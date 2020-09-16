@@ -209,9 +209,9 @@ wine_runc_msvc_gc: .wine_runc_msvc_gc
 	# build gc as well, as it is needed for the msvc c runtime
 	@echo 'Build gc (RelWithDebInfo)'
 
-	(test -f $@ && test -d 3rdParty/gc/build_msvc/) || (rm -rf 3rdParty/gc/build_msvc/ && mkdir -p 3rdParty/gc/build_msvc && cd 3rdParty/gc/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles" && $(WINE) nmake /f Makefile)
+	(test -f $@ && test -d 3rdParty/gc/build_msvc/) || (rm -rf 3rdParty/gc/build_msvc/ && mkdir -p 3rdParty/gc/build_msvc && cd 3rdParty/gc/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGC_BUILD_SHARED_LIBS=OFF ../ -G "NMake Makefiles" && $(WINE) nmake /f Makefile)
 	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'
-	cp -u 3rdParty/gc/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
+	cp -u 3rdParty/gc/build_msvc/omcgc.* $(OMBUILDDIR)/lib/omc/msvc/
 	@touch $@
 
 wine_run_omc_msvc: .wine_run_omc_msvc
@@ -220,5 +220,5 @@ wine_run_omc_msvc: .wine_run_omc_msvc
 
 	(test -f $@ && test -d Compiler/runtime/build_msvc/) || (rm -rf Compiler/runtime/build_msvc/ && mkdir -p Compiler/runtime/build_msvc && cd Compiler/runtime/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles" && $(WINE) nmake /f Makefile)
 	@echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'
-	# cp -u Compiler/runtime/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
+	# cp -u Compiler/runtime/build_msvc/omcgc.* $(OMBUILDDIR)/lib/omc/msvc/
 	@touch $@

@@ -534,14 +534,14 @@ simulationruntimecmsvc: getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sund
 	mkdir -p 3rdParty/gc/build_msvc
 	echo @echo on > 3rdParty/gc/build_msvc/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/gc/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/gc/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo -DGC_BUILD_SHARED_LIBS=OFF ../ -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/gc/build_msvc/build.bat
 	echo @echo on >> 3rdParty/gc/build_msvc/build.bat
 	echo set MAKE= >> 3rdParty/gc/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/gc/build_msvc/build.bat
 	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile >> 3rdParty/gc/build_msvc/build.bat
 	cd 3rdParty/gc/build_msvc &&	cmd /c build.bat
 	echo 'Copy the .lib files (needed for compilation) and .pdb files (needed for debugging) to $(OMBUILDDIR)/lib/omc/msvc/'
-	cp -u 3rdParty/gc/build_msvc/gc-lib.* $(OMBUILDDIR)/lib/omc/msvc/
+	cp -u 3rdParty/gc/build_msvc/omcgc.* $(OMBUILDDIR)/lib/omc/msvc/
 	rm -rf 3rdParty/gc/build_msvc/
 
 omc-bootstrapped:
