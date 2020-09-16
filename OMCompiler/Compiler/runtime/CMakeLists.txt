@@ -2,7 +2,7 @@
 find_package(CURL REQUIRED)
 find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
-find_package(BLAS REQUIRED)
+find_package(LAPACK REQUIRED)
 # find_package(ZLIB REQUIRED) # Not needed. We use the minizip lib from 3rdParty/FMIL instead
 
 
@@ -47,7 +47,7 @@ target_compile_features(omcruntime PRIVATE cxx_std_11)
 target_link_libraries(omcruntime PUBLIC curl)
 target_link_libraries(omcruntime PUBLIC Intl)
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
-target_link_libraries(omcruntime PUBLIC BLAS::BLAS)
+target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
