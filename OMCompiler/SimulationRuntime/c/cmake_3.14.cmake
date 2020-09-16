@@ -24,10 +24,12 @@ add_library(OpenModelicaRuntimeC ${libOpenModelicaRuntimeC_BUILD_TYPE}
                                     ${OMC_SIMRT_META_SOURCES}
                                     ${OMC_SIMRT_GC_SOURCES})
 
-target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)
-target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
+if(WIN32)
+  target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)
+  target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
+endif(WIN32)
+
 target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
-target_compile_options(OpenModelicaRuntimeC PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror=implicit-function-declaration>)
 
 target_include_directories(OpenModelicaRuntimeC INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
