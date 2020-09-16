@@ -20,7 +20,8 @@ omc_add_to_report(CMAKE_BUILD_TYPE)
 
 
 # options
-option(OMC_USE_CORBA "Should use corba." ON)
+option(OMC_USE_CORBA "Should use corba." OFF)
+omc_add_to_report(OMC_USE_CORBA)
 
 
 omc_add_subdirectory(3rdParty)

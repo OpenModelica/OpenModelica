@@ -23,20 +23,28 @@ set(OMC_RUNTIIME_SOURCES Error_omc.cpp Print_omc.c ErrorMessage.cpp
                             )
 
 
-if(OMC_USE_CORBA AND MINGW)
+if(OMC_USE_CORBA)
+  if(MINGW)
     # setup omniORB for MinGW OMDev
     include(.cmake/omdev_omniorb_setup.cmake)
-
     # Include the macro for compiling corba targets.
     include(.cmake/omc_omniorb_corba_target.cmake)
-
     # add a corba target for omc_communication.idl. The outputs will be put in the
     # generated files directory.
     omc_add_omniorb_corba_target(${OMNIIDL_EXE} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl ${GENERATED_DIRECTORY})
+    # add corba sources to source files list.
+    set(OMC_RUNTIIME_SOURCES ${OMC_RUNTIIME_SOURCES} ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp Corba_omc.cpp)
+  else(MINGW) # Not MinGW
+    message(FATAL "Corba support for non-MinGW omc builds is not yet implemented.")
+    # set(OMC_RUNTIIME_SOURCES ${OMC_RUNTIIME_SOURCES} ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp Corba_omc.cpp)
+  endif(MINGW)
 
-    set(OMC_RUNTIME_CORBA_SOURCES ${GENERATED_DIRECTORY}/omc_communication.cc omc_communication_impl.cpp Corba_omc.cpp)
-    set(OMC_RUNTIIME_SOURCES ${OMC_RUNTIIME_SOURCES} ${OMC_RUNTIME_CORBA_SOURCES})
-endif(OMC_USE_CORBA AND MINGW)
+else(OMC_USE_CORBA) # No corba support requested.
+    set(OMC_RUNTIIME_SOURCES ${OMC_RUNTIIME_SOURCES} corbaimpl_stub_omc.o)
+endif(OMC_USE_CORBA)
+
+
+
 
 
 
