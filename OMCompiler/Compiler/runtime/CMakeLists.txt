@@ -53,7 +53,7 @@ add_library(omc::compiler::runtime ALIAS omcruntime)
 target_compile_features(omcruntime PRIVATE cxx_std_11)
 
 target_link_libraries(omcruntime PUBLIC curl)
-target_link_libraries(omcruntime PUBLIC Intl)
+target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
 target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC OpenModelicaRuntimeC)
@@ -83,7 +83,7 @@ set(OMC_BACKENDRUNTIIME_SOURCES HpcOmSchedulerExt_omc.cpp HpcOmBenchmarkExt_omc.
 add_library(omcbackendruntime STATIC ${OMC_BACKENDRUNTIIME_SOURCES})
 add_library(omc::compiler::backendruntime ALIAS omcbackendruntime)
 
-target_link_libraries(omcbackendruntime PUBLIC Intl)
+target_link_libraries(omcbackendruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcbackendruntime PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib::static)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
