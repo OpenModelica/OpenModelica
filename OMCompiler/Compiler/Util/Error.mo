@@ -1043,6 +1043,8 @@ public constant ErrorTypes.Message ERROR_PKG_INSTALL_NO_PACKAGE_MO = ErrorTypes.
   Gettext.gettext("After extracting %s, %s does not exist. Removing the failed installation."));
 public constant ErrorTypes.Message WARNING_PKG_CONFLICTING_VERSIONS = ErrorTypes.MESSAGE(612, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("Conflicting versions for loading package %s: %s is to be installed, but another package requires version %s which is not provided by this version."));
+public constant ErrorTypes.Message NOTIFY_PKG_NO_INSTALL = ErrorTypes.MESSAGE(613, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
+  Gettext.gettext("%s %s will not be installed since version %s is installed."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));

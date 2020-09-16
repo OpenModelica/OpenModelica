@@ -317,6 +317,11 @@ protected
   String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
+  for p in packageList loop
+    if p.pkg == pkg and not p.needsInstall then
+      Error.addSourceMessage(Error.NOTIFY_PKG_NO_INSTALL, {pkg, version, SemanticVersion.toString(p.version)}, makeSourceInfo(p.path));
+    end if;
+  end for;
   packagesToInstall := list(p for p guard p.needsInstall in packageList);
   cachePath := getCachePath();
 
@@ -402,7 +407,7 @@ protected
   VersionMap.Tree installedVersions;
   list<String> candidates, usesPackages;
   list<SemanticVersion.Version> candidatesSemver, exactMatches;
-  String versionToInstall, usedVersion, path, sha, jsonPath;
+  String versionToInstall, usedVersion, path, sha, jsonPath, zip;
   SemanticVersion.Version semverToInstall, semver;
   JSON index, versionObj, versionsObj, usesObj;
   Boolean indexHasPkg;
@@ -413,7 +418,6 @@ algorithm
   semver := SemanticVersion.parse(version);
   exactMatches := list(candidate for candidate guard 0==SemanticVersion.compare(candidate, semver, compareBuildInformation=SemanticVersion.hasMetaInformation(semver)) in candidatesSemver);
   success := false;
-
   for pkgInfo in packagesToInstall loop
     if pkgInfo.pkg == pkg then
       if SemanticVersion.compare(pkgInfo.version, semver)==0 or max(0==SemanticVersion.compare(pkgInfo.version, candidate) for candidate in candidatesSemver) then
@@ -450,13 +454,19 @@ algorithm
       path := if VersionMap.hasKey(installedVersions, semverToInstall) then VersionMap.get(installedVersions, semverToInstall) else "#DUMMY#";
       jsonPath := path + "/" + metaDataFileName;
       if System.regularFileExists(jsonPath) then
-        sha := JSON.getString(JSON.get(JSON.parseFile(jsonPath), "sha"));
+        versionObj := JSON.parseFile(jsonPath);
+        zip := JSON.getString(JSON.get(versionObj, "zipfile"));
+        try
+          sha := JSON.getString(JSON.get(versionObj, "sha"));
+        else
+        end try;
+      else
+        zip := "";
       end if;
-      packageToInstall := PKG_INSTALL_INFO(false, pkg, semverToInstall, "", "", sha, JSON.emptyObject());
+      packageToInstall := PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, JSON.emptyObject());
       indexHasPkg := JSON.hasKey(JSON.get(index, "libs"), pkg);
     end if;
   end if;
-
   if not success then
     if listEmpty(candidates) then
       Error.addSourceMessage(Error.ERROR_PKG_NOT_FOUND_VERSION, {pkg, version}, makeSourceInfo(getIndexPath()));
