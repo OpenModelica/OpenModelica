@@ -6,6 +6,17 @@ find_package(LAPACK REQUIRED)
 # find_package(ZLIB REQUIRED) # Not needed. We use the minizip lib from 3rdParty/FMIL instead
 
 
+# On Win32 we use system UUID lib which is one of the default libs that cmake adds to any target on Win32.
+# On non Win32 systems we need to link explicitly to uuid. However,
+# there is no FindUUID yet. We can add one later.
+# Instead we use find library for now. It should be okay for now since I am guessing uuid headers
+# should be in the default include dirs anyway.
+if(NOT WIN32)
+    find_library(uuid REQUIRED)
+endif()
+
+
+
 # make a directory specifically for generated files. If we are asked
 # for corba support we will generate some files here.
 set (GENERATED_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/generated)
@@ -60,6 +71,12 @@ target_link_libraries(omcruntime PUBLIC OpenModelicaRuntimeC)
 target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
+
+# uuid is one of the default libs that cmake adds to any target on Win32.
+# On non-Win systems we look for the library and explicitly use it.
+if(NOT WIN32)
+    target_link_libraries(omcruntime PUBLIC uuid)
+endif()
 
 if(OMC_USE_CORBA AND MINGW)
     target_link_libraries(omcruntime PUBLIC omdev::omniORB::omniORB420_rt)
