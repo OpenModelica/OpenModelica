@@ -238,7 +238,7 @@ public
       local
         BEquation.EquationPointers equations;
       case BDAE(eqData = BEquation.EQ_DATA_SIM(equations = equations)) algorithm
-        _ := BEquation.EquationPointers.map(equations, Equation.simplify);
+        _ := BEquation.EquationPointers.map(equations, function Equation.simplify(name = getInstanceName()));
       then ();
       else ();
     end match;

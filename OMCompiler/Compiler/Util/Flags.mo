@@ -564,6 +564,8 @@ constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(194, "combineSubscripts", fal
   Gettext.gettext("Move all subscripts to the end of component references."));
 constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(195, "zmqDangerousAcceptConnectionsFromAnywhere", false,
   Gettext.gettext("When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1."));
+constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(196, "dumpSimplify", false,
+  Gettext.gettext("Dumps expressions before and after simplification."));
 
 public
 // CONFIGURATION FLAGS

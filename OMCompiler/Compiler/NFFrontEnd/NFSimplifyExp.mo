@@ -58,6 +58,21 @@ import MetaModelica.Dangerous.listReverseInPlace;
 
 public
 
+function simplifyDump
+  "wrapper function for simplification to allow dumping before and afterwards"
+  input output Expression exp;
+  input String name = "";
+algorithm
+  if Flags.isSet(Flags.DUMP_SIMPLIFY) then
+    print("### dumpSimplify | " + name + " ###\n");
+    print("[BEFORE] " + Expression.toString(exp) + "\n");
+    exp := simplify(exp);
+    print("[AFTER ] " + Expression.toString(exp) + "\n\n");
+  else
+      exp := simplify(exp);
+  end if;
+end simplifyDump;
+
 function simplify
   input output Expression exp;
 algorithm
@@ -496,7 +511,8 @@ function simplifyMultary
 protected
   Operator operator;
   list<Expression> arguments, constArguments;
-  Expression new_const;
+  Expression new_const, new_multary;
+  Boolean isNegative;
 algorithm
   Expression.MULTARY(arguments = arguments, operator = operator) := exp;
 
@@ -511,6 +527,7 @@ algorithm
     exp := Expression.MULTARY(arguments, operator);
   else
     new_const := combineConstantNumbers(constArguments, operator);
+
     if listLength(arguments) == 0 then
       // if there are no other arguments just return the new expression
       exp := new_const;
@@ -522,13 +539,30 @@ algorithm
         case NFOperator.MathClassification.ADDITION guard(Expression.isZero(new_const))
         then Expression.MULTARY(arguments, operator);
 
-        // 1 * rest = rest
-        case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isOne(new_const))
-        then Expression.MULTARY(arguments, operator);
-
         // 0 * rest = 0
         case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isZero(new_const))
         then new_const;
+
+        // 1 * rest = rest
+        case NFOperator.MathClassification.MULTIPLICATION
+          guard(Expression.isOne(new_const))
+          algorithm
+            // simplify all signs and pull a minus to the front if one remains
+            (arguments, isNegative) := simplifyMultarySigns(arguments);
+            new_multary := Expression.MULTARY(arguments, operator);
+        then if isNegative then
+          Expression.UNARY(Operator.OPERATOR(operator.ty, NFOperator.Op.UMINUS), new_multary)
+          else new_multary;
+
+        // only try to simplify signs for multiplication
+        case NFOperator.MathClassification.MULTIPLICATION
+          algorithm
+            // simplify all signs and pull a minus to the front if one remains
+            (arguments, isNegative) := simplifyMultarySigns(new_const :: arguments);
+            new_multary := Expression.MULTARY(arguments, operator);
+        then if isNegative then
+          Expression.UNARY(Operator.OPERATOR(operator.ty, NFOperator.Op.UMINUS), new_multary)
+          else new_multary;
 
         // return the full expression
         else Expression.MULTARY(new_const :: arguments, operator);
@@ -536,6 +570,20 @@ algorithm
     end if;
   end if;
 end simplifyMultary;
+
+function simplifyMultarySigns
+  "removes all signs from arguments and returns true if an odd number of negative
+  signs were removed. Should only be used for multiplication!"
+  input list<Expression> arguments;
+  output list<Expression> new_arguments = {};
+  output Boolean isNegative = false;
+algorithm
+  for arg in listReverse(arguments) loop
+    (new_arguments, isNegative) := if Expression.isNegative(arg)
+      then (Expression.negate(arg) :: new_arguments, not isNegative)
+      else (arg :: new_arguments, isNegative);
+  end for;
+end simplifyMultarySigns;
 
 function simplifyBinary
   input output Expression binaryExp;
@@ -647,12 +695,25 @@ function simplifyBinaryDiv
   input Expression exp2;
   output Expression outExp;
 algorithm
+  // fix constants
   // e / 1 = e
-  if Expression.isOne(exp2) then
-    outExp := exp1;
-  else
-    outExp := Expression.BINARY(exp1, op, exp2);
-  end if;
+  // e / (-1) = -e
+  // 0 / e = 0 (e <> 0)
+  outExp :=
+    if Expression.isOne(exp2) then exp1
+    elseif Expression.isMinusOne(exp2) then Expression.negate(exp1)
+    elseif Expression.isZero(exp1) and not Expression.isZero(exp2) then exp1
+    // fix minus signs
+    // (-e1)/(-e2) = e1/e2
+    // e1/(-e2) = -(e1/e2)
+    // (-e1)/e2 = -(e1/e2)
+    // e1/e2 = e1/e2
+    else match (Expression.isNegative(exp1), Expression.isNegative(exp1))
+      case (true, true)     then Expression.BINARY(Expression.negate(exp1), op, Expression.negate(exp2));
+      case (false, true)    then Expression.negate(Expression.BINARY(exp1, op, Expression.negate(exp2)));
+      case (true, false)    then Expression.negate(Expression.BINARY(Expression.negate(exp1), op, exp2));
+      case (false, false)   then Expression.BINARY(exp1, op, exp2);
+    end match;
 end simplifyBinaryDiv;
 
 function simplifyBinaryPow
@@ -695,9 +756,19 @@ algorithm
     outExp := Ceval.evalUnaryOp(exp, op);
     outExp := Expression.stripBindingInfo(outExp);
   else
-    outExp := Expression.UNARY(op, exp);
+    outExp := simplifyUnarySign(exp);
   end if;
 end simplifyUnaryOp;
+
+function simplifyUnarySign
+  input output Expression unaryExp;
+  input Boolean isNegative = false;
+algorithm
+  unaryExp := match unaryExp
+    case Expression.UNARY() then simplifyUnarySign(unaryExp.exp, not isNegative);
+    else if isNegative then Expression.negate(unaryExp) else unaryExp;
+  end match;
+end simplifyUnarySign;
 
 function simplifyLogicBinary
   input output Expression binaryExp;
@@ -920,14 +991,6 @@ algorithm
         end for;
       then result;
 
-      case NFOperator.MathClassification.SUBTRACTION algorithm
-        result := 0.0;
-        for exp in exp_lst loop
-          (tmp, anyReal) := getConstantValue(exp, anyReal);
-          result := result - tmp;
-        end for;
-      then result;
-
       case NFOperator.MathClassification.MULTIPLICATION algorithm
         result := 1.0;
         for exp in exp_lst loop
@@ -937,7 +1000,8 @@ algorithm
       then result;
 
       else algorithm
-        Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY():" + Operator.symbol(operator), sourceInfo());
+        Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.symbol(operator) +
+         "] with following arguments:\n" + stringDelimitList(list(Expression.toString(e) for e in exp_lst), ", "), sourceInfo());
       then fail();
 
     end match;

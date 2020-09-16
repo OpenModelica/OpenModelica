@@ -1359,6 +1359,7 @@ function evalUnaryOp
   output Expression exp;
 algorithm
   exp := match op.op
+    case Op.UMINUS guard(Expression.isZero(exp1)) then exp1;
     case Op.UMINUS then Expression.bindingExpMap(exp1, evalUnaryMinus);
     else
       algorithm

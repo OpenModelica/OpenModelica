@@ -197,7 +197,7 @@ public
       then fail();
 
     end match;
-    eq := Equation.simplify(eq);
+    eq := Equation.simplify(eq, getInstanceName());
   /* ToDo:
     record ALGORITHM
       Integer size                    "output size";
@@ -623,15 +623,26 @@ public
         Operator operator, addOp, mulOp;
         Operator.SizeClassification sizeClass;
 
-      // Dash calculations (ADD, SUB, ADD_EW, SUB_EW, ...)
+      // Addition calculations (ADD, ADD_EW, ...)
       // (f + g)' = f' + g'
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
-        guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION) or
-              (Operator.getMathClassification(operator) == NFOperator.MathClassification.SUBTRACTION))
+        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
         algorithm
           (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
           (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
       then (Expression.MULTARY({diffExp1, diffExp2}, operator), diffArguments);
+
+      // Subtraction calculations (SUB, SUB_EW, ...)
+      // (f - g)' = f' - g'
+      case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
+        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.SUBTRACTION)
+        algorithm
+          (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
+          (diffExp2, diffArguments) := differentiateExpression(exp2, diffArguments);
+          // create addition operator from the size classification of original multiplication operator
+          (_, sizeClass) := Operator.classify(operator);
+          addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
+      then (Expression.MULTARY({diffExp1, Expression.negate(diffExp2)}, addOp), diffArguments);
 
       // Multiplication (MUL, MUL_EW, ...)
       // (f * g)' =  fg' + f'g

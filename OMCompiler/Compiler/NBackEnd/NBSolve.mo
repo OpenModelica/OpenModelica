@@ -107,7 +107,7 @@ protected
     // Set eqn: cref = - f/f'
     eqn := Equation.setLHS(eqn, crefExp);
     eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.BINARY(numerator, divOp, derivative)));
-    eqn := Equation.simplify(eqn);
+    eqn := Equation.simplify(eqn, getInstanceName());
   end solveLinear;
 
   annotation(__OpenModelica_Interface="backend");

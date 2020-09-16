@@ -150,7 +150,7 @@ public
 
   record MULTARY "Multary expressions with the same operator, e.g. a+b+c"
     list<Expression> arguments;
-    Operator operator;
+    Operator operator "Can only be + or * (commutative)";
   end MULTARY;
 
   record BINARY "Binary operations, e.g. a+4"
@@ -3735,9 +3735,23 @@ public
       case INTEGER() then exp.value == 1;
       case REAL() then exp.value == 1.0;
       case CAST() then isOne(exp.exp);
+      case UNARY() then isMinusOne(exp.exp);
       else false;
     end match;
   end isOne;
+
+  function isMinusOne
+    input Expression exp;
+    output Boolean isOne;
+  algorithm
+    isOne := match exp
+      case INTEGER() then exp.value == -1;
+      case REAL() then exp.value == -1.0;
+      case CAST() then isMinusOne(exp.exp);
+      case UNARY() then isOne(exp.exp);
+      else false;
+    end match;
+  end isMinusOne;
 
   function isNegative
     input Expression exp;

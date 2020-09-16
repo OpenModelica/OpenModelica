@@ -482,20 +482,21 @@ public
 
     function simplify
       input output Equation eq;
+      input String name = "";
     algorithm
       eq := match eq
         case SCALAR_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplify(eq.lhs);
-          eq.rhs := SimplifyExp.simplify(eq.rhs);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name);
         then eq;
         case ARRAY_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplify(eq.lhs);
-          eq.rhs := SimplifyExp.simplify(eq.rhs);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name);
         then eq;
         case SIMPLE_EQUATION() then eq;
         case RECORD_EQUATION() algorithm
-          eq.lhs := SimplifyExp.simplify(eq.lhs);
-          eq.rhs := SimplifyExp.simplify(eq.rhs);
+          eq.lhs := SimplifyExp.simplifyDump(eq.lhs, name);
+          eq.rhs := SimplifyExp.simplifyDump(eq.rhs, name);
         then eq;
         // ToDo: implement the following correctly:
         case ALGORITHM()       then eq;
@@ -556,17 +557,17 @@ public
         local
           Operator operator;
         case Equation.SCALAR_EQUATION() algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.SUB);
-        then Expression.BINARY(eqn.rhs, operator, eqn.lhs);
+          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+        then Expression.MULTARY({eqn.rhs, Expression.negate(eqn.lhs)}, operator);
         case Equation.ARRAY_EQUATION()  algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.SUB);
-        then Expression.BINARY(eqn.rhs, operator, eqn.lhs);
+          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+        then Expression.MULTARY({eqn.rhs, Expression.negate(eqn.lhs)}, operator);
         case Equation.SIMPLE_EQUATION() algorithm
-          operator := Operator.OPERATOR(ComponentRef.getComponentType(eqn.lhs), NFOperator.Op.SUB);
-        then Expression.BINARY(Expression.fromCref(eqn.rhs), operator, Expression.fromCref(eqn.lhs));
+          operator := Operator.OPERATOR(ComponentRef.getComponentType(eqn.lhs), NFOperator.Op.ADD);
+        then Expression.MULTARY({Expression.fromCref(eqn.rhs), Expression.negate(Expression.fromCref(eqn.lhs))}, operator);
         case Equation.RECORD_EQUATION() algorithm
-          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.SUB);
-        then Expression.BINARY(eqn.rhs, operator, eqn.lhs);
+          operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
+        then Expression.MULTARY({eqn.rhs, Expression.negate(eqn.lhs)}, operator);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
         then fail();

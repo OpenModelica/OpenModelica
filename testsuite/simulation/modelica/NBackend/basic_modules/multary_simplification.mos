@@ -1,0 +1,94 @@
+// name: multary_simplifications
+// keywords: NewBackend
+// status: correct
+
+
+loadString("
+  model M
+    Real x, y;
+  equation
+    x = 2 * (time + (-4) - 3);
+    y = time * (-2) * 4 * 1;
+  end M;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=dumpSimplify");
+simulate(M); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] y
+// [AFTER ] y
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] time * (-2.0) * 4.0
+// [AFTER ] -8.0 * time
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] x
+// [AFTER ] x
+//
+// ### dumpSimplify | NBackendDAE.simplify ###
+// [BEFORE] 2.0 * (time + (-4.0) + (-3.0))
+// [AFTER ] 2.0 * ((-7.0) + time)
+//
+// ### dumpSimplify | NBDifferentiate.differentiateEquation ###
+// [BEFORE] $SEED_A.x
+// [AFTER ] $SEED_A.x
+//
+// ### dumpSimplify | NBDifferentiate.differentiateEquation ###
+// [BEFORE] 0.0 * ((-7.0) + time) + 2.0 * (0.0 + 0.0)
+// [AFTER ] 0.0
+//
+// ### dumpSimplify | NBDifferentiate.differentiateEquation ###
+// [BEFORE] $SEED_A.y
+// [AFTER ] $SEED_A.y
+//
+// ### dumpSimplify | NBDifferentiate.differentiateEquation ###
+// [BEFORE] -(0.0 * time + 8.0 * 0.0)
+// [AFTER ] 0.0
+//
+// ### dumpSimplify | NBSolve.solveLinear ###
+// [BEFORE] x
+// [AFTER ] x
+//
+// ### dumpSimplify | NBSolve.solveLinear ###
+// [BEFORE] -(2.0 * ((-7.0) + time) + (-x)) / (-1.0)
+// [AFTER ] 2.0 * ((-7.0) + time) + x
+//
+// ### dumpSimplify | NBSolve.solveLinear ###
+// [BEFORE] y
+// [AFTER ] y
+//
+// ### dumpSimplify | NBSolve.solveLinear ###
+// [BEFORE] -((-8.0 * time) + (-y)) / (-1.0)
+// [AFTER ] 8.0 * time + y
+//
+// ### dumpSimplify | NBSolve.solveLinear ###
+// [BEFORE] x
+// [AFTER ] x
+//
+// ### dumpSimplify | NBSolve.solveLinear ###
+// [BEFORE] -(2.0 * ((-7.0) + time) + (-x)) / (-1.0)
+// [AFTER ] 2.0 * ((-7.0) + time) + x
+//
+// ### dumpSimplify | NBSolve.solveLinear ###
+// [BEFORE] y
+// [AFTER ] y
+//
+// ### dumpSimplify | NBSolve.solveLinear ###
+// [BEFORE] -((-8.0 * time) + (-y)) / (-1.0)
+// [AFTER ] 8.0 * time + y
+//
+// record SimulationResult
+//     resultFile = "M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
