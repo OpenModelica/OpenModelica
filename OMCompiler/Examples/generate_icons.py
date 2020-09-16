@@ -526,7 +526,7 @@ def getGraphicsWithPortsForClass(modelicaClass):
                 g['id'] = component_name
                 g['className'] = class_name
 
-                g['desc'] = componentInfo[0]
+                g['desc'] = componentInfo[2]
 
                 g['classDesc'] = ask_omc('getClassComment', class_name).strip().strip('"')
 
