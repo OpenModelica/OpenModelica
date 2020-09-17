@@ -24,7 +24,7 @@ ToZeroMQEvent::ToZeroMQEvent(int pubPort, int subPort, string zeroMQJobiID, stri
     //Needed to establish connection
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    //std::cout << "pub port: " << to_string(pubPort)<< " sub port: " << to_string(subPort) <<  " job id " << zeroMQJobiID << " server thread id " << zeromq_simultaion_thread_id << std::endl;
+   
 }
 ToZeroMQEvent::~ToZeroMQEvent()
 {
@@ -58,7 +58,7 @@ void ToZeroMQEvent::NotifyResults(double progress)
 }
 void ToZeroMQEvent::NotifyWaitForStarting()
 {
-    //std::cout << "Wating for ID" << std::endl;
+    
     s_sendmore(publisher_, _zeromq_server_id);
     s_sendmore(publisher_, "SimulationThreadWatingForID");
     s_send(publisher_, "{\"jobId\":\"" + _zeromq_job_id + "\"}");
@@ -85,10 +85,10 @@ bool ToZeroMQEvent::AskForStop()
     std::string message = s_recv(subscriber_, false);
     if (!message.empty())
     {
-       // std::cout << "received topic" << message << std::endl;
+       
         //  Read message contents
         std::string type = s_recv(subscriber_,false);
-        std::cout << "received type " << type << std::endl;
+        
         if (type == "StopSimulationThread")
         {
             
@@ -100,13 +100,19 @@ bool ToZeroMQEvent::AskForStop()
 }
 
 
-void ToZeroMQEvent::NotifyFinish()
+void ToZeroMQEvent::NotifyFinish(bool success, string erro_message)
 {
     if (!_zeromq_job_id.empty())
     {
         s_sendmore(publisher_, _zeromq_client_id);
         s_sendmore(publisher_, "SimulationFinished");
-        s_send(publisher_, "{\"Succeeded\":true,\"JobId\":\"" + _zeromq_job_id + "\",\"ResultFile\":\"\",\"Error\":\"\"}");
+        string sim_success;
+        if(success)
+            sim_success = "true";
+        else
+            sim_success = "false";
+        string finished = string("{\"Succeeded\":") + sim_success + string(",\"JobId\":\"") + _zeromq_job_id + string("\",\"ResultFile\":\"\",\"Error\":\"") + erro_message +string("\"}");
+            s_send(publisher_,finished.c_str());
     }
     else
         throw ModelicaSimulationError(SIMMANAGER, "No simulation id received");
@@ -114,7 +120,16 @@ void ToZeroMQEvent::NotifyFinish()
 
 void ToZeroMQEvent::NotifyException(std::string message)
 {
-
+if (!_zeromq_job_id.empty())
+    {
+        s_sendmore(publisher_, _zeromq_client_id);
+        s_sendmore(publisher_, "SimulationFinished");
+        string finished = string("{\"Succeeded\":false,\"JobId\":\"") + _zeromq_job_id + string("\",\"ResultFile\":\"\",\"Error\":\"") + message + string("\"}");
+      
+        s_send(publisher_,finished.c_str());
+    }
+    else
+        throw ModelicaSimulationError(SIMMANAGER, "No simulation id received");
 
 }
 
@@ -126,5 +141,7 @@ void ToZeroMQEvent::NotifyStarted()
         s_sendmore(publisher_, "SimulationStarted");
         s_send(publisher_, "{\"JobId\":\"" + _zeromq_job_id + "\"}");
     }
+     else
+        throw ModelicaSimulationError(SIMMANAGER, "No simulation id received");
 }
 
