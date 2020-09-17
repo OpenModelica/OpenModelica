@@ -627,7 +627,7 @@ public
     exp := match (exp)
       local
         Call call;
-        Expression derFuncCall, exp1, diffExp1;
+        Expression derFuncCall, arg1, diffArg1, exp1, diffExp1;
         list<Expression> arguments;
         Operator operator, addOp, mulOp;
         Operator.SizeClassification sizeClass;
@@ -637,13 +637,20 @@ public
       guard (listLength(Call.arguments(call)) == 1)
       algorithm
         arguments := Call.arguments(call);
-        exp1 := List.first(arguments);
-        diffExp1 := differentiateExpression(exp1, diffArguments);
+        arg1 := List.first(arguments);
+        diffArg1 := differentiateExpression(arg1, diffArguments);
         // TODO: Check sizeClass for array-equations
         sizeClass := NFOperator.SizeClassification.SCALAR;
         mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
-        derFuncCall := differentiateNamedCall1Arg(name, exp1);
-      then(Expression.MULTARY({derFuncCall, diffExp1}, {}, mulOp));
+        derFuncCall := differentiateNamedCall1Arg(name, arg1);
+      then(Expression.MULTARY({derFuncCall, diffArg1}, {}, mulOp));
+
+      // Builtin function call with two arguments
+      case (Expression.CALL(call=call))
+      guard (listLength(Call.arguments(call)) == 2)
+      algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp) + " Not implemeted yet!"});
+      then fail();
 
       // try some simple known cases
       case (Expression.CALL(call=call)) algorithm
@@ -665,13 +672,28 @@ public
     output Expression derFuncCall;
   algorithm
     derFuncCall := match (name)
+      local
+        Expression exp1;
+        Operator addOp, mulOp, powOp;
+        Operator.SizeClassification sizeClass;
+      // acos -> - 1 / sqrt(1-innerExp^2)
+      case("acos") algorithm
+        sizeClass := NFOperator.SizeClassification.SCALAR;
+        powOp := Operator.fromClassification((NFOperator.MathClassification.POWER, sizeClass), Type.REAL());    // TODO: How to get size and what is ty?
+        addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), Type.REAL());
+        mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
+        exp1 := Expression.BINARY(innerExp, powOp, Expression.REAL(2.0));                       // innerExp^2
+        exp1 := Expression.MULTARY({Expression.REAL(1.0)}, {exp1}, addOp);                      // 1 - innerExp^2
+        exp1 := Expression.BINARY(exp1, powOp, Expression.REAL(0.5));                           // sqrt(1-innerExp^2)   // TODO: Or do we wan't to use sqrt builtin-function?
+        exp1 := Expression.MULTARY({Expression.negate(Expression.REAL(1.0))}, {exp1}, mulOp);   // -1/sqrt(1-innerExp^2)
+        then exp1;
+      // cos -> -sin
+      case("cos") algorithm
+        then Expression.negate(Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SIN_REAL, {innerExp}, Expression.variability(innerExp))));
       // sin -> cos
       case ("sin") algorithm
         then Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.COS_REAL, {innerExp}, Expression.variability(innerExp)));
-      // cos -> -sin
-      case ("cos") algorithm
-        then Expression.negate(Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SIN_REAL, {innerExp}, Expression.variability(innerExp))));
-      // TODO All all builtin functions with one argument here
+      // TODO Add all builtin functions with one argument here
     else algorithm
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
       then fail();

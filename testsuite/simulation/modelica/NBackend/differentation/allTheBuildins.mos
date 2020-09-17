@@ -1,0 +1,101 @@
+// name: solveSingleEquations
+// keywords: NewBackend
+// status: correct
+
+/*
+loadString("
+model oneArgBuiltins
+  Real var1, var2, var3, var4, var5;
+  Real var6, var7, var8, var9, var10;
+  Real var11, var12, var13, var14, var15;
+  Real var16, var17;
+  Integer ivar1;
+equation
+  var1 = time;
+
+  // Test reals
+  abs(var1) = var2;
+  acos(var2) = var3;          // -1 <= var <= 1
+  asin(var2) = var4;          // -1 <= var <= 1
+  atan(var4) = var5;          // -inf <= var <= inf
+  cos(var3) = var6;           // -inf <= var <= inf
+  cosh(var6) = var7;          // -inf <= var <= inf
+  exp(var7) = var8;           // -inf <= var <= inf
+  log(var2+0.1) = var9;       // 0 < var <= inf
+  log10(var2+0.1) = var10;    // 0 < var <= inf
+  sign(var6) = var11;
+  sin(var10) = var12;
+  sinh(var12) = var13;
+  sqrt(var2) = var14;
+  tan(var14) = var15;
+  tanh(var15) = var16;
+
+  // Test integers
+  ivar1 = integer(100*time);
+  var17 = cos(ivar1);
+end oneArgBuiltins;
+"); getErrorString();
+*/
+loadString("
+model oneArgBuiltins
+  Real var1(start=0), var2(start=1), var3(start=0);
+equation
+  time = sin(var1);
+  time = cos(var2);
+  time = acos(var3);
+end oneArgBuiltins;
+"); getErrorString();
+
+/*
+loadString("
+model twoArgBuiltins
+  Real var1, var2;
+equation
+  // Builtin functions with two arguments
+  atan2(var1, var2) = var3;       // tan(y) = u1/u2, y != pi (0.5 + k), k integer
+  cross()
+  der(x) = 2;
+  y = delay(x, 1);
+end twoArguiltins;
+"); getErrorString();
+*/
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(oneArgBuiltins); getErrorString();
+
+val(var1,{0,1});
+val(var2,{0,1});
+val(var3,{0,1});
+/*
+val(var4,{0,1});
+val(var5,{0,1});
+val(var6,{0,1});
+val(var7,{0,1});
+val(var8,{0,1});
+val(var9,{0,1});
+val(var10,{0,1});
+val(var11,{0,1});
+val(var12,{0,1});
+val(var13,{0,1});
+val(var14,{0,1});
+val(var15,{0,1});
+val(var16,{0,1});
+val(var17,{0,1});
+*/
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "oneArgBuiltins_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'oneArgBuiltins', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// {0.0,1.570796337005974}
+// endResult
