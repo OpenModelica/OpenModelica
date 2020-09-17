@@ -12,7 +12,13 @@ class DiscreteEvents;
 *
 *
 *****************************************************************************/
+
+
+
 typedef vector<tuple<fmi2_value_reference_t, unsigned int>> out_vars_vr_t;
+
+
+
 
 class omsi_me;
 
