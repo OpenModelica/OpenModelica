@@ -14,7 +14,7 @@
 		~ToZeroMQEvent();
         virtual void NotifyStarted();
 		virtual void NotifyResults(double progress);
-		virtual void NotifyFinish();
+		virtual void NotifyFinish(bool success, string erro_message = string("no error has occurred"));
 		virtual void NotifyException(std::string message);
         virtual void NotifyWaitForStarting();
         virtual bool AskForStop();
