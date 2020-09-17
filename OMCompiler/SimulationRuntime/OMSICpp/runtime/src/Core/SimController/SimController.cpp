@@ -101,10 +101,7 @@ weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib, string modelKe
     //create system
     shared_ptr<IMixedSystem> system = createSystem(modelLib, modelKey, _config->getGlobalSettings());
 
-    if (system)
-        std::cout << "1 system  is here " << modelKey << std::endl;
-    else
-        std::cout << "1 no system is here " << modelKey << std::endl;
+   
 
     _systems[modelKey] = system;
     return system;
@@ -224,10 +221,14 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         }
 #endif
 
+        
+    if (!_startZeroMQ)
+    {
+        //initialize for zeromq simulation is done in simulation thread
         _simMgr->initialize();
+    }
 
-
-}
+    }
     catch (ModelicaSimulationError& ex)
     {
         string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name, ex.what(), ex.getErrorID());

@@ -31,7 +31,7 @@ public:
 
     void notifyResults(double time);
 
-    void setSimStoped();
+    void setSimStoped(bool success, string erro_message = string("no error has occurred"));
     void setSimStarted();
     void setSimStopedByException(std::exception& except);
     void setGuiStoped();

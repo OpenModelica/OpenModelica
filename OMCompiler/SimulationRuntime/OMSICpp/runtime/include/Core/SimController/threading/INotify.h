@@ -42,7 +42,7 @@
         /**
 		Simulation has finished
 		*/
-		virtual void NotifyFinish() = 0;
+		virtual void NotifyFinish(bool success, string erro_message =  string("no error has occurred")) = 0;
 
 		/**
 		Simulation throws an exception

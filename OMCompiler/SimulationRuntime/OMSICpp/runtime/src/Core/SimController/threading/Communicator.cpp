@@ -183,14 +183,14 @@ void Communicator::notifyResults(double time)
 /**
 Indicates   simulation thread is finished
 */
-void Communicator::setSimStoped()
+void Communicator::setSimStoped(bool success, string erro_message)
 {
     std::lock_guard<std::mutex> lockGuard(_mutex);
     //cout << "sim stoped" << std::endl;
     _paused = false;
     _simstopped = true;
     _stop = true;
-    _notify->NotifyFinish();
+    _notify->NotifyFinish(success,erro_message);
     _simulation_finish.notify_all();
 }
 /**
@@ -235,9 +235,17 @@ Indicates  simulation thread is finished
 void Communicator::setSimStopedByException(std::exception& except)
 {
 
-    setSimStoped();
+    
+    std::lock_guard<std::mutex> lockGuard(_mutex);
+    //cout << "sim stoped" << std::endl;
+    _paused = false;
+    _simstopped = true;
+    _stop = true;
+    
     if (_notify)
         _notify->NotifyException(except.what());
+    
+    _simulation_finish.notify_all();
 
 }
 /**
@@ -256,7 +264,7 @@ Indicates when progress thread is finished
 void Communicator::setGuiStoped()
 {
     std::lock_guard<std::mutex> lockGuard(_mutex);
-    cout << "gui stoped" << std::endl;
+    //cout << "gui stoped" << std::endl;
     _guistopped = true;
    
     _simulation_finish.notify_all();

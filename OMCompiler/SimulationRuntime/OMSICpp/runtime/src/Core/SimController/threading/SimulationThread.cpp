@@ -30,7 +30,7 @@ Run method of the simulation thread in which the simulation is executed
 void SimulationThread::Run(shared_ptr<SimManager> simManager, shared_ptr<IGlobalSettings> global_settings, shared_ptr<IMixedSystem> system, shared_ptr<ISimObjects> sim_objects, string modelKey)
 {
  
-   
+  
     
     try
     {
@@ -46,11 +46,13 @@ void SimulationThread::Run(shared_ptr<SimManager> simManager, shared_ptr<IGlobal
 #endif
 
         _simManager = simManager;
+       
        bool starting = _communicator->waitForSimulationStarting(1);
+      
        if (starting)
        {
            _communicator->setSimStarted();
-         
+          simManager->initialize();
 
 #ifdef RUNTIME_PROFILING
            if (MeasureTime::getInstance() != NULL)
@@ -60,10 +62,11 @@ void SimulationThread::Run(shared_ptr<SimManager> simManager, shared_ptr<IGlobal
            }
 #endif
            high_resolution_clock::time_point t_s = high_resolution_clock::now();
+         
            simManager->runSimulation();
            high_resolution_clock::time_point t1 = high_resolution_clock::now();
            seconds elapsed = duration_cast<std::chrono::seconds>(t1 - t_s);
-           cout << "time for simulation: " << elapsed.count();
+           
 
 
            if (global_settings->getOutputFormat() == BUFFER)
@@ -103,11 +106,13 @@ void SimulationThread::Run(shared_ptr<SimManager> simManager, shared_ptr<IGlobal
                vector<double> time_values = history->getTimeEntries();
                simData->addTimeEntries(time_values);
            }
-           _communicator->setSimStoped();
+           
+           _communicator->setSimStoped(true);
        }
        else
        {
            string error = string("Simulation failed for ") + modelKey;
+            _communicator->setSimStoped(false,error);
            throw ModelicaSimulationError(SIMMANAGER, error);
        }
        
@@ -115,6 +120,9 @@ void SimulationThread::Run(shared_ptr<SimManager> simManager, shared_ptr<IGlobal
     catch (ModelicaSimulationError& ex)
     {
         string error = add_error_info(string("Simulation failed for ") + modelKey, ex.what(), ex.getErrorID());
+        //_communicator->setSimStopedByException(ex);
+    
+        _communicator->setSimStoped(false,error);
         throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
     }
 
