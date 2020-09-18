@@ -76,11 +76,11 @@ int main(int argc, char** argv) {
             return 1;
         }
 
-        rev_dep_file << pac.first << ": ";
+        // rev_dep_file << pac.first << ": ";
         for (const auto& depee : pac.second) {
-            rev_dep_file << depee << " ";
+            rev_dep_file << depee << ";";
         }
-        rev_dep_file << std::endl;
+        // rev_dep_file << std::endl;
 
         // if(pac.second.size() > largest) {
         //     largest = pac.second.size();

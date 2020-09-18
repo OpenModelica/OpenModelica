@@ -63,9 +63,12 @@ macro(add_interface_check_step mo_source_file)
     add_custom_command(
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo
         # COMMAND ${CMAKE_COMMAND} -E cat ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_depends
+        COMMAND ${CMAKE_COMMAND} -DREV_DEP_FILE=${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_depends
+                                 -DINTERFACE_FILES_DIR=${CMAKE_CURRENT_BINARY_DIR}
+                                  -P ${CMAKE_CURRENT_SOURCE_DIR}//.cmake/dep_toucher.cmake
         COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_deps.stamp
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_deps.stamp
-        COMMENT "Touched dependents of ${mo_source_file}"
+        COMMENT "Touching dependents of ${mo_source_file}"
     )
     set(OMC_REV_DEP_STAMP_FILES ${OMC_REV_DEP_STAMP_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.rev_deps.stamp)
 
@@ -137,7 +140,7 @@ add_custom_target(DEPENDENCY_SCAN
 
 add_custom_target(DEPENDENCY_UPDATE
                   DEPENDS ${OMC_REV_DEP_STAMP_FILES}
-                  COMMENT "Updated dependencies for MetaModelica sources.")
+                  COMMENT "Touched dependents of modified MetaModelica sources.")
 
 
 add_dependencies(DEPENDENCY_SCAN INTERFACE_CHECK)

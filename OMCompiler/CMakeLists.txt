@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(OMCompiler)
 
+# Variable for signifying that we are using the new CMake configuration.
 # We use this to selectively include some cmake source files
 # e.g. simulationRuntime/c/ has two cmake sources that are conditionally
 # included. The old (cmake 2.8) cmake source in there is used for compilation
@@ -26,8 +27,11 @@ omc_add_to_report(OMC_USE_CORBA)
 
 omc_add_subdirectory(3rdParty)
 
-# We want to make sure include directories are handled properly. C allows implicit function
-# declaration. We have to disable that so that we can be consistent and correct with our inclusions.
+# We do this after 3rdPart is added because some libs in FMILib use implicit function declration
+# because of missing #defines due to bad configuration.
+
+# We want to make sure include directories are handled properly.
+# We have to disable implicit function declaration so that we can be consistent and correct with our inclusions.
 if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     add_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=implicit-function-declaration>)
 endif()
