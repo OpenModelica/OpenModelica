@@ -250,7 +250,11 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.SPLIT_CONSTANT_PARTS_SYMJAC,
   Flags.NF_DUMP_FLAT,
   Flags.DUMP_FORCE_FMI_ATTRIBUTES,
-  Flags.DUMP_DATARECONCILIATION
+  Flags.DUMP_DATARECONCILIATION,
+  Flags.JIT_EVAL_FUNC,
+  Flags.JIT_DUMP_IR,
+  Flags.JIT_NO_OPT,
+  Flags.DUMP_MIDCODE
 };
 
 protected

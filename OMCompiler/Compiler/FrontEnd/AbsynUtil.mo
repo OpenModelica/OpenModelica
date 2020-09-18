@@ -2778,22 +2778,18 @@ algorithm
     local
       Ident str;
       Path p;
-
     case QUALIFIED(name = str, path = IDENT())
       then IDENT(str);
-
     case QUALIFIED(name = str, path = p)
       equation
         p = stripLast(p);
       then
         QUALIFIED(str, p);
-
     case FULLYQUALIFIED(p)
       equation
         p = stripLast(p);
       then
         FULLYQUALIFIED(p);
-
   end match;
 end stripLast;
 
