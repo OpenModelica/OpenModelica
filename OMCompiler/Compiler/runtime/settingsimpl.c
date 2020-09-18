@@ -91,7 +91,8 @@ static void stripbinpath(char *omhome)
   }
 
   do {
-    assert(tmp = strrchr(omhome,'/'));
+    tmp = strrchr(omhome,'/');
+    assert(tmp);
     *tmp = '\0';
   } while (strcmp(tmp+1,"bin") && strcmp(tmp+1,"lib"));
   return;
