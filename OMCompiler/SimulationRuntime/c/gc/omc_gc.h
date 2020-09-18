@@ -183,11 +183,16 @@ static inline void* mmc_check_out_of_memory(void *ptr)
 #else /* #if (defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME)) */
 
 #include <gc.h>
+// No need for this I think. If you define GC_THREADS (linux) or GC_WIN32_PTHREADS (on Win/MinGW) before
+// including gc.h these will be picked up.
+// Make sure to define GC_THREADS (linux) or GC_WIN32_PTHREADS (on Win/MinGW) on the makefiles or
+// compiler command line so that everything is picked up consistently by all headers.
+
 /* gc.h doesn't include this by default; and the actual header redirects dlopen, which does not have an implementation */
-#if !defined(OMC_NO_THREADS)
-int GC_pthread_create(pthread_t *,const pthread_attr_t *,void *(*)(void *), void *);
-int GC_pthread_join(pthread_t, void **);
-#endif
+// #if !defined(OMC_NO_THREADS)
+// int GC_pthread_create(pthread_t *,const pthread_attr_t *,void *(*)(void *), void *);
+// int GC_pthread_join(pthread_t, void **);
+// #endif
 
 void omc_GC_set_max_heap_size(size_t);
 size_t omc_GC_get_max_heap_size();
