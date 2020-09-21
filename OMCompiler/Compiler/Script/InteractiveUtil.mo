@@ -3897,54 +3897,6 @@ algorithm
   end match;
 end makeExtendsFullyQualified;
 
-protected function getExtendsModifierNames
-" Return the modifier names of a
-   modification on an extends clause.
-   For instance,
-     model test extends A(p1=3,p2(z=3));end test;
-     getExtendsModifierNames(test,A) => {p1,p2.z}
-   inputs:  (Absyn.ComponentRef, /* class */
-               Absyn.ComponentRef, /* inherited class */
-               Absyn.Program)
-   outputs: (string)"
-  input Absyn.ComponentRef inComponentRef1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Boolean inBoolean;
-  input Absyn.Program inProgram3;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inComponentRef1,inComponentRef2,inBoolean,inProgram3)
-    local
-      Absyn.Path p_class,name,extpath;
-      Absyn.Class cdef;
-      list<Absyn.ElementSpec> exts,exts_1;
-      FCore.Graph env;
-      list<Absyn.ElementArg> extmod;
-      list<String> res,res1;
-      String res_1,res_2;
-      Boolean b;
-      Absyn.ComponentRef class_,inherit_name;
-      Absyn.Program p;
-    case (class_,inherit_name,b,p)
-      equation
-        p_class = AbsynUtil.crefToPath(class_);
-        name = AbsynUtil.crefToPath(inherit_name);
-        cdef = getPathedClassInProgram(p_class, p);
-        exts = getExtendsElementspecInClass(cdef);
-        env = getClassEnv(p, p_class);
-        exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
-        res = getModificationNames(extmod);
-        res1 = if b then insertQuotesToList(res) else res;
-        res_1 = stringDelimitList(res1, ", ");
-        res_2 = stringAppendList({"{",res_1,"}"});
-      then
-        res_2;
-    else "Error";
-  end matchcontinue;
-end getExtendsModifierNames;
-
 protected function extendsElementspecNamed
 "the name given as path, false otherwise."
   input Absyn.ElementSpec inElementSpec;
@@ -7897,22 +7849,7 @@ algorithm
       equation
         modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
-        p_1 = SymbolTable.getSCode();
-        if Flags.isSet(Flags.NF_API) then
-          genv = Interactive.GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, FCore.emptyCache(), FGraph.emptyGraph);
-        else
-          (cache,env) = Inst.makeEnvFromProgram(p_1);
-          (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache, env, modelpath);
-          env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-          ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-          permissive = Flags.getConfigBool(Flags.PERMISSIVE);
-          FlagsUtil.setConfigBool(Flags.PERMISSIVE, true);
-          (_,env2,_,_,_) =
-            Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
-              DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-          FlagsUtil.setConfigBool(Flags.PERMISSIVE, permissive);
-          genv = Interactive.GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, cache, env2);
-        end if;
+        genv = createEnvironment(SymbolTable.getAbsyn(), SOME(SymbolTable.getSCode()), modelpath);
         comps1 = getPublicElementsInClass(cdef);
         s1 = getElementsInfo(comps1, b, "\"public\"", genv);
         if (access >= 4) then // i.e., Access.diagram
@@ -7927,6 +7864,46 @@ algorithm
     else "Error";
   end matchcontinue;
 end getElements2;
+
+public function createEnvironment
+  input Absyn.Program p;
+  input Option<SCode.Program> os;
+  input Absyn.Path modelPath;
+  output Interactive.GraphicEnvCache genv;
+protected
+  FCore.Graph env,env_1,env2;
+  SCode.Program s;
+  SCode.Element c;
+  String id;
+  SCode.Encapsulated encflag;
+  SCode.Restriction restr;
+  ClassInf.State ci_state;
+  Absyn.ComponentRef model_;
+  FCore.Cache cache;
+  Boolean b, permissive;
+algorithm
+  if Flags.isSet(Flags.NF_API) then
+    genv := Interactive.GRAPHIC_ENV_FULL_CACHE(p, modelPath, FCore.emptyCache(), FGraph.emptyGraph);
+  else
+    s := Util.getOptionOrDefault(os, AbsynToSCode.translateAbsyn2SCode(p));
+    (cache,env) := Inst.makeEnvFromProgram(s);
+    (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) := Lookup.lookupClass(cache, env, modelPath);
+    env2 := FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
+    ci_state := ClassInf.start(restr, FGraph.getGraphName(env2));
+    permissive := Flags.getConfigBool(Flags.PERMISSIVE);
+    FlagsUtil.setConfigBool(Flags.PERMISSIVE, true);
+    try
+      (_,env2,_,_,_) :=
+        Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
+          DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
+      FlagsUtil.setConfigBool(Flags.PERMISSIVE, permissive);
+    else
+      FlagsUtil.setConfigBool(Flags.PERMISSIVE, permissive);
+      fail();
+    end try;
+    genv := Interactive.GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelPath, cache, env2);
+  end if;
+end createEnvironment;
 
 public function getElementAnnotations " This function takes a `ComponentRef\', a `Program\' and
    returns a list of all element annotations.
@@ -11857,12 +11834,7 @@ algorithm
         attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps),
         constrainClass = occ)
       algorithm
-        if Flags.isSet(Flags.NF_API) then
-          (_, qpath) := Interactive.mkFullyQual(inEnv, p);
-          typename := AbsynUtil.pathString(qpath);
-        else
-          typename := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), p);
-        end if;
+        typename := AbsynUtil.pathString(qualifyPath(inEnv, p));
 
         names := getComponentItemsNameAndComment(comps, inQuoteNames);
         dims := getComponentitemsDimension(comps);
@@ -11897,12 +11869,7 @@ algorithm
            class_ = c as Absyn.CLASS(name = name, restriction = restriction, body = Absyn.DERIVED(typeSpec = Absyn.TPATH(p, oadim), attributes = attr, comment = ocmt))),
            constrainClass = occ)
       algorithm
-        if Flags.isSet(Flags.NF_API) then
-          (_, qpath) := Interactive.mkFullyQual(inEnv, p);
-          typename := AbsynUtil.pathString(qpath);
-        else
-          typename := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), p);
-        end if;
+        typename := AbsynUtil.pathString(qualifyPath(inEnv, p));
 
         cmt_str := getClassCommentInCommentOpt(ocmt);
 
@@ -11945,6 +11912,22 @@ algorithm
   end match;
 end getElementInfo;
 
+public function qualifyPath
+  input GraphicEnvCache inEnv;
+  input Absyn.Path inPath;
+  output Absyn.Path outPath;
+algorithm
+  try
+	  if Flags.isSet(Flags.NF_API) then
+	    (_, outPath) := Interactive.mkFullyQual(inEnv, inPath);
+	  else
+	    outPath := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), inPath);
+	  end if;
+	else
+	  outPath := inPath;
+	end try;
+end qualifyPath;
+
 public function getConstrainClassStr
   input GraphicEnvCache inEnv;
   input Option<Absyn.ConstrainClass> occ;
@@ -11955,13 +11938,9 @@ algorithm
   s := matchcontinue(occ)
     case SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path = p)))
       algorithm
-        if Flags.isSet(Flags.NF_API) then
-          (_, qpath) := Interactive.mkFullyQual(inEnv, p);
-          s := AbsynUtil.pathString(qpath);
-        else
-          s := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), p);
-        end if;
-      then s;
+        s := AbsynUtil.pathString(qualifyPath(inEnv, p));
+      then
+        s;
     else "$Any";
   end matchcontinue;
 end getConstrainClassStr;
@@ -11969,7 +11948,7 @@ end getConstrainClassStr;
 public function qualifyType
   input FGraph.Graph inEnv;
   input Absyn.Path p;
-  output String typename;
+  output Absyn.Path fqp = p;
 protected
   Option<Absyn.Path> oenv_path;
   Absyn.Path env_path, tp_path, pkg_path;
@@ -11977,11 +11956,10 @@ protected
   FGraph.Graph env;
 algorithm
   if AbsynUtil.pathIsFullyQualified(p) then
-    typename := AbsynUtil.pathString(p);
     return;
   end if;
 
-  typename := matchcontinue ()
+  fqp := matchcontinue ()
     // Look up the full type path.
     case ()
       algorithm
@@ -11999,7 +11977,7 @@ algorithm
           tp_path := p;
         end if;
       then
-        AbsynUtil.pathString(tp_path);
+        tp_path;
 
     // If the first case fails, i.e. if the type name doesn't reference an
     // existing type, try to construct a fully qualified path to where the
@@ -12021,9 +11999,9 @@ algorithm
           tp_path := p;
         end if;
       then
-        AbsynUtil.pathString(tp_path);
+        tp_path;
 
-    else AbsynUtil.pathString(p);
+    else p;
 
   end matchcontinue;
 
@@ -15552,12 +15530,14 @@ public function getAllInheritedClasses
   input Absyn.Path inClassName;
   input Absyn.Program inProgram;
   output list<Absyn.Path> outBaseClassNames;
+protected
+  GraphicEnvCache genv;
 algorithm
   outBaseClassNames :=
   matchcontinue (inClassName,inProgram)
     local
       Absyn.Path p_class;
-      list<Absyn.Path> paths;
+      list<Absyn.Path> paths, fqpaths, allPaths = {};
       Absyn.Class cdef;
       list<Absyn.ElementSpec> exts;
       Absyn.Program p;
@@ -15567,12 +15547,26 @@ algorithm
       algorithm
         cdef := getPathedClassInProgram(p_class, p);
         exts := getExtendsElementspecInClass(cdef);
-        paths := listReverse(getBaseClassNameFromExtends(e) for e in exts);
-        for pt in paths loop
-          paths := List.append_reverse(getAllInheritedClasses(pt, p), paths);
+        paths := List.map(exts, getBaseClassNameFromExtends);
+        fqpaths := {};
+        try
+          genv := createEnvironment(p, NONE(), p_class);
+          for pt in paths loop
+            fqpaths := qualifyPath(genv, pt) :: fqpaths;
+          end for;
+          fqpaths := listReverse(fqpaths);
+        else
+          // print("Bummer: " + AbsynUtil.pathString(p_class) + "\n");
+          fqpaths := paths;
+        end try;
+        allPaths := {};
+        for pt in fqpaths loop
+          allPaths := listAppend(allPaths, getAllInheritedClasses(pt, p));
+          allPaths := List.unique(allPaths);
         end for;
+        fqpaths := listAppend(fqpaths, allPaths);
       then
-        Dangerous.listReverseInPlace(List.unique(paths));
+        fqpaths;
 
     else {};
   end matchcontinue;
@@ -15874,24 +15868,34 @@ protected
   Absyn.Class cdef;
   String s1;
   list<String> strlst;
-  Absyn.Path pp;
+  Absyn.Path pp, fqpath;
   Absyn.Program p;
   list<Absyn.Class> classes;
   list<Option<Absyn.Path>> result_path_lst;
   list<Absyn.Path> acc, extendPaths;
   Boolean b,c;
+  GraphicEnvCache genv;
 algorithm
   Absyn.PROGRAM(classes=classes) := inProgram;
   strlst := List.map(classes, AbsynUtil.getClassName);
   result_path_lst := List.mapMap(strlst, AbsynUtil.makeIdentPathFromString, Util.makeOption);
   (_,acc) := List.map3Fold(result_path_lst, getClassNamesRecursive, inProgram, true, false, {});
+
+  try
+    genv := createEnvironment(inProgram, NONE(), inParentClass);
+    fqpath := qualifyPath(genv, inClass);
+  else
+    // print("Bummer PPPath: " + AbsynUtil.pathString(inParentClass) + "\n");
+    fqpath := inClass;
+  end try;
+  // print("FQPath: " + AbsynUtil.pathString(fqpath) + "\n");
+  // print("PPPath: " + AbsynUtil.pathString(inParentClass) + "\n");
   paths := {};
   for pt in acc loop
     // print("Path: " + AbsynUtil.pathString(pt) + ":\n");
     extendPaths := getAllInheritedClasses(pt, inProgram);
-    // print("  " + stringDelimitList(List.map(extendPaths, AbsynUtil.pathStringDefault), ", ")); print("\n");
-    // System.fflush();
-    b := List.applyAndFold1(extendPaths, boolOr, AbsynUtil.pathSuffixOfr, inClass, false);
+    // print("  " + stringDelimitList(List.map(extendPaths, AbsynUtil.pathStringDefault), ", ")); print("\n"); System.fflush();
+    b := List.applyAndFold1(extendPaths, boolOr, AbsynUtil.pathSuffixOfr, fqpath, false);
     paths := if b then pt::paths else paths;
   end for;
   paths := List.unique(paths);
