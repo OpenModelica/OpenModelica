@@ -42,6 +42,7 @@ encapsulated package NFClassTree
 protected
   import Array;
   import Error;
+  import Flags;
   import MetaModelica.Dangerous.*;
   import Class = NFClass;
   import Component = NFComponent;
@@ -534,7 +535,14 @@ public
                     // If the component is outer, link it with the corresponding
                     // inner component.
                     if Component.isOuter(comp) then
-                      node := linkInnerOuter(node, inst_scope);
+                      try
+                        node := linkInnerOuter(node, inst_scope);
+                      else
+                        // fail if not NF_API
+                        if not Flags.isSet(Flags.NF_API) then
+                          fail();
+                        end if;
+                      end try;
                     end if;
 
                     // Add the node to the component array.

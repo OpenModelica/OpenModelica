@@ -52,23 +52,24 @@ constant Integer symbolTable = 3;
 constant Integer instHashIndex = 9;
 constant Integer instNFInstCacheIndex = 10;
 constant Integer instNFNodeCacheIndex = 11;
-constant Integer builtinIndex = 12;
-constant Integer builtinEnvIndex = 13;
-constant Integer profilerTime1Index = 14;
-constant Integer profilerTime2Index = 15;
-constant Integer flagsIndex = 16;
-constant Integer builtinGraphIndex = 17;
-constant Integer rewriteRulesIndex = 18;
-constant Integer stackoverFlowIndex = 19;
-constant Integer gcProfilingIndex = 20;
-constant Integer inlineHashTable = 21; // TODO: Should be a local root?
-constant Integer currentInstVar = 22;
-constant Integer operatorOverloadingCache = 23;
-constant Integer optionSimCode = 24;
-constant Integer interactiveCache = 25;
-constant Integer isInStream = 26;
-constant Integer MMToJLListIndex = 27;
-constant Integer packageIndexCacheIndex = 28;
+constant Integer instNFLookupCacheIndex = 12;
+constant Integer builtinIndex = 13;
+constant Integer builtinEnvIndex = 14;
+constant Integer profilerTime1Index = 15;
+constant Integer profilerTime2Index = 16;
+constant Integer flagsIndex = 17;
+constant Integer builtinGraphIndex = 18;
+constant Integer rewriteRulesIndex = 19;
+constant Integer stackoverFlowIndex = 20;
+constant Integer gcProfilingIndex = 21;
+constant Integer inlineHashTable = 22; // TODO: Should be a local root?
+constant Integer currentInstVar = 23;
+constant Integer operatorOverloadingCache = 24;
+constant Integer optionSimCode = 25;
+constant Integer interactiveCache = 26;
+constant Integer isInStream = 27;
+constant Integer MMToJLListIndex = 28;
+constant Integer packageIndexCacheIndex = 29;
 
 // indexes in System.tick
 // ----------------------
@@ -99,6 +100,7 @@ algorithm
   setGlobalRoot(interactiveCache, NONE());
   setGlobalRoot(instNFInstCacheIndex, {});
   setGlobalRoot(instNFNodeCacheIndex, {});
+  setGlobalRoot(instNFLookupCacheIndex, {});
 end initialize;
 
 annotation(__OpenModelica_Interface="util");

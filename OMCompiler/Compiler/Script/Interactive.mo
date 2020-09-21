@@ -5650,18 +5650,39 @@ algorithm
         name = AbsynUtil.crefToPath(inherit_name);
         cdef = getPathedClassInProgram(p_class, p);
         exts = getExtendsElementspecInClass(cdef);
-        env = getClassEnv(p, p_class);
-        exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
-        {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
-        res = getModificationNames(extmod);
-        res1 = if b then insertQuotesToList(res) else res;
-        res_1 = stringDelimitList(res1, ", ");
+        if hasModifiers(exts) then
+          env = getClassEnv(p, p_class);
+          exts_1 = List.map1(exts, makeExtendsFullyQualified, env);
+          {Absyn.EXTENDS(_,extmod,_)} = List.select1(exts_1, extendsElementspecNamed, name);
+          res = getModificationNames(extmod);
+          res1 = if b then insertQuotesToList(res) else res;
+          res_1 = stringDelimitList(res1, ", ");
+        else
+          res_1 = "";
+        end if;
         res_2 = stringAppendList({"{",res_1,"}"});
       then
         res_2;
     else "Error";
   end matchcontinue;
 end getExtendsModifierNames;
+
+function hasModifiers
+  input list<Absyn.ElementSpec> exts;
+  output Boolean b = false;
+protected
+   Absyn.ElementSpec ext;
+algorithm
+  for e in exts loop
+    b := match e
+      case ext as Absyn.EXTENDS() then not listEmpty(ext.elementArg);
+      else false;
+    end match;
+    if b then
+      break;
+    end if;
+  end for;
+end hasModifiers;
 
 protected function extendsElementspecNamed
 "the name given as path, false otherwise."
@@ -14147,12 +14168,7 @@ algorithm
     case Absyn.ELEMENT(specification = Absyn.COMPONENTS(
         attributes = attr, typeSpec = Absyn.TPATH(path = p), components = comps))
       algorithm
-        if Flags.isSet(Flags.NF_API) then
-          (_, qpath) := mkFullyQual(inEnv, p);
-          typename := AbsynUtil.pathString(qpath);
-        else
-          typename := InteractiveUtil.qualifyType(envFromGraphicEnvCache(inEnv), p);
-        end if;
+        typename := AbsynUtil.pathString(InteractiveUtil.qualifyPath(inEnv, p));
 
         names := getComponentItemsNameAndComment(comps, inQuoteNames);
         dims := getComponentitemsDimension(comps);
