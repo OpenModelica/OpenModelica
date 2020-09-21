@@ -751,9 +751,14 @@ fmi2Status fmi2Reset(fmi2Component c)
 
 fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, fmi2Real value[])
 {
+  /* Variables */
   int i;
+  int success = 0;
   ModelInstance *comp = (ModelInstance*)c;
+  threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp=threadData->mmc_jumper;
 
+  /* Check for valid call sequence */
   if (invalidState(comp, "fmi2GetReal", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetReal", "vr[]", vr))
@@ -763,6 +768,12 @@ fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
 
   setThreadData(comp);
 #if NUMBER_OF_REALS > 0
+  /* TRY */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = threadData->simulationJumpBuffer;
+#endif
+
   if (comp->_need_update)
   {
     if (modelInitializationMode == comp->state)
@@ -782,8 +793,21 @@ fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
     }
     comp->_need_update = 0;
   }
+  success = 1;
 
+  /* CATCH */
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = old_jmp;
+#endif
   resetThreadData(comp);
+  if (!success)
+  {
+    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2GetReal: terminated by an assertion.")
+    // TODO: Check if fmi2Error or fmi2Discard should be returned
+    return fmi2Error;
+  }
+
   for (i = 0; i < nvr; i++)
   {
     if (vrOutOfRange(comp, "fmi2GetReal", vr[i], NUMBER_OF_REALS)) {
@@ -798,8 +822,14 @@ fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
 
 fmi2Status fmi2GetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, fmi2Integer value[])
 {
+  /* Variables */
   int i;
+  int success = 0;
   ModelInstance *comp = (ModelInstance *)c;
+  threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp=threadData->mmc_jumper;
+
+  /* Check for valid call sequence */
   if (invalidState(comp, "fmi2GetInteger", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetInteger", "vr[]", vr))
@@ -808,6 +838,14 @@ fmi2Status fmi2GetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
     return fmi2Error;
 
   setThreadData(comp);
+
+#if NUMBER_OF_INTEGERS > 0
+  /* TRY */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = threadData->simulationJumpBuffer;
+#endif
+
   if (comp->_need_update)
   {
     if (modelInitializationMode == comp->state)
@@ -828,7 +866,21 @@ fmi2Status fmi2GetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
     comp->_need_update = 0;
   }
 
+  success = 1;
+
+  /* CATCH */
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = old_jmp;
+#endif
   resetThreadData(comp);
+  if (!success)
+  {
+    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2GetInteger: terminated by an assertion.")
+    // TODO: Check if fmi2Error or fmi2Discard should be returned
+    return fmi2Error;
+  }
+
   for (i = 0; i < nvr; i++)
   {
     if (vrOutOfRange(comp, "fmi2GetInteger", vr[i], NUMBER_OF_INTEGERS)) {
@@ -837,13 +889,20 @@ fmi2Status fmi2GetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
     value[i] = getInteger(comp, vr[i]); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetInteger: #i%u# = %d", vr[i], value[i])
   }
+#endif
   return fmi2OK;
 }
 
 fmi2Status fmi2GetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, fmi2Boolean value[])
 {
+  /* Variables */
   int i;
+  int success = 0;
   ModelInstance *comp = (ModelInstance *)c;
+  threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp=threadData->mmc_jumper;
+
+  /* Check for valid call sequence */
   if (invalidState(comp, "fmi2GetBoolean", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
     return fmi2Error;
   if (nvr > 0 && nullPointer(comp, "fmi2GetBoolean", "vr[]", vr))
@@ -852,6 +911,13 @@ fmi2Status fmi2GetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
     return fmi2Error;
 
   setThreadData(comp);
+
+#if NUMBER_OF_BOOLEANS > 0
+  /* TRY */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = threadData->simulationJumpBuffer;
+#endif
   if (comp->_need_update)
   {
     if (modelInitializationMode == comp->state)
@@ -872,7 +938,21 @@ fmi2Status fmi2GetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
     comp->_need_update = 0;
   }
 
+  success = 1;
+
+  /* CATCH */
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = old_jmp;
+#endif
   resetThreadData(comp);
+  if (!success)
+  {
+    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2GetBoolean: terminated by an assertion.")
+    // TODO: Check if fmi2Error or fmi2Discard should be returned
+    return fmi2Error;
+  }
+
   for (i = 0; i < nvr; i++)
   {
     if (vrOutOfRange(comp, "fmi2GetBoolean", vr[i], NUMBER_OF_BOOLEANS)) {
@@ -881,13 +961,20 @@ fmi2Status fmi2GetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
     value[i] = getBoolean(comp, vr[i]); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetBoolean: #b%u# = %s", vr[i], value[i]? "true" : "false")
   }
+#endif
   return fmi2OK;
 }
 
 fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, fmi2String value[])
 {
+  /* Variables */
   int i;
+  int success = 0;
   ModelInstance *comp = (ModelInstance *)c;
+  threadData_t *threadData = comp->threadData;
+  jmp_buf *old_jmp=threadData->mmc_jumper;
+
+  /* Check for valid call sequence */
   if (invalidState(comp, "fmi2GetString", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
     return fmi2Error;
   if (nvr>0 && nullPointer(comp, "fmi2GetString", "vr[]", vr))
@@ -896,6 +983,13 @@ fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
     return fmi2Error;
 
   setThreadData(comp);
+
+#if NUMBER_OF_STRINGS > 0
+  /* TRY */
+#if !defined(OMC_EMCC)
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = threadData->simulationJumpBuffer;
+#endif
   if (comp->_need_update)
   {
     if (modelInitializationMode == comp->state)
@@ -915,7 +1009,20 @@ fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
     }
     comp->_need_update = 0;
   }
+  success = 1;
+
+  /* CATCH */
+#if !defined(OMC_EMCC)
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+  threadData->mmc_jumper = old_jmp;
+#endif
   resetThreadData(comp);
+  if (!success)
+  {
+    FILTERED_LOG(comp, fmi2Error, LOG_FMI2_CALL, "fmi2GetString: terminated by an assertion.")
+    // TODO: Check if fmi2Error or fmi2Discard should be returned
+    return fmi2Error;
+  }
 
   for (i=0; i<nvr; i++)
   {
@@ -924,6 +1031,7 @@ fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
     value[i] = getString(comp, vr[i]); // to be implemented by the includer of this file
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetString: #s%u# = '%s'", vr[i], value[i])
   }
+#endif
   return fmi2OK;
 }
 
