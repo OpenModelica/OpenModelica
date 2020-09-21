@@ -553,7 +553,7 @@ public
     input output Expression exp "Has to be Expression.CALL()";
     input output DifferentiationArguments diffArguments;
   protected
-    constant Boolean debug = true;
+    constant Boolean debug = false;
   algorithm
     if debug then
       print("\nDifferentiate Exp-Call: "+ Expression.toString(exp) + "\n");

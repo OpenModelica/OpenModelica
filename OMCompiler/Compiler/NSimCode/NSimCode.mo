@@ -87,6 +87,8 @@ public
   uniontype SimCodeIndices
     record SIM_CODE_INDICES
       "Unique simulation code indices"
+      Integer uniqueIndex;
+
       Integer realVarIndex;
       Integer integerVarIndex;
       Integer booleanVarIndex;
@@ -97,6 +99,11 @@ public
       Integer booleanParamIndex;
       Integer stringParamIndex;
 
+      Integer realAliasIndex;
+      Integer integerAliasIndex;
+      Integer booleanAliasIndex;
+      Integer stringAliasIndex;
+
       Integer equationIndex;
       Integer linearSystemIndex;
       Integer nonlinearSystemIndex;
@@ -106,7 +113,12 @@ public
     end SIM_CODE_INDICES;
   end SimCodeIndices;
 
-  constant SimCodeIndices EMPTY_SIM_CODE_INDICES = SIM_CODE_INDICES(0,0,0,0,0,0,0,0,0,0,0,0,0);
+  constant SimCodeIndices EMPTY_SIM_CODE_INDICES = SIM_CODE_INDICES(1,
+                                                                    0,0,0,0,
+                                                                    0,0,0,0,
+                                                                    0,0,0,0,
+                                                                    0,0,0,
+                                                                    0,0);
 
   uniontype SimCode
     record SIM_CODE

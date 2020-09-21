@@ -212,19 +212,21 @@ public
     // first simplfy everything
     bdae := simplify(bdae);
 
-    // Modules
-    bdae := DetectStates.main(bdae);
+    // Pre-Partitioning Modules
+    // (RSE before DetectStates)
     bdae := RemoveSimpleEquations.main(bdae);
+    bdae := DetectStates.main(bdae);
+
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
     bdae := Causalize.main(bdae, NBSystem.SystemType.ODE);
 
     bdae := Initialization.main(bdae);
-    // only if dae mode, but force it for now
+
     if Flags.getConfigBool(Flags.DAE_MODE) then
       bdae := DAEMode.main(bdae);
     end if;
 
-    // do Tearing at the very end
+    // do Tearing and jacobians at the very end
     bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);
     bdae := Jacobian.main(bdae, NBSystem.SystemType.ODE);
   end solve;
@@ -496,7 +498,8 @@ protected
       continuous  = BEquation.EquationPointers.fromList(continuous_lst),
       discretes   = BEquation.EquationPointers.fromList(discretes_lst),
       initials    = BEquation.EquationPointers.fromList(initials_lst),
-      auxiliaries = BEquation.EquationPointers.fromList(auxiliaries_lst)
+      auxiliaries = BEquation.EquationPointers.fromList(auxiliaries_lst),
+      removed     = BEquation.EquationPointers.empty()
     );
   end lowerEquationData;
 

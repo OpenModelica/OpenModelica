@@ -311,7 +311,8 @@ protected
       equations     = diffedEquations,
       results       = diffedEquations,
       temporary     = BEquation.EquationPointers.empty(),
-      auxiliaries   = BEquation.EquationPointers.empty()
+      auxiliaries   = BEquation.EquationPointers.empty(),
+      removed       = BEquation.EquationPointers.empty()
     );
 
     // collect var data

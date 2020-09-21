@@ -91,6 +91,20 @@ public
     end match;
   end main;
 
+  function simple
+    input BVariable.VariablePointers vars;
+    input BEquation.EquationPointers eqs;
+    output list<StrongComponent> comps;
+  protected
+    AdjacencyMatrix adj;
+    Matching matching;
+  algorithm
+     // create scalar adjacency matrix for now
+    adj := AdjacencyMatrix.create(vars, eqs, AdjacencyMatrixType.SCALAR);
+    matching := Matching.regular(adj);
+    comps := Sorting.tarjan(adj, matching, vars, eqs);
+  end simple;
+
 protected
   function causalizeScalar extends Module.causalizeInterface;
   protected

@@ -242,6 +242,16 @@ public
     end match;
   end isParamOrConst;
 
+  function isConst
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
+      else false;
+    end match;
+  end isConst;
+
   function isDAEResidual
     input Pointer<Variable> var;
     output Boolean b;

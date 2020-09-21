@@ -47,13 +47,24 @@ protected
   import Expression = NFExpression;
   import HashTableCrToExp = NFHashTableCrToExp;
   import Operator = NFOperator;
+  import Variable = NFVariable;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
-  import HashTableCrToCrEqLst = NBHashTableCrToCrEqLst;
+  import Causalize = NBCausalize;
+  import Equation = NBEquation.Equation;
+  import EquationPointers = NBEquation.EquationPointers;
+  import HashTableRSE = NBHashTableRSE;
+  import HashTableCrToInt = NBHashTableCrToInt;
   import Replacements = NBReplacements;
+  import Solve = NBSolve;
+  import StrongComponent = NBStrongComponent;
+  import VariablePointers = NBVariable.VariablePointers;
+
+  // Util imports
+  import StringUtil;
 public
   function main
     "Wrapper function for any detect states function. This will be
@@ -71,7 +82,9 @@ public
         BEquation.EqData eqData           "Data containing equation pointers";
       case BackendDAE.BDAE(varData = varData, eqData = eqData)
         algorithm
-          func(varData, eqData);
+          (varData, eqData) := func(varData, eqData);
+          bdae.varData := varData;
+          bdae.eqData := eqData;
       then bdae;
 
       else algorithm
@@ -93,184 +106,332 @@ public
     end match;
   end getModule;
 
+  uniontype SimpleSet "gets accumulated to find sets of simple equations and solve them"
+    record SIMPLE_SET
+      list<Pointer<Variable>> simple_variables    "list of all variables in this set";
+      list<Pointer<Equation>> simple_equations    "list of all equations in this set";
+      Option<Pointer<Equation>> const_opt         "optional constant binding of one variable";
+    end SIMPLE_SET;
+
+    function toString
+      input SimpleSet set;
+      output String str;
+    algorithm
+      if isSome(set.const_opt) then
+        str := "\tConstant/Parameter Binding: "
+          + Equation.toString(Pointer.access(Util.getOption(set.const_opt))) + "\n";
+      else
+        str := "\t<No Constant/Parameter Binding>\n";
+      end if;
+      if listEmpty(set.simple_equations) then
+        str := str + "\t###<No Set Equations>\n";
+      else
+        str := str + "\t### Set Equations:\n";
+        for eq in set.simple_equations loop
+          str := str + Equation.toString(Pointer.access(eq), "\t") + "\n";
+        end for;
+      end if;
+    end toString;
+  end SimpleSet;
+
+  constant SimpleSet EMPTY_SIMPLE_SET = SIMPLE_SET({}, {}, NONE());
+
 protected
+  uniontype CrefTpl "used for findCrefs()"
+    record CREF_TPL
+      Boolean cont                "false if search already resulted in non simple structure";
+      Integer varCount            "variable count";
+      Integer paramCount          "parameter/constant count";
+      list<ComponentRef> cr_lst   "list of found variables for replacement";
+    end CREF_TPL;
+  end CrefTpl;
+
+  constant CrefTpl EMPTY_CREF_TPL = CREF_TPL(true, 0, 0, {});
+  constant CrefTpl FAILED_CREF_TPL = CREF_TPL(false, 0, 0, {});
+
   function removeSimpleEquationsDefault extends Module.removeSimpleEquationsInterface;
     algorithm
-    _ := match (varData, eqData)
+    (varData, eqData) := match (varData, eqData)
       local
-        BVariable.VariablePointers variables, aliasVars;
-        BEquation.EquationPointers simulation, initials;
-        Integer size;
-        HashTableCrToCrEqLst.HashTable HTCrToCrEqLst;
-        HashTableCrToExp.HashTable HTCrToExp;
-        Replacements repl;
+        EquationPointers newEquations;
+        Integer size, setIdx = 1;
+        HashTableRSE.HashTable hashTable;
+        HashTableCrToExp.HashTable replacements;
+        list<SimpleSet> sets;
+        list<Pointer<Variable>> alias_vars;
+        list<Pointer<Equation>> removed_equations = {};
 
-      case (BVariable.VAR_DATA_SIM(variables = variables, aliasVars = aliasVars), BEquation.EQ_DATA_SIM(simulation = simulation, initials = initials))
+      case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
           // ToDo: sizes of Hash tables are system dependent!
-          size := BVariable.VariablePointers.size(variables);
-          size := intMax(BaseHashTable.defaultBucketSize, realInt(realMul(intReal(size), 0.7)));
-          HTCrToExp := HashTableCrToExp.emptyHashTableSized(size);
-          HTCrToCrEqLst := HashTableCrToCrEqLst.emptyHashTableSized(size);
-          repl := Replacements.empty(size);
+          size := BVariable.VariablePointers.size(varData.unknowns);
+          size := intMax(BaseHashTable.lowBucketSize, realInt(realMul(intReal(size), 0.7)));
+          hashTable := HashTableRSE.empty(size);
+          (newEquations, hashTable) := NBEquation.EquationPointers.foldRemovePtr(eqData.simulation, findSimpleEquation, hashTable);
+          eqData.simulation := newEquations;
 
-      then ();
-      else ();
+          sets := getSimpleSets(hashTable, size);
+          if Flags.isSet(Flags.DUMP_REPL) then
+            print(StringUtil.headline_2("[dumprepl] Alias Sets:") + "\n");
+            for set in sets loop
+              print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + SimpleSet.toString(set)+ "\n");
+              setIdx := setIdx + 1;
+            end for;
+          end if;
+
+          replacements := HashTableCrToExp.emptyHashTableSized(size);
+          for set in sets loop
+            (replacements, removed_equations) := createReplacementRules(set, replacements, removed_equations);
+          end for;
+
+          if Flags.isSet(Flags.DUMP_REPL) then
+            print(StringUtil.headline_2("[dumprepl] Replacements:"));
+            BaseHashTable.dumpHashTable(replacements);
+          end if;
+
+          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
+
+          // take care here if something else than unknowns are removed, might need updating
+          varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
+          varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
+          varData.algebraics := VariablePointers.removeList(alias_vars, varData.algebraics);
+          varData.states := VariablePointers.removeList(alias_vars, varData.states);
+          varData.discretes := VariablePointers.removeList(alias_vars, varData.discretes);
+          varData.initials := VariablePointers.removeList(alias_vars, varData.initials);
+
+          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
+
+          eqData.removed := EquationPointers.addList(removed_equations, eqData.removed);
+      then (varData, eqData);
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
     end match;
   end removeSimpleEquationsDefault;
 
-  function findSimpleEquations
-    "BB,  main function for detecting simple equations"
-    input BEquation.Equation inEq;
-    input tuple <BVariable.VariablePointers, HashTableCrToExp.HashTable, HashTableCrToCrEqLst.HashTable, list<BEquation.Equation>, list<BEquation.Equation>> inTuple;
-    input Boolean findAliases;
-    output BEquation.Equation outEq = inEq;
-    output tuple <BVariable.VariablePointers, HashTableCrToExp.HashTable, HashTableCrToCrEqLst.HashTable, list<BEquation.Equation>, list<BEquation.Equation>> outTuple = inTuple;
+  function findSimpleEquation
+    input Pointer<Equation> eq_ptr;
+    input output HashTableRSE.HashTable hashTable;
+    output Boolean delete = false;
+  protected
+    Equation eq;
+    CrefTpl crefTpl = EMPTY_CREF_TPL;
   algorithm
-    /*
-    (outEq, outTuple) := matchcontinue(inEq, inTuple)
+    eq := Pointer.access(eq_ptr);
+    crefTpl := match eq
       local
-        BEquation.Equation eq, eqSolved;
-        HashTableCrToExp.HashTable HTCrToExp;
-        HashTableCrToCrEqLst.HashTable HTCrToCrEqLst;
-        list<ComponentRef> cr_lst;
-        list<Expression> exp_lst;
-        list<BackendDAE.Var> varList;
-        list<BEquation.Equation> eqList;
-        list<BEquation.Equation> simpleEqList;
-        Integer count, paramCount;
-        ComponentRef cr, cr1, cr2;
-        Expression res, value, exp1, exp2;
-        BVariable.VariablePointers vars;
-        Boolean keepEquation, cont;
-        DAE.ElementSource source;
-        BEquation.EquationAttributes eqAttr;
 
-// ToDo case simple equation
+      case BEquation.SIMPLE_EQUATION()
+        guard(not (ComponentRef.isTime(eq.lhs) or ComponentRef.isTime(eq.rhs)))
+        then findCrefsSimple(eq.lhs, eq.rhs, crefTpl);
 
-      case (eq ,(vars, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList)) equation
-          res = BEquation.Equation.getRHS(eq);
-          (cr_lst,_,count,paramCount,true) = Expression.fold(res, findCrefs, ({},vars,0,0,true));
-          res = BEquation.Equation.getLHS(eq);
-          (cr_lst,_,count,_,true) = Expression.fold(res, findCrefs, (cr_lst,vars,count,paramCount,true));
-          keepEquation = true;
-          if (count == 1) then
-            if Flags.isSet(Flags.DEBUG_ALIAS) then
-              print("Found Equation knw0: " + BackendDump.equationString(eq) + "\n");
-            end if;
-            {cr} = cr_lst;
-            // ToDo: allow state replacement
-            false = BVariable.isState(BVariable.getVarPointer(cr));
-            //false = BackendVariable.isClockedState(cr,vars);
-            //false = BackendVariable.isOutput(cr,vars);
-            false =  BVariable.isDiscrete(BVariable.getVarPointer(cr));
-            exp1 = Expression.crefExp(cr);
-            true = Types.isSimpleType(Expression.typeof(exp1));
-            eqSolved as BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp1,NONE());
-            true = isSimple(res);
-            if Flags.isSet(Flags.DEBUG_ALIAS) then
-              print("Found Equation knw1: " + BackendDump.equationString(eq) + "\n");
-            end if;
-            HTCrToExp = addToCrToExp(cr, eqSolved, HTCrToExp, HTCrToCrEqLst);
-            keepEquation = false;
-         elseif (count == 2) and findAliases then
-            if Flags.isSet(Flags.DEBUG_ALIAS) then
-              print("Found Equation al0: " + BackendDump.equationString(eq) + "\n");
-            end if;
-            {cr2, cr1} = cr_lst;
-            // Be careful, when replacing states!!!
-            // if BackendVariable.isState(cr1,vars) then
-              // true = BackendVariable.isState(cr2,vars);
-            // end if;
-            false = BackendVariable.isState(cr1,vars) or BackendVariable.isState(cr2,vars);
-            false = BackendVariable.isClockedState(cr1,vars) or BackendVariable.isClockedState(cr2,vars);
-            false = BackendVariable.isOutput(cr1,vars) or BackendVariable.isOutput(cr2,vars);
-            false = BackendVariable.isDiscrete(cr1,vars) or BackendVariable.isDiscrete(cr2,vars);
-            exp1 = Expression.crefExp(cr1);
-            true = Types.isSimpleType(Expression.typeof(exp1));
-            exp2 = Expression.crefExp(cr2);
+      case BEquation.SCALAR_EQUATION() algorithm
+        crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
+        crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
+      then crefTpl;
 
-            BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp2,NONE());
-            true = isSimple(res);
-            BackendDAE.EQUATION(scalar=res) = BackendEquation.solveEquation(eq,exp1,NONE());
-            true = isSimple(res);
-            if Flags.isSet(Flags.DEBUG_ALIAS) then
-              print("Found Equation al1: "  + BackendDump.equationString(eq) + "\n");
-            end if;
+      // ToDo: ARRAY_EQUATION RECORD_EQUATION (AUX_EQUATION?)
+      else crefTpl;
+    end match;
 
-            HTCrToCrEqLst = addToCrAndEqLists(cr2, cr1, inEq, HTCrToCrEqLst);
-            HTCrToCrEqLst = addToCrAndEqLists(cr1, cr2, inEq, HTCrToCrEqLst);
+    (hashTable, delete) := match crefTpl
+      local
+        Pointer<SimpleSet> set_ptr, set1_ptr, set2_ptr;
+        SimpleSet set, set1, set2;
+        ComponentRef cr1, cr2;
 
-            if (BaseHashTable.hasKey(cr2, HTCrToExp)) then
-              value = BaseHashTable.get(cr2, HTCrToExp);
-              BackendDAE.EQUATION(scalar=res, source=source, attr=eqAttr) = BackendEquation.solveEquation(eq, Expression.crefExp(cr1),NONE());
-              (res,_) = Expression.replaceExp(res,Expression.crefExp(cr2),value);
-              (res,_) = ExpressionSimplify.simplify(res);
-              HTCrToExp = addToCrToExp(cr1, BackendDAE.EQUATION(Expression.crefExp(cr1), res, source, eqAttr), HTCrToExp, HTCrToCrEqLst);
-            else
-              if (BaseHashTable.hasKey(cr1, HTCrToExp)) then
-                value = BaseHashTable.get(cr1, HTCrToExp);
-                BackendDAE.EQUATION(scalar=res, source=source, attr=eqAttr) = BackendEquation.solveEquation(eq, Expression.crefExp(cr2),NONE());
-                (res,_) = Expression.replaceExp(res,Expression.crefExp(cr1),value);
-                (res,_) = ExpressionSimplify.simplify(res);
-                HTCrToExp = addToCrToExp(cr2, BackendDAE.EQUATION(Expression.crefExp(cr2), res, source, eqAttr), HTCrToExp, HTCrToCrEqLst);
-              end if;
-            end if;
-            keepEquation = false;
-        end if;
-        if (keepEquation) then
-          eqList = inEq::eqList;
+      // one variable is connected to a parameter or constant
+      case CREF_TPL(cr_lst = {cr1}) algorithm
+        if not BaseHashTable.hasKey(cr1, hashTable) then
+          // the variable does not belong to a set -> create new one
+          set := EMPTY_SIMPLE_SET;
+          set.const_opt := SOME(Pointer.create(eq));
+          hashTable := BaseHashTable.add((cr1, Pointer.create(set)), hashTable);
+
         else
-          simpleEqList = inEq::simpleEqList;
+          // it already belongs to a set, try to update it and throw error if there already is a const binding
+          set_ptr := BaseHashTable.get(cr1, hashTable);
+          set := Pointer.access(set_ptr);
+          if isSome(set.const_opt) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to add Equation:\n"
+              + Equation.toString(eq) + "\n because the set already contains a constant binding.
+              Overdetermined Set!:" + SimpleSet.toString(set)});
+            fail();
+          else
+            set.const_opt := SOME(Pointer.create(eq));
+          end if;
+          Pointer.update(set_ptr, set);
         end if;
-      then (inEq, (vars, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList));
-      case (_,(vars, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList))equation
-         eqList = inEq::eqList;
-      then (inEq, (vars, HTCrToExp, HTCrToCrEqLst, eqList, simpleEqList));
-      else equation
-        print("\n++++++++++ Error in RemoveSimpleEquations.findSimpleEquations ++++++++++\n");
-      then (inEq, inTuple);
-    end matchcontinue;
-    */
-  end findSimpleEquations;
+      then (hashTable, true);
+
+      // two variable crefs are connected by a simple equation
+      case CREF_TPL(cr_lst = {cr1, cr2}) algorithm
+        if (BaseHashTable.hasKey(cr1, hashTable) and BaseHashTable.hasKey(cr2, hashTable)) then
+          // Merge sets
+          set1_ptr := BaseHashTable.get(cr1, hashTable);
+          set2_ptr := BaseHashTable.get(cr2, hashTable);
+          set1 := Pointer.access(set1_ptr);
+          set2 := Pointer.access(set2_ptr);
+          set := EMPTY_SIMPLE_SET;
+
+          if isSome(set1.const_opt) and isSome(set2.const_opt) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets
+                because both have a constant binding. This would create an overdetermined Set!:\n" +
+                SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
+            fail();
+          elseif isSome(set1.const_opt) then
+            set.const_opt := set1.const_opt;
+          elseif isSome(set2.const_opt) then
+            set.const_opt := set2.const_opt;
+          end if;
+
+          // try to append the shorter to the longer lists
+          if listLength(set1.simple_equations) > listLength(set2.simple_equations) then
+            set.simple_equations := Pointer.create(eq) :: listAppend(set2.simple_equations, set1.simple_equations);
+          else
+            set.simple_equations := Pointer.create(eq) :: listAppend(set1.simple_equations, set2.simple_equations);
+          end if;
+
+          // try to change as few pointer entries as possible
+          if listLength(set1.simple_variables) > listLength(set2.simple_variables) then
+            set.simple_variables := listAppend(set2.simple_variables, set1.simple_variables);
+            Pointer.update(set1_ptr, set);
+            for var_ptr in set2.simple_variables loop
+              try
+                BaseHashTable.update((BVariable.getVarName(var_ptr), set1_ptr), hashTable);
+              else
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to update hashTable
+                  entry for variable: " + Variable.toString(Pointer.access(var_ptr)) +
+                  " while merging following sets:\n" +  SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
+                fail();
+              end try;
+            end for;
+          else
+            set.simple_variables := listAppend(set2.simple_variables, set1.simple_variables);
+            Pointer.update(set2_ptr, set);
+            for var_ptr in set1.simple_variables loop
+              try
+                BaseHashTable.update((BVariable.getVarName(var_ptr), set2_ptr), hashTable);
+              else
+                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to update hashTable
+                  entry for variable: " + Variable.toString(Pointer.access(var_ptr)) +
+                  " while merging following sets:\n" +  SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
+                fail();
+              end try;
+            end for;
+          end if;
+        elseif BaseHashTable.hasKey(cr1, hashTable) then
+          // Update set
+          set_ptr := BaseHashTable.get(cr1, hashTable);
+          set := Pointer.access(set_ptr);
+          set.simple_variables := BVariable.getVarPointer(cr2) :: set.simple_variables;
+          set.simple_equations := Pointer.create(eq) :: set.simple_equations;
+          Pointer.update(set_ptr, set);
+        elseif BaseHashTable.hasKey(cr2, hashTable) then
+          // Update set
+          set_ptr := BaseHashTable.get(cr2, hashTable);
+          set := Pointer.access(set_ptr);
+          set.simple_variables := BVariable.getVarPointer(cr1) :: set.simple_variables;
+          set.simple_equations := Pointer.create(eq) :: set.simple_equations;
+          Pointer.update(set_ptr, set);
+        else
+          // create new set
+          set := EMPTY_SIMPLE_SET;
+          set.simple_variables := {BVariable.getVarPointer(cr1), BVariable.getVarPointer(cr2)};
+          set.simple_equations := {Pointer.create(eq)};
+          set_ptr := Pointer.create(set);
+          hashTable := BaseHashTable.add((cr1, set_ptr), hashTable);
+          hashTable := BaseHashTable.add((cr2, set_ptr), hashTable);
+        end if;
+      then (hashTable, true);
+
+      // no replacements can be done with this equation
+      else (hashTable, false);
+    end match;
+  end findSimpleEquation;
 
   function findCrefs "BB,
   looks for variable crefs in Expressions, if more then 2 are found stop searching
   also stop if complex structures appear, e.g. IFEXP
   "
-     input output Expression exp;
-     output Boolean cont;
-     input output tuple<list<ComponentRef>, BVariable.VariablePointers, Integer, Integer, Boolean> tpl;
+     input Expression exp;
+     input output CrefTpl tpl;
   algorithm
-      (exp, cont, tpl) := match(exp,tpl)
-      local
-        ComponentRef cr;
-        list<ComponentRef> cr_lst;
-        Integer count, paramCount;
-        BackendExtension.VariableKind kind;
-        BVariable.VariablePointers vars;
-      case(_,(_,_,_,_,cont)) guard(not cont) algorithm return; then (exp, cont, tpl);
-      case(_,(_,vars,count,_,_)) guard(count<0) then(exp, false, ({},vars,-1,-1,false));
-      case (Expression.CREF(cref=cr),(cr_lst,vars,count,paramCount,true))
-        guard(count < 2 and not (ComponentRef.isTime(cr)) and not BVariable.isParamOrConst(BVariable.getVarPointer(cr)))
-      then (exp, true, (cr::cr_lst,vars,count+1,paramCount,true));
-      case (Expression.CREF(cref=cr),(cr_lst,vars,count,paramCount,true))
-        guard(count < 2 and not (ComponentRef.isTime(cr)))
-      then (exp, true, (cr_lst,vars,count,paramCount+1,true));
-      case (Expression.CREF(),(_,vars,_,_,true))
-      then (exp, false, ({},vars,-1,-1,false));
-      case (Expression.RELATION(),(_,vars,_,_,_))
-      then (exp, false, ({},vars,-1,-1,false));
-      case (Expression.IF(),(_,vars,_,_,_))
-      then (exp, false, ({},vars,-1,-1,false));
-      case (Expression.CALL(),(_,vars,_,_,_))
-      then (exp, false, ({},vars,-1,-1,false));
-      case (Expression.RECORD(),(_,vars,_,_,_))
-      then (exp, false, ({},vars,-1,-1,false));
-      // ToDo: maybe more cases to stop
-      else (exp, true, tpl);
-    end match;
+      tpl := match (exp, tpl)
+        local
+          Integer varCount;
+
+        case (_, _) guard(not tpl.cont) then FAILED_CREF_TPL;
+
+        // variable found (less than two previous variables, not time and not param or const)
+        case (Expression.CREF(), CREF_TPL(varCount = varCount))
+          guard((varCount < 2) and not (ComponentRef.isTime(exp.cref) or
+            BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref))))
+          algorithm
+            // add the variable to the list and bump var count
+            tpl.cr_lst := exp.cref :: tpl.cr_lst;
+            tpl.varCount := tpl.varCount + 1;
+        then tpl;
+
+        // parameter found (not time)
+        case (Expression.CREF(), _)
+          guard(not ComponentRef.isTime(exp.cref))
+          algorithm
+            // just bump param count
+            tpl.paramCount := tpl.paramCount + 1;
+        then tpl;
+
+        // set the continue attribute to false if any fail case is met
+        case (_, _)
+          guard(findCrefsFail(exp))
+            algorithm
+            tpl.cont := false;
+        then FAILED_CREF_TPL;
+
+        else tpl;
+      end match;
   end findCrefs;
+
+  function findCrefsFail
+    "finds all failing cases to stop searching for simple crefs.
+    also fails for crefs because viable cases have to be caught
+    before invoking this function in findCrefs().
+    ToDo: Discuss and find all failing cases"
+    input Expression exp;
+    output Boolean cont;
+  algorithm
+    cont := match exp
+      case Expression.CREF()      then true;
+      case Expression.RELATION()  then true;
+      case Expression.IF()        then true;
+      case Expression.CALL()      then true;
+      case Expression.RECORD()    then true;
+                                  else false;
+    end match;
+  end findCrefsFail;
+
+  function findCrefsSimple
+    input ComponentRef lhs;
+    input ComponentRef rhs;
+    input output CrefTpl crefTpl;
+  algorithm
+    // add rhs and lhs only if there are not params/constants
+    if BVariable.isParamOrConst(BVariable.getVarPointer(rhs)) then
+      crefTpl.paramCount := crefTpl.paramCount + 1;
+    else
+      crefTpl.cr_lst := rhs :: crefTpl.cr_lst;
+      crefTpl.varCount := crefTpl.varCount + 1;
+    end if;
+
+    if BVariable.isParamOrConst(BVariable.getVarPointer(lhs)) then
+      crefTpl.paramCount := crefTpl.paramCount + 1;
+    else
+      crefTpl.cr_lst := lhs :: crefTpl.cr_lst;
+      crefTpl.varCount := crefTpl.varCount + 1;
+    end if;
+  end findCrefsSimple;
 
   function isSimple
     "BB start module for detecting simple equation/expressions"
@@ -292,48 +453,133 @@ protected
   protected
     function checkOp
       "BB"
-      input Operator.Op op;
+      input Operator op;
       output Boolean b;
     algorithm
       b := match(op)
-        case NFOperator.Op.ADD        then true;
-        case NFOperator.Op.SUB        then true;
-        case NFOperator.Op.UMINUS     then true;
-        case NFOperator.Op.MUL        then false;
-        case NFOperator.Op.EQUAL      then false;
-        case NFOperator.Op.DIV        then false;
-        case NFOperator.Op.POW        then false;
-                                      else false;
+        case Operator.OPERATOR(op = NFOperator.Op.ADD)        then true;
+        case Operator.OPERATOR(op = NFOperator.Op.SUB)        then true;
+        case Operator.OPERATOR(op = NFOperator.Op.UMINUS)     then true;
+        case Operator.OPERATOR(op = NFOperator.Op.NOT)        then true;
+                                                              else false;
       end match;
     end checkOp;
   algorithm
-    simple := match(exp)
-      local
-        Expression exp1, exp2;
-        Operator op;
-        Boolean check;
-      case Expression.BINARY(exp1, op, exp2) equation
-        true = checkOp(op.op);
-        true = checkOperator(exp1,simple);
-        true = checkOperator(exp2,simple);
-      then true;
-      case Expression.UNARY(_,exp1)
-      then checkOperator(exp1,simple);
-      case Expression.LUNARY(_,exp1)
-      then checkOperator(exp1,simple);
-      case Expression.CREF()
-      then true;
-      case Expression.INTEGER()
-      then true;
-      case Expression.REAL()
-      then true;
-      case Expression.BOOLEAN()
-      then true;
-      case Expression.STRING()
-      then true;
-      else false;
-    end match;
+    // only check if not previously already found to not be simple
+    if simple then
+      simple := match(exp)
+        case Expression.MULTARY() then checkOp(exp.operator);
+        case Expression.BINARY()  then checkOp(exp.operator);
+        case Expression.UNARY()   then checkOp(exp.operator);
+        case Expression.LUNARY()  then checkOp(exp.operator);
+        case Expression.CREF()    then true;
+        case Expression.INTEGER() then true;
+        case Expression.REAL()    then true;
+        case Expression.BOOLEAN() then true;
+        case Expression.STRING()  then true;
+                                  else false;
+      end match;
+    end if;
   end checkOperator;
+
+  function getSimpleSets
+    input HashTableRSE.HashTable hashTable;
+    input Integer size;
+    output list<SimpleSet> sets = {};
+  protected
+    HashTableCrToInt.HashTable cref_marks = HashTableCrToInt.empty(size);
+    list<tuple<ComponentRef, Pointer<SimpleSet>>> entry_lst;
+    ComponentRef simple_cref;
+    Pointer<SimpleSet> set_ptr;
+    SimpleSet set;
+  algorithm
+    entry_lst := BaseHashTable.hashTableList(hashTable);
+    for entry in entry_lst loop
+      (simple_cref, set_ptr) := entry;
+      if not BaseHashTable.hasKey(simple_cref, cref_marks) then
+        set := Pointer.access(set_ptr);
+        sets := set :: sets;
+        for var_ptr in set.simple_variables loop
+          cref_marks := BaseHashTable.add((BVariable.getVarName(var_ptr), 1), cref_marks);
+        end for;
+      end if;
+    end for;
+  end getSimpleSets;
+
+  function createReplacementRules
+    input SimpleSet set;
+    input output HashTableCrToExp.HashTable replacements;
+    input output list<Pointer<Equation>> removed_equations;
+  algorithm
+    // ToDo: fix variable attributes to keep
+    // report errors/warnings
+    replacements := match set.const_opt
+      local
+        Pointer<Equation> const_eq;
+        list<Pointer<Variable>> alias_vars;
+        VariablePointers vars;
+        EquationPointers eqs;
+        list<StrongComponent> comps;
+
+      case SOME(const_eq) algorithm
+        removed_equations := listAppend(set.simple_equations, removed_equations);
+        vars := VariablePointers.fromList(set.simple_variables);
+        eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
+        comps := Causalize.simple(vars, eqs);
+        replacements := Replacements.simple(comps, replacements);
+      then replacements;
+
+      else algorithm
+        alias_vars := chooseVariableToKeep(set.simple_variables);
+        removed_equations := listAppend(set.simple_equations, removed_equations);
+        vars := VariablePointers.fromList(alias_vars);
+        eqs := EquationPointers.fromList(set.simple_equations);
+        comps := Causalize.simple(vars, eqs);
+        replacements := Replacements.simple(comps, replacements);
+      then replacements;
+    end match;
+  end createReplacementRules;
+
+  function chooseVariableToKeep
+    input list<Pointer<Variable>> tail;
+    input Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
+    input Integer max_rating = -1;
+    output list<Pointer<Variable>> acc;
+  algorithm
+    acc := match tail
+      local
+        list<Pointer<Variable>> rest;
+        Pointer<Variable> var, new_alias;
+        Integer cur_rating, new_max_rating;
+
+      case var :: rest guard(max_rating == -1) algorithm
+        Pointer.update(var_to_keep, var);
+        new_max_rating := rateVar(var);
+      then chooseVariableToKeep(rest, var_to_keep, new_max_rating);
+
+      case var :: rest algorithm
+        cur_rating := rateVar(var);
+        if cur_rating > max_rating then
+          new_alias := Pointer.access(var_to_keep);
+          Pointer.update(var_to_keep, var);
+          new_max_rating := cur_rating;
+        else
+          new_alias := var;
+          new_max_rating := max_rating;
+        end if;
+      then new_alias :: chooseVariableToKeep(rest, var_to_keep, new_max_rating);
+
+      else {};
+    end match;
+  end chooseVariableToKeep;
+
+  function rateVar
+    input Pointer<Variable> var_ptr;
+    output Integer rating;
+  algorithm
+    // ToDo: put acutal rating algorithm here
+    rating := 0;
+  end rateVar;
 
   annotation(__OpenModelica_Interface="backend");
 end NBRemoveSimpleEquations;

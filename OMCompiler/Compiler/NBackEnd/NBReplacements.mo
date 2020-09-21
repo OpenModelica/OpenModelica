@@ -45,16 +45,36 @@ protected
   import Replacements = NBReplacements;
 
   // NF imports
+  import Binding = NFBinding;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import FunctionTreeImpl = NFFlatten.FunctionTreeImpl;
   import HashSet = NFHashSet;
   import HashTableCrToExp = NFHashTableCrToExp;
   import HashTableCrToLst = NFHashTable3;
+  import Variable = NFVariable;
+
+  // Backend imports
+  import BVariable = NBVariable;
+  import EqData = NBEquation.EqData;
+  import Equation = NBEquation.Equation;
+  import EquationPointers = NBEquation.EquationPointers;
+  import HashTableCrToCrEqLst = NBHashTableCrToCrEqLst;
+  import Solve = NBSolve;
+  import StrongComponent = NBStrongComponent;
+  import VarData = NBVariable.VarData;
+  import VariablePointers = NBVariable.VariablePointers;
 
   // Util imports
   import BaseHashTable;
 
 public
+
+  record REPLACEMENTS
+    HashTableCrToExp.HashTable hashTable        "src -> dst, used for replacing. src is variable, dst is expression.";
+    HashTableCrToLst.HashTable invHashTable     "dst -> list of sources. dst is a variable, sources are variables.";
+  end REPLACEMENTS;
+
   function single
     input output Expression exp   "Replacement happens inside this expression";
     input Expression old          "Replaced by new";
@@ -71,13 +91,188 @@ public
     exp := if Expression.isEqual(exp, old) then new else exp;
   end singleTraverse;
 
-  record REPLACEMENTS
-    HashTableCrToExp.HashTable hashTable        "src -> dst, used for replacing. src is variable, dst is expression.";
-    //HashTableCrToLst.HashTable invHashTable     "dst -> list of sources. dst is a variable, sources are variables.";
-    //HashSet.HashSet extendHashSet               "src -> nothing, used for extend arrays and records.";
-    //list<String> iterationVars                  "this are the implicit declerate iteration variables for for and range expressions";
-    //Option<HashTableCrToExp.HashTable> derConst "this is used if states are constant to replace der(state) with 0.0";
-  end REPLACEMENTS;
+  function simple
+    input list<StrongComponent> comps;
+    input output HashTableCrToExp.HashTable replacements;
+  algorithm
+    replacements := List.fold(comps, addSimple, replacements);
+  end simple;
+
+  function addSimple
+    "ToDo: More cases!"
+    input StrongComponent comp;
+    input output HashTableCrToExp.HashTable replacements;
+  algorithm
+    replacements := match comp
+      local
+        ComponentRef varName;
+        Equation solved;
+        Expression replace_exp;
+
+      case StrongComponent.SINGLE_EQUATION() algorithm
+        // solve the equation for the variable
+        varName := BVariable.getVarName(comp.var);
+        solved := Solve.solve(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
+        // apply all previous replacements on the RHS
+        replace_exp := Equation.getRHS(solved);
+        replace_exp := applySimpleExp(replace_exp, replacements);
+        // add the new replacement rule
+        replacements := BaseHashTable.add((varName, replace_exp), replacements);
+      then replacements;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component is not simple: " + StrongComponent.toString(comp)});
+      then fail();
+    end match;
+  end addSimple;
+
+  function applySimple
+    "Used for RemoveSimpleEquations.
+    This should be applied before partitioning. Otherwise all systems have to be checked for jacobians
+    and hessians on which this also has to be applied. Can be applied on single jacobians and hessians
+    while removing simple equations on them."
+    input output EqData eqData;
+    input output VarData varData; // bindings
+    input HashTableCrToExp.HashTable replacements "rules for replacements are stored inside here";
+  protected
+    list<tuple<ComponentRef, Expression>> entries;
+    ComponentRef aliasCref;
+    Expression replacement;
+    Pointer<Variable> var_ptr;
+    Variable var;
+  algorithm
+    eqData := match eqData
+      case EqData.EQ_DATA_SIM() algorithm
+        // we do not want to traverse removed equations, otherwise we could break them
+        eqData.simulation   := EquationPointers.mapExp(eqData.simulation, function applySimpleExp(replacements = replacements));
+        eqData.continuous   := EquationPointers.mapExp(eqData.continuous, function applySimpleExp(replacements = replacements));
+        eqData.discretes    := EquationPointers.mapExp(eqData.discretes, function applySimpleExp(replacements = replacements));
+        eqData.initials     := EquationPointers.mapExp(eqData.initials, function applySimpleExp(replacements = replacements));
+        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applySimpleExp(replacements = replacements));
+      then eqData;
+
+      case EqData.EQ_DATA_JAC() algorithm
+        eqData.results      := EquationPointers.mapExp(eqData.results, function applySimpleExp(replacements = replacements));
+        eqData.temporary    := EquationPointers.mapExp(eqData.temporary, function applySimpleExp(replacements = replacements));
+        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applySimpleExp(replacements = replacements));
+      then eqData;
+
+      case EqData.EQ_DATA_HES() algorithm
+        Pointer.update(eqData.result, Equation.map(Pointer.access(eqData.result), function applySimpleExp(replacements = replacements)));
+        eqData.temporary    := EquationPointers.mapExp(eqData.temporary, function applySimpleExp(replacements = replacements));
+        eqData.auxiliaries  := EquationPointers.mapExp(eqData.auxiliaries, function applySimpleExp(replacements = replacements));
+      then eqData;
+    end match;
+
+    // apply on bindings (is this necessary?)
+    varData := match varData
+      case VarData.VAR_DATA_SIM() algorithm
+        varData.variables := VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
+      then varData;
+      case VarData.VAR_DATA_JAC() algorithm
+        varData.variables := VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
+      then varData;
+      case VarData.VAR_DATA_HES() algorithm
+        varData.variables := VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
+      then varData;
+    end match;
+
+    // update alias variable bindings
+    entries := BaseHashTable.hashTableList(replacements);
+    for entry in entries loop
+      (aliasCref, replacement) := entry;
+      var_ptr := BVariable.getVarPointer(aliasCref);
+      var := Pointer.access(var_ptr);
+      var.binding := Binding.update(var.binding, replacement);
+      Pointer.update(var_ptr, var);
+    end for;
+  end applySimple;
+
+  function applySimpleExp
+    "Needs to be mapped with Expression.map()"
+    input output Expression exp                   "Replacement happens inside this expression";
+    input HashTableCrToExp.HashTable replacements "rules for replacements are stored inside here";
+  algorithm
+    exp := match exp
+      case Expression.CREF() guard(BaseHashTable.hasKey(exp.cref, replacements)) algorithm
+      then BaseHashTable.get(exp.cref, replacements);
+      else exp;
+    end match;
+  end applySimpleExp;
+
+  function applySimpleVar
+    input output Variable var;
+    input HashTableCrToExp.HashTable replacements "rules for replacements are stored inside here";
+  algorithm
+    var := match var
+      local
+        Binding binding;
+      case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
+        binding.bindingExp := Expression.map(binding.bindingExp, function applySimpleExp(replacements = replacements));
+        var.binding := binding;
+      then var;
+      else var;
+    end match;
+  end applySimpleVar;
+
+/*
+
+  function empty
+    "Returns an empty set of replacement rules"
+    input Integer size = BaseHashTable.defaultBucketSize;
+    input Boolean simple = false;
+    output Replacements variableReplacements;
+  protected
+    HashTableCrToExp.HashTable replacements;
+    HashTableCrToCrEqLst.HashTable groups;
+  algorithm
+    // ToDo: remove all those sized calls, they are just duplicate functions
+    replacements := HashTableCrToExp.emptyHashTableSized(size);
+    groups := HashTableCrToCrEqLst.emptyHashTableSized(size);
+    variableReplacements := SIMPLE_REPLACEMENTS(replacements, groups);
+  end empty;
+
+  function add
+    input output Replacements replacements;
+    input Expression src                    "for simple replacements src and dst are not yet determined";
+    input Expression dst;
+    input Equation eqn;
+  algorithm
+    // new (a -> b), existing (b -> c)
+    // new (a -> b), existing (a -> c) (FAIL or REPLACE?)
+    // new (a -> b), existing (c -> a) (how to detect for f(.., a, ...)?)
+    replacements := match replacements
+      case SIMPLE_REPLACEMENTS() algorithm
+      then replacements;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed adding replacement for expressions: "
+        + "\n\t 1. " + Expression.toString(src) + "\n\t 2. " + Expression.toString(dst) + "\n In equation: \n\t"
+        + Equation.toString(eqn)});
+      then fail();
+    end match;
+  end add;
+
+  function addStatic
+    input output Replacements repl;
+    input ComponentRef src;
+    input Expression dst;
+    input Equation eqn;
+  algorithm
+    repl := match repl
+      case SIMPLE_REPLACEMENTS() guard(not BaseHashTable.hasKey(src, repl.replacements)) algorithm
+        repl.replacements := BaseHashTable.add((src, dst), repl.replacements);
+      then repl;
+
+      // need forward replacement
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed adding replacement for componentRef: "
+        + "\n\t - " + ComponentRef.toString(src) + "\n In equation: \n\t" + Equation.toString(eqn)});
+      then fail();
+    end match;
+
+  end addStatic;
 
   function empty
     "Returns an empty set of replacement rules"
@@ -85,10 +280,12 @@ public
     input Integer size = BaseHashTable.defaultBucketSize;
   protected
     HashTableCrToExp.HashTable hashTable;
+    HashTableCrToLst.HashTable invHashTable;
   algorithm
     // ToDo: remove all those sized calls, they are just duplicate functions
     hashTable := HashTableCrToExp.emptyHashTableSized(size);
-    variableReplacements := REPLACEMENTS(hashTable);
+    invHashTable := HashTableCrToLst.emptyHashTableSized(size);
+    variableReplacements := REPLACEMENTS(hashTable, invHashTable);
   end empty;
 
   function add
@@ -96,15 +293,18 @@ public
     input ComponentRef src;
     input Expression dst;
   algorithm
-    replacements := match replacements
-      local
-        HashTableCrToExp.HashTable hashTable;
-      case REPLACEMENTS(hashTable = hashTable)
-        algorithm
-          hashTable := BaseHashTable.add((src, dst), hashTable);
-      then REPLACEMENTS(hashTable);
-      else fail();
-    end match;
+    // new (a -> b), existing (b -> c)
+    // new (a -> b), existing (a -> c) (FAIL or REPLACE?)
+    // new (a -> b), existing (c -> a) (how to detect for f(.., a, ...)?)
+    if BaseHashTable.hasKey(src, replacements.hashTable) then
+      // fail if there is already a replacement rule for this expression
+      fail();
+    else
+      //replacements := makeTransitiveBackwards(replacements, src, dst);
+      replacements.hashTable := BaseHashTable.add((src, dst), replacements.hashTable);
+    end if;
+    //replacements.invHashTable := BaseHashTable.add((src, dst), replacements.invHashTable);
+
   end add;
 
   function addList
@@ -119,7 +319,7 @@ public
       replacements := add(replacements, src, dst);
     end for;
   end addList;
-/*
+
   public function add
     "Adds a replacement rule to the set of replacement rules given as argument.
     If a replacement rule a->b already exists and we add a new rule b->c then
@@ -162,8 +362,7 @@ public
           fail();
     end match;
   end add;
-*/
-/*
+
   function remove
     "removes the replacement for a given key using BaseHashTable.delete
     the extendhashSet is not updated"

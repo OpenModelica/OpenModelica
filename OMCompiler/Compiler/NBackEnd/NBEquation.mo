@@ -323,6 +323,13 @@ public
               eq.body := SOME(new_body);
             end if;
         then eq;
+
+        case DUMMY_EQUATION() then eq;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there was no suitable case for: " + Equation.toString(eq)});
+        then fail();
+
       end match;
     end map;
 
@@ -408,6 +415,7 @@ public
       eq := match(eq)
         local
           ComponentRef cref;
+          Equation new_eq;
         case SCALAR_EQUATION()
           algorithm
             eq.lhs := lhs;
@@ -422,12 +430,16 @@ public
         then eq;
         case SIMPLE_EQUATION()
           algorithm
-            eq.lhs := match lhs
+            new_eq := match lhs
               local ComponentRef cr;
-              case Expression.CREF(cref = cr) then cr;
-              else fail();
+              case Expression.CREF(cref = cr) algorithm
+                eq.lhs := cr;
+              then eq;
+              case _ guard(Type.isScalar(Expression.typeOf(lhs)))
+              then SCALAR_EQUATION(lhs, Expression.fromCref(eq.rhs), eq.source, eq.attr);
+              else ARRAY_EQUATION({}, lhs, Expression.fromCref(eq.rhs), eq.source, eq.attr, NONE());
             end match;
-        then eq;
+        then new_eq;
         else fail();
       end match;
     end setLHS;
@@ -440,6 +452,7 @@ public
       eq := match(eq)
         local
           ComponentRef cref;
+          Equation new_eq;
         case SCALAR_EQUATION()
           algorithm
             eq.rhs := rhs;
@@ -454,13 +467,16 @@ public
         then eq;
         case SIMPLE_EQUATION()
           algorithm
-            eq.rhs := match rhs
+            new_eq := match rhs
               local ComponentRef cr;
-              case Expression.CREF(cref = cr) then cr;
-              else fail();
+              case Expression.CREF(cref = cr) algorithm
+                eq.rhs := cr;
+              then eq;
+              case _ guard(Type.isScalar(Expression.typeOf(rhs)))
+              then SCALAR_EQUATION(Expression.fromCref(eq.lhs), rhs, eq.source, eq.attr);
+              else ARRAY_EQUATION({}, Expression.fromCref(eq.lhs), rhs, eq.source, eq.attr, NONE());
             end match;
-        then eq;
-        else fail();
+        then new_eq;
       end match;
     end setRHS;
 
@@ -1105,6 +1121,54 @@ public
       end for;
     end mapExp;
 
+    function fold<T>
+      "Traverses all equations and applies a function to them to accumulate data.
+      Cannot change equations."
+      input EquationPointers equations;
+      input MapFunc func;
+      input output T extArg;
+      partial function MapFunc
+        input Equation e;
+        input output T extArg;
+      end MapFunc;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          extArg := func(Pointer.access(ExpandableArray.get(i, equations.eqArr)), extArg);
+        end if;
+      end for;
+    end fold;
+
+    function foldRemovePtr<T>
+      "Traverses all equation pointers and applies a function to them to accumulate data.
+      Can invoke to delete the equation pointer. (also deletes other instances of the equation.
+      Take care to keep a copy if you want to add it back later)"
+      input output EquationPointers equations;
+      input MapFunc func;
+      input output T extArg;
+      partial function MapFunc
+        input Pointer<Equation> e;
+        input output T extArg;
+        output Boolean delete;
+      end MapFunc;
+    protected
+      Pointer<Equation> eq_ptr;
+      Boolean delete;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          eq_ptr := ExpandableArray.get(i, equations.eqArr);
+          (extArg, delete) := func(eq_ptr, extArg);
+          if delete then
+            // change the pointer to point to an empty equation
+            Pointer.update(eq_ptr, DUMMY_EQUATION());
+            // delete this pointer instance
+            equations.eqArr := ExpandableArray.delete(i, equations.eqArr);
+          end if;
+        end if;
+      end for;
+    end foldRemovePtr;
+
     function getEqnAt
       "Returns the equation pointer at given index. If there is none it fails."
       input EquationPointers equations;
@@ -1119,6 +1183,18 @@ public
       Be careful: This changes the indices of the elements."
       input output EquationPointers equations;
     algorithm
+      // delete all empty equations
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          _ := match Pointer.access(ExpandableArray.get(i, equations.eqArr))
+            case Equation.DUMMY_EQUATION() algorithm
+              equations.eqArr := ExpandableArray.delete(i, equations.eqArr);
+            then ();
+            else ();
+          end match;
+        end if;
+      end for;
+      // compress the array
       equations.eqArr := ExpandableArray.compress(equations.eqArr);
     end compress;
 
@@ -1172,6 +1248,7 @@ public
       EquationPointers discretes    "Discrete equations";
       EquationPointers initials     "(Exclusively) Initial equations";
       EquationPointers auxiliaries  "Auxiliary equations";
+      EquationPointers removed      "Removed equations (alias and no return value)";
     end EQ_DATA_SIM;
 
     record EQ_DATA_JAC
@@ -1179,14 +1256,16 @@ public
       EquationPointers results      "Result equations";
       EquationPointers temporary    "Temporary inner equations";
       EquationPointers auxiliaries  "Auxiliary equations";
+      EquationPointers removed      "Removed equations (alias and no return value)";
     end EQ_DATA_JAC;
 
-    record EQ_DATA_HESS
+    record EQ_DATA_HES
       EquationPointers equations    "All equations";
       Pointer<Equation> result      "Result equation";
       EquationPointers temporary    "Temporary inner equations";
       EquationPointers auxiliaries  "Auxiliary equations";
-    end EQ_DATA_HESS;
+      EquationPointers removed      "Removed equations (alias and no return value)";
+    end EQ_DATA_HES;
 
     record EQ_DATA_EMPTY end EQ_DATA_EMPTY;
 
@@ -1222,7 +1301,7 @@ public
             end if;
         then tmp;
 
-        case EQ_DATA_HESS()
+        case EQ_DATA_HES()
           algorithm
             if level == 0 then
               tmp :=  EquationPointers.toString(eqData.equations, "Hessian", false);
@@ -1247,7 +1326,7 @@ public
       eqData := match eqData
         case EQ_DATA_SIM() algorithm eqData.equations := equations; then eqData;
         case EQ_DATA_JAC() algorithm eqData.equations := equations; then eqData;
-        case EQ_DATA_HESS() algorithm eqData.equations := equations; then eqData;
+        case EQ_DATA_HES() algorithm eqData.equations := equations; then eqData;
       end match;
     end setEquations;
   end EqData;

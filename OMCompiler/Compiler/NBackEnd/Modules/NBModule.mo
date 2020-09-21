@@ -165,8 +165,8 @@ public
      unknowns to knows. Since this can also affects all other pointer arrays, the
      full variable data is needed. All things that are allowed to be changed
      are pointers, so no return value."
-    input BVariable.VarData varData         "Data containing variable pointers";
-    input BEquation.EqData eqData           "Data containing equation pointers";
+    input output BVariable.VarData varData         "Data containing variable pointers";
+    input output BEquation.EqData eqData           "Data containing equation pointers";
   end removeSimpleEquationsInterface;
 
 
