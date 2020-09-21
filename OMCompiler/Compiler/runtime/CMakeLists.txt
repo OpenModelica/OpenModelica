@@ -51,7 +51,7 @@ if(OMC_USE_CORBA)
   endif(MINGW)
 
 else(OMC_USE_CORBA) # No corba support requested.
-    set(OMC_RUNTIIME_SOURCES ${OMC_RUNTIIME_SOURCES} corbaimpl_stub_omc.o)
+    set(OMC_RUNTIIME_SOURCES ${OMC_RUNTIIME_SOURCES} corbaimpl_stub_omc.c)
 endif(OMC_USE_CORBA)
 
 
