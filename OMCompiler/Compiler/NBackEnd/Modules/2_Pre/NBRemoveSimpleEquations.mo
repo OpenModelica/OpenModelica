@@ -150,6 +150,13 @@ protected
   constant CrefTpl FAILED_CREF_TPL = CREF_TPL(false, 0, 0, {});
 
   function removeSimpleEquationsDefault extends Module.removeSimpleEquationsInterface;
+    "STEPS:
+      1. collect alias sets (variables, equations, optional constant binding)
+      2. balance sets - choose variable to keep if necessary
+      3. match/sort set (linear w.r.t. since all equations contain two crefs at max and are simple/linear)
+      4. apply replacements
+      5. save replacements in bindings of alias variables
+    "
     algorithm
     (varData, eqData) := match (varData, eqData)
       local
@@ -163,7 +170,10 @@ protected
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
-          // ToDo: sizes of Hash tables are system dependent!
+          // ------------------------------------------------------------------------------
+          // 1. collect alias sets (variables, equations, optional constant binding)
+          // ------------------------------------------------------------------------------
+          // collect (cref) -> (simpleSet) hashtable
           size := BVariable.VariablePointers.size(varData.unknowns);
           size := intMax(BaseHashTable.lowBucketSize, realInt(realMul(intReal(size), 0.7)));
           hashTable := HashTableRSE.empty(size);
@@ -179,6 +189,10 @@ protected
             end for;
           end if;
 
+          // --------------------------------------------------------------------------------------------------------
+          // 2. balance sets - choose variable to keep if necessary
+          // 3. match/sort set (linear w.r.t. since all equations contain two crefs at max and are simple/linear)
+          // --------------------------------------------------------------------------------------------------------
           replacements := HashTableCrToExp.emptyHashTableSized(size);
           for set in sets loop
             (replacements, removed_equations) := createReplacementRules(set, replacements, removed_equations);
@@ -189,10 +203,17 @@ protected
             BaseHashTable.dumpHashTable(replacements);
           end if;
 
+          // -----------------------------------
+          // 4. apply replacements
+          // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+
+          // ----------------------------------------------------
+          // 5. save replacements in bindings of alias variables
+          // ----------------------------------------------------
           alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
 
-          // take care here if something else than unknowns are removed, might need updating
+          // update variable and equation lists
           varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
           varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
           varData.algebraics := VariablePointers.removeList(alias_vars, varData.algebraics);
@@ -205,6 +226,8 @@ protected
           eqData.removed := EquationPointers.addList(removed_equations, eqData.removed);
       then (varData, eqData);
 
+      // ToDo: add for Jacobian/Hessian
+
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
@@ -212,6 +235,7 @@ protected
   end removeSimpleEquationsDefault;
 
   function findSimpleEquation
+    "Checks if the equation is simple and adds it to the correct set in the hashTable."
     input Pointer<Equation> eq_ptr;
     input output HashTableRSE.HashTable hashTable;
     output Boolean delete = false;
@@ -483,6 +507,7 @@ protected
   end checkOperator;
 
   function getSimpleSets
+    "extracts all simple sets from the hashTable and avoids duplicates by marking variables"
     input HashTableRSE.HashTable hashTable;
     input Integer size;
     output list<SimpleSet> sets = {};
@@ -507,6 +532,7 @@ protected
   end getSimpleSets;
 
   function createReplacementRules
+    "creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input SimpleSet set;
     input output HashTableCrToExp.HashTable replacements;
     input output list<Pointer<Equation>> removed_equations;
@@ -522,25 +548,32 @@ protected
         list<StrongComponent> comps;
 
       case SOME(const_eq) algorithm
+        // there is a constant binding -> no variable will be kept and all will be replaced by a constant
         removed_equations := listAppend(set.simple_equations, removed_equations);
         vars := VariablePointers.fromList(set.simple_variables);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
+        // causalize the system
         comps := Causalize.simple(vars, eqs);
+        // create replacements from strong components
         replacements := Replacements.simple(comps, replacements);
       then replacements;
 
       else algorithm
+        // there is no constant binding -> all others will be replaced by one variable
         alias_vars := chooseVariableToKeep(set.simple_variables);
         removed_equations := listAppend(set.simple_equations, removed_equations);
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
+        // causalize the system
         comps := Causalize.simple(vars, eqs);
+        // create replacements from strong components
         replacements := Replacements.simple(comps, replacements);
       then replacements;
     end match;
   end createReplacementRules;
 
   function chooseVariableToKeep
+    "choose a variable from a list to keep. returns all variables but the one with the highest rating"
     input list<Pointer<Variable>> tail;
     input Pointer<Pointer<Variable>> var_to_keep = Pointer.create(Pointer.create(NBVariable.DUMMY_VARIABLE));
     input Integer max_rating = -1;
@@ -553,17 +586,21 @@ protected
         Integer cur_rating, new_max_rating;
 
       case var :: rest guard(max_rating == -1) algorithm
+        // this is the entry point. update the variable to keep with the very first of the list
         Pointer.update(var_to_keep, var);
         new_max_rating := rateVar(var);
       then chooseVariableToKeep(rest, var_to_keep, new_max_rating);
 
       case var :: rest algorithm
+        // check if new rating is better than old
         cur_rating := rateVar(var);
         if cur_rating > max_rating then
+          // put the currently held variable back to the list and update the new "variable to keep"
           new_alias := Pointer.access(var_to_keep);
           Pointer.update(var_to_keep, var);
           new_max_rating := cur_rating;
         else
+          // do not change anything and just keep the variable and max_rating
           new_alias := var;
           new_max_rating := max_rating;
         end if;
@@ -574,6 +611,7 @@ protected
   end chooseVariableToKeep;
 
   function rateVar
+    "Rates a variable based on attributes"
     input Pointer<Variable> var_ptr;
     output Integer rating;
   algorithm

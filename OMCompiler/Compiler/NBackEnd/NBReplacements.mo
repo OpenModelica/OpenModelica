@@ -76,6 +76,7 @@ public
   end REPLACEMENTS;
 
   function single
+    "performs a single replacement"
     input output Expression exp   "Replacement happens inside this expression";
     input Expression old          "Replaced by new";
     input Expression new          "Replaces old";
@@ -92,6 +93,7 @@ public
   end singleTraverse;
 
   function simple
+    "creates simple replacement rules for removeSimpleEquations"
     input list<StrongComponent> comps;
     input output HashTableCrToExp.HashTable replacements;
   algorithm
@@ -201,6 +203,7 @@ public
   end applySimpleExp;
 
   function applySimpleVar
+    "applys replacement on the variable binding expression"
     input output Variable var;
     input HashTableCrToExp.HashTable replacements "rules for replacements are stored inside here";
   algorithm
