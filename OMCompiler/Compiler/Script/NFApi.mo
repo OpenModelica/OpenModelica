@@ -247,7 +247,7 @@ algorithm
 
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
 
-          inst_anncls := NFInst.instantiate(anncls);
+          inst_anncls := NFInst.instantiate(anncls, InstNode.EMPTY_NODE(), true);
 
           execStat("NFApi.instantiate("+ annName +")");
 
@@ -458,7 +458,7 @@ function mkFullyQual
   input Absyn.Path pathToQualify;
   output Absyn.Path qualPath;
 protected
-  InstNode top, inst_cls, cls;
+  InstNode top, expanded_cls, cls;
   SCode.Program program;
   String name;
   Boolean b, s;
@@ -467,8 +467,13 @@ algorithm
   s := FlagsUtil.set(Flags.NF_SCALARIZE, true); // #5689
   try
     // run the front-end front
-    (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
-    cls := Lookup.lookupClassName(pathToQualify, inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
+    (program, name, top, expanded_cls) := frontEndLookup(absynProgram, classPath);
+    // if is derived qualify in the parent
+    if InstNode.isDerivedClass(expanded_cls) then
+      cls := Lookup.lookupClassName(pathToQualify, InstNode.classParent(expanded_cls), AbsynUtil.dummyInfo, checkAccessViolations = false);
+    else // qualify in the class
+      cls := Lookup.lookupClassName(pathToQualify, expanded_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
+    end if;
     qualPath := InstNode.scopePath(cls, true);
     FlagsUtil.set(Flags.SCODE_INST, b);
     FlagsUtil.set(Flags.NF_SCALARIZE, s);
@@ -586,7 +591,6 @@ algorithm
 
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
-  execStat("NFApi.lookup("+ name +")");
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
   // Initialize the storage for automatically generated inner elements.
@@ -595,17 +599,15 @@ algorithm
   // Instantiate the class.
   inst_cls := NFInst.instantiate(cls);
   NFInst.insertGeneratedInners(inst_cls, top);
-  execStat("NFApi.instantiate("+ name +")");
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
   NFInst.instExpressions(inst_cls);
-  execStat("NFApi.instExpressions("+ name +")");
 
   // Mark structural parameters.
   NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
-  execStat("NFApi.updateImplicitVariability");
+  execStat("NFApi.frontEndFront_dispatch");
 end frontEndFront_dispatch;
 
 protected
@@ -662,6 +664,74 @@ algorithm
   // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs);
 end frontEndBack;
+
+protected
+function frontEndLookup
+  input Absyn.Program absynProgram;
+  input Absyn.Path classPath;
+  output SCode.Program program;
+  output String name;
+  output InstNode top;
+  output InstNode expanded_cls;
+protected
+  list<tuple<tuple<Absyn.Program, Absyn.Path>, tuple<SCode.Program, String, InstNode, InstNode>>> cache;
+algorithm
+  cache := getGlobalRoot(Global.instNFLookupCacheIndex);
+  if not listEmpty(cache) then
+    for i in cache loop
+      if AbsynUtil.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
+        if referenceEq(absynProgram, Util.tuple21(Util.tuple21(i))) then
+          (program, name, top, expanded_cls) := Util.tuple22(i);
+          return;
+        end if;
+        // program changed, wipe the cache!
+        cache := {};
+        break;
+      end if;
+    end for;
+  end if;
+  (program, name, top, expanded_cls) := frontEndLookup_dispatch(absynProgram, classPath);
+  if listLength(cache) > 100 then
+    // trim it down, keep 10
+    cache := List.firstN(cache, 10);
+  end if;
+
+  cache := ((absynProgram,classPath),(program, name, top, expanded_cls))::cache;
+  setGlobalRoot(Global.instNFLookupCacheIndex, cache);
+end frontEndLookup;
+
+protected
+function frontEndLookup_dispatch
+  input Absyn.Program absynProgram;
+  input Absyn.Path classPath;
+  output SCode.Program program;
+  output String name;
+  output InstNode top;
+  output InstNode expanded_cls;
+protected
+  SCode.Program scode_builtin, graphicProgramSCode;
+  Absyn.Program placementProgram;
+  InstNode cls;
+  list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
+  Boolean update = true;
+algorithm
+  (program, top) := mkTop(absynProgram);
+
+  name := AbsynUtil.pathString(classPath);
+
+  // Look up the class to instantiate and mark it as the root class.
+  cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
+  cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
+
+  // Initialize the storage for automatically generated inner elements.
+  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
+
+  // Expand the class.
+  expanded_cls := NFInst.expand(cls);
+  NFInst.insertGeneratedInners(expanded_cls, top);
+  execStat("NFApi.frontEndLookup_dispatch("+ name +")");
+
+end frontEndLookup_dispatch;
 
   annotation(__OpenModelica_Interface="backend");
 end NFApi;
