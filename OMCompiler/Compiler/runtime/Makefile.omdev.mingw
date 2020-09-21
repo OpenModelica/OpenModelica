@@ -29,6 +29,7 @@ OMBUILDDIR = ../../../build
 LPSOLVEINCLUDE = ../../3rdParty/lpsolve/build/include/
 SQLITE3INCLUDE = ../../3rdParty/sqlite3/build/include/
 ZMQINCLUDE = ../../3rdParty/libzmq/include
+GCINCLUDE = -DGC_WIN32_PTHREADS -I../../3rdParty/gc/include
 OMC=$(OMBUILDDIR)/bin/omc
 SHREXT=.a
 OMPCC = gcc -fopenmp
@@ -48,7 +49,7 @@ OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
 SHELL	= /bin/sh
 CC	= gcc
 CXX = g++
-override CFLAGS += -I. $(USE_CORBA) $(USE_METIS) -Wall -Wno-unused-variable -I../../ -I$(top_builddir) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc $(CORBAINCL) -I$(FMIINCLUDE) -I../../3rdParty/gc/include -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(LPSOLVEINCLUDE) -I$(SQLITE3INCLUDE) -I$(ZMQINCLUDE)
+override CFLAGS += -I. $(USE_CORBA) $(USE_METIS) -Werror=implicit-function-declaration -Wall -Wno-unused-variable -I../../ -I$(top_builddir) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(GRAPHSTREAMINCLUDE) -I$(CJSONINCLUDE) -I$(GRAPHINCLUDE) -I$(LPSOLVEINCLUDE) -I$(SQLITE3INCLUDE) -I$(ZMQINCLUDE)
 override CXXFLAGS += -std=c++11 $(CFLAGS)
 
 include Makefile.common
