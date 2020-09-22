@@ -16173,22 +16173,31 @@ protected function updateConnectionAnnotationInEqList
 protected
   Absyn.ComponentRef c1, c2;
   String c1_str, c2_str;
+  Boolean found = false;
 algorithm
   for eq in equations loop
-    eq := match eq
-      case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
-        algorithm
-          c1_str := AbsynUtil.crefString(c1);
-          c2_str := AbsynUtil.crefString(c2);
+    if not found then
+      eq := match eq
+        case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
+          algorithm
+            c1_str := AbsynUtil.crefString(c1);
+            c2_str := AbsynUtil.crefString(c2);
 
-          if (c1_str == from and c2_str == to) or (c1_str == to and c2_str == from) then
-            eq.comment := SOME(Absyn.COMMENT(SOME(ann), NONE()));
-          end if;
-        then
-          eq;
+            if (c1_str == from and c2_str == to) then
+              found := true;
+            end if;
+            if not found then
+              found := (c1_str == to and c2_str == from);
+            end if;
+            if found then
+              eq.comment := SOME(Absyn.COMMENT(SOME(ann), NONE()));
+            end if;
+          then
+            eq;
 
-      else eq;
-    end match;
+        else eq;
+      end match;
+    end if;
 
     outEquations := eq :: outEquations;
   end for;
@@ -16291,22 +16300,27 @@ protected function updateConnectionNamesInEqList
 protected
   Absyn.ComponentRef c1, c2;
   String c1_str, c2_str;
+  Boolean found = false;
+
 algorithm
   for eq in equations loop
-    eq := match eq
-      case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
-        algorithm
-          c1_str := AbsynUtil.crefString(c1);
-          c2_str := AbsynUtil.crefString(c2);
+    if not found then
+      eq := match eq
+        case Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1, connector2 = c2))
+          algorithm
+            c1_str := AbsynUtil.crefString(c1);
+            c2_str := AbsynUtil.crefString(c2);
 
-          if (c1_str == from and c2_str == to) or (c1_str == to and c2_str == from) then
-            eq.equation_ := Absyn.EQ_CONNECT(Parser.stringCref(fromNew), Parser.stringCref(toNew));
-          end if;
-        then
-          eq;
+            found := if (c1_str == from and c2_str == to) then true else (c1_str == to and c2_str == from);
+            if found then
+              eq.equation_ := Absyn.EQ_CONNECT(Parser.stringCref(fromNew), Parser.stringCref(toNew));
+            end if;
+          then
+            eq;
 
-      else eq;
-    end match;
+        else eq;
+      end match;
+    end if;
 
     outEquations := eq :: outEquations;
   end for;
