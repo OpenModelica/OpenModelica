@@ -2090,11 +2090,12 @@ protected
       SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__ModelicaAssociation_Impure");
   end hasImpure;
 
-  function getBuiltin
-    input SCode.Element def;
-    output DAE.FunctionBuiltin builtin = if SCodeUtil.isBuiltinElement(def) then
-       DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
-  end getBuiltin;
+  function getBuiltinPtr
+    input SCode.Comment cmt;
+    output DAE.FunctionBuiltin builtin =
+      if SCodeUtil.commentHasBooleanNamedAnnotation(cmt, "__OpenModelica_BuiltinPtr") then
+        DAE.FUNCTION_BUILTIN_PTR() else DAE.FUNCTION_NOT_BUILTIN();
+  end getBuiltinPtr;
 
   function mergeFunctionAnnotations
     "Merges the function's comments from inherited classes."
@@ -2136,13 +2137,13 @@ protected
     list<SCode.Comment> cmts;
     SCode.Comment cmt;
   algorithm
-    def := InstNode.definition(node);
+    def := InstNode.definition(Class.lastBaseClass(node));
     res := SCodeUtil.getClassRestriction(def);
 
     Error.assertion(SCodeUtil.isFunctionRestriction(res), getInstanceName() + " got non-function restriction", sourceInfo());
 
     SCode.Restriction.R_FUNCTION(functionRestriction = fres) := res;
-    is_partial := SCodeUtil.isPartial(def);
+    is_partial := InstNode.isPartial(node);
 
     cmts := InstNode.getComments(node);
     cmt := mergeFunctionAnnotations(cmts);
@@ -2186,7 +2187,7 @@ protected
           inline_ty := InstUtil.commentIsInlineFunc(cmt);
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), false, is_partial,
-            getBuiltin(def), DAE.FP_PARALLEL_FUNCTION());
+            getBuiltinPtr(cmt), DAE.FP_PARALLEL_FUNCTION());
 
       // Kernel functions: never builtin and never inlined.
       case SCode.FunctionRestriction.FR_KERNEL_FUNCTION()
@@ -2209,7 +2210,7 @@ protected
           end if;
         then
           DAE.FUNCTION_ATTRIBUTES(inline_ty, hasOMPure(cmt), is_impure, is_partial,
-            getBuiltin(def), DAE.FP_NON_PARALLEL());
+            getBuiltinPtr(cmt), DAE.FP_NON_PARALLEL());
 
     end matchcontinue;
   end makeAttributes;
