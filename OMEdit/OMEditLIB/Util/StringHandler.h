@@ -48,7 +48,7 @@ public:
   enum ViewType {Icon, Diagram, ModelicaText, NoView};
   enum ModelicaClasses {Model, Class, ExpandableConnector, Connector, Record, Block, Function, Package, Primitive, Type, Operator,
                         OperatorRecord, OperatorFunction, Optimization, Parameter, Constant, Protected, Enumeration};
-  enum OpenModelicaErrors {Notification, Warning, OMError, NoOMError};
+  enum OpenModelicaErrors {Internal, Notification, Warning, OMError, NoOMError};
   enum OpenModelicaErrorKinds {Syntax, Grammar, Translation, Symbolic, Simulation, Scripting, NoOMErrorKind};
   enum LinePattern {LineNone, LineSolid, LineDash, LineDot, LineDashDot, LineDashDotDot};
   enum FillPattern {FillNone, FillSolid, FillHorizontal, FillVertical, FillCross, FillForward, FillBackward, FillCrossDiag,

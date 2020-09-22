@@ -90,6 +90,7 @@ public:
   static int headingFontSize;
   static QString ModelicaSimulationOutputFormats;
   static QString clockOptions;
+  static QString internalLevel;
   static QString notificationLevel;
   static QString warningLevel;
   static QString errorLevel;
