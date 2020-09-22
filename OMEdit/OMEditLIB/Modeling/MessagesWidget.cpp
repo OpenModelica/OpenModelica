@@ -212,6 +212,9 @@ void MessageWidget::addGUIMessage(MessageItem messageItem)
   // set the CSS class depending on message type
   QString messageCSSClass;
   switch (messageItem.getErrorType()) {
+    case StringHandler::Internal:
+      messageCSSClass = "error";
+      break;
     case StringHandler::Warning:
       messageCSSClass = "warning";
       break;
@@ -467,6 +470,9 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
   }
 
   switch (messageItem.getErrorType()) {
+    case StringHandler::Internal:
+      mpErrorMessageWidget->addGUIMessage(messageItem);
+      mpAllMessageWidget->addGUIMessage(messageItem);
     case StringHandler::Notification:
       mpNotificationMessageWidget->addGUIMessage(messageItem);
       mpAllMessageWidget->addGUIMessage(messageItem);

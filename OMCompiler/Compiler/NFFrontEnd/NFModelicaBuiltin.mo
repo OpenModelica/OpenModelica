@@ -2006,7 +2006,7 @@ type ErrorKind = enumeration(
   runtime "simulation/function runtime error",
   scripting "runtime scripting /interpretation error"
 );
-type ErrorLevel = enumeration(notification,warning,error);
+type ErrorLevel = enumeration(internal,notification,warning,error);
 
 record ErrorMessage
   SourceInfo info;

@@ -80,6 +80,7 @@ qreal Helper::shapesStrokeWidth = 2.0;
 int Helper::headingFontSize = 18;
 QString Helper::ModelicaSimulationOutputFormats = "mat,plt,csv";
 QString Helper::clockOptions = ",RT,CYC,CPU";
+QString Helper::internalLevel = ".OpenModelica.Scripting.ErrorLevel.internal";
 QString Helper::notificationLevel = ".OpenModelica.Scripting.ErrorLevel.notification";
 QString Helper::warningLevel = ".OpenModelica.Scripting.ErrorLevel.warning";
 QString Helper::errorLevel = ".OpenModelica.Scripting.ErrorLevel.error";
