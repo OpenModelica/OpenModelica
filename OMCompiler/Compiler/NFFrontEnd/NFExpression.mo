@@ -148,9 +148,12 @@ public
   record END
   end END;
 
-  record MULTARY "Multary expressions with the same operator, e.g. a+b+c"
-    list<Expression> arguments;
-    Operator operator "Can only be + or * (commutative)";
+  record MULTARY
+    "Multary expressions with the same operator, e.g. a+b+c
+    An empty list has to be interpreted as the neutral element of the operator space"
+    list<Expression> arguments      "arguments that are chained with the operator (+, *)";
+    list<Expression> inv_arguments  "arguments that are chained with the inverse operator (-, :)";
+    Operator operator               "Can only be + or * (commutative)";
   end MULTARY;
 
   record BINARY "Binary operations, e.g. a+4"
@@ -1602,8 +1605,8 @@ public
   protected
     Type t;
     ClockKind clk;
-    Expression first;
-    list<Expression> rest;
+    Expression first, first_inv;
+    list<Expression> rest, rest_inv;
   algorithm
     str := match exp
       case INTEGER() then intString(exp.value);
@@ -1638,10 +1641,16 @@ public
                         ) + ")";
       case END() then "end";
 
-      case MULTARY() algorithm
-        first :: rest := exp.arguments;
-      then operandString(first, exp, true) + Operator.symbol(exp.operator) +
-        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(exp.operator));
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryString(exp.arguments, exp, exp.operator, false);
+
+      case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
+                     then "-" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
+                          Operator.symbol(Operator.inverse(exp.operator)) +
+                          multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1728,10 +1737,16 @@ public
                         ) + ")";
       case END() then "end";
 
-      case MULTARY() algorithm
-        first :: rest := exp.arguments;
-      then operandString(first, exp, true) + Operator.symbol(exp.operator) +
-        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(exp.operator));
+      case MULTARY() guard(listEmpty(exp.inv_arguments)) then multaryString(exp.arguments, exp, exp.operator, false);
+
+      case MULTARY() guard(listEmpty(exp.arguments) and Operator.isDashClassification(Operator.getMathClassification(exp.operator)))
+                     then "-" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() guard(listEmpty(exp.arguments)) then "1/" + multaryString(exp.inv_arguments, exp, exp.operator);
+
+      case MULTARY() then multaryString(exp.arguments, exp, exp.operator) +
+                          Operator.symbol(Operator.inverse(exp.operator)) +
+                          multaryString(exp.inv_arguments, exp, exp.operator);
 
       case BINARY() then operandFlatString(exp.exp1, exp, true) +
                          Operator.symbol(exp.operator) +
@@ -1862,6 +1877,28 @@ public
       str := "(" + str + ")";
     end if;
   end operandFlatString;
+
+  function multaryString
+    input list<Expression> arguments;
+    input Expression exp;
+    input Operator operator;
+    input Boolean useParanthesis = true;
+    output String str;
+  protected
+    Expression first;
+    list<Expression> rest;
+  algorithm
+    first :: rest := arguments;
+    if listEmpty(rest) then
+      str := toString(first);
+    elseif useParanthesis then
+      str := "(" + operandString(first, exp, true) + Operator.symbol(operator) +
+        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator)) + ")";
+    else
+      str := operandString(first, exp, true) + Operator.symbol(operator) +
+        stringDelimitList(list(operandString(e, exp, false) for e in rest), Operator.symbol(operator));
+    end if;
+  end multaryString;
 
   function priority
     input Expression exp;
@@ -1996,8 +2033,7 @@ public
 
       case MULTARY() algorithm
         // swapping not necessary because multary expressions have to be commutative
-        (daeOp, _) := Operator.toDAE(exp.operator);
-      then toDAEMultary(exp.arguments, daeOp);
+      then toDAEMultary(exp.arguments, exp.inv_arguments, exp.operator);
 
       case BINARY()
         algorithm
@@ -2049,8 +2085,27 @@ public
     "Converts a multary expression to a chain of binary expressions because
     the old frontend does not have multary expressions."
     input list<Expression> arguments;
-    input DAE.Operator daeOp;
+    input list<Expression> inv_arguments;
+    input Operator operator;
     output DAE.Exp daeExp;
+  algorithm
+    if listEmpty(inv_arguments) then
+      daeExp := toDAEMultaryArgs(arguments, operator);
+    else
+      daeExp := DAE.BINARY(
+        exp1      = toDAEMultaryArgs(arguments, operator),
+        operator  = Operator.toDAE(Operator.inverse(operator)),
+        exp2      = toDAEMultaryArgs(inv_arguments, operator)
+       );
+     end if;
+  end toDAEMultary;
+
+  function toDAEMultaryArgs
+    input list<Expression> arguments;
+    input Operator operator;
+    output DAE.Exp daeExp;
+  protected
+    DAE.Operator daeOp;
   algorithm
     daeExp := match arguments
       local
@@ -2064,14 +2119,15 @@ public
       // convert argument to DAE and create new binary. recurse for second argument
       case arg :: rest algorithm
         exp := Expression.toDAE(arg);
-      then  DAE.BINARY(exp, daeOp, toDAEMultary(rest, daeOp));
+       (daeOp, _) := Operator.toDAE(operator);
+      then  DAE.BINARY(exp, daeOp, toDAEMultary(rest, {}, operator));
 
       else algorithm
         Error.assertion(false, getInstanceName() + " got unhandled argument list:
         {" + stringDelimitList(list(toString(e) for e in arguments), ", ") + "}", sourceInfo());
       then fail();
     end match;
-  end toDAEMultary;
+  end toDAEMultaryArgs;
 
   function toDAERecord
     input Type ty;
@@ -2273,6 +2329,7 @@ public
         algorithm
           // ToDo: referenceEq ?
           exp.arguments := list(map(arg, func) for arg in exp.arguments);
+          exp.inv_arguments := list(map(arg, func) for arg in exp.inv_arguments);
         then exp;
 
       case UNARY()
@@ -2673,6 +2730,9 @@ public
         algorithm
           result := arg;
           for argument in exp.arguments loop
+            result := fold(argument, func, result);
+          end for;
+          for argument in exp.inv_arguments loop
             result := fold(argument, func, result);
           end for;
         then
@@ -4345,6 +4405,7 @@ public
           var;
 
       case END() then Variability.PARAMETER;
+      case MULTARY() then Prefixes.variabilityMax(variabilityList(exp.arguments), variabilityList(exp.arguments));
       case BINARY() then Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2));
       case UNARY() then variability(exp.exp);
       case LBINARY() then Prefixes.variabilityMax(variability(exp.exp1), variability(exp.exp2));

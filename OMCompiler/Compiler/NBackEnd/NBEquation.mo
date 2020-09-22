@@ -576,18 +576,23 @@ public
       exp := match eqn
         local
           Operator operator;
+
         case Equation.SCALAR_EQUATION() algorithm
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
-        then Expression.MULTARY({eqn.rhs, Expression.negate(eqn.lhs)}, operator);
+        then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
+
         case Equation.ARRAY_EQUATION()  algorithm
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
-        then Expression.MULTARY({eqn.rhs, Expression.negate(eqn.lhs)}, operator);
+        then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
+
         case Equation.SIMPLE_EQUATION() algorithm
           operator := Operator.OPERATOR(ComponentRef.getComponentType(eqn.lhs), NFOperator.Op.ADD);
-        then Expression.MULTARY({Expression.fromCref(eqn.rhs), Expression.negate(Expression.fromCref(eqn.lhs))}, operator);
+        then Expression.MULTARY({Expression.fromCref(eqn.rhs)},{Expression.fromCref(eqn.lhs)}, operator);
+
         case Equation.RECORD_EQUATION() algorithm
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
-        then Expression.MULTARY({eqn.rhs, Expression.negate(eqn.lhs)}, operator);
+        then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
         then fail();

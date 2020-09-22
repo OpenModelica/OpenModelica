@@ -102,6 +102,33 @@ public
     comp := Util.intCompare(Integer(o1), Integer(o2));
   end compare;
 
+  function inverse
+    input output Operator operator;
+  algorithm
+    operator.op := match operator.op
+      case Op.ADD then Op.SUB;
+      case Op.SUB then Op.ADD;
+      case Op.MUL then Op.DIV;
+      case Op.DIV then Op.MUL;
+      case Op.ADD_EW then Op.SUB_EW;
+      case Op.SUB_EW then Op.ADD_EW;
+      case Op.MUL_EW then Op.DIV_EW;
+      case Op.DIV_EW then Op.MUL_EW;
+      case Op.ADD_SCALAR_ARRAY then Op.SUB_SCALAR_ARRAY;
+      case Op.ADD_ARRAY_SCALAR then Op.SUB_ARRAY_SCALAR;
+      case Op.SUB_SCALAR_ARRAY then Op.ADD_SCALAR_ARRAY;
+      case Op.SUB_ARRAY_SCALAR then Op.ADD_ARRAY_SCALAR;
+      case Op.MUL_SCALAR_ARRAY then Op.DIV_SCALAR_ARRAY;
+      case Op.MUL_ARRAY_SCALAR then Op.DIV_ARRAY_SCALAR;
+      case Op.DIV_SCALAR_ARRAY then Op.MUL_SCALAR_ARRAY;
+      case Op.DIV_ARRAY_SCALAR then Op.MUL_ARRAY_SCALAR;
+      // ToDo: should POW return POW? exponent should be negated
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + symbol(operator)});
+      then fail();
+    end match;
+  end inverse;
+
   function fromAbsyn
     input Absyn.Operator inOperator;
     output Operator outOperator;
@@ -503,6 +530,21 @@ public
   type SizeClassification = enumeration(SCALAR, ELEMENT_WISE, ARRAY_SCALAR, SCALAR_ARRAY, MATRIX, VECTOR_MATRIX, MATRIX_VECTOR, LOGICAL);
   type Classification = tuple<MathClassification, SizeClassification>;
 
+  function mathSymbol
+    input MathClassification mcl;
+    output String str;
+  algorithm
+    str := match mcl
+      case MathClassification.ADDITION        then "+";
+      case MathClassification.SUBTRACTION     then "-";
+      case MathClassification.MULTIPLICATION  then "*";
+      case MathClassification.DIVISION        then "/";
+      case MathClassification.POWER           then "^";
+      case MathClassification.LOGICAL         then "L";
+                                              else fail();
+    end match;
+  end mathSymbol;
+
   function classify
     input Operator op;
     output Classification cl;
@@ -601,27 +643,43 @@ public
     end match;
   end isDashClassification;
 
-  function isSoftCommutative
-    "returns true for operators that are either commutative or have an easy rule for swapping arguments"
+  function isCommutative
+    "returns true for operators that are commutative"
     input Operator operator;
     output Boolean b;
   algorithm
     b := match operator.op
       case Op.ADD               then true;
-      case Op.SUB               then true;
       case Op.MUL               then true;
       case Op.ADD_EW            then true;
-      case Op.SUB_EW            then true;
       case Op.MUL_EW            then true;
       // the following might need adaption since they depend on argument ordering
       // furthermore weird regarding more than two arguments in Expression.MULTARY()
       case Op.ADD_SCALAR_ARRAY  then true;
       case Op.ADD_ARRAY_SCALAR  then true;
-      case Op.SUB_SCALAR_ARRAY  then true;
-      case Op.SUB_ARRAY_SCALAR  then true;
       case Op.MUL_SCALAR_ARRAY  then true;
       case Op.MUL_ARRAY_SCALAR  then true;
-      case Op.SCALAR_PRODUCT    then true;
+      else false;
+    end match;
+
+  end isCommutative;
+
+  function isSoftCommutative
+    "returns true for operators that are not commutative but have an easy rule for swapping arguments"
+    input Operator operator;
+    output Boolean b;
+  algorithm
+    b := match operator.op
+      case Op.SUB               then true;
+      case Op.DIV               then true;
+      case Op.SUB_EW            then true;
+      case Op.DIV_EW            then true;
+      // the following might need adaption since they depend on argument ordering
+      // furthermore weird regarding more than two arguments in Expression.MULTARY()
+      case Op.SUB_SCALAR_ARRAY  then true;
+      case Op.SUB_ARRAY_SCALAR  then true;
+      case Op.DIV_SCALAR_ARRAY  then true;
+      case Op.DIV_ARRAY_SCALAR  then true;
       else false;
     end match;
   end isSoftCommutative;

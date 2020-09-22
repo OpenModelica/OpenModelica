@@ -509,89 +509,146 @@ end simplifySize;
 
 function simplifyMultary
   input output Expression exp;
-protected
-  Operator operator;
-  list<Expression> arguments, constArguments;
-  Expression new_const, new_multary;
-  Boolean isNegative;
 algorithm
-  Expression.MULTARY(arguments = arguments, operator = operator) := exp;
+  exp := match exp
+    local
+      Operator operator;
+      list<Expression> arguments, inv_arguments, const_args, inv_const_args;
+      Expression new_const, tmp, result;
+      Operator.MathClassification mcl;
+      Boolean useConst, isNegative;
 
-  // simplify arguments first
-  arguments := list(simplify(arg) for arg in arguments);
+    // empty multary with addition -> 0
+    case Expression.MULTARY(arguments = {}, inv_arguments = {}, operator = operator)
+      guard(Operator.isDashClassification(Operator.getMathClassification(operator)))
+    then Expression.makeZero(operator.ty);
 
-  // split them into constant and non constant arguments
-  (constArguments, arguments) := List.splitOnTrue(arguments, Expression.isConstNumber);
+    // empty multary with multiplication -> 1
+    case Expression.MULTARY(arguments = {}, inv_arguments = {}, operator = operator)
+    then Expression.makeOne(operator.ty);
 
-  if listLength(constArguments) == 0 then
-    // if there are no constants, just return the simplified arguments
-    exp := Expression.MULTARY(arguments, operator);
-  else
-    new_const := combineConstantNumbers(constArguments, operator);
+    // multary with only one argument
+    case Expression.MULTARY(arguments = {tmp}, inv_arguments = {})
+    then tmp;
 
-    if listLength(arguments) == 0 then
-      // if there are no other arguments just return the new expression
-      exp := new_const;
-    else
-      // return combined multary expression if constant part is non trivial
-      exp := match Operator.getMathClassification(operator)
+    // non-empty multaries
+    case Expression.MULTARY(arguments = arguments, inv_arguments = inv_arguments, operator = operator) algorithm
+      // get math classification
+      mcl := Operator.getMathClassification(operator);
 
-        // 0 + rest = rest (also covers subtraction since there are no multaries with -)
-        case NFOperator.MathClassification.ADDITION guard(Expression.isZero(new_const))
-        then if listLength(arguments) == 1
-          then List.first(arguments)
-          else Expression.MULTARY(arguments, operator);
+      // simplify arguments first
+      arguments := list(simplify(arg) for arg in arguments);
+      inv_arguments := list(simplify(arg) for arg in inv_arguments);
+      (arguments, inv_arguments, isNegative) := simplifyMultarySigns(arguments, inv_arguments, mcl);
 
-        // 0 * rest = 0
-        case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isZero(new_const))
-        then new_const;
+      // split them into constant and non constant arguments
+      (const_args, arguments) := List.splitOnTrue(arguments, Expression.isConstNumber);
+      (inv_const_args, inv_arguments) := List.splitOnTrue(inv_arguments, Expression.isConstNumber);
 
-        // 1 * rest = rest
-        case NFOperator.MathClassification.MULTIPLICATION
-          guard(Expression.isOne(new_const))
-          algorithm
-            if listLength(arguments) == 1 then
-              // if there is just one argument, return it
-              isNegative := false;
-              new_multary := List.first(arguments);
-            else
-              // simplify all signs and pull a minus to the front if one remains
-              (arguments, isNegative) := simplifyMultarySigns(arguments);
-              new_multary := Expression.MULTARY(arguments, operator);
-            end if;
-        then if isNegative then
-          Expression.UNARY(Operator.OPERATOR(operator.ty, NFOperator.Op.UMINUS), new_multary)
-          else new_multary;
+      // combine the constants
+      new_const := combineConstantNumbers(const_args, inv_const_args, mcl);
 
-        // only try to simplify signs for multiplication
-        case NFOperator.MathClassification.MULTIPLICATION
-          algorithm
-            // simplify all signs and pull a minus to the front if one remains
-            (arguments, isNegative) := simplifyMultarySigns(new_const :: arguments);
-            new_multary := Expression.MULTARY(arguments, operator);
-        then if isNegative then
-          Expression.UNARY(Operator.OPERATOR(operator.ty, NFOperator.Op.UMINUS), new_multary)
-          else new_multary;
+      // return combined multary expression and check for trivial replacements
 
-        // return the full expression
-        else Expression.MULTARY(new_const :: arguments, operator);
+      // check if the constant is used
+      useConst := match mcl
+        case NFOperator.MathClassification.ADDITION guard(Expression.isZero(new_const)) then false;
+        case NFOperator.MathClassification.MULTIPLICATION guard(Expression.isOne(new_const)) then false;
+        else true;
       end match;
-    end if;
-  end if;
+
+      result := match (mcl, arguments, inv_arguments)
+        // const + {} - {} = const
+        case (NFOperator.MathClassification.ADDITION, {}, {}) then new_const;
+
+        // 0 + {cr} - {} = cr
+        // 1 * {cr} / {} = cr
+        case (_, {tmp}, {}) guard(not useConst) then tmp;
+
+        // 0 + {} - {cr} = - cr
+        case (NFOperator.MathClassification.ADDITION, {}, {tmp}) guard(not useConst)
+        then Expression.negate(tmp);
+
+        // 0 * {...} / {...} = 0
+        case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
+
+        // apply negative constant to inverse list
+        case (NFOperator.MathClassification.ADDITION, _, _) guard(Expression.isNegative(new_const) and useConst)
+        then Expression.MULTARY(
+            arguments     = arguments,
+            inv_arguments = Expression.negate(new_const) :: inv_arguments,
+            operator      = operator
+          );
+
+        else Expression.MULTARY(
+            arguments     = if useConst then new_const :: arguments else arguments,
+            inv_arguments = inv_arguments,
+            operator      = operator
+          );
+      end match;
+
+      // negate the expression if there was an odd number of negative arguments (only multiplication)
+    then if isNegative then Expression.UNARY(Operator.makeUMinus(operator.ty), result) else result;
+
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for expression: " + Expression.toString(exp)});
+    then fail();
+  end match;
 end simplifyMultary;
 
 function simplifyMultarySigns
-  "removes all signs from arguments and returns true if an odd number of negative
-  signs were removed. Should only be used for multiplication!"
   input list<Expression> arguments;
+  input list<Expression> inv_arguments;
+  input Operator.MathClassification mcl;
   output list<Expression> new_arguments = {};
-  output Boolean isNegative = false;
+  output list<Expression> new_inv_arguments = {};
+  output Boolean isNegative = false; // only relevant for multiplication
 algorithm
-  for arg in listReverse(arguments) loop
-    (new_arguments, isNegative) := if Expression.isNegative(arg)
-      then (Expression.negate(arg) :: new_arguments, not isNegative)
-      else (arg :: new_arguments, isNegative);
-  end for;
+  _ := match mcl
+    case NFOperator.MathClassification.ADDITION algorithm
+      // check if arguments are negative
+      // negate them and swap them to the other list
+      for arg in listReverse(arguments) loop
+        if Expression.isNegative(arg) then
+          new_inv_arguments := Expression.negate(arg) :: new_inv_arguments;
+        else
+          new_arguments := arg :: new_arguments;
+        end if;
+      end for;
+      for arg in listReverse(inv_arguments) loop
+        if Expression.isNegative(arg) then
+          new_arguments := Expression.negate(arg) :: new_arguments;
+        else
+          new_inv_arguments := arg :: new_inv_arguments;
+        end if;
+      end for;
+    then ();
+
+    case NFOperator.MathClassification.MULTIPLICATION algorithm
+      // check if arguments are negative and negate them.
+      // track if there is an even or odd number of negative arguments
+      for arg in listReverse(arguments) loop
+        if Expression.isNegative(arg) then
+          new_arguments := Expression.negate(arg) :: new_arguments;
+          isNegative := not isNegative;
+        else
+          new_arguments := arg :: new_arguments;
+        end if;
+      end for;
+      for arg in listReverse(inv_arguments) loop
+        if Expression.isNegative(arg) then
+          new_inv_arguments := Expression.negate(arg) :: new_inv_arguments;
+          isNegative := not isNegative;
+        else
+          new_inv_arguments := arg :: new_inv_arguments;
+        end if;
+      end for;
+    then ();
+
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+    then fail();
+  end match;
 end simplifyMultarySigns;
 
 function simplifyBinary
@@ -980,43 +1037,54 @@ algorithm
 end simplifyTupleElement;
 
 public function combineConstantNumbers
-  input list<Expression> exp_lst  "has to be a list of REAL(), INTEGER() and/or CAST()";
-  input Operator operator;
+  input list<Expression> const      "has to be a list of REAL(), INTEGER() and/or CAST()";
+  input list<Expression> inv_const  "has to be a list of REAL(), INTEGER() and/or CAST()";
+  input Operator.MathClassification mcl;
   output Expression res;
 protected
   Real tmp, result;
   Boolean anyReal = false         "true if any element in the list is of type REAL() (or cast to one)";
 algorithm
-  if listLength(exp_lst) == 1 then
-    res := List.first(exp_lst);
-  else
-    result := match Operator.getMathClassification(operator)
+  result := match mcl
 
-      case NFOperator.MathClassification.ADDITION algorithm
-        result := 0.0;
-        for exp in exp_lst loop
-          (tmp, anyReal) := getConstantValue(exp, anyReal);
-          result := result + tmp;
-        end for;
-      then result;
+    case NFOperator.MathClassification.ADDITION algorithm
+      result := 0.0;
+      // sum all constants
+      for exp in const loop
+        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        result := result + tmp;
+      end for;
+      // subtract all inverse constants
+      for exp in inv_const loop
+        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        result := result - tmp;
+      end for;
+    then result;
 
-      case NFOperator.MathClassification.MULTIPLICATION algorithm
-        result := 1.0;
-        for exp in exp_lst loop
-          (tmp, anyReal) := getConstantValue(exp, anyReal);
-          result := result * tmp;
-        end for;
-      then result;
+    case NFOperator.MathClassification.MULTIPLICATION algorithm
+      result := 1.0;
+      // multiply all constants
+      for exp in const loop
+        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        result := result * tmp;
+      end for;
+      // devide all inverse constants
+      for exp in inv_const loop
+        (tmp, anyReal) := getConstantValue(exp, anyReal);
+        result := result / tmp;
+      end for;
+    then result;
 
-      else algorithm
-        Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.symbol(operator) +
-         "] with following arguments:\n" + stringDelimitList(list(Expression.toString(e) for e in exp_lst), ", "), sourceInfo());
-      then fail();
+    else algorithm
+      Error.assertion(false, getInstanceName() + " detected non-commutative operator in MULTARY(): [" + Operator.mathSymbol(mcl) +
+       "]\n with following arguments: " + stringDelimitList(list(Expression.toString(e) for e in const), ", ") +
+       "\n and following inverse arguments: " + stringDelimitList(list(Expression.toString(e) for e in inv_const), ", "),
+       sourceInfo());
+    then fail();
 
-    end match;
+  end match;
 
-    res := if anyReal then REAL(result) else INTEGER(realInt(result));
-  end if;
+  res := if anyReal then REAL(result) else INTEGER(realInt(result));
 end combineConstantNumbers;
 
 protected function getConstantValue
@@ -1045,78 +1113,111 @@ algorithm
   end match;
 end getConstantValue;
 
-public function combineBinariesExp
+public function combineBinaries
+  "just a wrapper to remove the interface for traversal"
+  input output Expression exp;
+algorithm
+  exp := combineBinariesExp(exp);
+end combineBinaries;
+
+protected function combineBinariesExp
   "author: kabdelhak 09-2020
   Combines binaries for better handling in the backend.
   NOTE: 1. does not do any other simplification
-        2. removes all subtractions and changes it to additions with negated signs
-  e.g. BINARY(BINARY(2, *, y^2), *, BINARY(3, *, x))
-   --> MULTARY({2, y^2, 3, x}, *)"
-  input output Expression exp;
-algorithm
-  exp := match combineBinariesExpWork(exp, NONE())
-    local
-      Expression result;
-    case {result} then result;
-    else algorithm
-      Error.assertion(false, getInstanceName() + " the function finished with more than one expression on the stack.", sourceInfo());
-    then fail();
-  end match;
-end combineBinariesExp;
-
-protected function combineBinariesExpWork
+        2. also combines inverse operations
+  e.g. BINARY(BINARY(2, /, y^2), *, BINARY(3, *, x))
+   --> MULTARY({2, 3, x}, {y^2},*)"
   input Expression exp;
-  input Option<Operator> optOperator;
-  output list<Expression> stack;
+  input Option<Operator> optOperator = NONE();
+  input output Expression result = Expression.EMPTY(Expression.typeOf(exp));
+  input Boolean inverse = false;
 algorithm
-  stack := match (optOperator, exp)
+  result := match (optOperator, exp)
     local
       Operator op;
+      list<Expression> tmp, tmp_inv;
       list<Expression> final_stack = {};
+      list<Expression> final_inverse_stack = {};
       Expression new_exp;
 
     // #######################################################
     //          Building MULTARY() recursively
     // #######################################################
 
-    // with previous binary/multary. Check if operator is the same. Return all arguments
+    // case 1.0 binary SOME(op) same operator (+, *)
+    case (SOME(op), Expression.BINARY()) guard(Operator.compare(op, exp.operator) == 0) algorithm
+      result := combineBinariesExp(exp.exp1, SOME(op), result, inverse);
+      result := combineBinariesExp(exp.exp2, SOME(op), result, inverse);
+    then result;
+
+    // case 1.1 multary SOME(op) same operator (+, *)
+    case (SOME(op), Expression.MULTARY()) guard(Operator.compare(op, exp.operator) == 0) algorithm
+      for arg in exp.arguments loop
+        result := combineBinariesExp(arg, SOME(exp.operator), result, inverse);
+      end for;
+      for arg in exp.inv_arguments loop
+        result := combineBinariesExp(arg, SOME(exp.operator), result, not inverse);
+      end for;
+    then result;
+
+    // case 2.0 binary SOME(op) inverse operator (-, :)
     case (SOME(op), Expression.BINARY()) guard(Operator.isCombineable(op, exp.operator)) algorithm
-      final_stack := listAppend(combineBinariesExpWork(exp.exp2, SOME(exp.operator)), final_stack);
-      final_stack := listAppend(combineBinariesExpWork(exp.exp1, optOperator), final_stack);
-    then final_stack;
+      result := combineBinariesExp(exp.exp1, SOME(op), result, inverse);
+      result := combineBinariesExp(exp.exp2, SOME(op), result, not inverse);
+    then result;
 
-    // handle multary the same way in the case it has to be applied again
+    // case 2.1 multary SOME(op) inverse operator (-, :)
     case (SOME(op), Expression.MULTARY()) guard(Operator.isCombineable(op, exp.operator)) algorithm
-      for arg in listReverse(exp.arguments) loop
-        final_stack := listAppend(combineBinariesExpWork(arg, SOME(exp.operator)), final_stack);
+      for arg in exp.arguments loop
+        result := combineBinariesExp(arg, SOME(exp.operator), result, inverse);
       end for;
-    then final_stack;
+      for arg in exp.inv_arguments loop
+        result := combineBinariesExp(arg, SOME(exp.operator), result, not inverse);
+      end for;
+    then result;
 
-    // no previous binary/multary encountered or wrong operator type
-    // creating new multary expression if the operator is commutative
+    // ##########################################################
+    //                 Starts a new MULTARY()
+    // previous not compatible or no MULTARY on the stack at all
+    // ##########################################################
+
+   // case 3.0 _ binary | commutative operator (+, *)
+    case (_, Expression.BINARY()) guard(Operator.isCommutative(exp.operator)) algorithm
+      new_exp := Expression.MULTARY({}, {}, exp.operator);
+      new_exp := combineBinariesExp(exp.exp2, SOME(exp.operator), new_exp, false);
+      new_exp := combineBinariesExp(exp.exp1, SOME(exp.operator), new_exp, false);
+    then addArgument(result, new_exp, inverse);
+
+    // case 3.1 _ multary | commutative operator (+, *)
+    case (_, Expression.MULTARY()) guard(Operator.isCommutative(exp.operator)) algorithm
+      new_exp := Expression.MULTARY({}, {}, exp.operator);
+      for arg in exp.arguments loop
+        new_exp := combineBinariesExp(arg, SOME(exp.operator), new_exp, false);
+      end for;
+      for arg in exp.inv_arguments loop
+        new_exp := combineBinariesExp(arg, SOME(exp.operator), new_exp, true);
+      end for;
+    then addArgument(result, new_exp, inverse);
+
+    // case 4.0 _ binary | soft commutative operator (-, :)
     case (_, Expression.BINARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
-      op := fixMinusOperator(exp.operator);
-      final_stack := listAppend(combineBinariesExpWork(exp.exp2, SOME(exp.operator)), final_stack);
-      final_stack := listAppend(combineBinariesExpWork(exp.exp1, SOME(op)), final_stack);
-    then {Expression.MULTARY(final_stack, op)};
+      op := Operator.inverse(exp.operator);
+      new_exp := Expression.MULTARY({}, {}, op);
+      new_exp := combineBinariesExp(exp.exp1, SOME(op), new_exp, false);
+      new_exp := combineBinariesExp(exp.exp2, SOME(op), new_exp, true);
+    then addArgument(result, new_exp, inverse);
 
-    // handle multary the same way in the case it has to be applied again
-    // can not contain SUBTRACTION! therefore no fixing here
-    case (_, Expression.MULTARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
-      for arg in listReverse(exp.arguments) loop
-        final_stack := listAppend(combineBinariesExpWork(arg, SOME(exp.operator)), final_stack);
-      end for;
-    then {Expression.MULTARY(final_stack, exp.operator)};
-
+    // case 4.1 _ multary soft | commutative operator (-, :)
+    // THIS IS NOT ALLOWED TO EXIST!
 
     // #######################################################
-    //      Other expression that do not get combined
+    //      Other expressions that do not get combined
     // #######################################################
 
     // going deeper on the different expression types
     case (_, Expression.ARRAY()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.RANGE()) algorithm
       exp.start := combineBinariesExp(exp.start);
@@ -1124,90 +1225,90 @@ algorithm
       if Util.isSome(exp.step) then
         exp.step := SOME(combineBinariesExp(Util.getOption(exp.step)));
       end if;
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.TUPLE()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.RECORD()) algorithm
       exp.elements := list(combineBinariesExp(element) for element in exp.elements);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.SIZE()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
       if Util.isSome(exp.dimIndex) then
         exp.dimIndex := SOME(combineBinariesExp(Util.getOption(exp.dimIndex)));
       end if;
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.UNARY()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     // ToDo: rules for logical operators (LMULTARY ?)
     // For now leave them as is and traverse branches
     case (_, Expression.LBINARY()) algorithm
       exp.exp1 := combineBinariesExp(exp.exp1);
       exp.exp2 := combineBinariesExp(exp.exp2);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.LUNARY()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.RELATION()) algorithm
       exp.exp1 := combineBinariesExp(exp.exp1);
       exp.exp2 := combineBinariesExp(exp.exp2);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.IF()) algorithm
       exp.condition := combineBinariesExp(exp.condition);
       exp.trueBranch := combineBinariesExp(exp.trueBranch);
       exp.falseBranch := combineBinariesExp(exp.falseBranch);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.CAST()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.BOX()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.UNBOX()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.SUBSCRIPTED_EXP()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
       exp.subscripts := list(combineBinariesSubscript(sub) for sub in exp.subscripts);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.TUPLE_ELEMENT()) algorithm
       exp.tupleExp := combineBinariesExp(exp.tupleExp);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.RECORD_ELEMENT()) algorithm
       exp.recordExp := combineBinariesExp(exp.recordExp);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.MUTABLE()) algorithm
       Mutable.update(exp.exp, combineBinariesExp(Mutable.access(exp.exp)));
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.PARTIAL_FUNCTION_APPLICATION()) algorithm
       exp.args := list(combineBinariesExp(arg) for arg in exp.args);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     case (_, Expression.BINDING_EXP()) algorithm
       exp.exp := combineBinariesExp(exp.exp);
-    then {fixMinusExpression(exp, optOperator)};
+    then addArgument(result, exp, inverse);
 
     // done on this branch
-    else {fixMinusExpression(exp, optOperator)};
+    else addArgument(result, exp, inverse);
   end match;
-end combineBinariesExpWork;
+end combineBinariesExp;
 
 protected function combineBinariesSubscript
   input output Subscript subscript;
@@ -1233,46 +1334,32 @@ algorithm
   end match;
 end combineBinariesSubscript;
 
-protected function fixMinusOperator
-  "Changes a minus operator to an addition operator of the same size
-  used for combining summands with different signs."
-  input output Operator operator;
-algorithm
-  operator := match Operator.classify(operator)
-    local
-      Operator.SizeClassification scl;
-    case (NFOperator.MathClassification.SUBTRACTION, scl)
-    then Operator.fromClassification((NFOperator.MathClassification.ADDITION, scl), operator.ty);
-    else operator;
-  end match;
-end fixMinusOperator;
-
-protected function fixMinusExpression
-  "Combines an expression with a minus sign if there is one.
-  used for combining summands with different signs.
-  E.g. a - b -> a + (-b)
-  Seems odd, but this is very useful for multaries"
+protected function addArgument
   input output Expression exp;
-  input Option<Operator> optOperator;
+  input Expression arg;
+  input Boolean inverse;
 algorithm
-  exp := match optOperator
-    local
-      Operator operator;
-    // only do something if there is an operator
-    case SOME(operator)
-    then match (Operator.getMathClassification(operator), exp)
-      // - (-a) = a
-      case (NFOperator.MathClassification.SUBTRACTION, Expression.UNARY(Operator.OPERATOR(op = NFOperator.Op.UMINUS)))
-      then exp.exp;
-      // just add the minus operator to the expressions as unary
-      case (NFOperator.MathClassification.SUBTRACTION, _)
-      then Expression.UNARY(Operator.OPERATOR(operator.ty, NFOperator.Op.UMINUS), exp);
-      // just return the expression as is
-      else exp;
-    end match;
-    else exp;
+  exp := match exp
+    // add to inverse arguments
+    case Expression.MULTARY() guard(inverse) algorithm
+      exp.inv_arguments := arg :: exp.inv_arguments;
+    then exp;
+
+    // add to arguments
+    case Expression.MULTARY() algorithm
+      exp.arguments := arg :: exp.arguments;
+    then exp;
+
+    // no multary on the stack, just return the expression
+    case Expression.EMPTY() then arg;
+
+    // cannot be parsed
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to add : " +
+        Expression.toString(arg) + " to " + Expression.toString(exp) + ". Only works for MULTARY()!"});
+    then fail();
   end match;
-end fixMinusExpression;
+end addArgument;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSimplifyExp;

@@ -149,7 +149,7 @@ protected
   constant CrefTpl EMPTY_CREF_TPL = CREF_TPL(true, 0, 0, {});
   constant CrefTpl FAILED_CREF_TPL = CREF_TPL(false, 0, 0, {});
 
-  function removeSimpleEquationsDefault extends Module.removeSimpleEquationsInterface;
+  function removeSimpleEquationsDefault
     "STEPS:
       1. collect alias sets (variables, equations, optional constant binding)
       2. balance sets - choose variable to keep if necessary
@@ -157,6 +157,7 @@ protected
       4. apply replacements
       5. save replacements in bindings of alias variables
     "
+    extends Module.removeSimpleEquationsInterface;
     algorithm
     (varData, eqData) := match (varData, eqData)
       local
@@ -191,7 +192,7 @@ protected
 
           // --------------------------------------------------------------------------------------------------------
           // 2. balance sets - choose variable to keep if necessary
-          // 3. match/sort set (linear w.r.t. since all equations contain two crefs at max and are simple/linear)
+          // 3. match/sort set (linear w.r.t. vars since all equations contain two crefs at max and are simple/linear)
           // --------------------------------------------------------------------------------------------------------
           replacements := HashTableCrToExp.emptyHashTableSized(size);
           for set in sets loop
@@ -205,12 +206,9 @@ protected
 
           // -----------------------------------
           // 4. apply replacements
+          // 5. save replacements in bindings of alias variables
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
-
-          // ----------------------------------------------------
-          // 5. save replacements in bindings of alias variables
-          // ----------------------------------------------------
           alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
 
           // update variable and equation lists
@@ -224,6 +222,8 @@ protected
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
 
           eqData.removed := EquationPointers.addList(removed_equations, eqData.removed);
+          eqData.equations := EquationPointers.compress(eqData.equations);
+          eqData.continuous := EquationPointers.compress(eqData.continuous);
       then (varData, eqData);
 
       // ToDo: add for Jacobian/Hessian
@@ -300,9 +300,14 @@ protected
           set2 := Pointer.access(set2_ptr);
           set := EMPTY_SIMPLE_SET;
 
-          if isSome(set1.const_opt) and isSome(set2.const_opt) then
+          if (isSome(set1.const_opt) and isSome(set2.const_opt)) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
+                SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
+            fail();
+          elseif referenceEq(set1_ptr, set2_ptr) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets
-                because both have a constant binding. This would create an overdetermined Set!:\n" +
+                because they would create a loop. This would create an overdetermined Set!:\n" +
                 SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
             fail();
           elseif isSome(set1.const_opt) then
@@ -346,6 +351,7 @@ protected
               end try;
             end for;
           end if;
+
         elseif BaseHashTable.hasKey(cr1, hashTable) then
           // Update set
           set_ptr := BaseHashTable.get(cr1, hashTable);

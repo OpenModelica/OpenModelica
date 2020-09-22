@@ -95,18 +95,18 @@ protected
     input output FunctionTree funcTree;
   protected
     Expression crefExp, numerator;
-    Operator divOp, uminOp;
+    Operator mulOp, uminOp;
     Type ty;
   algorithm
     funcTree := diffArgs.funcTree;
     crefExp := Expression.fromCref(cref);
     ty := ComponentRef.getComponentType(cref);
     numerator := Replacements.single(residual, crefExp, Expression.makeZero(ty));
-    divOp := Operator.OPERATOR(ty, NFOperator.Op.DIV);
+    mulOp := Operator.OPERATOR(ty, NFOperator.Op.MUL);
     uminOp := Operator.OPERATOR(ty, NFOperator.Op.UMINUS);
     // Set eqn: cref = - f/f'
     eqn := Equation.setLHS(eqn, crefExp);
-    eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.BINARY(numerator, divOp, derivative)));
+    eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.MULTARY({numerator},{derivative}, mulOp)));
     eqn := Equation.simplify(eqn, getInstanceName());
   end solveLinear;
 

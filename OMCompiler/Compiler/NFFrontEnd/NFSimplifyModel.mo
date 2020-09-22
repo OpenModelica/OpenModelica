@@ -610,15 +610,15 @@ function combineBinaries
   "author: kabdelhak 09-2020
   Combines binaries for better handling in the backend.
   NOTE: does not do any other simplification
-  e.g. BINARY(BINARY(2, *, y^2), *, BINARY(3, *, x))
-   --> MULTARY({2, y^2, 3, x}, +)"
+  e.g. BINARY(BINARY(2, /, y^2), *, BINARY(3, *, x))
+   --> MULTARY({2, 3, x}, {y^2}, *)"
   input output FlatModel flatModel;
 algorithm
   flatModel.variables := list(combineBinariesVar(var) for var in flatModel.variables);
-  flatModel.equations := list(Equation.mapExp(eqn, SimplifyExp.combineBinariesExp) for eqn in flatModel.equations);
-  flatModel.initialEquations := list(Equation.mapExp(eqn, SimplifyExp.combineBinariesExp) for eqn in flatModel.initialEquations);
-  flatModel.algorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinariesExp) for alg in flatModel.algorithms);
-  flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinariesExp) for alg in flatModel.initialAlgorithms);
+  flatModel.equations := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.equations);
+  flatModel.initialEquations := list(Equation.mapExp(eqn, SimplifyExp.combineBinaries) for eqn in flatModel.initialEquations);
+  flatModel.algorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.algorithms);
+  flatModel.initialAlgorithms := list(Algorithm.mapExp(alg, SimplifyExp.combineBinaries) for alg in flatModel.initialAlgorithms);
 end combineBinaries;
 
 protected function combineBinariesVar
@@ -629,22 +629,22 @@ algorithm
       Binding binding;
 
     case Variable.VARIABLE(binding = binding as Binding.UNTYPED_BINDING()) algorithm
-      binding.bindingExp := SimplifyExp.combineBinariesExp(binding.bindingExp);
+      binding.bindingExp := SimplifyExp.combineBinaries(binding.bindingExp);
       var.binding := binding;
     then var;
 
     case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING()) algorithm
-      binding.bindingExp := SimplifyExp.combineBinariesExp(binding.bindingExp);
+      binding.bindingExp := SimplifyExp.combineBinaries(binding.bindingExp);
       var.binding := binding;
     then var;
 
     case Variable.VARIABLE(binding = binding as Binding.FLAT_BINDING()) algorithm
-      binding.bindingExp := SimplifyExp.combineBinariesExp(binding.bindingExp);
+      binding.bindingExp := SimplifyExp.combineBinaries(binding.bindingExp);
       var.binding := binding;
     then var;
 
     case Variable.VARIABLE(binding = binding as Binding.CEVAL_BINDING()) algorithm
-      binding.bindingExp := SimplifyExp.combineBinariesExp(binding.bindingExp);
+      binding.bindingExp := SimplifyExp.combineBinaries(binding.bindingExp);
       var.binding := binding;
     then var;
 
