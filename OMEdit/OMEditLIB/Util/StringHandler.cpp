@@ -323,7 +323,9 @@ QString StringHandler::getErrorKindString(OpenModelicaErrorKinds errorKind)
 
 StringHandler::OpenModelicaErrors StringHandler::getErrorType(QString errorType)
 {
-  if (errorType.compare(Helper::notificationLevel) == 0) {
+  if (errorType.compare(Helper::internalLevel) == 0) {
+    return StringHandler::Internal;
+  } else if (errorType.compare(Helper::notificationLevel) == 0) {
     return StringHandler::Notification;
   } else if (errorType.compare(Helper::warningLevel) == 0) {
     return StringHandler::Warning;
@@ -337,6 +339,8 @@ StringHandler::OpenModelicaErrors StringHandler::getErrorType(QString errorType)
 QString StringHandler::getErrorTypeDisplayString(StringHandler::OpenModelicaErrors errorType)
 {
   switch (errorType) {
+    case StringHandler::Internal:
+      return tr("Internal Error");
     case StringHandler::Notification:
       return tr("Notification");
     case StringHandler::Warning:
@@ -352,6 +356,8 @@ QString StringHandler::getErrorTypeDisplayString(StringHandler::OpenModelicaErro
 QString StringHandler::getErrorTypeString(StringHandler::OpenModelicaErrors errorType)
 {
   switch (errorType) {
+    case StringHandler::Internal:
+      return Helper::internalLevel;
     case StringHandler::Warning:
       return Helper::warningLevel;
     case StringHandler::OMError:
