@@ -387,6 +387,8 @@ ExtendsVisibility2.mo \
 ExtendsVisibility3.mo \
 ExtendsVisibility4.mo \
 ExtendsVisibility5.mo \
+ExternalBuiltin1.mo \
+ExternalBuiltin2.mo \
 ExternalFunctionExplicit1.mo \
 ExternalFunctionExplicit2.mo \
 ExternalFunctionExplicit3.mo \
