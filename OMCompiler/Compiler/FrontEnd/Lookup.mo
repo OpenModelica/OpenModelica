@@ -2557,7 +2557,7 @@ algorithm
         fpath = FGraph.getGraphName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = InstUtil.splitElts(elts);
         (cache,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(), extendsElts, classExtendsElts, elts, ClassInf.RECORD(fpath), name, true, false);
-        eltsMods = listAppend(eltsMods,InstUtil.addNomod(compElts));
+        eltsMods = listAppend(eltsMods,InstUtil.addNomod(compElts)) annotation(__OpenModelica_DisableListAppendWarning=true);
         // print("Record Elements: " +
         //   stringDelimitList(
         //     List.map(

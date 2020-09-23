@@ -6187,6 +6187,26 @@ algorithm
   outList := list(e for e guard(not inCompFunc(inValue, e)) in inList);
 end removeOnTrue;
 
+public function filterCons<T>
+  "Adds the elements from inList for which the filter function returns true to
+   accumList in reverse order. Ex:
+     filterCons({1, 2, 3, 4, 5}, isOdd, {6, 7}) => {5, 3, 1, 6, 7}"
+  input list<T> inList;
+  input FilterFunc fn;
+  input output list<T> accumList;
+
+  partial function FilterFunc
+    input T e;
+    output Boolean res;
+  end FilterFunc;
+algorithm
+  for e in inList loop
+    if fn(e) then
+      accumList := e :: accumList;
+    end if;
+  end for;
+end filterCons;
+
 public function select = filterOnTrue;
 public function select1 = filter1OnTrue;
 public function select1r = filter1rOnTrue;

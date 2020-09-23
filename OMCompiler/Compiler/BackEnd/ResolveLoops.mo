@@ -460,7 +460,7 @@ algorithm
 	        paths0 = List.sort(paths,List.listIsLonger);  // solve the small loops first
 	        (connectedPaths,loopConnectors) = connect2PathsToLoops(paths0,{},{});
 	        loopConnectors = List.filter1OnTrue(loopConnectors,connectsLoops,simpleLoops);
-	        simpleLoops = listAppend(simpleLoops,loopConnectors);
+	        simpleLoops = listAppend(simpleLoops,loopConnectors) annotation(__OpenModelica_DisableListAppendWarning=true);
 
 	        //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
 	        subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
@@ -805,10 +805,12 @@ algorithm
         path;
     case(_,startNode::_)
       equation
+        // TODO: This makes a list of all matching paths when it seems to really
+        //       only need the first matching. Same in the case below.
         nextPaths1 = List.filter1OnTrue(allPathsIn, firstInListIsEqual, startNode);
         nextPaths2 = List.filter1OnTrue(allPathsIn, lastInListIsEqual, startNode);
-        nextPaths1 = listAppend(nextPaths1,nextPaths2);
-        nextPath = listHead(nextPaths1);
+        nextPaths2 = listAppend(nextPaths1,nextPaths2);
+        nextPath = listHead(nextPaths2);
         rest = List.deleteMember(allPathsIn,nextPath);
         nextPath = List.deleteMember(nextPath,startNode);
         path = listAppend(nextPath,loopIn);
@@ -820,8 +822,8 @@ algorithm
         startNode::restPath = path;
         nextPaths1 = List.filter1OnTrue(rest, firstInListIsEqual, startNode);
         nextPaths2 = List.filter1OnTrue(rest, lastInListIsEqual, startNode);
-        nextPaths1 = listAppend(nextPaths1,nextPaths2);
-        nextPath = listHead(nextPaths1);
+        nextPaths2 = listAppend(nextPaths1,nextPaths2);
+        nextPath = listHead(nextPaths2);
         rest = List.deleteMember(rest,nextPath);
         path = listAppend(nextPath,restPath);
         path = connectPathsToOneLoop(rest,path);
@@ -1104,8 +1106,7 @@ protected
   list<Integer> entry;
 algorithm
   entry := arrayGet(arrIn,idx);
-  entry := listAppend(entry,appLst);
-  _ := arrayUpdate(arrIn,idx,entry);
+  arrayUpdate(arrIn,idx,listAppend(entry,appLst));
 end arrayGetAppendLst;
 
 protected function getReverseDoubles "author: Waurich TUD 2014-01
@@ -1450,9 +1451,9 @@ algorithm
         nextEqs = List.flatten(adjEqs);
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
         paths = List.map1(endEqs,cons1,{crossEq}); //TODO: replace this stupid cons1
-        paths = listAppend(paths,eqPathsIn);
+        paths = listAppend(paths,eqPathsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
         unfinPaths = List.map1(unfinEqs,cons1,{crossEq});
-        unfinPaths = listAppend(unfinPaths,unfinPathsIn);
+        unfinPaths = listAppend(unfinPaths,unfinPathsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
         paths = getPathTillNextCrossEq(restCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPaths,paths);
       then
         paths;
@@ -1468,9 +1469,9 @@ algorithm
         (nextEqs,_) = List.deleteMemberOnTrue(prevEq,nextEqs,intEq); //do not take the path back to the previous node
         (endEqs,unfinEqs,_) = List.intersection1OnTrue(nextEqs,allEqCrossNodes,intEq);
         paths = List.map1(endEqs,cons1,pathStart); //TODO: replace this stupid cons1
-        paths = listAppend(paths,eqPathsIn);
+        paths = listAppend(paths,eqPathsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
         unfinPaths = List.map1(unfinEqs,cons1,pathStart);
-        unfinPaths = listAppend(unfinPaths,restUnfinPaths);
+        unfinPaths = listAppend(unfinPaths,restUnfinPaths) annotation(__OpenModelica_DisableListAppendWarning=true);
         paths = getPathTillNextCrossEq(checkEqCrossNodes,mIn,mTIn,allEqCrossNodes,unfinPaths,paths);
       then
         paths;
@@ -1861,7 +1862,7 @@ algorithm
           List.map2_0(eqs,Array.updateIndexFirst,0,markEqs);
 
           // check them later
-          rest = listAppend(rest,eqs);
+          rest = listAppend(rest,eqs) annotation(__OpenModelica_DisableListAppendWarning=true);
         else
           //the node has been investigated already
           partitions = partitionsIn;
@@ -2054,7 +2055,7 @@ algorithm
     local
       Integer startNode,endNode;
       list<Integer> path;
-      list<list<Integer>> rest, paths1, paths2, sortedPaths;
+      list<list<Integer>> rest, paths1, paths2, allPaths, sortedPaths;
     case({},_,_,_)
       equation
       then
@@ -2076,10 +2077,10 @@ algorithm
         // check if theres a path that continues the endNode
         paths1 = List.filter1OnTrue(pathsIn, firstInListIsEqual, lastNode);
         paths2 = List.filter1OnTrue(pathsIn, lastInListIsEqual, lastNode);
-        paths1 = listAppend(paths1,paths2);
-        false = listEmpty(paths1);
-        path = listHead(paths1);
-        endNode = if not listEmpty(paths1) then List.last(path) else -1;
+        allPaths = listAppend(paths1,paths2);
+        false = listEmpty(allPaths);
+        path = listHead(allPaths);
+        endNode = if not listEmpty(allPaths) then List.last(path) else -1;
         endNode = if not listEmpty(paths2) then listHead(path) else -1;
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = listAppend(sortedPathsIn,{path});
@@ -2092,10 +2093,10 @@ algorithm
         // check if theres a path that continues the startNode
         paths1 = List.filter1OnTrue(pathsIn, firstInListIsEqual, firstNode);
         paths2 = List.filter1OnTrue(pathsIn, lastInListIsEqual, firstNode);
-        paths1 = listAppend(paths1,paths2);
-        false = listEmpty(paths1);
-        path = listHead(paths1);
-        startNode = if not listEmpty(paths1) then List.last(path) else -1;
+        allPaths = listAppend(paths1,paths2);
+        false = listEmpty(allPaths);
+        path = listHead(allPaths);
+        startNode = if not listEmpty(allPaths) then List.last(path) else -1;
         startNode = if not listEmpty(paths2) then listHead(path) else -1;
         rest = List.deleteMember(pathsIn,path);
         sortedPaths = path::sortedPathsIn;
@@ -2152,7 +2153,7 @@ algorithm
       Boolean closedALoop;
       Integer startNode, endNode;
       list<Integer> path;
-      list<list<Integer>> rest, endPaths, startPaths, loops, restPaths;
+      list<list<Integer>> rest, endPaths, startPaths, newLoops, loops, restPaths;
     case({},_,_)
       equation
         then
@@ -2188,9 +2189,9 @@ algorithm
         endPaths = List.filter1OnTrue(endPaths,lastInListIsEqual,startNode);
         endPaths = listAppend(startPaths,endPaths);
         closedALoop = intGe(listLength(endPaths),1);
-        loops = if closedALoop then connectPaths(path,endPaths) else {};
+        newLoops = if closedALoop then connectPaths(path,endPaths) else {};
         restPaths = if closedALoop then restPathsIn else (path::restPathsIn);
-        loops = listAppend(loops,loopsIn);
+        loops = listAppend(newLoops,loopsIn);
         (loops,restPaths) = connect2PathsToLoops(rest,loops,restPaths);
       then
         (loops,restPaths);

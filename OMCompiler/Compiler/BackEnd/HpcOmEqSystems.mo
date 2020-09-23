@@ -223,8 +223,7 @@ algorithm
 
         // insert the new components into the BLT instead of the TornSystem, append the updated blocks for the other equations, update matching for the new equations
         numNewSingleEqs = listLength(compsNew)-listLength(tvarIdcs);
-        compsNew = listAppend(compsNew, otherComps);
-        compsTmp = List.replaceAtWithList(compsNew,compIdx-1,compsIn);
+        compsTmp = List.replaceAtWithList(listAppend(compsNew, otherComps),compIdx-1,compsIn);
         ((ass1All,ass2All)) = List.fold2(List.intRange(arrayLength(ass1New)),updateMatching,(listLength(eqsOld),listLength(varsOld)),(ass1New,ass2New),(ass1All,ass2All));
         syst.matching = BackendDAE.MATCHING(ass1All, ass2All, compsTmp);
 
@@ -516,8 +515,8 @@ algorithm
      //BackendDump.dumpVarList(addVarLst,"addVarLst");
      //BackendDump.dumpEquationList(addEqLst,"addEqLst");
 
-   eqsNewOut := listAppend(eqsNewOut,addEqLst);
-   varsNewOut := listAppend(varsNewOut,addVarLst);
+   eqsNewOut := listAppend(eqsNewOut,addEqLst) annotation(__OpenModelica_DisableListAppendWarning=true);
+   varsNewOut := listAppend(varsNewOut,addVarLst) annotation(__OpenModelica_DisableListAppendWarning=true);
        //BackendDump.dumpVarList(varsNewOut,"varsNew");
        //BackendDump.dumpEquationList(eqsNewOut,"eqsNew");
 
@@ -1412,7 +1411,6 @@ algorithm
     equation
       true = iValue > 0;
       str1 = "$xa"+intString(tornSysIdx)+intString(iValue);
-      _ = "$g"+intString(tornSysIdx)+intString(iValue);
       tVarCRef = listGet(tVarCRefLstIn,iValue);
       tVarCRefLst1 = listDelete(tVarCRefLstIn,iValue);
       replTmp = BackendVarTransform.emptyReplacementsSized(size);
@@ -1611,8 +1609,8 @@ algorithm
       expLst1 = Expression.allTerms(lhs);
       expLst1 = List.map(expLst1,Expression.negate);
       expLst2 = Expression.allTerms(rhs);
-      expLst1 = listAppend(expLst1,expLst2);
-    then expLst1;
+      expLst2 = listAppend(expLst1,expLst2);
+    then expLst2;
   else
     equation
       print("getSummands failed! for"+BackendDump.equationString(eq)+"\n\n");

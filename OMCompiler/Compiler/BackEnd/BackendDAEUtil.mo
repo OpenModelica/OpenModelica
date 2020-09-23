@@ -1843,7 +1843,7 @@ algorithm
         end if;
         indx_lst_v := BackendVariable.getVarIndexFromVariables(iVars, v);
 
-        indx_lst_v := listAppend(indx_lst_v, statevarindx_lst) "overestimate";
+        indx_lst_v := listAppend(indx_lst_v, statevarindx_lst) "overestimate" annotation(__OpenModelica_DisableListAppendWarning=true);
         indx_lst_e := List.map1r(indx_lst_v, arrayGet, ass1);
 
         indx_arr := arrayCreate(equationArraySizeDAE(iSyst), 0);

@@ -1649,19 +1649,17 @@ algorithm
         dims := Types.getDimensions(ty);
         diff := listLength(dims) - listLength(subs);
         newsubs := List.fill(DAE.INDEX(DAE.ICONST(1)), diff);
-        subs := listAppend(subs,newsubs);
       then
-        DAE.CREF_IDENT(i, ty, subs);
+        DAE.CREF_IDENT(i, ty, listAppend(subs,newsubs));
 
     case DAE.CREF_QUAL(i, ty, subs, cr)
       algorithm
         dims := Types.getDimensions(ty);
         diff := listLength(dims) - listLength(subs);
         newsubs := List.fill(DAE.INDEX(DAE.ICONST(1)), diff);
-        subs := listAppend(subs,newsubs);
         cr := crefArrayGetFirstCref(cr);
       then
-        DAE.CREF_QUAL(i, ty, subs, cr);
+        DAE.CREF_QUAL(i, ty, listAppend(subs,newsubs), cr);
   end match;
 end crefArrayGetFirstCref;
 

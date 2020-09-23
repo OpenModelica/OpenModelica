@@ -541,8 +541,7 @@ algorithm
   end if;
   List.map2_0(compsNew, updateAssignment, ass1, ass2);
   comps := List.replaceAtWithList(compsNew, idx-1, comps);
-  comps := listAppend(comps, compsAdd);
-  systOut.matching := BackendDAE.MATCHING(ass1, ass2, comps);
+  systOut.matching := BackendDAE.MATCHING(ass1, ass2, listAppend(comps, compsAdd));
   systOut := BackendDAEUtil.setEqSystMatrices(systOut);
 end replaceStrongComponent;
 
@@ -1499,14 +1498,14 @@ algorithm
       equation
         (eqns1,inputVarsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
         vars1 = List.flatten(inputVarsLst);
-        eqns = listAppend(eqns, eqns1);
+        eqns1 = listAppend(eqns, eqns1);
         solvedVars = listAppend(vars, vars1);
 
-        inputVarsLst = List.map1(eqns, Array.getIndexFirst, inMatrix);
+        inputVarsLst = List.map1(eqns1, Array.getIndexFirst, inMatrix);
         inputVars = List.flatten(inputVarsLst);
         inputVars = list(v for v guard not listMember(v, solvedVars) in inputVars);
 
-        getSparsePattern2(inputVars, solvedVars, eqns, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
+        getSparsePattern2(inputVars, solvedVars, eqns1, ineqnSparse, invarSparse, inMark, inUsed, inmarkValue);
 
         result = getSparsePattern(rest, result,  invarSparse, inMark, inUsed, inmarkValue+1, inMatrix, inMatrixT);
       then result;
@@ -1717,11 +1716,11 @@ try
   // prepare all needed variables
   varlst := BackendVariable.varList(v);
   knvarlst := BackendVariable.varList(globalKnownVars);
-  states := BackendVariable.getAllStateVarFromVariables(v);
 
-  if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
-    states := listAppend(states, BackendVariable.getAllClockedStatesFromVariables(v));
-  end if;
+  states := if Config.languageStandardAtLeast(Config.LanguageStandard.'3.3') then
+    BackendVariable.getAllClockedStatesFromVariables(v) else {};
+
+  states := listAppend(BackendVariable.getAllStateVarFromVariables(v), states);
 
   inputvars := List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
   outputvars := List.select(varlst, BackendVariable.isVarOnTopLevelAndOutput);
@@ -1835,7 +1834,7 @@ algorithm
         (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
         end if;
@@ -1844,7 +1843,7 @@ algorithm
         (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
         end if;
@@ -1852,13 +1851,13 @@ algorithm
         // Differentiate the System w.r.t inputs for matrices D
         (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
-        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix D time: " + realString(clock()) + "\n");
         end if;
 
       then
-        (linearModelMatrices, functionTree);
+        (listReverse(linearModelMatrices), functionTree);
 
     case (backendDAE, true) //  created linear model (matrixes) for optimization
       equation
@@ -1913,7 +1912,7 @@ algorithm
         (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"B",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix B time: " + realString(clock()) + "\n");
         end if;
@@ -1925,7 +1924,7 @@ algorithm
         (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2,states_inputs,statesarr,inputvarsarr,paramvarsarr,optimizer_vars,varlst,"C",false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
         backendDAE2 = BackendDAEUtil.setFunctionTree(backendDAE2, functionTree);
-        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix C time: " + realString(clock()) + "\n");
         end if;
@@ -1936,13 +1935,13 @@ algorithm
 
         (linearModelMatrix, funcs, sparsePattern, sparseColoring) = generateGenericJacobian(backendDAE2, states_inputs, statesarr, inputvarsarr, paramvarsarr, optimizer_vars, varlst, "D", false);
         functionTree = DAE.AvlTreePathFunction.join(functionTree, funcs);
-        linearModelMatrices = listAppend(linearModelMatrices,{(linearModelMatrix,sparsePattern,sparseColoring)});
+        linearModelMatrices = (linearModelMatrix,sparsePattern,sparseColoring) :: linearModelMatrices;
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated system for matrix D time: " + realString(clock()) + "\n");
         end if;
 
       then
-        (linearModelMatrices, functionTree);
+        (listReverse(linearModelMatrices), functionTree);
     else
       equation
         Error.addInternalError("Generation of LinearModel Matrices failed.", sourceInfo());
@@ -3600,17 +3599,14 @@ protected function calculateJacobianRow2 "author: PA
   input BackendDAE.Shared iShared;
   input DAE.ElementSource source;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
-  output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst = {};
+  output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst = iAcc;
   output BackendDAE.Shared oShared = iShared;
 protected
-  DAE.Exp e, e_1, e_2, dcrexp;
+  DAE.Exp e, e_1, dcrexp;
   BackendDAE.Var v;
   DAE.ComponentRef cr, dcr;
-  list<tuple<Integer, Integer, BackendDAE.Equation>> es, result;
   Integer vindx;
-  list<Integer> vindxs;
   String str;
-  BackendDAE.Shared shared;
 algorithm
   try
     for vindx in inIntegerLst loop
@@ -3628,7 +3624,6 @@ algorithm
         outLst := (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(e_1,source,BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN))::outLst;
       end if;
     end for;
-    outLst := listAppend(outLst, iAcc);
   else
     if Flags.isSet(Flags.FAILTRACE) then
       str := ExpressionDump.printExpStr(inExp);

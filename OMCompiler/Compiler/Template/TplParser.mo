@@ -4826,7 +4826,7 @@ algorithm
    case (expLst, indStack, actInd, lineInd, accChars as (_::_) )
       equation
         true = ( lineInd >= actInd );
-        accChars = listAppend(accChars, List.fill(" ",lineInd - actInd));
+        accChars = listAppend(accChars, List.fill(" ",lineInd - actInd)) annotation(__OpenModelica_DisableListAppendWarning=true);
         ( (TplAbsyn.STR_TOKEN(Tpl.ST_STRING_LIST(strLst, false)),_) :: expLst)
          = addAccStringChars(expLst, accChars); //must create the ST becase of accChars as (_::_)
         //make the opened last ST be disposable new line
@@ -4940,7 +4940,7 @@ algorithm
    case (_, expLst, indStack, actInd, lineInd, accChars)
       equation
         true = ( lineInd >= actInd );
-        accChars = listAppend(accChars, List.fill(" ",lineInd - actInd));
+        accChars = listAppend(accChars, List.fill(" ",lineInd - actInd)) annotation(__OpenModelica_DisableListAppendWarning=true);
         expLst = addAccStringChars(expLst, accChars);
         expLst = finalizeLastStringToken(expLst);
         (expLst, {}, _) = popIndentStack(expLst, indStack, actInd, 0);
@@ -5451,7 +5451,7 @@ algorithm
         (chars, linfo, mcaseLst) = matchCaseListNoOpt(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, elseLst) = matchElseCase(chars, linfo, lesc, resc);
-        mcaseLst = listAppend(mcaseLst, elseLst);
+        mcaseLst = listAppend(mcaseLst, elseLst) annotation(__OpenModelica_DisableListAppendWarning=true);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = matchEndMatch(chars, linfo);
         sinfo = tplSourceInfo(captureStartPosition(startChars, startLInfo, 5), chars, linfo);
@@ -5672,7 +5672,7 @@ algorithm
         (chars, linfo, mcaseLst) = matchCase(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, mcrest) = matchCaseList(chars, linfo, lesc, resc);
-        mcaseLst = listAppend(mcaseLst, mcrest);
+        mcaseLst = listAppend(mcaseLst, mcrest) annotation(__OpenModelica_DisableListAppendWarning=true);
       then (chars, linfo, mcaseLst);
 
     else (inChars, inLineInfo, {});

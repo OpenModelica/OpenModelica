@@ -450,7 +450,7 @@ algorithm
 
     // append removed equation to all equations, since these are actually
     // just the algorithms without outputs
-    algebraicEquations := listAppend(algebraicEquations, removedEquations::{});
+    algebraicEquations := List.appendElt(removedEquations, algebraicEquations);
     allEquations := List.append_reverse(allEquations, removedEquations);
 
     // create inline equations if present
@@ -549,17 +549,13 @@ algorithm
     // collect symbolic jacobians in linear loops of the overall jacobians
     (LinearMatrices, uniqueEqIndex) := createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex, shared);
     (SymbolicJacs, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs(LinearMatrices, modelInfo);
-    SymbolicJacs := listAppend(SymbolicJacsFMI, SymbolicJacs);
-    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelect);
     // append datareconciliation jacobians equation to SymbolicJacs for correct generation of equations in model_info.json
-    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsdatarecon);
+    SymbolicJacs := List.flatten({SymbolicJacsFMI, SymbolicJacs, SymbolicJacsStateSelect, SymbolicJacsdatarecon});
     // collect jacobian equation only for equantion info file
     jacobianEquations := collectAllJacobianEquations(SymbolicJacs);
     if debug then execStat("simCode: create Jacobian linear code"); end if;
 
-    SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), SymbolicJacs);
-    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
-    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsStateSelectInternal);
+    SymbolicJacs := List.flatten({listReverse(SymbolicJacsNLS), SymbolicJacs, SymbolicJacsTemp, SymbolicJacsStateSelectInternal});
     jacobianSimvars := collectAllJacobianVars(SymbolicJacs);
     modelInfo := setJacobianVars(jacobianSimvars, modelInfo);
     seedVars := collectAllSeedVars(SymbolicJacs);
@@ -2226,7 +2222,7 @@ algorithm
       Boolean homotopySupport;
       DAE.FunctionTree funcs;
       list<BackendDAE.Equation> solveEqns;
-      list<SimCode.SimEqSystem> eqSystlst;
+      list<SimCode.SimEqSystem> eqSystlst, eqs;
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<SimCode.SimEqSystem> oelseWhenSimEq;
       BackendDAE.EquationAttributes eqAttr;
@@ -2304,13 +2300,13 @@ algorithm
           solveCr := listReverse(solveCr);
           cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
           source := ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-          (eqSystlst, uniqueEqIndex1) := List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
+          (eqs, uniqueEqIndex1) := List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
           if listEmpty(cons) then
             (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex1, cr, exp_, source, eqAttr)}, uniqueEqIndex1+1);
           else
             (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN_CONSTRAINTS(uniqueEqIndex1, cr, exp_, source, cons, eqAttr)}, uniqueEqIndex1+1);
           end if;
-          eqSystlst := listAppend(eqSystlst,resEqs);
+          eqSystlst := listAppend(eqs,resEqs);
           tempvars := createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
         else
           if match (e1,e2) case (DAE.RCONST(),DAE.IFEXP()) then true; else false; end match then
@@ -3516,7 +3512,7 @@ algorithm
        BackendDAE.Variables vars, globalKnownVars;
        BackendDAE.EquationArray eqns;
        list<SimCodeVar.SimVar> tempvars, tempvars2, simVars;
-       list<SimCode.SimEqSystem> simequations, resEqs;
+       list<SimCode.SimEqSystem> simequations, resEqs, eqs;
        Integer uniqueEqIndex, nInnerVars;
        list<DAE.ComponentRef> tcrs;
        Option<SimCode.JacobianMatrix> jacobianMatrix;
@@ -3553,11 +3549,11 @@ algorithm
        // generate other equations
        (simequations, uniqueEqIndex, tempvars, nInnerVars, _) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars, ishared.functionTree);
-       simequations = listAppend(simequations, resEqs);
+       eqs = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
        partOfJac = BackendDAEUtil.isJacobianDAE(ishared);
-       lSystem = SimCode.LINEARSYSTEM(uniqueEqIndex, false, true, simVars, {}, {}, simequations, jacobianMatrix, {}, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), partOfJac);
+       lSystem = SimCode.LINEARSYSTEM(uniqueEqIndex, false, true, simVars, {}, {}, eqs, jacobianMatrix, {}, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), partOfJac);
        tempvars2 = tempvars;
 
        // Do if dynamic tearing is activated
@@ -3575,10 +3571,10 @@ algorithm
          // generate other equations
          (simequations, uniqueEqIndex, tempvars2, nInnerVars, _) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
          (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2, ishared.functionTree);
-         simequations = listAppend(simequations, resEqs);
+         eqs = listAppend(simequations, resEqs);
 
          (jacobianMatrix, uniqueEqIndex, tempvars2) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars2);
-         alternativeTearingL = SOME(SimCode.LINEARSYSTEM(uniqueEqIndex, false, true, simVars, {}, {}, simequations, jacobianMatrix, {}, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), partOfJac));
+         alternativeTearingL = SOME(SimCode.LINEARSYSTEM(uniqueEqIndex, false, true, simVars, {}, {}, eqs, jacobianMatrix, {}, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), partOfJac));
 
        else
          alternativeTearingL = NONE();
@@ -3600,7 +3596,7 @@ algorithm
        // generate other equations
        (simequations, uniqueEqIndex, tempvars, nInnerVars, homotopySupport) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, iuniqueEqIndex, itempvars, {});
        (resEqs, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars, ishared.functionTree);
-       simequations = listAppend(simequations, resEqs);
+       eqs = listAppend(simequations, resEqs);
 
        (jacobianMatrix, uniqueEqIndex, tempvars) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars);
        if not homotopySupport then
@@ -3609,7 +3605,7 @@ algorithm
 
        clockIndex = partitionKindToClockIndex(isyst.partitionKind);
 
-       nlSystem = SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex);
+       nlSystem = SimCode.NONLINEARSYSTEM(uniqueEqIndex, eqs, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars)-listLength(itempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex);
        tempvars2 = tempvars;
 
        // Do if dynamic tearing is activated
@@ -3627,14 +3623,14 @@ algorithm
          // generate other equations
          (simequations, uniqueEqIndex, tempvars2, nInnerVars, homotopySupport) = createTornSystemInnerEqns(innerEquations, skipDiscInAlgorithm, genDiscrete, isyst, ishared, uniqueEqIndex+1, tempvars, {});
          (resEqs, uniqueEqIndex, tempvars2) = createNonlinearResidualEquations(reqns, uniqueEqIndex, tempvars2, ishared.functionTree);
-         simequations = listAppend(simequations, resEqs);
+         eqs = listAppend(simequations, resEqs);
 
          (jacobianMatrix, uniqueEqIndex, tempvars2) = createSymbolicSimulationJacobian(inJacobian, uniqueEqIndex, tempvars2);
          if not homotopySupport then
            (_, homotopySupport) = BackendEquation.traverseExpsOfEquationList(reqns, BackendDAEUtil.containsHomotopyCall, false);
          end if;
 
-         alternativeTearingNl = SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, simequations, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex));
+         alternativeTearingNl = SOME(SimCode.NONLINEARSYSTEM(uniqueEqIndex, eqs, tcrs, 0, listLength(tvars)+nInnerVars+listLength(tempvars2)-listLength(tempvars), jacobianMatrix, homotopySupport, mixedSystem, true, clockIndex));
        else
          alternativeTearingNl = NONE();
        end if;
@@ -3941,7 +3937,7 @@ algorithm
       list<SimCodeVar.SimVar> loopIterationVars, loopSolvedVars;
       list<BackendDAE.Equation> reqns, eqnlst;
       SimCode.SimEqSystem algSystem;
-      list<SimCode.SimEqSystem> resEqs, simequations;
+      list<SimCode.SimEqSystem> resEqs, simequations, eqs;
       SimCode.OMSIFunction omsiFunction;
       Boolean linear, mixedSystem;
       Option<SimCode.DerivativeMatrix> derivativeMatrix;
@@ -4012,7 +4008,7 @@ algorithm
       reqns := BackendEquation.replaceDerOpInEquationList(reqns);
       (resEqs, uniqueEqIndex, tempVars) := createNonlinearResidualEquations(reqns, uniqueEqIndex, {}, shared.functionTree);
 
-      simequations := listAppend(simequations, resEqs);
+      eqs := listAppend(simequations, resEqs);
 
       //set index
       (loopIterationVars, index) := rewriteIndex(loopIterationVars, 0);
@@ -4030,7 +4026,7 @@ algorithm
       end if;
 
       tmpOutputVars := listAppend(loopIterationVars, loopSolvedVars);
-      omsiFunction := SimCode.OMSI_FUNCTION(equations = simequations,
+      omsiFunction := SimCode.OMSI_FUNCTION(equations = eqs,
                                             inputVars = {},
                                             outputVars = tmpOutputVars,
                                             innerVars = tempVars,
@@ -4181,7 +4177,7 @@ algorithm
       list<BackendDAE.WhenOperator> whenStmtLst;
       Option<BackendDAE.WhenEquation> oelseWhen;
 
-      list<SimCode.SimEqSystem> tmpSimEqLst;
+      list<SimCode.SimEqSystem> eqs, tmpSimEqLst;
       SimCodeVar.SimVar newSimVar;
       list<BackendDAE.Equation> solveEqns;
       list<DAE.Statement> asserts;
@@ -4207,13 +4203,13 @@ algorithm
           //solve equation lhs=rhs with respect to varible varExp
           (resolvedExp, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(lhs, rhs, varExp, SOME(funcTree), SOME(uniqueEqIndex), true, true);
 
-          (equations, uniqueEqIndex) := List.mapFold(listReverse(solveEqns), makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
+          (eqs, uniqueEqIndex) := List.mapFold(listReverse(solveEqns), makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
           innerVars := createTempVarsforCrefs(List.map(listReverse(solveCr), Expression.crefExp), {});
 
           source := ElementSource.addSymbolicTransformationSolve(true, source, cr, lhs, rhs, resolvedExp, asserts);
           (tmpSimEqLst, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, cr, resolvedExp, source, eqAttr)}, uniqueEqIndex+1);
 
-          equations := listAppend(equations, tmpSimEqLst);
+          equations := listAppend(eqs, tmpSimEqLst);
 
           //TODO: fix dlowvarToSimvar by romving Variables, they are not needed any more
           newSimVar := dlowvarToSimvar(var, NONE(), BackendVariable.emptyVars(0));
@@ -4259,7 +4255,7 @@ algorithm
         dumpVarLst({newSimVar},"newSimVar");
       end if;
 
-      equations := listAppend(equations, tmpSimEqLst);
+      equations := listAppend(equations, tmpSimEqLst) annotation(__OpenModelica_DisableListAppendWarning=true);
       outputVars := listAppend({newSimVar}, outputVars);
     then();
 
@@ -4299,7 +4295,7 @@ algorithm
     tmpVars := List.map1r(vars, BackendVariable.getVarAt, syst.orderedVars);
     tmpVars := BackendVariable.setVarsKind(tmpVars, BackendDAE.LOOP_SOLVED());
     ((tmpOutputVars, _)) := List.fold(tmpVars, traversingdlowvarToSimvarFold, ({}, BackendVariable.emptyVars(0)));
-    outputVars := listAppend(outputVars,tmpOutputVars);
+    outputVars := List.append_reverse(tmpOutputVars, outputVars);
     eqn := BackendEquation.get(syst.orderedEqs, eqnindx);
 
     // generate comp
@@ -4308,6 +4304,7 @@ algorithm
     DoubleEnded.push_list_back(dblLstEqns, omsiFuncEquations.equations);
   end for;
 
+  outputVars := Dangerous.listReverseInPlace(outputVars);
   equations := DoubleEnded.toListAndClear(dblLstEqns);
 end generateInnerEqns;
 
@@ -5677,8 +5674,7 @@ algorithm
         // get minmax and nominal asserts
         res = BackendVariable.traverseBackendDAEVars(vars, BackendVariable.getMinMaxAsserts, {});
         (result, uniqueEqIndex) = List.mapFold(res, dlowAlgToSimEqSystem, uniqueEqIndex);
-        result = listAppend(result, simeqns);
-      then ((uniqueEqIndex, result));
+      then ((uniqueEqIndex, listAppend(result, simeqns)));
     else
       equation
         Error.addInternalError("function createAlgorithmAndEquationAsserts failed", sourceInfo());
@@ -6001,12 +5997,11 @@ algorithm
     // process also the zeroVariable equations
     (uniqueEqIndex, zeroVarEquations) := BackendEquation.traverseEquationArray(syst.removedEqs, SimCodeUtil.traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
 
-    // add the zero variable equations
-    simEqs := listAppend(simEqs, zeroVarEquations);
-
     // add equations
-    outEquations := listAppend(outEquations, {simEqs});
+    outEquations := listAppend(simEqs, zeroVarEquations) :: outEquations;
   end for;
+
+  outEquations := Dangerous.listReverseInPlace(outEquations);
 end createEquationsfromBackendDAE;
 
 public function createEquationsfromList
@@ -13246,7 +13241,7 @@ protected
   String msg;
   String tmpName, tmpValue;
   list<String> tmpSplitted;
-  list<tuple<String,String>> nameValueTouples = {} ;
+  list<tuple<String,String>> nameValueTuples = {} ;
 algorithm
   fmiFlagsList := Flags.getConfigStringList(Flags.FMI_FLAGS);
 
@@ -13303,9 +13298,10 @@ algorithm
         msg := "Adding unknown FMU simulation flag \"" + tmpName + "\" .";
         Error.addCompilerWarning(msg);
       end if;
-      nameValueTouples := listAppend(nameValueTouples, {(tmpName, tmpValue)});
+      nameValueTuples := (tmpName, tmpValue) :: nameValueTuples;
     end for;
-    fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTouples));
+    nameValueTuples := Dangerous.listReverseInPlace(nameValueTuples);
+    fmiSimulationFlags := SOME(SimCode.FMI_SIMULATION_FLAGS(nameValueTuples));
   end if;
 end createFMISimulationFlags;
 
@@ -13326,7 +13322,7 @@ protected
    BackendDAE.SparsePatternCrefs spTA, spTB;
    SimCode.SparsityPattern sparseInts;
    list<SimCode.FmiUnknown> allUnknowns, derivatives, outputs, discreteStates, allInitialUnknowns;
-   list<SimCodeVar.SimVar> varsA, varsB, varsC, varsD, clockedStates, allOutputVars, allParamVars, initialUnknownsOutputVars, initialUnknownsCalculatedParameters, tmpInitialUnknowns, initialUnknownsStateVars, initialUnknownsDerivativeVars;
+   list<SimCodeVar.SimVar> varsA, varsB, varsC, varsD, clockedStates, allOutputVars, allParamVars, tmpInitialUnknowns;
    list<DAE.ComponentRef> diffCrefsA, diffedCrefsA, derdiffCrefsA;
    list<DAE.ComponentRef> diffCrefsB, diffedCrefsB;
    DoubleEnded.MutableList<SimCodeVar.SimVar> delst;
@@ -13356,9 +13352,9 @@ algorithm
     // collect all variable
     varsA := getSimVars2Crefs(diffedCrefsA, crefSimVarHT);
     varsB := getSimVars2Crefs(derdiffCrefsA, crefSimVarHT);
-    varsA := listAppend(varsA, varsB);
-    varsB := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
-    varsA := listAppend(varsA, varsB);
+    varsC := listAppend(varsA, varsB);
+    varsD := getSimVars2Crefs(diffCrefsA, crefSimVarHT);
+    varsA := listAppend(varsC, varsD);
     //print("-- created vars for AB\n");
     sparseInts := sortSparsePattern(varsA, spTA, true);
     //print("-- sorted vars for AB\n");
@@ -13400,22 +13396,19 @@ algorithm
     tmpInitialUnknowns := {};
 
     // Condition-1: causality = "output" and (initial = approx or calculated)
-    initialUnknownsOutputVars := List.filterOnTrue(allOutputVars, isInitialApproxOrCalculatedSimVar);
-    tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsOutputVars);
+    tmpInitialUnknowns := List.filterCons(allOutputVars, isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
 
     // Condition-2: causality = "calculatedParameter"
     allParamVars := getAllParamSimVars(inModelInfo);
-    initialUnknownsCalculatedParameters := List.filterOnTrue(allParamVars, isCausalityCalculatedParameterSimVar);
-    tmpInitialUnknowns := listAppend(tmpInitialUnknowns,initialUnknownsCalculatedParameters);
+    tmpInitialUnknowns := List.filterCons(allParamVars, isCausalityCalculatedParameterSimVar, tmpInitialUnknowns);
 
     // Condition-3: continuous-time states with (initial = approx or calculated)
-    initialUnknownsStateVars := List.filterOnTrue(inModelInfo.vars.stateVars, isInitialApproxOrCalculatedSimVar);
-    tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsStateVars);
+    tmpInitialUnknowns := List.filterCons(inModelInfo.vars.stateVars, isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
 
     // Condition-4: state derivatives with (initial = approx or calculated)
-    initialUnknownsDerivativeVars := List.filterOnTrue(inModelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar);
-    tmpInitialUnknowns := listAppend(tmpInitialUnknowns, initialUnknownsDerivativeVars);
+    tmpInitialUnknowns := List.filterCons(inModelInfo.vars.derivativeVars, isInitialApproxOrCalculatedSimVar, tmpInitialUnknowns);
 
+    tmpInitialUnknowns := Dangerous.listReverseInPlace(tmpInitialUnknowns);
     //dumpVarLst(tmpInitialUnknowns, "InitialUnknownList");
 
     // get FMI initialUnknowns list with dependencies
@@ -13618,10 +13611,10 @@ algorithm
   (_, rowspt, (indepCrefs, depCrefs), _) := sparsePattern;
   vars1 := getSimVars2Crefs(indepCrefs, crefSimVarHT);
   vars2 := getSimVars2Crefs(depCrefs, crefSimVarHT);
-  vars1 := listAppend(vars1, vars2);
+  vars2 := listAppend(vars1, vars2);
 
   // sort the vars with FMI Index
-  sparseInts := sortSparsePattern(vars1, rowspt, true);
+  sparseInts := sortSparsePattern(vars2, rowspt, true);
   // populate the FmiInitial unknowns according to FMI ModelDescription.xml format
   outFmiUnknownlist := translateSparsePatterInts2FMIUnknown(sparseInts, {});
 end getFmiInitialUnknowns;
@@ -13959,8 +13952,8 @@ function getScalarVars
   output list<SimCodeVar.SimVar> outVars;
 algorithm
   outVars := {};
-  for var in inVars loop
-    outVars := listAppend(outVars, getScalarElements(var));
+  for var in listReverse(inVars) loop
+    outVars := listAppend(getScalarElements(var), outVars);
   end for;
 end getScalarVars;
 

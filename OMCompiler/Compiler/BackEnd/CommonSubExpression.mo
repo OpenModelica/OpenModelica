@@ -2175,10 +2175,10 @@ algorithm
          //print("is equal\n");
       // build CSE
       sharedVarIdcs = List.map1(sharedVarIdcs, List.getIndexFirst, varMap);
-      varIdcs1 = listAppend(varIdcs1, varIdcs2);
-      varIdcs1 = List.map1(varIdcs1, List.getIndexFirst, varMap);
+      varIdcs2 = listAppend(varIdcs1, varIdcs2);
+      varIdcs2 = List.map1(varIdcs2, List.getIndexFirst, varMap);
       eqIdcs = List.map1(partition, List.getIndexFirst, eqMap);
-    then ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs1)::cseIn;
+    then ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs2)::cseIn;
   else cseIn;
   end matchcontinue;
 end getCSE2;
@@ -2242,12 +2242,12 @@ algorithm
             eqMapArr := listArray(eqMap);
             varMapArr := listArray(varMap);
             sharedVarIdcs := list(arrayGet(varMapArr, i) for i in sharedVarIdcs);
-            varIdcs1 := listAppend(varIdcs1, varIdcs2);
-            varIdcs1 := list(arrayGet(varMapArr, i) for i in varIdcs1);
+            varIdcs2 := listAppend(varIdcs1, varIdcs2);
+            varIdcs2 := list(arrayGet(varMapArr, i) for i in varIdcs2);
             eqIdcs := list(arrayGet(eqMapArr,i) for i in loop1);
             GC.free(eqMapArr);
             GC.free(varMapArr);
-            cseLst := ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs1)::cseLst;
+            cseLst := ASSIGNMENT_CSE(eqIdcs, sharedVarIdcs, varIdcs2)::cseLst;
           end if;
       end for;
     then cseLst;
