@@ -109,7 +109,7 @@ public
   uniontype SimpleSet "gets accumulated to find sets of simple equations and solve them"
     record SIMPLE_SET
       list<Pointer<Variable>> simple_variables    "list of all variables in this set";
-      list<Pointer<Equation>> simple_equations    "list of all equations in this set";
+      list<Pointer<Equation>> simple_equations    "list of all equations in this set"; // should always be one less than simple_variables
       Option<Pointer<Equation>> const_opt         "optional constant binding of one variable";
     end SIMPLE_SET;
 
@@ -158,7 +158,7 @@ protected
       5. save replacements in bindings of alias variables
     "
     extends Module.removeSimpleEquationsInterface;
-    algorithm
+  algorithm
     (varData, eqData) := match (varData, eqData)
       local
         EquationPointers newEquations;
@@ -185,7 +185,7 @@ protected
           if Flags.isSet(Flags.DUMP_REPL) then
             print(StringUtil.headline_2("[dumprepl] Alias Sets:") + "\n");
             for set in sets loop
-              print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + SimpleSet.toString(set)+ "\n");
+              print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + SimpleSet.toString(set) + "\n");
               setIdx := setIdx + 1;
             end for;
           end if;
@@ -245,11 +245,10 @@ protected
   algorithm
     eq := Pointer.access(eq_ptr);
     crefTpl := match eq
-      local
 
       case BEquation.SIMPLE_EQUATION()
         guard(not (ComponentRef.isTime(eq.lhs) or ComponentRef.isTime(eq.rhs)))
-        then findCrefsSimple(eq.lhs, eq.rhs, crefTpl);
+      then findCrefsSimple(eq.lhs, eq.rhs, crefTpl);
 
       case BEquation.SCALAR_EQUATION() algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
@@ -271,9 +270,9 @@ protected
         if not BaseHashTable.hasKey(cr1, hashTable) then
           // the variable does not belong to a set -> create new one
           set := EMPTY_SIMPLE_SET;
+          set.simple_variables := {BVariable.getVarPointer(cr1)};
           set.const_opt := SOME(Pointer.create(eq));
           hashTable := BaseHashTable.add((cr1, Pointer.create(set)), hashTable);
-
         else
           // it already belongs to a set, try to update it and throw error if there already is a const binding
           set_ptr := BaseHashTable.get(cr1, hashTable);
@@ -285,8 +284,8 @@ protected
             fail();
           else
             set.const_opt := SOME(Pointer.create(eq));
+            Pointer.update(set_ptr, set);
           end if;
-          Pointer.update(set_ptr, set);
         end if;
       then (hashTable, true);
 
@@ -307,7 +306,7 @@ protected
             fail();
           elseif referenceEq(set1_ptr, set2_ptr) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets
-                because they would create a loop. This would create an overdetermined Set!:\n" +
+                because they would create a loop. This would create an underdetermined Set!:\n" +
                 SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
             fail();
           elseif isSome(set1.const_opt) then
@@ -414,11 +413,7 @@ protected
         then tpl;
 
         // set the continue attribute to false if any fail case is met
-        case (_, _)
-          guard(findCrefsFail(exp))
-            algorithm
-            tpl.cont := false;
-        then FAILED_CREF_TPL;
+        case (_, _) guard(findCrefsFail(exp)) then FAILED_CREF_TPL;
 
         else tpl;
       end match;
