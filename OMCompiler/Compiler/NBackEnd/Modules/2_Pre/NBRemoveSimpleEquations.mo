@@ -45,6 +45,7 @@ protected
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
+  import HashSet = NFHashSet;
   import HashTableCrToExp = NFHashTableCrToExp;
   import Operator = NFOperator;
   import Variable = NFVariable;
@@ -57,7 +58,6 @@ protected
   import Equation = NBEquation.Equation;
   import EquationPointers = NBEquation.EquationPointers;
   import HashTableRSE = NBHashTableRSE;
-  import HashTableCrToInt = NBHashTableCrToInt;
   import Replacements = NBReplacements;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
@@ -513,7 +513,7 @@ protected
     input Integer size;
     output list<SimpleSet> sets = {};
   protected
-    HashTableCrToInt.HashTable cref_marks = HashTableCrToInt.empty(size);
+    HashSet.HashSet cref_marks = HashSet.emptyHashSet(size);
     list<tuple<ComponentRef, Pointer<SimpleSet>>> entry_lst;
     ComponentRef simple_cref;
     Pointer<SimpleSet> set_ptr;
@@ -522,11 +522,11 @@ protected
     entry_lst := BaseHashTable.hashTableList(hashTable);
     for entry in entry_lst loop
       (simple_cref, set_ptr) := entry;
-      if not BaseHashTable.hasKey(simple_cref, cref_marks) then
+      if not BaseHashSet.has(simple_cref, cref_marks) then
         set := Pointer.access(set_ptr);
         sets := set :: sets;
         for var_ptr in set.simple_variables loop
-          cref_marks := BaseHashTable.add((BVariable.getVarName(var_ptr), 1), cref_marks);
+          cref_marks := BaseHashSet.addUnique(BVariable.getVarName(var_ptr), cref_marks);
         end for;
       end if;
     end for;
