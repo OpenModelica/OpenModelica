@@ -689,7 +689,6 @@ algorithm
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs,modifiernamelst;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
-      list<GlobalScript.Statements> istmtss;
       Boolean have_corba, bval, anyCode, b, b1, b2, b3, b4, b5, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, keepRedeclares;
       FCore.Cache cache;
       Absyn.ComponentRef  crefCName;
@@ -1845,7 +1844,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname, modeldescriptionfilename, tmpDir, tmpFile;
+             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname, modeldescriptionfilename, tmpDir, tmpFile, annStr;
       list<DAE.Exp> simOptions;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
@@ -1881,7 +1880,6 @@ algorithm
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs,modifiernamelst;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
-      list<GlobalScript.Statements> istmtss;
       Boolean have_corba, bval, anyCode, b, b1, b2, b3, b4, b5, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, keepRedeclares;
       FCore.Cache cache;
       Absyn.ComponentRef  crefCName;
@@ -2790,6 +2788,22 @@ algorithm
         (cache,Values.BOOL(true));
 
     case (cache,_,"updateConnection",_,_) then (cache,Values.BOOL(false));
+
+    case (cache,_,"updateConnectionStr",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),Values.STRING(annStr)},_)
+      algorithm
+        istmts := Parser.parsestringexp("__dummy(" + annStr + ");");
+        GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = aexp)}) := istmts;
+        Absyn.CALL(functionArgs = Absyn.FUNCTIONARGS(argNames = nargs)) := aexp;
+        Absyn.NAMEDARG(argValue = Absyn.CODE(Absyn.C_MODIFICATION(Absyn.CLASSMOD(elementArgLst=eltargs,eqMod=Absyn.NOMOD())))) := listHead(nargs);
+        p := SymbolTable.getAbsyn();
+        absynClass := Interactive.getPathedClassInProgram(classpath, p);
+        absynClass := InteractiveUtil.updateConnectionAnnotationInClass(absynClass, str1, str2, Absyn.ANNOTATION(eltargs));
+        p := Interactive.updateProgram(Absyn.PROGRAM({absynClass}, if AbsynUtil.pathIsIdent(classpath) then Absyn.TOP() else Absyn.WITHIN(AbsynUtil.stripLast(classpath))), p);
+        SymbolTable.setAbsyn(p);
+      then
+        (cache,Values.BOOL(true));
+
+    case (cache,_,"updateConnectionStr",_,_) then (cache,Values.BOOL(false));
 
     case (cache,_,"updateConnectionNames",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),
                                            Values.STRING(str3), Values.STRING(str4)},_)
