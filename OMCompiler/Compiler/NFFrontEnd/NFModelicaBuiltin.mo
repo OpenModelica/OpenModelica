@@ -1363,9 +1363,20 @@ external "builtin";
 annotation(preferredView="text");
 end loadFiles;
 
+function parseEncryptedPackage
+  input String fileName;
+  input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
+  output TypeName names[:];
+external "builtin";
+annotation(Documentation(info="<html>
+<p>Parses the given encrypted package and returns the names of the parsed classes.</p>
+</html>"), preferredView="text");
+end parseEncryptedPackage;
+
 function loadEncryptedPackage
   input String fileName;
   input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
+  input Boolean skipUnzip = false "Skips the unzip of .mol if true. In that case we expect the files are already extracted e.g., because of parseEncryptedPackage() call.";
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -1488,6 +1499,13 @@ function generateHeader
 external "builtin";
 annotation(preferredView="text");
 end generateHeader;
+
+function generateJuliaHeader
+  input String fileName;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end generateJuliaHeader;
 
 function generateSeparateCode
   input TypeName className;
@@ -1709,6 +1727,18 @@ function setCompilerFlags
 external "builtin";
 annotation(preferredView="text");
 end setCompilerFlags;
+
+function enableNewInstantiation
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end enableNewInstantiation;
+
+function disableNewInstantiation
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end disableNewInstantiation;
 
 function setDebugFlags "example input: failtrace,-noevalfunc"
   input String debugFlags;
@@ -2202,6 +2232,14 @@ external "builtin";
 annotation(preferredView="text");
 end mkdir;
 
+function copy "copies the source file to the destination file. Returns true if the file has been copied."
+  input String source;
+  input String destination;
+  output Boolean success;
+external "builtin";
+annotation(preferredView="text");
+end copy;
+
 function remove "removes a file or directory of given path (which may be either relative or absolute)."
   input String path;
   output Boolean success "Returns true on success.";
@@ -2322,7 +2360,7 @@ function saveTotalModel "Save the className model in a single file, together wit
    which loads className and all the other needed classes into memory.
    This is useful to allow third parties to run a certain model (e.g. for debugging)
    without worrying about all the library dependencies.
-   Please note that SaveTotal file is not a valid Modelica .mo file according to the 
+   Please note that SaveTotal file is not a valid Modelica .mo file according to the
    specification, and cannot be loaded in OMEdit - it can only be loaded with loadFile()."
   input String fileName;
   input TypeName className;
@@ -2491,6 +2529,7 @@ end list;
 
 function listFile "Lists the contents of the file given by the class."
   input TypeName class_;
+  input Boolean nestedClasses = true;
   output String contents;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -2681,8 +2720,8 @@ end buildModelFMU;
 
 function buildEncryptedPackage
   input TypeName className "the class that should encrypted";
+  input Boolean encrypt = true;
   output Boolean success;
-  output String commandOutput "Output of the packagetool executable";
 external "builtin";
 annotation(preferredView="text");
 end buildEncryptedPackage;
@@ -2941,7 +2980,7 @@ annotation(preferredView="text");
 end getPackages;
 
 function getAllSubtypeOf
-  "Returns the list of all classes that extend from class_ given a parentClass where the lookup for class_ should start"
+  "Returns the list of all classes that extend from className given a parentClass where the lookup for className should start"
   input TypeName className;
   input TypeName parentClass = $TypeName(AllLoadedClasses);
   input Boolean qualified = false;
@@ -3103,6 +3142,12 @@ external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes one simulation result and filters out the selected variables only, producing the output file.</p>
 <p>If numberOfIntervals<>0, re-sample to that number of intervals, ignoring event points (might be changed in the future).</p>
+<p>if removeDescription=true, the description matrix will contain 0-length strings, making the file smaller.</p>
+</html>",revisions="<html>
+<table>
+<tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
+<tr><td>1.13.0</td><td>sjoelund.se</td><td>Introduced removeDescription.</td></tr>
+</table>
 </html>"),preferredView="text");
 end filterSimulationResults;
 
@@ -3256,7 +3301,7 @@ function getComponentModifierValue
 external "builtin";
 annotation(
   Documentation(info="<html>
-  <p>Returns the modifier value (only the binding exculding submodifiers) of component.
+  <p>Returns the modifier value (only the binding excluding submodifiers) of component.
     For instance,
       model A
         B b1(a1(p1=5,p2=4));
@@ -3300,63 +3345,68 @@ annotation(
 end removeComponentModifiers;
 
 function getElementModifierNames
-  input TypeName class_;
-  input String componentName;
+  input TypeName className;
+  input String elementName;
   output String[:] modifiers;
 external "builtin";
 annotation(
   Documentation(info="<html>
-  Returns the list of class component modifiers.
+  Returns the list of element (component or short class) modifiers in a class.
 </html>"),
   preferredView="text");
 end getElementModifierNames;
 
 function getElementModifierValue
-  input TypeName class_;
+  input TypeName className;
   input TypeName modifier;
   output String value;
 external "builtin";
 annotation(
   Documentation(info="<html>
-  <p>Returns the modifier value (only the binding exculding submodifiers) of component.
+  <p>Returns the modifier value (only the binding excluding submodifiers) of element (component or short class).
     For instance,
       model A
         B b1(a1(p1=5,p2=4));
+        model X = Y(a1(p1=5,p2=4));
       end A;
       getElementModifierValue(A,b1.a1.p1) => 5
       getElementModifierValue(A,b1.a1.p2) => 4
+      getElementModifierValue(A,X.a1.p1) => 5
+      getElementModifierValue(A,X.a1.p2) => 4
     See also <a href=\"modelica://OpenModelica.Scripting.getElementModifierValues\">getElementModifierValues()</a>.</p>
 </html>"),
   preferredView="text");
 end getElementModifierValue;
 
 function getElementModifierValues
-  input TypeName class_;
+  input TypeName className;
   input TypeName modifier;
   output String value;
 external "builtin";
 annotation(
   Documentation(info="<html>
-  <p>Returns the modifier value (including the submodfiers) of component.
+  <p>Returns the modifier value (including the submodfiers) of element (component or short class).
     For instance,
       model A
         B b1(a1(p1=5,p2=4));
+        model X = Y(a1(p1=5,p2=4));
       end A;
       getElementModifierValues(A,b1.a1) => (p1 = 5, p2 = 4)
+      getElementModifierValues(A,X.a1) => (p1 = 5, p2 = 4)
     See also <a href=\"modelica://OpenModelica.Scripting.getElementModifierValue\">getElementModifierValue()</a>.</p>
 </html>"),
   preferredView="text");
 end getElementModifierValues;
 
 function removeElementModifiers
-  input TypeName class_;
+  input TypeName className;
   input String componentName;
   input Boolean keepRedeclares = false;
   output Boolean success;
 external "builtin";
 annotation(
   Documentation(info="<html>
-  Removes the component modifiers.
+  Removes the element (component or short class) modifiers.
 </html>"),
   preferredView="text");
 end removeElementModifiers;
@@ -3384,6 +3434,43 @@ annotation(
 </html>"),
   preferredView="text");
 end removeExtendsModifiers;
+
+function updateConnection
+  input TypeName className;
+  input String from;
+  input String to;
+  input ExpressionOrModification annotate;
+  output Boolean result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Updates the connection annotation in the class. See also updateConnectionNames().</p>
+</html>"));
+end updateConnection;
+
+function updateConnectionStr
+  input TypeName className;
+  input String from;
+  input String to;
+  input String annotate;
+  output Boolean result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Updates the connection annotation in the class. See also updateConnectionNames().</p>
+</html>"));
+end updateConnectionStr;
+
+function updateConnectionNames
+  input TypeName className;
+  input String from;
+  input String to;
+  input String fromNew;
+  input String toNew;
+  output Boolean result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Updates the connection connector names in the class. See also updateConnection().</p>
+</html>"));
+end updateConnectionNames;
 
 function getConnectionCount "Counts the number of connect equation in a class."
   input TypeName className;
@@ -4101,6 +4188,18 @@ Returns the libraries used by the package {{\"Library1\",\"Version\"},{\"Library
 </html>"),
   preferredView="text");
 end getUses;
+
+function getConversionsFromVersions
+  input TypeName pack;
+  output String[:] withoutConversion;
+  output String[:] withConversion;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+Returns the versions this library can convert from with and without conversions.
+</html>"),
+  preferredView="text");
+end getConversionsFromVersions;
 
 function getDerivedClassModifierNames "Returns the derived class modifier names.
   Example command:
@@ -5096,6 +5195,16 @@ annotation(
 (as long as the function interfaces are the same).</p>
 </html>"), preferredView="text");
 end relocateFunctions;
+
+function toJulia
+  output String res;
+external "builtin";
+end toJulia;
+
+function interactiveDumpAbsynToJL
+  output String res;
+external "builtin";
+end interactiveDumpAbsynToJL;
 
 end Experimental;
 
