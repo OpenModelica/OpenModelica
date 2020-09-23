@@ -421,9 +421,8 @@ protected
   Ref r;
 algorithm
   FCore.N(n, id, p, c, FCore.FS(it)) := fromRef(ref);
-  it := listAppend(it, inIterators);
   // update the child
-  r := updateRef(ref, FCore.N(n, id, p, c, FCore.FS(it)));
+  r := updateRef(ref, FCore.N(n, id, p, c, FCore.FS(listAppend(it, inIterators))));
 end addIteratorsToRef;
 
 public function addDefinedUnitToRef

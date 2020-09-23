@@ -68,7 +68,7 @@ import GC;
 import IndexReduction;
 import List;
 import Matching;
-import MetaModelica.Dangerous;
+import MetaModelica.Dangerous.listReverseInPlace;
 import Sorting;
 import SymbolicJacobian;
 
@@ -209,7 +209,7 @@ algorithm
 
     // fix over- and under-constrained subsystems
     (initdae, dumpVars2, removedEqns) := analyzeInitialSystem(initdae, initVars);
-    dumpVars := listAppend(dumpVars, dumpVars2);
+    dumpVars := listAppend(dumpVars, dumpVars2) annotation(__OpenModelica_DisableListAppendWarning=true);
     execStat("analyzeInitialSystem (initialization)");
 
     // some debug prints
@@ -1189,18 +1189,22 @@ algorithm
   outDumpVars := DoubleEnded.toListAndClear(dumpVars);
 end analyzeInitialSystem;
 
-protected function getInitEqIndex
-  input BackendDAE.Equation inEquation;
-  input tuple<Integer, list<Integer>> inTpl;
-  output tuple<Integer, list<Integer>> outTpl;
+protected function getInitEqIndices
+  input list<BackendDAE.Equation> equations;
+  output list<Integer> indices = {};
 protected
-  Integer pos;
-  list<Integer> lst;
+  Integer i = 1;
 algorithm
-  (pos, lst) := inTpl;
-  lst := listAppend(lst, if BackendEquation.isInitialEquation(inEquation) then {pos} else {});
-  outTpl := (pos+1, lst);
-end getInitEqIndex;
+  for eq in equations loop
+    if BackendEquation.isInitialEquation(eq) then
+      indices := i :: indices;
+    end if;
+
+    i := i + 1;
+  end for;
+
+  indices := listReverseInPlace(indices);
+end getInitEqIndices;
 
 protected function fixInitialSystem "author: lochel
   This function handles under-, over-, and mixed-determined systems with a given index."
@@ -1386,7 +1390,7 @@ algorithm
   end if;
 
   if inNAddVars > 0 then
-    (_, initEqsIndices) := List.fold(BackendEquation.equationList(orderedEqs), getInitEqIndex, (1, {})); // TODO: Bad scaling. Can be done better. But only affects overdetermined systems
+    initEqsIndices := getInitEqIndices(BackendEquation.equationList(orderedEqs));
     newVarIndices := List.intRange2(inNVars+1, inNVars+inNAddVars);
     outM := List.fold1(initEqsIndices, squareAdjacencyMatrix2, newVarIndices, inM);
   else
@@ -1478,7 +1482,7 @@ algorithm
     local
       list<Integer> outRange, resiRange, flatComps, markedComps;
       list<Integer> outListComps, outLoopListComps, restRedundantEqns;
-      list<Integer> consistentEquations, inconsistentEquations, uncheckedEquations, uncheckedEquations2;
+      list<Integer> consistentEquations, consistentEquations2, inconsistentEquations, uncheckedEquations, uncheckedEquations2;
       BackendDAE.AdjacencyMatrix m;
       Integer nVars, nEqns, currRedundantEqn, redundantEqn;
       list<list<Integer>> comps;
@@ -1527,12 +1531,12 @@ algorithm
       (outRange, true, uncheckedEquations) = getConsistentEquation(redundantEqn, substEqns, inEqns, inM, vecVarToEqs, inVars, inShared, 1);
       (consistentEquations, inconsistentEquations, uncheckedEquations2) = consistencyCheck(restRedundantEqns, inEqns, inVars, inShared, nAddVars, inM, me, vecVarToEqs, vecEqsToVar, mapIncRowEqn);
 
-      consistentEquations = listAppend(consistentEquations, outRange);
-      uncheckedEquations = listAppend(uncheckedEquations, uncheckedEquations2);
+      consistentEquations2 = listAppend(consistentEquations, outRange);
+      uncheckedEquations2 = listAppend(uncheckedEquations, uncheckedEquations2);
     //BackendDump.dumpList(outRange, "outRange: ");
     //BackendDump.dumpEquationArray(inEqns, "inEqns");
     //BackendDump.dumpEquationArray(substEqns, "substEqns");
-    then (consistentEquations, inconsistentEquations, uncheckedEquations);
+    then (consistentEquations2, inconsistentEquations, uncheckedEquations2);
 
     // add current equation to list of inconsistent equations
     case currRedundantEqn::restRedundantEqns equation

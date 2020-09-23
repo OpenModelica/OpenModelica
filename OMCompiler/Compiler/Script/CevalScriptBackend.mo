@@ -3401,7 +3401,7 @@ algorithm
   if Flags.isSet(Flags.NF_API) then
     placement_p := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphic_p := AbsynToSCode.translateAbsyn2SCode(placement_p);
-    scode_p := listAppend(scode_p, graphic_p);
+    scode_p := listAppend(graphic_p, scode_p);
   end if;
 
   // make sure we don't run the default instantiateModel using -d=nfAPI

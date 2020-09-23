@@ -228,9 +228,9 @@ algorithm
         //print("--getSystemComponents0 begin\n");
         tmpSystMapping = List.fold2(comps, getSystemComponents1, iSyst, currentIdx, tmpSystMapping);
         //print(stringDelimitList(List.map(comps, BackendDump.printComponent),","));
-        tmpComps = listAppend(tmpComps,comps);
+        comps = listAppend(tmpComps,comps);
         //print("--getSystemComponents0 end (found " + intString(listLength(comps)) + " components in system " + intString(currentIdx) + ")\n");
-      then ((tmpComps, tmpSystMapping, currentIdx+1));
+      then ((comps, tmpSystMapping, currentIdx+1));
     else
       equation
         print("getSystemComponents0 failed\n");
@@ -811,8 +811,7 @@ algorithm
   (eventEqsIn,offset) := eventInfoIn;
   eventEqs := getEventNodeEqs1(comps,offset,{});
   offset := offset+ExpandableArray.getNumberOfElements(orderedEqs);
-  eventEqs := listAppend(eventEqs,eventEqsIn);
-  eventInfoOut := (eventEqs,offset);
+  eventInfoOut := (listAppend(eventEqs,eventEqsIn), offset);
 end getEventNodeEqs;
 
 protected function getEventNodeEqs1 "author: Waurich TUD 2013-06
@@ -2303,10 +2302,10 @@ algorithm
           //print("\tSetting node mark to " + intString(zeroFuncNodeMark) + "\n");
         end if;
         zeroFuncNodeMarks := arrayUpdate(zeroFuncNodeMarks, nodeIdx, zeroFuncNodeMark);
-        newNodeList := listAppend(newNodeList, predecessors); //add all nodes of previous level
+        newNodeList := List.append_reverse(predecessors, newNodeList); //add all nodes of previous level
       end if;
     end for;
-    nodeList := newNodeList;
+    nodeList := listReverse(newNodeList);
   end while;
 
   //Setup a new graph that contains only nodes which are part of the event system
@@ -2422,9 +2421,7 @@ algorithm
   //((_,sccsContainingTime)) := List.fold1(systs, getComponentsIncludingTime, eqCompMapping, (0,{}));
   sccsContainingTime := {};
   //print("Nodes containing time as variable: " + stringDelimitList(List.map(sccsContainingTime, intString), ",") + " (len: " + intString(listLength(sccsContainingTime)) + ")\n");
-  discreteNodes := listAppend(discreteNodes, sccsContainingTime);
-  discreteNodes := listAppend(discreteNodes, zeroCrossingNodes);
-  discreteNodes := List.unique(discreteNodes);
+  discreteNodes := List.flatten({discreteNodes, sccsContainingTime, zeroCrossingNodes});
   //print("Discrete nodes: " + stringDelimitList(List.map(discreteNodes, intString), ",") + " (len: " + intString(listLength(discreteNodes)) + ")\n");
   graphTmp := iTaskGraph; //arrayCopy(graphIn);
   (graphTmp,cutNodes) := cutTaskGraph(graphTmp,discreteNodes,{});
@@ -2564,8 +2561,7 @@ algorithm
   (eventEqsIn,offset) := eventInfoIn;
   eventEqs := getDiscreteNodesEqs1(comps,offset,orderedVars,{});
   offset := offset+ExpandableArray.getNumberOfElements(orderedEqs);
-  eventEqs := listAppend(eventEqs,eventEqsIn);
-  eventInfoOut := (eventEqs,offset);
+  eventInfoOut := (listAppend(eventEqs,eventEqsIn),offset);
 end getDiscreteNodesEqs;
 
 protected function getDiscreteNodesEqs1
@@ -3919,7 +3915,7 @@ algorithm
       tmpTaskGraphT := arrayUpdate(tmpTaskGraphT, nodeIdx, parentNodeChildListNew);
     end for;
 
-    outgoingEdges := listAppend(outgoingEdges, childNodes);
+    outgoingEdges := listAppend(outgoingEdges, childNodes) annotation(__OpenModelica_DisableListAppendWarning=true);
 
     nodeMarks := arrayUpdate(nodeMarks, nodeListHeadIdx, 0);
     // Update Task Graph
@@ -5942,10 +5938,10 @@ algorithm
     //if(intGe(mark, 0)) then
       comps := arrayGet(inComps, taskIdx);
       //print("getAllSCCsOfGraph: components are '" + stringDelimitList(List.map(comps, intString), ",") + "'\n");
-      tmpSccs := listAppend(tmpSccs, comps);
+      tmpSccs := List.append_reverse(comps, tmpSccs);
     //end if;
   end for;
-  oSccs := tmpSccs;
+  oSccs := listReverse(tmpSccs);
 end getAllSCCsOfGraph;
 
 //TODO: Remove

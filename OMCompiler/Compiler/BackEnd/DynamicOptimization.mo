@@ -115,7 +115,7 @@ algorithm
    (mayer,lagrange,startTimeE,finalTimeE) := getOptimicaArgs(classAttrs);
     varlst :=  BackendVariable.varList(globalKnownVars);
     _ := addTimeGrid(varlst, globalKnownVars);
-    varlst := listAppend(varlst, BackendVariable.varList(vars));
+    varlst := listAppend(varlst, BackendVariable.varList(vars)) annotation(__OpenModelica_DisableListAppendWarning=true);
 
     (vars, eqnsLst, mayer) := joinObjectFun(makeObject(BackendDAE.optimizationMayerTermName, findMayerTerm, varlst, mayer), vars, eqnsLst);
     (vars, eqnsLst, lagrange) := joinObjectFun(makeObject(BackendDAE.optimizationLagrangeTermName, findLagrangeTerm, varlst, lagrange), vars, eqnsLst);
@@ -797,7 +797,7 @@ algorithm
            var_lst_opt := list(vv for vv  guard BackendVariable.isStateVar(vv) in var_lst);
            b3 := listLength(var_lst_opt) == 1;
            var_lst := BackendEquation.equationsLstVars({eqn_}, globalKnownVars);
-           var_lst_opt := listAppend(var_lst_opt, list(vv for vv guard BackendVariable.isInput(vv) in var_lst));
+           var_lst_opt := listAppend(var_lst_opt, list(vv for vv guard BackendVariable.isInput(vv) in var_lst)) annotation(__OpenModelica_DisableListAppendWarning=true);
            //print("\nn = " + intString(listLength(var_lst_opt)));
            if listLength(var_lst_opt) == 1 then
              {var_} := var_lst_opt;

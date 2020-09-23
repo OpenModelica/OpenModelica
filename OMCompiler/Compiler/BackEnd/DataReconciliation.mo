@@ -239,10 +239,10 @@ algorithm
   end if;
 
   /* Merge E-BLT blocks with S-BLT */
-  s_BLTBlocks := listAppend(s_BLTBlocks, e_BLTBlocks);  // append the E-BLT blocks to the end with S-BLT
-  s_BLTBlockRanks := listAppend(s_BLTBlockRanks, e_BLTBlockRanks); // append E-BLT block ranks with S-BLT block ranks
-  sBltAdjacencyMatrix := listAppend(sBltAdjacencyMatrix, eBltAdjacencyMatrix);  // append the E-BLT Adjacency matrix with S-BLT Adjacency matrix
-  solvedEqsAndVarsInfo := listAppend(solvedEqsAndVarsInfo, e_BLTSolvedEqsAndVars);  // append the E-BLT Solved Equations and Vars to S-BLT vars
+  s_BLTBlocks := listAppend(s_BLTBlocks, e_BLTBlocks) annotation(__OpenModelica_DisableListAppendWarning=true);  // append the E-BLT blocks to the end with S-BLT
+  s_BLTBlockRanks := listAppend(s_BLTBlockRanks, e_BLTBlockRanks) annotation(__OpenModelica_DisableListAppendWarning=true); // append E-BLT block ranks with S-BLT block ranks
+  sBltAdjacencyMatrix := listAppend(sBltAdjacencyMatrix, eBltAdjacencyMatrix) annotation(__OpenModelica_DisableListAppendWarning=true);  // append the E-BLT Adjacency matrix with S-BLT Adjacency matrix
+  solvedEqsAndVarsInfo := listAppend(solvedEqsAndVarsInfo, e_BLTSolvedEqsAndVars) annotation(__OpenModelica_DisableListAppendWarning=true);  // append the E-BLT Solved Equations and Vars to S-BLT vars
 
 
   if debug then
@@ -293,7 +293,7 @@ algorithm
   // update the exactEquation vars
   exactEquationVars := List.setDifferenceOnTrue(exactEquationVars, boundaryConditionTaggedEquationSolvedVars, intEq);
   // update the boundaryCondtions vars
-  boundaryConditionVars := listAppend(boundaryConditionVars, boundaryConditionTaggedEquationSolvedVars);
+  boundaryConditionVars := listAppend(boundaryConditionVars, boundaryConditionTaggedEquationSolvedVars) annotation(__OpenModelica_DisableListAppendWarning=true);
 
   if debug then
     print("\nUpdatedVariablesCategories\n=============================");
@@ -861,14 +861,15 @@ end ExtractEquationsUsingSetOperations;
 
 public function filterTargetBlocksWithoutRanks
   input list<tuple<list<Integer>, Integer>> targetBlocks;
-  input output list<Integer> outBlocks;
+  input list<Integer> inBlocks;
+  output list<Integer> outBlocks;
 protected
-  list<Integer> mainBlocks;
+  list<Integer> mainBlocks = {};
 algorithm
   for blocks in targetBlocks loop
-    (mainBlocks, _) := blocks;
-    outBlocks := listAppend(outBlocks, mainBlocks);
+    mainBlocks := List.append_reverse(Util.tuple21(blocks), mainBlocks);
   end for;
+  outBlocks := listAppend(inBlocks, listReverse(mainBlocks));
 end filterTargetBlocksWithoutRanks;
 
 public function setEBLTEquationsWithIndexAndRank
@@ -1258,8 +1259,7 @@ algorithm
         print("\nFIND Blocks target of :" + anyString(i) + "\n========================");
       end if;
       (targetblocks, eBLTBlocks) := findBlockTargetsHelper({i}, inlist2, solvedvariables, mxt, inlist1, debug);
-      targetblocks := listAppend({i}, targetblocks);
-      targetblocks := listAppend(targetblocks, eBLTBlocks); // append the EBLT blocks to end
+      targetblocks := listAppend(i :: targetblocks, eBLTBlocks); // append the EBLT blocks to end
       //print("\n Final Target Blocks before :" + anyString(targetblocks) + "==>EBLT "+ anyString(eBLTBlocks) +"\n **************\n");
       (updatedblocks, ranklist) := findBlocksRanks(blockranks, targetblocks);
       updatedblocks := sortBlocks(ranklist, updatedblocks);
@@ -1328,8 +1328,8 @@ algorithm
   for i in inlist loop
     (tmpSBLT, tmpEBLT) := getDependencyequation(i, {}, solvedvariables, mxt);
     //print("\n Dependencyequations:" + anyString(i) + "=====>" + anyString(tmpSBLT) + "===> EBLT" + anyString(tmpEBLT) + "\n");
-    outSBLT := listAppend(outSBLT, tmpSBLT);
-    outEBLT := listAppend(outEBLT, {tmpEBLT});
+    outSBLT := listAppend(outSBLT, tmpSBLT) annotation(__OpenModelica_DisableListAppendWarning=true);
+    outEBLT := List.appendElt(tmpEBLT, outEBLT);
     /*for v in listReverse(dependencyequations) loop
       outlist:=v::outlist;
     end for;*/
@@ -1417,9 +1417,8 @@ algorithm
     end for;
   end for;
   outlist := listReverse(outlist);
-  ranklist := List.sort(s_BLTRanks, intGt);
   // append the EBLT Blocks ranks always to last
-  ranklist := listAppend(ranklist, listReverse(e_BLTRanks));
+  ranklist := listAppend(List.sort(s_BLTRanks, intGt), listReverse(e_BLTRanks));
 end findBlocksRanks;
 
 public function sortBlocks

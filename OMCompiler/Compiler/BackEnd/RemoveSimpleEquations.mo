@@ -79,6 +79,7 @@ import List;
 import SimCodeUtil;
 import Types;
 import Util;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 
 
@@ -225,7 +226,7 @@ algorithm
       if listEmpty(tempreferencevar) then
         tempreferencevar := getVarsHelper(cr,inDAE.shared.globalKnownVars);
       end if;
-      referencevar := listAppend(referencevar,tempreferencevar);
+      referencevar := listAppend(tempreferencevar, referencevar);
     end for;
 
     // check list of referencevariable either PARAM() or CONST()
@@ -900,8 +901,7 @@ algorithm
         eqnlst = BackendEquation.getList(elst, iEqns);
         (elst,_,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
         eqnlst1 = BackendEquation.getList(elst, iEqns);
-        eqnlst = listAppend(eqnlst, eqnlst1);
-        arg = inFunc(eqnlst, inTypeA);
+        arg = inFunc(listAppend(eqnlst, eqnlst1), inTypeA);
       then
         traverseComponents(rest, iEqns, inFunc, arg);
   end match;
@@ -1870,8 +1870,8 @@ algorithm
     // var
     case (DAE.CREF(cr, _), (b, vars, globalKnownVars, b1, b2, ilst)) equation
       (_::_, vlst)= BackendVariable.getVar(cr, vars);
-      ilst = listAppend(ilst, vlst);
-    then (inExp, true, (b, vars, globalKnownVars, b1, b2, ilst));
+      vlst = listAppend(ilst, vlst);
+    then (inExp, true, (b, vars, globalKnownVars, b1, b2, vlst));
 
     case (_, (b, _, _, _, _, _))
     then (inExp, not b, inTuple);
@@ -2235,7 +2235,7 @@ protected
   list<String> lst;
   String msg;
 algorithm
-  lst := circularEqualityMsg_dispatch(stack, iR, simpleeqnsarr, {});
+  lst := circularEqualityMsg_dispatch(stack, iR, simpleeqnsarr);
   msg := stringDelimitList(lst, "\n");
   msg := stringAppendList({iMsg, msg, "\n"});
   oMsg := msg;
@@ -2245,27 +2245,23 @@ protected function circularEqualityMsg_dispatch "author: Frenkel TUD 2013-05, ad
   input list<Integer> stack;
   input Integer iR;
   input array<SimpleContainer> simpleeqnsarr;
-  input list<String> iMsg;
-  output list<String> oMsg;
+  output list<String> oMsg = {};
+protected
+  list<DAE.ComponentRef> names;
+  list<String> slst;
 algorithm
-  oMsg := match(stack, iR, simpleeqnsarr, iMsg)
-    local
-      Integer r;
-      list<Integer> rest;
-      String msg;
-      list<DAE.ComponentRef> names;
-      list<String> slst;
-    case ({}, _, _, _) then iMsg;
-    case (r::_, _, _, _) guard intEq(r, iR) then iMsg;
-    case (r::rest, _, _, _)
-      equation
-        names = getVarsNames(simpleeqnsarr[r]);
-        slst = List.map(names, ComponentReference.printComponentRefStr);
-        slst = listAppend(slst, {"----------------------------------"});
-        slst = listAppend(iMsg, slst);
-      then
-        circularEqualityMsg_dispatch(rest, iR, simpleeqnsarr, slst);
-  end match;
+  for r in stack loop
+    if r == iR then
+      break;
+    end if;
+
+    for n in getVarsNames(simpleeqnsarr[r]) loop
+      oMsg := ComponentReference.printComponentRefStr(n) :: oMsg;
+    end for;
+    oMsg := "----------------------------------" :: oMsg;
+  end for;
+
+  listReverseInPlace(oMsg);
 end circularEqualityMsg_dispatch;
 
 protected function getVarsNames "author: Frenkel TUD 2013-05"
@@ -3631,8 +3627,8 @@ algorithm
       end if;
       true = intEq(i, is);
       crVar = BackendVariable.varCref(inVar);
-      favorit = if ComponentReference.crefEqual(crVar, crs) then {(es, crs, is), (e, cr, i)} else {(e, cr, i), (es, crs, is)};
-      favorit = listAppend(favorit,rest);
+      favorit = if ComponentReference.crefEqual(crVar, crs) then
+       (es, crs, is) :: (e, cr, i) :: rest else (e, cr, i) :: (es, crs, is) :: rest;
     then selectFreeValue1(zerofreevalues, favorit, s, iAttributeName, inFunc, inVar, globalKnownVars);
 
     // less than, remove all from list, return just this one

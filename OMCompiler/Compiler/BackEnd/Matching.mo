@@ -3888,7 +3888,7 @@ algorithm
         false = intEq(L,level[r1]);
         (r2::unmatched) = listReverse(unMatched);
         l = level[r2];
-        unmatched = listAppend(unmatched,r2::unmatchedRows);
+        unmatched = listAppend(unmatched,r2::unmatchedRows) annotation(__OpenModelica_DisableListAppendWarning=true);
         ABMPDFS(unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});
       then ();
     case (_,_,r1::_,{},_,_,_,_,_,_,_,_,_,_)

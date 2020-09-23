@@ -2519,7 +2519,7 @@ algorithm
         print("\n" + BORDER + "\nBEGINNING of TarjanMatching\n\n");
       end if;
 
-      tvars = listAppend(tvars,tvarsIn);
+      tvars = listAppend(tvars,tvarsIn) annotation(__OpenModelica_DisableListAppendWarning=true);
 
       // assign vars to eqs until complete or partially causalisation(and restart algorithm)
       (order,causal) = TarjanMatching(mIn,mtIn,meIn,ass1In,ass2In,orderIn,mapEqnIncRow,mapIncRowEqn,eqnNonlinPoints);

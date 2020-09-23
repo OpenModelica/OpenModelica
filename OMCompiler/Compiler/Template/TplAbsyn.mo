@@ -1570,7 +1570,7 @@ algorithm
         ((mmexp,_), mmopts) = lookupDeleteTupleList(mmopts, optid);
         stmt = pushBlockStatement(btid, mmexp, intxt, outtxt);
         pstmt = tplStatement("popBlock", {}, outtxt, outtxt);
-        popstmts = listAppend(popstmts, {pstmt} );
+        popstmts = List.appendElt(pstmt, popstmts);
       then ( mmopts, (stmt :: stmts), popstmts, outtxt);
 
     case ( mmopts, _, _, stmts, popstmts, intxt, _)
@@ -2829,7 +2829,7 @@ algorithm
     //then there is no usage of the iteration environment from the user expression
     case (true, _, true, false, iopts, _)
       equation
-        iopts = listAppend(iopts, nonSpecifiedIterOptions);
+        iopts = listAppend(iopts, nonSpecifiedIterOptions) annotation(__OpenModelica_DisableListAppendWarning=true);
         ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, emptyOptionId);
         ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, separatorOptionId);
         ((MM_LITERAL("0"),_))    = lookupTupleList(iopts, alignNumOptionId);
@@ -2843,7 +2843,7 @@ algorithm
     //then there is no usage of the iteration environment from the user expression
     case (true, _, false, false, iopts, {})
       equation
-        iopts = listAppend(iopts, nonSpecifiedIterOptions);
+        iopts = listAppend(iopts, nonSpecifiedIterOptions) annotation(__OpenModelica_DisableListAppendWarning=true);
         ((MM_LITERAL("NONE()"),_)) = lookupTupleList(iopts, emptyOptionId);
       then false;
 

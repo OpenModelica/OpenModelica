@@ -209,7 +209,7 @@ algorithm
         if(boolNot(listEmpty(predecessors))) then //in this case the node has predecessors
           //find all predecessors which are scheduled to another thread and thus require a lock
           (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
-          outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks);
+          outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
           //threadTasks = listAppend(List.map(newLockIdc,convertLockIdToAssignTask), threadTasks);
           threadTasks = listAppend(lockTasks, threadTasks);
 
@@ -226,7 +226,7 @@ algorithm
 
         //add all successors with refcounter = 1
         (allCalcTasks,tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
-        tmpNodeList = listAppend(tmpNodeList, rest);
+        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
         arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
@@ -360,7 +360,7 @@ algorithm
         //Find all predecessors which are scheduled to another thread and thus require a lock
         (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head, predecessors, threadId, iCommCosts, iCompTaskMapping,
                                                                       iSimVarMapping);
-        outgoingDepTasks = listAppend(outgoingDepTasks, newOutgoingDepTasks);
+        outgoingDepTasks = listAppend(outgoingDepTasks, newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
         threadTasks = listAppend(lockTasks, threadTasks);
 
         simEqIdc = List.map(List.map1(eqIdc, getSimEqSysIdxForComp, iSccSimEqMapping), List.last);
@@ -373,7 +373,7 @@ algorithm
 
         //add all successors with refcounter = 1
         (allCalcTasks, tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks, successorIdc, {});
-        tmpNodeList = listAppend(tmpNodeList, rest);
+        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         (_, newTaskRefCount) = arrayGet(allCalcTasks, index);
         _ = arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
@@ -408,7 +408,7 @@ algorithm
 
         //Add all successors with refcounter = 1
         (allCalcTasks, tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks, successorIdc, {});
-        tmpNodeList = listAppend(tmpNodeList, rest);
+        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         (_, newTaskRefCount) = arrayGet(allCalcTasks, index);
         _ = arrayUpdate(allCalcTasks, index, (newTask, newTaskRefCount));
@@ -2016,10 +2016,10 @@ algorithm
   for nodeIdx in iNodeIdc loop
     sccs := arrayGet(iNodeSccMapping, nodeIdx);
     for sccIdx in sccs loop
-      simEqs := listAppend(simEqs, arrayGet(iSccSimEqMapping, sccIdx));
+      simEqs := List.append_reverse(arrayGet(iSccSimEqMapping, sccIdx), simEqs);
     end for;
   end for;
-  oTask := HpcOmSimCode.CALCTASK_LEVEL(simEqs,iNodeIdc,NONE());
+  oTask := HpcOmSimCode.CALCTASK_LEVEL(listReverse(simEqs),iNodeIdc,NONE());
 end makeCalcTaskLevel;
 
 public function makeCalcTask "
@@ -2705,8 +2705,8 @@ protected
 algorithm
   costs := HpcOmTaskGraph.getCommCostTimeBetweenNodes(n,edge,iTaskGraphMeta);
   costsInt := realInt(costs);
-  orelations := listAppend(irelations,{(edge,n,costsInt)});
-  orelations := listAppend(orelations,{(n,edge,costsInt)});
+  orelations := List.appendElt((edge,n,costsInt), irelations);
+  orelations := List.appendElt((n,edge,costsInt), orelations);
 end getSingleRelations;
 
 protected function getRelations
@@ -2842,10 +2842,10 @@ algorithm
     case (_,(node,position,l_eptr,l_eint,l_hewgts))
         equation
             n=node-1;
-            l_eint = listAppend(l_eint,{n});
+            l_eint = List.appendElt(n, l_eint);
             l_eint = List.fold(childnodes,listNodes,l_eint);
             n=position+listLength(childnodes)+1;
-            l_eptr = listAppend(l_eptr,{n});
+            l_eptr = List.appendElt(n, l_eptr);
             help = (node+1,n,l_eptr,l_eint,l_hewgts);
         then help;
     end match;
@@ -2994,7 +2994,7 @@ algorithm
 
         //find all predecessors which are scheduled to another thread and thus require a lock
         (lockTasks,newOutgoingDepTasks) = iLockWithPredecessorHandler(head,predecessors,threadId,iCommCosts,iCompTaskMapping,iSimVarMapping);
-        outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks);
+        outgoingDepTasks = listAppend(outgoingDepTasks,newOutgoingDepTasks) annotation(__OpenModelica_DisableListAppendWarning=true);
         //threadTasks = listAppend(List.map(newLockIdc,convertLockIdToAssignTask), threadTasks);
         threadTasks = listAppend(lockTasks, threadTasks);
 
@@ -3009,7 +3009,7 @@ algorithm
         //print("Successors: " + stringDelimitList(List.map(successorIdc, intString), ",") + "\n");
         //add all successors with refcounter = 1
         (allCalcTasks,tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
-        tmpNodeList = listAppend(tmpNodeList, rest);
+        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
         arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
@@ -3034,7 +3034,7 @@ algorithm
         //print("Successors: " + stringDelimitList(List.map(successorIdc, intString), ",") + "\n");
         //add all successors with refcounter = 1
         (allCalcTasks,tmpNodeList) = updateRefCounterBySuccessorIdc(allCalcTasks,successorIdc,{});
-        tmpNodeList = listAppend(tmpNodeList, rest);
+        tmpNodeList = listAppend(tmpNodeList, rest) annotation(__OpenModelica_DisableListAppendWarning=true);
         tmpNodeList = List.sort(tmpNodeList, compareTasksByWeighting);
         ((_,newTaskRefCount)) = arrayGet(allCalcTasks,index);
         arrayUpdate(allCalcTasks,index,(newTask,newTaskRefCount));
@@ -3173,8 +3173,7 @@ algorithm
         assLocks = List.map6(preds,createDepTaskByTaskIdc,idx,iAllCalcTasks,false,iCommCosts,iCompTaskMapping,iSimVarMapping);
         relLocks = List.map6(succs,createDepTaskByTaskIdc,idx,iAllCalcTasks,true,iCommCosts,iCompTaskMapping,iSimVarMapping);
         //tasks = task::assLocks;
-        tasks = listAppend(relLocks,{task});
-        tasks = listAppend(tasks,assLocks);
+        tasks = listAppend(listAppend(relLocks,{task}),assLocks);
         thread = if not listEmpty(threads) then listHead(threads) else {};
         thread = listAppend(tasks,thread);
         threads = if not listEmpty(threads) then List.replaceAt(thread,1,threads) else {thread};
@@ -4374,7 +4373,7 @@ algorithm
         thread = front::thread;
         clusters = List.replaceAt(thread,currThread,clustersIn);
         //print("cluster: "+intListString(thread)+"\n");
-        clusters = listAppend(clusters,{{}});
+        clusters = List.appendElt({}, clusters);
         clusters = TDS_InitialCluster1(iTaskGraph,iTaskGraphT,iTaskGraphMeta,lastArrayIn,lactArrayIn,fpredArrayIn,rootNodes,taskAssIn,currThread+1,rest,clusters);
       then clusters;
     case(_,_,_,_,_,_,_,_,_,front::rest,_)
@@ -4959,10 +4958,10 @@ algorithm
         task = HpcOmSimCode.CALCTASK(mark,node,exeCost,-1.0,proc,simEqIdc);
         taskLst1 = task::taskLstRel;
         taskLst1 = listAppend(taskLstAss,taskLst1);
-        taskLst = listAppend(taskLst,taskLst1);
+        taskLst1 = listAppend(taskLst,taskLst1);
         //update schedule
-        threadTasks = arrayUpdate(threadTasks,proc,taskLst);
-        outgoingDepTasks = listAppend(outgoingDepTasks,taskLstAss);
+        threadTasks = arrayUpdate(threadTasks,proc,taskLst1);
+        outgoingDepTasks = listAppend(outgoingDepTasks,taskLstAss) annotation(__OpenModelica_DisableListAppendWarning=true);
         schedule = HpcOmSimCode.THREADSCHEDULE(threadTasks,outgoingDepTasks,{},allCalcTasks);
         (schedule,removeLocks) = createScheduleFromAssignments(taskAss,procAss,SOME(rest),taskGraphIn,taskGraphTIn,taskGraphMetaIn,SccSimEqMappingIn,removeLocks,orderIn,iSimVarMapping,schedule);
       then
