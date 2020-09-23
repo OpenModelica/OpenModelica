@@ -204,10 +204,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   }
 #endif
   /* useHomotopy=1: global homotopy (equidistant lambda) */
-  if ( (data->callback->useHomotopy == 1 && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] != 1) && omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY] !=1 ) {
+  if (data->callback->useHomotopy == 1 && omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] != 1 && omc_flag[FLAG_NO_HOMOTOPY_ON_FIRST_TRY] != 1) {
       omc_flag[FLAG_HOMOTOPY_ON_FIRST_TRY] = 1;
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. "
-                                            "To disable initialization with homotpy operator use \"-noHomotopyOnFirstTry\".");
+                                            "To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".");
   }
 
   adaptiveGlobal = data->callback->useHomotopy == 2;  /* new global homotopy approach (adaptive lambda) */
