@@ -158,7 +158,7 @@ wine_fmil_msvc: .wine_fmil_msvc
 	# Goto build msvc directory
 	test -d 3rdParty/FMIL
 
-	(test -f $@ && test -d 3rdParty/FMIL/build_msvc && test -d 3rdParty/FMIL/install_msvc) || (rm -rf 3rdParty/FMIL/build_msvc && rm -rf 3rdParty/FMIL/install_msvc && mkdir -p 3rdParty/FMIL/build_msvc && cd 3rdParty/FMIL/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFMILIB_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles" && $(WINE) nmake /f Makefile install)
+	(test -f $@ && test -d 3rdParty/FMIL/build_msvc && test -d 3rdParty/FMIL/install_msvc) || (rm -rf 3rdParty/FMIL/build_msvc && rm -rf 3rdParty/FMIL/install_msvc && mkdir -p 3rdParty/FMIL/build_msvc && cd 3rdParty/FMIL/build_msvc && $(WINE) "$(OMDEV_CMAKE)" -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles" && $(WINE) nmake /f Makefile install)
 
 	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.dll $(OMBUILDDIR)/lib/omc/msvc/fmilib.dll)
 	(cp -puf 3rdParty/FMIL/install_msvc/lib/fmilib_shared.lib $(OMBUILDDIR)/lib/omc/msvc/fmilib.lib)

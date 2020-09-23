@@ -151,6 +151,7 @@ target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIO
 
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 
+
 include_regular_expression("^$")
 # There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
 target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Util)
@@ -168,7 +169,20 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_io)
 
 
 
-
 # OMC Executable.
 add_executable(omc .cmake/omc_main.c)
 target_link_libraries(omc OpenModelicaCompiler)
+
+
+
+
+### INSTALLATION
+
+# Install OpenModelicaCompiler to the directory for LIBRARIES (default=lib)
+# Install omc to the directory for RUNTIME (default=bin)
+install(TARGETS omc OpenModelicaCompiler)
+
+# Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
+install(FILES NFFrontEnd/NFModelicaBuiltin.mo DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc)
+install(FILES FrontEnd/ModelicaBuiltin.mo DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc)
+install(FILES FrontEnd/MetaModelicaBuiltin.mo DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc)

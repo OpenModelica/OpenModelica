@@ -357,7 +357,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
 
 # Install expat
 expat: fmil

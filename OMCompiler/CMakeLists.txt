@@ -19,6 +19,11 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
+# Set the installation lib directory as an rpath for all installed
+# libs.
+# Maybe there is a better way to do this but it should suffice for now.
+SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
+
 
 # options
 option(OMC_USE_CORBA "Should use corba." OFF)

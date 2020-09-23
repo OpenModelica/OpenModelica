@@ -330,7 +330,7 @@ $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
 	echo @echo on > 3rdParty/FMIL/build_msvc/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/FMIL/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DFMILIB_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo @echo on >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKE= >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/FMIL/build_msvc/build.bat
