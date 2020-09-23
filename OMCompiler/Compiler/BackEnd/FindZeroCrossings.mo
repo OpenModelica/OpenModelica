@@ -100,7 +100,7 @@ algorithm
   eqns_ := BackendEquation.listEquation(DoubleEnded.toListNoCopyNoClear(eqns));
   vars_ := BackendVariable.listVar(DoubleEnded.toListNoCopyNoClear(vars));
   syst := BackendDAEUtil.createEqSystem(vars_, eqns_, {}, BackendDAE.UNSPECIFIED_PARTITION(), BackendEquation.emptyEqns());
-  systs := listAppend(systs, {syst});
+  systs := List.appendElt(syst, systs);
 
   outDAE := BackendDAE.DAE(systs, shared);
   if index > 1 then
@@ -260,9 +260,9 @@ algorithm
       (elsewhenPart, vars1, eqns1, index, ht) = encapsulateWhenConditions_Equations(elsewhenPart, inSource, inIndex, inHT);
       (condition, vars, eqns, index, ht) = encapsulateWhenConditions_Equations1(condition, inSource, index, ht);
       whenEquation = BackendDAE.WHEN_STMTS(condition, whenStmtLst, SOME(elsewhenPart));
-      vars = listAppend(vars, vars1);
-      eqns = listAppend(eqns, eqns1);
-    then (whenEquation, vars, eqns, index, ht);
+      vars1 = listAppend(vars, vars1);
+      eqns1 = listAppend(eqns, eqns1);
+    then (whenEquation, vars1, eqns1, index, ht);
 
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/FindZeroCrossings.mo: function encapsulateWhenConditions_Equations failed"});
@@ -394,14 +394,14 @@ algorithm
       if listEmpty(CheckModel.algorithmStatementListOutputs(stmts1, DAE.EXPAND())) then
         // without outputs
         (stmts, preStmts2, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-        preStmts = listAppend(preStmts, preStmts2);
-        stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts;
+        preStmts = listAppend(preStmts, preStmts2) annotation(__OpenModelica_DisableListAppendWarning=true);
+        stmts = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts;
       else
         (stmts, stmts_, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
         stmts_ = DAE.STMT_WHEN(condition, conditions, initialCall, stmts1, NONE(), source)::stmts_;
-        stmts_ = listAppend(stmts_, stmts);
+        stmts = listAppend(stmts_, stmts);
       end if;
-    then (stmts_, preStmts, index);
+    then (stmts, preStmts, index);
 
     // when - elsewhen statement
     case (stmt as DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), source=source))::rest equation
@@ -420,14 +420,14 @@ algorithm
         if listEmpty(CheckModel.algorithmStatementListOutputs({stmt2}, DAE.EXPAND())) then
           // without outputs
           preStmts2 = List.stripLast(elseWhenList);
-          preStmts = listAppend(preStmts, preStmts2);
+          preStmts = listAppend(preStmts, preStmts2) annotation(__OpenModelica_DisableListAppendWarning=true);
           (stmts, preStmts2, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-          preStmts = listAppend(preStmts, preStmts2);
+          preStmts = listAppend(preStmts, preStmts2) annotation(__OpenModelica_DisableListAppendWarning=true);
           stmts_ = stmt2::stmts;
         elseif listLength(elseWhenList)==1 then
-          preStmts = listAppend(preStmts, preStmts2);
+          preStmts = listAppend(preStmts, preStmts2) annotation(__OpenModelica_DisableListAppendWarning=true);
           (stmts, stmts_, index) = encapsulateWhenConditions_Algorithms(rest, vars, index);
-          stmts_ = stmt2::listAppend(stmts_, stmts);
+          stmts_ = stmt2::listAppend(stmts_, stmts) annotation(__OpenModelica_DisableListAppendWarning=true);
         else
           (stmts, preStmts, index) = encapsulateWhenConditions_Algorithms(rest, vars, inIndex);
           stmts_ = listAppend(preStmts, stmts);

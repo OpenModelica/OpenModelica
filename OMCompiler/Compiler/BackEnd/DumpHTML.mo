@@ -251,8 +251,7 @@ protected
 algorithm
   t := listReverse(tags);
   DOCUMENT(docType=docType, head=head, body=body) := inDoc;
-  body := listAppend(body, t);
-  outDoc := DOCUMENT(docType, head, body);
+  outDoc := DOCUMENT(docType, head, listAppend(body, t));
 end addBodyTags;
 
 protected function dumpDocument " author: Frenkel TUD 2011-08

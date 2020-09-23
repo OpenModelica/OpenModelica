@@ -261,49 +261,44 @@ end solve2;
 
 
 protected function solveWork
-
- input DAE.Exp inExp1 "lhs";
- input DAE.Exp inExp2 "rhs";
- input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
- input Option<DAE.FunctionTree> functions;
- input Option<Integer> uniqueEqIndex "offset for tmp vars";
- input Integer idepth;
- input Boolean doInline;
- input Boolean isContinuousIntegration;
- output DAE.Exp outExp;
- output list<DAE.Statement> outAsserts;
- output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
- output list<DAE.ComponentRef> newVarsCrefs;
- output Integer depth;
-
-
+  input DAE.Exp inExp1 "lhs";
+  input DAE.Exp inExp2 "rhs";
+  input DAE.Exp inExp3 "DAE.CREF or 'der(DAE.CREF())'";
+  input Option<DAE.FunctionTree> functions;
+  input Option<Integer> uniqueEqIndex "offset for tmp vars";
+  input Integer idepth;
+  input Boolean doInline;
+  input Boolean isContinuousIntegration;
+  output DAE.Exp outExp;
+  output list<DAE.Statement> outAsserts;
+  output list<BackendDAE.Equation> eqnForNewVars "eqn for tmp vars";
+  output list<DAE.ComponentRef> newVarsCrefs;
+  output Integer depth;
 protected
- DAE.Exp e1, e2;
- list<BackendDAE.Equation> eqnForNewVars1;
- list<DAE.ComponentRef> newVarsCrefs1;
+  DAE.Exp e1, e2;
+  list<BackendDAE.Equation> eqnForNewVars1, eqnForNewVars2;
+  list<DAE.ComponentRef> newVarsCrefs1, newVarsCrefs2;
 algorithm
- (e1, e2, eqnForNewVars, newVarsCrefs, depth) := matchcontinue inExp1
-               case _ then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex, idepth, doInline);
-               else
-                equation
-                  if Flags.isSet(Flags.FAILTRACE) then
-                    Debug.trace("\n-ExpressionSolve.preprocessingSolve failed:\n");
-                    Debug.trace(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
-                    Debug.trace(" with respect to: " + ExpressionDump.printExpStr(inExp3));
-                  end if;
-                then (inExp1,inExp2,{},{}, idepth);
-              end matchcontinue;
+  (e1, e2, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue inExp1
+    case _ then preprocessingSolve(inExp1, inExp2, inExp3, functions, uniqueEqIndex, idepth, doInline);
+    else
+      equation
+        if Flags.isSet(Flags.FAILTRACE) then
+          Debug.trace("\n-ExpressionSolve.preprocessingSolve failed:\n");
+          Debug.trace(ExpressionDump.printExpStr(inExp1) + " = " + ExpressionDump.printExpStr(inExp2));
+          Debug.trace(" with respect to: " + ExpressionDump.printExpStr(inExp3));
+        end if;
+      then (inExp1,inExp2,{},{}, idepth);
+  end matchcontinue;
 
- (outExp, outAsserts, eqnForNewVars1, newVarsCrefs1, depth) := matchcontinue e1
-                          case _ then  solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth, doInline, isContinuousIntegration);
-                          case _ then  solveSimple(e1, e2, inExp3, depth);
-                          case _ then  solveLinearSystem(e1, e2, inExp3, functions, depth);
-                          else fail();
-                         end matchcontinue;
+  (outExp, outAsserts, eqnForNewVars2, newVarsCrefs2, depth) := matchcontinue e1
+    case _ then solveIfExp(e1, e2, inExp3, functions, uniqueEqIndex, depth, doInline, isContinuousIntegration);
+    case _ then solveSimple(e1, e2, inExp3, depth);
+    case _ then solveLinearSystem(e1, e2, inExp3, functions, depth);
+   end matchcontinue;
 
- eqnForNewVars := listAppend(eqnForNewVars, eqnForNewVars1);
- newVarsCrefs := listAppend(newVarsCrefs, newVarsCrefs1);
-
+  eqnForNewVars := listAppend(eqnForNewVars1, eqnForNewVars2);
+  newVarsCrefs := listAppend(newVarsCrefs1, newVarsCrefs2);
 end solveWork;
 
 public function solveLin

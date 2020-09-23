@@ -631,15 +631,15 @@ algorithm
     syst.orderedEqs := eqns_1;
     eqnslst1 := List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
     eqnslst1 :=  List.uniqueIntN(listAppend(MSSSeqs,eqnslst1),numEqs1);
-    eqnslst1 := listAppend(eqnslst1,eqnslst);
+    eqnslst := listAppend(eqnslst1,eqnslst);
     if Flags.isSet(Flags.BLT_DUMP) then
       print("Update Adjacency Matrix: ");
-      BackendDump.debuglst(eqnslst1,intString," ","\n");
+      BackendDump.debuglst(eqnslst,intString," ","\n");
       print("\n");
     end if;
     funcs := BackendDAEUtil.getFunctions(inShared);
     (syst,omapEqnIncRow,omapIncRowEqn) :=
-      BackendDAEUtil.updateAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst1, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
+      BackendDAEUtil.updateAdjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), eqnslst, imapEqnIncRow, imapIncRowEqn, BackendDAEUtil.isInitializationDAE(inShared));
     osyst := syst;
     oshared := inShared;
     oNotDiffableMSS := iNotDiffableMSS;
@@ -1969,9 +1969,8 @@ algorithm
       equation
         crlst = getDerStateOrder(dcr,so);
         vlst = List.map1(crlst,getVar,vars);
-        vlst = listAppend(vlst,iVars);
       then
-        vlst;
+        listAppend(vlst,iVars);
     case BackendDAE.VAR(varKind=BackendDAE.STATE(index=diffindx))
       then
          List.consOnTrue(intGt(diffindx,level),inVar,iVars);
@@ -2182,11 +2181,10 @@ algorithm
         //  print("Sets:\n");
         //  BackendDump.dumpAdjacencyMatrix(listArray(comps));
         //  BackendDump.printEqSystem(syst);
-        (vlst,_,stateSets) := processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,inShared,{},{},iStateSets);
+        (vlst,_,stateSets) := processComps4New(comps,nv,ne,vars,eqns,m,mT,mapEqnIncRow,mapIncRowEqn,vec2,vec1,level,inShared,iStateSets);
         vlst := List.select(vlst, BackendVariable.isStateVar);
-        dummyVars := listAppend(dummyVars,vlst);
       then
-        (dummyVars,stateSets);
+        (listAppend(dummyVars, vlst), stateSets);
     // to much equations this is an error
     case _
       guard intGt(neqns,nfreeStates)
@@ -2418,7 +2416,7 @@ algorithm
   (ilst1,ilst) := List.split1OnTrue(ilst,intGt,nvars);
   ilst1 := List.map1(ilst1,intSub,nvars);
   ilst1 := List.map1r(ilst1,arrayGet,invindexmap);
-  ilst := listAppend(ilst,ilst1);
+  ilst1 := listAppend(ilst,ilst1);
   // add states of that level
   //ilst1 := List.flatten(List.map1r(comp,arrayGet,m));
   //(ilst1,_) := List.split1OnTrue(ilst1,intGt,nvars);
@@ -2426,7 +2424,7 @@ algorithm
   //ilst1 := List.map1r(ilst1,arrayGet,invindexmap);
   //ilst := List.unionIntN(ilst, ilst1, nvars);
   print("##########################\n");
-  print(BackendDump.dumpMarkedVars(syst, ilst) + "\n");
+  print(BackendDump.dumpMarkedVars(syst, ilst1) + "\n");
   print(BackendDump.dumpMarkedEqns(syst, eqns));
 end dumpBlock;
 
@@ -2627,8 +2625,7 @@ algorithm
         colls = List.select1r(colls,Matching.isUnAssigned, rowmarkarr);
         _ = List.fold1(colls, markTrue, iNSystems, rowmarkarr);
         rows = List.flatten(List.map1r(colls,arrayGet,m));
-        rows = List.select1r(rows,Matching.isUnAssigned, collmarkarr);
-        rows = listAppend(rows,iQueue);
+        rows = listAppend(List.select1r(rows,Matching.isUnAssigned, collmarkarr), iQueue);
       then
         partitionSystemstraverseRows(rest,rows,m,mT,rowmarkarr,collmarkarr,iNSystems);
     case (r::rest,_)
@@ -2677,11 +2674,9 @@ protected function processComps4New
   input array<Integer> vec2;
   input Integer level;
   input BackendDAE.Shared iShared;
-  input list<BackendDAE.Var> inHov;
-  input list<DAE.ComponentRef> inDummyStates;
   input StateSets iStateSets;
-  output list<BackendDAE.Var> outDummyVars = inHov;
-  output list<DAE.ComponentRef> outDummyStates = inDummyStates;
+  output list<BackendDAE.Var> outDummyVars = {};
+  output list<DAE.ComponentRef> outDummyStates = {};
   output StateSets oStateSets = iStateSets;
 protected
   array<list<Integer>> mapEqnIncRow1;
@@ -2691,7 +2686,7 @@ protected
   BackendDAE.EquationArray eqns,eqns1 = iEqns;
   BackendDAE.EqSystem syst;
   list<Integer> seteqns,unassigned,assigned,set,statevars,dstatevars,ass1,ass2,assigend1,range;
-  list<BackendDAE.Var> varlst = inHov;
+  list<BackendDAE.Var> varlst;
   array<Boolean> flag;
   list<BackendDAE.Equation> eqnlst;
   BackendDAE.AdjacencyMatrixEnhanced me;
@@ -2751,10 +2746,12 @@ algorithm
         ne := BackendEquation.equationArraySize(eqns);
         (varlst,oStateSets) := selectDummyDerivatives2new(dstates1,states1,range,assigend1,vars,nv,eqns,ne,mapIncRowEqn1,level,oStateSets);
         dummyStates := List.map(varlst,BackendVariable.varCref);
-        outDummyStates := listAppend(outDummyStates,dummyStates);
+        outDummyStates := List.append_reverse(dummyStates, outDummyStates);
         outDummyVars := listAppend(varlst, outDummyVars);
       end if;
     end for;
+
+    outDummyStates := MetaModelica.Dangerous.listReverseInPlace(outDummyStates);
   else
     Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.processComps4New failed!"});
     fail();
@@ -2809,8 +2806,7 @@ algorithm
         eqns = inMapEqnIncRow[e1];
         _ = List.fold1r(eqns,arrayUpdate,false,flag);
         vindx = List.map1r(eqns,arrayGet,vec1);
-        varlst = List.map1r(vindx,BackendVariable.getVarAt,iVars);
-        varlst = listAppend(varlst,iVarsLst);
+        varlst = listAppend(List.map1r(vindx,BackendVariable.getVarAt,iVars), iVarsLst);
         ass = List.intRange2(n-listLength(eqns)+1, n);
         ass1 = listAppend(ass,iAss1);
         ass2 = listAppend(ass,iAss2);

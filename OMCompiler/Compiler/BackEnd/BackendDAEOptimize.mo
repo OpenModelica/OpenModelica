@@ -2326,9 +2326,9 @@ algorithm
         explst = ExpressionSimplify.simplifyList(explst);
         // simplify if equation
         (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,globalKnownVars,acc,attr);
-        asserts = listAppend(asserts,asserts1);
+        asserts1 = listAppend(asserts,asserts1);
       then
-        (acc, asserts, true);
+        (acc, asserts1, true);
 
     case (eqn,globalKnownVars)
       equation
@@ -2417,7 +2417,7 @@ algorithm
         eqnslst = listReverse(theneqns1);
         // simplify nested if equations
         ((elseenqs1,asserts,_)) = List.fold31(listReverse(elseenqs), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
-        elseenqs1 = listAppend(elseenqs1,asserts);
+        elseenqs1 = listAppend(elseenqs1,asserts) annotation(__OpenModelica_DisableListAppendWarning=true);
         (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
         eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,globalKnownVars,inEqns,inEqAttr);
       then
@@ -2436,7 +2436,7 @@ algorithm
         eqnslst = listReverse(theneqns1);
         // simplify nested if equations
         ((elseenqs1,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
-        elseenqs1 = listAppend(elseenqs1,asserts);
+        elseenqs1 = listAppend(elseenqs1,asserts) annotation(__OpenModelica_DisableListAppendWarning=true);
         (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
         eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,globalKnownVars,inEqns,inEqAttr);
       then
@@ -2452,7 +2452,7 @@ algorithm
       equation
         // simplify nested if equations
         ((eqns,asserts,_)) = List.fold31(listReverse(eqns), simplifyIfEquationsFinder, globalKnownVars, {},{},false);
-        eqns = listAppend(eqns,asserts);
+        eqns = listAppend(eqns,asserts) annotation(__OpenModelica_DisableListAppendWarning=true);
         (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,globalKnownVars,inEqns,inEqAttr);
       then
         (eqns,asserts);

@@ -2456,8 +2456,8 @@ algorithm
       Boolean b,b1,b2;
       case (DAE.BCONST(true),statementLst,_,_,es,repl,_,_,_)
         equation
-          statementLst = listAppend(statementLst,es);
-          (es_1,b) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
+          statementLst_1 = listAppend(statementLst,es);
+          (es_1,b) = replaceStatementLst(statementLst_1, repl,inFuncTypeExpExpToBooleanOption,inAcc,true);
         then (es_1,b);
       case (DAE.BCONST(false),_,DAE.NOELSE(),_,es,repl,_,_,_)
         equation

@@ -544,7 +544,7 @@ algorithm
     program := listAppend(scode_builtin, program);
     placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
-    program := listAppend(program, graphicProgramSCode);
+    program := listAppend(graphicProgramSCode, program);
 
     // gather here all the flags to disable expansion
     // and scalarization if -d=-nfScalarize is on
