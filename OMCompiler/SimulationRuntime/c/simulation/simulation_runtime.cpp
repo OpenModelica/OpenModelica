@@ -787,7 +787,29 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   int i;
   initDumpSystem();
 
-  if(setLogFormat(argc, argv) || helpFlagSet(argc, argv) || checkCommandLineArguments(argc, argv))
+  int checkArgumentsRes = checkCommandLineArguments(argc, argv);
+
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  if(omc_flag[FLAG_PORT]) {
+    std::istringstream stream(omc_flagValue[FLAG_PORT]);
+    int port;
+    stream >> port;
+    sim_communication_port_open = 1;
+    sim_communication_port_open &= sim_communication_port.create();
+    sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
+  }
+#endif
+
+  int logFormatResult = setLogFormat(argc, argv);
+
+#ifndef NO_INTERACTIVE_DEPENDENCY
+  if (isXMLTCP && !sim_communication_port_open) {
+    errorStreamPrint(LOG_STDOUT, 0, "xmltcp log format requires a TCP-port to be passed (and successfully open)");
+    EXIT(1);
+  }
+#endif
+
+  if(logFormatResult || helpFlagSet(argc, argv) || checkArgumentsRes)
   {
     infoStreamPrint(LOG_STDOUT, 1, "usage: %s", argv[0]);
 
@@ -1058,21 +1080,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
   if(omc_flag[FLAG_PORT]) {
-    std::istringstream stream(omc_flagValue[FLAG_PORT]);
-    int port;
-    stream >> port;
-    sim_communication_port_open = 1;
-    sim_communication_port_open &= sim_communication_port.create();
-    sim_communication_port_open &= sim_communication_port.connect("127.0.0.1", port);
-
     if(0 != strcmp("ia", data->simulationInfo->outputFormat)) {
       communicateStatus("Starting", 0.0, data->simulationInfo->startTime, 0);
     }
-  }
-
-  if (isXMLTCP && !sim_communication_port_open) {
-    errorStreamPrint(LOG_STDOUT, 0, "xmltcp log format requires a TCP-port to be passed (and successfully open)");
-    EXIT(1);
   }
 #endif
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
