@@ -2033,7 +2033,7 @@ algorithm
       // items, move it so the added/deleted are next to each other to
       // merge them better.
       if addedBeforeDeleted then
-        before := listAppend(before, middle);
+        before := listAppend(before, middle) annotation(__OpenModelica_DisableListAppendWarning=true);
       else
         after := listAppend(middle, after);
       end if;

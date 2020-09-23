@@ -1764,18 +1764,15 @@ algorithm
     local
       DAE.Exp e;
       Integer c;
-      list<tuple<Integer, DAE.Exp>> rest, acc;
+      list<tuple<Integer, DAE.Exp>> rest;
       case (_, {}, _)
         then
           listReverse(inAcc);
       case (_, (c, _)::rest, _)
         guard
           intEq(i, c)
-        equation
-          acc = listReverse(inAcc);
-          acc = listAppend(acc, rest);
         then
-          acc;
+          listAppend(listReverse(inAcc), rest);
       case (_, (c, e)::rest, _)
         then
           removeFromCol(i, rest, (c, e)::inAcc);

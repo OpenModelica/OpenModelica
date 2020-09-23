@@ -561,7 +561,7 @@ algorithm
         (elst,vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         // get used vars of comp
         _ = List.fold1r(vlst,arrayUpdate,mark,markarray) "set assigned visited";
-        vlst = getUsedVarsComp(elst,m,markarray,mark,{});
+        vlst = getUsedVarsComp(elst,m,markarray,mark);
         (n,graph) = addCompEdgesGraph(vlst,varcomp,markarray,mark+1,iN,id,iGraph);
       then
         addCompsEdgesGraph(rest,m,varcomp,iN+1,n,markarray,mark+2,graph);
@@ -574,23 +574,16 @@ protected function getUsedVarsComp "author: Frenkel TUD 2013-02,
   input BackendDAE.AdjacencyMatrix m;
   input array<Integer> markarray;
   input Integer mark;
-  input list<Integer> iVars;
-  output list<Integer> oVars;
+  output list<Integer> oVars = {};
+protected
+  list<Integer> vlst;
 algorithm
-  oVars := match(iEqns,m,markarray,mark,iVars)
-    local
-      list<Integer> rest,vlst;
-      Integer e;
-    case ({},_,_,_,_) then iVars;
-    case (e::rest,_,_,_,_)
-      equation
-        vlst = List.select1(m[e], intGt, 0);
-        vlst = List.select1r(vlst, isUnMarked, (markarray,mark));
-        _ = List.fold1r(vlst,arrayUpdate,mark,markarray) "set visited";
-        vlst = listAppend(vlst,iVars);
-      then
-        getUsedVarsComp(rest,m,markarray,mark,vlst);
-  end match;
+  for eq in iEqns loop
+    vlst := List.select1(m[eq], intGt, 0);
+    vlst := List.select1r(vlst, isUnMarked, (markarray, mark));
+    _ := List.fold1r(vlst, arrayUpdate, mark, markarray) "set visited";
+    oVars := listAppend(vlst, oVars);
+  end for;
 end getUsedVarsComp;
 
 protected function addCompEdgesGraph "author: Frenkel TUD 2013-02,

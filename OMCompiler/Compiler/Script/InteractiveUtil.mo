@@ -15557,7 +15557,7 @@ algorithm
   matchcontinue (inClassName,inProgram)
     local
       Absyn.Path p_class;
-      list<Absyn.Path> paths, allPaths = {};
+      list<Absyn.Path> paths;
       Absyn.Class cdef;
       list<Absyn.ElementSpec> exts;
       Absyn.Program p;
@@ -15567,15 +15567,12 @@ algorithm
       algorithm
         cdef := getPathedClassInProgram(p_class, p);
         exts := getExtendsElementspecInClass(cdef);
-        paths := List.map(exts, getBaseClassNameFromExtends);
-        allPaths := {};
+        paths := listReverse(getBaseClassNameFromExtends(e) for e in exts);
         for pt in paths loop
-          allPaths := listAppend(allPaths, getAllInheritedClasses(pt, p));
-          allPaths := List.unique(allPaths);
+          paths := List.append_reverse(getAllInheritedClasses(pt, p), paths);
         end for;
-        paths := listAppend(paths, allPaths);
       then
-        paths;
+        Dangerous.listReverseInPlace(List.unique(paths));
 
     else {};
   end matchcontinue;
@@ -15909,7 +15906,7 @@ algorithm
   matchcontinue (inClassName,inProgram)
     local
       Absyn.Path p_class;
-      list<Absyn.Path> paths, allPaths = {};
+      list<Absyn.Path> paths;
       Absyn.Class cdef;
       list<Absyn.ElementSpec> exts;
       Absyn.Program p;
@@ -15921,17 +15918,14 @@ algorithm
         exts := getExtendsElementspecInClass(cdef);
         // do not use getClassEnv so we don't cache it
         env := getClassEnv_dispatch(p, p_class);
-        exts := list(makeExtendsFullyQualified(e, env) for e in exts);
+        exts := listReverse(makeExtendsFullyQualified(e, env) for e in exts);
         paths := List.map(exts, getBaseClassNameFromExtends);
         paths := List.unique(paths);
-        allPaths := {};
         for pt in paths loop
-          allPaths := listAppend(allPaths, getRecursiveInheritedClasses(pt, p));
-          allPaths := List.unique(allPaths);
+          paths := List.append_reverse(getRecursiveInheritedClasses(pt, p), paths);
         end for;
-        paths := listAppend(paths, allPaths);
       then
-        paths;
+        Dangerous.listReverseInPlace(List.unique(paths));
 
     else {};
   end matchcontinue;

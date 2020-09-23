@@ -494,8 +494,8 @@ algorithm
             outREqns := listAppend(List.map1(reqns, BackendEquation.setEquationAttributes, eq_attrs), outREqns);
           else
             (eqns, reqns) := lowerWhenEqn(el, inFunctions, {}, {});
-            outEqns := listAppend(outEqns, eqns);
-            outREqns := listAppend(outREqns, reqns);
+            outEqns := listAppend(outEqns, eqns) annotation(__OpenModelica_DisableListAppendWarning=true);
+            outREqns := listAppend(outREqns, reqns) annotation(__OpenModelica_DisableListAppendWarning=true);
           end if;
         then
           ();
@@ -670,7 +670,7 @@ algorithm
     case (DAE.CALL(Absyn.IDENT("sample"), es as {start, interval}, attr), (ht, iDelay, iSample, timeEvents))
     guard (not Types.isClockOrSubTypeClock(Expression.typeof(interval))) equation
       iSample = iSample+1;
-      timeEvents = listAppend(timeEvents, {BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval)});
+      timeEvents = List.appendElt(BackendDAE.SAMPLE_TIME_EVENT(iSample, start, interval), timeEvents);
       ht = BaseHashTable.add((inExp, iSample), ht);
     then (DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample, timeEvents));
 

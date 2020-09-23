@@ -1135,7 +1135,7 @@ algorithm
 
     case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))
       equation
-        oBody = listAppend(oBody,st);
+        oBody = List.append_reverse(st, oBody);
       then
         ();
 
@@ -1150,6 +1150,7 @@ algorithm
 
   oInputs := listReverse(oInputs);
   oOutputs := listReverse(oOutputs);
+  oBody := listReverse(oBody);
 
 end getFunctionInputsOutputBody;
 

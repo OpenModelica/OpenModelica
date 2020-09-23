@@ -1379,8 +1379,7 @@ algorithm
     jacobianEquations := SimCodeUtil.collectAllJacobianEquations(SymbolicJacs);
     if debug then ExecStat.execStat("simCode: create Jacobian linear code"); end if;
 
-    SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), SymbolicJacs);
-    SymbolicJacs := listAppend(SymbolicJacs, SymbolicJacsTemp);
+    SymbolicJacs := listAppend(listReverse(SymbolicJacsNLS), listAppend(SymbolicJacs, SymbolicJacsTemp));
     jacobianSimvars := SimCodeUtil.collectAllJacobianVars(SymbolicJacs);
     modelInfo := SimCodeUtil.setJacobianVars(jacobianSimvars, modelInfo);
     seedVars := SimCodeUtil.collectAllSeedVars(SymbolicJacs);

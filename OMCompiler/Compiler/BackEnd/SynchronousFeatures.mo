@@ -61,6 +61,7 @@ import List;
 import MMath;
 import Types;
 import Util;
+import MetaModelica.Dangerous.listReverseInPlace;
 
 
 // =============================================================================
@@ -564,11 +565,13 @@ algorithm
     (systs, baseClock, lstSubClocks1) := subClockPartitioning(syst, outShared, i);
     n := listLength(systs);
     arrayUpdate(basePartitions, j, BackendDAE.BASE_PARTITION(baseClock, n));
-    outSysts := listAppend(outSysts, systs);
-    lstSubClocks := listAppend(lstSubClocks, lstSubClocks1);
+    outSysts := List.append_reverse(systs, outSysts);
+    lstSubClocks := List.append_reverse(lstSubClocks1, lstSubClocks);
     i := i + n;
     j := j + 1;
   end for;
+  outSysts := listReverseInPlace(outSysts);
+  lstSubClocks := listReverseInPlace(lstSubClocks);
 
   hasHoldOperator := arrayCreate(listLength(lstSubClocks), false);
   //Create hash cr -> subpartition index

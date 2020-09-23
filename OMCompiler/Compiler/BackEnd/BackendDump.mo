@@ -4206,8 +4206,8 @@ algorithm
       //gather equations ans variables
       (eqIdcs,varIdcsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
       varIdcs = List.flatten(varIdcsLst);
-      eqIdcs = listAppend(eqIdcs, rEqIdcs);
-      varIdcs = listAppend(varIdcs, tVarIdcs);
+      eqIdcs = listAppend(eqIdcs, rEqIdcs) annotation(__OpenModelica_DisableListAppendWarning=true);
+      varIdcs = listAppend(varIdcs, tVarIdcs) annotation(__OpenModelica_DisableListAppendWarning=true);
       compEqLst = List.map1(eqIdcs,List.getIndexFirst,eqsIn);
       compVarLst = List.map1(varIdcs,List.getIndexFirst,varsIn);
       compVars = BackendVariable.listVar1(compVarLst);

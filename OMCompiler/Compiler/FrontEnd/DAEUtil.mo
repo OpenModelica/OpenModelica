@@ -6540,11 +6540,11 @@ algorithm
 
       case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(s), source = source)
         equation
-          stmts = listAppend(stmts, s);
+          stmts = List.append_reverse(s, stmts);
         then ();
       case DAE.INITIALALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(s), source = source)
         equation
-          istmts = listAppend(istmts, s);
+          istmts = List.append_reverse(s, istmts);
         then ();
       else
         equation
@@ -6552,14 +6552,14 @@ algorithm
         then ();
     end match;
   end for;
-  newEls := listReverse(newEls);
   if not listEmpty(istmts) then
-    newEls := listAppend(newEls, {DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(istmts), source)});
+    newEls := DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(listReverse(istmts)), source) :: newEls;
   end if;
   if not listEmpty(stmts) then
-    newEls := listAppend(newEls, {DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts), source)});
+    newEls := DAE.ALGORITHM(DAE.ALGORITHM_STMTS(listReverse(stmts)), source) :: newEls;
   end if;
 
+  newEls := listReverse(newEls);
   outDae := DAE.DAE(newEls);
 
 end mergeAlgorithmSections;

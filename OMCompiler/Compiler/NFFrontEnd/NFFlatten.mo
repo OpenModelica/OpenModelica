@@ -1363,7 +1363,7 @@ function resolveConnections
   input output FlatModel flatModel;
 protected
   Connections conns;
-  list<Equation> conn_eql;
+  list<Equation> conn_eql, ec_eql;
   ConnectionSets.Sets csets;
   array<list<Connector>> csets_array;
   CardinalityTable.Table ctable;
@@ -1390,8 +1390,9 @@ algorithm
   conn_eql := ConnectEquations.generateEquations(csets_array);
 
   // append the equalityConstraint call equations for the broken connects
-  if  System.getHasOverconstrainedConnectors() then
-    conn_eql := listAppend(conn_eql, List.flatten(List.map(broken, Util.tuple33)));
+  if System.getHasOverconstrainedConnectors() then
+    ec_eql := List.flatten(list(Util.tuple33(e) for e in broken));
+    flatModel.equations := listAppend(ec_eql, flatModel.equations);
   end if;
 
   // add the equations to the flat model
