@@ -831,7 +831,7 @@ record SimulationResult
   String simulationOptions;
   String messages;
 end SimulationResult; */
-encapsulated package OpenModelica "OpenModelica internal defintions and scripting functions"
+encapsulated package OpenModelica "OpenModelica internal definitions and scripting functions"
 
 type $Code "Code quoting is not a uniontype yet because that would require enabling MetaModelica extensions in the regular compiler.
 Besides, it has special semantics."
@@ -2578,7 +2578,7 @@ external "builtin";
 annotation(preferredView="text");
 end buildModel;
 
-function buildLabel "builds Lable."
+function buildLabel "builds Label."
 input TypeName className "the class that should be built";
  input Real startTime = 0.0 "the start time of the simulation. <default> = 0.0";
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
@@ -3239,6 +3239,18 @@ annotation(preferredView="text",Documentation(info="<html>
 <p>Updates the connection annotation in the class. See also updateConnectionNames().</p>
 </html>"));
 end updateConnection;
+
+function updateConnectionStr
+  input TypeName className;
+  input String from;
+  input String to;
+  input String annotate;
+  output Boolean result;
+external "builtin";
+annotation(preferredView="text",Documentation(info="<html>
+<p>Updates the connection annotation in the class. See also updateConnectionNames().</p>
+</html>"));
+end updateConnectionStr;
 
 function updateConnectionNames
   input TypeName className;

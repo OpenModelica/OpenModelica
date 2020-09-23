@@ -991,7 +991,7 @@ QStringList OMCProxy::getComponentModifierNames(QString className, QString name)
 {
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
   {
-    mpOMCInterface->getElementModifierNames(className, name);
+    return mpOMCInterface->getElementModifierNames(className, name);
   }
   return mpOMCInterface->getComponentModifierNames(className, name);
 }
@@ -1007,7 +1007,7 @@ QString OMCProxy::getComponentModifierValue(QString className, QString name)
 {
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport())
   {
-    mpOMCInterface->getElementModifierValue(className, name);
+    return mpOMCInterface->getElementModifierValue(className, name);
   }
   return mpOMCInterface->getComponentModifierValue(className, name);
 }
@@ -2021,18 +2021,16 @@ bool OMCProxy::renameComponentInClass(QString className, QString oldName, QStrin
  * \param className - the name of the class.
  * \param from - the connection start component name
  * \param to - the connection end component name
- * \param annotation - the updated conneciton annotation.
+ * \param annotation - the updated connection annotation.
  * \return true on success.
  */
 bool OMCProxy::updateConnection(QString className, QString from, QString to, QString annotation)
 {
-  sendCommand(QString("updateConnection(%1, \"%2\", \"%3\", %4)").arg(className, from, to, annotation));
-  if (StringHandler::unparseBool(getResult())) {
-    return true;
-  } else {
+  bool result = mpOMCInterface->updateConnectionStr(className, from, to, annotation);
+  if (!result) {
     printMessagesStringInternal();
-    return false;
   }
+  return result;
 }
 
 /*!
