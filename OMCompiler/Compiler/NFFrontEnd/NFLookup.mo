@@ -403,23 +403,34 @@ function lookupSimpleName
   output InstNode node;
 protected
   InstNode cur_scope = scope;
+  Boolean require_builtin = false;
 algorithm
   // Look for the name in each enclosing scope, until it's either found or we
   // run out of scopes.
   for i in 1:Global.recursionDepthLimit loop
     try
       node := lookupLocalSimpleName(name, cur_scope);
-      return;
-    else
-      // TODO: Handle encapsulated scopes.
-      // If the scope has the same name as we're looking for we can just return it.
-      if name == InstNode.name(cur_scope) and InstNode.isClass(cur_scope) then
-        node := cur_scope;
-        return;
+
+      if require_builtin then
+        true := InstNode.isBuiltin(node);
       end if;
 
-      // Otherwise, continue in the enclosing scope.
-      cur_scope := InstNode.parentScope(cur_scope);
+      return;
+    else
+      // If the scope is encapsulated, continue looking among the builtin
+      // classes in the top scope.
+      if InstNode.isEncapsulated(cur_scope) then
+        // Do parentScope first to avoid an infinite loop if we're already in the top scope.
+        cur_scope := InstNode.topScope(InstNode.parentScope(cur_scope));
+        require_builtin := true;
+      elseif name == InstNode.name(cur_scope) and InstNode.isClass(cur_scope) then
+        // If the scope has the same name as we're looking for we can just return it.
+        node := cur_scope;
+        return;
+      else
+        // Otherwise, continue in the enclosing scope.
+        cur_scope := InstNode.parentScope(cur_scope);
+      end if;
     end try;
   end for;
 
@@ -692,7 +703,7 @@ function lookupSimpleCref
   output InstNode foundScope = scope;
   output LookupState state;
 protected
-  Boolean is_import;
+  Boolean is_import, require_builtin = false;
 algorithm
   try
     (node, cref, state) := lookupSimpleBuiltinCref(name, subs);
@@ -714,6 +725,10 @@ algorithm
             then Class.lookupElement(name, InstNode.getClass(foundScope.innerNode));
         end match;
 
+        if require_builtin then
+          true := InstNode.isBuiltin(node);
+        end if;
+
         if is_import then
           foundScope := InstNode.parent(node);
         elseif InstNode.isInnerOuterNode(node) then
@@ -727,8 +742,14 @@ algorithm
         cref := ComponentRef.fromAbsyn(node, subs);
         return;
       else
-        // Look in the next enclosing scope.
-        foundScope := InstNode.parentScope(foundScope);
+        // Stop if the current scope is encapsulated.
+        if InstNode.isEncapsulated(foundScope) then
+          foundScope := InstNode.topScope(InstNode.parentScope(foundScope));
+          require_builtin := true;
+        else
+          // Look in the next enclosing scope.
+          foundScope := InstNode.parentScope(foundScope);
+        end if;
       end try;
     end for;
 
