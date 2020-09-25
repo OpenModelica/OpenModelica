@@ -6558,5 +6558,18 @@ algorithm
   ELEMENT(specification = elSpec) := el;
 end elementSpec;
 
+public function isClassOrComponentElementSpec
+  "The ElementSpec type contains the name of the element, and this function
+   extracts this name."
+  input ElementSpec inElementSpec;
+  output Boolean yes = false;
+algorithm
+  yes := match (inElementSpec)
+    case CLASSDEF(class_ = CLASS()) then true;
+    case COMPONENTS(components = {COMPONENTITEM()}) then true;
+    else false;
+  end match;
+end isClassOrComponentElementSpec;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
