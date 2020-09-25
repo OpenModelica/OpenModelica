@@ -180,9 +180,19 @@ target_link_libraries(omc OpenModelicaCompiler)
 
 # Install OpenModelicaCompiler to the directory for LIBRARIES (default=lib)
 # Install omc to the directory for RUNTIME (default=bin)
-install(TARGETS omc OpenModelicaCompiler)
+# They are part of "compiler" installation component. This means that you can
+# install just the files in this component by specifying its name.
+install(TARGETS omc OpenModelicaCompiler
+            COMPONENT compiler)
 
 # Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
-install(FILES NFFrontEnd/NFModelicaBuiltin.mo DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc)
-install(FILES FrontEnd/ModelicaBuiltin.mo DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc)
-install(FILES FrontEnd/MetaModelicaBuiltin.mo DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc)
+# They are also part of "compiler" installation component.
+install(FILES NFFrontEnd/NFModelicaBuiltin.mo
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            COMPONENT compiler)
+install(FILES FrontEnd/ModelicaBuiltin.mo
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            COMPONENT compiler)
+install(FILES FrontEnd/MetaModelicaBuiltin.mo
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            COMPONENT compiler)
