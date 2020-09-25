@@ -79,15 +79,6 @@ annotation(__OpenModelica_builtin=true, Documentation(info="<html>
 </html>"));
 end assert;
 
-function constrain
-  input Real i1;
-  input Real i2;
-  input Real i3;
-  output Real o1;
-external "builtin";
-annotation(version="Dymola / MSL 1.6");
-end constrain;
-
 function ceil "Round a real number towards plus infinity"
   input Real x;
   output Real y;

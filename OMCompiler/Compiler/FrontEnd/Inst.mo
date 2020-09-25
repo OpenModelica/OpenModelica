@@ -5430,7 +5430,6 @@ algorithm
     case "ceil" then Absyn.FULLYQUALIFIED(Absyn.IDENT("ceil"));
     case "change" then Absyn.FULLYQUALIFIED(Absyn.IDENT("change"));
     case "classDirectory" then Absyn.FULLYQUALIFIED(Absyn.IDENT("classDirectory"));
-    case "constrain" then Absyn.FULLYQUALIFIED(Absyn.IDENT("constrain"));
     case "cos" then Absyn.FULLYQUALIFIED(Absyn.IDENT("cos"));
     case "cosh" then Absyn.FULLYQUALIFIED(Absyn.IDENT("cosh"));
     case "cross" then Absyn.FULLYQUALIFIED(Absyn.IDENT("cross"));
