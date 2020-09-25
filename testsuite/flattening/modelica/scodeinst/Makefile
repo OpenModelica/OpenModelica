@@ -319,6 +319,8 @@ Each3.mo \
 Each4.mo \
 Each5.mo \
 EmptyArray1.mo \
+Encapsulated1.mo \
+Encapsulated2.mo \
 EncapsulatingInst1.mo \
 End1.mo \
 End2.mo \
