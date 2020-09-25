@@ -620,17 +620,6 @@ algorithm
                                  FGraph.top(graph), "actualStream", graph);
   graph := mkTypeNode({DAE.T_FUNCTION(argsRealX,DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN,Absyn.IDENT("inStream"))},
                                  FGraph.top(graph), "inStream", graph);
-  graph := mkTypeNode({
-      DAE.T_FUNCTION(argsRealXYZ,DAE.T_REAL_DEFAULT,DAE.FUNCTION_ATTRIBUTES_BUILTIN,Absyn.IDENT("constrain")),
-      DAE.T_FUNCTION({
-        DAE.FUNCARG("x",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-        DAE.FUNCARG("y",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE()),
-        DAE.FUNCARG("z",T_REAL_ARRAY_1_DEFAULT,DAE.C_VAR(),DAE.NON_PARALLEL(),NONE())},
-        T_REAL_ARRAY_1_DEFAULT,
-        DAE.FUNCTION_ATTRIBUTES_BUILTIN,
-        Absyn.IDENT("constrain"))
-      },
-      FGraph.top(graph), "constrain", graph);
 end initialGraphModelica;
 
 function initialGraphMetaModelica
