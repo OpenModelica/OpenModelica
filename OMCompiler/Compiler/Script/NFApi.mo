@@ -60,7 +60,6 @@ import Connection = NFConnection;
 import Algorithm = NFAlgorithm;
 import ExpOrigin = NFTyping.ExpOrigin;
 
-
 import Absyn.Path;
 import AbsynToSCode;
 import Array;
@@ -68,7 +67,9 @@ import ComplexType = NFComplexType;
 import Config;
 import ConvertDAE = NFConvertDAE;
 import DAEUtil;
+import Dump;
 import EvalConstants = NFEvalConstants;
+import ErrorExt;
 import ExecStat.{execStat,execStatReset};
 import FBuiltin;
 import Flags;
@@ -97,7 +98,6 @@ import Prefixes = NFPrefixes;
 import Record = NFRecord;
 import Restriction = NFRestriction;
 import Scalarize = NFScalarize;
-import SCodeDump;
 import SimplifyExp = NFSimplifyExp;
 import SimplifyModel = NFSimplifyModel;
 import System;
@@ -210,17 +210,13 @@ algorithm
           inst_anncls := NFInst.expand(anncls);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls);
 
-          execStat("NFApi.instantiate("+ annName + SCodeDump.printModStr(smod) + ")");
-
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
           NFInst.instExpressions(inst_anncls);
-          execStat("NFApi.instExpressions("+ annName + SCodeDump.printModStr(smod) + ")");
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
-          execStat("NFApi.updateImplicitVariability");
 
           dae := frontEndBack(inst_anncls, annName);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -249,17 +245,13 @@ algorithm
 
           inst_anncls := NFInst.instantiate(anncls, InstNode.EMPTY_NODE(), true);
 
-          execStat("NFApi.instantiate("+ annName +")");
-
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
           NFInst.instExpressions(inst_anncls);
-          execStat("NFApi.instExpressions("+ annName +")");
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
-          execStat("NFApi.updateImplicitVariability");
 
           dae := frontEndBack(inst_anncls, annName);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -272,6 +264,10 @@ algorithm
   end for;
 
   outString := stringDelimitList(stringLst, ", ");
+
+  if Flags.isSet(Flags.EXEC_STAT) then
+    execStat("NFApi.evaluateAnnotation_dispatch("+ AbsynUtil.pathString(classPath) + " annotation(" + stringDelimitList(List.map(el, Dump.unparseElementArgStr), ", ") + ")");
+  end if;
 
 end evaluateAnnotation_dispatch;
 
@@ -391,17 +387,13 @@ algorithm
           inst_anncls := NFInst.expand(anncls);
           inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls);
 
-          execStat("NFApi.instantiate("+ annName + SCodeDump.printModStr(smod) + ")");
-
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
           NFInst.instExpressions(inst_anncls);
-          execStat("NFApi.instExpressions("+ annName + SCodeDump.printModStr(smod) + ")");
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
-          execStat("NFApi.updateImplicitVariability");
 
           dae := frontEndBack(inst_anncls, annName);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -422,17 +414,13 @@ algorithm
 
           inst_anncls := NFInst.instantiate(anncls);
 
-          execStat("NFApi.instantiate("+ annName +")");
-
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
           NFInst.instExpressions(inst_anncls);
-          execStat("NFApi.instExpressions("+ annName +")");
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
-          execStat("NFApi.updateImplicitVariability");
 
           dae := frontEndBack(inst_anncls, annName);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -448,6 +436,10 @@ algorithm
   outStringLst := stringAppendList({"{", str, "}"}) :: outStringLst;
 
   end for;
+
+  if Flags.isSet(Flags.EXEC_STAT) then
+    execStat("NFApi.evaluateAnnotations_dispatch("+ AbsynUtil.pathString(classPath) + " annotation(" + stringDelimitList(List.map(List.flatten(elArgs), Dump.unparseElementArgStr), ", ") + ")");
+  end if;
 
 end evaluateAnnotations_dispatch;
 
@@ -466,6 +458,9 @@ algorithm
   b := FlagsUtil.set(Flags.SCODE_INST, true);
   s := FlagsUtil.set(Flags.NF_SCALARIZE, true); // #5689
   try
+    if not Flags.isSet(Flags.NF_API_NOISE) then
+      ErrorExt.setCheckpoint("NFApi.mkFullyQual");
+    end if;
     // run the front-end front
     (program, name, top, expanded_cls) := frontEndLookup(absynProgram, classPath);
     // if is derived qualify in the parent
@@ -474,12 +469,23 @@ algorithm
     else // qualify in the class
       cls := Lookup.lookupClassName(pathToQualify, expanded_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
     end if;
+
     qualPath := InstNode.scopePath(cls, true);
+
+    if not Flags.isSet(Flags.NF_API_NOISE) then
+      ErrorExt.rollBack("NFApi.mkFullyQual");
+    end if;
+
     FlagsUtil.set(Flags.SCODE_INST, b);
     FlagsUtil.set(Flags.NF_SCALARIZE, s);
   else
     // do not fail, just return the Absyn path
     qualPath := pathToQualify;
+
+    if not Flags.isSet(Flags.NF_API_NOISE) then
+      ErrorExt.rollBack("NFApi.mkFullyQual");
+    end if;
+
     FlagsUtil.set(Flags.SCODE_INST, b);
     FlagsUtil.set(Flags.NF_SCALARIZE, s);
   end try;

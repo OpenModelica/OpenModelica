@@ -341,7 +341,7 @@ void Parameter::createValueWidget()
       constrainedByClassName = mpComponent->getComponentInfo()->getConstrainedByClassName();
       mpValueComboBox = new QComboBox;
       mpValueComboBox->setEditable(true);
-      mpValueComboBox->addItem("", "");
+      mpValueComboBox->addItem(mDefaultValue, mDefaultValue);
       if (constrainedByClassName.contains("$Any"))
       {
         constrainedByClassName = className;

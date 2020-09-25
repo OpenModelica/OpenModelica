@@ -3231,7 +3231,7 @@ annotation(preferredView="text",Documentation(info="<html>
 </html>"));
 end updateConnection;
 
-function updateConnectionStr
+function updateConnectionAnnotation
   input TypeName className;
   input String from;
   input String to;
@@ -3241,7 +3241,7 @@ external "builtin";
 annotation(preferredView="text",Documentation(info="<html>
 <p>Updates the connection annotation in the class. See also updateConnectionNames().</p>
 </html>"));
-end updateConnectionStr;
+end updateConnectionAnnotation;
 
 function updateConnectionNames
   input TypeName className;
