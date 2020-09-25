@@ -19,8 +19,17 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
+# Precaution so that users do not install in system folders (e.g. /user/, /usr/local/)
+# unintentionally. If the user has not specified anything default to an install_cmake dir in the root folder.
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/install_cmake CACHE PATH "Default installation directory" FORCE)
+    message(WARNING "No installation directory specified. ${CMAKE_INSTALL_PREFIX}")
+endif()
+omc_add_to_report(CMAKE_INSTALL_PREFIX)
+
+
 # Set the installation lib directory as an rpath for all installed
-# libs.
+# libs and executables.
 # Maybe there is a better way to do this but it should suffice for now.
 SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 
@@ -32,7 +41,7 @@ omc_add_to_report(OMC_USE_CORBA)
 
 omc_add_subdirectory(3rdParty)
 
-# We do this after 3rdPart is added because some libs in FMILib use implicit function declration
+# We do this after 3rdParty is added because some libs in FMILib use implicit function declaration
 # because of missing #defines due to bad configuration.
 
 # We want to make sure include directories are handled properly.
