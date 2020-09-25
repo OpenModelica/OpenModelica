@@ -15561,12 +15561,11 @@ algorithm
         end try;
         allPaths := {};
         for pt in fqpaths loop
-          allPaths := listAppend(allPaths, getAllInheritedClasses(pt, p));
-          allPaths := List.unique(allPaths);
+          allPaths := List.append_reverse(getAllInheritedClasses(pt, p), allPaths);
         end for;
-        fqpaths := listAppend(fqpaths, allPaths);
+        allPaths := Dangerous.listReverseInPlace(List.unique(allPaths));
       then
-        fqpaths;
+        listAppend(fqpaths, allPaths);
 
     else {};
   end matchcontinue;

@@ -1116,7 +1116,7 @@ public constant ErrorTypes.Message DUPLICATE_DEFINITION = ErrorTypes.MESSAGE(503
   Gettext.gettext("The same variable is being defined twice: %s."));
 public constant ErrorTypes.Message PATTERN_VAR_NOT_VARIABLE = ErrorTypes.MESSAGE(5038, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Identifiers need to point to local or output variables. Variable %s is %s."));
-public constant ErrorTypes.Message LIST_REVERSE_WRONG_ORDER = ErrorTypes.MESSAGE(5039, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
+public constant ErrorTypes.Message LIST_REVERSE_WRONG_ORDER = ErrorTypes.MESSAGE(5039, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("%1:=listAppend(%1, _) has the first argument in the \"wrong\" order.\n  It is very slow to keep appending a linked list (scales like O(N²)).\n  Consider building the list in the reverse order in order to improve performance (scales like O(N) even if you need to reverse a lot of lists). Use annotation __OpenModelica_DisableListAppendWarning=true to disable this message for a certain assignment."));
 public constant ErrorTypes.Message IS_PRESENT_WRONG_SCOPE = ErrorTypes.MESSAGE(5040, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("isPresent needs to be called from a function scope, got %s."));
