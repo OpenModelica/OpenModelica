@@ -2789,7 +2789,7 @@ algorithm
 
     case (cache,_,"updateConnection",_,_) then (cache,Values.BOOL(false));
 
-    case (cache,_,"updateConnectionStr",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),Values.STRING(annStr)},_)
+    case (cache,_,"updateConnectionAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),Values.STRING(annStr)},_)
       algorithm
         istmts := Parser.parsestringexp("__dummy(" + annStr + ");");
         GlobalScript.ISTMTS(interactiveStmtLst = {GlobalScript.IEXP(exp = aexp)}) := istmts;
@@ -2803,7 +2803,7 @@ algorithm
       then
         (cache,Values.BOOL(true));
 
-    case (cache,_,"updateConnectionStr",_,_) then (cache,Values.BOOL(false));
+    case (cache,_,"updateConnectionAnnotation",_,_) then (cache,Values.BOOL(false));
 
     case (cache,_,"updateConnectionNames",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1), Values.STRING(str2),
                                            Values.STRING(str3), Values.STRING(str4)},_)

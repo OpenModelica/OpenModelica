@@ -12,38 +12,38 @@ getAnnotationVersion();
 // set the annotation version
 setAnnotationVersion("2.x");
 
-createModel(A);                                                                                                  getErrorString();
-addComponent(x,Real,A);                                                                                          getErrorString();
-setComponentProperties(A ,x,{false,false,false,false},{""},{true,true},{""});                                    getErrorString();
-getComponents(A);                                                                                                getErrorString();
+createModel(A);                                                                                                         getErrorString();
+addComponent(x,Real,A);                                                                                                 getErrorString();
+setComponentProperties(A ,x,{false,false,false,false},{""},{true,true},{""});                                           getErrorString();
+getComponents(A);                                                                                                       getErrorString();
 // test the setting of "stream"
-setComponentProperties(A ,x,{true,false,true,true,true},{""},{true,true},{"input"});                             getErrorString();
-getComponents(A);                                                                                                getErrorString();
-setComponentProperties(A ,x,{true,true,true,true},{"parameter"},{true,true},{"input"});                          getErrorString();
-getComponents(A);                                                                                                getErrorString();
-setComponentProperties(A ,x,{true,true,false,true},{"constant"},{false,true},{"output"});                        getErrorString();
-getComponents(A);                                                                                                getErrorString();
-setComponentProperties(A ,x,{true,false,false,false},{"discrete"},{true,false},{""});                            getErrorString();
-getComponents(A);                                                                                                getErrorString();
-updateComponent(x,Integer,A);                                                                                    getErrorString();
-getComponents(A);                                                                                                getErrorString();
-setComponentComment(A,x,"comment for x");                                                                        getErrorString();
-addConnection(a,b,A);                                                                                            getErrorString();
-setConnectionComment(A,a,b,"connecting a and b");                                                                getErrorString();
-list();                                                                                                          getErrorString();
-updateConnection(A, "a", "b", annotate=Line(points = {{-22.0,15.0},{32.0,15.0},{32.0,16.0}}));                   getErrorString();
-list();                                                                                                          getErrorString();
-updateConnectionStr(A, "a", "b", "annotate=$annotation(Line(points = {{11.0,22.0},{33.0,44.0},{55.0,66.0}}))");  getErrorString();
-list();                                                                                                          getErrorString();
-getConnectionCount(A);                                                                                           getErrorString();
-getNthConnection(A, 1);                                                                                          getErrorString();
-getNthConnectionAnnotation(A, 1);                                                                                getErrorString();
-setClassComment(A,"this is the class A");                                                                        getErrorString();
-getClassInformation(A);                                                                                          getErrorString();
-getComponents(A);                                                                                                getErrorString();
-addComponent(y,Real,A);                                                                                          getErrorString();
-setComponentProperties(A ,y,{true,false,true,false,false},{""},{false,false},{""});                              getErrorString();
-list(A);                                                                                                         getErrorString();
+setComponentProperties(A ,x,{true,false,true,true,true},{""},{true,true},{"input"});                                    getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+setComponentProperties(A ,x,{true,true,true,true},{"parameter"},{true,true},{"input"});                                 getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+setComponentProperties(A ,x,{true,true,false,true},{"constant"},{false,true},{"output"});                               getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+setComponentProperties(A ,x,{true,false,false,false},{"discrete"},{true,false},{""});                                   getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+updateComponent(x,Integer,A);                                                                                           getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+setComponentComment(A,x,"comment for x");                                                                               getErrorString();
+addConnection(a,b,A);                                                                                                   getErrorString();
+setConnectionComment(A,a,b,"connecting a and b");                                                                       getErrorString();
+list();                                                                                                                 getErrorString();
+updateConnection(A, "a", "b", annotate=Line(points = {{-22.0,15.0},{32.0,15.0},{32.0,16.0}}));                          getErrorString();
+list();                                                                                                                 getErrorString();
+updateConnectionAnnotation(A, "a", "b", "annotate=$annotation(Line(points = {{11.0,22.0},{33.0,44.0},{55.0,66.0}}))");  getErrorString();
+list();                                                                                                                 getErrorString();
+getConnectionCount(A);                                                                                                  getErrorString();
+getNthConnection(A, 1);                                                                                                 getErrorString();
+getNthConnectionAnnotation(A, 1);                                                                                       getErrorString();
+setClassComment(A,"this is the class A");                                                                               getErrorString();
+getClassInformation(A);                                                                                                 getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+addComponent(y,Real,A);                                                                                                 getErrorString();
+setComponentProperties(A ,y,{true,false,true,false,false},{""},{false,false},{""});                                     getErrorString();
+list(A);                                                                                                                getErrorString();
 
 // clear all
 clear();
@@ -53,36 +53,36 @@ getAnnotationVersion();
 // set the annotation version
 setAnnotationVersion("3.x");
 
-createModel(A);                                                                                                  getErrorString();
-addComponent(x,Real,A);                                                                                          getErrorString();
-setComponentProperties(A ,x,{false,false,false,false},{""},{true,true},{""});                                    getErrorString();
-getComponents(A);                                                                                                getErrorString();
+createModel(A);                                                                                                         getErrorString();
+addComponent(x,Real,A);                                                                                                 getErrorString();
+setComponentProperties(A ,x,{false,false,false,false},{""},{true,true},{""});                                           getErrorString();
+getComponents(A);                                                                                                       getErrorString();
 // test the setting of "stream"
-setComponentProperties(A ,x,{true,false,true,true,true},{""},{true,true},{"input"});                             getErrorString();
-getComponents(A);                                                                                                getErrorString();
-setComponentProperties(A ,x,{true,true,true,true},{"parameter"},{true,true},{"input"});                          getErrorString();
-getComponents(A);                                                                                                getErrorString();
-setComponentProperties(A ,x,{true,true,false,true},{"constant"},{false,true},{"output"});                        getErrorString();
-getComponents(A);                                                                                                getErrorString();
-setComponentProperties(A ,x,{true,false,false,false},{"discrete"},{true,false},{""});                            getErrorString();
-getComponents(A);                                                                                                getErrorString();
-updateComponent(x,Integer,A);                                                                                    getErrorString();
-getComponents(A);                                                                                                getErrorString();
-setComponentComment(A,x,"comment for x");                                                                        getErrorString();
-addConnection(a,b,A);                                                                                            getErrorString();
-setConnectionComment(A,a,b,"connecting a and b");                                                                getErrorString();
-list();                                                                                                          getErrorString();
-updateConnection(A, "a", "b", annotate=$annotation(Line(points = {{-22.0,15.0},{32.0,15.0},{32.0,16.0}})));      getErrorString();
-list();                                                                                                          getErrorString();
-getConnectionCount(A);                                                                                           getErrorString();
-getNthConnection(A, 1);                                                                                          getErrorString();
-getNthConnectionAnnotation(A, 1);                                                                                getErrorString();
-setClassComment(A,"this is the class A");                                                                        getErrorString();
-getClassInformation(A);                                                                                          getErrorString();
-getComponents(A);                                                                                                getErrorString();
-addComponent(y,Real,A);                                                                                          getErrorString();
-setComponentProperties(A ,y,{true,false,true,false,false},{""},{false,false},{""});                              getErrorString();
-list(A);                                                                                                         getErrorString();
+setComponentProperties(A ,x,{true,false,true,true,true},{""},{true,true},{"input"});                                    getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+setComponentProperties(A ,x,{true,true,true,true},{"parameter"},{true,true},{"input"});                                 getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+setComponentProperties(A ,x,{true,true,false,true},{"constant"},{false,true},{"output"});                               getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+setComponentProperties(A ,x,{true,false,false,false},{"discrete"},{true,false},{""});                                   getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+updateComponent(x,Integer,A);                                                                                           getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+setComponentComment(A,x,"comment for x");                                                                               getErrorString();
+addConnection(a,b,A);                                                                                                   getErrorString();
+setConnectionComment(A,a,b,"connecting a and b");                                                                       getErrorString();
+list();                                                                                                                 getErrorString();
+updateConnection(A, "a", "b", annotate=$annotation(Line(points = {{-22.0,15.0},{32.0,15.0},{32.0,16.0}})));             getErrorString();
+list();                                                                                                                 getErrorString();
+getConnectionCount(A);                                                                                                  getErrorString();
+getNthConnection(A, 1);                                                                                                 getErrorString();
+getNthConnectionAnnotation(A, 1);                                                                                       getErrorString();
+setClassComment(A,"this is the class A");                                                                               getErrorString();
+getClassInformation(A);                                                                                                 getErrorString();
+getComponents(A);                                                                                                       getErrorString();
+addComponent(y,Real,A);                                                                                                 getErrorString();
+setComponentProperties(A ,y,{true,false,true,false,false},{""},{false,false},{""});                                     getErrorString();
+list(A);                                                                                                                getErrorString();
 
 
 // Result:
@@ -182,7 +182,7 @@ list(A);                                                                        
 // end A;"
 // Evaluating: getErrorString()
 // ""
-// Evaluating: updateConnectionStr(A, "a", "b", "annotate=$annotation(Line(points = {{11.0,22.0},{33.0,44.0},{55.0,66.0}}))")
+// Evaluating: updateConnectionAnnotation(A, "a", "b", "annotate=$annotation(Line(points = {{11.0,22.0},{33.0,44.0},{55.0,66.0}}))")
 // true
 // Evaluating: getErrorString()
 // ""
