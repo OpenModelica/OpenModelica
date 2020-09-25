@@ -2026,7 +2026,7 @@ bool OMCProxy::renameComponentInClass(QString className, QString oldName, QStrin
  */
 bool OMCProxy::updateConnection(QString className, QString from, QString to, QString annotation)
 {
-  bool result = mpOMCInterface->updateConnectionStr(className, from, to, annotation);
+  bool result = mpOMCInterface->updateConnectionAnnotation(className, from, to, annotation);
   if (!result) {
     printMessagesStringInternal();
   }

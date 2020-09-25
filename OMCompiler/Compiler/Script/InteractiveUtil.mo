@@ -2499,7 +2499,7 @@ algorithm
     case (_,p)
       equation
         cdef = getPathedClassInProgram(path, p);
-        comps = getComponentsInClass(cdef);
+        comps = getElementsInClass(cdef);
         compelts = list(getComponentitemsInElement(c) for c guard isParameterElement(c) in comps);
         compelts_1 = List.flatten(compelts);
         names = List.map(compelts_1, getComponentitemName);
@@ -3789,7 +3789,7 @@ algorithm
     env := getClassEnv(program, cls_path);
     exts := list(makeExtendsFullyQualified(e, env) for e in getExtendsElementspecInClass(cls));
     {Absyn.EXTENDS(elementArg = args)} := List.select1(exts, extendsElementspecNamed, name);
-    valueStr := Dump.printExpStr(getModificationValue(args, AbsynUtil.crefToPath(varRef)));
+    valueStr := getModificationValueStr(args, AbsynUtil.crefToPath(varRef));
   else
     valueStr := "";
   end try;
@@ -4182,9 +4182,13 @@ protected function setElementSubmodifierInClass
 protected
   Boolean found = false;
 algorithm
-  (outClass, found) := AbsynUtil.traverseClassElements(inClass,
-    function setSubmodifierInElement(inElementName =
-      inElementName, inMod = inMod), false);
+  try
+    (outClass, found) := AbsynUtil.traverseClassElements(inClass,
+      function setSubmodifierInElement(inElementName =
+        inElementName, inMod = inMod), false);
+  else
+    // do nothing
+  end try;
   // not found in elements, try components
   if not found then
     (outClass, true) := AbsynUtil.traverseClassComponents(inClass,
@@ -4206,12 +4210,22 @@ protected function setSubmodifierInElement
 protected
   list<Absyn.ElementArg> args_old, args_new;
   Absyn.EqMod eqmod_old, eqmod_new;
-  String el_id;
+  String el_id, id = "";
   Absyn.Element el = inElement;
+  Absyn.ElementSpec elSpec;
 algorithm
   el_id := AbsynUtil.crefFirstIdent(inElementName);
+  elSpec := AbsynUtil.elementSpec(inElement);
+  if AbsynUtil.isClassOrComponentElementSpec(elSpec) then
+    // this will fail if no class or component (extends, import, etc)
+    id := AbsynUtil.elementSpecName(elSpec);
+  else
+    outFound := false;
+    outContinue := true;
+    return;
+  end if;
 
-  if (el_id == AbsynUtil.elementSpecName(AbsynUtil.elementSpec(inElement))) then
+  if (el_id == id) then
     try
       outElement := match el
         case Absyn.ELEMENT()
@@ -4417,33 +4431,66 @@ public function getElementModifierValue
   output String valueStr;
 protected
   Absyn.Path cls_path;
-  String name;
+  String name, elName;
   Absyn.Class cls;
-  list<Absyn.ElementArg> args;
+  list<Absyn.ElementArg> args = {};
+  list<Absyn.Element> elems;
+  Boolean found = false;
+  list<Absyn.ComponentItem> components;
+  Option<Absyn.Modification> optMod;
 algorithm
   try
     cls_path := AbsynUtil.crefToPath(classRef);
-    name := AbsynUtil.crefIdent(varRef);
+    elName := AbsynUtil.crefIdent(varRef);
     cls := getPathedClassInProgram(cls_path, program);
-    Absyn.COMPONENTITEM(component = Absyn.COMPONENT(modification =
-      SOME(Absyn.CLASSMOD(elementArgLst = args)))) := getComponentInClass(cls, name);
-    valueStr := Dump.printExpStr(getModificationValue(args, AbsynUtil.crefToPath(subModRef)));
+    elems := getElementsInClass(cls);
+    for e in elems loop
+      args := match e
+        case Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_ = Absyn.CLASS(name = name, body = Absyn.DERIVED(arguments = args)))) guard stringEq(name, elName)
+          algorithm
+            found := true;
+          then
+            args;
+        case Absyn.ELEMENT(specification=Absyn.COMPONENTS(components = components))
+          algorithm
+            for c in components loop
+              Absyn.COMPONENTITEM(Absyn.COMPONENT(name = name, modification = optMod)) := c;
+              if stringEq(name, elName) then
+                Absyn.CLASSMOD(elementArgLst = args) := Util.getOptionOrDefault(optMod, Absyn.CLASSMOD({}, Absyn.NOMOD()));
+                found := true;
+              end if;
+            end for;
+          then
+            args;
+        else {};
+      end match;
+      if found then
+        break;
+      end if;
+    end for;
+    if found then
+      valueStr := getModificationValueStr(args, AbsynUtil.crefToPath(subModRef));
+    else
+      valueStr := "";
+    end if;
   else
     valueStr := "";
   end try;
 end getElementModifierValue;
 
-public function getModificationValue
+public function getModificationValueStr
   "Looks up a modifier in a list of element args and returns its binding
    expression, or fails if no modifier is found."
   input list<Absyn.ElementArg> args;
   input Absyn.Path path;
-  output Absyn.Exp value;
+  output String value = "";
 protected
   String name;
   list<Absyn.ElementArg> rest_args = args;
   Absyn.ElementArg arg;
   Boolean found = false;
+  Absyn.ElementSpec elSpec;
+  Absyn.Exp exp;
 algorithm
   while not found loop
     arg :: rest_args := rest_args;
@@ -4451,7 +4498,8 @@ algorithm
     found := match arg
       case Absyn.MODIFICATION() guard AbsynUtil.pathEqual(arg.path, path)
         algorithm
-          SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = value))) := arg.modification;
+          SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = exp))) := arg.modification;
+          value := Dump.printExpStr(exp);
         then
           true;
 
@@ -4459,14 +4507,21 @@ algorithm
           guard name == AbsynUtil.pathFirstIdent(path)
         algorithm
           SOME(Absyn.CLASSMOD(elementArgLst = rest_args)) := arg.modification;
-          value := getModificationValue(rest_args, AbsynUtil.pathRest(path));
+          value := getModificationValueStr(rest_args, AbsynUtil.pathRest(path));
+        then
+          true;
+
+      case Absyn.REDECLARATION(elementSpec = elSpec)
+        guard AbsynUtil.pathFirstIdent(path) == AbsynUtil.elementSpecName(elSpec)
+        algorithm
+          value := System.escapedString(Dump.unparseElementArgStr(arg), false);
         then
           true;
 
       else false;
     end match;
   end while;
-end getModificationValue;
+end getModificationValueStr;
 
 public function getElementModifierValues
   input Absyn.ComponentRef inComponentRef1;
@@ -4480,7 +4535,7 @@ algorithm
       Absyn.Path p_class;
       String name,res;
       Absyn.Class cdef;
-      list<Absyn.Element> comps;
+      list<Absyn.Element> elems;
       list<list<Absyn.ComponentItem>> compelts;
       list<Absyn.ComponentItem> compelts_1;
       Absyn.Modification mod;
@@ -4493,8 +4548,8 @@ algorithm
         p_class = AbsynUtil.crefToPath(class_);
         Absyn.IDENT(name) = AbsynUtil.crefToPath(ident);
         cdef = getPathedClassInProgram(p_class, p);
-        comps = getComponentsInClass(cdef);
-        compelts = List.map(comps, getComponentitemsInElement);
+        elems = getElementsInClass(cdef);
+        compelts = List.map(elems, getComponentitemsInElement);
         compelts_1 = List.flatten(compelts);
         {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = List.select1(compelts_1, componentitemNamed, name);
         mod = getModificationValues(elementArgLst, AbsynUtil.crefToPath(subident));
@@ -4540,30 +4595,54 @@ algorithm
 end getModificationValues;
 
 public function getElementModifierNames
- "Return the modifiernames of a component"
+ "Return the modifiernames of an element"
   input Absyn.Path path;
-  input String inComponentName;
+  input String inElementName;
   input Absyn.Program inProgram3;
   output list<String> outList;
 algorithm
   outList:=
-  matchcontinue (path,inComponentName,inProgram3)
+  matchcontinue (path,inElementName,inProgram3)
     local
       Absyn.Class cdef;
-      list<Absyn.Element> comps;
-      list<list<Absyn.ComponentItem>> compelts;
-      list<Absyn.ComponentItem> compelts_1;
-      list<Absyn.ElementArg> mod;
+      list<Absyn.Element> elems;
+      list<Absyn.ElementSpec> elSpec;
       list<String> res;
+      String name;
       Absyn.Program p;
+      list<Absyn.ElementArg> mod = {}, args = {};
+      list<Absyn.ComponentItem> components;
+      Boolean found = false;
+      Option<Absyn.Modification> optMod;
     case (_,_,p)
-      equation
-        cdef = getPathedClassInProgram(path, p);
-        comps = getComponentsInClass(cdef);
-        compelts = List.map(comps, getComponentitemsInElement);
-        compelts_1 = List.flatten(compelts);
-        {Absyn.COMPONENTITEM(Absyn.COMPONENT(_,_,SOME(Absyn.CLASSMOD(mod,_))),_,_)} = List.select1(compelts_1, componentitemNamed, inComponentName);
-        res = getModificationNames(mod);
+      algorithm
+        cdef := getPathedClassInProgram(path, p);
+        elems := getElementsInClass(cdef);
+        for e in elems loop
+          mod := match e
+            case Absyn.ELEMENT(specification=Absyn.CLASSDEF(class_ = Absyn.CLASS(name = name, body = Absyn.DERIVED(arguments = args)))) guard stringEq(name, inElementName)
+              algorithm
+                found := true;
+              then
+                args;
+            case Absyn.ELEMENT(specification=Absyn.COMPONENTS(components = components))
+              algorithm
+                for c in components loop
+                  Absyn.COMPONENTITEM(Absyn.COMPONENT(name = name, modification = optMod)) := c;
+                  if stringEq(name, inElementName) then
+                    Absyn.CLASSMOD(elementArgLst = mod) := Util.getOptionOrDefault(optMod, Absyn.CLASSMOD({}, Absyn.NOMOD()));
+                    found := true;
+                  end if;
+                end for;
+              then
+                mod;
+            else {};
+          end match;
+          if found then
+            break;
+          end if;
+        end for;
+        res := getModificationNames(mod, includeRedeclares = true);
       then
         res;
     else {};
@@ -4571,8 +4650,9 @@ algorithm
 end getElementModifierNames;
 
 protected function getModificationNames
-"Helper function to getComponentModifierNames"
+"Helper function to getElementModifierNames"
   input list<Absyn.ElementArg> inAbsynElementArgLst;
+  input Boolean includeRedeclares = false;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
@@ -4584,42 +4664,57 @@ algorithm
       String name;
       Option<String> cmt;
       list<Absyn.ElementArg> rest,args;
+      Absyn.ElementSpec elSpec;
       Absyn.Path p;
+
     case ({}) then {};
-    case ((Absyn.MODIFICATION(path = Absyn.IDENT(name = name),modification = NONE()) :: rest))
+
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name = name),modification = NONE()) :: rest)
       equation
-        names = getModificationNames(rest);
+        names = getModificationNames(rest, includeRedeclares);
       then
-        (name :: names);
-    case ((Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD({},_))) :: rest))
+        name :: names;
+
+    case (Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD({},_))) :: rest)
       equation
         name = AbsynUtil.pathString(p);
-        names = getModificationNames(rest);
+        names = getModificationNames(rest, includeRedeclares);
       then
-        (name :: names);
-        // modifier with submodifiers -and- binding, e.g. m(...)=2, add also m to list
-    case ((Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD(args,Absyn.EQMOD()))) :: rest))
+        name :: names;
+
+    // modifier with submodifiers -and- binding, e.g. m(...)=2, add also m to list
+    case (Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD(args,Absyn.EQMOD()))) :: rest)
       equation
         name = AbsynUtil.pathString(p);
-        names2 = list(stringAppend(stringAppend(name, "."), n) for n in getModificationNames(args));
-        names = getModificationNames(rest);
+        names2 = list(stringAppend(stringAppend(name, "."), n) for n in getModificationNames(args, includeRedeclares));
+        names = getModificationNames(rest, includeRedeclares);
         res = listAppend(names2, names);
       then
-        name::res;
-      // modifier with submodifiers, e.g. m(...)
-    case ((Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD(args,_))) :: rest))
+        name :: res;
+
+    // modifier with submodifiers, e.g. m(...)
+    case (Absyn.MODIFICATION(path = p,modification = SOME(Absyn.CLASSMOD(args,_))) :: rest)
       equation
         name = AbsynUtil.pathString(p);
-        names2 = list(stringAppend(stringAppend(name, "."), n) for n in getModificationNames(args));
-        names = getModificationNames(rest);
+        names2 = list(stringAppend(stringAppend(name, "."), n) for n in getModificationNames(args, includeRedeclares));
+        names = getModificationNames(rest, includeRedeclares);
         res = listAppend(names2, names);
       then
         res;
-    case ((_ :: rest))
+
+    case (Absyn.REDECLARATION(elementSpec = elSpec) :: rest) guard includeRedeclares
       equation
-        names = getModificationNames(rest);
+        name = AbsynUtil.elementSpecName(elSpec);
+        names = getModificationNames(rest, includeRedeclares);
+      then
+        name :: names;
+
+    case (_ :: rest)
+      equation
+        names = getModificationNames(rest, includeRedeclares);
       then
         names;
+
   end matchcontinue;
 end getModificationNames;
 
@@ -6402,7 +6497,7 @@ protected
 algorithm
   try
     Absyn.CLASS(body = Absyn.DERIVED(arguments = args)) := cls;
-    value := Dump.printExpStr(getModificationValue(args, path));
+    value := getModificationValueStr(args, path);
   else
     value := "";
   end try;
@@ -11609,7 +11704,7 @@ algorithm
   end matchcontinue;
 end stripGraphicsAndInteractionModification;
 
-public function getComponentsInClass
+public function getElementsInClass
 " Both public and protected lists are searched."
   input Absyn.Class inClass;
   output list<Absyn.Element> outAbsynElementLst;
@@ -11671,7 +11766,7 @@ algorithm
     else {};
 
   end match;
-end getComponentsInClass;
+end getElementsInClass;
 
 public function getPublicElementsInClass
 " Public lists are searched."
@@ -11780,7 +11875,7 @@ algorithm
 end getProtectedElementsInClass;
 
 protected function getElementsInElementitems
-"Helper function to getComponentsInClass."
+"Helper function to getElementsInClass."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
   output list<Absyn.Element> outAbsynElementLst = {};
 algorithm
