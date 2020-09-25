@@ -45,7 +45,7 @@ function der "Derivative of the input expression"
   input Real x(unit="'p");
   output Real dx(unit="'p/s");
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'der()'\">der()</a>
 </html>"));
 end der;
@@ -53,7 +53,7 @@ end der;
 impure function initial "True if in initialization phase"
   discrete output Boolean isInitial;
 external "builtin";
-annotation(__OpenModelica_Impure=true, Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initial()'\">initial()</a>
 </html>"));
 end initial;
@@ -61,7 +61,7 @@ end initial;
 impure function terminal "True after successful analysis"
   discrete output Boolean isTerminal;
 external "builtin";
-annotation(__OpenModelica_Impure=true, Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'terminal()'\">terminal()</a>
 </html>"));
 end terminal;
@@ -74,7 +74,7 @@ function assert "Check an assertion condition"
   input String message;
   input AssertionLevel level = AssertionLevel.error;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'assert()'\">assert()</a>
 </html>"));
 end assert;
@@ -92,7 +92,7 @@ function ceil "Round a real number towards plus infinity"
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ceil()'\">ceil()</a>
 </html>"));
 end ceil;
@@ -101,7 +101,7 @@ function floor "Round a real number towards minus infinity"
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'floor()'\">floor()</a>
 </html>"));
 end floor;
@@ -110,7 +110,7 @@ function integer "Returns the largest integer not greater than x. The argument s
   input Real x;
   output Integer y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'integer()'\">integer()</a>
 </html>"));
 end integer;
@@ -119,7 +119,7 @@ function sqrt "Square root"
   input Real x(unit="'p");
   output Real y(unit="'p(1/2)");
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sqrt()'\">sqrt()</a>
 </html>"));
 end sqrt;
@@ -128,7 +128,7 @@ function sign "Sign of real or integer number"
   input Real v;
   output Integer _sign;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sign()'\">sign()</a>
 </html>"));
 /* We do this with external "builtin" for now. But maybe we should inline it instead...
@@ -142,7 +142,7 @@ function identity "Identity matrix of given size"
   input Integer arraySize;
   output Integer[arraySize,arraySize] outArray;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'identity()'\">identity()</a>
 </html>"));
 end identity;
@@ -153,7 +153,7 @@ function semiLinear
   input Real negativeSlope;
   output Real result;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'semiLinear()'\">semiLinear()</a>
 </html>"));
 end semiLinear;
@@ -163,7 +163,7 @@ impure function edge "Indicate rising edge"
   output Boolean edgeEvent;
   // TODO: Ceval parameters? Needed to remove the builtin handler
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'edge()'\">edge()</a>
 </html>"));
 end edge;
@@ -172,7 +172,7 @@ function sin "Sine"
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sin()'\">sin()</a>
 </html>"));
 end sin;
@@ -181,7 +181,7 @@ function cos "Cosine"
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cos()'\">cos()</a>
 </html>"));
 end cos;
@@ -190,7 +190,7 @@ function tan "Tangent (u shall not be -pi/2, pi/2, 3*pi/2, ...)"
   input Real u;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'tan()'\">tan()</a>
 </html>"));
 end tan;
@@ -199,7 +199,7 @@ function sinh "Hyperbolic sine"
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sinh()'\">sinh()</a>
 </html>"));
 end sinh;
@@ -208,7 +208,7 @@ function cosh "Hyperbolic cosine"
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cosh()'\">cosh()</a>
 </html>"));
 end cosh;
@@ -217,7 +217,7 @@ function tanh "Hyperbolic tangent"
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'tanh()'\">tanh()</a>
 </html>"));
 end tanh;
@@ -226,7 +226,7 @@ function asin "Inverse sine (-1 <= u <= 1)"
   input Real u;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'asin()'\">asin()</a>
 </html>"));
 end asin;
@@ -235,7 +235,7 @@ function acos "Inverse cosine (-1 <= u <= 1)"
   input Real u;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'acos()'\">acos()</a>
 </html>"));
 end acos;
@@ -244,7 +244,7 @@ function atan "Inverse tangent"
   input Real x;
   output Real y;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'atan()'\">atan()</a>
 </html>"));
 end atan;
@@ -254,7 +254,7 @@ function atan2 "Four quadrant inverse tangent"
   input Real x;
   output Real z;
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'atan2()'\">atan2()</a>
 </html>"));
 end atan2;
@@ -263,7 +263,7 @@ function exp "Exponential, base e"
   input Real x(unit="1");
   output Real y(unit="1");
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'exp()'\">exp()</a>
 </html>"));
 end exp;
@@ -272,7 +272,7 @@ function log "Natural (base e) logarithm (u shall be > 0)"
   input Real u(unit="1");
   output Real y(unit="1");
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'log()'\">log()</a>
 </html>"));
 end log;
@@ -281,7 +281,7 @@ function log10 "Base 10 logarithm (u shall be > 0)"
   input Real u(unit="1");
   output Real y(unit="1");
 external "builtin";
-annotation(Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'log10()'\">log10()</a>
 </html>"));
 end log10;
@@ -291,7 +291,7 @@ impure function homotopy
   input Real simplified;
   output Real outValue;
 external "builtin";
-annotation(version="Modelica 3.2",Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, version="Modelica 3.2",Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'homotopy()'\">homotopy()</a> (experimental implementation)
 </html>"));
 end homotopy;
@@ -311,25 +311,25 @@ end linspace;
 
 function div = $overload(OpenModelica.Internal.intDiv,OpenModelica.Internal.realDiv)
   "Integer part of a division of two Real numbers"
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'div()'\">div()</a>
 </html>"));
 
 function mod = $overload(OpenModelica.Internal.intMod,OpenModelica.Internal.realMod)
   "Integer modulus of a division of two Real numbers"
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'mod()'\">mod()</a>
 </html>"));
 
 function rem = $overload(OpenModelica.Internal.intRem,OpenModelica.Internal.realRem)
   "Integer remainder of the division of two Real numbers"
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'rem()'\">rem()</a>
 </html>"));
 
 function abs = $overload(OpenModelica.Internal.intAbs,OpenModelica.Internal.realAbs)
   "Absolute value"
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'abs()'\">abs()</a>
 </html>"));
 
@@ -350,7 +350,7 @@ function cross "Cross product of two 3-vectors"
   output Real[3] z;
 algorithm
   z := { x[2]*y[3]-x[3]*y[2] , x[3]*y[1]-x[1]*y[3] , x[1]*y[2]-x[2]*y[1] };
-annotation(__OpenModelica_EarlyInline = true, preferredView="text",Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, __OpenModelica_EarlyInline = true, preferredView="text",Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cross()'\">cross()</a>
 </html>"));
 end cross;
@@ -360,13 +360,13 @@ function skew "The skew matrix associated with the vector"
   output Real[3,3] y;
 algorithm
   y := {{0, -x[3], x[2]}, {x[3], 0, -x[1]}, {-x[2], x[1], 0}};
-annotation(__OpenModelica_EarlyInline = true, preferredView = "text", Documentation(info="<html>
+annotation(__OpenModelica_builtin=true, __OpenModelica_EarlyInline = true, preferredView = "text", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'skew()'\">skew()</a>
 </html>"));
 end skew;
 
 function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.delay3) "Delay expression"
-  annotation(__OpenModelica_Impure=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'delay()'\">delay()</a>
 </html>"));
 
@@ -376,7 +376,7 @@ function delay = $overload(OpenModelica.Internal.delay2,OpenModelica.Internal.de
 //function min = $overload(OpenModelica.Internal.scalarMin, OpenModelica.Internal.arrayMin)
 function min
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'min()'\">min()</a>
 </html>"));
 end min;
@@ -387,7 +387,7 @@ end min;
 //function max = $overload(OpenModelica.Internal.scalarMax, OpenModelica.Internal.arrayMax)
 function max
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'max()'\">max()</a>
 </html>"));
 end max;
@@ -396,7 +396,7 @@ function sum<ArrayType, ScalarBasicType> "Sum of all array elements"
   input ArrayType a;
   output ScalarBasicType s;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sum()'\">sum()</a>
 </html>"));
 end sum;
@@ -404,20 +404,21 @@ end sum;
 function product<ArrayType, ScalarBasicType> "Product of all array elements"
   input ArrayType a;
   output ScalarBasicType s;  external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'product()'\">product()</a>
 </html>"));
 end product;
 
 function promote
   external "builtin";
+  annotation(__OpenModelica_builtin=true);
 end promote;
 
 function transpose<T> "Transpose a matrix"
   input T a;
   output T b;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'transpose()'\">transpose()</a>
 </html>"));
 end transpose;
@@ -426,7 +427,7 @@ function symmetric<T> "Returns a symmetric matrix"
   input T[:,:] a;
   output T[:,:] b;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'symmetric()'\">symmetric()</a>
 </html>"));
 end symmetric;
@@ -436,7 +437,7 @@ function smooth<RealArrayOrRecord> "Indicate smoothness of expression"
   input RealArrayOrRecord expr;
   output RealArrayOrRecord s;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'smooth()'\">smooth()</a>
 </html>"));
 end smooth;
@@ -445,7 +446,7 @@ function diagonal<T> "Returns a diagonal matrix"
   input T v[:];
   output T mat[size(v,1),size(v,1)];
   external "builtin";
-  annotation(__OpenModelica_UnboxArguments=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'diagonal()'\">diagonal()</a>
 </html>"));
 end diagonal;
@@ -454,42 +455,42 @@ function cardinality "Number of connectors in connection"
   input Real c;
   parameter output Integer numOccurances;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cardinality()'\">cardinality()</a>
 </html>"),version="Deprecated");
 end cardinality;
 
 function array "Constructs an array"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'array()'\">array()</a>
 </html>"));
 end array;
 
 function zeros "Returns a zero array"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'zeros()'\">zeros()</a>
 </html>"));
 end zeros;
 
 function ones "Returns a one array"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ones()'\">ones()</a>
 </html>"));
 end ones;
 
 function fill "Returns an array with all elements equal"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'fill()'\">fill()</a>
 </html>"));
 end fill;
 
 function noEvent "Turn off event triggering"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'noEvent()'\">noEvent()</a>
 </html>"));
 end noEvent;
@@ -498,7 +499,7 @@ impure function pre<PodCref> "Refer to left limit"
   discrete input PodCref y;
   output PodCref p;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'pre()'\">pre()</a>
 </html>"));
 end pre;
@@ -507,7 +508,7 @@ impure function change<PodCref> "Indicate discrete variable changing"
   discrete input PodCref y;
   output Boolean p;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'change()'\">change()</a>
 </html>"));
 end change;
@@ -516,14 +517,14 @@ function reinit<RealOrArrayCref, RealOrArrayExpr> "Reinitialize state variable"
   input RealOrArrayCref x;
   input RealOrArrayExpr expr;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'reinit()'\">reinit()</a>
 </html>"));
 end reinit;
 
 function sample = $overload(OMC_NO_CLOCK.sample, OMC_CLOCK.sample)
    "Returns the interval between the previous and present tick of the clock of its argument"
-  annotation(__OpenModelica_UnboxArguments=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
 </html>"));
 
@@ -557,7 +558,7 @@ function shiftSample<T> "First activation of clock is shifted in time"
   parameter input Integer resolution(min = 1) = 1;
   output T c;
   external "builtin";
-  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'shiftSample()'\">shiftSample()</a>
 </html>"));
 end shiftSample;
@@ -568,28 +569,28 @@ function backSample<T> "First activation of clock is shifted in time before acti
   parameter input Integer resolution(min = 1) = 1;
   output T c;
   external "builtin";
-  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'backSample()'\">backSample()</a>
 </html>"));
 end backSample;
 
 function transition "Define state machine transition"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'transition()'\">transition()</a>
 </html>"));
 end transition;
 
 function initialState "Define inital state of a state machine"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'initialState()'\">initialState()</a>
 </html>"));
 end initialState;
 
 function activeState "Return true if instance of a state machine is active, otherwise false"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'activeState()'\">activeState()</a>
 </html>"));
 end activeState;
@@ -598,14 +599,14 @@ function ndims<T> "Number of array dimensions"
   input T a;
   parameter output Integer d;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ndims()'\">ndims()</a>
 </html>"));
 end ndims;
 
 function size "Returns dimensions of an array"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'size()'\">size()</a>
 </html>"));
 end size;
@@ -615,7 +616,7 @@ function DynamicSelect<T> "select static or dynamic expressions in the annotatio
   input T dynamic;
   output T selected;
   external "builtin";
-  annotation(__OpenModelica_UnboxArguments=true, __OpenModelica_Impure=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, __OpenModelica_Impure=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Annotations.DynamicSelect\">DynamicSelect</a>
 </html>"));
 end DynamicSelect;
@@ -624,7 +625,7 @@ function scalar<T,ScalarType> "Returns a one-element array as scalar"
   input T i;
   output ScalarType s;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'scalar()'\">scalar()</a>
 </html>"));
 end scalar;
@@ -633,7 +634,7 @@ function vector<T,VectorType> "Returns an array as vector"
   input T i;
   output VectorType v;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'vector()'\">vector()</a>
 </html>"));
 end vector;
@@ -642,14 +643,14 @@ function matrix<T,Matrix> "Returns the first two dimensions of an array as matri
   input T i;
   output Matrix m;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'matrix()'\">matrix()</a>
 </html>"));
 end matrix;
 
 function cat "Concatenate arrays along given dimension"
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'cat()'\">cat()</a>
 </html>"));
 end cat;
@@ -658,13 +659,14 @@ function actualStream
   input Real x;
   output Real y;
   external "builtin";
+  annotation(__OpenModelica_builtin=true);
 end actualStream;
 
 function inStream
   input Real x;
   output Real y;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'inStream()'\">inStream()</a>
 </html>"));
 end inStream;
@@ -685,6 +687,7 @@ end Correlation;
 
 function rooted
   external "builtin";
+  annotation(__OpenModelica_builtin=true);
 end rooted;
 
 encapsulated package Connections
@@ -694,29 +697,34 @@ encapsulated package Connections
     input VariableName node1;
     input VariableName node2;
     external "builtin";
+    annotation(__OpenModelica_builtin=true);
   end branch;
 
   function root
     input VariableName node;
     external "builtin";
+    annotation(__OpenModelica_builtin=true);
   end root;
 
   function potentialRoot
     input VariableName node;
     parameter input Integer priority = 0;
     external "builtin";
+    annotation(__OpenModelica_builtin=true);
   end potentialRoot;
 
   function isRoot
     input VariableName node;
     output Boolean isroot;
     external "builtin";
+    annotation(__OpenModelica_builtin=true);
   end isRoot;
 
   function uniqueRoot
     input VariableName root;
     input String message = "";
     external "builtin";
+    annotation(__OpenModelica_builtin=true);
   end uniqueRoot;
 
   function uniqueRootIndices
@@ -726,11 +734,12 @@ encapsulated package Connections
     output Integer[size(roots, 1)] rootIndices;
     // adrpo: I would like an assert here: size(nodes) <= size (roots)
     external "builtin";
+    annotation(__OpenModelica_builtin=true);
   end uniqueRootIndices;
 
   function rooted
     external "builtin";
-    annotation(Documentation(info="<html>
+    annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   <h4>Syntax</h4>
   <blockquote>
   <pre><b>Connections.rooted</b>(x)</pre>
@@ -750,6 +759,8 @@ encapsulated package Connections
   </p>
   </html>"));
   end rooted;
+
+  annotation(__OpenModelica_builtin=true);
 end Connections;
 
 encapsulated package Subtask
@@ -787,7 +798,7 @@ end classDirectory;
 function getInstanceName
   output String instanceName;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
 <h4>
 Modelica definition:
 </h4>
@@ -832,27 +843,27 @@ function spatialDistribution "Not yet implemented"
   output Real out0;
   output Real out1;
 external "builtin";
-annotation(version="Modelica 3.3");
+annotation(__OpenModelica_builtin=true, version="Modelica 3.3");
 end spatialDistribution;
 
 function previous<T> "Access previous value of a clocked variable"
   input T u;
   output T y;
   external "builtin";
-  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'previous()'\">previous()</a>
 </html>"));
 end previous;
 
 function firstTick = $overload(OMC_NO_ARGS.firstTick, OMC_ARGS.firstTick)
    "Returns the interval between the previous and present tick of the clock of its argument"
-  annotation(__OpenModelica_UnboxArguments=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'firstTick()'\">firstTick()</a>
 </html>"));
 
 function interval = $overload(OMC_NO_ARGS.interval, OMC_ARGS.interval)
    "Returns the interval between the previous and present tick of the clock of its argument"
-  annotation(__OpenModelica_UnboxArguments=true, Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'interval()'\">interval()</a>
 </html>"));
 
@@ -900,13 +911,13 @@ end OMC_ARGS;
 
 function subSample = $overload(OpenModelica.Internal.subSampleExpression, OpenModelica.Internal.subSampleClock)
   "Conversion from faster clock to slower clock"
-  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'subSample()'\">subSample()</a>
 </html>"));
 
 function superSample = $overload(OpenModelica.Internal.superSampleExpression, OpenModelica.Internal.superSampleClock)
   "Conversion from slower clock to faster clock"
-  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'superSample()'\">superSample()</a>
 </html>"));
 
@@ -914,7 +925,7 @@ function hold<T> "Conversion from clocked discrete-time to continuous time"
   input T u;
   output T y;
   external "builtin";
-  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'hold()'\">hold()</a>
 </html>"));
 end hold;
@@ -923,7 +934,7 @@ function noClock<T> "Clock of y=Clock(u) is always inferred"
   input T u;
   output T y;
   external "builtin";
-  annotation(__OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, __OpenModelica_UnboxArguments=true, version="Modelica 3.3", Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'noClock()'\">noClock()</a>
 </html>"));
 end noClock;
@@ -931,7 +942,7 @@ end noClock;
 impure function ticksInState "Returns the number of clock ticks since a transition was made to the currently active state"
   output Integer ticks;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ticksInState()'\">ticksInState()</a>
 </html>"));
 end ticksInState;
@@ -939,7 +950,7 @@ end ticksInState;
 impure function timeInState "Returns the time duration as Real in [s] since a transition was made to the currently active state"
   output Real t;
   external "builtin";
-  annotation(Documentation(info="<html>
+  annotation(__OpenModelica_builtin=true, Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'ticksInState()'\">ticksInState()</a>
 </html>"));
 end timeInState;

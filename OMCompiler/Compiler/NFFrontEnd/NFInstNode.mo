@@ -1450,6 +1450,17 @@ uniontype InstNode
     end match;
   end protectComponent;
 
+  function isEncapsulated
+    input InstNode node;
+    output Boolean enc;
+  algorithm
+    enc := match node
+      case CLASS_NODE() then Class.isEncapsulated(Pointer.access(node.cls));
+      case COMPONENT_NODE() then Class.isEncapsulated(getClass(node));
+      else false;
+    end match;
+  end isEncapsulated;
+
   function getModifier
     input InstNode node;
     output Modifier mod;

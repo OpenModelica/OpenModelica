@@ -81,6 +81,11 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       input Prefixes prefs;
       output Boolean isPartial = SCodeUtil.partialBool(prefs.partialPrefix);
     end isPartial;
+
+    function isEncapsulated
+      input Prefixes prefs;
+      output Boolean isEncapsulated = SCodeUtil.encapsulatedBool(prefs.encapsulatedPrefix);
+    end isEncapsulated;
   end Prefixes;
 
   record NOT_INSTANTIATED end NOT_INSTANTIATED;
@@ -651,14 +656,7 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
 
   function isEncapsulated
     input Class cls;
-    output Boolean isEncapsulated;
-  algorithm
-    isEncapsulated := match cls
-      case PARTIAL_CLASS() then SCodeUtil.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
-      case EXPANDED_CLASS() then SCodeUtil.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
-      case EXPANDED_DERIVED() then SCodeUtil.encapsulatedBool(cls.prefixes.encapsulatedPrefix);
-      else false;
-    end match;
+    output Boolean isEncapsulated = Prefixes.isEncapsulated(getPrefixes(cls));
   end isEncapsulated;
 
   function isPartial
