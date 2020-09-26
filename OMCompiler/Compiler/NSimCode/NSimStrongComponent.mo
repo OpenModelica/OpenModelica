@@ -55,6 +55,8 @@ protected
 
   // Backend imports
   import BEquation = NBEquation;
+  import NBEquation.Equation;
+  import NBEquation.EquationPointers;
   import BVariable = NBVariable;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
@@ -303,6 +305,38 @@ public
       end for;
       vars := listReverse(Pointer.access(vars_ptr));
     end createDAEModeBlocks;
+
+    function createNoReturnBlocks
+      input EquationPointers equations;
+      output list<Block> blcks = {};
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
+    protected
+      Equation eqn;
+      Block tmp;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          eqn := Pointer.access(ExpandableArray.get(i, equations.eqArr));
+          (tmp, simCodeIndices, funcTree) := match eqn
+            local
+              ComponentRef cref;
+
+            case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
+            then createEquation(NBVariable.getVar(cref), eqn, simCodeIndices, funcTree);
+
+            /* ToDo: ARRAY_EQUATION ... */
+
+            else algorithm
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + Equation.toString(eqn)});
+            then fail();
+          end match;
+
+          blcks := tmp :: blcks;
+          // list reverse necessary? they are unodered anyway
+        end if;
+      end for;
+    end createNoReturnBlocks;
 
     function fromSystem
       input System.System system;

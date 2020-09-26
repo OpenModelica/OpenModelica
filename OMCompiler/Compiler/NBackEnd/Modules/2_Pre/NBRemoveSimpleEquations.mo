@@ -166,8 +166,9 @@ protected
         HashTableRSE.HashTable hashTable;
         HashTableCrToExp.HashTable replacements;
         list<SimpleSet> sets;
-        list<Pointer<Variable>> alias_vars;
+        list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
         list<Pointer<Equation>> removed_equations = {};
+        list<Pointer<Equation>> non_trivial_eqs;
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
@@ -211,7 +212,7 @@ protected
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
           alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
 
-          // update variable and equation lists
+          // remove alias vars from all relevant arrays
           varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
           varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
           varData.algebraics := VariablePointers.removeList(alias_vars, varData.algebraics);
@@ -219,11 +220,28 @@ protected
           varData.discretes := VariablePointers.removeList(alias_vars, varData.discretes);
           varData.initials := VariablePointers.removeList(alias_vars, varData.initials);
 
-          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
+          // categorize alias vars and sort them to the correct arrays
+          (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
+          (alias_vars, non_trivial_alias) := List.splitOnTrue(alias_vars, BVariable.hasAliasBinding);
 
-          eqData.removed := EquationPointers.addList(removed_equations, eqData.removed);
+          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
+          varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
+          varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
+
+          // update constant start values and add to parameters
+          // otherwise they would not show in the result file
+          const_vars := list(BVariable.setBindingAsStart(var) for var in const_vars);
+          varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
+
+          // compress to remove dummy and empty equations
           eqData.equations := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
+
+          // add non trivial alias to removed
+          non_trivial_eqs := list(Equation.generateBindingEquation(var) for var in non_trivial_alias);
+          eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
+          eqData.initials := EquationPointers.addList(non_trivial_eqs, eqData.initials);
+          eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
       then (varData, eqData);
 
       // ToDo: add for Jacobian/Hessian
@@ -299,14 +317,14 @@ protected
           set2 := Pointer.access(set2_ptr);
           set := EMPTY_SIMPLE_SET;
 
-          if (isSome(set1.const_opt) and isSome(set2.const_opt)) then
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
-                "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
-                SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
-            fail();
-          elseif referenceEq(set1_ptr, set2_ptr) then
+          if referenceEq(set1_ptr, set2_ptr) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets
                 because they would create a loop. This would create an underdetermined Set!:\n" +
+                SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
+            fail();
+          elseif (isSome(set1.const_opt) and isSome(set2.const_opt)) then
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to merge following sets " +
+                "because both have a constant binding. This would create an overdetermined Set!:\n\n" +
                 SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
             fail();
           elseif isSome(set1.const_opt) then
@@ -355,22 +373,30 @@ protected
           // Update set
           set_ptr := BaseHashTable.get(cr1, hashTable);
           set := Pointer.access(set_ptr);
+          // add cr2 to variables and add new equation pointer
           set.simple_variables := BVariable.getVarPointer(cr2) :: set.simple_variables;
           set.simple_equations := Pointer.create(eq) :: set.simple_equations;
           Pointer.update(set_ptr, set);
+          // add new hash entry for c2
+          hashTable := BaseHashTable.add((cr2, set_ptr), hashTable);
         elseif BaseHashTable.hasKey(cr2, hashTable) then
           // Update set
           set_ptr := BaseHashTable.get(cr2, hashTable);
           set := Pointer.access(set_ptr);
+          // add cr1 to variables and add new equation pointer
           set.simple_variables := BVariable.getVarPointer(cr1) :: set.simple_variables;
           set.simple_equations := Pointer.create(eq) :: set.simple_equations;
           Pointer.update(set_ptr, set);
+          // add new hash entry for c1
+          hashTable := BaseHashTable.add((cr1, set_ptr), hashTable);
         else
           // create new set
           set := EMPTY_SIMPLE_SET;
+          // add both variables and add new equation pointer
           set.simple_variables := {BVariable.getVarPointer(cr1), BVariable.getVarPointer(cr2)};
           set.simple_equations := {Pointer.create(eq)};
           set_ptr := Pointer.create(set);
+          // add new hash entry for both variables
           hashTable := BaseHashTable.add((cr1, set_ptr), hashTable);
           hashTable := BaseHashTable.add((cr2, set_ptr), hashTable);
         end if;

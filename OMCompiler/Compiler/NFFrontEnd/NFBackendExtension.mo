@@ -335,6 +335,35 @@ public
       end match;
     end setFixedIfNone;
 
+    function setStartAttribute
+      input output VariableAttributes attributes;
+      input Expression start;
+    algorithm
+      attributes := match attributes
+        case VAR_ATTR_REAL() algorithm
+          attributes.start := SOME(start);
+        then attributes;
+
+        case VAR_ATTR_INT() algorithm
+          attributes.start := SOME(start);
+        then attributes;
+
+        case VAR_ATTR_BOOL() algorithm
+          attributes.start := SOME(start);
+        then attributes;
+
+        case VAR_ATTR_STRING() algorithm
+          attributes.start := SOME(start);
+        then attributes;
+
+        case VAR_ATTR_ENUMERATION() algorithm
+          attributes.start := SOME(start);
+        then attributes;
+
+        else attributes;
+      end match;
+    end setStartAttribute;
+
   protected
     function attributesToString
       input list<tuple<String, Option<Expression>>> tpl_lst;

@@ -559,7 +559,8 @@ algorithm
 
       result := match (mcl, arguments, inv_arguments)
         // const + {} - {} = const
-        case (NFOperator.MathClassification.ADDITION, {}, {}) then new_const;
+        // const * {} / {} = const
+        case (_, {}, {}) then new_const;
 
         // 0 + {cr} - {} = cr
         // 1 * {cr} / {} = cr
@@ -572,13 +573,14 @@ algorithm
         // 0 * {...} / {...} = 0
         case (NFOperator.MathClassification.MULTIPLICATION, _, _) guard(Expression.isZero(new_const)) then new_const;
 
-        // apply negative constant to inverse list
-        case (NFOperator.MathClassification.ADDITION, _, _) guard(Expression.isNegative(new_const) and useConst)
-        then Expression.MULTARY(
-            arguments     = arguments,
-            inv_arguments = Expression.negate(new_const) :: inv_arguments,
-            operator      = operator
-          );
+        // THIS SEEMS LIKE A BAD IDEA STRUCTURALLY
+        // apply negative constant to inverse list for addition
+        //case (NFOperator.MathClassification.ADDITION, _, _) guard(Expression.isNegative(new_const) and useConst)
+        //then Expression.MULTARY(
+        //    arguments     = arguments,
+        //    inv_arguments = Expression.negate(new_const) :: inv_arguments,
+        //    operator      = operator
+        //  );
 
         else Expression.MULTARY(
             arguments     = if useConst then new_const :: arguments else arguments,
@@ -588,7 +590,7 @@ algorithm
       end match;
 
       // negate the expression if there was an odd number of negative arguments (only multiplication)
-    then if isNegative then Expression.UNARY(Operator.makeUMinus(operator.ty), result) else result;
+    then if isNegative then Expression.negate(result) else result;
 
     else algorithm
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for expression: " + Expression.toString(exp)});

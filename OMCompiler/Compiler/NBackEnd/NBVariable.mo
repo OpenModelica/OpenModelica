@@ -148,7 +148,7 @@ public
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
-    name := var.name;
+    name := BackendDAE.lowerComponentReferenceInstNode(var.name, var_ptr);
   end getVarName;
 
   function isState
@@ -676,6 +676,56 @@ public
     end match;
   end getBindingVariability;
 
+  function hasConstBinding
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(var_ptr);
+    b := Expression.isConstNumber(Expression.getBindingExp(Binding.getExp(var.binding)));
+  end hasConstBinding;
+
+  function setBindingAsStart
+    "use this if a binding is found out to be constant, remove variable to known vars (param/const)
+    NOTE: this overwrites the old start value. throw error/warning if different?"
+    input output Pointer<Variable> var_ptr;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(var_ptr);
+    var:= match var
+      local
+        BackendExtension.BackendInfo binfo;
+        Expression start;
+
+      case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
+        start := Expression.getBindingExp(Binding.getExp(var.binding));
+        binfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(binfo.attributes, start);
+        var.backendinfo := binfo;
+      then var;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding."});
+      then fail();
+    end match;
+    Pointer.update(var_ptr, var);
+  end setBindingAsStart;
+
+  function hasAliasBinding
+    "returns true if the binding represents either a cref or a negated cref. used for alias
+    removal since only those can be stored as actual alias variables"
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  protected
+    Variable var;
+    Expression binding;
+  algorithm
+    var := Pointer.access(var_ptr);
+    binding := Expression.getBindingExp(Binding.getExp(var.binding));
+    b := Expression.isCref(binding) or Expression.isCref(Expression.negate(binding));
+  end hasAliasBinding;
+
   // ==========================================================================
   //                        Other type wrappers
   //
@@ -815,6 +865,7 @@ public
       input output VariablePointers variables;
     algorithm
       variables := List.fold(var_lst, function remove(), variables);
+      variables := compress(variables);
     end removeList;
 
     function add
@@ -897,7 +948,7 @@ public
     protected
       Pointer<list<ComponentRef>> acc = Pointer.create({});
     algorithm
-      map(variables, function getVarNameTraverse(acc = acc));
+      mapPtr(variables, function getVarNameTraverse(acc = acc));
       names := listReverse(Pointer.access(acc));
     end getVarNames;
 
@@ -1195,10 +1246,10 @@ public
   // ==========================================================================
 protected
   function getVarNameTraverse
-    input output Variable var;
+    input Pointer<Variable> var;
     input Pointer<list<ComponentRef>> acc;
   algorithm
-    Pointer.update(acc, var.name :: Pointer.access(acc));
+    Pointer.update(acc, getVarName(var) :: Pointer.access(acc));
   end getVarNameTraverse;
 
   annotation(__OpenModelica_Interface="backend");

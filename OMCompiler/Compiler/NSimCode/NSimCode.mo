@@ -55,6 +55,9 @@ protected
 
   // Backend imports
   import BackendDAE = NBackendDAE;
+  import BEquation = NBEquation;
+  import NBEquation.Equation;
+  import NBEquation.EquationPointers;
   import BVariable = NBVariable;
   import System = NBSystem;
 
@@ -192,6 +195,7 @@ public
       if isSome(simCode.daeModeData) then
         str := str + DaeModeData.toString(Util.getOption(simCode.daeModeData)) + "\n";
       end if;
+      str := str + SimStrongComponent.Block.listToString(simCode.no_ret, "  ", "REMOVED / ALIAS / KNOWN") + "\n";
     end toString;
 
     function create
@@ -203,6 +207,7 @@ public
       simCode := match bdae
         local
           BackendDAE qual;
+          EquationPointers no_ret_eq;
           FunctionTree funcTree;
           // old SimCode strcutures
           Absyn.Program program;
@@ -229,7 +234,7 @@ public
           SimJacobian jacA, jacB, jacC, jacD, jacF;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
-        case qual as BackendDAE.BDAE()
+        case qual as BackendDAE.BDAE(eqData = BEquation.EQ_DATA_SIM(removed = no_ret_eq))
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES;
@@ -246,6 +251,7 @@ public
             // There is no actual need for parameter equations block
             param := {};
             no_ret := {};
+            (no_ret, simCodeIndices, funcTree) := SimStrongComponent.Block.createNoReturnBlocks(no_ret_eq, simCodeIndices, funcTree);
             algorithms := {};
             zero_cross_blocks := {};
             jac_blocks := {};
@@ -253,7 +259,9 @@ public
             init_0 := {};
             init_no_ret := {};
             start := {};
-            algebraic := {};
+            // ToDo: why???
+            /// somehow we need to add those to algebraic
+            algebraic := no_ret :: {};
             discreteVars := {};
             jacobians := {};
             if isSome(qual.dae) then

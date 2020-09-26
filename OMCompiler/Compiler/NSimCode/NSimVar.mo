@@ -45,6 +45,7 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFInstNode.InstNode;
+  import Operator = NFOperator;
   import Prefixes = NFPrefixes;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;
@@ -111,11 +112,13 @@ public
     function listToString
       input list<SimVar> var_lst;
       input output String str = "";
+      input Boolean printAlias = false;
     algorithm
       if not listEmpty(var_lst) then
         str := StringUtil.headline_4(str + " (" + intString(listLength(var_lst)) + ")");
         for var in var_lst loop
-          str := str + toString(var, "  ") + "\n";
+          str := str + toString(var, "  ");
+          str := if printAlias then str + " " + Alias.toString(var.aliasvar) + "\n" else str + "\n";
         end for;
       else
         str := "";
@@ -488,11 +491,12 @@ public
 
   uniontype Alias
     record NO_ALIAS end NO_ALIAS;
+
     record ALIAS
       "General alias expression with a coefficent.
-      var := coefficent * alias"
+      var := gain * alias + offset"
       ComponentRef alias    "The name of the alias variable.";
-      Real coefficient      " = 1 for regular alias.";
+      Real gain             " = 1 for regular alias.";
       Real offset           " = 0 for regular alias.";
     end ALIAS;
 
@@ -509,20 +513,38 @@ public
       end match;
     end fromBinding;
 
+    function toString
+      input Alias alias;
+      output String str;
+    algorithm
+      str := match alias
+        local
+          String gainStr, offsetStr;
+        case NO_ALIAS() then "(no alias)";
+        case ALIAS() algorithm
+          gainStr := if alias.gain == 1.0 then "" else realString(alias.gain) + "*";
+          offsetStr := if alias.offset == 0.0 then "" else "+" + realString(alias.offset);
+        then "(bound alias: " + gainStr + ComponentRef.toString(alias.alias) + offsetStr + ")";
+      end match;
+    end toString;
+
     function convert
       input Alias alias;
       output OldSimCodeVar.AliasVariable oldAlias;
     algorithm
       oldAlias := match alias
-        local
-          Alias qual;
         case NO_ALIAS() then OldSimCodeVar.NOALIAS();
-        case qual as ALIAS() guard(realEq(qual.coefficient, 1.0)) then OldSimCodeVar.ALIAS(ComponentRef.toDAE(qual.alias));
-        case qual as ALIAS() guard(realEq(qual.coefficient, -1.0)) then OldSimCodeVar.NEGATEDALIAS(ComponentRef.toDAE(qual.alias));
-        case qual as ALIAS()
-          algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the old SimCode can only parse a coefficent for ALIAS() of exactly 1 or -1. Got coefficient: " + realString(qual.coefficient)});
-        then fail();
+
+        case ALIAS() guard(realEq(alias.gain, 1.0) and realEq(alias.offset, 0.0))
+        then OldSimCodeVar.ALIAS(ComponentRef.toDAE(alias.alias));
+
+        case ALIAS() guard(realEq(alias.gain, -1.0) and realEq(alias.offset, 0.0))
+        then OldSimCodeVar.NEGATEDALIAS(ComponentRef.toDAE(alias.alias));
+
+/* unfortunately not possible in old sim code
+        case ALIAS()
+        then OldSimCodeVar.ALIAS_FUNC(ComponentRef.toDAE(alias.alias), alias.gain, alias.offset);
+*/
         else
           algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown Alias type."});
@@ -539,11 +561,93 @@ public
       alias := match SimplifyExp.simplify(exp)
         local
           Expression e, e1, e2;
-        case e as Expression.CREF() then ALIAS(e.cref, 1.0, 0.0);
-//        case Expression.MULTARY(arguments = {e1,e2}, ) then getAliasFrom
+          Real gain, offset;
+          ComponentRef cref;
+
+        // equality alias
+        case e as Expression.CREF()                         then ALIAS(e.cref, 1.0, 0.0);
+
+        // negated alias
+        case Expression.UNARY(exp = e as Expression.CREF()) then ALIAS(e.cref, -1.0, 0.0);
+/*
+        // gain alias
+        case e as Expression.MULTARY(arguments = {e1, e2}, inv_arguments = {})
+          guard(Operator.getMathClassification(e.operator) == NFOperator.MathClassification.MULTIPLICATION)
+          algorithm
+            (cref, gain) := getGainAlias(e1, e2);
+        then ALIAS(cref, gain, 0.0);
+
+        // offset alias (possibly also gain alias)
+        // constant should always be simplified to the arguments list even if it is negative
+        case e as Expression.MULTARY(arguments = {e1, e2}, inv_arguments = {})
+          guard(Operator.getMathClassification(e.operator) == NFOperator.MathClassification.ADDITION)
+          algorithm
+            (cref, gain, offset) := getOffsetAlias(e1, e2);
+        then ALIAS(cref, gain, offset);
+*/
         else NO_ALIAS();
       end match;
     end getAlias;
+
+    function getGainAlias
+      input Expression e1;
+      input Expression e2;
+      output ComponentRef cref;
+      output Real gain;
+    algorithm
+      (cref, gain) := match(e1, e2)
+        // first argument is the cref and second is const
+        case (Expression.CREF(), _) guard(Expression.isConstNumber(e2)) then (e1.cref, Expression.realValue(e2));
+        // secoond argument is the cref and first is const
+        case (_, Expression.CREF()) guard(Expression.isConstNumber(e1)) then (e2.cref, Expression.realValue(e1));
+        else algorithm
+          Error.addInternalError(getInstanceName() + " cannot generate gain alias from Expressions: {"
+            + Expression.toString(e1) + ", " + Expression.toString(e2) + "}", sourceInfo());
+        then fail();
+      end match;
+    end getGainAlias;
+
+    function getOffsetAlias
+      input Expression e1;
+      input Expression e2;
+      output ComponentRef cref;
+      output Real gain;
+      output Real offset;
+    algorithm
+      (cref, gain, offset) := match (e1, e2)
+        local
+          Expression arg1, arg2;
+
+        // first argument is the cref and second is const
+        case (Expression.CREF(), _) guard(Expression.isConstNumber(e2)) then (e1.cref, 0.0, Expression.realValue(e2));
+
+        // second is the cref and first is const
+        case (_, Expression.CREF()) guard(Expression.isConstNumber(e1)) then (e2.cref, 0.0, Expression.realValue(e1));
+
+        // first argument is a multiplication with two arguments, second is constant
+        // check if multiplication represents simple gain
+        case (Expression.MULTARY(arguments = {arg1, arg2}, inv_arguments = {}), _)
+          guard((Operator.getMathClassification(e1.operator) == NFOperator.MathClassification.MULTIPLICATION)
+                and Expression.isConstNumber(e2))
+          algorithm
+            (cref, gain) := getGainAlias(arg1, arg2);
+          then (cref, gain, Expression.realValue(e2));
+
+        // second argument is a multiplication with two arguments, first is constant
+        // check if multiplication represents simple gain
+        case (_, Expression.MULTARY(arguments = {arg1, arg2}, inv_arguments = {}))
+          guard((Operator.getMathClassification(e2.operator) == NFOperator.MathClassification.MULTIPLICATION)
+                and Expression.isConstNumber(e1))
+          algorithm
+            (cref, gain) := getGainAlias(arg1, arg2);
+          then (cref, gain, Expression.realValue(e1));
+
+        else algorithm
+          Error.addInternalError(getInstanceName() + " cannot generate offset alias from Expressions: {"
+            + Expression.toString(e1) + ", " + Expression.toString(e2) + "}", sourceInfo());
+        then fail();
+      end match;
+    end getOffsetAlias;
   end Alias;
 
   // kabdelhak: i don't like "CALCULATED_PARAMETER", is there a better way to describe it?
@@ -594,7 +698,9 @@ public
       str := str + SimVar.listToString(vars.stateVars, "States") + "\n";
       str := str + SimVar.listToString(vars.derivativeVars, "Derivatives") + "\n";
       str := str + SimVar.listToString(vars.algVars, "Algebraic Variables") + "\n";
+      str := str + SimVar.listToString(vars.paramVars, "Real Parameters") + "\n";
       str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters") + "\n";
+      str := str + SimVar.listToString(vars.aliasVars, "Real Alias", true) + "\n";
       // ToDo: all the other stuff
     end toString;
 
