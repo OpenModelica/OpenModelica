@@ -652,18 +652,6 @@ algorithm
   end if;
 end setVarMinMax;
 
-public function setUnit "author: jhagemann
-  Sets the unit attribute of a variable."
-  input BackendDAE.Var inVar;
-  input DAE.Exp inUnit;
-  output BackendDAE.Var outVar = inVar;
-protected
-  Option<DAE.VariableAttributes> oattr;
-algorithm
-  oattr := if isSome(inVar.values) then inVar.values else SOME(getVariableAttributefromType(inVar.varType));
-  outVar.values := DAEUtil.setUnitAttr(oattr, inUnit);
-end setUnit;
-
 public function varNominalValue "author: Frenkel TUD"
   input BackendDAE.Var inVar;
   output DAE.Exp outExp;

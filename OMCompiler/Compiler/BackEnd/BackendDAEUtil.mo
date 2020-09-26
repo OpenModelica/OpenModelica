@@ -117,7 +117,6 @@ import SynchronousFeatures;
 import System;
 import Tearing;
 import Types;
-import UnitCheck;
 import DataReconciliation;
 import Values;
 import XMLDump;
@@ -8299,7 +8298,6 @@ public function allPreOptimizationModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (DataReconciliation.extractionAlgorithm, "dataReconciliation"),
-    (UnitCheck.unitChecking, "unitChecking"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (EvaluateParameter.evaluateParameters, "evaluateParameters"),
