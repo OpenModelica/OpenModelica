@@ -22,8 +22,8 @@ omc_add_to_report(CMAKE_BUILD_TYPE)
 # Precaution so that users do not install in system folders (e.g. /user/, /usr/local/)
 # unintentionally. If the user has not specified anything default to an install_cmake dir in the root folder.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR}/install_cmake CACHE PATH "Default installation directory" FORCE)
-    message(WARNING "No installation directory specified. ${CMAKE_INSTALL_PREFIX}")
+    set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/install_cmake CACHE PATH "Default installation directory" FORCE)
+    message(WARNING "No installation directory specified. Defaulting to: ${CMAKE_INSTALL_PREFIX}")
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
 
