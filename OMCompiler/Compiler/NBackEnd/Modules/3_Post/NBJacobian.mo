@@ -78,7 +78,7 @@ public
         FunctionTree funcTree                           "Function call bodies";
         list<System.System> oldSystems, newSystems = {} "Equation systems before and afterwards";
 
-      case BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
+      case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
           (oldSystems, name) := match systemType
             case NBSystem.SystemType.ODE    then (bdae.ode, "ODEJac");
@@ -349,7 +349,7 @@ protected
       // safe residuals somewhere?
     end if;
 
-    jacobian := SOME(Jacobian.JAC(
+    jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
       varData           = varDataJac,
       eqData            = eqDataJac,
@@ -375,7 +375,7 @@ protected
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(unknowns, residuals, equations, strongComponents);
       // safe residuals somewhere?
     end if;
-    jacobian := SOME(Jacobian.JAC(
+    jacobian := SOME(Jacobian.JACOBIAN(
       name              = name,
       varData           = BVariable.VAR_DATA_EMPTY(),
       eqData            = BEquation.EQ_DATA_EMPTY(),

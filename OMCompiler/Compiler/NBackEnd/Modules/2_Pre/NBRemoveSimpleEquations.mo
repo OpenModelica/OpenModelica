@@ -80,7 +80,22 @@ public
       local
         BVariable.VarData varData         "Data containing variable pointers";
         BEquation.EqData eqData           "Data containing equation pointers";
-      case BackendDAE.BDAE(varData = varData, eqData = eqData)
+
+      case BackendDAE.MAIN(varData = varData, eqData = eqData)
+        algorithm
+          (varData, eqData) := func(varData, eqData);
+          bdae.varData := varData;
+          bdae.eqData := eqData;
+      then bdae;
+
+      case BackendDAE.JACOBIAN(varData = varData, eqData = eqData)
+        algorithm
+          (varData, eqData) := func(varData, eqData);
+          bdae.varData := varData;
+          bdae.eqData := eqData;
+      then bdae;
+
+      case BackendDAE.HESSIAN(varData = varData, eqData = eqData)
         algorithm
           (varData, eqData) := func(varData, eqData);
           bdae.varData := varData;
@@ -161,49 +176,17 @@ protected
   algorithm
     (varData, eqData) := match (varData, eqData)
       local
-        EquationPointers newEquations;
-        Integer size, setIdx = 1;
-        HashTableRSE.HashTable hashTable;
         HashTableCrToExp.HashTable replacements;
-        list<SimpleSet> sets;
+        EquationPointers newEquations;
         list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
-        list<Pointer<Equation>> removed_equations = {};
         list<Pointer<Equation>> non_trivial_eqs;
 
       case (BVariable.VAR_DATA_SIM(), BEquation.EQ_DATA_SIM())
         algorithm
-          // ------------------------------------------------------------------------------
-          // 1. collect alias sets (variables, equations, optional constant binding)
-          // ------------------------------------------------------------------------------
-          // collect (cref) -> (simpleSet) hashtable
-          size := BVariable.VariablePointers.size(varData.unknowns);
-          size := intMax(BaseHashTable.lowBucketSize, realInt(realMul(intReal(size), 0.7)));
-          hashTable := HashTableRSE.empty(size);
-          (newEquations, hashTable) := NBEquation.EquationPointers.foldRemovePtr(eqData.simulation, findSimpleEquation, hashTable);
-          eqData.simulation := newEquations;
-
-          sets := getSimpleSets(hashTable, size);
-          if Flags.isSet(Flags.DUMP_REPL) then
-            print(StringUtil.headline_2("[dumprepl] Alias Sets:") + "\n");
-            for set in sets loop
-              print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + SimpleSet.toString(set) + "\n");
-              setIdx := setIdx + 1;
-            end for;
-          end if;
-
-          // --------------------------------------------------------------------------------------------------------
-          // 2. balance sets - choose variable to keep if necessary
-          // 3. match/sort set (linear w.r.t. vars since all equations contain two crefs at max and are simple/linear)
-          // --------------------------------------------------------------------------------------------------------
-          replacements := HashTableCrToExp.emptyHashTableSized(size);
-          for set in sets loop
-            (replacements, removed_equations) := createReplacementRules(set, replacements, removed_equations);
-          end for;
-
-          if Flags.isSet(Flags.DUMP_REPL) then
-            print(StringUtil.headline_2("[dumprepl] Replacements:"));
-            BaseHashTable.dumpHashTable(replacements);
-          end if;
+          // -----------------------------------
+          //            1. 2. 3.
+          // -----------------------------------
+          (replacements, newEquations) := removeSimpleEquationsCausalize(varData.unknowns, eqData.simulation);
 
           // -----------------------------------
           // 4. apply replacements
@@ -211,6 +194,11 @@ protected
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
           alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
+
+          // save new equations and compress affected arrays(some might have been removed)
+          eqData.simulation := EquationPointers.compress(newEquations);
+          eqData.equations := EquationPointers.compress(eqData.equations);
+          eqData.continuous := EquationPointers.compress(eqData.continuous);
 
           // remove alias vars from all relevant arrays
           varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
@@ -233,9 +221,6 @@ protected
           const_vars := list(BVariable.setBindingAsStart(var) for var in const_vars);
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
 
-          // compress to remove dummy and empty equations
-          eqData.equations := EquationPointers.compress(eqData.equations);
-          eqData.continuous := EquationPointers.compress(eqData.continuous);
 
           // add non trivial alias to removed
           non_trivial_eqs := list(Equation.generateBindingEquation(var) for var in non_trivial_alias);
@@ -244,13 +229,134 @@ protected
           eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
       then (varData, eqData);
 
-      // ToDo: add for Jacobian/Hessian
+      case (BVariable.VAR_DATA_JAC(), BEquation.EQ_DATA_JAC())
+        algorithm
+          // -----------------------------------
+          //            1. 2. 3.
+          // apply only on temporary equations,
+          // result equations cannot be removed!
+          // -----------------------------------
+          (replacements, newEquations) := removeSimpleEquationsCausalize(varData.unknowns, eqData.temporary);
+
+          // -----------------------------------
+          // 4. apply replacements
+          // 5. save replacements in bindings of alias variables
+          // -----------------------------------
+          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
+
+          // save new equations and compress affected arrays(some might have been removed)
+          eqData.temporary := EquationPointers.compress(newEquations);
+          eqData.equations := EquationPointers.compress(eqData.equations);
+
+          // remove alias vars from all relevant arrays
+          varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
+          varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
+
+          // categorize alias vars and sort them to the correct arrays
+          // discard constants entirely for jacobians
+          (_, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
+          (alias_vars, non_trivial_alias) := List.splitOnTrue(alias_vars, BVariable.hasAliasBinding);
+
+          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
+          varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
+
+          // add non trivial alias to removed
+          non_trivial_eqs := list(Equation.generateBindingEquation(var) for var in non_trivial_alias);
+          eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
+          eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
+      then (varData, eqData);
+
+      case (BVariable.VAR_DATA_HES(), BEquation.EQ_DATA_HES())
+        algorithm
+          // -----------------------------------
+          //            1. 2. 3.
+          // apply only on temporary equations,
+          // result equation cannot be removed!
+          // -----------------------------------
+          (replacements, newEquations) := removeSimpleEquationsCausalize(varData.unknowns, eqData.temporary);
+
+          // -----------------------------------
+          // 4. apply replacements
+          // 5. save replacements in bindings of alias variables
+          // -----------------------------------
+          (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
+          alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
+
+          // save new equations and compress affected arrays(some might have been removed)
+          eqData.temporary := EquationPointers.compress(newEquations);
+          eqData.equations := EquationPointers.compress(eqData.equations);
+
+          // remove alias vars from all relevant arrays
+          varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
+
+          varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
+          // categorize alias vars and sort them to the correct arrays
+          // discard constants entirely for hessians
+          (_, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
+          (alias_vars, non_trivial_alias) := List.splitOnTrue(alias_vars, BVariable.hasAliasBinding);
+
+          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
+          varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
+
+          // add non trivial alias to removed
+          non_trivial_eqs := list(Equation.generateBindingEquation(var) for var in non_trivial_alias);
+          eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
+          eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
+      then (varData, eqData);
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
       then fail();
     end match;
   end removeSimpleEquationsDefault;
+
+  function removeSimpleEquationsCausalize
+    "STEPS:
+      1. collect alias sets (variables, equations, optional constant binding)
+      2. balance sets - choose variable to keep if necessary
+      3. match/sort set (linear w.r.t. since all equations contain two unknown crefs at max and are simple/linear)
+    "
+    input VariablePointers variables;
+    input EquationPointers equations;
+    output HashTableCrToExp.HashTable replacements;
+    output EquationPointers newEquations;
+  protected
+    Integer size, setIdx = 1;
+    HashTableRSE.HashTable hashTable;
+    list<SimpleSet> sets;
+  algorithm
+    // ------------------------------------------------------------------------------
+    // 1. collect alias sets (variables, equations, optional constant binding)
+    // ------------------------------------------------------------------------------
+    // collect (cref) -> (simpleSet) hashtable
+    size := BVariable.VariablePointers.size(variables);
+    size := intMax(BaseHashTable.lowBucketSize, realInt(realMul(intReal(size), 0.7)));
+    hashTable := HashTableRSE.empty(size);
+    (newEquations, hashTable) := NBEquation.EquationPointers.foldRemovePtr(equations, findSimpleEquation, hashTable);
+
+    sets := getSimpleSets(hashTable, size);
+    if Flags.isSet(Flags.DUMP_REPL) then
+      print(StringUtil.headline_2("[dumprepl] Alias Sets:") + "\n");
+      for set in sets loop
+        print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + SimpleSet.toString(set) + "\n");
+        setIdx := setIdx + 1;
+      end for;
+    end if;
+
+    // --------------------------------------------------------------------------------------------------------
+    // 2. balance sets - choose variable to keep if necessary
+    // 3. match/sort set (linear w.r.t. vars since all equations contain two crefs at max and are simple/linear)
+    // --------------------------------------------------------------------------------------------------------
+    replacements := HashTableCrToExp.emptyHashTableSized(size);
+    for set in sets loop
+      replacements := createReplacementRules(set, replacements);
+    end for;
+
+    if Flags.isSet(Flags.DUMP_REPL) then
+      print(Replacements.simpleToString(replacements));
+    end if;
+  end removeSimpleEquationsCausalize;
 
   function findSimpleEquation
     "Checks if the equation is simple and adds it to the correct set in the hashTable."
@@ -562,7 +668,6 @@ protected
     "creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input SimpleSet set;
     input output HashTableCrToExp.HashTable replacements;
-    input output list<Pointer<Equation>> removed_equations;
   algorithm
     // ToDo: fix variable attributes to keep
     // report errors/warnings
@@ -576,7 +681,6 @@ protected
 
       case SOME(const_eq) algorithm
         // there is a constant binding -> no variable will be kept and all will be replaced by a constant
-        removed_equations := listAppend(set.simple_equations, removed_equations);
         vars := VariablePointers.fromList(set.simple_variables);
         eqs := EquationPointers.fromList(const_eq :: set.simple_equations);
         // causalize the system
@@ -588,7 +692,6 @@ protected
       else algorithm
         // there is no constant binding -> all others will be replaced by one variable
         alias_vars := chooseVariableToKeep(set.simple_variables);
-        removed_equations := listAppend(set.simple_equations, removed_equations);
         vars := VariablePointers.fromList(alias_vars);
         eqs := EquationPointers.fromList(set.simple_equations);
         // causalize the system

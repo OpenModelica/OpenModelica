@@ -54,6 +54,7 @@ public
 protected
   // util imports
   import List;
+  import StringUtil;
 
 public type Key = ComponentRef;
 public type Value = Pointer<SimpleSet>;

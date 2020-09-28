@@ -96,17 +96,17 @@ public
       local
         list<System.System> systems;
 
-      case (NBSystem.SystemType.ODE, BackendDAE.BDAE(ode = systems))
+      case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems))
         algorithm
           bdae.ode := tearingTraverser(systems, func);
       then bdae;
 
-      case (NBSystem.SystemType.INIT, BackendDAE.BDAE(init = systems))
+      case (NBSystem.SystemType.INIT, BackendDAE.MAIN(init = systems))
         algorithm
           bdae.init := tearingTraverser(systems, func);
       then bdae;
 
-      case (NBSystem.SystemType.DAE, BackendDAE.BDAE(dae = SOME(systems)))
+      case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems)))
         algorithm
           bdae.dae := SOME(tearingTraverser(systems, func));
       then bdae;

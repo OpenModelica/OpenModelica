@@ -234,7 +234,7 @@ public
           SimJacobian jacA, jacB, jacC, jacD, jacF;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
-        case qual as BackendDAE.BDAE(eqData = BEquation.EQ_DATA_SIM(removed = no_ret_eq))
+        case qual as BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(removed = no_ret_eq))
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES;

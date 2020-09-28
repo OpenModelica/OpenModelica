@@ -182,7 +182,7 @@ public
           SparsityColoring coloring;
           SimJacobian jac;
 
-        case qual as BackendDAE.JAC(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
+        case qual as BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
           BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr, funcTree_ptr = funcTree_ptr));
 
           BVariable.VariablePointers.map(varData.unknowns, function SimVar.SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
@@ -237,7 +237,7 @@ public
 
         case (_, NONE()) then NONE();
 
-        case (BackendDAE.JAC(sparsityPattern = pattern, sparsityColoring = coloring), SOME(tmp))
+        case (BackendDAE.JACOBIAN(sparsityPattern = pattern, sparsityColoring = coloring), SOME(tmp))
           algorithm
             // the seed cref for correct index lookup
             seedCref := ComponentRef.fromNode(InstNode.VAR_NODE(NBVariable.SEED_STR + "_" + tmp.name, Pointer.create(NBVariable.DUMMY_VARIABLE)), Type.UNKNOWN());

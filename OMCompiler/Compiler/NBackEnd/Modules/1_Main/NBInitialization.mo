@@ -68,7 +68,7 @@ public
         local
           BVariable.VarData varData;
           BEquation.EqData eqData;
-        case BackendDAE.BDAE( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, initials = initialVars, states = states, parameters = parameters),
+        case BackendDAE.MAIN( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, initials = initialVars, states = states, parameters = parameters),
                               eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
             (variables, equations, initialEqs) := createStartEquations(states, variables, equations, initialEqs);

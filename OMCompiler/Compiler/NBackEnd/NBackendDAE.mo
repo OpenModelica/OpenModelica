@@ -39,6 +39,7 @@ public
   import NBSystem.System;
   import BVariable = NBVariable;
   import BEquation = NBEquation;
+  import Jacobian = NBJacobian;
 
 protected
   // New Frontend imports
@@ -64,7 +65,6 @@ protected
   import DAEMode = NBDAEMode;
   import Equation = NBEquation.Equation;
   import Initialization = NBInitialization;
-  import Jacobian = NBJacobian;
   import Partitioning = NBPartitioning;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
   import Tearing = NBTearing;
@@ -76,8 +76,7 @@ protected
   import StringUtil;
 
 public
-  record BDAE
-    /* Stuff here! */
+  record MAIN
     list<System> ode              "Systems for simulation";
     list<System> event            "Systems for event iteration";
     list<System> init             "Systems for Initialization";
@@ -89,20 +88,20 @@ public
     BEquation.EqData eqData       "Equation data.";
 
     FunctionTree funcTree         "Function bodies.";
-  end BDAE;
+  end MAIN;
 
-  record JAC
+  record JACOBIAN
     String name                                 "unique matrix name";
     BVariable.VarData varData                   "Variable data.";
     BEquation.EqData eqData                     "Equation data.";
     Jacobian.SparsityPattern sparsityPattern    "Sparsity pattern for the jacobian";
     Jacobian.SparsityColoring sparsityColoring  "Coloring information";
-  end JAC;
+  end JACOBIAN;
 
-  record HESS
+  record HESSIAN
     BVariable.VarData varData     "Variable data.";
     BEquation.EqData eqData       "Equation data.";
-  end HESS;
+  end HESSIAN;
 
   function toString
     input BackendDAE bdae;
@@ -113,7 +112,7 @@ public
       local
         String tmp;
         list<System> dae;
-      case BDAE()
+      case MAIN()
         algorithm
           if listEmpty(bdae.ode) or not Flags.isSet(Flags.BLT_DUMP) then
             tmp := StringUtil.headline_1("Not partitioned BackendDAE: " + str) + "\n";
@@ -141,12 +140,12 @@ public
           end if;
       then tmp;
 
-      case JAC() then StringUtil.headline_1("Jacobian " + bdae.name + ": " + str) + "\n" +
+      case JACOBIAN() then StringUtil.headline_1("Jacobian " + bdae.name + ": " + str) + "\n" +
                               BVariable.VarData.toString(bdae.varData, 1) + "\n" +
                               BEquation.EqData.toString(bdae.eqData, 1) + "\n" +
                               Jacobian.SparsityPattern.toString(bdae.sparsityPattern, bdae.sparsityColoring);
 
-      case HESS() then StringUtil.headline_1("Hessian: " + str) + "\n" +
+      case HESSIAN() then StringUtil.headline_1("Hessian: " + str) + "\n" +
                               BVariable.VarData.toString(bdae.varData, 1) + "\n" +
                               BEquation.EqData.toString(bdae.eqData, 1);
     end match;
@@ -157,9 +156,9 @@ public
     output BVariable.VarData varData;
   algorithm
     varData := match bdae
-      case BDAE() then bdae.varData;
-      case JAC() then bdae.varData;
-      case HESS() then bdae.varData;
+      case MAIN() then bdae.varData;
+      case JACOBIAN() then bdae.varData;
+      case HESSIAN() then bdae.varData;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
       then fail();
@@ -171,9 +170,9 @@ public
     output BEquation.EqData eqData;
   algorithm
     eqData := match bdae
-      case BDAE() then bdae.eqData;
-      case JAC() then bdae.eqData;
-      case HESS() then bdae.eqData;
+      case MAIN() then bdae.eqData;
+      case JACOBIAN() then bdae.eqData;
+      case HESSIAN() then bdae.eqData;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
       then fail();
@@ -185,9 +184,9 @@ public
     output FunctionTree funcTree;
   algorithm
     funcTree := match bdae
-      case BDAE(funcTree = funcTree) then funcTree;
+      case MAIN(funcTree = funcTree) then funcTree;
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type BDAE() has a function tree."});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Only the record type MAIN() has a function tree."});
       then fail();
     end match;
   end getFunctionTree;
@@ -203,7 +202,7 @@ public
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
-    bdae := BDAE({}, {}, {}, {}, NONE(), NONE(), variableData, equationData, funcTree);
+    bdae := MAIN({}, {}, {}, {}, NONE(), NONE(), variableData, equationData, funcTree);
   end lower;
 
   function solve
@@ -239,7 +238,7 @@ public
     _ := match bdae
       local
         BEquation.EquationPointers equations;
-      case BDAE(eqData = BEquation.EQ_DATA_SIM(equations = equations)) algorithm
+      case MAIN(eqData = BEquation.EQ_DATA_SIM(equations = equations)) algorithm
         _ := BEquation.EquationPointers.map(equations, function Equation.simplify(name = getInstanceName(), indent = ""));
       then ();
       else ();

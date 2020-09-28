@@ -65,22 +65,22 @@ public
       local
         list<System.System> systems;
 
-      case (System.SystemType.ODE, BackendDAE.BDAE(ode = systems))
+      case (System.SystemType.ODE, BackendDAE.MAIN(ode = systems))
         algorithm
           bdae.ode := List.map(systems, causalizeScalar);
       then bdae;
 
-      case (System.SystemType.INIT, BackendDAE.BDAE(init = systems))
+      case (System.SystemType.INIT, BackendDAE.MAIN(init = systems))
         algorithm
           bdae.init := List.map(systems, causalizeScalar);
       then bdae;
 
-      case (System.SystemType.PARAM, BackendDAE.BDAE(param = systems))
+      case (System.SystemType.PARAM, BackendDAE.MAIN(param = systems))
         algorithm
           bdae.param := List.map(systems, causalizeScalar);
       then bdae;
 
-      case (System.SystemType.DAE, BackendDAE.BDAE(dae = SOME(systems)))
+      case (System.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems)))
         algorithm
           bdae.dae := SOME(List.map(systems, causalizeDAEMode));
       then bdae;

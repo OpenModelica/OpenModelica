@@ -218,6 +218,22 @@ public
     end match;
   end applySimpleVar;
 
+  function simpleToString
+    input HashTableCrToExp.HashTable replacements;
+    output String str = "";
+  protected
+    list<tuple<ComponentRef, Expression>> entries;
+    ComponentRef key;
+    Expression value;
+  algorithm
+    str := StringUtil.headline_2("[dumprepl] Replacements: " + str);
+    entries := BaseHashTable.hashTableList(replacements);
+    for entry in entries loop
+      (key, value) := entry;
+      str := str + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";
+    end for;
+  end simpleToString;
+
 /*
 
   function empty

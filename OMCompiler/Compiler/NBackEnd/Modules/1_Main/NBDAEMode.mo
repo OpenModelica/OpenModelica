@@ -62,7 +62,7 @@ public
         local
           list<System.System> ode;
 
-        case BackendDAE.BDAE(ode = ode)
+        case BackendDAE.MAIN(ode = ode)
           algorithm
             bdae.dae := SOME(func(ode));
         then bdae;

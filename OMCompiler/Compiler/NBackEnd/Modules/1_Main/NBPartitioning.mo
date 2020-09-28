@@ -63,12 +63,12 @@ public
         BVariable.VariablePointers variables;
         BEquation.EquationPointers equations;
 
-      case (System.SystemType.ODE, BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
+      case (System.SystemType.ODE, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
         algorithm
           bdae.ode := func(systemType, variables, equations);
         then bdae;
 
-      case (System.SystemType.INIT, BackendDAE.BDAE(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
+      case (System.SystemType.INIT, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
         algorithm
           bdae.init := func(systemType, variables, equations);
         then bdae;

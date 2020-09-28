@@ -4,13 +4,14 @@
 
 loadString("
   model RSE
-    Real x, y, z;
-    Real a, b, c;
+    Real y;             // not simple
+    Real x, z;          // regular simple
+    Real a, b, c;       // constant simple
   equation
     a = b;
     b = c;
     x = z;
-    c = time;
+    c = 3.0;
     y = time + c;
     z = sin(time);
   end RSE;
@@ -35,7 +36,7 @@ simulate(RSE); getErrorString();
 //
 // Alias Set 2:
 // ****************************************
-// 	<No Constant/Parameter Binding>
+// 	Constant/Parameter Binding: [SCAL] c = 3.0
 // 	### Set Equations:
 // 	[SCAL] b = c
 // 	[SCAL] a = b
@@ -43,10 +44,10 @@ simulate(RSE); getErrorString();
 // ========================================
 // [dumprepl] Replacements:
 // ========================================
-// HashTable:
-// {z,{x}}
-// {b,{c}}
-// {a,{c}}
+// 	z	 ==> 	x
+// 	c	 ==> 	3.0
+// 	b	 ==> 	3.0
+// 	a	 ==> 	3.0
 // record SimulationResult
 //     resultFile = "RSE_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RSE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

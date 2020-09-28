@@ -76,7 +76,7 @@ public
       local
         BVariable.VarData varData                       "Data containing variable pointers";
         BEquation.EqData eqData                         "Data containing equation pointers";
-      case BackendDAE.BDAE(varData = varData, eqData = eqData)
+      case BackendDAE.MAIN(varData = varData, eqData = eqData)
         algorithm
           (varData, eqData) := mainFunc(varData, eqData, contFunc, discFunc);
           bdae.varData := varData;
