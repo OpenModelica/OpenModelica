@@ -4,6 +4,7 @@ TESTFILES = \
 DualMassOscillator_cs.mos \
 DualMassOscillator_me.mos \
 DualMassOscillator.mos \
+enumeration.mos \
 initialization_omc.mos \
 initialization.mos \
 initialization2_omc.mos \
