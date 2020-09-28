@@ -37,7 +37,6 @@ import Connections = NFConnections;
 
 protected
 import Array;
-import BaseHashSet;
 import Binding = NFBinding;
 import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
@@ -60,6 +59,7 @@ import Prefixes = NFPrefixes;
 import TypeCheck = NFTypeCheck;
 import Type = NFType;
 import Typing = NFTyping;
+import UnorderedSet;
 import Util;
 import Variable = NFVariable;
 
@@ -117,32 +117,6 @@ algorithm
 end elaborate;
 
 protected
-
-encapsulated package ExpandableSet
-  import BaseHashSet;
-  import Connector = NFConnector;
-  import ComponentRef = NFComponentRef;
-
-  extends BaseHashSet(redeclare type Key = Connector);
-
-  function emptySet
-    input Integer size;
-    output HashSet set;
-  algorithm
-    set := BaseHashSet.emptyHashSetWork(size,
-      (hashConnector, Connector.isNodeNameEqual, Connector.toString));
-  end emptySet;
-
-  function hashConnector
-    input Connector conn;
-    input Integer mod;
-    output Integer res;
-  algorithm
-    res := stringHashDjb2Mod(ComponentRef.firstName(conn.name), mod);
-  end hashConnector;
-
-  annotation(__OpenModelica_Interface="frontend");
-end ExpandableSet;
 
 function sortConnections
   "Sorts the connections into different categories of connectors based on
@@ -328,21 +302,21 @@ function elaborateExpandableSet
   input list<Connector> set;
   input output list<Variable> vars;
 protected
-  ExpandableSet.HashSet exp_set;
+  UnorderedSet<Connector> exp_set;
   list<Connector> exp_conns = {}, exp_set_lst;
 algorithm
-  exp_set := ExpandableSet.emptySet(Util.nextPrime(listLength(set)));
+  exp_set := UnorderedSet.new(hashConnector, Connector.isNodeNameEqual);
 
   for c in set loop
     if ConnectorType.isExpandable(c.cty) then
       exp_conns := c :: exp_conns;
     elseif ConnectorType.isUndeclared(c.cty) then
-      exp_set := BaseHashSet.add(c, exp_set);
+      UnorderedSet.add(c, exp_set);
       markComponentPresent(ComponentRef.node(Connector.name(c)));
     end if;
   end for;
 
-  exp_set_lst := BaseHashSet.hashSetList(exp_set);
+  exp_set_lst := UnorderedSet.toList(exp_set);
 
   for ec in exp_conns loop
     vars := augmentExpandableConnector(ec, exp_set_lst, vars);
@@ -496,6 +470,14 @@ algorithm
     var.attributes := Component.getAttributes(InstNode.component(ComponentRef.node(var.name)));
   end if;
 end updatePotentiallyPresentVariable;
+
+function hashConnector
+  input Connector conn;
+  input Integer mod;
+  output Integer res;
+algorithm
+  res := stringHashDjb2Mod(ComponentRef.firstName(conn.name), mod);
+end hashConnector;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpandableConnectors;
