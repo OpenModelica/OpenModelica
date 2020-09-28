@@ -209,6 +209,7 @@ if true then /* Suppress output */
     "../Util/Socket.mo",
     "../Util/System.mo",
     "../Util/Testsuite.mo",
+    "../Util/UnorderedSet.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
     "../Util/ZeroMQ.mo",
