@@ -3596,11 +3596,11 @@ protected
   list<tuple<Integer,Integer>> te_nl,te_nl2;
   list<Integer> m_se,m_salg,m_sarr,m_sec;
   list<tuple<Integer,Integer>> me_jc,e_jt,me_jt,me_jn,me_nj,me_lt,me_nt;
-  list<DAE.ComponentRef> states,discvars,discstates;
+  list<DAE.ComponentRef> states,discvars,discstates,clockedstates={};
   HashSet.HashSet HS;
   BackendDAE.EqSystems systs;
   BackendDAE.EquationArray removedEqs;
-  String statesStr, sysStr, stStr, dvarStr, dstStr, statesStr, discvarsStr, discstatesStr, inpStr, strcompsStr, seqStr, sarrStr, salgStr, sceStr, sweStr, sieStr, eqsysStr, teqsysStr, meqsysStr, daeType;
+  String sysStr, stStr, dvarStr, dstStr, clckStr, statesStr, discvarsStr, discstatesStr, clockedstatesStr, inpStr, strcompsStr, seqStr, sarrStr, salgStr, sceStr, sweStr, sieStr, eqsysStr, teqsysStr, meqsysStr, daeType;
 
   list<String> msgs;
   DumpCompShortSystemsTpl systemsTpl;
@@ -3618,6 +3618,11 @@ algorithm
   discstates := BaseHashSet.hashSetList(HS);
   dst := listLength(discstates);
 
+  // collect and print clocked states #6132
+  for syst in systs loop
+    clockedstates := BackendVariable.filterCrefs(syst.orderedVars, BackendVariable.isVarClockedState, clockedstates);
+  end for;
+
   ((sys,inp,st,states,dvar,discvars,seq,salg,sarr,sce,swe,sie,systemsTpl,mixedTpl,tornTpl,tornTpl2)) := BackendDAEUtil.foldEqSystem(inDAE,dumpCompShort1,(0,0,0,{},0,{},0,0,0,0,0,0,({},{},{},{}),({},{},{},{},{},{},{},{},{},{}),({},{}),({},{})));
   (e_jc,e_jt,e_jn,e_nj) := systemsTpl;
   (m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt) := mixedTpl;
@@ -3634,6 +3639,7 @@ algorithm
   stStr := intString(st);
   dvarStr := intString(dvar);
   dstStr := intString(dst);
+  clckStr := intString(listLength(clockedstates));
   statesStr := if Flags.isSet(Flags.DUMP_STATESELECTION_INFO)
     then " (" + stringDelimitList(List.map(states, ComponentReference.printComponentRefStr),",") + ")"
     else " ('-d=stateselection' for list of states)";
@@ -3643,11 +3649,15 @@ algorithm
   discstatesStr := if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)
      then " (" + stringDelimitList(List.map(discstates, ComponentReference.printComponentRefStr),",") + ")"
      else " ('-d=discreteinfo' for list of discrete states)";
-  inpStr := intString(inp);
+  clockedstatesStr := if Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO)
+     then " (" + stringDelimitList(List.map(clockedstates, ComponentReference.printComponentRefStr),",") + ")"
+     else " ('-d=discreteinfo' for list of clocked states)";
   stStr := stStr+statesStr;
   dvarStr := dvarStr+discvarsStr;
   dstStr := dstStr+discstatesStr;
-  msgs := {daeType,sysStr,stStr,dvarStr,dstStr,inpStr};
+  clckStr := clckStr+clockedstatesStr;
+  inpStr := intString(inp);
+  msgs := {daeType,sysStr,stStr,dvarStr,dstStr,clckStr,inpStr};
   Error.addMessage(Error.BACKENDDAEINFO_STATISTICS, msgs);
 
   strcompsStr := intString(strcomps);
