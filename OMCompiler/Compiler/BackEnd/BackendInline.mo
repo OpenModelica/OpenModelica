@@ -80,13 +80,14 @@ end lateInlineFunction;
 //
 // =============================================================================
 public function normalInlineFunction
+  "inlines functions with normal or default inline attribute"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
   if Flags.getConfigEnum(Flags.INLINE_METHOD) == 1 then
-    outDAE := inlineCalls({DAE.NORM_INLINE()}, inDAE);
+    outDAE := inlineCalls({DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}, inDAE);
   else
-    outDAE := inlineCallsBDAE({DAE.NORM_INLINE()}, inDAE);
+    outDAE := inlineCallsBDAE({DAE.NORM_INLINE(), DAE.DEFAULT_INLINE()}, inDAE);
   end if;
 end normalInlineFunction;
 
