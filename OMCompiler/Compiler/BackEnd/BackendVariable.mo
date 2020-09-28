@@ -940,6 +940,20 @@ algorithm
   end match;
 end isVarDiscrete;
 
+public function isVarClockedState
+"This functions checks if BackendDAE.Var is a clocked state"
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+protected
+  String test;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.CLOCKED_STATE())) then true;
+    else false;
+  end match;
+  test := "";
+end isVarClockedState;
+
 public function isDiscrete
 "This functions checks if BackendDAE.Var is discrete"
   input DAE.ComponentRef cr;
@@ -3570,6 +3584,29 @@ algorithm
   BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(numberOfElements=num_vars, varOptArr=vars)) := inVariables;
   outArg := BackendDAEUtil.traverseArrayNoCopy(vars, inFunc, traverseBackendDAEVars2, inArg, num_vars);
 end traverseBackendDAEVars;
+
+partial function filterFunc
+  input BackendDAE.Var var;
+  output Boolean b;
+end filterFunc;
+
+public function filterCrefs
+  input BackendDAE.Variables variables;
+  input filterFunc func;
+  input output list<DAE.ComponentRef> acc;
+algorithm
+  acc := traverseBackendDAEVars(variables, function filterTraverse(func = func), acc);
+end filterCrefs;
+
+protected function filterTraverse
+  input output BackendDAE.Var var;
+  input filterFunc func;
+  input output list<DAE.ComponentRef> acc;
+algorithm
+  if func(var) then
+    acc := var.varName :: acc;
+  end if;
+end filterTraverse;
 
 protected function traverseBackendDAEVars2<ArgT>
   input Option<BackendDAE.Var> inVar;
