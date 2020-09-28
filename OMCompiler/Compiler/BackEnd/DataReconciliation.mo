@@ -79,7 +79,7 @@ protected
   list<list<Integer>> s_BLTBlocks, e_BLTBlocks, allBlocks, tmpAdjacencyMatrix;
   list<list<String>> allBlocksStatusVarInfo;
   list<tuple<Integer, BackendDAE.Equation>> e_BLT_EquationsWithIndex;
-  ExtAdjacencyMatrix eBltAdjacencyMatrix, sBltAdjacencyMatrix;
+  ExtAdjacencyMatrix eBltAdjacencyMatrix, sBltAdjacencyMatrix, setS_BLTAdjacencyMatrix;
   list<tuple<Integer, Integer>> e_BLTSolvedEqsAndVars;
   list<tuple<list<Integer>, Integer>> e_BLTBlockRanks, s_BLTBlockRanks;
   list<tuple<list<Integer>, list<tuple<list<Integer>, Integer>>, list<tuple<list<String>, Integer>>>> s_BLTBlockTargetInfo;
@@ -90,7 +90,7 @@ protected
   BackendDAE.Shared shared;
   String str, modelicaOutput, modelicaFileName;
 
-  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars;
+  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
 
   Boolean debug = false;
@@ -328,6 +328,41 @@ algorithm
     dumpSetSVarsSolvedInfo(tempSetS, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars);
   end if;
 
+  //extractedVarsfromSetS := getVariablesAfterExtraction({}, tempSetS, sBltAdjacencyMatrix);
+  //extractedVarsfromSetS := List.setDifferenceOnTrue(extractedVarsfromSetS, knowns, intEq);
+
+  setC := List.unique(getAbsoluteIndexHelper(tempSetC, mapIncRowEqn));
+  setS := List.unique(getAbsoluteIndexHelper(tempSetS, mapIncRowEqn));
+
+  setC_Eq := getEquationsFromSBLTAndEBLT(setC, currentSystem.orderedEqs, e_BLT_EquationsWithIndex);
+  setS_Eq := getEquationsFromSBLTAndEBLT(setS, currentSystem.orderedEqs, e_BLT_EquationsWithIndex);
+
+  //BackendDump.dumpEquationList(setC_Eq,"SET_C");
+  //BackendDump.dumpEquationList(setS_Eq,"SET_S");
+  BackendDump.dumpEquationArray(BackendEquation.listEquation(setC_Eq), "SET_C");
+  BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S");
+
+  unknownVarsInSetC := getVariablesAfterExtraction(tempSetC, {}, sBltAdjacencyMatrix);
+  unknownVarsInSetC := listReverse(List.setDifferenceOnTrue(unknownVarsInSetC, knowns, intEq));
+
+  // get the blt adjacencyMatrix asscoiated with extracted SET-S
+  setS_BLTAdjacencyMatrix := getSetSAdjacencyMatrix(sBltAdjacencyMatrix, tempSetS);
+
+  if debug then
+    print("\nStart of Extract Minimal Set-S Algorithm\n" + UNDERLINE + "\n");
+    print("\nSet-S Adjacency MAtrix : " +  intString(listLength(setS_BLTAdjacencyMatrix)) + "\n" + UNDERLINE + "\n" + anyString(setS_BLTAdjacencyMatrix));
+    print("\nS'        : {}");
+    print("\nV_C       :" +  dumplistInteger(unknownVarsInSetC) + "\n");
+  end if;
+
+  // run the minimal SET-S extraction algorithm
+  (_, tempSetS) := extractMinimalSetS(unknownVarsInSetC, setS_BLTAdjacencyMatrix, knowns, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, {}, debug);
+
+  if debug then
+    print("\n****End of Minimal extraction Algorithm****\n");
+    print("\nSet-S after running minimal extraction algorithm \n" + UNDERLINE + "\n" +"SET_S: "+dumplistInteger(tempSetS)+ "\n\n");
+  end if;
+
   extractedVarsfromSetS := getVariablesAfterExtraction({}, tempSetS, sBltAdjacencyMatrix);
   extractedVarsfromSetS := List.setDifferenceOnTrue(extractedVarsfromSetS, knowns, intEq);
 
@@ -339,10 +374,8 @@ algorithm
   setC_Eq := getEquationsFromSBLTAndEBLT(setC, currentSystem.orderedEqs, e_BLT_EquationsWithIndex);
   setS_Eq := getEquationsFromSBLTAndEBLT(setS, currentSystem.orderedEqs, e_BLT_EquationsWithIndex);
 
-  //BackendDump.dumpEquationList(setC_Eq,"SET_C");
-  //BackendDump.dumpEquationList(setS_Eq,"SET_S");
-  BackendDump.dumpEquationArray(BackendEquation.listEquation(setC_Eq), "SET_C");
-  BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S");
+  // dump minimal SET-S equations
+  BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S_After_Minimal_Extraction");
 
   // prepare outdiff vars (i.e) variables of interest
   outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
@@ -417,6 +450,135 @@ algorithm
   // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
   outDAE := BackendDAE.DAE({currentSystem}, shared);
 end extractionAlgorithm;
+
+protected function getSetSAdjacencyMatrix
+ "return the adjacency matrix associated with set-S"
+  input ExtAdjacencyMatrix sBltAdjacencyMatrix;
+  input list<Integer> setS;
+  output ExtAdjacencyMatrix setS_BltAdjacencyMatrix = {};
+protected
+  Integer eq;
+algorithm
+  for i in sBltAdjacencyMatrix loop
+    (eq, _) := i;
+     if listMember(eq, setS) then
+       setS_BltAdjacencyMatrix := i :: setS_BltAdjacencyMatrix;
+     end if;
+   end for;
+end getSetSAdjacencyMatrix;
+
+protected function extractMinimalSetS
+  "construct a minimal set-S using recursive algorithm, which are needed to solve intermediate
+  variables in set-c and also avoid complication when calculating jacobians"
+  input output list<Integer> unknownsInSetC;
+  input ExtAdjacencyMatrix sBltAdjacencyMatrix;
+  input list<Integer> knownVars;
+  input BackendDAE.Variables orderedVars;
+  input BackendDAE.EquationArray orderedEqs;
+  input array<Integer> mapIncRowEqn;
+  input output list<Integer> minimalSetS = {};
+  input Boolean debug;
+protected
+  Integer firstMatchedEquation, mappedEq;
+  BackendDAE.Var var;
+  BackendDAE.Equation tmpEq;
+  list<Integer> rest, vars, intermediateVars = {}, V_EQ;
+algorithm
+  for varIndex in unknownsInSetC loop
+    // break the recursion loop
+    if listEmpty(unknownsInSetC) then
+      break;
+    end if;
+    if debug then
+      print("\nIntermediate varList : " + dumplistInteger(unknownsInSetC) + "\n" + UNDERLINE + "\n");
+    end if;
+    _ :: rest := unknownsInSetC;
+    (firstMatchedEquation, vars) := getVariableFirstOccurrenceInEquation(sBltAdjacencyMatrix, varIndex, minimalSetS);
+    var := BackendVariable.getVarAt(orderedVars, varIndex);
+
+    if not intEq(firstMatchedEquation, 0) then // equation exists
+      minimalSetS := firstMatchedEquation :: minimalSetS; // insert the equation into S'
+      minimalSetS := List.unique(minimalSetS);
+      intermediateVars := List.setDifferenceOnTrue(vars, knownVars, intEq); // get intermediate vars in matched equations
+      V_EQ := List.unique(listAppend(intermediateVars, rest));
+      if debug then
+        dumpMininimalExtraction(varIndex, var, firstMatchedEquation, mapIncRowEqn, orderedEqs, minimalSetS, intermediateVars, rest, V_EQ, false);
+      end if;
+      // V_EQ exist, recursive call
+      (unknownsInSetC, minimalSetS) := extractMinimalSetS(V_EQ, sBltAdjacencyMatrix, knownVars, orderedVars, orderedEqs, mapIncRowEqn, minimalSetS, debug);
+    else // equation not exist
+      if debug then
+        dumpMininimalExtraction(varIndex, var, 0, mapIncRowEqn, orderedEqs, {}, {}, rest, {}, true);
+      end if;
+      unknownsInSetC := rest; // update the list with the remaining Vars
+    end if;
+  end for;
+end extractMinimalSetS;
+
+protected function dumpMininimalExtraction
+  "dumps the minimal set-S extraction algorithm"
+  input Integer varIndex;
+  input BackendDAE.Var var;
+  input Integer firstMatchedEquation;
+  input array<Integer> mapIncRowEqn;
+  input BackendDAE.EquationArray orderedEqs;
+  input list<Integer> minimalSetS;
+  input list<Integer> intermediateVars;
+  input list<Integer> rest;
+  input list<Integer> V_EQ;
+  input Boolean falseBlock;
+protected
+  Integer mappedEq;
+  BackendDAE.Equation tmpEq;
+algorithm
+  if falseBlock then
+    print("\nVarIndex           : " + intString(varIndex));
+    print("\nVariable Name      : " + ComponentReference.printComponentRefStr(var.varName));
+    print("\nEquation Not Exist : " + "NIL");
+    print("\nRemainingVars      : " + dumplistInteger(rest) + "\n");
+  else
+    mappedEq := listGet(arrayList(mapIncRowEqn), firstMatchedEquation);
+    tmpEq := BackendEquation.get(orderedEqs, mappedEq);
+    //print("\n" + "   ("  + intString(mappedEq) + "/"  + intString(firstMatchedEquation)  + "): " + BackendDump.equationString(tmpEq) + "\n");
+    print("\nVarIndex                     : " + intString(varIndex));
+    print("\nVariable Name                : " + ComponentReference.printComponentRefStr(var.varName));
+    print("\nEquation Exist               : " + intString(firstMatchedEquation));
+    print("\nmappedEquation               : " + intString(mappedEq));
+    print("\nMatched Equation             : " + BackendDump.equationString(tmpEq));
+    print("\nS'                           : " + dumplistInteger(minimalSetS));
+    print("\nUnknowns in matchedEquation  : " + dumplistInteger(intermediateVars));
+    print("\nRemaining Vars               : " + dumplistInteger(rest));
+    print("\nV_EQ                         : " + dumplistInteger(V_EQ) + "\n");
+  end if;
+end dumpMininimalExtraction;
+
+protected function getVariableFirstOccurrenceInEquation
+  "returns the first equation that contains the variable index (e.g)
+   var index = 6
+   BLT = {(1, {26, 5}), (2, {25, 6}, (3, {1, 2, 6})}
+   result = (2,{25, 6})"
+  input ExtAdjacencyMatrix m;
+  input Integer varIndex;
+  input list<Integer> minimalSetS;
+  output tuple<Integer, list<Integer>> matchedEquation = (0, {}) "default value 0 means equation does not exist";
+protected
+  list<Integer> ret, vars, matchedeq;
+  Integer eq, eqnum, varnum;
+algorithm
+  for i in m loop
+    (eq, vars) := i;
+    //print("\nVarcheck : " + intString(varIndex) + "=>" + anyString(eq) + " => " + anyString(vars));
+    if eq > 0 then
+      if not listMember(eq, minimalSetS) then
+        if listMember(varIndex, vars) then
+          //print("\n Found the first equation : " + anyString(i));
+          matchedEquation := i;
+          break;
+        end if;
+      end if;
+    end if;
+  end for;
+end getVariableFirstOccurrenceInEquation;
 
 protected function dumpResidualVars
   "returns the variables of interest in modelica format"
@@ -509,7 +671,7 @@ algorithm
   end for;
 
   if debug then
-     BackendDump.dumpVarList(daeVarsLst, "boundaryConditionVarsTaggedAsParmeters");
+    BackendDump.dumpVarList(daeVarsLst, "boundaryConditionVarsTaggedAsParmeters");
   end if;
 
   // update the EqSyst with new boundary Conditions vars and equations
@@ -1244,7 +1406,7 @@ protected
   list<list<Integer>> targetblocks, eBLTBlocks;
   list<tuple<list<String>,Integer>> targetvarlist;
   list<String> blockvarlst;
-  list<Integer> ranklist,blocks1;
+  list<Integer> ranklist, blocks1;
   Integer rank;
   list<tuple<list<Integer>,Integer>> updatedblocks;
 algorithm
