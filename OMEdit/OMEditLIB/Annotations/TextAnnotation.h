@@ -64,8 +64,6 @@ public:
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;
   void updateShape(ShapeAnnotation *pShapeAnnotation) override;
-
-  QRectF mExportBoundingRect;
 private:
   Element *mpComponent;
 
