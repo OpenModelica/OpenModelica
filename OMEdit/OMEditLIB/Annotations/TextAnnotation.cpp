@@ -391,10 +391,6 @@ void TextAnnotation::drawTextAnnotaion(QPainter *painter)
   // draw the font
   if (mpComponent || mappedBoundingRect.width() != 0 || mappedBoundingRect.height() != 0) {
     painter->drawText(mappedBoundingRect, StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
-    mExportBoundingRect = painter->boundingRect(mappedBoundingRect, StringHandler::getTextAlignment(mHorizontalAlignment) | Qt::AlignVCenter | Qt::TextDontClip, textToDraw);
-    if (mpComponent) {
-      mExportBoundingRect = sceneTransform().mapRect(mExportBoundingRect);
-    }
   }
 }
 
