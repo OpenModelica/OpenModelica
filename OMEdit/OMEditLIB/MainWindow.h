@@ -573,11 +573,16 @@ protected:
   virtual void dropEvent(QDropEvent *event) override;
 };
 
+class QNetworkReply;
 class AboutOMEditDialog : public QDialog
 {
   Q_OBJECT
 public:
   AboutOMEditDialog(MainWindow *pMainWindow);
+private:
+  Label *mpOMContributorsLabel;
+private slots:
+  void readOMContributors(QNetworkReply *pNetworkReply);
 };
 
 #endif // MAINWINDOW_H
