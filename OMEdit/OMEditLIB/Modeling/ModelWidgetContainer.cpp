@@ -6211,7 +6211,7 @@ void ModelWidget::associateBusWithConnectors(QString busName)
 }
 
 /*!
- * \brief ModelWidget::toOMSensJson
+ * \brief ModelWidget::toOMSensData
  * Creates a list of QVariant containing the model information needed by OMSens.
  * Currently only works for REAL types (OMSens currently have similar limitations)
  * \return
