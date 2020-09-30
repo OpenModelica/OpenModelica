@@ -170,9 +170,6 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
   pParametersScrollArea->setWidget(pParametersWidget);
   mParameterLabels.clear();
   mParameterLineEdits.clear();
-  LibraryTreeItem *pModelLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(
-                                             StringHandler::getFirstWordBeforeDot(mpComponent->getLibraryTreeItem()->getNameStructure()));
-  bool modelInstantiated = pModelLibraryTreeItem && pModelLibraryTreeItem->isOMSModelInstantiated();
   bool hasParameter = false;
   if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
@@ -189,21 +186,21 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
           QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
           pParameterLineEdit->setValidator(pDoubleValidator);
           double value;
-          if (modelInstantiated && (status = OMSProxy::instance()->getReal(nameStructure, &value))) {
+          if ((status = OMSProxy::instance()->getReal(nameStructure, &value))) {
             pParameterLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pParameterLineEdit->setValidator(pIntValidator);
           int value;
-          if (modelInstantiated && (status = OMSProxy::instance()->getInteger(nameStructure, &value))) {
+          if ((status = OMSProxy::instance()->getInteger(nameStructure, &value))) {
             pParameterLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pParameterLineEdit->setValidator(pIntValidator);
           bool value;
-          if (modelInstantiated && (status = OMSProxy::instance()->getBoolean(nameStructure, &value))) {
+          if ((status = OMSProxy::instance()->getBoolean(nameStructure, &value))) {
             pParameterLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
@@ -258,21 +255,21 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
           QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
           pInputLineEdit->setValidator(pDoubleValidator);
           double value;
-          if (modelInstantiated && (status = OMSProxy::instance()->getReal(nameStructure, &value))) {
+          if ((status = OMSProxy::instance()->getReal(nameStructure, &value))) {
             pInputLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_integer) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pInputLineEdit->setValidator(pIntValidator);
           int value;
-          if (modelInstantiated && (status = OMSProxy::instance()->getInteger(nameStructure, &value))) {
+          if ((status = OMSProxy::instance()->getInteger(nameStructure, &value))) {
             pInputLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pInputLineEdit->setValidator(pIntValidator);
           bool value;
-          if (modelInstantiated && (status = OMSProxy::instance()->getBoolean(nameStructure, &value))) {
+          if ((status = OMSProxy::instance()->getBoolean(nameStructure, &value))) {
             pInputLineEdit->setText(QString::number(value));
           }
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
@@ -301,7 +298,6 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
-  mpOkButton->setEnabled(modelInstantiated);
   connect(mpOkButton, SIGNAL(clicked()), this, SLOT(updateProperties()));
   mpCancelButton = new QPushButton(Helper::cancel);
   mpCancelButton->setAutoDefault(false);
