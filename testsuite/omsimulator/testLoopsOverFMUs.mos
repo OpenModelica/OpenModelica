@@ -1,0 +1,142 @@
+// name:     testLoopsOverFMUs.mos
+// status:   correct
+// teardown_command: rm -rf loopsOverFMUs* temp/
+//
+// Test algeraic loops over FMUs A and B or C and D. Can't be solved by fixed-point-iteration
+// Using KINSOL to solve loops.
+
+loadModel(Modelica);
+
+loadString("
+package loopsOverFMUs
+  model A
+    Real a, b, c;
+    Modelica.Blocks.Interfaces.RealOutput a_out;
+    Modelica.Blocks.Interfaces.RealOutput b_out;
+    Modelica.Blocks.Interfaces.RealInput c_in;
+  equation
+    c = c_in;
+    // Eq. 1 and 2 of loop
+    a + b + c=0;
+    2*a - 3*b + 2*c=9;
+    a_out = a;
+    b_out = b;
+  end A;
+
+  model B
+    Real a, b, c;
+    Modelica.Blocks.Interfaces.RealInput a_in;
+    Modelica.Blocks.Interfaces.RealInput b_in;
+    Modelica.Blocks.Interfaces.RealOutput c_out;
+  equation
+    a = a_in;
+    b = b_in;
+    // Equation 3 of loop
+    a*a + b*b + c*c=5;
+    c_out = c;
+  end B;
+
+  model C
+    Modelica.Blocks.Interfaces.RealInput x_in;
+    Modelica.Blocks.Interfaces.RealOutput x_out;
+    Real y(fixed=true, start=2);
+    parameter Real a = 2;
+  equation
+    der(y) = a*y;
+    x_out = 2*x_in-y;
+  end C;
+
+  model D
+    Modelica.Blocks.Interfaces.RealInput x_in;
+    Modelica.Blocks.Interfaces.RealOutput x_out;
+  equation
+    x_out = x_in;
+  end D;
+end loopsOverFMUs;
+"); getErrorString();
+
+buildModelFMU(loopsOverFMUs.A, fmuType="me");
+buildModelFMU(loopsOverFMUs.B, fmuType="me");
+buildModelFMU(loopsOverFMUs.C, fmuType="me");
+buildModelFMU(loopsOverFMUs.D, fmuType="me");
+
+
+writeFile("loopsOverFMUs.lua","
+oms_setTempDirectory(\"./temp/\")
+oms_newModel(\"loopsOverFMUs\")
+oms_addSystem(\"loopsOverFMUs.root\", oms_system_sc)
+
+-- instantiate FMUs
+oms_addSubModel(\"loopsOverFMUs.root.A\", \"loopsOverFMUs.A.fmu\")
+oms_addSubModel(\"loopsOverFMUs.root.B\", \"loopsOverFMUs.B.fmu\")
+oms_addSubModel(\"loopsOverFMUs.root.C\", \"loopsOverFMUs.C.fmu\")
+oms_addSubModel(\"loopsOverFMUs.root.D\", \"loopsOverFMUs.D.fmu\")
+
+-- connections: A <-> B
+oms_addConnection(\"loopsOverFMUs.root.A.a_out\", \"loopsOverFMUs.root.B.a_in\")
+oms_addConnection(\"loopsOverFMUs.root.A.b_out\", \"loopsOverFMUs.root.B.b_in\")
+oms_addConnection(\"loopsOverFMUs.root.A.c_in\", \"loopsOverFMUs.root.B.c_out\")
+
+-- connections: C <-> D
+oms_addConnection(\"loopsOverFMUs.root.C.x_out\", \"loopsOverFMUs.root.D.x_in\")
+oms_addConnection(\"loopsOverFMUs.root.C.x_in\", \"loopsOverFMUs.root.D.x_out\")
+
+-- simulation settings
+oms_setResultFile(\"loopsOverFMUs\", \"loopsOverFMUs.mat\")
+oms_setStartTime(\"loopsOverFMUs\", 0)
+oms_setStopTime(\"loopsOverFMUs\", 0.1)
+
+oms_instantiate(\"loopsOverFMUs\")
+oms_setReal(\"loopsOverFMUs.root.A.c_in\", 1.0)
+
+oms_initialize(\"loopsOverFMUs\")
+oms_simulate(\"loopsOverFMUs\")
+oms_terminate(\"loopsOverFMUs\")
+oms_delete(\"loopsOverFMUs\")
+"); getErrorString();
+
+system("OMSimulator loopsOverFMUs.lua --algLoopSolver=kinsol --stripRoot=true --suppressPath=true --deleteTempFiles=true"); getErrorString();
+
+// Possible solutions:
+// a≈0.635425, b=-1.8, c≈1.16458 or a≈1.16458, b=-1.8, c≈0.635425
+val(A.a_out, 0.1, "loopsOverFMUs.mat");
+val(A.b_out, 0.1, "loopsOverFMUs.mat");
+val(B.c_out, 0.1, "loopsOverFMUs.mat");
+
+// x should be equal to y
+val(C.y, 0, "loopsOverFMUs.mat");
+val(C.y, 0.1, "loopsOverFMUs.mat");
+val(D.x_out, 0, "loopsOverFMUs.mat");
+val(D.x_out, 0.1, "loopsOverFMUs.mat");
+
+
+// Result:
+// true
+// true
+// ""
+// "loopsOverFMUs.A.fmu"
+// "loopsOverFMUs.B.fmu"
+// "loopsOverFMUs.C.fmu"
+// "loopsOverFMUs.D.fmu"
+// true
+// ""
+// warning: Alg. loop (size 3)
+// warning: Alg. loop (size 2)
+// info:    maximum step size for 'loopsOverFMUs.root': 0.100000
+// info:    Result file: loopsOverFMUs.mat (bufferSize=1)
+// warning: Alg. loop (size 3)
+// warning: Alg. loop (size 2)
+// info:    Final Statistics for 'loopsOverFMUs.root':
+//          NumSteps = 10 NumRhsEvals  = 15 NumLinSolvSetups = 6
+//          NumNonlinSolvIters = 14 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+// info:    4 warnings
+// info:    0 errors
+// 0
+// ""
+// 0.6354248688886293
+// -1.8
+// 1.164575131109139
+// 2.0
+// 2.443067244571996
+// 2.0
+// 2.443067244215552
