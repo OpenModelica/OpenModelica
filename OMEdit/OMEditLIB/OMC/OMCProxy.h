@@ -154,8 +154,7 @@ public:
   QList<QString> getDocumentationAnnotationInClass(LibraryTreeItem *pLibraryTreeItem);
   QString getClassComment(QString className);
   QString changeDirectory(QString directory = QString(""));
-  bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = false, QString languageStandard = QString(""),
-                 bool requireExactVersion = false);
+  bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = true, QString languageStandard = QString(""), bool requireExactVersion = false);
   bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false);
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool merge = false, bool checkError = true);
   QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);

@@ -1126,7 +1126,7 @@ function loadFile "load file (*.mo) and merge it with the loaded AST."
   input String fileName;
   input String encoding = "UTF-8";
   input Boolean uses = true;
-  input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
+  input Boolean notify = false "Give a notification of the libraries and versions that were loaded";
   input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output Boolean success;
 external "builtin";
@@ -1145,7 +1145,7 @@ function loadFiles "load files (*.mo) and merges them with the loaded AST."
   input String encoding = "UTF-8";
   input Integer numThreads = OpenModelica.Scripting.numProcessors();
   input Boolean uses = true;
-  input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
+  input Boolean notify = false "Give a notification of the libraries and versions that were loaded";
   input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output Boolean success;
 external "builtin";
@@ -1167,7 +1167,7 @@ function loadEncryptedPackage
   input String workdir = "<default>" "The output directory for imported encrypted files. <default> will put the files to current working directory.";
   input Boolean skipUnzip = false "Skips the unzip of .mol if true. In that case we expect the files are already extracted e.g., because of parseEncryptedPackage() call.";
   input Boolean uses = true;
-  input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
+  input Boolean notify = false "Give a notification of the libraries and versions that were loaded";
   input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output Boolean success;
 external "builtin";
@@ -1234,7 +1234,7 @@ function loadFileInteractive
   input String filename;
   input String encoding = "UTF-8";
   input Boolean uses = true;
-  input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
+  input Boolean notify = false "Give a notification of the libraries and versions that were loaded";
   input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output TypeName names[:];
 external "builtin";
@@ -2095,7 +2095,7 @@ end generateCode;
 function loadModel "Loads the Modelica Standard Library."
   input TypeName className;
   input String[:] priorityVersion = {"default"};
-  input Boolean notify = true "Give a notification of the libraries and versions that were loaded";
+  input Boolean notify = false "Give a notification of the libraries and versions that were loaded";
   input String languageStandard = "" "Override the set language standard. Parse with the given setting, but do not change it permanently.";
   input Boolean requireExactVersion = false "If the version is required to be exact, if there is a uses Modelica(version=\"3.2\"), Modelica 3.2.1 will not match it.";
   output Boolean success;

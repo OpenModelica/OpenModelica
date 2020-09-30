@@ -176,7 +176,7 @@ int LoadFile(data* omcData, const char* fileName)
     modelica_boolean result;
     std::string encoding = "UTF-8";
     modelica_boolean uses = true; //Uses-annotations
-    modelica_boolean notify = true;
+    modelica_boolean notify = false;
     modelica_boolean requireExactVersion = false;
 
     MMC_TRY_TOP_SET(omcData->threadData)
