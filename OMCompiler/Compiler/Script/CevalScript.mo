@@ -307,6 +307,8 @@ protected function loadFile "load the file or the directory structure if the fil
   input String encoding;
   input Absyn.Program p;
   input Boolean checkUses;
+  input Boolean notifyLoad;
+  input Boolean requireExactVersion;
   output Absyn.Program outProgram;
 protected
   String dir,filename,cname,prio,mp;
@@ -321,12 +323,12 @@ algorithm
     // see https://trac.openmodelica.org/OpenModelica/ticket/2422
     // prio = if_(stringEq(prio,""), "default", prio);
     mp := System.realpath(dir + "/../") + Autoconf.groupDelimiter + Settings.getModelicaPath(Testsuite.isRunning());
-    (outProgram,true) := loadModel((Absyn.IDENT(cname),"loadFile automatically converted to loadModel",{prio},true)::{}, mp, p, true, true, checkUses, true, filename == "package.moc");
+    (outProgram,true) := loadModel((Absyn.IDENT(cname),"loadFile automatically converted to loadModel",{prio},true)::{}, mp, p, true, notifyLoad, checkUses, requireExactVersion, filename == "package.moc");
     return;
   end if;
   outProgram := Parser.parse(name,encoding);
   ClassLoader.checkOnLoadMessage(outProgram);
-  outProgram := checkUsesAndUpdateProgram(outProgram, p, checkUses, Settings.getModelicaPath(Testsuite.isRunning()));
+  outProgram := checkUsesAndUpdateProgram(outProgram, p, checkUses, Settings.getModelicaPath(Testsuite.isRunning()), notifyLoad, requireExactVersion);
 end loadFile;
 
 protected function checkUsesAndUpdateProgram
@@ -334,12 +336,14 @@ protected function checkUsesAndUpdateProgram
   input output Absyn.Program p;
   input Boolean checkUses;
   input String modelicaPath;
+  input Boolean notifyLoad;
+  input Boolean requireExactVersion;
 protected
   list<tuple<Absyn.Path,String,list<String>,Boolean>> modelsToLoad;
 algorithm
-  modelsToLoad := if checkUses then Interactive.getUsesAnnotationOrDefault(newp, requireExactVersion=true) else {};
+  modelsToLoad := if checkUses then Interactive.getUsesAnnotationOrDefault(newp, requireExactVersion) else {};
   p := Interactive.updateProgram(newp, p);
-  (p, _) := loadModel(modelsToLoad, modelicaPath, p, false, true, true, true, false);
+  (p, _) := loadModel(modelsToLoad, modelicaPath, p, false, notifyLoad, checkUses, requireExactVersion, false);
 end checkUsesAndUpdateProgram;
 
 protected type LoadModelFoldArg =
@@ -653,9 +657,9 @@ algorithm
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals));
 
-    case (cache,_,"loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding)},_)
+    case (cache,_,"loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding),Values.BOOL(b),Values.BOOL(b1),Values.BOOL(requireExactVersion)},_)
       equation
-        pnew = loadFile(str1, encoding, SymbolTable.getAbsyn(), false) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
+        pnew = loadFile(str1, encoding, SymbolTable.getAbsyn(), b, b1, requireExactVersion) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
         vals = List.map(Interactive.getTopClassnames(pnew),ValuesUtil.makeCodeTypeName);
         SymbolTable.setAbsyn(pnew);
       then (cache,ValuesUtil.makeArray(vals));
@@ -1464,11 +1468,11 @@ algorithm
       then
         (cache,Values.BOOL(false));
 
-    case (_,_,"loadFile",Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(b)::_,_)
+    case (_,_,"loadFile",Values.STRING(name)::Values.STRING(encoding)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_,_)
       equation
         execStatReset();
         name = Testsuite.friendlyPath(name);
-        newp = loadFile(name, encoding, SymbolTable.getAbsyn(), b);
+        newp = loadFile(name, encoding, SymbolTable.getAbsyn(), b, b1, requireExactVersion);
         execStat("loadFile("+name+")");
         SymbolTable.setAbsyn(newp);
       then
@@ -1477,11 +1481,11 @@ algorithm
     case (cache,_,"loadFile",_,_)
       then (cache,Values.BOOL(false));
 
-    case (_,_,"loadFiles",Values.ARRAY(valueLst=vals)::Values.STRING(encoding)::Values.INTEGER(i)::_,_)
+    case (_,_,"loadFiles",Values.ARRAY(valueLst=vals)::Values.STRING(encoding)::Values.INTEGER(i)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_,_)
       equation
         strs = List.mapMap(vals,ValuesUtil.extractValueString,Testsuite.friendlyPath);
         newps = Parser.parallelParseFilesToProgramList(strs,encoding,numThreads=i);
-        newp = List.fold(newps, function checkUsesAndUpdateProgram(checkUses=false, modelicaPath=Settings.getModelicaPath(Testsuite.isRunning())), SymbolTable.getAbsyn());
+        newp = List.fold(newps, function checkUsesAndUpdateProgram(checkUses=b, modelicaPath=Settings.getModelicaPath(Testsuite.isRunning()), notifyLoad=b1, requireExactVersion=requireExactVersion), SymbolTable.getAbsyn());
         SymbolTable.setAbsyn(newp);
       then
         (FCore.emptyCache(),Values.BOOL(true));
@@ -1505,14 +1509,14 @@ algorithm
         end if;
       then (cache,ValuesUtil.makeArray(vals));
 
-    case (_,_,"loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::_,_)
+    case (_,_,"loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_,_)
       equation
         (b, filename_1) = unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
         if (b) then
           execStatReset();
           filename_1 = Testsuite.friendlyPath(filename_1);
           p = SymbolTable.getAbsyn();
-          newp = loadFile(filename_1, "UTF-8", p, true);
+          newp = loadFile(filename_1, "UTF-8", p, b, b1, requireExactVersion);
           execStat("loadFile("+filename_1+")");
           SymbolTable.setAbsyn(newp);
         end if;
