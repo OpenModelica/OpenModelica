@@ -66,8 +66,8 @@ public
   function new
     "Creates a new set given a hash function, equality function, and optional
      desired bucket count. An approriate bucket count is
-     Util.nextPrime(number of values that will be added), but starting with a
-     low bucket count is also fine if the number of values is unknown since the
+     Util.nextPrime(number of elements that will be added), but starting with a
+     low bucket count is also fine if the number of elements is unknown since the
      set rehashes as needed."
     input Hash hash;
     input KeyEq keyEq;
@@ -79,6 +79,19 @@ public
     buckets := Mutable.create(arrayCreate(bucketCount, {}));
     set := UNORDERED_SET(buckets, Mutable.create(0), hash, keyEq);
   end new;
+
+  function copy
+    "Returns a copy of the given set."
+    input UnorderedSet<T> set;
+    output UnorderedSet<T> outSet;
+  algorithm
+    outSet := UNORDERED_SET(
+      Mutable.create(arrayCopy(Mutable.access(set.buckets))),
+      Mutable.create(Mutable.access(set.size)),
+      set.hashFn,
+      set.eqFn
+    );
+  end copy;
 
   function add
     "Adds a key to the set unless the key already exists in the set, in which
@@ -144,6 +157,7 @@ public
 
     if isSome(okey) then
       arrayUpdateNoBoundsChecking(buckets, hash + 1, bucket);
+      Mutable.update(set.size, Mutable.access(set.size) - 1);
     end if;
   end remove;
 
@@ -165,8 +179,25 @@ public
     res := isSome(find(key, set));
   end contains;
 
+  function first
+    "Returns the first element in the set, or fails if the set is empty.
+     Since the set is unordered there isn't really any 'first' element though,
+     it will just return the first element in the first non-empty bucket."
+    input UnorderedSet<T> set;
+    output T val;
+  algorithm
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        val := k;
+        return;
+      end for;
+    end for;
+
+    fail();
+  end first;
+
   function toList
-    "Returns the values in the set as a list in no particular order."
+    "Returns the elements in the set as a list in no particular order."
     input UnorderedSet<T> set;
     output list<T> outList = {};
   algorithm
@@ -178,7 +209,7 @@ public
   end toList;
 
   function toArray
-    "Returns the values in the set as an array in no particular order."
+    "Returns the elements in the set as an array in no particular order."
     input UnorderedSet<T> set;
     output array<T> outArray;
   protected
@@ -214,11 +245,104 @@ public
     end for;
   end fold;
 
+  function all
+    "Returns true if the given function returns true for all elements in the set,
+     otherwise false."
+    input UnorderedSet<T> set;
+    input PredFn fn;
+    output Boolean res;
+
+    partial function PredFn
+      input T key;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    if isEmpty(set) then
+      res := true;
+      return;
+    end if;
+
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        if not fn(k) then
+          res := false;
+          return;
+        end if;
+      end for;
+    end for;
+
+    res := true;
+  end all;
+
+  function any
+    "Returns true if the given function returns true for any elements in the set,
+     otherwise false."
+    input UnorderedSet<T> set;
+    input PredFn fn;
+    output Boolean res;
+
+    partial function PredFn
+      input T key;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    if isEmpty(set) then
+      res := false;
+      return;
+    end if;
+
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        if fn(k) then
+          res := true;
+          return;
+        end if;
+      end for;
+    end for;
+
+    res := false;
+  end any;
+
+  function none
+    "Returns true if the given function returns true for none of the elements in
+     the set, otherwise false."
+    input UnorderedSet<T> set;
+    input PredFn fn;
+    output Boolean res;
+
+    partial function PredFn
+      input T key;
+      output Boolean res;
+    end PredFn;
+  algorithm
+    if isEmpty(set) then
+      res := true;
+      return;
+    end if;
+
+    for b in Mutable.access(set.buckets) loop
+      for k in b loop
+        if fn(k) then
+          res := false;
+          return;
+        end if;
+      end for;
+    end for;
+
+    res := true;
+  end none;
+
   function size
-    "Returns the number of values the set contains."
+    "Returns the number of elements the set contains."
     input UnorderedSet<T> set;
     output Integer size = Mutable.access(set.size);
   end size;
+
+  function isEmpty
+    "Returns whether the set is empty or not."
+    input UnorderedSet<T> set;
+    output Boolean empty = Mutable.access(set.size) == 0;
+  end isEmpty;
 
   function bucketCount
     "Returns the number of buckets used by the set."
@@ -235,7 +359,7 @@ public
 
   function rehash
     "Changes the number of buckets to an appropriate number based on the number
-     of values in the set and rehashes all the keys."
+     of elements in the set and rehashes all the keys."
     input UnorderedSet<T> set;
   protected
     array<list<T>> old_buckets = Mutable.access(set.buckets);
@@ -323,7 +447,7 @@ protected
       h := hash;
     end if;
 
-    // Add the key and its index in the value array to the bucket indicated by the hash.
+    // Add the key to the bucket indicated by the hash.
     arrayUpdate(buckets, h + 1, key :: arrayGet(buckets, h + 1));
     // Update the size of the set.
     Mutable.update(set.size, Mutable.access(set.size) + 1);
