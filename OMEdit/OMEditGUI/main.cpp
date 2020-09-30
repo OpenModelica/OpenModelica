@@ -35,24 +35,6 @@
 /*!
  * \mainpage OMEdit - OpenModelica Connection Editor Documentation
  * Source code documentation. Provides brief information about the classes used.
- * \section contributors_section Contributors
- * - Adeel Asghar - <a href="mailto:adeel.asghar@liu.se">adeel.asghar@liu.se</a>
- * - Sonia Tariq
- * - Martin Sjölund - <a href="mailto:martin.sjolund@liu.se">martin.sjolund@liu.se</a>
- * - Alachew Shitahun - <a href="mailto:alachew.mengist@liu.se">alachew.mengist@liu.se</a>
- * - Jan Kokert - <a href="mailto:jan.kokert@imtek.uni-freiburg.de">jan.kokert@imtek.uni-freiburg.de</a>
- * - Dr. Henning Kiel - <a href="mailto:henning.kiel@w-hs.de">henning.kiel@w-hs.de</a>
- * - Haris Kapidzic
- * - Abhinn Kothari
- * - Lennart Ochel - <a href="mailto:lennart.ochel@liu.se">lennart.ochel@liu.se</a>
- * - Volker Waurich - <a href="mailto:volker.waurich@tu-dresden.de">volker.waurich@tu-dresden.de</a>
- * - Rüdiger Franke
- * - Martin Flehmig
- * - Robert Braun - <a href=\"mailto:robert.braun@liu.se\">robert.braun@liu.se</a>
- * - Per Östlund - <a href=\"mailto:per.ostlund@liu.se\">per.ostlund@liu.se</a>
- * - Dietmar Winkler
- * - Anatoly Severin
- * - Adrian Pop - <a href="mailto:adrian.pop@liu.se">adrian.pop@liu.se</a>
  */
 
 #include "OMEditApplication.h"
