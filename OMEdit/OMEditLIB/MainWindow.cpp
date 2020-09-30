@@ -75,7 +75,9 @@
 #include "Interfaces/InformationInterface.h"
 #include "Interfaces/ModelInterface.h"
 #include "omc_config.h"
+#include "Util/NetworkAccessManager.h"
 
+#include <qjson/parser.h>
 #include <QtSvg/QSvgGenerator>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -2802,6 +2804,7 @@ void MainWindow::openOpenModelicaTLMSimulatorDocumentation()
 void MainWindow::openAboutOMEdit()
 {
   AboutOMEditDialog *pAboutOMEditDialog = new AboutOMEditDialog(this);
+  pAboutOMEditDialog->resize(400, 600);
   pAboutOMEditDialog->exec();
 }
 
@@ -4452,32 +4455,11 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "<b>Connected to %3</b><br />"
      "<b>Connected to %4</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
-     "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>.<br /><br />"
-     "Initially developed by <b>Adeel Asghar</b> and <b>Sonia Tariq</b> as part of their final master thesis."
+     "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
 #if defined(WITHOUT_OSG)
      "<br /><em>Compiled without 3D animation support</em>."
 #endif
-     "<br /><br /><b>Contributors:</b>"
-     "<ul>"
-     "<li>Adeel Asghar - <u><a href=\"mailto:adeel.asghar@liu.se\">adeel.asghar@liu.se</a></u></li>"
-     "<li>Sonia Tariq</li>"
-     "<li>Martin Sjölund - <u><a href=\"mailto:martin.sjolund@liu.se\">martin.sjolund@liu.se</a></u></li>"
-     "<li>Alachew Shitahun - <u><a href=\"mailto:alachew.mengist@liu.se\">alachew.mengist@liu.se</a></u></li>"
-     "<li>Jan Kokert - <u><a href=\"mailto:jan.kokert@imtek.uni-freiburg.de\">jan.kokert@imtek.uni-freiburg.de</a></u></li>"
-     "<li>Dr. Henning Kiel - <u><a href=\"mailto:henning.kiel@w-hs.de\">henning.kiel@w-hs.de</a></u></li>"
-     "<li>Haris Kapidzic</li>"
-     "<li>Abhinn Kothari</li>"
-     "<li>Lennart Ochel - <u><a href=\"mailto:lennart.ochel@liu.se\">lennart.ochel@liu.se</a></u></li>"
-     "<li>Volker Waurich - <u><a href=\"mailto:volker.waurich@tu-dresden.de\">volker.waurich@tu-dresden.de</a></u></li>"
-     "<li>Rüdiger Franke</li>"
-     "<li>Martin Flehmig</li>"
-     "<li>Robert Braun - <u><a href=\"mailto:robert.braun@liu.se\">robert.braun@liu.se</a></u></li>"
-     "<li>Per Östlund - <u><a href=\"mailto:per.ostlund@liu.se\">per.ostlund@liu.se</a></u></li>"
-     "<li>Dietmar Winkler</li>"
-     "<li>Anatoly Severin<li>"
-     "<li>Adrian Pop - <u><a href=\"mailto:adrian.pop@liu.se\">adrian.pop@liu.se</a></u></li>"
-     "<li>John Tinnerholm - <u><a href=\"mailto:john.tinnerholm@liu.se\">john.tinnerholm@liu.se</a></u></li>"
-     "</ul>")
+     "")
      .arg(Helper::applicationName,
           Helper::applicationIntroText,
           Helper::OpenModelicaVersion,
@@ -4488,6 +4470,31 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   pAboutTextLabel->setOpenExternalLinks(true);
   pAboutTextLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
   pAboutTextLabel->setToolTip("");
+
+  QString url("https://github.com/OpenModelica/OpenModelica/graphs/contributors");
+  Label *pOMContributorsHeadingLabel = new Label;
+  pOMContributorsHeadingLabel->setOpenExternalLinks(true);
+  pOMContributorsHeadingLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+  pOMContributorsHeadingLabel->setText(QString("<b>OpenModelica Contributors:</b>"
+                                               "<br />Source: <a href=\"%1\">%1</a>"
+                                               "<br />Sorted by the number of commits per contributor in descending order.")
+                                       .arg(url));
+  pOMContributorsHeadingLabel->setToolTip("");
+
+  NetworkAccessManager *pNetworkAccessManager = new NetworkAccessManager;
+  connect(pNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), SLOT(readOMContributors(QNetworkReply*)));
+  pNetworkAccessManager->get(QNetworkRequest(QUrl("https://api.github.com/repos/OpenModelica/OpenModelica/contributors")));
+
+  mpOMContributorsLabel = new Label;
+  mpOMContributorsLabel->setObjectName("OMContributorsLabel");
+  mpOMContributorsLabel->setWordWrap(true);
+  mpOMContributorsLabel->setOpenExternalLinks(true);
+  mpOMContributorsLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+
+  QScrollArea *pOMContributorsScrollArea = new QScrollArea;
+  pOMContributorsScrollArea->setFrameShape(QFrame::NoFrame);
+  pOMContributorsScrollArea->setWidgetResizable(true);
+  pOMContributorsScrollArea->setWidget(mpOMContributorsLabel);
   // close button
   QPushButton *pCloseButton = new QPushButton(Helper::close);
   connect(pCloseButton, SIGNAL(clicked()), SLOT(reject()));
@@ -4495,10 +4502,46 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
   Label *pLogoLabel = new Label;
   QPixmap pixmap(":/Resources/icons/omedit.png");
   pLogoLabel->setPixmap(pixmap.scaled(128, 128, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  // vertical layout
+  QVBoxLayout *pVerticalLayout = new QVBoxLayout;
+  pVerticalLayout->addWidget(pAboutTextLabel);
+  pVerticalLayout->addWidget(pOMContributorsHeadingLabel);
+  pVerticalLayout->addWidget(pOMContributorsScrollArea);
   // main layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->addWidget(pLogoLabel, 0, 0, Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addWidget(pAboutTextLabel, 0, 1, Qt::AlignTop | Qt::AlignLeft);
+  pMainLayout->addLayout(pVerticalLayout, 0, 1, Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(pCloseButton, 1, 0, 1, 2, Qt::AlignRight);
   setLayout(pMainLayout);
+}
+
+/*!
+ * \brief AboutOMEditDialog::readOMContributors
+ * Slot activated when NetworkAccessManager finished SIGNAL is raised.\n
+ * Reads the OpenModelica contributors and makes a list of it.
+ * \param pNetworkReply
+ */
+void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
+{
+  QJson::Parser parser;
+  bool ok;
+  QList<QVariant> result;
+  const QByteArray jsonData = pNetworkReply->readAll();
+  result = parser.parse(jsonData, &ok).toList();
+  if (!ok) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Failed to parse json of github contributors.", Helper::scriptingKind, Helper::errorLevel));
+  }
+
+  QString contributors;
+  foreach (QVariant variant, result) {
+    QVariantMap map = variant.toMap();
+    if (map["login"].toString().compare(QStringLiteral("OpenModelica-Hudson")) == 0) {
+      continue;
+    }
+    contributors.append(QString("<li>%1 - <u><a href=\"%2\">%2</a></u></li>").arg(map["login"].toString(), map["html_url"].toString()));
+  }
+  mpOMContributorsLabel->setText(QString("<ul>%1</ul>").arg(contributors));
+  mpOMContributorsLabel->setToolTip("");
+
+  pNetworkReply->deleteLater();
 }
