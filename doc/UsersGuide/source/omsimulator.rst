@@ -1,4 +1,18 @@
 OMSimulator
-===========
+~~~~~~~~~~~
 
-`OMSimulator <https://github.com/OpenModelica/OMSimulator>`_ has its own `documentation <https://openmodelica.org/doc/OMSimulator/master/html/>`_.
+.. include:: omsimulator/introduction.rst
+
+.. include:: omsimulator/OMSimulator.rst
+
+.. include:: omsimulator/OMSimulatorLib.rst
+
+.. include:: omsimulator/OMSimulatorLua.rst
+
+.. include:: omsimulator/OMSimulatorPython.rst
+
+.. include:: omsimulator/OpenModelicaScripting.rst
+
+.. include:: omsimulator/OMEdit.rst
+
+.. include:: omsimulator/SSP.rst
