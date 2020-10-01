@@ -204,6 +204,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Socket.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/System.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Testsuite.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Util.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/VarTransform.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ZeroMQ.mo

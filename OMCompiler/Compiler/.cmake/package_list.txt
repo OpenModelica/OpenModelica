@@ -393,6 +393,7 @@ UnitAbsynBuilder
 UnitCheck
 UnitChecker
 UnitParserExt
+UnorderedSet
 Unparsing
 Unzip
 Util
