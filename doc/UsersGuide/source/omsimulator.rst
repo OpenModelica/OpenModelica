@@ -1,6 +1,8 @@
 OMSimulator
 ~~~~~~~~~~~
 
+.. include :: releaselink.inc
+
 .. include:: omsimulator/introduction.rst
 
 .. include:: omsimulator/OMSimulator.rst
