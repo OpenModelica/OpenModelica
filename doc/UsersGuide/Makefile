@@ -12,7 +12,7 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
 
-ALLDEP = source/openmodelica.bib source/interface.inc $(OMEDIT_ICONS) $(OMOPTIM_ICONS)
+ALLDEP = source/openmodelica.bib source/interface.inc $(OMEDIT_ICONS) $(OMOPTIM_ICONS) source/omsimulator-help.inc source/OMSimulatorPython.inc
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -270,3 +270,8 @@ source/omchelptext.rst:
 	mv "$@.tmp" "$@"
 source/tracreleases.rst: source/tracreleases.py
 	cd source && ./tracreleases.py
+source/omsimulator-help.inc:
+	$(OPENMODELICAHOME)/bin/OMSimulator --help > "$@.tmp"
+	mv "$@.tmp" "$@"
+source/OMSimulatorPython.inc: source/omsimulator/conf.py
+	(cd source/ && python3 "omsimulator/conf.py")
