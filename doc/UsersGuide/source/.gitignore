@@ -1,1 +1,10 @@
 Modelica.Mechanics.*
+OMCScripting.inc
+OMSimulatorLib.inc
+OMSimulatorLua.inc
+OMSimulatorPython.inc
+api
+images
+omsimulator
+releaselink.inc
+
