@@ -8,7 +8,7 @@ Generated on |date| at |time|
 
 .. only :: html or epub
 
- .. include :: releaselink.inc
+ .. include :: omreleaselink.inc
 
 .. only :: latex
 
