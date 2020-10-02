@@ -49,7 +49,20 @@ public
   // Util imports
   import Util;
 
+  function find
+    "returns all indices of elements that are true"
+    input array<Boolean> arr;
+    output list<Integer> indices = {};
+  algorithm
+    for i in 1:arrayLength(arr) loop
+      if arr[i] then
+        indices := i :: indices;
+      end if;
+    end for;
+  end find;
+
   function indexTplGt<T>
+    "use with List.sort() and a rating function to sort any list"
     input tuple<Integer, T> tpl1;
     input tuple<Integer, T> tpl2;
     output Boolean gt;
@@ -57,7 +70,7 @@ public
     Integer i1, i2;
   algorithm
     (i1, _) := tpl1;
-    (i2, _) := tpl1;
+    (i2, _) := tpl2;
     gt := if i1 > i2 then true else false;
   end indexTplGt;
 

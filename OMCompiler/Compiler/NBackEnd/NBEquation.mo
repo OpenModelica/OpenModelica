@@ -200,6 +200,37 @@ public
       end match;
     end getAttributes;
 
+    function setAttributes
+      input output Equation eq;
+      input EquationAttributes attr;
+    algorithm
+      eq := match eq
+        local
+          EquationAttributes tmp;
+          Equation body;
+        case SCALAR_EQUATION()  algorithm eq.attr := attr; then eq;
+        case ARRAY_EQUATION()   algorithm eq.attr := attr; then eq;
+        case SIMPLE_EQUATION()  algorithm eq.attr := attr; then eq;
+        case RECORD_EQUATION()  algorithm eq.attr := attr; then eq;
+        case ALGORITHM()        algorithm eq.attr := attr; then eq;
+        case IF_EQUATION()      algorithm eq.attr := attr; then eq;
+        case FOR_EQUATION()     algorithm eq.attr := attr; then eq;
+        case WHEN_EQUATION()    algorithm eq.attr := attr; then eq;
+        case AUX_EQUATION(body = SOME(body)) algorithm eq.body := SOME(setAttributes(body, attr)); then eq;
+        end match;
+    end setAttributes;
+
+    function setDerivative
+      input output Equation eq;
+      input Pointer<Equation> derivative;
+    protected
+      EquationAttributes attr;
+    algorithm
+      attr := getAttributes(eq);
+      attr.derivative := SOME(derivative);
+      eq := setAttributes(eq, attr);
+    end setDerivative;
+
     function map
       "Traverses all expressions of the equations and applies a function to it.
       Optional second input to also traverse crefs, only needed for simple
@@ -887,7 +918,7 @@ public
 
   uniontype EquationAttributes
     record EQUATION_ATTRIBUTES // ToDo: replace differentiated by optional equation pointer to diffed eq (only TIME!)
-      Boolean differentiated "true if the equation was differentiated, and should not be differentiated again to avoid equal equations";
+      Option<Pointer<Equation>> derivative;
       EquationKind kind;
       EvaluationStages evalStages;
       Option<Pointer<Variable>> residualVar;
@@ -929,18 +960,18 @@ public
       output OldBackendDAE.EquationAttributes oldAttributes;
     algorithm
       oldAttributes := OldBackendDAE.EQUATION_ATTRIBUTES(
-        differentiated  = attributes.differentiated,
+        differentiated  = Util.isSome(attributes.derivative),
         kind            = EquationKind.convert(attributes.kind),
         evalStages      = EvaluationStages.convert(attributes.evalStages));
     end convert;
   end EquationAttributes;
 
-  constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(false, DYNAMIC_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(false, BINDING_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(false, INITIAL_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_DISCRETE = EQUATION_ATTRIBUTES(false, DISCRETE_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_AUX = EQUATION_ATTRIBUTES(false, AUX_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
-  constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(false, UNKNOWN_EQUATION_KIND(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_DYNAMIC = EQUATION_ATTRIBUTES(NONE(), DYNAMIC_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_BINDING = EQUATION_ATTRIBUTES(NONE(), BINDING_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(NONE(), INITIAL_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_DISCRETE = EQUATION_ATTRIBUTES(NONE(), DISCRETE_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_AUX = EQUATION_ATTRIBUTES(NONE(), AUX_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(NONE(), UNKNOWN_EQUATION_KIND(), DEFAULT_EVALUATION_STAGES, NONE());
 
   uniontype EquationKind
     record BINDING_EQUATION end BINDING_EQUATION;
@@ -1030,6 +1061,11 @@ public
       arr_size := max(size, BaseHashTable.lowBucketSize);
       equationPointers := EQUATION_POINTERS(ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
     end empty;
+
+    function clone
+      input EquationPointers equations;
+      output EquationPointers new = fromList(toList(equations));
+    end clone;
 
     function toList
       "Creates a EquationPointer list from EquationPointers."
@@ -1334,6 +1370,41 @@ public
         case EQ_DATA_HES() algorithm eqData.equations := equations; then eqData;
       end match;
     end setEquations;
+
+  type EqType = enumeration(CONTINUOUS, DISCRETE, INITIAL);
+
+  function addTypedList
+    input output EqData eqData;
+    input list<Pointer<Equation>> eq_lst;
+    input EqType eqType;
+  algorithm
+    eqData := match (eqData, eqType)
+
+      case (EQ_DATA_SIM(), EqType.CONTINUOUS) algorithm
+        eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
+        eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
+        eqData.continuous := EquationPointers.addList(eq_lst, eqData.continuous);
+      then eqData;
+
+      case (EQ_DATA_SIM(), EqType.DISCRETE) algorithm
+        eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
+        eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
+        eqData.discretes := EquationPointers.addList(eq_lst, eqData.discretes);
+      then eqData;
+
+      case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
+        eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
+        eqData.initials := EquationPointers.addList(eq_lst, eqData.initials);
+      then eqData;
+
+      // ToDo: other cases
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end addTypedList;
+
   end EqData;
 
   uniontype InnerEquation

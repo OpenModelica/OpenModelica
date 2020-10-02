@@ -63,6 +63,7 @@ public
     residual := Equation.getResidualExp(eqn);
     diffArgs := Differentiate.DIFFERENTIATION_ARGUMENTS(
       diffCref        = cref,
+      new_vars        = {},
       jacobianHT      = NONE(),
       diffType        = NBDifferentiate.DifferentiationType.SIMPLE,
       funcTree        = funcTree,

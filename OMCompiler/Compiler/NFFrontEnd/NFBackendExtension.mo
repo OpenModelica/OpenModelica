@@ -71,6 +71,11 @@ public
       str := VariableKind.toString(backendInfo.varKind) + " " + VariableAttributes.toString(backendInfo.attributes);
     end toString;
 
+    function getVarKind
+      input BackendInfo binfo;
+      output VariableKind varKind = binfo.varKind;
+    end getVarKind;
+
     function setVarKind
       input output BackendInfo binfo;
       input VariableKind varKind;
@@ -363,6 +368,16 @@ public
         else attributes;
       end match;
     end setStartAttribute;
+
+    function getStateSelect
+      input VariableAttributes attributes;
+      output StateSelect stateSelect;
+    algorithm
+      stateSelect := match attributes
+        case VAR_ATTR_REAL(stateSelect = SOME(stateSelect)) then stateSelect;
+        else StateSelect.DEFAULT;
+      end match;
+    end getStateSelect;
 
   protected
     function attributesToString

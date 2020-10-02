@@ -316,6 +316,23 @@ public
     end match;
   end isFixed;
 
+  function isStateSelect
+    "checks if a variable has a certain StateSelect attribute"
+    input Pointer<Variable> var;
+    input BackendExtension.StateSelect stateSelect;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      local
+        BackendExtension.VariableAttributes attributes;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = attributes))
+      then BackendExtension.VariableAttributes.getStateSelect(attributes) == stateSelect;
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + toString(Pointer.access(var))});
+      then fail();
+    end match;
+  end isStateSelect;
+
   function setVariableAttributes
     input output Variable var;
     input BackendExtension.VariableAttributes variableAttributes;
@@ -444,6 +461,32 @@ public
       then fail();
     end match;
   end getDerCref;
+
+  function makeDummyState
+    input Pointer<Variable> varPointer;
+    output Pointer<Variable> derivative;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(varPointer);
+    var.backendinfo := match BackendExtension.BackendInfo.getVarKind(var.backendinfo)
+      local
+        BackendExtension.VariableKind varKind;
+        Variable der_var;
+
+      case varKind as BackendExtension.STATE(derivative = SOME(derivative)) algorithm
+        // also update the derivative to be a dummy derivative
+        der_var := Pointer.access(derivative);
+        der_var.backendinfo := BackendExtension.BackendInfo.setVarKind(der_var.backendinfo, BackendExtension.DUMMY_DER(varPointer));
+        Pointer.update(derivative, der_var);
+      then BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DUMMY_STATE(derivative));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(getVarName(varPointer)) + "."});
+      then fail();
+    end match;
+    Pointer.update(varPointer, var);
+  end makeDummyState;
 
   function getDummyDerCref
     "Returns the dummy derivative variable component reference from a dummy state component reference.
@@ -749,6 +792,16 @@ public
     end match;
   end checkExp;
 
+  function checkCref
+    input ComponentRef cref;
+    input checkFunc func;
+    output Boolean b = func(getVarPointer(cref));
+    partial function checkFunc
+      input Pointer<Variable> var;
+      output Boolean b;
+    end checkFunc;
+  end checkCref;
+
   // ==========================================================================
   //                        Variable Array Stuff
   //    All variable arrays are pointer arrays to avoid duplicates
@@ -833,6 +886,11 @@ public
       variables := VARIABLE_POINTERS(HashTableCrToInt.empty(bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
     end empty;
 
+    function clone
+      input VariablePointers variables;
+      output VariablePointers new = fromList(toList(variables));
+    end clone;
+
     function toList
       "Creates a VariablePointer list from VariablePointers."
       input VariablePointers variables;
@@ -879,7 +937,7 @@ public
       var := Pointer.access(varPointer);
       if BaseHashTable.hasKey(var.name, variables.ht) then
         idx := BaseHashTable.get(var.name, variables.ht);
-        ExpandableArray.set(idx, varPointer, variables.varArr);
+        ExpandableArray.update(idx, varPointer, variables.varArr);
       else
         (_, idx) := ExpandableArray.add(varPointer, variables.varArr);
       end if;
@@ -1239,6 +1297,47 @@ public
         else fail();
       end match;
     end setVariables;
+
+    // used to add specific types. Fill up with Jacobian/Hessian types
+    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS);
+
+    function addTypedList
+      input output VarData varData;
+      input list<Pointer<Variable>> var_lst;
+      input VarType varType;
+    algorithm
+      varData := match (varData, varType)
+
+        case (VAR_DATA_SIM(), VarType.STATE) algorithm
+          varData.variables := VariablePointers.addList(var_lst, varData.variables);
+          varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
+          varData.states := VariablePointers.addList(var_lst, varData.states);
+          // also remove from algebraics in the case it was moved
+          varData.unknowns := VariablePointers.removeList(var_lst, varData.unknowns);
+          varData.algebraics := VariablePointers.removeList(var_lst, varData.algebraics);
+        then varData;
+
+        case (VAR_DATA_SIM(), VarType.STATE_DER) algorithm
+          varData.variables := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.derivatives := VariablePointers.addList(var_lst, varData.derivatives);
+        then varData;
+
+        // algebraic variables, dummy states and dummy derivatives are mathematically equal
+        case (VAR_DATA_SIM(), VarType.ALGEBRAIC) algorithm
+          varData.variables := VariablePointers.addList(var_lst, varData.variables);
+          varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
+          varData.algebraics := VariablePointers.addList(var_lst, varData.algebraics);
+        then varData;
+
+        // ToDo: other cases
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end addTypedList;
+
   end VarData;
 
   // ==========================================================================

@@ -230,6 +230,11 @@ constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 // TODO: Sort these functions ...
+constant Function SIN_REAL = Function.FUNCTION(Path.IDENT("sin"),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
+
 constant Function COS_REAL = Function.FUNCTION(Path.IDENT("cos"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
     Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},

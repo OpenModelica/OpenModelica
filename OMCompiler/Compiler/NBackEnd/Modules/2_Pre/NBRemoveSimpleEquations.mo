@@ -520,32 +520,35 @@ protected
      input Expression exp;
      input output CrefTpl tpl;
   algorithm
-      tpl := match (exp, tpl)
-        local
-          Integer varCount;
+      tpl := match exp
 
-        case (_, _) guard(not tpl.cont) then FAILED_CREF_TPL;
+        case _ guard(not tpl.cont) then FAILED_CREF_TPL;
+
+        // TIME, do nothing
+        // ToDo: replace all others with time
+        case Expression.CREF()  guard(ComponentRef.isTime(exp.cref))
+        then tpl;
+
+        // parameter or constant found (nothing happens)
+        case Expression.CREF()
+          guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)))
+        then tpl;
 
         // variable found (less than two previous variables, not time and not param or const)
-        case (Expression.CREF(), CREF_TPL(varCount = varCount))
-          guard((varCount < 2) and not (ComponentRef.isTime(exp.cref) or
-            BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref))))
+        case Expression.CREF()
+          guard((tpl.varCount < 2))
           algorithm
             // add the variable to the list and bump var count
             tpl.cr_lst := exp.cref :: tpl.cr_lst;
             tpl.varCount := tpl.varCount + 1;
         then tpl;
 
-        // parameter found (not time)
-        case (Expression.CREF(), _)
-          guard(not ComponentRef.isTime(exp.cref))
-          algorithm
-            // just bump param count
-            tpl.paramCount := tpl.paramCount + 1;
-        then tpl;
+        // Fail cref if not parameter and not constant
+        case Expression.CREF()
+        then FAILED_CREF_TPL;
 
         // set the continue attribute to false if any fail case is met
-        case (_, _) guard(findCrefsFail(exp)) then FAILED_CREF_TPL;
+        case _ guard(findCrefsFail(exp)) then FAILED_CREF_TPL;
 
         else tpl;
       end match;

@@ -64,16 +64,19 @@ protected
 
   // Backend imports
   import BEquation = NBEquation;
+  import NBEquation.EqData;
+  import NBEquation.EquationPointers;
   import Jacobian = NBackendDAE;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import BVariable = NBVariable;
+  import NBVariable.VarData;
+  import NBVariable.VariablePointers;
 
 public
   partial function wrapper
     input output BackendDAE bdae;
   end wrapper;
-
 
 // =========================================================================
 //                                MAIN MODULES
@@ -86,8 +89,8 @@ public
      This function is only allowed to create systems of specialized SystemType
      by creating an adjacency matrix using provided variables and equations."
     input System.SystemType systemType;
-    input BVariable.VariablePointers variables;
-    input BEquation.EquationPointers equations;
+    input VariablePointers variables;
+    input EquationPointers equations;
     output list<System.System> systems;
   end partitioningInterface;
 
@@ -95,8 +98,12 @@ public
 // *************************************************************************
   partial function causalizeInterface
     "Causalize
-     This function is only allowed to add strong components."
+     This function is allowed to add variables, equations and manipulate the
+     function tree (index reduction)."
     input output System.System system;
+    input output VarData varData;
+    input output EqData eqData;
+    input output FunctionTree funcTree;
   end causalizeInterface;
 
 //                               DAEMODE
@@ -131,26 +138,26 @@ public
     "DetectContinuousStates
      This function is only allowed to read and change equations, change algebraic
      variables to states and create state derivatives."
-    input output BVariable.VariablePointers variables     "All variables";
-    input output BEquation.EquationPointers equations     "System equations";
-    input output BVariable.VariablePointers unknowns      "Unknowns";
-    input output BVariable.VariablePointers knowns        "Knowns";
-    input output BVariable.VariablePointers initials      "Initial unknowns";
-    input output BVariable.VariablePointers states        "States";
-    input output BVariable.VariablePointers derivatives   "State derivatives (der(x) -> $DER.x)";
-    input output BVariable.VariablePointers algebraics    "Algebraic variables";
+    input output VariablePointers variables     "All variables";
+    input output EquationPointers equations     "System equations";
+    input output VariablePointers unknowns      "Unknowns";
+    input output VariablePointers knowns        "Knowns";
+    input output VariablePointers initials      "Initial unknowns";
+    input output VariablePointers states        "States";
+    input output VariablePointers derivatives   "State derivatives (der(x) -> $DER.x)";
+    input output VariablePointers algebraics    "Algebraic variables";
   end detectContinuousStatesInterface;
 
   partial function detectDiscreteStatesInterface
     "DetectDiscreteStates
      This function is only allowed to read and change equations, change algebraic
      variables to discrete and create previous discrete variables."
-    input output BVariable.VariablePointers variables     "All variables";
-    input output BEquation.EquationPointers equations     "ONLY Discrete equations!";
-    input output BVariable.VariablePointers knowns        "Knowns";
-    input output BVariable.VariablePointers initials      "Initial unknowns";
-    input output BVariable.VariablePointers discretes     "Discrete variables";
-    input output BVariable.VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
+    input output VariablePointers variables     "All variables";
+    input output EquationPointers equations     "ONLY Discrete equations!";
+    input output VariablePointers knowns        "Knowns";
+    input output VariablePointers initials      "Initial unknowns";
+    input output VariablePointers discretes     "Discrete variables";
+    input output VariablePointers previous      "Previous discrete variables (pre(d) -> $PRE.d)";
   end detectDiscreteStatesInterface;
 
 // =========================================================================
@@ -183,10 +190,10 @@ public
       [!] This function can not only be used as an optimization module but also for
       nonlinear systems, state sets, linearization and dynamic optimization."
       input String name                                     "Name of jacobian";
-      input BVariable.VariablePointers unknowns             "Variable array of unknowns";
-      input Option<BVariable.VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
-      input BEquation.EquationPointers equations            "Equations array";
-      input BVariable.VariablePointers knowns               "Variable array of knowns";
+      input VariablePointers unknowns             "Variable array of unknowns";
+      input Option<VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
+      input EquationPointers equations            "Equations array";
+      input VariablePointers knowns               "Variable array of knowns";
       input Option<array<StrongComponent>> strongComponents "Strong Components";
       output Option<Jacobian> jacobian                      "Resulting jacobian";
       input output FunctionTree funcTree                    "Function call bodies";

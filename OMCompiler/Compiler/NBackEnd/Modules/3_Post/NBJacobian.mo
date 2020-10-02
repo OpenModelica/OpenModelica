@@ -297,6 +297,7 @@ protected
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
       diffCref        = ComponentRef.EMPTY(),             // no explicit cref necessary, rules are set by HT
+      new_vars        = {},
       jacobianHT      = SOME(Pointer.access(jacobianHT)), // seed and temporary cref hashtable
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,

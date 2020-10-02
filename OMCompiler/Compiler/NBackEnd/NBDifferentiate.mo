@@ -52,43 +52,27 @@ public
   import Variable = NFVariable;
 
   // Backend imports
-  import BVariable = NBVariable;
   import NBEquation.Equation;
-  import NBEquation.EquationPointers;
   import NBEquation.EquationAttributes;
+  import NBEquation.EquationPointers;
   import NBEquation.IfEquationBody;
   import NBEquation.WhenEquationBody;
   import NBEquation.WhenStatement;
-  import HashTableCrToCr = NBHashTableCrToCr;
+  import BVariable = NBVariable;
 
   // Util imports
   import Error;
+  import HashTableCrToCr = NBHashTableCrToCr;
 
   // ================================
   //        TYPES AND UNIONTYPES
   // ================================
   type DifferentiationType = enumeration(TIME, SIMPLE, FUNCTION, JACOBIAN);
 
-  /* ToDo: is this whole differentiation data necessary with new HT approach? */
-  uniontype DifferentiationData
-    record DIFFERENTIATION_DATA
-      Option<BVariable.VariablePointers> independenentVars "Independent variables";
-      Option<BVariable.VariablePointers> dependenentVars   "Dependent variables";
-      Option<BVariable.VariablePointers> knownVars         "known variables (e.g. parameter, constants, ...)";
-      Option<BVariable.VariablePointers> allVars           "all variables";
-      list<Variable> controlVars                           "variables to save control vars of for algorithm";
-      list<ComponentRef> diffCrefs                         "all crefs to differentiate, needed for generic gradient";
-      Option<HashTableCrToCr.HashTable> jacobianHT         "seed and temporary cref hashtable x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y";
-      AvlSetPath.Tree diffedFunctions                      "current functions, to prevent recursive differentiation";
-    end DIFFERENTIATION_DATA;
-  end DifferentiationData;
-
-  constant DifferentiationData EMPTY_DIFFERENTIATION_DATA = DIFFERENTIATION_DATA(NONE(),NONE(),NONE(),NONE(),{},{},NONE(),AvlSetPath.EMPTY());
-
   uniontype DifferentiationArguments
     record DIFFERENTIATION_ARGUMENTS
-      ComponentRef diffCref                         "The input will be differentiated w.r.t. this cref.";
-      //DifferentiationData diffData                "Contains information eg. independent, dependent, known variables";
+      ComponentRef diffCref                         "The input will be differentiated w.r.t. this cref (only SIMPLE).";
+      list<Pointer<Variable>> new_vars              "contains all new variables that need to be added to the system";
       Option<HashTableCrToCr.HashTable> jacobianHT  "seed and temporary cref hashtable x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y";
       DifferentiationType diffType                  "Differentiation use case (time, simple, function, jacobian)";
       FunctionTree funcTree                         "Function tree containing all functions and their known derivatives";
@@ -117,19 +101,37 @@ public
   end differentiateEquationPointers;
 
   function differentiateEquationPointer
-    input output Pointer<Equation> eq_ptr;
+    input Pointer<Equation> eq_ptr;
     input Pointer<DifferentiationArguments> diffArguments_ptr;
     input String name = "";
+    output Pointer<Equation> derivative_ptr;
   protected
-    Equation diffedEq;
+    Equation eq, diffedEq;
     DifferentiationArguments old_diffArguments, new_diffArguments;
   algorithm
+    eq := Pointer.access(eq_ptr);
     old_diffArguments := Pointer.access(diffArguments_ptr);
-    (diffedEq, new_diffArguments) := differentiateEquation(Pointer.access(eq_ptr), old_diffArguments, name);
-    eq_ptr := Pointer.create(diffedEq);
-    if not referenceEq(new_diffArguments, old_diffArguments) then
-      Pointer.update(diffArguments_ptr, new_diffArguments);
-    end if;
+
+    derivative_ptr := match Equation.getAttributes(eq)
+
+      // we differentiate w.r.t time and there already is a derivative saved
+      case EquationAttributes.EQUATION_ATTRIBUTES(derivative = SOME(derivative_ptr))
+        guard(old_diffArguments.diffType == DifferentiationType.TIME)
+      then derivative_ptr;
+
+      // else differentiate the equation
+      else algorithm
+        (diffedEq, new_diffArguments) := differentiateEquation(eq, old_diffArguments, name);
+        derivative_ptr := Pointer.create(diffedEq);
+        // save the derivative if we derive w.r.t. time
+        if new_diffArguments.diffType == DifferentiationType.TIME then
+          Pointer.update(eq_ptr, Equation.setDerivative(eq, derivative_ptr));
+        end if;
+        if not referenceEq(new_diffArguments, old_diffArguments) then
+          Pointer.update(diffArguments_ptr, new_diffArguments);
+        end if;
+      then derivative_ptr;
+    end match;
   end differentiateEquationPointer;
 
   function differentiateEquation
@@ -447,52 +449,60 @@ public
   function differentiateComponentRef
     input output Expression exp "Has to be Expression.CREF()";
     input output DifferentiationArguments diffArguments;
+  protected
+    Pointer<Variable> var_ptr, der_ptr;
+    ComponentRef derCref;
   algorithm
-    (exp, diffArguments) := match (exp, diffArguments)
+    // extract var pointer first to have following code more readable
+    var_ptr := match exp
+      case Expression.CREF() guard(ComponentRef.isTime(exp.cref)) then Pointer.create(NBVariable.DUMMY_VARIABLE);
+      case Expression.CREF() then BVariable.getVarPointer(exp.cref);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
+      then fail();
+    end match;
+
+    (exp, diffArguments) := match (exp, diffArguments.diffType, diffArguments.jacobianHT)
       local
         Expression res;
         HashTableCrToCr.HashTable jacobianHT;
 
       // Types: (TIME)
       // differentiate time cref => 1
-      case (Expression.CREF(), _)
-        guard((diffArguments.diffType == DifferentiationType.TIME) and
-              ComponentRef.isTime(exp.cref))
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(ComponentRef.isTime(exp.cref))
       then (Expression.makeOne(exp.ty), diffArguments);
 
       // Types: not (TIME)
       // differentiate time cref => 0
-      case (Expression.CREF(), _)
-        guard(not (diffArguments.diffType == DifferentiationType.TIME) and
-              ComponentRef.isTime(exp.cref))
+      case (Expression.CREF(),  _, _)
+        guard(ComponentRef.isTime(exp.cref))
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
       // differentiate start cref => 0
-      case (Expression.CREF(), _)
-        guard(BVariable.isStart(BVariable.getVarPointer(exp.cref)))
+      case (Expression.CREF(), _, _)
+        guard(BVariable.isStart(var_ptr))
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // ToDo: Records, Arrays, WILD (?)
 
       // Types: (SIMPLE)
       //  D(x)/dx => 1
-      case (Expression.CREF(), _)
-        guard((diffArguments.diffType == DifferentiationType.SIMPLE) and
-              ComponentRef.isEqual(exp.cref, diffArguments.diffCref))
+      case (Expression.CREF(), DifferentiationType.SIMPLE, _)
+        guard(ComponentRef.isEqual(exp.cref, diffArguments.diffCref))
       then (Expression.makeOne(exp.ty), diffArguments);
 
       // Types: (SIMPLE)
       // D(y)/dx => 0
-      case (Expression.CREF(), _)
-        guard(diffArguments.diffType == DifferentiationType.SIMPLE)
+      case (Expression.CREF(), DifferentiationType.SIMPLE, _)
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (ALL)
       // Known variables, except top for level inputs have a 0-derivative
-      case (Expression.CREF(), _)
-        guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) and
-              not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(BVariable.getVarPointer(exp.cref))))
+      case (Expression.CREF(), _, _)
+        guard(BVariable.isParamOrConst(var_ptr) and
+              not (ComponentRef.isTopLevel(exp.cref) and BVariable.isInput(var_ptr)))
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // -------------------------------------
@@ -501,19 +511,37 @@ public
 
       // Types: (TIME)
       // D(discrete)/d(x) = 0
-      case (Expression.CREF(), _)
-        guard((diffArguments.diffType == DifferentiationType.TIME) and
-              (BVariable.isDiscrete(BVariable.getVarPointer(exp.cref)) or BVariable.isDiscreteState(BVariable.getVarPointer(exp.cref))))
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(BVariable.isDiscrete(var_ptr) or BVariable.isDiscreteState(var_ptr))
       then (Expression.makeZero(exp.ty), diffArguments);
 
       // Types: (TIME)
       // DUMMY_STATES => DUMMY_DER
-      case (Expression.CREF(), _)
-        guard((diffArguments.diffType == DifferentiationType.TIME) and
-              (BVariable.isDummyState(BVariable.getVarPointer(exp.cref))))
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(BVariable.isDummyState(var_ptr))
       then (Expression.fromCref(BVariable.getDummyDerCref(exp.cref)), diffArguments);
 
-      // ToDo: Types: (TIME) D(y)/dtime --> der(y) --> $DER.y (make y a state)
+      // Types: (TIME)
+      // D(x)/dtime --> der(x) --> $DER.x
+      // STATE => STATE_DER
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(BVariable.isState(var_ptr))
+      then (Expression.fromCref(BVariable.getDerCref(exp.cref)), diffArguments);
+
+      // Types: (TIME)
+      // D(y)/dtime --> der(y) --> $DER.y
+      // ALGEBRAIC => STATE_DER
+      // make y a state and add new STATE_DER
+      case (Expression.CREF(), DifferentiationType.TIME, _)
+        guard(BVariable.isAlgebraic(var_ptr))
+        algorithm
+          // create derivative
+          (derCref, der_ptr) := BVariable.makeDerVar(exp.cref);
+          // add derivative to new_vars
+          diffArguments.new_vars := der_ptr :: diffArguments.new_vars;
+          // update algebraic variable to be a state
+          var_ptr := BVariable.makeStateVar(var_ptr, der_ptr);
+      then (Expression.fromCref(BVariable.getDerCref(derCref)), diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: FUNCTION
@@ -527,15 +555,13 @@ public
 
       // Types: (JACOBIAN)
       // cref in jacobianHT => get $SEED or $pDER variable from HashTable
-      case (Expression.CREF(), DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT)))
-        guard((diffArguments.diffType == DifferentiationType.JACOBIAN) and
-              BaseHashTable.hasKey(exp.cref, jacobianHT))
+      case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(jacobianHT))
+        guard(BaseHashTable.hasKey(exp.cref, jacobianHT))
       then (Expression.fromCref(BaseHashTable.get(exp.cref, jacobianHT)), diffArguments);
 
       // Types: (JACOBIAN)
       // Everything that is not in jacobianHT gets differentiated to zero
-      case (Expression.CREF(), _)
-        guard(diffArguments.diffType == DifferentiationType.JACOBIAN)
+      case (Expression.CREF(), DifferentiationType.JACOBIAN, _)
       then (Expression.makeZero(exp.ty), diffArguments);
 
       else algorithm
@@ -566,15 +592,14 @@ public
         _ := match call
           local
             String name;
-            ComponentRef inDiffwrtCref;
+
           case Call.TYPED_CALL() algorithm
             name := AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn));
-            inDiffwrtCref := diffArguments.diffCref;
             exp := differentiateCallExp(name, exp, diffArguments);
             then();
           else algorithm
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Call.toString(call)});
-            then fail();
+          then fail();
         end match;
 
         then (exp, diffArguments);
@@ -633,6 +658,9 @@ public
       // sin -> cos
       case ("sin") algorithm
         then Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.COS_REAL, {innerExp}, Expression.variability(innerExp)));
+      // cos -> -sin
+      case ("cos") algorithm
+        then Expression.negate(Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SIN_REAL, {innerExp}, Expression.variability(innerExp))));
       // TODO All all builtin functions with one argument here
     else algorithm
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
@@ -729,19 +757,21 @@ public
       then (Expression.makeZero(operator.ty), diffArguments);
 
       // Power (POW, POW_EW, ...) with constant exponent
-      // (x^r)' = r*(x^(r-1))
+      // (x^r)' = r*(x^(r-1))*x'
       case Expression.BINARY(exp1 = exp1, operator = operator, exp2 = exp2)
         guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.POWER) and
               (Expression.isConstNumber(exp2) or BVariable.checkExp(exp2, BVariable.isParamOrConst)))
         algorithm
+          (diffExp1, diffArguments) := differentiateExpression(exp1, diffArguments);
           (_, sizeClass) := Operator.classify(operator);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
       then (Expression.MULTARY(
-              {exp2,                                                     // r
-              Expression.BINARY(exp1, operator, minusOne(exp2, addOp))}, // x^(r-1)
+              {exp2,                                                      // r
+              Expression.BINARY(exp1, operator, minusOne(exp2, addOp)),   // x^(r-1)
+              diffExp1},                                                  // x'
               {},
-              mulOp                                                      // *
+              mulOp                                                       // *
             ),
             diffArguments);
 
@@ -923,29 +953,27 @@ public
   end differentiateMultaryMultiplicationArgs;
 
   function differentiateEquationAttributes
-    "Differentiates the residual variable, if it exists.
+    "Differentiates the residual variable for diffType JACOBIAN, if it exists.
     The cref has to be saved in the jacobianHT for this to work.
-    Only apply if diffType is JACOBIAN
     ToDo: needs to be adapted for torn/inner equations"
     input output EquationAttributes attr;
     input DifferentiationArguments diffArguments;
   algorithm
-    if diffArguments.diffType == DifferentiationType.JACOBIAN then
-      attr := match (attr, diffArguments)
-        local
-          Pointer<Variable> residualVar, diffedResidualVar;
-          HashTableCrToCr.HashTable jacobianHT;
+    attr := match (attr, diffArguments)
+      local
+        Pointer<Variable> residualVar, diffedResidualVar;
+        HashTableCrToCr.HashTable jacobianHT;
 
-        case (EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)), DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT)))
-          guard(BaseHashTable.hasKey(BVariable.getVarName(residualVar), jacobianHT))
-          algorithm
-            diffedResidualVar := BVariable.getVarPointer(BaseHashTable.get(BVariable.getVarName(residualVar), jacobianHT));
-        then EquationAttributes.EQUATION_ATTRIBUTES(attr.differentiated, attr.kind, attr.evalStages, SOME(diffedResidualVar));
+      case (EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)),
+         DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT), diffType = DifferentiationType.JACOBIAN))
+        guard(BaseHashTable.hasKey(BVariable.getVarName(residualVar), jacobianHT))
+        algorithm
+          diffedResidualVar := BVariable.getVarPointer(BaseHashTable.get(BVariable.getVarName(residualVar), jacobianHT));
+      then EquationAttributes.EQUATION_ATTRIBUTES(NONE(), attr.kind, attr.evalStages, SOME(diffedResidualVar));
 
-        else attr;
+      else attr;
 
-      end match;
-    end if;
+    end match;
   end differentiateEquationAttributes;
 
   protected
