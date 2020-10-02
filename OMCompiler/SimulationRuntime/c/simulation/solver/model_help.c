@@ -58,9 +58,9 @@
 
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = 0.2;
-int linearSparseSolverMinSize = 201;
+int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
 double nonlinearSparseSolverMaxDensity = 0.2;
-int nonlinearSparseSolverMinSize = 10001;
+int nonlinearSparseSolverMinSize = DEFAULT_FLAG_NLS_MIN_SIZE;
 double maxStepFactor = 1e12;
 double newtonXTol = 1e-12;
 double newtonFTol = 1e-12;
