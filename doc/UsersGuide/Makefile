@@ -5,6 +5,8 @@ OPENMODELICA_ROOT = $(CURDIR)/../../
 # OMPython needs this
 OPENMODELICAHOME := $(OPENMODELICA_ROOT)/build/
 
+OMSUSERSGUIDE = $(OPENMODELICA_ROOT)/OMSimulator/doc/UsersGuide
+
 # You can set these variables from the command line.
 
 SPHINXOPTS    =
@@ -12,7 +14,7 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build
 
-ALLDEP = source/openmodelica.bib source/interface.inc $(OMEDIT_ICONS) $(OMOPTIM_ICONS)
+ALLDEP = source/openmodelica.bib source/interface.inc $(OMEDIT_ICONS) $(OMOPTIM_ICONS) omsimulatorstuff
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -26,7 +28,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) sou
 # the i18n builder cannot share the environment and doctrees with the others
 I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
-.PHONY: help clean html htmlmathpng dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext readme
+.PHONY: help clean html htmlmathpng dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext readme omsimulatorstuff
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -270,3 +272,12 @@ source/omchelptext.rst:
 	mv "$@.tmp" "$@"
 source/tracreleases.rst: source/tracreleases.py
 	cd source && ./tracreleases.py
+source/omsimulator-help.inc:
+	$(OPENMODELICAHOME)/bin/OMSimulator --help > "$@.tmp"
+	mv "$@.tmp" "$@"
+$(OMSUSERSGUIDE)/source/OMSimulatorPython.inc: $(OMSUSERSGUIDE)/source/conf.py
+	(cd $(OMSUSERSGUIDE)/source && python3 "conf.py")
+omsimulatorstuff:
+	$(MAKE) $(OMSUSERSGUIDE)/source/OMSimulatorPython.inc source/omsimulator-help.inc
+	test -e source/omsimulator || ln -s "$(OMSUSERSGUIDE)/source" "source/omsimulator"
+	for f in api images OMCScripting.inc OMSimulatorLib.inc OMSimulatorLua.inc OMSimulatorPython.inc releaselink.inc; do test -e "source/$$f" || ln -s "$(OMSUSERSGUIDE)/source/$$f" "source/$$f"; done
