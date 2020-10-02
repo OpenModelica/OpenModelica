@@ -37,6 +37,12 @@
   extern "C" {
 #endif
 
+#define EXPANDSTRING(s) EXPANDSTRINGHELPER(s)
+#define EXPANDSTRINGHELPER(s) #s
+
+#define DEFAULT_FLAG_LSS_MIN_SIZE 201
+#define DEFAULT_FLAG_NLS_MIN_SIZE 10001
+
 enum _FLAG
 {
   FLAG_UNKNOWN = 0,
