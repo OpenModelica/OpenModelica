@@ -5,15 +5,11 @@ This section describes the use of OpenModelica to compute parameter
 sensitivities using forward sensitivity analysis together with the
 Sundials/IDA solver.
 
-*Note: this is a very short preliminary description which soon will be
-considerably improved, since this a rather new feature and will
-continuous improved.*
-
-*Note: OpenModelica version 1.10 or newer is required.*
-
+Single Parameter sensitivities with IDA/Sundials
+------------------------------------------------
 
 Background
-----------
+~~~~~~~~~~
 
 Parameter sensitivity analysis aims at analyzing the behavior of the
 corresponding model states w.r.t. model parameters.
@@ -44,7 +40,7 @@ solution over the time by:
 
 
 An Example
-----------
+~~~~~~~~~~
 
 This section demonstrates the usage of the sensitivities analysis in
 OpenModelica on an example. This module is enabled by the following
@@ -99,3 +95,124 @@ sensitivities w.r.t. **every state**.
   y
 
 .. omc-reset ::
+
+Single and Multi-parameter sensitivities with OMSens
+----------------------------------------------------
+
+OpenModelica sensitivity analysis and optimization module.
+
+Installation
+~~~~~~~~~~~~
+
+The core files of OMSens are provided as part of the OpenModelica installation.
+However, you still need to install python and build OMSens with that python before using it.
+Follow the installation process described on the `OMSens github page <https://github.com/OpenModelica/OMSens>`_.
+
+Usage
+~~~~~
+
+OMSens offers 3 flavors for parameter sensitivity analysis.
+
+-  Individual Sensitivity Analysis
+  -  Used to analyze how a parameter affects a variable when perturbed on its own
+-  Multi-parameter Sweep
+  -  Exploratory experimentation that sweeps the space of a set of parameters
+-  Vectorial Sensitivity Analysis
+  -  Used to find the combination of parameters that maximizes/minimizes a state variable
+
+We choose the Lotka-Volterra model that consists of a second-order nonlinear set of ordinary
+differential equations. The system models the relationship between the populations of predators
+and preys in a closed ecosystem.
+
+.. code-block :: modelica
+
+  model LotkaVolterra "This is the typical equation-oriented model"
+    parameter Real alpha=0.1 "Reproduction rate of prey";
+    parameter Real beta=0.02 "Mortality rate of predator per prey";
+    parameter Real gamma=0.4 "Mortality rate of predator";
+    parameter Real delta=0.02 "Reproduction rate of predator per prey";
+    parameter Real prey_pop_init=10 "Initial prey population";
+    parameter Real pred_pop_init=10 "Initial predator population";
+    Real prey_pop(start=prey_pop_init) "Prey population";
+    Real pred_pop(start=pred_pop_init) "Predator population";
+  initial equation
+    prey_pop = prey_pop_init;
+    pred_pop = pred_pop_init;
+  equation
+    der(prey_pop) = prey_pop*(alpha-beta*pred_pop);
+    der(pred_pop) = pred_pop*(delta*prey_pop-gamma);
+  end LotkaVolterra;
+
+Let’s say we need to investigate the influence of model parameters on the predator population
+at 40 units of time. We assume a +/-5% uncertainty on model parameters.
+
+We can use OMSens to study the sensitivity model to each parameter, one at a time.
+
+Open the Lotka-Volterra model using OMEdit.
+
+.. _individual-sensitivity-analysis :
+
+Individual Sensitivity Analysis
+"""""""""""""""""""""""""""""""
+
+#. Select *Sensitivity Optimization > Run Sensitivity Analysis and Optimization* from the menu.
+   A window like the one below should appear.
+
+.. figure :: media/omsens-window.png
+
+  OMSens window.
+
+#. Choose **Individual Parameter Based Sensitivity Analysis** and set up the simulation settings.
+
+.. figure :: media/omsens-individual-analysis.png
+
+  Run individual sensitivity analysis.
+
+#. Select variables.
+
+.. figure :: media/omsens-individual-analysis-variables.png
+
+  Individual sensitivity analysis variables.
+
+#. Select parameters.
+
+  .. figure :: media/omsens-individual-analysis-parameters.png
+
+    Individual sensitivity analysis parameters.
+
+#. Choose the perturbation percentage and direction. Run the analysis.
+
+  .. figure :: media/omsens-individual-analysis-perturbation.png
+
+  Individual sensitivity analysis perturbation.
+
+#. After the analysis a dialog with results is shown.
+   Open the heatmap corresponding to the relative sensitivity index.
+
+    .. figure :: media/omsens-individual-analysis-results.png
+
+    Individual sensitivity analysis results.
+
+#. The heatmap shows the effect of each parameter on each variable in the form of
+   (parameter,variable) cells. As we can see, pred_pop was affected by the perturbation on every
+   parameter but prey_pop presents a negligible sensitivity to delta (P.3).
+   Recall that this heatmap shows the effect on the variables at time 40
+   for each perturbation imposed at time 0.
+
+   .. figure :: media/omsens-individual-analysis-heatmap.png
+
+   Individual sensitivity analysis heatmap.
+
+Multi-parameter Sweep
+"""""""""""""""""""""
+
+Now we would like to see what happens to pred_pop when the top 3 most influencing parameters are
+perturbed at the same time. Repeat the first three steps from :ref:`individual-sensitivity-analysis`
+but this time select **Multi-parameter Sweep**.
+
+#. Choose to sweep alpha, gamma and pred_pop_init in a range of ±5% from its default value
+   and with 3 iterations (#iter) distributed equidistantly within that range. Run the sweep analysis.
+
+   .. figure :: media/omsens-multi-sweep-parameters.png
+
+   Multi-parameter sweep parameters.
