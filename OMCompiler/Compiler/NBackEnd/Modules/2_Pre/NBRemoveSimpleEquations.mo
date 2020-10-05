@@ -200,7 +200,10 @@ protected
           eqData.equations := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
 
-          // remove alias vars from all relevant arrays
+          // categorize alias vars and sort them to the correct arrays
+          (alias_vars, non_trivial_alias) := List.splitOnTrue(alias_vars, BVariable.hasAliasBinding);
+
+          // remove alias vars from all relevant arrays after splitting of non trivial alias vars
           varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
           varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
           varData.algebraics := VariablePointers.removeList(alias_vars, varData.algebraics);
@@ -208,9 +211,8 @@ protected
           varData.discretes := VariablePointers.removeList(alias_vars, varData.discretes);
           varData.initials := VariablePointers.removeList(alias_vars, varData.initials);
 
-          // categorize alias vars and sort them to the correct arrays
+          // split of constants
           (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
-          (alias_vars, non_trivial_alias) := List.splitOnTrue(alias_vars, BVariable.hasAliasBinding);
 
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
           varData.knowns := VariablePointers.addList(const_vars, varData.knowns);

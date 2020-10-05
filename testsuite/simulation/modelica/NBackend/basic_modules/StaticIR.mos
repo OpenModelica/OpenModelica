@@ -34,16 +34,16 @@ simulate(StaticIR); getErrorString();
 //
 // (2) Constraint Equations
 // ****************************************
-// [SCAL] y = x + z ^ 2.0 + sin(time)
 // [SCAL] y = z ^ 2.0 + x ^ 2.0
+// [SCAL] y = x + z ^ 2.0 + sin(time)
 //
 // [dummyselect] 1. Differentiate the constraint equations
 // ----------------------------------------
-// [dummyselect] constraint eqn:		[SCAL] y = x + z ^ 2.0 + sin(time)
-// [dummyselect] differentiated eqn:	[SCAL] $DER.y = $DER.x + 2.0 * z * $DER.z + cos(time)
-//
 // [dummyselect] constraint eqn:		[SCAL] y = z ^ 2.0 + x ^ 2.0
 // [dummyselect] differentiated eqn:	[SCAL] $DER.y = 2.0 * z * $DER.z + 2.0 * x * $DER.x
+//
+// [dummyselect] constraint eqn:		[SCAL] y = x + z ^ 2.0 + sin(time)
+// [dummyselect] differentiated eqn:	[SCAL] $DER.y = $DER.x + 2.0 * z * $DER.z + cos(time)
 //
 // (1) Selected States
 // ****************************************

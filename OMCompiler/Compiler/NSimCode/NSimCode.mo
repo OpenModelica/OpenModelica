@@ -271,7 +271,7 @@ public
               (ode, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
               daeModeData := NONE();
             end if;
-            allSim := List.flatten(ode);
+            allSim := listAppend(List.flatten(ode), List.flatten(algebraic));
 
             // ToDo add event system
             inlineEquations := {};
