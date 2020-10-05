@@ -22,6 +22,7 @@ buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString()
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 0 ()
 //  * Number of discrete states: 0 ()
+//  * Number of clocked states: 0 ()
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (0):
 //  * Single equations (assignments): 0
@@ -38,6 +39,7 @@ buildModel(Modelica.Utilities.Examples.readRealParameterModel); getErrorString()
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 0 ()
 //  * Number of discrete states: 0 ()
+//  * Number of clocked states: 0 ()
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (0):
 //  * Single equations (assignments): 0

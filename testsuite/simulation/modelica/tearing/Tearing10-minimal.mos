@@ -38,6 +38,7 @@ val(R1.v,0.2); getErrorString();
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (15):
 //  * Single equations (assignments): 14
@@ -57,6 +58,7 @@ val(R1.v,0.2); getErrorString();
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (9):
 //  * Single equations (assignments): 8
@@ -72,8 +74,8 @@ val(R1.v,0.2); getErrorString();
 //  * Linear torn systems: 1 {(10,23.0%) 0}
 //  * Non-linear torn systems: 0
 // "
-// -3.019806626980426e-14
+// -2.753353101070388e-14
 // ""
-// -2.984279490192421e-13
+// -2.700062395888381e-13
 // ""
 // endResult
