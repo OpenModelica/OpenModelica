@@ -151,6 +151,11 @@ algorithm
         matches := true; /* Any version matches the empty */
         return;
       then fail();
+    case SemanticVersion.SEMVER(major=0, minor=0, patch=0, prerelease={"default"})
+      algorithm
+        matches := true; /* Any version matches the empty */
+        return;
+      then fail();
     else ();
   end match;
   JSON.ARRAY(providedVersions) := provides;
