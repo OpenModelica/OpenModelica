@@ -1,4 +1,4 @@
 System Identification
 =====================
 
-`System Identification (OMSysIdent) <https://github.com/OpenModelica/OMSimulator/tree/master/src/OMSysIdentLib>`_ has its own `documentation <https://openmodelica.org/doc/OMSimulator/master/html/OMSysIdent.html>`_.
+`System Identification (OMSysIdent) <https://github.com/OpenModelica/OMSysident>`_ is its own separate project and not bundled together with the main OpenModelica distribution.
