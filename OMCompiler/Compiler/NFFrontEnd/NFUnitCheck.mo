@@ -98,7 +98,7 @@ protected
   HashTableUnitToString.HashTable htU2S;
   FunctionUnitCache.Cache fn_cache;
 algorithm
-  if not (Flags.isSet(Flags.NF_UNITCHECK) or Flags.getConfigBool(Flags.CHECK_MODEL)) then
+  if not (Flags.getConfigBool(Flags.UNIT_CHECKING) or Flags.getConfigBool(Flags.CHECK_MODEL)) then
     return;
   end if;
 
