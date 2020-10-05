@@ -37,6 +37,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum2_res.m
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 27 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (629):
 //  * Single equations (assignments): 625
@@ -56,6 +57,7 @@ res := OpenModelica.Scripting.compareSimulationResults("Pendulum.Pendulum2_res.m
 //  * Number of states: 4 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (130):
 //  * Single equations (assignments): 126
