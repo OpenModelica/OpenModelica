@@ -155,53 +155,53 @@ Open the Lotka-Volterra model using OMEdit.
 Individual Sensitivity Analysis
 """""""""""""""""""""""""""""""
 
-#. Select *Sensitivity Optimization > Run Sensitivity Analysis and Optimization* from the menu.
+-  Select *Sensitivity Optimization > Run Sensitivity Analysis and Optimization* from the menu.
    A window like the one below should appear.
 
 .. figure :: media/omsens-window.png
 
   OMSens window.
 
-#. Choose **Individual Parameter Based Sensitivity Analysis** and set up the simulation settings.
+-  Choose **Individual Parameter Based Sensitivity Analysis** and set up the simulation settings.
 
 .. figure :: media/omsens-individual-analysis.png
 
   Run individual sensitivity analysis.
 
-#. Select variables.
+-  Select variables.
 
 .. figure :: media/omsens-individual-analysis-variables.png
 
   Individual sensitivity analysis variables.
 
-#. Select parameters.
+-  Select parameters.
 
-  .. figure :: media/omsens-individual-analysis-parameters.png
+.. figure :: media/omsens-individual-analysis-parameters.png
 
-    Individual sensitivity analysis parameters.
+  Individual sensitivity analysis parameters.
 
-#. Choose the perturbation percentage and direction. Run the analysis.
+-  Choose the perturbation percentage and direction. Run the analysis.
 
-  .. figure :: media/omsens-individual-analysis-perturbation.png
+.. figure :: media/omsens-individual-analysis-perturbation.png
 
   Individual sensitivity analysis perturbation.
 
-#. After the analysis a dialog with results is shown.
+-  After the analysis a dialog with results is shown.
    Open the heatmap corresponding to the relative sensitivity index.
 
-    .. figure :: media/omsens-individual-analysis-results.png
+.. figure :: media/omsens-individual-analysis-results.png
 
-    Individual sensitivity analysis results.
+  Individual sensitivity analysis results.
 
-#. The heatmap shows the effect of each parameter on each variable in the form of
+-  The heatmap shows the effect of each parameter on each variable in the form of
    (parameter,variable) cells. As we can see, pred_pop was affected by the perturbation on every
    parameter but prey_pop presents a negligible sensitivity to delta (P.3).
    Recall that this heatmap shows the effect on the variables at time 40
    for each perturbation imposed at time 0.
 
-   .. figure :: media/omsens-individual-analysis-heatmap.png
+.. figure :: media/omsens-individual-analysis-heatmap.png
 
-   Individual sensitivity analysis heatmap.
+  Individual sensitivity analysis heatmap.
 
 Multi-parameter Sweep
 """""""""""""""""""""
@@ -210,9 +210,100 @@ Now we would like to see what happens to pred_pop when the top 3 most influencin
 perturbed at the same time. Repeat the first three steps from :ref:`individual-sensitivity-analysis`
 but this time select **Multi-parameter Sweep**.
 
-#. Choose to sweep alpha, gamma and pred_pop_init in a range of ±5% from its default value
+-  Choose to sweep alpha, gamma and pred_pop_init in a range of ±5% from its default value
    and with 3 iterations (#iter) distributed equidistantly within that range. Run the sweep analysis.
 
-   .. figure :: media/omsens-multi-sweep-parameters.png
+.. figure :: media/omsens-multi-sweep-parameters.png
 
-   Multi-parameter sweep parameters.
+  Multi-parameter sweep parameters.
+
+-  The backend is invoked and when it completes the analysis the following results dialog is
+   shown. Open the plot for pred_pop.
+
+.. figure :: media/omsens-multi-sweep-results.png
+
+  Multi-parameter sweep results.
+
+-  At time 40 the parameters perturbations with a higher predator population are all blue,
+   but it’s not clear which one. We need something more precise.
+
+.. figure :: media/omsens-multi-sweep-plot.png
+
+  Multi-parameter sweep plot.
+
+   These results can be very informative but clearly the exhaustive exploration approach doesn't
+   scale for more parameters (#p) and more perturbation values (#v) (#v^#p simulations required).
+
+Vectorial Sensitivity Analysis
+""""""""""""""""""""""""""""""
+
+Using the Vectorial optimization-based analysis (see below) we can request OMSens to find a
+combination of parameters that perturbs the most (i.e. minimize or maximize) the value of the
+target variable at a desired simulation time.
+
+For **Vectorial Sensitivity Analysis** repeat the first two steps from
+:ref:`individual-sensitivity-analysis` but choose **Vectorial Parameter Based Sensitivity Analysis**.
+
+-  Choose only alpha, delta and pred_pop_init to perturb.
+
+.. figure :: media/omsens-vectorial-analysis-parameters.png
+
+  Vectorial sensitivity analysis parameters.
+
+-  Setup the optimization settings and run the analysis.
+
+.. figure :: media/omsens-vectorial-analysis-optimization.png
+
+  Vectorial sensitivity analysis optimization.
+
+-  The **Parameters** tab in the results window shows the values found by the optimization
+   routine that maximize pred_pop at t=40 s.
+
+.. figure :: media/omsens-vectorial-analysis-results.png
+
+  Vectorial sensitivity analysis parameters result.
+
+-  The **State Variable** tab shows the comparison between the values of the variable in the
+   standard run vs the perturbed run at simulation time 40s.
+
+.. figure :: media/omsens-vectorial-analysis-state-variables.png
+
+  Vectorial sensitivity analysis state variables.
+
+-  If we simulate using the optimum values and compare it to the standard (unperturbed) run,
+   we see that it **delays the bell** described by the variable.
+
+.. figure :: media/omsens-vectorial-analysis-plot.png
+
+  Vectorial sensitivity analysis plot.
+
+-  So far, we have only perturbed the top 3 parameters detected by the **Individual Sensitivity**
+   method. Maybe we can find a greater effect on the variable if we perturb all 6 parameters.
+   Running a Sweep is not an option as perturbing 6 parameters with 3 iterations each results in
+   3⁶=729 simulations. We run another Vectorial Sensitivity Analysis instead but now choose to
+   perturb all 6 parameters.
+
+.. figure :: media/omsens-vectorial-analysis-parameters-all.png
+
+  Vectorial sensitivity analysis parameters.
+
+-  The **parameters tab** shows that the optimum value is found by perturbing all of the
+   parameters to their boundaries.
+
+.. figure :: media/omsens-vectorial-analysis-results-all.png
+
+  Vectorial sensitivity analysis parameters result.
+
+-  The **State Variable** tab shows that pred_pop can be increased by 98% when perturbing the
+   6 parameters as opposed to 68% when perturbing the top 3 influencing parameters.
+
+.. figure :: media/omsens-vectorial-analysis-state-variables.png
+
+  Vectorial sensitivity analysis state variables.
+
+-  The plot shows again that the parameters found delay the bell-shaped curve, but with a
+   stronger impact than before.
+
+.. figure :: media/omsens-vectorial-analysis-plot-all.png
+
+  Vectorial sensitivity analysis plot.
