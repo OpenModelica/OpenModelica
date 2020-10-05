@@ -2,27 +2,27 @@
 
 
 #include <zmq.hpp>
-#include "zhelpers.hpp"
-#include <string>
-#include <vector>
-#include <thread>
-#include <memory>
-#include <functional>
-#include <iostream>
+
+
 #ifndef _WIN32
 #include <unistd.h>
 #else
 #include <windows.h>
 #endif
-#include "OMC.h"
+
+#include <ModelicaDefine.h>
+#include <Modelica.h>
+
 //boost property tree to read and write json streams
+#define BOOST_SPIRIT_THREADSAFE
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/program_options.hpp>
-#include <exception>
+
+#include "IOMCZeromq.h"
 #include "omcZeromqTask.h"
-#define GC_THREADS
-#include "gc.h"
+
+
 
 using std::string;
 OMCData* omc;
@@ -34,9 +34,9 @@ string getVersion(OMCData* omc);
 namespace po = boost::program_options;
 
 
+
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #include <tchar.h>
-
 
 
 int _tmain(int argc, const _TCHAR* argv[])
@@ -44,6 +44,8 @@ int _tmain(int argc, const _TCHAR* argv[])
 int main(int argc, const char* argv[])
 #endif
 {
+    
+   
     
     int port_pub;
         int port_sub;
@@ -178,15 +180,25 @@ int main(int argc, const char* argv[])
     std::thread t(std::bind(&omcZeromqTask::run, &st));
 
     t.join();
+    
+     if (globalSimulationExceptionPtr)
+     {
+        std::rethrow_exception(globalSimulationExceptionPtr);
+     }
+         
+     if (globalZeroMQTaskExceptionPtr)
+     {
+        std::rethrow_exception(globalZeroMQTaskExceptionPtr);
+     }
 
     getchar();
 
-      }
+    }
     catch (std::exception & ex)
     {
 
         std::cout << "Stop omc zeromq application with error: " << ex.what();
-      
+    
         return 1;
     }
 
