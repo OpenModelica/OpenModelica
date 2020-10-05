@@ -275,16 +275,18 @@ public
 
     function createInitialBlocks
       input list<System.System> systems;
-      output list<Block> blcks = {};
+      output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
     protected
       list<Block> tmp;
+      list<list<Block>> tmp_lst = {};
     algorithm
       for system in systems loop
         (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
-        blcks := listAppend(blcks, tmp);
+        tmp_lst := tmp :: tmp_lst;
       end for;
+      blcks := List.flatten(tmp_lst);
     end createInitialBlocks;
 
     function createDAEModeBlocks

@@ -538,7 +538,7 @@ public
     algorithm
       matching := match adj
         local
-          list<Integer> marked_eqns;
+          list<list<Integer>> marked_eqns;
 
         case SCALAR_ADJACENCY_MATRIX()  algorithm
           if transposed then
@@ -549,7 +549,7 @@ public
 
           // some equations could not be matched --> apply index reduction
           if not listEmpty(marked_eqns) then
-            (vars, eqns, varData, eqData, funcTree) := IndexReduction.main(vars, eqns, varData, eqData, funcTree, marked_eqns);
+            (vars, eqns, varData, eqData, funcTree) := IndexReduction.main(vars, eqns, varData, eqData, funcTree, List.flatten(marked_eqns));
             // compute new adjacency matrix (ToDo: keep more of old information)
             new_adj := AdjacencyMatrix.create(vars, eqns, AdjacencyMatrixType.SCALAR);
             // restart matching with new information
@@ -626,7 +626,7 @@ public
       input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
       output Matching matching;
       // this needs partially = true to get computed. Otherwise it fails on singular systems
-      output list<Integer> marked_eqns = {}   "marked equations for index reduction in the case of a singular system";
+      output list<list<Integer>> marked_eqns = {}   "marked equations for index reduction in the case of a singular system";
     protected
       Integer nVars = arrayLength(mT), nEqns = arrayLength(m);
       array<Integer> var_to_eqn;
@@ -648,9 +648,9 @@ public
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the system is structurally singular. Index Reduction is not yet supported"});
           elseif transposed then
             // if transposed the variable marks represent equations
-            marked_eqns := listAppend(marked_eqns, BackendUtil.find(var_marks));
+            marked_eqns := BackendUtil.findTrueIndices(var_marks) :: marked_eqns;
           else
-            marked_eqns := listAppend(marked_eqns, BackendUtil.find(eqn_marks));
+            marked_eqns := BackendUtil.findTrueIndices(eqn_marks) :: marked_eqns;
           end if;
         end if;
       end for;

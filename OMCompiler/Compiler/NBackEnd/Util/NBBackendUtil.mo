@@ -49,17 +49,11 @@ public
   // Util imports
   import Util;
 
-  function find
+  function findTrueIndices
     "returns all indices of elements that are true"
     input array<Boolean> arr;
-    output list<Integer> indices = {};
-  algorithm
-    for i in 1:arrayLength(arr) loop
-      if arr[i] then
-        indices := i :: indices;
-      end if;
-    end for;
-  end find;
+    output list<Integer> indices = list(i for i guard arr[i] in arrayLength(arr):-1:1);
+  end findTrueIndices;
 
   function indexTplGt<T>
     "use with List.sort() and a rating function to sort any list"
