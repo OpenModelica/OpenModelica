@@ -738,7 +738,9 @@ public
           bindingType = Expression.typeOf(exp),
           variability = Expression.variability(exp),
           eachType    = EachType.NOT_EACH,
-          evaluated   = Expression.isConstNumber(exp),
+          evalState   = if Expression.isConstNumber(exp)
+                        then Mutable.create(EvalState.EVALUATED)
+                        else Mutable.create(EvalState.NOT_EVALUATED),
           isFlattened = true,
           info        = binding.info
         );
