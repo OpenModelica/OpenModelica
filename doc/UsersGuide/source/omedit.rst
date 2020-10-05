@@ -192,7 +192,7 @@ Welcome Perspective
   OMEdit Welcome Perspective.
 
 The Welcome Perspective shows the list of recent files and the list of
-latest news from https://www.openmodelica.org/.
+latest news from https://www.openmodelica.org.
 See :numref:`omedit-welcome`. The orientation of recent files and latest news can be
 horizontal or vertical. User is allowed to show/hide the latest news.
 See section :ref:`omedit-options-general`.
@@ -1058,7 +1058,7 @@ General
 
   -  *Horizontal View/Vertical View* – Sets the view mode for welcome page.
 
-  -  *Show Latest News* - If enabled then the latest news from https://openmodelica.org/ are shown.
+  -  *Show Latest News* - If enabled then the latest news from https://openmodelica.org are shown.
 
 -  Optional Features
 
