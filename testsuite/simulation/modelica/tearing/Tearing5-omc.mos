@@ -45,6 +45,7 @@ val(i5,0.0); getErrorString();
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (2):
 //  * Single equations (assignments): 1
@@ -64,6 +65,7 @@ val(i5,0.0); getErrorString();
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (2):
 //  * Single equations (assignments): 1
@@ -85,7 +87,7 @@ val(i5,0.0); getErrorString();
 // ""
 // 0.2622950819672131
 // ""
-// 0.04918032786885246
+// 0.04918032786885245
 // ""
 // 0.7868852459016393
 // ""
