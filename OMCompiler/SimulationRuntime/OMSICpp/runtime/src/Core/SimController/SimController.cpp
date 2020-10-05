@@ -26,6 +26,7 @@
 #endif
 
 
+
 SimController::SimController(PATH library_path, PATH modelicasystem_path, bool startZeroMQ)
     : SimControllerPolicy(library_path, modelicasystem_path, library_path)
 
@@ -242,6 +243,10 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         _communicator->initialize(global_settings->getZeroMQPubPort(), global_settings->getZeroMQSubPort(), global_settings->getZeroMQJobiID(), global_settings->getZeroMQServerID(), global_settings->getZeroMQClientID());
         _communicator->startThreads(_simMgr, global_settings, mixedsystem, _sim_objects, modelKey);
         _communicator->waitForAllThreads(120);
+         if (globalExceptionPtr)
+         {
+              std::rethrow_exception(globalExceptionPtr);
+         }
 #elif defined(USE_ZEROMQ)
         throw ModelicaSimulationError(SIMMANAGER, "ZeroMQ is not enabled", "", ex.isSuppressed());
 #endif

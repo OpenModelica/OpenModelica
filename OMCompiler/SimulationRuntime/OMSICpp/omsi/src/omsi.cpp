@@ -59,6 +59,13 @@ extern "C" void handle_aborts(int signal_number)
        
 }
 
+extern "C" void handle_segmentaion_faults(int signal_number)
+{
+    
+    std::string error = std::string("A memory access violation has occurred: ") + to_string(signal_number);
+    throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
+       
+}
 
 
 
@@ -87,6 +94,8 @@ int main(int argc, const char* argv[])
     
     //use handle_aborts for abort() calls
     signal(SIGABRT, &handle_aborts);
+    //use handle_segmentaion_faults for segmentatino faults
+    signal(SIGSEGV , &handle_segmentaion_faults);
     // default program options
     std::map<std::string, std::string> opts;
 
@@ -118,6 +127,6 @@ int main(int argc, const char* argv[])
     {
         if (!ex.isSuppressed())
             std::cerr << "Simulation stopped with error in " << error_id_string(ex.getErrorID()) << ": " << ex.what();
-        return 1;
+        return -1;
     }
 }

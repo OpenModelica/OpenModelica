@@ -37,7 +37,7 @@ struct SimSettings
   string zeromqClientID;
 
 };
-
+static std::exception_ptr globalExceptionPtr = nullptr;
 /**
  *  SimController to start and stop the simulation
  */

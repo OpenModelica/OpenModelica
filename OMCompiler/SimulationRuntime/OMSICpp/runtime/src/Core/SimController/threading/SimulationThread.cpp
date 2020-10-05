@@ -4,7 +4,7 @@
 #include <Core/Modelica.h>
 #include <Core/System/IExtendedSimObjects.h>
 #include <Core/SimController/threading/SimulationThread.h>
-
+#include <Core/SimController/ISimController.h>
 
 
 
@@ -120,10 +120,8 @@ void SimulationThread::Run(shared_ptr<SimManager> simManager, shared_ptr<IGlobal
     catch (ModelicaSimulationError& ex)
     {
         string error = add_error_info(string("Simulation failed for ") + modelKey, ex.what(), ex.getErrorID());
-        //_communicator->setSimStopedByException(ex);
-    
         _communicator->setSimStoped(false,error);
-        throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
+        globalExceptionPtr = std::current_exception();
     }
 
 }
