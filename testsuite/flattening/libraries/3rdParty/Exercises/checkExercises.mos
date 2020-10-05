@@ -28,14 +28,14 @@ checkModel(FourBar.TestPlanarLoops); getErrorString();
 
 // Result:
 // true
-// ""
-// "Check of Aufgabe1_1 completed successfully.
-// Class Aufgabe1_1 has 52 equation(s) and 52 variable(s).
-// 39 of these are trivial equation(s)."
 // "Notification: Automatically loaded package Modelica 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package Complex 3.2.1 due to uses annotation.
 // Notification: Automatically loaded package ModelicaServices 3.2.1 due to uses annotation.
 // "
+// "Check of Aufgabe1_1 completed successfully.
+// Class Aufgabe1_1 has 52 equation(s) and 52 variable(s).
+// 39 of these are trivial equation(s)."
+// ""
 // "Check of Aufgabe1_2 completed successfully.
 // Class Aufgabe1_2 has 89 equation(s) and 89 variable(s).
 // 61 of these are trivial equation(s)."

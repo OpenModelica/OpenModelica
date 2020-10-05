@@ -1579,11 +1579,11 @@ bool OMCProxy::loadModel(QString className, QString priorityVersion, bool notify
   \param fileName - the file to load.
   \return true on success
   */
-bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses)
+bool OMCProxy::loadFile(QString fileName, QString encoding, bool uses, bool notify, bool requireExactVersion)
 {
   bool result = false;
   fileName = fileName.replace('\\', '/');
-  result = mpOMCInterface->loadFile(fileName, encoding, uses);
+  result = mpOMCInterface->loadFile(fileName, encoding, uses, notify, requireExactVersion);
   printMessagesStringInternal();
   return result;
 }
@@ -3273,9 +3273,9 @@ QList<QString> OMCProxy::parseEncryptedPackage(QString fileName, QString working
  * \param workingDirectory
  * \return
  */
-bool OMCProxy::loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip)
+bool OMCProxy::loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses, bool notify, bool requireExactVersion)
 {
-  bool result = mpOMCInterface->loadEncryptedPackage(fileName, workingDirectory, skipUnzip);
+  bool result = mpOMCInterface->loadEncryptedPackage(fileName, workingDirectory, skipUnzip, uses, notify, requireExactVersion);
   printMessagesStringInternal();
   return result;
 }

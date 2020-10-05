@@ -176,9 +176,11 @@ int LoadFile(data* omcData, const char* fileName)
     modelica_boolean result;
     std::string encoding = "UTF-8";
     modelica_boolean uses = true; //Uses-annotations
+    modelica_boolean notify = false;
+    modelica_boolean requireExactVersion = false;
 
     MMC_TRY_TOP_SET(omcData->threadData)
-      result = omc_OpenModelicaScriptingAPI_loadFile(threadData, mmc_mk_scon(fileName), mmc_mk_scon(encoding.c_str()), uses);
+      result = omc_OpenModelicaScriptingAPI_loadFile(threadData, mmc_mk_scon(fileName), mmc_mk_scon(encoding.c_str()), uses, notify, requireExactVersion);
       CP_TD();
     MMC_CATCH_TOP(return -1)
 
