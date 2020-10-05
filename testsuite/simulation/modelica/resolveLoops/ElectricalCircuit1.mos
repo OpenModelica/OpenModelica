@@ -41,6 +41,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for initialization (27):
 //  * Single equations (assignments): 23
@@ -60,6 +61,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Number of states: 2 (C2.v,C3.v)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
+//  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
 // Notification: Strong component statistics for simulation (17):
 //  * Single equations (assignments): 13
