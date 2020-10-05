@@ -154,9 +154,8 @@ public:
   QList<QString> getDocumentationAnnotationInClass(LibraryTreeItem *pLibraryTreeItem);
   QString getClassComment(QString className);
   QString changeDirectory(QString directory = QString(""));
-  bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = false, QString languageStandard = QString(""),
-                 bool requireExactVersion = false);
-  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true);
+  bool loadModel(QString className, QString priorityVersion = QString("default"), bool notify = true, QString languageStandard = QString(""), bool requireExactVersion = false);
+  bool loadFile(QString fileName, QString encoding = Helper::utf8, bool uses = true, bool notify = true, bool requireExactVersion = false);
   bool loadString(QString value, QString fileName, QString encoding = Helper::utf8, bool merge = false, bool checkError = true);
   QList<QString> parseFile(QString fileName, QString encoding = Helper::utf8);
   QList<QString> parseString(QString value, QString fileName, bool printErrors = true);
@@ -268,7 +267,7 @@ public:
   QList<QList<QString > > getUses(QString className);
   bool buildEncryptedPackage(QString className, bool encrypt = true);
   QList<QString> parseEncryptedPackage(QString fileName, QString workingDirectory);
-  bool loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip);
+  bool loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses = true, bool notify = true, bool requireExactVersion = false);
 signals:
   void commandFinished();
 public slots:
