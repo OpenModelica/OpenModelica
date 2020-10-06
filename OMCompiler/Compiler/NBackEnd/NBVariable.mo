@@ -78,6 +78,11 @@ public
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFComponent.DEFAULT_ATTR,
     {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
+  constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
+    NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFComponent.DEFAULT_ATTR,
+    {}, NONE(), SCodeUtil.dummyInfo, BackendExtension.BACKEND_INFO(
+    BackendExtension.VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL));
+
   constant String DERIVATIVE_STR          = "$DER";
   constant String DUMMY_DERIVATIVE_STR    = "$dDER";
   constant String PARTIAL_DERIVATIVE_STR  = "$pDER";
@@ -123,20 +128,14 @@ public
   function getVarPointer
     input ComponentRef cref;
     output Pointer<Variable> var;
-  protected
-    String err_str;
   algorithm
     var := match cref
       local
         Pointer<Variable> varPointer;
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
       else algorithm
-        if ComponentRef.isTime(cref) then
-          err_str := "there is no variable for the time cref, please treat differently.";
-        else
-          err_str := "because of wrong InstNode (not VAR_NODE). Please use NBVariable.getVarSafe if it should not fail here.";
-        end if;
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) + ", " + err_str});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) +
+        ", because of wrong InstNode (not VAR_NODE). Please use NBVariable.getVarSafe if it should not fail here."});
       then fail();
     end match;
   end getVarPointer;

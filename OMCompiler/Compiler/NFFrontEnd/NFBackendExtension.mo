@@ -88,6 +88,7 @@ public
   constant BackendInfo DUMMY_BACKEND_INFO = BACKEND_INFO(FRONTEND_DUMMY(), EMPTY_VAR_ATTR_REAL);
 
   uniontype VariableKind
+    record TIME end TIME;
     record ALGEBRAIC end ALGEBRAIC;
     record STATE
       Integer index                         "how often this states was differentiated";
@@ -150,6 +151,7 @@ public
       output String str;
     algorithm
       str := match varKind
+        case TIME() then                "[TIME]";
         case ALGEBRAIC() then           "[ALGB]";
         case STATE() then               "[STAT]";
         case STATE_DER() then           "[DER-]";

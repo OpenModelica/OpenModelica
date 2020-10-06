@@ -455,7 +455,6 @@ public
   algorithm
     // extract var pointer first to have following code more readable
     var_ptr := match exp
-      case Expression.CREF() guard(ComponentRef.isTime(exp.cref)) then Pointer.create(NBVariable.DUMMY_VARIABLE);
       case Expression.CREF() then BVariable.getVarPointer(exp.cref);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});

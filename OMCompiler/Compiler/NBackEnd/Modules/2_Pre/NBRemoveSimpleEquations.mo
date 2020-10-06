@@ -373,7 +373,6 @@ protected
     crefTpl := match eq
 
       case BEquation.SIMPLE_EQUATION()
-        guard(not (ComponentRef.isTime(eq.lhs) or ComponentRef.isTime(eq.rhs)))
       then findCrefsSimple(eq.lhs, eq.rhs, crefTpl);
 
       case BEquation.SCALAR_EQUATION() algorithm
@@ -526,14 +525,9 @@ protected
 
         case _ guard(not tpl.cont) then FAILED_CREF_TPL;
 
-        // TIME, do nothing
-        // ToDo: replace all others with time
-        case Expression.CREF()  guard(ComponentRef.isTime(exp.cref))
-        then tpl;
-
-        // parameter or constant found (nothing happens)
+        // time, parameter or constant found (nothing happens)
         case Expression.CREF()
-          guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)))
+          guard(BVariable.isParamOrConst(BVariable.getVarPointer(exp.cref)) or ComponentRef.isTime(exp.cref))
         then tpl;
 
         // variable found (less than two previous variables, not time and not param or const)
@@ -545,7 +539,7 @@ protected
             tpl.varCount := tpl.varCount + 1;
         then tpl;
 
-        // Fail cref if not parameter and not constant
+        // Fail cref if not time or parameter or constant and varCount >= 2
         case Expression.CREF()
         then FAILED_CREF_TPL;
 

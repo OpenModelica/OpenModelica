@@ -662,7 +662,7 @@ public
       input output ComponentRef cref;
       input Pointer<Boolean> b_ptr;
     algorithm
-      if Pointer.access(b_ptr) and not ComponentRef.isTime(cref) then
+      if Pointer.access(b_ptr) then
         Pointer.update(b_ptr, BVariable.isParamOrConst(BVariable.getVarPointer(cref)));
       end if;
     end crefIsParamOrConst;

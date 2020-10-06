@@ -63,11 +63,13 @@ protected
   import Causalize = NBCausalize;
   import DetectStates = NBDetectStates;
   import DAEMode = NBDAEMode;
-  import Equation = NBEquation.Equation;
+  import NBEquation.EquationPointers;
+  import NBEquation.Equation;
   import Initialization = NBInitialization;
   import Partitioning = NBPartitioning;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
   import Tearing = NBTearing;
+  import NBVariable.VariablePointers;
 
   // Util imports
   import Error;
@@ -237,9 +239,9 @@ public
     // no output needed, all pointers
     _ := match bdae
       local
-        BEquation.EquationPointers equations;
+        EquationPointers equations;
       case MAIN(eqData = BEquation.EQ_DATA_SIM(equations = equations)) algorithm
-        _ := BEquation.EquationPointers.map(equations, function Equation.simplify(name = getInstanceName(), indent = ""));
+        _ := EquationPointers.map(equations, function Equation.simplify(name = getInstanceName(), indent = ""));
       then ();
       else ();
     end match;
@@ -255,24 +257,26 @@ protected
     output BVariable.VarData variableData;
   protected
     Variable lowVar;
-    Pointer<Variable> lowVar_ptr;
+    Pointer<Variable> lowVar_ptr, time_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
     list<Pointer<Variable>> parameters_lst = {}, constants_lst = {};
-    BVariable.VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars;
-    BVariable.VariablePointers states, derivatives, algebraics, discretes, previous;
-    BVariable.VariablePointers parameters, constants;
+    VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars;
+    VariablePointers states, derivatives, algebraics, discretes, previous;
+    VariablePointers parameters, constants;
   algorithm
-    // instantiate variable data
-    variables := BVariable.VariablePointers.empty(listLength(varList));
-    // sort vars to have sorting independent heuristic behaviours
-    // ToDo! kabdelhak: use already existing hash values for this?
+    // instantiate variable data (with one more space for time variable);
+    variables := VariablePointers.empty(listLength(varList) + 1);
+
+    /* create time var and add it*/
+    time_ptr := Pointer.create(NBVariable.TIME_VARIABLE);
+    variables := VariablePointers.add(time_ptr, variables);
 
     // routine to prepare the lists for pointer arrays
     for var in listReverse(varList) loop
       lowVar := lowerVariable(var);
       lowVar_ptr := Pointer.create(lowVar);
-      variables := BVariable.VariablePointers.add(lowVar_ptr, variables);
+      variables := VariablePointers.add(lowVar_ptr, variables);
       _ := match lowVar.backendinfo.varKind
 
         case BackendExtension.ALGEBRAIC() algorithm
@@ -324,25 +328,23 @@ protected
     end for;
 
     // create pointer arrays
-    unknowns := BVariable.VariablePointers.fromList(unknowns_lst);
-    knowns := BVariable.VariablePointers.fromList(knowns_lst);
-    initials := BVariable.VariablePointers.fromList(initials_lst);
-    auxiliaries := BVariable.VariablePointers.fromList(auxiliaries_lst);
-    aliasVars := BVariable.VariablePointers.fromList(aliasVars_lst);
+    unknowns := VariablePointers.fromList(unknowns_lst);
+    knowns := VariablePointers.fromList(knowns_lst);
+    initials := VariablePointers.fromList(initials_lst);
+    auxiliaries := VariablePointers.fromList(auxiliaries_lst);
+    aliasVars := VariablePointers.fromList(aliasVars_lst);
 
-    states := BVariable.VariablePointers.fromList(states_lst);
-    derivatives := BVariable.VariablePointers.fromList(derivatives_lst);
-    algebraics := BVariable.VariablePointers.fromList(algebraics_lst);
-    discretes := BVariable.VariablePointers.fromList(discretes_lst);
-    previous := BVariable.VariablePointers.fromList(previous_lst);
+    states := VariablePointers.fromList(states_lst);
+    derivatives := VariablePointers.fromList(derivatives_lst);
+    algebraics := VariablePointers.fromList(algebraics_lst);
+    discretes := VariablePointers.fromList(discretes_lst);
+    previous := VariablePointers.fromList(previous_lst);
 
-    parameters := BVariable.VariablePointers.fromList(parameters_lst);
-    constants := BVariable.VariablePointers.fromList(constants_lst);
+    parameters := VariablePointers.fromList(parameters_lst);
+    constants := VariablePointers.fromList(constants_lst);
 
     /* lower the variable bindings */
-    BVariable.VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
-
-    // ToDo: lower component references in other Expression based attributes
+    VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
 
     /* create variable data */
     variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars,
@@ -422,7 +424,7 @@ protected
 
   function lowerVariableBinding
     input output Variable var;
-    input BVariable.VariablePointers variables;
+    input VariablePointers variables;
   algorithm
     var := match var
       local
@@ -445,15 +447,15 @@ protected
     input list<Algorithm> al_lst;
     input list<FEquation> init_eq_lst;
     input list<Algorithm> init_al_lst;
-    input BVariable.VariablePointers variables;
+    input VariablePointers variables;
     output BEquation.EqData eqData;
   protected
     list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {};
-    BEquation.EquationPointers equations;
+    EquationPointers equations;
     Pointer<Equation> eq;
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
-    equations := BEquation.EquationPointers.fromList(equation_lst);
+    equations := EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, variables);
 
     for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
@@ -493,12 +495,12 @@ protected
 
     eqData := BEquation.EQ_DATA_SIM(
       equations   = equations,
-      simulation  = BEquation.EquationPointers.fromList(simulation_lst),
-      continuous  = BEquation.EquationPointers.fromList(continuous_lst),
-      discretes   = BEquation.EquationPointers.fromList(discretes_lst),
-      initials    = BEquation.EquationPointers.fromList(initials_lst),
-      auxiliaries = BEquation.EquationPointers.fromList(auxiliaries_lst),
-      removed     = BEquation.EquationPointers.empty()
+      simulation  = EquationPointers.fromList(simulation_lst),
+      continuous  = EquationPointers.fromList(continuous_lst),
+      discretes   = EquationPointers.fromList(discretes_lst),
+      initials    = EquationPointers.fromList(initials_lst),
+      auxiliaries = EquationPointers.fromList(auxiliaries_lst),
+      removed     = EquationPointers.empty()
     );
   end lowerEquationData;
 
@@ -906,15 +908,15 @@ protected
   end lowerEquationAttributes;
 
   function lowerComponentReferences
-    input output BEquation.EquationPointers equations;
-    input BVariable.VariablePointers variables;
+    input output EquationPointers equations;
+    input VariablePointers variables;
   algorithm
-    equations := BEquation.EquationPointers.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
+    equations := EquationPointers.mapExp(equations,function lowerComponentReferenceExp(variables = variables), SOME(function lowerComponentReference(variables = variables)));
   end lowerComponentReferences;
 
   function lowerComponentReferenceExp
     input output Expression exp;
-    input BVariable.VariablePointers variables;
+    input VariablePointers variables;
   algorithm
     exp := match exp
       local
@@ -927,12 +929,12 @@ protected
 
   function lowerComponentReference
     input output ComponentRef cref;
-    input BVariable.VariablePointers variables;
+    input VariablePointers variables;
   protected
     Pointer<Variable> var;
   algorithm
     try
-      var := BVariable.VariablePointers.getVarSafe(cref, variables);
+      var := VariablePointers.getVarSafe(cref, variables);
       cref := lowerComponentReferenceInstNode(cref, var);
     else
       if Flags.isSet(Flags.FAILTRACE) then

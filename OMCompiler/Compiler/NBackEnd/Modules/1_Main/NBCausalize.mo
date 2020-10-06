@@ -924,11 +924,9 @@ public
     protected
       Pointer<Variable> var;
     algorithm
-      if not ComponentRef.isTime(cref) then
-        var := BVariable.getVarPointer(cref);
-        if (BVariable.isState(var) or BVariable.isStateDerivative(var) or BVariable.isAlgebraic(var)) then
-          Pointer.update(acc, cref :: Pointer.access(acc));
-        end if;
+      var := BVariable.getVarPointer(cref);
+      if (BVariable.isState(var) or BVariable.isStateDerivative(var) or BVariable.isAlgebraic(var)) then
+        Pointer.update(acc, cref :: Pointer.access(acc));
       end if;
     end getStateCandidate;
 
