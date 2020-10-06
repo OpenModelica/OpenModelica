@@ -119,6 +119,9 @@ When importing the model into OMEdit, roughly the following commands will be exe
 .. omc-mos ::
   :erroratend:
 
+
+  loadFile(getInstallationDirectoryPath() + "/share/doc/omc/testmodels/BouncingBall.mo")
+  translateModelFMU(BouncingBall)
   imported_fmu_mo_file:=importFMU("BouncingBall.fmu")
   loadFile(imported_fmu_mo_file)
 
