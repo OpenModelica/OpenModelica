@@ -13547,17 +13547,22 @@ protected
   String strMatchingAlgorithm, strIndexReductionMethod;
   BackendDAE.AdjacencyMatrix outAdjacencyMatrix;
   array<Integer> match1,match2;
+  Boolean debug = false;
 algorithm
   initialUnknownCrefs := List.map(initialUnknownList, getCrefFromSimVar); // extract cref from initialUnknownsList
-  //print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));
+  if debug then
+    print ("\n FmiInitialUnknownsDependencyList :" + ComponentReference.printComponentRefListStr(initialUnknownCrefs));
+  end if;
 
   //prepare initialization DAE
   tmpBDAE := BackendDAEUtil.copyBackendDAE(inInitDAE);
   tmpBDAE := BackendDAEOptimize.collapseIndependentBlocks(tmpBDAE);
 
   BackendDAE.DAE(currentSystem::{},shared) := tmpBDAE;
-  //BackendDump.dumpVariables(currentSystem.orderedVars,"orderedVariables");
-  //BackendDump.dumpEquationArray(currentSystem.orderedEqs,"orderedEquation");
+  if debug then
+    BackendDump.dumpVariables(currentSystem.orderedVars,"orderedVariables");
+    BackendDump.dumpEquationArray(currentSystem.orderedEqs,"orderedEquation");
+  end if;
 
   // traverse the simulation DAE globalknownVars and update the initialization DAE with new equations and vars
   for var in BackendVariable.varList(inSimDAE.shared.globalKnownVars) loop
@@ -13589,7 +13594,9 @@ algorithm
   strIndexReductionMethod := BackendDAEUtil.getIndexReductionMethodString();
   tmpBDAE := BackendDAEUtil.causalizeDAE(tmpBDAE, NONE(), BackendDAEUtil.getMatchingAlgorithm(SOME(strMatchingAlgorithm)), BackendDAEUtil.getIndexReductionMethod(SOME(strIndexReductionMethod)), false);
 
-  //BackendDump.dumpBackendDAE(tmpBDAE, "Check Initilization DAE");
+  if debug then
+    BackendDump.dumpBackendDAE(tmpBDAE, "Check Initilization DAE");
+  end if;
 
   orderedVars := BackendVariable.equationSystemsVarsLst(tmpBDAE.eqs); // extract ordered vars
 
@@ -13600,12 +13607,16 @@ algorithm
   // search in globalKnownVars as they contains inputs and parameters with inital = exact
   (depVars, indepVars) := getDepAndIndepVarsForInitialUnknowns(BackendVariable.varList(tmpBDAE.shared.globalKnownVars), depVars, indepVars, initialUnknownCrefs, crefSimVarHT);
 
-  //BackendDump.dumpVarList(depVars, "depVars");
-  //BackendDump.dumpVarList(indepVars, "indepVars");
+  if debug then
+    BackendDump.dumpVarList(depVars, "depVars");
+    BackendDump.dumpVarList(indepVars, "indepVars");
+  end if;
 
   // Calculate the dependecies of initialUnknowns
   (sparsePattern, _) := SymbolicJacobian.generateSparsePattern(tmpBDAE, indepVars, depVars);
-  //dumpFmiInitialUnknownsDependencies(sparsePattern, "FmiInitialUnknownDependency");
+  if debug then
+    dumpFmiInitialUnknownsDependencies(sparsePattern, "FmiInitialUnknownDependency");
+  end if;
 
   // collect all variables from sparsePattern
   (_, rowspt, (indepCrefs, depCrefs), _) := sparsePattern;
@@ -13639,11 +13650,9 @@ protected function getDepAndIndepVarsForInitialUnknowns
   output list<BackendDAE.Var> outindepVars = indepVars;
 protected
   DAE.ComponentRef cref;
-  SimCodeVar.SimVar referenceVar, tmpreferenceVar;
-  SimCodeVar.Causality tmpcausality;
-  SimCodeVar.Causality default_causality = SimCodeVar.LOCAL();
-  SimCodeVar.Variability default_variability = SimCodeVar.CONTINUOUS();
-  SimCodeVar.Initial tmpinitial_;
+  SimCodeVar.SimVar referenceVar;
+  SimCodeVar.Variability variability;
+  Boolean isConst = false;
 algorithm
   for var in inVar loop
     cref := BackendVariable.varCref(var);
@@ -13654,8 +13663,12 @@ algorithm
     // get indepVars, which is bascially list of vars with causality = input or initial = exact
     try
       referenceVar := BaseHashTable.get(cref, crefSimVarHT); // lookup in the SimVar to get causality and initial attribute
-      //print("\n referenceVar name:"+ ComponentReference.printComponentRefStr(referenceVar.name) + "\n variability : " + anyString(referenceVar.variability) + "\n causality : " + anyString(referenceVar.causality) + "\n initial :" + anyString(referenceVar.initial_) + "\n");
-      if isCausalityInputSimVar(referenceVar) or isInitialExactSimVar(referenceVar) then
+      // Ignore constant variables for now, they are not in the modelDescription.xml
+      isConst := match (referenceVar.variability)
+        case SOME(SimCodeVar.Variability.CONSTANT()) then true;
+        else false;
+      end match;
+      if not isConst and (isCausalityInputSimVar(referenceVar) or isInitialExactSimVar(referenceVar)) then
         outindepVars := var :: outindepVars;
       end if;
     else
