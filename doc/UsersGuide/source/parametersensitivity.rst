@@ -99,14 +99,14 @@ sensitivities w.r.t. **every state**.
 Single and Multi-parameter sensitivities with OMSens
 ----------------------------------------------------
 
-OpenModelica sensitivity analysis and optimization module.
+OMSens is an OpenModelica sensitivity analysis and optimization module.
 
 Installation
 ~~~~~~~~~~~~
 
 The core files of OMSens are provided as part of the OpenModelica installation.
 However, you still need to install python and build OMSens with that python before using it.
-Follow the installation process described on the `OMSens github page <https://github.com/OpenModelica/OMSens>`_.
+Follow the build instructions described on the `OMSens github page <https://github.com/OpenModelica/OMSens>`_.
 
 Usage
 ~~~~~
@@ -120,7 +120,7 @@ OMSens offers 3 flavors for parameter sensitivity analysis.
 -  Vectorial Sensitivity Analysis
   -  Used to find the combination of parameters that maximizes/minimizes a state variable
 
-We choose the Lotka-Volterra model that consists of a second-order nonlinear set of ordinary
+As an example, we choose the Lotka-Volterra model that consists of a second-order nonlinear set of ordinary
 differential equations. The system models the relationship between the populations of predators
 and preys in a closed ecosystem.
 
