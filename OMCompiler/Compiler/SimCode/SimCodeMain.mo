@@ -1010,7 +1010,7 @@ algorithm
 
         bdae := NBackendDAE.solve(bdae);
 
-        if Flags.isSet(Flags.OPT_DAE_DUMP) then
+        if Flags.isSet(Flags.OPT_DAE_DUMP) or Flags.isSet(Flags.BLT_DUMP) then
           print(NBackendDAE.toString(bdae, "(After Solve)"));
         end if;
 

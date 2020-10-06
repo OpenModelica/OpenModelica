@@ -96,6 +96,7 @@ public
   end ALGEBRAIC_LOOP;
 
   record TORN_LOOP
+    Integer idx;
     Tearing strict;
     Option<Tearing> casual;
     Boolean linear;
@@ -320,6 +321,30 @@ public
       else ht;
     end match;
   end getDependentCrefs;
+
+  function addLoopJacobian
+    input output StrongComponent comp;
+    input Option<BackendDAE> jac;
+  algorithm
+    comp := match comp
+      local
+        Tearing strict;
+
+      case ALGEBRAIC_LOOP() algorithm
+        comp.jac := jac;
+      then comp;
+
+      case TORN_LOOP(strict = strict) algorithm
+        // ToDo: update linearity here
+        strict.jac := jac;
+        comp.strict := strict;
+      then comp;
+
+      else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong component: " + toString(comp)});
+      then fail();
+    end match;
+  end addLoopJacobian;
 
 protected
   function createScalar

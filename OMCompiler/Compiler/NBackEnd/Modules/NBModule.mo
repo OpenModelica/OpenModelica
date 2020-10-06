@@ -211,6 +211,8 @@ public
      necessary. Only has access to the strong component itself, everything else
      accessable with pointers."
     input output StrongComponent comp     "the suspected algebraic loop.";
+    input output FunctionTree funcTree    "Function call bodies";
+    input output Integer index            "current unique loop index";
   end tearingInterface;
 
 

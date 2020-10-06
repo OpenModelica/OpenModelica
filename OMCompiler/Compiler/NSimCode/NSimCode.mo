@@ -259,17 +259,16 @@ public
             init_0 := {};
             init_no_ret := {};
             start := {};
-            // ToDo: why???
-            /// somehow we need to add those to algebraic
-            algebraic := no_ret :: {};
             discreteVars := {};
             jacobians := {};
             if isSome(qual.dae) then
               ode := {};
+              algebraic := no_ret :: {};
               (daeModeData, simCodeIndices, funcTree) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices, funcTree);
             else
-              (ode, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
               daeModeData := NONE();
+              (ode, algebraic, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
+              algebraic := no_ret :: algebraic;
             end if;
             allSim := listAppend(List.flatten(ode), List.flatten(algebraic));
 

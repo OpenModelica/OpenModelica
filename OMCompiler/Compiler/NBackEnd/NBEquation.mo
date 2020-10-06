@@ -917,11 +917,11 @@ public
   end WhenStatement;
 
   uniontype EquationAttributes
-    record EQUATION_ATTRIBUTES // ToDo: replace differentiated by optional equation pointer to diffed eq (only TIME!)
+    record EQUATION_ATTRIBUTES
       Option<Pointer<Equation>> derivative;
       EquationKind kind;
       EvaluationStages evalStages;
-      Option<Pointer<Variable>> residualVar;
+      Option<Pointer<Variable>> residualVar "also used to represent the equation itself";
     end EQUATION_ATTRIBUTES;
 
     function toString

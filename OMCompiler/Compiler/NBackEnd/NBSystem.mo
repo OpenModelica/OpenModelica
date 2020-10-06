@@ -44,8 +44,10 @@ protected
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
+  import NBEquation.EquationPointers;
   import Jacobian = NBackendDAE.BackendDAE;
   import BVariable = NBVariable;
+  import NBVariable.VariablePointers;
 
   // Util imports
   import StringUtil;
@@ -54,9 +56,9 @@ public
   uniontype System
     record SYSTEM
       SystemType systemType                           "Type of system: ODE, INIT, DAE or PARAM";
-      BVariable.VariablePointers unknowns             "Variable array of unknowns, subset of full variable array";
-      Option<BVariable.VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
-      BEquation.EquationPointers equations            "Equations array, subset of the full equation array";
+      VariablePointers unknowns             "Variable array of unknowns, subset of full variable array";
+      Option<VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
+      EquationPointers equations            "Equations array, subset of the full equation array";
       Option<AdjacencyMatrix> adjacencyMatrix         "Adjacency matrix with all additional information";
       Option<Matching> matching                       "Matching (see 2.5)";
       Option<array<StrongComponent>> strongComponents "Strong Components";
@@ -83,8 +85,8 @@ public
 
         else
           algorithm
-            str := str +  BVariable.VariablePointers.toString(system.unknowns, "Unknown") + "\n" +
-                          BEquation.EquationPointers.toString(system.equations, "Equations") + "\n";
+            str := str +  VariablePointers.toString(system.unknowns, "Unknown") + "\n" +
+                          EquationPointers.toString(system.equations, "Equations") + "\n";
         then str;
       end match;
 
@@ -104,9 +106,21 @@ public
     function sort
       input output System system;
     algorithm
-      system.unknowns := BVariable.VariablePointers.sort(system.unknowns);
-      system.equations := BEquation.EquationPointers.sort(system.equations);
+      system.unknowns := VariablePointers.sort(system.unknowns);
+      system.equations := EquationPointers.sort(system.equations);
     end sort;
+
+    function isAlgebraic
+      input System syst;
+      output Boolean b = true;
+    algorithm
+      for var in VariablePointers.toList(syst.unknowns) loop
+          if BVariable.isStateDerivative(var) then
+            b := false;
+            break;
+          end if;
+      end for;
+    end isAlgebraic;
 
     function systemTypeString
       input SystemType systemType;

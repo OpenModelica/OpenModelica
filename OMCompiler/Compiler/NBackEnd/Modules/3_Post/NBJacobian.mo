@@ -50,11 +50,13 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
+  import NBEquation.EquationPointers;
   import HashTableCrToCr = NBHashTableCrToCr;
   import HashTableCrToCrLst = NBHashTableCrToCrLst;
   import Jacobian = NBackendDAE.BackendDAE;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
+  import NBVariable.VariablePointers;
 
   // Util imports
   import AvlSetPath;
@@ -73,7 +75,7 @@ public
     bdae := match bdae
       local
         String name                                     "Context name for jacobian";
-        BVariable.VariablePointers knowns               "Variable array of knowns";
+        VariablePointers knowns               "Variable array of knowns";
         Option<Jacobian> jacobian                       "Resulting jacobian";
         FunctionTree funcTree                           "Function call bodies";
         list<System.System> oldSystems, newSystems = {} "Equation systems before and afterwards";
@@ -118,6 +120,26 @@ public
 
     end match;
   end main;
+
+  function simple
+    input VariablePointers residuals;
+    input Option<VariablePointers> variables;
+    input EquationPointers equations;
+    input StrongComponent comp;
+    output Option<Jacobian> jacobian;
+    input output FunctionTree funcTree;
+    input String name;
+  algorithm
+    (jacobian, funcTree) := jacobianSymbolic(
+        name              = name,
+        unknowns          = residuals,
+        daeUnknowns       = variables,
+        equations         = equations,
+        knowns            = VariablePointers.empty(0), // remove them? are they necessary?
+        strongComponents  = SOME(arrayCreate(1, comp)),
+        funcTree          = funcTree
+      );
+  end simple;
 
   function getModule
     "Returns the module function that was chosen by the user."
@@ -173,9 +195,9 @@ public
     end toString;
 
     function create
-      input BVariable.VariablePointers independentVars;
-      input BVariable.VariablePointers residualVars;
-      input BEquation.EquationPointers equations;
+      input VariablePointers independentVars;
+      input VariablePointers residualVars;
+      input EquationPointers equations;
       input Option<array<StrongComponent>> strongComponents "Strong Components";
       output SparsityPattern sparsityPattern;
       output SparsityColoring sparsityColoring;
@@ -194,8 +216,8 @@ public
 
         case SOME(comps) algorithm
           // get all relevant crefs
-          residual_vars := BVariable.VariablePointers.getVarNames(residualVars);
-          independent_vars := BVariable.VariablePointers.getVarNames(independentVars);
+          residual_vars := VariablePointers.getVarNames(residualVars);
+          independent_vars := VariablePointers.getVarNames(independentVars);
 
           // create a sufficiant big hash table
           ht := HashTableCrToCrLst.empty(listLength(independent_vars) + listLength(residual_vars));
@@ -271,7 +293,7 @@ public
 protected
   function jacobianSymbolic extends Module.jacobianInterface;
   protected
-    BVariable.VariablePointers seedCandidates, partialCandidates, residuals;
+    VariablePointers seedCandidates, partialCandidates, residuals;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> residual_vars_ptr = Pointer.create({});
@@ -279,7 +301,7 @@ protected
     Pointer<HashTableCrToCr.HashTable> jacobianHT = Pointer.create(HashTableCrToCr.empty());
     Differentiate.DifferentiationArguments diffArguments;
 
-    BEquation.EquationPointers diffedEquations;
+    EquationPointers diffedEquations;
     BEquation.EqData eqDataJac;
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
@@ -289,10 +311,10 @@ protected
   algorithm
     // ToDo: apply tearing to split residual/inner variables and equations
     // add inner / tmp cref tuples to HT
-    (seedCandidates, partialCandidates) := if isSome(daeUnknowns) then (Util.getOption(daeUnknowns), unknowns) else (unknowns, BVariable.VariablePointers.empty());
+    (seedCandidates, partialCandidates) := if isSome(daeUnknowns) then (Util.getOption(daeUnknowns), unknowns) else (unknowns, VariablePointers.empty());
 
-    BVariable.VariablePointers.map(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
-    BVariable.VariablePointers.map(partialCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, ht = jacobianHT, makeVar = BVariable.makePDerVar));
+    VariablePointers.map(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
+    VariablePointers.map(partialCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, ht = jacobianHT, makeVar = BVariable.makePDerVar));
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -311,9 +333,9 @@ protected
     eqDataJac := BEquation.EQ_DATA_JAC(
       equations     = diffedEquations,
       results       = diffedEquations,
-      temporary     = BEquation.EquationPointers.empty(),
-      auxiliaries   = BEquation.EquationPointers.empty(),
-      removed       = BEquation.EquationPointers.empty()
+      temporary     = EquationPointers.empty(),
+      auxiliaries   = EquationPointers.empty(),
+      removed       = EquationPointers.empty()
     );
 
     // collect var data
@@ -329,23 +351,23 @@ protected
     tmp_vars      := {}; // ToDo: add this once system has been torn
 
     varDataJac := BVariable.VAR_DATA_JAC(
-      variables     = NBVariable.VariablePointers.fromList(all_vars),
-      unknowns      = NBVariable.VariablePointers.fromList(unknown_vars),
+      variables     = VariablePointers.fromList(all_vars),
+      unknowns      = VariablePointers.fromList(unknown_vars),
       knowns        = knowns,
-      auxiliaries   = NBVariable.VariablePointers.fromList(aux_vars),
-      aliasVars     = NBVariable.VariablePointers.fromList(alias_vars),
+      auxiliaries   = VariablePointers.fromList(aux_vars),
+      aliasVars     = VariablePointers.fromList(alias_vars),
       diffVars      = unknowns,
-      dependencies  = NBVariable.VariablePointers.fromList(depend_vars),
-      resultVars    = NBVariable.VariablePointers.fromList(res_vars),
-      tmpVars       = NBVariable.VariablePointers.fromList(tmp_vars),
-      seedVars      = NBVariable.VariablePointers.fromList(seed_vars)
+      dependencies  = VariablePointers.fromList(depend_vars),
+      resultVars    = VariablePointers.fromList(res_vars),
+      tmpVars       = VariablePointers.fromList(tmp_vars),
+      seedVars      = VariablePointers.fromList(seed_vars)
     );
 
     if isSome(daeUnknowns) then
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
     else
-      BEquation.EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
-      residuals := BVariable.VariablePointers.fromList(listReverse(Pointer.access(residual_vars_ptr)));
+      EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
+      residuals := VariablePointers.fromList(listReverse(Pointer.access(residual_vars_ptr)));
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(unknowns, residuals, equations, strongComponents);
       // safe residuals somewhere?
     end if;
@@ -364,15 +386,15 @@ protected
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
   protected
-    BVariable.VariablePointers residuals;
+    VariablePointers residuals;
     Pointer<list<Pointer<Variable>>> residual_vars_ptr = Pointer.create({});
     Pointer<Integer> idx = Pointer.create(0);
   algorithm
     if isSome(daeUnknowns) then
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
     else
-      BEquation.EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
-      residuals := BVariable.VariablePointers.fromList(listReverse(Pointer.access(residual_vars_ptr)));
+      EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
+      residuals := VariablePointers.fromList(listReverse(Pointer.access(residual_vars_ptr)));
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(unknowns, residuals, equations, strongComponents);
       // safe residuals somewhere?
     end if;

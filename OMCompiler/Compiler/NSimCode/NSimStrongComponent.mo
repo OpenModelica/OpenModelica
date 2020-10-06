@@ -260,7 +260,8 @@ public
 
     function createBlocks
       input list<System.System> systems;
-      output list<list<Block>> blcks = {};
+      output list<list<Block>> ode = {};
+      output list<list<Block>> algebraic = {};
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
     protected
@@ -268,9 +269,14 @@ public
     algorithm
       for system in systems loop
         (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
-        blcks := tmp :: blcks;
+        if System.System.isAlgebraic(system) then
+          algebraic := tmp :: algebraic;
+        else
+          ode := tmp :: ode;
+        end if;
       end for;
-      blcks := listReverse(blcks);
+      ode := listReverse(ode);
+      algebraic := listReverse(algebraic);
     end createBlocks;
 
     function createInitialBlocks

@@ -49,12 +49,15 @@ protected
 
   // Backend imports
   import BEquation = NBEquation;
+  import BJacobian = NBJacobian;
   import Differentiate = NBDifferentiate;
   import NBEquation.Equation;
+  import NBEquation.EquationPointers;
   import NBEquation.InnerEquation;
   import Jacobian = NBackendDAE.BackendDAE;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
+  import NBVariable.VariablePointers;
 
   //Util imports
   import StringUtil;
@@ -91,24 +94,28 @@ public
     input System.SystemType systemType;
   protected
     constant Module.tearingInterface func = getModule();
+    FunctionTree funcTree;
   algorithm
     bdae := match (systemType, bdae)
       local
         list<System.System> systems;
 
-      case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems))
+      case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems, funcTree = funcTree))
         algorithm
-          bdae.ode := tearingTraverser(systems, func);
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree);
+          bdae.ode := systems;
       then bdae;
 
-      case (NBSystem.SystemType.INIT, BackendDAE.MAIN(init = systems))
+      case (NBSystem.SystemType.INIT, BackendDAE.MAIN(init = systems, funcTree = funcTree))
         algorithm
-          bdae.init := tearingTraverser(systems, func);
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree);
+          bdae.init := systems;
       then bdae;
 
-      case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems)))
+      case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree))
         algorithm
-          bdae.dae := SOME(tearingTraverser(systems, func));
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree);
+          bdae.dae := SOME(systems);
       then bdae;
 
     // ToDo: all the other cases: e.g. Jacobian, Hessian
@@ -134,15 +141,17 @@ protected
     input list<System.System> systems;
     input Module.tearingInterface func;
     output list<System.System> new_systems = {};
+    input output FunctionTree funcTree;
   protected
     array<StrongComponent> strongComponents;
     StrongComponent tmp;
+    Integer idx = 0;
   algorithm
     for syst in systems loop
       if isSome(syst.strongComponents) then
         SOME(strongComponents) := syst.strongComponents;
         for i in 1:arrayLength(strongComponents) loop
-          tmp := func(strongComponents[i]);
+          (tmp, funcTree, idx) := func(strongComponents[i], funcTree, idx);
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
             arrayUpdate(strongComponents, i, tmp);
@@ -160,6 +169,13 @@ protected
   algorithm
     comp := match comp
       local
+        StrongComponent result;
+        String name;
+        EquationPointers equations;
+        Pointer<list<Pointer<Variable>>> residual_vars = Pointer.create({});
+        Pointer<Integer> idx = Pointer.create(0);
+        list<Pointer<Equation>> new_eqns;
+        Option<Jacobian> jacobian;
         Tearing tearingSet;
         InnerEquation dummy;
 
@@ -167,9 +183,25 @@ protected
       case StrongComponent.ALGEBRAIC_LOOP()
         algorithm
           // for now do not apply tearing
+          index := index + 1;
+          name := "JAC_" + intString(index);
+          equations := EquationPointers.fromList(comp.eqns);
+          EquationPointers.map(equations, function Equation.createResidual(context = name, residual_vars = residual_vars, idx = idx));
+
           dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), {});
           tearingSet := TEARING_SET(comp.vars, comp.eqns, arrayCreate(0, dummy), NONE());
-      then StrongComponent.TORN_LOOP(tearingSet, NONE(), false, comp.mixed);
+          result := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, comp.mixed);
+
+          (jacobian, funcTree) := BJacobian.simple(
+            residuals = VariablePointers.fromList(Pointer.access(residual_vars)),
+            variables = SOME(VariablePointers.fromList(comp.vars)),
+            equations = equations,
+            comp      = result,
+            funcTree  = funcTree,
+            name      = name
+          );
+
+      then StrongComponent.addLoopJacobian(result, jacobian);
 
       // do nothing otherwise
       else comp;
