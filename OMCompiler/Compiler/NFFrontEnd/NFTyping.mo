@@ -3055,28 +3055,6 @@ algorithm
     ErrorExt.delCheckpoint(getInstanceName());
   end for;
 
-  // Do branch selection anyway if -d=-nfScalarize is set, otherwise turning of
-  // scalarization breaks currently.
-  if not Flags.isSet(Flags.NF_SCALARIZE) then
-    bl := bl2;
-    bl2 := {};
-
-    for b in bl loop
-      bl2 := match b
-        case Equation.Branch.BRANCH()
-          guard b.conditionVar <= Variability.STRUCTURAL_PARAMETER
-          algorithm
-            b.condition := Ceval.evalExp(b.condition);
-          then
-            if Expression.isFalse(b.condition) then bl2 else b :: bl2;
-
-        else b :: bl2;
-      end match;
-    end for;
-
-    bl2 := listReverseInPlace(bl2);
-  end if;
-
   ifEq := Equation.IF(bl2, source);
 end typeIfEquation;
 
