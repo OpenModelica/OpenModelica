@@ -1538,90 +1538,45 @@ getErrorString();
 // 65/65 (1): staticDrum1.Ce_eva.a = true   [binding |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (65)
+// SET_S_After_Minimal_Extraction (16, 16)
+// ========================================
+// 1/1 (1): new_Sink1.C.Q = new_Sink1.Q   [dynamic |0|0|0|0|]
+// 2/2 (1): lumpedStraightPipe1.C2.Q = new_Sink1.C.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): lumpedStraightPipe1.C1.Q = lumpedStraightPipe1.C2.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): lumpedStraightPipe1.Q = lumpedStraightPipe1.C1.Q   [dynamic |0|0|0|0|]
+// 5/5 (1): staticDrum1.Ce_sup.Q = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): lumpedStraightPipe2.Q = lumpedStraightPipe2.C1.Q   [dynamic |0|0|0|0|]
+// 7/7 (1): lumpedStraightPipe2.C1.Q = lumpedStraightPipe2.C2.Q   [dynamic |0|0|0|0|]
+// 8/8 (1): lumpedStraightPipe2.C2.Q = staticDrum1.Ce_steam.Q   [dynamic |0|0|0|0|]
+// 9/9 (1): staticDrum1.Cs_purg.Q = 0.0   [dynamic |0|0|0|0|]
+// 10/10 (1): staticDrum1.Cs_sur.Q = 0.0   [dynamic |0|0|0|0|]
+// 11/11 (1): staticDrum1.Cs_eva.Q = 0.0   [dynamic |0|0|0|0|]
+// 12/12 (1): lumpedStraightPipe3.Q = lumpedStraightPipe3.C1.Q   [dynamic |0|0|0|0|]
+// 13/13 (1): lumpedStraightPipe3.C1.Q = lumpedStraightPipe3.C2.Q   [dynamic |0|0|0|0|]
+// 14/14 (1): lumpedStraightPipe3.C2.Q = staticDrum1.Ce_eco.Q   [dynamic |0|0|0|0|]
+// 15/15 (1): staticDrum1.Ce_eva.Q = 0.0   [dynamic |0|0|0|0|]
+// 16/16 (1): staticDrum1.Ce_eco.Q + staticDrum1.Ce_steam.Q + staticDrum1.Ce_sup.Q + staticDrum1.Ce_eva.Q + (-staticDrum1.Cs_sup.Q) - staticDrum1.Cs_eva.Q - staticDrum1.Cs_sur.Q - staticDrum1.Cs_purg.Q = 0.0   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (16)
 // ========================================
 //
-// 1: lumpedStraightPipe3.C1.Q type: Real
-// 2: lumpedStraightPipe3.C2.Q type: Real
-// 3: staticDrum1.Ce_eco.Q type: Real
-// 4: staticDrum1.Cs_sup.Q type: Real
-// 5: lumpedStraightPipe1.C1.Q type: Real
-// 6: lumpedStraightPipe1.C2.Q type: Real
-// 7: new_Sink1.Q type: Real
-// 8: new_Sink1.C.Q type: Real
-// 9: lumpedStraightPipe2.C1.Q type: Real
-// 10: staticDrum1.Ce_steam.Q type: Real
-// 11: lumpedStraightPipe2.C2.Q type: Real
-// 12: lumpedStraightPipe1.C2.b type: Boolean
-// 13: new_Sink1.C.b type: Boolean
-// 14: lumpedStraightPipe1.C2.a type: Boolean
-// 15: new_Sink1.C.a type: Boolean
-// 16: staticDrum1.Ce_eva.Q type: Real
-// 17: staticDrum1.Ce_eva.h type: Real
-// 18: staticDrum1.Cs_eva.Q type: Real
-// 19: staticDrum1.Cs_sur.Q type: Real
-// 20: staticDrum1.Cs_purg.Q type: Real
-// 21: staticDrum1.Ce_sup.Q type: Real
-// 22: staticDrum1.Cs_eva.h type: Real
-// 23: staticDrum1.Cs_sur.h type: Real
-// 24: staticDrum1.Cs_purg.h type: Real
-// 25: staticDrum1.Ce_sup.h type: Real
-// 26: staticDrum1.Cth.W type: Real
-// 27: lumpedStraightPipe1.khi type: Real
-// 28: lumpedStraightPipe1.lam type: Real
-// 29: staticDrum1.Cs_sup.b type: Boolean
-// 30: lumpedStraightPipe1.C1.b type: Boolean
-// 31: staticDrum1.Cs_sup.a type: Boolean
-// 32: lumpedStraightPipe1.C1.a type: Boolean
-// 33: lumpedStraightPipe1.Relim type: Real
-// 34: lumpedStraightPipe3.khi type: Real
-// 35: lumpedStraightPipe3.lam type: Real
-// 36: staticDrum1.Ce_eco.b type: Boolean
-// 37: lumpedStraightPipe3.C2.b type: Boolean
-// 38: staticDrum1.Ce_eco.a type: Boolean
-// 39: lumpedStraightPipe3.C2.a type: Boolean
-// 40: sourceQ2.C.b type: Boolean
-// 41: lumpedStraightPipe3.C1.b type: Boolean
-// 42: sourceQ2.C.a type: Boolean
-// 43: lumpedStraightPipe3.C1.a type: Boolean
-// 44: lumpedStraightPipe3.Relim type: Real
-// 45: lumpedStraightPipe2.C1.b type: Boolean
-// 46: sourceQ1.C.b type: Boolean
-// 47: lumpedStraightPipe2.C1.a type: Boolean
-// 48: sourceQ1.C.a type: Boolean
-// 49: lumpedStraightPipe2.khi type: Real
-// 50: lumpedStraightPipe2.lam type: Real
-// 51: staticDrum1.Ce_steam.b type: Boolean
-// 52: lumpedStraightPipe2.C2.b type: Boolean
-// 53: staticDrum1.Ce_steam.a type: Boolean
-// 54: lumpedStraightPipe2.C2.a type: Boolean
-// 55: lumpedStraightPipe2.Relim type: Real
-// 56: staticDrum1.Ce_sup.b type: Boolean
-// 57: staticDrum1.Ce_sup.a type: Boolean
-// 58: staticDrum1.Cs_purg.b type: Boolean
-// 59: staticDrum1.Cs_purg.a type: Boolean
-// 60: staticDrum1.Cs_sur.b type: Boolean
-// 61: staticDrum1.Cs_sur.a type: Boolean
-// 62: staticDrum1.Cs_eva.b type: Boolean
-// 63: staticDrum1.Cs_eva.a type: Boolean
-// 64: staticDrum1.Ce_eva.b type: Boolean
-// 65: staticDrum1.Ce_eva.a type: Boolean
-//
-//
-// Parameters in SET_S (12)
-// ========================================
-// 1: lumpedStraightPipe1.rugosrel:PARAM()  = 0.0001  "Pipe roughness (active if lambda_fixed=false)" type: Real
-// 2: lumpedStraightPipe1.lambda:PARAM()  = 0.03  "Friction pressure loss coefficient (active if lambda_fixed=true)" type: Real
-// 3: lumpedStraightPipe1.D:PARAM(min = 0.0 unit = "m" )  = 0.2  "Pipe internal diameter" type: Real
-// 4: lumpedStraightPipe1.L:PARAM(unit = "m" )  = 10.0  "Pipe length" type: Real
-// 5: lumpedStraightPipe3.rugosrel:PARAM()  = 0.0001  "Pipe roughness (active if lambda_fixed=false)" type: Real
-// 6: lumpedStraightPipe3.lambda:PARAM()  = 0.03  "Friction pressure loss coefficient (active if lambda_fixed=true)" type: Real
-// 7: lumpedStraightPipe3.D:PARAM(min = 0.0 unit = "m" )  = 0.2  "Pipe internal diameter" type: Real
-// 8: lumpedStraightPipe3.L:PARAM(unit = "m" )  = 10.0  "Pipe length" type: Real
-// 9: lumpedStraightPipe2.rugosrel:PARAM()  = 0.0001  "Pipe roughness (active if lambda_fixed=false)" type: Real
-// 10: lumpedStraightPipe2.lambda:PARAM()  = 0.03  "Friction pressure loss coefficient (active if lambda_fixed=true)" type: Real
-// 11: lumpedStraightPipe2.D:PARAM(min = 0.0 unit = "m" )  = 0.2  "Pipe internal diameter" type: Real
-// 12: lumpedStraightPipe2.L:PARAM(unit = "m" )  = 10.0  "Pipe length" type: Real
+// 1: new_Sink1.Q type: Real
+// 2: new_Sink1.C.Q type: Real
+// 3: lumpedStraightPipe1.C2.Q type: Real
+// 4: lumpedStraightPipe1.C1.Q type: Real
+// 5: lumpedStraightPipe2.C1.Q type: Real
+// 6: lumpedStraightPipe2.C2.Q type: Real
+// 7: lumpedStraightPipe3.C1.Q type: Real
+// 8: lumpedStraightPipe3.C2.Q type: Real
+// 9: staticDrum1.Ce_eva.Q type: Real
+// 10: staticDrum1.Ce_eco.Q type: Real
+// 11: staticDrum1.Cs_sup.Q type: Real
+// 12: staticDrum1.Cs_eva.Q type: Real
+// 13: staticDrum1.Cs_sur.Q type: Real
+// 14: staticDrum1.Cs_purg.Q type: Real
+// 15: staticDrum1.Ce_steam.Q type: Real
+// 16: staticDrum1.Ce_sup.Q type: Real
 //
 //
 //
@@ -1635,7 +1590,7 @@ getErrorString();
 // 3: lumpedStraightPipe2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-3}
-// -SET_S:{118, 115, 192, 48, 146, 143, 203, 170, 74, 71, 181, 141, 205, 168, 204, 20, 21, 23, 29, 26, 17, 24, 30, 27, 18, 174, 151, 150, 11, 199, 140, 198, 152, 123, 122, 113, 194, 10, 193, 104, 188, 112, 187, 124, 96, 177, 68, 176, 79, 78, 69, 183, 15, 182, 80, 19, 16, 14, 28, 13, 31, 12, 25, 22, 9}
+// -SET_S:{170, 203, 143, 146, 17, 74, 71, 181, 26, 29, 23, 118, 115, 192, 20, 48}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -1679,7 +1634,7 @@ getErrorString();
 // Condition-5 "SET_S should be square "
 // ==========================================================================
 // -Passed
-//  Set_S has 65 equations and 65 variables
+//  Set_S has 16 equations and 16 variables
 //
 // record SimulationResult
 //     resultFile = "econcile",

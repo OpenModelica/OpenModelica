@@ -322,20 +322,33 @@ getErrorString();
 // 11/11 (1): V_Q5 = Q05   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (11)
+// SET_S_After_Minimal_Extraction (10, 10)
+// ========================================
+// 1/1 (1): Q05 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): V_Q5 = Q05   [dynamic |0|0|0|0|]
+// 3/3 (1): Q04 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): V_Q4 = Q04   [dynamic |0|0|0|0|]
+// 5/5 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 6/6 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 7/7 (1): T1_Q2 = Q1   [dynamic |0|0|0|0|]
+// 8/8 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+// 9/9 (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5   [dynamic |0|0|0|0|]
+// 10/10 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (10)
 // ========================================
 //
-// 1: T1_Q2 type: Real
-// 2: V_Q1 type: Real
-// 3: V_Q3 type: Real
-// 4: T3_Q1 type: Real
-// 5: T1_Q1 type: Real
+// 1: Q05 type: Real
+// 2: Q04 type: Real
+// 3: T2_Q1 type: Real
+// 4: T1_Q2 type: Real
+// 5: V_Q1 type: Real
 // 6: V_Q2 type: Real
-// 7: T2_Q1 type: Real
-// 8: Q04 type: Real
-// 9: V_Q4 type: Real
-// 10: Q05 type: Real
-// 11: V_Q5 type: Real
+// 7: V_Q4 type: Real
+// 8: V_Q5 type: Real
+// 9: V_Q3 type: Real
+// 10: T3_Q1 type: Real
 //
 //
 //
@@ -349,7 +362,7 @@ getErrorString();
 // 3: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
 //
 // -SET_C:{-1}
-// -SET_S:{19, 18, 17, 22, 29, 21, 20, 7, 9, 8, 10}
+// -SET_S:{8, 10, 7, 9, 21, 20, 19, 18, 17, 22}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -391,7 +404,7 @@ getErrorString();
 // Condition-5 "SET_S should be square "
 // ==========================================================================
 // -Passed
-//  Set_S has 11 equations and 11 variables
+//  Set_S has 10 equations and 10 variables
 //
 // record SimulationResult
 //     resultFile = "econcile",

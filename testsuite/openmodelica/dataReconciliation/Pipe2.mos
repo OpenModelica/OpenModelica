@@ -141,11 +141,9 @@ getErrorString();
 // 2/2 (1): y1 = y2   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (2)
+// Unknown variables in SET_S  (0)
 // ========================================
 //
-// 1: y1 type: Real
-// 2: y2 type: Real
 //
 //
 //
@@ -158,7 +156,7 @@ getErrorString();
 // 2: Q1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
 //
 // -SET_C:{-1}
-// -SET_S:{4, 5}
+// -SET_S:{}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
