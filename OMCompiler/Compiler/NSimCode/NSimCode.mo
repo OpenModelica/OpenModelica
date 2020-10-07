@@ -284,7 +284,7 @@ public
             (libs, libPaths, _, includeDirs, recordDecls, functions, _) := SimCodeUtil.createFunctions(program, ConvertDAE.convertFunctionTree(funcTree));
             makefileParams := OldSimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
 
-            (linearLoops, nonlinearLoops) := collectAlgebraicLoops(init, daeModeData);
+            (linearLoops, nonlinearLoops) := collectAlgebraicLoops(init, ode, algebraic, daeModeData);
             (modelInfo, simCodeIndices) := ModelInfo.create(qual.varData, name, directory, functions, linearLoops, nonlinearLoops, simCodeIndices);
             crefToSimVarHT := HashTableSimCode.create(modelInfo.vars);
 
@@ -429,11 +429,14 @@ public
         then fail();
       end match;
     end getDirectoryAndLibs;
+
   protected
     function collectAlgebraicLoops
       "Collects algebraic loops from all systems (ode, init, init_0, dae, ...).
       ToDo: Add other systems once implemented!"
       input list<SimStrongComponent.Block> init;
+      input list<list<SimStrongComponent.Block>> ode;
+      input list<list<SimStrongComponent.Block>> algebraic;
       input Option<DaeModeData> daeModeData;
       output list<SimStrongComponent.Block> linearLoops = {};
       output list<SimStrongComponent.Block> nonlinearLoops = {};
@@ -441,6 +444,8 @@ public
       list<list<SimStrongComponent.Block>> dae_mode_blcks;
     algorithm
       (linearLoops, nonlinearLoops) := SimStrongComponent.Block.collectAlgebraicLoops({init}, linearLoops, nonlinearLoops);
+      (linearLoops, nonlinearLoops) := SimStrongComponent.Block.collectAlgebraicLoops(ode, linearLoops, nonlinearLoops);
+      (linearLoops, nonlinearLoops) := SimStrongComponent.Block.collectAlgebraicLoops(algebraic, linearLoops, nonlinearLoops);
       if isSome(daeModeData) then
         SOME(DAE_MODE_DATA(blcks = dae_mode_blcks)) := daeModeData;
         (linearLoops, nonlinearLoops) := SimStrongComponent.Block.collectAlgebraicLoops(dae_mode_blcks, linearLoops, nonlinearLoops);

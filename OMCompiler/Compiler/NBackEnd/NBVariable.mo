@@ -939,8 +939,8 @@ public
         ExpandableArray.update(idx, varPointer, variables.varArr);
       else
         (_, idx) := ExpandableArray.add(varPointer, variables.varArr);
+        variables.ht := BaseHashTable.add((var.name, idx), variables.ht);
       end if;
-      variables.ht := BaseHashTable.add((var.name, idx), variables.ht);
     end add;
 
     function remove

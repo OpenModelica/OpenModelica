@@ -57,6 +57,7 @@ public
 
   // New Backend imports
   import BVariable = NBVariable;
+  import HashTableCrToInt = NBHashTableCrToInt;
 
   // Util imports
   import BackendUtil = NBBackendUtil;
@@ -156,12 +157,36 @@ public
       end match;
     end toString;
 
+    function getEqnName
+      input Pointer<Equation> eqn;
+      output ComponentRef name;
+    protected
+      Pointer<Variable> residualVar;
+    algorithm
+      residualVar := getResidualVar(eqn);
+      name := BVariable.getVarName(residualVar);
+    end getEqnName;
+
+    function getResidualVar
+      input Pointer<Equation> eqn;
+      output Pointer<Variable> residualVar;
+    algorithm
+      try
+        residualVar := EquationAttributes.getResidualVar(getAttributes(Pointer.access(eqn)));
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of missing residual variable."});
+        fail();
+      end try;
+    end getResidualVar;
+
     function makeStartEq
       input ComponentRef lhs;
       input ComponentRef rhs;
-      output Equation eq;
+      input Pointer<Integer> idx;
+      output Pointer<Equation> eq;
     algorithm
-      eq := SIMPLE_EQUATION(lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL);
+      eq := Pointer.create(SIMPLE_EQUATION(lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
+      Equation.createName(eq, idx, "SRT");
     end makeStartEq;
 
     function forEquationToString
@@ -561,6 +586,61 @@ public
       end match;
     end simplify;
 
+    function createName
+      input Pointer<Equation> eqn_ptr;
+      input Pointer<Integer> idx;
+      input String context;
+    protected
+      Equation eqn;
+      Pointer<Variable> residualVar;
+    algorithm
+      // create residual var as name
+      (residualVar, _) := BVariable.makeResidualVar(context, Pointer.access(idx));
+      Pointer.update(idx, Pointer.access(idx) + 1);
+
+      // update equation attributes
+      eqn := Pointer.access(eqn_ptr);
+      eqn := match eqn
+        case SCALAR_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case ARRAY_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case SIMPLE_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case RECORD_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case ALGORITHM() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case IF_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case FOR_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case WHEN_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(eqn)});
+        then fail();
+
+      end match;
+      Pointer.update(eqn_ptr, eqn);
+    end createName;
+
     function createResidual
       "Creates a residual equation from a regular equation.
       Expample (for DAEMode): $RES_DAE_idx := rhs.
@@ -591,7 +671,25 @@ public
           eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
         then eqn;
 
-        // ToDo: add all other cases!
+        case RECORD_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case ALGORITHM() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case IF_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case FOR_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
+
+        case WHEN_EQUATION() algorithm
+          eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
+        then eqn;
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(eqn)});
@@ -669,6 +767,7 @@ public
 
     function generateBindingEquation
       input Pointer<Variable> var_ptr;
+      input Pointer<Integer> idx;
       output Pointer<Equation> eqn;
     protected
       Variable var;
@@ -686,6 +785,7 @@ public
         then fail();
       end match;
       eqn := Pointer.create(Equation.fromLHSandRHS(lhs, rhs, EQ_ATTR_DEFAULT_INITIAL));
+      Equation.createName(eqn, idx, "BND");
     end generateBindingEquation;
 
   end Equation;
@@ -1030,6 +1130,7 @@ public
       array of pointers to equations, but it makes it easier maintanable
       since all utility functions are in the same place. Also it mirrors
       VariablePointers behavior."
+      HashTableCrToInt.HashTable ht               "Hash table for cref->index";
       ExpandableArray<Pointer<Equation>> eqArr;
     end EQUATION_POINTERS;
 
@@ -1056,10 +1157,11 @@ public
       input Integer size = BaseHashTable.bigBucketSize;
       output EquationPointers equationPointers;
     protected
-      Integer arr_size;
+      Integer arr_size, bucketSize;
     algorithm
       arr_size := max(size, BaseHashTable.lowBucketSize);
-      equationPointers := EQUATION_POINTERS(ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
+      bucketSize := realInt(intReal(arr_size) * 1.4);
+      equationPointers := EQUATION_POINTERS(HashTableCrToInt.empty(bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
     end empty;
 
     function clone
@@ -1077,20 +1179,60 @@ public
 
     function fromList
       input list<Pointer<Equation>> eq_lst;
-      output EquationPointers equationPointers;
+      output EquationPointers equations;
     algorithm
-      equationPointers := empty(listLength(eq_lst));
-      equationPointers := addList(eq_lst, equationPointers);
+      equations := empty(listLength(eq_lst));
+      equations := addList(eq_lst, equations);
     end fromList;
 
     function addList
       input list<Pointer<Equation>> eq_lst;
-      input output EquationPointers equationPointers;
+      input output EquationPointers equations;
     algorithm
-      for eq in eq_lst loop
-        equationPointers.eqArr := ExpandableArray.add(eq, equationPointers.eqArr);
-      end for;
+      equations := List.fold(eq_lst, function add(), equations);
     end addList;
+
+    function removeList
+      "Removes a list of equations from the EquationPointers structure."
+      input list<Pointer<Equation>> eq_lst;
+      input output EquationPointers equations;
+    algorithm
+      equations := List.fold(eq_lst, function remove(), equations);
+      equations := compress(equations);
+    end removeList;
+
+    function add
+      input Pointer<Equation> eqn;
+      input output EquationPointers equations;
+    protected
+      ComponentRef name;
+      Integer idx;
+    algorithm
+      name := Equation.getEqnName(eqn);
+      if BaseHashTable.hasKey(name, equations.ht) then
+        idx := BaseHashTable.get(name, equations.ht);
+        ExpandableArray.update(idx, eqn, equations.eqArr);
+      else
+        (_, idx) := ExpandableArray.add(eqn, equations.eqArr);
+        equations.ht := BaseHashTable.add((name, idx), equations.ht);
+      end if;
+    end add;
+
+    function remove
+      "Removes an equation pointer identified by its (residual var) name from the set."
+      input Pointer<Equation> eqn;
+      input output EquationPointers equations "only an output for mapping";
+    protected
+      ComponentRef name;
+      Integer idx;
+    algorithm
+      name := Equation.getEqnName(eqn);
+      if BaseHashTable.hasKey(name, equations.ht) then
+        idx := BaseHashTable.get(name, equations.ht);
+        ExpandableArray.delete(idx, equations.eqArr);
+        BaseHashTable.delete(name, equations.ht);
+      end if;
+    end remove;
 
     function map
       "Traverses all equations and applies a function to them."
@@ -1283,6 +1425,7 @@ public
 
   uniontype EqData
     record EQ_DATA_SIM
+      Pointer<Integer> uniqueIndex  "current index to be used for new identifier";
       EquationPointers equations    "All equations";
       EquationPointers simulation   "All equations for simulation (without initial)";
       EquationPointers continuous   "Continuous equations";
@@ -1293,6 +1436,7 @@ public
     end EQ_DATA_SIM;
 
     record EQ_DATA_JAC
+      Pointer<Integer> uniqueIndex  "current index to be used for new identifier";
       EquationPointers equations    "All equations";
       EquationPointers results      "Result equations";
       EquationPointers temporary    "Temporary inner equations";
@@ -1301,6 +1445,7 @@ public
     end EQ_DATA_JAC;
 
     record EQ_DATA_HES
+      Pointer<Integer> uniqueIndex  "current index to be used for new identifier";
       EquationPointers equations    "All equations";
       Pointer<Equation> result      "Result equation";
       EquationPointers temporary    "Temporary inner equations";
@@ -1381,18 +1526,27 @@ public
     eqData := match (eqData, eqType)
 
       case (EQ_DATA_SIM(), EqType.CONTINUOUS) algorithm
+        for eqn_ptr in eq_lst loop
+          Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+        end for;
         eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
         eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
         eqData.continuous := EquationPointers.addList(eq_lst, eqData.continuous);
       then eqData;
 
       case (EQ_DATA_SIM(), EqType.DISCRETE) algorithm
+        for eqn_ptr in eq_lst loop
+          Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+        end for;
         eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
         eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
         eqData.discretes := EquationPointers.addList(eq_lst, eqData.discretes);
       then eqData;
 
       case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
+        for eqn_ptr in eq_lst loop
+          Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+        end for;
         eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
         eqData.initials := EquationPointers.addList(eq_lst, eqData.initials);
       then eqData;

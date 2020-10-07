@@ -896,13 +896,6 @@ public
       // filter all variables that were created during differentiation for state derivatives
       (state_derivatives, _) := List.extractOnTrue(diffArguments.new_vars, BVariable.isStateDerivative);
 
-      // add all new differentiated variables
-      variables := VariablePointers.addList(diffArguments.new_vars, variables);
-      // add all dummy states
-      variables := VariablePointers.addList(dummy_states, variables);
-      // add new equations
-      equations := EquationPointers.addList(new_eqns, equations);
-
       // cleanup varData and expand eqData
       // some algebraics -> states (to states)
       varData := VarData.addTypedList(varData, states, NBVariable.VarData.VarType.STATE);
@@ -914,6 +907,15 @@ public
       varData := VarData.addTypedList(varData, dummy_derivatives, NBVariable.VarData.VarType.ALGEBRAIC);
       // new equations
       eqData := EqData.addTypedList(eqData, new_eqns, NBEquation.EqData.EqType.CONTINUOUS);
+
+      // add all new differentiated variables
+      variables := VariablePointers.addList(diffArguments.new_vars, variables);
+      // add all dummy states
+      variables := VariablePointers.addList(dummy_states, variables);
+      // add new equations (after cleanup because equation names are added there)
+      equations := EquationPointers.addList(new_eqns, equations);
+
+
 
     end main;
 

@@ -4,7 +4,7 @@
 
 loadString("
 model simpleNonlinearLoop
-  Real x,y;
+  Real x(start=1.0, nominal=1.0),y(start=1.0, nominal=1.0);
 equation
   x = y^2 + sin(time);
   y = sin(x);
@@ -13,17 +13,216 @@ end simpleNonlinearLoop;
 
 setCommandLineOptions("--newBackend -d=bltdump");
 simulate(simpleNonlinearLoop); getErrorString();
+
 // Result:
 // true
 // ""
 // true
+// ################################################################################
+//
+// 	[ODE] Simulation: (After Solve)
+//
+// ################################################################################
+//
+// ========================================
+// UNKNOWN ODE System
+// ========================================
+//
+// BLOCK 1: Torn Algebraic Loop (Linear = false, Mixed = false)
+// ----------------------------------------
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	Real x
+// 	Real y
+//
+// ### Residual Equations:
+// 	[SCAL] ($RES_SIM_0) y = sin(x)
+// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
+// ################################################################################
+//
+// 	Jacobian JAC1:
+//
+// ################################################################################
+//
+// ========================================
+// Variable Data Jacobian
+// ========================================
+//
+// Auxiliary Variables (2)
+// ========================================
+// 1: [SEED] Real $SEED_JAC1.y ()
+// 2: [SEED] Real $SEED_JAC1.x ()
+//
+//
+// Result EquationPointers (2)
+// ****************************************
+// (1)	[SCAL] ($RES_JAC1_0) $SEED_JAC1.y = cos(x) * $SEED_JAC1.x
+// (2)	[SCAL] ($RES_JAC1_1) $SEED_JAC1.x = 2.0 * y * $SEED_JAC1.y
+//
+//
+// Sparsity Pattern (nnz: 4)
+// ----------------------------------------
+// (y)	{y,x}
+// (x)	{y,x}
+//
+// Sparsity Coloring Groups
+// ----------------------------------------
+// {x}
+// {y}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 1
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 2
+// 	eqn 2 --> var 1
+//
+//
+// ################################################################################
+//
+// 	Jacobian A:
+//
+// ################################################################################
+//
+// ========================================
+// Variable Data Jacobian
+// ========================================
+//
+// Auxiliary Variables (2)
+// ========================================
+// 1: [SEED] Real $SEED_A.y ()
+// 2: [SEED] Real $SEED_A.x ()
+//
+//
+// Result EquationPointers (2)
+// ****************************************
+// (1)	[SCAL] ($RES_A_0) $SEED_A.x = 2.0 * y * $SEED_A.y
+// (2)	[SCAL] ($RES_A_1) $SEED_A.y = cos(x) * $SEED_A.x
+//
+//
+// Sparsity Pattern (nnz: 4)
+// ----------------------------------------
+// (y)	{y,x}
+// (x)	{y,x}
+//
+// Sparsity Coloring Groups
+// ----------------------------------------
+// {x}
+// {y}
+//
+// ################################################################################
+//
+// 	[INIT] Initialization: (After Solve)
+//
+// ################################################################################
+//
+// ========================================
+// UNKNOWN INIT System
+// ========================================
+//
+// BLOCK 1: Torn Algebraic Loop (Linear = false, Mixed = false)
+// ----------------------------------------
+// Strict Tearing Set
+// ****************************************
+// ### Iteration Variables:
+// 	Real x
+// 	Real y
+//
+// ### Residual Equations:
+// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
+// 	[SCAL] ($RES_SIM_0) y = sin(x)
+// ################################################################################
+//
+// 	Jacobian JAC1:
+//
+// ################################################################################
+//
+// ========================================
+// Variable Data Jacobian
+// ========================================
+//
+// Auxiliary Variables (2)
+// ========================================
+// 1: [SEED] Real $SEED_JAC1.y ()
+// 2: [SEED] Real $SEED_JAC1.x ()
+//
+//
+// Result EquationPointers (2)
+// ****************************************
+// (1)	[SCAL] ($RES_JAC1_0) $SEED_JAC1.x = 2.0 * y * $SEED_JAC1.y
+// (2)	[SCAL] ($RES_JAC1_1) $SEED_JAC1.y = cos(x) * $SEED_JAC1.x
+//
+//
+// Sparsity Pattern (nnz: 4)
+// ----------------------------------------
+// (y)	{x,y}
+// (x)	{x,y}
+//
+// Sparsity Coloring Groups
+// ----------------------------------------
+// {x}
+// {y}
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 1
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 2
+// 	eqn 2 --> var 1
+//
+//
 // record SimulationResult
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simpleNonlinearLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Failed to build model: simpleNonlinearLoop"
-// end SimulationResult;
-// "Error: Internal error NBJacobian.SparsityPattern.create failed because of missing strong components.
-// Error: Internal error NBInitialization.main failed!
-// Error: Internal error NBJacobian.SparsityPattern.create failed because of missing strong components.
+//     messages = "Simulation execution failed for model: simpleNonlinearLoop
+// Got number 0.000000, expected: 1.000000
+// Aborted (core dumped)
 // "
+// end SimulationResult;
+// ""
 // endResult

@@ -50,6 +50,7 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
+  import NBEquation.Equation;
   import NBEquation.EquationPointers;
   import HashTableCrToCr = NBHashTableCrToCr;
   import HashTableCrToCrLst = NBHashTableCrToCrLst;
@@ -122,8 +123,7 @@ public
   end main;
 
   function simple
-    input VariablePointers residuals;
-    input Option<VariablePointers> variables;
+    input VariablePointers variables;
     input EquationPointers equations;
     input StrongComponent comp;
     output Option<Jacobian> jacobian;
@@ -132,8 +132,8 @@ public
   algorithm
     (jacobian, funcTree) := jacobianSymbolic(
         name              = name,
-        unknowns          = residuals,
-        daeUnknowns       = variables,
+        unknowns          = variables,
+        daeUnknowns       = NONE(),
         equations         = equations,
         knowns            = VariablePointers.empty(0), // remove them? are they necessary?
         strongComponents  = SOME(arrayCreate(1, comp)),
@@ -296,13 +296,13 @@ protected
     VariablePointers seedCandidates, partialCandidates, residuals;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
-    Pointer<list<Pointer<Variable>>> residual_vars_ptr = Pointer.create({});
-    Pointer<Integer> idx = Pointer.create(0);
     Pointer<HashTableCrToCr.HashTable> jacobianHT = Pointer.create(HashTableCrToCr.empty());
     Differentiate.DifferentiationArguments diffArguments;
 
     EquationPointers diffedEquations;
     BEquation.EqData eqDataJac;
+    Pointer<Integer> idx = Pointer.create(0);
+    list<Pointer<Variable>> residual_vars;
 
     list<Pointer<Variable>> all_vars, unknown_vars, aux_vars, alias_vars, depend_vars, res_vars, tmp_vars, seed_vars;
     BVariable.VarData varDataJac;
@@ -327,10 +327,12 @@ protected
     );
 
     (diffedEquations, diffArguments) := Differentiate.differentiateEquationPointers(equations, diffArguments, getInstanceName());
+    EquationPointers.mapPtr(diffedEquations, function Equation.createName(idx = idx, context = name));
 
     // create equation data for jacobian
     // ToDo: split temporary and auxiliares once tearing is applied
     eqDataJac := BEquation.EQ_DATA_JAC(
+      uniqueIndex   = idx,
       equations     = diffedEquations,
       results       = diffedEquations,
       temporary     = EquationPointers.empty(),
@@ -366,8 +368,9 @@ protected
     if isSome(daeUnknowns) then
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
     else
-      EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
-      residuals := VariablePointers.fromList(listReverse(Pointer.access(residual_vars_ptr)));
+      //EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
+      residual_vars := list(Equation.getResidualVar(eqn) for eqn in EquationPointers.toList(equations));
+      residuals := VariablePointers.fromList(listReverse(residual_vars));
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(unknowns, residuals, equations, strongComponents);
       // safe residuals somewhere?
     end if;

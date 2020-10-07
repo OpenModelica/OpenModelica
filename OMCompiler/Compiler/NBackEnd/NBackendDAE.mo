@@ -453,8 +453,12 @@ protected
     list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {};
     EquationPointers equations;
     Pointer<Equation> eq;
+    Pointer<Integer> idx = Pointer.create(0);
   algorithm
     equation_lst := lowerEquationsAndAlgorithms(eq_lst, al_lst, init_eq_lst, init_al_lst);
+    for eqn_ptr in equation_lst loop
+      BEquation.Equation.createName(eqn_ptr, idx, "SIM");
+    end for;
     equations := EquationPointers.fromList(equation_lst);
     equations := lowerComponentReferences(equations, variables);
 
@@ -494,6 +498,7 @@ protected
     end for;
 
     eqData := BEquation.EQ_DATA_SIM(
+      uniqueIndex = idx,
       equations   = equations,
       simulation  = EquationPointers.fromList(simulation_lst),
       continuous  = EquationPointers.fromList(continuous_lst),

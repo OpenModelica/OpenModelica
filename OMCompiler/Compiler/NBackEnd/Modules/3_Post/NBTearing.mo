@@ -84,6 +84,9 @@ public
       str := str  + Equation.toString(Pointer.access(eqn), "\t") + "\n";
     end for;
     // ToDo: inner equations and jacobian
+    if Util.isSome(set.jac) then
+      str := str + BackendDAE.toString(Util.getOption(set.jac));
+    end if;
   end toString;
 
   function main
@@ -171,9 +174,6 @@ protected
       local
         StrongComponent result;
         String name;
-        EquationPointers equations;
-        Pointer<list<Pointer<Variable>>> residual_vars = Pointer.create({});
-        Pointer<Integer> idx = Pointer.create(0);
         list<Pointer<Equation>> new_eqns;
         Option<Jacobian> jacobian;
         Tearing tearingSet;
@@ -184,18 +184,14 @@ protected
         algorithm
           // for now do not apply tearing
           index := index + 1;
-          name := "JAC_" + intString(index);
-          equations := EquationPointers.fromList(comp.eqns);
-          EquationPointers.map(equations, function Equation.createResidual(context = name, residual_vars = residual_vars, idx = idx));
-
+          name := "JAC" + intString(index);
           dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), {});
           tearingSet := TEARING_SET(comp.vars, comp.eqns, arrayCreate(0, dummy), NONE());
           result := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, comp.mixed);
 
           (jacobian, funcTree) := BJacobian.simple(
-            residuals = VariablePointers.fromList(Pointer.access(residual_vars)),
-            variables = SOME(VariablePointers.fromList(comp.vars)),
-            equations = equations,
+            variables = VariablePointers.fromList(comp.vars),
+            equations = EquationPointers.fromList(comp.eqns),
             comp      = result,
             funcTree  = funcTree,
             name      = name

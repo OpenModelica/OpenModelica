@@ -707,7 +707,9 @@ public
       input NonlinearSystem system;
       input output String str;
     algorithm
-      str := "Nonlinear System (size = " + intString(system.size) + ", homotopy = " + boolString(system.homotopy) + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n" + Block.listToString(system.blcks, str + "--");
+      str := "Nonlinear System (size = " + intString(system.size) + ", homotopy = " + boolString(system.homotopy)
+              + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n"
+              + Block.listToString(system.blcks, str + "--");
     end toString;
 
     function convert

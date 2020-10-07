@@ -34,16 +34,16 @@ simulate(StaticIR); getErrorString();
 //
 // (2) Constraint Equations
 // ****************************************
-// [SCAL] y = z ^ 2.0 + x ^ 2.0
-// [SCAL] y = x + z ^ 2.0 + sin(time)
+// [SCAL] ($RES_SIM_1) y = z ^ 2.0 + x ^ 2.0
+// [SCAL] ($RES_SIM_0) y = x + z ^ 2.0 + sin(time)
 //
 // [dummyselect] 1. Differentiate the constraint equations
 // ----------------------------------------
-// [dummyselect] constraint eqn:		[SCAL] y = z ^ 2.0 + x ^ 2.0
-// [dummyselect] differentiated eqn:	[SCAL] $DER.y = 2.0 * z * $DER.z + 2.0 * x * $DER.x
+// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_1) y = z ^ 2.0 + x ^ 2.0
+// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_1) $DER.y = 2.0 * z * $DER.z + 2.0 * x * $DER.x
 //
-// [dummyselect] constraint eqn:		[SCAL] y = x + z ^ 2.0 + sin(time)
-// [dummyselect] differentiated eqn:	[SCAL] $DER.y = $DER.x + 2.0 * z * $DER.z + cos(time)
+// [dummyselect] constraint eqn:		[SCAL] ($RES_SIM_0) y = x + z ^ 2.0 + sin(time)
+// [dummyselect] differentiated eqn:	[SCAL] ($RES_SIM_0) $DER.y = $DER.x + 2.0 * z * $DER.z + cos(time)
 //
 // (1) Selected States
 // ****************************************
@@ -57,7 +57,9 @@ simulate(StaticIR); getErrorString();
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'StaticIR', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "Simulation execution failed for model: StaticIR
-// assert            | debug   | residual function pointer is invalid
+// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// Got number 0.000000, expected: 1.000000
+// Aborted (core dumped)
 // "
 // end SimulationResult;
 // ""

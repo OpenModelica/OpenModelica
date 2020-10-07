@@ -169,7 +169,7 @@ algorithm
   case (var::rest)
     equation
       serializeVar(file,var,withOperations,not inFirst);
-      min(serializeVar(file,v,withOperations) for v in List.restOrEmpty(rest));
+      min(serializeVar(file,v,withOperations) for v in rest);
    then true;
 
   end match;

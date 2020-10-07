@@ -223,9 +223,8 @@ protected
           const_vars := list(BVariable.setBindingAsStart(var) for var in const_vars);
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
 
-
           // add non trivial alias to removed
-          non_trivial_eqs := list(Equation.generateBindingEquation(var) for var in non_trivial_alias);
+          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           eqData.initials := EquationPointers.addList(non_trivial_eqs, eqData.initials);
           eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
@@ -264,7 +263,7 @@ protected
           varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
 
           // add non trivial alias to removed
-          non_trivial_eqs := list(Equation.generateBindingEquation(var) for var in non_trivial_alias);
+          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
       then (varData, eqData);
@@ -302,7 +301,7 @@ protected
           varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
 
           // add non trivial alias to removed
-          non_trivial_eqs := list(Equation.generateBindingEquation(var) for var in non_trivial_alias);
+          non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
       then (varData, eqData);
