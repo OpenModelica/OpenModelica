@@ -28,7 +28,6 @@ Modified_FourFlows.mos\
 TSP_FourFlows.mos\
 TSP_FourFlows1.mos\
 TSP_FourFlows2.mos\
-TSP_FourFlows6.mos\
 TSP_Pipe.mos\
 TSP_Pipe1.mos\
 TSP_Pipe3.mos\

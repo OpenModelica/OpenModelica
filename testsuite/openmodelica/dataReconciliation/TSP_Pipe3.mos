@@ -842,36 +842,29 @@ getErrorString();
 // 27/27 (1): singularPressureLoss1.C1.a = sourcePQ1.C.a   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (27)
+// SET_S_After_Minimal_Extraction (8, 8)
+// ========================================
+// 1/1 (1): sink1.C.Q = sink1.Q   [dynamic |0|0|0|0|]
+// 2/2 (1): singularPressureLoss3.C2.Q = sink1.C.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): singularPressureLoss3.C2.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 5/5 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 6/6 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 7/7 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 8/8 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (8)
 // ========================================
 //
-// 1: singularPressureLoss2.C1.Q type: Real
-// 2: singularPressureLoss2.C2.Q type: Real
-// 3: singularPressureLoss1.C1.Q type: Real
-// 4: singularPressureLoss1.C2.Q type: Real
-// 5: singularPressureLoss1.pro.T type: Real
-// 6: singularPressureLoss2.pro.T type: Real
-// 7: singularPressureLoss3.C1.Q type: Real
-// 8: singularPressureLoss3.C2.Q type: Real
-// 9: sink1.Q type: Real
-// 10: sink1.C.Q type: Real
-// 11: singularPressureLoss3.pro.T type: Real
-// 12: sink1.C.b type: Boolean
-// 13: singularPressureLoss3.C2.b type: Boolean
-// 14: sink1.C.a type: Boolean
-// 15: singularPressureLoss3.C2.a type: Boolean
-// 16: singularPressureLoss2.C2.b type: Boolean
-// 17: singularPressureLoss3.C1.b type: Boolean
-// 18: singularPressureLoss2.C2.a type: Boolean
-// 19: singularPressureLoss3.C1.a type: Boolean
-// 20: singularPressureLoss1.C2.b type: Boolean
-// 21: singularPressureLoss2.C1.b type: Boolean
-// 22: singularPressureLoss1.C2.a type: Boolean
-// 23: singularPressureLoss2.C1.a type: Boolean
-// 24: sourcePQ1.C.b type: Boolean
-// 25: singularPressureLoss1.C1.b type: Boolean
-// 26: sourcePQ1.C.a type: Boolean
-// 27: singularPressureLoss1.C1.a type: Boolean
+// 1: sink1.Q type: Real
+// 2: sink1.C.Q type: Real
+// 3: singularPressureLoss3.C2.Q type: Real
+// 4: singularPressureLoss3.C1.Q type: Real
+// 5: singularPressureLoss2.C2.Q type: Real
+// 6: singularPressureLoss2.C1.Q type: Real
+// 7: singularPressureLoss1.C1.Q type: Real
+// 8: singularPressureLoss1.C2.Q type: Real
 //
 //
 //
@@ -888,7 +881,7 @@ getErrorString();
 // 6: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-2, -4}
-// -SET_S:{55, 52, 33, 30, 47, 69, 77, 74, 107, 23, 91, 72, 109, 21, 108, 50, 104, 71, 103, 28, 100, 49, 99, 11, 95, 27, 94}
+// -SET_S:{23, 107, 74, 77, 52, 55, 33, 30}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -896,60 +889,18 @@ getErrorString();
 //
 // Condition-2 "All variables of interest must be involved in SET_C or SET_S"
 // ==========================================================================
-// -Passed
+// -Failed
 //
-// -SET_C has known variables:{} (0)
+// knownVariables not Found:{81, 53, 25} (3)
 // ========================================
-//
-//
-// -SET_S has known variables:{83, 81, 55, 53, 27, 25} (6)
-// ========================================
-// 1: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 2: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
-// 3: singularPressureLoss2.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 4: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
-// 5: singularPressureLoss3.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 6: singularPressureLoss3.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
-//
-// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
-// ==========================================================================
-// -Passed
-// -SET_C contains:2 equations < 6 known variables
-//
-// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
-// ==========================================================================
-//
-// -SET_C has intermediate variables:{20, 42, 48, 70} (4)
-// ========================================
-// 1: singularPressureLoss3.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 2: singularPressureLoss2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 3: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 4: singularPressureLoss1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-//
-//
-// -SET_S has intermediate variables involved in SET_C:{20, 42, 48, 70} (4)
-// ========================================
-// 1: singularPressureLoss3.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 2: singularPressureLoss2.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 3: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 4: singularPressureLoss1.C2.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-//
-// -Passed
-//
-// Condition-5 "SET_S should be square "
-// ==========================================================================
-// -Passed
-//  Set_S has 27 equations and 27 variables
+// 1: singularPressureLoss1.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
+// 2: singularPressureLoss2.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
+// 3: singularPressureLoss3.T:VARIABLE(min = 0.0 start = 290.0 unit = "K" nominal = 300.0 uncertain=Uncertainty.refine)  "Fluid temperature" type: Real
 //
 // record SimulationResult
-//     resultFile = "econcile",
+//     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.TSP_Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | DataReconciliationSimpleTests.TSP_Pipe3
-// stdout            | info    | DataReconciliation Completed!
-// "
+//     messages = "Failed to build model: DataReconciliationSimpleTests.TSP_Pipe3"
 // end SimulationResult;
 // "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
 // Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
@@ -989,5 +940,7 @@ getErrorString();
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Error: Internal error : Condition 2- Failed : The system is ill-posed.
+// Error: pre-optimization module dataReconciliation (simulation) failed.
 // "
 // endResult

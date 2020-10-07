@@ -53,10 +53,10 @@ getErrorString();
 // 14: mixer21.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 15: mixer21.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 16: mixer21.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 17: mixer21.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 17: mixer21.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 18: mixer21.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 19: mixer21.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 20: mixer21.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 20: mixer21.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 21: mixer21.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 22: mixer21.Oalpha1.signal:VARIABLE(flow=false )  type: Real
 // 23: mixer21.Ialpha1.signal:VARIABLE(flow=false )  type: Real
@@ -155,10 +155,10 @@ getErrorString();
 // 116: singularPressureLoss4.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 117: singularPressureLoss4.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 118: singularPressureLoss4.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 119: singularPressureLoss4.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 119: singularPressureLoss4.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 120: singularPressureLoss4.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 121: singularPressureLoss4.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 122: singularPressureLoss4.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 122: singularPressureLoss4.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 123: singularPressureLoss4.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 124: singularPressureLoss4.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 125: singularPressureLoss4.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -183,10 +183,10 @@ getErrorString();
 // 144: singularPressureLoss3.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 145: singularPressureLoss3.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 146: singularPressureLoss3.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 147: singularPressureLoss3.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 147: singularPressureLoss3.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 148: singularPressureLoss3.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 149: singularPressureLoss3.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 150: singularPressureLoss3.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 150: singularPressureLoss3.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 151: singularPressureLoss3.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 152: singularPressureLoss3.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 153: singularPressureLoss3.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -211,10 +211,10 @@ getErrorString();
 // 172: singularPressureLoss2.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 173: singularPressureLoss2.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 174: singularPressureLoss2.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 175: singularPressureLoss2.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 175: singularPressureLoss2.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 176: singularPressureLoss2.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 177: singularPressureLoss2.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 178: singularPressureLoss2.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 178: singularPressureLoss2.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 179: singularPressureLoss2.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 180: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 181: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -239,10 +239,10 @@ getErrorString();
 // 200: singularPressureLoss1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 201: singularPressureLoss1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 202: singularPressureLoss1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 203: singularPressureLoss1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 203: singularPressureLoss1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 204: singularPressureLoss1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 205: singularPressureLoss1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 206: singularPressureLoss1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 206: singularPressureLoss1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 207: singularPressureLoss1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 208: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 209: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -289,7 +289,7 @@ getErrorString();
 // 11/11 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 12/12 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 13/13 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
-// 14/14 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 14/14 (1): singularPressureLoss1.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss1.Q, singularPressureLoss1.C1.h_vol, singularPressureLoss1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 15/15 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss1.Q, singularPressureLoss1.eps) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
 // 16/16 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
 // 17/17 (10): singularPressureLoss1.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, singularPressureLoss1.mode, singularPressureLoss1.fluid)   [dynamic |0|0|0|0|]
@@ -302,7 +302,7 @@ getErrorString();
 // 24/33 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 25/34 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 26/35 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
-// 27/36 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 27/36 (1): singularPressureLoss2.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss2.Q, singularPressureLoss2.C1.h_vol, singularPressureLoss2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 28/37 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss2.Q, singularPressureLoss2.eps) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
 // 29/38 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
 // 30/39 (10): singularPressureLoss2.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, singularPressureLoss2.mode, singularPressureLoss2.fluid)   [dynamic |0|0|0|0|]
@@ -315,7 +315,7 @@ getErrorString();
 // 37/55 (1): singularPressureLoss3.C2.h = singularPressureLoss3.C1.h   [dynamic |0|0|0|0|]
 // 38/56 (1): singularPressureLoss3.h = singularPressureLoss3.C1.h   [dynamic |0|0|0|0|]
 // 39/57 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
-// 40/58 (1): 0.0 = if singularPressureLoss3.Q > 0.0 then singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol else singularPressureLoss3.C2.h - singularPressureLoss3.C2.h_vol   [dynamic |0|0|0|0|]
+// 40/58 (1): singularPressureLoss3.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss3.Q, singularPressureLoss3.C1.h_vol, singularPressureLoss3.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 41/59 (1): singularPressureLoss3.deltaP = singularPressureLoss3.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss3.Q, singularPressureLoss3.eps) / singularPressureLoss3.rho   [dynamic |0|0|0|0|]
 // 42/60 (1): singularPressureLoss3.Pm = 0.5 * (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)   [dynamic |0|0|0|0|]
 // 43/61 (10): singularPressureLoss3.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, singularPressureLoss3.mode, singularPressureLoss3.fluid)   [dynamic |0|0|0|0|]
@@ -328,7 +328,7 @@ getErrorString();
 // 50/77 (1): singularPressureLoss4.C2.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
 // 51/78 (1): singularPressureLoss4.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
 // 52/79 (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q   [dynamic |0|0|0|0|]
-// 53/80 (1): 0.0 = if singularPressureLoss4.Q > 0.0 then singularPressureLoss4.C1.h - singularPressureLoss4.C1.h_vol else singularPressureLoss4.C2.h - singularPressureLoss4.C2.h_vol   [dynamic |0|0|0|0|]
+// 53/80 (1): singularPressureLoss4.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss4.Q, singularPressureLoss4.C1.h_vol, singularPressureLoss4.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 54/81 (1): singularPressureLoss4.deltaP = singularPressureLoss4.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss4.Q, singularPressureLoss4.eps) / singularPressureLoss4.rho   [dynamic |0|0|0|0|]
 // 55/82 (1): singularPressureLoss4.Pm = 0.5 * (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)   [dynamic |0|0|0|0|]
 // 56/83 (10): singularPressureLoss4.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss4.Pm, singularPressureLoss4.h, singularPressureLoss4.mode, singularPressureLoss4.fluid)   [dynamic |0|0|0|0|]
@@ -483,7 +483,7 @@ getErrorString();
 // 24/24 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 25/25 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 26/26 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
-// 27/27 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 27/27 (1): singularPressureLoss1.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss1.Q, singularPressureLoss1.C1.h_vol, singularPressureLoss1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 28/28 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss1.Q, singularPressureLoss1.eps) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
 // 29/29 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
 // 30/30 (10): singularPressureLoss1.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, singularPressureLoss1.mode, singularPressureLoss1.fluid)   [dynamic |0|0|0|0|]
@@ -496,7 +496,7 @@ getErrorString();
 // 37/46 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 38/47 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 39/48 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
-// 40/49 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 40/49 (1): singularPressureLoss2.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss2.Q, singularPressureLoss2.C1.h_vol, singularPressureLoss2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 41/50 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss2.Q, singularPressureLoss2.eps) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
 // 42/51 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
 // 43/52 (10): singularPressureLoss2.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, singularPressureLoss2.mode, singularPressureLoss2.fluid)   [dynamic |0|0|0|0|]
@@ -509,7 +509,7 @@ getErrorString();
 // 50/68 (1): singularPressureLoss3.C2.h = singularPressureLoss3.C1.h   [dynamic |0|0|0|0|]
 // 51/69 (1): singularPressureLoss3.h = singularPressureLoss3.C1.h   [dynamic |0|0|0|0|]
 // 52/70 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
-// 53/71 (1): 0.0 = if singularPressureLoss3.Q > 0.0 then singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol else singularPressureLoss3.C2.h - singularPressureLoss3.C2.h_vol   [dynamic |0|0|0|0|]
+// 53/71 (1): singularPressureLoss3.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss3.Q, singularPressureLoss3.C1.h_vol, singularPressureLoss3.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 54/72 (1): singularPressureLoss3.deltaP = singularPressureLoss3.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss3.Q, singularPressureLoss3.eps) / singularPressureLoss3.rho   [dynamic |0|0|0|0|]
 // 55/73 (1): singularPressureLoss3.Pm = 0.5 * (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)   [dynamic |0|0|0|0|]
 // 56/74 (10): singularPressureLoss3.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, singularPressureLoss3.mode, singularPressureLoss3.fluid)   [dynamic |0|0|0|0|]
@@ -522,7 +522,7 @@ getErrorString();
 // 63/90 (1): singularPressureLoss4.C2.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
 // 64/91 (1): singularPressureLoss4.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
 // 65/92 (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q   [dynamic |0|0|0|0|]
-// 66/93 (1): 0.0 = if singularPressureLoss4.Q > 0.0 then singularPressureLoss4.C1.h - singularPressureLoss4.C1.h_vol else singularPressureLoss4.C2.h - singularPressureLoss4.C2.h_vol   [dynamic |0|0|0|0|]
+// 66/93 (1): singularPressureLoss4.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss4.Q, singularPressureLoss4.C1.h_vol, singularPressureLoss4.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 67/94 (1): singularPressureLoss4.deltaP = singularPressureLoss4.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss4.Q, singularPressureLoss4.eps) / singularPressureLoss4.rho   [dynamic |0|0|0|0|]
 // 68/95 (1): singularPressureLoss4.Pm = 0.5 * (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)   [dynamic |0|0|0|0|]
 // 69/96 (10): singularPressureLoss4.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss4.Pm, singularPressureLoss4.h, singularPressureLoss4.mode, singularPressureLoss4.fluid)   [dynamic |0|0|0|0|]
@@ -932,7 +932,7 @@ getErrorString();
 // 24/24 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 25/25 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 26/26 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
-// 27/27 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 27/27 (1): singularPressureLoss1.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss1.Q, singularPressureLoss1.C1.h_vol, singularPressureLoss1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 28/28 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss1.Q, singularPressureLoss1.eps) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
 // 29/29 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
 // 30/30 (10): singularPressureLoss1.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, singularPressureLoss1.mode, singularPressureLoss1.fluid)   [dynamic |0|0|0|0|]
@@ -945,7 +945,7 @@ getErrorString();
 // 37/46 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 38/47 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 39/48 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
-// 40/49 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 40/49 (1): singularPressureLoss2.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss2.Q, singularPressureLoss2.C1.h_vol, singularPressureLoss2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 41/50 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss2.Q, singularPressureLoss2.eps) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
 // 42/51 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
 // 43/52 (10): singularPressureLoss2.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, singularPressureLoss2.mode, singularPressureLoss2.fluid)   [dynamic |0|0|0|0|]
@@ -958,7 +958,7 @@ getErrorString();
 // 50/68 (1): singularPressureLoss3.C2.h = singularPressureLoss3.C1.h   [dynamic |0|0|0|0|]
 // 51/69 (1): singularPressureLoss3.h = singularPressureLoss3.C1.h   [dynamic |0|0|0|0|]
 // 52/70 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
-// 53/71 (1): 0.0 = if singularPressureLoss3.Q > 0.0 then singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol else singularPressureLoss3.C2.h - singularPressureLoss3.C2.h_vol   [dynamic |0|0|0|0|]
+// 53/71 (1): singularPressureLoss3.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss3.Q, singularPressureLoss3.C1.h_vol, singularPressureLoss3.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 54/72 (1): singularPressureLoss3.deltaP = singularPressureLoss3.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss3.Q, singularPressureLoss3.eps) / singularPressureLoss3.rho   [dynamic |0|0|0|0|]
 // 55/73 (1): singularPressureLoss3.Pm = 0.5 * (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)   [dynamic |0|0|0|0|]
 // 56/74 (10): singularPressureLoss3.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, singularPressureLoss3.mode, singularPressureLoss3.fluid)   [dynamic |0|0|0|0|]
@@ -971,7 +971,7 @@ getErrorString();
 // 63/90 (1): singularPressureLoss4.C2.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
 // 64/91 (1): singularPressureLoss4.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
 // 65/92 (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q   [dynamic |0|0|0|0|]
-// 66/93 (1): 0.0 = if singularPressureLoss4.Q > 0.0 then singularPressureLoss4.C1.h - singularPressureLoss4.C1.h_vol else singularPressureLoss4.C2.h - singularPressureLoss4.C2.h_vol   [dynamic |0|0|0|0|]
+// 66/93 (1): singularPressureLoss4.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss4.Q, singularPressureLoss4.C1.h_vol, singularPressureLoss4.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 67/94 (1): singularPressureLoss4.deltaP = singularPressureLoss4.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss4.Q, singularPressureLoss4.eps) / singularPressureLoss4.rho   [dynamic |0|0|0|0|]
 // 68/95 (1): singularPressureLoss4.Pm = 0.5 * (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)   [dynamic |0|0|0|0|]
 // 69/96 (10): singularPressureLoss4.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss4.Pm, singularPressureLoss4.h, singularPressureLoss4.mode, singularPressureLoss4.fluid)   [dynamic |0|0|0|0|]
@@ -1106,10 +1106,10 @@ getErrorString();
 // 14: mixer21.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 15: mixer21.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 16: mixer21.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 17: mixer21.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 17: mixer21.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 18: mixer21.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 19: mixer21.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 20: mixer21.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 20: mixer21.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 21: mixer21.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 22: mixer21.Oalpha1.signal:VARIABLE(flow=false )  type: Real
 // 23: mixer21.Ialpha1.signal:VARIABLE(flow=false )  type: Real
@@ -1208,10 +1208,10 @@ getErrorString();
 // 116: singularPressureLoss4.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 117: singularPressureLoss4.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 118: singularPressureLoss4.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 119: singularPressureLoss4.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 119: singularPressureLoss4.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 120: singularPressureLoss4.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 121: singularPressureLoss4.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 122: singularPressureLoss4.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 122: singularPressureLoss4.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 123: singularPressureLoss4.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 124: singularPressureLoss4.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 125: singularPressureLoss4.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -1236,10 +1236,10 @@ getErrorString();
 // 144: singularPressureLoss3.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 145: singularPressureLoss3.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 146: singularPressureLoss3.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 147: singularPressureLoss3.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 147: singularPressureLoss3.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 148: singularPressureLoss3.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 149: singularPressureLoss3.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 150: singularPressureLoss3.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 150: singularPressureLoss3.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 151: singularPressureLoss3.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 152: singularPressureLoss3.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 153: singularPressureLoss3.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -1264,10 +1264,10 @@ getErrorString();
 // 172: singularPressureLoss2.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 173: singularPressureLoss2.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 174: singularPressureLoss2.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 175: singularPressureLoss2.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 175: singularPressureLoss2.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 176: singularPressureLoss2.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 177: singularPressureLoss2.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 178: singularPressureLoss2.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 178: singularPressureLoss2.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 179: singularPressureLoss2.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 180: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 181: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -1292,10 +1292,10 @@ getErrorString();
 // 200: singularPressureLoss1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 201: singularPressureLoss1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 202: singularPressureLoss1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 203: singularPressureLoss1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 203: singularPressureLoss1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 204: singularPressureLoss1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 205: singularPressureLoss1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 206: singularPressureLoss1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 206: singularPressureLoss1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 207: singularPressureLoss1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 208: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 209: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -1677,7 +1677,7 @@ getErrorString();
 // 11/20 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 12/21 (1): singularPressureLoss1.C2.h = staticDrum1.Ce_sup.h   [dynamic |0|0|0|0|]
 // 13/22 (1): staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Cth.W + (-staticDrum1.Cs_purg.Q) * staticDrum1.Cs_purg.h - staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h - staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h - staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h = 0.0   [dynamic |0|0|0|0|]
-// 14/23 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 14/23 (1): singularPressureLoss1.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss1.Q, singularPressureLoss1.C1.h_vol, singularPressureLoss1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 15/24 (1): staticDrum1.T = staticDrum1.lsat.T   [dynamic |0|0|0|0|]
 // 16/25 (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)   [dynamic |0|0|0|0|]
 // 17/39 (1): staticDrum1.P = staticDrum1.Ce_sup.P   [dynamic |0|0|0|0|]
@@ -1737,9 +1737,9 @@ getErrorString();
 // 71/129 (1): singularPressureLoss4.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
 // 72/130 (1): singularPressureLoss4.C2.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
 // 73/131 (1): singularPressureLoss3.C1.h_vol = staticDrum1.Cs_eva.h_vol   [dynamic |0|0|0|0|]
-// 74/132 (1): 0.0 = if singularPressureLoss3.Q > 0.0 then singularPressureLoss3.C1.h - singularPressureLoss3.C1.h_vol else singularPressureLoss3.C2.h - singularPressureLoss3.C2.h_vol   [dynamic |0|0|0|0|]
+// 74/132 (1): singularPressureLoss3.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss3.Q, singularPressureLoss3.C1.h_vol, singularPressureLoss3.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 75/133 (1): singularPressureLoss2.C1.h_vol = staticDrum1.Cs_sur.h_vol   [dynamic |0|0|0|0|]
-// 76/134 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 76/134 (1): singularPressureLoss2.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss2.Q, singularPressureLoss2.C1.h_vol, singularPressureLoss2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 77/135 (1): singularPressureLoss1.C2.h_vol = staticDrum1.Ce_sup.h_vol   [dynamic |0|0|0|0|]
 // 78/136 (1): singularPressureLoss4.C2.h = sink1.C.h   [dynamic |0|0|0|0|]
 // 79/137 (1): singularPressureLoss4.C2.P = sink1.C.P   [dynamic |0|0|0|0|]
@@ -1822,223 +1822,295 @@ getErrorString();
 // 156/214 (1): singularPressureLoss4.C2.a = sink1.C.a   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (214)
+// SET_S_After_Minimal_Extraction (112, 170)
+// ========================================
+// 1/1 (1): sink1.C.Q = sink1.Q   [dynamic |0|0|0|0|]
+// 2/2 (1): singularPressureLoss4.C2.Q = sink1.C.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): singularPressureLoss4.C2.Q = singularPressureLoss4.C1.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q   [dynamic |0|0|0|0|]
+// 5/5 (1): singularPressureLoss3.T = singularPressureLoss3.pro.T   [dynamic |0|0|0|0|]
+// 6/6 (1): staticDrum1.T = staticDrum1.lsat.T   [dynamic |0|0|0|0|]
+// 7/7 (1): sourceQ1.C.P = sourceQ1.P   [dynamic |0|0|0|0|]
+// 8/8 (1): singularPressureLoss1.C1.P = sourceQ1.C.P   [dynamic |0|0|0|0|]
+// 9/9 (1): singularPressureLoss1.C1.P - singularPressureLoss1.C2.P = singularPressureLoss1.deltaP   [dynamic |0|0|0|0|]
+// 10/10 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss1.Q, singularPressureLoss1.eps) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
+// 11/11 (1): singularPressureLoss1.rho = singularPressureLoss1.pro.d   [dynamic |0|0|0|0|]
+// 12/12 (1): singularPressureLoss1.T = singularPressureLoss1.pro.T   [dynamic |0|0|0|0|]
+// 13/13 (1): staticDrum1.Cth.W = 0.0   [dynamic |0|0|0|0|]
+// 14/14 (1): staticDrum1.Ce_steam.h = 100000.0   [dynamic |0|0|0|0|]
+// 15/15 (1): staticDrum1.Cs_purg.h = 100000.0   [dynamic |0|0|0|0|]
+// 16/16 (1): staticDrum1.Cs_sup.h = 100000.0   [dynamic |0|0|0|0|]
+// 17/17 (1): staticDrum1.Ce_eco.h = 100000.0   [dynamic |0|0|0|0|]
+// 18/18 (1): staticDrum1.Ce_eva.h = 100000.0   [dynamic |0|0|0|0|]
+// 19/19 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 20/20 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 21/21 (1): singularPressureLoss1.C2.Q = staticDrum1.Ce_sup.Q   [dynamic |0|0|0|0|]
+// 22/22 (1): staticDrum1.Ce_steam.Q = 0.0   [dynamic |0|0|0|0|]
+// 23/23 (1): staticDrum1.Cs_purg.Q = 0.0   [dynamic |0|0|0|0|]
+// 24/24 (1): singularPressureLoss2.T = singularPressureLoss2.pro.T   [dynamic |0|0|0|0|]
+// 25/25 (1): staticDrum1.Ce_steam.h_vol = staticDrum1.hv   [dynamic |0|0|0|0|]
+// 26/26 (1): staticDrum1.hv = staticDrum1.vsat.h   [dynamic |0|0|0|0|]
+// 27/27 (1): singularPressureLoss3.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss3.Q, singularPressureLoss3.C1.h_vol, singularPressureLoss3.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
+// 28/28 (1): singularPressureLoss3.C1.h_vol = staticDrum1.Cs_eva.h_vol   [dynamic |0|0|0|0|]
+// 29/29 (1): singularPressureLoss1.C2.h_vol = staticDrum1.Ce_sup.h_vol   [dynamic |0|0|0|0|]
+// 30/30 (1): staticDrum1.Ce_sup.h_vol = staticDrum1.hl   [dynamic |0|0|0|0|]
+// 31/31 (1): staticDrum1.Ce_eva.h_vol = staticDrum1.hl   [dynamic |0|0|0|0|]
+// 32/32 (1): staticDrum1.Ce_eco.h_vol = staticDrum1.hl   [dynamic |0|0|0|0|]
+// 33/33 (1): staticDrum1.Cs_purg.h_vol = staticDrum1.hl   [dynamic |0|0|0|0|]
+// 34/34 (1): staticDrum1.Cs_sup.h_vol = staticDrum1.hl   [dynamic |0|0|0|0|]
+// 35/35 (1): staticDrum1.Cs_eva.h_vol = staticDrum1.hl   [dynamic |0|0|0|0|]
+// 36/36 (1): staticDrum1.hl = staticDrum1.lsat.h   [dynamic |0|0|0|0|]
+// 37/37 (1): staticDrum1.Cs_sur.h_vol = (1.0 - staticDrum1.x) * staticDrum1.hl + staticDrum1.x * staticDrum1.hv   [dynamic |0|0|0|0|]
+// 38/38 (1): singularPressureLoss2.C1.h_vol = staticDrum1.Cs_sur.h_vol   [dynamic |0|0|0|0|]
+// 39/39 (1): singularPressureLoss2.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss2.Q, singularPressureLoss2.C1.h_vol, singularPressureLoss2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
+// 40/40 (1): mixer21.T = mixer21.pro.T   [dynamic |0|0|0|0|]
+// 41/41 (1): mixer21.Ce1.h_vol = mixer21.h   [dynamic |0|0|0|0|]
+// 42/42 (1): mixer21.Ce2.h_vol = mixer21.h   [dynamic |0|0|0|0|]
+// 43/43 (1): mixer21.Cs.h_vol = mixer21.h   [dynamic |0|0|0|0|]
+// 44/44 (1): sink1.C.P = sink1.P   [dynamic |0|0|0|0|]
+// 45/45 (1): singularPressureLoss4.C2.P = sink1.C.P   [dynamic |0|0|0|0|]
+// 46/46 (1): singularPressureLoss4.C1.P - singularPressureLoss4.C2.P = singularPressureLoss4.deltaP   [dynamic |0|0|0|0|]
+// 47/47 (1): singularPressureLoss4.deltaP = singularPressureLoss4.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss4.Q, singularPressureLoss4.eps) / singularPressureLoss4.rho   [dynamic |0|0|0|0|]
+// 48/48 (1): singularPressureLoss4.rho = singularPressureLoss4.pro.d   [dynamic |0|0|0|0|]
+// 49/49 (1): singularPressureLoss4.T = singularPressureLoss4.pro.T   [dynamic |0|0|0|0|]
+// 50/50 (1): singularPressureLoss4.C2.h = sink1.C.h   [dynamic |0|0|0|0|]
+// 51/51 (1): singularPressureLoss4.C2.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
+// 52/52 (1): singularPressureLoss4.h = singularPressureLoss4.C1.h   [dynamic |0|0|0|0|]
+// 53/53 (10): singularPressureLoss4.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss4.Pm, singularPressureLoss4.h, singularPressureLoss4.mode, singularPressureLoss4.fluid)   [dynamic |0|0|0|0|]
+// 54/63 (1): singularPressureLoss4.Pm = 0.5 * (singularPressureLoss4.C1.P + singularPressureLoss4.C2.P)   [dynamic |0|0|0|0|]
+// 55/64 (1): mixer21.Cs.P = singularPressureLoss4.C1.P   [dynamic |0|0|0|0|]
+// 56/65 (1): mixer21.P = mixer21.Ce2.P   [dynamic |0|0|0|0|]
+// 57/66 (1): mixer21.P = mixer21.Cs.P   [dynamic |0|0|0|0|]
+// 58/67 (10): mixer21.pro = ThermoSysPro.Properties.Fluid.Ph(mixer21.P, mixer21.h, mixer21.mode, mixer21.fluid)   [dynamic |0|0|0|0|]
+// 59/77 (1): mixer21.P = mixer21.Ce1.P   [dynamic |0|0|0|0|]
+// 60/78 (1): mixer21.Ce1.P = singularPressureLoss2.C2.P   [dynamic |0|0|0|0|]
+// 61/79 (1): singularPressureLoss2.rho = singularPressureLoss2.pro.d   [dynamic |0|0|0|0|]
+// 62/80 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss2.Q, singularPressureLoss2.eps) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
+// 63/81 (1): singularPressureLoss2.C1.P - singularPressureLoss2.C2.P = singularPressureLoss2.deltaP   [dynamic |0|0|0|0|]
+// 64/82 (1): singularPressureLoss2.C1.P = staticDrum1.Cs_sur.P   [dynamic |0|0|0|0|]
+// 65/83 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
+// 66/84 (10): singularPressureLoss2.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, singularPressureLoss2.mode, singularPressureLoss2.fluid)   [dynamic |0|0|0|0|]
+// 67/94 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 68/95 (1): singularPressureLoss2.C1.h = staticDrum1.Cs_sur.h   [dynamic |0|0|0|0|]
+// 69/96 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 70/97 (1): mixer21.Ce1.h = singularPressureLoss2.C2.h   [dynamic |0|0|0|0|]
+// 71/98 (1): singularPressureLoss3.C2.h = singularPressureLoss3.C1.h   [dynamic |0|0|0|0|]
+// 72/99 (1): mixer21.Ce2.h = singularPressureLoss3.C2.h   [dynamic |0|0|0|0|]
+// 73/100 (1): 0.0 = mixer21.Ce1.Q + mixer21.Ce2.Q - mixer21.Cs.Q   [dynamic |0|0|0|0|]
+// 74/101 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 75/102 (1): singularPressureLoss3.C2.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 76/103 (1): mixer21.Ce2.Q = singularPressureLoss3.C2.Q   [dynamic |0|0|0|0|]
+// 77/104 (1): 0.0 = mixer21.Ce1.Q * mixer21.Ce1.h + mixer21.Ce2.Q * mixer21.Ce2.h - mixer21.Cs.Q * mixer21.Cs.h   [dynamic |0|0|0|0|]
+// 78/105 (1): mixer21.Oalpha1.signal = mixer21.alpha1   [dynamic |0|0|0|0|]
+// 79/106 (1): mixer21.alpha1 = mixer21.Ce1.Q / mixer21.Cs.Q   [dynamic |0|0|0|0|]
+// 80/107 (1): mixer21.Ce1.Q = singularPressureLoss2.C2.Q   [dynamic |0|0|0|0|]
+// 81/108 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 82/109 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 83/110 (1): singularPressureLoss2.C1.Q = staticDrum1.Cs_sur.Q   [dynamic |0|0|0|0|]
+// 84/111 (1): staticDrum1.Cs_sup.Q = 0.0   [dynamic |0|0|0|0|]
+// 85/112 (1): staticDrum1.Ce_eco.Q = 0.0   [dynamic |0|0|0|0|]
+// 86/113 (1): staticDrum1.Ce_eva.Q = 0.0   [dynamic |0|0|0|0|]
+// 87/114 (1): staticDrum1.Ce_eco.Q + staticDrum1.Ce_steam.Q + staticDrum1.Ce_sup.Q + staticDrum1.Ce_eva.Q + (-staticDrum1.Cs_sup.Q) - staticDrum1.Cs_eva.Q - staticDrum1.Cs_sur.Q - staticDrum1.Cs_purg.Q = 0.0   [dynamic |0|0|0|0|]
+// 88/115 (1): staticDrum1.Ce_eco.Q * staticDrum1.Ce_eco.h + staticDrum1.Ce_steam.Q * staticDrum1.Ce_steam.h + staticDrum1.Ce_sup.Q * staticDrum1.Ce_sup.h + staticDrum1.Ce_eva.Q * staticDrum1.Ce_eva.h + staticDrum1.Cth.W + (-staticDrum1.Cs_purg.Q) * staticDrum1.Cs_purg.h - staticDrum1.Cs_sur.Q * staticDrum1.Cs_sur.h - staticDrum1.Cs_eva.Q * staticDrum1.Cs_eva.h - staticDrum1.Cs_sup.Q * staticDrum1.Cs_sup.h = 0.0   [dynamic |0|0|0|0|]
+// 89/116 (1): singularPressureLoss1.C2.h = staticDrum1.Ce_sup.h   [dynamic |0|0|0|0|]
+// 90/117 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 91/118 (1): singularPressureLoss1.C1.h = sourceQ1.C.h   [dynamic |0|0|0|0|]
+// 92/119 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 93/120 (1): singularPressureLoss1.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss1.Q, singularPressureLoss1.C1.h_vol, singularPressureLoss1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
+// 94/121 (10): singularPressureLoss1.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, singularPressureLoss1.mode, singularPressureLoss1.fluid)   [dynamic |0|0|0|0|]
+// 95/131 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
+// 96/132 (1): singularPressureLoss1.C2.P = staticDrum1.Ce_sup.P   [dynamic |0|0|0|0|]
+// 97/133 (1): staticDrum1.P = staticDrum1.Ce_steam.P   [dynamic |0|0|0|0|]
+// 98/134 (1): staticDrum1.P = staticDrum1.Ce_sup.P   [dynamic |0|0|0|0|]
+// 99/135 (1): staticDrum1.P = staticDrum1.Ce_eva.P   [dynamic |0|0|0|0|]
+// 100/136 (1): staticDrum1.P = staticDrum1.Ce_eco.P   [dynamic |0|0|0|0|]
+// 101/137 (1): staticDrum1.P = staticDrum1.Cs_purg.P   [dynamic |0|0|0|0|]
+// 102/138 (1): staticDrum1.P = staticDrum1.Cs_sup.P   [dynamic |0|0|0|0|]
+// 103/139 (1): staticDrum1.P = staticDrum1.Cs_sur.P   [dynamic |0|0|0|0|]
+// 104/140 (14): (staticDrum1.lsat, staticDrum1.vsat) = ThermoSysPro.Properties.WaterSteam.IF97.Water_sat_P(staticDrum1.P)   [dynamic |0|0|0|0|]
+// 105/154 (1): staticDrum1.P = staticDrum1.Cs_eva.P   [dynamic |0|0|0|0|]
+// 106/155 (1): singularPressureLoss3.rho = singularPressureLoss3.pro.d   [dynamic |0|0|0|0|]
+// 107/156 (1): singularPressureLoss3.deltaP = singularPressureLoss3.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss3.Q, singularPressureLoss3.eps) / singularPressureLoss3.rho   [dynamic |0|0|0|0|]
+// 108/157 (1): singularPressureLoss3.C1.P - singularPressureLoss3.C2.P = singularPressureLoss3.deltaP   [dynamic |0|0|0|0|]
+// 109/158 (1): singularPressureLoss3.C1.P = staticDrum1.Cs_eva.P   [dynamic |0|0|0|0|]
+// 110/159 (1): singularPressureLoss3.Pm = 0.5 * (singularPressureLoss3.C1.P + singularPressureLoss3.C2.P)   [dynamic |0|0|0|0|]
+// 111/160 (10): singularPressureLoss3.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss3.Pm, singularPressureLoss3.h, singularPressureLoss3.mode, singularPressureLoss3.fluid)   [dynamic |0|0|0|0|]
+// 112/170 (1): singularPressureLoss3.h = singularPressureLoss3.C1.h   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (170)
 // ========================================
 //
-// 1: singularPressureLoss1.deltaP type: Real
-// 2: singularPressureLoss1.rho type: Real
-// 3: singularPressureLoss1.Pm type: Real
-// 4: singularPressureLoss1.pro.T type: Real
-// 5: singularPressureLoss1.pro.d type: Real
-// 6: singularPressureLoss1.pro.u type: Real
-// 7: singularPressureLoss1.pro.s type: Real
-// 8: singularPressureLoss1.pro.cp type: Real
-// 9: singularPressureLoss1.pro.ddhp type: Real
-// 10: singularPressureLoss1.pro.ddph type: Real
-// 11: singularPressureLoss1.pro.duph type: Real
-// 12: singularPressureLoss1.pro.duhp type: Real
-// 13: singularPressureLoss1.pro.x type: Real
-// 14: singularPressureLoss1.h type: Real
-// 15: sourceQ1.C.h type: Real
-// 16: singularPressureLoss1.C1.P type: Real
-// 17: sourceQ1.P type: Real
-// 18: sourceQ1.C.P type: Real
-// 19: staticDrum1.Cs_eva.h type: Real
-// 20: staticDrum1.Ce_sup.h type: Real
-// 21: singularPressureLoss1.C1.h_vol type: Real
-// 22: singularPressureLoss1.C1.h type: Real
-// 23: singularPressureLoss1.C2.h type: Real
-// 24: staticDrum1.lsat.P type: Real
-// 25: staticDrum1.lsat.T type: Real
-// 26: staticDrum1.lsat.rho type: Real
-// 27: staticDrum1.lsat.cp type: Real
-// 28: staticDrum1.lsat.pt type: Real
-// 29: staticDrum1.lsat.cv type: Real
-// 30: staticDrum1.vsat.P type: Real
-// 31: staticDrum1.vsat.T type: Real
-// 32: staticDrum1.vsat.rho type: Real
-// 33: staticDrum1.vsat.cp type: Real
-// 34: staticDrum1.vsat.pt type: Real
-// 35: staticDrum1.vsat.cv type: Real
-// 36: singularPressureLoss1.C2.P type: Real
-// 37: staticDrum1.Ce_sup.P type: Real
-// 38: staticDrum1.Cs_sur.P type: Real
-// 39: singularPressureLoss2.Pm type: Real
-// 40: singularPressureLoss2.pro.u type: Real
-// 41: singularPressureLoss2.pro.s type: Real
-// 42: singularPressureLoss2.pro.cp type: Real
-// 43: singularPressureLoss2.pro.ddhp type: Real
-// 44: singularPressureLoss2.pro.ddph type: Real
-// 45: singularPressureLoss2.pro.duph type: Real
-// 46: singularPressureLoss2.pro.duhp type: Real
-// 47: singularPressureLoss2.pro.x type: Real
-// 48: singularPressureLoss2.pro.d type: Real
-// 49: singularPressureLoss2.rho type: Real
-// 50: singularPressureLoss2.deltaP type: Real
-// 51: singularPressureLoss2.C1.P type: Real
-// 52: singularPressureLoss2.C2.P type: Real
-// 53: mixer21.Ce1.P type: Real
-// 54: mixer21.pro.d type: Real
-// 55: mixer21.pro.u type: Real
-// 56: mixer21.pro.s type: Real
-// 57: mixer21.pro.cp type: Real
-// 58: mixer21.pro.ddhp type: Real
-// 59: mixer21.pro.ddph type: Real
-// 60: mixer21.pro.duph type: Real
-// 61: mixer21.pro.duhp type: Real
-// 62: mixer21.pro.x type: Real
-// 63: singularPressureLoss2.h type: Real
-// 64: mixer21.Ce1.h_vol type: Real
-// 65: staticDrum1.Cs_eva.P type: Real
-// 66: singularPressureLoss3.rho type: Real
-// 67: singularPressureLoss3.deltaP type: Real
-// 68: singularPressureLoss3.C1.P type: Real
-// 69: singularPressureLoss3.C2.P type: Real
-// 70: singularPressureLoss3.Pm type: Real
-// 71: singularPressureLoss3.pro.d type: Real
-// 72: singularPressureLoss3.pro.u type: Real
-// 73: singularPressureLoss3.pro.s type: Real
-// 74: singularPressureLoss3.pro.cp type: Real
-// 75: singularPressureLoss3.pro.ddhp type: Real
-// 76: singularPressureLoss3.pro.ddph type: Real
-// 77: singularPressureLoss3.pro.duph type: Real
-// 78: singularPressureLoss3.pro.duhp type: Real
-// 79: singularPressureLoss3.pro.x type: Real
-// 80: singularPressureLoss3.h type: Real
-// 81: mixer21.Ce2.h type: Real
-// 82: mixer21.Cs.h type: Real
-// 83: mixer21.Ce1.h type: Real
-// 84: mixer21.Cs.h_vol type: Real
-// 85: mixer21.h type: Real
-// 86: mixer21.Ce2.h_vol type: Real
-// 87: mixer21.P type: Real
-// 88: mixer21.Ce2.P type: Real
-// 89: staticDrum1.Cth.T type: Real
-// 90: staticDrum1.lsat.h type: Real
-// 91: staticDrum1.vsat.h type: Real
-// 92: staticDrum1.Ce_steam.h_vol type: Real
-// 93: staticDrum1.Ce_steam.P type: Real
-// 94: staticDrum1.Cs_purg.h_vol type: Real
-// 95: staticDrum1.Cs_purg.P type: Real
-// 96: staticDrum1.Cs_sur.h type: Real
-// 97: staticDrum1.hv type: Real
-// 98: staticDrum1.Cs_sup.h_vol type: Real
-// 99: staticDrum1.Cs_sup.P type: Real
-// 100: staticDrum1.Ce_eco.h_vol type: Real
-// 101: staticDrum1.Ce_eco.P type: Real
-// 102: staticDrum1.hl type: Real
-// 103: staticDrum1.Ce_eva.h_vol type: Real
-// 104: staticDrum1.P type: Real
-// 105: staticDrum1.Ce_eva.P type: Real
-// 106: mixer21.Cs.P type: Real
-// 107: singularPressureLoss4.rho type: Real
-// 108: singularPressureLoss4.deltaP type: Real
-// 109: singularPressureLoss4.C1.P type: Real
-// 110: singularPressureLoss4.Pm type: Real
-// 111: singularPressureLoss4.pro.d type: Real
-// 112: singularPressureLoss4.pro.u type: Real
-// 113: singularPressureLoss4.pro.s type: Real
-// 114: singularPressureLoss4.pro.cp type: Real
-// 115: singularPressureLoss4.pro.ddhp type: Real
-// 116: singularPressureLoss4.pro.ddph type: Real
-// 117: singularPressureLoss4.pro.duph type: Real
-// 118: singularPressureLoss4.pro.duhp type: Real
-// 119: singularPressureLoss4.pro.x type: Real
-// 120: singularPressureLoss4.h type: Real
-// 121: singularPressureLoss4.C1.h type: Real
-// 122: staticDrum1.Cs_eva.h_vol type: Real
-// 123: singularPressureLoss3.C1.h_vol type: Real
-// 124: singularPressureLoss3.C1.h type: Real
-// 125: singularPressureLoss3.C2.h_vol type: Real
-// 126: singularPressureLoss3.C2.h type: Real
-// 127: staticDrum1.Cs_sur.h_vol type: Real
-// 128: singularPressureLoss2.C1.h_vol type: Real
-// 129: singularPressureLoss2.C1.h type: Real
-// 130: singularPressureLoss2.C2.h_vol type: Real
-// 131: singularPressureLoss2.C2.h type: Real
-// 132: singularPressureLoss1.C2.h_vol type: Real
-// 133: staticDrum1.Ce_sup.h_vol type: Real
-// 134: sink1.C.h type: Real
-// 135: singularPressureLoss4.C2.h type: Real
-// 136: singularPressureLoss4.C2.P type: Real
-// 137: sink1.P type: Real
-// 138: sink1.C.P type: Real
-// 139: singularPressureLoss1.C1.Q type: Real
-// 140: singularPressureLoss1.C2.Q type: Real
-// 141: staticDrum1.Cs_eva.Q type: Real
-// 142: staticDrum1.Ce_sup.Q type: Real
-// 143: singularPressureLoss2.C2.Q type: Real
-// 144: mixer21.Cs.Q type: Real
-// 145: mixer21.Ce1.Q type: Real
-// 146: mixer21.alpha1 type: Real
-// 147: mixer21.Oalpha1.signal type: Real
-// 148: singularPressureLoss2.C1.Q type: Real
-// 149: staticDrum1.Cs_sur.Q type: Real
-// 150: singularPressureLoss2.pro.T type: Real
-// 151: mixer21.pro.T type: Real
-// 152: singularPressureLoss3.C1.Q type: Real
-// 153: singularPressureLoss3.C2.Q type: Real
-// 154: mixer21.Ce2.Q type: Real
-// 155: singularPressureLoss3.pro.T type: Real
-// 156: singularPressureLoss4.C1.Q type: Real
-// 157: singularPressureLoss4.C2.Q type: Real
-// 158: sink1.Q type: Real
-// 159: sink1.C.Q type: Real
-// 160: singularPressureLoss4.pro.T type: Real
-// 161: singularPressureLoss1.C1.b type: Boolean
-// 162: sourceQ1.C.b type: Boolean
-// 163: singularPressureLoss1.C1.a type: Boolean
-// 164: sourceQ1.C.a type: Boolean
-// 165: mixer21.Ialpha1.signal type: Real
-// 166: singularPressureLoss2.C2.b type: Boolean
-// 167: mixer21.Ce1.b type: Boolean
-// 168: singularPressureLoss2.C2.a type: Boolean
-// 169: mixer21.Ce1.a type: Boolean
-// 170: singularPressureLoss4.C1.b type: Boolean
-// 171: mixer21.Cs.b type: Boolean
-// 172: singularPressureLoss4.C1.a type: Boolean
-// 173: mixer21.Cs.a type: Boolean
-// 174: singularPressureLoss3.C2.b type: Boolean
-// 175: mixer21.Ce2.b type: Boolean
-// 176: singularPressureLoss3.C2.a type: Boolean
-// 177: mixer21.Ce2.a type: Boolean
-// 178: staticDrum1.Cth.W type: Real
-// 179: singularPressureLoss1.C2.b type: Boolean
-// 180: staticDrum1.Ce_sup.b type: Boolean
-// 181: singularPressureLoss1.C2.a type: Boolean
-// 182: staticDrum1.Ce_sup.a type: Boolean
-// 183: staticDrum1.Ce_steam.b type: Boolean
-// 184: staticDrum1.Ce_steam.a type: Boolean
-// 185: staticDrum1.Ce_steam.h type: Real
-// 186: staticDrum1.Ce_steam.Q type: Real
-// 187: staticDrum1.Cs_purg.b type: Boolean
-// 188: staticDrum1.Cs_purg.a type: Boolean
-// 189: staticDrum1.Cs_purg.h type: Real
-// 190: staticDrum1.Cs_purg.Q type: Real
-// 191: singularPressureLoss2.C1.b type: Boolean
-// 192: staticDrum1.Cs_sur.b type: Boolean
-// 193: singularPressureLoss2.C1.a type: Boolean
-// 194: staticDrum1.Cs_sur.a type: Boolean
-// 195: singularPressureLoss3.C1.b type: Boolean
-// 196: staticDrum1.Cs_eva.b type: Boolean
-// 197: singularPressureLoss3.C1.a type: Boolean
-// 198: staticDrum1.Cs_eva.a type: Boolean
-// 199: staticDrum1.Ce_eva.Q type: Real
-// 200: staticDrum1.Ce_eva.h type: Real
-// 201: staticDrum1.Ce_eco.Q type: Real
-// 202: staticDrum1.Ce_eco.h type: Real
-// 203: staticDrum1.Cs_sup.Q type: Real
-// 204: staticDrum1.Cs_sup.h type: Real
-// 205: staticDrum1.Cs_sup.b type: Boolean
-// 206: staticDrum1.Cs_sup.a type: Boolean
-// 207: staticDrum1.Ce_eco.b type: Boolean
-// 208: staticDrum1.Ce_eco.a type: Boolean
-// 209: staticDrum1.Ce_eva.b type: Boolean
-// 210: staticDrum1.Ce_eva.a type: Boolean
-// 211: sink1.C.b type: Boolean
-// 212: singularPressureLoss4.C2.b type: Boolean
-// 213: sink1.C.a type: Boolean
-// 214: singularPressureLoss4.C2.a type: Boolean
+// 1: sink1.Q type: Real
+// 2: sink1.C.Q type: Real
+// 3: singularPressureLoss4.C2.Q type: Real
+// 4: singularPressureLoss4.C1.Q type: Real
+// 5: sourceQ1.P type: Real
+// 6: sourceQ1.C.P type: Real
+// 7: singularPressureLoss1.deltaP type: Real
+// 8: singularPressureLoss1.rho type: Real
+// 9: singularPressureLoss1.C1.Q type: Real
+// 10: singularPressureLoss1.C2.Q type: Real
+// 11: staticDrum1.Ce_steam.h_vol type: Real
+// 12: singularPressureLoss3.C2.h_vol type: Real
+// 13: singularPressureLoss3.C1.h_vol type: Real
+// 14: staticDrum1.Ce_sup.h_vol type: Real
+// 15: staticDrum1.Ce_eva.h_vol type: Real
+// 16: staticDrum1.Ce_eco.h_vol type: Real
+// 17: staticDrum1.Cs_purg.h_vol type: Real
+// 18: staticDrum1.Cs_sup.h_vol type: Real
+// 19: staticDrum1.Cs_eva.h_vol type: Real
+// 20: staticDrum1.hl type: Real
+// 21: staticDrum1.hv type: Real
+// 22: staticDrum1.Cs_sur.h_vol type: Real
+// 23: singularPressureLoss2.C1.h_vol type: Real
+// 24: singularPressureLoss2.C2.h_vol type: Real
+// 25: mixer21.Ce1.h_vol type: Real
+// 26: mixer21.Ce2.h_vol type: Real
+// 27: mixer21.Cs.h_vol type: Real
+// 28: sink1.P type: Real
+// 29: sink1.C.P type: Real
+// 30: singularPressureLoss4.deltaP type: Real
+// 31: singularPressureLoss4.rho type: Real
+// 32: sink1.C.h type: Real
+// 33: singularPressureLoss4.C2.h type: Real
+// 34: singularPressureLoss4.C1.h type: Real
+// 35: singularPressureLoss4.h type: Real
+// 36: singularPressureLoss4.pro.T type: Real
+// 37: singularPressureLoss4.pro.d type: Real
+// 38: singularPressureLoss4.pro.u type: Real
+// 39: singularPressureLoss4.pro.s type: Real
+// 40: singularPressureLoss4.pro.cp type: Real
+// 41: singularPressureLoss4.pro.ddhp type: Real
+// 42: singularPressureLoss4.pro.ddph type: Real
+// 43: singularPressureLoss4.pro.duph type: Real
+// 44: singularPressureLoss4.pro.duhp type: Real
+// 45: singularPressureLoss4.pro.x type: Real
+// 46: singularPressureLoss4.Pm type: Real
+// 47: singularPressureLoss4.C2.P type: Real
+// 48: singularPressureLoss4.C1.P type: Real
+// 49: mixer21.Ce2.P type: Real
+// 50: mixer21.Cs.P type: Real
+// 51: mixer21.h type: Real
+// 52: mixer21.pro.T type: Real
+// 53: mixer21.pro.d type: Real
+// 54: mixer21.pro.u type: Real
+// 55: mixer21.pro.s type: Real
+// 56: mixer21.pro.cp type: Real
+// 57: mixer21.pro.ddhp type: Real
+// 58: mixer21.pro.ddph type: Real
+// 59: mixer21.pro.duph type: Real
+// 60: mixer21.pro.duhp type: Real
+// 61: mixer21.pro.x type: Real
+// 62: mixer21.P type: Real
+// 63: mixer21.Ce1.P type: Real
+// 64: singularPressureLoss2.rho type: Real
+// 65: singularPressureLoss2.deltaP type: Real
+// 66: singularPressureLoss2.C1.P type: Real
+// 67: singularPressureLoss2.C2.P type: Real
+// 68: singularPressureLoss2.Pm type: Real
+// 69: singularPressureLoss2.pro.T type: Real
+// 70: singularPressureLoss2.pro.d type: Real
+// 71: singularPressureLoss2.pro.u type: Real
+// 72: singularPressureLoss2.pro.s type: Real
+// 73: singularPressureLoss2.pro.cp type: Real
+// 74: singularPressureLoss2.pro.ddhp type: Real
+// 75: singularPressureLoss2.pro.ddph type: Real
+// 76: singularPressureLoss2.pro.duph type: Real
+// 77: singularPressureLoss2.pro.duhp type: Real
+// 78: singularPressureLoss2.pro.x type: Real
+// 79: singularPressureLoss2.h type: Real
+// 80: singularPressureLoss2.C1.h type: Real
+// 81: singularPressureLoss2.C2.h type: Real
+// 82: singularPressureLoss3.C2.h type: Real
+// 83: singularPressureLoss3.C1.Q type: Real
+// 84: singularPressureLoss3.C2.Q type: Real
+// 85: mixer21.Ce2.Q type: Real
+// 86: mixer21.Ce2.h type: Real
+// 87: mixer21.Cs.h type: Real
+// 88: mixer21.Ce1.h type: Real
+// 89: mixer21.Oalpha1.signal type: Real
+// 90: mixer21.alpha1 type: Real
+// 91: mixer21.Cs.Q type: Real
+// 92: mixer21.Ce1.Q type: Real
+// 93: singularPressureLoss2.C2.Q type: Real
+// 94: singularPressureLoss2.C1.Q type: Real
+// 95: staticDrum1.Ce_eva.Q type: Real
+// 96: staticDrum1.Ce_eva.h type: Real
+// 97: staticDrum1.Ce_eco.Q type: Real
+// 98: staticDrum1.Ce_eco.h type: Real
+// 99: staticDrum1.Cs_sup.Q type: Real
+// 100: staticDrum1.Cs_sup.h type: Real
+// 101: staticDrum1.Cs_eva.Q type: Real
+// 102: staticDrum1.Cs_eva.h type: Real
+// 103: staticDrum1.Cs_sur.Q type: Real
+// 104: staticDrum1.Cs_sur.h type: Real
+// 105: staticDrum1.Cs_purg.Q type: Real
+// 106: staticDrum1.Cs_purg.h type: Real
+// 107: staticDrum1.Ce_steam.Q type: Real
+// 108: staticDrum1.Ce_steam.h type: Real
+// 109: staticDrum1.Ce_sup.Q type: Real
+// 110: staticDrum1.Cth.W type: Real
+// 111: staticDrum1.Ce_sup.h type: Real
+// 112: singularPressureLoss1.C2.h type: Real
+// 113: sourceQ1.C.h type: Real
+// 114: singularPressureLoss1.C1.h type: Real
+// 115: singularPressureLoss1.C1.h_vol type: Real
+// 116: singularPressureLoss1.C2.h_vol type: Real
+// 117: singularPressureLoss1.h type: Real
+// 118: singularPressureLoss1.pro.T type: Real
+// 119: singularPressureLoss1.pro.d type: Real
+// 120: singularPressureLoss1.pro.u type: Real
+// 121: singularPressureLoss1.pro.s type: Real
+// 122: singularPressureLoss1.pro.cp type: Real
+// 123: singularPressureLoss1.pro.ddhp type: Real
+// 124: singularPressureLoss1.pro.ddph type: Real
+// 125: singularPressureLoss1.pro.duph type: Real
+// 126: singularPressureLoss1.pro.duhp type: Real
+// 127: singularPressureLoss1.pro.x type: Real
+// 128: singularPressureLoss1.Pm type: Real
+// 129: singularPressureLoss1.C1.P type: Real
+// 130: singularPressureLoss1.C2.P type: Real
+// 131: staticDrum1.Ce_steam.P type: Real
+// 132: staticDrum1.Ce_sup.P type: Real
+// 133: staticDrum1.Ce_eva.P type: Real
+// 134: staticDrum1.Ce_eco.P type: Real
+// 135: staticDrum1.Cs_purg.P type: Real
+// 136: staticDrum1.Cs_sup.P type: Real
+// 137: staticDrum1.Cs_sur.P type: Real
+// 138: staticDrum1.lsat.P type: Real
+// 139: staticDrum1.lsat.T type: Real
+// 140: staticDrum1.lsat.rho type: Real
+// 141: staticDrum1.lsat.h type: Real
+// 142: staticDrum1.lsat.cp type: Real
+// 143: staticDrum1.lsat.pt type: Real
+// 144: staticDrum1.lsat.cv type: Real
+// 145: staticDrum1.vsat.P type: Real
+// 146: staticDrum1.vsat.T type: Real
+// 147: staticDrum1.vsat.rho type: Real
+// 148: staticDrum1.vsat.h type: Real
+// 149: staticDrum1.vsat.cp type: Real
+// 150: staticDrum1.vsat.pt type: Real
+// 151: staticDrum1.vsat.cv type: Real
+// 152: staticDrum1.P type: Real
+// 153: singularPressureLoss3.rho type: Real
+// 154: singularPressureLoss3.deltaP type: Real
+// 155: staticDrum1.Cs_eva.P type: Real
+// 156: singularPressureLoss3.C1.P type: Real
+// 157: singularPressureLoss3.C2.P type: Real
+// 158: singularPressureLoss3.Pm type: Real
+// 159: singularPressureLoss3.pro.T type: Real
+// 160: singularPressureLoss3.pro.d type: Real
+// 161: singularPressureLoss3.pro.u type: Real
+// 162: singularPressureLoss3.pro.s type: Real
+// 163: singularPressureLoss3.pro.cp type: Real
+// 164: singularPressureLoss3.pro.ddhp type: Real
+// 165: singularPressureLoss3.pro.ddph type: Real
+// 166: singularPressureLoss3.pro.duph type: Real
+// 167: singularPressureLoss3.pro.duhp type: Real
+// 168: singularPressureLoss3.pro.x type: Real
+// 169: singularPressureLoss3.h type: Real
+// 170: singularPressureLoss3.C1.h type: Real
 //
 //
 // Parameters in SET_S (19)
@@ -2082,7 +2154,7 @@ getErrorString();
 // 10: singularPressureLoss1.Q:VARIABLE(start = 2.1 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-2, -5, -3, -4, -7, -1, -6}
-// -SET_S:{40, 39, 38, 37, 36, 35, 34, 33, 32, 29, 22, 28, 41, 31, 30, 25, 238, 235, 193, 24, 211, 148, 27, 165, 162, 161, 160, 159, 158, 157, 156, 155, 154, 153, 152, 151, 149, 150, 132, 207, 138, 213, 61, 60, 59, 58, 57, 56, 55, 54, 52, 51, 53, 63, 50, 44, 223, 171, 189, 188, 187, 186, 185, 184, 183, 182, 181, 190, 47, 46, 227, 174, 135, 219, 83, 82, 81, 80, 79, 78, 77, 76, 75, 85, 72, 66, 73, 74, 69, 68, 231, 178, 176, 173, 175, 172, 166, 163, 139, 164, 142, 131, 143, 136, 217, 146, 145, 144, 137, 141, 134, 140, 133, 232, 104, 103, 102, 101, 100, 99, 98, 96, 97, 107, 94, 88, 95, 105, 91, 90, 222, 71, 218, 49, 212, 205, 201, 15, 26, 23, 208, 147, 48, 45, 224, 177, 179, 180, 214, 62, 191, 70, 67, 228, 84, 92, 89, 202, 16, 106, 192, 237, 20, 236, 170, 43, 226, 169, 225, 168, 234, 86, 233, 65, 230, 167, 229, 200, 21, 210, 115, 209, 118, 114, 117, 116, 113, 127, 126, 125, 112, 216, 42, 215, 111, 221, 64, 220, 119, 120, 122, 123, 128, 129, 110, 130, 124, 109, 121, 108, 87, 204, 14, 203}
+// -SET_S:{16, 202, 89, 92, 84, 165, 193, 235, 22, 28, 41, 40, 200, 117, 126, 129, 123, 120, 26, 23, 208, 116, 125, 62, 142, 164, 71, 222, 212, 139, 140, 141, 143, 144, 145, 163, 146, 218, 49, 191, 174, 175, 176, 15, 201, 88, 94, 107, 106, 205, 90, 91, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 95, 232, 172, 173, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 171, 223, 63, 50, 44, 213, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 47, 217, 46, 227, 68, 231, 177, 70, 67, 228, 178, 180, 179, 224, 45, 48, 214, 128, 122, 119, 147, 148, 211, 24, 238, 25, 27, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 29, 207, 131, 132, 133, 134, 136, 137, 138, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 135, 85, 72, 66, 219, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 69}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -2157,92 +2229,94 @@ getErrorString();
 // Condition-5 "SET_S should be square "
 // ==========================================================================
 // -Passed
-//  Set_S has 214 equations and 214 variables
+//  Set_S has 170 equations and 170 variables
 //
 // SimCodeUtil.createTmpCrefExpsForComplexEqnSys_work: fail forThermoSysPro.Properties.WaterSteam.Common.PropThermoSat(staticDrum1.lsat.P, staticDrum1.T, staticDrum1.lsat.rho, staticDrum1.hl, staticDrum1.lsat.cp, staticDrum1.lsat.pt, staticDrum1.lsat.cv)
 // SimCodeUtil.createTmpCrefExpsForComplexEqnSys_work: fail forThermoSysPro.Properties.WaterSteam.Common.PropThermoSat(staticDrum1.lsat.P, staticDrum1.T, staticDrum1.lsat.rho, staticDrum1.hl, staticDrum1.lsat.cp, staticDrum1.lsat.pt, staticDrum1.lsat.cv)
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.TSP_FourFlows5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_FourFlows5_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.TSP_FourFlows5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_FourFlows5_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Failed to build model: DataReconciliationSimpleTests.TSP_FourFlows5"
 // end SimulationResult;
-// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. You might experience problems if these versions are incompatible.
-// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. You might experience problems if these versions are incompatible.
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.pt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.pt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
-// Error: Error building simulator. Build log: mingw32-make: Entering directory 'C:/OPENMO~1/OPENMO~1/TESTSU~1/OPENMO~1/DATARE~1'
-// gcc  -O0 -falign-functions -fno-ipa-pure-const -mstackrealign -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5.o DataReconciliationSimpleTests.TSP_FourFlows5.c
-// gcc  -O0 -falign-functions -fno-ipa-pure-const -mstackrealign -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5_functions.o DataReconciliationSimpleTests.TSP_FourFlows5_functions.c
-// gcc  -O0 -falign-functions -fno-ipa-pure-const -mstackrealign -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5_records.o DataReconciliationSimpleTests.TSP_FourFlows5_records.c
-// gcc  -O0 -falign-functions -fno-ipa-pure-const -mstackrealign -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5_01exo.o DataReconciliationSimpleTests.TSP_FourFlows5_01exo.c
-// gcc  -O0 -falign-functions -fno-ipa-pure-const -mstackrealign -msse2 -mfpmath=sse     -I"C:/OPENMODELICAGIT/OpenModelica/build/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5_02nls.o DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c
-// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c: In function 'DataReconciliationSimpleTests_TSP_FourFlows5_eqFunction_452':
-// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:21:149: error: 'parentJacobian' undeclared (first use in this function)
-//    tmp0 = omc_ThermoSysPro_Properties_WaterSteam_IF97_Water__sat__P__der(threadData, data->localData[0]->realVars[281] /* staticDrum1.P variable */, parentJacobian->tmpVars[214] /* staticDrum1.P.$pDERF.dummyVarF JACOBIAN_DIFF_VAR */, NULL);
-//                                                                                                                                                      ^
+// Error: Error building simulator. Build log: gcc  -O0 -fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers     -I\"/home/arun/OpenModelica/build/bin/../include/omc/c\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5.o DataReconciliationSimpleTests.TSP_FourFlows5.c
+// gcc  -O0 -fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers     -I\"/home/arun/OpenModelica/build/bin/../include/omc/c\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5_functions.o DataReconciliationSimpleTests.TSP_FourFlows5_functions.c
+// gcc  -O0 -fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers     -I\"/home/arun/OpenModelica/build/bin/../include/omc/c\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5_records.o DataReconciliationSimpleTests.TSP_FourFlows5_records.c
+// gcc  -O0 -fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers     -I\"/home/arun/OpenModelica/build/bin/../include/omc/c\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5_01exo.o DataReconciliationSimpleTests.TSP_FourFlows5_01exo.c
+// gcc  -O0 -fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers     -I\"/home/arun/OpenModelica/build/bin/../include/omc/c\" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME -DOMC_MODEL_PREFIX=DataReconciliationSimpleTests_TSP_FourFlows5 -DOMC_NUM_MIXED_SYSTEMS=0 -DOMC_NUM_LINEAR_SYSTEMS=4 -DOMC_NUM_NONLINEAR_SYSTEMS=13 -DOMC_NDELAY_EXPRESSIONS=0 -DOMC_NVAR_STRING=0  -c -o DataReconciliationSimpleTests.TSP_FourFlows5_02nls.o DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c
+// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c: In function 'DataReconciliationSimpleTests_TSP_FourFlows5_eqFunction_402':
+// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:21:149: error: 'parentJacobian' undeclared (first use in this function); did you mean 'print_boolean'?
+//    tmp0 = omc_ThermoSysPro_Properties_WaterSteam_IF97_Water__sat__P__der(threadData, data->localData[0]->realVars[280] /* staticDrum1.P variable */, parentJacobian->tmpVars[266] /* staticDrum1.P.$pDERF.dummyVarF JACOBIAN_DIFF_VAR */, NULL);
+//                                                                                                                                                      ^~~~~~~~~~~~~~
+//                                                                                                                                                      print_boolean
 // DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:21:149: note: each undeclared identifier is reported only once for each function it appears in
-// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:22:3: error: '_omcQ_24TMP_5FThermoSysPro_5FProperties_5FWaterSteam_5FCommon_5FPropThermoSat445' undeclared (first use in this function)
-//    _omcQ_24TMP_5FThermoSysPro_5FProperties_5FWaterSteam_5FCommon_5FPropThermoSat445._P = tmp0._P;
-//    ^
-// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c: In function 'residualFunc453':
-// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:49:3: error: 'parentJacobian' undeclared (first use in this function)
-//    parentJacobian->tmpVars[89] /* $cse4.P JACOBIAN_DIFF_VAR */ = xloc[0];
-//    ^
-// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:61:12: error: '_omcQ_24TMP_5FThermoSysPro_5FProperties_5FWaterSteam_5FCommon_5FPropThermoSat445' undeclared (first use in this function)
-//    res[0] = _omcQ_24TMP_5FThermoSysPro_5FProperties_5FWaterSteam_5FCommon_5FPropThermoSat445._P - parentJacobian->tmpVars[89] /* $cse4.P JACOBIAN_DIFF_VAR */;
-//             ^
-// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c: In function 'getIterationVarsNLS453':
-// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:122:14: error: 'parentJacobian' undeclared (first use in this function)
-//    array[0] = parentJacobian->tmpVars[89] /* $cse4.P JACOBIAN_DIFF_VAR */;
-//               ^
+// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:22:3: error: '_omcQ_24TMP_5FThermoSysPro_5FProperties_5FWaterSteam_5FCommon_5FPropThermoSat395' undeclared (first use in this function); did you mean 'omc_ThermoSysPro_Properties_WaterSteam_Common_PropThermoSat'?
+//    _omcQ_24TMP_5FThermoSysPro_5FProperties_5FWaterSteam_5FCommon_5FPropThermoSat395._P = tmp0._P;
+//    ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//    omc_ThermoSysPro_Properties_WaterSteam_Common_PropThermoSat
+// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c: In function 'residualFunc403':
+// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:49:3: error: 'parentJacobian' undeclared (first use in this function); did you mean 'print_boolean'?
+//    parentJacobian->tmpVars[25] /* $cse16.rho JACOBIAN_DIFF_VAR */ = xloc[0];
+//    ^~~~~~~~~~~~~~
+//    print_boolean
+// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:61:12: error: '_omcQ_24TMP_5FThermoSysPro_5FProperties_5FWaterSteam_5FCommon_5FPropThermoSat395' undeclared (first use in this function); did you mean 'omc_ThermoSysPro_Properties_WaterSteam_Common_PropThermoSat'?
+//    res[0] = _omcQ_24TMP_5FThermoSysPro_5FProperties_5FWaterSteam_5FCommon_5FPropThermoSat395._P - parentJacobian->tmpVars[27] /* $cse16.P JACOBIAN_DIFF_VAR */;
+//             ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//             omc_ThermoSysPro_Properties_WaterSteam_Common_PropThermoSat
+// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c: In function 'getIterationVarsNLS403':
+// DataReconciliationSimpleTests.TSP_FourFlows5_02nls.c:122:14: error: 'parentJacobian' undeclared (first use in this function); did you mean 'print_boolean'?
+//    array[0] = parentJacobian->tmpVars[25] /* $cse16.rho JACOBIAN_DIFF_VAR */;
+//               ^~~~~~~~~~~~~~
+//               print_boolean
 // <builtin>: recipe for target 'DataReconciliationSimpleTests.TSP_FourFlows5_02nls.o' failed
-// mingw32-make: *** [DataReconciliationSimpleTests.TSP_FourFlows5_02nls.o] Error 1
-// mingw32-make: Leaving directory 'C:/OPENMO~1/OPENMO~1/TESTSU~1/OPENMO~1/DATARE~1'
-// RESULT: 2
+// make: *** [DataReconciliationSimpleTests.TSP_FourFlows5_02nls.o] Error 1
 // "
 // endResult

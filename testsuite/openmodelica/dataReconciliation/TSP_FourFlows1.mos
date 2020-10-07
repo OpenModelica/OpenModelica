@@ -1525,66 +1525,61 @@ getErrorString();
 // 57/57 (1): singularPressureLoss1.C2.a = splitter21.Ce.a   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (57)
+// SET_S_After_Minimal_Extraction (24, 24)
+// ========================================
+// 1/1 (1): constante1.y.signal = constante1.k   [dynamic |0|0|0|0|]
+// 2/2 (1): sink1.C.Q = sink1.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): singularPressureLoss4.C2.Q = sink1.C.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): singularPressureLoss4.C2.Q = singularPressureLoss4.C1.Q   [dynamic |0|0|0|0|]
+// 5/5 (1): singularPressureLoss4.Q = singularPressureLoss4.C1.Q   [dynamic |0|0|0|0|]
+// 6/6 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 7/7 (1): singularPressureLoss3.C1.Q = splitter21.Cs2.Q   [dynamic |0|0|0|0|]
+// 8/8 (1): singularPressureLoss3.C2.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 9/9 (1): mixer21.Ce2.Q = singularPressureLoss3.C2.Q   [dynamic |0|0|0|0|]
+// 10/10 (1): 0.0 = mixer21.Ce1.Q + mixer21.Ce2.Q - mixer21.Cs.Q   [dynamic |0|0|0|0|]
+// 11/11 (1): mixer21.Oalpha1.signal = mixer21.alpha1   [dynamic |0|0|0|0|]
+// 12/12 (1): mixer21.alpha1 = mixer21.Ce1.Q / mixer21.Cs.Q   [dynamic |0|0|0|0|]
+// 13/13 (1): mixer21.Ce1.Q = singularPressureLoss2.C2.Q   [dynamic |0|0|0|0|]
+// 14/14 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 15/15 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 16/16 (1): singularPressureLoss2.C1.Q = splitter21.Cs1.Q   [dynamic |0|0|0|0|]
+// 17/17 (1): 0.0 = splitter21.Ce.Q + (-splitter21.Cs1.Q) - splitter21.Cs2.Q   [dynamic |0|0|0|0|]
+// 18/18 (1): splitter21.Cs1.Q = splitter21.Ialpha1.signal * splitter21.Ce.Q   [dynamic |0|0|0|0|]
+// 19/19 (1): splitter21.Oalpha1.signal = splitter21.alpha1   [dynamic |0|0|0|0|]
+// 20/20 (1): splitter21.alpha1 = splitter21.Cs1.Q / splitter21.Ce.Q   [dynamic |0|0|0|0|]
+// 21/21 (1): sourceP1.C.Q = sourceP1.Q   [dynamic |0|0|0|0|]
+// 22/22 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 23/23 (1): singularPressureLoss1.C1.Q = sourceP1.C.Q   [dynamic |0|0|0|0|]
+// 24/24 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (24)
 // ========================================
 //
-// 1: singularPressureLoss3.C2.Q type: Real
-// 2: singularPressureLoss3.C1.Q type: Real
-// 3: splitter21.Cs2.Q type: Real
-// 4: mixer21.Ce2.Q type: Real
-// 5: mixer21.Cs.Q type: Real
-// 6: mixer21.alpha1 type: Real
-// 7: mixer21.Oalpha1.signal type: Real
-// 8: splitter21.alpha1 type: Real
-// 9: splitter21.Oalpha1.signal type: Real
-// 10: splitter21.Ce.Q type: Real
-// 11: splitter21.Ialpha1.signal type: Real
-// 12: sourceP1.Q type: Real
-// 13: sourceP1.C.Q type: Real
-// 14: singularPressureLoss1.C1.Q type: Real
-// 15: singularPressureLoss1.C2.Q type: Real
-// 16: splitter21.Cs1.Q type: Real
-// 17: singularPressureLoss2.C1.Q type: Real
-// 18: singularPressureLoss2.C2.Q type: Real
-// 19: mixer21.Ce1.Q type: Real
-// 20: singularPressureLoss4.C1.Q type: Real
-// 21: singularPressureLoss4.C2.Q type: Real
-// 22: sink1.Q type: Real
-// 23: sink1.C.Q type: Real
-// 24: singularPressureLoss4.C2.b type: Boolean
-// 25: sink1.C.b type: Boolean
-// 26: singularPressureLoss4.C2.a type: Boolean
-// 27: sink1.C.a type: Boolean
-// 28: singularPressureLoss1.C1.b type: Boolean
-// 29: sourceP1.C.b type: Boolean
-// 30: singularPressureLoss1.C1.a type: Boolean
-// 31: sourceP1.C.a type: Boolean
-// 32: constante1.y.signal type: Real
-// 33: mixer21.Ialpha1.signal type: Real
-// 34: singularPressureLoss2.C2.b type: Boolean
-// 35: mixer21.Ce1.b type: Boolean
-// 36: singularPressureLoss2.C2.a type: Boolean
-// 37: mixer21.Ce1.a type: Boolean
-// 38: singularPressureLoss4.C1.b type: Boolean
-// 39: mixer21.Cs.b type: Boolean
-// 40: singularPressureLoss4.C1.a type: Boolean
-// 41: mixer21.Cs.a type: Boolean
-// 42: singularPressureLoss3.C2.b type: Boolean
-// 43: mixer21.Ce2.b type: Boolean
-// 44: singularPressureLoss3.C2.a type: Boolean
-// 45: mixer21.Ce2.a type: Boolean
-// 46: singularPressureLoss3.C1.b type: Boolean
-// 47: splitter21.Cs2.b type: Boolean
-// 48: singularPressureLoss3.C1.a type: Boolean
-// 49: splitter21.Cs2.a type: Boolean
-// 50: singularPressureLoss2.C1.b type: Boolean
-// 51: splitter21.Cs1.b type: Boolean
-// 52: singularPressureLoss2.C1.a type: Boolean
-// 53: splitter21.Cs1.a type: Boolean
-// 54: singularPressureLoss1.C2.b type: Boolean
-// 55: splitter21.Ce.b type: Boolean
-// 56: singularPressureLoss1.C2.a type: Boolean
-// 57: splitter21.Ce.a type: Boolean
+// 1: constante1.y.signal type: Real
+// 2: sink1.Q type: Real
+// 3: sink1.C.Q type: Real
+// 4: singularPressureLoss4.C2.Q type: Real
+// 5: singularPressureLoss4.C1.Q type: Real
+// 6: singularPressureLoss3.C1.Q type: Real
+// 7: singularPressureLoss3.C2.Q type: Real
+// 8: mixer21.Ce2.Q type: Real
+// 9: mixer21.Oalpha1.signal type: Real
+// 10: mixer21.alpha1 type: Real
+// 11: mixer21.Cs.Q type: Real
+// 12: mixer21.Ce1.Q type: Real
+// 13: singularPressureLoss2.C2.Q type: Real
+// 14: singularPressureLoss2.C1.Q type: Real
+// 15: splitter21.Cs2.Q type: Real
+// 16: splitter21.Ialpha1.signal type: Real
+// 17: splitter21.Oalpha1.signal type: Real
+// 18: splitter21.alpha1 type: Real
+// 19: splitter21.Ce.Q type: Real
+// 20: splitter21.Cs1.Q type: Real
+// 21: sourceP1.Q type: Real
+// 22: sourceP1.C.Q type: Real
+// 23: singularPressureLoss1.C1.Q type: Real
+// 24: singularPressureLoss1.C2.Q type: Real
 //
 //
 // Parameters in SET_S (1)
@@ -1604,7 +1599,7 @@ getErrorString();
 // 4: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-2, -1, -3}
-// -SET_S:{59, 56, 175, 193, 106, 132, 134, 135, 109, 110, 108, 15, 209, 150, 12, 37, 187, 34, 181, 81, 78, 215, 170, 76, 217, 168, 216, 148, 211, 9, 210, 147, 125, 32, 183, 124, 182, 123, 200, 75, 199, 54, 177, 122, 176, 99, 195, 53, 194, 98, 189, 31, 188, 10, 205, 97, 204}
+// -SET_S:{147, 170, 215, 78, 81, 59, 193, 56, 175, 132, 135, 134, 181, 34, 37, 187, 106, 108, 110, 109, 150, 15, 209, 12}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -1657,7 +1652,7 @@ getErrorString();
 // Condition-5 "SET_S should be square "
 // ==========================================================================
 // -Passed
-//  Set_S has 57 equations and 57 variables
+//  Set_S has 24 equations and 24 variables
 //
 // record SimulationResult
 //     resultFile = "econcile",

@@ -173,13 +173,21 @@ getErrorString();
 // 4/4 (1): a = A   [dynamic |0|0|0|0|]
 //
 //
+// SET_S_After_Minimal_Extraction (4, 4)
+// ========================================
+// 1/1 (1): a = A   [dynamic |0|0|0|0|]
+// 2/2 (1): y1 = a * y   [dynamic |0|0|0|0|]
+// 3/3 (1): Q = y   [dynamic |0|0|0|0|]
+// 4/4 (1): y = y1 + y2   [dynamic |0|0|0|0|]
+//
+//
 // Unknown variables in SET_S  (4)
 // ========================================
 //
-// 1: y type: Real
-// 2: y1 type: Real
-// 3: y2 type: Real
-// 4: a type: Real
+// 1: a type: Real
+// 2: y type: Real
+// 3: y1 type: Real
+// 4: y2 type: Real
 //
 //
 // Parameters in SET_S (1)
@@ -198,7 +206,7 @@ getErrorString();
 // 3: Q:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
 //
 // -SET_C:{-2, -3}
-// -SET_S:{8, 6, 7, 5}
+// -SET_S:{5, 6, 8, 7}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
