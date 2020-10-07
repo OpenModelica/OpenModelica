@@ -1,8 +1,12 @@
+# THIS RELEASE WAS CANCELLED
+
+Checkout the previous commit (b315f0e39ab2d5aa4fdaf96ec87c62d489da1d08) to build this. configure.ac files were removed to prevent us from building this by accident.
+
 # OpenModelica [![License: OSMC-PL](https://img.shields.io/badge/license-OSMC--PL-lightgrey.svg)](OSMC-License.txt)
 
 [OpenModelica](https://openmodelica.org) is an open-source Modelica-based modeling and simulation environment intended for industrial and academic usage.
 
-## Dependencies (Linux/OSX) 
+## Dependencies (Linux/OSX)
 
 Many software packages are included inside the repositories.
 To get everything running, you will need a few extras:
