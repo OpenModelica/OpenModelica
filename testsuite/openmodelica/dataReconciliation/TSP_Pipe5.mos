@@ -65,10 +65,10 @@ getErrorString();
 // 27: volumeB1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 28: volumeB1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 29: volumeB1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 30: volumeB1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 30: volumeB1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 31: volumeB1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 32: volumeB1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 33: volumeB1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 33: volumeB1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 34: volumeB1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 35: volumeB1.BH:VARIABLE(unit = "W" )  "Right hand side of the energybalance equation" type: Real
 // 36: volumeB1.BQ:VARIABLE(unit = "kg/s" )  "Right hand side of the mass balance equation" type: Real
@@ -90,10 +90,10 @@ getErrorString();
 // 52: sinkP1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 53: sinkP1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 54: sinkP1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 55: sinkP1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 55: sinkP1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 56: sinkP1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 57: sinkP1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 58: sinkP1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 58: sinkP1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 59: sinkP1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 60: sinkP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
 // 61: sinkP1.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
@@ -113,10 +113,10 @@ getErrorString();
 // 75: sourceP1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 76: sourceP1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 77: sourceP1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 78: sourceP1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 78: sourceP1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 79: sourceP1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 80: sourceP1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 81: sourceP1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 81: sourceP1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 82: sourceP1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 83: sourceP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
 // 84: sourceP1.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
@@ -127,10 +127,10 @@ getErrorString();
 // 89: singularPressureLoss2.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 90: singularPressureLoss2.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 91: singularPressureLoss2.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 92: singularPressureLoss2.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 92: singularPressureLoss2.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 93: singularPressureLoss2.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 94: singularPressureLoss2.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 95: singularPressureLoss2.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 95: singularPressureLoss2.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 96: singularPressureLoss2.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 97: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 98: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -155,10 +155,10 @@ getErrorString();
 // 117: singularPressureLoss1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 118: singularPressureLoss1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 119: singularPressureLoss1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 120: singularPressureLoss1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 120: singularPressureLoss1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 121: singularPressureLoss1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 122: singularPressureLoss1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 123: singularPressureLoss1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 123: singularPressureLoss1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 124: singularPressureLoss1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 125: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 126: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -189,7 +189,7 @@ getErrorString();
 // 5/5 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 6/6 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 7/7 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
-// 8/8 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 8/8 (1): singularPressureLoss1.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss1.Q, singularPressureLoss1.C1.h_vol, singularPressureLoss1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 9/9 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss1.Q, singularPressureLoss1.eps) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
 // 10/10 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
 // 11/11 (10): singularPressureLoss1.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, singularPressureLoss1.mode, singularPressureLoss1.fluid)   [dynamic |0|0|0|0|]
@@ -202,7 +202,7 @@ getErrorString();
 // 18/27 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 19/28 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 20/29 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
-// 21/30 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 21/30 (1): singularPressureLoss2.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss2.Q, singularPressureLoss2.C1.h_vol, singularPressureLoss2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 22/31 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss2.Q, singularPressureLoss2.eps) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
 // 23/32 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
 // 24/33 (10): singularPressureLoss2.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, singularPressureLoss2.mode, singularPressureLoss2.fluid)   [dynamic |0|0|0|0|]
@@ -301,7 +301,7 @@ getErrorString();
 // 16/16 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 17/17 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 18/18 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
-// 19/19 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 19/19 (1): singularPressureLoss1.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss1.Q, singularPressureLoss1.C1.h_vol, singularPressureLoss1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 20/20 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss1.Q, singularPressureLoss1.eps) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
 // 21/21 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
 // 22/22 (10): singularPressureLoss1.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, singularPressureLoss1.mode, singularPressureLoss1.fluid)   [dynamic |0|0|0|0|]
@@ -314,7 +314,7 @@ getErrorString();
 // 29/38 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 30/39 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 31/40 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
-// 32/41 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 32/41 (1): singularPressureLoss2.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss2.Q, singularPressureLoss2.C1.h_vol, singularPressureLoss2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 33/42 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss2.Q, singularPressureLoss2.eps) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
 // 34/43 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
 // 35/44 (10): singularPressureLoss2.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, singularPressureLoss2.mode, singularPressureLoss2.fluid)   [dynamic |0|0|0|0|]
@@ -573,7 +573,7 @@ getErrorString();
 // 16/16 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 17/17 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
 // 18/18 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
-// 19/19 (1): 0.0 = if singularPressureLoss1.Q > 0.0 then singularPressureLoss1.C1.h - singularPressureLoss1.C1.h_vol else singularPressureLoss1.C2.h - singularPressureLoss1.C2.h_vol   [dynamic |0|0|0|0|]
+// 19/19 (1): singularPressureLoss1.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss1.Q, singularPressureLoss1.C1.h_vol, singularPressureLoss1.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 20/20 (1): singularPressureLoss1.deltaP = singularPressureLoss1.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss1.Q, singularPressureLoss1.eps) / singularPressureLoss1.rho   [dynamic |0|0|0|0|]
 // 21/21 (1): singularPressureLoss1.Pm = 0.5 * (singularPressureLoss1.C1.P + singularPressureLoss1.C2.P)   [dynamic |0|0|0|0|]
 // 22/22 (10): singularPressureLoss1.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss1.Pm, singularPressureLoss1.h, singularPressureLoss1.mode, singularPressureLoss1.fluid)   [dynamic |0|0|0|0|]
@@ -586,7 +586,7 @@ getErrorString();
 // 29/38 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 30/39 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
 // 31/40 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
-// 32/41 (1): 0.0 = if singularPressureLoss2.Q > 0.0 then singularPressureLoss2.C1.h - singularPressureLoss2.C1.h_vol else singularPressureLoss2.C2.h - singularPressureLoss2.C2.h_vol   [dynamic |0|0|0|0|]
+// 32/41 (1): singularPressureLoss2.h = ThermoSysPro.Functions.SmoothCond(singularPressureLoss2.Q, singularPressureLoss2.C1.h_vol, singularPressureLoss2.C2.h_vol, 1.0)   [dynamic |0|0|0|0|]
 // 33/42 (1): singularPressureLoss2.deltaP = singularPressureLoss2.K * ThermoSysPro.Functions.ThermoSquare(singularPressureLoss2.Q, singularPressureLoss2.eps) / singularPressureLoss2.rho   [dynamic |0|0|0|0|]
 // 34/43 (1): singularPressureLoss2.Pm = 0.5 * (singularPressureLoss2.C1.P + singularPressureLoss2.C2.P)   [dynamic |0|0|0|0|]
 // 35/44 (10): singularPressureLoss2.pro = ThermoSysPro.Properties.Fluid.Ph(singularPressureLoss2.Pm, singularPressureLoss2.h, singularPressureLoss2.mode, singularPressureLoss2.fluid)   [dynamic |0|0|0|0|]
@@ -691,10 +691,10 @@ getErrorString();
 // 27: volumeB1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 28: volumeB1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 29: volumeB1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 30: volumeB1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 30: volumeB1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 31: volumeB1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 32: volumeB1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 33: volumeB1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 33: volumeB1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 34: volumeB1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 35: volumeB1.BH:VARIABLE(unit = "W" )  "Right hand side of the energybalance equation" type: Real
 // 36: volumeB1.BQ:VARIABLE(unit = "kg/s" )  "Right hand side of the mass balance equation" type: Real
@@ -716,10 +716,10 @@ getErrorString();
 // 52: sinkP1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 53: sinkP1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 54: sinkP1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 55: sinkP1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 55: sinkP1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 56: sinkP1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 57: sinkP1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 58: sinkP1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 58: sinkP1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 59: sinkP1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 60: sinkP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
 // 61: sinkP1.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
@@ -739,10 +739,10 @@ getErrorString();
 // 75: sourceP1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 76: sourceP1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 77: sourceP1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 78: sourceP1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 78: sourceP1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 79: sourceP1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 80: sourceP1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 81: sourceP1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 81: sourceP1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 82: sourceP1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 83: sourceP1.h:VARIABLE(unit = "J/kg" )  "Fluid enthalpy" type: Real
 // 84: sourceP1.T:VARIABLE(min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  "Fluid temperature" type: Real
@@ -753,10 +753,10 @@ getErrorString();
 // 89: singularPressureLoss2.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 90: singularPressureLoss2.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 91: singularPressureLoss2.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 92: singularPressureLoss2.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 92: singularPressureLoss2.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 93: singularPressureLoss2.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 94: singularPressureLoss2.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 95: singularPressureLoss2.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 95: singularPressureLoss2.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 96: singularPressureLoss2.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 97: singularPressureLoss2.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 98: singularPressureLoss2.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -781,10 +781,10 @@ getErrorString();
 // 117: singularPressureLoss1.pro.duph:VARIABLE(unit = "m3/kg" )  "Derivative of specific inner energy wrt. pressure at constant specific enthalpy" type: Real
 // 118: singularPressureLoss1.pro.ddph:VARIABLE(unit = "s2/m2" )  "Derivative of density wrt. pressure at constant specific enthalpy" type: Real
 // 119: singularPressureLoss1.pro.ddhp:VARIABLE(unit = "kg.s2/m5" )  "Derivative of density wrt. specific enthalpy at constant pressure" type: Real
-// 120: singularPressureLoss1.pro.cp:VARIABLE(min = 1e-009 max = 1e+060 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
+// 120: singularPressureLoss1.pro.cp:VARIABLE(min = 1e-09 max = 9.999999999999999e+59 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific heat capacity at constant presure" type: Real
 // 121: singularPressureLoss1.pro.s:VARIABLE(min = -1000000.0 max = 1000000.0 unit = "J/(kg.K)" nominal = 1000.0 )  "Specific entropy" type: Real
 // 122: singularPressureLoss1.pro.u:VARIABLE(min = -100000000.0 max = 100000000.0 unit = "J/kg" nominal = 1000000.0 )  "Specific inner energy" type: Real
-// 123: singularPressureLoss1.pro.d:VARIABLE(min = 1e-009 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
+// 123: singularPressureLoss1.pro.d:VARIABLE(min = 1e-09 max = 100000.0 unit = "kg/m3" nominal = 998.0 )  "Density" type: Real
 // 124: singularPressureLoss1.pro.T:VARIABLE(min = 200.0 max = 6000.0 start = 288.15 unit = "K" nominal = 320.0 )  "Temperature" type: Real
 // 125: singularPressureLoss1.C2.b:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
 // 126: singularPressureLoss1.C2.a:DISCRETE(flow=false )  "Pseudo-variable for the verification of the connection orientation" type: Boolean
@@ -965,7 +965,7 @@ getErrorString();
 //
 // BLT_BLOCKS:
 // ==========================================================================
-// {{99},{105},{104},{103},{1},{6},{60},{61},{7},{62},{64},{65},{59},{135},{2},{57},{130},{21},{14},{20},{33},{31, 30, 29, 28, 27, 26, 25, 24, 22, 23},{17},{16},{19},{146},{114},{117},{5},{111},{98},{34},{147},{127, 126, 125, 124, 123, 122, 121, 120, 118, 119},{129},{113},{18},{15},{142},{145},{100},{101},{107},{106},{112},{116},{110},{102},{97},{115},{109},{13},{144},{96},{108},{128},{10},{82},{35},{139},{76},{4},{9},{80},{81},{77},{136},{43},{36},{3},{42},{55},{53, 52, 51, 50, 49, 48, 47, 46, 44, 45},{39},{38},{140},{40},{37},{137},{84},{85},{79},{11},{83},{94, 93, 92, 91, 90, 89, 88, 87, 86, 95},{78},{56},{12},{132},{134},{131},{8},{63},{74, 73, 72, 71, 70, 69, 68, 67, 66, 75},{58},{138},{141},{148},{41},{54},{143},{133},{32},{-1},{-2},{-3},{-4},{-5}}
+// {{99},{105},{104},{103},{1},{2},{6},{60},{61},{57},{130},{21},{14},{20},{33},{31, 30, 29, 28, 27, 26, 25, 24, 22, 23},{7},{62},{64},{65},{59},{135},{19},{146},{114},{117},{5},{111},{98},{34},{147},{127, 126, 125, 124, 123, 122, 121, 120, 118, 119},{129},{113},{18},{15},{142},{17},{16},{145},{100},{101},{107},{106},{112},{116},{110},{102},{97},{115},{109},{13},{144},{96},{108},{128},{10},{82},{35},{139},{76},{4},{9},{80},{81},{77},{136},{43},{36},{3},{42},{55},{53, 52, 51, 50, 49, 48, 47, 46, 44, 45},{39},{38},{140},{40},{37},{137},{84},{85},{79},{11},{83},{94, 93, 92, 91, 90, 89, 88, 87, 86, 95},{78},{56},{12},{132},{134},{131},{8},{63},{74, 73, 72, 71, 70, 69, 68, 67, 66, 75},{58},{138},{141},{148},{41},{54},{143},{133},{32},{-1},{-2},{-3},{-4},{-5}}
 //
 //
 // Targets of blocks without predecessors:
@@ -974,9 +974,9 @@ getErrorString();
 // Targets of Blue blocks (5)
 // ==============================
 //
-// Block :{1} || blockTargetsInfo :{({1}, 5), ({20}, 20), ({33}, 21), ({31, 30, 29, 28, 27, 26, 25, 24, 22, 23}, 22), ({17}, 23), ({16}, 24), ({19}, 25), ({146}, 26), ({114}, 27), ({117}, 28), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 34), ({129}, 35), ({113}, 36), ({18}, 37), ({15}, 38), ({142}, 39), ({145}, 40), ({106}, 44), ({112}, 45), ({116}, 46), ({115}, 50), ({128}, 56), ({134}, 90), ({131}, 91), ({58}, 95), ({32}, 103), ({-3}, -3), ({-4}, -4), ({-5}, -5)} || KnownBlocks :{1} || constantBlocks :{}
-// Block :{2} || blockTargetsInfo :{({2}, 15), ({21}, 18), ({14}, 19), ({20}, 20), ({33}, 21), ({31, 30, 29, 28, 27, 26, 25, 24, 22, 23}, 22), ({17}, 23), ({16}, 24), ({19}, 25), ({146}, 26), ({114}, 27), ({117}, 28), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 34), ({129}, 35), ({113}, 36), ({145}, 40), ({112}, 45), ({116}, 46), ({115}, 50), ({128}, 56), ({134}, 90), ({32}, 103), ({-1}, -1), ({-4}, -4), ({-5}, -5)} || KnownBlocks :{2} || constantBlocks :{}
-// Block :{5} || blockTargetsInfo :{({5}, 29), ({111}, 30), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 34), ({129}, 35), ({113}, 36), ({112}, 45), ({110}, 47), ({109}, 51), ({108}, 55), ({128}, 56), ({-2}, -2), ({-1}, -1), ({-4}, -4)} || KnownBlocks :{5} || constantBlocks :{}
+// Block :{1} || blockTargetsInfo :{({1}, 5), ({20}, 14), ({33}, 15), ({31, 30, 29, 28, 27, 26, 25, 24, 22, 23}, 16), ({19}, 23), ({146}, 24), ({114}, 25), ({117}, 26), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 32), ({129}, 33), ({113}, 34), ({18}, 35), ({15}, 36), ({142}, 37), ({17}, 38), ({16}, 39), ({145}, 40), ({106}, 44), ({112}, 45), ({116}, 46), ({115}, 50), ({128}, 56), ({134}, 90), ({131}, 91), ({58}, 95), ({32}, 103), ({-3}, -3), ({-4}, -4), ({-5}, -5)} || KnownBlocks :{1} || constantBlocks :{}
+// Block :{2} || blockTargetsInfo :{({2}, 6), ({21}, 12), ({14}, 13), ({20}, 14), ({33}, 15), ({31, 30, 29, 28, 27, 26, 25, 24, 22, 23}, 16), ({19}, 23), ({146}, 24), ({114}, 25), ({117}, 26), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 32), ({129}, 33), ({113}, 34), ({17}, 38), ({16}, 39), ({145}, 40), ({112}, 45), ({116}, 46), ({115}, 50), ({128}, 56), ({134}, 90), ({32}, 103), ({-1}, -1), ({-4}, -4), ({-5}, -5)} || KnownBlocks :{2} || constantBlocks :{}
+// Block :{5} || blockTargetsInfo :{({5}, 27), ({111}, 28), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 32), ({129}, 33), ({113}, 34), ({112}, 45), ({110}, 47), ({109}, 51), ({108}, 55), ({128}, 56), ({-2}, -2), ({-1}, -1), ({-4}, -4)} || KnownBlocks :{5} || constantBlocks :{}
 // Block :{4} || blockTargetsInfo :{({4}, 62), ({43}, 68), ({36}, 69), ({42}, 71), ({55}, 72), ({53, 52, 51, 50, 49, 48, 47, 46, 44, 45}, 73), ({39}, 74), ({38}, 75), ({140}, 76), ({41}, 99), ({54}, 100), ({-2}, -2), ({-4}, -4), ({-5}, -5)} || KnownBlocks :{4} || constantBlocks :{}
 // Block :{3} || blockTargetsInfo :{({3}, 70), ({42}, 71), ({55}, 72), ({53, 52, 51, 50, 49, 48, 47, 46, 44, 45}, 73), ({39}, 74), ({38}, 75), ({140}, 76), ({40}, 77), ({37}, 78), ({137}, 79), ({78}, 86), ({41}, 99), ({54}, 100), ({-3}, -3), ({-5}, -5), ({-4}, -4)} || KnownBlocks :{3} || constantBlocks :{}
 //
@@ -984,8 +984,8 @@ getErrorString();
 // Targets of Red blocks (6)
 // ==============================
 //
-// Block :{6} || blockTargetsInfo :{({6}, 6), ({60}, 7), ({61}, 8), ({65}, 12), ({59}, 13), ({135}, 14), ({57}, 16), ({130}, 17), ({21}, 18), ({14}, 19), ({20}, 20), ({33}, 21), ({31, 30, 29, 28, 27, 26, 25, 24, 22, 23}, 22), ({17}, 23), ({16}, 24), ({19}, 25), ({146}, 26), ({114}, 27), ({117}, 28), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 34), ({129}, 35), ({113}, 36), ({145}, 40), ({112}, 45), ({116}, 46), ({115}, 50), ({128}, 56), ({134}, 90), ({74, 73, 72, 71, 70, 69, 68, 67, 66, 75}, 94), ({32}, 103), ({-1}, -1), ({-5}, -5), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{}
-// Block :{7} || blockTargetsInfo :{({7}, 9), ({62}, 10), ({64}, 11), ({65}, 12), ({59}, 13), ({135}, 14), ({19}, 25), ({146}, 26), ({114}, 27), ({117}, 28), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 34), ({129}, 35), ({113}, 36), ({112}, 45), ({116}, 46), ({115}, 50), ({128}, 56), ({74, 73, 72, 71, 70, 69, 68, 67, 66, 75}, 94), ({-5}, -5), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{}
+// Block :{6} || blockTargetsInfo :{({6}, 7), ({60}, 8), ({61}, 9), ({57}, 10), ({130}, 11), ({21}, 12), ({14}, 13), ({20}, 14), ({33}, 15), ({31, 30, 29, 28, 27, 26, 25, 24, 22, 23}, 16), ({65}, 20), ({59}, 21), ({135}, 22), ({19}, 23), ({146}, 24), ({114}, 25), ({117}, 26), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 32), ({129}, 33), ({113}, 34), ({17}, 38), ({16}, 39), ({145}, 40), ({112}, 45), ({116}, 46), ({115}, 50), ({128}, 56), ({134}, 90), ({74, 73, 72, 71, 70, 69, 68, 67, 66, 75}, 94), ({32}, 103), ({-1}, -1), ({-5}, -5), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{}
+// Block :{7} || blockTargetsInfo :{({7}, 17), ({62}, 18), ({64}, 19), ({65}, 20), ({59}, 21), ({135}, 22), ({19}, 23), ({146}, 24), ({114}, 25), ({117}, 26), ({127, 126, 125, 124, 123, 122, 121, 120, 118, 119}, 32), ({129}, 33), ({113}, 34), ({112}, 45), ({116}, 46), ({115}, 50), ({128}, 56), ({74, 73, 72, 71, 70, 69, 68, 67, 66, 75}, 94), ({-5}, -5), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{}
 // Block :{10} || blockTargetsInfo :{({10}, 57), ({82}, 58), ({84}, 80), ({85}, 81), ({79}, 82), ({94, 93, 92, 91, 90, 89, 88, 87, 86, 95}, 85), ({141}, 97), ({41}, 99), ({-5}, -5)} || KnownBlocks :{} || constantBlocks :{}
 // Block :{9} || blockTargetsInfo :{({9}, 63), ({80}, 64), ({81}, 65), ({77}, 66), ({136}, 67), ({43}, 68), ({36}, 69), ({42}, 71), ({55}, 72), ({53, 52, 51, 50, 49, 48, 47, 46, 44, 45}, 73), ({39}, 74), ({38}, 75), ({140}, 76), ({85}, 81), ({79}, 82), ({94, 93, 92, 91, 90, 89, 88, 87, 86, 95}, 85), ({141}, 97), ({41}, 99), ({54}, 100), ({-2}, -2), ({-5}, -5), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{}
 // Block :{11} || blockTargetsInfo :{({11}, 83), ({83}, 84)} || KnownBlocks :{} || constantBlocks :{}
@@ -999,8 +999,8 @@ getErrorString();
 // Block :{105} || blockTargetsInfo :{({105}, 2)} || KnownBlocks :{} || constantBlocks :{105}
 // Block :{104} || blockTargetsInfo :{({104}, 3), ({112}, 45), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{104}
 // Block :{103} || blockTargetsInfo :{({103}, 4), ({106}, 44), ({112}, 45), ({-3}, -3), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{103}
-// Block :{98} || blockTargetsInfo :{({98}, 31), ({148}, 98)} || KnownBlocks :{} || constantBlocks :{98}
-// Block :{34} || blockTargetsInfo :{({34}, 32), ({147}, 33)} || KnownBlocks :{} || constantBlocks :{34}
+// Block :{98} || blockTargetsInfo :{({98}, 29), ({148}, 98)} || KnownBlocks :{} || constantBlocks :{98}
+// Block :{34} || blockTargetsInfo :{({34}, 30), ({147}, 31)} || KnownBlocks :{} || constantBlocks :{34}
 // Block :{100} || blockTargetsInfo :{({100}, 41), ({106}, 44), ({112}, 45), ({-3}, -3), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{100}
 // Block :{101} || blockTargetsInfo :{({101}, 42), ({112}, 45), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{101}
 // Block :{107} || blockTargetsInfo :{({107}, 43), ({106}, 44), ({112}, 45), ({-3}, -3), ({-4}, -4)} || KnownBlocks :{} || constantBlocks :{107}
@@ -1068,48 +1068,39 @@ getErrorString();
 // 39/39 (1): singularPressureLoss1.C1.a = sourceP1.C.a   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (39)
+// SET_S_After_Minimal_Extraction (13, 13)
+// ========================================
+// 1/1 (1): volumeB1.Cs2.Q = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): volumeB1.Ce2.Q = 0.0   [dynamic |0|0|0|0|]
+// 3/3 (1): sourceP1.C.Q = sourceP1.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 5/5 (1): singularPressureLoss1.C1.Q = sourceP1.C.Q   [dynamic |0|0|0|0|]
+// 6/6 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 7/7 (1): singularPressureLoss1.C2.Q = volumeB1.Ce1.Q   [dynamic |0|0|0|0|]
+// 8/8 (1): 0.0 = volumeB1.BQ   [dynamic |0|0|0|0|]
+// 9/9 (1): volumeB1.BQ = volumeB1.Ce1.Q + volumeB1.Ce2.Q + (-volumeB1.Cs1.Q) - volumeB1.Cs2.Q   [dynamic |0|0|0|0|]
+// 10/10 (1): sinkP1.C.Q = sinkP1.Q   [dynamic |0|0|0|0|]
+// 11/11 (1): singularPressureLoss2.C2.Q = sinkP1.C.Q   [dynamic |0|0|0|0|]
+// 12/12 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 13/13 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (13)
 // ========================================
 //
-// 1: singularPressureLoss1.C2.Q type: Real
-// 2: volumeB1.Ce1.Q type: Real
-// 3: volumeB1.Cs1.Q type: Real
-// 4: singularPressureLoss1.C1.Q type: Real
-// 5: sourceP1.Q type: Real
-// 6: sourceP1.C.Q type: Real
-// 7: volumeB1.Cs2.P type: Real
-// 8: volumeB1.Cs1.P type: Real
-// 9: volumeB1.Ce2.P type: Real
-// 10: volumeB1.Ce1.P type: Real
-// 11: singularPressureLoss2.C1.Q type: Real
+// 1: sourceP1.Q type: Real
+// 2: sourceP1.C.Q type: Real
+// 3: singularPressureLoss1.C1.Q type: Real
+// 4: singularPressureLoss1.C2.Q type: Real
+// 5: volumeB1.BQ type: Real
+// 6: volumeB1.Ce1.Q type: Real
+// 7: volumeB1.Ce2.Q type: Real
+// 8: volumeB1.Cs1.Q type: Real
+// 9: volumeB1.Cs2.Q type: Real
+// 10: sinkP1.Q type: Real
+// 11: sinkP1.C.Q type: Real
 // 12: singularPressureLoss2.C2.Q type: Real
-// 13: sinkP1.Q type: Real
-// 14: sinkP1.C.Q type: Real
-// 15: volumeB1.Cs2.b type: Boolean
-// 16: volumeB1.Cs2.a type: Boolean
-// 17: volumeB1.Cs2.h type: Real
-// 18: volumeB1.Cs2.Q type: Real
-// 19: singularPressureLoss2.C1.b type: Boolean
-// 20: volumeB1.Cs1.b type: Boolean
-// 21: singularPressureLoss2.C1.a type: Boolean
-// 22: volumeB1.Cs1.a type: Boolean
-// 23: volumeB1.Ce2.Q type: Real
-// 24: volumeB1.Ce2.h type: Real
-// 25: volumeB1.BQ type: Real
-// 26: volumeB1.Ce2.b type: Boolean
-// 27: volumeB1.Ce2.a type: Boolean
-// 28: singularPressureLoss1.C2.b type: Boolean
-// 29: volumeB1.Ce1.b type: Boolean
-// 30: singularPressureLoss1.C2.a type: Boolean
-// 31: volumeB1.Ce1.a type: Boolean
-// 32: singularPressureLoss2.C2.b type: Boolean
-// 33: sinkP1.C.b type: Boolean
-// 34: singularPressureLoss2.C2.a type: Boolean
-// 35: sinkP1.C.a type: Boolean
-// 36: singularPressureLoss1.C1.b type: Boolean
-// 37: sourceP1.C.b type: Boolean
-// 38: singularPressureLoss1.C1.a type: Boolean
-// 39: sourceP1.C.a type: Boolean
+// 13: singularPressureLoss2.C1.Q type: Real
 //
 //
 //
@@ -1125,7 +1116,7 @@ getErrorString();
 // 5: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-3}
-// -SET_S:{18, 15, 142, 106, 131, 58, 111, 110, 109, 108, 40, 37, 137, 78, 99, 105, 104, 103, 98, 148, 34, 147, 100, 101, 107, 102, 97, 13, 144, 96, 143, 35, 139, 76, 138, 56, 133, 12, 132}
+// -SET_S:{103, 100, 58, 18, 131, 15, 142, 107, 106, 78, 137, 37, 40}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -1135,55 +1126,56 @@ getErrorString();
 // ==========================================================================
 // -Failed
 //
-// knownVariables not Found:{138, 110} (2)
+// knownVariables not Found:{138, 110, 39} (3)
 // ========================================
 // 1: singularPressureLoss1.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
 // 2: singularPressureLoss2.Pm:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 uncertain=Uncertainty.refine)  "Average fluid pressure" type: Real
+// 3: volumeB1.P:VARIABLE(min = 0.0 start = 100000.0 unit = "Pa" nominal = 100000.0 uncertain=Uncertainty.refine)  "Fluid pressure" type: Real
 //
 // record SimulationResult
 //     resultFile = "",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-006, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.TSP_Pipe5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe5_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.TSP_Pipe5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe5_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Failed to build model: DataReconciliationSimpleTests.TSP_Pipe5"
 // end SimulationResult;
-// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. You might experience problems if these versions are incompatible.
-// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. You might experience problems if these versions are incompatible.
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1494:3-1528:30:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.T was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.dpT was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.cpt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vpp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1552:3-1581:34:writable] Warning: sat.vtp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:1089:9-1089:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:851:9-851:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/IF97_packages.mo:784:9-784:27:writable] Warning: cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:162:3-214:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:252:3-295:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1270:3-1340:18:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.u was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.cp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.ddph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duph was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/C3H3F5/C3H3F5_Ph.mo:2:1-131:14:writable] Warning: pro.duhp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du1satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:1185:3-1241:26:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // Error: Internal error : Condition 2- Failed : The system is ill-posed.
 // Error: pre-optimization module dataReconciliation (simulation) failed.
 // "

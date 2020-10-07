@@ -971,60 +971,59 @@ getErrorString();
 // 51/51 (1): singularPressureLoss2.C2.a = sink1.C.a   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (51)
+// SET_S_After_Minimal_Extraction (23, 23)
+// ========================================
+// 1/1 (1): sink1.C.Q = sink1.Q   [dynamic |0|0|0|0|]
+// 2/2 (1): singularPressureLoss2.C2.Q = sink1.C.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 5/5 (1): volumeATh1.Cs2.h = 100000.0   [dynamic |0|0|0|0|]
+// 6/6 (1): volumeATh1.Ce2.h = 100000.0   [dynamic |0|0|0|0|]
+// 7/7 (1): singularPressureLoss1.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 8/8 (1): singularPressureLoss1.C1.h = sourcePQ1.C.h   [dynamic |0|0|0|0|]
+// 9/9 (1): singularPressureLoss1.C2.h = singularPressureLoss1.C1.h   [dynamic |0|0|0|0|]
+// 10/10 (1): singularPressureLoss1.C2.h = volumeATh1.Ce1.h   [dynamic |0|0|0|0|]
+// 11/11 (1): volumeATh1.Cs2.Q = 0.0   [dynamic |0|0|0|0|]
+// 12/12 (1): volumeATh1.Ce2.Q = 0.0   [dynamic |0|0|0|0|]
+// 13/13 (1): 0.0 = volumeATh1.BQ   [dynamic |0|0|0|0|]
+// 14/14 (1): volumeATh1.BQ = volumeATh1.Ce1.Q + volumeATh1.Ce2.Q + (-volumeATh1.Cs1.Q) - volumeATh1.Cs2.Q   [dynamic |0|0|0|0|]
+// 15/15 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 16/16 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 17/17 (1): singularPressureLoss1.C2.Q = volumeATh1.Ce1.Q   [dynamic |0|0|0|0|]
+// 18/18 (1): volumeATh1.Cth.W = 0.0   [dynamic |0|0|0|0|]
+// 19/19 (1): 0.0 = volumeATh1.BH   [dynamic |0|0|0|0|]
+// 20/20 (1): volumeATh1.BH = volumeATh1.Ce1.Q * volumeATh1.Ce1.h + volumeATh1.Ce2.Q * volumeATh1.Ce2.h + volumeATh1.Cth.W + (-volumeATh1.Cs2.Q) * volumeATh1.Cs2.h - volumeATh1.Cs1.Q * volumeATh1.Cs1.h   [dynamic |0|0|0|0|]
+// 21/21 (1): singularPressureLoss2.C2.h = sink1.C.h   [dynamic |0|0|0|0|]
+// 22/22 (1): singularPressureLoss2.C2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+// 23/23 (1): singularPressureLoss2.h = singularPressureLoss2.C1.h   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (23)
 // ========================================
 //
-// 1: sourcePQ1.C.h type: Real
-// 2: singularPressureLoss1.C1.h type: Real
-// 3: singularPressureLoss1.C2.h type: Real
-// 4: volumeATh1.Ce1.h type: Real
-// 5: volumeATh1.Cs1.h type: Real
-// 6: singularPressureLoss1.C1.h_vol type: Real
-// 7: singularPressureLoss1.C1.Q type: Real
-// 8: singularPressureLoss1.C2.Q type: Real
-// 9: volumeATh1.Ce1.Q type: Real
-// 10: volumeATh1.Cs1.Q type: Real
-// 11: volumeATh1.Cs2.h_vol type: Real
-// 12: volumeATh1.Ce2.h_vol type: Real
-// 13: volumeATh1.Cs1.h_vol type: Real
-// 14: singularPressureLoss2.C1.h_vol type: Real
-// 15: singularPressureLoss2.C2.h_vol type: Real
-// 16: singularPressureLoss1.C2.h_vol type: Real
-// 17: volumeATh1.Ce1.h_vol type: Real
-// 18: singularPressureLoss2.C1.Q type: Real
-// 19: singularPressureLoss2.C2.Q type: Real
-// 20: sink1.Q type: Real
-// 21: sink1.C.Q type: Real
-// 22: singularPressureLoss2.C1.h type: Real
-// 23: sink1.C.h type: Real
-// 24: singularPressureLoss2.C2.h type: Real
-// 25: singularPressureLoss1.C1.b type: Boolean
-// 26: sourcePQ1.C.b type: Boolean
-// 27: singularPressureLoss1.C1.a type: Boolean
-// 28: sourcePQ1.C.a type: Boolean
-// 29: volumeATh1.Cs2.b type: Boolean
-// 30: volumeATh1.Cs2.a type: Boolean
-// 31: volumeATh1.Cs2.h type: Real
-// 32: volumeATh1.Cs2.Q type: Real
-// 33: singularPressureLoss2.C1.b type: Boolean
-// 34: volumeATh1.Cs1.b type: Boolean
-// 35: singularPressureLoss2.C1.a type: Boolean
-// 36: volumeATh1.Cs1.a type: Boolean
-// 37: volumeATh1.BH type: Real
-// 38: volumeATh1.Cth.W type: Real
-// 39: volumeATh1.Ce2.Q type: Real
-// 40: volumeATh1.Ce2.h type: Real
-// 41: volumeATh1.BQ type: Real
-// 42: volumeATh1.Ce2.b type: Boolean
-// 43: volumeATh1.Ce2.a type: Boolean
-// 44: singularPressureLoss1.C2.b type: Boolean
-// 45: volumeATh1.Ce1.b type: Boolean
-// 46: singularPressureLoss1.C2.a type: Boolean
-// 47: volumeATh1.Ce1.a type: Boolean
-// 48: sink1.C.b type: Boolean
-// 49: singularPressureLoss2.C2.b type: Boolean
-// 50: sink1.C.a type: Boolean
-// 51: singularPressureLoss2.C2.a type: Boolean
+// 1: sink1.Q type: Real
+// 2: sink1.C.Q type: Real
+// 3: singularPressureLoss2.C2.Q type: Real
+// 4: singularPressureLoss2.C1.Q type: Real
+// 5: sourcePQ1.C.h type: Real
+// 6: singularPressureLoss1.C1.h type: Real
+// 7: singularPressureLoss1.C2.h type: Real
+// 8: volumeATh1.BQ type: Real
+// 9: singularPressureLoss1.C1.Q type: Real
+// 10: singularPressureLoss1.C2.Q type: Real
+// 11: volumeATh1.BH type: Real
+// 12: volumeATh1.Cth.W type: Real
+// 13: volumeATh1.Ce1.Q type: Real
+// 14: volumeATh1.Ce1.h type: Real
+// 15: volumeATh1.Ce2.Q type: Real
+// 16: volumeATh1.Ce2.h type: Real
+// 17: volumeATh1.Cs1.Q type: Real
+// 18: volumeATh1.Cs1.h type: Real
+// 19: volumeATh1.Cs2.Q type: Real
+// 20: volumeATh1.Cs2.h type: Real
+// 21: sink1.C.h type: Real
+// 22: singularPressureLoss2.C2.h type: Real
+// 23: singularPressureLoss2.C1.h type: Real
 //
 //
 //
@@ -1040,7 +1039,7 @@ getErrorString();
 // 5: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-2, -1}
-// -SET_S:{21, 119, 20, 110, 76, 23, 22, 19, 107, 70, 81, 80, 79, 78, 115, 45, 111, 44, 41, 121, 12, 43, 42, 124, 95, 118, 16, 117, 63, 69, 68, 67, 62, 114, 38, 113, 77, 105, 64, 65, 71, 66, 61, 17, 109, 60, 108, 39, 123, 10, 122}
+// -SET_S:{12, 121, 41, 44, 68, 65, 21, 119, 20, 110, 67, 64, 71, 70, 22, 19, 107, 105, 77, 76, 124, 42, 43}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -1048,59 +1047,16 @@ getErrorString();
 //
 // Condition-2 "All variables of interest must be involved in SET_C or SET_S"
 // ==========================================================================
-// -Passed
+// -Failed
 //
-// -SET_C has known variables:{} (0)
+// knownVariables not Found:{52} (1)
 // ========================================
-//
-//
-// -SET_S has known variables:{109, 105, 81, 77, 52} (5)
-// ========================================
-// 1: singularPressureLoss1.Q:VARIABLE(start = 100.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 2: singularPressureLoss1.h:VARIABLE(start = 100000.0 unit = "J/kg" uncertain=Uncertainty.refine)  "Fluid specific enthalpy" type: Real
-// 3: singularPressureLoss2.Q:VARIABLE(start = 99.3 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
-// 4: singularPressureLoss2.h:VARIABLE(start = 110000.0 unit = "J/kg" uncertain=Uncertainty.refine)  "Fluid specific enthalpy" type: Real
-// 5: volumeATh1.h:VARIABLE(start = 1.0 unit = "J/kg" uncertain=Uncertainty.refine)  "Fluid specific enthalpy" type: Real
-//
-// Condition-3 "SET_C equations must be strictly less than Variable of Interest"
-// ==========================================================================
-// -Passed
-// -SET_C contains:2 equations < 5 known variables
-//
-// Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
-// ==========================================================================
-//
-// -SET_C has intermediate variables:{32, 74, 31, 73} (4)
-// ========================================
-// 1: volumeATh1.Cs1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 2: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 3: volumeATh1.Cs1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
-// 4: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
-//
-//
-// -SET_S has intermediate variables involved in SET_C:{32, 74, 31, 73} (4)
-// ========================================
-// 1: volumeATh1.Cs1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 2: singularPressureLoss2.C1.Q:VARIABLE(flow=false start = 500.0 unit = "kg/s" )  "Mass flow rate of the fluid crossing the boundary of the control volume" type: Real
-// 3: volumeATh1.Cs1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
-// 4: singularPressureLoss2.C1.h:VARIABLE(flow=false start = 100000.0 unit = "J/kg" )  "Specific enthalpy of the fluid crossing the boundary of the control volume" type: Real
-//
-// -Passed
-//
-// Condition-5 "SET_S should be square "
-// ==========================================================================
-// -Passed
-//  Set_S has 51 equations and 51 variables
+// 1: volumeATh1.h:VARIABLE(start = 1.0 unit = "J/kg" uncertain=Uncertainty.refine)  "Fluid specific enthalpy" type: Real
 //
 // record SimulationResult
-//     resultFile = "econcile",
+//     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.TSP_Pipe7', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe7_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
-// stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | DataReconciliationSimpleTests.TSP_Pipe7
-// stdout            | info    | DataReconciliation Completed!
-// "
+//     messages = "Failed to build model: DataReconciliationSimpleTests.TSP_Pipe7"
 // end SimulationResult;
 // "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
 // Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
@@ -1139,5 +1095,7 @@ getErrorString();
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
+// Error: Internal error : Condition 2- Failed : The system is ill-posed.
+// Error: pre-optimization module dataReconciliation (simulation) failed.
 // "
 // endResult

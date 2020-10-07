@@ -146,6 +146,12 @@ getErrorString();
 // 2/2 (1): Q1 = y1   [dynamic |0|0|0|0|]
 //
 //
+// SET_S_After_Minimal_Extraction (2, 2)
+// ========================================
+// 1/1 (1): Q2 = y2   [dynamic |0|0|0|0|]
+// 2/2 (1): Q1 = y1   [dynamic |0|0|0|0|]
+//
+//
 // Unknown variables in SET_S  (2)
 // ========================================
 //

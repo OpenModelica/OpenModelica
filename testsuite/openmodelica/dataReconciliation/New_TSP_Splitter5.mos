@@ -1395,65 +1395,45 @@ getErrorString();
 // 56/56 (1): singularPressureLoss3.C1.a = sourceQ3.C.a   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (56)
+// SET_S_After_Minimal_Extraction (16, 16)
+// ========================================
+// 1/1 (1): staticDrum1.Ce_sup.Q = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): singularPressureLoss2.C2.Q = staticDrum1.Ce_steam.Q   [dynamic |0|0|0|0|]
+// 5/5 (1): staticDrum1.Cs_purg.Q = 0.0   [dynamic |0|0|0|0|]
+// 6/6 (1): staticDrum1.Cs_sur.Q = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): staticDrum1.Cs_eva.Q = 0.0   [dynamic |0|0|0|0|]
+// 8/8 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 9/9 (1): singularPressureLoss3.C2.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 10/10 (1): singularPressureLoss3.C2.Q = staticDrum1.Ce_eco.Q   [dynamic |0|0|0|0|]
+// 11/11 (1): staticDrum1.Ce_eva.Q = 0.0   [dynamic |0|0|0|0|]
+// 12/12 (1): staticDrum1.Ce_eco.Q + staticDrum1.Ce_steam.Q + staticDrum1.Ce_sup.Q + staticDrum1.Ce_eva.Q + (-staticDrum1.Cs_sup.Q) - staticDrum1.Cs_eva.Q - staticDrum1.Cs_sur.Q - staticDrum1.Cs_purg.Q = 0.0   [dynamic |0|0|0|0|]
+// 13/13 (1): sink1.C.Q = sink1.Q   [dynamic |0|0|0|0|]
+// 14/14 (1): singularPressureLoss1.C2.Q = sink1.C.Q   [dynamic |0|0|0|0|]
+// 15/15 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 16/16 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (16)
 // ========================================
 //
-// 1: singularPressureLoss3.C1.Q type: Real
-// 2: singularPressureLoss3.C2.Q type: Real
-// 3: staticDrum1.Ce_eco.Q type: Real
-// 4: staticDrum1.Cs_sup.Q type: Real
-// 5: singularPressureLoss1.C1.Q type: Real
-// 6: singularPressureLoss1.C2.Q type: Real
-// 7: sink1.Q type: Real
-// 8: sink1.C.Q type: Real
-// 9: singularPressureLoss2.C1.Q type: Real
-// 10: singularPressureLoss2.C2.Q type: Real
+// 1: singularPressureLoss2.C1.Q type: Real
+// 2: singularPressureLoss2.C2.Q type: Real
+// 3: singularPressureLoss3.C1.Q type: Real
+// 4: singularPressureLoss3.C2.Q type: Real
+// 5: staticDrum1.Ce_eva.Q type: Real
+// 6: staticDrum1.Ce_eco.Q type: Real
+// 7: staticDrum1.Cs_sup.Q type: Real
+// 8: staticDrum1.Cs_eva.Q type: Real
+// 9: staticDrum1.Cs_sur.Q type: Real
+// 10: staticDrum1.Cs_purg.Q type: Real
 // 11: staticDrum1.Ce_steam.Q type: Real
-// 12: singularPressureLoss1.C2.b type: Boolean
-// 13: sink1.C.b type: Boolean
-// 14: singularPressureLoss1.C2.a type: Boolean
-// 15: sink1.C.a type: Boolean
-// 16: staticDrum1.Ce_eva.Q type: Real
-// 17: staticDrum1.Ce_eva.h type: Real
-// 18: staticDrum1.Cs_eva.Q type: Real
-// 19: staticDrum1.Cs_sur.Q type: Real
-// 20: staticDrum1.Cs_purg.Q type: Real
-// 21: staticDrum1.Ce_sup.Q type: Real
-// 22: staticDrum1.Cs_eva.h type: Real
-// 23: staticDrum1.Cs_sur.h type: Real
-// 24: staticDrum1.Cs_purg.h type: Real
-// 25: staticDrum1.Ce_sup.h type: Real
-// 26: staticDrum1.Cth.W type: Real
-// 27: staticDrum1.Ce_sup.b type: Boolean
-// 28: staticDrum1.Ce_sup.a type: Boolean
-// 29: singularPressureLoss2.C2.b type: Boolean
-// 30: staticDrum1.Ce_steam.b type: Boolean
-// 31: singularPressureLoss2.C2.a type: Boolean
-// 32: staticDrum1.Ce_steam.a type: Boolean
-// 33: staticDrum1.Cs_purg.b type: Boolean
-// 34: staticDrum1.Cs_purg.a type: Boolean
-// 35: staticDrum1.Cs_sur.b type: Boolean
-// 36: staticDrum1.Cs_sur.a type: Boolean
-// 37: staticDrum1.Cs_eva.b type: Boolean
-// 38: staticDrum1.Cs_eva.a type: Boolean
-// 39: singularPressureLoss1.C1.b type: Boolean
-// 40: staticDrum1.Cs_sup.b type: Boolean
-// 41: singularPressureLoss1.C1.a type: Boolean
-// 42: staticDrum1.Cs_sup.a type: Boolean
-// 43: singularPressureLoss3.C2.b type: Boolean
-// 44: staticDrum1.Ce_eco.b type: Boolean
-// 45: singularPressureLoss3.C2.a type: Boolean
-// 46: staticDrum1.Ce_eco.a type: Boolean
-// 47: staticDrum1.Ce_eva.b type: Boolean
-// 48: staticDrum1.Ce_eva.a type: Boolean
-// 49: singularPressureLoss2.C1.b type: Boolean
-// 50: sourceQ2.C.b type: Boolean
-// 51: singularPressureLoss2.C1.a type: Boolean
-// 52: sourceQ2.C.a type: Boolean
-// 53: singularPressureLoss3.C1.b type: Boolean
-// 54: sourceQ3.C.b type: Boolean
-// 55: singularPressureLoss3.C1.a type: Boolean
-// 56: sourceQ3.C.a type: Boolean
+// 12: staticDrum1.Ce_sup.Q type: Real
+// 13: sink1.Q type: Real
+// 14: sink1.C.Q type: Real
+// 15: singularPressureLoss1.C2.Q type: Real
+// 16: singularPressureLoss1.C1.Q type: Real
 //
 //
 //
@@ -1467,7 +1447,7 @@ getErrorString();
 // 3: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-3}
-// -SET_S:{59, 56, 174, 130, 15, 12, 185, 152, 37, 34, 168, 10, 187, 150, 186, 102, 103, 105, 111, 108, 99, 106, 112, 109, 100, 156, 101, 98, 32, 170, 97, 169, 96, 110, 95, 113, 94, 107, 93, 181, 9, 180, 54, 176, 92, 175, 104, 91, 83, 164, 31, 163, 75, 159, 53, 158}
+// -SET_S:{99, 37, 34, 168, 108, 111, 105, 59, 56, 174, 102, 130, 152, 185, 12, 15}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -1511,7 +1491,7 @@ getErrorString();
 // Condition-5 "SET_S should be square "
 // ==========================================================================
 // -Passed
-//  Set_S has 56 equations and 56 variables
+//  Set_S has 16 equations and 16 variables
 //
 // record SimulationResult
 //     resultFile = "econcile",

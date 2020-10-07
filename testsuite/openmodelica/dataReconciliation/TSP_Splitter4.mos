@@ -1147,47 +1147,39 @@ getErrorString();
 // 38/38 (1): mixer21.Ce2.a = singularPressureLoss3.C2.a   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (38)
+// SET_S_After_Minimal_Extraction (13, 13)
+// ========================================
+// 1/1 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 2/2 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): mixer21.Ce1.Q = singularPressureLoss2.C2.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): mixer21.Oalpha1.signal = mixer21.alpha1   [dynamic |0|0|0|0|]
+// 5/5 (1): mixer21.alpha1 = mixer21.Ce1.Q / mixer21.Cs.Q   [dynamic |0|0|0|0|]
+// 6/6 (1): sink1.C.Q = sink1.Q   [dynamic |0|0|0|0|]
+// 7/7 (1): singularPressureLoss1.C2.Q = sink1.C.Q   [dynamic |0|0|0|0|]
+// 8/8 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 9/9 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 10/10 (1): mixer21.Cs.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 11/11 (1): 0.0 = mixer21.Ce1.Q + mixer21.Ce2.Q - mixer21.Cs.Q   [dynamic |0|0|0|0|]
+// 12/12 (1): singularPressureLoss3.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+// 13/13 (1): singularPressureLoss3.C2.Q = singularPressureLoss3.C1.Q   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (13)
 // ========================================
 //
-// 1: singularPressureLoss3.C1.Q type: Real
-// 2: singularPressureLoss3.C2.Q type: Real
-// 3: mixer21.Ce2.Q type: Real
-// 4: singularPressureLoss1.C1.Q type: Real
-// 5: singularPressureLoss1.C2.Q type: Real
-// 6: sink1.Q type: Real
-// 7: sink1.C.Q type: Real
-// 8: mixer21.Cs.Q type: Real
-// 9: mixer21.alpha1 type: Real
-// 10: mixer21.Oalpha1.signal type: Real
-// 11: singularPressureLoss2.C1.Q type: Real
-// 12: singularPressureLoss2.C2.Q type: Real
-// 13: mixer21.Ce1.Q type: Real
-// 14: singularPressureLoss3.C1.b type: Boolean
-// 15: sourceQ1.C.b type: Boolean
-// 16: singularPressureLoss3.C1.a type: Boolean
-// 17: sourceQ1.C.a type: Boolean
-// 18: singularPressureLoss1.C2.b type: Boolean
-// 19: sink1.C.b type: Boolean
-// 20: singularPressureLoss1.C2.a type: Boolean
-// 21: sink1.C.a type: Boolean
-// 22: singularPressureLoss2.C1.b type: Boolean
-// 23: sourcePQ1.C.b type: Boolean
-// 24: singularPressureLoss2.C1.a type: Boolean
-// 25: sourcePQ1.C.a type: Boolean
-// 26: mixer21.Ialpha1.signal type: Real
-// 27: singularPressureLoss2.C2.b type: Boolean
-// 28: mixer21.Ce1.b type: Boolean
-// 29: singularPressureLoss2.C2.a type: Boolean
-// 30: mixer21.Ce1.a type: Boolean
-// 31: singularPressureLoss1.C1.b type: Boolean
-// 32: mixer21.Cs.b type: Boolean
-// 33: singularPressureLoss1.C1.a type: Boolean
-// 34: mixer21.Cs.a type: Boolean
-// 35: singularPressureLoss3.C2.b type: Boolean
-// 36: mixer21.Ce2.b type: Boolean
-// 37: singularPressureLoss3.C2.a type: Boolean
-// 38: mixer21.Ce2.a type: Boolean
+// 1: singularPressureLoss2.C1.Q type: Real
+// 2: singularPressureLoss2.C2.Q type: Real
+// 3: mixer21.Oalpha1.signal type: Real
+// 4: mixer21.alpha1 type: Real
+// 5: sink1.Q type: Real
+// 6: sink1.C.Q type: Real
+// 7: singularPressureLoss1.C2.Q type: Real
+// 8: singularPressureLoss1.C1.Q type: Real
+// 9: mixer21.Ce2.Q type: Real
+// 10: mixer21.Cs.Q type: Real
+// 11: mixer21.Ce1.Q type: Real
+// 12: singularPressureLoss3.C1.Q type: Real
+// 13: singularPressureLoss3.C2.Q type: Real
 //
 //
 //
@@ -1201,7 +1193,7 @@ getErrorString();
 // 3: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-1}
-// -SET_S:{60, 57, 16, 126, 86, 13, 148, 113, 88, 89, 38, 35, 132, 117, 155, 54, 154, 11, 150, 111, 149, 101, 144, 32, 143, 79, 33, 134, 78, 133, 77, 128, 10, 127, 55, 139, 76, 138}
+// -SET_S:{38, 35, 132, 89, 88, 113, 148, 13, 16, 126, 86, 60, 57}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -1245,7 +1237,7 @@ getErrorString();
 // Condition-5 "SET_S should be square "
 // ==========================================================================
 // -Passed
-//  Set_S has 38 equations and 38 variables
+//  Set_S has 13 equations and 13 variables
 //
 // record SimulationResult
 //     resultFile = "econcile",
