@@ -648,27 +648,25 @@ getErrorString();
 // 18/18 (1): singularPressureLoss1.C1.a = sourcePQ1.C.a   [dynamic |0|0|0|0|]
 //
 //
-// Unknown variables in SET_S  (18)
+// SET_S_After_Minimal_Extraction (6, 6)
+// ========================================
+// 1/1 (1): sink1.C.Q = sink1.Q   [dynamic |0|0|0|0|]
+// 2/2 (1): singularPressureLoss2.C2.Q = sink1.C.Q   [dynamic |0|0|0|0|]
+// 3/3 (1): singularPressureLoss2.C2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 4/4 (1): singularPressureLoss2.Q = singularPressureLoss2.C1.Q   [dynamic |0|0|0|0|]
+// 5/5 (1): singularPressureLoss1.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+// 6/6 (1): singularPressureLoss1.C2.Q = singularPressureLoss1.C1.Q   [dynamic |0|0|0|0|]
+//
+//
+// Unknown variables in SET_S  (6)
 // ========================================
 //
-// 1: singularPressureLoss1.C1.Q type: Real
-// 2: singularPressureLoss1.C2.Q type: Real
-// 3: singularPressureLoss2.C1.Q type: Real
-// 4: singularPressureLoss2.C2.Q type: Real
-// 5: sink1.Q type: Real
-// 6: sink1.C.Q type: Real
-// 7: sink1.C.b type: Boolean
-// 8: singularPressureLoss2.C2.b type: Boolean
-// 9: sink1.C.a type: Boolean
-// 10: singularPressureLoss2.C2.a type: Boolean
-// 11: singularPressureLoss1.C2.b type: Boolean
-// 12: singularPressureLoss2.C1.b type: Boolean
-// 13: singularPressureLoss1.C2.a type: Boolean
-// 14: singularPressureLoss2.C1.a type: Boolean
-// 15: sourcePQ1.C.b type: Boolean
-// 16: singularPressureLoss1.C1.b type: Boolean
-// 17: sourcePQ1.C.a type: Boolean
-// 18: singularPressureLoss1.C1.a type: Boolean
+// 1: sink1.Q type: Real
+// 2: sink1.C.Q type: Real
+// 3: singularPressureLoss2.C2.Q type: Real
+// 4: singularPressureLoss2.C1.Q type: Real
+// 5: singularPressureLoss1.C1.Q type: Real
+// 6: singularPressureLoss1.C2.Q type: Real
 //
 //
 //
@@ -681,7 +679,7 @@ getErrorString();
 // 2: singularPressureLoss1.Q:VARIABLE(start = 100.0 unit = "kg/s" uncertain=Uncertainty.refine)  "Mass flow rate" type: Real
 //
 // -SET_C:{-1}
-// -SET_S:{29, 26, 51, 48, 68, 19, 46, 70, 17, 69, 24, 75, 45, 74, 7, 80, 23, 79}
+// -SET_S:{19, 68, 48, 51, 29, 26}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
 // ==========================================================================
@@ -724,7 +722,7 @@ getErrorString();
 // Condition-5 "SET_S should be square "
 // ==========================================================================
 // -Passed
-//  Set_S has 18 equations and 18 variables
+//  Set_S has 6 equations and 6 variables
 //
 // record SimulationResult
 //     resultFile = "econcile",
