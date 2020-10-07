@@ -3602,12 +3602,20 @@ algorithm
   includeDefaultFmi := dquote + Settings.getInstallationDirectoryPath() + "/include/omc/c/fmi" + dquote;
 
   CC := System.getCCompiler();
-  CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
+
+  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+    CFLAGS := "-O0 -g " + System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
+  else
+    CFLAGS := "-Os "+System.stringReplace(System.getCFlags(),"${MODELICAUSERCFLAGS}","");
+  end if;
 
   LDFLAGS := ("-L"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
               "-Wl,-rpath,"+dquote+Settings.getInstallationDirectoryPath()+"/lib/"+Autoconf.triple+"/omc"+dquote+" "+
               System.getLDFlags()+" ");
   CPPFLAGS := "-I" + includeDefaultFmi + " -DOMC_FMI_RUNTIME=1";
+  if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
+    CPPFLAGS := CPPFLAGS + " -O0 -g ";
+  end if;
   if needs3rdPartyLibs then
     SUNDIALS :=  "1";
     CPPFLAGS := CPPFLAGS + " -DWITH_SUNDIALS=1" + " -Isundials";
@@ -3796,7 +3804,6 @@ protected
   list<String> fmiFlagsList;
   Boolean needs3rdPartyLibs;
   String FMUType = inFMUType;
-  Boolean debug = false;
 
 algorithm
 
@@ -3915,7 +3922,7 @@ algorithm
     fail();
   end if;
 
-  if not debug then
+  if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
     System.removeDirectory(fmutmp);
   end if;
 end buildModelFMU;
