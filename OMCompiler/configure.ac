@@ -206,7 +206,10 @@ if echo $CC | grep -v ccc-analyzer; then # ccc-analyzer calls gcc first and then
   if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^5"; then
     TRY_FLAGS="$TRY_FLAGS -fno-ipa-pure-const"
   fi
-
+  # GCC 8.x generates bad code, too
+  if $CC --version | grep -q gcc && $CC -dumpversion | grep -q "^8"; then
+    TRY_FLAGS="$TRY_FLAGS -fno-tree-vrp"
+  fi
   # GCC 7.x issues:
   # - RUNPATH instead of RPATH, disable that via -Wl,--disable-new-dtags
   # - sqrt from libcolamd is not found in -lm if -Wl,--no-as-needed is not specified
