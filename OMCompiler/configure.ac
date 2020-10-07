@@ -246,6 +246,20 @@ for flag in -Werror=implicit-function-declaration -Werror=incompatible-pointer-t
 done
 CFLAGS="$OLD_CFLAGS"
 
+AC_LANG([Fortran])
+OLD_FCFLAGS="$FCFLAGS"
+EXTRA_FCFLAGS=""
+AC_MSG_CHECKING([for flags to append to FCFLAGS])
+for flag in -fallow-argument-mismatch; do
+  FCFLAGS="$flag -Werror"
+  AC_TRY_LINK([], [], [
+    EXTRA_FCFLAGS="$EXTRA_FCFLAGS $flag"
+  ],[])
+done
+AC_MSG_RESULT([$EXTRA_FCFLAGS])
+FCFLAGS="$OLD_FCFLAGS $EXTRA_FCFLAGS"
+AC_LANG([C])
+
 if test ! "$DARWIN" = "1"; then
 
 if test "`getconf LONG_BIT`" = "64"; then
