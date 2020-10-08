@@ -632,7 +632,6 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(infoFile.fileName())
                                                             .arg(parser.errorString()), Helper::scriptingKind, Helper::errorLevel));
       MainWindow::instance()->printStandardOutAndErrorFilesMessages();
-      return;
     } else {
       if (MainWindow::instance()->isDebug()) {
         MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Parsed json file " + infoFile.fileName(), Helper::scriptingKind, Helper::errorLevel));
@@ -2404,8 +2403,6 @@ void VariablesWidget::showContextMenu(QPoint point)
     point.setY(point.y() + adjust);
     menu.exec(mpVariablesTreeView->mapToGlobal(point));
   } else if (pVariablesTreeItem) {
-    qDebug() << "showContextMenu" << index;
-    qDebug() << "name" << pVariablesTreeItem->getVariableName() << "path" << pVariablesTreeItem->getFilePath() << "uses" << pVariablesTreeItem->getUses();
     QAction *pGetDepends = new QAction(tr("Show only direct dependencies"), this);
     if (pVariablesTreeItem->getUses().size() <= 1 /* Self only */) {
       pGetDepends->setEnabled(false);
@@ -2442,7 +2439,7 @@ void VariablesWidget::showContextMenu(QPoint point)
       connect(pGetDefines, SIGNAL(triggered()), mpVariablesTreeModel, SLOT(openTransformationsBrowser()));
     }
 
-    menu.exec(mpVariablesTreeView->mapToGlobal(point));
+    menu.exec(mpVariablesTreeView->viewport()->mapToGlobal(point));
   }
 }
 
