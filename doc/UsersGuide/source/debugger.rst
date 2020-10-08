@@ -4,7 +4,7 @@ Debugging
 =========
 
 There are two main ways to debug Modelica code, the
-`transformations browser <transformations-browser>`_, which shows the
+:ref:`transformations browser <transformations-browser>`, which shows the
 transformations OpenModelica performs on the equations.
 There is also a debugger for :ref:`debugging of algorithm sections and functions <algorithm-debugging>`.
 
@@ -13,8 +13,7 @@ There is also a debugger for :ref:`debugging of algorithm sections and functions
 The Equation-based Debugger
 ---------------------------
 
-This section gives a short description how to get started using the
-equation-based debugger in OMEdit.
+This section gives a short description how to get started using the equation-based debugger in OMEdit.
 
 Enable Tracing Symbolic Transformations
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -58,8 +57,8 @@ click cancel simulation first.
 Use the Transformation Debugger for Browsing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Use the transformation debugger. It opens on the equation where the
-error was found. You can browse through the dependencies (variables that
+The debugger opens on the equation where the error was found.
+You can browse through the dependencies (variables that
 are defined by the equation, or the equation is dependent on), and
 similar for variables. The equations and variables form a bipartite
 graph that you can walk.
