@@ -275,6 +275,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     long step;
     char buffer[4096];
     double lambda;
+    int success = 0;
 
     infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "Global homotopy with equidistant step size started.");
 
@@ -304,6 +305,10 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #endif
 
     infoStreamPrint(LOG_INIT_HOMOTOPY, 1, "homotopy process\n---------------------------");
+    /* try */
+#ifndef OMC_EMCC
+  MMC_TRY_INTERNAL(simulationJumpBuffer)
+#endif
     for(step=0; step<init_lambda_steps; ++step)
     {
       data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
@@ -335,6 +340,23 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       }
 #endif
     }
+    success = 1;
+    /* catch */
+#ifndef OMC_EMCC
+  MMC_CATCH_INTERNAL(simulationJumpBuffer)
+#endif
+    /* Error handling in case an assert was thrown */
+    if (!success)
+    {
+      messageClose(LOG_INIT_HOMOTOPY);
+#if !defined(OMC_NO_FILESYSTEM)
+      if(ACTIVE_STREAM(LOG_INIT_HOMOTOPY))
+        fclose(pFile);
+#endif
+      errorStreamPrint(LOG_ASSERT, 0, "Failed to solve the initialization problem with global homotopy with equidistant step size.");
+      throwStreamPrint(threadData, "Unable to solve initialization problem.");
+    }
+
     data->simulationInfo->homotopySteps += init_lambda_steps;
     messageClose(LOG_INIT_HOMOTOPY);
 
