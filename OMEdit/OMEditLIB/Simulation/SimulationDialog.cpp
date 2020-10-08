@@ -872,8 +872,19 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
               }
               i++;
             }
-          } else { // put everything else in the Additional Simulation Flags textbox
-            additionalSimulationFlags.insert(simulationFlag, value);
+          } else { // put everything else in the Additional Simulation Flags textbox only if the simulation flag is valid
+            bool isValidSimulationFlag = false;
+            for (int i = FLAG_UNKNOWN + 1 ; i < FLAG_MAX ; i++) {
+              if (QString(FLAG_NAME[i]).compare(simulationFlag) == 0) {
+                additionalSimulationFlags.insert(simulationFlag, value);
+                isValidSimulationFlag = true;
+                break;
+              }
+            }
+            if (!isValidSimulationFlag) {
+              MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Ignoring unknown simulation flag: %1").arg(simulationFlag),
+                                                                    Helper::simulationKind, Helper::warningLevel));
+            }
           }
         }
         QStringList additionalSimulationFlagsList;
