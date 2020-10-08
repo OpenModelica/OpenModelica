@@ -4454,6 +4454,7 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      "<h2>%1 - %2</h2>"
      "<b>Connected to %3</b><br />"
      "<b>Connected to %4</b><br /><br />"
+     "Installation path <b>%5</b><br /><br />"
      "Copyright <b>Open Source Modelica Consortium (OSMC)</b>.<br />"
      "Distributed under OSMC-PL and GPL, see <u><a href=\"http://www.openmodelica.org\">www.openmodelica.org</a></u>."
 #if defined(WITHOUT_OSG)
@@ -4463,7 +4464,8 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
      .arg(Helper::applicationName,
           Helper::applicationIntroText,
           Helper::OpenModelicaVersion,
-          oms_getVersion());
+          oms_getVersion(),
+          Helper::OpenModelicaHome);
   // about text label
   Label *pAboutTextLabel = new Label(aboutText);
   pAboutTextLabel->setWordWrap(true);
