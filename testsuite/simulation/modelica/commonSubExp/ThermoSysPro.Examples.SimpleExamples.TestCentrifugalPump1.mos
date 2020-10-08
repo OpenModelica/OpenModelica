@@ -85,7 +85,6 @@ system("rm -f ./ReferenceFiles/ThermoSysPro.Examples.SimpleExamples.TestCentrifu
 // [ThermoSysPro 3.2/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2/ElectroMechanics/Connectors.mo:3:3-36:24:writable] Warning: Connector .ThermoSysPro.ElectroMechanics.Connectors.MechanichalTorque is not balanced: The number of potential variables (2) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// [ThermoSysPro 3.2/WaterSteam/Machines/CentrifugalPump.mo:137:3-139:9:writable] Error: Missing else-clause in if-equation with non-parameter conditions.
 // "
 // 0
 //
