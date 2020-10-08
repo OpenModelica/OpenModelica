@@ -3236,5 +3236,13 @@ algorithm
   end match;
 end createResidualExp;
 
+public function hasAnyUnknown
+  input BackendDAE.Equation eqn;
+  input BackendDAE.Variables vars;
+  output Boolean b;
+algorithm
+  b := not listEmpty(equationVars(eqn, vars));
+end hasAnyUnknown;
+
 annotation(__OpenModelica_Interface="backend");
 end BackendEquation;

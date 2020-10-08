@@ -1168,6 +1168,7 @@ protected
   list<BackendDAE.EqSystem> eqs;
   DoubleEnded.MutableList<BackendDAE.Var> dumpVars;
   DoubleEnded.MutableList<BackendDAE.Equation> removedEqns;
+  list<BackendDAE.Equation> filtered_initial_eqs;
 algorithm
   // filter empty systems
   eqs := {};
@@ -1177,7 +1178,8 @@ algorithm
     if BackendDAEUtil.nonEmptySystem(syst) then
       eqs := syst::eqs;
     else
-      DoubleEnded.push_list_back(removedEqns, BackendEquation.equationList(syst.orderedEqs));
+      filtered_initial_eqs := list(eqn for eqn guard(BackendEquation.hasAnyUnknown(eqn, inInitVars)) in BackendEquation.equationList(syst.orderedEqs));
+      DoubleEnded.push_list_back(removedEqns, filtered_initial_eqs);
       DoubleEnded.push_list_back(removedEqns, BackendEquation.equationList(syst.removedEqs));
     end if;
   end for;
