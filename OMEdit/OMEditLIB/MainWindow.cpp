@@ -2624,6 +2624,20 @@ void MainWindow::TLMSimulate()
 }
 
 /*!
+ * \brief MainWindow::openTemporaryDirectory
+ * Opens the temporary directory
+ */
+void MainWindow::openTemporaryDirectory()
+{
+  QUrl temporaryDirectory (QString("file:///%1").arg(Utilities::tempDirectory()));
+  if (!QDesktopServices::openUrl(temporaryDirectory)) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
+                                                          GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(temporaryDirectory.toString()),
+                                                          Helper::scriptingKind, Helper::errorLevel));
+  }
+}
+
+/*!
  * \brief MainWindow::openWorkingDirectory
  * Opens the current working directory.
  */
@@ -3542,6 +3556,10 @@ void MainWindow::createActions()
     mpShowOMCDiffWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler Diff"));
     connect(mpShowOMCDiffWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCDiffWidget()));
   }
+  // open temporary directory action
+  mpOpenTemporaryDirectoryAction = new QAction(tr("Open Temporary Directory"), this);
+  mpOpenTemporaryDirectoryAction->setStatusTip(tr("Opens the temporary directory"));
+  connect(mpOpenTemporaryDirectoryAction, SIGNAL(triggered()), SLOT(openTemporaryDirectory()));
   // open working directory action
   mpOpenWorkingDirectoryAction = new QAction(tr("Open Working Directory"), this);
   mpOpenWorkingDirectoryAction->setStatusTip(tr("Opens the current working directory"));
@@ -3975,6 +3993,7 @@ void MainWindow::createMenus()
     pToolsMenu->addAction(mpShowOMCDiffWidgetAction);
   }
   pToolsMenu->addSeparator();
+  pToolsMenu->addAction(mpOpenTemporaryDirectoryAction);
   pToolsMenu->addAction(mpOpenWorkingDirectoryAction);
   pToolsMenu->addAction(mpOpenTerminalAction);
   pToolsMenu->addSeparator();
