@@ -381,6 +381,7 @@ private:
   QAction *mpShowOMCLoggerWidgetAction;
   QAction *mpShowOpenModelicaCommandPromptAction;
   QAction *mpShowOMCDiffWidgetAction;
+  QAction *mpOpenTemporaryDirectoryAction;
   QAction *mpOpenWorkingDirectoryAction;
   QAction *mpOpenTerminalAction;
   QAction *mpOptionsAction;
@@ -520,6 +521,7 @@ public slots:
   void exportToClipboard();
   void fetchInterfaceData();
   void TLMSimulate();
+  void openTemporaryDirectory();
   void openWorkingDirectory();
   void openTerminal();
   void openConfigurationOptions();
