@@ -106,7 +106,7 @@ Installation
 
 The core files of OMSens are provided as part of the OpenModelica installation.
 However, you still need to install python and build OMSens with that python before using it.
-Follow the build instructions described on the `OMSens github page <https://github.com/OpenModelica/OMSens>`_.
+Follow the build/install instructions described on the `OMSens github page <https://github.com/OpenModelica/OMSens>`_.
 
 Usage
 ~~~~~
