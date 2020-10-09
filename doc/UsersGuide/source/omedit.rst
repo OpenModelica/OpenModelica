@@ -1755,7 +1755,7 @@ The users can perform multiple searches and go back to old search results using 
 
   Search History
 
-Temporary Directory, Working Directory and Log Files
+Temporary Directory, Log Files and Working Directory
 ----------------------------------------------------
 
 On Unix/Linux systems temporary directory is the path in the `TMPDIR` environment variable
@@ -1765,7 +1765,8 @@ so the complete path is usually `/tmp/OpenModelica<USERNAME>/OMEdit`.
 On Windows its the path in the `TEMP` or `TMP` environment variable appended with directory paths
 `OpenModelica/OMEdit` so the complete path is usually `%TEMP%/OpenModelica/OMEdit`.
 
-All the log files are always generated in the temporary directory.
+All the log files are always generated in the temporary directory. Choose *Tools > Open Temporary Directory*
+to open the temporary directory.
 
 By default the working directory has the same path as the temporary directory. You can change
 the working directory from *Tools > Options > General* see section :ref:`omedit-options-general`.
