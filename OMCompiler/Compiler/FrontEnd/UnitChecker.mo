@@ -65,7 +65,10 @@ algorithm
 
     case (_,st)
       equation
+        // phi: very old unit checking
+        /*
         false = Flags.getConfigBool(Flags.UNIT_CHECKING);
+        */
       then (st);
 
     // No more terms?
