@@ -18,11 +18,11 @@ UnitCheck14.mos \
 UnitCheck15.mos \
 UnitCheck16.mos \
 UnitCheck17.mos \
-Unitcheck18.mos \
+UnitCheck18.mos \
 ticket3631.mos \
 
 
-# test that currently fail. Move up when fixed.
+# Tests that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
 

@@ -9,34 +9,38 @@ package unitCheckTests
     Real V;
     Real A(unit = \"m/s\");
   equation
-    A=5.0;
-    V=8.0;
-    0=V-A-S;
+    A = 5.0;
+    V = 8.0;
+    0 = V - A - S;
   end UnitCheck7;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
-translateModel(unitCheckTests.UnitCheck7); getErrorString();
-
+setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+instantiateModel(unitCheckTests.UnitCheck7); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// #####################################
 // HashTable:
-// {A,{1.0 * m^(1) * s^(-1)}}
-// {V,{MASTER(V)}}
-// {S,{MASTER(S)}}
-// HashTable:
-// {A,{1.0 * m^(1) * s^(-1)}}
-// {V,{1.0 * m^(1) * s^(-1)}}
 // {S,{1.0 * m^(1) * s^(-1)}}
+// {V,{1.0 * m^(1) * s^(-1)}}
+// {A,{1.0 * m^(1) * s^(-1)}}
+// {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
-// true
-// "Notification: \"V\" has the Unit \"m/s\"
-// \"S\" has the Unit \"m/s\"
+// "class unitCheckTests.UnitCheck7
+//   Real S(unit = \"m/s\");
+//   Real V(unit = \"m/s\");
+//   Real A(unit = \"m/s\");
+// equation
+//   A = 5.0;
+//   V = 8.0;
+//   0.0 = V - A - S;
+// end unitCheckTests.UnitCheck7;
+// "
+// "Notification: \"S\" has the Unit \"m/s\"
+// \"V\" has the Unit \"m/s\"
 // "
 // endResult

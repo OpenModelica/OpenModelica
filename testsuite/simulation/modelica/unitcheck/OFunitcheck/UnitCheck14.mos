@@ -6,18 +6,17 @@ loadString("
 package unitCheckTests
   model UnitCheck14
     Real A;
-    Real V=1;
+    Real V = 1;
     Real S;
   equation
-    S=time;
-    A=der(S);
+    S = time;
+    A = der(S);
   end UnitCheck14;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits"); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.UnitCheck14); getErrorString();
-
 
 // Result:
 // true

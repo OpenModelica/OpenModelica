@@ -2,19 +2,16 @@
 // keywords: initialization
 // status: correct
 
-
 loadString("
 model UnitCheck19
-  equation
-    when time > 0 then
-    end when;
+equation
+  when time > 0 then
+  end when;
 end UnitCheck19;
 "); getErrorString();
 
-setCommandLineOptions("-d=frontEndUnitCheck,dumpUnits,newInst");
-getErrorString();
-instantiateModel(UnitCheck19);
-getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+instantiateModel(UnitCheck19); getErrorString();
 
 // Result:
 // true

@@ -9,17 +9,15 @@ package unitCheckTests
     Real A;
     Real S(unit = \"m2\");
   equation
-    A=5.0;
-    V=8.0;
-    S=V^2+sqrt(A);
+    A = 5.0;
+    V = 8.0;
+    S = V^2 + sqrt(A);
   end UnitCheck12;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("-d=frontEndUnitCheck,dumpUnits,newInst");
-getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.UnitCheck12); getErrorString();
-
 
 // Result:
 // true

@@ -3,18 +3,15 @@
 // status: correct
 
 loadString("
-model test
+model UnitCheck16
   Real x(fixed=true, start=1);
 equation
   der(x) = time;
-end test;
+end UnitCheck16;
 "); getErrorString();
 
-setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
-getErrorString();
-instantiateModel(test);
-getErrorString();
-
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
+instantiateModel(UnitCheck16); getErrorString();
 
 // Result:
 // true
@@ -25,11 +22,11 @@ getErrorString();
 // {x,{1.0 * s^(2)}}
 // {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
-// "class test
+// "class UnitCheck16
 //   Real x(unit = \"s2\", start = 1.0, fixed = true);
 // equation
 //   der(x) = time;
-// end test;
+// end UnitCheck16;
 // "
 // "Notification: \"x\" has the Unit \"s2\"
 // "

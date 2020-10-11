@@ -9,17 +9,15 @@ package unitCheckTests
     Real A;
     Real S(unit = \"m/s\");
   equation
-    A=5.0;
-    V=8.0;
-    S=V*A;
+    A = 5.0;
+    V = 8.0;
+    S = V*A;
   end UnitCheck10;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("-d=frontEndUnitCheck,dumpUnits,newInst");
-getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.UnitCheck10); getErrorString();
-
 
 // Result:
 // true

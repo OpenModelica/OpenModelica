@@ -8,20 +8,18 @@ package unitCheckTests
     Real V(unit = \"m2/s2\");
     Real A;
     Real S(unit = \"m/s\");
-    Real C=1;
-    Real E=1;
+    Real C = 1;
+    Real E = 1;
   equation
-    A=5.0;
-    V=8.0;
-    V=E*C+S*(-A);
+    A = 5.0;
+    V = 8.0;
+    V = E*C + S*(-A);
   end UnitCheck9;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("-d=frontEndUnitCheck,dumpUnits,newInst");
-getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
-
 
 // Result:
 // true
@@ -45,7 +43,7 @@ instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
 // equation
 //   A = 5.0;
 //   V = 8.0;
-//   V = E * C + S * (-A);
+//   V = E * C - S * A;
 // end unitCheckTests.UnitCheck9;
 // "
 // "Notification: \"A\" has the Unit \"m/s\"

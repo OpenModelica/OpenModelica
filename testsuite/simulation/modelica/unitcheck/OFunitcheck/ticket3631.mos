@@ -13,8 +13,7 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("-d=oldFrontEndUnitCheck,dumpUnits");
-getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.ticket3631); getErrorString();
 
 // Result:
