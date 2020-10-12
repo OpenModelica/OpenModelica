@@ -473,7 +473,12 @@ nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
 omcCAPImsvcinstall:
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw omcCAPImsvc OMBUILDDIR=$(OMBUILDDIR)
 
-runtimeCPPmsvcinstall: getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc OMSIBaseMSVC copycppmsvcheader
+runtimeCPPmsvcinstall_old: copycppmsvcheader_old
+	$(MAKE) -C SimulationRuntime/cpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
+	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
+	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
+
+runtimeCPPmsvcinstall: getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc OMSIBaseMSVC copycppmsvcheader runtimeCPPmsvcinstall_old
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/msvc
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/omsicpp/msvc
