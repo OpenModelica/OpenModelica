@@ -636,8 +636,6 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
 
   if (comp->_need_update)
   {
-    comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
-    comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
     if (initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0))
     {
       comp->state = modelError;
@@ -778,8 +776,6 @@ fmi2Status fmi2GetReal(fmi2Component c, const fmi2ValueReference vr[], size_t nv
   {
     if (modelInitializationMode == comp->state)
     {
-      comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
       initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
     }
     else
@@ -850,8 +846,6 @@ fmi2Status fmi2GetInteger(fmi2Component c, const fmi2ValueReference vr[], size_t
   {
     if (modelInitializationMode == comp->state)
     {
-      comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
       initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
     }
     else
@@ -922,8 +916,6 @@ fmi2Status fmi2GetBoolean(fmi2Component c, const fmi2ValueReference vr[], size_t
   {
     if (modelInitializationMode == comp->state)
     {
-      comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
       initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
     }
     else
@@ -994,8 +986,6 @@ fmi2Status fmi2GetString(fmi2Component c, const fmi2ValueReference vr[], size_t 
   {
     if (modelInitializationMode == comp->state)
     {
-      comp->fmuData->callback->updateBoundParameters(comp->fmuData, comp->threadData);
-      comp->fmuData->callback->updateBoundVariableAttributes(comp->fmuData, comp->threadData);
       initialization(comp->fmuData, comp->threadData, "fmi", "", 0.0);
     }
     else
