@@ -146,6 +146,14 @@ FORMS += ImageSizeDlg.ui \
     searchform.ui
 
 win32 {
+
+  _cxx = $$(CXX)
+  contains(_cxx, clang++) {
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport")
+    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+  }
+
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   DEFINES += IMPORT_INTO=1
   # win32 vs. win64

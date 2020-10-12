@@ -55,6 +55,14 @@ evil_hack_to_fool_lupdate {
 # Windows libraries and includes
 win32 {
 
+  _cxx = $$(CXX)
+  contains(_cxx, clang++) {
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport")
+    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+  }
+
+
 CONFIG(release, debug|release) { # release
   # required for backtrace
   # In order to get the stack trace in Windows we must add -g flag. Qt automatically adds the -O2 flag for optimization.

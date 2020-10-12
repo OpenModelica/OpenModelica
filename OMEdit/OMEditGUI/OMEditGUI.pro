@@ -44,6 +44,13 @@ OMEDIT_ROOT = ../
 
 # Windows libraries and includes
 win32 {
+  _cxx = $$(CXX)
+  contains(_cxx, clang++) {
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport")
+    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+  }
+
   include(OMEditGUI.win.config.pri)
   RC_FILE = rc_omedit.rc
 } else { # Unix libraries and includes

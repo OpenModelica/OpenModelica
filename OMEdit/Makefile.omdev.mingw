@@ -16,7 +16,7 @@ ifeq (gcc,$(findstring gcc,$(CC)))
 	override CFLAGS +=-falign-functions -fstack-protector-all
 endif
 AR = ar
-CMAKE = $(OMDEVMSYS)/bin/cmake/bin/cmake
+CMAKE = cmake # $(OMDEVMSYS)/bin/cmake/bin/cmake
 CMAKE_TARGET = "MSYS Makefiles"
 QMAKE=qmake
 

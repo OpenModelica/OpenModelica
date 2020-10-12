@@ -20,6 +20,14 @@ HEADERS += commandcompletion.h \
     oms.h
 
 win32 {
+
+  _cxx = $$(CXX)
+  contains(_cxx, clang++) {
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport")
+    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+  }
+
   # define used for OpenModelica C-API
   DEFINES += IMPORT_INTO=1
   # win32 vs. win64

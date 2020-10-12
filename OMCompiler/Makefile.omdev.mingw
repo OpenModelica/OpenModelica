@@ -12,6 +12,8 @@ ifeq (clang,$(findstring clang,$(CC)))
 	EXTRA_LDFLAGS=-Wl,-lmsvcrt
 endif
 
+override FCFLAGS +=-fallow-argument-mismatch
+
 # makefile for Windows MinGW OMDev
 all : .testvariables settings omc
 

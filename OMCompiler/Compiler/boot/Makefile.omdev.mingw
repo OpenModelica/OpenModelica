@@ -1,4 +1,7 @@
 
+CC=gcc
+CXX=g++
+
 EXE_EXT=.exe
 EXE_SUFFIX=
 
@@ -12,12 +15,21 @@ else
 	ISMINGW64 = true
 endif
 
-CC=gcc
-CXX=g++
-
 ifeq (gcc,$(findstring gcc,$(CC)))
 	override CFLAGS += -fno-ipa-pure-const
 endif
+
+# see if we have the new omdev
+PREVIOUS_GCC_VERSION = "5.3.0"
+GCC_VERSION := "`gcc -dumpversion`"
+OLD_OMDEV := $(shell expr "$(GCC_VERSION)" "==" "$(PREVIOUS_GCC_VERSION)")
+
+ifeq "$(OLD_OMDEV)" "1"
+	LDFLAGS_CURL = -Wl,-Bstatic -lcurl -lidn -lrtmp -lssh2 -lssl -lcrypto -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
+else
+	LDFLAGS_CURL = -Wl,-Bstatic -lcurl -lidn2 -lpsl  -lbrotlienc-static -lbrotlidec-static -lbrotlicommon-static -lssh2 -lssl -lcrypto -lwldap32 -lzstd -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lunistring -lnghttp2 -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32
+endif
+
 TOP_DIR=../../
 OMHOME=$(OMBUILDDIR)
 ifeq ($(OMENCRYPTION),yes)
@@ -35,7 +47,7 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
 -lzmq \
 $(OMENCRYPTIONLIBS) \
--Wl,-Bstatic -lcurl -lidn -lrtmp -lssh2 -lssl -lcrypto -lwldap32 -lz -lws2_32 -lgnutls -ltasn1 -lhogweed -lgmp -lnettle -Wl,-Bdynamic -lcrypt32 -lintl -lp11-kit -lwinmm -lgdi32 \
+$(LDFLAGS_CURL) \
 $(EXTRA_LD_FLAGS)
 
 FMILIB = -L$(TOP_DIR)/3rdParty/FMIL/install/lib -lfmilib
