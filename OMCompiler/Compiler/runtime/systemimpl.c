@@ -51,6 +51,9 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__MINGW32__)
+#define _POSIX_THREAD_SAFE_FUNCTIONS 200112L /* for ctime_r in time.h */
+#endif
 #include <time.h>
 #include <math.h>
 

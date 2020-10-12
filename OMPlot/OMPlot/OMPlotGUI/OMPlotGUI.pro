@@ -29,6 +29,13 @@ HEADERS += OMPlot.h \
     ScaleDraw.h
 
 win32 {
+  _cxx = $$(CXX)
+  contains(_cxx, clang++) {
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport")
+    QMAKE_CFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+  }
+
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   CONFIG(debug, debug|release){
     LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwtd
@@ -57,3 +64,4 @@ RCC_DIR = ../generatedfiles/rcc
 RESOURCES += resource_omplot.qrc
 
 RC_FILE = rc_omplot.rc
+

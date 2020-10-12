@@ -108,6 +108,8 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
         dest->index_type[i] = (char) va_arg(ap,_index_t); /* char is cast to int by va_arg.*/
     }
     va_end(ap);
+
+	assert(index_spec_ok(dest));
 }
 
 /* make_index_array

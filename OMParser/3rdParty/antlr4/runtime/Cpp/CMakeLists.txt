@@ -128,6 +128,8 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND ( CMAKE_SYSTEM_NAME MATCH
     if(WITH_LIBCXX)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
     endif()
+elseif ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang" AND WIN32) # msys2/mingw/clang
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 elseif(MSVC_VERSION GREATER 1800 OR MSVC_VERSION EQUAL 1800)
   # Visual Studio 2012+ supports c++11 features
 elseif(CMAKE_SYSTEM_NAME MATCHES "Emscripten")
