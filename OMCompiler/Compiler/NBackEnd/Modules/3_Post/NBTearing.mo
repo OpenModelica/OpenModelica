@@ -85,7 +85,7 @@ public
     end for;
     // ToDo: inner equations and jacobian
     if Util.isSome(set.jac) then
-      str := str + BackendDAE.toString(Util.getOption(set.jac));
+      str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS", true);
     end if;
   end toString;
 

@@ -156,6 +156,24 @@ public
     end match;
   end getModule;
 
+  function toString
+    input BackendDAE jacobian;
+    input output String str = "";
+    input Boolean compact = false;
+  algorithm
+    if not compact then
+      str := BackendDAE.toString(jacobian, str);
+    else
+      str := match jacobian
+        case BackendDAE.JACOBIAN() then StringUtil.headline_3("Jacobian " + jacobian.name + ": " + str)
+                                        + BEquation.EqData.toString(jacobian.eqData, 1);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end if;
+  end toString;
+
   type SparsityPatternCol = tuple<ComponentRef, list<ComponentRef>> "residual, {independents}";
   type SparsityPatternRow = SparsityPatternCol                      "independent, {residuals}";
 

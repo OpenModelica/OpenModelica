@@ -150,6 +150,9 @@ public
       case HESSIAN() then StringUtil.headline_1("Hessian: " + str) + "\n" +
                               BVariable.VarData.toString(bdae.varData, 1) + "\n" +
                               BEquation.EqData.toString(bdae.eqData, 1);
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
     end match;
   end toString;
 

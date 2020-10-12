@@ -387,6 +387,7 @@ public
           Block tmp;
           Pointer<Variable> varPtr;
           Variable var;
+          Option<SimJacobian> jacobian;
 
         case qual as StrongComponent.SINGLE_EQUATION()
           algorithm
@@ -412,7 +413,22 @@ public
               crefs := var.name :: crefs;
             end for;
             // ToDo: correct the following values: size, homotopy, torn
-            system := NONLINEAR_SYSTEM(simCodeIndices.equationIndex, listReverse(eqns), listReverse(crefs), simCodeIndices.nonlinearSystemIndex, listLength(crefs), NONE(), false, qual.mixed, true);
+            if Util.isSome(strict.jac) then
+              (jacobian, simCodeIndices, funcTree) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, funcTree);
+            else
+              jacobian := NONE();
+            end if;
+            system := NONLINEAR_SYSTEM(
+              index         = simCodeIndices.equationIndex,
+              blcks         = listReverse(eqns),
+              crefs         = listReverse(crefs),
+              indexSystem   = simCodeIndices.nonlinearSystemIndex,
+              size          = listLength(crefs),
+              jacobian      = jacobian,
+              homotopy      = false,
+              mixed         = qual.mixed,
+              torn          = true
+            );
             simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then NONLINEAR(system, NONE());
@@ -535,7 +551,7 @@ public
         Pointer.update(indices_ptr, indices);
         Pointer.update(funcTree_ptr, funcTree);
       else
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(eqn)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + BEquation.Equation.toString(eqn)});
         fail();
       end try;
     end traverseCreateEquation;
@@ -588,12 +604,20 @@ public
       input list<list<Block>> blcks;
       input output list<Block> linearLoops;
       input output list<Block> nonlinearLoops;
+      input output list<SimJacobian> jacobians;
     algorithm
       for blck_lst in blcks loop
         for blck in blck_lst loop
           (linearLoops, nonlinearLoops) := match blck
+            local
+              Option<SimJacobian> jacobian;
             case LINEAR()     then (blck :: linearLoops, nonlinearLoops);
-            case NONLINEAR()  then (linearLoops, blck :: nonlinearLoops);
+            case NONLINEAR() algorithm
+              jacobian := NonlinearSystem.getJacobian(blck.system);
+              if Util.isSome(jacobian) then
+                jacobians := Util.getOption(jacobian) :: jacobians;
+              end if;
+            then (linearLoops, blck :: nonlinearLoops);
                               else (linearLoops, nonlinearLoops);
           end match;
         end for;
@@ -702,6 +726,11 @@ public
       Boolean mixed;
       Boolean torn;
     end NONLINEAR_SYSTEM;
+
+    function getJacobian
+      input NonlinearSystem syst;
+      output Option<SimJacobian> jacobian = syst.jacobian;
+    end getJacobian;
 
     function toString
       input NonlinearSystem system;
