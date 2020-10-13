@@ -1,0 +1,47 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf Enumeration.lua Enumeration.fmu Enumeration.log Enumeration_systemCall.log temp-Enumeration/
+
+loadString("
+model Enumeration
+  type E = enumeration(one, two, three);
+  input E u(start=E.one);
+  output E y = u;
+end Enumeration;
+"); getErrorString();
+
+buildModelFMU(Enumeration, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+writeFile("Enumeration.lua", "
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-Enumeration/\")
+
+oms_newModel(\"test\")
+oms_addSystem(\"test.root\", oms_system_sc)
+oms_addSubModel(\"test.root.A\", \"Enumeration.fmu\")
+oms_addSubModel(\"test.root.B\", \"Enumeration.fmu\")
+oms_addConnection(\"test.root.A.y\", \"test.root.B.u\")
+oms_setResultFile(\"test\", \"\")
+
+oms_instantiate(\"test\")
+oms_initialize(\"test\")
+oms_simulate(\"test\")
+oms_terminate(\"test\")
+oms_delete(\"test\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Enumeration.lua", "Enumeration_systemCall.log");
+readFile("Enumeration_systemCall.log");
+
+// Result:
+// true
+// ""
+// "Enumeration.fmu"
+// ""
+// true
+// ""
+// 0
+// "info:    model doesn't contain any continuous state
+// info:    No result file will be created
+// "
+// endResult
