@@ -311,7 +311,7 @@ void Parameter::createValueWidget()
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getComponentInfo()->getClassName();
   QString constrainedByClassName = "$Any";
-  QString replaceable = "";
+  QString replaceable = "", replaceableText = "";
   QStringList enumerationLiterals, replaceableChoices;
   switch (mValueType) {
     case Parameter::Boolean:
@@ -322,6 +322,7 @@ void Parameter::createValueWidget()
       mpValueComboBox->addItem("false", "false");
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
+
     case Parameter::Enumeration:
       mpValueComboBox = new QComboBox;
       mpValueComboBox->setEditable(true);
@@ -332,34 +333,74 @@ void Parameter::createValueWidget()
       }
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       break;
+
     case Parameter::CheckBox:
       mpValueCheckBox = new QCheckBox;
       connect(mpValueCheckBox, SIGNAL(toggled(bool)), SLOT(valueCheckBoxChanged(bool)));
       break;
+
     case Parameter::ReplaceableComponent:
     case Parameter::ReplaceableClass:
+      {
       constrainedByClassName = mpComponent->getComponentInfo()->getConstrainedByClassName();
       mpValueComboBox = new QComboBox;
       mpValueComboBox->setEditable(true);
-      mpValueComboBox->addItem(mDefaultValue, mDefaultValue);
-      if (constrainedByClassName.contains("$Any"))
-      {
+      if (!mDefaultValue.isEmpty()) {
+        mpValueComboBox->addItem(mDefaultValue, mDefaultValue);
+      }
+      else {
+        if (mValueType == Parameter::ReplaceableClass) {
+          QString str = (pOMCProxy->getClassInformation(className)).comment;
+          if (!str.isEmpty()) {
+            str = " \"" + str + "\"";
+          }
+          replaceableText =  className + str;
+          mpValueComboBox->addItem(replaceableText, replaceableText);
+        }
+        else {
+          replaceable = "redeclare " + className + " " + mpComponent->getName();
+          mpValueComboBox->addItem(replaceable, replaceable);
+        }
+      }
+      if (constrainedByClassName.contains("$Any")) {
         constrainedByClassName = className;
       }
       replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, mpComponent->getComponentInfo()->getParentClassName());
       for (i = 0 ; i < replaceableChoices.size(); i++) {
-        if (mValueType == Parameter::ReplaceableClass)
+        if (className != replaceableChoices[i]) // filter out the default
         {
-          replaceable = "redeclare " + mpComponent->getComponentInfo()->getRestriction() + " " + mpComponent->getName() + " = " + replaceableChoices[i];
+          if (mValueType == Parameter::ReplaceableClass) {
+            if (i < replaceableChoices.size() - 1) // skip the last one
+            {
+              replaceable = "redeclare " + mpComponent->getComponentInfo()->getRestriction() + " " + mpComponent->getName() + " = " + replaceableChoices[i];
+              QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
+              if (!str.isEmpty()) {
+                str = " \"" + str + "\"";
+              }
+              replaceableText = replaceableChoices[i] + str;
+              mpValueComboBox->addItem(replaceableText, replaceable);
+            }
+          }
+          else {
+            replaceable = "redeclare " + replaceableChoices[i] + " " + mpComponent->getName();
+            replaceableText = replaceable;
+            mpValueComboBox->addItem(replaceableText, replaceable);
+          }
         }
-        else
-        {
-          replaceable = "redeclare " + replaceableChoices[i] + " " + mpComponent->getName();
-        }
-        mpValueComboBox->addItem(replaceable, replaceable);
       }
+
+      QStandardItemModel *model = qobject_cast<QStandardItemModel *>(mpValueComboBox->model());
+      if (model != NULL)
+      {
+        QStandardItem *item = model->item(0);
+        if (item != NULL)
+          item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
+      }
+
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
+      }
       break;
+
     case Parameter::Normal:
     default:
       mpValueTextBox = new QLineEdit;
