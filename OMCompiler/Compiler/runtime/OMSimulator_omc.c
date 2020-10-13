@@ -121,8 +121,11 @@ static fnptr_oms_deleteConnectorFromTLMBus oms_deleteConnectorFromTLMBus = NULL;
 typedef int (*fnptr_oms_export)(const char*,const char*);
 static fnptr_oms_export oms_export = NULL;
 
-typedef int (*fnptr_oms_exportDependencyGraphs)(const char*,const char*,const char*);
+typedef int (*fnptr_oms_exportDependencyGraphs)(const char*,const char*,const char*,const char*);
 static fnptr_oms_exportDependencyGraphs oms_exportDependencyGraphs = NULL;
+
+typedef int (*fnptr_oms_exportSnapshot)(const char*,char**);
+static fnptr_oms_exportSnapshot oms_exportSnapshot = NULL;
 
 typedef int (*fnptr_oms_extractFMIKind)(const char*,int*);
 static fnptr_oms_extractFMIKind oms_extractFMIKind = NULL;
@@ -168,6 +171,9 @@ static fnptr_oms_faultInjection oms_faultInjection = NULL;
 
 typedef int (*fnptr_oms_importFile)(const char*,char**);
 static fnptr_oms_importFile oms_importFile = NULL;
+
+typedef int (*fnptr_oms_importSnapshot)(const char*,const char*);
+static fnptr_oms_importSnapshot oms_importSnapshot = NULL;
 
 typedef int (*fnptr_oms_initialize)(const char*);
 static fnptr_oms_initialize oms_initialize = NULL;
@@ -299,6 +305,7 @@ void resolveFunctionNames()
   oms_deleteConnectorFromTLMBus = (fnptr_oms_deleteConnectorFromTLMBus)AddressOf(OMSimulatorDLL, "oms_deleteConnectorFromTLMBus");
   oms_export = (fnptr_oms_export)AddressOf(OMSimulatorDLL, "oms_export");
   oms_exportDependencyGraphs = (fnptr_oms_exportDependencyGraphs)AddressOf(OMSimulatorDLL, "oms_exportDependencyGraphs");
+  oms_exportSnapshot = (fnptr_oms_exportSnapshot)AddressOf(OMSimulatorDLL, "oms_exportSnapshot");
   oms_extractFMIKind = (fnptr_oms_extractFMIKind)AddressOf(OMSimulatorDLL, "oms_extractFMIKind");
   oms_getBoolean = (fnptr_oms_getBoolean)AddressOf(OMSimulatorDLL, "oms_getBoolean");
   oms_getFixedStepSize = (fnptr_oms_getFixedStepSize)AddressOf(OMSimulatorDLL, "oms_getFixedStepSize");
@@ -314,6 +321,7 @@ void resolveFunctionNames()
   oms_getVariableStepSize = (fnptr_oms_getVariableStepSize)AddressOf(OMSimulatorDLL, "oms_getVariableStepSize");
   oms_faultInjection = (fnptr_oms_faultInjection)AddressOf(OMSimulatorDLL, "oms_faultInjection");
   oms_importFile = (fnptr_oms_importFile)AddressOf(OMSimulatorDLL, "oms_importFile");
+  oms_importSnapshot = (fnptr_oms_importSnapshot)AddressOf(OMSimulatorDLL, "oms_importSnapshot");
   oms_initialize = (fnptr_oms_initialize)AddressOf(OMSimulatorDLL, "oms_initialize");
   oms_instantiate = (fnptr_oms_instantiate)AddressOf(OMSimulatorDLL, "oms_instantiate");
   oms_list = (fnptr_oms_list)AddressOf(OMSimulatorDLL, "oms_list");
@@ -650,14 +658,25 @@ extern const int OMSimulator_oms_export(const char* cref, const char* filename)
   return status;
 }
 
-extern const int OMSimulator_oms_exportDependencyGraphs(const char* cref, const char* initialization, const char* simulation)
+extern const int OMSimulator_oms_exportDependencyGraphs(const char* cref, const char* initialization, const char* event, const char* simulation)
 {
   if(!oms_exportDependencyGraphs)
   {
     printf("Could not Locate the Function oms_exportDependencyGraphs\n");
     exit(0);
   }
-  int status = oms_exportDependencyGraphs(cref,initialization,simulation);
+  int status = oms_exportDependencyGraphs(cref,initialization,event,simulation);
+  return status;
+}
+
+extern const int OMSimulator_oms_exportSnapshot(const char* cref, char** contents)
+{
+  if(!oms_exportSnapshot)
+  {
+    printf("Could not Locate the Function oms_exportSnapshot\n");
+    exit(0);
+  }
+  int status = oms_exportSnapshot(cref,contents);
   return status;
 }
 
@@ -823,6 +842,17 @@ extern const int OMSimulator_oms_importFile(const char* filename, char** cref)
     exit(0);
   }
   int status = oms_importFile(filename,cref);
+  return status;
+}
+
+extern const int OMSimulator_oms_importSnapshot(const char* cref, const char* snapshot)
+{
+  if(!oms_importSnapshot)
+  {
+    printf("Could not Locate the Function oms_importSnapshot\n");
+    exit(0);
+  }
+  int status = oms_importSnapshot(cref,snapshot);
   return status;
 }
 
