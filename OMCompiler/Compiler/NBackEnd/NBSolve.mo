@@ -70,15 +70,17 @@ public
       diffedFunctions = AvlSetPath.new()
     );
     (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-    derivative := SimplifyExp.simplify(derivative);   // TODO: Why simplify?
+    derivative := SimplifyExp.simplify(derivative);
 
     // If cref is only in lhs
 
-    // If eqn is linear in cref:
     if not Expression.containsCref(derivative, cref) then
+      // If eqn is linear in cref:
       (eqn, funcTree) := solveLinear(eqn, residual, derivative, diffArgs, cref, funcTree);
-    // If eqn is non-linear in cref
     else
+      // If eqn is non-linear in cref
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to solve Cref: "
+        + ComponentRef.toString(cref) + " in equation:\n" + Equation.toString(eqn)});
       fail();
     end if;
   end solve;

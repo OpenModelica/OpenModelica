@@ -120,24 +120,24 @@ public
     end toString;
 
     function fromSystems
-      "This is a little bit of an ugly hack. Why do we only have one jacobian for the full DAE and
-      not one for each subsystem? For now only create one single if there is only one system."
       input list<System.System> systems;
       output Option<SimJacobian> simJacobian;
       input output SimCode.SimCodeIndices indices;
       input output FunctionTree funcTree;
+    protected
+      list<BackendDAE> jacobians = {};
     algorithm
-      (simJacobian, indices, funcTree) := match systems
-        local
-          BackendDAE jacobian;
+      for system in systems loop
+        if Util.isSome(system.jacobian) then
+          jacobians := Util.getOption(system.jacobian) :: jacobians;
+        end if;
+      end for;
 
-        case {System.SYSTEM(jacobian = NONE())}           then (NONE(), indices, funcTree);
-        case {System.SYSTEM(jacobian = SOME(jacobian))}   then create(jacobian, indices, funcTree);
-        else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed! Partitioned systems are not yet supported by this function."});
-        then fail();
-
-      end match;
+      if listEmpty(jacobians) then
+        simJacobian := NONE();
+      else
+        (simJacobian, indices, funcTree) := create(Jacobian.combine(jacobians, "A"), indices, funcTree);
+      end if;
     end fromSystems;
 
     function fromSystemsSparsity
@@ -183,7 +183,7 @@ public
           SimJacobian jac;
 
         case qual as BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
-          BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateEquation(acc = columnEqns, indices_ptr = indices_ptr, funcTree_ptr = funcTree_ptr));
+          BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateResidual(acc = columnEqns, indices_ptr = indices_ptr));
 
           BVariable.VariablePointers.map(varData.unknowns, function SimVar.SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
           BVariable.VariablePointers.map(varData.seedVars, function SimVar.SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));

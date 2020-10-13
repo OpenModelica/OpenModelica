@@ -262,12 +262,14 @@ public
             discreteVars := {};
             jacobians := {};
             if isSome(qual.dae) then
+              // DAEMode
               ode := {};
               algebraic := no_ret :: {};
               (daeModeData, simCodeIndices, funcTree) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices, funcTree);
             else
+              // Normal Simulation
               daeModeData := NONE();
-              (ode, algebraic, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
+              (ode, algebraic, jacA, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
               algebraic := no_ret :: algebraic;
             end if;
             allSim := listAppend(List.flatten(ode), List.flatten(algebraic));
@@ -291,9 +293,8 @@ public
 
             // This needs to be done after the variables have been created by ModelInfo.create()
             if isSome(qual.dae) then
+              // DAEMode
               (daeModeData, modelInfo, jacA, crefToSimVarHT, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(qual.dae), crefToSimVarHT, simCodeIndices);
-            else
-              (jacA, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
             end if;
 
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
@@ -454,7 +455,6 @@ public
         (linearLoops, nonlinearLoops, jacobians) := SimStrongComponent.Block.collectAlgebraicLoops(dae_mode_blcks, linearLoops, nonlinearLoops, jacobians);
       end if;
     end collectAlgebraicLoops;
-
   end SimCode;
 
   uniontype ModelInfo

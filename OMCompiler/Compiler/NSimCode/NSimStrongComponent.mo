@@ -54,10 +54,12 @@ protected
   import OldBackendDAE = BackendDAE;
 
   // Backend imports
+  import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.Equation;
   import NBEquation.EquationPointers;
   import BVariable = NBVariable;
+  import Jacobian = NBJacobian;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
@@ -262,19 +264,39 @@ public
       input list<System.System> systems;
       output list<list<Block>> ode = {};
       output list<list<Block>> algebraic = {};
+      output SimJacobian simJac;
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
     protected
       list<Block> tmp;
+      list<BackendDAE> jacobians = {};
+      BackendDAE simJacobian;
+      Option<SimJacobian> simJac_opt;
     algorithm
       for system in systems loop
         (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
+        // check if system contains states
         if System.System.isAlgebraic(system) then
           algebraic := tmp :: algebraic;
         else
           ode := tmp :: ode;
         end if;
+        // save jacobian if existant
+        if Util.isSome(system.jacobian) then
+          jacobians := Util.getOption(system.jacobian) :: jacobians;
+        end if;
       end for;
+      if listEmpty(jacobians) then
+        (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
+      else
+        simJacobian := Jacobian.combine(jacobians, "A");
+        (simJac_opt, simCodeIndices, funcTree) := SimJacobian.create(simJacobian, simCodeIndices, funcTree);
+        if Util.isSome(simJac_opt) then
+          simJac := Util.getOption(simJac_opt);
+        else
+          (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
+        end if;
+      end if;
       ode := listReverse(ode);
       algebraic := listReverse(algebraic);
     end createBlocks;
@@ -533,7 +555,7 @@ public
 
     function traverseCreateEquation
       "Only works, if the variable to solve for is saved in equation attributes!
-      used for jacobians and hessians."
+      used for dae mode jacobians."
       input output BEquation.Equation eqn;
       input Pointer<list<Block>> acc;
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
@@ -555,6 +577,26 @@ public
         fail();
       end try;
     end traverseCreateEquation;
+
+    function traverseCreateResidual
+      "Only works, if the variable to solve for is saved in equation attributes!
+      used for dae mode jacobians."
+      input output BEquation.Equation eqn;
+      input Pointer<list<Block>> acc;
+      input Pointer<SimCode.SimCodeIndices> indices_ptr;
+    protected
+      Block blck;
+      SimCode.SimCodeIndices indices;
+    algorithm
+      try
+        (blck, indices) := createResidual(eqn, Pointer.access(indices_ptr));
+        Pointer.update(acc, blck :: Pointer.access(acc));
+        Pointer.update(indices_ptr, indices);
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + BEquation.Equation.toString(eqn)});
+        fail();
+      end try;
+    end traverseCreateResidual;
 
     function createAssignment
       "Creates an assignment equation."
@@ -636,7 +678,7 @@ public
         case qual as SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(qual.index, ComponentRef.toDAE(qual.lhs), Expression.toDAE(qual.rhs), qual.source, BEquation.EquationAttributes.convert(qual.attr));
         case qual as ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(qual.index, Expression.toDAE(qual.lhs), Expression.toDAE(qual.rhs), qual.source, BEquation.EquationAttributes.convert(qual.attr));
         // ToDo: add all the other cases here!
-        case qual as NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(qual.system), NONE(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN /* dangerous! */);
+        case qual as NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(qual.system), NONE(), BEquation.EquationAttributes.convert(NBEquation.EQ_ATTR_DEFAULT_UNKNOWN) /* dangerous! */);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
         then fail();

@@ -213,6 +213,7 @@ public
     input output StrongComponent comp     "the suspected algebraic loop.";
     input output FunctionTree funcTree    "Function call bodies";
     input output Integer index            "current unique loop index";
+    input System.SystemType systemType = NBSystem.SystemType.ODE   "system type";
   end tearingInterface;
 
 

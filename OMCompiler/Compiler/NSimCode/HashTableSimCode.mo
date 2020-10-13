@@ -86,7 +86,7 @@ public
     input Integer size = BaseHashTable.defaultBucketSize;
     output HashTable hashTable;
   algorithm
-    hashTable := BaseHashTable.emptyHashTableWork(size,(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString, function SimVar.toString(str = "")));
+    hashTable := BaseHashTable.emptyHashTableWork(intMax(1, size),(ComponentRef.hash,ComponentRef.isEqual,ComponentRef.toString, function SimVar.toString(str = "")));
   end empty;
 
   function create

@@ -50,6 +50,7 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
+  import NBEquation.EqData;
   import NBEquation.Equation;
   import NBEquation.EquationPointers;
   import HashTableCrToCr = NBHashTableCrToCr;
@@ -57,6 +58,7 @@ protected
   import Jacobian = NBackendDAE.BackendDAE;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
+  import NBVariable.VarData;
   import NBVariable.VariablePointers;
 
   // Util imports
@@ -76,7 +78,7 @@ public
     bdae := match bdae
       local
         String name                                     "Context name for jacobian";
-        VariablePointers knowns               "Variable array of knowns";
+        VariablePointers knowns                         "Variable array of knowns";
         Option<Jacobian> jacobian                       "Resulting jacobian";
         FunctionTree funcTree                           "Function call bodies";
         list<System.System> oldSystems, newSystems = {} "Equation systems before and afterwards";
@@ -84,17 +86,13 @@ public
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
           (oldSystems, name) := match systemType
-            case NBSystem.SystemType.ODE    then (bdae.ode, "ODEJac");
-            case NBSystem.SystemType.INIT   then (bdae.ode, "INITJac");
-            case NBSystem.SystemType.PARAM  then (bdae.param, "PARAMJac");
-            case NBSystem.SystemType.DAE    then (Util.getOption(bdae.dae), "DAEJac");
+            case NBSystem.SystemType.ODE    then (bdae.ode, "ODE_JAC");
+            case NBSystem.SystemType.INIT   then (bdae.ode, "INIT_JAC");
+            case NBSystem.SystemType.DAE    then (Util.getOption(bdae.dae), "DAE_JAC");
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + System.System.systemTypeString(systemType)});
             then fail();
           end match;
-
-          // kabdelhak: i would really like these names, but for now we need A, B, C, D
-          name := "A";
 
           for syst in oldSystems loop
             (jacobian, funcTree) := match syst
@@ -140,6 +138,120 @@ public
         funcTree          = funcTree
       );
   end simple;
+
+  function combine
+    input list<BackendDAE> jacobians;
+    input String name;
+    output BackendDAE jacobian;
+  protected
+    list<Pointer<Variable>> variables = {}, unknowns = {}, knowns = {}, auxiliaryVars = {}, aliasVars = {};
+    list<Pointer<Variable>> diffVars = {}, dependencies = {}, resultVars = {}, tmpVars = {}, seedVars = {};
+    list<Pointer<Equation>> equations = {}, results = {}, temporary = {}, auxiliaries= {}, removed = {};
+    list<SparsityPatternCol> col_wise_pattern = {};
+    list<SparsityPatternRow> row_wise_pattern = {};
+    list<ComponentRef> independent_vars = {};
+    list<ComponentRef> residual_vars = {};
+    Integer nnz = 0;
+    VarData varData;
+    EqData eqData;
+    SparsityPattern sparsityPattern;
+    list<list<ComponentRef>> sparsityColoring = {};
+  algorithm
+    for jac in jacobians loop
+      _ := match jac
+        local
+          VarData tmpVarData;
+          EqData tmpEqData;
+          SparsityPattern tmpPattern;
+          Integer size1, size2;
+          list<list<ComponentRef>> coloring1, coloring2;
+          list<Integer> test1 = {1,2};
+          list<Integer> test2 = {30,40};
+          list<Integer> test3;
+
+        case BackendDAE.JACOBIAN(varData = tmpVarData as VarData.VAR_DATA_JAC(), eqData = tmpEqData as EqData.EQ_DATA_JAC(), sparsityPattern = tmpPattern) algorithm
+          variables := listAppend(VariablePointers.toList(tmpVarData.variables), variables);
+          unknowns := listAppend(VariablePointers.toList(tmpVarData.unknowns), unknowns);
+          knowns := listAppend(VariablePointers.toList(tmpVarData.knowns), knowns);
+          auxiliaryVars := listAppend(VariablePointers.toList(tmpVarData.auxiliaries), auxiliaryVars);
+          aliasVars := listAppend(VariablePointers.toList(tmpVarData.aliasVars), aliasVars);
+          diffVars := listAppend(VariablePointers.toList(tmpVarData.diffVars), diffVars);
+          dependencies := listAppend(VariablePointers.toList(tmpVarData.dependencies), dependencies);
+          resultVars := listAppend(VariablePointers.toList(tmpVarData.resultVars), resultVars);
+          tmpVars := listAppend(VariablePointers.toList(tmpVarData.tmpVars), tmpVars);
+          seedVars := listAppend(VariablePointers.toList(tmpVarData.seedVars), seedVars);
+
+          equations := listAppend(EquationPointers.toList(tmpEqData.equations), equations);
+          results := listAppend(EquationPointers.toList(tmpEqData.results), results);
+          temporary := listAppend(EquationPointers.toList(tmpEqData.temporary), temporary);
+          auxiliaries := listAppend(EquationPointers.toList(tmpEqData.auxiliaries), auxiliaries);
+          removed := listAppend(EquationPointers.toList(tmpEqData.removed), removed);
+
+          col_wise_pattern := listAppend(tmpPattern.col_wise_pattern, col_wise_pattern);
+          row_wise_pattern := listAppend(tmpPattern.col_wise_pattern, row_wise_pattern);
+          independent_vars := listAppend(tmpPattern.independent_vars, independent_vars);
+          residual_vars := listAppend(tmpPattern.residual_vars, residual_vars);
+          nnz := nnz + tmpPattern.nnz;
+
+          // combine the sparsity colorings since all are independent
+          size1 := listLength(sparsityColoring);
+          size2 := listLength(jac.sparsityColoring);
+          (coloring1, coloring2) := if size1 > size2
+                                    then (sparsityColoring, jac.sparsityColoring)
+                                    else (jac.sparsityColoring, sparsityColoring);
+
+          // fill up the smaller coloring with empty groups
+          for i in 1:intAbs(size1-size2) loop
+            coloring2 := {} :: coloring2;
+          end for;
+
+          sparsityColoring := List.threadMap(coloring1, coloring2, listAppend);
+        then ();
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + BackendDAE.toString(jac)});
+        then fail();
+      end match;
+    end for;
+
+    varData := VarData.VAR_DATA_JAC(
+      variables     = VariablePointers.fromList(variables),
+      unknowns      = VariablePointers.fromList(unknowns),
+      knowns        = VariablePointers.fromList(knowns),
+      auxiliaries   = VariablePointers.fromList(auxiliaryVars),
+      aliasVars     = VariablePointers.fromList(aliasVars),
+      diffVars      = VariablePointers.fromList(diffVars),
+      dependencies  = VariablePointers.fromList(dependencies),
+      resultVars    = VariablePointers.fromList(resultVars),
+      tmpVars       = VariablePointers.fromList(tmpVars),
+      seedVars      = VariablePointers.fromList(seedVars)
+    );
+
+    eqData := EqData.EQ_DATA_JAC(
+      uniqueIndex   = Pointer.create(0),
+      equations     = EquationPointers.fromList(equations),
+      results       = EquationPointers.fromList(results),
+      temporary     = EquationPointers.fromList(temporary),
+      auxiliaries   = EquationPointers.fromList(auxiliaries),
+      removed       = EquationPointers.fromList(removed)
+    );
+
+    sparsityPattern := SPARSITY_PATTERN(
+      col_wise_pattern  = col_wise_pattern,
+      row_wise_pattern  = row_wise_pattern,
+      independent_vars  = independent_vars,
+      residual_vars     = residual_vars,
+      nnz               = nnz
+    );
+
+    jacobian := BackendDAE.JACOBIAN(
+      name = name,
+      varData = varData,
+      eqData = eqData,
+      sparsityPattern = sparsityPattern,
+      sparsityColoring = sparsityColoring
+    );
+  end combine;
 
   function getModule
     "Returns the module function that was chosen by the user."

@@ -105,19 +105,19 @@ public
 
       case (NBSystem.SystemType.ODE, BackendDAE.MAIN(ode = systems, funcTree = funcTree))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree);
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
           bdae.ode := systems;
       then bdae;
 
       case (NBSystem.SystemType.INIT, BackendDAE.MAIN(init = systems, funcTree = funcTree))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree);
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
           bdae.init := systems;
       then bdae;
 
       case (NBSystem.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), funcTree = funcTree))
         algorithm
-          (systems, funcTree) := tearingTraverser(systems, func, funcTree);
+          (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
           bdae.dae := SOME(systems);
       then bdae;
 
@@ -145,6 +145,7 @@ protected
     input Module.tearingInterface func;
     output list<System.System> new_systems = {};
     input output FunctionTree funcTree;
+    input System.SystemType systemType;
   protected
     array<StrongComponent> strongComponents;
     StrongComponent tmp;
@@ -154,7 +155,7 @@ protected
       if isSome(syst.strongComponents) then
         SOME(strongComponents) := syst.strongComponents;
         for i in 1:arrayLength(strongComponents) loop
-          (tmp, funcTree, idx) := func(strongComponents[i], funcTree, idx);
+          (tmp, funcTree, idx) := func(strongComponents[i], funcTree, idx, systemType);
           // only update if it changed
           if not referenceEq(tmp, strongComponents[i]) then
             arrayUpdate(strongComponents, i, tmp);
@@ -184,7 +185,7 @@ protected
         algorithm
           // for now do not apply tearing
           index := index + 1;
-          name := "JAC" + intString(index);
+          name := System.System.systemTypeString(systemType) + "_JAC" + intString(index);
           dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), {});
           tearingSet := TEARING_SET(comp.vars, comp.eqns, arrayCreate(0, dummy), NONE());
           result := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, comp.mixed);
