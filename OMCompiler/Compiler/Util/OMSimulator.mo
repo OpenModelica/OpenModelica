@@ -245,10 +245,18 @@ end oms_export;
 function oms_exportDependencyGraphs
   input String cref;
   input String initialization;
+  input String event;
   input String simulation;
   output Integer status;
-  external "C" status = OMSimulator_oms_exportDependencyGraphs(cref,initialization,simulation) annotation(Library = "omcruntime");
+  external "C" status = OMSimulator_oms_exportDependencyGraphs(cref,initialization,event,simulation) annotation(Library = "omcruntime");
 end oms_exportDependencyGraphs;
+
+function oms_exportSnapshot
+  input String cref;
+  output String contents;
+  output Integer status;
+  external "C" status = OMSimulator_oms_exportSnapshot(cref,contents) annotation(Library = "omcruntime");
+end oms_exportSnapshot;
 
 function oms_extractFMIKind
   input String filename;
@@ -358,6 +366,13 @@ function oms_importFile
   output Integer status;
   external "C" status = OMSimulator_oms_importFile(filename,cref) annotation(Library = "omcruntime");
 end oms_importFile;
+
+function oms_importSnapshot
+  input String cref;
+  input String snapshot;
+  output Integer status;
+  external "C" status = OMSimulator_oms_importSnapshot(cref,snapshot) annotation(Library = "omcruntime");
+end oms_importSnapshot;
 
 function oms_initialize
   input String cref;

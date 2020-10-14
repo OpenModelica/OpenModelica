@@ -4560,11 +4560,20 @@ end oms_export;
 function oms_exportDependencyGraphs
   input String cref;
   input String initialization;
+  input String event;
   input String simulation;
   output Integer status;
 external "builtin";
 annotation(preferredView="text");
 end oms_exportDependencyGraphs;
+
+function oms_exportSnapshot
+  input String cref;
+  output String contents;
+  output Integer status;
+external "builtin";
+annotation(preferredView="text");
+end oms_exportSnapshot;
 
 function oms_extractFMIKind
   input String filename;
@@ -4689,6 +4698,14 @@ function oms_importFile
 external "builtin";
 annotation(preferredView="text");
 end oms_importFile;
+
+function oms_importSnapshot
+  input String cref;
+  input String snapshot;
+  output Integer status;
+external "builtin";
+annotation(preferredView="text");
+end oms_importSnapshot;
 
 function oms_initialize
   input String cref;
