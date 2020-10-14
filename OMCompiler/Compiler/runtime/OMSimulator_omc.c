@@ -398,7 +398,7 @@ extern const char* OMSimulator_oms_getVersion()
 {
   if(!oms_getVersion)
   {
-    printf("Could not Locate the Function oms_getVersion\n");
+    printf("could not locate the function oms_getVersion\n");
     exit(0);
   }
   char *res=oms_getVersion();
@@ -409,7 +409,7 @@ extern const int OMSimulator_oms_addBus(const char* cref)
 {
   if(!oms_addBus)
   {
-    printf("Could not Locate the Function oms_addBus\n");
+    printf("could not locate the function oms_addBus\n");
     exit(0);
   }
   int status = oms_addBus(cref);
@@ -420,7 +420,7 @@ extern const int OMSimulator_oms_addConnection(const char* crefA, const char* cr
 {
   if(!oms_addConnection)
   {
-    printf("Could not Locate the Function oms_addConnection\n");
+    printf("could not locate the function oms_addConnection\n");
     exit(0);
   }
   int status = oms_addConnection(crefA,crefB);
@@ -431,7 +431,7 @@ extern const int OMSimulator_oms_addConnector(const char* cref, int causality, i
 {
   if(!oms_addConnector)
   {
-    printf("Could not Locate the Function oms_addConnector\n");
+    printf("could not locate the function oms_addConnector\n");
     exit(0);
   }
   int status = oms_addConnector(cref,causality,type);
@@ -442,7 +442,7 @@ extern const int OMSimulator_oms_addConnectorToBus(const char* busCref, const ch
 {
   if(!oms_addConnectorToBus)
   {
-    printf("Could not Locate the Function oms_addConnectorToBus\n");
+    printf("could not locate the function oms_addConnectorToBus\n");
     exit(0);
   }
   int status = oms_addConnectorToBus(busCref,connectorCref);
@@ -453,7 +453,7 @@ extern const int OMSimulator_oms_addConnectorToTLMBus(const char* busCref, const
 {
   if(!oms_addConnectorToTLMBus)
   {
-    printf("Could not Locate the Function oms_addConnectorToTLMBus\n");
+    printf("could not locate the function oms_addConnectorToTLMBus\n");
     exit(0);
   }
   int status = oms_addConnectorToTLMBus(busCref,connectorCref,type);
@@ -464,7 +464,7 @@ extern const int OMSimulator_oms_addDynamicValueIndicator(const char* signal, co
 {
   if(!oms_addDynamicValueIndicator)
   {
-    printf("Could not Locate the Function oms_addDynamicValueIndicator\n");
+    printf("could not locate the function oms_addDynamicValueIndicator\n");
     exit(0);
   }
   int status = oms_addDynamicValueIndicator(signal,lower,upper,stepSize);
@@ -475,7 +475,7 @@ extern const int OMSimulator_oms_addEventIndicator(const char* signal)
 {
   if(!oms_addEventIndicator)
   {
-    printf("Could not Locate the Function oms_addEventIndicator\n");
+    printf("could not locate the function oms_addEventIndicator\n");
     exit(0);
   }
   int status = oms_addEventIndicator(signal);
@@ -486,7 +486,7 @@ extern const int OMSimulator_oms_addExternalModel(const char* cref, const char* 
 {
   if(!oms_addExternalModel)
   {
-    printf("Could not Locate the Function oms_addExternalModel\n");
+    printf("could not locate the function oms_addExternalModel\n");
     exit(0);
   }
   int status = oms_addExternalModel(cref,path,startscript);
@@ -497,7 +497,7 @@ extern const int OMSimulator_oms_addSignalsToResults(const char* cref, const cha
 {
   if(!oms_addSignalsToResults)
   {
-    printf("Could not Locate the Function oms_addSignalsToResults\n");
+    printf("could not locate the function oms_addSignalsToResults\n");
     exit(0);
   }
   int status = oms_addSignalsToResults(cref,regex);
@@ -508,7 +508,7 @@ extern const int OMSimulator_oms_addStaticValueIndicator(const char* signal, dou
 {
   if(!oms_addStaticValueIndicator)
   {
-    printf("Could not Locate the Function oms_addStaticValueIndicator\n");
+    printf("could not locate the function oms_addStaticValueIndicator\n");
     exit(0);
   }
   int status = oms_addStaticValueIndicator(signal,lower,upper,stepSize);
@@ -519,7 +519,7 @@ extern const int OMSimulator_oms_addSubModel(const char* cref, const char* fmuPa
 {
   if(!oms_addSubModel)
   {
-    printf("Could not Locate the Function oms_addSubModel\n");
+    printf("could not locate the function oms_addSubModel\n");
     exit(0);
   }
   int status = oms_addSubModel(cref,fmuPath);
@@ -530,7 +530,7 @@ extern const int OMSimulator_oms_addSystem(const char* cref, int type)
 {
   if(!oms_addSystem)
   {
-    printf("Could not Locate the Function oms_addSystem\n");
+    printf("could not locate the function oms_addSystem\n");
     exit(0);
   }
   int status = oms_addSystem(cref,type);
@@ -541,7 +541,7 @@ extern const int OMSimulator_oms_addTimeIndicator(const char* signal)
 {
   if(!oms_addTimeIndicator)
   {
-    printf("Could not Locate the Function oms_addTimeIndicator\n");
+    printf("could not locate the function oms_addTimeIndicator\n");
     exit(0);
   }
   int status = oms_addTimeIndicator(signal);
@@ -552,7 +552,7 @@ extern const int OMSimulator_oms_addTLMBus(const char* cref, int domain, const i
 {
   if(!oms_addTLMBus)
   {
-    printf("Could not Locate the Function oms_addTLMBus\n");
+    printf("could not locate the function oms_addTLMBus\n");
     exit(0);
   }
   int status = oms_addTLMBus(cref,domain,dimensions,interpolation);
@@ -563,7 +563,7 @@ extern const int OMSimulator_oms_addTLMConnection(const char* crefA, const char*
 {
   if(!oms_addTLMConnection)
   {
-    printf("Could not Locate the Function oms_addTLMConnection\n");
+    printf("could not locate the function oms_addTLMConnection\n");
     exit(0);
   }
   int status = oms_addTLMConnection(crefA,crefB,delay,alpha,linearimpedance,angularimpedance);
@@ -574,7 +574,7 @@ extern const int OMSimulator_oms_cancelSimulation_asynchronous(const char* cref)
 {
   if(!oms_cancelSimulation_asynchronous)
   {
-    printf("Could not Locate the Function oms_cancelSimulation_asynchronous\n");
+    printf("could not locate the function oms_cancelSimulation_asynchronous\n");
     exit(0);
   }
   int status = oms_cancelSimulation_asynchronous(cref);
@@ -585,7 +585,7 @@ extern const int OMSimulator_oms_compareSimulationResults(const char* filenameA,
 {
   if(!oms_compareSimulationResults)
   {
-    printf("Could not Locate the Function oms_compareSimulationResults\n");
+    printf("could not locate the function oms_compareSimulationResults\n");
     exit(0);
   }
   int status = oms_compareSimulationResults(filenameA,filenameB,var,relTol,absTol);
@@ -596,7 +596,7 @@ extern const int OMSimulator_oms_copySystem(const char* source, const char* targ
 {
   if(!oms_copySystem)
   {
-    printf("Could not Locate the Function oms_copySystem\n");
+    printf("could not locate the function oms_copySystem\n");
     exit(0);
   }
   int status = oms_copySystem(source,target);
@@ -607,7 +607,7 @@ extern const int OMSimulator_oms_delete(const char* cref)
 {
   if(!oms_delete)
   {
-    printf("Could not Locate the Function oms_delete\n");
+    printf("could not locate the function oms_delete\n");
     exit(0);
   }
   int status = oms_delete(cref);
@@ -618,7 +618,7 @@ extern const int OMSimulator_oms_deleteConnection(const char* crefA, const char*
 {
   if(!oms_deleteConnection)
   {
-    printf("Could not Locate the Function oms_deleteConnection\n");
+    printf("could not locate the function oms_deleteConnection\n");
     exit(0);
   }
   int status = oms_deleteConnection(crefA,crefB);
@@ -629,7 +629,7 @@ extern const int OMSimulator_oms_deleteConnectorFromBus(const char* busCref, con
 {
   if(!oms_deleteConnectorFromBus)
   {
-    printf("Could not Locate the Function oms_deleteConnectorFromBus\n");
+    printf("could not locate the function oms_deleteConnectorFromBus\n");
     exit(0);
   }
   int status = oms_deleteConnectorFromBus(busCref,connectorCref);
@@ -640,7 +640,7 @@ extern const int OMSimulator_oms_deleteConnectorFromTLMBus(const char* busCref, 
 {
   if(!oms_deleteConnectorFromTLMBus)
   {
-    printf("Could not Locate the Function oms_deleteConnectorFromTLMBus\n");
+    printf("could not locate the function oms_deleteConnectorFromTLMBus\n");
     exit(0);
   }
   int status = oms_deleteConnectorFromTLMBus(busCref,connectorCref);
@@ -651,7 +651,7 @@ extern const int OMSimulator_oms_export(const char* cref, const char* filename)
 {
   if(!oms_export)
   {
-    printf("Could not Locate the Function oms_export\n");
+    printf("could not locate the function oms_export\n");
     exit(0);
   }
   int status = oms_export(cref,filename);
@@ -662,7 +662,7 @@ extern const int OMSimulator_oms_exportDependencyGraphs(const char* cref, const 
 {
   if(!oms_exportDependencyGraphs)
   {
-    printf("Could not Locate the Function oms_exportDependencyGraphs\n");
+    printf("could not locate the function oms_exportDependencyGraphs\n");
     exit(0);
   }
   int status = oms_exportDependencyGraphs(cref,initialization,event,simulation);
@@ -673,7 +673,7 @@ extern const int OMSimulator_oms_exportSnapshot(const char* cref, char** content
 {
   if(!oms_exportSnapshot)
   {
-    printf("Could not Locate the Function oms_exportSnapshot\n");
+    printf("could not locate the function oms_exportSnapshot\n");
     exit(0);
   }
   int status = oms_exportSnapshot(cref,contents);
@@ -684,7 +684,7 @@ extern const int OMSimulator_oms_extractFMIKind(const char* filename, int* kind)
 {
   if(!oms_extractFMIKind)
   {
-    printf("Could not Locate the Function oms_extractFMIKind\n");
+    printf("could not locate the function oms_extractFMIKind\n");
     exit(0);
   }
   int status = oms_extractFMIKind(filename,kind);
@@ -695,7 +695,7 @@ extern const int OMSimulator_oms_getBoolean(const char* cref, bool* value)
 {
   if(!oms_getBoolean)
   {
-    printf("Could not Locate the Function oms_getBoolean\n");
+    printf("could not locate the function oms_getBoolean\n");
     exit(0);
   }
   int status = oms_getBoolean(cref,value);
@@ -706,7 +706,7 @@ extern const int OMSimulator_oms_getFixedStepSize(const char* cref, double* step
 {
   if(!oms_getFixedStepSize)
   {
-    printf("Could not Locate the Function oms_getFixedStepSize\n");
+    printf("could not locate the function oms_getFixedStepSize\n");
     exit(0);
   }
   int status = oms_getFixedStepSize(cref,stepSize);
@@ -717,7 +717,7 @@ extern const int OMSimulator_oms_getInteger(const char* cref, int* value)
 {
   if(!oms_getInteger)
   {
-    printf("Could not Locate the Function oms_getInteger\n");
+    printf("could not locate the function oms_getInteger\n");
     exit(0);
   }
   int status = oms_getInteger(cref,value);
@@ -728,7 +728,7 @@ extern const int OMSimulator_oms_getModelState(const char* cref, int* modelState
 {
   if(!oms_getModelState)
   {
-    printf("Could not Locate the Function oms_getModelState\n");
+    printf("could not locate the function oms_getModelState\n");
     exit(0);
   }
   int status = oms_getModelState(cref,modelState);
@@ -739,7 +739,7 @@ extern const int OMSimulator_oms_getReal(const char* cref, double* value)
 {
   if(!oms_getReal)
   {
-    printf("Could not Locate the Function oms_getReal\n");
+    printf("could not locate the function oms_getReal\n");
     exit(0);
   }
   int status = oms_getReal(cref,value);
@@ -750,7 +750,7 @@ extern const int OMSimulator_oms_getSolver(const char* cref, int* solver)
 {
   if(!oms_getSolver)
   {
-    printf("Could not Locate the Function oms_getSolver\n");
+    printf("could not locate the function oms_getSolver\n");
     exit(0);
   }
   int status = oms_getSolver(cref,solver);
@@ -761,7 +761,7 @@ extern const int OMSimulator_oms_getStartTime(const char* cref, double* startTim
 {
   if(!oms_getStartTime)
   {
-    printf("Could not Locate the Function oms_getStartTime\n");
+    printf("could not locate the function oms_getStartTime\n");
     exit(0);
   }
   int status = oms_getStartTime(cref,startTime);
@@ -772,7 +772,7 @@ extern const int OMSimulator_oms_getStopTime(const char* cref, double* stopTime)
 {
   if(!oms_getStopTime)
   {
-    printf("Could not Locate the Function oms_getStopTime\n");
+    printf("could not locate the function oms_getStopTime\n");
     exit(0);
   }
   int status = oms_getStopTime(cref,stopTime);
@@ -783,7 +783,7 @@ extern const int OMSimulator_oms_getSubModelPath(const char* cref, char** path)
 {
   if(!oms_getSubModelPath)
   {
-    printf("Could not Locate the Function oms_getSubModelPath\n");
+    printf("could not locate the function oms_getSubModelPath\n");
     exit(0);
   }
   int status = oms_getSubModelPath(cref,path);
@@ -794,7 +794,7 @@ extern const int OMSimulator_oms_getSystemType(const char* cref, int* type)
 {
   if(!oms_getSystemType)
   {
-    printf("Could not Locate the Function oms_getSystemType\n");
+    printf("could not locate the function oms_getSystemType\n");
     exit(0);
   }
   int status = oms_getSystemType(cref,type);
@@ -805,7 +805,7 @@ extern const int OMSimulator_oms_getTolerance(const char* cref, double* absolute
 {
   if(!oms_getTolerance)
   {
-    printf("Could not Locate the Function oms_getTolerance\n");
+    printf("could not locate the function oms_getTolerance\n");
     exit(0);
   }
   int status = oms_getTolerance(cref,absoluteTolerance,relativeTolerance);
@@ -816,7 +816,7 @@ extern const int OMSimulator_oms_getVariableStepSize(const char* cref, double* i
 {
   if(!oms_getVariableStepSize)
   {
-    printf("Could not Locate the Function oms_getVariableStepSize\n");
+    printf("could not locate the function oms_getVariableStepSize\n");
     exit(0);
   }
   int status = oms_getVariableStepSize(cref,initialStepSize,minimumStepSize,maximumStepSize);
@@ -827,7 +827,7 @@ extern const int OMSimulator_oms_faultInjection(const char* signal, int faultTyp
 {
   if(!oms_faultInjection)
   {
-    printf("Could not Locate the Function oms_faultInjection\n");
+    printf("could not locate the function oms_faultInjection\n");
     exit(0);
   }
   int status = oms_faultInjection(signal,faultType,faultValue);
@@ -838,7 +838,7 @@ extern const int OMSimulator_oms_importFile(const char* filename, char** cref)
 {
   if(!oms_importFile)
   {
-    printf("Could not Locate the Function oms_importFile\n");
+    printf("could not locate the function oms_importFile\n");
     exit(0);
   }
   int status = oms_importFile(filename,cref);
@@ -849,7 +849,7 @@ extern const int OMSimulator_oms_importSnapshot(const char* cref, const char* sn
 {
   if(!oms_importSnapshot)
   {
-    printf("Could not Locate the Function oms_importSnapshot\n");
+    printf("could not locate the function oms_importSnapshot\n");
     exit(0);
   }
   int status = oms_importSnapshot(cref,snapshot);
@@ -860,7 +860,7 @@ extern const int OMSimulator_oms_initialize(const char* cref)
 {
   if(!oms_initialize)
   {
-    printf("Could not Locate the Function oms_initialize\n");
+    printf("could not locate the function oms_initialize\n");
     exit(0);
   }
   int status = oms_initialize(cref);
@@ -871,7 +871,7 @@ extern const int OMSimulator_oms_instantiate(const char* cref)
 {
   if(!oms_instantiate)
   {
-    printf("Could not Locate the Function oms_instantiate\n");
+    printf("could not locate the function oms_instantiate\n");
     exit(0);
   }
   int status = oms_instantiate(cref);
@@ -882,7 +882,7 @@ extern const int OMSimulator_oms_list(const char* cref, char** contents)
 {
   if(!oms_list)
   {
-    printf("Could not Locate the Function oms_list\n");
+    printf("could not locate the function oms_list\n");
     exit(0);
   }
   int status = oms_list(cref,contents);
@@ -893,7 +893,7 @@ extern const int OMSimulator_oms_listUnconnectedConnectors(const char* cref, cha
 {
   if(!oms_listUnconnectedConnectors)
   {
-    printf("Could not Locate the Function oms_listUnconnectedConnectors\n");
+    printf("could not locate the function oms_listUnconnectedConnectors\n");
     exit(0);
   }
   int status = oms_listUnconnectedConnectors(cref,contents);
@@ -904,7 +904,7 @@ extern const int OMSimulator_oms_loadSnapshot(const char* cref, const char* snap
 {
   if(!oms_loadSnapshot)
   {
-    printf("Could not Locate the Function oms_loadSnapshot\n");
+    printf("could not locate the function oms_loadSnapshot\n");
     exit(0);
   }
   int status = oms_loadSnapshot(cref,snapshot);
@@ -915,7 +915,7 @@ extern const int OMSimulator_oms_newModel(const char* cref)
 {
   if(!oms_newModel)
   {
-    printf("Could not Locate the Function oms_newModel\n");
+    printf("could not locate the function oms_newModel\n");
     exit(0);
   }
   int status = oms_newModel(cref);
@@ -926,7 +926,7 @@ extern const int OMSimulator_oms_parseModelName(const char* contents, char** cre
 {
   if(!oms_parseModelName)
   {
-    printf("Could not Locate the Function oms_parseModelName\n");
+    printf("could not locate the function oms_parseModelName\n");
     exit(0);
   }
   int status = oms_parseModelName(contents,cref);
@@ -937,7 +937,7 @@ extern const int OMSimulator_oms_removeSignalsFromResults(const char* cref, cons
 {
   if(!oms_removeSignalsFromResults)
   {
-    printf("Could not Locate the Function oms_removeSignalsFromResults\n");
+    printf("could not locate the function oms_removeSignalsFromResults\n");
     exit(0);
   }
   int status = oms_removeSignalsFromResults(cref,regex);
@@ -948,7 +948,7 @@ extern const int OMSimulator_oms_rename(const char* cref, const char* newCref)
 {
   if(!oms_rename)
   {
-    printf("Could not Locate the Function oms_rename\n");
+    printf("could not locate the function oms_rename\n");
     exit(0);
   }
   int status = oms_rename(cref,newCref);
@@ -959,7 +959,7 @@ extern const int OMSimulator_oms_reset(const char* cref)
 {
   if(!oms_reset)
   {
-    printf("Could not Locate the Function oms_reset\n");
+    printf("could not locate the function oms_reset\n");
     exit(0);
   }
   int status = oms_reset(cref);
@@ -970,7 +970,7 @@ extern const int OMSimulator_oms_RunFile(const char* filename)
 {
   if(!oms_RunFile)
   {
-    printf("Could not Locate the Function oms_RunFile\n");
+    printf("could not locate the function oms_RunFile\n");
     exit(0);
   }
   int status = oms_RunFile(filename);
@@ -981,7 +981,7 @@ extern const int OMSimulator_oms_setBoolean(const char* cref, bool value)
 {
   if(!oms_setBoolean)
   {
-    printf("Could not Locate the Function oms_setBoolean\n");
+    printf("could not locate the function oms_setBoolean\n");
     exit(0);
   }
   int status = oms_setBoolean(cref,value);
@@ -992,7 +992,7 @@ extern const int OMSimulator_oms_setCommandLineOption(const char* cmd)
 {
   if(!oms_setCommandLineOption)
   {
-    printf("Could not Locate the Function oms_setCommandLineOption\n");
+    printf("could not locate the function oms_setCommandLineOption\n");
     exit(0);
   }
   int status = oms_setCommandLineOption(cmd);
@@ -1003,7 +1003,7 @@ extern const int OMSimulator_oms_setFixedStepSize(const char* cref, double stepS
 {
   if(!oms_setFixedStepSize)
   {
-    printf("Could not Locate the Function oms_setFixedStepSize\n");
+    printf("could not locate the function oms_setFixedStepSize\n");
     exit(0);
   }
   int status = oms_setFixedStepSize(cref,stepSize);
@@ -1014,7 +1014,7 @@ extern const int OMSimulator_oms_setInteger(const char* cref, int value)
 {
   if(!oms_setInteger)
   {
-    printf("Could not Locate the Function oms_setInteger\n");
+    printf("could not locate the function oms_setInteger\n");
     exit(0);
   }
   int status = oms_setInteger(cref,value);
@@ -1025,7 +1025,7 @@ extern const int OMSimulator_oms_setLogFile(const char* filename)
 {
   if(!oms_setLogFile)
   {
-    printf("Could not Locate the Function oms_setLogFile\n");
+    printf("could not locate the function oms_setLogFile\n");
     exit(0);
   }
   int status = oms_setLogFile(filename);
@@ -1036,7 +1036,7 @@ extern const int OMSimulator_oms_setLoggingInterval(const char* cref, double log
 {
   if(!oms_setLoggingInterval)
   {
-    printf("Could not Locate the Function oms_setLoggingInterval\n");
+    printf("could not locate the function oms_setLoggingInterval\n");
     exit(0);
   }
   int status = oms_setLoggingInterval(cref,loggingInterval);
@@ -1047,7 +1047,7 @@ extern const int OMSimulator_oms_setLoggingLevel(int logLevel)
 {
   if(!oms_setLoggingLevel)
   {
-    printf("Could not Locate the Function oms_setLoggingLevel\n");
+    printf("could not locate the function oms_setLoggingLevel\n");
     exit(0);
   }
   int status = oms_setLoggingLevel(logLevel);
@@ -1058,7 +1058,7 @@ extern const int OMSimulator_oms_setReal(const char* cref, double value)
 {
   if(!oms_setReal)
   {
-    printf("Could not Locate the Function oms_setReal\n");
+    printf("could not locate the function oms_setReal\n");
     exit(0);
   }
   int status = oms_setReal(cref,value);
@@ -1069,7 +1069,7 @@ extern const int OMSimulator_oms_setRealInputDerivative(const char* cref, double
 {
   if(!oms_setRealInputDerivative)
   {
-    printf("Could not Locate the Function oms_setRealInputDerivative\n");
+    printf("could not locate the function oms_setRealInputDerivative\n");
     exit(0);
   }
   int status = oms_setRealInputDerivative(cref,value);
@@ -1080,7 +1080,7 @@ extern const int OMSimulator_oms_setResultFile(const char* cref, const char* fil
 {
   if(!oms_setResultFile)
   {
-    printf("Could not Locate the Function oms_setResultFile\n");
+    printf("could not locate the function oms_setResultFile\n");
     exit(0);
   }
   int status = oms_setResultFile(cref,filename,bufferSize);
@@ -1091,7 +1091,7 @@ extern const int OMSimulator_oms_setSignalFilter(const char* cref, const char* r
 {
   if(!oms_setSignalFilter)
   {
-    printf("Could not Locate the Function oms_setSignalFilter\n");
+    printf("could not locate the function oms_setSignalFilter\n");
     exit(0);
   }
   int status = oms_setSignalFilter(cref,regex);
@@ -1102,7 +1102,7 @@ extern const int OMSimulator_oms_setSolver(const char* cref, int solver)
 {
   if(!oms_setSolver)
   {
-    printf("Could not Locate the Function oms_setSolver\n");
+    printf("could not locate the function oms_setSolver\n");
     exit(0);
   }
   int status = oms_setSolver(cref,solver);
@@ -1113,7 +1113,7 @@ extern const int OMSimulator_oms_setStartTime(const char* cref, double startTime
 {
   if(!oms_setStartTime)
   {
-    printf("Could not Locate the Function oms_setStartTime\n");
+    printf("could not locate the function oms_setStartTime\n");
     exit(0);
   }
   int status = oms_setStartTime(cref,startTime);
@@ -1124,7 +1124,7 @@ extern const int OMSimulator_oms_setStopTime(const char* cref, double stopTime)
 {
   if(!oms_setStopTime)
   {
-    printf("Could not Locate the Function oms_setStopTime\n");
+    printf("could not locate the function oms_setStopTime\n");
     exit(0);
   }
   int status = oms_setStopTime(cref,stopTime);
@@ -1135,7 +1135,7 @@ extern const int OMSimulator_oms_setTempDirectory(const char* newTempDir)
 {
   if(!oms_setTempDirectory)
   {
-    printf("Could not Locate the Function oms_setTempDirectory\n");
+    printf("could not locate the function oms_setTempDirectory\n");
     exit(0);
   }
   int status = oms_setTempDirectory(newTempDir);
@@ -1146,7 +1146,7 @@ extern const int OMSimulator_oms_setTLMPositionAndOrientation(const char* cref, 
 {
   if(!oms_setTLMPositionAndOrientation)
   {
-    printf("Could not Locate the Function oms_setTLMPositionAndOrientation\n");
+    printf("could not locate the function oms_setTLMPositionAndOrientation\n");
     exit(0);
   }
   int status = oms_setTLMPositionAndOrientation(cref,x1,x2,x3,A11,A12,A13,A21,A22,A23,A31,A32,A33);
@@ -1157,7 +1157,7 @@ extern const int OMSimulator_oms_setTLMSocketData(const char* cref, const char* 
 {
   if(!oms_setTLMSocketData)
   {
-    printf("Could not Locate the Function oms_setTLMSocketData\n");
+    printf("could not locate the function oms_setTLMSocketData\n");
     exit(0);
   }
   int status = oms_setTLMSocketData(cref,address,managerPort,monitorPort);
@@ -1168,7 +1168,7 @@ extern const int OMSimulator_oms_setTolerance(const char* cref, double absoluteT
 {
   if(!oms_setTolerance)
   {
-    printf("Could not Locate the Function oms_setTolerance\n");
+    printf("could not locate the function oms_setTolerance\n");
     exit(0);
   }
   int status = oms_setTolerance(cref,absoluteTolerance,relativeTolerance);
@@ -1179,7 +1179,7 @@ extern const int OMSimulator_oms_setVariableStepSize(const char* cref, double in
 {
   if(!oms_setVariableStepSize)
   {
-    printf("Could not Locate the Function oms_setVariableStepSize\n");
+    printf("could not locate the function oms_setVariableStepSize\n");
     exit(0);
   }
   int status = oms_setVariableStepSize(cref,initialStepSize,minimumStepSize,maximumStepSize);
@@ -1190,7 +1190,7 @@ extern const int OMSimulator_oms_setWorkingDirectory(const char* newWorkingDir)
 {
   if(!oms_setWorkingDirectory)
   {
-    printf("Could not Locate the Function oms_setWorkingDirectory\n");
+    printf("could not locate the function oms_setWorkingDirectory\n");
     exit(0);
   }
   int status = oms_setWorkingDirectory(newWorkingDir);
@@ -1201,7 +1201,7 @@ extern const int OMSimulator_oms_simulate(const char* cref)
 {
   if(!oms_simulate)
   {
-    printf("Could not Locate the Function oms_simulate\n");
+    printf("could not locate the function oms_simulate\n");
     exit(0);
   }
   int status = oms_simulate(cref);
@@ -1212,7 +1212,7 @@ extern const int OMSimulator_oms_stepUntil(const char* cref, double stopTime)
 {
   if(!oms_stepUntil)
   {
-    printf("Could not Locate the Function oms_stepUntil\n");
+    printf("could not locate the function oms_stepUntil\n");
     exit(0);
   }
   int status = oms_stepUntil(cref,stopTime);
@@ -1223,7 +1223,7 @@ extern const int OMSimulator_oms_terminate(const char* cref)
 {
   if(!oms_terminate)
   {
-    printf("Could not Locate the Function oms_terminate\n");
+    printf("could not locate the function oms_terminate\n");
     exit(0);
   }
   int status = oms_terminate(cref);
