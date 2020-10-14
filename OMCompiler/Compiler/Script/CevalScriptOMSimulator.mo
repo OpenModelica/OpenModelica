@@ -49,7 +49,7 @@ public function ceval
 algorithm
   (outValue) := matchcontinue (inFunctionName,inVals)
     local
-      String cref,crefA,crefB,busCref,connectorCref,stype_,signal,s_lower,s_upper,path,startscript,regex,fmuPath,filenameA,filenameB,var,source,target,filename,initialization,simulation,contents,snapshot,newCref,cmd,newTempDir,address,newWorkingDir,version;
+      String cref,crefA,crefB,busCref,connectorCref,stype_,signal,s_lower,s_upper,path,startscript,regex,fmuPath,filenameA,filenameB,var,source,target,filename,initialization,event,simulation,contents,snapshot,newCref,cmd,newTempDir,address,newWorkingDir,version;
       Real stepSize,lower,upper,delay,alpha,linearimpedance,angularimpedance,relTol,absTol,faultValue,loggingInterval,rvalue,startTime,stopTime,x1,x2,x3,A11,A12,A13,A21,A22,A23,A31,A32,A33,absoluteTolerance,relativeTolerance,initialStepSize,minimumStepSize,maximumStepSize;
       Integer status,causality,type_,domain,kind,faultType,ivalue,logLevel,bufferSize,solver,dimensions,interpolation,managerPort,monitorPort;
       Boolean b;
@@ -204,11 +204,17 @@ algorithm
       then
         Values.INTEGER(status);
 
-    case("oms_exportDependencyGraphs",{Values.STRING(cref), Values.STRING(initialization), Values.STRING(simulation)})
+    case("oms_exportDependencyGraphs",{Values.STRING(cref), Values.STRING(initialization), Values.STRING(event), Values.STRING(simulation)})
       equation
-        status = OMSimulator.oms_exportDependencyGraphs(cref,initialization,simulation);
+        status = OMSimulator.oms_exportDependencyGraphs(cref,initialization,event,simulation);
       then
         Values.INTEGER(status);
+
+    case("oms_exportSnapshot",{Values.STRING(cref)})
+      equation
+        (contents,status) = OMSimulator.oms_exportSnapshot(cref);
+      then
+        Values.TUPLE({Values.STRING(contents),Values.INTEGER(status)});
 
     case("oms_extractFMIKind",{Values.STRING(filename)})
       equation
@@ -299,6 +305,12 @@ algorithm
         (cref,status) = OMSimulator.oms_importFile(filename);
       then
         Values.TUPLE({Values.STRING(cref),Values.INTEGER(status)});
+
+    case("oms_importSnapshot",{Values.STRING(cref), Values.STRING(snapshot)})
+      equation
+        status = OMSimulator.oms_importSnapshot(cref,snapshot);
+      then
+        Values.INTEGER(status);
 
     case("oms_initialize",{Values.STRING(cref)})
       equation
