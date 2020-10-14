@@ -120,6 +120,7 @@ public
           str := str + toString(var, "  ");
           str := if printAlias then str + " " + Alias.toString(var.aliasvar) + "\n" else str + "\n";
         end for;
+        str := str + "\n";
       else
         str := "";
       end if;
@@ -695,12 +696,12 @@ public
       input output String str = "";
     algorithm
       str := StringUtil.headline_2("SimVars " + str);
-      str := str + SimVar.listToString(vars.stateVars, "States") + "\n";
-      str := str + SimVar.listToString(vars.derivativeVars, "Derivatives") + "\n";
-      str := str + SimVar.listToString(vars.algVars, "Algebraic Variables") + "\n";
-      str := str + SimVar.listToString(vars.paramVars, "Real Parameters") + "\n";
-      str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters") + "\n";
-      str := str + SimVar.listToString(vars.aliasVars, "Real Alias", true) + "\n";
+      str := str + SimVar.listToString(vars.stateVars, "States");
+      str := str + SimVar.listToString(vars.derivativeVars, "Derivatives");
+      str := str + SimVar.listToString(vars.algVars, "Algebraic Variables");
+      str := str + SimVar.listToString(vars.paramVars, "Real Parameters");
+      str := str + SimVar.listToString(vars.intParamVars, "Integer Parameters");
+      str := str + SimVar.listToString(vars.aliasVars, "Real Alias", true);
       // ToDo: all the other stuff
     end toString;
 

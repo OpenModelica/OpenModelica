@@ -89,35 +89,44 @@ public
       Integer idx;
       list<Integer> dependencies;
     algorithm
-      str := StringUtil.headline_2("SimCode Jacobian " + simJac.name + "(idx = " + intString(simJac.jacobianIndex) + ", partition = " + intString(simJac.jacobianIndex) + ")") + "\n";
-      str := str + StringUtil.headline_4("ColumnVars (#residuals = " + intString(simJac.numberOfResultVars) + ")");
-      for var in simJac.columnVars loop
-        str := str + SimVar.SimVar.toString(var, "  ") + "\n";
-      end for;
-      str := str + StringUtil.headline_4("SeedVars");
-      for var in simJac.seedVars loop
-        str := str + SimVar.SimVar.toString(var, "  ") + "\n";
-      end for;
-      str := str + StringUtil.headline_3("Column Equations (#residuals = " + intString(simJac.numberOfResultVars) + ")");
-      for eq in simJac.columnEqns loop
-        str := str + SimStrongComponent.Block.toString(eq, "  ");
-      end for;
-      if not listEmpty(simJac.constantEqns) then
-        str := str + StringUtil.headline_3("Constant Equations");
-        for eq in simJac.constantEqns loop
+      if isEmpty(simJac) then
+        str := StringUtil.headline_2("[EMPTY] SimCode Jacobian " + simJac.name + "(idx = " + intString(simJac.jacobianIndex) + ", partition = " + intString(simJac.partitionIndex) + ")") + "\n";
+      else
+        str := StringUtil.headline_2("SimCode Jacobian " + simJac.name + "(idx = " + intString(simJac.jacobianIndex) + ", partition = " + intString(simJac.jacobianIndex) + ")") + "\n";
+        str := str + StringUtil.headline_4("ColumnVars (#residuals = " + intString(simJac.numberOfResultVars) + ")");
+        for var in simJac.columnVars loop
+          str := str + SimVar.SimVar.toString(var, "  ") + "\n";
+        end for;
+        str := str + StringUtil.headline_4("SeedVars");
+        for var in simJac.seedVars loop
+          str := str + SimVar.SimVar.toString(var, "  ") + "\n";
+        end for;
+        str := str + StringUtil.headline_3("Column Equations (#residuals = " + intString(simJac.numberOfResultVars) + ")");
+        for eq in simJac.columnEqns loop
           str := str + SimStrongComponent.Block.toString(eq, "  ");
         end for;
+        if not listEmpty(simJac.constantEqns) then
+          str := str + StringUtil.headline_3("Constant Equations");
+          for eq in simJac.constantEqns loop
+            str := str + SimStrongComponent.Block.toString(eq, "  ");
+          end for;
+        end if;
+        str := str + StringUtil.headline_4("Sparsity Pattern");
+        for tpl in simJac.sparsity loop
+          (idx, dependencies) := tpl;
+          str := str + "  " + intString(idx) + ":\t" + List.toString(dependencies, intString) + "\n";
+        end for;
+        str := str + StringUtil.headline_4("Sparsity Coloring Groups");
+        for lst in simJac.coloring loop
+          str := str +  "  " + List.toString(lst, intString) + "\n";
+        end for;
       end if;
-      str := str + StringUtil.headline_4("Sparsity Pattern");
-      for tpl in simJac.sparsity loop
-        (idx, dependencies) := tpl;
-        str := str + "  " + intString(idx) + ":\t" + List.toString(dependencies, intString) + "\n";
-      end for;
-      str := str + StringUtil.headline_4("Sparsity Coloring Groups");
-      for lst in simJac.coloring loop
-        str := str +  "  " + List.toString(lst, intString) + "\n";
-      end for;
     end toString;
+
+    function isEmpty
+      input SimJacobian simJac;
+      output Boolean b = simJac.numberOfResultVars == 0;
+    end isEmpty;
 
     function fromSystems
       input list<System.System> systems;
@@ -173,6 +182,7 @@ public
           BVariable.VarData varData;
           Pointer<list<SimStrongComponent.Block>> columnEqns = Pointer.create({});
           Pointer<SimCode.SimCodeIndices> indices_ptr = Pointer.create(indices);
+          Pointer<SimCode.SimCodeIndices> dummy_indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES);
           Pointer<FunctionTree> funcTree_ptr = Pointer.create(funcTree);
           Pointer<list<SimVar.SimVar>> columnVars_ptr = Pointer.create({});
           Pointer<list<SimVar.SimVar>> seedVars_ptr = Pointer.create({});
@@ -183,7 +193,9 @@ public
           SimJacobian jac;
 
         case qual as BackendDAE.JACOBIAN(varData = varData as BVariable.VAR_DATA_JAC(), eqData = eqData as BEquation.EQ_DATA_JAC()) algorithm
-          BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateResidual(acc = columnEqns, indices_ptr = indices_ptr));
+          // use a dummy index pointer to not distort the equation index and fix it afterwards. Only necessary if converting to old backend because
+          // of JSON file structures (jacobian indices need to be the last)
+          BEquation.EquationPointers.map(eqData.equations, function SimStrongComponent.Block.traverseCreateResidual(acc = columnEqns, indices_ptr = dummy_indices_ptr));
 
           BVariable.VariablePointers.map(varData.unknowns, function SimVar.SimVar.traverseCreate(acc = columnVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
           BVariable.VariablePointers.map(varData.seedVars, function SimVar.SimVar.traverseCreate(acc = seedVars_ptr, indices_ptr = Pointer.create(NSimCode.EMPTY_SIM_CODE_INDICES), varType =  VarType.SIMULATION));
@@ -220,6 +232,37 @@ public
         then fail();
       end match;
     end create;
+
+    function createSimulationJacobian
+      input list<System.System> systems;
+      output SimJacobian simJac;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
+    protected
+      list<BackendDAE> jacobians = {};
+      BackendDAE simJacobian;
+      Option<SimJacobian> simJac_opt;
+    algorithm
+      for system in systems loop
+        // save jacobian if existant
+        if Util.isSome(system.jacobian) then
+          jacobians := Util.getOption(system.jacobian) :: jacobians;
+        end if;
+      end for;
+
+      // create empty jacobian as fallback
+      if listEmpty(jacobians) then
+        (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
+      else
+        simJacobian := Jacobian.combine(jacobians, "A");
+        (simJac_opt, simCodeIndices, funcTree) := SimJacobian.create(simJacobian, simCodeIndices, funcTree);
+        if Util.isSome(simJac_opt) then
+          simJac := Util.getOption(simJac_opt);
+        else
+          (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
+        end if;
+      end if;
+    end createSimulationJacobian;
 
     function createSparsity
       input BackendDAE jacobian;
@@ -310,6 +353,16 @@ public
       emptyJac.jacobianIndex := indices.jacobianIndex;
       indices.jacobianIndex := indices.jacobianIndex + 1;
     end empty;
+
+    function getJacobianBlocks
+      input list<SimJacobian> jacobians;
+      output list<SimStrongComponent.Block> blcks = {};
+    algorithm
+      for jacobian in jacobians loop
+        blcks := listAppend(jacobian.columnEqns, blcks);
+        blcks := listAppend(jacobian.constantEqns, blcks);
+      end for;
+    end getJacobianBlocks;
 
     function convert
       input SimJacobian simJac;

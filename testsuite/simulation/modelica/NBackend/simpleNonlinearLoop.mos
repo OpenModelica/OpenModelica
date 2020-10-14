@@ -39,37 +39,14 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ### Residual Equations:
 // 	[SCAL] ($RES_SIM_0) y = sin(x)
 // 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
-// ################################################################################
 //
-// 	Jacobian JAC1:
-//
-// ################################################################################
-//
-// ========================================
-// Variable Data Jacobian
-// ========================================
-//
-// Auxiliary Variables (2)
-// ========================================
-// 1: [SEED] Real $SEED_JAC1.y ()
-// 2: [SEED] Real $SEED_JAC1.x ()
-//
-//
+// Jacobian ODE_NLS_JAC_1: NLS
+// ----------------------------------------
 // Result EquationPointers (2)
 // ****************************************
-// (1)	[SCAL] ($RES_JAC1_0) $SEED_JAC1.y = cos(x) * $SEED_JAC1.x
-// (2)	[SCAL] ($RES_JAC1_1) $SEED_JAC1.x = 2.0 * y * $SEED_JAC1.y
+// (1)	[SCAL] ($RES_ODE_NLS_JAC_1_0) $SEED_ODE_NLS_JAC_1.y = cos(x) * $SEED_ODE_NLS_JAC_1.x
+// (2)	[SCAL] ($RES_ODE_NLS_JAC_1_1) $SEED_ODE_NLS_JAC_1.x = 2.0 * y * $SEED_ODE_NLS_JAC_1.y
 //
-//
-// Sparsity Pattern (nnz: 4)
-// ----------------------------------------
-// (y)	{y,x}
-// (x)	{y,x}
-//
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {x}
-// {y}
 //
 // ========================================
 // AdjacencyMatrix
@@ -103,7 +80,7 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // ################################################################################
 //
-// 	Jacobian A:
+// 	Jacobian ODE_JAC:
 //
 // ################################################################################
 //
@@ -113,14 +90,14 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // Auxiliary Variables (2)
 // ========================================
-// 1: [SEED] Real $SEED_A.y ()
-// 2: [SEED] Real $SEED_A.x ()
+// 1: [SEED] Real $SEED_ODE_JAC.y ()
+// 2: [SEED] Real $SEED_ODE_JAC.x ()
 //
 //
 // Result EquationPointers (2)
 // ****************************************
-// (1)	[SCAL] ($RES_A_0) $SEED_A.x = 2.0 * y * $SEED_A.y
-// (2)	[SCAL] ($RES_A_1) $SEED_A.y = cos(x) * $SEED_A.x
+// (1)	[SCAL] ($RES_ODE_JAC_0) $SEED_ODE_JAC.x = 2.0 * y * $SEED_ODE_JAC.y
+// (2)	[SCAL] ($RES_ODE_JAC_1) $SEED_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x
 //
 //
 // Sparsity Pattern (nnz: 4)
@@ -154,37 +131,14 @@ simulate(simpleNonlinearLoop); getErrorString();
 // ### Residual Equations:
 // 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
 // 	[SCAL] ($RES_SIM_0) y = sin(x)
-// ################################################################################
 //
-// 	Jacobian JAC1:
-//
-// ################################################################################
-//
-// ========================================
-// Variable Data Jacobian
-// ========================================
-//
-// Auxiliary Variables (2)
-// ========================================
-// 1: [SEED] Real $SEED_JAC1.y ()
-// 2: [SEED] Real $SEED_JAC1.x ()
-//
-//
+// Jacobian INIT_NLS_JAC_1: NLS
+// ----------------------------------------
 // Result EquationPointers (2)
 // ****************************************
-// (1)	[SCAL] ($RES_JAC1_0) $SEED_JAC1.x = 2.0 * y * $SEED_JAC1.y
-// (2)	[SCAL] ($RES_JAC1_1) $SEED_JAC1.y = cos(x) * $SEED_JAC1.x
+// (1)	[SCAL] ($RES_INIT_NLS_JAC_1_0) $SEED_INIT_NLS_JAC_1.x = 2.0 * y * $SEED_INIT_NLS_JAC_1.y
+// (2)	[SCAL] ($RES_INIT_NLS_JAC_1_1) $SEED_INIT_NLS_JAC_1.y = cos(x) * $SEED_INIT_NLS_JAC_1.x
 //
-//
-// Sparsity Pattern (nnz: 4)
-// ----------------------------------------
-// (y)	{x,y}
-// (x)	{x,y}
-//
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {x}
-// {y}
 //
 // ========================================
 // AdjacencyMatrix
@@ -217,11 +171,10 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 //
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "simpleNonlinearLoop_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simpleNonlinearLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: simpleNonlinearLoop
-// Got number 0.000000, expected: 1.000000
-// Aborted (core dumped)
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

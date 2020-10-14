@@ -264,14 +264,10 @@ public
       input list<System.System> systems;
       output list<list<Block>> ode = {};
       output list<list<Block>> algebraic = {};
-      output SimJacobian simJac;
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
     protected
       list<Block> tmp;
-      list<BackendDAE> jacobians = {};
-      BackendDAE simJacobian;
-      Option<SimJacobian> simJac_opt;
     algorithm
       for system in systems loop
         (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
@@ -281,22 +277,7 @@ public
         else
           ode := tmp :: ode;
         end if;
-        // save jacobian if existant
-        if Util.isSome(system.jacobian) then
-          jacobians := Util.getOption(system.jacobian) :: jacobians;
-        end if;
       end for;
-      if listEmpty(jacobians) then
-        (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
-      else
-        simJacobian := Jacobian.combine(jacobians, "A");
-        (simJac_opt, simCodeIndices, funcTree) := SimJacobian.create(simJacobian, simCodeIndices, funcTree);
-        if Util.isSome(simJac_opt) then
-          simJac := Util.getOption(simJac_opt);
-        else
-          (simJac, simCodeIndices) := SimJacobian.empty("A", simCodeIndices);
-        end if;
-      end if;
       ode := listReverse(ode);
       algebraic := listReverse(algebraic);
     end createBlocks;
@@ -409,6 +390,7 @@ public
           Block tmp;
           Pointer<Variable> varPtr;
           Variable var;
+          SimJacobian tmpJac;
           Option<SimJacobian> jacobian;
 
         case qual as StrongComponent.SINGLE_EQUATION()
@@ -438,7 +420,8 @@ public
             if Util.isSome(strict.jac) then
               (jacobian, simCodeIndices, funcTree) := SimJacobian.create(Util.getOption(strict.jac), simCodeIndices, funcTree);
             else
-              jacobian := NONE();
+              (tmpJac, simCodeIndices) := SimJacobian.empty("NLS_DUMMY_" + intString(simCodeIndices.jacobianIndex), simCodeIndices);
+              jacobian := SOME(tmpJac);
             end if;
             system := NONLINEAR_SYSTEM(
               index         = simCodeIndices.equationIndex,
@@ -671,14 +654,12 @@ public
       output OldSimCode.SimEqSystem oldBlck;
     algorithm
       oldBlck := match blck
-        local
-          Block qual;
-        case qual as RESIDUAL()         then OldSimCode.SES_RESIDUAL(qual.index, Expression.toDAE(qual.exp), qual.source, BEquation.EquationAttributes.convert(qual.attr));
-        case qual as ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(qual.index, Expression.toDAE(qual.exp), qual.source, BEquation.EquationAttributes.convert(qual.attr));
-        case qual as SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(qual.index, ComponentRef.toDAE(qual.lhs), Expression.toDAE(qual.rhs), qual.source, BEquation.EquationAttributes.convert(qual.attr));
-        case qual as ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(qual.index, Expression.toDAE(qual.lhs), Expression.toDAE(qual.rhs), qual.source, BEquation.EquationAttributes.convert(qual.attr));
+        case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, BEquation.EquationAttributes.convert(blck.attr));
+        case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, BEquation.EquationAttributes.convert(blck.attr));
+        case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, BEquation.EquationAttributes.convert(blck.attr));
+        case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, BEquation.EquationAttributes.convert(blck.attr));
         // ToDo: add all the other cases here!
-        case qual as NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(qual.system), NONE(), BEquation.EquationAttributes.convert(NBEquation.EQ_ATTR_DEFAULT_UNKNOWN) /* dangerous! */);
+        case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), BEquation.EquationAttributes.convert(NBEquation.EQ_ATTR_DEFAULT_UNKNOWN) /* dangerous! */);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
         then fail();
@@ -704,6 +685,97 @@ public
       end for;
       oldBlck_lst_lst := listReverse(oldBlck_lst_lst);
     end convertListList;
+
+    function fixIndices
+      input output list<Block> blcks;
+      input output SimCode.SimCodeIndices indices;
+    algorithm
+      blcks := match blcks
+        local
+          Block blck;
+          list<Block> rest;
+        case blck :: rest algorithm
+          (blck, indices) := fixIndex(blck, indices);
+        then blck :: fixIndices(rest, indices);
+        else blcks;
+      end match;
+    end fixIndices;
+
+    function fixIndex
+      input output Block blck;
+      input output SimCode.SimCodeIndices indices;
+    algorithm
+      blck := match blck
+        local
+          Block tmp;
+          list<Block> tmp_lst;
+
+        case RESIDUAL() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case ARRAY_RESIDUAL() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case SIMPLE_ASSIGN() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case ARRAY_ASSIGN() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case ALIAS() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case ALGORITHM() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case INVERSE_ALGORITHM() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case IF() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case WHEN() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case FOR() algorithm
+          blck.index := indices.equationIndex;
+          indices.equationIndex := indices.equationIndex + 1;
+        then blck;
+
+        case LINEAR() algorithm
+          // TODO
+        then blck;
+
+        case NONLINEAR() algorithm
+          // TODO
+        then blck;
+
+        case HYBRID() algorithm
+          (tmp, indices) := fixIndex(blck.continuous, indices);
+          (tmp_lst, indices) := fixIndices(blck.discreteEqs, indices);
+          blck.continuous := tmp;
+          blck.discreteEqs := tmp_lst;
+        then blck;
+      end match;
+    end fixIndex;
   end Block;
 
   uniontype LinearSystem
@@ -798,7 +870,7 @@ public
         crefs                 = listReverse(crefs),
         indexNonLinearSystem  = system.indexSystem,
         nUnknowns             = system.size,
-        jacobianMatrix        = NONE(), // ToDo update this!
+        jacobianMatrix        = SimJacobian.convertOpt(system.jacobian), // ToDo update this!
         homotopySupport       = system.homotopy,
         mixedSystem           = system.mixed,
         tornSystem            = system.torn,

@@ -185,7 +185,7 @@ protected
         algorithm
           // for now do not apply tearing
           index := index + 1;
-          name := System.System.systemTypeString(systemType) + "_JAC" + intString(index);
+          name := System.System.systemTypeString(systemType) + "_NLS_JAC_" + intString(index);
           dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), {});
           tearingSet := TEARING_SET(comp.vars, comp.eqns, arrayCreate(0, dummy), NONE());
           result := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, comp.mixed);

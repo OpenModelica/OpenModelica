@@ -120,7 +120,7 @@ public
                                                                     0,0,0,0,
                                                                     0,0,0,0,
                                                                     0,0,0,0,
-                                                                    0,0,0,
+                                                                    1,0,0,
                                                                     0,0);
 
   uniontype SimCode
@@ -140,7 +140,7 @@ public
       list<SimStrongComponent.Block> param              "Blocks for parameter equations";
       list<SimStrongComponent.Block> no_ret             "Blocks for equations without return value";
       list<SimStrongComponent.Block> algorithms         "Blocks for algorithms and asserts";
-      list<SimStrongComponent.Block> zero_cross_blocks         "Blocks for zero crossing functions";
+      list<SimStrongComponent.Block> zero_cross_blocks  "Blocks for zero crossing functions";
       list<SimStrongComponent.Block> jac_blocks         "Blocks for jacobian equations";
       list<SimStrongComponent.Block> start              "Blocks for start value equations";
       list<SimStrongComponent.Block> init               "Blocks for initial equations";
@@ -192,10 +192,18 @@ public
         str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "ODE Partition " + intString(idx)) + "\n";
         idx := idx + 1;
       end for;
+      idx := 1;
+      for blck_lst in simCode.algebraic loop
+        str := str + SimStrongComponent.Block.listToString(blck_lst, "  ", "Algebraic Partition " + intString(idx)) + "\n";
+        idx := idx + 1;
+      end for;
       if isSome(simCode.daeModeData) then
         str := str + DaeModeData.toString(Util.getOption(simCode.daeModeData)) + "\n";
       end if;
-      str := str + SimStrongComponent.Block.listToString(simCode.no_ret, "  ", "REMOVED / ALIAS / KNOWN") + "\n";
+      for jac in simCode.jacobians loop
+        str := str + SimJacobian.toString(jac);
+      end for;
+      //str := str + SimStrongComponent.Block.listToString(simCode.no_ret, "  ", "REMOVED / ALIAS / KNOWN") + "\n";
     end toString;
 
     function create
@@ -254,7 +262,6 @@ public
             (no_ret, simCodeIndices, funcTree) := SimStrongComponent.Block.createNoReturnBlocks(no_ret_eq, simCodeIndices, funcTree);
             algorithms := {};
             zero_cross_blocks := {};
-            jac_blocks := {};
             (init, simCodeIndices, funcTree) := SimStrongComponent.Block.createInitialBlocks(qual.init, simCodeIndices, funcTree);
             init_0 := {};
             init_no_ret := {};
@@ -264,13 +271,19 @@ public
             if isSome(qual.dae) then
               // DAEMode
               ode := {};
-              algebraic := no_ret :: {};
+              if not listEmpty(no_ret) then
+                algebraic := {no_ret};
+              else
+                algebraic := {};
+              end if;
               (daeModeData, simCodeIndices, funcTree) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices, funcTree);
             else
               // Normal Simulation
               daeModeData := NONE();
-              (ode, algebraic, jacA, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
-              algebraic := no_ret :: algebraic;
+              (ode, algebraic, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
+              if not listEmpty(no_ret) then
+                algebraic := no_ret :: algebraic;
+              end if;
             end if;
             allSim := listAppend(List.flatten(ode), List.flatten(algebraic));
 
@@ -293,15 +306,21 @@ public
 
             // This needs to be done after the variables have been created by ModelInfo.create()
             if isSome(qual.dae) then
-              // DAEMode
               (daeModeData, modelInfo, jacA, crefToSimVarHT, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(qual.dae), crefToSimVarHT, simCodeIndices);
+            else
+              (jacA, simCodeIndices, funcTree) := SimJacobian.createSimulationJacobian(qual.ode, simCodeIndices, funcTree);
             end if;
+
+            // fix the equation indices (necessary for conversion to old simcode)
 
             (jacB, simCodeIndices) := SimJacobian.empty("B", simCodeIndices);
             (jacC, simCodeIndices) := SimJacobian.empty("C", simCodeIndices);
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
-            jacobians := listAppend({jacA, jacB, jacC, jacD, jacF}, jacobians);
+            jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
+            jac_blocks := {};
+            //jac_blocks := SimJacobian.getJacobianBlocks(jacobians);
+            //(jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, simCodeIndices);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,

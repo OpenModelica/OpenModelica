@@ -7,13 +7,13 @@ multary_simplification.mos \
 parameterSystem.mos \
 RSE.mos \
 StaticIR.mos \
+simpleNonlinearLoop.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest
 FAILINGTESTFILES = \
 simpleForLoop.mos \
 solveSingleEquation.mos \
-simpleNonlinearLoop.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
