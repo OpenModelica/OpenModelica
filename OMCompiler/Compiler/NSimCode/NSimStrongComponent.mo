@@ -270,7 +270,7 @@ public
       list<Block> tmp;
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
+        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
         // check if system contains states
         if System.System.isAlgebraic(system) then
           algebraic := tmp :: algebraic;
@@ -292,7 +292,7 @@ public
       list<list<Block>> tmp_lst = {};
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree);
+        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.INIT);
         tmp_lst := tmp :: tmp_lst;
       end for;
       blcks := List.flatten(tmp_lst);
@@ -311,7 +311,7 @@ public
     algorithm
       for system in listReverse(systems) loop
         BVariable.VariablePointers.map(system.unknowns, function SimVar.traverseCreate(acc = vars_ptr, indices_ptr = indices_ptr, varType = VarType.DAE_MODE_RESIDUAL));
-        (tmp, simCodeIndices, funcTree) := fromSystem(system, Pointer.access(indices_ptr), funcTree);
+        (tmp, simCodeIndices, funcTree) := fromSystem(system, Pointer.access(indices_ptr), funcTree, NBSystem.SystemType.DAE);
         blcks := tmp :: blcks;
       end for;
       vars := listReverse(Pointer.access(vars_ptr));
@@ -322,6 +322,7 @@ public
       output list<Block> blcks = {};
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
+      input System.SystemType systemType;
     protected
       Equation eqn;
       Block tmp;
@@ -334,7 +335,7 @@ public
               ComponentRef cref;
 
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
-            then createEquation(NBVariable.getVar(cref), eqn, simCodeIndices, funcTree);
+            then createEquation(NBVariable.getVar(cref), eqn, simCodeIndices, funcTree, systemType);
 
             /* ToDo: ARRAY_EQUATION ... */
 
@@ -354,6 +355,7 @@ public
       output list<Block> blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
+      input System.SystemType systemType;
     algorithm
       blcks := match system.strongComponents
         local
@@ -363,7 +365,7 @@ public
         case SOME(comps)
           algorithm
             for i in 1:arrayLength(comps) loop
-              (tmp, simCodeIndices, funcTree) := fromStrongComponent(comps[i], simCodeIndices, funcTree);
+              (tmp, simCodeIndices, funcTree) := fromStrongComponent(comps[i], simCodeIndices, funcTree, systemType);
               result := tmp :: result;
             end for;
         then listReverse(result);
@@ -379,6 +381,7 @@ public
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
+      input System.SystemType systemType;
     algorithm
       blck := match comp
         local
@@ -395,12 +398,12 @@ public
 
         case qual as StrongComponent.SINGLE_EQUATION()
           algorithm
-            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(qual.var), Pointer.access(qual.eqn), simCodeIndices, funcTree);
+            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(qual.var), Pointer.access(qual.eqn), simCodeIndices, funcTree, systemType);
         then tmp;
 
         case qual as StrongComponent.SINGLE_ARRAY(vars = {varPtr})
           algorithm
-            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(varPtr), Pointer.access(qual.eqn), simCodeIndices, funcTree);
+            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(varPtr), Pointer.access(qual.eqn), simCodeIndices, funcTree, systemType);
         then tmp;
 
         case qual as StrongComponent.TORN_LOOP(strict = strict)
@@ -492,6 +495,7 @@ public
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
+      input System.SystemType systemType;
     protected
       BEquation.Equation solvedEq;
       Boolean solved;
@@ -533,7 +537,7 @@ public
         // fallback implicit solving
         case (_, false)
           algorithm
-            (tmp, simCodeIndices, funcTree) := createImplicitEquation(var, eqn, simCodeIndices, funcTree);
+            (tmp, simCodeIndices, funcTree) := createImplicitEquation(var, eqn, simCodeIndices, funcTree, systemType);
          then tmp;
 
         else algorithm
@@ -550,17 +554,19 @@ public
       output Block blck;
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
+      input System.SystemType systemType;
     protected
       StrongComponent comp;
       Integer index;
     algorithm
       (comp, funcTree, index)  := Tearing.implicit(
-        comp      = StrongComponent.SINGLE_EQUATION(Pointer.create(var), Pointer.create(eqn)),
-        funcTree  = funcTree,
-        index     = simCodeIndices.implicitIndex
+        comp        = StrongComponent.SINGLE_EQUATION(Pointer.create(var), Pointer.create(eqn)),
+        funcTree    = funcTree,
+        index       = simCodeIndices.implicitIndex,
+        systemType  = systemType
       );
       simCodeIndices.implicitIndex := index;
-      (blck, simCodeIndices, funcTree) := fromStrongComponent(comp, simCodeIndices, funcTree);
+      (blck, simCodeIndices, funcTree) := fromStrongComponent(comp, simCodeIndices, funcTree, systemType);
     end createImplicitEquation;
 
     function traverseCreateEquation
@@ -570,6 +576,7 @@ public
       input Pointer<list<Block>> acc;
       input Pointer<SimCode.SimCodeIndices> indices_ptr;
       input Pointer<FunctionTree> funcTree_ptr;
+      input System.SystemType systemType;
     protected
       Pointer<Variable> residualVar;
       Block blck;
@@ -578,7 +585,7 @@ public
     algorithm
       try
         residualVar := BEquation.EquationAttributes.getResidualVar(BEquation.Equation.getAttributes(eqn));
-        (blck, indices, funcTree) := createEquation(Pointer.access(residualVar), eqn, Pointer.access(indices_ptr), Pointer.access(funcTree_ptr));
+        (blck, indices, funcTree) := createEquation(Pointer.access(residualVar), eqn, Pointer.access(indices_ptr), Pointer.access(funcTree_ptr), systemType);
         Pointer.update(acc, blck :: Pointer.access(acc));
         Pointer.update(indices_ptr, indices);
         Pointer.update(funcTree_ptr, funcTree);

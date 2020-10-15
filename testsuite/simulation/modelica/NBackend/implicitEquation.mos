@@ -63,7 +63,7 @@ simulate(implicitEquation); getErrorString();
 // ========================================
 //
 // ========================================
-// [EMPTY] SimCode Jacobian ODE_IMP_JAC_1(idx = 0, partition = 0)
+// [EMPTY] SimCode Jacobian INIT_IMP_JAC_1(idx = 0, partition = 0)
 // ========================================
 //
 //
@@ -155,7 +155,7 @@ simulate(implicitEquation); getErrorString();
 // ========================================
 // 7: -($SEED_ODE_JAC.x + 3.0 * x ^ 2.0 * $SEED_ODE_JAC.x - 2.0 * x * $SEED_ODE_JAC.x) (RESIDUAL)
 // 6: -($SEED_ODE_IMP_JAC_2.x + 3.0 * x ^ 2.0 * $SEED_ODE_IMP_JAC_2.x - 2.0 * x * $SEED_ODE_IMP_JAC_2.x) (RESIDUAL)
-// 5: -($SEED_ODE_IMP_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_ODE_IMP_JAC_1.x - 2.0 * x * $SEED_ODE_IMP_JAC_1.x) (RESIDUAL)
+// 5: -($SEED_INIT_IMP_JAC_1.x + 3.0 * x ^ 2.0 * $SEED_INIT_IMP_JAC_1.x - 2.0 * x * $SEED_INIT_IMP_JAC_1.x) (RESIDUAL)
 //
 // jacobianMatrices:
 // ========================================
