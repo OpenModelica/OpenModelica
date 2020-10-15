@@ -301,15 +301,13 @@ public
 
             (linearLoops, nonlinearLoops, jacobians) := collectAlgebraicLoops(init, ode, algebraic, daeModeData);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(qual.varData, name, directory, functions, linearLoops, nonlinearLoops, simCodeIndices);
-            crefToSimVarHT := HashTableSimCode.create(modelInfo.vars);
-
             // This needs to be done after the variables have been created by ModelInfo.create()
-            if isSome(qual.dae) then
-              (daeModeData, modelInfo, jacA, crefToSimVarHT, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(qual.dae), crefToSimVarHT, simCodeIndices);
-            else
+            // for now do not allow dae mode -- this has to be fixed and redesigned to fit before modelInfo!
+            //if isSome(qual.dae) then
+              //(daeModeData, modelInfo, jacA, crefToSimVarHT, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(qual.dae), crefToSimVarHT, simCodeIndices);
+            //else
               (jacA, simCodeIndices, funcTree) := SimJacobian.createSimulationJacobian(qual.ode, simCodeIndices, funcTree);
-            end if;
+            //end if;
 
             // fix the equation indices (necessary for conversion to old simcode)
 
@@ -318,9 +316,11 @@ public
             (jacD, simCodeIndices) := SimJacobian.empty("D", simCodeIndices);
             (jacF, simCodeIndices) := SimJacobian.empty("F", simCodeIndices);
             jacobians := jacA :: jacB :: jacC :: jacD :: jacF :: jacobians;
-            jac_blocks := {};
-            //jac_blocks := SimJacobian.getJacobianBlocks(jacobians);
-            //(jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, simCodeIndices);
+            jac_blocks := SimJacobian.getJacobianBlocks(jacobians);
+            (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
+
+            (modelInfo, simCodeIndices) := ModelInfo.create(qual.varData, name, directory, functions, linearLoops, nonlinearLoops, simCodeIndices);
+            crefToSimVarHT := HashTableSimCode.create(modelInfo.vars);
 
             simCode := SIM_CODE(
               modelInfo                 = modelInfo,

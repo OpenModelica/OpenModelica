@@ -687,17 +687,18 @@ public
     end convertListList;
 
     function fixIndices
-      input output list<Block> blcks;
+      input list<Block> blcks;
+      input output list<Block> acc;
       input output SimCode.SimCodeIndices indices;
     algorithm
-      blcks := match blcks
+      (acc, indices) := match blcks
         local
           Block blck;
           list<Block> rest;
         case blck :: rest algorithm
           (blck, indices) := fixIndex(blck, indices);
-        then blck :: fixIndices(rest, indices);
-        else blcks;
+        then fixIndices(rest, blck :: acc, indices);
+        else (acc, indices);
       end match;
     end fixIndices;
 
@@ -761,16 +762,16 @@ public
         then blck;
 
         case LINEAR() algorithm
-          // TODO
+          // TODO (these are not really necessary i suppose)
         then blck;
 
         case NONLINEAR() algorithm
-          // TODO
+          // TODO (these are not really necessary i suppose)
         then blck;
 
         case HYBRID() algorithm
           (tmp, indices) := fixIndex(blck.continuous, indices);
-          (tmp_lst, indices) := fixIndices(blck.discreteEqs, indices);
+          (tmp_lst, indices) := fixIndices(blck.discreteEqs, {}, indices);
           blck.continuous := tmp;
           blck.discreteEqs := tmp_lst;
         then blck;
@@ -802,22 +803,22 @@ public
       str := "Linear System (size = " + intString(system.size) + ", jacobian = " + boolString(system.partOfJac) + ", mixed = " + boolString(system.mixed) + ", torn = " + boolString(system.torn) + ")\n" + Block.listToString(system.residual, str + "--");
     end toString;
 
-/* ToDo finish this! not important for now
+/* ToDo: fix this
     function convert
       input LinearSystem system;
       output OldSimCode.LinearSystem oldSystem;
     protected
-      list<DAE.ComponentRef> crefs = {};
+      list<DAE.Exp> beqs = {};
     algorithm
-      for cref in system.crefs loop
-        crefs := ComponentRef.toDAE(cref) :: crefs;
+      for beq in system.beqs loop
+        beqs := Expression.toDAE(beq) :: beqs;
       end for;
       oldSystem := OldSimCode.LINEARSYSTEM(
         index                 = system.index,
         partOfMixed           = system.mixed,
         tornSystem            = system.torn,
-        eqs                   = {}, // ToDo: update this with block update!
-        crefs                 = listReverse(crefs),
+        vars                  = SimVar.convertList(system.vars),
+        beqs                  = listReverse(beqs),
         indexNonLinearSystem  = system.indexSystem,
         nUnknowns             = system.size,
         jacobianMatrix        = NONE(), // ToDo update this!
@@ -825,7 +826,7 @@ public
         clockIndex            = NONE() // ToDo update this
         );
     end convert;
-    */
+*/
   end LinearSystem;
 
   uniontype NonlinearSystem
