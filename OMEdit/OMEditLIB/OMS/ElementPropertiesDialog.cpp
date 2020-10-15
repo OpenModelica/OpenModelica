@@ -351,38 +351,50 @@ void ElementPropertiesDialog::updateProperties()
       if (pInterfaces[i]->causality == oms_causality_parameter) {
         QString parameterValue = mParameterLineEdits.at(parametersIndex)->text();
         parametersIndex++;
-        if (pInterfaces[i]->type == oms_signal_type_real) {
-          OMSProxy::instance()->setReal(nameStructure, parameterValue.toDouble());
-        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
-          OMSProxy::instance()->setInteger(nameStructure, parameterValue.toInt());
-        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
-          OMSProxy::instance()->setBoolean(nameStructure, parameterValue.toInt());
-        } else if (pInterfaces[i]->type == oms_signal_type_string) {
-          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
-        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_enum not implemented yet.";
-        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
-          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_bus not implemented yet.";
-        } else {
-          qDebug() << "ElementPropertiesDialog::updateProperties() unknown oms_signal_type_enu_t.";
+        if (parameterValue.isEmpty()) {
+          // delete start values only
+          OMSProxy::instance()->omsDelete(nameStructure + ":start");
+        }
+        else {
+          if (pInterfaces[i]->type == oms_signal_type_real) {
+            OMSProxy::instance()->setReal(nameStructure, parameterValue.toDouble());
+          } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+            OMSProxy::instance()->setInteger(nameStructure, parameterValue.toInt());
+          } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+            OMSProxy::instance()->setBoolean(nameStructure, parameterValue.toInt());
+          } else if (pInterfaces[i]->type == oms_signal_type_string) {
+            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
+          } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_enum not implemented yet.";
+          } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_bus not implemented yet.";
+          } else {
+            qDebug() << "ElementPropertiesDialog::updateProperties() unknown oms_signal_type_enu_t.";
+          }
         }
       } else if (pInterfaces[i]->causality == oms_causality_input) {
         QString inputValue = mInputLineEdits.at(inputsIndex)->text();
         inputsIndex++;
-        if (pInterfaces[i]->type == oms_signal_type_real) {
-          OMSProxy::instance()->setReal(nameStructure, inputValue.toDouble());
-        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
-          OMSProxy::instance()->setInteger(nameStructure, inputValue.toInt());
-        } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
-          OMSProxy::instance()->setBoolean(nameStructure, inputValue.toInt());
-        } else if (pInterfaces[i]->type == oms_signal_type_string) {
-          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
-        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_enum not implemented yet.";
-        } else if (pInterfaces[i]->type == oms_signal_type_bus) {
-          qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_bus not implemented yet.";
-        } else {
-          qDebug() << "ElementPropertiesDialog::updateProperties() unknown oms_signal_type_enu_t.";
+        if (inputValue.isEmpty()){
+          // delete start values only
+          OMSProxy::instance()->omsDelete(nameStructure + ":start");
+        }
+        else{
+          if (pInterfaces[i]->type == oms_signal_type_real) {
+            OMSProxy::instance()->setReal(nameStructure, inputValue.toDouble());
+          } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+            OMSProxy::instance()->setInteger(nameStructure, inputValue.toInt());
+          } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+            OMSProxy::instance()->setBoolean(nameStructure, inputValue.toInt());
+          } else if (pInterfaces[i]->type == oms_signal_type_string) {
+            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
+          } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_enum not implemented yet.";
+          } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_bus not implemented yet.";
+          } else {
+            qDebug() << "ElementPropertiesDialog::updateProperties() unknown oms_signal_type_enu_t.";
+          }
         }
       }
     }

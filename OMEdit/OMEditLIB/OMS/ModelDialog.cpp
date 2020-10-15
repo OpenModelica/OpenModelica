@@ -533,6 +533,8 @@ AddConnectorDialog::AddConnectorDialog(GraphicsView *pGraphicsView)
   mpCausalityComboBox = new QComboBox;
   mpCausalityComboBox->addItem("Input", oms_causality_input);
   mpCausalityComboBox->addItem("Output", oms_causality_output);
+  mpCausalityComboBox->addItem("Parameter", oms_causality_parameter);
+
   // type
   mpTypeLabel = new Label(Helper::type);
   mpTypeComboBox = new QComboBox;
