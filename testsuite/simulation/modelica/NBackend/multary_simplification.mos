@@ -39,7 +39,7 @@ simulate(multary_simplification); getErrorString();
 // [AFTER ] y
 //
 // ### dumpSimplify | NBSolve.solveLinear ###
-// [BEFORE] --8.0 * time - 0.0 / -1.0
+// [BEFORE] -8.0 * time - 0.0 / -1.0
 // [AFTER ] 8.0 * time
 //
 // ### dumpSimplify | NBSolve.solveLinear ###

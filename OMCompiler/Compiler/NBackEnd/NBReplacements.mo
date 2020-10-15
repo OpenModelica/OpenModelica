@@ -108,18 +108,23 @@ public
     replacements := match comp
       local
         ComponentRef varName;
-        Equation solved;
+        Equation solvedEq;
+        Boolean solved;
         Expression replace_exp;
 
       case StrongComponent.SINGLE_EQUATION() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
-        solved := Solve.solve(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
-        // apply all previous replacements on the RHS
-        replace_exp := Equation.getRHS(solved);
-        replace_exp := applySimpleExp(replace_exp, replacements);
-        // add the new replacement rule
-        replacements := BaseHashTable.add((varName, replace_exp), replacements);
+        (solvedEq, _, solved) := Solve.solve(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
+        if solved then
+          // apply all previous replacements on the RHS
+          replace_exp := Equation.getRHS(solvedEq);
+          replace_exp := applySimpleExp(replace_exp, replacements);
+          // add the new replacement rule
+          replacements := BaseHashTable.add((varName, replace_exp), replacements);
+        else
+          fail();
+        end if;
       then replacements;
 
       else algorithm

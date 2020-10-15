@@ -165,9 +165,6 @@ public
           SparsityPattern tmpPattern;
           Integer size1, size2;
           list<list<ComponentRef>> coloring1, coloring2;
-          list<Integer> test1 = {1,2};
-          list<Integer> test2 = {30,40};
-          list<Integer> test3;
 
         case BackendDAE.JACOBIAN(varData = tmpVarData as VarData.VAR_DATA_JAC(), eqData = tmpEqData as EqData.EQ_DATA_JAC(), sparsityPattern = tmpPattern) algorithm
           variables := listAppend(VariablePointers.toList(tmpVarData.variables), variables);

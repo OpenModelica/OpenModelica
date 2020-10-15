@@ -54,6 +54,7 @@ public
     input output Equation eqn;
     input ComponentRef cref;
     input output FunctionTree funcTree;
+    output Boolean solved;
   protected
     Expression residual, derivative;
     Differentiate.DifferentiationArguments diffArgs;
@@ -77,11 +78,14 @@ public
     if not Expression.containsCref(derivative, cref) then
       // If eqn is linear in cref:
       (eqn, funcTree) := solveLinear(eqn, residual, derivative, diffArgs, cref, funcTree);
+      solved := true;
     else
       // If eqn is non-linear in cref
-      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to solve Cref: "
-        + ComponentRef.toString(cref) + " in equation:\n" + Equation.toString(eqn)});
-      fail();
+      if Flags.isSet(Flags.FAILTRACE) then
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to solve Cref: "
+          + ComponentRef.toString(cref) + " in equation:\n" + Equation.toString(eqn)});
+      end if;
+      solved := false;
     end if;
   end solve;
 

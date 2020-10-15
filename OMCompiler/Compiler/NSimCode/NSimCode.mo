@@ -113,6 +113,8 @@ public
 
       Integer jacobianIndex;
       Integer daeModeResidualIndex;
+      Integer implicitIndex;
+
     end SIM_CODE_INDICES;
   end SimCodeIndices;
 
@@ -121,7 +123,7 @@ public
                                                                     0,0,0,0,
                                                                     0,0,0,0,
                                                                     1,0,0,
-                                                                    0,0);
+                                                                    0,0,0);
 
   uniontype SimCode
     record SIM_CODE

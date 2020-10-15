@@ -726,6 +726,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
         then fail();
       end match;
+      exp := SimplifyExp.simplify(exp);
     end getResidualExp;
 
     function isParameterEquation

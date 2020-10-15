@@ -125,6 +125,45 @@ public
     end match;
   end main;
 
+  function implicit extends Module.tearingInterface;
+  algorithm
+    (comp, funcTree, index) := match comp
+      // create implicit equations
+      case StrongComponent.SINGLE_EQUATION()
+      then tearingNoneWork(
+          name      = System.System.systemTypeString(systemType) + "_IMP_JAC_",
+          variables = {comp.var},
+          equations = {comp.eqn},
+          mixed     = false,
+          funcTree  = funcTree,
+          index     = index
+        );
+
+      case StrongComponent.SINGLE_ARRAY()
+      then tearingNoneWork(
+          name      = System.System.systemTypeString(systemType) + "_IMP_JAC_",
+          variables = comp.vars,
+          equations = {comp.eqn},
+          mixed     = false,
+          funcTree  = funcTree,
+          index     = index
+        );
+
+      case StrongComponent.SINGLE_RECORD_EQUATION()
+      then tearingNoneWork(
+          name      = System.System.systemTypeString(systemType) + "_IMP_JAC_",
+          variables = comp.vars,
+          equations = {comp.eqn},
+          mixed     = false,
+          funcTree  = funcTree,
+          index     = index
+        );
+
+      // do nothing otherwise
+      else (comp, funcTree, index);
+    end match;
+  end implicit;
+
   function getModule
     "Returns the module function that was chosen by the user."
     output Module.tearingInterface func;
@@ -171,39 +210,51 @@ protected
   // Module body functions
   function tearingNone extends Module.tearingInterface;
   algorithm
-    comp := match comp
-      local
-        StrongComponent result;
-        String name;
-        list<Pointer<Equation>> new_eqns;
-        Option<Jacobian> jacobian;
-        Tearing tearingSet;
-        InnerEquation dummy;
-
+    (comp, funcTree, index) := match comp
       // apply tearing if it is an algebraic loop
       case StrongComponent.ALGEBRAIC_LOOP()
-        algorithm
-          // for now do not apply tearing
-          index := index + 1;
-          name := System.System.systemTypeString(systemType) + "_NLS_JAC_" + intString(index);
-          dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), {});
-          tearingSet := TEARING_SET(comp.vars, comp.eqns, arrayCreate(0, dummy), NONE());
-          result := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, comp.mixed);
-
-          (jacobian, funcTree) := BJacobian.simple(
-            variables = VariablePointers.fromList(comp.vars),
-            equations = EquationPointers.fromList(comp.eqns),
-            comp      = result,
-            funcTree  = funcTree,
-            name      = name
-          );
-
-      then StrongComponent.addLoopJacobian(result, jacobian);
+      then tearingNoneWork(
+          name      = System.System.systemTypeString(systemType) + "_NLS_JAC_",
+          variables = comp.vars,
+          equations = comp.eqns,
+          mixed     = comp.mixed,
+          funcTree  = funcTree,
+          index     = index
+        );
 
       // do nothing otherwise
-      else comp;
+      else (comp, funcTree, index);
     end match;
   end tearingNone;
+
+  function tearingNoneWork
+    input String name;
+    input list<Pointer<Variable>> variables;
+    input list<Pointer<Equation>> equations;
+    input Boolean mixed;
+    output StrongComponent comp;
+    input output FunctionTree funcTree;
+    input output Integer index;
+  protected
+    InnerEquation dummy;
+    Tearing tearingSet;
+    Option<Jacobian> jacobian;
+  algorithm
+    index := index + 1;
+    dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), {});
+    tearingSet := TEARING_SET(variables, equations, arrayCreate(0, dummy), NONE());
+    comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed);
+
+    (jacobian, funcTree) := BJacobian.simple(
+      variables = VariablePointers.fromList(variables),
+      equations = EquationPointers.fromList(equations),
+      comp      = comp,
+      funcTree  = funcTree,
+      name      = name + intString(index)
+    );
+
+    comp := StrongComponent.addLoopJacobian(comp, jacobian);
+  end tearingNoneWork;
 
   annotation(__OpenModelica_Interface="backend");
 end NBTearing;

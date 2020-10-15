@@ -493,48 +493,75 @@ public
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
     protected
-      BEquation.Equation solved;
+      BEquation.Equation solvedEq;
+      Boolean solved;
     algorithm
-      solved := Solve.solve(eqn, var.name, funcTree);
-      blck := match solved
+      (solvedEq, funcTree, solved) := Solve.solve(eqn, var.name, funcTree);
+      blck := match (solvedEq, solved)
         local
           Type ty;
           Operator operator;
           Expression lhs, rhs;
           Block tmp;
 
-        case BEquation.SCALAR_EQUATION()
+        case (BEquation.SCALAR_EQUATION(), true)
           algorithm
-            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, solved.rhs, solved.source, solved.attr);
+            tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, solvedEq.rhs, solvedEq.source, solvedEq.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case BEquation.ARRAY_EQUATION()
+        case (BEquation.ARRAY_EQUATION(), true)
           algorithm
-            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), solved.rhs, solved.source, solved.attr);
+            tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), solvedEq.rhs, solvedEq.source, solvedEq.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         // remove simple equations should remove this, but if it is not activated we need this
-        case BEquation.SIMPLE_EQUATION()
+        case (BEquation.SIMPLE_EQUATION(), true)
           algorithm
-            ty := ComponentRef.getComponentType(solved.lhs);
+            ty := ComponentRef.getComponentType(solvedEq.lhs);
             if Type.isArray(ty) then
-              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.fromCref(solved.rhs), solved.source, solved.attr);
+              tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), Expression.fromCref(solvedEq.rhs), solvedEq.source, solvedEq.attr);
             else
-              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.fromCref(solved.rhs), solved.source, solved.attr);
+              tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, Expression.fromCref(solvedEq.rhs), solvedEq.source, solvedEq.attr);
             end if;
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         // ToDo: add all other cases!
 
+        // fallback implicit solving
+        case (_, false)
+          algorithm
+            (tmp, simCodeIndices, funcTree) := createImplicitEquation(var, eqn, simCodeIndices, funcTree);
+         then tmp;
+
         else algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(solved)});
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(solvedEq)});
         then fail();
 
       end match;
     end createEquation;
+
+    function createImplicitEquation
+      "Creates a single implicit equation"
+      input BVariable.Variable var;
+      input BEquation.Equation eqn;
+      output Block blck;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
+    protected
+      StrongComponent comp;
+      Integer index;
+    algorithm
+      (comp, funcTree, index)  := Tearing.implicit(
+        comp      = StrongComponent.SINGLE_EQUATION(Pointer.create(var), Pointer.create(eqn)),
+        funcTree  = funcTree,
+        index     = simCodeIndices.implicitIndex
+      );
+      simCodeIndices.implicitIndex := index;
+      (blck, simCodeIndices, funcTree) := fromStrongComponent(comp, simCodeIndices, funcTree);
+    end createImplicitEquation;
 
     function traverseCreateEquation
       "Only works, if the variable to solve for is saved in equation attributes!
