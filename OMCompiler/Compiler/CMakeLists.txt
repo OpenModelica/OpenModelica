@@ -29,13 +29,6 @@ macro(add_compile_script mo_source_file)
 endmacro(add_compile_script)
 
 
-add_executable(dep_scanner ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cpp)
-target_compile_features(dep_scanner PRIVATE cxx_std_11)
-
-
-
-
-
 
 macro(add_interface_check_step mo_source_file)
     add_interface_checker_script(${mo_source_file})
@@ -54,7 +47,7 @@ macro(add_interface_check_step mo_source_file)
         COMMENT "Checking interface for ${mo_source_file}"
     )
 
-    set(OMC_MM_SOURCE_FILES ${OMC_MM_SOURCE_FILES} ${mo_source_file})
+    set(OMC_MM_SOURCE_FILE_NAMES ${OMC_MM_SOURCE_FILE_NAMES} ${file_name_no_ext})
 
     set(OMC_MM_INTERFACE_FILES ${OMC_MM_INTERFACE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo)
     set(OMC_MM_STAMP_FILES ${OMC_MM_STAMP_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp)
@@ -123,19 +116,44 @@ foreach(OMC_MM_SOURCE ${OMC_MM_BACKEND_SOURCES})
 endforeach()
 
 
+
+# A target to make sure all interfaces have been checked. Interfaces get rechecked if a MM source is
+# modified. If a source is modified and the interface has NOT actually changed then only the stamp files
+# are touched to signify time of check. If the interface has CHANGED then the interface file is also
+# updated which will cause regeneration of dependency information. See the section below.
 add_custom_target(INTERFACE_CHECK
                   DEPENDS ${OMC_MM_STAMP_FILES}
                   COMMENT "Checked interfaces of modified MetaModelica sources.")
 
+
+
+
+# Add a small dependency scanner program. This reads a list of list of dependencies and generates
+# a list of dependents for each entry.
+add_executable(dep_scanner ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cpp)
+target_compile_features(dep_scanner PRIVATE cxx_std_11)
+
+# Write out a new line separated list of all MM source files to a list so that it can be easily
+# parsed by the small MetaModelica dependency scanner we have now. (c++ code)
+# The quote "" on ${OMC_MM_SOURCE_FILE_NAMES} is needed to get the ";"s in the list
+string (REPLACE ";" "\n" OMC_MM_SOURCE_FILE_NAMES_NEW_LINES "${OMC_MM_SOURCE_FILE_NAMES}")
+file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/mm_source_filenames_list.txt ${OMC_MM_SOURCE_FILE_NAMES_NEW_LINES})
+
+# Read the mm_source_filenames_list with the dep scanner. The dep scanner then reads <mm_source>.depends file for the
+# each mm_source in the list and generates the "reverse dependencies" (dependents) for each source in to <mm_source>.rev_deps.
+# This means all the files listed in .rev_deps need to be retranslated when <mm_source>.mo is modified.
 add_custom_command(
                 DEPENDS ${OMC_MM_INTERFACE_FILES}
-                COMMAND $<TARGET_FILE:dep_scanner> ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/package_list.txt ${CMAKE_CURRENT_BINARY_DIR}
+                COMMAND $<TARGET_FILE:dep_scanner> ${CMAKE_CURRENT_BINARY_DIR}/mm_source_filenames_list.txt ${CMAKE_CURRENT_BINARY_DIR}
                 COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                 OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                 COMMENT "Scanning reverse dependencies for MetaModelica sources.")
 add_custom_target(DEPENDENCY_SCAN
                   DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/dep_scan.stamp
                   COMMENT "Scanned reverse dependencies for MetaModelica sources.")
+
+
+
 
 
 add_custom_target(DEPENDENCY_UPDATE
@@ -146,17 +164,17 @@ add_custom_target(DEPENDENCY_UPDATE
 add_dependencies(DEPENDENCY_SCAN INTERFACE_CHECK)
 add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
 
+
+
+
 add_library(OpenModelicaCompiler STATIC ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 
 
-include_regular_expression("^$")
 # There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
 target_include_directories(OpenModelicaCompiler PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Util)
-
-# include_regular_expression("^.*$" "^$")
 
 
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
