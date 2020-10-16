@@ -498,7 +498,7 @@ template initParamsDefault(SimVar var, String arrayName) ::=
     let str = 'comp->fmuData->modelData-><%arrayName%>Data[<%index%>].attribute.start'
     match initialValue
       case SOME(v as SCONST(__)) then
-      '<%str%> = mmc_mk_scon(<%initVal(v)%>);'
+      '<%str%> = mmc_mk_scon_persist(<%initVal(v)%>); /* TODO: these are not freed currently, see #6161 */'
       else
       '<%str%> = <%initValDefault(var)%>;'
 end initParamsDefault;
