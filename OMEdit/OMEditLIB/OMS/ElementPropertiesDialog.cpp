@@ -354,8 +354,7 @@ void ElementPropertiesDialog::updateProperties()
         if (parameterValue.isEmpty()) {
           // delete start values only
           OMSProxy::instance()->omsDelete(nameStructure + ":start");
-        }
-        else {
+        } else {
           if (pInterfaces[i]->type == oms_signal_type_real) {
             OMSProxy::instance()->setReal(nameStructure, parameterValue.toDouble());
           } else if (pInterfaces[i]->type == oms_signal_type_integer) {
@@ -378,8 +377,7 @@ void ElementPropertiesDialog::updateProperties()
         if (inputValue.isEmpty()){
           // delete start values only
           OMSProxy::instance()->omsDelete(nameStructure + ":start");
-        }
-        else{
+        } else {
           if (pInterfaces[i]->type == oms_signal_type_real) {
             OMSProxy::instance()->setReal(nameStructure, inputValue.toDouble());
           } else if (pInterfaces[i]->type == oms_signal_type_integer) {
