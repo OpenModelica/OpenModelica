@@ -371,6 +371,85 @@ C
   void* omsi_newSysIdentModel(const char* ident);
 
 
+oms_status_str
+--------------
+
+Mapping of enum C-API status code (oms_status_enu_t) to string.
+
+The C enum is reproduced below for convenience.
+
+.. code-block:: c
+
+  typedef enum {
+    oms_status_ok,
+    oms_status_warning,
+    oms_status_discard,
+    oms_status_error,
+    oms_status_fatal,
+    oms_status_pending
+  } oms_status_enu_t;
+
+PYTHON
+^^^^^^
+
+Args:
+  :status: (int) The C-API status code.
+
+Returns:
+  :status_str: (str) String representation of status code.
+
+The range of values of :code:`status` corresponds to the C enum (by implicit conversion).
+This is a static Python method (:code:`@staticmethod`).
+
+.. code-block:: python
+
+  status_str = oms_status_str(status)
+
+C
+^
+
+Not available.
+
+
+omsi_simodelstate_str
+---------------------
+
+Mapping of enum C-API state code (omsi_simodelstate_t) to string.
+
+The C enum is reproduced below for convenience.
+
+.. code-block:: c
+
+  typedef enum {
+    omsi_simodelstate_constructed,    //!< After omsi_newSysIdentModel
+    omsi_simodelstate_initialized,    //!< After omsi_initialize
+    omsi_simodelstate_convergence,    //!< After omsi_solve if Ceres minimizer returned with ceres::TerminationType::CONVERGENCE
+    omsi_simodelstate_no_convergence, //!< After omsi_solve if Ceres minimizer returned with ceres::TerminationType::NO_CONVERGENCE
+    omsi_simodelstate_failure         //!< After omsi_solve if Ceres minimizer returned with ceres::TerminationType::FAILURE
+  } omsi_simodelstate_t;
+
+PYTHON
+^^^^^^
+
+Args:
+    :state: (int) State of SysIdent model.
+
+Returns:
+    :simodelstate_str: (str) String representation of state code.
+
+The range of values of :code:`state` corresponds to the C enum (by implicit conversion).
+This is a static Python method (:code:`@staticmethod`).
+
+.. code-block:: python
+
+  simodelstate_str = omsi_simodelstate_str(state)
+
+C
+^
+
+Not available.
+
+
 setOptions_max_num_iterations
 -----------------------------
 
