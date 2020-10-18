@@ -313,6 +313,7 @@ void Parameter::createValueWidget()
   QString constrainedByClassName = "$Any";
   QString replaceable = "", replaceableText = "";
   QStringList enumerationLiterals, replaceableChoices;
+
   switch (mValueType) {
     case Parameter::Boolean:
       mpValueComboBox = new QComboBox;
@@ -347,24 +348,29 @@ void Parameter::createValueWidget()
       mpValueComboBox->setEditable(true);
       if (!mDefaultValue.isEmpty()) {
         mpValueComboBox->addItem(mDefaultValue, mDefaultValue);
+        mpValueComboBox->lineEdit()->setPlaceholderText(mDefaultValue);
       }
       else {
         if (mValueType == Parameter::ReplaceableClass) {
           QString str = (pOMCProxy->getClassInformation(className)).comment;
           if (!str.isEmpty()) {
-            str = " \"" + str + "\"";
+            str = " - " + str;
           }
           replaceableText =  className + str;
           mpValueComboBox->addItem(replaceableText, replaceableText);
+          mpValueComboBox->lineEdit()->setPlaceholderText(replaceableText);
         }
         else {
           replaceable = "redeclare " + className + " " + mpComponent->getName();
           mpValueComboBox->addItem(replaceable, replaceable);
+          mpValueComboBox->lineEdit()->setPlaceholderText(replaceable);
         }
       }
+
       if (constrainedByClassName.contains("$Any")) {
         constrainedByClassName = className;
       }
+
       replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, mpComponent->getComponentInfo()->getParentClassName());
       for (i = 0 ; i < replaceableChoices.size(); i++) {
         if (className != replaceableChoices[i]) // filter out the default
@@ -375,7 +381,7 @@ void Parameter::createValueWidget()
               replaceable = "redeclare " + mpComponent->getComponentInfo()->getRestriction() + " " + mpComponent->getName() + " = " + replaceableChoices[i];
               QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
               if (!str.isEmpty()) {
-                str = " \"" + str + "\"";
+                str = " - " + str;
               }
               replaceableText = replaceableChoices[i] + str;
               mpValueComboBox->addItem(replaceableText, replaceable);
@@ -389,13 +395,8 @@ void Parameter::createValueWidget()
         }
       }
 
-      QStandardItemModel *model = qobject_cast<QStandardItemModel *>(mpValueComboBox->model());
-      if (model != NULL)
-      {
-        QStandardItem *item = model->item(0);
-        if (item != NULL)
-          item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
-      }
+      // add a way to remove the modifiers
+      mpValueComboBox->addItem("[remove modifier]", "");
 
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
       }
