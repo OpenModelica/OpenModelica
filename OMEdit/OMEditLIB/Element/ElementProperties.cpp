@@ -179,8 +179,15 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       if (defaultValue) {
         mpValueComboBox->lineEdit()->setPlaceholderText(value);
       } else {
-        mpValueComboBox->lineEdit()->setText(value);
-        mpValueComboBox->lineEdit()->setModified(valueModified);
+        // update the value combobox index when setting the value on the line edit
+        bool state = mpValueComboBox->blockSignals(true);
+        int index = mpValueComboBox->findData(value);
+        if (index > -1) {
+          mpValueComboBox->setCurrentIndex(index);
+          mpValueComboBox->lineEdit()->setText(value);
+          mpValueComboBox->lineEdit()->setModified(valueModified);
+        }
+        mpValueComboBox->blockSignals(state);
       }
       if (adjustSize) {
         /* Set the minimum width so that the value text will be readable */
@@ -310,7 +317,7 @@ void Parameter::createValueWidget()
   int i;
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getComponentInfo()->getClassName();
-  QString constrainedByClassName = "$Any";
+  QString constrainedByClassName = QStringLiteral("$Any");
   QString replaceable = "", replaceableText = "";
   QStringList enumerationLiterals, replaceableChoices;
 
@@ -342,64 +349,34 @@ void Parameter::createValueWidget()
 
     case Parameter::ReplaceableComponent:
     case Parameter::ReplaceableClass:
-      {
       constrainedByClassName = mpComponent->getComponentInfo()->getConstrainedByClassName();
       mpValueComboBox = new QComboBox;
       mpValueComboBox->setEditable(true);
-      if (!mDefaultValue.isEmpty()) {
-        mpValueComboBox->addItem(mDefaultValue, mDefaultValue);
-        mpValueComboBox->lineEdit()->setPlaceholderText(mDefaultValue);
-      }
-      else {
-        if (mValueType == Parameter::ReplaceableClass) {
-          QString str = (pOMCProxy->getClassInformation(className)).comment;
-          if (!str.isEmpty()) {
-            str = " - " + str;
-          }
-          replaceableText =  className + str;
-          mpValueComboBox->addItem(replaceableText, replaceableText);
-          mpValueComboBox->lineEdit()->setPlaceholderText(replaceableText);
-        }
-        else {
-          replaceable = "redeclare " + className + " " + mpComponent->getName();
-          mpValueComboBox->addItem(replaceable, replaceable);
-          mpValueComboBox->lineEdit()->setPlaceholderText(replaceable);
-        }
-      }
+      mpValueComboBox->addItem("", "");
 
-      if (constrainedByClassName.contains("$Any")) {
+      if (constrainedByClassName.contains(QStringLiteral("$Any"))) {
         constrainedByClassName = className;
       }
 
       replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, mpComponent->getComponentInfo()->getParentClassName());
       for (i = 0 ; i < replaceableChoices.size(); i++) {
-        if (className != replaceableChoices[i]) // filter out the default
-        {
-          if (mValueType == Parameter::ReplaceableClass) {
-            if (i < replaceableChoices.size() - 1) // skip the last one
-            {
-              replaceable = "redeclare " + mpComponent->getComponentInfo()->getRestriction() + " " + mpComponent->getName() + " = " + replaceableChoices[i];
-              QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
-              if (!str.isEmpty()) {
-                str = " - " + str;
-              }
-              replaceableText = replaceableChoices[i] + str;
-              mpValueComboBox->addItem(replaceableText, replaceable);
+        if (mValueType == Parameter::ReplaceableClass) {
+          if (i < replaceableChoices.size() - 1) { // skip the last one
+            replaceable = QString("redeclare %1 %2 = %3").arg(mpComponent->getComponentInfo()->getRestriction(), mpComponent->getName(), replaceableChoices[i]);
+            QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
+            if (!str.isEmpty()) {
+              str = " - " + str;
             }
-          }
-          else {
-            replaceable = "redeclare " + replaceableChoices[i] + " " + mpComponent->getName();
-            replaceableText = replaceable;
+            replaceableText = replaceableChoices[i] + str;
             mpValueComboBox->addItem(replaceableText, replaceable);
           }
+        } else {
+          replaceable = QString("redeclare %1 %2").arg(replaceableChoices[i], mpComponent->getName());
+          mpValueComboBox->addItem(replaceable, replaceable);
         }
       }
 
-      // add a way to remove the modifiers
-      mpValueComboBox->addItem("[remove modifier]", "");
-
       connect(mpValueComboBox, SIGNAL(currentIndexChanged(int)), SLOT(valueComboBoxChanged(int)));
-      }
       break;
 
     case Parameter::Normal:
@@ -1033,9 +1010,22 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem 
     pParameter->setLoadSelectorCaption(loadSelectorCaption);
     pParameter->setSaveSelectorFilter(saveSelectorFilter);
     pParameter->setSaveSelectorCaption(saveSelectorCaption);
-    QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
-    QString value = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, componentDefinedInClass);
-    pParameter->setValueWidget(value, true, pParameter->getUnit());
+    if (pParameter->getValueType() == Parameter::ReplaceableClass) {
+      QString className = pComponent->getComponentInfo()->getClassName();
+      QString comment = "";
+      if (pComponent->getLibraryTreeItem()) {
+        comment = pComponent->getLibraryTreeItem()->mClassInformation.comment;
+      } else {
+        comment = (pOMCProxy->getClassInformation(className)).comment;
+      }
+      pParameter->setValueWidget(comment.isEmpty() ? className : QString("%1 - %2").arg(className, comment), true, pParameter->getUnit());
+    } else if (pParameter->getValueType() == Parameter::ReplaceableComponent) {
+      pParameter->setValueWidget(QString("redeclare %1 %2").arg(pComponent->getComponentInfo()->getClassName(), pComponent->getName()), true, pParameter->getUnit());
+    } else {
+      QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+      QString value = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, componentDefinedInClass);
+      pParameter->setValueWidget(value, true, pParameter->getUnit());
+    }
     if (showStartAttribute) {
       pParameter->setValueWidget(start, true, pParameter->getUnit());
       pParameter->setFixedState(fixed, true);
