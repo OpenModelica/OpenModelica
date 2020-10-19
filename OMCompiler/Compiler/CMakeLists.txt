@@ -214,3 +214,14 @@ install(FILES FrontEnd/ModelicaBuiltin.mo
 install(FILES FrontEnd/MetaModelicaBuiltin.mo
             DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
             COMPONENT compiler)
+
+
+# This is a convenience target to install omc. We are used to issuing 'make install' to install
+# components. CMake uses a separate install script to perform installations. This custom command
+# runs that cmake script so that you can just write 'make install' (for makefile generators)
+# or 'cmake --build <b_dir> --target install_omc' in the general case.
+add_custom_target(install_omc
+                  DEPENDS omc
+                  COMMAND ${CMAKE_COMMAND} cmake -DCOMPONENT=compiler -P cmake_install.cmake
+                  COMMENT "Installing omc."
+                  )
