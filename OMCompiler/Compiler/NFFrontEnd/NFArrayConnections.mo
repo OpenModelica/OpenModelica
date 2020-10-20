@@ -687,7 +687,7 @@ protected
     for i in 1:arrayLength(iterators) loop
       iterators[i] := InstNode.fromComponent(
         "$i" + String(i),
-        Component.ITERATOR(Type.INTEGER(), Variability.IMPLICITLY_DISCRETE, AbsynUtil.dummyInfo),
+        Component.newIterator(Type.INTEGER(), AbsynUtil.dummyInfo),
         InstNode.EMPTY_NODE()
       );
     end for;
@@ -715,13 +715,19 @@ protected
     input SBInterval interval;
     output Expression range;
   protected
+    Integer lo = SBInterval.lowerBound(interval);
     Integer step = SBInterval.stepValue(interval);
+    Integer hi = SBInterval.upperBound(interval);
   algorithm
-    range := Expression.makeRange(
-      Expression.INTEGER(SBInterval.lowerBound(interval)),
-      if step == 1 then NONE() else SOME(Expression.INTEGER(step)),
-      Expression.INTEGER(SBInterval.upperBound(interval))
-    );
+    if lo == hi then
+      range := Expression.INTEGER(lo);
+    else
+      range := Expression.makeRange(
+        Expression.INTEGER(lo),
+        if step == 1 then NONE() else SOME(Expression.INTEGER(step)),
+        Expression.INTEGER(hi)
+      );
+    end if;
   end intervalToRange;
 
   function generatePotentialEquations
@@ -758,7 +764,7 @@ protected
       inds := transMulti(mi_range, aux_mi, iterators, false);
 
       eql := generatePotentialEquations2(vars1, vars, iterExps, inds);
-      equations := generateForLoop(eql, iterators, ranges) :: equations;
+      equations := generateForLoop(eql, iterators, ranges, equations);
     end for;
   end generatePotentialEquations;
 
@@ -857,7 +863,7 @@ protected
 
       ty := Expression.typeOf(sum_exp);
       eq := Equation.EQUALITY(sum_exp, Expression.makeZero(ty), ty, DAE.emptyElementSource);
-      equations := generateForLoop({eq}, iterators, ranges) :: equations;
+      equations := generateForLoop({eq}, iterators, ranges, equations);
     end if;
   end generateFlowEquation;
 
@@ -877,18 +883,26 @@ protected
   end generateConnector;
 
   function generateForLoop
-    input list<Equation> body;
+    input list<Equation> connects;
     input array<InstNode> iterators;
     input array<Expression> ranges;
-    output Equation forLoop;
+    input output list<Equation> equations;
   protected
-    Integer icount = arrayLength(iterators);
+    list<Equation> body = connects;
   algorithm
-    forLoop := Equation.FOR(iterators[icount], SOME(ranges[icount]), body, DAE.emptyElementSource);
-
-    for i in icount-1:-1:1 loop
-      forLoop := Equation.FOR(iterators[i], SOME(ranges[i]), {forLoop}, DAE.emptyElementSource);
+    for i in arrayLength(iterators):-1:1 loop
+      if Expression.isInteger(ranges[i]) then
+        // Scalar range means the interval had the same lower and upper bound,
+        // in which case the iterator can be replaced with the scalar expression
+        // instead of creating an unnecessary for loop here.
+        body := Equation.mapExpList(body,
+          function Expression.replaceIterator(iterator = iterators[i], iteratorValue = ranges[i]));
+      else
+        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, DAE.emptyElementSource)};
+      end if;
     end for;
+
+    equations := List.append_reverse(body, equations);
   end generateForLoop;
 
   function getConnectors
