@@ -204,7 +204,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Socket.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/System.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Testsuite.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Util.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/VarTransform.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ZeroMQ.mo
@@ -288,6 +287,7 @@ set(OMC_MM_BACKEND_SOURCES
 
     # "NFFrontEnd";
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFAlgorithm.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFArrayConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBinding.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBuiltin.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBuiltinCall.mo
@@ -428,6 +428,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlTreeString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlSetInt.mo
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/AdjacencyList.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Curl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DiffAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMI.mo
@@ -446,9 +447,19 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableStringToUnit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableUnitToString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/PriorityQueue.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBAtomicSet.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBFunctions.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBInterval.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBLinearMap.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBMultiInterval.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBPWAtomicLinearMap.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBPWLinearMap.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SimulationResults.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/TaskGraphResults.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Unzip.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Vector.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/../SimulationRuntime/c/RuntimeSources.mo
 )
