@@ -78,6 +78,12 @@ char* covertToForwardSlashesInPlace(char* path) {
   return path;
 }
 
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+const char* SettingsImpl__getInstallationDirectoryPath(void) {
+  const char *path = getenv("OPENMODELICAHOME");
+  return path ? path : "OPENMODELICA_BOOTSTRAPPING_STAGE_1_NO_OPENMODELICAHOME";
+}
+#else
 #if (defined(__linux__) || defined(__APPLE_CC__))
 /* Helper function to strip /bin/... or /lib/... from the executable path of omc */
 static void stripbinpath(char *omhome)
@@ -152,6 +158,7 @@ const char* SettingsImpl__getInstallationDirectoryPath(void) {
   return (const char*)omc_installationPath;
 }
 
+#endif
 #endif
 
 char* Settings_getHomeDir(int runningTestsuite)
