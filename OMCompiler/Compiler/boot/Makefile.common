@@ -14,7 +14,7 @@ generate-files-in-steps:
 	$(MAKE) -f $(defaultMakefileTarget) Makefile.depends INCLUDESOURCES=1
 	$(MAKE) -f $(defaultMakefileTarget) generate-files INCLUDESOURCES=1 INCLUDEDEPENDS=1
 
-.PHONY: interfaces generate-files runtime-depends parser compilerruntime patch-files
+.PHONY: interfaces generate-files runtime-depends parser compilerruntime patch-files bootstrap-from-tarball bootstrap-from-tarball2
 
 GEN_DIR=build/
 
@@ -36,37 +36,32 @@ LCOMPILERRUNTIME=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a $(TOP_DIR)/Comp
 FMILIB_OR_BOOT=$(FMILIB) -lexpat
 endif
 
-ifeq ($(BOOTSTRAP_OMHOME),1)
-else
-export OPENMODELICAHOME := $(OMBUILDDIR)
-endif
-
 %.patch: %.patch.xz
 	xz --keep --decompress --force $<
 
 patch-files: $(PATCHES)
 
 bootstrap-from-tarball:
+	OPENMODELICAHOME="$(OMBUILDDIR)" $(MAKE) -f $(defaultMakefileTarget) bootstrap-from-tarball2
+
+bootstrap-from-tarball2:
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=.omc
 	rm -rf $(GEN_DIR)
 	mkdir -p $(GEN_DIR)
 	cp -r bootstrap-sources/* .
 	# Patch _main.c to avoid a new tarball
-	$(MAKE) -f $(defaultMakefileTarget) patch-files
-	$(PATCH_SOURCES)
+	#$(MAKE) -f $(defaultMakefileTarget) patch-files
+	#$(PATCH_SOURCES)
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
 	@echo "Bootstrapping phase 1/3 completed"
-	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
-	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR) OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
-	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" OMC_EXTRA_FLAGS= BOOTSTRAP_OMHOME=1 TEMPLATES_TARGET=templates-bootstrap
-	# Patch _main.c to avoid a new tarball
-	$(PATCH_SOURCES)
-	echo '#include "Patternm.h"' >> build/SimCodeFunctionUtil_includes.h
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC="$(BOOTSTRAP_OMC)"
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR) OMC="$(BOOTSTRAP_OMC)"
+	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" OMC_EXTRA_FLAGS= TEMPLATES_TARGET=templates-bootstrap
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
-	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_2" BOOTSTRAP_OMHOME=1
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_2"
 	@echo "Bootstrapping phase 2/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC="$(BOOTSTRAP_OMC)"
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMC="$(BOOTSTRAP_OMC)" clean
