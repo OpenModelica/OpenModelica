@@ -8499,7 +8499,7 @@ protected
   Absyn.Within w;
 algorithm
   Absyn.PROGRAM(classes=cs,within_=w) := inNewProgram;
-  outProgram := updateProgram2(listReverse(cs),w,inOldProgram, mergeAST);
+  outProgram := updateProgram2(listReverse(cs), w, inOldProgram, mergeAST);
 end updateProgram;
 
 protected function updateProgram2
@@ -8524,19 +8524,19 @@ algorithm
 
     case ({},_,prg) then prg;
 
-    case ((c1 as Absyn.CLASS(name = name)) :: c2,Absyn.TOP(), (p2 as Absyn.PROGRAM(classes = c3,within_ = w2)))
+    case ((c1 as Absyn.CLASS(name = name)) :: c2, Absyn.TOP(), (p2 as Absyn.PROGRAM(classes = c3,within_ = w2)))
       equation
         if classInProgram(name, p2) then
           newp = replaceClassInProgram(c1, p2, mergeAST);
         else
-          newp = Absyn.PROGRAM((c1 :: c3),w2);
+          newp = Absyn.PROGRAM((c1 :: c3), w2);
         end if;
-      then updateProgram2(c2,w,newp, mergeAST);
+      then updateProgram2(c2, w, newp, mergeAST);
 
     case ((c1 :: c2),Absyn.WITHIN(),p2)
       equation
         newp = insertClassInProgram(c1, w, p2, mergeAST);
-        newp_1 = updateProgram2(c2,w,newp, mergeAST);
+        newp_1 = updateProgram2(c2, w, newp, mergeAST);
       then newp_1;
 
   end match;
