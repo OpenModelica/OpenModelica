@@ -6571,5 +6571,21 @@ algorithm
   end match;
 end isClassOrComponentElementSpec;
 
+public function isPartial
+"Return true if Class is a partial."
+  input Absyn.Class inClass;
+  output Boolean outBoolean;
+algorithm
+  Absyn.CLASS(partialPrefix = outBoolean) := inClass;
+end isPartial;
+
+public function isNotPartial
+"Return true if Class is a partial."
+  input Absyn.Class inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := not isPartial(inClass);
+end isNotPartial;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
