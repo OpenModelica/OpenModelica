@@ -1016,7 +1016,7 @@ protected
       i1_sz := SBInterval.size(i1);
       i2_sz := SBInterval.size(i2);
 
-      x := Expression.fromCref(ComponentRef.makeIterator(iterators[1], Type.INTEGER()));
+      x := Expression.fromCref(ComponentRef.makeIterator(iterators[i], Type.INTEGER()));
 
       if i1_sz == i2_sz then
         m_int := intDiv(SBInterval.stepValue(i2), SBInterval.stepValue(i1));
