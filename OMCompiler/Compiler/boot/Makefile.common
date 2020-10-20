@@ -48,14 +48,16 @@ patch-files: $(PATCHES)
 
 bootstrap-from-tarball:
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=.omc
-	tar xJf bootstrap-sources.tar.xz
+	rm -rf $(GEN_DIR)
+	mkdir -p $(GEN_DIR)
+	cp -r bootstrap-sources/* .
 	# Patch _main.c to avoid a new tarball
 	$(MAKE) -f $(defaultMakefileTarget) patch-files
 	$(PATCH_SOURCES)
-	cd build && patch -i ../patches/Absyn.h.1.patch Absyn.h
-	cd build && patch -i ../patches/Absyn.c.1.patch Absyn.c
-	cd build && patch -i ../patches/CevalScript.c.1.patch CevalScript.c
-	cd build && patch -i ../patches/System_includes.h.patch System_includes.h
+	#cd build && patch -i ../patches/Absyn.h.1.patch Absyn.h
+	#cd build && patch -i ../patches/Absyn.c.1.patch Absyn.c
+	#cd build && patch -i ../patches/CevalScript.c.1.patch CevalScript.c
+	#cd build && patch -i ../patches/System_includes.h.patch System_includes.h
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
@@ -94,8 +96,11 @@ make-bootstrap-tarball: clean
 	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
 	rm -rf $(GEN_DIR)/*.mo $(GEN_DIR)/tmp $(GEN_DIR)/*.deps $(GEN_DIR)/*.mos $(GEN_DIR)/*.stamp
 	sed -i.bak -e "s/^ *//" -e "/^[/][/]/d" -e "/^#line /d" -e "s/ *[/][*].*[*][/]\([;)]\?\) *$$/\1/" -e "s/^ *[/][*].*[*][/]\(;\?\) */\1/" -e "/^ *$$/d" $(GEN_DIR)/*.c $(GEN_DIR)/*.h
-	tar cf bootstrap-sources.tar $(GEN_DIR) Makefile.sources
-	xz --best --force bootstrap-sources.tar
+	rm -f $(GEN_DIR)/*.bak
+	rm -rf bootstrap-sources patches/ bootstrap-sources.tar
+	mkdir -p bootstrap-sources
+	mv $(GEN_DIR) Makefile.sources bootstrap-sources/
+	git add bootstrap-sources/
 
 templates:
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMBUILDDIR=$(OMBUILDDIR) $(TEMPLATES_TARGET)
