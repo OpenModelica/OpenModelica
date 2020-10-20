@@ -160,8 +160,9 @@ algorithm
 
     case Equation.FOR(range = SOME(e))
       algorithm
-        if not Equation.containsExpList(eq.body, function Expression.containsIterator(iterator = eq.iterator)) then
-          body := simplifyEquations(eq.body);
+        body := simplifyEquations(eq.body);
+
+        if not Equation.containsExpList(body, function Expression.containsIterator(iterator = eq.iterator)) then
           equations := List.append_reverse(body, equations);
         else
           // TODO: This causes issues with the -nfScalarize tests for some reason.
@@ -170,13 +171,13 @@ algorithm
           //if Dimension.isOne(dim) then
           //  e := Expression.applySubscript(Subscript.INDEX(Expression.INTEGER(1)), e);
 
-          //  body := Equation.mapExpList(eq.body,
+          //  body := Equation.mapExpList(body,
           //    function Expression.replaceIterator(iterator = eq.iterator, iteratorValue = e));
           //  body := simplifyEquations(body);
           //  equations := List.append_reverse(body, equations);
           //elseif not Dimension.isZero(dim) then
             eq.range := SimplifyExp.simplifyOpt(eq.range);
-            eq.body := simplifyEquations(eq.body);
+            eq.body := body;
             equations := eq :: equations;
           //end if;
         end if;

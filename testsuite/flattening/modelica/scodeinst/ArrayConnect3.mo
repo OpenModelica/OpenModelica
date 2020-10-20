@@ -62,9 +62,7 @@ end ArrayConnect3;
 //     end for;
 //   end for;
 //   for $i1 in 1:999 loop
-//     for $i2 in 1:99 loop
-//       cells[$i1,$i1].r.f + cells[$i1,$i1 + 1].l.f = 0.0;
-//     end for;
+//     cells[$i1,$i1].r.f + cells[$i1,$i1 + 1].l.f = 0.0;
 //   end for;
 //   for $i1 in 2:1000 loop
 //     for $i2 in 1:99 loop
@@ -72,49 +70,23 @@ end ArrayConnect3;
 //     end for;
 //   end for;
 //   for $i1 in 1:999 loop
-//     for $i2 in 1:99 loop
-//       cells[$i1,$i1].d.f + cells[$i1 + 1,$i1].u.f = 0.0;
-//     end for;
+//     cells[$i1,$i1].d.f + cells[$i1 + 1,$i1].u.f = 0.0;
 //   end for;
 //   for $i1 in 1:1000 loop
-//     for $i2 in 1:1 loop
-//       cells[$i1,$i2].l.e = cells[$i1,$i1 + 99].r.e;
-//     end for;
+//     cells[$i1,1].l.e = cells[$i1,$i1 + 99].r.e;
 //   end for;
 //   for $i1 in 1:1000 loop
-//     for $i2 in 100:100 loop
-//       cells[$i1,$i1].r.f + cells[$i1,$i1 - 99].l.f = 0.0;
-//     end for;
+//     cells[$i1,$i1].r.f + cells[$i1,$i1 - 99].l.f = 0.0;
 //   end for;
-//   for $i1 in 1000:1000 loop
-//     for $i2 in 1:99 loop
-//       cells[$i1,$i1].r.f = 0.0;
-//     end for;
-//   end for;
-//   for $i1 in 1000:1000 loop
-//     for $i2 in 2:100 loop
-//       cells[$i1,$i1].l.f = 0.0;
-//     end for;
-//   end for;
-//   for $i1 in 1000:1000 loop
-//     for $i2 in 1:100 loop
-//       cells[$i1,$i1].d.f = 0.0;
-//     end for;
-//   end for;
+//   cells[1000,1000].r.f = 0.0;
+//   cells[1000,1000].l.f = 0.0;
+//   cells[1000,1000].d.f = 0.0;
 //   for $i1 in 1:999 loop
-//     for $i2 in 100:100 loop
-//       cells[$i1,$i1].d.f = 0.0;
-//     end for;
+//     cells[$i1,$i1].d.f = 0.0;
 //   end for;
-//   for $i1 in 1:1 loop
-//     for $i2 in 1:100 loop
-//       cells[$i1,$i1].u.f = 0.0;
-//     end for;
-//   end for;
+//   cells[1,1].u.f = 0.0;
 //   for $i1 in 2:1000 loop
-//     for $i2 in 100:100 loop
-//       cells[$i1,$i1].u.f = 0.0;
-//     end for;
+//     cells[$i1,$i1].u.f = 0.0;
 //   end for;
 // end ArrayConnect3;
 // endResult
