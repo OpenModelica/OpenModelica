@@ -184,12 +184,6 @@ void add_source_message(threadData_t *threadData,
 extern "C"
 {
 
-#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
-extern void ErrorImpl__updateCurrentComponent(threadData_t *threadData,const char* newVar, int wr, const char* fn, int rs, int re, int cs, int ce)
-{
-}
-#endif
-
 static void printCheckpointStack(threadData_t *threadData)
 {
   errorext_members *members = getMembers(threadData);
@@ -423,14 +417,12 @@ static const char* ErrorImpl__getLastDeletedCheckpoint(threadData_t *threadData)
   return getMembers(threadData)->lastDeletedCheckpoint->c_str();
 }
 
-#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
 #if !defined(OMC_GENERATE_RELOCATABLE_CODE)
 extern void* omc_Error_getCurrentComponent
 #else
 extern void* (*omc_Error_getCurrentComponent)
 #endif
   (threadData_t *threadData, modelica_integer *sline, modelica_integer *scol, modelica_integer *eline, modelica_integer *ecol, modelica_integer *read_only, void **filename);
-#endif
 
 extern void c_add_message(threadData_t *threadData,int errorID, ErrorType type, ErrorLevel severity, const char* message, const char** ctokens, int nTokens)
 {
@@ -443,19 +435,9 @@ extern void c_add_message(threadData_t *threadData,int errorID, ErrorType type, 
   for (int i=nTokens-1; i>=0; i--) {
     tokens.push_back(std::string(ctokens[i]));
   }
-#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
   void *mmc_filename;
   str = MMC_STRINGDATA(omc_Error_getCurrentComponent(threadData, &sline, &scol, &eline, &ecol, &read_only, &mmc_filename));
   filename = MMC_STRINGDATA(mmc_filename);
-#else
-  sline=0;
-  scol=0;
-  eline=0;
-  ecol=0;
-  read_only=0;
-  str="";
-  filename="";
-#endif
   ErrorMessage *msg = *(const char*)MMC_STRINGDATA(str) ?
     new ErrorMessage((long)errorID, type, severity, std::string((const char*)MMC_STRINGDATA(str)) + std::string(message), tokens, sline , scol, eline, ecol, read_only, MMC_STRINGDATA(filename)) :
     new ErrorMessage((long)errorID, type, severity, message, tokens);

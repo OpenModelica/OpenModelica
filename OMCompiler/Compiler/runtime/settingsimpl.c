@@ -78,7 +78,7 @@ char* covertToForwardSlashesInPlace(char* path) {
   return path;
 }
 
-#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) && (defined(__linux__) || defined(__APPLE_CC__))
+#if (defined(__linux__) || defined(__APPLE_CC__))
 /* Helper function to strip /bin/... or /lib/... from the executable path of omc */
 static void stripbinpath(char *omhome)
 {
@@ -100,12 +100,7 @@ static void stripbinpath(char *omhome)
 #endif
 
 /* Do not free or modify the returned variable of getInstallationDirectoryPath. It's part of the environment! */
-#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) && !(defined(_MSC_VER) || defined(__MINGW32__))
-const char* SettingsImpl__getInstallationDirectoryPath(void) {
-  const char *path = getenv("OPENMODELICAHOME");
-  return path ? path : "OPENMODELICA_BOOTSTRAPPING_STAGE_1_NO_OPENMODELICAHOME";
-}
-#elif defined(__linux__) || defined(__APPLE_CC__)
+#if defined(__linux__) || defined(__APPLE_CC__)
 #include <dlfcn.h>
 
 const char* SettingsImpl__getInstallationDirectoryPath(void) {

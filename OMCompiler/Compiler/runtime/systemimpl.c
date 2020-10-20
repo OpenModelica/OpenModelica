@@ -1786,11 +1786,9 @@ extern char* SystemImpl__unquoteIdentifier(char* str)
     return System_sanitizeQuotedIdentifier(str);
   }
 
-#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
   if (strstr(str, "$")) {
     return System_sanitizeQuotedIdentifier(str);
   }
-#endif
 
   return str;
 }
@@ -2367,14 +2365,6 @@ extern int SystemImpl_tmpTickMaximum(threadData_t *threadData, int index)
   assert(index < MAX_TMP_TICK && index >= 0);
   return data->tmp_tick_max_no[index];
 }
-
-#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
-extern int SystemImpl_tmpTick(threadData_t *threadData)
-{
-  int res = SystemImpl_tmpTickIndex(threadData,0);
-  return res;
-}
-#endif
 
 extern void SystemImpl_tmpTickReset(threadData_t *threadData, int start)
 {
