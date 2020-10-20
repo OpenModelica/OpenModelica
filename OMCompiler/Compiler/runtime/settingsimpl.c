@@ -81,6 +81,7 @@ char* covertToForwardSlashesInPlace(char* path) {
 #if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) || defined(OPENMODELICA_BOOTSTRAPPING_STAGE_2)
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   const char *path = getenv("OPENMODELICAHOME");
+  fprintf(stderr, "SettingsImpl__getInstallationDirectoryPath: %s\n", path);
   return path &&*path ? path : "OPENMODELICA_BOOTSTRAPPING_STAGE_1_NO_OPENMODELICAHOME";
 }
 #else
