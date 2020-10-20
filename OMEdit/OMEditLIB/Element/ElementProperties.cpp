@@ -184,9 +184,11 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         int index = mpValueComboBox->findData(value);
         if (index > -1) {
           mpValueComboBox->setCurrentIndex(index);
-          mpValueComboBox->lineEdit()->setText(value);
-          mpValueComboBox->lineEdit()->setModified(valueModified);
+        } else { // if we fail to find the value in the combobox then add it to the combobox
+          mpValueComboBox->insertItem(1, value, value);
         }
+        mpValueComboBox->lineEdit()->setText(value);
+        mpValueComboBox->lineEdit()->setModified(valueModified);
         mpValueComboBox->blockSignals(state);
       }
       if (adjustSize) {
