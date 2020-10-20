@@ -78,10 +78,10 @@ char* covertToForwardSlashesInPlace(char* path) {
   return path;
 }
 
-#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
+#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1) || defined(OPENMODELICA_BOOTSTRAPPING_STAGE_2)
 const char* SettingsImpl__getInstallationDirectoryPath(void) {
   const char *path = getenv("OPENMODELICAHOME");
-  return path ? path : "OPENMODELICA_BOOTSTRAPPING_STAGE_1_NO_OPENMODELICAHOME";
+  return path &&*path ? path : "OPENMODELICA_BOOTSTRAPPING_STAGE_1_NO_OPENMODELICAHOME";
 }
 #else
 #if (defined(__linux__) || defined(__APPLE_CC__))
