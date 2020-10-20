@@ -886,7 +886,7 @@ protected
   algorithm
     forLoop := Equation.FOR(iterators[icount], SOME(ranges[icount]), body, DAE.emptyElementSource);
 
-    for i in 1:icount-1 loop
+    for i in icount-1:-1:1 loop
       forLoop := Equation.FOR(iterators[i], SOME(ranges[i]), {forLoop}, DAE.emptyElementSource);
     end for;
   end generateForLoop;
