@@ -1,0 +1,263 @@
+#ifndef Lookup__H
+#define Lookup__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_Direction_BIDIR__desc;
+extern struct record_description Absyn_Direction_INPUT__desc;
+extern struct record_description Absyn_Direction_OUTPUT__desc;
+extern struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
+extern struct record_description Absyn_IsField_NONFIELD__desc;
+extern struct record_description Absyn_Path_IDENT__desc;
+extern struct record_description Absyn_Path_QUALIFIED__desc;
+extern struct record_description Absyn_TypeSpec_TPATH__desc;
+extern struct record_description ClassInf_State_CONNECTOR__desc;
+extern struct record_description ClassInf_State_META__RECORD__desc;
+extern struct record_description ClassInf_State_RECORD__desc;
+extern struct record_description ConnectionGraph_ConnectionGraph_GRAPH__desc;
+extern struct record_description DAE_Attributes_ATTR__desc;
+extern struct record_description DAE_Binding_EQBOUND__desc;
+extern struct record_description DAE_Binding_UNBOUND__desc;
+extern struct record_description DAE_ComponentRef_WILD__desc;
+extern struct record_description DAE_Connect_SetTrieNode_SET__TRIE__NODE__desc;
+extern struct record_description DAE_Connect_Sets_SETS__desc;
+extern struct record_description DAE_ConnectorType_NON__CONNECTOR__desc;
+extern struct record_description DAE_Const_C__CONST__desc;
+extern struct record_description DAE_Const_C__VAR__desc;
+extern struct record_description DAE_Dimension_DIM__INTEGER__desc;
+extern struct record_description DAE_Dimension_DIM__UNKNOWN__desc;
+extern struct record_description DAE_Exp_ARRAY__desc;
+extern struct record_description DAE_Exp_BCONST__desc;
+extern struct record_description DAE_Exp_CREF__desc;
+extern struct record_description DAE_Exp_ENUM__LITERAL__desc;
+extern struct record_description DAE_Exp_ICONST__desc;
+extern struct record_description DAE_Exp_RANGE__desc;
+extern struct record_description DAE_FuncArg_FUNCARG__desc;
+extern struct record_description DAE_FunctionAttributes_FUNCTION__ATTRIBUTES__desc;
+extern struct record_description DAE_FunctionBuiltin_FUNCTION__NOT__BUILTIN__desc;
+extern struct record_description DAE_FunctionParallelism_FP__NON__PARALLEL__desc;
+extern struct record_description DAE_InlineType_DEFAULT__INLINE__desc;
+extern struct record_description DAE_Mod_NOMOD__desc;
+extern struct record_description DAE_Prefix_NOPRE__desc;
+extern struct record_description DAE_Subscript_SLICE__desc;
+extern struct record_description DAE_Type_T__ANYTYPE__desc;
+extern struct record_description DAE_Type_T__ARRAY__desc;
+extern struct record_description DAE_Type_T__BOOL__desc;
+extern struct record_description DAE_Type_T__COMPLEX__desc;
+extern struct record_description DAE_Type_T__ENUMERATION__desc;
+extern struct record_description DAE_Type_T__FUNCTION__desc;
+extern struct record_description DAE_Type_T__INTEGER__desc;
+extern struct record_description DAE_Type_T__METAPOLYMORPHIC__desc;
+extern struct record_description DAE_Type_T__METARECORD__desc;
+extern struct record_description DAE_Type_T__REAL__desc;
+extern struct record_description DAE_Type_T__STRING__desc;
+extern struct record_description DAE_Type_T__UNKNOWN__desc;
+extern struct record_description DAE_VarParallelism_NON__PARALLEL__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description FCore_ScopeType_CLASS__SCOPE__desc;
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description InstTypes_CallingScope_INNER__CALL__desc;
+extern struct record_description InstTypes_CallingScope_TOP__CALL__desc;
+extern struct record_description InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc;
+extern struct record_description InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc;
+extern struct record_description InstTypes_SplicedExpData_SPLICEDEXPDATA__desc;
+extern struct record_description Mod_ModScope_COMPONENT__desc;
+extern struct record_description SCode_Attributes_ATTR__desc;
+extern struct record_description SCode_ClassDef_PARTS__desc;
+extern struct record_description SCode_Comment_COMMENT__desc;
+extern struct record_description SCode_ConnectorType_POTENTIAL__desc;
+extern struct record_description SCode_Element_CLASS__desc;
+extern struct record_description SCode_Element_COMPONENT__desc;
+extern struct record_description SCode_Encapsulated_NOT__ENCAPSULATED__desc;
+extern struct record_description SCode_Final_NOT__FINAL__desc;
+extern struct record_description SCode_FunctionRestriction_FR__RECORD__CONSTRUCTOR__desc;
+extern struct record_description SCode_Mod_NOMOD__desc;
+extern struct record_description SCode_Parallelism_NON__PARALLEL__desc;
+extern struct record_description SCode_Partial_NOT__PARTIAL__desc;
+extern struct record_description SCode_Prefixes_PREFIXES__desc;
+extern struct record_description SCode_Redeclare_NOT__REDECLARE__desc;
+extern struct record_description SCode_Replaceable_NOT__REPLACEABLE__desc;
+extern struct record_description SCode_Restriction_R__FUNCTION__desc;
+extern struct record_description SCode_Variability_CONST__desc;
+extern struct record_description SCode_Variability_VAR__desc;
+extern struct record_description SCode_Visibility_PROTECTED__desc;
+extern struct record_description SCode_Visibility_PUBLIC__desc;
+extern struct record_description SCodeDump_SCodeDumpOptions_OPTIONS__desc;
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+extern struct record_description UnitAbsyn_InstStore_NOSTORE__desc;
+DLLExport
+modelica_metatype omc_Lookup_isArrayType(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath, modelica_boolean *out_outIsArray);
+DLLExport
+modelica_metatype boxptr_Lookup_isArrayType(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath, modelica_metatype *out_outIsArray);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_isArrayType,2,0) {(void*) boxptr_Lookup_isArrayType,0}};
+#define boxvar_Lookup_isArrayType MMC_REFSTRUCTLIT(boxvar_lit_Lookup_isArrayType)
+#define boxptr_Lookup_prefixSplicedExp omc_Lookup_prefixSplicedExp
+DLLExport
+modelica_boolean omc_Lookup_isFunctionCallViaComponent(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath);
+DLLExport
+modelica_metatype boxptr_Lookup_isFunctionCallViaComponent(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_isFunctionCallViaComponent,2,0) {(void*) boxptr_Lookup_isFunctionCallViaComponent,0}};
+#define boxvar_Lookup_isFunctionCallViaComponent MMC_REFSTRUCTLIT(boxvar_lit_Lookup_isFunctionCallViaComponent)
+DLLExport
+modelica_metatype omc_Lookup_isIterator(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inCref, modelica_metatype *out_outCache);
+#define boxptr_Lookup_isIterator omc_Lookup_isIterator
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_isIterator,2,0) {(void*) boxptr_Lookup_isIterator,0}};
+#define boxvar_Lookup_isIterator MMC_REFSTRUCTLIT(boxvar_lit_Lookup_isIterator)
+DLLExport
+modelica_metatype omc_Lookup_buildMetaRecordType(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _cdef, modelica_metatype *out_outEnv, modelica_metatype *out_ftype);
+#define boxptr_Lookup_buildMetaRecordType omc_Lookup_buildMetaRecordType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_buildMetaRecordType,2,0) {(void*) boxptr_Lookup_buildMetaRecordType,0}};
+#define boxvar_Lookup_buildMetaRecordType MMC_REFSTRUCTLIT(boxvar_lit_Lookup_buildMetaRecordType)
+#define boxptr_Lookup_sliceDimensionType omc_Lookup_sliceDimensionType
+#define boxptr_Lookup_expandWholeDimSubScript omc_Lookup_expandWholeDimSubScript
+#define boxptr_Lookup_makeDimensionSubscript omc_Lookup_makeDimensionSubscript
+#define boxptr_Lookup_addArrayDimensions omc_Lookup_addArrayDimensions
+#define boxptr_Lookup_elabComponentRecursive omc_Lookup_elabComponentRecursive
+#define boxptr_Lookup_lookupBinding omc_Lookup_lookupBinding
+#define boxptr_Lookup_lookupVarFMetaModelica omc_Lookup_lookupVarFMetaModelica
+#define boxptr_Lookup_lookupVarFIdent omc_Lookup_lookupVarFIdent
+#define boxptr_Lookup_lookupVarF omc_Lookup_lookupVarF
+#define boxptr_Lookup_checkSubscripts omc_Lookup_checkSubscripts
+#define boxptr_Lookup_lookupVar2 omc_Lookup_lookupVar2
+#define boxptr_Lookup_lookupClassInFrame omc_Lookup_lookupClassInFrame
+#define boxptr_Lookup_lookupClassInEnv omc_Lookup_lookupClassInEnv
+#define boxptr_Lookup_buildRecordConstructorResultElt omc_Lookup_buildRecordConstructorResultElt
+#define boxptr_Lookup_buildRecordConstructorElts omc_Lookup_buildRecordConstructorElts
+#define boxptr_Lookup_selectModifier omc_Lookup_selectModifier
+#define boxptr_Lookup_buildRecordConstructorClass2 omc_Lookup_buildRecordConstructorClass2
+#define boxptr_Lookup_buildRecordConstructorClass omc_Lookup_buildRecordConstructorClass
+#define boxptr_Lookup_buildRecordType omc_Lookup_buildRecordType
+DLLExport
+modelica_metatype omc_Lookup_selectUpdatedEnv(threadData_t *threadData, modelica_metatype _inNewEnv, modelica_metatype _inOldEnv);
+#define boxptr_Lookup_selectUpdatedEnv omc_Lookup_selectUpdatedEnv
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_selectUpdatedEnv,2,0) {(void*) boxptr_Lookup_selectUpdatedEnv,0}};
+#define boxvar_Lookup_selectUpdatedEnv MMC_REFSTRUCTLIT(boxvar_lit_Lookup_selectUpdatedEnv)
+#define boxptr_Lookup_lookupFunctionsInFrame omc_Lookup_lookupFunctionsInFrame
+#define boxptr_Lookup_lookupTypeInFrame2 omc_Lookup_lookupTypeInFrame2
+#define boxptr_Lookup_lookupTypeInFrame omc_Lookup_lookupTypeInFrame
+#define boxptr_Lookup_getHtTypes omc_Lookup_getHtTypes
+#define boxptr_Lookup_lookupTypeInEnv omc_Lookup_lookupTypeInEnv
+#define boxptr_Lookup_createGenericBuiltinFunctions omc_Lookup_createGenericBuiltinFunctions
+DLLExport
+modelica_metatype omc_Lookup_lookupFunctionsListInEnv(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIds, modelica_metatype _info, modelica_metatype _inAcc, modelica_metatype *out_outTypesTypeLst);
+#define boxptr_Lookup_lookupFunctionsListInEnv omc_Lookup_lookupFunctionsListInEnv
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupFunctionsListInEnv,2,0) {(void*) boxptr_Lookup_lookupFunctionsListInEnv,0}};
+#define boxvar_Lookup_lookupFunctionsListInEnv MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupFunctionsListInEnv)
+DLLExport
+modelica_metatype omc_Lookup_lookupFunctionsInEnv(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inId, modelica_metatype _inInfo, modelica_metatype *out_outTypesTypeLst);
+#define boxptr_Lookup_lookupFunctionsInEnv omc_Lookup_lookupFunctionsInEnv
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupFunctionsInEnv,2,0) {(void*) boxptr_Lookup_lookupFunctionsInEnv,0}};
+#define boxvar_Lookup_lookupFunctionsInEnv MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupFunctionsInEnv)
+DLLExport
+modelica_metatype omc_Lookup_lookupIdent(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_string _inIdent, modelica_metatype *out_outVar, modelica_metatype *out_outElement, modelica_metatype *out_outMod, modelica_metatype *out_instStatus, modelica_metatype *out_outEnv);
+#define boxptr_Lookup_lookupIdent omc_Lookup_lookupIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupIdent,2,0) {(void*) boxptr_Lookup_lookupIdent,0}};
+#define boxvar_Lookup_lookupIdent MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupIdent)
+DLLExport
+modelica_metatype omc_Lookup_lookupClassLocal(threadData_t *threadData, modelica_metatype _inEnv, modelica_string _inIdent, modelica_metatype *out_outEnv);
+#define boxptr_Lookup_lookupClassLocal omc_Lookup_lookupClassLocal
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupClassLocal,2,0) {(void*) boxptr_Lookup_lookupClassLocal,0}};
+#define boxvar_Lookup_lookupClassLocal MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupClassLocal)
+DLLExport
+modelica_metatype omc_Lookup_lookupIdentLocal(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_string _inIdent, modelica_metatype *out_outVar, modelica_metatype *out_outElement, modelica_metatype *out_outMod, modelica_metatype *out_instStatus, modelica_metatype *out_outComponentEnv);
+#define boxptr_Lookup_lookupIdentLocal omc_Lookup_lookupIdentLocal
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupIdentLocal,2,0) {(void*) boxptr_Lookup_lookupIdentLocal,0}};
+#define boxvar_Lookup_lookupIdentLocal MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupIdentLocal)
+DLLExport
+modelica_metatype omc_Lookup_lookupVarLocal(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inComponentRef, modelica_metatype *out_outAttributes, modelica_metatype *out_outType, modelica_metatype *out_outBinding, modelica_metatype *out_constOfForIteratorRange, modelica_metatype *out_splicedExpData, modelica_metatype *out_outClassEnv, modelica_metatype *out_outComponentEnv, modelica_string *out_name);
+#define boxptr_Lookup_lookupVarLocal omc_Lookup_lookupVarLocal
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupVarLocal,2,0) {(void*) boxptr_Lookup_lookupVarLocal,0}};
+#define boxvar_Lookup_lookupVarLocal MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupVarLocal)
+DLLExport
+modelica_metatype omc_Lookup_lookupVarInPackagesIdent(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_string _id, modelica_metatype _ss, modelica_metatype _inPrevFrames, modelica_metatype _inState, modelica_metatype *out_outClassEnv, modelica_metatype *out_outAttributes, modelica_metatype *out_outType, modelica_metatype *out_outBinding, modelica_metatype *out_constOfForIteratorRange, modelica_metatype *out_splicedExpData, modelica_metatype *out_outComponentEnv, modelica_string *out_name);
+#define boxptr_Lookup_lookupVarInPackagesIdent omc_Lookup_lookupVarInPackagesIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupVarInPackagesIdent,2,0) {(void*) boxptr_Lookup_lookupVarInPackagesIdent,0}};
+#define boxvar_Lookup_lookupVarInPackagesIdent MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupVarInPackagesIdent)
+DLLExport
+modelica_metatype omc_Lookup_lookupVarInPackages(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inComponentRef, modelica_metatype _inPrevFrames, modelica_metatype _inState, modelica_metatype *out_outClassEnv, modelica_metatype *out_outAttributes, modelica_metatype *out_outType, modelica_metatype *out_outBinding, modelica_metatype *out_constOfForIteratorRange, modelica_metatype *out_splicedExpData, modelica_metatype *out_outComponentEnv, modelica_string *out_name);
+#define boxptr_Lookup_lookupVarInPackages omc_Lookup_lookupVarInPackages
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupVarInPackages,2,0) {(void*) boxptr_Lookup_lookupVarInPackages,0}};
+#define boxvar_Lookup_lookupVarInPackages MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupVarInPackages)
+DLLExport
+modelica_metatype omc_Lookup_lookupVarInternalIdent(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_string _ident, modelica_metatype _ss, modelica_metatype _searchStrategy, modelica_metatype *out_outAttributes, modelica_metatype *out_outType, modelica_metatype *out_outBinding, modelica_metatype *out_constOfForIteratorRange, modelica_metatype *out_splicedExpData, modelica_metatype *out_outClassEnv, modelica_metatype *out_outComponentEnv, modelica_string *out_name);
+#define boxptr_Lookup_lookupVarInternalIdent omc_Lookup_lookupVarInternalIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupVarInternalIdent,2,0) {(void*) boxptr_Lookup_lookupVarInternalIdent,0}};
+#define boxvar_Lookup_lookupVarInternalIdent MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupVarInternalIdent)
+DLLExport
+modelica_metatype omc_Lookup_lookupVarInternal(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inComponentRef, modelica_metatype _searchStrategy, modelica_metatype *out_outAttributes, modelica_metatype *out_outType, modelica_metatype *out_outBinding, modelica_metatype *out_constOfForIteratorRange, modelica_metatype *out_splicedExpData, modelica_metatype *out_outClassEnv, modelica_metatype *out_outComponentEnv, modelica_string *out_name);
+#define boxptr_Lookup_lookupVarInternal omc_Lookup_lookupVarInternal
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupVarInternal,2,0) {(void*) boxptr_Lookup_lookupVarInternal,0}};
+#define boxvar_Lookup_lookupVarInternal MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupVarInternal)
+#define boxptr_Lookup_checkPackageVariableConstant omc_Lookup_checkPackageVariableConstant
+DLLExport
+modelica_metatype omc_Lookup_lookupVarIdent(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_string _ident, modelica_metatype _ss, modelica_metatype *out_outAttributes, modelica_metatype *out_outType, modelica_metatype *out_outBinding, modelica_metatype *out_constOfForIteratorRange, modelica_metatype *out_outSplicedExpData, modelica_metatype *out_outClassEnv, modelica_metatype *out_outComponentEnv, modelica_string *out_name);
+#define boxptr_Lookup_lookupVarIdent omc_Lookup_lookupVarIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupVarIdent,2,0) {(void*) boxptr_Lookup_lookupVarIdent,0}};
+#define boxvar_Lookup_lookupVarIdent MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupVarIdent)
+DLLExport
+modelica_metatype omc_Lookup_lookupVar(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inComponentRef, modelica_metatype *out_outAttributes, modelica_metatype *out_outType, modelica_metatype *out_outBinding, modelica_metatype *out_constOfForIteratorRange, modelica_metatype *out_outSplicedExpData, modelica_metatype *out_outClassEnv, modelica_metatype *out_outComponentEnv, modelica_string *out_name);
+#define boxptr_Lookup_lookupVar omc_Lookup_lookupVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupVar,2,0) {(void*) boxptr_Lookup_lookupVar,0}};
+#define boxvar_Lookup_lookupVar MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupVar)
+#define boxptr_Lookup_lookupConnectorVar2 omc_Lookup_lookupConnectorVar2
+DLLExport
+modelica_metatype omc_Lookup_lookupConnectorVar(threadData_t *threadData, modelica_metatype _env, modelica_metatype _cr, modelica_boolean _firstId, modelica_metatype *out_ty, modelica_metatype *out_status, modelica_boolean *out_isExpandable);
+DLLExport
+modelica_metatype boxptr_Lookup_lookupConnectorVar(threadData_t *threadData, modelica_metatype _env, modelica_metatype _cr, modelica_metatype _firstId, modelica_metatype *out_ty, modelica_metatype *out_status, modelica_metatype *out_isExpandable);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupConnectorVar,2,0) {(void*) boxptr_Lookup_lookupConnectorVar,0}};
+#define boxvar_Lookup_lookupConnectorVar MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupConnectorVar)
+DLLExport
+modelica_metatype omc_Lookup_lookupRecordConstructorClass(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath, modelica_metatype *out_outClass, modelica_metatype *out_outEnv);
+#define boxptr_Lookup_lookupRecordConstructorClass omc_Lookup_lookupRecordConstructorClass
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupRecordConstructorClass,2,0) {(void*) boxptr_Lookup_lookupRecordConstructorClass,0}};
+#define boxvar_Lookup_lookupRecordConstructorClass MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupRecordConstructorClass)
+#define boxptr_Lookup_lookupQualifiedImportedClassInFrame omc_Lookup_lookupQualifiedImportedClassInFrame
+#define boxptr_Lookup_lookupQualifiedImportedVarInFrame omc_Lookup_lookupQualifiedImportedVarInFrame
+#define boxptr_Lookup_lookupPrevFrames omc_Lookup_lookupPrevFrames
+#define boxptr_Lookup_getConstrainingClass omc_Lookup_getConstrainingClass
+#define boxptr_Lookup_checkPartialScope omc_Lookup_checkPartialScope
+#define boxptr_Lookup_lookupClassQualified2 omc_Lookup_lookupClassQualified2
+#define boxptr_Lookup_lookupClassQualified omc_Lookup_lookupClassQualified
+#define boxptr_Lookup_lookupClass2 omc_Lookup_lookupClass2
+#define boxptr_Lookup_lookupClass1 omc_Lookup_lookupClass1
+DLLExport
+modelica_metatype omc_Lookup_lookupClassIdent(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_string _ident, modelica_metatype _inInfo, modelica_metatype *out_outClass, modelica_metatype *out_outEnv);
+#define boxptr_Lookup_lookupClassIdent omc_Lookup_lookupClassIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupClassIdent,2,0) {(void*) boxptr_Lookup_lookupClassIdent,0}};
+#define boxvar_Lookup_lookupClassIdent MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupClassIdent)
+DLLExport
+modelica_metatype omc_Lookup_lookupClass(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath, modelica_metatype _inInfo, modelica_metatype *out_outClass, modelica_metatype *out_outEnv);
+#define boxptr_Lookup_lookupClass omc_Lookup_lookupClass
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupClass,2,0) {(void*) boxptr_Lookup_lookupClass,0}};
+#define boxvar_Lookup_lookupClass MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupClass)
+#define boxptr_Lookup_lookupMetarecordsRecursive3 omc_Lookup_lookupMetarecordsRecursive3
+#define boxptr_Lookup_lookupMetarecordsRecursive2 omc_Lookup_lookupMetarecordsRecursive2
+DLLExport
+modelica_metatype omc_Lookup_lookupMetarecordsRecursive(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inUniontypePaths, modelica_metatype *out_outMetarecordTypes);
+#define boxptr_Lookup_lookupMetarecordsRecursive omc_Lookup_lookupMetarecordsRecursive
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupMetarecordsRecursive,2,0) {(void*) boxptr_Lookup_lookupMetarecordsRecursive,0}};
+#define boxvar_Lookup_lookupMetarecordsRecursive MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupMetarecordsRecursive)
+#define boxptr_Lookup_lookupType2 omc_Lookup_lookupType2
+DLLExport
+modelica_metatype omc_Lookup_lookupTypeIdent(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_string _ident, modelica_metatype _msg, modelica_metatype *out_outType, modelica_metatype *out_outEnv);
+#define boxptr_Lookup_lookupTypeIdent omc_Lookup_lookupTypeIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupTypeIdent,2,0) {(void*) boxptr_Lookup_lookupTypeIdent,0}};
+#define boxvar_Lookup_lookupTypeIdent MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupTypeIdent)
+#define boxptr_Lookup_lookupTypeQual omc_Lookup_lookupTypeQual
+DLLExport
+modelica_metatype omc_Lookup_lookupType(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath, modelica_metatype _msg, modelica_metatype *out_t, modelica_metatype *out_env);
+#define boxptr_Lookup_lookupType omc_Lookup_lookupType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Lookup_lookupType,2,0) {(void*) boxptr_Lookup_lookupType,0}};
+#define boxvar_Lookup_lookupType MMC_REFSTRUCTLIT(boxvar_lit_Lookup_lookupType)
+#ifdef __cplusplus
+}
+#endif
+#endif

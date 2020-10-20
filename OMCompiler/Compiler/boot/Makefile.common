@@ -18,7 +18,7 @@ generate-files-in-steps:
 
 GEN_DIR=build/
 
-PATCH_SOURCES=sed -i=.bak 's/ = omc_assert_function/__attribute__((noreturn)) = omc_assert_function/' build/_main.c
+PATCH_SOURCES=true
 
 PATCHES := $(patsubst %.patch.xz,%.patch,$(wildcard patches/*.patch.xz))
 

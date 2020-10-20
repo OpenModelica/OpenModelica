@@ -1,0 +1,84 @@
+#ifndef StaticScript__H
+#define StaticScript__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_CodeNode_C__TYPENAME__desc;
+extern struct record_description Absyn_ComponentRef_CREF__IDENT__desc;
+extern struct record_description Absyn_ComponentRef_CREF__QUAL__desc;
+extern struct record_description Absyn_Direction_BIDIR__desc;
+extern struct record_description Absyn_Exp_CALL__desc;
+extern struct record_description Absyn_FunctionArgs_FUNCTIONARGS__desc;
+extern struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
+extern struct record_description Absyn_Msg_MSG__desc;
+extern struct record_description Absyn_Path_IDENT__desc;
+extern struct record_description ClassInf_State_RECORD__desc;
+extern struct record_description DAE_Attributes_ATTR__desc;
+extern struct record_description DAE_Binding_UNBOUND__desc;
+extern struct record_description DAE_CodeType_C__TYPENAME__desc;
+extern struct record_description DAE_ConnectorType_NON__CONNECTOR__desc;
+extern struct record_description DAE_Const_C__CONST__desc;
+extern struct record_description DAE_Const_C__VAR__desc;
+extern struct record_description DAE_Dimension_DIM__INTEGER__desc;
+extern struct record_description DAE_Exp_ARRAY__desc;
+extern struct record_description DAE_Exp_BCONST__desc;
+extern struct record_description DAE_Exp_CODE__desc;
+extern struct record_description DAE_Exp_ICONST__desc;
+extern struct record_description DAE_Exp_SCONST__desc;
+extern struct record_description DAE_Properties_PROP__desc;
+extern struct record_description DAE_Type_T__ARRAY__desc;
+extern struct record_description DAE_Type_T__BOOL__desc;
+extern struct record_description DAE_Type_T__COMPLEX__desc;
+extern struct record_description DAE_Type_T__INTEGER__desc;
+extern struct record_description DAE_Type_T__REAL__desc;
+extern struct record_description DAE_Type_T__STRING__desc;
+extern struct record_description DAE_Type_T__UNKNOWN__desc;
+extern struct record_description DAE_Var_TYPES__VAR__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
+extern struct record_description Flags_FlagData_BOOL__FLAG__desc;
+extern struct record_description Flags_FlagVisibility_INTERNAL__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description SCode_Parallelism_NON__PARALLEL__desc;
+extern struct record_description SCode_Variability_VAR__desc;
+extern struct record_description SCode_Visibility_PUBLIC__desc;
+DLLExport
+modelica_metatype omc_StaticScript_elabGraphicsExp(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inExp, modelica_boolean _inImplInst, modelica_metatype _inPrefix, modelica_metatype _info, modelica_metatype *out_outExp, modelica_metatype *out_outProperties);
+DLLExport
+modelica_metatype boxptr_StaticScript_elabGraphicsExp(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inExp, modelica_metatype _inImplInst, modelica_metatype _inPrefix, modelica_metatype _info, modelica_metatype *out_outExp, modelica_metatype *out_outProperties);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StaticScript_elabGraphicsExp,2,0) {(void*) boxptr_StaticScript_elabGraphicsExp,0}};
+#define boxvar_StaticScript_elabGraphicsExp MMC_REFSTRUCTLIT(boxvar_lit_StaticScript_elabGraphicsExp)
+DLLExport
+modelica_metatype omc_StaticScript_elabExp(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inExp, modelica_boolean _inImplicit, modelica_boolean _performVectorization, modelica_metatype _inPrefix, modelica_metatype _info, modelica_metatype *out_outExp, modelica_metatype *out_outProperties);
+DLLExport
+modelica_metatype boxptr_StaticScript_elabExp(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inExp, modelica_metatype _inImplicit, modelica_metatype _performVectorization, modelica_metatype _inPrefix, modelica_metatype _info, modelica_metatype *out_outExp, modelica_metatype *out_outProperties);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StaticScript_elabExp,2,0) {(void*) boxptr_StaticScript_elabExp,0}};
+#define boxvar_StaticScript_elabExp MMC_REFSTRUCTLIT(boxvar_lit_StaticScript_elabExp)
+DLLExport
+modelica_metatype omc_StaticScript_elabCallInteractive(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcache, modelica_metatype _env, modelica_metatype _fn, modelica_metatype _args, modelica_metatype _nargs, modelica_boolean _impl, modelica_metatype _pre, modelica_metatype _info, modelica_metatype *out_e, modelica_metatype *out_prop);
+DLLExport
+modelica_metatype boxptr_StaticScript_elabCallInteractive(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcache, modelica_metatype _env, modelica_metatype _fn, modelica_metatype _args, modelica_metatype _nargs, modelica_metatype _impl, modelica_metatype _pre, modelica_metatype _info, modelica_metatype *out_e, modelica_metatype *out_prop);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StaticScript_elabCallInteractive,2,0) {(void*) boxptr_StaticScript_elabCallInteractive,0}};
+#define boxvar_StaticScript_elabCallInteractive MMC_REFSTRUCTLIT(boxvar_lit_StaticScript_elabCallInteractive)
+DLLExport
+void omc_StaticScript_checkSimulationArguments(threadData_t *threadData, modelica_metatype _args, modelica_string _callName, modelica_metatype _info);
+#define boxptr_StaticScript_checkSimulationArguments omc_StaticScript_checkSimulationArguments
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StaticScript_checkSimulationArguments,2,0) {(void*) boxptr_StaticScript_checkSimulationArguments,0}};
+#define boxvar_StaticScript_checkSimulationArguments MMC_REFSTRUCTLIT(boxvar_lit_StaticScript_checkSimulationArguments)
+DLLExport
+modelica_metatype omc_StaticScript_getSimulationArguments(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inAbsynExpLst, modelica_metatype _inAbsynNamedArgLst, modelica_boolean _inImplInst, modelica_metatype _inPrefix, modelica_string _callName, modelica_metatype _inInfo, modelica_metatype _defaultOption, modelica_metatype *out_outSimulationArguments);
+DLLExport
+modelica_metatype boxptr_StaticScript_getSimulationArguments(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inAbsynExpLst, modelica_metatype _inAbsynNamedArgLst, modelica_metatype _inImplInst, modelica_metatype _inPrefix, modelica_metatype _callName, modelica_metatype _inInfo, modelica_metatype _defaultOption, modelica_metatype *out_outSimulationArguments);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_StaticScript_getSimulationArguments,2,0) {(void*) boxptr_StaticScript_getSimulationArguments,0}};
+#define boxvar_StaticScript_getSimulationArguments MMC_REFSTRUCTLIT(boxvar_lit_StaticScript_getSimulationArguments)
+#ifdef __cplusplus
+}
+#endif
+#endif

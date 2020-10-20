@@ -1,0 +1,137 @@
+#include <meta/meta_modelica.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_AnnotationType_ICON__ANNOTATION__desc_added
+#define Interactive_AnnotationType_ICON__ANNOTATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_AnnotationType_ICON__ANNOTATION__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc = {
+"Interactive_AnnotationType_ICON__ANNOTATION",
+"Interactive.AnnotationType.ICON_ANNOTATION",
+Interactive_AnnotationType_ICON__ANNOTATION__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
+#define Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc = {
+"Interactive_AnnotationType_DIAGRAM__ANNOTATION",
+"Interactive.AnnotationType.DIAGRAM_ANNOTATION",
+Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
+#define Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc = {
+"Interactive_AnnotationType_DIAGRAM__ANNOTATION",
+"Interactive.AnnotationType.DIAGRAM_ANNOTATION",
+Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_AnnotationType_DIAGRAM__ANNOTATION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_AnnotationType_ICON__ANNOTATION__desc_added
+#define Interactive_AnnotationType_ICON__ANNOTATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_AnnotationType_ICON__ANNOTATION__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc = {
+"Interactive_AnnotationType_ICON__ANNOTATION",
+"Interactive.AnnotationType.ICON_ANNOTATION",
+Interactive_AnnotationType_ICON__ANNOTATION__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_AnnotationType_ICON__ANNOTATION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc_added
+#define Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc__fields[2] = {"program","modelPath"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc = {
+"Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE",
+"Interactive.GraphicEnvCache.GRAPHIC_ENV_NO_CACHE",
+Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc_added
+#define Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc__fields[4] = {"program","modelPath","cache","env"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc = {
+"Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE",
+"Interactive.GraphicEnvCache.GRAPHIC_ENV_PARTIAL_CACHE",
+Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc_added
+#define Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc__fields[4] = {"program","modelPath","cache","env"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc = {
+"Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE",
+"Interactive.GraphicEnvCache.GRAPHIC_ENV_FULL_CACHE",
+Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc_added
+#define Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc__fields[4] = {"program","modelPath","cache","env"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc = {
+"Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE",
+"Interactive.GraphicEnvCache.GRAPHIC_ENV_FULL_CACHE",
+Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__FULL__CACHE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc_added
+#define Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc__fields[4] = {"program","modelPath","cache","env"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc = {
+"Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE",
+"Interactive.GraphicEnvCache.GRAPHIC_ENV_PARTIAL_CACHE",
+Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__PARTIAL__CACHE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc_added
+#define Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc_added
+ADD_METARECORD_DEFINITIONS const char* Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc__fields[2] = {"program","modelPath"};
+ADD_METARECORD_DEFINITIONS struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc = {
+"Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE",
+"Interactive.GraphicEnvCache.GRAPHIC_ENV_NO_CACHE",
+Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc__fields
+};
+#endif
+#else
+extern struct record_description Interactive_GraphicEnvCache_GRAPHIC__ENV__NO__CACHE__desc;
+#endif
+#ifdef __cplusplus
+}
+#endif

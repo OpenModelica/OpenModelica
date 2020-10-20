@@ -77,7 +77,6 @@ Temporary Items
 # OpenModelica Files
 # =========================
 
-build/
 .externalToolBuilders/OpenModelicaBuilder.launch
 .externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch
 .project

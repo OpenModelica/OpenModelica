@@ -1,0 +1,29 @@
+#ifndef SimCodeFunction__H
+#define SimCodeFunction__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description MidCode_Program_PROGRAM__desc;
+extern struct record_description SimCodeFunction_FunctionCode_FUNCTIONCODE__desc;
+extern struct record_description Tpl_Text_MEM__TEXT__desc;
+DLLExport
+modelica_metatype omc_SimCodeFunction_getCalledFunctionsInFunction(threadData_t *threadData, modelica_metatype _path, modelica_metatype _funcs);
+#define boxptr_SimCodeFunction_getCalledFunctionsInFunction omc_SimCodeFunction_getCalledFunctionsInFunction
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SimCodeFunction_getCalledFunctionsInFunction,2,0) {(void*) boxptr_SimCodeFunction_getCalledFunctionsInFunction,0}};
+#define boxvar_SimCodeFunction_getCalledFunctionsInFunction MMC_REFSTRUCTLIT(boxvar_lit_SimCodeFunction_getCalledFunctionsInFunction)
+#define boxptr_SimCodeFunction_removeThreadDataFunction omc_SimCodeFunction_removeThreadDataFunction
+#define boxptr_SimCodeFunction_removeThreadDataRecord omc_SimCodeFunction_removeThreadDataRecord
+DLLExport
+void omc_SimCodeFunction_translateFunctions(threadData_t *threadData, modelica_metatype _program, modelica_string _name, modelica_metatype _optMainFunction, modelica_metatype _idaeElements, modelica_metatype _metarecordTypes, modelica_metatype _inIncludes);
+#define boxptr_SimCodeFunction_translateFunctions omc_SimCodeFunction_translateFunctions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SimCodeFunction_translateFunctions,2,0) {(void*) boxptr_SimCodeFunction_translateFunctions,0}};
+#define boxvar_SimCodeFunction_translateFunctions MMC_REFSTRUCTLIT(boxvar_lit_SimCodeFunction_translateFunctions)
+#ifdef __cplusplus
+}
+#endif
+#endif

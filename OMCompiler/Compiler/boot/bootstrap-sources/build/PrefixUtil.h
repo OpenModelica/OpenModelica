@@ -1,0 +1,277 @@
+#ifndef PrefixUtil__H
+#define PrefixUtil__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_Path_IDENT__desc;
+extern struct record_description Absyn_Path_QUALIFIED__desc;
+extern struct record_description ClassInf_State_UNKNOWN__desc;
+extern struct record_description DAE_ClassPrefix_CLASSPRE__desc;
+extern struct record_description DAE_ClockKind_BOOLEAN__CLOCK__desc;
+extern struct record_description DAE_ClockKind_INTEGER__CLOCK__desc;
+extern struct record_description DAE_ClockKind_REAL__CLOCK__desc;
+extern struct record_description DAE_ClockKind_SOLVER__CLOCK__desc;
+extern struct record_description DAE_ComponentPrefix_NOCOMPPRE__desc;
+extern struct record_description DAE_ComponentPrefix_PRE__desc;
+extern struct record_description DAE_ComponentRef_CREF__IDENT__desc;
+extern struct record_description DAE_ComponentRef_WILD__desc;
+extern struct record_description DAE_Dimension_DIM__EXP__desc;
+extern struct record_description DAE_Else_ELSE__desc;
+extern struct record_description DAE_Else_ELSEIF__desc;
+extern struct record_description DAE_Else_NOELSE__desc;
+extern struct record_description DAE_Exp_ARRAY__desc;
+extern struct record_description DAE_Exp_BINARY__desc;
+extern struct record_description DAE_Exp_CALL__desc;
+extern struct record_description DAE_Exp_CAST__desc;
+extern struct record_description DAE_Exp_CLKCONST__desc;
+extern struct record_description DAE_Exp_CONS__desc;
+extern struct record_description DAE_Exp_IFEXP__desc;
+extern struct record_description DAE_Exp_LBINARY__desc;
+extern struct record_description DAE_Exp_LIST__desc;
+extern struct record_description DAE_Exp_LUNARY__desc;
+extern struct record_description DAE_Exp_MATRIX__desc;
+extern struct record_description DAE_Exp_METARECORDCALL__desc;
+extern struct record_description DAE_Exp_META__OPTION__desc;
+extern struct record_description DAE_Exp_META__TUPLE__desc;
+extern struct record_description DAE_Exp_RANGE__desc;
+extern struct record_description DAE_Exp_RECORD__desc;
+extern struct record_description DAE_Exp_REDUCTION__desc;
+extern struct record_description DAE_Exp_RELATION__desc;
+extern struct record_description DAE_Exp_SIZE__desc;
+extern struct record_description DAE_Exp_TSUB__desc;
+extern struct record_description DAE_Exp_TUPLE__desc;
+extern struct record_description DAE_Exp_UNARY__desc;
+extern struct record_description DAE_Prefix_NOPRE__desc;
+extern struct record_description DAE_Prefix_PREFIX__desc;
+extern struct record_description DAE_ReductionIterator_REDUCTIONITER__desc;
+extern struct record_description DAE_Statement_STMT__ASSERT__desc;
+extern struct record_description DAE_Statement_STMT__ASSIGN__desc;
+extern struct record_description DAE_Statement_STMT__ASSIGN__ARR__desc;
+extern struct record_description DAE_Statement_STMT__BREAK__desc;
+extern struct record_description DAE_Statement_STMT__FAILURE__desc;
+extern struct record_description DAE_Statement_STMT__FOR__desc;
+extern struct record_description DAE_Statement_STMT__IF__desc;
+extern struct record_description DAE_Statement_STMT__RETURN__desc;
+extern struct record_description DAE_Statement_STMT__TUPLE__ASSIGN__desc;
+extern struct record_description DAE_Statement_STMT__WHILE__desc;
+extern struct record_description DAE_Subscript_INDEX__desc;
+extern struct record_description DAE_Subscript_SLICE__desc;
+extern struct record_description DAE_Subscript_WHOLEDIM__desc;
+extern struct record_description DAE_Subscript_WHOLE__NONEXP__desc;
+extern struct record_description DAE_Type_T__COMPLEX__desc;
+extern struct record_description DAE_Type_T__UNKNOWN__desc;
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+#define boxptr_PrefixUtil_removePrefixFromCref omc_PrefixUtil_removePrefixFromCref
+DLLExport
+modelica_metatype omc_PrefixUtil_removeCompPrefixFromExps(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inCompPref);
+#define boxptr_PrefixUtil_removeCompPrefixFromExps omc_PrefixUtil_removeCompPrefixFromExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_removeCompPrefixFromExps,2,0) {(void*) boxptr_PrefixUtil_removeCompPrefixFromExps,0}};
+#define boxvar_PrefixUtil_removeCompPrefixFromExps MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_removeCompPrefixFromExps)
+DLLExport
+modelica_boolean omc_PrefixUtil_haveSubs(threadData_t *threadData, modelica_metatype _pre);
+DLLExport
+modelica_metatype boxptr_PrefixUtil_haveSubs(threadData_t *threadData, modelica_metatype _pre);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_haveSubs,2,0) {(void*) boxptr_PrefixUtil_haveSubs,0}};
+#define boxvar_PrefixUtil_haveSubs MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_haveSubs)
+DLLExport
+void omc_PrefixUtil_writeComponentPrefix(threadData_t *threadData, modelica_complex _file, modelica_metatype _pre, modelica_integer _escape);
+DLLExport
+void boxptr_PrefixUtil_writeComponentPrefix(threadData_t *threadData, modelica_metatype _file, modelica_metatype _pre, modelica_metatype _escape);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_writeComponentPrefix,2,0) {(void*) boxptr_PrefixUtil_writeComponentPrefix,0}};
+#define boxvar_PrefixUtil_writeComponentPrefix MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_writeComponentPrefix)
+DLLExport
+modelica_metatype omc_PrefixUtil_componentPrefix(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_componentPrefix omc_PrefixUtil_componentPrefix
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_componentPrefix,2,0) {(void*) boxptr_PrefixUtil_componentPrefix,0}};
+#define boxvar_PrefixUtil_componentPrefix MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_componentPrefix)
+DLLExport
+modelica_boolean omc_PrefixUtil_componentPrefixPathEqual(threadData_t *threadData, modelica_metatype _pre1, modelica_metatype _pre2);
+DLLExport
+modelica_metatype boxptr_PrefixUtil_componentPrefixPathEqual(threadData_t *threadData, modelica_metatype _pre1, modelica_metatype _pre2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_componentPrefixPathEqual,2,0) {(void*) boxptr_PrefixUtil_componentPrefixPathEqual,0}};
+#define boxvar_PrefixUtil_componentPrefixPathEqual MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_componentPrefixPathEqual)
+DLLExport
+modelica_integer omc_PrefixUtil_prefixHashWork(threadData_t *threadData, modelica_metatype _inPrefix, modelica_integer __omcQ_24in_5Fhash);
+DLLExport
+modelica_metatype boxptr_PrefixUtil_prefixHashWork(threadData_t *threadData, modelica_metatype _inPrefix, modelica_metatype __omcQ_24in_5Fhash);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixHashWork,2,0) {(void*) boxptr_PrefixUtil_prefixHashWork,0}};
+#define boxvar_PrefixUtil_prefixHashWork MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixHashWork)
+DLLExport
+modelica_metatype omc_PrefixUtil_getPrefixInfo(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_getPrefixInfo omc_PrefixUtil_getPrefixInfo
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_getPrefixInfo,2,0) {(void*) boxptr_PrefixUtil_getPrefixInfo,0}};
+#define boxvar_PrefixUtil_getPrefixInfo MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_getPrefixInfo)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixClockKind(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inClkKind, modelica_metatype _inPrefix, modelica_metatype *out_outClkKind);
+#define boxptr_PrefixUtil_prefixClockKind omc_PrefixUtil_prefixClockKind
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixClockKind,2,0) {(void*) boxptr_PrefixUtil_prefixClockKind,0}};
+#define boxvar_PrefixUtil_prefixClockKind MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixClockKind)
+DLLExport
+modelica_boolean omc_PrefixUtil_isNoPrefix(threadData_t *threadData, modelica_metatype _inPrefix);
+DLLExport
+modelica_metatype boxptr_PrefixUtil_isNoPrefix(threadData_t *threadData, modelica_metatype _inPrefix);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_isNoPrefix,2,0) {(void*) boxptr_PrefixUtil_isNoPrefix,0}};
+#define boxvar_PrefixUtil_isNoPrefix MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_isNoPrefix)
+DLLExport
+modelica_boolean omc_PrefixUtil_isPrefix(threadData_t *threadData, modelica_metatype _prefix);
+DLLExport
+modelica_metatype boxptr_PrefixUtil_isPrefix(threadData_t *threadData, modelica_metatype _prefix);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_isPrefix,2,0) {(void*) boxptr_PrefixUtil_isPrefix,0}};
+#define boxvar_PrefixUtil_isPrefix MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_isPrefix)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixDimensions(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inPre, modelica_metatype _inDims, modelica_metatype *out_outDims);
+#define boxptr_PrefixUtil_prefixDimensions omc_PrefixUtil_prefixDimensions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixDimensions,2,0) {(void*) boxptr_PrefixUtil_prefixDimensions,0}};
+#define boxvar_PrefixUtil_prefixDimensions MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixDimensions)
+#define boxptr_PrefixUtil_prefixArrayDimensions omc_PrefixUtil_prefixArrayDimensions
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixExpressionsInType(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inPre, modelica_metatype _inTy, modelica_metatype *out_outTy);
+#define boxptr_PrefixUtil_prefixExpressionsInType omc_PrefixUtil_prefixExpressionsInType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixExpressionsInType,2,0) {(void*) boxptr_PrefixUtil_prefixExpressionsInType,0}};
+#define boxvar_PrefixUtil_prefixExpressionsInType MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixExpressionsInType)
+DLLExport
+modelica_string omc_PrefixUtil_makePrefixString(threadData_t *threadData, modelica_metatype _pre);
+#define boxptr_PrefixUtil_makePrefixString omc_PrefixUtil_makePrefixString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_makePrefixString,2,0) {(void*) boxptr_PrefixUtil_makePrefixString,0}};
+#define boxvar_PrefixUtil_makePrefixString MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_makePrefixString)
+#define boxptr_PrefixUtil_prefixElse omc_PrefixUtil_prefixElse
+#define boxptr_PrefixUtil_prefixStatements omc_PrefixUtil_prefixStatements
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixExpList(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inExpExpLst, modelica_metatype _inPrefix, modelica_metatype *out_outExpExpLst);
+#define boxptr_PrefixUtil_prefixExpList omc_PrefixUtil_prefixExpList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixExpList,2,0) {(void*) boxptr_PrefixUtil_prefixExpList,0}};
+#define boxvar_PrefixUtil_prefixExpList MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixExpList)
+#define boxptr_PrefixUtil_prefixIterators omc_PrefixUtil_prefixIterators
+#define boxptr_PrefixUtil_prefixExpCref2 omc_PrefixUtil_prefixExpCref2
+#define boxptr_PrefixUtil_prefixExpCref omc_PrefixUtil_prefixExpCref
+#define boxptr_PrefixUtil_prefixExpWork omc_PrefixUtil_prefixExpWork
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixExp(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcache, modelica_metatype _env, modelica_metatype _ih, modelica_metatype __omcQ_24in_5Fexp, modelica_metatype _pre, modelica_metatype *out_exp);
+#define boxptr_PrefixUtil_prefixExp omc_PrefixUtil_prefixExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixExp,2,0) {(void*) boxptr_PrefixUtil_prefixExp,0}};
+#define boxvar_PrefixUtil_prefixExp MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixExp)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixCrefInnerOuter(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inCref, modelica_metatype _inPrefix, modelica_metatype *out_outCref);
+#define boxptr_PrefixUtil_prefixCrefInnerOuter omc_PrefixUtil_prefixCrefInnerOuter
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixCrefInnerOuter,2,0) {(void*) boxptr_PrefixUtil_prefixCrefInnerOuter,0}};
+#define boxvar_PrefixUtil_prefixCrefInnerOuter MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixCrefInnerOuter)
+#define boxptr_PrefixUtil_prefixSubscript omc_PrefixUtil_prefixSubscript
+#define boxptr_PrefixUtil_prefixSubscripts omc_PrefixUtil_prefixSubscripts
+#define boxptr_PrefixUtil_prefixSubscriptsInCrefWork omc_PrefixUtil_prefixSubscriptsInCrefWork
+#define boxptr_PrefixUtil_prefixSubscriptsInCref omc_PrefixUtil_prefixSubscriptsInCref
+DLLExport
+modelica_metatype omc_PrefixUtil_makeCrefFromPrefixNoFail(threadData_t *threadData, modelica_metatype _pre);
+#define boxptr_PrefixUtil_makeCrefFromPrefixNoFail omc_PrefixUtil_makeCrefFromPrefixNoFail
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_makeCrefFromPrefixNoFail,2,0) {(void*) boxptr_PrefixUtil_makeCrefFromPrefixNoFail,0}};
+#define boxvar_PrefixUtil_makeCrefFromPrefixNoFail MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_makeCrefFromPrefixNoFail)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixToCrefOpt2(threadData_t *threadData, modelica_metatype _inPrefix, modelica_metatype _inExpComponentRefOption);
+#define boxptr_PrefixUtil_prefixToCrefOpt2 omc_PrefixUtil_prefixToCrefOpt2
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixToCrefOpt2,2,0) {(void*) boxptr_PrefixUtil_prefixToCrefOpt2,0}};
+#define boxvar_PrefixUtil_prefixToCrefOpt2 MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixToCrefOpt2)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixToCrefOpt(threadData_t *threadData, modelica_metatype _pre);
+#define boxptr_PrefixUtil_prefixToCrefOpt omc_PrefixUtil_prefixToCrefOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixToCrefOpt,2,0) {(void*) boxptr_PrefixUtil_prefixToCrefOpt,0}};
+#define boxvar_PrefixUtil_prefixToCrefOpt MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixToCrefOpt)
+#define boxptr_PrefixUtil_prefixToCref2 omc_PrefixUtil_prefixToCref2
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixToCref(threadData_t *threadData, modelica_metatype _pre);
+#define boxptr_PrefixUtil_prefixToCref omc_PrefixUtil_prefixToCref
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixToCref,2,0) {(void*) boxptr_PrefixUtil_prefixToCref,0}};
+#define boxvar_PrefixUtil_prefixToCref MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixToCref)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixCrefNoContext(threadData_t *threadData, modelica_metatype _inPre, modelica_metatype _inCref);
+#define boxptr_PrefixUtil_prefixCrefNoContext omc_PrefixUtil_prefixCrefNoContext
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixCrefNoContext,2,0) {(void*) boxptr_PrefixUtil_prefixCrefNoContext,0}};
+#define boxvar_PrefixUtil_prefixCrefNoContext MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixCrefNoContext)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixCref(threadData_t *threadData, modelica_metatype _cache, modelica_metatype _env, modelica_metatype _inIH, modelica_metatype _pre, modelica_metatype _cref, modelica_metatype *out_cref_1);
+#define boxptr_PrefixUtil_prefixCref omc_PrefixUtil_prefixCref
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixCref,2,0) {(void*) boxptr_PrefixUtil_prefixCref,0}};
+#define boxvar_PrefixUtil_prefixCref MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixCref)
+DLLExport
+modelica_metatype omc_PrefixUtil_componentPrefixToPath(threadData_t *threadData, modelica_metatype _pre);
+#define boxptr_PrefixUtil_componentPrefixToPath omc_PrefixUtil_componentPrefixToPath
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_componentPrefixToPath,2,0) {(void*) boxptr_PrefixUtil_componentPrefixToPath,0}};
+#define boxvar_PrefixUtil_componentPrefixToPath MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_componentPrefixToPath)
+DLLExport
+modelica_string omc_PrefixUtil_identAndPrefixToPath(threadData_t *threadData, modelica_string _ident, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_identAndPrefixToPath omc_PrefixUtil_identAndPrefixToPath
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_identAndPrefixToPath,2,0) {(void*) boxptr_PrefixUtil_identAndPrefixToPath,0}};
+#define boxvar_PrefixUtil_identAndPrefixToPath MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_identAndPrefixToPath)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixToPath(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_prefixToPath omc_PrefixUtil_prefixToPath
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixToPath,2,0) {(void*) boxptr_PrefixUtil_prefixToPath,0}};
+#define boxvar_PrefixUtil_prefixToPath MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixToPath)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixPath(threadData_t *threadData, modelica_metatype _inPath, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_prefixPath omc_PrefixUtil_prefixPath
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixPath,2,0) {(void*) boxptr_PrefixUtil_prefixPath,0}};
+#define boxvar_PrefixUtil_prefixPath MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixPath)
+#define boxptr_PrefixUtil_compPreStripLast omc_PrefixUtil_compPreStripLast
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixStripLast(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_prefixStripLast omc_PrefixUtil_prefixStripLast
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixStripLast,2,0) {(void*) boxptr_PrefixUtil_prefixStripLast,0}};
+#define boxvar_PrefixUtil_prefixStripLast MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixStripLast)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixLast(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_prefixLast omc_PrefixUtil_prefixLast
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixLast,2,0) {(void*) boxptr_PrefixUtil_prefixLast,0}};
+#define boxvar_PrefixUtil_prefixLast MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixLast)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixFirstCref(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_prefixFirstCref omc_PrefixUtil_prefixFirstCref
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixFirstCref,2,0) {(void*) boxptr_PrefixUtil_prefixFirstCref,0}};
+#define boxvar_PrefixUtil_prefixFirstCref MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixFirstCref)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixFirst(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_prefixFirst omc_PrefixUtil_prefixFirst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixFirst,2,0) {(void*) boxptr_PrefixUtil_prefixFirst,0}};
+#define boxvar_PrefixUtil_prefixFirst MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixFirst)
+DLLExport
+modelica_metatype omc_PrefixUtil_prefixAdd(threadData_t *threadData, modelica_string _inIdent, modelica_metatype _inType, modelica_metatype _inIntegerLst, modelica_metatype _inPrefix, modelica_metatype _vt, modelica_metatype _ci_state, modelica_metatype _inInfo);
+#define boxptr_PrefixUtil_prefixAdd omc_PrefixUtil_prefixAdd
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixAdd,2,0) {(void*) boxptr_PrefixUtil_prefixAdd,0}};
+#define boxvar_PrefixUtil_prefixAdd MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_prefixAdd)
+DLLExport
+void omc_PrefixUtil_printPrefix(threadData_t *threadData, modelica_metatype _p);
+#define boxptr_PrefixUtil_printPrefix omc_PrefixUtil_printPrefix
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefix,2,0) {(void*) boxptr_PrefixUtil_printPrefix,0}};
+#define boxvar_PrefixUtil_printPrefix MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefix)
+DLLExport
+modelica_string omc_PrefixUtil_printPrefixStrIgnoreNoPre(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_printPrefixStrIgnoreNoPre omc_PrefixUtil_printPrefixStrIgnoreNoPre
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefixStrIgnoreNoPre,2,0) {(void*) boxptr_PrefixUtil_printPrefixStrIgnoreNoPre,0}};
+#define boxvar_PrefixUtil_printPrefixStrIgnoreNoPre MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefixStrIgnoreNoPre)
+DLLExport
+modelica_string omc_PrefixUtil_printPrefixStr3(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_printPrefixStr3 omc_PrefixUtil_printPrefixStr3
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefixStr3,2,0) {(void*) boxptr_PrefixUtil_printPrefixStr3,0}};
+#define boxvar_PrefixUtil_printPrefixStr3 MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefixStr3)
+DLLExport
+modelica_string omc_PrefixUtil_printPrefixStr2(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_printPrefixStr2 omc_PrefixUtil_printPrefixStr2
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefixStr2,2,0) {(void*) boxptr_PrefixUtil_printPrefixStr2,0}};
+#define boxvar_PrefixUtil_printPrefixStr2 MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefixStr2)
+DLLExport
+modelica_string omc_PrefixUtil_printPrefixStr(threadData_t *threadData, modelica_metatype _inPrefix);
+#define boxptr_PrefixUtil_printPrefixStr omc_PrefixUtil_printPrefixStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefixStr,2,0) {(void*) boxptr_PrefixUtil_printPrefixStr,0}};
+#define boxvar_PrefixUtil_printPrefixStr MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_printPrefixStr)
+DLLExport
+modelica_string omc_PrefixUtil_printComponentPrefixStr(threadData_t *threadData, modelica_metatype _pre);
+#define boxptr_PrefixUtil_printComponentPrefixStr omc_PrefixUtil_printComponentPrefixStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PrefixUtil_printComponentPrefixStr,2,0) {(void*) boxptr_PrefixUtil_printComponentPrefixStr,0}};
+#define boxvar_PrefixUtil_printComponentPrefixStr MMC_REFSTRUCTLIT(boxvar_lit_PrefixUtil_printComponentPrefixStr)
+#ifdef __cplusplus
+}
+#endif
+#endif

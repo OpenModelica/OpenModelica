@@ -1,0 +1,38 @@
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "AbsynUtil.h"
+#include "BaseHashTable.h"
+#include "Builtin.h"
+#include "ClassInf.h"
+#include "ComponentReference.h"
+#include "Config.h"
+#include "DAEUtil.h"
+#include "Debug.h"
+#include "Error.h"
+#include "ErrorExt.h"
+#include "Expression.h"
+#include "ExpressionDump.h"
+#include "FCore.h"
+#include "FGraph.h"
+#include "FNode.h"
+#include "Flags.h"
+#include "HashTableStringToPath.h"
+#include "Inst.h"
+#include "InstExtends.h"
+#include "InstFunction.h"
+#include "InstUtil.h"
+#include "List.h"
+#include "Lookup.h"
+#include "Mod.h"
+#include "Mutable.h"
+#include "PrefixUtil.h"
+#include "SCodeDump.h"
+#include "SCodeUtil.h"
+#include "Static.h"
+#include "Types.h"
+#include "Util.h"
+#include "ValuesUtil.h"
+#ifdef __cplusplus
+}
+#endif

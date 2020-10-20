@@ -1,0 +1,72 @@
+#ifndef InstVar__H
+#define InstVar__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_Direction_BIDIR__desc;
+extern struct record_description Absyn_InnerOuter_OUTER__desc;
+extern struct record_description Absyn_Path_IDENT__desc;
+extern struct record_description ConnectionGraph_ConnectionGraph_GRAPH__desc;
+extern struct record_description DAE_ComponentRef_CREF__IDENT__desc;
+extern struct record_description DAE_Connect_Face_OUTSIDE__desc;
+extern struct record_description DAE_Const_C__VAR__desc;
+extern struct record_description DAE_DAElist_DAE__desc;
+extern struct record_description DAE_Element_ARRAY__EQUATION__desc;
+extern struct record_description DAE_Exp_BCONST__desc;
+extern struct record_description DAE_Exp_CREF__desc;
+extern struct record_description DAE_Exp_ENUM__LITERAL__desc;
+extern struct record_description DAE_Exp_ICONST__desc;
+extern struct record_description DAE_Mod_NOMOD__desc;
+extern struct record_description DAE_Prefix_NOPRE__desc;
+extern struct record_description DAE_Properties_PROP__desc;
+extern struct record_description DAE_Subscript_INDEX__desc;
+extern struct record_description DAE_Type_T__REAL__desc;
+extern struct record_description DAE_Type_T__UNKNOWN__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description ErrorTypes_Severity_WARNING__desc;
+extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Flags_FlagData_BOOL__FLAG__desc;
+extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description InnerOuter_InstInner_INST__INNER__desc;
+extern struct record_description InnerOuter_InstResult_INST__RESULT__desc;
+extern struct record_description InstTypes_CallingScope_INNER__CALL__desc;
+extern struct record_description Mod_ModScope_DERIVED__desc;
+extern struct record_description SCode_ClassDef_PARTS__desc;
+extern struct record_description SCode_Initial_NON__INITIAL__desc;
+extern struct record_description SCode_Variability_VAR__desc;
+extern struct record_description SCodeDump_SCodeDumpOptions_OPTIONS__desc;
+#define boxptr_InstVar_checkArraySubModDimSize omc_InstVar_checkArraySubModDimSize
+#define boxptr_InstVar_checkArrayModDimSize omc_InstVar_checkArrayModDimSize
+#define boxptr_InstVar_checkDimensionGreaterThanZero omc_InstVar_checkDimensionGreaterThanZero
+#define boxptr_InstVar_stripRecordDefaultBindingsFromElement omc_InstVar_stripRecordDefaultBindingsFromElement
+#define boxptr_InstVar_stripRecordDefaultBindingsFromDAE omc_InstVar_stripRecordDefaultBindingsFromDAE
+#define boxptr_InstVar_stripVarAttrDirection omc_InstVar_stripVarAttrDirection
+DLLExport
+modelica_metatype omc_InstVar_instScalar(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inStore, modelica_metatype _inState, modelica_metatype _inMod, modelica_metatype _inPrefix, modelica_string _inName, modelica_metatype _inClass, modelica_metatype _inAttributes, modelica_metatype _inPrefixes, modelica_metatype _inSubscripts, modelica_metatype _inInstDims, modelica_boolean _inImpl, modelica_metatype _inComment, modelica_metatype _inInfo, modelica_metatype _inGraph, modelica_metatype _inSets, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outStore, modelica_metatype *out_outDae, modelica_metatype *out_outSets, modelica_metatype *out_outType, modelica_metatype *out_outGraph);
+DLLExport
+modelica_metatype boxptr_InstVar_instScalar(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inStore, modelica_metatype _inState, modelica_metatype _inMod, modelica_metatype _inPrefix, modelica_metatype _inName, modelica_metatype _inClass, modelica_metatype _inAttributes, modelica_metatype _inPrefixes, modelica_metatype _inSubscripts, modelica_metatype _inInstDims, modelica_metatype _inImpl, modelica_metatype _inComment, modelica_metatype _inInfo, modelica_metatype _inGraph, modelica_metatype _inSets, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outStore, modelica_metatype *out_outDae, modelica_metatype *out_outSets, modelica_metatype *out_outType, modelica_metatype *out_outGraph);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstVar_instScalar,2,0) {(void*) boxptr_InstVar_instScalar,0}};
+#define boxvar_InstVar_instScalar MMC_REFSTRUCTLIT(boxvar_lit_InstVar_instScalar)
+#define boxptr_InstVar_addArrayVarEquation omc_InstVar_addArrayVarEquation
+#define boxptr_InstVar_liftUserTypeEqMod omc_InstVar_liftUserTypeEqMod
+#define boxptr_InstVar_liftUserTypeSubMod omc_InstVar_liftUserTypeSubMod
+#define boxptr_InstVar_liftUserTypeMod omc_InstVar_liftUserTypeMod
+DLLExport
+modelica_metatype omc_InstVar_instVar(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inStore, modelica_metatype _inState, modelica_metatype _inMod, modelica_metatype _inPrefix, modelica_string _inIdent, modelica_metatype _inClass, modelica_metatype _inAttributes, modelica_metatype _inPrefixes, modelica_metatype _inDimensionLst, modelica_metatype _inIntegerLst, modelica_metatype _inInstDims, modelica_boolean _inImpl, modelica_metatype _inComment, modelica_metatype _info, modelica_metatype _inGraph, modelica_metatype _inSets, modelica_metatype _componentDefinitionParentEnv, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outStore, modelica_metatype *out_outDae, modelica_metatype *out_outSets, modelica_metatype *out_outType, modelica_metatype *out_outGraph);
+DLLExport
+modelica_metatype boxptr_InstVar_instVar(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inIH, modelica_metatype _inStore, modelica_metatype _inState, modelica_metatype _inMod, modelica_metatype _inPrefix, modelica_metatype _inIdent, modelica_metatype _inClass, modelica_metatype _inAttributes, modelica_metatype _inPrefixes, modelica_metatype _inDimensionLst, modelica_metatype _inIntegerLst, modelica_metatype _inInstDims, modelica_metatype _inImpl, modelica_metatype _inComment, modelica_metatype _info, modelica_metatype _inGraph, modelica_metatype _inSets, modelica_metatype _componentDefinitionParentEnv, modelica_metatype *out_outEnv, modelica_metatype *out_outIH, modelica_metatype *out_outStore, modelica_metatype *out_outDae, modelica_metatype *out_outSets, modelica_metatype *out_outType, modelica_metatype *out_outGraph);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstVar_instVar,2,0) {(void*) boxptr_InstVar_instVar,0}};
+#define boxvar_InstVar_instVar MMC_REFSTRUCTLIT(boxvar_lit_InstVar_instVar)
+#ifdef __cplusplus
+}
+#endif
+#endif

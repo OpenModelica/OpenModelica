@@ -1,0 +1,683 @@
+#include <meta/meta_modelica.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_FunctionCode_FUNCTIONCODE__desc_added
+#define SimCodeFunction_FunctionCode_FUNCTIONCODE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_FunctionCode_FUNCTIONCODE__desc__fields[7] = {"name","mainFunction","functions","literals","externalFunctionIncludes","makefileParams","extraRecordDecls"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_FunctionCode_FUNCTIONCODE__desc = {
+"SimCodeFunction_FunctionCode_FUNCTIONCODE",
+"SimCodeFunction.FunctionCode.FUNCTIONCODE",
+SimCodeFunction_FunctionCode_FUNCTIONCODE__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_FunctionCode_FUNCTIONCODE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_FunctionCode_FUNCTIONCODE__desc_added
+#define SimCodeFunction_FunctionCode_FUNCTIONCODE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_FunctionCode_FUNCTIONCODE__desc__fields[7] = {"name","mainFunction","functions","literals","externalFunctionIncludes","makefileParams","extraRecordDecls"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_FunctionCode_FUNCTIONCODE__desc = {
+"SimCodeFunction_FunctionCode_FUNCTIONCODE",
+"SimCodeFunction.FunctionCode.FUNCTIONCODE",
+SimCodeFunction_FunctionCode_FUNCTIONCODE__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_FunctionCode_FUNCTIONCODE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_FUNCTION__desc_added
+#define SimCodeFunction_Function_FUNCTION__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_FUNCTION__desc__fields[7] = {"name","outVars","functionArguments","variableDeclarations","body","visibility","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_FUNCTION__desc = {
+"SimCodeFunction_Function_FUNCTION",
+"SimCodeFunction.Function.FUNCTION",
+SimCodeFunction_Function_FUNCTION__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_FUNCTION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_PARALLEL__FUNCTION__desc_added
+#define SimCodeFunction_Function_PARALLEL__FUNCTION__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_PARALLEL__FUNCTION__desc__fields[6] = {"name","outVars","functionArguments","variableDeclarations","body","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_PARALLEL__FUNCTION__desc = {
+"SimCodeFunction_Function_PARALLEL__FUNCTION",
+"SimCodeFunction.Function.PARALLEL_FUNCTION",
+SimCodeFunction_Function_PARALLEL__FUNCTION__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_PARALLEL__FUNCTION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_KERNEL__FUNCTION__desc_added
+#define SimCodeFunction_Function_KERNEL__FUNCTION__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_KERNEL__FUNCTION__desc__fields[6] = {"name","outVars","functionArguments","variableDeclarations","body","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_KERNEL__FUNCTION__desc = {
+"SimCodeFunction_Function_KERNEL__FUNCTION",
+"SimCodeFunction.Function.KERNEL_FUNCTION",
+SimCodeFunction_Function_KERNEL__FUNCTION__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_KERNEL__FUNCTION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_EXTERNAL__FUNCTION__desc_added
+#define SimCodeFunction_Function_EXTERNAL__FUNCTION__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_EXTERNAL__FUNCTION__desc__fields[14] = {"name","extName","funArgs","extArgs","extReturn","inVars","outVars","biVars","includes","libs","language","visibility","info","dynamicLoad"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_EXTERNAL__FUNCTION__desc = {
+"SimCodeFunction_Function_EXTERNAL__FUNCTION",
+"SimCodeFunction.Function.EXTERNAL_FUNCTION",
+SimCodeFunction_Function_EXTERNAL__FUNCTION__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_EXTERNAL__FUNCTION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc_added
+#define SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc__fields[5] = {"name","funArgs","locals","visibility","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc = {
+"SimCodeFunction_Function_RECORD__CONSTRUCTOR",
+"SimCodeFunction.Function.RECORD_CONSTRUCTOR",
+SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc_added
+#define SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc__fields[5] = {"name","funArgs","locals","visibility","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc = {
+"SimCodeFunction_Function_RECORD__CONSTRUCTOR",
+"SimCodeFunction.Function.RECORD_CONSTRUCTOR",
+SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_RECORD__CONSTRUCTOR__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_EXTERNAL__FUNCTION__desc_added
+#define SimCodeFunction_Function_EXTERNAL__FUNCTION__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_EXTERNAL__FUNCTION__desc__fields[14] = {"name","extName","funArgs","extArgs","extReturn","inVars","outVars","biVars","includes","libs","language","visibility","info","dynamicLoad"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_EXTERNAL__FUNCTION__desc = {
+"SimCodeFunction_Function_EXTERNAL__FUNCTION",
+"SimCodeFunction.Function.EXTERNAL_FUNCTION",
+SimCodeFunction_Function_EXTERNAL__FUNCTION__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_EXTERNAL__FUNCTION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_KERNEL__FUNCTION__desc_added
+#define SimCodeFunction_Function_KERNEL__FUNCTION__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_KERNEL__FUNCTION__desc__fields[6] = {"name","outVars","functionArguments","variableDeclarations","body","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_KERNEL__FUNCTION__desc = {
+"SimCodeFunction_Function_KERNEL__FUNCTION",
+"SimCodeFunction.Function.KERNEL_FUNCTION",
+SimCodeFunction_Function_KERNEL__FUNCTION__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_KERNEL__FUNCTION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_PARALLEL__FUNCTION__desc_added
+#define SimCodeFunction_Function_PARALLEL__FUNCTION__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_PARALLEL__FUNCTION__desc__fields[6] = {"name","outVars","functionArguments","variableDeclarations","body","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_PARALLEL__FUNCTION__desc = {
+"SimCodeFunction_Function_PARALLEL__FUNCTION",
+"SimCodeFunction.Function.PARALLEL_FUNCTION",
+SimCodeFunction_Function_PARALLEL__FUNCTION__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_PARALLEL__FUNCTION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Function_FUNCTION__desc_added
+#define SimCodeFunction_Function_FUNCTION__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Function_FUNCTION__desc__fields[7] = {"name","outVars","functionArguments","variableDeclarations","body","visibility","info"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Function_FUNCTION__desc = {
+"SimCodeFunction_Function_FUNCTION",
+"SimCodeFunction.Function.FUNCTION",
+SimCodeFunction_Function_FUNCTION__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Function_FUNCTION__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc_added
+#define SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc__fields[4] = {"name","aliasName","defPath","variables"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc = {
+"SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL",
+"SimCodeFunction.RecordDeclaration.RECORD_DECL_FULL",
+SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc_added
+#define SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc__fields[3] = {"ctor_name","name","variables"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc = {
+"SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR",
+"SimCodeFunction.RecordDeclaration.RECORD_DECL_ADD_CONSTRCTOR",
+SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc_added
+#define SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc__fields[2] = {"path","fieldNames"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc = {
+"SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF",
+"SimCodeFunction.RecordDeclaration.RECORD_DECL_DEF",
+SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc_added
+#define SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc__fields[2] = {"path","fieldNames"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc = {
+"SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF",
+"SimCodeFunction.RecordDeclaration.RECORD_DECL_DEF",
+SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__DEF__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc_added
+#define SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc__fields[3] = {"ctor_name","name","variables"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc = {
+"SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR",
+"SimCodeFunction.RecordDeclaration.RECORD_DECL_ADD_CONSTRCTOR",
+SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__ADD__CONSTRCTOR__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc_added
+#define SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc__fields[4] = {"name","aliasName","defPath","variables"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc = {
+"SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL",
+"SimCodeFunction.RecordDeclaration.RECORD_DECL_FULL",
+SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_RecordDeclaration_RECORD__DECL__FULL__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc_added
+#define SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc__fields[14] = {"ccompiler","cxxcompiler","linker","exeext","dllext","omhome","cflags","ldflags","runtimelibs","includes","libs","libPaths","platform","compileDir"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc = {
+"SimCodeFunction_MakefileParams_MAKEFILE__PARAMS",
+"SimCodeFunction.MakefileParams.MAKEFILE_PARAMS",
+SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc_added
+#define SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc__fields[14] = {"ccompiler","cxxcompiler","linker","exeext","dllext","omhome","cflags","ldflags","runtimelibs","includes","libs","libPaths","platform","compileDir"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc = {
+"SimCodeFunction_MakefileParams_MAKEFILE__PARAMS",
+"SimCodeFunction.MakefileParams.MAKEFILE_PARAMS",
+SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_MakefileParams_MAKEFILE__PARAMS__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_SimExtArg_SIMEXTARG__desc_added
+#define SimCodeFunction_SimExtArg_SIMEXTARG__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_SimExtArg_SIMEXTARG__desc__fields[6] = {"cref","isInput","outputIndex","isArray","hasBinding","type_"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_SimExtArg_SIMEXTARG__desc = {
+"SimCodeFunction_SimExtArg_SIMEXTARG",
+"SimCodeFunction.SimExtArg.SIMEXTARG",
+SimCodeFunction_SimExtArg_SIMEXTARG__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_SimExtArg_SIMEXTARG__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc_added
+#define SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc__fields[2] = {"exp","type_"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc = {
+"SimCodeFunction_SimExtArg_SIMEXTARGEXP",
+"SimCodeFunction.SimExtArg.SIMEXTARGEXP",
+SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc_added
+#define SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc__fields[5] = {"cref","isInput","outputIndex","type_","exp"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc = {
+"SimCodeFunction_SimExtArg_SIMEXTARGSIZE",
+"SimCodeFunction.SimExtArg.SIMEXTARGSIZE",
+SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_SimExtArg_SIMNOEXTARG__desc_added
+#define SimCodeFunction_SimExtArg_SIMNOEXTARG__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_SimExtArg_SIMNOEXTARG__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_SimExtArg_SIMNOEXTARG__desc = {
+"SimCodeFunction_SimExtArg_SIMNOEXTARG",
+"SimCodeFunction.SimExtArg.SIMNOEXTARG",
+SimCodeFunction_SimExtArg_SIMNOEXTARG__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_SimExtArg_SIMNOEXTARG__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_SimExtArg_SIMNOEXTARG__desc_added
+#define SimCodeFunction_SimExtArg_SIMNOEXTARG__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_SimExtArg_SIMNOEXTARG__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_SimExtArg_SIMNOEXTARG__desc = {
+"SimCodeFunction_SimExtArg_SIMNOEXTARG",
+"SimCodeFunction.SimExtArg.SIMNOEXTARG",
+SimCodeFunction_SimExtArg_SIMNOEXTARG__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_SimExtArg_SIMNOEXTARG__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc_added
+#define SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc__fields[5] = {"cref","isInput","outputIndex","type_","exp"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc = {
+"SimCodeFunction_SimExtArg_SIMEXTARGSIZE",
+"SimCodeFunction.SimExtArg.SIMEXTARGSIZE",
+SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_SimExtArg_SIMEXTARGSIZE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc_added
+#define SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc__fields[2] = {"exp","type_"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc = {
+"SimCodeFunction_SimExtArg_SIMEXTARGEXP",
+"SimCodeFunction.SimExtArg.SIMEXTARGEXP",
+SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_SimExtArg_SIMEXTARGEXP__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_SimExtArg_SIMEXTARG__desc_added
+#define SimCodeFunction_SimExtArg_SIMEXTARG__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_SimExtArg_SIMEXTARG__desc__fields[6] = {"cref","isInput","outputIndex","isArray","hasBinding","type_"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_SimExtArg_SIMEXTARG__desc = {
+"SimCodeFunction_SimExtArg_SIMEXTARG",
+"SimCodeFunction.SimExtArg.SIMEXTARG",
+SimCodeFunction_SimExtArg_SIMEXTARG__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_SimExtArg_SIMEXTARG__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Variable_VARIABLE__desc_added
+#define SimCodeFunction_Variable_VARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Variable_VARIABLE__desc__fields[7] = {"name","ty","value","instDims","parallelism","kind","bind_from_outside"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Variable_VARIABLE__desc = {
+"SimCodeFunction_Variable_VARIABLE",
+"SimCodeFunction.Variable.VARIABLE",
+SimCodeFunction_Variable_VARIABLE__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Variable_VARIABLE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Variable_FUNCTION__PTR__desc_added
+#define SimCodeFunction_Variable_FUNCTION__PTR__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Variable_FUNCTION__PTR__desc__fields[4] = {"name","tys","args","defaultValue"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Variable_FUNCTION__PTR__desc = {
+"SimCodeFunction_Variable_FUNCTION__PTR",
+"SimCodeFunction.Variable.FUNCTION_PTR",
+SimCodeFunction_Variable_FUNCTION__PTR__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Variable_FUNCTION__PTR__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Variable_FUNCTION__PTR__desc_added
+#define SimCodeFunction_Variable_FUNCTION__PTR__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Variable_FUNCTION__PTR__desc__fields[4] = {"name","tys","args","defaultValue"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Variable_FUNCTION__PTR__desc = {
+"SimCodeFunction_Variable_FUNCTION__PTR",
+"SimCodeFunction.Variable.FUNCTION_PTR",
+SimCodeFunction_Variable_FUNCTION__PTR__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Variable_FUNCTION__PTR__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Variable_VARIABLE__desc_added
+#define SimCodeFunction_Variable_VARIABLE__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Variable_VARIABLE__desc__fields[7] = {"name","ty","value","instDims","parallelism","kind","bind_from_outside"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Variable_VARIABLE__desc = {
+"SimCodeFunction_Variable_VARIABLE",
+"SimCodeFunction.Variable.VARIABLE",
+SimCodeFunction_Variable_VARIABLE__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Variable_VARIABLE__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_SIMULATION__CONTEXT__desc_added
+#define SimCodeFunction_Context_SIMULATION__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_SIMULATION__CONTEXT__desc__fields[1] = {"genDiscrete"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_SIMULATION__CONTEXT__desc = {
+"SimCodeFunction_Context_SIMULATION__CONTEXT",
+"SimCodeFunction.Context.SIMULATION_CONTEXT",
+SimCodeFunction_Context_SIMULATION__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_SIMULATION__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_FUNCTION__CONTEXT__desc_added
+#define SimCodeFunction_Context_FUNCTION__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_FUNCTION__CONTEXT__desc__fields[2] = {"cref_prefix","is_parallel"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_FUNCTION__CONTEXT__desc = {
+"SimCodeFunction_Context_FUNCTION__CONTEXT",
+"SimCodeFunction.Context.FUNCTION_CONTEXT",
+SimCodeFunction_Context_FUNCTION__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_FUNCTION__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_ALGLOOP__CONTEXT__desc_added
+#define SimCodeFunction_Context_ALGLOOP__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_ALGLOOP__CONTEXT__desc__fields[2] = {"genInitialisation","genJacobian"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_ALGLOOP__CONTEXT__desc = {
+"SimCodeFunction_Context_ALGLOOP__CONTEXT",
+"SimCodeFunction.Context.ALGLOOP_CONTEXT",
+SimCodeFunction_Context_ALGLOOP__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_ALGLOOP__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_JACOBIAN__CONTEXT__desc_added
+#define SimCodeFunction_Context_JACOBIAN__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_JACOBIAN__CONTEXT__desc__fields[1] = {"jacHT"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_JACOBIAN__CONTEXT__desc = {
+"SimCodeFunction_Context_JACOBIAN__CONTEXT",
+"SimCodeFunction.Context.JACOBIAN_CONTEXT",
+SimCodeFunction_Context_JACOBIAN__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_JACOBIAN__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_OTHER__CONTEXT__desc_added
+#define SimCodeFunction_Context_OTHER__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_OTHER__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_OTHER__CONTEXT__desc = {
+"SimCodeFunction_Context_OTHER__CONTEXT",
+"SimCodeFunction.Context.OTHER_CONTEXT",
+SimCodeFunction_Context_OTHER__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_OTHER__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc_added
+#define SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc = {
+"SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT",
+"SimCodeFunction.Context.ZEROCROSSINGS_CONTEXT",
+SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc_added
+#define SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc = {
+"SimCodeFunction_Context_OPTIMIZATION__CONTEXT",
+"SimCodeFunction.Context.OPTIMIZATION_CONTEXT",
+SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_FMI__CONTEXT__desc_added
+#define SimCodeFunction_Context_FMI__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_FMI__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_FMI__CONTEXT__desc = {
+"SimCodeFunction_Context_FMI__CONTEXT",
+"SimCodeFunction.Context.FMI_CONTEXT",
+SimCodeFunction_Context_FMI__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_FMI__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_DAE__MODE__CONTEXT__desc_added
+#define SimCodeFunction_Context_DAE__MODE__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_DAE__MODE__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_DAE__MODE__CONTEXT__desc = {
+"SimCodeFunction_Context_DAE__MODE__CONTEXT",
+"SimCodeFunction.Context.DAE_MODE_CONTEXT",
+SimCodeFunction_Context_DAE__MODE__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_DAE__MODE__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_OMSI__CONTEXT__desc_added
+#define SimCodeFunction_Context_OMSI__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_OMSI__CONTEXT__desc__fields[1] = {"hashTable"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_OMSI__CONTEXT__desc = {
+"SimCodeFunction_Context_OMSI__CONTEXT",
+"SimCodeFunction.Context.OMSI_CONTEXT",
+SimCodeFunction_Context_OMSI__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_OMSI__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_OMSI__CONTEXT__desc_added
+#define SimCodeFunction_Context_OMSI__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_OMSI__CONTEXT__desc__fields[1] = {"hashTable"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_OMSI__CONTEXT__desc = {
+"SimCodeFunction_Context_OMSI__CONTEXT",
+"SimCodeFunction.Context.OMSI_CONTEXT",
+SimCodeFunction_Context_OMSI__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_OMSI__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_DAE__MODE__CONTEXT__desc_added
+#define SimCodeFunction_Context_DAE__MODE__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_DAE__MODE__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_DAE__MODE__CONTEXT__desc = {
+"SimCodeFunction_Context_DAE__MODE__CONTEXT",
+"SimCodeFunction.Context.DAE_MODE_CONTEXT",
+SimCodeFunction_Context_DAE__MODE__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_DAE__MODE__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_FMI__CONTEXT__desc_added
+#define SimCodeFunction_Context_FMI__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_FMI__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_FMI__CONTEXT__desc = {
+"SimCodeFunction_Context_FMI__CONTEXT",
+"SimCodeFunction.Context.FMI_CONTEXT",
+SimCodeFunction_Context_FMI__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_FMI__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc_added
+#define SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc = {
+"SimCodeFunction_Context_OPTIMIZATION__CONTEXT",
+"SimCodeFunction.Context.OPTIMIZATION_CONTEXT",
+SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_OPTIMIZATION__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc_added
+#define SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc = {
+"SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT",
+"SimCodeFunction.Context.ZEROCROSSINGS_CONTEXT",
+SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_ZEROCROSSINGS__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_OTHER__CONTEXT__desc_added
+#define SimCodeFunction_Context_OTHER__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_OTHER__CONTEXT__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_OTHER__CONTEXT__desc = {
+"SimCodeFunction_Context_OTHER__CONTEXT",
+"SimCodeFunction.Context.OTHER_CONTEXT",
+SimCodeFunction_Context_OTHER__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_OTHER__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_JACOBIAN__CONTEXT__desc_added
+#define SimCodeFunction_Context_JACOBIAN__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_JACOBIAN__CONTEXT__desc__fields[1] = {"jacHT"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_JACOBIAN__CONTEXT__desc = {
+"SimCodeFunction_Context_JACOBIAN__CONTEXT",
+"SimCodeFunction.Context.JACOBIAN_CONTEXT",
+SimCodeFunction_Context_JACOBIAN__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_JACOBIAN__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_ALGLOOP__CONTEXT__desc_added
+#define SimCodeFunction_Context_ALGLOOP__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_ALGLOOP__CONTEXT__desc__fields[2] = {"genInitialisation","genJacobian"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_ALGLOOP__CONTEXT__desc = {
+"SimCodeFunction_Context_ALGLOOP__CONTEXT",
+"SimCodeFunction.Context.ALGLOOP_CONTEXT",
+SimCodeFunction_Context_ALGLOOP__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_ALGLOOP__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_FUNCTION__CONTEXT__desc_added
+#define SimCodeFunction_Context_FUNCTION__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_FUNCTION__CONTEXT__desc__fields[2] = {"cref_prefix","is_parallel"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_FUNCTION__CONTEXT__desc = {
+"SimCodeFunction_Context_FUNCTION__CONTEXT",
+"SimCodeFunction.Context.FUNCTION_CONTEXT",
+SimCodeFunction_Context_FUNCTION__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_FUNCTION__CONTEXT__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef SimCodeFunction_Context_SIMULATION__CONTEXT__desc_added
+#define SimCodeFunction_Context_SIMULATION__CONTEXT__desc_added
+ADD_METARECORD_DEFINITIONS const char* SimCodeFunction_Context_SIMULATION__CONTEXT__desc__fields[1] = {"genDiscrete"};
+ADD_METARECORD_DEFINITIONS struct record_description SimCodeFunction_Context_SIMULATION__CONTEXT__desc = {
+"SimCodeFunction_Context_SIMULATION__CONTEXT",
+"SimCodeFunction.Context.SIMULATION_CONTEXT",
+SimCodeFunction_Context_SIMULATION__CONTEXT__desc__fields
+};
+#endif
+#else
+extern struct record_description SimCodeFunction_Context_SIMULATION__CONTEXT__desc;
+#endif
+#ifdef __cplusplus
+}
+#endif

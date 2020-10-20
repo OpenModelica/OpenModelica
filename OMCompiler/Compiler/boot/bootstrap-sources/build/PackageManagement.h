@@ -1,0 +1,48 @@
+#ifndef PackageManagement__H
+#define PackageManagement__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+DLLExport
+modelica_boolean omc_PackageManagement_upgradeInstalledPackages(threadData_t *threadData, modelica_boolean _b);
+DLLExport
+modelica_metatype boxptr_PackageManagement_upgradeInstalledPackages(threadData_t *threadData, modelica_metatype _b);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PackageManagement_upgradeInstalledPackages,2,0) {(void*) boxptr_PackageManagement_upgradeInstalledPackages,0}};
+#define boxvar_PackageManagement_upgradeInstalledPackages MMC_REFSTRUCTLIT(boxvar_lit_PackageManagement_upgradeInstalledPackages)
+DLLExport
+modelica_boolean omc_PackageManagement_updateIndex(threadData_t *threadData);
+DLLExport
+modelica_metatype boxptr_PackageManagement_updateIndex(threadData_t *threadData);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PackageManagement_updateIndex,2,0) {(void*) boxptr_PackageManagement_updateIndex,0}};
+#define boxvar_PackageManagement_updateIndex MMC_REFSTRUCTLIT(boxvar_lit_PackageManagement_updateIndex)
+DLLExport
+modelica_boolean omc_PackageManagement_installPackage(threadData_t *threadData, modelica_string _str1, modelica_string _str2, modelica_boolean _b);
+DLLExport
+modelica_metatype boxptr_PackageManagement_installPackage(threadData_t *threadData, modelica_metatype _str1, modelica_metatype _str2, modelica_metatype _b);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PackageManagement_installPackage,2,0) {(void*) boxptr_PackageManagement_installPackage,0}};
+#define boxvar_PackageManagement_installPackage MMC_REFSTRUCTLIT(boxvar_lit_PackageManagement_installPackage)
+DLLExport
+modelica_metatype omc_PackageManagement_getInstalledLibraries(threadData_t *threadData);
+#define boxptr_PackageManagement_getInstalledLibraries omc_PackageManagement_getInstalledLibraries
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PackageManagement_getInstalledLibraries,2,0) {(void*) boxptr_PackageManagement_getInstalledLibraries,0}};
+#define boxvar_PackageManagement_getInstalledLibraries MMC_REFSTRUCTLIT(boxvar_lit_PackageManagement_getInstalledLibraries)
+DLLExport
+modelica_metatype omc_PackageManagement_versionsThatProvideTheWanted(threadData_t *threadData, modelica_string _id, modelica_string _version, modelica_boolean _printError);
+DLLExport
+modelica_metatype boxptr_PackageManagement_versionsThatProvideTheWanted(threadData_t *threadData, modelica_metatype _id, modelica_metatype _version, modelica_metatype _printError);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PackageManagement_versionsThatProvideTheWanted,2,0) {(void*) boxptr_PackageManagement_versionsThatProvideTheWanted,0}};
+#define boxvar_PackageManagement_versionsThatProvideTheWanted MMC_REFSTRUCTLIT(boxvar_lit_PackageManagement_versionsThatProvideTheWanted)
+DLLExport
+modelica_metatype omc_PackageManagement_AvailableLibraries_listKeys(threadData_t *threadData, modelica_metatype __omcQ_24in_5Flst);
+#define boxptr_PackageManagement_AvailableLibraries_listKeys omc_PackageManagement_AvailableLibraries_listKeys
+static const MMC_DEFSTRUCTLIT(boxvar_lit_PackageManagement_AvailableLibraries_listKeys,2,0) {(void*) boxptr_PackageManagement_AvailableLibraries_listKeys,0}};
+#define boxvar_PackageManagement_AvailableLibraries_listKeys MMC_REFSTRUCTLIT(boxvar_lit_PackageManagement_AvailableLibraries_listKeys)
+#ifdef __cplusplus
+}
+#endif
+#endif

@@ -1,0 +1,163 @@
+#include <meta/meta_modelica.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_CallingScope_TOP__CALL__desc_added
+#define InstTypes_CallingScope_TOP__CALL__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_CallingScope_TOP__CALL__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_CallingScope_TOP__CALL__desc = {
+"InstTypes_CallingScope_TOP__CALL",
+"InstTypes.CallingScope.TOP_CALL",
+InstTypes_CallingScope_TOP__CALL__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_CallingScope_TOP__CALL__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_CallingScope_INNER__CALL__desc_added
+#define InstTypes_CallingScope_INNER__CALL__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_CallingScope_INNER__CALL__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_CallingScope_INNER__CALL__desc = {
+"InstTypes_CallingScope_INNER__CALL",
+"InstTypes.CallingScope.INNER_CALL",
+InstTypes_CallingScope_INNER__CALL__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_CallingScope_INNER__CALL__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_CallingScope_TYPE__CALL__desc_added
+#define InstTypes_CallingScope_TYPE__CALL__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_CallingScope_TYPE__CALL__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_CallingScope_TYPE__CALL__desc = {
+"InstTypes_CallingScope_TYPE__CALL",
+"InstTypes.CallingScope.TYPE_CALL",
+InstTypes_CallingScope_TYPE__CALL__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_CallingScope_TYPE__CALL__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_CallingScope_TYPE__CALL__desc_added
+#define InstTypes_CallingScope_TYPE__CALL__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_CallingScope_TYPE__CALL__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_CallingScope_TYPE__CALL__desc = {
+"InstTypes_CallingScope_TYPE__CALL",
+"InstTypes.CallingScope.TYPE_CALL",
+InstTypes_CallingScope_TYPE__CALL__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_CallingScope_TYPE__CALL__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_CallingScope_INNER__CALL__desc_added
+#define InstTypes_CallingScope_INNER__CALL__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_CallingScope_INNER__CALL__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_CallingScope_INNER__CALL__desc = {
+"InstTypes_CallingScope_INNER__CALL",
+"InstTypes.CallingScope.INNER_CALL",
+InstTypes_CallingScope_INNER__CALL__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_CallingScope_INNER__CALL__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_CallingScope_TOP__CALL__desc_added
+#define InstTypes_CallingScope_TOP__CALL__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_CallingScope_TOP__CALL__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_CallingScope_TOP__CALL__desc = {
+"InstTypes_CallingScope_TOP__CALL",
+"InstTypes.CallingScope.TOP_CALL",
+InstTypes_CallingScope_TOP__CALL__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_CallingScope_TOP__CALL__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc_added
+#define InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc = {
+"InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY",
+"InstTypes.SearchStrategy.SEARCH_LOCAL_ONLY",
+InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc_added
+#define InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc = {
+"InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN",
+"InstTypes.SearchStrategy.SEARCH_ALSO_BUILTIN",
+InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc_added
+#define InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc = {
+"InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN",
+"InstTypes.SearchStrategy.SEARCH_ALSO_BUILTIN",
+InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_SearchStrategy_SEARCH__ALSO__BUILTIN__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc_added
+#define InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc = {
+"InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY",
+"InstTypes.SearchStrategy.SEARCH_LOCAL_ONLY",
+InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_SearchStrategy_SEARCH__LOCAL__ONLY__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_SplicedExpData_SPLICEDEXPDATA__desc_added
+#define InstTypes_SplicedExpData_SPLICEDEXPDATA__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_SplicedExpData_SPLICEDEXPDATA__desc__fields[2] = {"splicedExp","identType"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_SplicedExpData_SPLICEDEXPDATA__desc = {
+"InstTypes_SplicedExpData_SPLICEDEXPDATA",
+"InstTypes.SplicedExpData.SPLICEDEXPDATA",
+InstTypes_SplicedExpData_SPLICEDEXPDATA__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_SplicedExpData_SPLICEDEXPDATA__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstTypes_SplicedExpData_SPLICEDEXPDATA__desc_added
+#define InstTypes_SplicedExpData_SPLICEDEXPDATA__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstTypes_SplicedExpData_SPLICEDEXPDATA__desc__fields[2] = {"splicedExp","identType"};
+ADD_METARECORD_DEFINITIONS struct record_description InstTypes_SplicedExpData_SPLICEDEXPDATA__desc = {
+"InstTypes_SplicedExpData_SPLICEDEXPDATA",
+"InstTypes.SplicedExpData.SPLICEDEXPDATA",
+InstTypes_SplicedExpData_SPLICEDEXPDATA__desc__fields
+};
+#endif
+#else
+extern struct record_description InstTypes_SplicedExpData_SPLICEDEXPDATA__desc;
+#endif
+#ifdef __cplusplus
+}
+#endif

@@ -1,0 +1,31 @@
+#ifndef InstStateMachineUtil__H
+#define InstStateMachineUtil__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+DLLExport
+modelica_metatype omc_InstStateMachineUtil_wrapSMCompsInFlatSMs(threadData_t *threadData, modelica_metatype _inIH, modelica_metatype _inDae1, modelica_metatype _inDae2, modelica_integer _smNodeToFlatSMGroup, modelica_metatype _smInitialCrefs, modelica_metatype *out_outDae2);
+DLLExport
+modelica_metatype boxptr_InstStateMachineUtil_wrapSMCompsInFlatSMs(threadData_t *threadData, modelica_metatype _inIH, modelica_metatype _inDae1, modelica_metatype _inDae2, modelica_metatype _smNodeToFlatSMGroup, modelica_metatype _smInitialCrefs, modelica_metatype *out_outDae2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_wrapSMCompsInFlatSMs,2,0) {(void*) boxptr_InstStateMachineUtil_wrapSMCompsInFlatSMs,0}};
+#define boxvar_InstStateMachineUtil_wrapSMCompsInFlatSMs MMC_REFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_wrapSMCompsInFlatSMs)
+DLLExport
+modelica_integer omc_InstStateMachineUtil_createSMNodeToFlatSMGroupTable(threadData_t *threadData, modelica_metatype _inDae);
+DLLExport
+modelica_metatype boxptr_InstStateMachineUtil_createSMNodeToFlatSMGroupTable(threadData_t *threadData, modelica_metatype _inDae);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_createSMNodeToFlatSMGroupTable,2,0) {(void*) boxptr_InstStateMachineUtil_createSMNodeToFlatSMGroupTable,0}};
+#define boxvar_InstStateMachineUtil_createSMNodeToFlatSMGroupTable MMC_REFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_createSMNodeToFlatSMGroupTable)
+DLLExport
+modelica_metatype omc_InstStateMachineUtil_getSMStatesInContext(threadData_t *threadData, modelica_metatype _eqns, modelica_metatype _inPrefix, modelica_metatype *out_initialStates);
+#define boxptr_InstStateMachineUtil_getSMStatesInContext omc_InstStateMachineUtil_getSMStatesInContext
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_getSMStatesInContext,2,0) {(void*) boxptr_InstStateMachineUtil_getSMStatesInContext,0}};
+#define boxvar_InstStateMachineUtil_getSMStatesInContext MMC_REFSTRUCTLIT(boxvar_lit_InstStateMachineUtil_getSMStatesInContext)
+#ifdef __cplusplus
+}
+#endif
+#endif

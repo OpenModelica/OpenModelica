@@ -1,0 +1,529 @@
+#ifndef Dump__H
+#define Dump__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_EqMod_NOMOD__desc;
+extern struct record_description Absyn_Modification_CLASSMOD__desc;
+extern struct record_description Absyn_Program_PROGRAM__desc;
+extern struct record_description Absyn_Within_TOP__desc;
+extern struct record_description Dump_DumpOptions_DUMPOPTIONS__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
+extern struct record_description Flags_FlagData_BOOL__FLAG__desc;
+extern struct record_description Flags_FlagData_ENUM__FLAG__desc;
+extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
+extern struct record_description Flags_ValidOptions_STRING__OPTION__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+DLLExport
+void omc_Dump_writePath(threadData_t *threadData, modelica_complex _file, modelica_metatype _path, modelica_integer _escape, modelica_string _delimiter, modelica_boolean _initialDot);
+DLLExport
+void boxptr_Dump_writePath(threadData_t *threadData, modelica_metatype _file, modelica_metatype _path, modelica_metatype _escape, modelica_metatype _delimiter, modelica_metatype _initialDot);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_writePath,2,0) {(void*) boxptr_Dump_writePath,0}};
+#define boxvar_Dump_writePath MMC_REFSTRUCTLIT(boxvar_lit_Dump_writePath)
+#define boxptr_Dump_printStringAsCorbaString omc_Dump_printStringAsCorbaString
+#define boxptr_Dump_printTupleExpExpAsCorbaString omc_Dump_printTupleExpExpAsCorbaString
+#define boxptr_Dump_printEachAsCorbaString omc_Dump_printEachAsCorbaString
+#define boxptr_Dump_printOperatorAsCorbaString omc_Dump_printOperatorAsCorbaString
+#define boxptr_Dump_printTupleAsCorbaString omc_Dump_printTupleAsCorbaString
+#define boxptr_Dump_printListAsCorbaString omc_Dump_printListAsCorbaString
+#define boxptr_Dump_printListExpAsCorbaString omc_Dump_printListExpAsCorbaString
+#define boxptr_Dump_printCodeAsCorbaString omc_Dump_printCodeAsCorbaString
+#define boxptr_Dump_printCaseAsCorbaString omc_Dump_printCaseAsCorbaString
+#define boxptr_Dump_printMatchTypeAsCorbaString omc_Dump_printMatchTypeAsCorbaString
+#define boxptr_Dump_printExpAsCorbaString omc_Dump_printExpAsCorbaString
+#define boxptr_Dump_printNamedArgAsCorbaString omc_Dump_printNamedArgAsCorbaString
+#define boxptr_Dump_printForIteratorAsCorbaString omc_Dump_printForIteratorAsCorbaString
+#define boxptr_Dump_printFunctionArgsAsCorbaString omc_Dump_printFunctionArgsAsCorbaString
+#define boxptr_Dump_printElementArgAsCorbaString omc_Dump_printElementArgAsCorbaString
+#define boxptr_Dump_printIsFieldAsCorbaString omc_Dump_printIsFieldAsCorbaString
+#define boxptr_Dump_printDirectionAsCorbaString omc_Dump_printDirectionAsCorbaString
+#define boxptr_Dump_printVariabilityAsCorbaString omc_Dump_printVariabilityAsCorbaString
+#define boxptr_Dump_printParallelismAsCorbaString omc_Dump_printParallelismAsCorbaString
+#define boxptr_Dump_printElementAttributesAsCorbaString omc_Dump_printElementAttributesAsCorbaString
+#define boxptr_Dump_printImportAsCorbaString omc_Dump_printImportAsCorbaString
+#define boxptr_Dump_printSubscriptAsCorbaString omc_Dump_printSubscriptAsCorbaString
+#define boxptr_Dump_printArrayDimAsCorbaString omc_Dump_printArrayDimAsCorbaString
+#define boxptr_Dump_printTypeSpecAsCorbaString omc_Dump_printTypeSpecAsCorbaString
+#define boxptr_Dump_printCommentAsCorbaString omc_Dump_printCommentAsCorbaString
+#define boxptr_Dump_printAnnotationAsCorbaString omc_Dump_printAnnotationAsCorbaString
+#define boxptr_Dump_printEquationItemListAsCorbaString omc_Dump_printEquationItemListAsCorbaString
+#define boxptr_Dump_printEquationBranchAsCorbaString omc_Dump_printEquationBranchAsCorbaString
+#define boxptr_Dump_printAlgorithmItemListAsCorbaString omc_Dump_printAlgorithmItemListAsCorbaString
+#define boxptr_Dump_printAlgorithmBranchAsCorbaString omc_Dump_printAlgorithmBranchAsCorbaString
+#define boxptr_Dump_printAlgorithmAsCorbaString omc_Dump_printAlgorithmAsCorbaString
+#define boxptr_Dump_printAlgorithmItemAsCorbaString omc_Dump_printAlgorithmItemAsCorbaString
+#define boxptr_Dump_printEquationAsCorbaString omc_Dump_printEquationAsCorbaString
+#define boxptr_Dump_printEquationItemAsCorbaString omc_Dump_printEquationItemAsCorbaString
+#define boxptr_Dump_printEqModAsCorbaString omc_Dump_printEqModAsCorbaString
+#define boxptr_Dump_printModificationAsCorbaString omc_Dump_printModificationAsCorbaString
+#define boxptr_Dump_printComponentAsCorbaString omc_Dump_printComponentAsCorbaString
+#define boxptr_Dump_printComponentItemAsCorbaString omc_Dump_printComponentItemAsCorbaString
+#define boxptr_Dump_printElementSpecAsCorbaString omc_Dump_printElementSpecAsCorbaString
+#define boxptr_Dump_printConstrainClassAsCorbaString omc_Dump_printConstrainClassAsCorbaString
+#define boxptr_Dump_printRedeclareKeywordsAsCorbaString omc_Dump_printRedeclareKeywordsAsCorbaString
+#define boxptr_Dump_printInnerOuterAsCorbaString omc_Dump_printInnerOuterAsCorbaString
+#define boxptr_Dump_printElementAsCorbaString omc_Dump_printElementAsCorbaString
+#define boxptr_Dump_printElementItemAsCorbaString omc_Dump_printElementItemAsCorbaString
+#define boxptr_Dump_printExternalDeclAsCorbaString omc_Dump_printExternalDeclAsCorbaString
+#define boxptr_Dump_printClassPartAsCorbaString omc_Dump_printClassPartAsCorbaString
+#define boxptr_Dump_printFunctionPurityAsCorbaString omc_Dump_printFunctionPurityAsCorbaString
+#define boxptr_Dump_printFunctionRestrictionAsCorbaString omc_Dump_printFunctionRestrictionAsCorbaString
+#define boxptr_Dump_printRestrictionAsCorbaString omc_Dump_printRestrictionAsCorbaString
+#define boxptr_Dump_printEnumLiteralAsCorbaString omc_Dump_printEnumLiteralAsCorbaString
+#define boxptr_Dump_printEnumDefAsCorbaString omc_Dump_printEnumDefAsCorbaString
+#define boxptr_Dump_printClassDefAsCorbaString omc_Dump_printClassDefAsCorbaString
+#define boxptr_Dump_printInfoAsCorbaString omc_Dump_printInfoAsCorbaString
+#define boxptr_Dump_printClassAsCorbaString omc_Dump_printClassAsCorbaString
+#define boxptr_Dump_printWithinAsCorbaString omc_Dump_printWithinAsCorbaString
+#define boxptr_Dump_printComponentRefAsCorbaString omc_Dump_printComponentRefAsCorbaString
+#define boxptr_Dump_printPathAsCorbaString omc_Dump_printPathAsCorbaString
+DLLExport
+void omc_Dump_getAstAsCorbaString(threadData_t *threadData, modelica_metatype _program);
+#define boxptr_Dump_getAstAsCorbaString omc_Dump_getAstAsCorbaString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_getAstAsCorbaString,2,0) {(void*) boxptr_Dump_getAstAsCorbaString,0}};
+#define boxvar_Dump_getAstAsCorbaString MMC_REFSTRUCTLIT(boxvar_lit_Dump_getAstAsCorbaString)
+DLLExport
+void omc_Dump_stdout(threadData_t *threadData);
+#define boxptr_Dump_stdout omc_Dump_stdout
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_stdout,2,0) {(void*) boxptr_Dump_stdout,0}};
+#define boxvar_Dump_stdout MMC_REFSTRUCTLIT(boxvar_lit_Dump_stdout)
+DLLExport
+void omc_Dump_printTypeSpec(threadData_t *threadData, modelica_metatype _typeSpec);
+#define boxptr_Dump_printTypeSpec omc_Dump_printTypeSpec
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printTypeSpec,2,0) {(void*) boxptr_Dump_printTypeSpec,0}};
+#define boxvar_Dump_printTypeSpec MMC_REFSTRUCTLIT(boxvar_lit_Dump_printTypeSpec)
+DLLExport
+modelica_string omc_Dump_unparseTypeSpec(threadData_t *threadData, modelica_metatype _inTypeSpec);
+#define boxptr_Dump_unparseTypeSpec omc_Dump_unparseTypeSpec
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseTypeSpec,2,0) {(void*) boxptr_Dump_unparseTypeSpec,0}};
+#define boxvar_Dump_unparseTypeSpec MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseTypeSpec)
+DLLExport
+modelica_string omc_Dump_indentStr(threadData_t *threadData, modelica_integer _inInteger);
+DLLExport
+modelica_metatype boxptr_Dump_indentStr(threadData_t *threadData, modelica_metatype _inInteger);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_indentStr,2,0) {(void*) boxptr_Dump_indentStr,0}};
+#define boxvar_Dump_indentStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_indentStr)
+DLLExport
+modelica_string omc_Dump_printBoolStr(threadData_t *threadData, modelica_boolean _b);
+DLLExport
+modelica_metatype boxptr_Dump_printBoolStr(threadData_t *threadData, modelica_metatype _b);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printBoolStr,2,0) {(void*) boxptr_Dump_printBoolStr,0}};
+#define boxvar_Dump_printBoolStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printBoolStr)
+#define boxptr_Dump_printStringCommentOption omc_Dump_printStringCommentOption
+DLLExport
+modelica_string omc_Dump_getOptionWithConcatStr(threadData_t *threadData, modelica_metatype _inTypeAOption, modelica_fnptr _inFuncTypeTypeAToString, modelica_string _inString);
+#define boxptr_Dump_getOptionWithConcatStr omc_Dump_getOptionWithConcatStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_getOptionWithConcatStr,2,0) {(void*) boxptr_Dump_getOptionWithConcatStr,0}};
+#define boxvar_Dump_getOptionWithConcatStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_getOptionWithConcatStr)
+DLLExport
+modelica_string omc_Dump_getOptionStrDefault(threadData_t *threadData, modelica_metatype _inTypeAOption, modelica_fnptr _inFuncTypeTypeAToString, modelica_string _inString);
+#define boxptr_Dump_getOptionStrDefault omc_Dump_getOptionStrDefault
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_getOptionStrDefault,2,0) {(void*) boxptr_Dump_getOptionStrDefault,0}};
+#define boxvar_Dump_getOptionStrDefault MMC_REFSTRUCTLIT(boxvar_lit_Dump_getOptionStrDefault)
+DLLExport
+modelica_string omc_Dump_getOptionStr(threadData_t *threadData, modelica_metatype _inTypeAOption, modelica_fnptr _inFuncTypeTypeAToString);
+#define boxptr_Dump_getOptionStr omc_Dump_getOptionStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_getOptionStr,2,0) {(void*) boxptr_Dump_getOptionStr,0}};
+#define boxvar_Dump_getOptionStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_getOptionStr)
+DLLExport
+void omc_Dump_printBool(threadData_t *threadData, modelica_boolean _b);
+DLLExport
+void boxptr_Dump_printBool(threadData_t *threadData, modelica_metatype _b);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printBool,2,0) {(void*) boxptr_Dump_printBool,0}};
+#define boxvar_Dump_printBool MMC_REFSTRUCTLIT(boxvar_lit_Dump_printBool)
+DLLExport
+modelica_string omc_Dump_getStringList(threadData_t *threadData, modelica_metatype _inTypeALst, modelica_fnptr _inFuncTypeTypeAToString, modelica_string _inString);
+#define boxptr_Dump_getStringList omc_Dump_getStringList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_getStringList,2,0) {(void*) boxptr_Dump_getStringList,0}};
+#define boxvar_Dump_getStringList MMC_REFSTRUCTLIT(boxvar_lit_Dump_getStringList)
+DLLExport
+void omc_Dump_printList(threadData_t *threadData, modelica_metatype _inTypeALst, modelica_fnptr _inFuncTypeTypeATo, modelica_string _inString);
+#define boxptr_Dump_printList omc_Dump_printList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printList,2,0) {(void*) boxptr_Dump_printList,0}};
+#define boxvar_Dump_printList MMC_REFSTRUCTLIT(boxvar_lit_Dump_printList)
+DLLExport
+void omc_Dump_printListDebug(threadData_t *threadData, modelica_string _inString1, modelica_metatype _inTypeALst2, modelica_fnptr _inFuncTypeTypeATo3, modelica_string _inString4);
+#define boxptr_Dump_printListDebug omc_Dump_printListDebug
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printListDebug,2,0) {(void*) boxptr_Dump_printListDebug,0}};
+#define boxvar_Dump_printListDebug MMC_REFSTRUCTLIT(boxvar_lit_Dump_printListDebug)
+DLLExport
+void omc_Dump_printOption(threadData_t *threadData, modelica_metatype _inTypeAOption, modelica_fnptr _inFuncTypeTypeATo);
+#define boxptr_Dump_printOption omc_Dump_printOption
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printOption,2,0) {(void*) boxptr_Dump_printOption,0}};
+#define boxvar_Dump_printOption MMC_REFSTRUCTLIT(boxvar_lit_Dump_printOption)
+DLLExport
+void omc_Dump_printSelect(threadData_t *threadData, modelica_boolean _f, modelica_string _yes, modelica_string _no);
+DLLExport
+void boxptr_Dump_printSelect(threadData_t *threadData, modelica_metatype _f, modelica_metatype _yes, modelica_metatype _no);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printSelect,2,0) {(void*) boxptr_Dump_printSelect,0}};
+#define boxvar_Dump_printSelect MMC_REFSTRUCTLIT(boxvar_lit_Dump_printSelect)
+DLLExport
+modelica_string omc_Dump_selectString(threadData_t *threadData, modelica_boolean _inBoolean1, modelica_string _inString2, modelica_string _inString3);
+DLLExport
+modelica_metatype boxptr_Dump_selectString(threadData_t *threadData, modelica_metatype _inBoolean1, modelica_metatype _inString2, modelica_metatype _inString3);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_selectString,2,0) {(void*) boxptr_Dump_selectString,0}};
+#define boxvar_Dump_selectString MMC_REFSTRUCTLIT(boxvar_lit_Dump_selectString)
+#define boxptr_Dump_dumpOpSymbol omc_Dump_dumpOpSymbol
+DLLExport
+modelica_string omc_Dump_opSymbolCompact(threadData_t *threadData, modelica_metatype _inOperator);
+#define boxptr_Dump_opSymbolCompact omc_Dump_opSymbolCompact
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_opSymbolCompact,2,0) {(void*) boxptr_Dump_opSymbolCompact,0}};
+#define boxvar_Dump_opSymbolCompact MMC_REFSTRUCTLIT(boxvar_lit_Dump_opSymbolCompact)
+DLLExport
+modelica_string omc_Dump_opSymbol(threadData_t *threadData, modelica_metatype _inOperator);
+#define boxptr_Dump_opSymbol omc_Dump_opSymbol
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_opSymbol,2,0) {(void*) boxptr_Dump_opSymbol,0}};
+#define boxvar_Dump_opSymbol MMC_REFSTRUCTLIT(boxvar_lit_Dump_opSymbol)
+#define boxptr_Dump_printListStr omc_Dump_printListStr
+DLLExport
+modelica_string omc_Dump_printCodeStr(threadData_t *threadData, modelica_metatype _inCode);
+#define boxptr_Dump_printCodeStr omc_Dump_printCodeStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printCodeStr,2,0) {(void*) boxptr_Dump_printCodeStr,0}};
+#define boxvar_Dump_printCodeStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printCodeStr)
+DLLExport
+modelica_string omc_Dump_printExpStr(threadData_t *threadData, modelica_metatype _inExp);
+#define boxptr_Dump_printExpStr omc_Dump_printExpStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printExpStr,2,0) {(void*) boxptr_Dump_printExpStr,0}};
+#define boxvar_Dump_printExpStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printExpStr)
+DLLExport
+modelica_string omc_Dump_printExpLstStr(threadData_t *threadData, modelica_metatype _expl);
+#define boxptr_Dump_printExpLstStr omc_Dump_printExpLstStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printExpLstStr,2,0) {(void*) boxptr_Dump_printExpLstStr,0}};
+#define boxvar_Dump_printExpLstStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printExpLstStr)
+DLLExport
+modelica_integer omc_Dump_expPriority(threadData_t *threadData, modelica_metatype _inExp, modelica_boolean _inLhs);
+DLLExport
+modelica_metatype boxptr_Dump_expPriority(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inLhs);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_expPriority,2,0) {(void*) boxptr_Dump_expPriority,0}};
+#define boxvar_Dump_expPriority MMC_REFSTRUCTLIT(boxvar_lit_Dump_expPriority)
+DLLExport
+modelica_boolean omc_Dump_shouldParenthesize(threadData_t *threadData, modelica_metatype _inOperand, modelica_metatype _inOperator, modelica_boolean _inLhs);
+DLLExport
+modelica_metatype boxptr_Dump_shouldParenthesize(threadData_t *threadData, modelica_metatype _inOperand, modelica_metatype _inOperator, modelica_metatype _inLhs);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_shouldParenthesize,2,0) {(void*) boxptr_Dump_shouldParenthesize,0}};
+#define boxvar_Dump_shouldParenthesize MMC_REFSTRUCTLIT(boxvar_lit_Dump_shouldParenthesize)
+#define boxptr_Dump_printRow omc_Dump_printRow
+DLLExport
+modelica_string omc_Dump_printNamedArgValueStr(threadData_t *threadData, modelica_metatype _inNamedArg);
+#define boxptr_Dump_printNamedArgValueStr omc_Dump_printNamedArgValueStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printNamedArgValueStr,2,0) {(void*) boxptr_Dump_printNamedArgValueStr,0}};
+#define boxvar_Dump_printNamedArgValueStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printNamedArgValueStr)
+DLLExport
+modelica_string omc_Dump_printNamedArgStr(threadData_t *threadData, modelica_metatype _inNamedArg);
+#define boxptr_Dump_printNamedArgStr omc_Dump_printNamedArgStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printNamedArgStr,2,0) {(void*) boxptr_Dump_printNamedArgStr,0}};
+#define boxvar_Dump_printNamedArgStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printNamedArgStr)
+DLLExport
+void omc_Dump_printNamedArg(threadData_t *threadData, modelica_metatype _inNamedArg);
+#define boxptr_Dump_printNamedArg omc_Dump_printNamedArg
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printNamedArg,2,0) {(void*) boxptr_Dump_printNamedArg,0}};
+#define boxvar_Dump_printNamedArg MMC_REFSTRUCTLIT(boxvar_lit_Dump_printNamedArg)
+DLLExport
+modelica_string omc_Dump_printIteratorsStr(threadData_t *threadData, modelica_metatype _iterators);
+#define boxptr_Dump_printIteratorsStr omc_Dump_printIteratorsStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printIteratorsStr,2,0) {(void*) boxptr_Dump_printIteratorsStr,0}};
+#define boxvar_Dump_printIteratorsStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printIteratorsStr)
+DLLExport
+modelica_string omc_Dump_printFunctionArgsStr(threadData_t *threadData, modelica_metatype _inFunctionArgs);
+#define boxptr_Dump_printFunctionArgsStr omc_Dump_printFunctionArgsStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printFunctionArgsStr,2,0) {(void*) boxptr_Dump_printFunctionArgsStr,0}};
+#define boxvar_Dump_printFunctionArgsStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printFunctionArgsStr)
+#define boxptr_Dump_printIterator omc_Dump_printIterator
+#define boxptr_Dump_printFunctionArgs omc_Dump_printFunctionArgs
+DLLExport
+modelica_string omc_Dump_printMatchType(threadData_t *threadData, modelica_metatype _matchType);
+#define boxptr_Dump_printMatchType omc_Dump_printMatchType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printMatchType,2,0) {(void*) boxptr_Dump_printMatchType,0}};
+#define boxvar_Dump_printMatchType MMC_REFSTRUCTLIT(boxvar_lit_Dump_printMatchType)
+DLLExport
+void omc_Dump_printExp(threadData_t *threadData, modelica_metatype _inExp);
+#define boxptr_Dump_printExp omc_Dump_printExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printExp,2,0) {(void*) boxptr_Dump_printExp,0}};
+#define boxvar_Dump_printExp MMC_REFSTRUCTLIT(boxvar_lit_Dump_printExp)
+#define boxptr_Dump_printPathStr omc_Dump_printPathStr
+#define boxptr_Dump_dumpPath omc_Dump_dumpPath
+DLLExport
+void omc_Dump_printPath(threadData_t *threadData, modelica_metatype _p);
+#define boxptr_Dump_printPath omc_Dump_printPath
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printPath,2,0) {(void*) boxptr_Dump_printPath,0}};
+#define boxvar_Dump_printPath MMC_REFSTRUCTLIT(boxvar_lit_Dump_printPath)
+DLLExport
+modelica_string omc_Dump_printSubscriptsStr(threadData_t *threadData, modelica_metatype _inAbsynSubscriptLst);
+#define boxptr_Dump_printSubscriptsStr omc_Dump_printSubscriptsStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printSubscriptsStr,2,0) {(void*) boxptr_Dump_printSubscriptsStr,0}};
+#define boxvar_Dump_printSubscriptsStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printSubscriptsStr)
+DLLExport
+modelica_string omc_Dump_printComponentRefStr(threadData_t *threadData, modelica_metatype _inComponentRef);
+#define boxptr_Dump_printComponentRefStr omc_Dump_printComponentRefStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printComponentRefStr,2,0) {(void*) boxptr_Dump_printComponentRefStr,0}};
+#define boxvar_Dump_printComponentRefStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printComponentRefStr)
+DLLExport
+void omc_Dump_printSubscripts(threadData_t *threadData, modelica_metatype _inAbsynSubscriptLst);
+#define boxptr_Dump_printSubscripts omc_Dump_printSubscripts
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printSubscripts,2,0) {(void*) boxptr_Dump_printSubscripts,0}};
+#define boxvar_Dump_printSubscripts MMC_REFSTRUCTLIT(boxvar_lit_Dump_printSubscripts)
+DLLExport
+void omc_Dump_printComponentRef(threadData_t *threadData, modelica_metatype _inComponentRef);
+#define boxptr_Dump_printComponentRef omc_Dump_printComponentRef
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printComponentRef,2,0) {(void*) boxptr_Dump_printComponentRef,0}};
+#define boxvar_Dump_printComponentRef MMC_REFSTRUCTLIT(boxvar_lit_Dump_printComponentRef)
+#define boxptr_Dump_printAlgElseif omc_Dump_printAlgElseif
+DLLExport
+modelica_string omc_Dump_unparseAlgorithmStr(threadData_t *threadData, modelica_metatype _inAlgorithmItem);
+#define boxptr_Dump_unparseAlgorithmStr omc_Dump_unparseAlgorithmStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseAlgorithmStr,2,0) {(void*) boxptr_Dump_unparseAlgorithmStr,0}};
+#define boxvar_Dump_unparseAlgorithmStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseAlgorithmStr)
+DLLExport
+modelica_string omc_Dump_unparseAlgorithmStrLst(threadData_t *threadData, modelica_metatype _inAlgorithmItems, modelica_string _inSeparator);
+#define boxptr_Dump_unparseAlgorithmStrLst omc_Dump_unparseAlgorithmStrLst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseAlgorithmStrLst,2,0) {(void*) boxptr_Dump_unparseAlgorithmStrLst,0}};
+#define boxvar_Dump_unparseAlgorithmStrLst MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseAlgorithmStrLst)
+DLLExport
+void omc_Dump_printAlgorithm(threadData_t *threadData, modelica_metatype _inAlgorithm);
+#define boxptr_Dump_printAlgorithm omc_Dump_printAlgorithm
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printAlgorithm,2,0) {(void*) boxptr_Dump_printAlgorithm,0}};
+#define boxvar_Dump_printAlgorithm MMC_REFSTRUCTLIT(boxvar_lit_Dump_printAlgorithm)
+DLLExport
+void omc_Dump_printAlgorithmitem(threadData_t *threadData, modelica_metatype _inAlgorithmItem);
+#define boxptr_Dump_printAlgorithmitem omc_Dump_printAlgorithmitem
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printAlgorithmitem,2,0) {(void*) boxptr_Dump_printAlgorithmitem,0}};
+#define boxvar_Dump_printAlgorithmitem MMC_REFSTRUCTLIT(boxvar_lit_Dump_printAlgorithmitem)
+#define boxptr_Dump_printEqElseif omc_Dump_printEqElseif
+DLLExport
+modelica_string omc_Dump_unparseEquationItemStrLst(threadData_t *threadData, modelica_metatype _inEquationItems, modelica_string _inSeparator);
+#define boxptr_Dump_unparseEquationItemStrLst omc_Dump_unparseEquationItemStrLst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseEquationItemStrLst,2,0) {(void*) boxptr_Dump_unparseEquationItemStrLst,0}};
+#define boxvar_Dump_unparseEquationItemStrLst MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseEquationItemStrLst)
+DLLExport
+modelica_string omc_Dump_unparseEquationItemStr(threadData_t *threadData, modelica_metatype _inEquation);
+#define boxptr_Dump_unparseEquationItemStr omc_Dump_unparseEquationItemStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseEquationItemStr,2,0) {(void*) boxptr_Dump_unparseEquationItemStr,0}};
+#define boxvar_Dump_unparseEquationItemStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseEquationItemStr)
+DLLExport
+modelica_string omc_Dump_unparseEquationStr(threadData_t *threadData, modelica_metatype _inEquation);
+#define boxptr_Dump_unparseEquationStr omc_Dump_unparseEquationStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseEquationStr,2,0) {(void*) boxptr_Dump_unparseEquationStr,0}};
+#define boxvar_Dump_unparseEquationStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseEquationStr)
+DLLExport
+modelica_string omc_Dump_unparseClassPart(threadData_t *threadData, modelica_metatype _classPart);
+#define boxptr_Dump_unparseClassPart omc_Dump_unparseClassPart
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseClassPart,2,0) {(void*) boxptr_Dump_unparseClassPart,0}};
+#define boxvar_Dump_unparseClassPart MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseClassPart)
+#define boxptr_Dump_printEquationitem omc_Dump_printEquationitem
+DLLExport
+void omc_Dump_printEquation(threadData_t *threadData, modelica_metatype _inEquation);
+#define boxptr_Dump_printEquation omc_Dump_printEquation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printEquation,2,0) {(void*) boxptr_Dump_printEquation,0}};
+#define boxvar_Dump_printEquation MMC_REFSTRUCTLIT(boxvar_lit_Dump_printEquation)
+DLLExport
+modelica_string omc_Dump_equationName(threadData_t *threadData, modelica_metatype _eq);
+#define boxptr_Dump_equationName omc_Dump_equationName
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_equationName,2,0) {(void*) boxptr_Dump_equationName,0}};
+#define boxvar_Dump_equationName MMC_REFSTRUCTLIT(boxvar_lit_Dump_equationName)
+DLLExport
+modelica_string omc_Dump_unparseModificationStr(threadData_t *threadData, modelica_metatype _inModification);
+#define boxptr_Dump_unparseModificationStr omc_Dump_unparseModificationStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseModificationStr,2,0) {(void*) boxptr_Dump_unparseModificationStr,0}};
+#define boxvar_Dump_unparseModificationStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseModificationStr)
+#define boxptr_Dump_printMod2 omc_Dump_printMod2
+#define boxptr_Dump_printMod1 omc_Dump_printMod1
+#define boxptr_Dump_printModification omc_Dump_printModification
+#define boxptr_Dump_printOptModification omc_Dump_printOptModification
+DLLExport
+modelica_string omc_Dump_printSubscriptStr(threadData_t *threadData, modelica_metatype _inSubscript);
+#define boxptr_Dump_printSubscriptStr omc_Dump_printSubscriptStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printSubscriptStr,2,0) {(void*) boxptr_Dump_printSubscriptStr,0}};
+#define boxvar_Dump_printSubscriptStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printSubscriptStr)
+#define boxptr_Dump_printSubscript omc_Dump_printSubscript
+DLLExport
+modelica_string omc_Dump_printArraydimStr(threadData_t *threadData, modelica_metatype _s);
+#define boxptr_Dump_printArraydimStr omc_Dump_printArraydimStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printArraydimStr,2,0) {(void*) boxptr_Dump_printArraydimStr,0}};
+#define boxvar_Dump_printArraydimStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_printArraydimStr)
+DLLExport
+void omc_Dump_printArraydim(threadData_t *threadData, modelica_metatype _s);
+#define boxptr_Dump_printArraydim omc_Dump_printArraydim
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printArraydim,2,0) {(void*) boxptr_Dump_printArraydim,0}};
+#define boxvar_Dump_printArraydim MMC_REFSTRUCTLIT(boxvar_lit_Dump_printArraydim)
+#define boxptr_Dump_printArraydimOpt omc_Dump_printArraydimOpt
+DLLExport
+modelica_string omc_Dump_unparseComponentCondition(threadData_t *threadData, modelica_metatype _inComponentCondition);
+#define boxptr_Dump_unparseComponentCondition omc_Dump_unparseComponentCondition
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseComponentCondition,2,0) {(void*) boxptr_Dump_unparseComponentCondition,0}};
+#define boxvar_Dump_unparseComponentCondition MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseComponentCondition)
+#define boxptr_Dump_printComponentitem omc_Dump_printComponentitem
+DLLExport
+void omc_Dump_printComponent(threadData_t *threadData, modelica_metatype _inComponent);
+#define boxptr_Dump_printComponent omc_Dump_printComponent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printComponent,2,0) {(void*) boxptr_Dump_printComponent,0}};
+#define boxvar_Dump_printComponent MMC_REFSTRUCTLIT(boxvar_lit_Dump_printComponent)
+DLLExport
+modelica_string omc_Dump_unparseParallelismSymbolStr(threadData_t *threadData, modelica_metatype _inParallelism);
+#define boxptr_Dump_unparseParallelismSymbolStr omc_Dump_unparseParallelismSymbolStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseParallelismSymbolStr,2,0) {(void*) boxptr_Dump_unparseParallelismSymbolStr,0}};
+#define boxvar_Dump_unparseParallelismSymbolStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseParallelismSymbolStr)
+DLLExport
+modelica_string omc_Dump_unparseDirectionSymbolStr(threadData_t *threadData, modelica_metatype _inDirection);
+#define boxptr_Dump_unparseDirectionSymbolStr omc_Dump_unparseDirectionSymbolStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseDirectionSymbolStr,2,0) {(void*) boxptr_Dump_unparseDirectionSymbolStr,0}};
+#define boxvar_Dump_unparseDirectionSymbolStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseDirectionSymbolStr)
+#define boxptr_Dump_unparseVariabilitySymbolStr omc_Dump_unparseVariabilitySymbolStr
+DLLExport
+modelica_string omc_Dump_directionSymbol(threadData_t *threadData, modelica_metatype _inDirection);
+#define boxptr_Dump_directionSymbol omc_Dump_directionSymbol
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_directionSymbol,2,0) {(void*) boxptr_Dump_directionSymbol,0}};
+#define boxvar_Dump_directionSymbol MMC_REFSTRUCTLIT(boxvar_lit_Dump_directionSymbol)
+DLLExport
+modelica_string omc_Dump_variabilitySymbol(threadData_t *threadData, modelica_metatype _inVariability);
+#define boxptr_Dump_variabilitySymbol omc_Dump_variabilitySymbol
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_variabilitySymbol,2,0) {(void*) boxptr_Dump_variabilitySymbol,0}};
+#define boxvar_Dump_variabilitySymbol MMC_REFSTRUCTLIT(boxvar_lit_Dump_variabilitySymbol)
+DLLExport
+modelica_string omc_Dump_parallelSymbol(threadData_t *threadData, modelica_metatype _inparallel);
+#define boxptr_Dump_parallelSymbol omc_Dump_parallelSymbol
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_parallelSymbol,2,0) {(void*) boxptr_Dump_parallelSymbol,0}};
+#define boxvar_Dump_parallelSymbol MMC_REFSTRUCTLIT(boxvar_lit_Dump_parallelSymbol)
+#define boxptr_Dump_printElementattr omc_Dump_printElementattr
+DLLExport
+modelica_string omc_Dump_unparseImportStr(threadData_t *threadData, modelica_metatype _inImport);
+#define boxptr_Dump_unparseImportStr omc_Dump_unparseImportStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseImportStr,2,0) {(void*) boxptr_Dump_unparseImportStr,0}};
+#define boxvar_Dump_unparseImportStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseImportStr)
+#define boxptr_Dump_unparseGroupImport omc_Dump_unparseGroupImport
+DLLExport
+void omc_Dump_printImport(threadData_t *threadData, modelica_metatype _inImport);
+#define boxptr_Dump_printImport omc_Dump_printImport
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printImport,2,0) {(void*) boxptr_Dump_printImport,0}};
+#define boxvar_Dump_printImport MMC_REFSTRUCTLIT(boxvar_lit_Dump_printImport)
+DLLExport
+void omc_Dump_printElementspec(threadData_t *threadData, modelica_metatype _inElementSpec);
+#define boxptr_Dump_printElementspec omc_Dump_printElementspec
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printElementspec,2,0) {(void*) boxptr_Dump_printElementspec,0}};
+#define boxvar_Dump_printElementspec MMC_REFSTRUCTLIT(boxvar_lit_Dump_printElementspec)
+DLLExport
+modelica_string omc_Dump_unparseInnerouterStr(threadData_t *threadData, modelica_metatype _inInnerOuter);
+#define boxptr_Dump_unparseInnerouterStr omc_Dump_unparseInnerouterStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseInnerouterStr,2,0) {(void*) boxptr_Dump_unparseInnerouterStr,0}};
+#define boxvar_Dump_unparseInnerouterStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseInnerouterStr)
+#define boxptr_Dump_printInnerouter omc_Dump_printInnerouter
+#define boxptr_Dump_printElement omc_Dump_printElement
+DLLExport
+modelica_string omc_Dump_unparseAnnotationOption(threadData_t *threadData, modelica_metatype _inAbsynAnnotation);
+#define boxptr_Dump_unparseAnnotationOption omc_Dump_unparseAnnotationOption
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseAnnotationOption,2,0) {(void*) boxptr_Dump_unparseAnnotationOption,0}};
+#define boxvar_Dump_unparseAnnotationOption MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseAnnotationOption)
+DLLExport
+modelica_string omc_Dump_unparseAnnotation(threadData_t *threadData, modelica_metatype _inAnnotation);
+#define boxptr_Dump_unparseAnnotation omc_Dump_unparseAnnotation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseAnnotation,2,0) {(void*) boxptr_Dump_unparseAnnotation,0}};
+#define boxvar_Dump_unparseAnnotation MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseAnnotation)
+DLLExport
+modelica_string omc_Dump_unparseElementItemStr(threadData_t *threadData, modelica_metatype _inElementItem);
+#define boxptr_Dump_unparseElementItemStr omc_Dump_unparseElementItemStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseElementItemStr,2,0) {(void*) boxptr_Dump_unparseElementItemStr,0}};
+#define boxvar_Dump_unparseElementItemStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseElementItemStr)
+DLLExport
+modelica_string omc_Dump_unparseElementArgStr(threadData_t *threadData, modelica_metatype _inElementArg);
+#define boxptr_Dump_unparseElementArgStr omc_Dump_unparseElementArgStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseElementArgStr,2,0) {(void*) boxptr_Dump_unparseElementArgStr,0}};
+#define boxvar_Dump_unparseElementArgStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseElementArgStr)
+#define boxptr_Dump_printAnnotation omc_Dump_printAnnotation
+#define boxptr_Dump_printElementitems2 omc_Dump_printElementitems2
+#define boxptr_Dump_printElementitems omc_Dump_printElementitems
+#define boxptr_Dump_printExternalDecl omc_Dump_printExternalDecl
+#define boxptr_Dump_printClassPart omc_Dump_printClassPart
+#define boxptr_Dump_dumpEach omc_Dump_dumpEach
+DLLExport
+modelica_string omc_Dump_unparseEachStr(threadData_t *threadData, modelica_metatype _inEach);
+#define boxptr_Dump_unparseEachStr omc_Dump_unparseEachStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseEachStr,2,0) {(void*) boxptr_Dump_unparseEachStr,0}};
+#define boxvar_Dump_unparseEachStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseEachStr)
+#define boxptr_Dump_printElementArg omc_Dump_printElementArg
+#define boxptr_Dump_printClassModification omc_Dump_printClassModification
+#define boxptr_Dump_printClassRestriction omc_Dump_printClassRestriction
+#define boxptr_Dump_printClassdef omc_Dump_printClassdef
+#define boxptr_Dump_printClass omc_Dump_printClass
+DLLExport
+modelica_string omc_Dump_unparseInfoStr(threadData_t *threadData, modelica_metatype _inInfo);
+#define boxptr_Dump_unparseInfoStr omc_Dump_unparseInfoStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseInfoStr,2,0) {(void*) boxptr_Dump_unparseInfoStr,0}};
+#define boxvar_Dump_unparseInfoStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseInfoStr)
+DLLExport
+void omc_Dump_printInfo(threadData_t *threadData, modelica_metatype _inInfo);
+#define boxptr_Dump_printInfo omc_Dump_printInfo
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_printInfo,2,0) {(void*) boxptr_Dump_printInfo,0}};
+#define boxvar_Dump_printInfo MMC_REFSTRUCTLIT(boxvar_lit_Dump_printInfo)
+DLLExport
+modelica_string omc_Dump_unparseRestrictionStr(threadData_t *threadData, modelica_metatype _inRestriction);
+#define boxptr_Dump_unparseRestrictionStr omc_Dump_unparseRestrictionStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseRestrictionStr,2,0) {(void*) boxptr_Dump_unparseRestrictionStr,0}};
+#define boxvar_Dump_unparseRestrictionStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseRestrictionStr)
+#define boxptr_Dump_printEnumliterals2 omc_Dump_printEnumliterals2
+#define boxptr_Dump_printEnumliterals omc_Dump_printEnumliterals
+#define boxptr_Dump_dumpAnnotationOption omc_Dump_dumpAnnotationOption
+#define boxptr_Dump_dumpCommentOption omc_Dump_dumpCommentOption
+DLLExport
+modelica_string omc_Dump_unparseCommentOption(threadData_t *threadData, modelica_metatype _inComment);
+#define boxptr_Dump_unparseCommentOption omc_Dump_unparseCommentOption
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseCommentOption,2,0) {(void*) boxptr_Dump_unparseCommentOption,0}};
+#define boxvar_Dump_unparseCommentOption MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseCommentOption)
+DLLExport
+modelica_string omc_Dump_unparseClassAttributesStr(threadData_t *threadData, modelica_metatype _inClass);
+#define boxptr_Dump_unparseClassAttributesStr omc_Dump_unparseClassAttributesStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseClassAttributesStr,2,0) {(void*) boxptr_Dump_unparseClassAttributesStr,0}};
+#define boxvar_Dump_unparseClassAttributesStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseClassAttributesStr)
+#define boxptr_Dump_dumpWithin omc_Dump_dumpWithin
+DLLExport
+modelica_string omc_Dump_unparseWithin(threadData_t *threadData, modelica_metatype _inWithin);
+#define boxptr_Dump_unparseWithin omc_Dump_unparseWithin
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseWithin,2,0) {(void*) boxptr_Dump_unparseWithin,0}};
+#define boxvar_Dump_unparseWithin MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseWithin)
+DLLExport
+modelica_string omc_Dump_unparseClassStr(threadData_t *threadData, modelica_metatype _inClass);
+#define boxptr_Dump_unparseClassStr omc_Dump_unparseClassStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseClassStr,2,0) {(void*) boxptr_Dump_unparseClassStr,0}};
+#define boxvar_Dump_unparseClassStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseClassStr)
+DLLExport
+modelica_string omc_Dump_unparseClassList(threadData_t *threadData, modelica_metatype _inClasses);
+#define boxptr_Dump_unparseClassList omc_Dump_unparseClassList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseClassList,2,0) {(void*) boxptr_Dump_unparseClassList,0}};
+#define boxvar_Dump_unparseClassList MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseClassList)
+DLLExport
+modelica_string omc_Dump_unparseStr(threadData_t *threadData, modelica_metatype _inProgram, modelica_boolean _markup, modelica_metatype _options);
+DLLExport
+modelica_metatype boxptr_Dump_unparseStr(threadData_t *threadData, modelica_metatype _inProgram, modelica_metatype _markup, modelica_metatype _options);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_unparseStr,2,0) {(void*) boxptr_Dump_unparseStr,0}};
+#define boxvar_Dump_unparseStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_unparseStr)
+DLLExport
+void omc_Dump_dump(threadData_t *threadData, modelica_metatype _inProgram);
+#define boxptr_Dump_dump omc_Dump_dump
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_dump,2,0) {(void*) boxptr_Dump_dump,0}};
+#define boxvar_Dump_dump MMC_REFSTRUCTLIT(boxvar_lit_Dump_dump)
+DLLExport
+void omc_Dump_dumpExp(threadData_t *threadData, modelica_metatype _exp);
+#define boxptr_Dump_dumpExp omc_Dump_dumpExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_dumpExp,2,0) {(void*) boxptr_Dump_dumpExp,0}};
+#define boxvar_Dump_dumpExp MMC_REFSTRUCTLIT(boxvar_lit_Dump_dumpExp)
+DLLExport
+modelica_string omc_Dump_dumpExpStr(threadData_t *threadData, modelica_metatype _exp);
+#define boxptr_Dump_dumpExpStr omc_Dump_dumpExpStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_dumpExpStr,2,0) {(void*) boxptr_Dump_dumpExpStr,0}};
+#define boxvar_Dump_dumpExpStr MMC_REFSTRUCTLIT(boxvar_lit_Dump_dumpExpStr)
+DLLExport
+modelica_boolean omc_Dump_boolUnparseFileFromInfo(threadData_t *threadData, modelica_metatype _info, modelica_metatype _options);
+DLLExport
+modelica_metatype boxptr_Dump_boolUnparseFileFromInfo(threadData_t *threadData, modelica_metatype _info, modelica_metatype _options);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Dump_boolUnparseFileFromInfo,2,0) {(void*) boxptr_Dump_boolUnparseFileFromInfo,0}};
+#define boxvar_Dump_boolUnparseFileFromInfo MMC_REFSTRUCTLIT(boxvar_lit_Dump_boolUnparseFileFromInfo)
+#ifdef __cplusplus
+}
+#endif
+#endif
