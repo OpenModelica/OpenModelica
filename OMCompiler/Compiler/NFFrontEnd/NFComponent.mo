@@ -236,6 +236,14 @@ public
     component := ENUM_LITERAL(Expression.ENUM_LITERAL(enumType, literalName, literalIndex));
   end newEnum;
 
+  function newIterator
+    input Type iterType;
+    input SourceInfo info;
+    output Component component;
+  algorithm
+    component := ITERATOR(iterType, Variability.IMPLICITLY_DISCRETE, info);
+  end newIterator;
+
   function definition
     input Component component;
     output SCode.Element definition;
