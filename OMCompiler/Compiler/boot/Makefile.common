@@ -54,10 +54,6 @@ bootstrap-from-tarball:
 	# Patch _main.c to avoid a new tarball
 	$(MAKE) -f $(defaultMakefileTarget) patch-files
 	$(PATCH_SOURCES)
-	#cd build && patch -i ../patches/Absyn.h.1.patch Absyn.h
-	#cd build && patch -i ../patches/Absyn.c.1.patch Absyn.c
-	#cd build && patch -i ../patches/CevalScript.c.1.patch CevalScript.c
-	#cd build && patch -i ../patches/System_includes.h.patch System_includes.h
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
