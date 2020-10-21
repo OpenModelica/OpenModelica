@@ -3423,10 +3423,10 @@ algorithm
   b := FlagsUtil.set(Flags.NF_API, false);
   try
     (flatModel, functions, flatString) := NFInst.instClassInProgram(className, scode_p, dumpFlat);
-	FlagsUtil.set(Flags.NF_API, b);
+  FlagsUtil.set(Flags.NF_API, b);
   else
     FlagsUtil.set(Flags.NF_API, b);
-	fail();
+  fail();
   end try;
 end runFrontEndWorkNF;
 

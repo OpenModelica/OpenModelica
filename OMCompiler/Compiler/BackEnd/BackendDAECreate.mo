@@ -258,8 +258,8 @@ algorithm
       case BackendDAE.VAR(bindExp = SOME(DAE.CREF(componentRef=cref)))
       algorithm
         if BackendVarTransform.hasReplacement(repl,cref) then
-	  var.bindExp := NONE();
-	end if;
+    var.bindExp := NONE();
+  end if;
         then var;
       else var;
     end match;
