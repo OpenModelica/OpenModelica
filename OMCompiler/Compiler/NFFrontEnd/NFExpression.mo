@@ -1004,6 +1004,29 @@ public
     );
   end makeRange;
 
+  function makeIntegerRange
+    input Integer start;
+    input Integer step;
+    input Integer stop;
+    output Expression rangeExp;
+  protected
+    Expression start_exp, stop_exp;
+    Option<Expression> step_exp;
+  algorithm
+    start_exp := Expression.INTEGER(start);
+    stop_exp := Expression.INTEGER(stop);
+
+    if start == stop or
+       step == 1 and start <= stop or
+       step == -1 and start >= stop then
+      step_exp := NONE();
+    else
+      step_exp := SOME(Expression.INTEGER(step));
+    end if;
+
+    rangeExp := makeRange(start_exp, step_exp, stop_exp);
+  end makeIntegerRange;
+
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
     input list<Subscript> subscripts;
