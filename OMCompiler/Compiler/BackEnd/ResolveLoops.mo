@@ -457,22 +457,22 @@ algorithm
           //print("all tripleLoop-paths after equal structure: \n"+stringDelimitList(List.map(tripleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
         else
           optTripleMapping = NONE();
-	        paths0 = List.sort(paths,List.listIsLonger);  // solve the small loops first
-	        (connectedPaths,loopConnectors) = connect2PathsToLoops(paths0,{},{});
-	        loopConnectors = List.filter1OnTrue(loopConnectors,connectsLoops,simpleLoops);
-	        simpleLoops = listAppend(simpleLoops,loopConnectors) annotation(__OpenModelica_DisableListAppendWarning=true);
+          paths0 = List.sort(paths,List.listIsLonger);  // solve the small loops first
+          (connectedPaths,loopConnectors) = connect2PathsToLoops(paths0,{},{});
+          loopConnectors = List.filter1OnTrue(loopConnectors,connectsLoops,simpleLoops);
+          simpleLoops = listAppend(simpleLoops,loopConnectors) annotation(__OpenModelica_DisableListAppendWarning=true);
 
-	        //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
-	        subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
-	        isNoSingleLoop = listEmpty(subLoop);
-	        simpleLoops = if isNoSingleLoop then simpleLoops else {subLoop};
-	        paths0 = listAppend(simpleLoops,connectedPaths);
-	        paths0 = sortPathsAsChain(paths0);
-	        if findExactlyOneLoop then
-	          if not listEmpty(paths0) then
-	            {_} = paths0;
-	          end if;
-	        end if;
+          //print("all simpleLoop-paths: \n"+stringDelimitList(List.map(simpleLoops,HpcOmTaskGraph.intLstString)," / ")+"\n");
+          subLoop = connectPathsToOneLoop(simpleLoops,{});  // try to build a a closed loop from these paths
+          isNoSingleLoop = listEmpty(subLoop);
+          simpleLoops = if isNoSingleLoop then simpleLoops else {subLoop};
+          paths0 = listAppend(simpleLoops,connectedPaths);
+          paths0 = sortPathsAsChain(paths0);
+          if findExactlyOneLoop then
+            if not listEmpty(paths0) then
+              {_} = paths0;
+            end if;
+          end if;
         end if;
 
         //print("all paths to be resolved: \n"+stringDelimitList(List.map(paths0,HpcOmTaskGraph.intLstString)," / ")+"\n");
