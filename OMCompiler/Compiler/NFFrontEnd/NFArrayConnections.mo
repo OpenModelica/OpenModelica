@@ -371,7 +371,7 @@ protected
       vc := Vector.get(vCount, 1);
       Vector.update(vCount, 1, vc + 1);
 
-      mi := SBMultiInterval.fromList({SBInterval.new(vc, 1, vc)});
+      mi := SBMultiInterval.fromArray(arrayCreate(Vector.size(vCount), SBInterval.new(vc, 1, vc)));
     else
       ints := arrayCreate(listLength(dims), SBInterval.newEmpty());
       new_vc := Vector.copy(vCount);
@@ -546,7 +546,7 @@ protected
     input Vector<Integer> eCount;
   protected
     array<SBInterval> ints1, ints2, mi;
-    Integer mi1_sz, mi2_sz, ints1_i, ints2_i, sz, sz1, sz2;
+    Integer mi1_sz, mi2_sz, sz, sz1, sz2;
     Integer count, aux_ec;
     array<Real> g1, g2, o1, o2;
     Real g1i, g2i, o1i, o2i;
@@ -559,11 +559,9 @@ protected
     SetEdge se;
   algorithm
     ints1 := SBMultiInterval.intervals(mi1);
-    ints1_i := 1;
     mi1_sz := SBMultiInterval.size(mi1);
 
     ints2 := SBMultiInterval.intervals(mi2);
-    ints2_i := 1;
     mi2_sz := SBMultiInterval.size(mi2);
 
     if SBMultiInterval.ndim(mi1) <> SBMultiInterval.ndim(mi2) and
@@ -580,8 +578,8 @@ protected
     new_ec := Vector.new(0);
 
     for i in 1:sz loop
-      sz1 := SBInterval.size(ints1[ints1_i]);
-      sz2 := SBInterval.size(ints2[ints2_i]);
+      sz1 := SBInterval.size(ints1[i]);
+      sz2 := SBInterval.size(ints2[i]);
 
       if sz1 <> sz2 and sz1 <> 1 and sz2 <> 1 then
         Error.assertion(false, getInstanceName() + " got incompatible connect", sourceInfo());
@@ -591,8 +589,8 @@ protected
       aux_ec := Vector.get(eCount, i);
       mi[i] := SBInterval.new(aux_ec, 1, aux_ec + count - 1);
 
-      i1 := ints1[ints1_i];
-      i2 := ints2[ints2_i];
+      i1 := ints1[i];
+      i2 := ints2[i];
 
       if sz1 == 1 then
         g1[i] := 0.0;
@@ -615,14 +613,6 @@ protected
       end if;
 
       Vector.push(new_ec, aux_ec + count);
-
-      if mi1_sz > 1 or mi2_sz == 1 then
-        ints1_i := ints1_i + 1;
-      end if;
-
-      if mi2_sz > 1 or mi1_sz == 1 then
-        ints2_i := ints2_i + 1;
-      end if;
     end for;
 
     Vector.swap(eCount, new_ec);
@@ -716,17 +706,12 @@ protected
     output Expression range;
   protected
     Integer lo = SBInterval.lowerBound(interval);
-    Integer step = SBInterval.stepValue(interval);
     Integer hi = SBInterval.upperBound(interval);
   algorithm
     if lo == hi then
       range := Expression.INTEGER(lo);
     else
-      range := Expression.makeRange(
-        Expression.INTEGER(lo),
-        if step == 1 then NONE() else SOME(Expression.INTEGER(step)),
-        Expression.INTEGER(hi)
-      );
+      range := Expression.makeIntegerRange(lo, SBInterval.stepValue(interval), hi);
     end if;
   end intervalToRange;
 
@@ -1034,11 +1019,8 @@ protected
       elseif i2_sz == 1 and not forFlow then
         outExpl := Expression.INTEGER(SBInterval.lowerBound(i2)) :: outExpl;
       elseif i1_sz == 1 and forFlow then
-        e := Expression.makeRange(
-          Expression.INTEGER(SBInterval.lowerBound(i2)),
-          SOME(Expression.INTEGER(SBInterval.stepValue(i2))),
-          Expression.INTEGER(SBInterval.upperBound(i2))
-        );
+        e := Expression.makeIntegerRange(
+          SBInterval.lowerBound(i2), SBInterval.stepValue(i2), SBInterval.upperBound(i2));
         outExpl := e :: outExpl;
         flowRange := true;
       else

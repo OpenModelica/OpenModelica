@@ -60,7 +60,7 @@ end ArrayConnect2;
 //   end for;
 //   C[1].n.e = S.n.e;
 //   G.p.e = S.n.e;
-//   S.n.f + G.p.f + C[1].n.f + sum(C[2:1:999].n.f) + C[1000].n.f = 0.0;
+//   S.n.f + G.p.f + C[1].n.f + sum(C[2:999].n.f) + C[1000].n.f = 0.0;
 //   for $i1 in 1:999 loop
 //     R[$i1].n.e = R[$i1 + 1].p.e;
 //   end for;
