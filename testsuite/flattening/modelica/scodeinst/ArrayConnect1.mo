@@ -55,7 +55,7 @@ end ArrayConnect1;
 //     C[$i1].n.e = S.n.e;
 //   end for;
 //   G.p.e = S.n.e;
-//   S.n.f + G.p.f + sum(C[1:1:1000].n.f) = 0.0;
+//   S.n.f + G.p.f + sum(C[:].n.f) = 0.0;
 //   for $i1 in 1:999 loop
 //     R[$i1].n.e = R[$i1 + 1].p.e;
 //   end for;

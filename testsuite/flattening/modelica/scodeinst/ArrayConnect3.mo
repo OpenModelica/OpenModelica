@@ -82,20 +82,24 @@ end ArrayConnect3;
 //   for $i1 in 1:1000 loop
 //     cells[$i1,100].r.f + cells[$i1,1].l.f = 0.0;
 //   end for;
+//   S.p.e = cells[1,1].u.e;
+//   for $i2 in 2:100 loop
+//     cells[1,$i2].u.e = cells[1,1].u.e;
+//   end for;
+//   cells[1,1].u.f + sum(cells[1,2:100].u.f) + S.p.f = 0.0;
+//   S.n.e = cells[1000,1].d.e;
+//   for $i2 in 2:100 loop
+//     cells[1000,$i2].d.e = cells[1000,1].d.e;
+//   end for;
+//   cells[1000,1].d.f + sum(cells[1000,2:100].d.f) + S.n.f = 0.0;
 //   for $i2 in 1:99 loop
 //     cells[1000,$i2].r.f = 0.0;
 //   end for;
 //   for $i2 in 2:100 loop
 //     cells[1000,$i2].l.f = 0.0;
 //   end for;
-//   for $i2 in 1:100 loop
-//     cells[1000,$i2].d.f = 0.0;
-//   end for;
 //   for $i1 in 1:999 loop
 //     cells[$i1,100].d.f = 0.0;
-//   end for;
-//   for $i2 in 1:100 loop
-//     cells[1,$i2].u.f = 0.0;
 //   end for;
 //   for $i1 in 2:1000 loop
 //     cells[$i1,100].u.f = 0.0;
