@@ -717,24 +717,24 @@ algorithm
         if b then
           (res, functionTree) := differentiateExp(res, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
         else
-	        (res1, functionTree) := differentiateExp(e1.exp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
-	        // This might not be needed anymore. If it is simplifiable
-	        // Then it would have been simplified above.
-	        if not referenceEq(e1.exp, res1) then
-	          try
-	            (expl, strLst) := match res1
-	              case DAE.RECORD(exps=expl,comp=strLst) then (expl, strLst);
-	              case DAE.CALL(path=p1,expLst=expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=p2), varLst=varLst)))
-	              guard AbsynUtil.pathEqual(p1,p2)
-	              then (expl, list(v.name for v in varLst));
-	            end match;
-	            res := listGet(expl, List.position1OnTrue(strLst, stringEq, e1.fieldName));
-	          else
-	            e1.exp := res1;
-	            (res,_) := ExpressionSimplify.simplify1(e1);
-	          end try;
-	        end if;
-	      end if;
+          (res1, functionTree) := differentiateExp(e1.exp, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter-1);
+          // This might not be needed anymore. If it is simplifiable
+          // Then it would have been simplified above.
+          if not referenceEq(e1.exp, res1) then
+            try
+              (expl, strLst) := match res1
+                case DAE.RECORD(exps=expl,comp=strLst) then (expl, strLst);
+                case DAE.CALL(path=p1,expLst=expl,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=p2), varLst=varLst)))
+                guard AbsynUtil.pathEqual(p1,p2)
+                then (expl, list(v.name for v in varLst));
+              end match;
+              res := listGet(expl, List.position1OnTrue(strLst, stringEq, e1.fieldName));
+            else
+              e1.exp := res1;
+              (res,_) := ExpressionSimplify.simplify1(e1);
+            end try;
+          end if;
+        end if;
       then (res, functionTree);
 
     // differentiate tuple

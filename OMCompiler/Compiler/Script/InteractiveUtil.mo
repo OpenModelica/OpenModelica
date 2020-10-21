@@ -12022,17 +12022,17 @@ algorithm
     case Absyn.IDENT("String") then inPath;
     else
       algorithm
-			  try
-			    if Flags.isSet(Flags.NF_API) then
-			      (_, outPath) := Interactive.mkFullyQual(inEnv, inPath);
-			    else
-			      outPath := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), inPath);
-			    end if;
-			  else
-			    outPath := inPath;
-			  end try;
-			then
-			  outPath;
+        try
+          if Flags.isSet(Flags.NF_API) then
+            (_, outPath) := Interactive.mkFullyQual(inEnv, inPath);
+          else
+            outPath := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), inPath);
+          end if;
+        else
+          outPath := inPath;
+        end try;
+      then
+        outPath;
   end match;
 end qualifyPath;
 
