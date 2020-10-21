@@ -3272,17 +3272,17 @@ algorithm
                              Expression.EMPTY(bindingType), true);
 
     if not Config.getGraphicsExpMode() then // forget errors when handling annotations
-	    if isValidAssignmentMatch(mk) then
-	      Error.addMultiSourceMessage(Error.VARIABLE_BINDING_DIMS_MISMATCH,
-	        {name, Binding.toString(binding),
-	         Dimension.toStringList(Type.arrayDims(componentType)),
-	         Dimension.toStringList(Type.arrayDims(bindingType))},
-	        {binding_info, comp_info});
-	    else
-	      Error.addMultiSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
-	        {name, Binding.toString(binding), Type.toString(componentType),
-	         Type.toString(bindingType)}, {binding_info, comp_info});
-	    end if;
+      if isValidAssignmentMatch(mk) then
+        Error.addMultiSourceMessage(Error.VARIABLE_BINDING_DIMS_MISMATCH,
+          {name, Binding.toString(binding),
+           Dimension.toStringList(Type.arrayDims(componentType)),
+           Dimension.toStringList(Type.arrayDims(bindingType))},
+          {binding_info, comp_info});
+      else
+        Error.addMultiSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH,
+          {name, Binding.toString(binding), Type.toString(componentType),
+           Type.toString(bindingType)}, {binding_info, comp_info});
+      end if;
     end if;
   end if;
 end printBindingTypeError;

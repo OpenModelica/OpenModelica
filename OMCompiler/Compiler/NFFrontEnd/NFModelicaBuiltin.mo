@@ -520,15 +520,15 @@ function sample = $overload(OMC_NO_CLOCK.sample, OMC_CLOCK.sample)
 </html>"));
 
 package OMC_NO_CLOCK
-	impure function sample "Overloaded operator to either trigger time events or to convert between continuous-time and clocked-time representation"
-	  parameter input Real start;
-	  parameter input Real interval;
-	  output Boolean b;
-	  external "builtin";
-	  annotation(Documentation(info="<html>
-	  See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
-	</html>"));
-	end sample;
+  impure function sample "Overloaded operator to either trigger time events or to convert between continuous-time and clocked-time representation"
+    parameter input Real start;
+    parameter input Real interval;
+    output Boolean b;
+    external "builtin";
+    annotation(Documentation(info="<html>
+    See <a href=\"modelica://ModelicaReference.Operators.'sample()'\">sample()</a>
+  </html>"));
+  end sample;
 end OMC_NO_CLOCK;
 
 package OMC_CLOCK
