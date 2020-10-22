@@ -45,7 +45,7 @@
 
 #include "errorext.h"
 #include "systemimpl.h"
-#include "omc_file.h"
+#include "util/omc_file.h"
 
 pthread_once_t parser_once_create_key = PTHREAD_ONCE_INIT;
 pthread_key_t modelicaParserKey;

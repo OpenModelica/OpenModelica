@@ -29,7 +29,7 @@
  */
 
 #include <stdio.h>
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 static void errmsg() {
   fputs("CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.", stderr);
