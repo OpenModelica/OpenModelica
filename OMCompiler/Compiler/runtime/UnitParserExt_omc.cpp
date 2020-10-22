@@ -5,7 +5,7 @@
 extern "C"
 {
 
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "ModelicaUtilities.h"
 #include "systemimpl.h"
 #include "errorext.h"

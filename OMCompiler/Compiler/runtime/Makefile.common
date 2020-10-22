@@ -50,7 +50,7 @@ ifeq ($(BOOTSTRAPPING),1)
 ifeq ($(wildcard $(OMC)),)
 OBJEXT=.boot.o
 BOOTH=../boot/tarball-include/OpenModelicaBootstrappingHeader.h
-CPPFLAGS += -I../boot/tarball-include
+CPPFLAGS += -DOMC_BOOTSTRAPPING -I../boot/tarball-include
 install_bootstrapping: libomcruntime-boot$(SHREXT) libomcgraphstream.a libomcbackendruntime.a
 else
 install_bootstrapping:
