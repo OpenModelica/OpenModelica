@@ -662,7 +662,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("simplifyAllExpressions", Gettext.notrans("Does simplifications on all expressions.")),
     ("simplifyIfEquations", Gettext.gettext("Tries to simplify if equations by use of information from evaluated parameters.")),
     ("sortEqnsVars", Gettext.notrans("Heuristic sorting for equations and variables.")),
-    ("unitChecking", Gettext.gettext("Does advanced unit checking which consists of two parts: 1. calculation of unspecified unit information for variables; 2. consistency check for all equations based on unit information. Please note: This module is still experimental.")),
+    ("unitChecking", Gettext.gettext("This module is no longer available and its use is deprecated. Use --unitChecking instead.")),
     ("wrapFunctionCalls", Gettext.gettext("This module introduces variables for each function call and substitutes all these calls with the newly introduced variables."))
     })),
   Gettext.gettext("Sets the pre optimization modules to use in the back end. See --help=optmodules for more info."));

@@ -424,8 +424,6 @@ end saveFlags;
 
 protected function createConfigFlags
   output array<Flags.FlagData> configFlags;
-protected
-  Integer count, index = 0;
 algorithm
   configFlags := listArray(list(flag.defaultValue for flag in allConfigFlags));
 end createConfigFlags;
@@ -441,9 +439,6 @@ public function loadFlags
    hasn't been created yet."
   input Boolean initialize = true;
   output Flags.Flag flags;
-protected
-  array<Boolean> debug_flags;
-  array<Flags.FlagData> config_flags;
 algorithm
   try
     flags := Flags.getFlags();
@@ -539,7 +534,6 @@ public function set
 protected
   array<Boolean> debug_flags;
   array<Flags.FlagData> config_flags;
-  Flags.Flag flags;
 algorithm
   Flags.FLAGS(debug_flags, config_flags) := loadFlags();
   (debug_flags, outOldValue) := updateDebugFlagArray(debug_flags, inValue, inFlag);
@@ -611,8 +605,8 @@ end updateConfigFlagArray;
 
 public function readArgs
   "Reads the command line arguments to the compiler and sets the flags
-  accordingly. Returns a list of arguments that were not consumed, such as the
-  model filename."
+   accordingly. Returns a list of arguments that were not consumed, such as the
+   model filename."
   input list<String> inArgs;
   output list<String> outArgs = {};
 protected
@@ -638,20 +632,23 @@ algorithm
   end while;
 
   outArgs := List.append_reverse(outArgs, rest_args);
-  _ := List.map2(outArgs,System.iconv,"UTF-8","UTF-8");
+  _ := List.map2(outArgs, System.iconv, "UTF-8", "UTF-8");
   Error.assertionOrAddSourceMessage(numError == Error.getNumErrorMessages(), Error.UTF8_COMMAND_LINE_ARGS, {}, Util.dummyInfo);
   saveFlags(flags);
+
+  // after reading all flags, handle the deprecated ones
+  handleDeprecatedFlags();
 end readArgs;
 
 protected function readArg
-  "Reads a single command line argument. Returns true if the argument was not
+  "Reads a single command line argument. Returns true if the argument was
   consumed, otherwise false."
   input String inArg;
   input Flags.Flag inFlags;
   output Boolean outConsumed;
 protected
   String flagtype;
-  Integer len, pos;
+  Integer len;
 algorithm
   flagtype := stringGetStringChar(inArg, 1);
   len := stringLength(inArg);
@@ -1089,6 +1086,70 @@ algorithm
   Flags.CONFIG_FLAG(index = index2) := inFlag2;
   outEqualIndex := intEq(index1, index2);
 end configFlagsIsEqualIndex;
+
+protected function handleDeprecatedFlags
+  "Gives warnings when deprecated flags are used. Sets newer flags if
+   appropriate."
+protected
+  list<String> remaining_flags;
+algorithm
+  // At some point in the future remove all these flags and do the checks in
+  // parseConfigFlag or something like that...
+
+  // DEBUG FLAGS
+  if Flags.isSet(Flags.NF_UNITCHECK) then
+    disableDebug(Flags.NF_UNITCHECK);
+    setConfigBool(Flags.UNIT_CHECKING, true);
+    Error.addMessage(Error.DEPRECATED_FLAG, {"-d=frontEndUnitCheck", "--unitChecking"});
+  end if;
+  if Flags.isSet(Flags.OLD_FE_UNITCHECK) then
+    disableDebug(Flags.OLD_FE_UNITCHECK);
+    setConfigBool(Flags.UNIT_CHECKING, true);
+    Error.addMessage(Error.DEPRECATED_FLAG, {"-d=oldFrontEndUnitCheck", "--unitChecking"});
+  end if;
+  if Flags.isSet(Flags.INTERACTIVE_TCP) then
+    disableDebug(Flags.INTERACTIVE_TCP);
+    setConfigString(Flags.INTERACTIVE, "tcp");
+    Error.addMessage(Error.DEPRECATED_FLAG, {"-d=interactive", "--interactive=tcp"});
+    // The error message might get lost, so also print it directly here.
+    print("The flag -d=interactive is depreciated. Please use --interactive=tcp instead.\n");
+  end if;
+  if Flags.isSet(Flags.INTERACTIVE_CORBA) then
+    disableDebug(Flags.INTERACTIVE_CORBA);
+    setConfigString(Flags.INTERACTIVE, "corba");
+    Error.addMessage(Error.DEPRECATED_FLAG, {"-d=interactiveCorba", "--interactive=corba"});
+    // The error message might get lost, so also print it directly here.
+    print("The flag -d=interactiveCorba is depreciated. Please use --interactive=corba instead.\n");
+  end if;
+  // add other deprecated flags here...
+
+  // CONFIG_FLAGS
+  remaining_flags := {};
+  for flag in Flags.getConfigStringList(Flags.PRE_OPT_MODULES) loop
+    if flag == "unitChecking" then
+      setConfigBool(Flags.UNIT_CHECKING, true);
+      Error.addMessage(Error.DEPRECATED_FLAG, {"--preOptModules=unitChecking", "--unitChecking"});
+    //elseif flag ==
+    // add other deprecated flags here...
+    else
+      remaining_flags := flag :: remaining_flags;
+    end if;
+  end for;
+  setConfigStringList(Flags.PRE_OPT_MODULES, listReverse(remaining_flags));
+  remaining_flags := {};
+  for flag in Flags.getConfigStringList(Flags.PRE_OPT_MODULES_ADD) loop
+    if flag == "unitChecking" then
+      setConfigBool(Flags.UNIT_CHECKING, true);
+      Error.addMessage(Error.DEPRECATED_FLAG, {"--preOptModules+=unitChecking", "--unitChecking"});
+    //elseif flag ==
+    // add other deprecated flags here...
+    else
+      remaining_flags := flag :: remaining_flags;
+    end if;
+  end for;
+  setConfigStringList(Flags.PRE_OPT_MODULES_ADD, listReverse(remaining_flags));
+  // add other deprecated flags here...
+end handleDeprecatedFlags;
 
 protected function applySideEffects
   "Some flags have side effects, which are handled by this function."

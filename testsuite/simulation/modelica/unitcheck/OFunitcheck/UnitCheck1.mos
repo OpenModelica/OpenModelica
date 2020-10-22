@@ -37,7 +37,7 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.UnitCheck1); getErrorString();
 
 // Result:
@@ -60,7 +60,12 @@ instantiateModel(unitCheckTests.UnitCheck1); getErrorString();
 // {I,{1.0 * m^(1) * s^(-1)}}
 // {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
-// "function unitCheckTests.UnitCheck1.f1
+// "function unitCheckTests.UnitCheck1.f
+//   input Real V(unit = \"m/s\");
+//   output Boolean b = V >= 10.0;
+// end unitCheckTests.UnitCheck1.f;
+//
+// function unitCheckTests.UnitCheck1.f1
 //   input Real V(unit = \"m/s\");
 //   output Real O(unit = \"m\");
 // end unitCheckTests.UnitCheck1.f1;
@@ -88,15 +93,15 @@ instantiateModel(unitCheckTests.UnitCheck1); getErrorString();
 //   der(V) = A;
 // end unitCheckTests.UnitCheck1;
 // "
-// "[<interactive>:12:5-12:54:writable] Warning: The following equation is INCONSISTENT due to specified unit information: S = if time > 0.5 then V else X2
+// "[<interactive>:12:5-12:54:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  S = if time > 0.5 then V else X2;
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"V\" has unit \"m/s\"
 // - sub-expression \"X2\" has unit \"m\"
-// [<interactive>:28:5-28:10:writable] Warning: The following equation is INCONSISTENT due to specified unit information: H = G
+// [<interactive>:28:5-28:10:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  H = G;
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"G\" has unit \"m/s\"
 // - sub-expression \"H\" has unit \"m\"
-// [<interactive>:30:5-30:14:writable] Warning: The following equation is INCONSISTENT due to specified unit information: V = S + C
+// [<interactive>:30:5-30:14:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  V = S + C;
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"S\" has unit \"m\"
 // - sub-expression \"C\" has unit \"m/s\"

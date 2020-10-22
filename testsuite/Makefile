@@ -397,12 +397,9 @@ simulationqss.log: omc-diff
 	$(MAKE) -C simulation/modelica/qss -f Makefile test > $@
 	@echo $@ done
 frontEndUnitCheck.log: omc-diff
-	$(MAKE) -C simulation/modelica/Funitcheck -f Makefile test > $@
+	$(MAKE) -C simulation/modelica/unitcheck/OFunitcheck -f Makefile test > $@
 	@echo $@ done
 newFrontEndUnitCheck.log: omc-diff
-	$(MAKE) -C simulation/modelica/NFunitcheck -f Makefile test > $@
-	@echo $@ done
-simulationunitcheck.log: omc-diff
 	$(MAKE) -C simulation/modelica/unitcheck -f Makefile test > $@
 	@echo $@ done
 simulationtearing.log: omc-diff
@@ -690,7 +687,6 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/inheritances -f Makefile clean
 	$(MAKE) -C simulation/modelica/initialization -f Makefile clean
 	$(MAKE) -C simulation/modelica/qss -f Makefile clean
-	$(MAKE) -C simulation/modelica/unitcheck -f Makefile clean
 	$(MAKE) -C simulation/modelica/tearing -f Makefile clean
 	$(MAKE) -C simulation/modelica/japaneselanguage -f Makefile clean
 	$(MAKE) -C simulation/modelica/linear_system -f Makefile clean
@@ -700,8 +696,8 @@ clean_g_2 :
 	$(MAKE) -C simulation/modelica/packages -f Makefile clean
 	$(MAKE) -C simulation/modelica/records -f Makefile clean
 	$(MAKE) -C simulation/modelica/types -f Makefile clean
-	$(MAKE) -C simulation/modelica/Funitcheck -f Makefile clean
-	$(MAKE) -C simulation/modelica/NFunitcheck -f Makefile clean
+	$(MAKE) -C simulation/modelica/unitcheck -f Makefile clean
+	$(MAKE) -C simulation/modelica/unitcheck/OFunitcheck -f Makefile clean
 
 clean_g_3 :
 	if [ -d "flattening/libraries/msl22/" ]; then \

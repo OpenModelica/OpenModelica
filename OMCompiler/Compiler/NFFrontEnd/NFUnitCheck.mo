@@ -98,7 +98,7 @@ protected
   HashTableUnitToString.HashTable htU2S;
   FunctionUnitCache.Cache fn_cache;
 algorithm
-  if not (Flags.isSet(Flags.NF_UNITCHECK) or Flags.getConfigBool(Flags.CHECK_MODEL)) then
+  if not (Flags.getConfigBool(Flags.UNIT_CHECKING) or Flags.getConfigBool(Flags.CHECK_MODEL)) then
     return;
   end if;
 
@@ -1063,7 +1063,7 @@ algorithm
     if b then
       icu := {};
     else
-      temp := makeNewCref(unit, fnName);
+      temp := makeNewCref(var, fnName);
       icu := {{(arg, op_unit), (temp, op_unit2)}};
     end if;
 

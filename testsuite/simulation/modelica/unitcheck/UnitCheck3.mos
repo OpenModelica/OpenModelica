@@ -16,24 +16,28 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
-translateModel(unitCheckTests.UnitCheck3); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+instantiateModel(unitCheckTests.UnitCheck3); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// #####################################
 // HashTable:
-// {A,{1.0 * m^(1) * s^(-2)}}
-// {V,{1.0 * m^(1) * s^(-1)}}
 // {S,{1.0 * m^(1)}}
-// HashTable:
-// {A,{1.0 * m^(1) * s^(-2)}}
 // {V,{1.0 * m^(1) * s^(-1)}}
-// {S,{1.0 * m^(1)}}
+// {A,{1.0 * m^(1) * s^(-2)}}
 // ######## UnitCheck COMPLETED ########
-// true
+// "class unitCheckTests.UnitCheck3
+//   Real S(unit = \"m\");
+//   Real V(unit = \"m/s\");
+//   Real A(unit = \"m/s2\");
+// equation
+//   der(V) = A;
+//   S = 5.0;
+//   V = der(S);
+// end unitCheckTests.UnitCheck3;
+// "
 // ""
 // endResult
