@@ -34,8 +34,6 @@
 #include "generic_array.h"
 #include "omc_error.h"
 
-#pragma GCC diagnostic error "-Werror"
-
 static void* generic_ptrget(const base_array_t *a, size_t sze, size_t i) {
   return ((char*)a->data) + (i*sze);
 }
