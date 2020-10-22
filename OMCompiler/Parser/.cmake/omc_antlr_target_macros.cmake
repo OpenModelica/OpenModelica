@@ -1,4 +1,4 @@
-macro(ADD_ANTLR_GRAMMAR_TARGET input_file output_dir)
+macro(omc_add_antlr_grammar_target input_file output_dir)
 
   get_filename_component(file_name_no_ext ${input_file} NAME_WE)
   set(output_file_path_no_ext ${output_dir}/${file_name_no_ext}Parser)
@@ -26,10 +26,10 @@ macro(ADD_ANTLR_GRAMMAR_TARGET input_file output_dir)
 
   message(STATUS "added antrl target ${output_file_path_no_ext}")
 
-endmacro(ADD_ANTLR_GRAMMAR_TARGET)
+endmacro(omc_add_antlr_grammar_target)
 
 
-macro(ADD_ANTLR_BASE_LEXER_TARGET input_file output_dir)
+macro(omc_add_antlr_base_lexer_target input_file output_dir)
 
   get_filename_component(file_name_no_ext ${input_file} NAME_WE)
   set(output_file_path_no_ext ${output_dir}/${file_name_no_ext})
@@ -64,4 +64,4 @@ macro(ADD_ANTLR_BASE_LEXER_TARGET input_file output_dir)
   # set(ANTLR_BASE_LEXER_${file_name_no_ext}_OUTPUTS ${output_file_path_no_ext}.c ${output_file_base_path_no_ext}.c)
 
   message(STATUS "added antrl (BaseModelica_Lexer dependent) target ${output_file_path_no_ext}")
-endmacro(ADD_ANTLR_BASE_LEXER_TARGET)
+endmacro(omc_add_antlr_base_lexer_target)
