@@ -31,7 +31,7 @@ endif(WIN32)
 
 target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
 
-target_include_directories(OpenModelicaRuntimeC INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(OpenModelicaRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 
