@@ -298,8 +298,8 @@ private:
   bool isClassDroppedOnItself(LibraryTreeItem *pLibraryTreeItem);
   bool isAnyItemSelectedAndEditable(int key);
   bool isCreatingShape();
-  Element* getComponentFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
-  Element* componentAtPosition(QPoint position);
+  Element* getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem);
+  Element* elementAtPosition(QPoint position);
   Element* connectorComponentAtPosition(QPoint position);
   Element* stateComponentAtPosition(QPoint position);
   static bool updateComponentConnectorSizingParameter(GraphicsView *pGraphicsView, QString className, Element *pComponent);
