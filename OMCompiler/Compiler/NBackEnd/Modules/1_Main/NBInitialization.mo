@@ -56,23 +56,21 @@ protected
 public
   function main extends Module.wrapper;
   protected
-    BVariable.VariablePointers variables;
-    BVariable.VariablePointers initialVars;
-    BVariable.VariablePointers states;
-    BVariable.VariablePointers parameters;
-    BEquation.EquationPointers equations;
-    BEquation.EquationPointers initialEqs;
+    BVariable.VariablePointers variables, initialVars;
+    BEquation.EquationPointers equations, initialEqs;
   algorithm
     try
       bdae := match bdae
         local
           BVariable.VarData varData;
           BEquation.EqData eqData;
-        case BackendDAE.MAIN( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, initials = initialVars, states = states, parameters = parameters),
+        case BackendDAE.MAIN( varData = varData as BVariable.VAR_DATA_SIM(variables = variables, initials = initialVars),
                               eqData = eqData as BEquation.EQ_DATA_SIM(equations = equations, initials = initialEqs))
           algorithm
-            (variables, equations, initialEqs) := createStartEquations(states, variables, equations, initialEqs, eqData.uniqueIndex);
-            (equations, initialEqs, initialVars) := createParameterEquations(parameters, equations, initialEqs, initialVars, eqData.uniqueIndex);
+            (variables, equations, initialEqs) := createStartEquations(varData.states, variables, equations, initialEqs, eqData.uniqueIndex);
+            (variables, equations, initialEqs) := createStartEquations(varData.discretes, variables, equations, initialEqs, eqData.uniqueIndex);
+            (equations, initialEqs) := createPreEquations(varData.previous, equations, initialEqs, eqData.uniqueIndex);
+            (equations, initialEqs, initialVars) := createParameterEquations(varData.parameters, equations, initialEqs, initialVars, eqData.uniqueIndex);
 
             varData.variables := variables;
             varData.initials := initialVars;
@@ -89,9 +87,9 @@ public
       end match;
 
       // Modules
-      bdae := Partitioning.main(bdae, NBSystem.SystemType.INIT);
-      bdae := Causalize.main(bdae, NBSystem.SystemType.INIT);
-      bdae := Tearing.main(bdae, NBSystem.SystemType.INIT);
+      bdae := Partitioning.main(bdae, NBSystem.SystemType.INI);
+      bdae := Causalize.main(bdae, NBSystem.SystemType.INI);
+      bdae := Tearing.main(bdae, NBSystem.SystemType.INI);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;
@@ -113,7 +111,7 @@ protected
     list<Pointer<Variable>> start_vars;
     list<Pointer<BEquation.Equation>> start_eqs;
   algorithm
-    _ := BVariable.VariablePointers.map(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_eqs = ptr_start_eqs, idx = idx));
+    _ := BVariable.VariablePointers.mapPtr(states, function createStartEquation(ptr_start_vars = ptr_start_vars, ptr_start_eqs = ptr_start_eqs, idx = idx));
     start_vars := Pointer.access(ptr_start_vars);
     start_eqs := Pointer.access(ptr_start_eqs);
 
@@ -123,19 +121,20 @@ protected
   end createStartEquations;
 
   function createStartEquation
-    input output Variable state;
+    input Pointer<Variable> state;
     input Pointer<list<Pointer<Variable>>> ptr_start_vars;
     input Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqs;
     input Pointer<Integer> idx;
   algorithm
-    _ := match state
+    _ := match Pointer.access(state)
       local
         ComponentRef name, start_name;
         Pointer<Variable> start_var;
         Pointer<BEquation.Equation> start_eq;
         Option<Expression> start;
-      case Variable.VARIABLE(name = name, backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)), start = start)))
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(attributes = BackendExtension.VAR_ATTR_REAL(fixed = SOME(Expression.BOOLEAN(value = true)), start = start)))
         algorithm
+          name := BVariable.getVarName(state);
           (start_name, start_var) := BVariable.makeStartVar(name);
           start_eq := BEquation.Equation.makeStartEq(name, start_name, idx);
           Pointer.update(ptr_start_vars, start_var :: Pointer.access(ptr_start_vars));
@@ -144,6 +143,42 @@ protected
       else ();
     end match;
   end createStartEquation;
+
+  function createPreEquations
+    "Creates start equations from fixed start values.
+     kabdelhak: currently does not check for consistency!"
+    // ToDo: create Module wrapper for this.
+    input BVariable.VariablePointers previous;
+    input output BEquation.EquationPointers equations;
+    input output BEquation.EquationPointers initialEqs;
+    input Pointer<Integer> idx;
+  protected
+    Pointer<list<Pointer<BEquation.Equation>>> ptr_pre_eqs = Pointer.create({});
+    list<Pointer<BEquation.Equation>> pre_eqs;
+  algorithm
+    _ := BVariable.VariablePointers.mapPtr(previous, function createPreEquation(ptr_pre_eqs = ptr_pre_eqs, idx = idx));
+    pre_eqs := Pointer.access(ptr_pre_eqs);
+    equations := BEquation.EquationPointers.addList(pre_eqs, equations);
+    initialEqs := BEquation.EquationPointers.addList(pre_eqs, initialEqs);
+  end createPreEquations;
+
+  function createPreEquation
+    input Pointer<Variable> preVar;
+    input Pointer<list<Pointer<BEquation.Equation>>> ptr_pre_eqs;
+    input Pointer<Integer> idx;
+  algorithm
+    _ := match Pointer.access(preVar)
+      local
+        Pointer<Variable> disc_var;
+        Pointer<BEquation.Equation> pre_eq;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.VariableKind.PREVIOUS(disc = disc_var)))
+        algorithm
+          pre_eq := BEquation.Equation.makePreEq(BVariable.getVarName(preVar), BVariable.getVarName(disc_var), idx);
+          Pointer.update(ptr_pre_eqs, pre_eq :: Pointer.access(ptr_pre_eqs));
+      then ();
+      else ();
+    end match;
+  end createPreEquation;
 
   function createParameterEquations
     input BVariable.VariablePointers parameters;

@@ -88,7 +88,7 @@ public
           bdae.eqData := eqData;
       then bdae;
 
-      case (System.SystemType.INIT, BackendDAE.MAIN(init = systems, varData = varData, eqData = eqData, funcTree = funcTree))
+      case (System.SystemType.INI, BackendDAE.MAIN(init = systems, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
           for system in systems loop
             (new_system, varData, eqData, funcTree) := causalizeScalar(system, varData, eqData, funcTree);

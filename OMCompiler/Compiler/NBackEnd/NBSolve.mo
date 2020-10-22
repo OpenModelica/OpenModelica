@@ -50,46 +50,106 @@ public
   import NBEquation.Equation;
   import Replacements = NBReplacements;
 
+  type Status = enumeration(UNPROCESSED, EXPLICIT, IMPLICIT);
+
   function solve
     input output Equation eqn;
     input ComponentRef cref;
     input output FunctionTree funcTree;
-    output Boolean solved;
+    output Status status;
+    output Boolean invertRelation     "If the equation represents a relation, this tells if the sign should be inverted";
   protected
     Expression residual, derivative;
     Differentiate.DifferentiationArguments diffArgs;
     Operator divOp, uminOp;
     Type ty;
   algorithm
-    residual := Equation.getResidualExp(eqn);
-    diffArgs := Differentiate.DIFFERENTIATION_ARGUMENTS(
-      diffCref        = cref,
-      new_vars        = {},
-      jacobianHT      = NONE(),
-      diffType        = NBDifferentiate.DifferentiationType.SIMPLE,
-      funcTree        = funcTree,
-      diffedFunctions = AvlSetPath.new()
-    );
-    (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
-    derivative := SimplifyExp.simplify(derivative);
+    (eqn, status, invertRelation) := solveSimple(eqn, cref);
+    // if the equation does not have a simple structure try to solve with other strategies
+    if status == Status.UNPROCESSED then
+      residual := Equation.getResidualExp(eqn);
+      diffArgs := Differentiate.DIFFERENTIATION_ARGUMENTS(
+        diffCref        = cref,
+        new_vars        = {},
+        jacobianHT      = NONE(),
+        diffType        = NBDifferentiate.DifferentiationType.SIMPLE,
+        funcTree        = funcTree,
+        diffedFunctions = AvlSetPath.new()
+      );
+      (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
+      derivative := SimplifyExp.simplify(derivative);
 
-    // If cref is only in lhs
-
-    if not Expression.containsCref(derivative, cref) then
-      // If eqn is linear in cref:
-      (eqn, funcTree) := solveLinear(eqn, residual, derivative, diffArgs, cref, funcTree);
-      solved := true;
-    else
-      // If eqn is non-linear in cref
-      if Flags.isSet(Flags.FAILTRACE) then
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to solve Cref: "
-          + ComponentRef.toString(cref) + " in equation:\n" + Equation.toString(eqn)});
+      if not Expression.containsCref(derivative, cref) then
+        // If eqn is linear in cref:
+        (eqn, funcTree) := solveLinear(eqn, residual, derivative, diffArgs, cref, funcTree);
+        // If the derivative is negative, invert possible inequality sign
+        invertRelation := Expression.isNegative(derivative);
+        status := Status.EXPLICIT;
+      else
+        // If eqn is non-linear in cref
+        if Flags.isSet(Flags.FAILTRACE) then
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to solve Cref: "
+            + ComponentRef.toString(cref) + " in equation:\n" + Equation.toString(eqn)});
+        end if;
+        invertRelation := false;
+        status := Status.IMPLICIT;
       end if;
-      solved := false;
     end if;
+    eqn := Equation.simplify(eqn, getInstanceName());
   end solve;
 
 protected
+  function solveSimple
+    input output Equation eqn;
+    input ComponentRef cref;
+    output Status status;
+    output Boolean invertRelation;
+  algorithm
+    (eqn, status, invertRelation) := match eqn
+      local
+        ComponentRef lhs, rhs;
+
+      case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = lhs))
+        guard(ComponentRef.isEqual(cref, lhs) and not Expression.containsCref(eqn.rhs, cref))
+      then (eqn, Status.EXPLICIT, false);
+
+      case Equation.SCALAR_EQUATION(rhs = Expression.CREF(cref = rhs))
+        guard(ComponentRef.isEqual(cref, rhs) and not Expression.containsCref(eqn.lhs, cref))
+      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
+
+      case Equation.ARRAY_EQUATION(lhs = Expression.CREF(cref = lhs))
+        guard(ComponentRef.isEqual(cref, lhs) and not Expression.containsCref(eqn.rhs, cref))
+      then (eqn, Status.EXPLICIT, false);
+
+      case Equation.ARRAY_EQUATION(rhs = Expression.CREF(cref = rhs))
+        guard(ComponentRef.isEqual(cref, rhs) and not Expression.containsCref(eqn.lhs, cref))
+      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
+
+      // we do not check for x = x because that is nonsensical
+      case Equation.SIMPLE_EQUATION()
+        guard(ComponentRef.isEqual(cref, eqn.lhs))
+      then (eqn, Status.EXPLICIT, false);
+
+      case Equation.SIMPLE_EQUATION()
+        guard(ComponentRef.isEqual(cref, eqn.rhs))
+      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
+
+      case Equation.RECORD_EQUATION(lhs = Expression.CREF(cref = lhs))
+        guard(ComponentRef.isEqual(cref, lhs) and not Expression.containsCref(eqn.rhs, cref))
+      then (eqn, Status.EXPLICIT, false);
+
+      case Equation.RECORD_EQUATION(rhs = Expression.CREF(cref = rhs))
+        guard(ComponentRef.isEqual(cref, rhs) and not Expression.containsCref(eqn.lhs, cref))
+      then (Equation.swapLHSandRHS(eqn), Status.EXPLICIT, true);
+
+      case Equation.WHEN_EQUATION() then (eqn, Status.EXPLICIT, false); // ToDo: need to check if implicit
+
+      // ToDo: more cases
+
+      else (eqn, Status.UNPROCESSED, false);
+    end match;
+  end solveSimple;
+
   function solveLinear
     "author: kabdelhak, phannebohm
     solves a linear equation with one newton step
@@ -114,7 +174,6 @@ protected
     // Set eqn: cref = - f/f'
     eqn := Equation.setLHS(eqn, crefExp);
     eqn := Equation.setRHS(eqn, Expression.UNARY(uminOp, Expression.MULTARY({numerator},{derivative}, mulOp)));
-    eqn := Equation.simplify(eqn, getInstanceName());
   end solveLinear;
 
   annotation(__OpenModelica_Interface="backend");

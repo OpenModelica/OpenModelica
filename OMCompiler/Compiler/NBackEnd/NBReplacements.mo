@@ -48,7 +48,7 @@ protected
   import Binding = NFBinding;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import FunctionTreeImpl = NFFlatten.FunctionTreeImpl;
+  import NFFlatten.FunctionTreeImpl;
   import HashSet = NFHashSet;
   import HashTableCrToExp = NFHashTableCrToExp;
   import HashTableCrToLst = NFHashTable3;
@@ -109,17 +109,17 @@ public
       local
         ComponentRef varName;
         Equation solvedEq;
-        Boolean solved;
+        Solve.Status status;
         Expression replace_exp;
 
       case StrongComponent.SINGLE_EQUATION() algorithm
         // solve the equation for the variable
         varName := BVariable.getVarName(comp.var);
-        (solvedEq, _, solved) := Solve.solve(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
-        if solved then
+        (solvedEq, _, status, _) := Solve.solve(Pointer.access(comp.eqn), varName, FunctionTreeImpl.EMPTY());
+        if status == NBSolve.Status.EXPLICIT then
           // apply all previous replacements on the RHS
           replace_exp := Equation.getRHS(solvedEq);
-          replace_exp := applySimpleExp(replace_exp, replacements);
+          replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           // add the new replacement rule
           replacements := BaseHashTable.add((varName, replace_exp), replacements);
         else

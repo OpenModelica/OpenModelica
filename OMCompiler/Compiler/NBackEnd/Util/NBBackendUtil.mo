@@ -68,6 +68,22 @@ public
     gt := if i1 > i2 then true else false;
   end indexTplGt;
 
+  function compareCombine
+    "combines two integer values for tree management.
+    Only returns 0 if both are 0"
+    input Integer i1;
+    input Integer i2;
+    output Integer comp;
+  algorithm
+    if i1 == 0 and i2 == 0 then
+      comp := 0;
+    elseif i1 == -i2 then
+      comp := i1 + 2*i2;
+    else
+      comp := i1 + i2;
+    end if;
+  end compareCombine;
+
   function noNameHashEq
     input BEquation.Equation eq;
     input Integer mod;
@@ -140,6 +156,7 @@ public
           case (NFOperator.MathClassification.DIVISION, _)        then realInt(hash1 / hash2);
           case (NFOperator.MathClassification.POWER, _)           then realInt(hash1 ^ hash2);
           case (NFOperator.MathClassification.LOGICAL, _)         then -(hash1 + hash2);
+          case (NFOperator.MathClassification.RELATION, _)        then hash2 - hash1;
           else hash2 - hash1;
         end match;
       then hash;
@@ -189,6 +206,25 @@ public
     end match;
     hash := intMod(intAbs(hash), mod);
   end noNameHashExp;
+
+  function isOnlyTimeDependent
+    input Expression exp;
+    output Boolean b;
+  algorithm
+    b := Expression.fold(exp, isOnlyTimeDependentFold, true);
+  end isOnlyTimeDependent;
+
+    function isOnlyTimeDependentFold
+      input Expression exp;
+      input output Boolean b;
+    algorithm
+      if b then
+        b := match exp
+          case Expression.CREF() then ComponentRef.isTime(exp.cref);
+          else true;
+        end match;
+      end if;
+    end isOnlyTimeDependentFold;
 
   annotation(__OpenModelica_Interface="backend");
 end NBBackendUtil;

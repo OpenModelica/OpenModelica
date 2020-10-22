@@ -57,6 +57,8 @@ protected
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.Equation;
+  import NBEquation.EquationAttributes;
+  import NBEquation.EquationKind;
   import NBEquation.EquationPointers;
   import BVariable = NBVariable;
   import Jacobian = NBJacobian;
@@ -87,7 +89,7 @@ public
       Integer index;
       Expression exp;
       DAE.ElementSource source;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end RESIDUAL;
 
     record ARRAY_RESIDUAL
@@ -97,7 +99,7 @@ public
       Integer index;
       Expression exp;
       DAE.ElementSource source;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end ARRAY_RESIDUAL;
 
     record SIMPLE_ASSIGN
@@ -110,7 +112,7 @@ public
       DAE.ElementSource source;
       // ToDo: this needs to be added for tearing later on
       //Option<BackendDAE.Constraints> constraints;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end SIMPLE_ASSIGN;
 
     record ARRAY_ASSIGN
@@ -120,11 +122,11 @@ public
       Expression lhs;
       Expression rhs;
       DAE.ElementSource source;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end ARRAY_ASSIGN;
 
     record ALIAS
-      "Simple alias assignment pointing to the alias variable."
+      "Simple alias assignment pointing to the alias equation."
       Integer index;
       Integer aliasOf;
     end ALIAS;
@@ -134,7 +136,7 @@ public
       // ToDo: do we need to keep inputs/outputs here?
       Integer index;
       list<Statement> statements;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end ALGORITHM;
 
     record INVERSE_ALGORITHM
@@ -143,7 +145,7 @@ public
       list<Statement> statements;
       list<ComponentRef> knownOutputs "this is a subset of output crefs of the original algorithm, which are already known";
       Boolean insideNonLinearSystem;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end INVERSE_ALGORITHM;
 
     record IF
@@ -153,7 +155,7 @@ public
       Integer index;
       BEquation.IfEquationBody body;
       DAE.ElementSource source;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end IF;
 
     record WHEN
@@ -162,7 +164,7 @@ public
       Boolean initialCall "true, if top-level branch with initial()";
       BEquation.WhenEquationBody body;
       DAE.ElementSource source;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end WHEN;
 
     record FOR
@@ -173,7 +175,7 @@ public
       ComponentRef lhs;
       Expression rhs;
       DAE.ElementSource source;
-      BEquation.EquationAttributes attr;
+      EquationAttributes attr;
     end FOR;
 
     record LINEAR
@@ -223,6 +225,37 @@ public
       end match;
     end toString;
 
+    function isDiscrete
+      input Block blck;
+      output Boolean b;
+    algorithm
+      b := match blck
+        local
+          EquationAttributes attr;
+        case RESIDUAL(attr = attr)           then EquationKind.isDiscrete(attr.kind);
+        case ARRAY_RESIDUAL(attr = attr)     then EquationKind.isDiscrete(attr.kind);
+        case SIMPLE_ASSIGN(attr = attr)      then EquationKind.isDiscrete(attr.kind);
+        case ARRAY_ASSIGN(attr = attr)       then EquationKind.isDiscrete(attr.kind);
+        case ALIAS()                         then false; // todo: once this is implemented check in the HT for alias eq discrete
+        case ALGORITHM(attr = attr)          then EquationKind.isDiscrete(attr.kind);
+        case INVERSE_ALGORITHM(attr = attr)  then EquationKind.isDiscrete(attr.kind);
+        case IF(attr = attr)                 then EquationKind.isDiscrete(attr.kind);
+        case WHEN(attr = attr)               then EquationKind.isDiscrete(attr.kind); // should hopefully always be true
+        case FOR(attr = attr)                then EquationKind.isDiscrete(attr.kind);
+        else false;
+      end match;
+    end isDiscrete;
+
+    function isWhen
+      input Block blck;
+      output Boolean b;
+    algorithm
+      b := match blck
+        case WHEN() then true;
+        else false;
+      end match;
+    end isWhen;
+
     function map
       "ToDo: other blocks and cref func"
       input output Block blck;
@@ -262,8 +295,8 @@ public
 
     function createBlocks
       input list<System.System> systems;
-      output list<list<Block>> ode = {};
-      output list<list<Block>> algebraic = {};
+      output list<list<Block>> blcks = {};
+      input output list<Block> all_blcks;
       input output SimCode.SimCodeIndices simCodeIndices;
       input output FunctionTree funcTree;
     protected
@@ -271,16 +304,35 @@ public
     algorithm
       for system in systems loop
         (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
-        // check if system contains states
-        if System.System.isAlgebraic(system) then
-          algebraic := tmp :: algebraic;
-        else
-          ode := tmp :: ode;
-        end if;
+        blcks := tmp :: blcks;
+        all_blcks := listAppend(tmp, all_blcks);
       end for;
-      ode := listReverse(ode);
-      algebraic := listReverse(algebraic);
+      blcks := listReverse(blcks);
     end createBlocks;
+
+    function createDiscreteBlocks
+      input list<System.System> systems;
+      input output list<list<Block>> blcks;
+      input output list<Block> all_blcks;
+      input output list<Block> event_dependencies;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
+    protected
+      list<Block> tmp;
+    algorithm
+      for system in systems loop
+        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
+        // add all
+        all_blcks := listAppend(tmp, all_blcks);
+        // filter all when equations and add to blcks (ode or algebraic)
+        tmp := list(blck for blck guard(not isWhen(blck)) in tmp);
+        blcks := tmp :: blcks;
+        // filter all other discrete equations and add to event_dependencies
+        tmp := list(blck for blck guard(not isDiscrete(blck)) in tmp);
+        event_dependencies := listAppend(tmp, event_dependencies);
+      end for;
+      blcks := listReverse(blcks);
+    end createDiscreteBlocks;
 
     function createInitialBlocks
       input list<System.System> systems;
@@ -292,7 +344,7 @@ public
       list<list<Block>> tmp_lst = {};
     algorithm
       for system in systems loop
-        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.INIT);
+        (tmp, simCodeIndices, funcTree) := fromSystem(system, simCodeIndices, funcTree, NBSystem.SystemType.INI);
         tmp_lst := tmp :: tmp_lst;
       end for;
       blcks := List.flatten(tmp_lst);
@@ -498,30 +550,30 @@ public
       input System.SystemType systemType;
     protected
       BEquation.Equation solvedEq;
-      Boolean solved;
+      Solve.Status status;
     algorithm
-      (solvedEq, funcTree, solved) := Solve.solve(eqn, var.name, funcTree);
-      blck := match (solvedEq, solved)
+      (solvedEq, funcTree, status, _) := Solve.solve(eqn, var.name, funcTree);
+      blck := match (solvedEq, status)
         local
           Type ty;
           Operator operator;
           Expression lhs, rhs;
           Block tmp;
 
-        case (BEquation.SCALAR_EQUATION(), true)
+        case (BEquation.SCALAR_EQUATION(), NBSolve.Status.EXPLICIT)
           algorithm
             tmp := SIMPLE_ASSIGN(simCodeIndices.equationIndex, var.name, solvedEq.rhs, solvedEq.source, solvedEq.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case (BEquation.ARRAY_EQUATION(), true)
+        case (BEquation.ARRAY_EQUATION(), NBSolve.Status.EXPLICIT)
           algorithm
             tmp := ARRAY_ASSIGN(simCodeIndices.equationIndex, Expression.fromCref(var.name), solvedEq.rhs, solvedEq.source, solvedEq.attr);
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
         // remove simple equations should remove this, but if it is not activated we need this
-        case (BEquation.SIMPLE_EQUATION(), true)
+        case (BEquation.SIMPLE_EQUATION(), NBSolve.Status.EXPLICIT)
           algorithm
             ty := ComponentRef.getComponentType(solvedEq.lhs);
             if Type.isArray(ty) then
@@ -532,10 +584,16 @@ public
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
+        case (BEquation.WHEN_EQUATION(), NBSolve.Status.EXPLICIT)
+          algorithm
+            tmp := WHEN(simCodeIndices.equationIndex, false, solvedEq.body, solvedEq.source, solvedEq.attr);
+            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        then tmp;
+
         // ToDo: add all other cases!
 
         // fallback implicit solving
-        case (_, false)
+        case (_, NBSolve.Status.IMPLICIT)
           algorithm
             (tmp, simCodeIndices, funcTree) := createImplicitEquation(var, eqn, simCodeIndices, funcTree, systemType);
          then tmp;
@@ -584,7 +642,7 @@ public
       FunctionTree funcTree;
     algorithm
       try
-        residualVar := BEquation.EquationAttributes.getResidualVar(BEquation.Equation.getAttributes(eqn));
+        residualVar := EquationAttributes.getResidualVar(BEquation.Equation.getAttributes(eqn));
         (blck, indices, funcTree) := createEquation(Pointer.access(residualVar), eqn, Pointer.access(indices_ptr), Pointer.access(funcTree_ptr), systemType);
         Pointer.update(acc, blck :: Pointer.access(acc));
         Pointer.update(indices_ptr, indices);
@@ -688,12 +746,27 @@ public
       output OldSimCode.SimEqSystem oldBlck;
     algorithm
       oldBlck := match blck
-        case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, BEquation.EquationAttributes.convert(blck.attr));
-        case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, BEquation.EquationAttributes.convert(blck.attr));
-        case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, BEquation.EquationAttributes.convert(blck.attr));
-        case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, BEquation.EquationAttributes.convert(blck.attr));
+        case RESIDUAL()         then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
+        case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
+        case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
+/*
+        case WHEN() algorithm
+                Expression condition                  "the when-condition" ;
+      list<WhenStatement> when_stmts        "body statements";
+      Option<WhenEquationBody> else_when    "optional elsewhen body";
+        then OldSimCode.SES_WHEN(
+            index = blck.index,
+            list<DAE.ComponentRef> conditions "list of boolean variables as conditions";
+            initialCall = blck.initialCall,
+            list<BackendDAE.WhenOperator> whenStmtLst;
+            Option<SimEqSystem> elseWhen;
+            source = blck.source,
+            eqAttr = eq.attr
+          );
+*/
         // ToDo: add all the other cases here!
-        case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), BEquation.EquationAttributes.convert(NBEquation.EQ_ATTR_DEFAULT_UNKNOWN) /* dangerous! */);
+        case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(NBEquation.EQ_ATTR_DEFAULT_UNKNOWN) /* dangerous! */);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + toString(blck)});
         then fail();

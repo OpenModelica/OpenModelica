@@ -40,6 +40,7 @@ public
   import BVariable = NBVariable;
   import BEquation = NBEquation;
   import Jacobian = NBJacobian;
+  import Events = NBEvents;
 
 protected
   // New Frontend imports
@@ -79,17 +80,19 @@ protected
 
 public
   record MAIN
-    list<System> ode              "Systems for simulation";
-    list<System> event            "Systems for event iteration";
-    list<System> init             "Systems for Initialization";
-    list<System> param            "Systems for Parameters";
-    Option<list<System>> init_0   "Systems for lambda 0 (homotopy) Initialization";
-    Option<list<System>> dae      "Systems for dae mode";
+    list<System> ode                  "Systems for differential-algebraic equations";
+    list<System> algebraic            "Systems for algebraic equations";
+    list<System> ode_event            "Systems for differential-algebraic event iteration";
+    list<System> alg_event            "Systems for algebraic event iteration";
+    list<System> init                 "Systems for initialization";
+    Option<list<System>> init_0       "Systems for lambda 0 (homotopy) Initialization";
+    Option<list<System>> dae          "Systems for dae mode";
 
-    BVariable.VarData varData     "Variable data.";
-    BEquation.EqData eqData       "Equation data.";
+    BVariable.VarData varData         "Variable data.";
+    BEquation.EqData eqData           "Equation data.";
 
-    FunctionTree funcTree         "Function bodies.";
+    Events.EventInfo eventInfo        "contains time and state events";
+    FunctionTree funcTree             "Function bodies.";
   end MAIN;
 
   record JACOBIAN
@@ -109,37 +112,29 @@ public
     input BackendDAE bdae;
     input output String str = "";
   algorithm
-    // ToDo: Add init, dae, event...
     str := match bdae
       local
-        String tmp;
+        String tmp = "";
         list<System> dae;
       case MAIN()
         algorithm
-          if listEmpty(bdae.ode) or not Flags.isSet(Flags.BLT_DUMP) then
-            tmp := StringUtil.headline_1("Not partitioned BackendDAE: " + str) + "\n";
+          if (listEmpty(bdae.ode) and listEmpty(bdae.algebraic) and listEmpty(bdae.ode_event) and listEmpty(bdae.alg_event))
+             or not Flags.isSet(Flags.BLT_DUMP) then
+            tmp := StringUtil.headline_1("BackendDAE: " + str) + "\n";
             tmp := tmp +  BVariable.VarData.toString(bdae.varData, 2) + "\n" +
                           BEquation.EqData.toString(bdae.eqData, 1);
           else
-            tmp := StringUtil.headline_1("[ODE] Simulation: " + str) + "\n";
-            for syst in bdae.ode loop
-              tmp := tmp + System.toString(syst);
-            end for;
-            if not listEmpty(bdae.init) then
-              tmp := tmp + StringUtil.headline_1("[INIT] Initialization: " + str) + "\n";
-              for syst in bdae.init loop
-                tmp := tmp + System.toString(syst);
-              end for;
-            end if;
+            tmp := tmp + System.toStringList(bdae.ode, "[ODE] Differential-Algebraic: " + str);
+            tmp := tmp + System.toStringList(bdae.algebraic, "[ALG] Algebraic: " + str);
+            tmp := tmp + System.toStringList(bdae.ode_event, "[ODE_EVENT] Event Handling: " + str);
+            tmp := tmp + System.toStringList(bdae.alg_event, "[ALG_EVENT] Event Handling: " + str);
+            tmp := tmp + System.toStringList(bdae.init, "[INI] Initialization: " + str);
             if isSome(bdae.dae) then
               SOME(dae) := bdae.dae;
-              tmp := tmp + StringUtil.headline_1("[DAE] DAEMode: " + str) + "\n";
-              for syst in dae loop
-                tmp := tmp + System.toString(syst);
-              end for;
+              tmp := tmp + System.toStringList(dae, "[DAE] DAEMode: " + str);
             end if;
-
           end if;
+          tmp := tmp + Events.EventInfo.toString(bdae.eventInfo);
       then tmp;
 
       case JACOBIAN() then StringUtil.headline_1("Jacobian " + bdae.name + ": " + str) + "\n" +
@@ -204,10 +199,11 @@ public
   protected
     BVariable.VarData variableData;
     BEquation.EqData equationData;
+    Events.EventInfo eventInfo = Events.EventInfo.empty();
   algorithm
     variableData := lowerVariableData(flatModel.variables);
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
-    bdae := MAIN({}, {}, {}, {}, NONE(), NONE(), variableData, equationData, funcTree);
+    bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
   end lower;
 
   function solve
@@ -217,21 +213,23 @@ public
     bdae := simplify(bdae);
 
     // Pre-Partitioning Modules
-    // (RSE before DetectStates)
+    // (do not change order RSE -> EVENTS -> DETECTSTATES)
     bdae := RemoveSimpleEquations.main(bdae);
+    bdae := Events.main(bdae);
     bdae := DetectStates.main(bdae);
 
+    // Main-Modules
     bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
     bdae := Causalize.main(bdae, NBSystem.SystemType.ODE);
-
     bdae := Initialization.main(bdae);
 
     if Flags.getConfigBool(Flags.DAE_MODE) then
       bdae := DAEMode.main(bdae);
     end if;
 
-    // do Tearing and jacobians at the very end
+    // Post-Partitioning Modules
     bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);
+    bdae := Partitioning.splitSystems(bdae);
     bdae := Jacobian.main(bdae, NBSystem.SystemType.ODE);
   end solve;
 
@@ -738,7 +736,7 @@ protected
   end lowerIfBranchBody;
 
   function lowerWhenEquation
-    // ToDo! inherit findZeroCrossings or implement own routine to be applied after lowering
+    // ToDo! inherit findEvents or implement own routine to be applied after lowering
     input FEquation frontend_equation;
     input Boolean init;
     output Equation backend_equation;

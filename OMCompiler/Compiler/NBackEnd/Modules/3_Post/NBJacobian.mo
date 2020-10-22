@@ -82,32 +82,44 @@ public
         Option<Jacobian> jacobian                       "Resulting jacobian";
         FunctionTree funcTree                           "Function call bodies";
         list<System.System> oldSystems, newSystems = {} "Equation systems before and afterwards";
+        list<System.System> oldEvents, newEvents = {}   "Event Equation systems before and afterwards";
 
       case BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(knowns = knowns), funcTree = funcTree)
         algorithm
-          (oldSystems, name) := match systemType
-            case NBSystem.SystemType.ODE    then (bdae.ode, "ODE_JAC");
-            case NBSystem.SystemType.INIT   then (bdae.ode, "INIT_JAC");
-            case NBSystem.SystemType.DAE    then (Util.getOption(bdae.dae), "DAE_JAC");
+          (oldSystems, oldEvents, name) := match systemType
+            case NBSystem.SystemType.ODE    then (bdae.ode, bdae.ode_event, "ODE_JAC");
+            case NBSystem.SystemType.DAE    then (Util.getOption(bdae.dae), bdae.ode_event,"DAE_JAC");
             else algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + System.System.systemTypeString(systemType)});
             then fail();
           end match;
 
-          for syst in oldSystems loop
+          for syst in listReverse(oldSystems) loop
             (jacobian, funcTree) := match syst
               case System.SYSTEM() then func(name, syst.unknowns, syst.daeUnknowns, syst.equations, knowns, syst.strongComponents, funcTree);
             end match;
             syst.jacobian := jacobian;
             newSystems := syst::newSystems;
           end for;
-          newSystems := listReverse(newSystems);
+
+          for syst in listReverse(oldEvents) loop
+            (jacobian, funcTree) := match syst
+              case System.SYSTEM() then func(name, syst.unknowns, syst.daeUnknowns, syst.equations, knowns, syst.strongComponents, funcTree);
+            end match;
+            syst.jacobian := jacobian;
+            newEvents := syst::newEvents;
+          end for;
 
           _ := match systemType
-            case NBSystem.SystemType.ODE    algorithm bdae.ode    := newSystems;        then ();
-            case NBSystem.SystemType.INIT   algorithm bdae.init   := newSystems;        then ();
-            case NBSystem.SystemType.PARAM  algorithm bdae.param  := newSystems;        then ();
-            case NBSystem.SystemType.DAE    algorithm bdae.dae    := SOME(newSystems);  then ();
+            case NBSystem.SystemType.ODE algorithm
+              bdae.ode := newSystems;
+              bdae.ode_event := newEvents;
+            then ();
+
+            case NBSystem.SystemType.DAE algorithm
+              bdae.dae := SOME(newSystems);
+              bdae.ode_event := newEvents;
+            then ();
           end match;
           bdae.funcTree := funcTree;
       then bdae;
@@ -426,6 +438,7 @@ protected
     Pointer<HashTableCrToCr.HashTable> jacobianHT = Pointer.create(HashTableCrToCr.empty());
     Differentiate.DifferentiationArguments diffArguments;
 
+    list<Pointer<Equation>> eqn_lst, diffed_eqn_lst;
     EquationPointers diffedEquations;
     BEquation.EqData eqDataJac;
     Pointer<Integer> idx = Pointer.create(0);
@@ -440,8 +453,9 @@ protected
     // add inner / tmp cref tuples to HT
     (seedCandidates, partialCandidates) := if isSome(daeUnknowns) then (Util.getOption(daeUnknowns), unknowns) else (unknowns, VariablePointers.empty());
 
-    VariablePointers.map(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
-    VariablePointers.map(partialCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, ht = jacobianHT, makeVar = BVariable.makePDerVar));
+    // create seed and pDer vars (also filters out discrete vars)
+    VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
+    VariablePointers.mapPtr(partialCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, ht = jacobianHT, makeVar = BVariable.makePDerVar));
 
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
@@ -453,8 +467,10 @@ protected
       diffedFunctions = AvlSetPath.new()
     );
 
-    (diffedEquations, diffArguments) := Differentiate.differentiateEquationPointers(equations, diffArguments, getInstanceName());
-    EquationPointers.mapPtr(diffedEquations, function Equation.createName(idx = idx, context = name));
+    // filter all discrete equations and differentiate the others
+    eqn_lst := list(eqn for eqn guard(not Equation.isDiscrete(eqn)) in EquationPointers.toList(equations));
+    (diffed_eqn_lst, diffArguments) := Differentiate.differentiateEquationPointerList(eqn_lst, diffArguments, idx, name, getInstanceName());
+    diffedEquations := EquationPointers.fromList(diffed_eqn_lst);
 
     // create equation data for jacobian
     // ToDo: split temporary and auxiliares once tearing is applied
@@ -538,7 +554,7 @@ protected
   end jacobianNumeric;
 
   function makeVarTraverse
-    input output Variable var;
+    input Pointer<Variable> var_ptr;
     input String name;
     input Pointer<list<Pointer<Variable>>> vars_ptr;
     input Pointer<HashTableCrToCr.HashTable> ht;
@@ -547,17 +563,21 @@ protected
     partial function Func
       input output ComponentRef cref;
       input String name;
-      output Pointer<Variable> var_ptr;
+      output Pointer<Variable> new_var_ptr;
     end Func;
   protected
+    Variable var = Pointer.access(var_ptr);
     ComponentRef cref;
-    Pointer<Variable> var_ptr;
+    Pointer<Variable> new_var_ptr;
   algorithm
-    (cref, var_ptr) := makeVar(var.name, name);
-    // add $<new>.x variable pointer to the variables
-    Pointer.update(vars_ptr, var_ptr :: Pointer.access(vars_ptr));
-    // add x -> $<new>.x to the hashTable for later lookup
-    Pointer.update(ht, BaseHashTable.add((var.name, cref), Pointer.access(ht)));
+    // only create seed or pDer var if it is continuous
+    if BVariable.isContinuous(var_ptr) then
+      (cref, new_var_ptr) := makeVar(var.name, name);
+      // add $<new>.x variable pointer to the variables
+      Pointer.update(vars_ptr, new_var_ptr :: Pointer.access(vars_ptr));
+      // add x -> $<new>.x to the hashTable for later lookup
+      Pointer.update(ht, BaseHashTable.add((var.name, cref), Pointer.access(ht)));
+    end if;
   end makeVarTraverse;
 
   annotation(__OpenModelica_Interface="backend");

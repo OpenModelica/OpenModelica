@@ -180,6 +180,7 @@ public
     end getResidualVar;
 
     function makeStartEq
+      " x = $START.x"
       input ComponentRef lhs;
       input ComponentRef rhs;
       input Pointer<Integer> idx;
@@ -188,6 +189,17 @@ public
       eq := Pointer.create(SIMPLE_EQUATION(lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
       Equation.createName(eq, idx, "SRT");
     end makeStartEq;
+
+    function makePreEq
+      "$PRE.d = d"
+      input ComponentRef lhs;
+      input ComponentRef rhs;
+      input Pointer<Integer> idx;
+      output Pointer<Equation> eq;
+    algorithm
+      eq := Pointer.create(SIMPLE_EQUATION(lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
+      Equation.createName(eq, idx, "PRE");
+    end makePreEq;
 
     function forEquationToString
       input InstNode iter                   "the iterator variable";
@@ -539,18 +551,61 @@ public
     function fromLHSandRHS
       input Expression lhs;
       input Expression rhs;
+      input Pointer<Integer> idx;
+      input String context;
       input EquationAttributes attr = EQ_ATTR_DEFAULT_UNKNOWN;
       input DAE.ElementSource source = DAE.emptyElementSource;
-      output Equation eq;
+      output Pointer<Equation> eqn_ptr;
     protected
       Type ty;
+      Equation eqn;
     algorithm
       ty := Expression.typeOf(lhs);
-      eq := match ty
+      eqn := match ty
         case Type.ARRAY() then ARRAY_EQUATION(List.map(ty.dimensions, Dimension.size), lhs, rhs, source, attr, NONE());
         else SCALAR_EQUATION(lhs, rhs, source, attr);
       end match;
+      eqn_ptr := Pointer.create(eqn);
+      Equation.createName(eqn_ptr, idx, context);
     end fromLHSandRHS;
+
+    function swapLHSandRHS
+      input output Equation eqn;
+    algorithm
+      eqn := match eqn
+        local
+          Expression tmpExp;
+          ComponentRef tmpCref;
+
+        case Equation.SCALAR_EQUATION() algorithm
+          tmpExp := eqn.rhs;
+          eqn.rhs := eqn.lhs;
+          eqn.lhs := tmpExp;
+        then eqn;
+
+        case Equation.ARRAY_EQUATION() algorithm
+          tmpExp := eqn.rhs;
+          eqn.rhs := eqn.lhs;
+          eqn.lhs := tmpExp;
+        then eqn;
+
+        case Equation.SIMPLE_EQUATION() algorithm
+          tmpCref := eqn.rhs;
+          eqn.rhs := eqn.lhs;
+          eqn.lhs := tmpCref;
+        then eqn;
+
+        case Equation.RECORD_EQUATION() algorithm
+          tmpExp := eqn.rhs;
+          eqn.rhs := eqn.lhs;
+          eqn.lhs := tmpExp;
+        then eqn;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Equation.toString(eqn)});
+        then fail();
+      end match;
+    end swapLHSandRHS;
 
     function simplify
       input output Equation eq;
@@ -729,6 +784,26 @@ public
       exp := SimplifyExp.simplify(exp);
     end getResidualExp;
 
+    function isDiscrete
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    protected
+      EquationAttributes attr;
+    algorithm
+      attr := getAttributes(Pointer.access(eqn));
+      b := EquationKind.isDiscrete(attr.kind);
+    end isDiscrete;
+
+    function isWhenEquation
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    algorithm
+      b := match Pointer.access(eqn)
+        case Equation.WHEN_EQUATION() then true;
+        else false;
+      end match;
+    end isWhenEquation;
+
     function isParameterEquation
       input Equation eqn;
       output Boolean b = true;
@@ -785,8 +860,7 @@ public
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding type: " + Binding.toString(var.binding) + " for variable " + Variable.toString(Pointer.access(var_ptr))});
         then fail();
       end match;
-      eqn := Pointer.create(Equation.fromLHSandRHS(lhs, rhs, EQ_ATTR_DEFAULT_INITIAL));
-      Equation.createName(eqn, idx, "BND");
+      eqn := Equation.fromLHSandRHS(lhs, rhs, idx, "BND", EQ_ATTR_DEFAULT_INITIAL);
     end generateBindingEquation;
 
   end Equation;
@@ -1100,6 +1174,16 @@ public
         else fail();
       end match;
     end convert;
+
+    function isDiscrete
+      input EquationKind eqKind;
+      output Boolean b;
+    algorithm
+      b := match eqKind
+        case DISCRETE_EQUATION() then true;
+        else false;
+      end match;
+    end isDiscrete;
   end EquationKind;
 
   uniontype EvaluationStages
@@ -1305,6 +1389,29 @@ public
       end for;
     end mapExp;
 
+    function mapRemovePtr
+      "Traverses all equation pointers and may invoke to remove the equation pointer
+      (does not affect other instances of the equation)"
+      input output EquationPointers equations;
+      input MapFunc func;
+      partial function MapFunc
+        input Pointer<Equation> e;
+        output Boolean delete;
+      end MapFunc;
+    protected
+      Pointer<Equation> eq_ptr;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          eq_ptr := ExpandableArray.get(i, equations.eqArr);
+          if func(eq_ptr) then
+            equations := remove(eq_ptr, equations);
+          end if;
+         end if;
+      end for;
+      equations := compress(equations);
+    end mapRemovePtr;
+
     function fold<T>
       "Traverses all equations and applies a function to them to accumulate data.
       Cannot change equations."
@@ -1322,6 +1429,24 @@ public
         end if;
       end for;
     end fold;
+
+    function foldPtr<T>
+      "Traverses all equations and applies a function to them to accumulate data.
+      Can change the equation pointer."
+      input EquationPointers equations;
+      input MapFunc func;
+      input output T extArg;
+      partial function MapFunc
+        input Pointer<Equation> e;
+        input output T extArg;
+      end MapFunc;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          extArg := func(ExpandableArray.get(i, equations.eqArr), extArg);
+        end if;
+      end for;
+    end foldPtr;
 
     function foldRemovePtr<T>
       "Traverses all equation pointers and applies a function to them to accumulate data.

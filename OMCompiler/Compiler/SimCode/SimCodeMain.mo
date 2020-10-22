@@ -986,8 +986,14 @@ algorithm
     case (graph, filenameprefix) guard(Flags.getConfigBool(Flags.NEW_BACKEND))
       algorithm
 
+        // set new instantiation flag to true
+        FlagsUtil.enableDebug(Flags.SCODE_INST);
+
+
         // set daeMode to true for now - only allow daeMode!
         // FlagsUtil.setConfigBool(Flags.DAE_MODE, true);
+
+
 
         // calculate stuff that we need to create SimCode data structure
         /* ================================

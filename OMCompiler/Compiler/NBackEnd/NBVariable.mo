@@ -93,6 +93,8 @@ public
   constant String RESIDUAL_STR            = "$RES";
   constant String TEMPORARY_STR           = "$TMP";
   constant String SEED_STR                = "$SEED";
+  constant String TIME_EVENT_STR          = "$TEV";
+  constant String STATE_EVENT_STR         = "$SEV";
 
   function toString
     input Variable var;
@@ -190,6 +192,18 @@ public
     end match;
   end isStart;
 
+  function isContinuous
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE())) then false;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE())) then false;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS())) then false;
+      else true;
+    end match;
+  end isContinuous;
+
   function isDiscreteState
     input Pointer<Variable> var;
     output Boolean b;
@@ -209,6 +223,16 @@ public
       else false;
     end match;
   end isDiscrete;
+
+  function isPrevious
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS())) then true;
+      else false;
+    end match;
+  end isPrevious;
 
   function isDummyState
     input Pointer<Variable> var;
@@ -345,6 +369,18 @@ public
       then var;
     end match;
   end setVariableAttributes;
+
+  function setVarKind
+    "use with caution: some variable kinds have extra information that needs to be correct"
+    input output Pointer<Variable> varPointer;
+    input BackendExtension.VariableKind varKind;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(varPointer);
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, varKind);
+    Pointer.update(varPointer, var);
+  end setVarKind;
 
   function isDummyVariable
     "Returns true, if the variable is a dummy variable.
@@ -700,6 +736,29 @@ public
     cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
   end makeResidualVar;
 
+  function makeEventVar
+    "Creates a generic boolean variable pointer from a unique index and context name.
+    e.g. (\"$WHEN\", 4) --> $WHEN_4"
+    input String name                 "context name e.g. §WHEN";
+    input Integer uniqueIndex         "unique identifier index";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output ComponentRef cref          "new component reference";
+  protected
+    InstNode node;
+    Variable var;
+  algorithm
+    // create inst node with dummy variable pointer and create cref from it
+    node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    cref := ComponentRef.CREF(node, {}, Type.BOOLEAN(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    // create variable and set its kind to dae_residual (change name?)
+    var := BVariable.fromCref(cref);
+    // update the variable to be a seed and pass the pointer to the original variable
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE());
+    // create the new variable pointer and safe it to the component reference
+    var_ptr := Pointer.create(var);
+    cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+  end makeEventVar;
+
   function getBindingVariability
     "returns the variability of the binding, fails if it has the wrong type.
     unbound variables return the most restrictive variability because they have
@@ -728,7 +787,7 @@ public
     b := Expression.isConstNumber(Expression.getBindingExp(Binding.getExp(var.binding)));
   end hasConstBinding;
 
-  function setBindingAsStart
+  function setBindingAsStartAndFix
     "use this if a binding is found out to be constant, remove variable to known vars (param/const)
     NOTE: this overwrites the old start value. throw error/warning if different?"
     input output Pointer<Variable> var_ptr;
@@ -744,6 +803,7 @@ public
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
         start := Expression.getBindingExp(Binding.getExp(var.binding));
         binfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(binfo.attributes, start);
+        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes);
         var.backendinfo := binfo;
       then var;
 
@@ -752,11 +812,11 @@ public
       then fail();
     end match;
     Pointer.update(var_ptr, var);
-  end setBindingAsStart;
+  end setBindingAsStartAndFix;
 
-  function hasAliasBinding
-    "returns true if the binding represents either a cref or a negated cref. used for alias
-    removal since only those can be stored as actual alias variables"
+  function hasNonTrivialAliasBinding
+    "returns true if the binding does not represent a cref, a negated cref or a constant.
+     used for alias removal since only those can be stored as actual alias variables"
     input Pointer<Variable> var_ptr;
     output Boolean b;
   protected
@@ -765,8 +825,8 @@ public
   algorithm
     var := Pointer.access(var_ptr);
     binding := Expression.getBindingExp(Binding.getExp(var.binding));
-    b := Expression.isCref(binding) or Expression.isCref(Expression.negate(binding));
-  end hasAliasBinding;
+    b := not (Expression.isCref(binding) or Expression.isCref(Expression.negate(binding)) or Expression.isConstNumber(binding));
+  end hasNonTrivialAliasBinding;
 
   // ==========================================================================
   //                        Other type wrappers

@@ -102,7 +102,7 @@ public
     comp := Util.intCompare(Integer(o1), Integer(o2));
   end compare;
 
-  function inverse
+  function invert
     input output Operator operator;
   algorithm
     operator.op := match operator.op
@@ -122,12 +122,18 @@ public
       case Op.MUL_ARRAY_SCALAR then Op.DIV_ARRAY_SCALAR;
       case Op.DIV_SCALAR_ARRAY then Op.MUL_SCALAR_ARRAY;
       case Op.DIV_ARRAY_SCALAR then Op.MUL_ARRAY_SCALAR;
+      case Op.LESS             then Op.GREATEREQ;
+      case Op.LESSEQ           then Op.GREATER;
+      case Op.GREATER          then Op.LESSEQ;
+      case Op.GREATEREQ        then Op.LESS;
+      case Op.EQUAL            then Op.EQUAL;
+      case Op.NEQUAL           then Op.NEQUAL;
       // ToDo: should POW return POW? exponent should be negated
       else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + symbol(operator)});
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + "Failed! Don't know how to invert: " + symbol(operator)});
       then fail();
     end match;
-  end inverse;
+  end invert;
 
   function fromAbsyn
     input Absyn.Operator inOperator;
@@ -507,27 +513,8 @@ public
     end match;
   end isElementWise;
 
-  function negate
-    input Operator op;
-    output Operator outOp;
-  protected
-    Op neg_op;
-  algorithm
-    neg_op := match op.op
-      case Op.ADD then Op.SUB;
-      case Op.SUB then Op.ADD;
-      case Op.ADD_EW then Op.SUB_EW;
-      case Op.SUB_EW then Op.ADD_EW;
-      case Op.ADD_SCALAR_ARRAY then Op.SUB_SCALAR_ARRAY;
-      case Op.SUB_SCALAR_ARRAY then Op.ADD_SCALAR_ARRAY;
-      case Op.ADD_ARRAY_SCALAR then Op.SUB_ARRAY_SCALAR;
-    end match;
-
-    outOp := OPERATOR(op.ty, neg_op);
-  end negate;
-
-  type MathClassification = enumeration(ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, POWER, LOGICAL);
-  type SizeClassification = enumeration(SCALAR, ELEMENT_WISE, ARRAY_SCALAR, SCALAR_ARRAY, MATRIX, VECTOR_MATRIX, MATRIX_VECTOR, LOGICAL);
+  type MathClassification = enumeration(ADDITION, SUBTRACTION, MULTIPLICATION, DIVISION, POWER, LOGICAL, RELATION);
+  type SizeClassification = enumeration(SCALAR, ELEMENT_WISE, ARRAY_SCALAR, SCALAR_ARRAY, MATRIX, VECTOR_MATRIX, MATRIX_VECTOR, LOGICAL, RELATION);
   type Classification = tuple<MathClassification, SizeClassification>;
 
   function mathSymbol
@@ -541,6 +528,7 @@ public
       case MathClassification.DIVISION        then "/";
       case MathClassification.POWER           then "^";
       case MathClassification.LOGICAL         then "L";
+      case MathClassification.RELATION        then "R";
                                               else fail();
     end match;
   end mathSymbol;
@@ -575,12 +563,12 @@ public
       case Op.AND                 then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
       case Op.OR                  then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
       case Op.NOT                 then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
-      case Op.LESS                then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
-      case Op.LESSEQ              then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
-      case Op.GREATER             then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
-      case Op.GREATEREQ           then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
-      case Op.EQUAL               then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
-      case Op.NEQUAL              then (MathClassification.LOGICAL,         SizeClassification.LOGICAL);
+      case Op.LESS                then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.LESSEQ              then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.GREATER             then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.GREATEREQ           then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.EQUAL               then (MathClassification.RELATION,        SizeClassification.RELATION);
+      case Op.NEQUAL              then (MathClassification.RELATION,        SizeClassification.RELATION);
       else algorithm
         Error.addInternalError(getInstanceName() + ": Don't know how to handle " + String(op.op), sourceInfo());
       then fail();

@@ -47,7 +47,7 @@ simulate(RSE); getErrorString();
 // ========================================
 // 	z	 ==> 	x
 // 	c	 ==> 	3.0
-// 	y	 ==> 	time + c
+// 	y	 ==> 	time + 3.0
 // 	b	 ==> 	3.0
 // 	a	 ==> 	3.0
 // record SimulationResult

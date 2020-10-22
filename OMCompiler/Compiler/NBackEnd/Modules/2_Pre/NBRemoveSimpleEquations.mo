@@ -201,9 +201,12 @@ protected
           eqData.continuous := EquationPointers.compress(eqData.continuous);
 
           // categorize alias vars and sort them to the correct arrays
-          (alias_vars, non_trivial_alias) := List.splitOnTrue(alias_vars, BVariable.hasAliasBinding);
+          (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
 
-          // remove alias vars from all relevant arrays after splitting of non trivial alias vars
+          // add non trivial alias to knowns, but leave them in other arrays
+          varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
+
+          // remove alias vars from all relevant arrays after splitting off non trivial alias vars
           varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
           varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
           varData.algebraics := VariablePointers.removeList(alias_vars, varData.algebraics);
@@ -211,17 +214,17 @@ protected
           varData.discretes := VariablePointers.removeList(alias_vars, varData.discretes);
           varData.initials := VariablePointers.removeList(alias_vars, varData.initials);
 
-          // split of constants
-          (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
-
-          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
-          varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
-          varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
-
+          // split off constant alias
           // update constant start values and add to parameters
           // otherwise they would not show in the result file
-          const_vars := list(BVariable.setBindingAsStart(var) for var in const_vars);
+          (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
+          const_vars := list(BVariable.setVarKind(var, BackendExtension.VariableKind.PARAMETER()) for var in const_vars);
+          const_vars := list(BVariable.setBindingAsStartAndFix(var) for var in const_vars);
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
+          varData.knowns := VariablePointers.addList(const_vars, varData.knowns);
+
+          // add only the actual 1/-1 alias vars to alias vars
+          varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
 
           // add non trivial alias to removed
           non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
@@ -257,7 +260,7 @@ protected
           // categorize alias vars and sort them to the correct arrays
           // discard constants entirely for jacobians
           (_, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
-          (alias_vars, non_trivial_alias) := List.splitOnTrue(alias_vars, BVariable.hasAliasBinding);
+          (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
 
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
           varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
@@ -290,12 +293,12 @@ protected
 
           // remove alias vars from all relevant arrays
           varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
-
           varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
+
           // categorize alias vars and sort them to the correct arrays
-          // discard constants entirely for hessians
+          // discard constants entirely for jacobians and hessians
           (_, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
-          (alias_vars, non_trivial_alias) := List.splitOnTrue(alias_vars, BVariable.hasAliasBinding);
+          (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
 
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
           varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);

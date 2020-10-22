@@ -313,6 +313,35 @@ public
       end match;
     end create;
 
+    function setFixed
+      input output VariableAttributes attributes;
+      input Boolean b = true;
+    algorithm
+      attributes := match attributes
+        case VAR_ATTR_REAL() algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        case VAR_ATTR_INT() algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        case VAR_ATTR_BOOL() algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        case VAR_ATTR_STRING() algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        case VAR_ATTR_ENUMERATION() algorithm
+          attributes.fixed := SOME(Expression.BOOLEAN(b));
+        then attributes;
+
+        else attributes;
+      end match;
+    end setFixed;
+
     function setFixedIfNone
       input output VariableAttributes attributes;
       input Boolean b = true;

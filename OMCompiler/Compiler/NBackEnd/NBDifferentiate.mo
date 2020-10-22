@@ -84,21 +84,24 @@ public
   //             FUNCTIONS
   // ================================
 
-  function differentiateEquationPointers
+  function differentiateEquationPointerList
     "author: kabdelhak
     Differentiates an array of equations wrapped in pointers."
-    input output EquationPointers equations;
+    input output list<Pointer<Equation>> equations;
     input output DifferentiationArguments diffArguments;
-    input String name = "";
+    input Pointer<Integer> idx;
+    input String context;
+    input String name;
   protected
     Pointer<DifferentiationArguments> diffArguments_ptr = Pointer.create(diffArguments);
-    list<Pointer<Equation>> diffed_eqn_lst;
   algorithm
     // don't use EquationPointers.map because that would manipulate original eqn pointers
-    diffed_eqn_lst := List.map(EquationPointers.toList(equations), function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
-    equations := EquationPointers.fromList(diffed_eqn_lst);
+    equations := List.map(equations, function differentiateEquationPointer(diffArguments_ptr = diffArguments_ptr, name = name));
+    for eqn in equations loop
+      Equation.createName(eqn, idx, context);
+    end for;
     diffArguments := Pointer.access(diffArguments_ptr);
-  end differentiateEquationPointers;
+  end differentiateEquationPointerList;
 
   function differentiateEquationPointer
     input Pointer<Equation> eq_ptr;
@@ -640,7 +643,15 @@ public
         sizeClass := NFOperator.SizeClassification.SCALAR;
         mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), Type.REAL());
         derFuncCall := differentiateNamedCall1Arg(name, exp1);
-        then(Expression.MULTARY({derFuncCall, diffExp1}, {}, mulOp));
+      then(Expression.MULTARY({derFuncCall, diffExp1}, {}, mulOp));
+
+      // try some simple known cases
+      case (Expression.CALL(call=call)) algorithm
+        exp1 := match Call.getLastPathName(Call.functionName(call))
+          case "sample" then Expression.BOOLEAN(false);
+          else fail();
+        end match;
+      then exp1;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + Expression.toString(exp)});
@@ -826,9 +837,10 @@ public
             ),
             diffArguments);
 
-      // Logical operators => just return as is
+      // Logical and Comparing operators => just return as is
       case Expression.BINARY(operator = operator)
-        guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.LOGICAL)
+        guard((Operator.getMathClassification(operator) == NFOperator.MathClassification.LOGICAL) or
+              (Operator.getMathClassification(operator) == NFOperator.MathClassification.RELATION))
       then (exp, diffArguments);
 
       else algorithm

@@ -20,12 +20,12 @@ simulate(simpleNonlinearLoop); getErrorString();
 // true
 // ################################################################################
 //
-// 	[ODE] Simulation: (After Solve)
+// 	[ALG] Algebraic: (After Solve)
 //
 // ################################################################################
 //
 // ========================================
-// UNKNOWN ODE System
+// UNKNOWN ALG System
 // ========================================
 //
 // BLOCK 1: Torn Algebraic Loop (Linear = false, Mixed = false)
@@ -80,44 +80,12 @@ simulate(simpleNonlinearLoop); getErrorString();
 //
 // ################################################################################
 //
-// 	Jacobian ODE_JAC:
+// 	[INI] Initialization: (After Solve)
 //
 // ################################################################################
 //
 // ========================================
-// Variable Data Jacobian
-// ========================================
-//
-// Auxiliary Variables (2)
-// ========================================
-// 1: [SEED] Real $SEED_ODE_JAC.y ()
-// 2: [SEED] Real $SEED_ODE_JAC.x ()
-//
-//
-// Result EquationPointers (2)
-// ****************************************
-// (1)	[SCAL] ($RES_ODE_JAC_0) $SEED_ODE_JAC.x = 2.0 * y * $SEED_ODE_JAC.y
-// (2)	[SCAL] ($RES_ODE_JAC_1) $SEED_ODE_JAC.y = cos(x) * $SEED_ODE_JAC.x
-//
-//
-// Sparsity Pattern (nnz: 4)
-// ----------------------------------------
-// (y)	{y,x}
-// (x)	{y,x}
-//
-// Sparsity Coloring Groups
-// ----------------------------------------
-// {x}
-// {y}
-//
-// ################################################################################
-//
-// 	[INIT] Initialization: (After Solve)
-//
-// ################################################################################
-//
-// ========================================
-// UNKNOWN INIT System
+// UNKNOWN INI System
 // ========================================
 //
 // BLOCK 1: Torn Algebraic Loop (Linear = false, Mixed = false)
@@ -132,12 +100,12 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
 // 	[SCAL] ($RES_SIM_0) y = sin(x)
 //
-// Jacobian INIT_NLS_JAC_1: NLS
+// Jacobian INI_NLS_JAC_1: NLS
 // ----------------------------------------
 // Result EquationPointers (2)
 // ****************************************
-// (1)	[SCAL] ($RES_INIT_NLS_JAC_1_0) $SEED_INIT_NLS_JAC_1.x = 2.0 * y * $SEED_INIT_NLS_JAC_1.y
-// (2)	[SCAL] ($RES_INIT_NLS_JAC_1_1) $SEED_INIT_NLS_JAC_1.y = cos(x) * $SEED_INIT_NLS_JAC_1.x
+// (1)	[SCAL] ($RES_INI_NLS_JAC_1_0) $SEED_INI_NLS_JAC_1.x = 2.0 * y * $SEED_INI_NLS_JAC_1.y
+// (2)	[SCAL] ($RES_INI_NLS_JAC_1_1) $SEED_INI_NLS_JAC_1.y = cos(x) * $SEED_INI_NLS_JAC_1.x
 //
 //
 // ========================================

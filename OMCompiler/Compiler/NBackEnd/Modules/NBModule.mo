@@ -42,6 +42,7 @@ encapsulated package NBModule
    - daeModeInterface
 
   *** PRE (Mandatory)
+   - eventsInterface
    - detectStatesInterface
    - detectContinuousStatesInterface
    - detectDiscreteStatesInterface
@@ -72,6 +73,7 @@ protected
   import BVariable = NBVariable;
   import NBVariable.VarData;
   import NBVariable.VariablePointers;
+  import NBEvents.EventInfo;
 
 public
   partial function wrapper
@@ -118,6 +120,18 @@ public
 //                         MANDATORY PRE-OPT MODULES
 // =========================================================================
 
+//                            COLLECT EVENTS
+// *************************************************************************
+  partial function eventsInterface
+    "Events
+     This function is only allowed to read and change equations and create new
+     dicrete zero crossing equations and variables. ($TEV, $SEV)
+     It also fills the EventInfo object."
+    input output VarData varData         "Data containing variable pointers";
+    input output EqData eqData           "Data containing equation pointers";
+    input output EventInfo eventInfo     "object containing all zero crossings";
+  end eventsInterface;
+
 //                               DETECT STATES
 // *************************************************************************
   partial function detectStatesInterface
@@ -128,8 +142,8 @@ public
      Sub-Modules:
       - DetectContinuousStates
       - DetectDiscreteStates"
-    input output BVariable.VarData varData                "Data containing variable pointers";
-    input output BEquation.EqData eqData                  "Data containing equation pointers";
+    input output VarData varData                "Data containing variable pointers";
+    input output EqData eqData                  "Data containing equation pointers";
     input detectContinuousStatesInterface continuousFunc  "Subroutine for continuous states";
     input detectDiscreteStatesInterface discreteFunc      "Subroutine for discrete states";
   end detectStatesInterface;
@@ -172,8 +186,8 @@ public
      unknowns to knows. Since this can also affects all other pointer arrays, the
      full variable data is needed. All things that are allowed to be changed
      are pointers, so no return value."
-    input output BVariable.VarData varData         "Data containing variable pointers";
-    input output BEquation.EqData eqData           "Data containing equation pointers";
+    input output VarData varData         "Data containing variable pointers";
+    input output EqData eqData           "Data containing equation pointers";
   end removeSimpleEquationsInterface;
 
 

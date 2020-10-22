@@ -60,17 +60,16 @@ public
 
 function simplifyDump
   "wrapper function for simplification to allow dumping before and afterwards"
-  input output Expression exp;
+  input Expression exp;
+  output Expression res;
   input String name = "";
   input String indent = "";
 algorithm
-  if Flags.isSet(Flags.DUMP_SIMPLIFY) then
+  res := simplify(exp);
+  if Flags.isSet(Flags.DUMP_SIMPLIFY) and not Expression.isEqual(exp, res) then
     print(indent + "### dumpSimplify | " + name + " ###\n");
     print(indent + "[BEFORE] " + Expression.toString(exp) + "\n");
-    exp := simplify(exp);
-    print(indent + "[AFTER ] " + Expression.toString(exp) + "\n\n");
-  else
-      exp := simplify(exp);
+    print(indent + "[AFTER ] " + Expression.toString(res) + "\n\n");
   end if;
 end simplifyDump;
 
@@ -707,7 +706,7 @@ algorithm
     outExp := exp1;
   elseif Expression.isNegated(exp2) then
     // e1 + -(e2) = e1 - e2
-    outExp := Expression.BINARY(exp1, Operator.negate(op), Expression.negate(exp2));
+    outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -727,7 +726,7 @@ algorithm
     outExp := exp1;
   elseif Expression.isNegated(exp2) then
     // e1 - -(e2) = e1 + e2
-    outExp := Expression.BINARY(exp1, Operator.negate(op), Expression.negate(exp2));
+    outExp := Expression.BINARY(exp1, Operator.invert(op), Expression.negate(exp2));
   else
     outExp := Expression.BINARY(exp1, op, exp2);
   end if;
@@ -824,7 +823,7 @@ algorithm
     outExp := Ceval.evalUnaryOp(exp, op);
     outExp := Expression.stripBindingInfo(outExp);
   else
-    outExp := simplifyUnarySign(exp);
+    outExp := simplifyUnarySign(exp, true);
   end if;
 end simplifyUnaryOp;
 
@@ -1203,7 +1202,7 @@ algorithm
 
     // case 4.0 _ binary | soft commutative operator (-, :)
     case (_, Expression.BINARY()) guard(Operator.isSoftCommutative(exp.operator)) algorithm
-      op := Operator.inverse(exp.operator);
+      op := Operator.invert(exp.operator);
       new_exp := Expression.MULTARY({}, {}, op);
       new_exp := combineBinariesExp(exp.exp1, SOME(op), new_exp, false);
       new_exp := combineBinariesExp(exp.exp2, SOME(op), new_exp, true);

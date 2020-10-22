@@ -301,6 +301,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/1_Main/NBInitialization.mo",
     "../NBackEnd/Modules/1_Main/NBPartitioning.mo",
     "../NBackEnd/Modules/2_Pre/NBDetectStates.mo",
+    "../NBackEnd/Modules/2_Pre/NBEvents.mo",
     "../NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo",
     "../NBackEnd/Modules/3_Post/NBJacobian.mo",
     "../NBackEnd/Modules/3_Post/NBTearing.mo",

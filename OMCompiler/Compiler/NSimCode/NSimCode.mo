@@ -142,7 +142,7 @@ public
       list<SimStrongComponent.Block> param              "Blocks for parameter equations";
       list<SimStrongComponent.Block> no_ret             "Blocks for equations without return value";
       list<SimStrongComponent.Block> algorithms         "Blocks for algorithms and asserts";
-      list<SimStrongComponent.Block> zero_cross_blocks  "Blocks for zero crossing functions";
+      list<SimStrongComponent.Block> event_blocks  "Blocks for zero crossing functions";
       list<SimStrongComponent.Block> jac_blocks         "Blocks for jacobian equations";
       list<SimStrongComponent.Block> start              "Blocks for start value equations";
       list<SimStrongComponent.Block> init               "Blocks for initial equations";
@@ -232,8 +232,8 @@ public
           SimCodeIndices simCodeIndices;
           list<Expression> literals;
           list<String> externalFunctionIncludes;
-          list<SimStrongComponent.Block> independent, allSim, nominal, min, max, param, no_ret, algorithms;
-          list<SimStrongComponent.Block> zero_cross_blocks, jac_blocks;
+          list<SimStrongComponent.Block> independent, allSim = {}, nominal, min, max, param, no_ret, algorithms;
+          list<SimStrongComponent.Block> event_blocks = {}, jac_blocks;
           list<SimStrongComponent.Block> init, init_0, init_no_ret, start;
           list<list<SimStrongComponent.Block>> ode, algebraic;
           list<SimStrongComponent.Block> linearLoops, nonlinearLoops;
@@ -263,7 +263,6 @@ public
             no_ret := {};
             (no_ret, simCodeIndices, funcTree) := SimStrongComponent.Block.createNoReturnBlocks(no_ret_eq, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
             algorithms := {};
-            zero_cross_blocks := {};
             (init, simCodeIndices, funcTree) := SimStrongComponent.Block.createInitialBlocks(qual.init, simCodeIndices, funcTree);
             init_0 := {};
             init_no_ret := {};
@@ -282,12 +281,15 @@ public
             else
               // Normal Simulation
               daeModeData := NONE();
-              (ode, algebraic, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, simCodeIndices, funcTree);
+              (ode, allSim, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, allSim, simCodeIndices, funcTree);
+              (algebraic, allSim, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.algebraic, allSim, simCodeIndices, funcTree);
+              (ode, allSim, event_blocks, simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(qual.ode_event, ode, allSim, event_blocks,  simCodeIndices, funcTree);
+              (algebraic, allSim, event_blocks,  simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(qual.alg_event, algebraic, allSim, event_blocks,  simCodeIndices, funcTree);
               if not listEmpty(no_ret) then
                 algebraic := no_ret :: algebraic;
+                allSim := listAppend(no_ret, allSim);
               end if;
             end if;
-            allSim := listAppend(List.flatten(ode), List.flatten(algebraic));
 
             // ToDo add event system
             inlineEquations := {};
@@ -339,7 +341,7 @@ public
               param                     = param,
               no_ret                    = no_ret,
               algorithms                = algorithms,
-              zero_cross_blocks         = zero_cross_blocks,
+              event_blocks         = event_blocks,
               jac_blocks                = jac_blocks,
               start                     = start,
               init                      = init,
@@ -409,7 +411,7 @@ public
         parameterEquations            = SimStrongComponent.Block.convertList(simCode.param),
         removedEquations              = SimStrongComponent.Block.convertList(simCode.no_ret),
         algorithmAndEquationAsserts   = SimStrongComponent.Block.convertList(simCode.algorithms),
-        equationsForZeroCrossings     = SimStrongComponent.Block.convertList(simCode.zero_cross_blocks),
+        equationsForZeroCrossings     = SimStrongComponent.Block.convertList(simCode.event_blocks),
         jacobianEquations             = SimStrongComponent.Block.convertList(simCode.jac_blocks),
         stateSets                     = {}, // ToDo: add this once state sets are supported
         constraints                   = {}, // ToDo: add this once constraints are supported

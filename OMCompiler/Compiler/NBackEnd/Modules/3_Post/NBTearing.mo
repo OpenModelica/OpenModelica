@@ -109,7 +109,7 @@ public
           bdae.ode := systems;
       then bdae;
 
-      case (NBSystem.SystemType.INIT, BackendDAE.MAIN(init = systems, funcTree = funcTree))
+      case (NBSystem.SystemType.INI, BackendDAE.MAIN(init = systems, funcTree = funcTree))
         algorithm
           (systems, funcTree) := tearingTraverser(systems, func, funcTree, systemType);
           bdae.init := systems;

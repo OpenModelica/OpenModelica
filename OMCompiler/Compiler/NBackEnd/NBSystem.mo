@@ -50,15 +50,16 @@ protected
   import NBVariable.VariablePointers;
 
   // Util imports
+  import DoubleEnded;
   import StringUtil;
 
 public
   uniontype System
     record SYSTEM
-      SystemType systemType                           "Type of system: ODE, INIT, DAE or PARAM";
-      VariablePointers unknowns             "Variable array of unknowns, subset of full variable array";
-      Option<VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
-      EquationPointers equations            "Equations array, subset of the full equation array";
+      SystemType systemType                           "Type of system";
+      VariablePointers unknowns                       "Variable array of unknowns, subset of full variable array";
+      Option<VariablePointers> daeUnknowns            "Variable array of unknowns in the case of dae mode";
+      EquationPointers equations                      "Equations array, subset of the full equation array";
       Option<AdjacencyMatrix> adjacencyMatrix         "Adjacency matrix with all additional information";
       Option<Matching> matching                       "Matching (see 2.5)";
       Option<array<StrongComponent>> strongComponents "Strong Components";
@@ -103,6 +104,21 @@ public
       end if;
     end toString;
 
+    function toStringList
+      input list<System> systems;
+      input String header = "";
+      output String str = "";
+    algorithm
+      if not listEmpty(systems) then
+        if header <> "" then
+          str := StringUtil.headline_1(header) + "\n";
+        end if;
+        for syst in systems loop
+          str := str + System.toString(syst);
+        end for;
+      end if;
+    end toStringList;
+
     function sort
       input output System system;
     algorithm
@@ -122,15 +138,77 @@ public
       end for;
     end isAlgebraic;
 
+    function isAlgebraicContinuous
+      input System syst;
+      output Boolean alg = true;
+      output Boolean con = true;
+    algorithm
+      for var in VariablePointers.toList(syst.unknowns) loop
+          if BVariable.isStateDerivative(var) then
+            alg := false;
+            break;
+          end if;
+          if BVariable.isDiscrete(var) then
+            con := false;
+          end if;
+          // stop searching if both
+          if not (alg or con) then
+            break;
+          end if;
+      end for;
+    end isAlgebraicContinuous;
+
+    function categorize
+      input System system;
+      input DoubleEnded.MutableList<System> ode;
+      input DoubleEnded.MutableList<System> alg;
+      input DoubleEnded.MutableList<System> ode_evt;
+      input DoubleEnded.MutableList<System> alg_evt;
+    protected
+      Boolean algebraic, continuous;
+      System cont_syst, disc_syst;
+    algorithm
+      (algebraic, continuous) := isAlgebraicContinuous(system);
+      _ := match (algebraic, continuous)
+        case (true, true) algorithm
+          // algebraic continuous
+          system.systemType := SystemType.ALG;
+          DoubleEnded.push_back(alg, system);
+        then ();
+
+        case (false, true) algorithm
+          // differential continuous
+          system.systemType := SystemType.ODE;
+          DoubleEnded.push_back(ode, system);
+        then ();
+
+        case (true, false) algorithm
+          // algebraic discrete
+          system.systemType := SystemType.ALG_EVT;
+          DoubleEnded.push_back(alg_evt, system);
+        then ();
+
+        case (false, false) algorithm
+          // differential discrete
+          system.systemType := SystemType.ODE_EVT;
+          DoubleEnded.push_back(ode_evt, system);
+        then ();
+
+        else fail();
+      end match;
+    end categorize;
+
     function systemTypeString
       input SystemType systemType;
       output String str = "";
     algorithm
       str := match systemType
-        case SystemType.ODE     then "ODE";
-        case SystemType.INIT    then "INIT";
-        case SystemType.DAE     then "DAE";
-        case SystemType.PARAM   then "PARAM";
+        case SystemType.ODE         then "ODE";
+        case SystemType.ALG         then "ALG";
+        case SystemType.ODE_EVT     then "ODE_EVT";
+        case SystemType.ALG_EVT     then "ALG_EVT";
+        case SystemType.INI         then "INI";
+        case SystemType.DAE         then "DAE";
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed. Unknown system type in match."});
         then fail();
@@ -153,10 +231,16 @@ public
       end match;
     end partitionKindString;
 
+    function categorizeVariable
+      input DoubleEnded.MutableList<System> alg;
+      input DoubleEnded.MutableList<System> evt;
+    end categorizeVariable;
+
+
   end System;
 
   // ToDo: Expand with Jacobian and Hessian later on
-  type SystemType = enumeration(ODE, DAE, INIT, PARAM);
+  type SystemType = enumeration(ODE, ALG, ODE_EVT, ALG_EVT, INI, DAE);
   type PartitionKind = enumeration(UNKNOWN, UNSPECIFIED, CLOCKED, CONTINUOUS);
 
 

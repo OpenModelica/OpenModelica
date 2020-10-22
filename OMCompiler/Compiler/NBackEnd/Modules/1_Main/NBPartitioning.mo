@@ -38,12 +38,18 @@ public
   import Module = NBModule;
 
 protected
+  // Backend
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
+  import NBEquation.Equation;
   import NBEquation.EquationPointers;
+  import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
+
+  // Util
+  import DoubleEnded;
 
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
@@ -67,16 +73,19 @@ public
 
       case (System.SystemType.ODE, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
         algorithm
+          variables := VariablePointers.clone(variables);
+          equations := EquationPointers.clone(equations);
           bdae.ode := func(systemType, variables, equations);
         then bdae;
 
-      case (System.SystemType.INIT, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
+      case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
         algorithm
+          variables := VariablePointers.clone(variables);
+          equations := EquationPointers.clone(equations);
+          // remove the when equations for initial systems
+          equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);
           bdae.init := func(systemType, variables, equations);
         then bdae;
-
-      // nothing needs to be done here for now
-      case (System.SystemType.PARAM, _) then bdae;
 
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
@@ -97,11 +106,40 @@ public
     end match;
   end getModule;
 
+  function splitSystems
+    "creates ODE, ALG, ODE_EVT, ALG_EVT systems from ODE by checking
+    if it contains discrete equations or state equations.
+    Should be evoked just before jacobian at the very end."
+    extends Module.wrapper;
+  algorithm
+    bdae := match bdae
+      local
+        DoubleEnded.MutableList<System.System> ode = DoubleEnded.MutableList.fromList({});
+        DoubleEnded.MutableList<System.System> alg = DoubleEnded.MutableList.fromList({});
+        DoubleEnded.MutableList<System.System> ode_evt = DoubleEnded.MutableList.fromList({});
+        DoubleEnded.MutableList<System.System> alg_evt = DoubleEnded.MutableList.fromList({});
+
+      case BackendDAE.MAIN() algorithm
+        for syst in bdae.ode loop
+          System.System.categorize(syst, ode, alg, ode_evt, alg_evt);
+        end for;
+        bdae.ode := DoubleEnded.MutableList.toListAndClear(ode);
+        bdae.algebraic := DoubleEnded.MutableList.toListAndClear(alg);
+        bdae.ode_event := DoubleEnded.MutableList.toListAndClear(ode_evt);
+        bdae.alg_event := DoubleEnded.MutableList.toListAndClear(alg_evt);
+      then bdae;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+      then fail();
+    end match;
+  end splitSystems;
+
 protected
   function partitioningDefault extends Module.partitioningInterface;
   algorithm
     // ToDo: actually do partitioning! For now just create one system with everything inside.
-    systems := {System.SYSTEM(systemType, VariablePointers.clone(variables), NONE(), EquationPointers.clone(equations), NONE(), NONE(), NONE(), System.PartitionKind.UNKNOWN, NONE(), NONE())};
+    systems := {System.SYSTEM(systemType, variables, NONE(), equations, NONE(), NONE(), NONE(), System.PartitionKind.UNKNOWN, NONE(), NONE())};
   end partitioningDefault;
 
 annotation(__OpenModelica_Interface="backend");
