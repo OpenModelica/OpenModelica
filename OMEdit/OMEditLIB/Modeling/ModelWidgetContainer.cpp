@@ -1904,36 +1904,42 @@ bool GraphicsView::isAnyItemSelectedAndEditable(int key)
 /*!
  * \brief GraphicsView::getComponentFromQGraphicsItem
  * \param pGraphicsItem
- * A QGraphicsItem can be a Component or a ShapeAnnotation inside a Component.
+ * A QGraphicsItem can be a Element or a ShapeAnnotation inside a Element.
  * \return
  */
-Element *GraphicsView::getComponentFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
+Element *GraphicsView::getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
 {
   if (pGraphicsItem) {
-    Element *pComponent = dynamic_cast<Element*>(pGraphicsItem);
-    if (!pComponent && pGraphicsItem->parentItem()) {
-      pComponent = dynamic_cast<Element*>(pGraphicsItem->parentItem());
+    Element *pElement = dynamic_cast<Element*>(pGraphicsItem);
+    if (!pElement && pGraphicsItem->parentItem()) {
+      pElement = dynamic_cast<Element*>(pGraphicsItem->parentItem());
     }
-    return pComponent;
+    if (!pElement) {
+      OriginItem *pOriginItem = dynamic_cast<OriginItem*>(pGraphicsItem);
+      if (pOriginItem) {
+        pElement = pOriginItem->getElement();
+      }
+    }
+    return pElement;
   }
   return 0;
 }
 
 /*!
- * \brief GraphicsView::componentAtPosition
- * Returns the first component at the position.
+ * \brief GraphicsView::elementAtPosition
+ * Returns the first Element at the position.
  * \param position
  * \return
  */
-Element *GraphicsView::componentAtPosition(QPoint position)
+Element *GraphicsView::elementAtPosition(QPoint position)
 {
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    Element *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
-    if (pComponent) {
-      Element *pRootComponent = pComponent->getRootParentComponent();
-      if (pRootComponent && pRootComponent->getLibraryTreeItem() && !pRootComponent->getLibraryTreeItem()->isNonExisting()) {
-        return pRootComponent;
+    Element *pElement = getElementFromQGraphicsItem(pGraphicsItem);
+    if (pElement) {
+      Element *pRootElement = pElement->getRootParentComponent();
+      if (pRootElement && pRootElement->getLibraryTreeItem() && !pRootElement->getLibraryTreeItem()->isNonExisting()) {
+        return pRootElement;
       }
     }
   }
@@ -1955,7 +1961,7 @@ Element* GraphicsView::connectorComponentAtPosition(QPoint position)
    */
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    Element *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+    Element *pComponent = getElementFromQGraphicsItem(pGraphicsItem);
     if (pComponent) {
       Element *pRootComponent = pComponent->getRootParentComponent();
       if (pRootComponent && pRootComponent->isSelected()) {
@@ -1987,7 +1993,7 @@ Element* GraphicsView::stateComponentAtPosition(QPoint position)
 {
   QList<QGraphicsItem*> graphicsItems = items(position);
   foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-    Element *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+    Element *pComponent = getElementFromQGraphicsItem(pGraphicsItem);
     if (pComponent) {
       Element *pRootComponent = pComponent->getRootParentComponent();
       if (pRootComponent && !pRootComponent->isSelected()) {
@@ -3476,7 +3482,7 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
 {
   QGraphicsItem *pGraphicsItem = itemAt(event->pos());
   bool shouldEnactQTDoubleClick = true;
-  Element *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+  Element *pComponent = getElementFromQGraphicsItem(pGraphicsItem);
   if (pComponent) {
     shouldEnactQTDoubleClick = false;
     Element *pRootComponent = pComponent->getRootParentComponent();
@@ -3790,7 +3796,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
       oneShapeSelected = scene()->selectedItems().size() == 1;
     } else {
       // if a component is right clicked
-      pComponent = componentAtPosition(event->pos());
+      pComponent = elementAtPosition(event->pos());
       if (pComponent) {
         if (!pComponent->isSelected()) {
           clearSelection(pComponent);
@@ -3836,7 +3842,7 @@ void GraphicsView::contextMenuEvent(QContextMenuEvent *event)
     bool noInheritedItemSelected = true;
     QList<QGraphicsItem*> graphicsItems = scene()->selectedItems();
     foreach (QGraphicsItem *pGraphicsItem, graphicsItems) {
-      Element *pComponent = getComponentFromQGraphicsItem(pGraphicsItem);
+      Element *pComponent = getElementFromQGraphicsItem(pGraphicsItem);
       if (pComponent) {
         Element *pRootComponent = pComponent->getRootParentComponent();
         if (pRootComponent && pRootComponent->isInheritedElement() && pRootComponent->isSelected()) {
