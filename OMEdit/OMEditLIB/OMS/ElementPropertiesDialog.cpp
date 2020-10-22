@@ -423,12 +423,12 @@ bool ElementPropertiesDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 
       if (parameterIndex != -1) {
         QString pParameterLabelText = mParameterLabels.at(parameterIndex)->text();
-        updateStartValues(pParameterLabelText, pLineEdit);
+        restoreDefaultStartValue(pParameterLabelText, pLineEdit);
       }
 
       if (inputIndex != -1) {
         QString pInputLabelText = mInputLabels.at(inputIndex)->text();
-        updateStartValues(pInputLabelText, pLineEdit);
+        restoreDefaultStartValue(pInputLabelText, pLineEdit);
       }
     }
   }
@@ -436,9 +436,10 @@ bool ElementPropertiesDialog::eventFilter(QObject *pObject, QEvent *pEvent)
 }
 
 /*
- * helper function to updateStartValues read from modeldescription.xml
+ * helper function to restore default start values read from modeldescription.xml for fmus
+ * and 0 for other systems
  */
-void ElementPropertiesDialog::updateStartValues(QString pName, QLineEdit * pLineEdit)
+void ElementPropertiesDialog::restoreDefaultStartValue(QString pName, QLineEdit * pLineEdit)
 {
   if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
@@ -446,11 +447,11 @@ void ElementPropertiesDialog::updateStartValues(QString pName, QLineEdit * pLine
       QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), QString(pInterfaces[i]->name));
       if (pInterfaces[i]->causality == oms_causality_parameter && QString(pInterfaces[i]->name)== pName) {
         OMSProxy::instance()->omsDelete(nameStructure + ":start");
-        updateStartValuesHelper(pInterfaces[i], nameStructure, pLineEdit);
+        restoreDefaultStartValueHelper(pInterfaces[i], nameStructure, pLineEdit);
         break;
       } else if (pInterfaces[i]->causality == oms_causality_input && QString(pInterfaces[i]->name)== pName) {
         OMSProxy::instance()->omsDelete(nameStructure + ":start");
-        updateStartValuesHelper(pInterfaces[i], nameStructure, pLineEdit);
+        restoreDefaultStartValueHelper(pInterfaces[i], nameStructure, pLineEdit);
         break;
       }
     }
@@ -458,9 +459,10 @@ void ElementPropertiesDialog::updateStartValues(QString pName, QLineEdit * pLine
 }
 
 /*
- * helper function to updateStartValues read from modeldescription.xml
+ * helper function to restore default start values read from modeldescription.xml for fmus
+ * and 0 for other systems
  */
-void ElementPropertiesDialog::updateStartValuesHelper(oms_connector_t* pConnector, QString pName, QLineEdit *pLineEdit)
+void ElementPropertiesDialog::restoreDefaultStartValueHelper(oms_connector_t* pConnector, QString pName, QLineEdit *pLineEdit)
 {
   bool status = false;
   if (pConnector->type == oms_signal_type_real) {
