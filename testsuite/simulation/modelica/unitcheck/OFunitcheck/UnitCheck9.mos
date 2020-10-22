@@ -18,7 +18,7 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
 
 // Result:
@@ -43,7 +43,7 @@ instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
 // equation
 //   A = 5.0;
 //   V = 8.0;
-//   V = E * C + S * (-A);
+//   V = E * C - S * A;
 // end unitCheckTests.UnitCheck9;
 // "
 // "Notification: \"A\" has the Unit \"m/s\"

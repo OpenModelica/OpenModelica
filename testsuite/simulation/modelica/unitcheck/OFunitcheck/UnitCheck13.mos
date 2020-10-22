@@ -16,7 +16,7 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(unitCheckTests.UnitCheck13); getErrorString();
 
 // Result:
@@ -40,7 +40,7 @@ instantiateModel(unitCheckTests.UnitCheck13); getErrorString();
 //   V = A;
 // end unitCheckTests.UnitCheck13;
 // "
-// "[<interactive>:10:5-10:10:writable] Warning: The following equation is INCONSISTENT due to specified unit information: V = A
+// "[<interactive>:10:5-10:10:writable] Warning: The following equation is INCONSISTENT due to specified unit information:  V = A;
 // Warning: The units of following sub-expressions need to be equal:
 // - sub-expression \"A\" has unit \"m4\"
 // - sub-expression \"V\" has unit \"m\"

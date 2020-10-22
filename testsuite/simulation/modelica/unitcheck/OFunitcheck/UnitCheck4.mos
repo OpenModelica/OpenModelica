@@ -1,23 +1,23 @@
-// name: UnitCheck2
+// name: UnitCheck4
 // keywords: initialization
 // status: correct
 
 loadString("
 package unitCheckTests
-  model UnitCheck2
+  model UnitCheck4
     Real S(unit=\"m\");
     Real V(unit=\"m/s\");
-    Real A(unit=\"m/s2\");
+    Real A;
   equation
-    V = der(S);
-    der(V) = A;
+    der(S) = V;
+    A = der(V);
     S = 5.0;
-  end UnitCheck2;
+  end UnitCheck4;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
-instantiateModel(unitCheckTests.UnitCheck2); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
+instantiateModel(unitCheckTests.UnitCheck4); getErrorString();
 
 // Result:
 // true
@@ -28,16 +28,18 @@ instantiateModel(unitCheckTests.UnitCheck2); getErrorString();
 // {S,{1.0 * m^(1)}}
 // {V,{1.0 * m^(1) * s^(-1)}}
 // {A,{1.0 * m^(1) * s^(-2)}}
+// {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
-// "class unitCheckTests.UnitCheck2
+// "class unitCheckTests.UnitCheck4
 //   Real S(unit = \"m\");
 //   Real V(unit = \"m/s\");
-//   Real A(unit = \"m/s2\");
+//   Real A(unit = \"m.s-2\");
 // equation
-//   V = der(S);
-//   der(V) = A;
+//   der(S) = V;
+//   A = der(V);
 //   S = 5.0;
-// end unitCheckTests.UnitCheck2;
+// end unitCheckTests.UnitCheck4;
 // "
-// ""
+// "Notification: \"A\" has the Unit \"m.s-2\"
+// "
 // endResult

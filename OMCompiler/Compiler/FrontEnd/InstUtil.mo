@@ -477,7 +477,10 @@ algorithm
 
     case(_,_)
       equation
+        // phi: very old unit checking
+        /*
         false = Flags.getConfigBool(Flags.UNIT_CHECKING);
+        */
       then
         ();
 
@@ -745,8 +748,11 @@ algorithm
 
     // do nothing if we don't have to do unit checking
     case (_,_,store,_,_,_,_)
+      // phi: very old unit checking
+      /*
       guard
         not Flags.getConfigBool(Flags.UNIT_CHECKING)
+      */
       then
         (cache,env,store);
 
