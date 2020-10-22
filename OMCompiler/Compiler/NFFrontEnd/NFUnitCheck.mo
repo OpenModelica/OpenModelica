@@ -1063,7 +1063,7 @@ algorithm
     if b then
       icu := {};
     else
-      temp := makeNewCref(unit, fnName);
+      temp := makeNewCref(var, fnName);
       icu := {{(arg, op_unit), (temp, op_unit2)}};
     end if;
 
