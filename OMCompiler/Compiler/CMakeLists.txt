@@ -42,7 +42,7 @@ macro(add_interface_check_step mo_source_file)
 
         COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.check_interface.mos
 
-        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp
+        OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.stamp
         BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo
         COMMENT "Checking interface for ${mo_source_file}"
     )
@@ -50,7 +50,7 @@ macro(add_interface_check_step mo_source_file)
     set(OMC_MM_SOURCE_FILE_NAMES ${OMC_MM_SOURCE_FILE_NAMES} ${file_name_no_ext})
 
     set(OMC_MM_INTERFACE_FILES ${OMC_MM_INTERFACE_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo)
-    set(OMC_MM_STAMP_FILES ${OMC_MM_STAMP_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp)
+    set(OMC_MM_STAMP_FILES ${OMC_MM_STAMP_FILES} ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.stamp)
 
 
     add_custom_command(
@@ -78,7 +78,7 @@ macro(add_compile_step mo_source_file)
     get_filename_component(source_dir ${mo_source_file} DIRECTORY)
 
     add_custom_command(
-        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.tmp
+        DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.interface.mo.stamp
                 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
 
         COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_BINARY_DIR}/${file_name_no_ext}.compile.mos
