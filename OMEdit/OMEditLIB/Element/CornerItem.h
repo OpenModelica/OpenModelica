@@ -106,6 +106,7 @@ class OriginItem : public QGraphicsItem
 public:
   OriginItem(Element *pComponent);
   OriginItem(ShapeAnnotation *pShapeAnnotation);
+  Element* getElement() {return mpComponent;}
   void setActive();
   void setPassive();
   QRectF boundingRect() const {return mRectangle;}
