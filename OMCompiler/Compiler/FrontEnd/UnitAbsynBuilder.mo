@@ -69,7 +69,10 @@ algorithm
    local
      list<DAE.Element> elts;
    case(_,_,_) equation
+       // phi: very old unit checking
+       /*
        false = Flags.getConfigBool(Flags.UNIT_CHECKING);
+       */
    then ();
 
    case(_,_,DAE.DAE(elementLst=elts)) equation
@@ -176,8 +179,11 @@ algorithm
   _ := matchcontinue(prg)
     case _
       equation
+        // phi: very old unit checking
+        /*
         true = Flags.getConfigBool(Flags.UNIT_CHECKING);
         ((_,_,_)) = AbsynUtil.traverseClasses(prg,NONE(),registerUnitInClass,0,false); // defineunits must be in public section.
+        */
       then ();
 
     else
@@ -393,7 +399,8 @@ end instGetStore;
 public function emptyInstStore "returns an empty InstStore"
   output UnitAbsyn.InstStore st;
 algorithm
-  st := emptyInstStore2(Flags.getConfigBool(Flags.UNIT_CHECKING));
+  // phi: very old unit checking
+  st := emptyInstStore2(/*Flags.getConfigBool(Flags.UNIT_CHECKING)*/false);
 end emptyInstStore;
 
 protected function emptyInstStore2 "returns an empty InstStore"

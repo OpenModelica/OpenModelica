@@ -10,7 +10,7 @@ equation
 end UnitCheck16;
 "); getErrorString();
 
-setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
 instantiateModel(UnitCheck16); getErrorString();
 
 // Result:
