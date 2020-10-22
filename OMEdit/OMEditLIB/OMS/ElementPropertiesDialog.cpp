@@ -448,11 +448,11 @@ void ElementPropertiesDialog::restoreDefaultStartValue(QString pName, QLineEdit 
       if (pInterfaces[i]->causality == oms_causality_parameter && QString(pInterfaces[i]->name)== pName) {
         OMSProxy::instance()->omsDelete(nameStructure + ":start");
         restoreDefaultStartValueHelper(pInterfaces[i], nameStructure, pLineEdit);
-        break;
+        return;
       } else if (pInterfaces[i]->causality == oms_causality_input && QString(pInterfaces[i]->name)== pName) {
         OMSProxy::instance()->omsDelete(nameStructure + ":start");
         restoreDefaultStartValueHelper(pInterfaces[i], nameStructure, pLineEdit);
-        break;
+        return;
       }
     }
   }
