@@ -374,10 +374,10 @@ algorithm
         (nelif, eqs4, elems4, count4) = parseExpressionTuple(elif, defs, eqs3, elems3, count3);
       then (Absyn.IFEXP(nife, nexp1, nexp2, nelif), eqs4, elems4, count4);
 
-    case(Absyn.CALL(crf,fargs))
+    case(Absyn.CALL())
       equation
         //print("call" + intString(instNo) + "\n");
-        (nexp1, eqs1, elems1, count) = parseCall(Absyn.CALL(crf,fargs), defs, instNo, oldEqs, oldElems);
+        (nexp1, eqs1, elems1, count) = parseCall(in_eq, defs, instNo, oldEqs, oldElems);
       then (nexp1, eqs1, elems1, count);
      case(_)
        then (in_eq, oldEqs, oldElems, instNo);
@@ -448,7 +448,7 @@ algorithm
       list<Absyn.EquationItem> eqs;
       Integer count;
 
-    case(Absyn.CALL(Absyn.CREF_IDENT(id, _), fargs))
+    case Absyn.CALL(function_ = Absyn.CREF_IDENT(id, _), functionArgs = fargs)
       equation
         //print("Found function call " + id + "\n");
         (eqs, mods, true, count) = getDefinition(id, instNo, defs, fargs, oldEqs, {});
@@ -459,9 +459,7 @@ algorithm
                       Absyn.TPATH(Absyn.IDENT(id), NONE()), {Absyn.COMPONENTITEM(Absyn.COMPONENT(elName,{}, SOME(Absyn.CLASSMOD(mods, Absyn.NOMOD()))), NONE(), NONE())}), AbsynUtil.dummyInfo, NONE()));
       then (Absyn.CREF(Absyn.CREF_QUAL(elName, {}, Absyn.CREF_IDENT("out", {}))),  eqs, elem::oldElems, count);
 
-    case(Absyn.CALL(crf, fargs))
-    then (Absyn.CALL(crf,fargs), oldEqs, {}, instNo);
-
+    case Absyn.CALL() then (in_eq, oldEqs, {}, instNo);
   end matchcontinue;
 end parseCall;
 

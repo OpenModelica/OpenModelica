@@ -125,6 +125,11 @@ extern struct record_description SCode_Visibility_PUBLIC__desc;
 extern struct record_description SCodeDump_SCodeDumpOptions_OPTIONS__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
 extern struct record_description UnitAbsyn_InstStore_NOSTORE__desc;
+DLLExport
+modelica_metatype omc_Inst_instClassType(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fcache, modelica_metatype __omcQ_24in_5Fenv, modelica_metatype _classElem, modelica_metatype *out_env, modelica_metatype *out_ty);
+#define boxptr_Inst_instClassType omc_Inst_instClassType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inst_instClassType,2,0) {(void*) boxptr_Inst_instClassType,0}};
+#define boxvar_Inst_instClassType MMC_REFSTRUCTLIT(boxvar_lit_Inst_instClassType)
 #define boxptr_Inst_instFunctionAnnotations omc_Inst_instFunctionAnnotations
 #define boxptr_Inst_showCacheInfo omc_Inst_showCacheInfo
 DLLExport

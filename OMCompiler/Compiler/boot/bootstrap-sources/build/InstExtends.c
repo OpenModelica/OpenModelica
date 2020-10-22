@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstExtends.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstExtends.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "InstExtends.h"
@@ -28,10 +28,10 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT7,35,_OMC_LIT7_data);
 #define _OMC_LIT8_data "InstExtends.fixStatement failed: "
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT8,33,_OMC_LIT8_data);
 #define _OMC_LIT8 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT8)
-#define _OMC_LIT9_data "/home/martin/OpenModelica/OMCompiler/Compiler/FrontEnd/InstExtends.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT9,69,_OMC_LIT9_data);
+#define _OMC_LIT9_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/InstExtends.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT9,76,_OMC_LIT9_data);
 #define _OMC_LIT9 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT9)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT10_6,1602156586.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT10_6,1604411007.0);
 #define _OMC_LIT10_6 MMC_REFREALLIT(_OMC_LIT_STRUCT10_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT10,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT9,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1390)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1391)),MMC_IMMEDIATE(MMC_TAGFIXNUM(94)),_OMC_LIT10_6}};
 #define _OMC_LIT10 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT10)
@@ -486,17 +486,15 @@ goto tmp2_done;
 }
 case 1: {
 modelica_boolean tmp6;
-if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,3) == 0) goto tmp2_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
-tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 3));
-tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 1));
-tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 2));
-tmpMeta[5] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 3));
+tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 1));
+tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 2));
+tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_2), 3));
 _cref = tmpMeta[1];
-_fargs = tmpMeta[2];
-_cache = tmpMeta[3];
-_env = tmpMeta[4];
-_tree = tmpMeta[5];
+_cache = tmpMeta[2];
+_env = tmpMeta[3];
+_tree = tmpMeta[4];
 _cref1 = omc_InstExtends_fixCref(threadData, _cache, _env, _cref, _tree);
 tmp6 = (modelica_boolean)referenceEq(_cref, _cref1);
 if(tmp6)
@@ -505,7 +503,7 @@ tmpMeta[2] = _exp;
 }
 else
 {
-tmpMeta[1] = mmc_mk_box3(14, &Absyn_Exp_CALL__desc, _cref1, _fargs);
+tmpMeta[1] = mmc_mk_box4(14, &Absyn_Exp_CALL__desc, _cref1, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_exp), 3))), (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_exp), 4))));
 tmpMeta[2] = tmpMeta[1];
 }
 tmpMeta[0] = tmpMeta[2];

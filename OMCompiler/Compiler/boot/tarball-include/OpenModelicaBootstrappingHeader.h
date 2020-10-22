@@ -2545,7 +2545,7 @@ extern struct record_description Absyn_Exp_PARTEVALFUNCTION__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Exp_CALL__desc_added
 #define Absyn_Exp_CALL__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_CALL__desc__fields[2] = {"function_","functionArgs"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Exp_CALL__desc__fields[3] = {"function_","functionArgs","typeVars"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_CALL__desc = {
   "Absyn_Exp_CALL",
   "Absyn.Exp.CALL",
@@ -2555,8 +2555,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Exp_CALL__desc = {
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Exp_CALL__desc;
 #endif
-#define Absyn__CALL_3dBOX2 14
-#define Absyn__CALL(function_,functionArgs) (mmc_mk_box3(14,&Absyn_Exp_CALL__desc,function_,functionArgs))
+#define Absyn__CALL_3dBOX3 14
+#define Absyn__CALL(function_,functionArgs,typeVars) (mmc_mk_box4(14,&Absyn_Exp_CALL__desc,function_,functionArgs,typeVars))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Exp_IFEXP__desc_added
 #define Absyn_Exp_IFEXP__desc_added

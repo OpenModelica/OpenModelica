@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Lookup.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Lookup.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Lookup.h"
@@ -100,7 +100,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT39,34,_OMC_LIT39_data);
 #define _OMC_LIT39 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT39)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT40,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT39}};
 #define _OMC_LIT40 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT40)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT41,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(21)),_OMC_LIT38,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT40}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT41,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(20)),_OMC_LIT38,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT40}};
 #define _OMC_LIT41 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT41)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT42,1,5) {&ErrorTypes_MessageType_TRANSLATION__desc,}};
 #define _OMC_LIT42 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT42)

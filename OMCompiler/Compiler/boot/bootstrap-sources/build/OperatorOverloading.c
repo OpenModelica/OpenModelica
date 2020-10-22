@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/OperatorOverloading.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/OperatorOverloading.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "OperatorOverloading.h"
@@ -9430,7 +9430,7 @@ for (; tmp4 < 1; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
 modelica_boolean tmp6;
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,11,3) == 0) goto tmp3_end;
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_3), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],2,2) == 0) goto tmp3_end;
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
@@ -9470,8 +9470,9 @@ tmpMeta[4] = MMC_CAR(tmpMeta[3]);
 tmpMeta[5] = MMC_CDR(tmpMeta[3]);
 _types = tmpMeta[3];
 tmpMeta[7] = mmc_mk_cons(_exp1, _restargs);
-tmpMeta[8] = omc_Static_elabCallArgs3(threadData, _cache, _env, _types, _path, tmpMeta[7], _nargs, _inImpl, _inPre, _inInfo, &tmpMeta[3]);
-_cache = tmpMeta[8];
+tmpMeta[8] = MMC_REFSTRUCTLIT(mmc_nil);
+tmpMeta[9] = omc_Static_elabCallArgs3(threadData, _cache, _env, _types, _path, tmpMeta[7], _nargs, tmpMeta[8], _inImpl, _inPre, _inInfo, &tmpMeta[3]);
+_cache = tmpMeta[9];
 if (optionNone(tmpMeta[3])) goto goto_2;
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 1));
 tmpMeta[5] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[4]), 1));
@@ -9518,7 +9519,7 @@ modelica_metatype omc_OperatorOverloading_unary(threadData_t *threadData, modeli
 modelica_metatype _outCache = NULL;
 modelica_metatype _outExp = NULL;
 modelica_metatype _outProp = NULL;
-modelica_metatype tmpMeta[10] __attribute__((unused)) = {0};
+modelica_metatype tmpMeta[11] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 {
@@ -9634,8 +9635,9 @@ tmpMeta[5] = MMC_CDR(tmpMeta[3]);
 _types = tmpMeta[3];
 tmpMeta[7] = mmc_mk_cons(_absexp1, MMC_REFSTRUCTLIT(mmc_nil));
 tmpMeta[8] = MMC_REFSTRUCTLIT(mmc_nil);
-tmpMeta[9] = omc_Static_elabCallArgs3(threadData, _cache, _env, _types, _path, tmpMeta[7], tmpMeta[8], _inImpl, _inPre, _inInfo, &tmpMeta[3]);
-_cache = tmpMeta[9];
+tmpMeta[9] = MMC_REFSTRUCTLIT(mmc_nil);
+tmpMeta[10] = omc_Static_elabCallArgs3(threadData, _cache, _env, _types, _path, tmpMeta[7], tmpMeta[8], tmpMeta[9], _inImpl, _inPre, _inInfo, &tmpMeta[3]);
+_cache = tmpMeta[10];
 if (optionNone(tmpMeta[3])) goto goto_2;
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 1));
 tmpMeta[5] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[4]), 1));

@@ -343,7 +343,7 @@ algorithm
       equation
         ErrorExt.setCheckpoint("Scripting");
         cr = AbsynUtil.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
-        (cache,exp_1,prop) = Static.elabExp(cache,env,Absyn.CALL(cr,Absyn.FUNCTIONARGS(inExps,inNamedArgs)),impl,false,inPrefix,info);
+        (cache,exp_1,prop) = Static.elabExp(cache,env,Absyn.CALL(cr,Absyn.FUNCTIONARGS(inExps,inNamedArgs),{}),impl,false,inPrefix,info);
         ErrorExt.delCheckpoint("Scripting");
       then (cache,exp_1,prop);
 

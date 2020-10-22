@@ -6688,7 +6688,7 @@ algorithm
     case (e,n::names,r::ranges)
       equation
         e2 = wrapIntoFor(e, names, ranges);
-      then Absyn.CALL(Absyn.CREF_IDENT("array",{}), Absyn.FOR_ITER_FARG(e2, Absyn.COMBINE() ,{Absyn.ITERATOR(n,NONE(),SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),r)))}));
+      then Absyn.CALL(Absyn.CREF_IDENT("array",{}), Absyn.FOR_ITER_FARG(e2, Absyn.COMBINE() ,{Absyn.ITERATOR(n,NONE(),SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),r)))}),{});
   end match;
 end wrapIntoFor;
 
@@ -8861,7 +8861,7 @@ algorithm
               );
       then
         exp;
-    case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
+    case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_),{})
     //pder - first derivative
       equation
         if not List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual) then
@@ -8889,7 +8889,7 @@ algorithm
               Absyn.CREF(Absyn.CREF_QUAL(domName,{},Absyn.CREF_IDENT("dx",{})))
             )
           );
-    case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x")),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_))
+    case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(fieldCr as Absyn.CREF_IDENT(name, subscripts)),Absyn.CREF(Absyn.CREF_IDENT(name="x")),Absyn.CREF(Absyn.CREF_IDENT(name="x"))},_),{})
     //pder - second derivative
       equation
         if not List.isMemberOnTrue(fieldCr,fieldLst,AbsynUtil.crefEqual) then
@@ -8923,13 +8923,13 @@ algorithm
 
 
 
-    case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
+    case Absyn.CALL(function_ = Absyn.CREF_IDENT("pder",{}), functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(_),_},_))
     //pder with differentiating wrt wrong variable
       equation
         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"You are differentiating with respect to variable that is not a coordinate."}, info);
       then
         inExp;
-    case Absyn.CALL(Absyn.CREF_IDENT("pder",{}),Absyn.FUNCTIONARGS({_,_},_))
+    case Absyn.CALL(function_ = Absyn.CREF_IDENT("pder",{}), functionArgs = Absyn.FUNCTIONARGS({_,_},_))
       equation
         Error.addSourceMessageAndFail(Error.COMPILER_ERROR,{"Unsupported partial derivative."}, info);
       then

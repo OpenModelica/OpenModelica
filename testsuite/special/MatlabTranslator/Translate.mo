@@ -453,7 +453,7 @@ algorithm
   case(fname::fnc_hdl_idents1,cref1) //drop first ident because its a function name and rest of ident is declared as a function arguments
     equation
       mod_lst = ident_lst(fnc_hdl_idents1);
-      out = Absyn.CALL(Absyn.CREF_IDENT(cref1,{}),Absyn.FUNCTIONARGS(mod_lst,{}));
+      out = Absyn.CALL(Absyn.CREF_IDENT(cref1,{}),Absyn.FUNCTIONARGS(mod_lst,{}),{});
         then out; 
   end matchcontinue;
 end rpl_arg_fnc_hdl;
@@ -475,17 +475,17 @@ algorithm
     case(arg_lst1,cref1,true,true)
       equation
         mod_lst = argument_lst(arg_lst1,false);
-        out1 = Absyn.CALL(Absyn.CREF_IDENT(cref1,{}),Absyn.FUNCTIONARGS(mod_lst,{}));
+        out1 = Absyn.CALL(Absyn.CREF_IDENT(cref1,{}),Absyn.FUNCTIONARGS(mod_lst,{}),{});
         then out1; 
     case(arg_lst1,cref1,true,false)
       equation
         mod_lst = argument_lst(arg_lst1,false);
-        out1 = Absyn.CALL(Absyn.CREF_IDENT(cref1,{}),Absyn.FUNCTIONARGS(mod_lst,{}));
+        out1 = Absyn.CALL(Absyn.CREF_IDENT(cref1,{}),Absyn.FUNCTIONARGS(mod_lst,{}),{});
         then out1;
     case(arg_lst1,cref1,false,true)
       equation
           mod_lst = argument_lst(arg_lst1,false);
-          out1 = Absyn.CALL(Absyn.CREF_IDENT(cref1,{}),Absyn.FUNCTIONARGS(mod_lst,{}));
+          out1 = Absyn.CALL(Absyn.CREF_IDENT(cref1,{}),Absyn.FUNCTIONARGS(mod_lst,{}),{});
         then out1;
     case(arg_lst1,cref1,false,false)
       equation
@@ -522,7 +522,7 @@ algorithm
       equation
         {mod_exp4} = mod_exp_lst1;
         fnc_args = Absyn.FUNCTIONARGS(mod_exp4,{});       
-        out = Absyn.CALL(Absyn.CREF_IDENT("array",{}),fnc_args);      
+        out = Absyn.CALL(Absyn.CREF_IDENT("array",{}),fnc_args,{});
       then out;
   end matchcontinue;
 end tslat_vec_mtx;      

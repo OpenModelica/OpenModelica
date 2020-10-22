@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Config.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Config.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Config.h"
@@ -53,7 +53,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT18,45,_OMC_LIT18_data);
 #define _OMC_LIT18 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT18)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT19,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT18}};
 #define _OMC_LIT19 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT19)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT20,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(68)),_OMC_LIT17,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT19}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT20,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(67)),_OMC_LIT17,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT19}};
 #define _OMC_LIT20 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT20)
 #define _OMC_LIT21_data "homotopyApproach"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT21,16,_OMC_LIT21_data);
@@ -1805,8 +1805,8 @@ static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT729,2,0) {_OMC_LIT726,_OMC_LIT728}}
 #define _OMC_LIT730_data "unitChecking"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT730,12,_OMC_LIT730_data);
 #define _OMC_LIT730 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT730)
-#define _OMC_LIT731_data "Does advanced unit checking which consists of two parts: 1. calculation of unspecified unit information for variables; 2. consistency check for all equations based on unit information. Please note: This module is still experimental."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT731,232,_OMC_LIT731_data);
+#define _OMC_LIT731_data "This module is no longer available and its use is deprecated. Use --unitChecking instead."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT731,89,_OMC_LIT731_data);
 #define _OMC_LIT731 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT731)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT732,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT731}};
 #define _OMC_LIT732 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT732)
@@ -2028,7 +2028,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT815,66,_OMC_LIT815_data);
 #define _OMC_LIT815 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT815)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT816,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT815}};
 #define _OMC_LIT816 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT816)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT817,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(76)),_OMC_LIT814,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT816}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT817,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(75)),_OMC_LIT814,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT816}};
 #define _OMC_LIT817 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT817)
 #define _OMC_LIT818_data "showStructuralAnnotations"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT818,25,_OMC_LIT818_data);

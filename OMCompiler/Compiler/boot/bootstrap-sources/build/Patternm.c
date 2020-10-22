@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Patternm.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Patternm.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Patternm.h"
@@ -13,7 +13,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1,76,_OMC_LIT1_data);
 #define _OMC_LIT1 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT1)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT2,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT1}};
 #define _OMC_LIT2 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT2)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT3,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(23)),_OMC_LIT0,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT2}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT3,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(22)),_OMC_LIT0,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT2}};
 #define _OMC_LIT3 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT3)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT4,1,5) {&ErrorTypes_MessageType_TRANSLATION__desc,}};
 #define _OMC_LIT4 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT4)
@@ -191,7 +191,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT81,141,_OMC_LIT81_data);
 #define _OMC_LIT81 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT81)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT82,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT81}};
 #define _OMC_LIT82 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT82)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT83,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(25)),_OMC_LIT80,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT82}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT83,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(24)),_OMC_LIT80,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT82}};
 #define _OMC_LIT83 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT83)
 #define _OMC_LIT84_data "$case scope$"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT84,12,_OMC_LIT84_data);
@@ -242,7 +242,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT103,52,_OMC_LIT103_data);
 #define _OMC_LIT103 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT103)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT104,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT103}};
 #define _OMC_LIT104 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT104)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT105,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(24)),_OMC_LIT102,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT104}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT105,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(23)),_OMC_LIT102,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT104}};
 #define _OMC_LIT105 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT105)
 #define _OMC_LIT106_data "Empty matchcontinue case"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT106,24,_OMC_LIT106_data);
@@ -313,7 +313,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT134,32,_OMC_LIT134_data);
 #define _OMC_LIT134 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT134)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT135,2,4) {&Gettext_TranslatableContent_notrans__desc,_OMC_LIT36}};
 #define _OMC_LIT135 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT135)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT136,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(22)),_OMC_LIT134,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT135}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT136,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(21)),_OMC_LIT134,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT135}};
 #define _OMC_LIT136 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT136)
 #define _OMC_LIT137_data "Failed to elaborate match expression %s"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT137,39,_OMC_LIT137_data);
@@ -3259,7 +3259,7 @@ threadData->mmc_jumper = &new_mmc_jumper;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_4,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_4,11,3) == 0) goto tmp3_end;
 tmpMeta[5] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_4), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[5],2,2) == 0) goto tmp3_end;
 tmpMeta[6] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[5]), 2));
@@ -7937,7 +7937,7 @@ tmpMeta[0+0] = omc_Patternm_elabPattern(threadData, _cache, _env, _lhs, _ty, _in
 goto tmp3_done;
 }
 case 8: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,3) == 0) goto tmp3_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_2), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],2,2) == 0) goto tmp3_end;
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
@@ -7960,7 +7960,7 @@ goto tmp3_done;
 case 9: {
 if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,19,1) == 0) goto tmp3_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_3), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,3) == 0) goto tmp3_end;
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_2), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],2,2) == 0) goto tmp3_end;
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
@@ -8038,7 +8038,7 @@ tmpMeta[0+1] = tmpMeta[2];
 goto tmp3_done;
 }
 case 13: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,3) == 0) goto tmp3_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_2), 2));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_2), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,9,3) == 0) goto tmp3_end;
@@ -8055,7 +8055,7 @@ tmpMeta[0+0] = omc_Patternm_elabPatternCall(threadData, _cache, _env, omc_AbsynU
 goto tmp3_done;
 }
 case 14: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,3) == 0) goto tmp3_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_2), 2));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_2), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,20,5) == 0) goto tmp3_end;
@@ -8070,7 +8070,7 @@ tmpMeta[0+0] = omc_Patternm_elabPatternCall(threadData, _cache, _env, omc_AbsynU
 goto tmp3_done;
 }
 case 15: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_2,11,3) == 0) goto tmp3_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_2), 2));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_2), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,21,6) == 0) goto tmp3_end;

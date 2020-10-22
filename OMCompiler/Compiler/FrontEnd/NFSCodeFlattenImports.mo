@@ -648,7 +648,7 @@ algorithm
         env = NFSCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(NFSCodeEnv.tmpTickIndex), env);
         exp = flattenExp(exp, env, info);
       then
-        (Absyn.CALL(cref, Absyn.FOR_ITER_FARG(exp, iterType, iters)), (env, info));
+        (Absyn.CALL(cref, Absyn.FOR_ITER_FARG(exp, iterType, iters), inExp.typeVars), (env, info));
 
     case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "SOME")), _)
       then (inExp,inTuple);
@@ -658,7 +658,7 @@ algorithm
         cref = NFSCodeLookup.lookupComponentRef(cref, env, info);
         // TODO: handle function arguments
       then
-        (Absyn.CALL(cref, args), tup);
+        (Absyn.CALL(cref, args, inExp.typeVars), tup);
 
     case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = args), tup as (env, info))
       equation

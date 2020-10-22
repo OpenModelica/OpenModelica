@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/AbsynToSCode.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/AbsynToSCode.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "AbsynToSCode.h"
@@ -205,7 +205,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT86,100,_OMC_LIT86_data);
 #define _OMC_LIT86 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT86)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT87,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT86}};
 #define _OMC_LIT87 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT87)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT88,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(156)),_OMC_LIT85,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT87}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT88,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(155)),_OMC_LIT85,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT87}};
 #define _OMC_LIT88 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT88)
 #define _OMC_LIT89_data "AbsynToSCode.translateElementspec failed"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT89,40,_OMC_LIT89_data);
@@ -1233,9 +1233,10 @@ goto tmp2_done;
 }
 case 11: {
 if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,6,2) == 0) goto tmp2_end;
-tmpMeta[1] = mmc_mk_box3(14, &Absyn_Exp_CALL__desc, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inEquation), 2))), (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inEquation), 3))));
-tmpMeta[2] = mmc_mk_box4(12, &SCode_EEquation_EQ__NORETCALL__desc, tmpMeta[1], _inComment, _inInfo);
-tmpMeta[0] = tmpMeta[2];
+tmpMeta[1] = MMC_REFSTRUCTLIT(mmc_nil);
+tmpMeta[2] = mmc_mk_box4(14, &Absyn_Exp_CALL__desc, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inEquation), 2))), (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inEquation), 3))), tmpMeta[1]);
+tmpMeta[3] = mmc_mk_box4(12, &SCode_EEquation_EQ__NORETCALL__desc, tmpMeta[2], _inComment, _inInfo);
+tmpMeta[0] = tmpMeta[3];
 goto tmp2_done;
 }
 }
@@ -3370,8 +3371,9 @@ goto tmp2_done;
 }
 case 11: {
 if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,6,2) == 0) goto tmp2_end;
-tmpMeta[1] = mmc_mk_box3(14, &Absyn_Exp_CALL__desc, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_alg), 2))), (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_alg), 3))));
-_e1 = tmpMeta[1];
+tmpMeta[1] = MMC_REFSTRUCTLIT(mmc_nil);
+tmpMeta[2] = mmc_mk_box4(14, &Absyn_Exp_CALL__desc, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_alg), 2))), (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_alg), 3))), tmpMeta[1]);
+_e1 = tmpMeta[2];
 tmpMeta[1] = mmc_mk_box4(12, &SCode_Statement_ALG__NORETCALL__desc, _e1, _comment, _info);
 tmpMeta[0] = tmpMeta[1];
 goto tmp2_done;

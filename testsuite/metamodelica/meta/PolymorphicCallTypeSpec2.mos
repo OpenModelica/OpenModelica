@@ -1,0 +1,32 @@
+// name: PolymorphicCallTypeSpec2
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadString("
+  uniontype U<T>
+    record R
+      list<T> l;
+    end R;
+
+    function new
+      output U<T> u = R({});
+    end new;
+  end U;
+
+  function test
+    output U<Integer, String> u = U.new<Integer, String>();
+  end test;
+");
+getErrorString();
+test();
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+//
+// "[<interactive>:13:5-13:59:writable] Error: Too many type variables given in call to ‘.U.new‘.
+// [metamodelica/meta/PolymorphicCallTypeSpec2.mos:21:1-21:7:writable] Error: Class test not found in scope <global scope> (looking for a function or record).
+// "
+// endResult

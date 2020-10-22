@@ -1471,7 +1471,7 @@ algorithm
         restRes = transAnnLstToCalls(rest,context);
       then
         Absyn.CALL(Absyn.CREF_IDENT("Line",{}), Absyn.FUNCTIONARGS({},
-        Absyn.NAMEDARG("color",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;
+        Absyn.NAMEDARG("color",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes),{}) :: restRes;
 
       /* Special case for Rectangle Ellipse, Polygon, Text, need to add default lineColor={0,0,255} if no color given */
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
@@ -1484,7 +1484,7 @@ algorithm
         restRes = transAnnLstToCalls(rest,context);
       then
         Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},
-        Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;
+        Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes),{}) :: restRes;
 
 
     case(Absyn.MODIFICATION(path = Absyn.IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
@@ -1495,7 +1495,7 @@ algorithm
         restRes = transAnnLstToCalls(rest,context);
 
       then
-        Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},argRes)) :: restRes;
+        Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},argRes),{}) :: restRes;
 
     case(_ :: rest,context)
 

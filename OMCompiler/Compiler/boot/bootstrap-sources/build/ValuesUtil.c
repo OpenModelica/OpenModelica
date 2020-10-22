@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/ValuesUtil.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/ValuesUtil.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "ValuesUtil.h"
@@ -92,7 +92,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT28,81,_OMC_LIT28_data);
 #define _OMC_LIT28 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT28)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT29,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT28}};
 #define _OMC_LIT29 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT29)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT30,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(61)),_OMC_LIT27,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT29}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT30,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(60)),_OMC_LIT27,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT29}};
 #define _OMC_LIT30 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT30)
 #define _OMC_LIT31_data "end SimulationResult;"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT31,21,_OMC_LIT31_data);

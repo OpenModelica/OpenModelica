@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/ConnectUtil.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/ConnectUtil.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "ConnectUtil.h"
@@ -252,10 +252,10 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT95,12,_OMC_LIT95_data);
 #define _OMC_LIT96_data " in ConnectUtil.daeVarToCrefs"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT96,29,_OMC_LIT96_data);
 #define _OMC_LIT96 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT96)
-#define _OMC_LIT97_data "/home/martin/OpenModelica/OMCompiler/Compiler/FrontEnd/ConnectUtil.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT97,69,_OMC_LIT97_data);
+#define _OMC_LIT97_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/ConnectUtil.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT97,76,_OMC_LIT97_data);
 #define _OMC_LIT97 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT97)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT98_6,1602156586.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT98_6,1584700699.0);
 #define _OMC_LIT98_6 MMC_REFREALLIT(_OMC_LIT_STRUCT98_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT98,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT97,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(465)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(466)),MMC_IMMEDIATE(MMC_TAGFIXNUM(57)),_OMC_LIT98_6}};
 #define _OMC_LIT98 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT98)
@@ -267,7 +267,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT100,49,_OMC_LIT100_data);
 #define _OMC_LIT100 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT100)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT101,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT100}};
 #define _OMC_LIT101 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT101)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT102,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(93)),_OMC_LIT99,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT101}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT102,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(92)),_OMC_LIT99,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT101}};
 #define _OMC_LIT102 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT102)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT103,1,3) {&DAE_Connect_ConnectorType_EQU__desc,}};
 #define _OMC_LIT103 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT103)

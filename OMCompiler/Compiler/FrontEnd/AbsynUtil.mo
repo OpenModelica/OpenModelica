@@ -565,7 +565,7 @@ algorithm
       equation
         (fargs2, arg) = traverseExpBidirFunctionArgs(fargs1, enterFunc, exitFunc, arg);
       then
-        (if referenceEq(fargs1,fargs2) then inExp else Absyn.CALL(cref, fargs2), arg);
+        (if referenceEq(fargs1,fargs2) then inExp else Absyn.CALL(cref, fargs2, inExp.typeVars), arg);
 
     case (Absyn.PARTEVALFUNCTION(function_ = cref, functionArgs = fargs1), _, _, arg)
       equation
@@ -4252,7 +4252,8 @@ public function isDerCref
   output Boolean b;
 algorithm
   b := match exp
-    case Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF()},{})) then true;
+    case Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}),
+                    functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF()},{})) then true;
     else false;
   end match;
 end isDerCref;
@@ -4260,7 +4261,8 @@ end isDerCref;
 public function isDerCrefFail
   input Absyn.Exp exp;
 algorithm
-  Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF()},{})) := exp;
+  Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}),
+             functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF()},{})) := exp;
 end isDerCrefFail;
 
 public function getExpsFromArrayDim

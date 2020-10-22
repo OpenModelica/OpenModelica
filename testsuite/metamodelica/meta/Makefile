@@ -98,6 +98,8 @@ PartialFnDefaultBinding.mos \
 PatternMatchInvalidType.mo \
 Polymorphic.mos \
 Polymorphic2.mos \
+PolymorphicCallTypeSpec1.mos \
+PolymorphicCallTypeSpec2.mos \
 PolymorphicReduction.mos \
 Recursive.mos \
 ReturnInTryBlock.mos \

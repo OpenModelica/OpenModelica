@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/BackendDAEUtil.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/BackendDAEUtil.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "BackendDAEUtil.h"
@@ -33,7 +33,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",54,3,54,35,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",54,3,54,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
@@ -54,7 +54,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",47,3,47,35,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",47,3,47,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }
@@ -75,7 +75,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",36,3,36,35,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",36,3,36,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT2));
 }
 }
@@ -94,7 +94,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",26,3,26,35,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",26,3,26,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT3));
 }
 }
@@ -117,7 +117,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",18,3,18,35,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/BackendDAEUtil.mo",18,3,18,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT4));
 }
 }

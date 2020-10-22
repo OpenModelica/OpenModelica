@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/CodegenMidToC.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/CodegenMidToC.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "CodegenMidToC.h"
@@ -21,7 +21,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/CodegenMidToC.mo",13,3,13,49,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/CodegenMidToC.mo",13,3,13,49,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }

@@ -9,6 +9,11 @@
 extern "C" {
 #endif
 DLLExport
+modelica_metatype omc_List_trim(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fl, modelica_fnptr _fn);
+#define boxptr_List_trim omc_List_trim
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_trim,2,0) {(void*) boxptr_List_trim,0}};
+#define boxvar_List_trim MMC_REFSTRUCTLIT(boxvar_lit_List_trim)
+DLLExport
 modelica_metatype omc_List_maxElement(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _lessFn);
 #define boxptr_List_maxElement omc_List_maxElement
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_maxElement,2,0) {(void*) boxptr_List_maxElement,0}};

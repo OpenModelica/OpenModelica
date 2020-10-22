@@ -1,17 +1,17 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/VarTransform.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/VarTransform.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "VarTransform.h"
 #define _OMC_LIT0_data "Got exp to replace when condition is not allowing replacements. Check traversal."
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT0,80,_OMC_LIT0_data);
 #define _OMC_LIT0 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT0)
-#define _OMC_LIT1_data "/home/martin/OpenModelica/OMCompiler/Compiler/Util/VarTransform.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1,66,_OMC_LIT1_data);
+#define _OMC_LIT1_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/Util/VarTransform.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1,73,_OMC_LIT1_data);
 #define _OMC_LIT1 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT1)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT2_6,1602156586.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT2_6,1574422972.0);
 #define _OMC_LIT2_6 MMC_REFREALLIT(_OMC_LIT_STRUCT2_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT2,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT1,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1260)),MMC_IMMEDIATE(MMC_TAGFIXNUM(5)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1260)),MMC_IMMEDIATE(MMC_TAGFIXNUM(125)),_OMC_LIT2_6}};
 #define _OMC_LIT2 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT2)
@@ -42,7 +42,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT10,63,_OMC_LIT10_data);
 #define _OMC_LIT11_data "applyReplacementsDAEElts should not fail"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT11,40,_OMC_LIT11_data);
 #define _OMC_LIT11 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT11)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT12_6,1602156586.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT12_6,1574422972.0);
 #define _OMC_LIT12_6 MMC_REFREALLIT(_OMC_LIT_STRUCT12_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT12,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT1,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(302)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(302)),MMC_IMMEDIATE(MMC_TAGFIXNUM(89)),_OMC_LIT12_6}};
 #define _OMC_LIT12 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT12)

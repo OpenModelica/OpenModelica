@@ -852,7 +852,7 @@ algorithm
       equation
         //print("CALL...."  + "\n");
         //print(Dump.dumpExpStr(Absyn.CALL(crf, fargs)) + "\n");
-      then (Absyn.CALL(crf, fargs));
+      then (Absyn.CALL(crf, fargs, in_eq.typeVars));
      case(_)
        equation
         //print(Dump.dumpExpStr(in_eq) + "\n");

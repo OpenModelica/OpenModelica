@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstHashTable.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstHashTable.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "InstHashTable.h"
@@ -30,7 +30,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT8,34,_OMC_LIT8_data);
 #define _OMC_LIT8 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT8)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT9,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT8}};
 #define _OMC_LIT9 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT9)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT10,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(18)),_OMC_LIT7,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT9}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT10,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(17)),_OMC_LIT7,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT9}};
 #define _OMC_LIT10 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT10)
 #include "util/modelica.h"
 #include "InstHashTable_includes.h"
