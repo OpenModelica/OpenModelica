@@ -298,13 +298,13 @@ extern modelica_string OpenModelica_uriToFilename_impl(threadData_t *threadData,
       MMC_THROW();
     }
     if (resourcesDir) {
-      if (strlen(dir)+2+strlen(resourcesDir) >= PATH_MAX) {
+      if (MMC_STRLEN(dir)+2+strlen(resourcesDir) >= PATH_MAX) {
         omc_assert_warning(info, "Path longer than PATH_MAX: %s/%s, ignoring the resourcesDir", MMC_STRINGDATA(dir), resourcesDir);
       } else {
         int dirExists = 0==stat(MMC_STRINGDATA(dir), &stat_buf);
         sprintf(buf, "%s/%s", MMC_STRINGDATA(dir), resourcesDir);
         if (!dirExists || 0==stat(buf, &stat_buf)) {
-          dir = buf;
+          dir = mmc_mk_scon(buf);
         } else {
           omc_assert_warning(info, PATH_NOT_IN_FMU_RESOURCES, MMC_STRINGDATA(dir));
         }
