@@ -37,6 +37,14 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
 
+include(WriteCompilerDetectionHeader)
+write_compiler_detection_header(
+  FILE omc_compiler_detection.h
+  PREFIX OMC
+  COMPILERS GNU Clang MSVC
+  FEATURES cxx_static_assert
+)
+
 
 # Set the installation lib directory as an rpath for all installed
 # libs and executables.
