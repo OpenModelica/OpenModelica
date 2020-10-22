@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/AbsynUtil.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/AbsynUtil.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "AbsynUtil.h"
@@ -167,10 +167,10 @@ static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT56,2,4) {&Absyn_Path_IDENT__desc,_O
 #define _OMC_LIT57_data "AbsynUtil.getCrefFromExp failed "
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT57,32,_OMC_LIT57_data);
 #define _OMC_LIT57 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT57)
-#define _OMC_LIT58_data "/home/martin/OpenModelica/OMCompiler/Compiler/FrontEnd/AbsynUtil.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT58,67,_OMC_LIT58_data);
+#define _OMC_LIT58_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/AbsynUtil.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT58,74,_OMC_LIT58_data);
 #define _OMC_LIT58 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT58)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT59_6,1603174392.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT59_6,1604411007.0);
 #define _OMC_LIT59_6 MMC_REFREALLIT(_OMC_LIT_STRUCT59_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT59,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT58,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2582)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2582)),MMC_IMMEDIATE(MMC_TAGFIXNUM(103)),_OMC_LIT59_6}};
 #define _OMC_LIT59 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT59)
@@ -368,6 +368,47 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseExpBidirSubExps,2,0) 
 PROTECTED_FUNCTION_STATIC modelica_metatype omc_AbsynUtil_traverseEquationItem(threadData_t *threadData, modelica_metatype _inEquationItem, modelica_fnptr _inFunc, modelica_metatype _inTypeA);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquationItem,2,0) {(void*) boxptr_AbsynUtil_traverseEquationItem,0}};
 #define boxvar_AbsynUtil_traverseEquationItem MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_traverseEquationItem)
+DLLExport
+modelica_boolean omc_AbsynUtil_isNotPartial(threadData_t *threadData, modelica_metatype _inClass)
+{
+modelica_boolean _outBoolean;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_outBoolean = (!omc_AbsynUtil_isPartial(threadData, _inClass));
+_return: OMC_LABEL_UNUSED
+return _outBoolean;
+}
+modelica_metatype boxptr_AbsynUtil_isNotPartial(threadData_t *threadData, modelica_metatype _inClass)
+{
+modelica_boolean _outBoolean;
+modelica_metatype out_outBoolean;
+_outBoolean = omc_AbsynUtil_isNotPartial(threadData, _inClass);
+out_outBoolean = mmc_mk_icon(_outBoolean);
+return out_outBoolean;
+}
+DLLExport
+modelica_boolean omc_AbsynUtil_isPartial(threadData_t *threadData, modelica_metatype _inClass)
+{
+modelica_boolean _outBoolean;
+modelica_integer tmp1;
+modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+tmpMeta[0] = _inClass;
+tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 3));
+tmp1 = mmc_unbox_integer(tmpMeta[1]);
+_outBoolean = tmp1;
+_return: OMC_LABEL_UNUSED
+return _outBoolean;
+}
+modelica_metatype boxptr_AbsynUtil_isPartial(threadData_t *threadData, modelica_metatype _inClass)
+{
+modelica_boolean _outBoolean;
+modelica_metatype out_outBoolean;
+_outBoolean = omc_AbsynUtil_isPartial(threadData, _inClass);
+out_outBoolean = mmc_mk_icon(_outBoolean);
+return out_outBoolean;
+}
 DLLExport
 modelica_boolean omc_AbsynUtil_isClassOrComponentElementSpec(threadData_t *threadData, modelica_metatype _inElementSpec)
 {
@@ -2852,7 +2893,7 @@ tmp1 = 1;
 goto tmp3_done;
 }
 case 10: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,3) == 0) goto tmp3_end;
 tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],0,1) == 0) goto tmp3_end;
 tmp1 = 1;
@@ -3471,8 +3512,8 @@ _outExp = tmpMeta[0];
 goto tmp2_done;
 }
 case 14: {
-tmpMeta[0] = MMC_TAGPTR(mmc_alloc_words(4));
-memcpy(MMC_UNTAGPTR(tmpMeta[0]), MMC_UNTAGPTR(_outExp), 4*sizeof(modelica_metatype));
+tmpMeta[0] = MMC_TAGPTR(mmc_alloc_words(5));
+memcpy(MMC_UNTAGPTR(tmpMeta[0]), MMC_UNTAGPTR(_outExp), 5*sizeof(modelica_metatype));
 ((modelica_metatype*)MMC_UNTAGPTR(tmpMeta[0]))[3] = omc_AbsynUtil_traverseExpShallowFuncArgs(threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_outExp), 3))), _inArg, ((modelica_fnptr) _inFunc));
 _outExp = tmpMeta[0];
 goto tmp2_done;
@@ -5969,7 +6010,7 @@ tmp4 = 0;
 for (; tmp4 < 3; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,3) == 0) goto tmp3_end;
 tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],2,2) == 0) goto tmp3_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 2));
@@ -5978,7 +6019,7 @@ tmp1 = 1;
 goto tmp3_done;
 }
 case 1: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,3) == 0) goto tmp3_end;
 tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],0,1) == 0) goto tmp3_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 2));
@@ -7347,7 +7388,7 @@ modelica_metatype tmpMeta[9] __attribute__((unused)) = {0};
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 tmpMeta[0] = _exp;
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],11,2) == 0) MMC_THROW_INTERNAL();
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],11,3) == 0) MMC_THROW_INTERNAL();
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],2,2) == 0) MMC_THROW_INTERNAL();
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 2));
@@ -7385,7 +7426,7 @@ tmp4 = 0;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,3) == 0) goto tmp3_end;
 tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],2,2) == 0) goto tmp3_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 2));
@@ -8304,7 +8345,7 @@ tmp4 = 0;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,3) == 0) goto tmp3_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],2,2) == 0) goto tmp3_end;
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
@@ -12628,7 +12669,7 @@ goto tmp2_done;
 }
 case 14: {
 modelica_boolean tmp5;
-if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,3) == 0) goto tmp2_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 3));
 _cr = tmpMeta[1];
@@ -17545,7 +17586,7 @@ goto tmp3_done;
 }
 case 14: {
 modelica_boolean tmp12;
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,11,3) == 0) goto tmp3_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 2));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 3));
 _cref = tmpMeta[2];
@@ -17559,7 +17600,7 @@ tmpMeta[3] = _inExp;
 }
 else
 {
-tmpMeta[2] = mmc_mk_box3(14, &Absyn_Exp_CALL__desc, _cref, _fargs2);
+tmpMeta[2] = mmc_mk_box4(14, &Absyn_Exp_CALL__desc, _cref, _fargs2, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inExp), 4))));
 tmpMeta[3] = tmpMeta[2];
 }
 tmpMeta[0+0] = tmpMeta[3];

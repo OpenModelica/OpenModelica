@@ -1,21 +1,21 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Types.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Types.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Types.h"
 #define _OMC_LIT0_data "Types.getMetaRecordFields called on a non-singleton uniontype: "
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT0,63,_OMC_LIT0_data);
 #define _OMC_LIT0 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT0)
-#define _OMC_LIT1_data "/home/martin/OpenModelica/OMCompiler/Compiler/FrontEnd/Types.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1,63,_OMC_LIT1_data);
+#define _OMC_LIT1_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/Types.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT1,70,_OMC_LIT1_data);
 #define _OMC_LIT1 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT1)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT2_6,1602156586.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT2_6,1604411007.0);
 #define _OMC_LIT2_6 MMC_REFREALLIT(_OMC_LIT_STRUCT2_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT2,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT1,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(8634)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(8634)),MMC_IMMEDIATE(MMC_TAGFIXNUM(125)),_OMC_LIT2_6}};
 #define _OMC_LIT2 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT2)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT3_6,1602156586.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT3_6,1604411007.0);
 #define _OMC_LIT3_6 MMC_REFREALLIT(_OMC_LIT_STRUCT3_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT3,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT1,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(8643)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(8643)),MMC_IMMEDIATE(MMC_TAGFIXNUM(125)),_OMC_LIT3_6}};
 #define _OMC_LIT3 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT3)
@@ -265,7 +265,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT103,34,_OMC_LIT103_data);
 #define _OMC_LIT103 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT103)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT104,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT103}};
 #define _OMC_LIT104 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT104)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT105,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(28)),_OMC_LIT102,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT104}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT105,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(27)),_OMC_LIT102,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT104}};
 #define _OMC_LIT105 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT105)
 #define _OMC_LIT106_data "matchType"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT106,9,_OMC_LIT106_data);
@@ -333,7 +333,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT128,188,_OMC_LIT128_data);
 #define _OMC_LIT128 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT128)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT129,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT128}};
 #define _OMC_LIT129 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT129)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT130,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(107)),_OMC_LIT127,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT129}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT130,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(106)),_OMC_LIT127,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT129}};
 #define _OMC_LIT130 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT130)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT131,2,34) {&DAE_Exp_META__OPTION__desc,MMC_REFSTRUCTLIT(mmc_none)}};
 #define _OMC_LIT131 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT131)
@@ -866,16 +866,6 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_solvePolymorphicBindingsLoop,2,0)
 PROTECTED_FUNCTION_STATIC void omc_Types_checkValidBindings(threadData_t *threadData, modelica_metatype _bindings, modelica_metatype _solvedBindings, modelica_metatype _unsolvedBindings, modelica_metatype _info, modelica_metatype _path);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_checkValidBindings,2,0) {(void*) boxptr_Types_checkValidBindings,0}};
 #define boxvar_Types_checkValidBindings MMC_REFSTRUCTLIT(boxvar_lit_Types_checkValidBindings)
-PROTECTED_FUNCTION_STATIC modelica_metatype omc_Types_addPolymorphicBinding(threadData_t *threadData, modelica_string _id, modelica_metatype _ity, modelica_metatype _bindings);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_addPolymorphicBinding,2,0) {(void*) boxptr_Types_addPolymorphicBinding,0}};
-#define boxvar_Types_addPolymorphicBinding MMC_REFSTRUCTLIT(boxvar_lit_Types_addPolymorphicBinding)
-PROTECTED_FUNCTION_STATIC modelica_string omc_Types_polymorphicTypeName(threadData_t *threadData, modelica_metatype _ty);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_polymorphicTypeName,2,0) {(void*) boxptr_Types_polymorphicTypeName,0}};
-#define boxvar_Types_polymorphicTypeName MMC_REFSTRUCTLIT(boxvar_lit_Types_polymorphicTypeName)
-PROTECTED_FUNCTION_STATIC modelica_boolean omc_Types_isPolymorphic(threadData_t *threadData, modelica_metatype _ty);
-PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Types_isPolymorphic(threadData_t *threadData, modelica_metatype _ty);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_isPolymorphic,2,0) {(void*) boxptr_Types_isPolymorphic,0}};
-#define boxvar_Types_isPolymorphic MMC_REFSTRUCTLIT(boxvar_lit_Types_isPolymorphic)
 PROTECTED_FUNCTION_STATIC modelica_metatype omc_Types_makeDummyExpAndTypeLists(threadData_t *threadData, modelica_metatype _lst, modelica_metatype *out_outTypes);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_makeDummyExpAndTypeLists,2,0) {(void*) boxptr_Types_makeDummyExpAndTypeLists,0}};
 #define boxvar_Types_makeDummyExpAndTypeLists MMC_REFSTRUCTLIT(boxvar_lit_Types_makeDummyExpAndTypeLists)
@@ -7644,7 +7634,8 @@ omc_Types_checkValidBindings(threadData, _bindings, _solvedBindings, _unsolvedBi
 _return: OMC_LABEL_UNUSED
 return _solvedBindings;
 }
-PROTECTED_FUNCTION_STATIC modelica_metatype omc_Types_addPolymorphicBinding(threadData_t *threadData, modelica_string _id, modelica_metatype _ity, modelica_metatype _bindings)
+DLLExport
+modelica_metatype omc_Types_addPolymorphicBinding(threadData_t *threadData, modelica_string _id, modelica_metatype _ity, modelica_metatype _bindings)
 {
 modelica_metatype _outBindings = NULL;
 modelica_metatype tmpMeta[5] __attribute__((unused)) = {0};
@@ -7738,7 +7729,8 @@ _outBindings = tmpMeta[0];
 _return: OMC_LABEL_UNUSED
 return _outBindings;
 }
-PROTECTED_FUNCTION_STATIC modelica_string omc_Types_polymorphicTypeName(threadData_t *threadData, modelica_metatype _ty)
+DLLExport
+modelica_string omc_Types_polymorphicTypeName(threadData_t *threadData, modelica_metatype _ty)
 {
 modelica_string _name = NULL;
 modelica_metatype tmpMeta[2] __attribute__((unused)) = {0};
@@ -7751,7 +7743,8 @@ _name = tmpMeta[1];
 _return: OMC_LABEL_UNUSED
 return _name;
 }
-PROTECTED_FUNCTION_STATIC modelica_boolean omc_Types_isPolymorphic(threadData_t *threadData, modelica_metatype _ty)
+DLLExport
+modelica_boolean omc_Types_isPolymorphic(threadData_t *threadData, modelica_metatype _ty)
 {
 modelica_boolean _outMatch;
 modelica_boolean tmp1 = 0;
@@ -7790,7 +7783,7 @@ _outMatch = tmp1;
 _return: OMC_LABEL_UNUSED
 return _outMatch;
 }
-PROTECTED_FUNCTION_STATIC modelica_metatype boxptr_Types_isPolymorphic(threadData_t *threadData, modelica_metatype _ty)
+modelica_metatype boxptr_Types_isPolymorphic(threadData_t *threadData, modelica_metatype _ty)
 {
 modelica_boolean _outMatch;
 modelica_metatype out_outMatch;

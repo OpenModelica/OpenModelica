@@ -129,7 +129,7 @@ goto rule ## func ## Ex; }}
   #define isPath(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(2+1, Absyn__TPATH_3dBOX2))
   #define isComplex(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(3+1, Absyn__TCOMPLEX_3dBOX3))
   #define isTuple(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(1+1, Absyn__TUPLE_3dBOX1))
-  #define isCall(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(2+1, Absyn__CALL_3dBOX2))
+  #define isCall(X) (MMC_GETHDR(X) == MMC_STRUCTHDR(3+1, Absyn__CALL_3dBOX3))
   #define isNotNil(X) (MMC_NILHDR != MMC_GETHDR(X))
   #define mmc_mk_cons_typed(T,head,tail) mmc_mk_cons(head,tail)
   #define OM_PUSHZ1(A) (A) = NULL;
@@ -1608,7 +1608,7 @@ primary returns [void* ast]
   | T_FALSE            { $ast = Absyn__BOOL(MMC_FALSE); }
   | T_TRUE             { $ast = Absyn__BOOL(MMC_TRUE); }
   | ptr=component_reference__function_call { $ast = ptr.ast; }
-  | DER el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("der"), mmc_mk_nil()),el); }
+  | DER el=function_call { $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon("der"), mmc_mk_nil()),el,mmc_mk_nil()); }
   | LPAR el=output_expression_list[&tupleExpressionIsTuple]
     {
       $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) : el;
@@ -1624,7 +1624,7 @@ primary returns [void* ast]
           "Empty array constructors are not valid in Modelica.", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = Absyn__ARRAY(for_or_el.ast);
       } else {
-        $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon(ARRAY_REDUCTION_NAME), mmc_mk_nil()),for_or_el.ast);
+        $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mmc_mk_scon(ARRAY_REDUCTION_NAME), mmc_mk_nil()),for_or_el.ast,mmc_mk_nil());
       }
     }
   | T_END { $ast = Absyn__END; }
@@ -1639,10 +1639,16 @@ matrix_expression_list returns [void* ast]
   finally{ OM_POP(2); }
 
 component_reference__function_call returns [void* ast]
-@init{ OM_PUSHZ3(cr.ast, fc, e.ast); i = 0; } :
-  cr=component_reference ( fc=function_call (DOT e=expression[metamodelica_enabled()])? )? {
+@init{ OM_PUSHZ4(cr.ast, ids, fc, e.ast); i = 0; } :
+  (component_reference LESS name_list GREATER function_call) =>
+  cr=component_reference LESS ids=name_list GREATER fc=function_call {
+    modelicaParserAssert(metamodelica_enabled(), "Polymorphic type specifiers are only available in MetaModelica",
+      component_reference__function_call, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+    $ast = Absyn__CALL(cr.ast, fc, ids);
+  }
+  | cr=component_reference ( fc=function_call (DOT e=expression[metamodelica_enabled()])? )? {
       if (fc != NULL) {
-        $ast = Absyn__CALL(cr.ast, fc);
+        $ast = Absyn__CALL(cr.ast, fc, mmc_mk_nil());
         if (e.ast != 0) {
           modelicaParserAssert(ModelicaParser_langStd >= 1000, "Dot operator is not allowed in function calls in current Modelica standards.", component_reference__function_call, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
           $ast = Absyn__DOT($ast, e.ast);
@@ -1653,7 +1659,7 @@ component_reference__function_call returns [void* ast]
     }
   | i=INITIAL LPAR RPAR {
       $ast = Absyn__CREF_5fIDENT(mmc_mk_scon("initial"), mmc_mk_nil());
-      $ast = Absyn__CALL($ast,Absyn__FUNCTIONARGS(mmc_mk_nil(),mmc_mk_nil()));
+      $ast = Absyn__CALL($ast,Absyn__FUNCTIONARGS(mmc_mk_nil(),mmc_mk_nil()),mmc_mk_nil());
     }
   ;
   finally{ OM_POP(3); }

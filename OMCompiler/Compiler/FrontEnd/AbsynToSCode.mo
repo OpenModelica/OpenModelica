@@ -889,7 +889,7 @@ algorithm
 
     case Absyn.ALG_NORETCALL()
       algorithm
-        e1 := Absyn.CALL(alg.functionCall, alg.functionArgs);
+        e1 := Absyn.CALL(alg.functionCall, alg.functionArgs, {});
       then
         SCode.ALG_NORETCALL(e1, comment, info);
 
@@ -1682,7 +1682,7 @@ algorithm
     // number of arguments is also turned into a noretcall, since it's
     // preferable to handle the error during instantation instead of here.
     case Absyn.EQ_NORETCALL()
-      then SCode.EQ_NORETCALL(Absyn.CALL(inEquation.functionName, inEquation.functionArgs),
+      then SCode.EQ_NORETCALL(Absyn.CALL(inEquation.functionName, inEquation.functionArgs, {}),
         inComment, inInfo);
 
   end match;

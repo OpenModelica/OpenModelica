@@ -517,14 +517,15 @@ protected
   Absyn.FunctionArgs args;
   Absyn.Exp arg;
   String last_id;
+  list<Absyn.Path> type_vars;
 algorithm
-  Absyn.CALL(function_ = func_name, functionArgs = args) := inExp;
+  Absyn.CALL(function_ = func_name, functionArgs = args, typeVars = type_vars) := inExp;
 
   _ := match(args)
     case Absyn.FUNCTIONARGS()
       algorithm
         (outCache, outExp, outProperties) := elabCall(inCache, inEnv,
-          func_name, args.args, args.argNames, inImplicit, inPrefix, inInfo);
+          func_name, args.args, args.argNames, type_vars, inImplicit, inPrefix, inInfo);
         outExp := ExpressionSimplify.simplify1(outExp);
       then
         ();
@@ -605,7 +606,7 @@ algorithm
     (outCache, {tty}) := Lookup.lookupFunctionsInEnv(inCache, inEnv, path, inInfo);
     tty := Types.makeFunctionPolymorphicReference(tty);
     (outCache, args, consts, _, tty, _, slots) := elabTypes(outCache, inEnv, pos_args,
-      named_args, {tty}, true, true, inImplicit,
+      named_args, {}, {tty}, true, true, inImplicit,
       inPrefix, inInfo);
     if not Types.isFunctionPointer(tty) then
       (outCache, path) := Inst.makeFullyQualified(outCache, inEnv, path);
@@ -1755,7 +1756,7 @@ algorithm
         env = FGraph.addForIterator(env, resultId, resultTy, DAE.UNBOUND(), SCode.VAR(), SOME(DAE.C_VAR()));
         cr1 = Absyn.CREF_IDENT(foldId, {});
         cr2 = Absyn.CREF_IDENT(resultId, {});
-        exp = Absyn.CALL(cr, Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}));
+        exp = Absyn.CALL(cr, Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}), {});
       then
         (env, SOME(exp));
   end match;
@@ -2286,7 +2287,7 @@ algorithm
     // Function calls
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),_,pre,_)
       equation
-        (cache,e_1,prop) = elabCall(cache,env, fn, args, nargs, true,pre,info);
+        (cache,e_1,prop) = elabCall(cache,env, fn, args, nargs, inExp.typeVars, true,pre,info);
       then
         (cache,e_1,prop);
 
@@ -3097,7 +3098,7 @@ algorithm
   ty := Types.arrayElementType(ty);
   true := inTypeChecker(ty);
   (outCache, outExp, outProperties as DAE.PROP()) := elabCallArgs(outCache,
-      inEnv, Absyn.FULLYQUALIFIED(Absyn.IDENT(inFnName)), {e}, {}, inImplicit,
+      inEnv, Absyn.FULLYQUALIFIED(Absyn.IDENT(inFnName)), {e}, {}, {}, inImplicit,
       inPrefix, inInfo);
 end verifyBuiltInHandlerType;
 
@@ -3804,7 +3805,7 @@ algorithm
   else
      // Otherwise, handle it like a normal function.
     (outCache, outExp, outProperties) := elabCallArgs(inCache, inEnv,
-      Absyn.IDENT("homotopy"), inPosArgs, inNamedArgs, inImplicit,
+      Absyn.IDENT("homotopy"), inPosArgs, inNamedArgs, {}, inImplicit,
       inPrefix, inInfo);
   end if;
 end elabBuiltinHomotopy;
@@ -4155,7 +4156,7 @@ algorithm
   // Use elabCallArgs to also try vectorized calls
   if Types.dimensionsKnown(ty) then
     (outCache, outExp, outProperties) := elabCallArgs(outCache, inEnv,
-      Absyn.IDENT("inStream"), {e}, {}, inImpl, inPrefix, inInfo);
+      Absyn.IDENT("inStream"), {e}, {}, {}, inImpl, inPrefix, inInfo);
   end if;
 end elabBuiltinInStream;
 
@@ -4185,7 +4186,7 @@ algorithm
   // Use elabCallArgs to also try vectorized calls
   if Types.dimensionsKnown(ty) then
     (outCache, outExp, outProperties) := elabCallArgs(outCache, inEnv,
-      Absyn.IDENT("actualStream"), {e}, {}, inImpl, inPrefix, inInfo);
+      Absyn.IDENT("actualStream"), {e}, {}, {}, inImpl, inPrefix, inInfo);
   end if;
 end elabBuiltinActualStream;
 
@@ -4723,7 +4724,7 @@ algorithm
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("hold"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("hold"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("hold"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinHold;
@@ -4769,7 +4770,7 @@ algorithm
                  DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("sample"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
 
     // The sample from the Synchronous Language Elements chapter (Modelica 3.3)
@@ -4790,7 +4791,7 @@ algorithm
                 Absyn.IDENT("sample"));
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"),
-          args, nargs, impl, pre, info);
+          args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
 
     case (cache,env,{au}, {},impl,pre,_)
@@ -4807,7 +4808,7 @@ algorithm
                 Absyn.IDENT("sample"));
 
         (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("sample"),
-          args, nargs, impl, pre, info);
+          args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
 
 
@@ -4860,7 +4861,7 @@ algorithm
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("shiftSample"));
         // Pretend that shiftSample(u,shiftCounter) was shiftSample(u,shiftCounter,1) (resolution=1 is default value)
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), {au, ashiftCounter, aresolution}, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), {au, ashiftCounter, aresolution}, nargs, {}, impl, pre, info);
       then (cache, call, prop);
 
     case (cache,env,{au,ashiftCounter,aresolution},{},impl,pre,_)
@@ -4888,7 +4889,7 @@ algorithm
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("shiftSample"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), {au, ashiftCounter, aresolution}, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("shiftSample"), {au, ashiftCounter, aresolution}, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinShiftSample;
@@ -4939,7 +4940,7 @@ algorithm
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("backSample"));
         // Pretend that backSample(u,backCounter) was backSample(u,backCounter,1) (resolution=1 is default value)
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), {au, abackCounter, aresolution}, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), {au, abackCounter, aresolution}, nargs, {}, impl, pre, info);
       then (cache, call, prop);
 
     case (cache,env,{au,abackCounter,aresolution},{},impl,pre,_)
@@ -4967,7 +4968,7 @@ algorithm
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("backSample"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), {au, abackCounter, aresolution}, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("backSample"), {au, abackCounter, aresolution}, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinBackSample;
@@ -5006,7 +5007,7 @@ algorithm
                  ty1,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("noClock"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("noClock"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("noClock"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinNoClock;
@@ -5042,7 +5043,7 @@ algorithm
                 DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("firstTick"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
 
     case (cache,env,{au},{},impl,pre,_)
@@ -5054,7 +5055,7 @@ algorithm
                 DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("firstTick"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("firstTick"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinFirstTick;
@@ -5091,7 +5092,7 @@ algorithm
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("interval"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("interval"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("interval"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
 
     case (cache,env,{au},{},impl,pre,_)
@@ -5103,7 +5104,7 @@ algorithm
                 DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("interval"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("interval"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("interval"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinInterval;
@@ -5179,7 +5180,7 @@ algorithm
                  DAE.T_NORETCALL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("transition"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("transition"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("transition"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinTransition;
@@ -5328,7 +5329,7 @@ algorithm
                  DAE.T_NORETCALL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("initialState"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("initialState"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("initialState"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinInitialState;
@@ -5374,7 +5375,7 @@ algorithm
                  DAE.T_BOOL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("activeState"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("activeState"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("activeState"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinActiveState;
@@ -5411,7 +5412,7 @@ algorithm
                  DAE.T_INTEGER_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("ticksInState"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("ticksInState"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("ticksInState"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinTicksInState;
@@ -5448,7 +5449,7 @@ algorithm
                  DAE.T_REAL_DEFAULT,
                 DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE,
                 Absyn.IDENT("timeInState"));
-        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("timeInState"), args, nargs, impl, pre, info);
+        (cache,SOME((call,prop))) = elabCallArgs3(cache, env, {ty}, Absyn.IDENT("timeInState"), args, nargs, {}, impl, pre, info);
       then (cache, call, prop);
   end match;
 end elabBuiltinTimeInState;
@@ -5592,7 +5593,7 @@ algorithm
     if Types.dimensionsKnown(ty) then
       // Use elabCallArgs to handle vectorization if possible.
       (outCache, outExp, outProperties) := elabCallArgs(inCache, inEnv,
-          Absyn.IDENT("der"), inPosArgs, {}, inImplicit, inPrefix, inInfo);
+          Absyn.IDENT("der"), inPosArgs, {}, {}, inImplicit, inPrefix, inInfo);
     else
       // Otherwise just create a call to der.
       outExp := Expression.makePureBuiltinCall("der", {outExp},
@@ -6054,7 +6055,7 @@ algorithm
   try
     // Check if 'String' is overloaded.
     e := Absyn.CALL(Absyn.CREF_IDENT("String", {}),
-        Absyn.FUNCTIONARGS(inPosArgs, inNamedArgs));
+        Absyn.FUNCTIONARGS(inPosArgs, inNamedArgs), {});
     (outCache, outExp, outProperties) := OperatorOverloading.string(inCache,
         inEnv, e, inImplicit, true, inPrefix, inInfo);
   else
@@ -6689,6 +6690,7 @@ protected function elabCall
   input Absyn.ComponentRef fn;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
+  input list<Absyn.Path> typeVars;
   input Boolean impl;
   input DAE.Prefix pre;
   input SourceInfo info;
@@ -6727,7 +6729,7 @@ algorithm
       algorithm
         ErrorExt.setCheckpoint("elabCall_InteractiveFunction");
         fn_1 := AbsynUtil.crefToPath(fn);
-        (cache,e,prop) := elabCallArgs(cache,env, fn_1, args, nargs, impl,pre,info);
+        (cache,e,prop) := elabCallArgs(cache,env, fn_1, args, nargs, typeVars, impl,pre,info);
         ErrorExt.delCheckpoint("elabCall_InteractiveFunction");
       then
         (cache,e,prop);
@@ -6972,6 +6974,7 @@ function: elabCallArgs
   input Absyn.Path inPath;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input list<Absyn.Path> typeVars;
   input Boolean inBoolean;
   input DAE.Prefix inPrefix;
   input SourceInfo info;
@@ -6980,7 +6983,7 @@ function: elabCallArgs
   output DAE.Properties outProperties;
 algorithm
   (outCache,SOME((outExp,outProperties))) :=
-  elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Mutable.create(false),inPrefix,info,Error.getNumErrorMessages());
+  elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,typeVars,inBoolean,Mutable.create(false),inPrefix,info,Error.getNumErrorMessages());
   (outCache,outProperties) := elabCallArgsEvaluateArrayLength(outCache,inEnv,outProperties,inPrefix,info);
 end elabCallArgs;
 
@@ -7096,6 +7099,7 @@ function: elabCallArgs
   input Absyn.Path inPath;
   input list<Absyn.Exp> inAbsynExpLst;
   input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input list<Absyn.Path> typeVars;
   input Boolean inBoolean;
   input Mutable<Boolean> stopElab;
   input DAE.Prefix inPrefix;
@@ -7224,7 +7228,7 @@ algorithm
         (cache,typelist as _::_) = Lookup.lookupFunctionsListInEnv(cache, recordEnv, operNames, info, {});
 
         Mutable.update(stopElab,true);
-        (cache,expProps) = elabCallArgs3(cache,env,typelist,fn_1,args,nargs,impl,pre,info);
+        (cache,expProps) = elabCallArgs3(cache,env,typelist,fn_1,args,nargs,typeVars,impl,pre,info);
 
         ErrorExt.rollBack("RecordConstructor");
 
@@ -7261,7 +7265,7 @@ algorithm
          in the function type of the user function and check both the
          function name and the function\'s type." ;
         Mutable.update(stopElab,true);
-        (cache,expProps) = elabCallArgs3(cache,env,typelist,fn,args,nargs,impl,pre,info);
+        (cache,expProps) = elabCallArgs3(cache,env,typelist,fn,args,nargs,typeVars,impl,pre,info);
 
         ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
 
@@ -7272,7 +7276,7 @@ algorithm
       equation
         (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache, env, fn, info);
         (cache,args_1,_,_,functype,_,_) =
-          elabTypes(cache, env, args, nargs, typelist, true, false/* Do not check types*/,impl,pre,info);
+          elabTypes(cache, env, args, nargs, {}, typelist, true, false/* Do not check types*/,impl,pre,info);
         argStr = ExpressionDump.printExpListStr(args_1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         fn_str = AbsynUtil.pathString(fn) + "(" + argStr + ")\nof type\n  " + Types.unparseType(functype);
@@ -7366,6 +7370,7 @@ public function elabCallArgs3
   input Absyn.Path fn;
   input list<Absyn.Exp> args;
   input list<Absyn.NamedArg> nargs;
+  input list<Absyn.Path> typeVars;
   input Boolean impl;
   input DAE.Prefix pre;
   input SourceInfo info;
@@ -7404,7 +7409,7 @@ algorithm
                                                                          isFunctionPointer=isFunctionPointer,
                                                                          functionParallelism=funcParal)),
    vect_dims,
-   slots) := elabTypes(inCache, inEnv, args, nargs, typelist, onlyOneFunction, true/* Check types*/, impl,pre,info)
+   slots) := elabTypes(inCache, inEnv, args, nargs, typeVars, typelist, onlyOneFunction, true/* Check types*/, impl,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant.";
 
   (fn_1,functype) := deoverloadFuncname(fn, functype, inEnv);
@@ -8504,6 +8509,7 @@ protected function elabTypes
   input FCore.Graph inEnv;
   input list<Absyn.Exp> inPosArgs;
   input list<Absyn.NamedArg> inNamedArgs;
+  input list<Absyn.Path> typeVars;
   input list<DAE.Type> inTypes;
   input Boolean inOnlyOneFunction "if true, we can report errors as soon as possible";
   input Boolean inCheckTypes "if true, checks types";
@@ -8556,6 +8562,7 @@ algorithm
       (outCache, outArgs, outSlots, outConsts, pb) := elabInputArgs(inCache, inEnv,
         inPosArgs, inNamedArgs, slots, inOnlyOneFunction, inCheckTypes, inImplicit,
         inPrefix, inInfo, func_ty, path);
+      (outCache, pb) := addPolymorphicTypeVars(outCache, inEnv, typeVars, func_ty, pb, path, inInfo);
       pb := Types.solvePolymorphicBindings(pb, inInfo, path);
       res_ty := Types.fixPolymorphicRestype(res_ty, pb, inInfo);
       (outArgs, outSlots, params, res_ty) := match func_attr.isBuiltin
@@ -8588,6 +8595,47 @@ algorithm
     end try;
   end while;
 end elabTypes;
+
+function addPolymorphicTypeVars
+  input output FCore.Cache cache;
+  input FCore.Graph env;
+  input list<Absyn.Path> typeVars;
+  input DAE.Type funcTy;
+  input output InstTypes.PolymorphicBindings pb;
+  input Absyn.Path fnPath;
+  input SourceInfo info;
+protected
+  DAE.Type ty;
+  FCore.Graph scope;
+  SCode.Element e;
+  list<String> poly_types;
+  String ty_name;
+algorithm
+  if listEmpty(typeVars) then
+    return;
+  end if;
+
+  poly_types := match funcTy
+    case DAE.T_FUNCTION()
+      then list("$" + Types.polymorphicTypeName(t)
+                for t in Types.getAllInnerTypesOfType(funcTy.funcResultType, Types.isPolymorphic));
+    case DAE.T_METAPOLYMORPHIC() then {"$" + funcTy.name};
+    else {};
+  end match;
+
+  if listLength(typeVars) > listLength(poly_types) then
+    Error.addSourceMessage(Error.TOO_MANY_TYPE_VARS_IN_CALL,
+      {AbsynUtil.pathString(fnPath)}, info);
+    fail();
+  end if;
+
+  for tv in typeVars loop
+    ty_name :: poly_types := poly_types;
+    (cache, e, scope) := Lookup.lookupClass(cache, env, tv, SOME(info));
+    (cache, _, ty) := Inst.instClassType(cache, scope, e);
+    pb := Types.addPolymorphicBinding(ty_name, ty, pb);
+  end for;
+end addPolymorphicTypeVars;
 
 protected function applyArgTypesToFuncType
   "This function is yet another hack trying to handle function parameters with
@@ -12194,7 +12242,7 @@ algorithm
     case (Absyn.CREF(componentRef=cr),DAE.C_VARIABLENAME())
       then DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.T_UNKNOWN_DEFAULT);
 
-    case (Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS(args={Absyn.CREF()},argNames={})),DAE.C_VARIABLENAME())
+    case (Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}), functionArgs = Absyn.FUNCTIONARGS(args={Absyn.CREF()},argNames={})),DAE.C_VARIABLENAME())
       then DAE.CODE(Absyn.C_EXPRESSION(exp),DAE.T_UNKNOWN_DEFAULT);
 
     // failure
@@ -12626,7 +12674,7 @@ algorithm
         (cr, i) := inTuple;
       then
         Absyn.CALL(Absyn.CREF_IDENT("size", {}),
-          Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.INTEGER(i)}, {}));
+          Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.INTEGER(i)}, {}), {});
 
     case Absyn.CREF()
       then Absyn.CREF(replaceEnd(inExp.componentRef));

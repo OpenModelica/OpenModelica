@@ -211,13 +211,13 @@ algorithm
       equation
         aexpl = List.map(expl,unelabExp);
         acref = AbsynUtil.pathToCref(path);
-      then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
+      then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}),{});
 
     case (DAE.RECORD(path = path,exps = expl))
       equation
         aexpl = List.map(expl,unelabExp);
         acref = AbsynUtil.pathToCref(path);
-      then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}));
+      then Absyn.CALL(acref,Absyn.FUNCTIONARGS(aexpl,{}),{});
 
     case(DAE.PARTEVALFUNCTION(path,expl,_,_))
       equation
@@ -232,7 +232,7 @@ algorithm
         ae1 = unleabZeroExpFromType(ty);
         expl_1 = List.map(dims, unelabDimensionToFillExp);
       then
-        Absyn.CALL(Absyn.CREF_IDENT("fill",{}),Absyn.FUNCTIONARGS(ae1::expl_1,{}));
+        Absyn.CALL(Absyn.CREF_IDENT("fill",{}),Absyn.FUNCTIONARGS(ae1::expl_1,{}),{});
 
     case (DAE.ARRAY(array = expl))
       equation
@@ -279,7 +279,7 @@ algorithm
     case(DAE.SIZE(e1,SOME(e2))) equation
       ae1 = unelabExp(e1);
       ae2 = unelabExp(e2);
-    then Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({ae1,ae2},{}));
+    then Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({ae1,ae2},{}),{});
 
     /* WHAT? exactly the same case as above???!!!
     case(DAE.SIZE(e1,SOME(e2))) equation
@@ -296,7 +296,7 @@ algorithm
       acref = AbsynUtil.pathToCref(path);
       ae1 = unelabExp(e1);
       aiters = List.map(riters, unelabReductionIterator);
-      then Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, iterType, aiters));
+      then Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, iterType, aiters),{});
 
     else
       equation
@@ -490,7 +490,7 @@ algorithm
       then
         e;
 
-    case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
+    case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(function_ = Absyn.CREF_IDENT("der",{}), functionArgs = Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
       equation
         (_,e_cref) = Static.elabUntypedCref(FCore.emptyCache(),FGraph.empty(),cref,false,DAE.NOPRE(),AbsynUtil.dummyInfo);
         e = crefExp(e_cref);

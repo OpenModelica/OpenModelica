@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/DumpGraphviz.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/DumpGraphviz.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "DumpGraphviz.h"
@@ -20,7 +20,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/DumpGraphviz.mo",6,3,6,35,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/DumpGraphviz.mo",6,3,6,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }

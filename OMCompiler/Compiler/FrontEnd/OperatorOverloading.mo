@@ -227,7 +227,7 @@ algorithm
          operNames = AbsynToSCode.getListofQualOperatorFuncsfromOperator(operatorCl);
          (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
 
-         (cache,SOME((exp,prop))) = Static.elabCallArgs3(cache,env,types,path,{absexp1},{},inImpl,inPre,inInfo);
+         (cache,SOME((exp,prop))) = Static.elabCallArgs3(cache,env,types,path,{absexp1},{},{},inImpl,inPre,inInfo);
 
        then
          (cache,exp,prop);
@@ -282,7 +282,7 @@ algorithm
         operNames = AbsynToSCode.getListofQualOperatorFuncsfromOperator(operatorCl);
         (cache,types as _::_) = Lookup.lookupFunctionsListInEnv(cache, operatorEnv, operNames, inInfo, {});
 
-        (cache,SOME((daeExp,prop))) = Static.elabCallArgs3(cache,env,types,path,exp1::restargs,nargs,inImpl,inPre,inInfo);
+        (cache,SOME((daeExp,prop))) = Static.elabCallArgs3(cache,env,types,path,exp1::restargs,nargs,{},inImpl,inPre,inInfo);
       then
         (cache,daeExp,prop);
 

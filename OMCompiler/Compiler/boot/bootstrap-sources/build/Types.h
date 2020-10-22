@@ -491,8 +491,22 @@ modelica_metatype omc_Types_solvePolymorphicBindings(threadData_t *threadData, m
 #define boxptr_Types_solvePolymorphicBindings omc_Types_solvePolymorphicBindings
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_solvePolymorphicBindings,2,0) {(void*) boxptr_Types_solvePolymorphicBindings,0}};
 #define boxvar_Types_solvePolymorphicBindings MMC_REFSTRUCTLIT(boxvar_lit_Types_solvePolymorphicBindings)
+DLLExport
+modelica_metatype omc_Types_addPolymorphicBinding(threadData_t *threadData, modelica_string _id, modelica_metatype _ity, modelica_metatype _bindings);
 #define boxptr_Types_addPolymorphicBinding omc_Types_addPolymorphicBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_addPolymorphicBinding,2,0) {(void*) boxptr_Types_addPolymorphicBinding,0}};
+#define boxvar_Types_addPolymorphicBinding MMC_REFSTRUCTLIT(boxvar_lit_Types_addPolymorphicBinding)
+DLLExport
+modelica_string omc_Types_polymorphicTypeName(threadData_t *threadData, modelica_metatype _ty);
 #define boxptr_Types_polymorphicTypeName omc_Types_polymorphicTypeName
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_polymorphicTypeName,2,0) {(void*) boxptr_Types_polymorphicTypeName,0}};
+#define boxvar_Types_polymorphicTypeName MMC_REFSTRUCTLIT(boxvar_lit_Types_polymorphicTypeName)
+DLLExport
+modelica_boolean omc_Types_isPolymorphic(threadData_t *threadData, modelica_metatype _ty);
+DLLExport
+modelica_metatype boxptr_Types_isPolymorphic(threadData_t *threadData, modelica_metatype _ty);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Types_isPolymorphic,2,0) {(void*) boxptr_Types_isPolymorphic,0}};
+#define boxvar_Types_isPolymorphic MMC_REFSTRUCTLIT(boxvar_lit_Types_isPolymorphic)
 DLLExport
 modelica_metatype omc_Types_getRealOrIntegerDimensions(threadData_t *threadData, modelica_metatype _inType);
 #define boxptr_Types_getRealOrIntegerDimensions omc_Types_getRealOrIntegerDimensions

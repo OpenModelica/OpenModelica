@@ -1721,12 +1721,12 @@ algorithm
         cref1 = fixCref(cache,env,cref,tree);
       then (if referenceEq(cref, cref1) then exp else Absyn.CREF(cref1));
 
-    case (Absyn.CALL(cref,fargs),(cache,env,tree))
+    case (Absyn.CALL(function_ = cref),(cache,env,tree))
       equation
         // print("cref actual: " + AbsynUtil.crefString(cref) + " scope: " + FGraph.printGraphPathStr(env) + "\n");
         cref1 = fixCref(cache,env,cref,tree);
         // print("cref fixed : " + AbsynUtil.crefString(cref) + "\n");
-      then (if referenceEq(cref, cref1) then exp else Absyn.CALL(cref1,fargs));
+      then (if referenceEq(cref, cref1) then exp else Absyn.CALL(cref1, exp.functionArgs, exp.typeVars));
 
     case (Absyn.PARTEVALFUNCTION(cref,fargs),(cache,env,tree))
       equation

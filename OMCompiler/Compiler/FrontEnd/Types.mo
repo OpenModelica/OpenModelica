@@ -6300,7 +6300,7 @@ algorithm
   end match;
 end getRealOrIntegerDimensions;
 
-protected function isPolymorphic
+public function isPolymorphic
   input DAE.Type ty;
   output Boolean outMatch;
 algorithm
@@ -6310,14 +6310,14 @@ algorithm
   end match;
 end isPolymorphic;
 
-protected function polymorphicTypeName
+public function polymorphicTypeName
   input DAE.Type ty;
   output String name;
 algorithm
   DAE.T_METAPOLYMORPHIC(name = name) := ty;
 end polymorphicTypeName;
 
-protected function addPolymorphicBinding
+public function addPolymorphicBinding
   input String id;
   input DAE.Type ity;
   input InstTypes.PolymorphicBindings bindings;

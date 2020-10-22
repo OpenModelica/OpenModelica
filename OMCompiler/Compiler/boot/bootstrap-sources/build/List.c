@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/List.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/List.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "List.h"
@@ -48,6 +48,21 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_List_merge,2,0) {(void*) boxptr_List_me
 PROTECTED_FUNCTION_STATIC modelica_metatype omc_List_insertListSorted1(threadData_t *threadData, modelica_metatype _inList, modelica_metatype _inList2, modelica_fnptr _inCompFunc, modelica_metatype _inResultList);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_insertListSorted1,2,0) {(void*) boxptr_List_insertListSorted1,0}};
 #define boxvar_List_insertListSorted1 MMC_REFSTRUCTLIT(boxvar_lit_List_insertListSorted1)
+DLLExport
+modelica_metatype omc_List_trim(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fl, modelica_fnptr _fn)
+{
+modelica_metatype _l = NULL;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_l = __omcQ_24in_5Fl;
+while(1)
+{
+if(!((!listEmpty(_l)) && mmc_unbox_boolean((MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_fn), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_fn), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_fn), 2))), listHead(_l)) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_fn), 1)))) (threadData, listHead(_l))))) break;
+_l = listRest(_l);
+}
+_return: OMC_LABEL_UNUSED
+return _l;
+}
 DLLExport
 modelica_metatype omc_List_maxElement(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _lessFn)
 {

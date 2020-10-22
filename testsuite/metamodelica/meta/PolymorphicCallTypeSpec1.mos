@@ -1,0 +1,32 @@
+// name: PolymorphicCallTypeSpec1
+// status: correct
+
+setCommandLineOptions("-g=MetaModelica -d=gen");
+loadString("
+  uniontype U<T>
+    record R
+      list<T> l;
+    end R;
+
+    function new
+      output U<T> u = R({});
+    end new;
+  end U;
+
+  function test
+    output U<Integer> u = U.new<Integer>();
+  end test;
+");
+getErrorString();
+test();
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record U.R
+//     l = {}
+// end U.R;
+// ""
+// endResult

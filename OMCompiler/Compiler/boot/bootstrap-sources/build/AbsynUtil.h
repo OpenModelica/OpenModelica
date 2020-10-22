@@ -87,6 +87,18 @@ extern struct record_description ErrorTypes_Severity_ERROR__desc;
 extern struct record_description Gettext_TranslatableContent_gettext__desc;
 extern struct record_description SourceInfo_SOURCEINFO__desc;
 DLLExport
+modelica_boolean omc_AbsynUtil_isNotPartial(threadData_t *threadData, modelica_metatype _inClass);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_isNotPartial(threadData_t *threadData, modelica_metatype _inClass);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_isNotPartial,2,0) {(void*) boxptr_AbsynUtil_isNotPartial,0}};
+#define boxvar_AbsynUtil_isNotPartial MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_isNotPartial)
+DLLExport
+modelica_boolean omc_AbsynUtil_isPartial(threadData_t *threadData, modelica_metatype _inClass);
+DLLExport
+modelica_metatype boxptr_AbsynUtil_isPartial(threadData_t *threadData, modelica_metatype _inClass);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_AbsynUtil_isPartial,2,0) {(void*) boxptr_AbsynUtil_isPartial,0}};
+#define boxvar_AbsynUtil_isPartial MMC_REFSTRUCTLIT(boxvar_lit_AbsynUtil_isPartial)
+DLLExport
 modelica_boolean omc_AbsynUtil_isClassOrComponentElementSpec(threadData_t *threadData, modelica_metatype _inElementSpec);
 DLLExport
 modelica_metatype boxptr_AbsynUtil_isClassOrComponentElementSpec(threadData_t *threadData, modelica_metatype _inElementSpec);

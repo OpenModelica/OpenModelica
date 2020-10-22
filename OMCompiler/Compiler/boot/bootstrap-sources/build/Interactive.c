@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Interactive.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Interactive.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Interactive.h"
@@ -470,7 +470,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT177,58,_OMC_LIT177_data);
 #define _OMC_LIT177 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT177)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT178,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT177}};
 #define _OMC_LIT178 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT178)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT179,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(183)),_OMC_LIT176,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT178}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT179,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(182)),_OMC_LIT176,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT178}};
 #define _OMC_LIT179 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT179)
 #define _OMC_LIT180_data "Icon"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT180,4,_OMC_LIT180_data);
@@ -708,7 +708,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT267,80,_OMC_LIT267_data);
 #define _OMC_LIT267 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT267)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT268,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT267}};
 #define _OMC_LIT268 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT268)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT269,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(185)),_OMC_LIT266,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT268}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT269,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(184)),_OMC_LIT266,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT268}};
 #define _OMC_LIT269 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT269)
 #define _OMC_LIT270_data "getInheritedClassesHelper"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT270,25,_OMC_LIT270_data);
@@ -1435,7 +1435,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT536,178,_OMC_LIT536_data);
 #define _OMC_LIT536 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT536)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT537,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT536}};
 #define _OMC_LIT537 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT537)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT538,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),_OMC_LIT535,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT537}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT538,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(8)),_OMC_LIT535,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT537}};
 #define _OMC_LIT538 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT538)
 #define _OMC_LIT539_data "evalfunc"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT539,8,_OMC_LIT539_data);
@@ -1445,7 +1445,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT540,42,_OMC_LIT540_data);
 #define _OMC_LIT540 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT540)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT541,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT540}};
 #define _OMC_LIT541 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT541)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT542,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(8)),_OMC_LIT539,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT541}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT542,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(7)),_OMC_LIT539,MMC_IMMEDIATE(MMC_TAGFIXNUM(1)),_OMC_LIT541}};
 #define _OMC_LIT542 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT542)
 #define _OMC_LIT543_data "keepArrays"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT543,10,_OMC_LIT543_data);
@@ -1514,7 +1514,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT569,79,_OMC_LIT569_data);
 #define _OMC_LIT569 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT569)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT570,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT569}};
 #define _OMC_LIT570 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT570)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT571,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(29)),_OMC_LIT568,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT570}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT571,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(28)),_OMC_LIT568,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT570}};
 #define _OMC_LIT571 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT571)
 #define _OMC_LIT572_data "Evaluating: "
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT572,12,_OMC_LIT572_data);
@@ -8926,7 +8926,7 @@ switch (MMC_SWITCH_CAST(tmp3)) {
 case 0: {
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 3));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],11,3) == 0) goto tmp2_end;
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],0,2) == 0) goto tmp2_end;
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
@@ -9013,7 +9013,7 @@ threadData->mmc_jumper = &new_mmc_jumper;
 for (; tmp3 < 4; tmp3++) {
 switch (MMC_SWITCH_CAST(tmp3)) {
 case 0: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,3) == 0) goto tmp2_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],0,2) == 0) goto tmp2_end;
@@ -9036,7 +9036,7 @@ tmpMeta[0] = tmpMeta[4];
 goto tmp2_done;
 }
 case 1: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,3) == 0) goto tmp2_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],0,2) == 0) goto tmp2_end;
@@ -9054,7 +9054,7 @@ tmpMeta[0] = tmpMeta[2];
 goto tmp2_done;
 }
 case 2: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,3) == 0) goto tmp2_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],0,2) == 0) goto tmp2_end;
@@ -9062,7 +9062,7 @@ tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
 if (listEmpty(tmpMeta[3])) goto tmp2_end;
 tmpMeta[4] = MMC_CAR(tmpMeta[3]);
 tmpMeta[5] = MMC_CDR(tmpMeta[3]);
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[4],11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[4],11,3) == 0) goto tmp2_end;
 if (!listEmpty(tmpMeta[5])) goto tmp2_end;
 tmpMeta[6] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 3));
 _cr = tmpMeta[1];
@@ -17394,8 +17394,9 @@ _p_1 = omc_AbsynToSCode_translateAbsyn2SCode(threadData, _lineProgram);
 _cache = omc_Inst_makeEnvFromProgram(threadData, _p_1 ,&_env);
 tmpMeta[1] = MMC_REFSTRUCTLIT(mmc_nil);
 tmpMeta[2] = mmc_mk_box3(5, &Absyn_ComponentRef_CREF__IDENT__desc, _annName, tmpMeta[1]);
-tmpMeta[3] = mmc_mk_box3(14, &Absyn_Exp_CALL__desc, tmpMeta[2], _fargs);
-omc_StaticScript_elabGraphicsExp(threadData, _cache, _env, tmpMeta[3], 0, _OMC_LIT70, _info ,&_newexp ,&_prop);
+tmpMeta[3] = MMC_REFSTRUCTLIT(mmc_nil);
+tmpMeta[4] = mmc_mk_box4(14, &Absyn_Exp_CALL__desc, tmpMeta[2], _fargs, tmpMeta[3]);
+omc_StaticScript_elabGraphicsExp(threadData, _cache, _env, tmpMeta[4], 0, _OMC_LIT70, _info ,&_newexp ,&_prop);
 _cache = omc_Ceval_cevalIfConstant(threadData, _cache, _env, _newexp, _prop, 0, _info ,&_newexp ,&_prop);
 omc_Print_clearErrorBuf(threadData);
 _gexpstr = omc_ExpressionDump_printExpStr(threadData, _newexp);
@@ -44521,7 +44522,7 @@ tmpMeta[0] = tmpMeta[1];
 goto tmp2_done;
 }
 case 11: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,11,3) == 0) goto tmp2_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 3));
 _cref = tmpMeta[1];
@@ -44531,7 +44532,7 @@ _new_comp = tmp3_3;
 tmp3 += 7;
 _cref = omc_Interactive_replaceStartInComponentRef(threadData, _cref, _old_comp, _new_comp);
 _func_args = omc_Interactive_renameComponentInFunctionArgs(threadData, _func_args, _old_comp, _new_comp);
-tmpMeta[1] = mmc_mk_box3(14, &Absyn_Exp_CALL__desc, _cref, _func_args);
+tmpMeta[1] = mmc_mk_box4(14, &Absyn_Exp_CALL__desc, _cref, _func_args, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inExp1), 4))));
 tmpMeta[0] = tmpMeta[1];
 goto tmp2_done;
 }
@@ -48829,7 +48830,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 tmpMeta[0] = _inStmt;
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],1,2) == 0) MMC_THROW_INTERNAL();
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],11,2) == 0) MMC_THROW_INTERNAL();
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],11,3) == 0) MMC_THROW_INTERNAL();
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],0,2) == 0) MMC_THROW_INTERNAL();
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 3));
@@ -48856,7 +48857,7 @@ switch (MMC_SWITCH_CAST(tmp3)) {
 case 0: {
 if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,1,2) == 0) goto tmp2_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],11,3) == 0) goto tmp2_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],0,2) == 0) goto tmp2_end;
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
@@ -48894,7 +48895,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 tmpMeta[0] = _inStmt;
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],1,2) == 0) MMC_THROW_INTERNAL();
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],11,2) == 0) MMC_THROW_INTERNAL();
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],11,3) == 0) MMC_THROW_INTERNAL();
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 2));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],2,2) == 0) MMC_THROW_INTERNAL();
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
@@ -49563,8 +49564,9 @@ _fargs = tmpMeta[2];
 _info = tmpMeta[3];
 tmp4 += 9;
 _env = omc_SymbolTable_buildEnv(threadData);
-tmpMeta[0] = mmc_mk_box3(14, &Absyn_Exp_CALL__desc, _cr, _fargs);
-_exp = tmpMeta[0];
+tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
+tmpMeta[1] = mmc_mk_box4(14, &Absyn_Exp_CALL__desc, _cr, _fargs, tmpMeta[0]);
+_exp = tmpMeta[1];
 _cache = omc_StaticScript_elabExp(threadData, omc_FCore_emptyCache(threadData), _env, _exp, 1, 1, _OMC_LIT70, _info ,&_sexp ,NULL);
 tmpMeta[0] = mmc_mk_box2(3, &Absyn_Msg_MSG__desc, _info);
 omc_CevalScript_ceval(threadData, _cache, _env, _sexp, 1, tmpMeta[0], ((modelica_integer) 0), NULL);
@@ -49884,7 +49886,7 @@ switch (MMC_SWITCH_CAST(tmp7)) {
 case 0: {
 if (mmc__uniontype__metarecord__typedef__equal(tmp7_1,1,2) == 0) goto tmp6_end;
 tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp7_1), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],11,2) == 0) goto tmp6_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],11,3) == 0) goto tmp6_end;
 tmp7 += 1;
 _partialInst = omc_System_getPartialInstantiation(threadData);
 omc_System_setPartialInstantiation(threadData, 1);

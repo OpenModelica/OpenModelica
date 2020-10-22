@@ -12,6 +12,7 @@ extern struct record_description ErrorTypes_Message_MESSAGE__desc;
 extern struct record_description ErrorTypes_MessageType_SCRIPTING__desc;
 extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
 extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description ErrorTypes_Severity_WARNING__desc;
 extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
 extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
 extern struct record_description Flags_Flag_FLAGS__desc;
@@ -132,6 +133,7 @@ void omc_FlagsUtil_setConfigValue(threadData_t *threadData, modelica_metatype _i
 static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigValue,2,0) {(void*) boxptr_FlagsUtil_setConfigValue,0}};
 #define boxvar_FlagsUtil_setConfigValue MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigValue)
 #define boxptr_FlagsUtil_applySideEffects omc_FlagsUtil_applySideEffects
+#define boxptr_FlagsUtil_handleDeprecatedFlags omc_FlagsUtil_handleDeprecatedFlags
 #define boxptr_FlagsUtil_printActualTypeStr omc_FlagsUtil_printActualTypeStr
 #define boxptr_FlagsUtil_printExpectedTypeStr omc_FlagsUtil_printExpectedTypeStr
 #define boxptr_FlagsUtil_stringFlagData omc_FlagsUtil_stringFlagData

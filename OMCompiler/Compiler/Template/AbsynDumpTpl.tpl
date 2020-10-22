@@ -795,7 +795,8 @@ match exp
   case CALL(__) then
     let func_str = dumpCref(function_)
     let args_str = dumpFunctionArgs(functionArgs)
-    '<%func_str%>(<%args_str%>)'
+    let tvs_str = if typeVars then '<<%(typeVars |> v => dumpPath(v) ;separator=", ")%>>'
+    '<%func_str%><%tvs_str%>(<%args_str%>)'
   case PARTEVALFUNCTION(__) then
     let func_str = dumpCref(function_)
     let args_str = dumpFunctionArgs(functionArgs)

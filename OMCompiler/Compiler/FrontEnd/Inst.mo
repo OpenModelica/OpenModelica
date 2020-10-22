@@ -5603,5 +5603,16 @@ algorithm
   end match;
 end instFunctionAnnotations;
 
+public function instClassType
+  input output FCore.Cache cache;
+  input output FCore.Graph env;
+  input SCode.Element classElem;
+        output DAE.Type ty;
+algorithm
+  (cache, env, _, _, _, _, ty) := instClass(cache, env, InnerOuter.emptyInstHierarchy,
+    UnitAbsyn.noStore, DAE.NOMOD(), DAE.NOPRE(), classElem, {}, true,
+    InstTypes.TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet);
+end instClassType;
+
 annotation(__OpenModelica_Interface="frontend");
 end Inst;

@@ -736,6 +736,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   record CALL
     ComponentRef function_ "function" ;
     FunctionArgs functionArgs ;
+    list<Absyn.Path> typeVars;
   end CALL;
 
   // stefan
@@ -1646,7 +1647,7 @@ algorithm
       equation
         (fargs, arg) = traverseExpBidirFunctionArgs(fargs, enterFunc, exitFunc, arg);
       then
-        (CALL(cref, fargs), arg);
+        (CALL(cref, fargs, inExp.typeVars), arg);
 
     case (PARTEVALFUNCTION(function_ = cref, functionArgs = fargs), _, _, arg)
       equation
@@ -5155,7 +5156,8 @@ public function isDerCref
   output Boolean b;
 algorithm
   b := match exp
-    case CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF()},{})) then true;
+    case CALL(function_ = CREF_IDENT("der",{}),
+              functionArgs = FUNCTIONARGS({CREF()},{})) then true;
     else false;
   end match;
 end isDerCref;
@@ -5163,7 +5165,8 @@ end isDerCref;
 public function isDerCrefFail
   input Exp exp;
 algorithm
-  CALL(CREF_IDENT("der",{}),FUNCTIONARGS({CREF()},{})) := exp;
+  CALL(function_ = CREF_IDENT("der",{}),
+       functionArgs = FUNCTIONARGS({CREF()},{})) := exp;
 end isDerCrefFail;
 
 public function getExpsFromArrayDim

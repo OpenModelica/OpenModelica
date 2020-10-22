@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/SCodeUtil.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/SCodeUtil.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "SCodeUtil.h"
@@ -120,10 +120,10 @@ static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT46,1,3) {&SCode_Visibility_PUBLIC__
 #define _OMC_LIT47_data "SCodeUtil.getStatementInfo failed"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT47,33,_OMC_LIT47_data);
 #define _OMC_LIT47 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT47)
-#define _OMC_LIT48_data "/home/martin/OpenModelica/OMCompiler/Compiler/FrontEnd/SCodeUtil.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT48,67,_OMC_LIT48_data);
+#define _OMC_LIT48_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/SCodeUtil.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT48,74,_OMC_LIT48_data);
 #define _OMC_LIT48 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT48)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT49_6,1602156586.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT49_6,1594126855.0);
 #define _OMC_LIT49_6 MMC_REFREALLIT(_OMC_LIT_STRUCT49_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT49,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT48,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2703)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2703)),MMC_IMMEDIATE(MMC_TAGFIXNUM(82)),_OMC_LIT49_6}};
 #define _OMC_LIT49 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT49)
@@ -12566,7 +12566,7 @@ goto tmp2_done;
 case 12: {
 if (mmc__uniontype__metarecord__typedef__equal(tmp3_1,9,3) == 0) goto tmp2_end;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 2));
-if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],11,2) == 0) goto tmp2_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],11,3) == 0) goto tmp2_end;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 2));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 3));
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp3_1), 4));

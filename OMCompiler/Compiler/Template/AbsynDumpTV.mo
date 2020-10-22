@@ -572,6 +572,7 @@ package Absyn
     record CALL
       ComponentRef function_;
       FunctionArgs functionArgs ;
+      list<Absyn.Path> typeVars;
     end CALL;
 
     record PARTEVALFUNCTION

@@ -4530,7 +4530,7 @@ algorithm
         printListAsCorbaString(elseIfBranch,printTupleExpExpAsCorbaString,",");
         Print.printBuf(" end Absyn.IFEXP;");
       then ();
-    case Absyn.CALL(function_,functionArgs)
+    case Absyn.CALL(function_,functionArgs,_)
       equation
         Print.printBuf("record Absyn.CALL function_ = ");
         printComponentRefAsCorbaString(function_);

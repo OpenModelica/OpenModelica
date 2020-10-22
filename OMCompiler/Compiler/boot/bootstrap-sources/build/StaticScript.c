@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/StaticScript.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/StaticScript.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "StaticScript.h"
@@ -290,7 +290,7 @@ threadData->mmc_jumper = &new_mmc_jumper;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,11,3) == 0) goto tmp3_end;
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_3), 2));
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_3), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[4],0,2) == 0) goto tmp3_end;
@@ -455,7 +455,7 @@ threadData->mmc_jumper = &new_mmc_jumper;
 for (; tmp4 < 2; tmp4++) {
 switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
-if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,11,2) == 0) goto tmp3_end;
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_3,11,3) == 0) goto tmp3_end;
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_3), 2));
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_3), 3));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[4],0,2) == 0) goto tmp3_end;
@@ -604,8 +604,9 @@ _impl = tmp4_6;
 omc_ErrorExt_setCheckpoint(threadData, _OMC_LIT0);
 _cr = omc_AbsynUtil_joinCrefs(threadData, _OMC_LIT3, _cr2);
 tmpMeta[3] = mmc_mk_box3(3, &Absyn_FunctionArgs_FUNCTIONARGS__desc, _inExps, _inNamedArgs);
-tmpMeta[4] = mmc_mk_box3(14, &Absyn_Exp_CALL__desc, _cr, tmpMeta[3]);
-_cache = omc_Static_elabExp(threadData, _cache, _env, tmpMeta[4], _impl, 0, _inPrefix, _info ,&_exp_1 ,&_prop);
+tmpMeta[4] = MMC_REFSTRUCTLIT(mmc_nil);
+tmpMeta[5] = mmc_mk_box4(14, &Absyn_Exp_CALL__desc, _cr, tmpMeta[3], tmpMeta[4]);
+_cache = omc_Static_elabExp(threadData, _cache, _env, tmpMeta[5], _impl, 0, _inPrefix, _info ,&_exp_1 ,&_prop);
 omc_ErrorExt_delCheckpoint(threadData, _OMC_LIT0);
 tmpMeta[0+0] = _cache;
 tmpMeta[0+1] = _exp_1;

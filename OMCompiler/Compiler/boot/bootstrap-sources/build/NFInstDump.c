@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/NFInstDump.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/NFInstDump.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "NFInstDump.h"
@@ -24,7 +24,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/NFInstDump.mo",14,3,14,35,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/NFInstDump.mo",14,3,14,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
@@ -43,7 +43,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/martin/OpenModelica/OMCompiler/Compiler/Stubs/NFInstDump.mo",7,3,7,35,0};
+FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/NFInstDump.mo",7,3,7,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }

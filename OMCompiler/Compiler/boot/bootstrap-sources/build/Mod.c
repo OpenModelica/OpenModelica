@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/martin/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Mod.c"
+#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Mod.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Mod.h"
@@ -189,7 +189,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT67,46,_OMC_LIT67_data);
 #define _OMC_LIT67 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT67)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT68,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT67}};
 #define _OMC_LIT68 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT68)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT69,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(64)),_OMC_LIT66,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT68}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT69,5,3) {&Flags_DebugFlag_DEBUG__FLAG__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(63)),_OMC_LIT66,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),_OMC_LIT68}};
 #define _OMC_LIT69 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT69)
 #define _OMC_LIT70_data "- Mod.updateMod failed mod: "
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT70,28,_OMC_LIT70_data);

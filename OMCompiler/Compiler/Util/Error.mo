@@ -824,6 +824,8 @@ public constant ErrorTypes.Message PARTIAL_COMPONENT_TYPE = ErrorTypes.MESSAGE(3
   Gettext.gettext("Component ‘%s‘ has partial type ‘%s‘."));
 public constant ErrorTypes.Message PARTIAL_FUNCTION_CALL = ErrorTypes.MESSAGE(376, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Called function ‘%s‘ is partial."));
+public constant ErrorTypes.Message TOO_MANY_TYPE_VARS_IN_CALL = ErrorTypes.MESSAGE(377, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Too many type variables given in call to ‘%s‘."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
