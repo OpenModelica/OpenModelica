@@ -192,9 +192,11 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         mpValueComboBox->blockSignals(state);
       }
       if (adjustSize) {
-        /* Set the minimum width so that the value text will be readable */
+        /* Set the minimum width so that the value text will be readable.
+         * If the items width is greater than the value text than use it.
+         */
         fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
-        mpValueComboBox->setMinimumWidth(fm.width(value) + 50);
+        mpValueComboBox->setMinimumWidth(qMax(fm.width(value), mpValueComboBox->minimumSizeHint().width()) + 50);
       }
       break;
     case Parameter::CheckBox:
