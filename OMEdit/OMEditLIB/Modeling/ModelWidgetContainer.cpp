@@ -1916,7 +1916,9 @@ Element *GraphicsView::getElementFromQGraphicsItem(QGraphicsItem *pGraphicsItem)
     }
     if (!pElement) {
       OriginItem *pOriginItem = dynamic_cast<OriginItem*>(pGraphicsItem);
-      pElement = pOriginItem->getElement();
+      if (pOriginItem) {
+        pElement = pOriginItem->getElement();
+      }
     }
     return pElement;
   }
