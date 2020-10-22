@@ -40,6 +40,9 @@ target_link_libraries(omparse PUBLIC omc::3rd::omantlr3)
 target_link_libraries(omparse PUBLIC OpenModelicaRuntimeC)
 
 
+# # to find the generated antlr headers
+# # SYSTEM to disable warnings on the generated code.
+target_include_directories(omparse SYSTEM PRIVATE ${GNERATED_DIRECTORY})
 target_include_directories(omparse PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_include_directories(omparse PRIVATE ${OMCompiler_SOURCE_DIR}) #for revision.h :/
@@ -58,7 +61,7 @@ target_compile_definitions(omparse-boot PRIVATE OMC_BOOTSTRAPPING)
 
 # # to find the generated antlr headers
 # # SYSTEM to disable warnings on the generated code.
-# target_include_directories(omparse SYSTEM PRIVATE ${GNERATED_DIRECTORY})
+target_include_directories(omparse-boot SYSTEM PRIVATE ${GNERATED_DIRECTORY})
 target_include_directories(omparse-boot PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_include_directories(omparse-boot PRIVATE ${OMCompiler_SOURCE_DIR}) #for revision.h
