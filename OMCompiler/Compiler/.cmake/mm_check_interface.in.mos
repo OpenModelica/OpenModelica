@@ -1,7 +1,7 @@
 echo(false);
 mm_src_file := "@MM_INPUT_SOURCE_DIR@/@MM_PACKAGE_NAME@.mo";
 
-tmp_interface_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.interface.mo.tmp";
+tmp_interface_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.interface.mo.stamp";
 interface_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.interface.mo";
 depends_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.depends";
 public_imports_file := "@MM_OUTPUT_DIR@/@MM_PACKAGE_NAME@.public.imports";
