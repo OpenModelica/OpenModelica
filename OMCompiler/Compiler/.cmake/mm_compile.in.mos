@@ -1,0 +1,50 @@
+echo(false);
+mm_output_dir := "@MM_OUTPUT_DIR@";
+mm_src_file := "@MM_INPUT_SOURCE_DIR@/@MM_PACKAGE_NAME@.mo";
+
+out_c_src_dir := "@MM_OUTPUT_DIR@/c_files/";
+out_log_file := "@MM_OUTPUT_DIR@/c_files/@MM_PACKAGE_NAME@.log";
+
+class_strname := "@MM_PACKAGE_NAME@";
+class_typename := $TypeName(@MM_PACKAGE_NAME@);
+
+
+setCommandLineOptions("-g=MetaModelica --debug=-buildExternalLibs");
+getErrorString();
+
+if not loadFile(mm_src_file) then
+  print("Failed to load file: " + mm_src_file + "\n" + getErrorString());
+  exit(1);
+end if;
+
+total_imported_names := OpenModelica.Scripting.getMMfileTotalDependencies(class_strname, mm_output_dir);
+getErrorString();
+
+dep_interface_files := {mm_output_dir + "/" + pac + ".interface.mo" for pac guard not stringEqual(pac,class_strname) in total_imported_names};
+
+if not loadFiles(dep_interface_files) then
+  print("Failed to load files:\n" + getErrorString());
+  exit(1);
+end if;
+
+
+
+mkdir(out_c_src_dir);
+cd(out_c_src_dir);
+
+setCommandLineOptions("-d=rml");
+status := OpenModelica.Scripting.generateSeparateCode(class_typename);
+
+(numMessages, numErrors, numWarnings) := countMessages();
+
+if numMessages > 0 or not status then
+  status := false;
+  messages := getErrorString(warningsAsErrors=true);
+  print(intString(numErrors+numWarnings) + " errors out of " + intString(numMessages) + " messages:\n" + messages);
+  writeFile(out_log_file, messages);
+  if numErrors+numWarnings > 0 then
+    exit(1);
+  end if;
+else
+  remove(out_log_file);
+end if;

@@ -35,7 +35,7 @@ extern "C" {
 /*
  * Common includes
  */
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,7 +45,7 @@ extern "C" {
 #include <time.h>
 #include <math.h>
 
-#include "rtclock.h"
+#include "util/rtclock.h"
 #include "omc_config.h"
 #include "errorext.h"
 

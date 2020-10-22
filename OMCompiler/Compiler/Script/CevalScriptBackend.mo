@@ -3024,6 +3024,26 @@ algorithm
 
     case (cache,_,"getNthImport",_,_) then (cache,ValuesUtil.makeArray({}));
 
+    case (cache,_,"getImportedNames",{Values.CODE(Absyn.C_TYPENAME(path))},_)
+      algorithm
+        absynClass := Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn());
+        (vals,vals2) := getImportedNames(absynClass);
+        v := Values.TUPLE({ValuesUtil.makeArray(vals),ValuesUtil.makeArray(vals2)});
+      then
+        (cache, v);
+
+    case (cache,_,"getImportedNames",_,_)
+      then (cache,Values.TUPLE({ValuesUtil.makeArray({}),ValuesUtil.makeArray({})}));
+
+    case (cache,_,"getMMfileTotalDependencies",{Values.STRING(s1), Values.STRING(s2)},_)
+      algorithm
+        names := getMMfileTotalDependencies(s1, s2);
+        vals := list(Values.STRING(s) for s in names);
+      then
+        (cache,ValuesUtil.makeArray(vals));
+
+    case (cache,_,"getMMfileTotalDependencies",_,_) then (cache,ValuesUtil.makeArray({}));
+
     // plotParametric
     case (cache,env,"plotParametric",
         {
@@ -7138,184 +7158,180 @@ protected function getImportCount
 "Counts the number of Import sections in a class."
   input Absyn.Class inClass;
   output Integer outInteger;
+protected
+  list<Absyn.Import> pub_imports_list , pro_imports_list;
 algorithm
-  outInteger := match (inClass)
-    local
-      list<Absyn.ClassPart> parts;
-      Integer count;
-    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts))
-      equation
-        count = getImportsInClassParts(parts);
-      then
-        count;
-    // check also the case model extends X end X;
-    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts))
-      equation
-        count = getImportsInClassParts(parts);
-      then
-        count;
-    case Absyn.CLASS(body = Absyn.DERIVED()) then 0;
-  end match;
+  (pub_imports_list , pro_imports_list) := getImportList(inClass);
+  outInteger := listLength(pub_imports_list) + listLength(pro_imports_list);
 end getImportCount;
 
-protected function getImportsInClassParts
-"Helper function to getImportCount"
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output Integer outInteger;
+protected function getMMfileTotalDependencies
+  input String in_package_name;
+  input String public_imports_dir;
+  output list<String> total_pub_imports = {};
+protected
+  Absyn.Class package_class;
+  list<Absyn.Import> pub_imports_list , pro_imports_list;
+  String imp_ident;
 algorithm
-  outInteger := matchcontinue (inAbsynClassPartLst)
+  package_class := Interactive.getPathedClassInProgram(Absyn.IDENT(in_package_name), SymbolTable.getAbsyn());
+
+  (pub_imports_list , pro_imports_list) := getImportList(package_class);
+
+  for imp in pub_imports_list loop
+   imp_ident := AbsynUtil.pathFirstIdent(AbsynUtil.importPath(imp));
+   if imp_ident <> "MetaModelica" then
+     total_pub_imports := getMMfilePublicDependencies(imp_ident, public_imports_dir, total_pub_imports);
+   end if;
+  end for;
+
+  for imp in pro_imports_list loop
+   imp_ident := AbsynUtil.pathFirstIdent(AbsynUtil.importPath(imp));
+   if imp_ident <> "MetaModelica" then
+     total_pub_imports := getMMfilePublicDependencies(imp_ident, public_imports_dir, total_pub_imports);
+   end if;
+  end for;
+
+end getMMfileTotalDependencies;
+
+protected function getMMfilePublicDependencies
+  input String in_package_name;
+  input String public_imports_dir;
+  input output list<String> packages;
+protected
+  String dep_public_imports_file, pub_imports_total;
+algorithm
+  if listMember(in_package_name, packages) then
+    return;
+  end if;
+
+  packages := in_package_name::packages;
+
+  dep_public_imports_file := public_imports_dir + "/" + in_package_name + ".public.imports";
+  pub_imports_total := System.readFile(dep_public_imports_file);
+
+  for pub_imp in System.strtok(pub_imports_total, ";") loop
+    packages := getMMfilePublicDependencies(pub_imp, public_imports_dir, packages);
+  end for;
+
+end getMMfilePublicDependencies;
+
+
+
+protected function getImportedNames
+  input Absyn.Class inClass;
+  output list<Values.Value> outPublicImports;
+  output list<Values.Value> outProtectedImports;
+protected
+  String ident;
+  list<Absyn.Import> pub_imports_list , pro_imports_list;
+algorithm
+  (pub_imports_list , pro_imports_list) := getImportList(inClass);
+
+  outPublicImports := {};
+  for imp in pub_imports_list loop
+     ident := AbsynUtil.pathFirstIdent(AbsynUtil.importPath(imp));
+     if ident <> "MetaModelica" then
+       outPublicImports := Values.STRING(ident)::outPublicImports;
+     end if;
+  end for;
+
+  outProtectedImports := {};
+  for imp in pro_imports_list loop
+     ident := AbsynUtil.pathFirstIdent(AbsynUtil.importPath(imp));
+     if ident <> "MetaModelica" then
+       outProtectedImports := Values.STRING(ident)::outProtectedImports;
+     end if;
+  end for;
+end getImportedNames;
+
+protected function getImportList
+"Counts the number of Import sections in a class."
+  input Absyn.Class inClass;
+  input output list<Absyn.Import> pub_imports_list = {};
+  input output list<Absyn.Import> pro_imports_list = {};
+algorithm
+  () := match (inClass)
+    local
+      list<Absyn.ClassPart> parts;
+
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) algorithm
+      for part in parts loop
+        (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
+      end for;
+    then ();
+
+    // check also the case model extends X end X;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)) algorithm
+      for part in parts loop
+        (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
+      end for;
+    then ();
+
+    case Absyn.CLASS(body = Absyn.DERIVED()) then ();
+  end match;
+end getImportList;
+
+protected function getImportsInClassPart
+  input Absyn.ClassPart inAbsynClassPart;
+  input output list<Absyn.Import> pub_imports_list;
+  input output list<Absyn.Import> pro_imports_list;
+algorithm
+  () := matchcontinue (inAbsynClassPart)
     local
       list<Absyn.ElementItem> els;
-      list<Absyn.ClassPart> xs;
-      Integer c1, c2, res;
-    case (Absyn.PUBLIC(contents = els) :: xs)
-      equation
-        c1 = getImportsInElementItems(els);
-        c2 = getImportsInClassParts(xs);
-      then
-        c1 + c2;
-    case (Absyn.PROTECTED(contents = els) :: xs)
-      equation
-        c1 = getImportsInElementItems(els);
-        c2 = getImportsInClassParts(xs);
-      then
-        c1 + c2;
-    case ((_ :: xs))
-      equation
-        res = getImportsInClassParts(xs);
-      then
-        res;
-    case ({}) then 0;
-  end matchcontinue;
-end getImportsInClassParts;
+    case Absyn.PUBLIC(contents = els) algorithm
+      for elem in els loop
+        pub_imports_list := getImportsInElementItem(elem, pub_imports_list);
+      end for;
+    then ();
 
-protected function getImportsInElementItems
+    case Absyn.PROTECTED(contents = els) algorithm
+      for elem in els loop
+        pro_imports_list := getImportsInElementItem(elem, pro_imports_list);
+      end for;
+    then ();
+
+    else ();
+
+  end matchcontinue;
+end getImportsInClassPart;
+
+protected function getImportsInElementItem
 "Helper function to getImportCount"
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output Integer outInteger;
+  input Absyn.ElementItem inAbsynElementItem;
+  input output list<Absyn.Import> imports_list;
 algorithm
-  outInteger := matchcontinue (inAbsynElementItemLst)
+  () := matchcontinue inAbsynElementItem
     local
       Absyn.Import import_;
-      list<Absyn.ElementItem> els;
-      Integer c1, res;
-    case (Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT())) :: els)
-      equation
-        c1 = getImportsInElementItems(els);
-      then
-        c1 + 1;
-    case ((_ :: els))
-      equation
-        res = getImportsInElementItems(els);
-      then
-        res;
-    case ({}) then 0;
+      Absyn.Class class_;
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_)))
+      algorithm
+        imports_list := import_::imports_list;
+      then ();
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = class_)))
+      algorithm
+        // imports_list := getImportList(class_, get_protected, imports_list);
+      then ();
+
+    else ();
   end matchcontinue;
-end getImportsInElementItems;
+end getImportsInElementItem;
 
 protected function getNthImport
 "Returns the Nth Import String from a class."
   input Absyn.Class inClass;
   input Integer inInteger;
   output list<Values.Value> outValue;
+protected
+  list<Absyn.Import> pub_imports_list , pro_imports_list;
 algorithm
-  outValue := match (inClass,inInteger)
-    local
-      list<Absyn.ClassPart> parts;
-      list<Values.Value> vals;
-      Integer n;
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),n)
-      equation
-        vals = getNthImportInClassParts(parts,n);
-      then
-        vals;
-    // check also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),n)
-      equation
-        vals = getNthImportInClassParts(parts,n);
-      then
-        vals;
-  end match;
+  (pub_imports_list, pro_imports_list) := getImportList(inClass);
+  outValue := unparseNthImport(listGet(pub_imports_list,inInteger));
 end getNthImport;
-
-protected function getNthImportInClassParts
-"Helper function to getNthImport"
-  input list<Absyn.ClassPart> inAbsynClassPartLst;
-  input Integer inInteger;
-  output list<Values.Value> outValue;
-algorithm
-  outValue := matchcontinue (inAbsynClassPartLst,inInteger)
-    local
-      list<Values.Value> vals;
-      list<Absyn.ElementItem> els;
-      list<Absyn.ClassPart> xs;
-      Integer n,c1,newn;
-    case ((Absyn.PUBLIC(contents = els) :: _),n)
-      equation
-        vals = getNthImportInElementItems(els, n);
-      then
-        vals;
-    case ((Absyn.PUBLIC(contents = els) :: xs),n) /* The rule above failed, subtract the number of imports in the first section and try with the rest of the classparts */
-      equation
-        c1 = getImportsInElementItems(els);
-        newn = n - c1;
-        vals = getNthImportInClassParts(xs, newn);
-      then
-        vals;
-    case ((Absyn.PROTECTED(contents = els) :: _),n)
-      equation
-        vals = getNthImportInElementItems(els, n);
-      then
-        vals;
-    case ((Absyn.PROTECTED(contents = els) :: xs),n) /* The rule above failed, subtract the number of imports in the first section and try with the rest of the classparts */
-      equation
-        c1 = getImportsInElementItems(els);
-        newn = n - c1;
-        vals = getNthImportInClassParts(xs, newn);
-      then
-        vals;
-    case ((_ :: xs),n)
-      equation
-        vals = getNthImportInClassParts(xs, n);
-      then
-        vals;
-  end matchcontinue;
-end getNthImportInClassParts;
-
-protected function getNthImportInElementItems
-" This function takes an Element list and an int
-   and returns the nth import as string.
-   If the number is larger than the number of annotations
-   in the list, the function fails. Helper function to getNthImport."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  input Integer inInteger;
-  output list<Values.Value> outValue;
-algorithm
-  outValue := matchcontinue (inAbsynElementItemLst,inInteger)
-    local
-      list<Values.Value> vals;
-      Absyn.Import import_;
-      list<Absyn.ElementItem> els;
-      Integer newn,n;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_))) :: _), 1)
-      equation
-        vals = unparseNthImport(import_);
-      then
-        vals;
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT())) :: els), n)
-      equation
-        newn = n - 1;
-        vals = getNthImportInElementItems(els, newn);
-      then
-        vals;
-    case ((_ :: els),n)
-      equation
-        vals = getNthImportInElementItems(els, n);
-      then
-        vals;
-    case ({},_) then fail();
-  end matchcontinue;
-end getNthImportInElementItems;
 
 public function unparseNthImport
 " helperfunction to getNthImport."

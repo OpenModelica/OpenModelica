@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "settingsimpl.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "ModelicaUtilities.h"
 #include "omc_config.h"
 

@@ -1467,12 +1467,4 @@ package Flags
   end getConfigBool;
 end Flags;
 
-package Connect
-  uniontype Face
-    record INSIDE "This is an inside connection" end INSIDE;
-    record OUTSIDE "This is an outside connection" end OUTSIDE;
-    record NO_FACE end NO_FACE;
-  end Face;
-end Connect;
-
 end DAEDumpTV;

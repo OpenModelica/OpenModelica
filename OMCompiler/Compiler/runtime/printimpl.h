@@ -28,7 +28,7 @@
  *
  */
 
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 
 extern int Print_saveAndClearBuf(threadData_t *threadData);
 extern void Print_restoreBuf(threadData_t *threadData, int handle);

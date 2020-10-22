@@ -33,7 +33,7 @@
 
 extern "C" {
 
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "ModelicaUtilities.h"
 
 extern int Corba_haveCorba()
