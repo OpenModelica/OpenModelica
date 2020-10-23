@@ -727,6 +727,27 @@ public
     end match;
   end toDimension;
 
+  function fromDimension
+    "Returns a slice subscripts that covers the given dimension.
+     Will fail for untyped or unknown dimensions."
+    input Dimension dimension;
+    output Subscript subscript;
+  algorithm
+    subscript := match dimension
+      case Dimension.INTEGER()
+        then Subscript.SLICE(Expression.makeIntegerRange(1, 1, dimension.size));
+      case Dimension.BOOLEAN()
+        then Subscript.SLICE(Expression.makeRange(Expression.BOOLEAN(false), NONE(), Expression.BOOLEAN(true)));
+      case Dimension.ENUM()
+        then Subscript.SLICE(Expression.makeRange(
+          Expression.makeEnumLiteral(dimension.enumType, 1),
+          NONE(),
+          Expression.makeEnumLiteral(dimension.enumType, Type.enumSize(dimension.enumType))));
+      case Dimension.EXP()
+        then Subscript.SLICE(Expression.makeRange(Expression.INTEGER(1), NONE(), dimension.exp));
+    end match;
+  end fromDimension;
+
   function scalarize
     input Subscript subscript;
     input Dimension dimension;

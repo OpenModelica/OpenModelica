@@ -308,10 +308,10 @@ protected
     input output ComponentRef cref;
           output list<Subscript> subs;
   algorithm
+    cref := ComponentRef.fillSubscripts(cref);
+    cref := ComponentRef.replaceWholeSubscripts(cref);
     subs := ComponentRef.subscriptsAllFlat(cref);
     cref := ComponentRef.stripSubscriptsAll(cref);
-
-    // TODO: Replace any : in the subs with the correct dimension.
   end separate;
 
   function getConnectIntervals
@@ -346,7 +346,7 @@ protected
       mi := Array.map(miv, make_lo_interval);
     else
       index := 1;
-      mi := arrayCreate(listLength(subs), SBInterval.newEmpty());
+      mi := arrayCopy(miv);
 
       for s in subs loop
         sub_exp := evalCrefs(Subscript.toExp(s));
@@ -364,6 +364,11 @@ protected
         end if;
 
         index := index + 1;
+      end for;
+
+      for i in listLength(subs)+1:arrayLength(mi) loop
+        aux_lo := SBInterval.lowerBound(miv[i]);
+        mi[index] := SBInterval.new(aux_lo, 1, aux_lo);
       end for;
     end if;
 
@@ -406,7 +411,7 @@ protected
 
       mi := SBMultiInterval.fromArray(arrayCreate(Vector.size(vCount), SBInterval.new(vc, 1, vc)));
     else
-      ints := arrayCreate(listLength(dims), SBInterval.newEmpty());
+      ints := arrayCreate(Vector.size(vCount), SBInterval.newEmpty());
       new_vc := Vector.copy(vCount);
       index := 1;
 
@@ -429,6 +434,11 @@ protected
         end if;
 
         index := index + 1;
+      end for;
+
+      for i in listLength(dims)+1:Vector.size(vCount) loop
+        vc := Vector.get(vCount, 1);
+        ints[i] := SBInterval.new(vc, 1, vc);
       end for;
 
       mi := SBMultiInterval.fromArray(ints);
@@ -899,6 +909,7 @@ protected
 
     if Type.isArray(Expression.typeOf(outExp)) then
       subs := list(Subscript.fromTypedExp(i) for i in indices);
+      subs := List.firstN(subs, Type.dimensionCount(Expression.typeOf(outExp)));
       outExp := Expression.applySubscripts(subs, outExp);
     end if;
   end generateConnector;

@@ -44,6 +44,7 @@ protected
   import Class = NFClass;
   import List;
   import Prefixes = NFPrefixes;
+  import MetaModelica.Dangerous.*;
 
   import ComponentRef = NFComponentRef;
 
@@ -571,6 +572,68 @@ public
       else arg;
     end match;
   end foldSubscripts;
+
+  function fillSubscripts
+    "Fills in any unsubscripted dimensions in the cref with : subscripts."
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      local
+        list<Dimension> dims;
+        Integer dim_count, sub_count;
+
+      case CREF()
+        algorithm
+          dims := Type.arrayDims(cref.ty);
+          dim_count := listLength(dims);
+          sub_count := listLength(cref.subscripts);
+
+          if sub_count < dim_count then
+            cref.subscripts := List.consN(dim_count - sub_count, Subscript.WHOLE(), cref.subscripts);
+          end if;
+
+          cref.restCref := fillSubscripts(cref.restCref);
+        then
+          ();
+
+      else ();
+    end match;
+  end fillSubscripts;
+
+  function replaceWholeSubscripts
+    "Replaces any : subscripts with slice subscripts for the corresponding dimension."
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      local
+        list<Dimension> dims;
+        list<Subscript> subs;
+
+      case CREF()
+        algorithm
+          if List.exist(cref.subscripts, Subscript.isWhole) then
+            dims := Type.arrayDims(cref.ty);
+            subs := {};
+
+            for s in cref.subscripts loop
+              if Subscript.isWhole(s) then
+                s := Subscript.fromDimension(listHead(dims));
+              end if;
+
+              subs := s :: subs;
+              dims := listRest(dims);
+            end for;
+
+            cref.subscripts := listReverseInPlace(subs);
+          end if;
+
+          cref.restCref := replaceWholeSubscripts(cref.restCref);
+        then
+          ();
+
+      else ();
+    end match;
+  end replaceWholeSubscripts;
 
   function compare
     input ComponentRef cref1;
