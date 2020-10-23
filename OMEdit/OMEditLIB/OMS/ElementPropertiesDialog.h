@@ -92,7 +92,7 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
-  void deleteStartValueAndRestoreDefault(QString pName, QLineEdit * pLineEdit);
+  void deleteStartValueAndRestoreDefault(const QString name, QLineEdit * pLineEdit);
 private slots:
   void updateProperties();
 };

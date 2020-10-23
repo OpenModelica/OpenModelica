@@ -439,13 +439,13 @@ bool ElementPropertiesDialog::eventFilter(QObject *pObject, QEvent *pEvent)
  * helper function to restore default start values read from modeldescription.xml for fmus
  * and 0 for other systems
  */
-void ElementPropertiesDialog::deleteStartValueAndRestoreDefault(QString pName, QLineEdit * pLineEdit)
+void ElementPropertiesDialog::deleteStartValueAndRestoreDefault(const QString name, QLineEdit * pLineEdit)
 {
   if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), QString(pInterfaces[i]->name));
-      if (QString(pInterfaces[i]->name).compare(pName) == 0) {
+      if (QString(pInterfaces[i]->name).compare(name) == 0) {
         if (oms_causality_parameter == pInterfaces[i]->causality || oms_causality_input == pInterfaces[i]->causality) {
           OMSProxy::instance()->omsDelete(nameStructure + ":start");
           //restoreDefaultStartValueHelper(pInterfaces[i], nameStructure, pLineEdit);
