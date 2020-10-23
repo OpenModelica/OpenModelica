@@ -181,7 +181,7 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::parser)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::graphstream)
-target_link_libraries(OpenModelicaCompiler PUBLIC OpenModelicaRuntimeC)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_external_c)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_io)
 
