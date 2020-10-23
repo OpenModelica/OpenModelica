@@ -761,7 +761,6 @@ algorithm
           stmt := Statement.FOR(iter, SOME(range), body, alg.source);
         end while;
       then
-        Algorithm.ALGORITHM({Statement.FOR(iter, SOME(range), body, alg.source)}, alg.outputs, alg.source);
         Algorithm.ALGORITHM({Statement.FOR(iter, SOME(range), body, alg.source)}, alg.inputs, alg.outputs, alg.source); // ToDo: update inputs, outputs?
   end match;
 end vectorizeAlgorithm;
