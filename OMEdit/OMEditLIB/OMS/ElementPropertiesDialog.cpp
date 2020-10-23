@@ -489,5 +489,4 @@ void ElementPropertiesDialog::deleteStartValueAndRestoreDefault(const QString na
   if (!status) {
     pLineEdit->setPlaceholderText("unknown");
   }
-  return;
 }
