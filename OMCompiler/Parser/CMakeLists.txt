@@ -33,8 +33,8 @@ target_sources(omparse PRIVATE ${OM_PARSE_SOURCES})
 
 target_link_libraries(omparse PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omparse PUBLIC omc::compiler::runtime)
+target_link_libraries(omparse PUBLIC omc::simrt::runtime)
 target_link_libraries(omparse PUBLIC omc::3rd::omantlr3)
-target_link_libraries(omparse PUBLIC OpenModelicaRuntimeC)
 
 # To find the generated antlr headers. SYSTEM to disable warnings on the generated code.
 target_include_directories(omparse SYSTEM PRIVATE ${GNERATED_DIRECTORY})
@@ -51,8 +51,8 @@ target_sources(omparse-boot PRIVATE ${OM_PARSE_SOURCES})
 
 target_link_libraries(omparse-boot PUBLIC Intl)
 target_link_libraries(omparse-boot PUBLIC omc::compiler::runtime)
+target_link_libraries(omparse-boot PUBLIC omc::simrt::runtime)
 target_link_libraries(omparse-boot PUBLIC omc::3rd::omantlr3)
-target_link_libraries(omparse-boot PUBLIC OpenModelicaRuntimeC)
 
 # Define OMC_BOOTSTRAPPING for the boot lib.
 target_compile_definitions(omparse-boot PRIVATE OMC_BOOTSTRAPPING)

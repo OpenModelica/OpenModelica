@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.14)
 
 project(SimulationRuntimeC)
 
-
 file(GLOB OMC_SIMRT_UTIL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/util/*.c)
 file(GLOB OMC_SIMRT_UTIL_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/util/*.h)
 
@@ -15,34 +14,27 @@ file(GLOB OMC_SIMRT_GC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.h)
 file(GLOB OMC_SIMRT_FMI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.c)
 file(GLOB OMC_SIMRT_FMI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.h)
 
+# ######################################################################################################################
+# Library: OpenModelicaRuntimeC
+add_library(OpenModelicaRuntimeC STATIC)
+add_library(omc::simrt::runtime ALIAS OpenModelicaRuntimeC)
 
-set(libOpenModelicaRuntimeC_BUILD_TYPE STATIC CACHE STRING "Type of OpenModelicaRuntimeC to build")
-omc_add_to_report(libOpenModelicaRuntimeC_BUILD_TYPE)
-
-add_library(OpenModelicaRuntimeC ${libOpenModelicaRuntimeC_BUILD_TYPE}
-                                    ${OMC_SIMRT_UTIL_SOURCES}
-                                    ${OMC_SIMRT_META_SOURCES}
-                                    ${OMC_SIMRT_GC_SOURCES})
+target_sources(OpenModelicaRuntimeC PRIVATE ${OMC_SIMRT_UTIL_SOURCES} ${OMC_SIMRT_META_SOURCES} ${OMC_SIMRT_GC_SOURCES})
+target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
 
 if(WIN32)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC dbghelp)
   target_link_libraries(OpenModelicaRuntimeC PUBLIC regex)
 endif(WIN32)
 
-target_link_libraries(OpenModelicaRuntimeC PUBLIC omc::3rd::omcgc)
+target_include_directories(OpenModelicaRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_include_directories(OpenModelicaRuntimeC INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+# ######################################################################################################################
+# Library: OpenModelicaFMIRuntimeC
+add_library(OpenModelicaFMIRuntimeC STATIC ${OMC_SIMRT_FMI_SOURCES})
+add_library(omc::simrt::fmiruntime ALIAS OpenModelicaFMIRuntimeC)
 
-
-
-set(libOpenModelicaFMIRuntimeC_BUILD_TYPE STATIC CACHE STRING "Type of OpenModelicaFMIRuntimeC to build" FORCE)
-omc_add_to_report(libOpenModelicaFMIRuntimeC_BUILD_TYPE)
-
-add_library(OpenModelicaFMIRuntimeC ${libOpenModelicaFMIRuntimeC_BUILD_TYPE}
-                                    ${OMC_SIMRT_FMI_SOURCES})
-
+target_sources(OpenModelicaFMIRuntimeC PRIVATE ${OMC_SIMRT_FMI_SOURCES})
 
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib::static)
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC OpenModelicaRuntimeC)
-target_compile_options(OpenModelicaFMIRuntimeC PRIVATE $<$<CXX_COMPILER_ID:GNU>:-Werror=implicit-function-declaration>)
-
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::simrt::runtime)
