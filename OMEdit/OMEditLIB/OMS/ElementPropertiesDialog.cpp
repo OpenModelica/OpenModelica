@@ -422,13 +422,13 @@ bool ElementPropertiesDialog::eventFilter(QObject *pObject, QEvent *pEvent)
       int inputIndex = mInputLineEdits.indexOf(pLineEdit);
 
       if (parameterIndex != -1) {
-        QString pParameterLabelText = mParameterLabels.at(parameterIndex)->text();
-        restoreDefaultStartValue(pParameterLabelText, pLineEdit);
+        QString parameterLabelText = mParameterLabels.at(parameterIndex)->text();
+        deleteStartValueAndRestoreDefault(parameterLabelText, pLineEdit);
       }
 
       if (inputIndex != -1) {
-        QString pInputLabelText = mInputLabels.at(inputIndex)->text();
-        restoreDefaultStartValue(pInputLabelText, pLineEdit);
+        QString inputLabelText = mInputLabels.at(inputIndex)->text();
+        deleteStartValueAndRestoreDefault(inputLabelText, pLineEdit);
       }
     }
   }
@@ -439,57 +439,47 @@ bool ElementPropertiesDialog::eventFilter(QObject *pObject, QEvent *pEvent)
  * helper function to restore default start values read from modeldescription.xml for fmus
  * and 0 for other systems
  */
-void ElementPropertiesDialog::restoreDefaultStartValue(QString pName, QLineEdit * pLineEdit)
+void ElementPropertiesDialog::deleteStartValueAndRestoreDefault(QString pName, QLineEdit * pLineEdit)
 {
   if (mpComponent->getLibraryTreeItem()->getOMSElement() && mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
     oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
     for (int i = 0 ; pInterfaces[i] ; i++) {
       QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), QString(pInterfaces[i]->name));
-      if (pInterfaces[i]->causality == oms_causality_parameter && QString(pInterfaces[i]->name)== pName) {
-        OMSProxy::instance()->omsDelete(nameStructure + ":start");
-        restoreDefaultStartValueHelper(pInterfaces[i], nameStructure, pLineEdit);
-        return;
-      } else if (pInterfaces[i]->causality == oms_causality_input && QString(pInterfaces[i]->name)== pName) {
-        OMSProxy::instance()->omsDelete(nameStructure + ":start");
-        restoreDefaultStartValueHelper(pInterfaces[i], nameStructure, pLineEdit);
-        return;
+      if (QString(pInterfaces[i]->name).compare(pName) == 0) {
+        if (oms_causality_parameter == pInterfaces[i]->causality || oms_causality_input == pInterfaces[i]->causality) {
+          OMSProxy::instance()->omsDelete(nameStructure + ":start");
+          //restoreDefaultStartValueHelper(pInterfaces[i], nameStructure, pLineEdit);
+          bool status = false;
+          if (pInterfaces[i]->type == oms_signal_type_real) {
+            double value;
+            if ((status = OMSProxy::instance()->getReal(nameStructure, &value))) {
+              pLineEdit->setText(QString::number(value));
+            }
+          } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+            int value;
+            if ((status = OMSProxy::instance()->getInteger(nameStructure, &value))) {
+              pLineEdit->setText(QString::number(value));
+            }
+          } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+            bool value;
+            if ((status = OMSProxy::instance()->getBoolean(nameStructure, &value))) {
+              pLineEdit->setText(QString::number(value));
+            }
+          } else if (pInterfaces[i]->type == oms_signal_type_string) {
+            qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_string not implemented yet.";
+          } else if (pInterfaces[i]->type == oms_signal_type_enum) {
+            qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_enum not implemented yet.";
+          } else if (pInterfaces[i]->type == oms_signal_type_bus) {
+            qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_bus not implemented yet.";
+          } else {
+            qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() unknown oms_signal_type_enu_t.";
+          }
+          if (!status) {
+            pLineEdit->setPlaceholderText("unknown");
+          }
+          return;
+        }
       }
     }
-  }
-}
-
-/*
- * helper function to restore default start values read from modeldescription.xml for fmus
- * and 0 for other systems
- */
-void ElementPropertiesDialog::restoreDefaultStartValueHelper(oms_connector_t* pConnector, QString pName, QLineEdit *pLineEdit)
-{
-  bool status = false;
-  if (pConnector->type == oms_signal_type_real) {
-    double value;
-    if ((status = OMSProxy::instance()->getReal(pName, &value))) {
-      pLineEdit->setText(QString::number(value));
-    }
-  } else if (pConnector->type == oms_signal_type_integer) {
-    int value;
-    if ((status = OMSProxy::instance()->getInteger(pName, &value))) {
-      pLineEdit->setText(QString::number(value));
-    }
-  } else if (pConnector->type == oms_signal_type_boolean) {
-    bool value;
-    if ((status = OMSProxy::instance()->getBoolean(pName, &value))) {
-      pLineEdit->setText(QString::number(value));
-    }
-  } else if (pConnector->type == oms_signal_type_string) {
-    qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_string not implemented yet.";
-  } else if (pConnector->type == oms_signal_type_enum) {
-    qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_enum not implemented yet.";
-  } else if (pConnector->type == oms_signal_type_bus) {
-    qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_bus not implemented yet.";
-  } else {
-    qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() unknown oms_signal_type_enu_t.";
-  }
-  if (!status) {
-    pLineEdit->setPlaceholderText("unknown");
   }
 }
