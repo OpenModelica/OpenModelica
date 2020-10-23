@@ -918,6 +918,10 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem 
   int insertIndex = 0;
   pLibraryTreeItem->getModelWidget()->loadDiagramView();
   foreach (Element *pComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
+    // if we already have the parameter from one of the inherited class then just skip this one.
+    if (findParameter(pComponent->getName())) {
+      continue;
+    }
     /* Ticket #2531
      * Do not show the protected & final parameters.
      */
