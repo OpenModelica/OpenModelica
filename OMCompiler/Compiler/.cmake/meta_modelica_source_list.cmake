@@ -262,8 +262,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/SynchronousFeatures.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Tearing.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Uncertainties.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/UnitCheck.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Unit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/Vectorization.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/VisualXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/XMLDump.mo
@@ -442,10 +440,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToIndexExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExpSourceTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToCrEqLst.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToUnit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSimCodeEqCache.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableStringToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableUnitToString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/PriorityQueue.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBAtomicSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBFunctions.mo

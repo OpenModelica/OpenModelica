@@ -13,6 +13,16 @@ set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/.cmake/")
 include(omc_utils)
 
+# Add the compiler ids to the report for convenience.
+omc_add_to_report(CMAKE_CXX_COMPILER_ID)
+omc_add_to_report(CMAKE_C_COMPILER_ID)
+
+# Export compile commands (compile_commands.json) for each source file. This helps editors (e.g. vscode, emacs) have
+# a more accurate code navigation and intelisens. E.g includes can be pinpointed instead of
+# using glob expressions to parse everything.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Debug" CACHE STRING
       "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel." FORCE)
@@ -27,6 +37,14 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
 
+include(WriteCompilerDetectionHeader)
+write_compiler_detection_header(
+  FILE omc_compiler_detection.h
+  PREFIX OMC
+  COMPILERS GNU Clang MSVC
+  FEATURES cxx_static_assert
+)
+
 
 # Set the installation lib directory as an rpath for all installed
 # libs and executables.
@@ -40,10 +58,6 @@ omc_add_to_report(OMC_USE_CORBA)
 
 option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
 omc_add_to_report(OMC_USE_CCACHE)
-
-
-
-
 
 
 
