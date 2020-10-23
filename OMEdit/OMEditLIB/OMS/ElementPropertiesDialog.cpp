@@ -450,35 +450,39 @@ bool ElementPropertiesDialog::eventFilter(QObject *pObject, QEvent *pEvent)
  */
 void ElementPropertiesDialog::deleteStartValueAndRestoreDefault(const QString name, QLineEdit * pLineEdit)
 {
-  oms_connector_t** pInterfaces = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
+  oms_connector_t** pConnectors = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
   int i=0;
-  while (pInterfaces[i] && QString(pInterfaces[i]->name).compare(name) != 0) {
+  while (pConnectors[i] && QString(pConnectors[i]->name).compare(name) != 0) {
     i++;
   }
 
-  if (!pInterfaces[i]) {
+  // no element found
+  if (!pConnectors[i]) {
     return;
   }
 
-  if (oms_causality_parameter != pInterfaces[i]->causality && oms_causality_input != pInterfaces[i]->causality) {
+  auto& pConnector = pConnectors[i];
+
+  // only considering parameters and inputs
+  if (oms_causality_parameter != pConnector->causality && oms_causality_input != pConnector->causality) {
     return;
   }
 
-  QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), QString(pInterfaces[i]->name));
+  QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), QString(pConnector->name));
   OMSProxy::instance()->omsDelete(nameStructure + ":start");
 
   bool status = false;
-  if (pInterfaces[i]->type == oms_signal_type_real) {
+  if (pConnector->type == oms_signal_type_real) {
     double value;
     if ((status = OMSProxy::instance()->getReal(nameStructure, &value))) {
       pLineEdit->setText(QString::number(value));
     }
-  } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+  } else if (pConnector->type == oms_signal_type_integer) {
     int value;
     if ((status = OMSProxy::instance()->getInteger(nameStructure, &value))) {
       pLineEdit->setText(QString::number(value));
     }
-  } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
+  } else if (pConnector->type == oms_signal_type_boolean) {
     bool value;
     if ((status = OMSProxy::instance()->getBoolean(nameStructure, &value))) {
       pLineEdit->setText(QString::number(value));
