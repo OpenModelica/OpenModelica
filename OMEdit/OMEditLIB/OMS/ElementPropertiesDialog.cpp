@@ -181,6 +181,7 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
         QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), name);
         mParameterLabels.append(pNameLabel);
         QLineEdit *pParameterLineEdit = new QLineEdit;
+        pParameterLineEdit->installEventFilter(this);
         bool status = false;
         if (pInterfaces[i]->type == oms_signal_type_real) {
           QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
@@ -250,6 +251,7 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
         pNameLabel->setToolTip(nameStructure);
         mInputLabels.append(pNameLabel);
         QLineEdit *pInputLineEdit = new QLineEdit;
+        pInputLineEdit->installEventFilter(this);
         bool status = false;
         if (pInterfaces[i]->type == oms_signal_type_real) {
           QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
@@ -402,4 +404,93 @@ void ElementPropertiesDialog::updateProperties()
   pModelWidget->updateModelText();
   // accept the dialog
   accept();
+}
+
+/*
+ * event filter for mParameterLineEdits and mInputLineEdit
+ * to detect the focus out event, and update
+ * the default start values from modeldesctiption.xml
+ */
+bool ElementPropertiesDialog::eventFilter(QObject *pObject, QEvent *pEvent)
+{
+  QLineEdit *pLineEdit = qobject_cast<QLineEdit*>(pObject);
+
+  if (pLineEdit && pEvent->type() != QEvent::FocusOut) {
+    return QWidget::eventFilter(pObject, pEvent);
+  }
+
+  if (!pLineEdit->text().isEmpty()) {
+    return QWidget::eventFilter(pObject, pEvent);
+  }
+
+  if (!mpComponent->getLibraryTreeItem()->getOMSElement() || !mpComponent->getLibraryTreeItem()->getOMSElement()->connectors) {
+    return QWidget::eventFilter(pObject, pEvent);
+  }
+
+  // search the lineEdit index in parameters
+  int parameterIndex = mParameterLineEdits.indexOf(pLineEdit);
+  if (parameterIndex != -1) {
+    QString parameterLabelText = mParameterLabels.at(parameterIndex)->text();
+    deleteStartValueAndRestoreDefault(parameterLabelText, pLineEdit);
+  }
+
+  // search the lineEdit index in inputs
+  int inputIndex = mInputLineEdits.indexOf(pLineEdit);
+  if (inputIndex != -1) {
+    QString inputLabelText = mInputLabels.at(inputIndex)->text();
+    deleteStartValueAndRestoreDefault(inputLabelText, pLineEdit);
+  }
+
+  return QWidget::eventFilter(pObject, pEvent);
+}
+
+/*
+ * helper function to restore default start values read from modeldescription.xml for fmus
+ * and 0 for other systems
+ */
+void ElementPropertiesDialog::deleteStartValueAndRestoreDefault(const QString name, QLineEdit * pLineEdit)
+{
+  oms_connector_t** pConnectors = mpComponent->getLibraryTreeItem()->getOMSElement()->connectors;
+  int i=0;
+  while (pConnectors[i] && QString(pConnectors[i]->name).compare(name) != 0) {
+    i++;
+  }
+
+  // no element found
+  if (!pConnectors[i]) {
+    return;
+  }
+
+  auto& pConnector = pConnectors[i];
+
+  // only considering parameters and inputs
+  if (oms_causality_parameter != pConnector->causality && oms_causality_input != pConnector->causality) {
+    return;
+  }
+
+  QString nameStructure = QString("%1.%2").arg(mpComponent->getLibraryTreeItem()->getNameStructure(), QString(pConnector->name));
+  OMSProxy::instance()->omsDelete(nameStructure + ":start");
+
+  bool status = false;
+  if (pConnector->type == oms_signal_type_real) {
+    double value;
+    if ((status = OMSProxy::instance()->getReal(nameStructure, &value))) {
+      pLineEdit->setText(QString::number(value));
+    }
+  } else if (pConnector->type == oms_signal_type_integer) {
+    int value;
+    if ((status = OMSProxy::instance()->getInteger(nameStructure, &value))) {
+      pLineEdit->setText(QString::number(value));
+    }
+  } else if (pConnector->type == oms_signal_type_boolean) {
+    bool value;
+    if ((status = OMSProxy::instance()->getBoolean(nameStructure, &value))) {
+      pLineEdit->setText(QString::number(value));
+    }
+  } else {
+    qDebug() << "ElementPropertiesDialog::deleteStartValueAndRestoreDefault() unknown signal type";
+  }
+  if (!status) {
+    pLineEdit->setPlaceholderText("unknown");
+  }
 }
