@@ -206,9 +206,15 @@ public
 
       if count_r < count_s then
         // create an interval for every residue class not equal to i2.lo
-        for i in count_r:-1:1 loop
-          UnorderedSet.add(new(i2.lo + i * int1.step, i2.step, i2.hi - i2.step + i * int1.step), ints);
-        end for;
+        if count_s < System.intMaxLit() then
+          for i in count_r:-1:1 loop
+            UnorderedSet.add(new(i2.lo + i * int1.step, i2.step, i2.hi - i2.step + i * int1.step), ints);
+          end for;
+        else
+          for i in count_r:-1:1 loop
+            UnorderedSet.add(new(i2.lo + i * int1.step, i2.step, System.intMaxLit()), ints);
+          end for;
+        end if;
       else
         // create an interval for every space between removed points
         for i in count_s:-1:1 loop
