@@ -314,7 +314,7 @@ simulationdaemode.log: omc-diff
 	$(MAKE) -C simulation/modelica/daemode -f Makefile test > $@
 	@echo $@ done
 simulationnewbackend.log: omc-diff
-	$(MAKE) -C simulation/modelica/newBackend -f Makefile test > $@
+	$(MAKE) -C simulation/modelica/NBackend -f Makefile test > $@
 	@echo $@ done
 simulationdeclarations.log: omc-diff
 	$(MAKE) -C simulation/modelica/declarations -f Makefile test > $@
