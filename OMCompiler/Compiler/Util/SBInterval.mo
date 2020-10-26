@@ -166,7 +166,9 @@ public
         new_lo := intMax(int1.lo, int2.lo);
         new_hi := intMin(int1.hi, int2.hi);
         new_lo := new_lo + mod(x - new_lo, new_step);
-        new_hi := new_hi - mod(new_hi - x, new_step);
+        if new_hi < System.intMaxLit() then
+          new_hi := new_hi - mod(new_hi - x, new_step);
+        end if;
 
         if new_hi < new_lo then
           // Empty interval
@@ -179,12 +181,12 @@ public
   end intersection;
 
   function complement
-    "Returns a list of intervals corresponding to the removal of int2 from int1."
+    "Returns a set of intervals corresponding to the removal of int2 from int1."
     input SBInterval int1;
     input SBInterval int2;
     output UnorderedSet<SBInterval> ints;
   protected
-    SBInterval i1, i2;
+    SBInterval i2;
     Integer count_r, count_s;
   algorithm
     ints := UnorderedSet.new(hash, isEqual);
@@ -200,7 +202,7 @@ public
       end if;
 
       count_r := div(i2.step, int1.step) - 1;
-      count_s := div(i2.hi - i2.lo, i2.step);
+      count_s := if i2.hi < System.intMaxLit() then div(i2.hi - i2.lo, i2.step) else System.intMaxLit();
 
       if count_r < count_s then
         // create an interval for every residue class not equal to i2.lo
@@ -248,18 +250,14 @@ public
         lo := lo + step * (1 + floor(abs(lo) / step));
       end if;
 
-      ilo := integer(lo);
-      istep := integer(step);
-      ihi := integer(hi);
-
-      if ilo == ihi then
-        istep := 1;
-      end if;
-
       if hi < lo then
         // Empty interval.
         res := newEmpty();
       else
+        ilo := integer(lo);
+        ihi := integer(hi);
+        istep := if ilo == ihi then 1 else integer(step);
+
         res := new(ilo, istep, ihi);
       end if;
     else
