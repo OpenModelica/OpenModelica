@@ -44,14 +44,14 @@
 #define CONFIG_MODELICA_SPEC_PLATFORM "win64"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "mingw64"
 #define CONFIG_GCC_DUMPMACHINE "x86_64-w64-mingw32"
-#define CONFIG_GCC_VERSION "5.3.0" /* adrpo, change here when we upgrade! */
+#define CONFIG_GCC_VERSION __VERSION__
 
 #elif defined(__MINGW32__)
 
 #define CONFIG_MODELICA_SPEC_PLATFORM "win32"
 #define CONFIG_OPENMODELICA_SPEC_PLATFORM "mingw32"
 #define CONFIG_GCC_DUMPMACHINE "i686-w64-mingw32"
-#define CONFIG_GCC_VERSION "5.3.0" /* adrpo, change here when we upgrade! */
+#define CONFIG_GCC_VERSION __VERSION__
 
 #elif defined(_MSV_VER) && defined(_M_IX86)
 
@@ -69,9 +69,22 @@
 
 #endif
 
-#define DEFAULT_CC "gcc"
-#define DEFAULT_CXX "g++"
-#define DEFAULT_OMPCC "gcc -fopenmp"
+/* if we compiled omc with clang asume we
+ * use it to compile simulation code with it
+ */
+#if defined(__clang__)
+  #define DEFAULT_CC "clang"
+  #define DEFAULT_CXX "clang++"
+  #define DEFAULT_OMPCC "clang -fopenmp"
+  #define DEFAULT_LD "clang++"
+#else /* assume gcc */
+  #define DEFAULT_CC "gcc"
+  #define DEFAULT_CXX "g++"
+  #define DEFAULT_OMPCC "gcc -fopenmp"
+  #define DEFAULT_LD "g++"
+#endif
+
+
 #define CONFIG_TRIPLE ""
 
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
@@ -92,15 +105,16 @@
    * Visual Studio then use the SSE instructions,
    * not the normal i387 FPU
    */
-  #define DEFAULT_CFLAGS "-falign-functions -fno-ipa-pure-const -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
 #else
-  #define DEFAULT_CFLAGS "-falign-functions -fno-ipa-pure-const ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-falign-functions ${MODELICAUSERCFLAGS}"
 #endif
+
 #if defined(__x86_64__)
   /* -fPIC needed on x86_64! */
-  #define DEFAULT_LINKER "g++ -shared -Xlinker --export-all-symbols -fPIC"
+  #define DEFAULT_LINKER DEFAULT_LD" -shared -Xlinker --export-all-symbols -fPIC"
 #else
-  #define DEFAULT_LINKER "g++ -shared -Xlinker --export-all-symbols"
+  #define DEFAULT_LINKER DEFAULT_LD" -shared -Xlinker --export-all-symbols"
 #endif
 
 #define CONFIG_IPOPT_INC /* Without IPOPT */

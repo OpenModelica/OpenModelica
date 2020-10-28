@@ -114,9 +114,13 @@ QList<ProcessItem> ProcessListModel::getLocalProcesses()
     ProcessItem p;
     p.mProcessId = pe.th32ProcessID;
     // Image has the absolute path, but can fail.
+#if defined(__MINGW32__) && defined(__clang__)
+    p.mProcessName = QString(pe.szExeFile);
+#else
     p.mProcessName = QString::fromWCharArray(pe.szExeFile);
+#endif
     const QString image = imageName(pe.th32ProcessID);
-    p.mProcessPath = image.isEmpty() ? QString::fromWCharArray(pe.szExeFile) : image;
+    p.mProcessPath = image.isEmpty() ? p.mProcessName : image;
     processes << p;
   }
   CloseHandle(snapshot);

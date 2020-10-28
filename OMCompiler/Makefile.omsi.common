@@ -81,7 +81,6 @@ OMSICClean:
 #############################
 
 OMSICPP: omc
-	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 
 OMSICPPinstall: copycppheader OMSICPP
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f $(defaultMakefileTarget) CC="$(CC)" CXX="$(CXX)" install ANALYZATION_MODE="$(ANALYZATION_MODE)" $(CMAKE_ARGS) OMBUILDDIR=$(OMBUILDDIR) LIB_OMC=$(LIB_OMC)

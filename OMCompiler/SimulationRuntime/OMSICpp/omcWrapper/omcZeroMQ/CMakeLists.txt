@@ -11,9 +11,9 @@ MESSAGE(STATUS ${IS_MINGW64})
 
 
 IF(IS_MINGW32)
-   SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw32/include")
+  SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw32/")
 ELSEIF(IS_MINGW64)
-  SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw64/include")
+  SET(BOOST_ROOT $ENV{OMDEV}"/tools/mingw64/")
 ELSE()
   if(MSVC_VERSION GREATER 1800)
     MESSAGE(STATUS "USE MSVC 2015 and greater:")

@@ -733,7 +733,12 @@ algorithm
         end if;
         msysBinDir = omdevPath + "\\tools\\msys\\usr\\bin";
         binDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\bin";
-        libBinDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+        // if compiler is gcc
+        if System.getCCompiler() == "gcc" then
+          libBinDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+        else // if is clang
+          libBinDir = binDir;
+        end if;
         // do we have bin and lib bin?
         hasBinDir = System.directoryExists(binDir);
         hasLibBinDir = System.directoryExists(libBinDir);

@@ -1,4 +1,13 @@
 #include <Core/System/ExtendedSystem.h>
+
+// adrpo: link with static libfmilib.a on MinGW
+// if this is not desired we need to signal this
+// from the CMakeFiles.txt with a define when we
+// compile shared DLLs and link with dynamic
+// fmilib_shared.dll instead of static libfmilib.a
+#if defined(__MINGW32__)
+#define FMILIB_STATIC_LIB_ONLY
+#endif
 #include <fmilib.h>
 
 //Forward declaration to speed-up the compilation process

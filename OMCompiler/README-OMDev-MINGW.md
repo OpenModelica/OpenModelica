@@ -21,7 +21,7 @@
   - do not install git using pacman in msys, it does not work correctly!
 - get OpenModelica from git
   - do not create an OpenModelica directory in which you clone OpenModelica repository, it will be created when you clone it
-  - start `$OMDEV\tools\msys\mingw64_shell.bat` or `$OMDEV\tools\msys\mingw32_shell.bat` and type:
+  - start `$OMDEV\tools\msys\mingw64.exe` or `$OMDEV\tools\msys\mingw32.exe` and type:
 
 		```bash
 		# change the directory to where you want the OpenModelica repository on your hard drive
@@ -38,8 +38,8 @@
 
 ## Compiling OMC using MSYS
 
-- To compile 32bit OMC start `$OMDEV\tools\msys\mingw32_shell.bat`
-- To compile 64bit OMC start `$OMDEV\tools\msys\mingw64_shell.bat`
+- To compile 32bit OMC start `$OMDEV\tools\msys\mingw32.exe`
+- To compile 64bit OMC start `$OMDEV\tools\msys\mingw64.exe`
 
 After starting the terminal type:
 ```bash
@@ -54,7 +54,6 @@ export OPENMODELICALIBRARY="c:\\path\\to\\OpenModelica\\build\\lib\\omlibrary"
 
 # build omc using 8 cores (-j8), if you have less cores use that number in -jN
 make -f Makefile.omdev.mingw -j8
-
 
 # to build the QT clients make sure you ran \path\to\OMDEV\SETUP_OMDEV_Qt5.bat first
 
