@@ -184,9 +184,12 @@ FOREACH(lib ${Boost_LIBRARIES_})
   # Convert "Boost:SomeCrazyLib" to "-lboost_SomeCrazyLib" for ModelicaConfig_gcc.inc
   IF (${CMAKE_VERSION} VERSION_GREATER "3.16.0") # support newer cmake >= 3.16
     GET_TARGET_PROPERTY(libNew "${lib}" LOCATION)
+    IF ("${libNew}" STREQUAL "libNew-NOTFOUND") # could not find it
+      SET(libNew ${lib})
+    ENDIF("${libNew}" STREQUAL "libNew-NOTFOUND")
     GET_FILENAME_COMPONENT(libNew "${libNew}" NAME_WE)
   ELSE(${CMAKE_VERSION} VERSION_GREATER "3.16.0") # support older cmake <= 3.16
-    GET_FILENAME_COMPONENT(libNew "${lib}" NAME_WE)
+  GET_FILENAME_COMPONENT(libNew "${lib}" NAME_WE)
   ENDIF(${CMAKE_VERSION} VERSION_GREATER "3.16.0")
   STRING(REGEX REPLACE "^lib" "" libNew ${libNew})
   SET(Boost_LIBRARIES_NEW "${Boost_LIBRARIES_NEW} ${LINKER_LIB_PREFIX}${libNew}")

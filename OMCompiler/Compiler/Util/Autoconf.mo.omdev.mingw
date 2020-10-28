@@ -1,6 +1,7 @@
 encapsulated package Autoconf
 
   constant Boolean is64Bit = @ISMINGW64@;
+  constant Boolean isNewOMDev = @IS_NEW_OMDEV@;
 
   constant String bstatic = "-Wl,-Bstatic";
   constant String bdynamic = "-Wl,-Bdynamic";
@@ -9,11 +10,20 @@ encapsulated package Autoconf
   constant String make = "make";
   constant String exeExt = ".exe";
   constant String dllExt = ".dll";
-  constant String ldflags_basic = " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis -lumfpack -lklu -lcolamd -lbtf -lamd  -lsundials_idas -lsundials_cvodes -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lpthread -lm -lgfortranbegin -lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic";
+  constant String libFortran = if not isNewOMDev then "-lgfortranbegin " else " ";
+  constant String libMsvcrt = if not isNewOMDev then "-lmsvcrt " else " ";
+  constant String ldflags_basic = " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis -lumfpack -lklu -lcolamd -lbtf -lamd  -lsundials_idas -lsundials_cvodes -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lpthread -lm " +
+                                  libFortran +
+                                  "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
+                                  libMsvcrt +
+                                  "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
   constant String ldflags_runtime_sim = " -Wl,-Bstatic -lSimulationRuntimeC -Wl,-Bdynamic" + ldflags_basic + " -lwsock32 -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic";
-  constant String ldflags_runtime_fmu = " -Wl,-Bstatic -lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm -lgfortranbegin -lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex -lmsvcrt -luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lszip -Wl,-Bdynamic";
+  constant String ldflags_runtime_fmu = " -Wl,-Bstatic -lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
+                                        libFortran +
+                                        "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
+                                        libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lszip -Wl,-Bdynamic";
 
   constant String platform = if is64Bit then "WIN64" else "WIN32";
   constant String pathDelimiter = "/";

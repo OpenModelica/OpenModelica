@@ -20,6 +20,7 @@ IF(WIN32) # Check if we are on Windows
   ELSE(MSVC)
    SET(OMC_LIB_PATH "${OMC_PATH}/${LIB_OMC}")
    set(CMAKE_EXE_LINKER_FLAGS "-Wl,--stack,33554432")
+   SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dll.a" ".dll" ".a")
   ENDIF(MSVC)
 ELSEIF(UNIX)
   SET(OMC_LIB_PATH "${OMC_PATH}/${LIBINSTALLEXT}/../")
