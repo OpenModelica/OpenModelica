@@ -1250,12 +1250,10 @@ public
       output String str;
     algorithm
       str := if level == 0 then match varData
-          local
-            VarData qualVarData;
-          case qualVarData as VAR_DATA_SIM()  then VariablePointers.toString(varData.variables, "Simulation");
-          case qualVarData as VAR_DATA_JAC()  then VariablePointers.toString(varData.variables, "Jacobian");
-          case qualVarData as VAR_DATA_HES()  then VariablePointers.toString(varData.variables, "Hessian");
-          case VAR_DATA_EMPTY()               then "Empty variable Data!\n";
+          case VAR_DATA_SIM()   then VariablePointers.toString(varData.variables, "Simulation");
+          case VAR_DATA_JAC()   then VariablePointers.toString(varData.variables, "Jacobian");
+          case VAR_DATA_HES()   then VariablePointers.toString(varData.variables, "Hessian");
+          case VAR_DATA_EMPTY() then "Empty variable Data!\n";
           else fail();
         end match
       elseif level == 1 then toStringVerbose(varData, false)
@@ -1269,10 +1267,10 @@ public
     algorithm
       str := match varData
         local
-          VarData qualVarData;
           String tmp = "";
           VariablePointers lambdaVars;
-        case qualVarData as VAR_DATA_SIM() algorithm
+
+        case VAR_DATA_SIM() algorithm
           tmp := StringUtil.headline_2("Variable Data Simulation") + "\n" +
             VariablePointers.toString(varData.unknowns, "Unknown", false) +
             VariablePointers.toString(varData.states, "Local Known", false) +
@@ -1290,7 +1288,7 @@ public
           end if;
         then tmp;
 
-        case qualVarData as VAR_DATA_JAC() algorithm
+        case VAR_DATA_JAC() algorithm
           tmp := StringUtil.headline_2("Variable Data Jacobian") + "\n" +
             VariablePointers.toString(varData.unknowns, "Unknown", false) +
             VariablePointers.toString(varData.knowns, "Known", false) +
@@ -1305,7 +1303,7 @@ public
           end if;
         then tmp;
 
-        case qualVarData as VAR_DATA_HES() algorithm
+        case VAR_DATA_HES() algorithm
           tmp := StringUtil.headline_2("Variable Data Hessian") + "\n" +
             VariablePointers.toString(varData.unknowns, "Unknown", false) +
             VariablePointers.toString(varData.knowns, "Known", false) +
@@ -1348,11 +1346,9 @@ public
       input VariablePointers variables;
     algorithm
       varData := match varData
-        local
-          VarData qual;
-        case qual as VAR_DATA_SIM() algorithm qual.variables := variables; then qual;
-        case qual as VAR_DATA_JAC() algorithm qual.variables := variables; then qual;
-        case qual as VAR_DATA_HES() algorithm qual.variables := variables; then qual;
+        case VAR_DATA_SIM() algorithm varData.variables := variables; then varData;
+        case VAR_DATA_JAC() algorithm varData.variables := variables; then varData;
+        case VAR_DATA_HES() algorithm varData.variables := variables; then varData;
         else fail();
       end match;
     end setVariables;

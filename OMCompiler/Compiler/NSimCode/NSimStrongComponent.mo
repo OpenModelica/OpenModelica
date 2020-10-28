@@ -437,7 +437,6 @@ public
     algorithm
       blck := match comp
         local
-          StrongComponent qual;
           Tearing strict;
           NonlinearSystem system;
           list<Block> result = {}, eqns = {};
@@ -448,17 +447,17 @@ public
           SimJacobian tmpJac;
           Option<SimJacobian> jacobian;
 
-        case qual as StrongComponent.SINGLE_EQUATION()
+        case StrongComponent.SINGLE_EQUATION()
           algorithm
-            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(qual.var), Pointer.access(qual.eqn), simCodeIndices, funcTree, systemType);
+            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(comp.var), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
         then tmp;
 
-        case qual as StrongComponent.SINGLE_ARRAY(vars = {varPtr})
+        case StrongComponent.SINGLE_ARRAY(vars = {varPtr})
           algorithm
-            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(varPtr), Pointer.access(qual.eqn), simCodeIndices, funcTree, systemType);
+            (tmp, simCodeIndices, funcTree) := createEquation(Pointer.access(varPtr), Pointer.access(comp.eqn), simCodeIndices, funcTree, systemType);
         then tmp;
 
-        case qual as StrongComponent.TORN_LOOP(strict = strict)
+        case StrongComponent.TORN_LOOP(strict = strict)
           algorithm
             for eqn_ptr in strict.residual_eqns loop
               (tmp, simCodeIndices) := createResidual(Pointer.access(eqn_ptr), simCodeIndices);
@@ -486,7 +485,7 @@ public
               size          = listLength(crefs),
               jacobian      = jacobian,
               homotopy      = false,
-              mixed         = qual.mixed,
+              mixed         = comp.mixed,
               torn          = true
             );
             simCodeIndices.nonlinearSystemIndex := simCodeIndices.nonlinearSystemIndex + 1;

@@ -112,85 +112,84 @@ public
   algorithm
     str := match comp
       local
-        StrongComponent qual;
         Tearing casual;
 
-      case qual as SINGLE_EQUATION()
+      case SINGLE_EQUATION()
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Equation");
-          str := str + "### Variable:" + Variable.toString(Pointer.access(qual.var), "\t") + "\n";
-          str := str + "### Equation:" + Equation.toString(Pointer.access(qual.eqn), "\t") + "\n";
+          str := str + "### Variable:" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
+          str := str + "### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case qual as SINGLE_ARRAY()
+      case SINGLE_ARRAY()
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Array");
           str := str + "### Variables:\n";
-          for var in qual.vars loop
+          for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(qual.eqn), "\t") + "\n";
+          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case qual as SINGLE_ALGORITHM()
+      case SINGLE_ALGORITHM()
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Algorithm");
           str := str + "### Variables:\n";
-          for var in qual.vars loop
+          for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(qual.eqn), "\t") + "\n";
+          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case qual as SINGLE_RECORD_EQUATION()
+      case SINGLE_RECORD_EQUATION()
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Record Equation");
           str := str + "### Variables:\n";
-          for var in qual.vars loop
+          for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(qual.eqn), "\t") + "\n";
+          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case qual as SINGLE_WHEN_EQUATION()
+      case SINGLE_WHEN_EQUATION()
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Single When-Equation");
           str := str + "### Variables:\n";
-          for var in qual.vars loop
+          for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(qual.eqn), "\t") + "\n";
+          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case qual as SINGLE_IF_EQUATION()
+      case SINGLE_IF_EQUATION()
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Single If-Equation");
           str := str + "### Variables:\n";
-          for var in qual.vars loop
+          for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(qual.eqn), "\t") + "\n";
+          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
-      case qual as ALGEBRAIC_LOOP()
+      case ALGEBRAIC_LOOP()
         algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Mixed = " + boolString(qual.mixed) + ")");
+          str := StringUtil.headline_3("BLOCK" + indexStr + ": Algebraic Loop (Mixed = " + boolString(comp.mixed) + ")");
           str := str + "### Variables:\n";
-          for var in qual.vars loop
+          for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
           str := str + "\n### Equations:\n";
-          for eqn in qual.eqns loop
+          for eqn in comp.eqns loop
             str := str  + Equation.toString(Pointer.access(eqn), "\t") + "\n";
           end for;
       then str;
 
-      case qual as TORN_LOOP()
+      case TORN_LOOP()
         algorithm
-          str := StringUtil.headline_3("BLOCK" + indexStr + ": Torn Algebraic Loop (Linear = " + boolString(qual.linear) + ", Mixed = " + boolString(qual.mixed) + ")");
-          str := str + Tearing.toString(qual.strict, "Strict Tearing Set");
-          if isSome(qual.casual) then
-            SOME(casual) := qual.casual;
+          str := StringUtil.headline_3("BLOCK" + indexStr + ": Torn Algebraic Loop (Linear = " + boolString(comp.linear) + ", Mixed = " + boolString(comp.mixed) + ")");
+          str := str + Tearing.toString(comp.strict, "Strict Tearing Set");
+          if isSome(comp.casual) then
+            SOME(casual) := comp.casual;
             str := str + Tearing.toString(casual, "Casual Tearing Set");
           end if;
       then str;
@@ -209,11 +208,9 @@ public
     output StrongComponent comp;
   algorithm
     comp := match matching
-        local
-          Causalize.Matching qual;
-      case qual as Causalize.SCALAR_MATCHING() algorithm
-      then createScalar(comp_indices, qual.eqn_to_var, vars, eqns);
-      case qual as Causalize.ARRAY_MATCHING() algorithm
+      case Causalize.SCALAR_MATCHING() algorithm
+      then createScalar(comp_indices, matching.eqn_to_var, vars, eqns);
+      case Causalize.ARRAY_MATCHING() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array strong components are not yet supported."});
       then fail();
       else algorithm

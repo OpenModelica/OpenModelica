@@ -127,9 +127,9 @@ public
 
   uniontype EventInfo
     record EVENT_INFO
-      list<TimeEvent> timeEvents    "all time events";
-      list<StateEvent> stateEvents   "all state events";
-      Integer numberMathEvents      "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+      list<TimeEvent> timeEvents      "all time events";
+      list<StateEvent> stateEvents    "all state events";
+      Integer numberMathEvents        "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
     end EVENT_INFO;
 
     function toString
