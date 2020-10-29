@@ -52,7 +52,13 @@ std::ostream& log(const char* pref = "") {
 }
 
 std::ostream& log() {
-    return log_stream;
+    return std::cout;
+}
+
+void indexed_dlog(int index, const std::string& message) {
+#ifdef OM_PM_LOG_VERBOSE
+    std::cerr << "INFO: "<< std::to_string(index) << " : " << message << std::endl;
+#endif
 }
 
 std::ostream& warning(const char* pref = "") {
@@ -75,6 +81,14 @@ std::ostream& error() {
     return std::cerr;
 }
 
+void eq_index_error(int index, const std::string& message) {
+    std::cerr << std::to_string(index) << " : " << message << std::endl;
+}
+
+void eq_index_fatal(int index, const std::string& message) {
+    utility::eq_index_error(index, message);
+    exit(1);
+}
 
 } // utility
 } // parmodelica

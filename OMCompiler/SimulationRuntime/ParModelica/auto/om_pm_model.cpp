@@ -305,6 +305,8 @@ inline void check_tag(int index, const std::string& tag) {
     if (tag == "dummy"
         or tag == "assign"
         or tag == "residual"
+        or tag == "tornsystem"
+        or tag == "jacobian" // TODO: Skip me. These cariables are visible only inside the SCC
         or tag == "algorithm"
         or tag == "container")
         return;
@@ -346,11 +348,43 @@ void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_
             continue;
         }
 
-        // So that we know what we can handle so far.
-        check_tag(index, eq["tag"]);
+        if(eq["section"] != "regular") {
+            utility::eq_index_fatal(index, "Unkown section!" + eq["section"].get<std::string>());
+        }
 
-        /*an equation with no parent and is not a container(system). create a new node for it.*/
-        if(eq["parent"] == nullptr && eq["tag"] != "container") {
+        const std::string& tag = eq["tag"];
+        check_tag(index, tag);
+
+
+        if(tag == "assign") {
+
+#ifdef NDEBUG
+            if (eq["defines"].size() != 1) {
+                utility::eq_index_error(index, "Assign with more than one define!");
+            }
+#endif
+
+            Equation current_node;
+            current_node.index = index;
+
+            // Copy the pointers to the needed info from the Model
+            // to each equation node.
+            current_node.data = this->data;
+            current_node.threadData = this->threadData;
+            current_node.function_system = function_system;
+
+            current_node.lhs.insert(eq["defines"].front().get<std::string>());
+
+            for(auto use : eq["uses"])
+                current_node.rhs.insert(use.get<std::string>());
+
+            ++node_count;
+            task_system.add_node(current_node);
+
+        }
+
+        else if(tag == "tornsystem") {
+
             Equation current_node;
             current_node.index = index;
 
@@ -362,81 +396,142 @@ void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_
 
             for(auto def : eq["defines"]) {
                 current_node.lhs.insert(def.get<std::string>());
+                utility::indexed_dlog(index, ": added own defines: " + def.get<std::string>());
             }
-            for(auto use : eq["uses"])
-                current_node.rhs.insert(use.get<std::string>());
+
+            auto sys_size = eq["unknowns"].get<int>();
+
+            for(auto int_eq : eq["internal-equations"]) {
+                for(auto def : int_eq["defines"]) {
+                    current_node.lhs.insert(def.get<std::string>());
+                    utility::indexed_dlog(index, ": added defines: " + def.get<std::string>() + " : due to " + std::to_string(int_eq["eqIndex"].get<int>()));
+                }
+
+                for(auto use : int_eq["uses"]) {
+                    auto var_s = use.get<std::string>();
+                    auto local_defined = current_node.lhs.find(var_s) != current_node.lhs.end();
+
+                    // Disable me and see if graphs look different.
+                    if (!local_defined) {
+                        current_node.rhs.insert(use.get<std::string>());
+                        utility::indexed_dlog(index, ": added uses: " + use.get<std::string>() + " : due to " + std::to_string(int_eq["eqIndex"].get<int>()));
+                    }
+                    else{
+                        utility::indexed_dlog(index, ": skiped uses: " + use.get<std::string>() + " : due to local define");
+                    }
+                }
+
+            }
+
+            utility::indexed_dlog(index, "Total number of defines: " + std::to_string(current_node.lhs.size()));
+            utility::indexed_dlog(index, "Total number of uses: " + std::to_string(current_node.rhs.size()));
+
 
             ++node_count;
             task_system.add_node(current_node);
 
         }
-        /*an equation with parent and is not a complex system. collect references from it to pass
-          to its parent.*/
-        else if(eq["parent"] != nullptr && eq["tag"] != "container") {
-            if(current_parent == -1)
-                current_parent = eq["parent"];
-            else if (eq["parent"] != current_parent) {
-                std::cerr << "current parent " << current_parent <<" and equation parent " << eq["parent"] << " don't add up. something is fishy" << std::endl;
-                exit(1);
-            }
 
-            // std::cout << "Collecting from : "<< index << " for : " << eq["parent"] << std::endl;
-
-            for(auto def : eq["defines"]) {
-                complex_eq_lhs.insert(def.get<std::string>());
-            }
-            for(auto use : eq["uses"])
-                complex_eq_rhs.insert(use.get<std::string>());
-        }
-        /*an equation with no parent and is a complex system. create a new node for it
-          using the collected rhs and lsh references from its children.*/
-        else if(eq["parent"] == nullptr && eq["tag"] == "container") {
-
-            check_container_dispaly(index,eq["display"]);
-
-            Equation current_node;
-            current_node.index = index;
-
-            // Copy the pointers to the needed info from the Model
-            // to each equation node.
-            current_node.data = this->data;
-            current_node.threadData = this->threadData;
-            current_node.function_system = function_system;
-
-            current_node.lhs = complex_eq_lhs;
-            complex_eq_lhs.clear();
-            for(auto def : eq["defines"]) {
-                current_node.lhs.insert(def.get<std::string>());
-            }
-
-            // std::cout << "Equation: "  << index << " defines : "<< std::endl;
-            // for(auto def : current_node.lhs)
-                // std::cout << def << ", ";
-            // std::cout << std::endl;
-
-
-            current_node.rhs = complex_eq_rhs;
-            complex_eq_rhs.clear();
-            for(auto use : eq["uses"]) {
-                current_node.rhs.insert(use.get<std::string>());
-            }
-
-            // std::cout << "Equation: "  << index << " uses : "<< std::endl;
-            // for(auto use : current_node.rhs)
-                // std::cout << use << ", ";
-            // std::cout << std::endl;
-
-            current_parent = -1;
-
-            ++node_count;
-            task_system.add_node(current_node);
-
-        }
         else {
-            std::cerr << "Equation type not yet handled : "  << index << std::endl;
-            std::cerr << eq << std::endl;
-            exit(1);
+            utility::eq_index_fatal(index, "Equation type not yet handled: " + eq["tag"].get<std::string>());
         }
+
+
+
+
+
+
+        // // So that we know what we can handle so far.
+        // check_tag(index, eq["tag"]);
+
+        // /*an equation with no parent and is not a container(system). create a new node for it.*/
+        // if(eq["parent"] == nullptr && eq["tag"] != "container") {
+        //     Equation current_node;
+        //     current_node.index = index;
+
+        //     // Copy the pointers to the needed info from the Model
+        //     // to each equation node.
+        //     current_node.data = this->data;
+        //     current_node.threadData = this->threadData;
+        //     current_node.function_system = function_system;
+
+        //     for(auto def : eq["defines"]) {
+        //         current_node.lhs.insert(def.get<std::string>());
+        //     }
+        //     for(auto use : eq["uses"])
+        //         current_node.rhs.insert(use.get<std::string>());
+
+        //     ++node_count;
+        //     task_system.add_node(current_node);
+
+        // }
+        // /*an equation with parent and is not a complex system. collect references from it to pass
+        //   to its parent.*/
+        // else if(eq["parent"] != nullptr && eq["tag"] != "container") {
+        //     if(current_parent == -1)
+        //         current_parent = eq["parent"];
+        //     else if (eq["parent"] != current_parent) {
+        //         std::cerr << "current parent " << current_parent <<" and equation parent " << eq["parent"] << " don't add up. something is fishy" << std::endl;
+        //         exit(1);
+        //     }
+
+        //     // std::cout << "Collecting from : "<< index << " for : " << eq["parent"] << std::endl;
+
+        //     for(auto def : eq["defines"]) {
+        //         complex_eq_lhs.insert(def.get<std::string>());
+        //     }
+        //     for(auto use : eq["uses"])
+        //         complex_eq_rhs.insert(use.get<std::string>());
+        // }
+        // /*an equation with no parent and is a complex system. create a new node for it
+        //   using the collected rhs and lsh references from its children.*/
+        // else if(eq["parent"] == nullptr && eq["tag"] == "container") {
+
+        //     check_container_dispaly(index,eq["display"]);
+
+        //     Equation current_node;
+        //     current_node.index = index;
+
+        //     // Copy the pointers to the needed info from the Model
+        //     // to each equation node.
+        //     current_node.data = this->data;
+        //     current_node.threadData = this->threadData;
+        //     current_node.function_system = function_system;
+
+        //     current_node.lhs = complex_eq_lhs;
+        //     complex_eq_lhs.clear();
+        //     for(auto def : eq["defines"]) {
+        //         current_node.lhs.insert(def.get<std::string>());
+        //     }
+
+        //     // std::cout << "Equation: "  << index << " defines : "<< std::endl;
+        //     // for(auto def : current_node.lhs)
+        //         // std::cout << def << ", ";
+        //     // std::cout << std::endl;
+
+
+        //     current_node.rhs = complex_eq_rhs;
+        //     complex_eq_rhs.clear();
+        //     for(auto use : eq["uses"]) {
+        //         current_node.rhs.insert(use.get<std::string>());
+        //     }
+
+        //     // std::cout << "Equation: "  << index << " uses : "<< std::endl;
+        //     // for(auto use : current_node.rhs)
+        //         // std::cout << use << ", ";
+        //     // std::cout << std::endl;
+
+        //     current_parent = -1;
+
+        //     ++node_count;
+        //     task_system.add_node(current_node);
+
+        // }
+        // else {
+        //     std::cerr << "Equation type not yet handled : "  << index << std::endl;
+        //     std::cerr << eq << std::endl;
+        //     exit(1);
+        // }
     }
 
     std::cout << "Number of tasks      = " << node_count << newl;

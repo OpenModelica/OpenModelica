@@ -72,6 +72,11 @@ extern std::ostringstream error_stream;
 std::ostream& error(const char* pref);
 std::ostream& error();
 
+// debug only log
+void indexed_dlog(int index, const std::string& message);
+void eq_index_error(int index, const std::string& message);
+void eq_index_fatal(int index, const std::string& message);
+
 
 
 template<typename InputIterator1, typename InputIterator2>

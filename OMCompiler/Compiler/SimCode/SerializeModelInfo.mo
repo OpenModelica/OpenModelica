@@ -278,6 +278,8 @@ protected
   Integer i;
   list<DAE.SymbolicOperation> operations;
 algorithm
+  File.write(file,"{}");
+  return;
   DAE.SOURCE(typeLst=typeLst,info=info,instance=instance,partOfLst=partOfLst,operations=operations) := source;
   File.write(file,"{\"info\":");
   serializeInfo(file,info);
@@ -593,29 +595,15 @@ algorithm
     case SimCode.SES_LINEAR(lSystem = lSystem as SimCode.LINEARSYSTEM(), alternativeTearing = NONE()) equation
       i = listLength(lSystem.beqs);
       j = listLength(lSystem.simJac);
-
       eqs = SimCodeUtil.sortEqSystems(lSystem.residual);
-      if not listEmpty(eqs) then
-        serializeEquation(file,listHead(eqs),section,withOperations,parent=lSystem.index,first=true,assign_type=if lSystem.tornSystem then 1 else 0);
-        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=if lSystem.tornSystem then 1 else 0) for e in List.rest(eqs));
-      end if;
-
       jeqs = match lSystem.jacobianMatrix
         case SOME(SimCode.JAC_MATRIX(columns={SimCode.JAC_COLUMN(columnEqns=jeqs,constantEqns=constantEqns)})) then SimCodeUtil.sortEqSystems(listAppend(jeqs,constantEqns));
         else {};
       end match;
-      if not listEmpty(jeqs) then
-        File.write(file, ",");
-        serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=true,assign_type=2);
-        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=2) for e in List.rest(jeqs));
-      end if;
 
-      if listEmpty(eqs) and listEmpty(jeqs) then
-        File.write(file, "\n{\"eqIndex\":");
-      else
-        File.write(file, ",\n{\"eqIndex\":");
-      end if;
+      File.write(file, "\n{\"eqIndex\":");
       File.writeInt(file, lSystem.index);
+
       if parent <> 0 then
         File.write(file, ",\"parent\":");
         File.writeInt(file, parent);
@@ -643,7 +631,23 @@ algorithm
       serializeList1(file,lSystem.simJac,withOperations,serializeLinearCell);
       File.write(file,"],\"b\":[");
       serializeList(file,lSystem.beqs,serializeExp);
-      File.write(file,"]}]}");
+      File.write(file,"]}]");
+
+      File.write(file, ",\n\"internal-equations\":[");
+
+      if not listEmpty(eqs) then
+        serializeEquation(file,listHead(eqs),section,withOperations,parent=lSystem.index,first=true,assign_type=if lSystem.tornSystem then 1 else 0);
+        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=if lSystem.tornSystem then 1 else 0) for e in List.rest(eqs));
+      end if;
+      File.write(file, "\n]");
+
+      File.write(file, ",\n\"jacobian-equations\":[");
+      if not listEmpty(jeqs) then
+        serializeEquation(file,listHead(jeqs),section,withOperations,parent=lSystem.index,first=true,assign_type=2);
+        min(serializeEquation(file,e,section,withOperations,parent=lSystem.index,assign_type=2) for e in List.rest(jeqs));
+      end if;
+
+      File.write(file, "\n]}");
     then true;
 
     // dynamic tearing
