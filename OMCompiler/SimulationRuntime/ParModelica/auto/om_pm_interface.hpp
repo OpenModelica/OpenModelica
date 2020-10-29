@@ -39,7 +39,7 @@
  Mahder.Gebremedhin@liu.se  2014-02-19
 */
 
-#include <simulation_data.h>
+#include "simulation_data.h"
 
 
 #ifdef __cplusplus
@@ -48,17 +48,31 @@ extern "C" {
 
 typedef void (*FunctionType)(DATA *, threadData_t*);
 
-void PM_Model_init(const char* , DATA* , threadData_t*, FunctionType*);
+void* PM_Model_create(const char* , DATA* , threadData_t*);
 
-void PM_functionInitialEquations(int size, DATA* data, threadData_t* threadData, FunctionType*);
+void PM_Model_load_ODE_system(void*, FunctionType*);
 
-void PM_functionDAE(int size, DATA* data, threadData_t* threadData, FunctionType*);
+// void PM_functionInitialEquations(int size, DATA* data, threadData_t* threadData, FunctionType*);
 
-void PM_functionODE(int size, DATA* data, threadData_t* threadData, FunctionType*);
+// void PM_functionDAE(int size, DATA* data, threadData_t* threadData, FunctionType*);
 
-void PM_functionAlg(int size, DATA* data, threadData_t* threadData, FunctionType*);
+void PM_evaluate_ODE_system(void*);
 
-void dump_times();
+// void PM_functionAlg(int size, DATA* data, threadData_t* threadData, FunctionType*);
+
+
+void seq_ode_timer_start();
+
+void seq_ode_timer_stop();
+
+void seq_ode_timer_reset();
+
+void seq_ode_timer_get_elapsed_time2();
+
+double seq_ode_timer_get_elapsed_time();
+
+
+void dump_times(void*);
 
 
 

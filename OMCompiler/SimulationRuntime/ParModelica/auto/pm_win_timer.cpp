@@ -43,8 +43,8 @@ namespace openmodelica {
 namespace parmodelica {
 
 
-double PMTimer::LI_to_secs(LARGE_INTEGER &LI) {
-    return ((double)LI.QuadPart /(double)frequency.QuadPart) ;
+double PMTimer::LI_to_milli_secs(LARGE_INTEGER &LI) {
+    return (((double)LI.QuadPart*1000) /(double)frequency.QuadPart) ;
  }
 
 PMTimer::PMTimer(){
@@ -70,7 +70,7 @@ void PMTimer::reset_timer(){
 }
 
 double PMTimer::get_elapsed_time(){
-    return LI_to_secs(total_time) ;
+    return LI_to_milli_secs(total_time) ;
 }
 
 } // parmodelica

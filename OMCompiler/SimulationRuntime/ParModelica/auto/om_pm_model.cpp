@@ -39,7 +39,10 @@
 #include "om_pm_model.hpp"
 
 #include <cstring>
-#include <pugixml.hpp>
+// #include <pugixml.hpp>
+
+#include "json.hpp"
+
 
 
 namespace openmodelica {
@@ -64,13 +67,19 @@ bool Equation::depends_on(const TaskNode& other_b) const {
     found_dep = utility::has_intersection(this->rhs.begin(),this->rhs.end(),
                             other.lhs.begin(), other.lhs.end());
     // Anti-dependency
-    if(!found_dep)
+    if(!found_dep) {
         found_dep = utility::has_intersection(this->lhs.begin(),this->lhs.end(),
                             other.rhs.begin(), other.rhs.end());
+        if(found_dep)
+            std::cout << "found anti-dep" << this->index << " and " << other.index << std::endl;
+    }
     // output-dependency
-    if(!found_dep)
+    if(!found_dep) {
         found_dep = utility::has_intersection(this->lhs.begin(),this->lhs.end(),
                             other.lhs.begin(), other.lhs.end());
+        if(found_dep)
+            std::cout << "found output-dep" << this->index << " and " << other.index << std::endl;
+    }
 
     return found_dep;
 }
@@ -81,27 +90,30 @@ void Equation::execute() {
 }
 
 
-OMModel::OMModel() :
-    INI_scheduler(INI_system),
-    DAE_scheduler(DAE_system),
-    ODE_scheduler(ODE_system)
+OMModel::OMModel(const std::string& in_name) :
+    name(in_name)
+    , INI_system(name)
+    , INI_scheduler(INI_system)
+    , DAE_system(name)
+    , DAE_scheduler(DAE_system)
+    , ODE_system(name)
+    , ODE_scheduler(ODE_system)
+    , ALG_system(name)
+    , ALG_scheduler(ALG_system)
 {
     intialized = false;
 }
 
 
 
-void OMModel::initialize(const char* model_name_, DATA* data_, threadData_t* threadData_, FunctionType* ode_system_) {
+void OMModel::load_ODE_system() {
 
     if(intialized)
         return;
 
-    model_name = model_name_;
-    data = data_;
-    threadData = threadData_;
-    ode_system_funcs = ode_system_;
-
-    load_from_xml(ODE_system, "ode-equations", ode_system_funcs);
+    load_system_timer.start_timer();
+    load_from_json(ODE_system, "ode-equations", ode_system_funcs);
+    load_system_timer.stop_timer();
     // ODE_system.construct_graph();
     // ODE_scheduler.set_up_executor(ode_system_funcs, data);
     // ODE_scheduler.schedule(4);
@@ -112,179 +124,322 @@ void OMModel::initialize(const char* model_name_, DATA* data_, threadData_t* thr
 }
 
 
-void load_equation(Equation& current_node, pugi::xml_node& xml_equ) {
+// void load_equation(Equation& current_node, pugi::xml_node& xml_equ) {
 
-    pugi::xml_node eq_type = xml_equ.first_child();
-    current_node.type = eq_type.name();
+    // pugi::xml_node eq_type = xml_equ.first_child();
+    // current_node.type = eq_type.name();
 
-    if( std::strcmp(eq_type.name(),"assign") == 0) {
+    // if( std::strcmp(eq_type.name(),"assign") == 0) {
 
-        pugi::xml_node current = eq_type.first_child();
+        // pugi::xml_node current = eq_type.first_child();
 
-        while(std::strcmp(current.name(),"defines") == 0) {
-            current_node.lhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
-
-
-        while(std::strcmp(current.name(),"depends") == 0) {
-            current_node.rhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
-
-        current_node.cost = 1;
-    }
-    else if( std::strcmp(eq_type.name(),"statement") == 0) {
-
-        pugi::xml_node current = eq_type.first_child();
-
-        while(std::strcmp(current.name(),"defines") == 0) {
-            current_node.lhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
+        // while(std::strcmp(current.name(),"defines") == 0) {
+            // current_node.lhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
 
 
-        while(std::strcmp(current.name(),"depends") == 0) {
-            current_node.rhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
+        // while(std::strcmp(current.name(),"depends") == 0) {
+            // current_node.rhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
 
-        current_node.cost = 1;
-    }
-    else if( std::strcmp(eq_type.name(),"when") == 0) {
+        // current_node.cost = 1;
+    // }
+    // else if( std::strcmp(eq_type.name(),"statement") == 0) {
 
-        pugi::xml_node current = eq_type.first_child();
-        current_node.rhs.insert(current.child_value());
-        current = current.next_sibling();
+        // pugi::xml_node current = eq_type.first_child();
 
-        while(std::strcmp(current.name(),"defines") == 0) {
-            current_node.lhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
+        // while(std::strcmp(current.name(),"defines") == 0) {
+            // current_node.lhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
 
 
-        while(std::strcmp(current.name(),"depends") == 0) {
-            current_node.rhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
+        // while(std::strcmp(current.name(),"depends") == 0) {
+            // current_node.rhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
 
-        current_node.cost = 2;
-    }
+        // current_node.cost = 1;
+    // }
+    // else if( std::strcmp(eq_type.name(),"when") == 0) {
 
-    else if( std::strcmp(eq_type.name(),"linear") == 0) {
+        // pugi::xml_node current = eq_type.first_child();
+        // current_node.rhs.insert(current.child_value());
+        // current = current.next_sibling();
 
-        pugi::xml_node current = eq_type.first_child();
+        // while(std::strcmp(current.name(),"defines") == 0) {
+            // current_node.lhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
 
-        int ls_size = 0;
-        while(std::strcmp(current.name(),"defines") == 0) {
-            current_node.lhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-            ++ls_size;
-        }
 
-        while(std::strcmp(current.name(),"depends") == 0) {
-            current_node.rhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
+        // while(std::strcmp(current.name(),"depends") == 0) {
+            // current_node.rhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
 
-        current_node.cost = ls_size;
-        utility::warning() << current_node.index << ": Linear equations not fully handled yet: " << ls_size << newl;
-    }
+        // current_node.cost = 2;
+    // }
 
-    else if( std::strcmp(eq_type.name(),"nonlinear") == 0) {
+    // else if( std::strcmp(eq_type.name(),"linear") == 0) {
 
-        pugi::xml_node current = eq_type.first_child();
+        // pugi::xml_node current = eq_type.first_child();
 
-        int nls_size = 0;
-        while(std::strcmp(current.name(),"defines") == 0) {
-            current_node.lhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-            ++nls_size;
-        }
+        // int ls_size = 0;
+        // while(std::strcmp(current.name(),"defines") == 0) {
+            // current_node.lhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+            // ++ls_size;
+        // }
 
-        while(std::strcmp(current.name(),"depends") == 0) {
-            current_node.rhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
+        // while(std::strcmp(current.name(),"depends") == 0) {
+            // current_node.rhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
 
-        current_node.cost = nls_size;
-        utility::warning() << current_node.index << ": Non linear equations not fully handled yet: " << nls_size << newl;
-    }
+        // current_node.cost = ls_size;
+        // utility::warning() << current_node.index << ": Linear equations not fully handled yet: " << ls_size << newl;
+    // }
 
-    else if( std::strcmp(eq_type.name(),"mixed") == 0) {
+    // else if( std::strcmp(eq_type.name(),"nonlinear") == 0) {
 
-        int mix_size = eq_type.attribute("size").as_int();
+        // pugi::xml_node current = eq_type.first_child();
 
-        pugi::xml_node current = eq_type.first_child();
+        // int nls_size = 0;
+        // while(std::strcmp(current.name(),"defines") == 0) {
+            // current_node.lhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+            // ++nls_size;
+        // }
 
-        while(std::strcmp(current.name(),"defines") == 0) {
-            current_node.lhs.insert(current.attribute("name").value());
-            current = current.next_sibling();
-        }
+        // while(std::strcmp(current.name(),"depends") == 0) {
+            // current_node.rhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
 
-        current_node.cost = mix_size;
+        // current_node.cost = nls_size;
+        // utility::warning() << current_node.index << ": Non linear equations not fully handled yet: " << nls_size << newl;
+    // }
 
-        for(int count = 0; count < mix_size; ++count) {
-            xml_equ = xml_equ.next_sibling();
-            Equation mix_eq_node;
-            load_node(mix_eq_node, xml_equ);
-            current_node.lhs.insert(mix_eq_node.lhs.begin(), mix_eq_node.lhs.end());
-            current_node.rhs.insert(mix_eq_node.rhs.begin(), mix_eq_node.rhs.end());
-        }
+    // else if( std::strcmp(eq_type.name(),"mixed") == 0) {
 
-        utility::warning() << current_node.index << ": Mixed equations not fully handled yet: " << mix_size << newl;
-    }
+        // int mix_size = eq_type.attribute("size").as_int();
 
+        // pugi::xml_node current = eq_type.first_child();
+
+        // while(std::strcmp(current.name(),"defines") == 0) {
+            // current_node.lhs.insert(current.attribute("name").value());
+            // current = current.next_sibling();
+        // }
+
+        // current_node.cost = mix_size;
+
+        // for(int count = 0; count < mix_size; ++count) {
+            // xml_equ = xml_equ.next_sibling();
+            // Equation mix_eq_node;
+            // load_node(mix_eq_node, xml_equ);
+            // current_node.lhs.insert(mix_eq_node.lhs.begin(), mix_eq_node.lhs.end());
+            // current_node.rhs.insert(mix_eq_node.rhs.begin(), mix_eq_node.rhs.end());
+        // }
+
+        // utility::warning() << current_node.index << ": Mixed equations not fully handled yet: " << mix_size << newl;
+    // }
+
+    // else {
+        // current_node.cost = 1;
+        // utility::error() << current_node.index << ": Unknown Equation type." << eq_type.name() << newl;
+    // }
+
+
+// }
+
+// void OMModel::load_from_xml(TaskSystemT& task_system, const std::string& eq_to_read, FunctionType* function_system) {
+
+    // std::string xml_file = model_name + "_tasks.xml";
+    // utility::log("") << "Loading " << xml_file << std::endl;
+
+    // pugi::xml_document doc;
+    // if(!doc.load_file(xml_file.c_str())) {
+        // std::cerr << "Error loading XML file '" << xml_file << "'." << std::endl;
+        // exit(1);
+    // }
+
+
+    // pugi::xml_node xml_equs = doc.child("tasksystemdump").child(eq_to_read.c_str());
+
+    // long node_count = 0;
+
+
+    // for (pugi::xml_node xml_equ = xml_equs.first_child(); xml_equ; )
+    // {
+
+        // Equation current_node;
+        // pugi::xml_attribute index = xml_equ.first_attribute();
+        // current_node.index = index.as_int();
+
+        // // Copy the pointers to the needed info from the Model
+        // // to each equation node.
+        // current_node.data = this->data;
+        // current_node.threadData = this->threadData;
+        // current_node.function_system = function_system;
+
+
+        // load_equation(current_node, xml_equ);
+        // ++node_count;
+
+        // task_system.add_node(current_node);
+
+        // xml_equ = xml_equ.next_sibling();
+    // }
+
+
+    // utility::log() << "Number of tasks      = " << node_count << newl;
+
+
+// }
+
+
+inline void check_tag(int index, const std::string& tag) {
+    if (tag == "dummy"
+        or tag == "assign"
+        or tag == "residual"
+        or tag == "algorithm"
+        or tag == "container")
+        return;
     else {
-        current_node.cost = 1;
-        utility::error() << current_node.index << ": Unknown Equation type." << eq_type.name() << newl;
+      std::cerr << index << " : with unknown tag : " << tag << std::endl;
+      exit(1);
     }
-
-
 }
 
-void OMModel::load_from_xml(TaskSystemT& task_system, const std::string& eq_to_read, FunctionType* function_system) {
-
-    std::string xml_file = model_name + "_tasks.xml";
-    utility::log("") << "Loading " << xml_file << std::endl;
-
-    pugi::xml_document doc;
-    if(!doc.load_file(xml_file.c_str())) {
-        std::cerr << "Error loading XML file '" << xml_file << "'." << std::endl;
-        exit(1);
+inline void check_container_dispaly(int index, const std::string& disp) {
+    if (disp == "linear"
+        or disp == "non-linear")
+        return;
+    else {
+      std::cerr << index << " : container with unknown disp : " << disp << std::endl;
+      exit(1);
     }
+}
 
+void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_read, FunctionType* function_system) {
+    std::string json_file = this->name + "_ode.json";
+    // utility::log("") << "Loading " << json_file << std::endl;
 
-    pugi::xml_node xml_equs = doc.child("tasksystemdump").child(eq_to_read.c_str());
+    std::set<std::string> complex_eq_lhs;
+    std::set<std::string> complex_eq_rhs;
+    int current_parent = -1;
+    std::ifstream f_s(json_file);
+    nlohmann::json jmodel_info;
 
+    jmodel_info << f_s;
+
+    // std::cout << std::setw(4) << jmodel_info["equations"][] << std::endl;
     long node_count = 0;
+    for(auto eq : jmodel_info[eq_to_read]) {
+
+        int index = eq["eqIndex"];
+        // skip the 'dummy' node in OpenModelica generated JSON file.
+        if (index == 0) {
+            continue;
+        }
+
+        // So that we know what we can handle so far.
+        check_tag(index, eq["tag"]);
+
+        /*an equation with no parent and is not a container(system). create a new node for it.*/
+        if(eq["parent"] == nullptr && eq["tag"] != "container") {
+            Equation current_node;
+            current_node.index = index;
+
+            // Copy the pointers to the needed info from the Model
+            // to each equation node.
+            current_node.data = this->data;
+            current_node.threadData = this->threadData;
+            current_node.function_system = function_system;
+
+            for(auto def : eq["defines"]) {
+                current_node.lhs.insert(def.get<std::string>());
+            }
+            for(auto use : eq["uses"])
+                current_node.rhs.insert(use.get<std::string>());
+
+            ++node_count;
+            task_system.add_node(current_node);
+
+        }
+        /*an equation with parent and is not a complex system. collect references from it to pass
+          to its parent.*/
+        else if(eq["parent"] != nullptr && eq["tag"] != "container") {
+            if(current_parent == -1)
+                current_parent = eq["parent"];
+            else if (eq["parent"] != current_parent) {
+                std::cerr << "current parent " << current_parent <<" and equation parent " << eq["parent"] << " don't add up. something is fishy" << std::endl;
+                exit(1);
+            }
+
+            // std::cout << "Collecting from : "<< index << " for : " << eq["parent"] << std::endl;
+
+            for(auto def : eq["defines"]) {
+                complex_eq_lhs.insert(def.get<std::string>());
+            }
+            for(auto use : eq["uses"])
+                complex_eq_rhs.insert(use.get<std::string>());
+        }
+        /*an equation with no parent and is a complex system. create a new node for it
+          using the collected rhs and lsh references from its children.*/
+        else if(eq["parent"] == nullptr && eq["tag"] == "container") {
+
+            check_container_dispaly(index,eq["display"]);
+
+            Equation current_node;
+            current_node.index = index;
+
+            // Copy the pointers to the needed info from the Model
+            // to each equation node.
+            current_node.data = this->data;
+            current_node.threadData = this->threadData;
+            current_node.function_system = function_system;
+
+            current_node.lhs = complex_eq_lhs;
+            complex_eq_lhs.clear();
+            for(auto def : eq["defines"]) {
+                current_node.lhs.insert(def.get<std::string>());
+            }
+
+            // std::cout << "Equation: "  << index << " defines : "<< std::endl;
+            // for(auto def : current_node.lhs)
+                // std::cout << def << ", ";
+            // std::cout << std::endl;
 
 
-    for (pugi::xml_node xml_equ = xml_equs.first_child(); xml_equ; )
-    {
+            current_node.rhs = complex_eq_rhs;
+            complex_eq_rhs.clear();
+            for(auto use : eq["uses"]) {
+                current_node.rhs.insert(use.get<std::string>());
+            }
 
-        Equation current_node;
-        pugi::xml_attribute index = xml_equ.first_attribute();
-        current_node.index = index.as_int();
+            // std::cout << "Equation: "  << index << " uses : "<< std::endl;
+            // for(auto use : current_node.rhs)
+                // std::cout << use << ", ";
+            // std::cout << std::endl;
 
-        // Copy the pointers to the needed info from the Model
-        // to each equation node.
-        current_node.data = this->data;
-        current_node.threadData = this->threadData;
-        current_node.function_system = function_system;
+            current_parent = -1;
 
+            ++node_count;
+            task_system.add_node(current_node);
 
-        load_equation(current_node, xml_equ);
-        ++node_count;
-
-        task_system.add_node(current_node);
-
-        xml_equ = xml_equ.next_sibling();
+        }
+        else {
+            std::cerr << "Equation type not yet handled : "  << index << std::endl;
+            std::cerr << eq << std::endl;
+            exit(1);
+        }
     }
 
-
-    utility::log() << "Number of tasks      = " << node_count << newl;
-
+    std::cout << "Number of tasks      = " << node_count << newl;
 
 }
 

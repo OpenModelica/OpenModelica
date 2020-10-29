@@ -40,6 +40,7 @@
 
 
 #include "pm_cluster_system.hpp"
+#include <algorithm>
 
 namespace openmodelica {
 namespace parmodelica {
@@ -252,7 +253,7 @@ struct cluster_none {
     }
 
 	template<typename TaskSystemType>
-	static void dump_graph(TaskSystemType& task_system) {
+	static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
         /*! No op*/
     }
 
@@ -270,8 +271,8 @@ struct cluster_merge_level_for_cost {
     }
 
 	template<typename TaskSystemType>
-	static void dump_graph(TaskSystemType& task_system) {
-        task_system.dump_graphml(cluster_merge_level_for_cost::name());
+	static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+        task_system.dump_graphml(cluster_merge_level_for_cost::name()+ "_" + suffix);
     }
 
     template<typename TaskSystemType>
@@ -287,7 +288,7 @@ struct cluster_merge_level_for_cost {
         ClusterLevels& clusters_by_level = task_system.clusters_by_level;
         GraphType& sys_graph = task_system.sys_graph;
 
-        int nr_of_clusters = 4;
+        int nr_of_clusters = 8;
 
         if(task_system.levels_valid == false)
             task_system.update_node_levels();
@@ -301,10 +302,11 @@ struct cluster_merge_level_for_cost {
             SameLevelClusterIdsType& current_level = *level_iter;
 
             /*!Sort the level by cost so that we can pick the nodes that fits the gap easily*/
+            // sort in decreasing order
             cluster_cost_comparator_by_id<GraphType> cccbi(sys_graph);
-            std::sort(current_level.begin(), current_level.end(), cccbi);
+            std::sort(current_level.rbegin(), current_level.rend(), cccbi);
 
-            double target_cost = current_level.level_cost/nr_of_clusters;
+            double target_cost = current_level.total_level_cost/nr_of_clusters;
             if(target_cost < sys_graph[current_level.front()].cost) {
                 target_cost = sys_graph[current_level.front()].cost;
             }
@@ -350,10 +352,93 @@ struct cluster_merge_level_for_cost {
 
             typename SameLevelClusterIdsType::iterator remaining_iter, smallest_clust_iter;
             while(clustid_iter != current_level.end()) {
-                smallest_clust_iter = std::min_element(current_level.begin(), current_level.begin() + nr_of_clusters);
+                smallest_clust_iter = std::min_element(current_level.begin(), current_level.begin() + nr_of_clusters, cccbi);
                 task_system.concat_same_level_clusters(*smallest_clust_iter, *clustid_iter);
                 clustid_iter = current_level.erase(clustid_iter);
             }
+
+        }
+
+        task_system.levels_valid = false;
+
+    }
+
+};
+
+struct cluster_merge_level_for_bins {
+    static std::string name() {
+        return "cluster_merge_level_for_bins";
+    }
+
+	template<typename TaskSystemType>
+	static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+        task_system.dump_graphml(cluster_merge_level_for_bins::name()+ "_" + suffix);
+    }
+
+    template<typename TaskSystemType>
+    static void apply(TaskSystemType& task_system) {
+
+        typedef typename TaskSystemType::GraphType GraphType;
+        typedef typename TaskSystemType::ClusterLevels ClusterLevels;
+        // typedef typename TaskSystemType::ClusterType ClusterType;
+        // typedef typename TaskSystemType::ClusterIdType ClusterIdType;
+
+        typedef typename ClusterLevels::value_type SameLevelClusterIdsType;
+
+        ClusterLevels& clusters_by_level = task_system.clusters_by_level;
+        GraphType& sys_graph = task_system.sys_graph;
+
+        int nr_of_clusters = NUM_THREADS*2;
+
+        if(task_system.levels_valid == false)
+            task_system.update_node_levels();
+
+
+        typename ClusterLevels::iterator level_iter = clusters_by_level.begin();
+        /*! Skip the first level. Which contains only the root node and some invlaidated clusters.*/
+        ++level_iter;
+        int level_number = 1;
+        for( ;level_iter != clusters_by_level.end(); ++level_iter, ++level_number) {
+            SameLevelClusterIdsType& current_level = *level_iter;
+
+            if(current_level.size() <= nr_of_clusters)
+                continue;
+
+            /*!Sort the level by cost so that we can pick the nodes that fits the gap easily*/
+            // sort in decreasing order
+            cluster_cost_comparator_by_id<GraphType> cccbi(sys_graph);
+            std::sort(current_level.rbegin(), current_level.rend(), cccbi);
+
+            // std::cout << "current level {";
+            // for(auto& c: current_level)
+                // std::cout << sys_graph[c].cost << ",";
+            // std::cout << "}" << std::endl;
+
+            typename SameLevelClusterIdsType::iterator smallest_clust_iter, clustid_iter, end_of_accepted;
+
+            // Accept the first n clusters as merged tasks
+            end_of_accepted = current_level.begin();
+            std::advance(end_of_accepted, nr_of_clusters);
+            // std::cout << "will start at: " << std::distance(current_level.begin(), end_of_accepted) << ": "<< sys_graph[*end_of_accepted].cost << std::endl;
+
+            // iterate through the rest and merge with the smallest currently
+            clustid_iter = end_of_accepted;
+            while(clustid_iter != current_level.end()) {
+                // std::cout << "current level {";
+                // for(auto& c: current_level)
+                    // std::cout << sys_graph[c].cost << ",";
+                // std::cout << "}" << std::endl;
+
+                smallest_clust_iter = std::min_element(current_level.begin(), end_of_accepted, cccbi);
+                // std::cout << "smallest is " << std::distance(current_level.begin(), smallest_clust_iter) << ": "<< sys_graph[*smallest_clust_iter].cost << std::endl;
+                task_system.concat_same_level_clusters(*smallest_clust_iter, *clustid_iter);
+                clustid_iter = current_level.erase(clustid_iter);
+            }
+
+            // std::cout << "current level {";
+            // for(auto& c: current_level)
+                // std::cout << sys_graph[c].cost << ",";
+            // std::cout << "}" << std::endl;
 
         }
 
@@ -370,8 +455,8 @@ struct cluster_merge_common {
     }
 
 	template<typename TaskSystemType>
-	static void dump_graph(TaskSystemType& task_system) {
-        task_system.dump_graphml(cluster_merge_common::name());
+	static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+        task_system.dump_graphml(cluster_merge_common::name()+ "_" + suffix);
     }
 
     template<typename TaskSystemType>
@@ -382,7 +467,7 @@ struct cluster_merge_common {
         typedef typename TaskSystemType::ClusterType ClusterType;
         typedef typename TaskSystemType::ClusterIdType ClusterIdType;
         typedef typename TaskSystemType::adjacency_iterator adjacency_iterator;
-		typedef typename TaskSystemType::out_edge_iterator out_edge_iterator;
+		// typedef typename TaskSystemType::out_edge_iterator out_edge_iterator;
 
         GraphType& sys_graph = task_system.sys_graph;
 
@@ -403,8 +488,9 @@ struct cluster_merge_common {
                 child_ids.push_back(curr_child_id);
         }
 
+            // sort in decreasing order
         cluster_cost_comparator_by_id<GraphType> cccbi(sys_graph);
-        std::sort(child_ids.begin(), child_ids.end(), cccbi);
+        std::sort(child_ids.rbegin(), child_ids.rend(), cccbi);
 
         typename std::vector<ClusterIdType>::iterator id_iter = child_ids.begin();
         for ( ; id_iter != child_ids.end(); ++id_iter) {
@@ -500,8 +586,8 @@ struct cluster_merge_single_parent {
     }
 
 	template<typename TaskSystemType>
-	static void dump_graph(TaskSystemType& task_system) {
-        task_system.dump_graphml(cluster_merge_single_parent::name());
+	static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+        task_system.dump_graphml(cluster_merge_single_parent::name()+ "_" + suffix);
     }
 
     template<typename TaskSystemType>
@@ -561,8 +647,8 @@ struct cluster_merge_level_parents {
     }
 
 	template<typename TaskSystemType>
-	static void dump_graph(TaskSystemType& task_system) {
-        task_system.dump_graphml(cluster_merge_level_parents::name());
+	static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+        task_system.dump_graphml(cluster_merge_level_parents::name()+ "_" + suffix);
     }
 
     template<typename TaskSystemType>
@@ -648,8 +734,8 @@ struct cluster_merge_connected_for_cost {
     }
 
 	template<typename TaskSystemType>
-	static void dump_graph(TaskSystemType& task_system) {
-        task_system.dump_graphml(cluster_merge_connected_for_cost::name());
+	static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+        task_system.dump_graphml(cluster_merge_connected_for_cost::name()+ "_" + suffix);
     }
 
     template<typename TaskSystemType>

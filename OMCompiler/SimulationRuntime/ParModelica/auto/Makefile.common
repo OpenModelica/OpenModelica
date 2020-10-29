@@ -8,8 +8,6 @@ om_pm_equation.cpp \
 pm_utility.cpp \
 om_pm_interface.cpp \
 om_pm_model.cpp 
-# ParModelicaTaskGrapExt_rml.cpp
-# ParModelicaTaskGrapExt_omc.cpp \
 
 HDRS = *.hpp *.inl
 OBJS = $(SRCS:.cpp=.o)
@@ -24,7 +22,7 @@ libParModelicaAuto.a: $(OBJS)
 	$(AR_) $@ $(OBJS)
     
 .cpp.o: $(DPFILE)
-	$(CC) $(CPPFLAGS) $(INCDIRS) -c $<    
+	$(CXX) $(CPPFLAGS) $(INCDIRS) -c $<
     
 test: test_task_graph.cpp libParModelicaAuto.a
 	$(CXX) $(CPPFLAGS) -I. $(INCDIRS) test_task_graph.cpp -o gen_graph$(EXEEXT) libParModelicaAuto.a -L$(TBB_LIB) -ltbb
@@ -34,6 +32,6 @@ clean :
 	touch $(DPFILE)
     
 $(DPFILE) depend : $(HDRS) $(SRCS)
-	$(CC) $(DPFLAGS) $(CPPFLAGS) $(SRCS) > $(DPFILE)    
+	$(CXX) $(DPFLAGS) $(CPPFLAGS) $(INCDIRS) $(SRCS) > $(DPFILE)
     
 include $(DPFILE)

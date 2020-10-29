@@ -56,7 +56,7 @@ private:
     PMStopWatch timer;
     LARGE_INTEGER total_time;
     LARGE_INTEGER frequency;
-    double LI_to_secs(LARGE_INTEGER &LI) ;
+    double LI_to_milli_secs(LARGE_INTEGER &LI) ;
 public:
     PMTimer();
     void start_timer();

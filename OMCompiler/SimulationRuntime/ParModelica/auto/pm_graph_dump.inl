@@ -73,39 +73,6 @@ void dump_graphviz(const TaskSystem<TaskTypeT>& task_system, const std::string& 
 }
 
 
-template<typename T>
-void TaskSystem_v2<T>::dump_graphml(const std::string& filename) {
-
-    if(levels_valid == false)
-        update_node_levels();
-
-
-    std::string out_filename = filename + ".graphml";
-    std::ofstream outfileml(out_filename.c_str());
-    boost::dynamic_properties dp;
-    dp.property("index", boost::get(&ClusterType::index_list, sys_graph));
-    dp.property("level", boost::get(&ClusterType::level, sys_graph));
-    dp.property("cost", boost::get(&ClusterType::cost, sys_graph));
-
-
-
-	/*! Now we have listS as vertex container. listS doesn't have VertexIndexMap
-	   created by default. So we create one for it here. */
-	typedef std::map<ClusterIdType, size_t> ClustIndexMap;
-    ClustIndexMap clust_map_index;
-    boost::associative_property_map<ClustIndexMap> clust_prop_map_index(clust_map_index);
-
-	size_t node_count = 0;
-	BGL_FORALL_VERTICES_T(clust_id, sys_graph, GraphType)
-    {
-        boost::put(clust_prop_map_index, clust_id, node_count++);
-    }
-
-    write_graphml(outfileml, sys_graph, clust_prop_map_index, dp, true);
-
-}
-
-
 
 } // openmodelica
 } // parmodelica

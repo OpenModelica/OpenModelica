@@ -40,12 +40,12 @@
 
 #include <simulation_data.h>
 
-#include "pm_task_system.hpp"
+// #include "pm_task_system.hpp"
 #include "pm_cluster_level_scheduler.hpp"
 #include "pm_cluster_dynamic_scheduler.hpp"
 
-#include "pm_level_scheduler.hpp"
-#include "pm_dynamic_scheduler.hpp"
+// #include "pm_level_scheduler.hpp"
+// #include "pm_dynamic_scheduler.hpp"
 
 #include "pm_timer.hpp"
 
@@ -92,22 +92,30 @@ class OMModel
     // typedef LevelSchedulerThreadOblivious<Equation> SchedulerT;
     // typedef DynamicScheduler<Equation> SchedulerT;
     // typedef TaskSystem<Equation> TaskSystemT;
-
+#ifdef USE_LEVEL_SCHEDULER
     typedef StepLevels<Equation> SchedulerT;
-    // typedef ClusterDynamicScheduler<Equation> SchedulerT;
+#else
+  #ifdef USE_FLOW_SCHEDULER
+    typedef ClusterDynamicScheduler<Equation> SchedulerT;
+  #else
+    #error "please specify scheduler. See makefile"
+  #endif
+#endif
     typedef TaskSystem_v2<Equation> TaskSystemT;
 
 
 
-private:
-    std::string model_name;
+public:
+    std::string name;
     bool intialized;
     DATA* data;
     threadData_t* threadData;
 
 public:
-    OMModel();
-    void initialize(const char* , DATA* , threadData_t* , FunctionType*);
+    OMModel(const std::string&);
+    void load_ODE_system();
+
+    PMTimer load_system_timer;
 
     FunctionType* ini_system_funcs;
     TaskSystemT INI_system;
@@ -121,10 +129,12 @@ public:
     TaskSystemT ODE_system;
     SchedulerT ODE_scheduler;
 
-    PMTimer total_alg_time;
+    FunctionType alg_system_funcs;
     TaskSystemT ALG_system;
+    SchedulerT ALG_scheduler;
 
     void load_from_xml(TaskSystemT&, const std::string&, FunctionType*);
+    void load_from_json(TaskSystemT&, const std::string&, FunctionType*);
 };
 
 

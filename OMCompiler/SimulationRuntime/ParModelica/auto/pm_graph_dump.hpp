@@ -44,11 +44,11 @@
 namespace openmodelica {
 namespace parmodelica {
 
-template<typename TaskTypeT>
-void dump_graphml(const TaskSystem<TaskTypeT>& task_system, const std::string& filename);
+// template<typename TaskTypeT>
+// void dump_graphml(const TaskSystem<TaskTypeT>& task_system, const std::string& filename);
 
-template<typename TaskTypeT>
-void dump_graphviz(const TaskSystem<TaskTypeT>& task_system, const std::string& filename);
+// template<typename TaskTypeT>
+// void dump_graphviz(const TaskSystem<TaskTypeT>& task_system, const std::string& filename);
 
 
 

@@ -58,7 +58,7 @@ void PMTimer::reset_timer(){
 }
 
 double PMTimer::get_elapsed_time(){
-    return boost::chrono::nanoseconds(total_time).count() / 1000000000.0;
+    return boost::chrono::nanoseconds(total_time).count() / 1000000.0;
 }
 
 } // parmodelica
