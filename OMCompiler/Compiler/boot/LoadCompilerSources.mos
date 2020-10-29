@@ -404,6 +404,7 @@ if true then /* Suppress output */
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",
     "../SimCode/SerializeModelInfo.mo",
+    "../SimCode/SerializeTaskSystemInfo.mo",
     "../SimCode/SimCode.mo",
     "../SimCode/SimCodeMain.mo",
     "../SimCode/SimCodeUtil.mo",
@@ -445,7 +446,6 @@ if true then /* Suppress output */
     "../Template/GraphMLDumpTpl.mo",
     "../Template/NFInstDumpTpl.mo",
     "../Template/SimCodeDump.mo",
-    "../Template/TaskSystemDump.mo",
     "../Template/VisualXMLTpl.mo",
 
     "../Util/AvlTree.mo",
