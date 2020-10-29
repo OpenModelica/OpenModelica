@@ -60,7 +60,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.FAILTRACE,
   Flags.CEVAL,
   Flags.CHECK_BACKEND_DAE,
-  Flags.PARMODAUTO,
   Flags.PTHREADS,
   Flags.EVENTS,
   Flags.DUMP_INLINE_SOLVER,
@@ -403,7 +402,9 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMI_FILTER,
   Flags.FMI_SOURCES,
   Flags.FMI_FLAGS,
-  Flags.NEW_BACKEND
+  Flags.NEW_BACKEND,
+  Flags.PARMODAUTO
+
 };
 
 public function new

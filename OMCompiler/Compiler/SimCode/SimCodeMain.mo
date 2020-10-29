@@ -538,7 +538,6 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
         codegenFuncs := (function runToBoolean(func=function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid))) :: codegenFuncs;
-        dumpTaskSystemIfFlag(simCode);
         codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
         for f in {
           // external objects
@@ -665,14 +664,6 @@ algorithm
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplates;
-
-protected function dumpTaskSystemIfFlag
-  input SimCode.SimCode simCode;
-algorithm
-  if Flags.isSet(Flags.PARMODAUTO) then
-    Tpl.tplNoret2(TaskSystemDump.dumpTaskSystem, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-  end if;
-end dumpTaskSystemIfFlag;
 
 protected function callTargetTemplatesCPP
   input SimCode.SimCode iSimCode;
