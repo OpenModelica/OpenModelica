@@ -6,7 +6,7 @@ PARMODELICAAUTO_INC=$(OPENMODELICA_INC)/ParModelica/auto/
 OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/@host_short@/omc
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
-TBB_ROOT = $(OMCOMPILER_ROOT)/3rdParty/tbb_cmake/
+TBB_ROOT = $(OMCOMPILER_ROOT)/3rdParty/tbb/
 BOOST_HOME = @BOOSTHOME@
 INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(TBB_ROOT)/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
 
