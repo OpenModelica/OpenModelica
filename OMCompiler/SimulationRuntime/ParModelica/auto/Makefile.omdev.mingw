@@ -6,9 +6,9 @@ PARMODELICAAUTO_INC=$(OPENMODELICA_INC)/ParModelica/auto/
 OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
-TBB_ROOT = $(OMCOMPILER_ROOT)/3rdParty/tbb/
+OMC_TBB_ROOT = $(OMCOMPILER_ROOT)/3rdParty/tbb/
 BOOST_HOME = $(OMDEV)/lib/3rdParty/boost-1_49
-INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(TBB_ROOT)/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
+INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMC_TBB_ROOT)/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
 
 CC=gcc
 CXX=g++

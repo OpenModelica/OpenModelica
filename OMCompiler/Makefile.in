@@ -21,6 +21,8 @@ host = @host@
 host_short = @host_short@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
+ENABLE_PARMODAUTO = @ENABLE_PARMODAUTO@
+OMC_TBB_ROOT = @OMC_TBB_ROOT@
 
 defaultMakefileTarget = Makefile
 MAKEFILE_BOOT = LinkMain.makefile
