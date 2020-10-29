@@ -2644,6 +2644,9 @@ algorithm
             (if Flags.isSet(Flags.HPCOM) then "-fopenmp" else "");
   cflags := if stringEq(Config.simCodeTarget(),"JavaScript") then "-Os -Wno-warn-absolute-paths" else cflags;
   ldflags := System.getLDFlags();
+  if Flags.getConfigBool(Flags.PARMODAUTO) then
+    ldflags := "-lParModelicaAuto -ltbb_static " + ldflags;
+  end if;
   rtlibs := if isFunction then Autoconf.ldflags_runtime else (if isFMU then Autoconf.ldflags_runtime_fmu else Autoconf.ldflags_runtime_sim);
   platform := System.modelicaPlatform();
   compileDir :=  System.pwd() + Autoconf.pathDelimiter;
