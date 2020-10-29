@@ -306,9 +306,8 @@ inline void check_tag(int index, const std::string& tag) {
         or tag == "assign"
         or tag == "residual"
         or tag == "tornsystem"
-        or tag == "jacobian" // TODO: Skip me. These cariables are visible only inside the SCC
-        or tag == "algorithm"
-        or tag == "container")
+        or tag == "system"
+        or tag == "algorithm")
         return;
     else {
       std::cerr << index << " : with unknown tag : " << tag << std::endl;
@@ -326,21 +325,144 @@ inline void check_container_dispaly(int index, const std::string& disp) {
     }
 }
 
+void load_simple_assign(Equation& current_node, const nlohmann::json& json_eq) {
+
+#ifndef NDEBUG
+    if (json_eq["defines"].size() != 1) {
+        utility::eq_index_error(current_node.index, "Assign with more than one define!");
+    }
+#endif
+
+    current_node.lhs.insert(json_eq["defines"].front().get<std::string>());
+
+    for(auto use : json_eq["uses"]) {
+        current_node.rhs.insert(use.get<std::string>());
+    }
+}
+
+
+
+void load_simple_assign_check_local_define(Equation& current_node, const nlohmann::json& int_eq) {
+
+#ifndef NDEBUG
+    if (int_eq["defines"].size() != 1) {
+        utility::eq_index_error(current_node.index, "Assign with more than one define!");
+    }
+#endif
+
+    current_node.lhs.insert(int_eq["defines"].front().get<std::string>());
+
+    for(auto& use : int_eq["uses"]) {
+        auto var_s = use.get<std::string>();
+        utility::indexed_dlog(current_node.index, "Checking if " + var_s + " is defined localy");
+        auto local_defined = current_node.lhs.find(var_s) != current_node.lhs.end();
+
+        // Disable me and see if graphs look different.
+        if (!local_defined) {
+            current_node.rhs.insert(use.get<std::string>());
+            utility::indexed_dlog(current_node.index, ": added uses: " + use.get<std::string>() + " : due to " + std::to_string(int_eq["eqIndex"].get<int>()));
+        }
+        else{
+            utility::indexed_dlog(current_node.index, ": skiped uses: " + use.get<std::string>() + " : due to local define");
+        }
+    }
+
+
+}
+
+void load_simple_residual(Equation& current_node, const nlohmann::json& json_eq) {
+    for(auto use : json_eq["uses"]) {
+        current_node.rhs.insert(use.get<std::string>());
+    }
+}
+
+
+void load_linear_system(Equation& current_node, const nlohmann::json& json_eq) {
+
+    for(auto& def : json_eq["defines"]) {
+        current_node.lhs.insert(def.get<std::string>());
+        utility::indexed_dlog(current_node.index, ": added own defines: " + def.get<std::string>());
+    }
+
+    for(auto& int_eq : json_eq["internal-equations"]) {
+
+        int i_index = int_eq["eqIndex"];
+        const std::string& i_tag = int_eq["tag"];
+
+        if(i_tag == "assign") {
+            load_simple_assign_check_local_define(current_node, int_eq);
+        }
+
+        else if(i_tag == "torn") {
+            load_simple_assign_check_local_define(current_node, int_eq);
+        }
+
+        else if(i_tag == "residual") {
+            load_simple_residual(current_node, int_eq);
+        }
+
+        else {
+            utility::eq_index_fatal(i_index, "Internal Equation type not yet handled: " + i_tag);
+        }
+
+    }
+
+    utility::indexed_dlog(current_node.index, "Total number of defines: " + std::to_string(current_node.lhs.size()));
+    utility::indexed_dlog(current_node.index, "Total number of uses: " + std::to_string(current_node.rhs.size()));
+
+}
+
+
+void load_system_of_equations(Equation& current_node, const nlohmann::json& json_eq) {
+    const std::string& display = json_eq["display"];
+    const std::string& tag = json_eq["tag"];
+
+    if(display == "linear") {
+        load_linear_system(current_node, json_eq);
+    }
+    else if(display == "non-linear") {
+        load_linear_system(current_node, json_eq);
+    }
+    else {
+        utility::eq_index_fatal(current_node.index, "System (" + tag + ") Equation display not yet handled: " + display);
+    }
+}
+
+void load_equation(Equation& current_node, const nlohmann::json& json_eq) {
+    const std::string& tag = json_eq["tag"];
+
+    if(tag == "assign") {
+        load_simple_assign(current_node, json_eq);
+        return;
+    }
+
+    else if(tag == "residual") {
+        load_simple_residual(current_node, json_eq);
+        return;
+    }
+
+    else if(tag == "tornsystem" || tag == "system") {
+        load_system_of_equations(current_node, json_eq);
+        return;
+    }
+
+    else {
+        utility::eq_index_fatal(current_node.index, "Equation type not yet handled: " + tag);
+    }
+}
+
+
 void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_read, FunctionType* function_system) {
     std::string json_file = this->name + "_ode.json";
     // utility::log("") << "Loading " << json_file << std::endl;
 
-    std::set<std::string> complex_eq_lhs;
-    std::set<std::string> complex_eq_rhs;
-    // int current_parent = -1;
     std::ifstream f_s(json_file);
     nlohmann::json jmodel_info;
 
     jmodel_info << f_s;
 
-    // std::cout << std::setw(4) << jmodel_info["equations"][] << std::endl;
     long node_count = 0;
-    for(auto eq : jmodel_info[eq_to_read]) {
+    for(auto& eq : jmodel_info[eq_to_read]) {
 
         int index = eq["eqIndex"];
         // skip the 'dummy' node in OpenModelica generated JSON file.
@@ -352,190 +474,23 @@ void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_
             utility::eq_index_fatal(index, "Unkown section!" + eq["section"].get<std::string>());
         }
 
-        const std::string& tag = eq["tag"];
-        check_tag(index, tag);
 
+        Equation current_node;
+        current_node.index = index;
+        // Copy the pointers to the needed info from the Model
+        // to each equation node.
+        current_node.data = this->data;
+        current_node.threadData = this->threadData;
+        current_node.function_system = function_system;
 
-        if(tag == "assign") {
+        load_equation(current_node, eq);
 
-#ifdef NDEBUG
-            if (eq["defines"].size() != 1) {
-                utility::eq_index_error(index, "Assign with more than one define!");
-            }
-#endif
+        ++node_count;
+        task_system.add_node(current_node);
 
-            Equation current_node;
-            current_node.index = index;
-
-            // Copy the pointers to the needed info from the Model
-            // to each equation node.
-            current_node.data = this->data;
-            current_node.threadData = this->threadData;
-            current_node.function_system = function_system;
-
-            current_node.lhs.insert(eq["defines"].front().get<std::string>());
-
-            for(auto use : eq["uses"])
-                current_node.rhs.insert(use.get<std::string>());
-
-            ++node_count;
-            task_system.add_node(current_node);
-
-        }
-
-        else if(tag == "tornsystem") {
-
-            Equation current_node;
-            current_node.index = index;
-
-            // Copy the pointers to the needed info from the Model
-            // to each equation node.
-            current_node.data = this->data;
-            current_node.threadData = this->threadData;
-            current_node.function_system = function_system;
-
-            for(auto def : eq["defines"]) {
-                current_node.lhs.insert(def.get<std::string>());
-                utility::indexed_dlog(index, ": added own defines: " + def.get<std::string>());
-            }
-
-            // auto sys_size = eq["unknowns"].get<int>();
-
-            for(auto int_eq : eq["internal-equations"]) {
-                for(auto def : int_eq["defines"]) {
-                    current_node.lhs.insert(def.get<std::string>());
-                    utility::indexed_dlog(index, ": added defines: " + def.get<std::string>() + " : due to " + std::to_string(int_eq["eqIndex"].get<int>()));
-                }
-
-                for(auto use : int_eq["uses"]) {
-                    auto var_s = use.get<std::string>();
-                    auto local_defined = current_node.lhs.find(var_s) != current_node.lhs.end();
-
-                    // Disable me and see if graphs look different.
-                    if (!local_defined) {
-                        current_node.rhs.insert(use.get<std::string>());
-                        utility::indexed_dlog(index, ": added uses: " + use.get<std::string>() + " : due to " + std::to_string(int_eq["eqIndex"].get<int>()));
-                    }
-                    else{
-                        utility::indexed_dlog(index, ": skiped uses: " + use.get<std::string>() + " : due to local define");
-                    }
-                }
-
-            }
-
-            utility::indexed_dlog(index, "Total number of defines: " + std::to_string(current_node.lhs.size()));
-            utility::indexed_dlog(index, "Total number of uses: " + std::to_string(current_node.rhs.size()));
-
-
-            ++node_count;
-            task_system.add_node(current_node);
-
-        }
-
-        else {
-            utility::eq_index_fatal(index, "Equation type not yet handled: " + eq["tag"].get<std::string>());
-        }
-
-
-
-
-
-
-        // // So that we know what we can handle so far.
-        // check_tag(index, eq["tag"]);
-
-        // /*an equation with no parent and is not a container(system). create a new node for it.*/
-        // if(eq["parent"] == nullptr && eq["tag"] != "container") {
-        //     Equation current_node;
-        //     current_node.index = index;
-
-        //     // Copy the pointers to the needed info from the Model
-        //     // to each equation node.
-        //     current_node.data = this->data;
-        //     current_node.threadData = this->threadData;
-        //     current_node.function_system = function_system;
-
-        //     for(auto def : eq["defines"]) {
-        //         current_node.lhs.insert(def.get<std::string>());
-        //     }
-        //     for(auto use : eq["uses"])
-        //         current_node.rhs.insert(use.get<std::string>());
-
-        //     ++node_count;
-        //     task_system.add_node(current_node);
-
-        // }
-        // /*an equation with parent and is not a complex system. collect references from it to pass
-        //   to its parent.*/
-        // else if(eq["parent"] != nullptr && eq["tag"] != "container") {
-        //     if(current_parent == -1)
-        //         current_parent = eq["parent"];
-        //     else if (eq["parent"] != current_parent) {
-        //         std::cerr << "current parent " << current_parent <<" and equation parent " << eq["parent"] << " don't add up. something is fishy" << std::endl;
-        //         exit(1);
-        //     }
-
-        //     // std::cout << "Collecting from : "<< index << " for : " << eq["parent"] << std::endl;
-
-        //     for(auto def : eq["defines"]) {
-        //         complex_eq_lhs.insert(def.get<std::string>());
-        //     }
-        //     for(auto use : eq["uses"])
-        //         complex_eq_rhs.insert(use.get<std::string>());
-        // }
-        // /*an equation with no parent and is a complex system. create a new node for it
-        //   using the collected rhs and lsh references from its children.*/
-        // else if(eq["parent"] == nullptr && eq["tag"] == "container") {
-
-        //     check_container_dispaly(index,eq["display"]);
-
-        //     Equation current_node;
-        //     current_node.index = index;
-
-        //     // Copy the pointers to the needed info from the Model
-        //     // to each equation node.
-        //     current_node.data = this->data;
-        //     current_node.threadData = this->threadData;
-        //     current_node.function_system = function_system;
-
-        //     current_node.lhs = complex_eq_lhs;
-        //     complex_eq_lhs.clear();
-        //     for(auto def : eq["defines"]) {
-        //         current_node.lhs.insert(def.get<std::string>());
-        //     }
-
-        //     // std::cout << "Equation: "  << index << " defines : "<< std::endl;
-        //     // for(auto def : current_node.lhs)
-        //         // std::cout << def << ", ";
-        //     // std::cout << std::endl;
-
-
-        //     current_node.rhs = complex_eq_rhs;
-        //     complex_eq_rhs.clear();
-        //     for(auto use : eq["uses"]) {
-        //         current_node.rhs.insert(use.get<std::string>());
-        //     }
-
-        //     // std::cout << "Equation: "  << index << " uses : "<< std::endl;
-        //     // for(auto use : current_node.rhs)
-        //         // std::cout << use << ", ";
-        //     // std::cout << std::endl;
-
-        //     current_parent = -1;
-
-        //     ++node_count;
-        //     task_system.add_node(current_node);
-
-        // }
-        // else {
-        //     std::cerr << "Equation type not yet handled : "  << index << std::endl;
-        //     std::cerr << eq << std::endl;
-        //     exit(1);
-        // }
     }
 
     std::cout << "Number of tasks      = " << node_count << newl;
-
 }
 
 
