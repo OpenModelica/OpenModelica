@@ -388,7 +388,7 @@ struct cluster_merge_level_for_bins {
         ClusterLevels& clusters_by_level = task_system.clusters_by_level;
         GraphType& sys_graph = task_system.sys_graph;
 
-        int nr_of_clusters = NUM_THREADS*2;
+        unsigned nr_of_clusters = NUM_THREADS*2;
 
         if(task_system.levels_valid == false)
             task_system.update_node_levels();

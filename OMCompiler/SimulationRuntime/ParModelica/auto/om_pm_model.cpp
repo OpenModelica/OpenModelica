@@ -332,7 +332,7 @@ void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_
 
     std::set<std::string> complex_eq_lhs;
     std::set<std::string> complex_eq_rhs;
-    int current_parent = -1;
+    // int current_parent = -1;
     std::ifstream f_s(json_file);
     nlohmann::json jmodel_info;
 
@@ -399,7 +399,7 @@ void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_
                 utility::indexed_dlog(index, ": added own defines: " + def.get<std::string>());
             }
 
-            auto sys_size = eq["unknowns"].get<int>();
+            // auto sys_size = eq["unknowns"].get<int>();
 
             for(auto int_eq : eq["internal-equations"]) {
                 for(auto def : int_eq["defines"]) {
