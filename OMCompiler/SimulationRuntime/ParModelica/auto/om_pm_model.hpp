@@ -38,14 +38,11 @@
  Mahder.Gebremedhin@liu.se  2020-10-12
 */
 
+#include <tbb/task_scheduler_init.h>
 #include <simulation_data.h>
 
-// #include "pm_task_system.hpp"
 #include "pm_cluster_level_scheduler.hpp"
 #include "pm_cluster_dynamic_scheduler.hpp"
-
-// #include "pm_level_scheduler.hpp"
-// #include "pm_dynamic_scheduler.hpp"
 
 #include "pm_timer.hpp"
 
@@ -107,13 +104,16 @@ class OMModel
 
 public:
     std::string name;
+    size_t max_num_threads;
+    tbb::task_scheduler_init tbb_system;
+
     bool intialized;
     DATA* data;
     threadData_t* threadData;
-    size_t max_num_threads;
+
 
 public:
-    OMModel(const std::string&);
+    OMModel(const std::string& name, size_t max_num_threads);
     void load_ODE_system();
 
     PMTimer load_system_timer;

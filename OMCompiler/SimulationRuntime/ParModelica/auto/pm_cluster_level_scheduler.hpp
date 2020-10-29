@@ -66,7 +66,7 @@ struct TBBConcurrentStepExecutor {
     GraphType&       sys_graph;
 
   public:
-    TBBConcurrentStepExecutor(GraphType& g, std::set<pid_t>& k) : sys_graph(g) {}
+    TBBConcurrentStepExecutor(GraphType& g) : sys_graph(g) {}
 
     void operator()(tbb::blocked_range<ClusteIdIter>& range) const {
 
@@ -116,11 +116,12 @@ class StepLevels : boost::noncopyable {
     typedef typename ClusterLevels::value_type     SameLevelClusterIdsType;
 
   public:
+    size_t max_num_threads;
+
     const TaskSystemType& task_system_org;
     TaskSystemType        task_system;
     TBBConcurrentStepExecutor<TaskType> step_executor;
 
-    size_t max_num_threads;
 
     bool profiled;
     bool schedule_available;
@@ -135,7 +136,6 @@ class StepLevels : boost::noncopyable {
     bool   has_run_parallel;
 
   public:
-    std::string name;
 
     PMTimer execution_timer;
     PMTimer clustering_timer;
@@ -143,9 +143,10 @@ class StepLevels : boost::noncopyable {
 
     std::vector<double> parallel_eval_costs;
 
-    StepLevels(TaskSystemType& ts)
-        : task_system_org(ts)
-        , task_system("invalid") // implement a constrctor with no parameters and remove this
+    StepLevels(TaskSystemType& ts, size_t mnt)
+        : max_num_threads(mnt)
+        , task_system_org(ts)
+        , task_system("invalid", mnt) // implement a constrctor with no parameters and remove this
         , step_executor(task_system.sys_graph) {
         // GC_allow_register_threads();
         // GC_use_threads_discovery();

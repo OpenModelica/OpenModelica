@@ -206,6 +206,8 @@ class TaskSystem_v2 {
   public:
     std::string name;
 
+    size_t max_num_threads;
+
     ClusterLevels clusters_by_level;
     bool          levels_valid;
     double        total_cost;
@@ -213,7 +215,8 @@ class TaskSystem_v2 {
     GraphType     sys_graph;
     ClusterIdType root_node_id;
 
-    TaskSystem_v2(const std::string& in_name) {
+    TaskSystem_v2(const std::string& in_name, size_t mnt) {
+        max_num_threads = mnt;
         name = in_name;
         levels_valid = false;
         node_count = 0;
@@ -228,6 +231,7 @@ class TaskSystem_v2 {
 
     TaskSystem_v2(const TaskSystem_v2& other) {
         this->name = other.name;
+        this->max_num_threads = other.max_num_threads;
         this->node_count = other.node_count;
 
         this->clusters_by_level = other.clusters_by_level;
@@ -258,6 +262,7 @@ class TaskSystem_v2 {
     TaskSystem_v2& operator=(const TaskSystem_v2& other) {
 
         this->name = other.name;
+        this->max_num_threads = other.max_num_threads;
         this->node_count = other.node_count;
 
         this->clusters_by_level = other.clusters_by_level;
@@ -476,7 +481,7 @@ class TaskSystem_v2 {
             }
         }
 
-        // create alist of nodes per level
+        // create a list of nodes per level
         // Collect nodes of the same level in to a vector and add it to the list of levels
         clusters_by_level.clear();
         clusters_by_level.resize(critical_path + 1);
@@ -499,8 +504,6 @@ class TaskSystem_v2 {
 
         this->levels_valid = true;
     }
-
-    void load_from_xml(const std::string& file_name, const std::string& eq_to_read);
 
     void dump_graphml(const std::string& suffix) {
 

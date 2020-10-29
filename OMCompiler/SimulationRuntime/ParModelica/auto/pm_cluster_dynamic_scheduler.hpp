@@ -69,6 +69,8 @@ class ClusterDynamicScheduler {
 
   private:
 
+    size_t max_num_threads;
+
     tbb::flow::graph                                   dynamic_graph;
     tbb::flow::broadcast_node<tbb::flow::continue_msg> flow_root;
 
@@ -81,14 +83,13 @@ class ClusterDynamicScheduler {
     PMTimer         clustering_timer;
     TaskSystemType& task_system;
 
-    size_t max_num_threads;
-
     int sequential_evaluations;
     int total_evaluations;
     int parallel_evaluations;
 
-    ClusterDynamicScheduler(TaskSystemType& task_system)
-        : flow_root(dynamic_graph)
+    ClusterDynamicScheduler(TaskSystemType& task_system, size_t mnt)
+        : max_num_threads(mnt)
+        , flow_root(dynamic_graph)
         , flow_graph_created(false)
         , task_system(task_system) {
         sequential_evaluations = 0;

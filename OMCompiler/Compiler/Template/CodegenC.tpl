@@ -1039,7 +1039,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     let pminit = if Flags.getConfigBool(Flags.PARMODAUTO) then
                     <<
 
-                    pm_model = PM_Model_create("<%fileNamePrefix%>", &data, threadData);
+                    pm_model = PM_Model_create("<%fileNamePrefix%>", &data, threadData, 0 /*num threads*/);
                     PM_Model_load_ODE_system(pm_model, functionODE_systems);
 
                     >>

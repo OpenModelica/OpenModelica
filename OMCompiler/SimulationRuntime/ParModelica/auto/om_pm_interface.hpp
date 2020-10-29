@@ -48,7 +48,7 @@ extern "C" {
 
 typedef void (*FunctionType)(DATA *, threadData_t*);
 
-void* PM_Model_create(const char* , DATA* , threadData_t*);
+void* PM_Model_create(const char* name, DATA* simdata, threadData_t* threadData, size_t num_threads);
 
 void PM_Model_load_ODE_system(void*, FunctionType*);
 

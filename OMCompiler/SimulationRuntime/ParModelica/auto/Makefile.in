@@ -13,7 +13,7 @@ INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMC_TBB_ROOT)/include -I$(OMCOMPILER_R
 CC=@CC@
 CXX=@CXX@
 CFLAGS=@CFLAGS@
-CPPFLAGS= @CFLAGS@ -Wall -DGC_THREADS
+CPPFLAGS= -O3 -Wall -DGC_THREADS
 
 OS_SRCS = pm_posix_timer.cpp
 

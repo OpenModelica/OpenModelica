@@ -45,12 +45,13 @@ typedef Equation::FunctionType FunctionType;
 
 PMTimer seq_ode_timer;
 
-void* PM_Model_create(const char* model_name, DATA* data, threadData_t* threadData) {
-    OMModel* pm_om_model = new OMModel(model_name);
+void* PM_Model_create(const char* model_name, DATA* data, threadData_t* threadData, size_t in_max_num_threads) {
+
+    size_t max_num_threads = in_max_num_threads ? in_max_num_threads : tbb::this_task_arena::max_concurrency();
+
+    OMModel* pm_om_model = new OMModel(model_name, max_num_threads);
     pm_om_model->data = data;
     pm_om_model->threadData = threadData;
-
-    pm_om_model->max_num_threads = tbb::this_task_arena::max_concurrency();
 
     return pm_om_model;
 }

@@ -77,16 +77,18 @@ void Equation::execute() {
     function_system[task_id](data, threadData);
 }
 
-OMModel::OMModel(const std::string& in_name)
+OMModel::OMModel(const std::string& in_name, size_t mnt)
     : name(in_name)
-    , INI_system(name)
-    , INI_scheduler(INI_system)
-    , DAE_system(name)
-    , DAE_scheduler(DAE_system)
-    , ODE_system(name)
-    , ODE_scheduler(ODE_system)
-    , ALG_system(name)
-    , ALG_scheduler(ALG_system) {
+    , max_num_threads(mnt)
+    , tbb_system(mnt)
+    , INI_system(name, mnt)
+    , INI_scheduler(INI_system, mnt)
+    , DAE_system(name, mnt)
+    , DAE_scheduler(DAE_system, mnt)
+    , ODE_system(name, mnt)
+    , ODE_scheduler(ODE_system, mnt)
+    , ALG_system(name, mnt)
+    , ALG_scheduler(ALG_system, mnt) {
     intialized = false;
 }
 
