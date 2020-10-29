@@ -60,6 +60,8 @@ protected
   import NBEquation.EquationAttributes;
   import NBEquation.EquationKind;
   import NBEquation.EquationPointers;
+  import NBEquation.WhenEquationBody;
+  import NBEquation.WhenStatement;
   import BVariable = NBVariable;
   import Jacobian = NBJacobian;
   import Solve = NBSolve;
@@ -150,8 +152,6 @@ public
 
     record IF
       "An if section."
-      // ToDo: Should this even exist outside algorithms? Any if equation has to be
-      // converted to an if expression, even if that means it will be residual.
       Integer index;
       BEquation.IfEquationBody body;
       DAE.ElementSource source;
@@ -162,7 +162,9 @@ public
       "A when section."
       Integer index;
       Boolean initialCall "true, if top-level branch with initial()";
-      BEquation.WhenEquationBody body;
+      list<ComponentRef> conditions;
+      list<WhenStatement> when_stmts;
+      Option<Block> else_when;
       DAE.ElementSource source;
       EquationAttributes attr;
     end WHEN;
@@ -205,23 +207,20 @@ public
       input output String str = "";
     algorithm
       str := match blck
-        local
-          Block qual;
-
-        case qual as RESIDUAL()           then str + "(" + intString(qual.index) + ") 0 = " + Expression.toString(qual.exp) + "\n";
-        case qual as ARRAY_RESIDUAL()     then str + "(" + intString(qual.index) + ") 0 = " + Expression.toString(qual.exp) + "\n";
-        case qual as SIMPLE_ASSIGN()      then str + "(" + intString(qual.index) + ") " + ComponentRef.toString(qual.lhs) + " := " + Expression.toString(qual.rhs) + "\n";
-        case qual as ARRAY_ASSIGN()       then str + "(" + intString(qual.index) + ") " + Expression.toString(qual.lhs) + " := " + Expression.toString(qual.rhs) + "\n";
-        case qual as ALIAS()              then str + "(" + intString(qual.index) + ") Alias of " + intString(qual.aliasOf) + "\n";
-        case qual as ALGORITHM()          then str + "(" + intString(qual.index) + ") Algorithm\n" + Statement.toStringList(qual.statements, str) + "\n";
-        case qual as INVERSE_ALGORITHM()  then str + "(" + intString(qual.index) + ") Inverse Algorithm\n" + Statement.toStringList(qual.statements, str) + "\n";
-        case qual as IF()                 then str + BEquation.IfEquationBody.toString(qual.body, str + "    ", "(" + intString(qual.index) + ") ") + "\n";
-        case qual as WHEN()               then str + BEquation.WhenEquationBody.toString(qual.body, str + "    ", "(" + intString(qual.index) + ") ") + "\n";
-        case qual as FOR()                then str + "(" + intString(qual.index) + ") for " + InstNode.name(qual.iter) + " in " + Expression.toString(qual.range) + "\n" + str + "  " + ComponentRef.toString(qual.lhs) + " := " + Expression.toString(qual.rhs) + "\n" + str + "end for;";
-        case qual as LINEAR()             then str + "(" + intString(qual.system.index) + ") " + LinearSystem.toString(qual.system, str);
-        case qual as NONLINEAR()          then str + "(" + intString(qual.system.index) + ") " + NonlinearSystem.toString(qual.system, str);
-        case qual as HYBRID()             then str + "(" + intString(qual.index) + ") Hybrid\n"; // ToDo!
-                                          else getInstanceName() + " failed.\n";
+        case RESIDUAL()           then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
+        case ARRAY_RESIDUAL()     then str + "(" + intString(blck.index) + ") 0 = " + Expression.toString(blck.exp) + "\n";
+        case SIMPLE_ASSIGN()      then str + "(" + intString(blck.index) + ") " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
+        case ARRAY_ASSIGN()       then str + "(" + intString(blck.index) + ") " + Expression.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n";
+        case ALIAS()              then str + "(" + intString(blck.index) + ") Alias of " + intString(blck.aliasOf) + "\n";
+        case ALGORITHM()          then str + "(" + intString(blck.index) + ") Algorithm\n" + Statement.toStringList(blck.statements, str) + "\n";
+        case INVERSE_ALGORITHM()  then str + "(" + intString(blck.index) + ") Inverse Algorithm\n" + Statement.toStringList(blck.statements, str) + "\n";
+        case IF()                 then str + BEquation.IfEquationBody.toString(blck.body, str + "    ", "(" + intString(blck.index) + ") ") + "\n";
+        case WHEN()               then str + "(" + intString(blck.index) + ") " + whenString(blck.conditions, blck.when_stmts, blck.else_when);
+        case FOR()                then str + "(" + intString(blck.index) + ") for " + InstNode.name(blck.iter) + " in " + Expression.toString(blck.range) + "\n" + str + "  " + ComponentRef.toString(blck.lhs) + " := " + Expression.toString(blck.rhs) + "\n" + str + "end for;";
+        case LINEAR()             then str + "(" + intString(blck.system.index) + ") " + LinearSystem.toString(blck.system, str);
+        case NONLINEAR()          then str + "(" + intString(blck.system.index) + ") " + NonlinearSystem.toString(blck.system, str);
+        case HYBRID()             then str + "(" + intString(blck.index) + ") Hybrid\n"; // ToDo!
+                                  else getInstanceName() + " failed.\n";
       end match;
     end toString;
 
@@ -265,16 +264,13 @@ public
       end expFunc;
     algorithm
       blck := match blck
-        local
-          Block qual;
+        case RESIDUAL() algorithm
+          blck.exp := Expression.map(blck.exp, func);
+        then blck;
 
-        case qual as RESIDUAL() algorithm
-          qual.exp := Expression.map(qual.exp, func);
-        then qual;
-
-        case qual as SIMPLE_ASSIGN() algorithm
-          qual.rhs := Expression.map(qual.rhs, func);
-        then qual;
+        case SIMPLE_ASSIGN() algorithm
+          blck.rhs := Expression.map(blck.rhs, func);
+        then blck;
 
         else blck;
       end match;
@@ -583,10 +579,8 @@ public
             simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
         then tmp;
 
-        case (BEquation.WHEN_EQUATION(), NBSolve.Status.EXPLICIT)
-          algorithm
-            tmp := WHEN(simCodeIndices.equationIndex, false, solvedEq.body, solvedEq.source, solvedEq.attr);
-            simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+        case (BEquation.WHEN_EQUATION(), NBSolve.Status.EXPLICIT) algorithm
+          (tmp, simCodeIndices) := createWhenBody(solvedEq.body, simCodeIndices, solvedEq.source, solvedEq.attr);
         then tmp;
 
         // ToDo: add all other cases!
@@ -625,6 +619,30 @@ public
       simCodeIndices.implicitIndex := index;
       (blck, simCodeIndices, funcTree) := fromStrongComponent(comp, simCodeIndices, funcTree, systemType);
     end createImplicitEquation;
+
+    function createWhenBody
+      input WhenEquationBody body;
+      output Block blck;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input DAE.ElementSource source;
+      input EquationAttributes attr;
+    protected
+      list<ComponentRef> conditions;
+      list<WhenStatement> when_stmts;
+      Option<WhenEquationBody> else_when;
+      Block tmp;
+      Option<Block> else_when_block;
+    algorithm
+      (conditions, when_stmts, else_when) := WhenEquationBody.getBodyAttributes(body);
+      if Util.isSome(else_when) then
+        (tmp, simCodeIndices) := createWhenBody(Util.getOption(else_when), simCodeIndices, source, attr);
+        else_when_block := SOME(tmp);
+      else
+        else_when_block := NONE();
+      end if;
+      blck := WHEN(simCodeIndices.equationIndex, false, conditions, when_stmts, else_when_block, source, attr);
+      simCodeIndices.equationIndex := simCodeIndices.equationIndex + 1;
+    end createWhenBody;
 
     function traverseCreateEquation
       "Only works, if the variable to solve for is saved in equation attributes!
@@ -749,21 +767,15 @@ public
         case ARRAY_RESIDUAL()   then OldSimCode.SES_RESIDUAL(blck.index, Expression.toDAE(blck.exp), blck.source, EquationAttributes.convert(blck.attr));
         case SIMPLE_ASSIGN()    then OldSimCode.SES_SIMPLE_ASSIGN(blck.index, ComponentRef.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
         case ARRAY_ASSIGN()     then OldSimCode.SES_ARRAY_CALL_ASSIGN(blck.index, Expression.toDAE(blck.lhs), Expression.toDAE(blck.rhs), blck.source, EquationAttributes.convert(blck.attr));
-/*
-        case WHEN() algorithm
-                Expression condition                  "the when-condition" ;
-      list<WhenStatement> when_stmts        "body statements";
-      Option<WhenEquationBody> else_when    "optional elsewhen body";
-        then OldSimCode.SES_WHEN(
-            index = blck.index,
-            list<DAE.ComponentRef> conditions "list of boolean variables as conditions";
-            initialCall = blck.initialCall,
-            list<BackendDAE.WhenOperator> whenStmtLst;
-            Option<SimEqSystem> elseWhen;
-            source = blck.source,
-            eqAttr = eq.attr
-          );
-*/
+        case WHEN() then OldSimCode.SES_WHEN(
+          index       = blck.index,
+          conditions  = list(ComponentRef.toDAE(cr) for cr in blck.conditions),
+          initialCall = blck.initialCall,
+          whenStmtLst = list(WhenStatement.convert(stmt) for stmt in blck.when_stmts),
+          elseWhen    = convertOpt(blck.else_when),
+          source      = blck.source,
+          eqAttr      = EquationAttributes.convert(blck.attr)
+        );
         // ToDo: add all the other cases here!
         case NONLINEAR()        then OldSimCode.SES_NONLINEAR(NonlinearSystem.convert(blck.system), NONE(), EquationAttributes.convert(NBEquation.EQ_ATTR_DEFAULT_UNKNOWN) /* dangerous! */);
         else algorithm
@@ -771,6 +783,11 @@ public
         then fail();
       end match;
     end convert;
+
+    function convertOpt
+      input Option<Block> blck;
+      output Option<OldSimCode.SimEqSystem> oldBlck = if Util.isSome(blck) then SOME(convert(Util.getOption(blck))) else NONE();
+    end convertOpt;
 
     function convertList
       input list<Block> blck_lst;
@@ -860,6 +877,10 @@ public
         case WHEN() algorithm
           blck.index := indices.equationIndex;
           indices.equationIndex := indices.equationIndex + 1;
+          if Util.isSome(blck.else_when) then
+            (tmp, indices) := fixIndex(Util.getOption(blck.else_when), indices);
+            blck.else_when := SOME(tmp);
+          end if;
         then blck;
 
         case FOR() algorithm
@@ -883,6 +904,22 @@ public
         then blck;
       end match;
     end fixIndex;
+
+  protected
+    function whenString
+      input list<ComponentRef> conditions;
+      input list<WhenStatement> when_stmts;
+      input Option<Block> else_when;
+      output String str = "";
+    algorithm
+      str := "when " + List.toString(conditions, ComponentRef.toString) + "\n" +
+             List.toString(when_stmts, function WhenStatement.toString(str = "\t"), "", "", "\n") + "\n";
+      if Util.isSome(else_when) then
+        str := str + "else" + toString(Util.getOption(else_when));
+      else
+        str := str + "end when;";
+      end if;
+    end whenString;
   end Block;
 
   uniontype LinearSystem

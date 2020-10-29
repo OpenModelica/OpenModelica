@@ -923,7 +923,7 @@ public
 
   uniontype WhenEquationBody
     record WHEN_EQUATION_BODY "equation when condition then cr = exp, reinit(...), terminate(...) or assert(...)"
-      Expression condition                  "the when-condition" ;
+      Expression condition                  "the when-condition (Expression.END for no condition)" ;
       list<WhenStatement> when_stmts        "body statements";
       Option<WhenEquationBody> else_when    "optional elsewhen body";
     end WHEN_EQUATION_BODY;
@@ -950,6 +950,24 @@ public
       end if;
     end toString;
 
+    function getBodyAttributes
+      "gets all conditions crefs as a list (has to be applied AFTER Event module)"
+      input WhenEquationBody body;
+      output list<ComponentRef> conditions;
+      output list<WhenStatement> when_stmts = body.when_stmts;
+      output Option<WhenEquationBody> else_when = body.else_when;
+    algorithm
+      conditions := match body.condition
+        local
+          ComponentRef cref;
+        case Expression.CREF(cref = cref) then {cref};
+        // ToDo: Array/Tuple etc
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
+        then fail();
+      end match;
+    end getBodyAttributes;
+
     function map
       input output WhenEquationBody whenBody;
       input MapFuncExp funcExp;
@@ -971,18 +989,39 @@ public
       // ToDo reference eq for lists?
       whenBody.when_stmts := List.map(whenBody.when_stmts, function WhenStatement.map(funcExp = funcExp, funcCrefOpt = funcCrefOpt));
     end map;
+/*
+    function convert
+      input WhenEquationBody body;
+      output OldBackendDAE.WhenEquation oldBody;
+    protected
+      DAE.Exp condition;
+      list<BackendDAE.WhenOperator> stmts;
+      BackendDAE.WhenEquation elseWhen;
+    algorithm
+      // convert the attributes
+      condition := Expression.toDAE(body.condition);
+      stmts     := list(WhenStatement.convert(stmt) for stmt in body.when_stmts);
+      elseWhen  := if Util.isSome(body.else_when) then convert(Util.getOption(body.else_when)) else NONE();
+      // create the when equation body itself
+      oldBody   := OldBackendDAE.WHEN_STMTS(
+        condition     = condition,
+        whenStmtLst   = stmts,
+        elsewhenPart  = elseWhen
+      );
+    end convert;
+*/
   end WhenEquationBody;
 
   uniontype WhenStatement
     record ASSIGN " left_cr = right_exp"
-      Expression lhs     "left hand side of assignment";
-      Expression rhs             "right hand side of assignment";
+      Expression lhs            "left hand side of assignment";
+      Expression rhs            "right hand side of assignment";
       DAE.ElementSource source  "origin of assignment";
     end ASSIGN;
 
     record REINIT "Reinit Statement"
-      ComponentRef stateVar   "State variable to reinit";
-      Expression value             "Value after reinit";
+      ComponentRef stateVar     "State variable to reinit";
+      Expression value          "Value after reinit";
       DAE.ElementSource source  "origin of statement";
     end REINIT;
 
@@ -1089,6 +1128,46 @@ public
         else stmt;
       end match;
     end map;
+
+    function convert
+      input WhenStatement stmt;
+      output OldBackendDAE.WhenOperator oldStmt;
+    algorithm
+      oldStmt := match stmt
+        case ASSIGN() then OldBackendDAE.ASSIGN(
+          left    = Expression.toDAE(stmt.lhs),
+          right   = Expression.toDAE(stmt.rhs),
+          source  = stmt.source
+        );
+
+        case REINIT() then OldBackendDAE.REINIT(
+          stateVar  = ComponentRef.toDAE(stmt.stateVar),
+          value     = Expression.toDAE(stmt.value),
+          source    = stmt.source
+        );
+
+        case ASSERT() then OldBackendDAE.ASSERT(
+          condition = Expression.toDAE(stmt.condition),
+          message   = Expression.toDAE(stmt.message),
+          level     = Expression.toDAE(stmt.level),
+          source    = stmt.source
+        );
+
+        case TERMINATE() then OldBackendDAE.TERMINATE(
+          message   = Expression.toDAE(stmt.message),
+          source    = stmt.source
+        );
+
+        case NORETCALL() then OldBackendDAE.NORETCALL(
+          exp       = Expression.toDAE(stmt.exp),
+          source    = stmt.source
+        );
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unrecognized statement: " + toString(stmt)});
+        then fail();
+      end match;
+    end convert;
   end WhenStatement;
 
   uniontype EquationAttributes

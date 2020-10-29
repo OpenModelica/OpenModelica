@@ -53,11 +53,15 @@ protected
   import NFInstNode.InstNode;
   import Type = NFType;
 
+  // Old Backend imports
+  import OldBackendDAE = BackendDAE;
+
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
   import NBEquation.Equation;
   import NBEquation.EquationPointers;
+  import NBEvents.EventInfo;
   import BVariable = NBVariable;
   import System = NBSystem;
 
@@ -152,9 +156,6 @@ public
       //list<StateSet> stateSets;
       //list<DAE.Constraint> constraints;
       //list<DAE.ClassAttributes> classAttributes;
-      //list<BackendDAE.ZeroCrossing> zeroCrossings;
-      //list<BackendDAE.ZeroCrossing> relations "only used by c runtime";
-      //list<BackendDAE.TimeEvent> timeEvents "only used by c runtime yet";
       list<ComponentRef> discreteVars                   "List of discrete variables";
       //ExtObjInfo extObjInfo;
       OldSimCodeFunction.MakefileParams makefileParams;
@@ -176,6 +177,7 @@ public
       //FMI 2.0 data for model structure
       //Option<FmiModelStructure> modelStructure;
       //PartitionData partitionData;
+      EventInfo eventInfo;
       Option<DaeModeData> daeModeData                   "Simulation system in case of DAEMode";
       list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
       //Option<OMSIData> omsiData "used for OMSI to generate equations code";
@@ -244,7 +246,7 @@ public
           SimJacobian jacA, jacB, jacC, jacD, jacF;
           list<SimStrongComponent.Block> inlineEquations; // ToDo: what exactly is this?
 
-        case qual as BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(removed = no_ret_eq))
+        case BackendDAE.MAIN(eqData = BEquation.EQ_DATA_SIM(removed = no_ret_eq))
           algorithm
             // somehow this cannot be set at definition (metamodelica bug?)
             simCodeIndices := EMPTY_SIM_CODE_INDICES;
@@ -263,13 +265,13 @@ public
             no_ret := {};
             (no_ret, simCodeIndices, funcTree) := SimStrongComponent.Block.createNoReturnBlocks(no_ret_eq, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
             algorithms := {};
-            (init, simCodeIndices, funcTree) := SimStrongComponent.Block.createInitialBlocks(qual.init, simCodeIndices, funcTree);
+            (init, simCodeIndices, funcTree) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, funcTree);
             init_0 := {};
             init_no_ret := {};
             start := {};
             discreteVars := {};
             jacobians := {};
-            if isSome(qual.dae) then
+            if isSome(bdae.dae) then
               // DAEMode
               ode := {};
               if not listEmpty(no_ret) then
@@ -277,14 +279,14 @@ public
               else
                 algebraic := {};
               end if;
-              (daeModeData, simCodeIndices, funcTree) := DaeModeData.create(Util.getOption(qual.dae), simCodeIndices, funcTree);
+              (daeModeData, simCodeIndices, funcTree) := DaeModeData.create(Util.getOption(bdae.dae), simCodeIndices, funcTree);
             else
               // Normal Simulation
               daeModeData := NONE();
-              (ode, allSim, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.ode, allSim, simCodeIndices, funcTree);
-              (algebraic, allSim, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(qual.algebraic, allSim, simCodeIndices, funcTree);
-              (ode, allSim, event_blocks, simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(qual.ode_event, ode, allSim, event_blocks,  simCodeIndices, funcTree);
-              (algebraic, allSim, event_blocks,  simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(qual.alg_event, algebraic, allSim, event_blocks,  simCodeIndices, funcTree);
+              (ode, allSim, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(bdae.ode, allSim, simCodeIndices, funcTree);
+              (algebraic, allSim, simCodeIndices, funcTree) := SimStrongComponent.Block.createBlocks(bdae.algebraic, allSim, simCodeIndices, funcTree);
+              (ode, allSim, event_blocks, simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(bdae.ode_event, ode, allSim, event_blocks,  simCodeIndices, funcTree);
+              (algebraic, allSim, event_blocks,  simCodeIndices, funcTree) := SimStrongComponent.Block.createDiscreteBlocks(bdae.alg_event, algebraic, allSim, event_blocks,  simCodeIndices, funcTree);
               if not listEmpty(no_ret) then
                 algebraic := no_ret :: algebraic;
                 allSim := listAppend(no_ret, allSim);
@@ -307,10 +309,10 @@ public
 
             // This needs to be done after the variables have been created by ModelInfo.create()
             // for now do not allow dae mode -- this has to be fixed and redesigned to fit before modelInfo!
-            //if isSome(qual.dae) then
-              //(daeModeData, modelInfo, jacA, crefToSimVarHT, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(qual.dae), crefToSimVarHT, simCodeIndices);
+            //if isSome(bdae.dae) then
+              //(daeModeData, modelInfo, jacA, crefToSimVarHT, simCodeIndices) := DaeModeData.createSparsityJacobian(daeModeData, modelInfo, Util.getOption(bdae.dae), crefToSimVarHT, simCodeIndices);
             //else
-              (jacA, simCodeIndices, funcTree) := SimJacobian.createSimulationJacobian(qual.ode, simCodeIndices, funcTree);
+              (jacA, simCodeIndices, funcTree) := SimJacobian.createSimulationJacobian(bdae.ode, simCodeIndices, funcTree);
             //end if;
 
             // fix the equation indices (necessary for conversion to old simcode)
@@ -323,7 +325,7 @@ public
             jac_blocks := SimJacobian.getJacobianBlocks(jacobians);
             (jac_blocks, simCodeIndices) := SimStrongComponent.Block.fixIndices(jac_blocks, {}, simCodeIndices);
 
-            (modelInfo, simCodeIndices) := ModelInfo.create(qual.varData, name, directory, functions, linearLoops, nonlinearLoops, simCodeIndices);
+            (modelInfo, simCodeIndices) := ModelInfo.create(bdae.varData, name, directory, functions, linearLoops, nonlinearLoops, bdae.eventInfo, simCodeIndices);
             crefToSimVarHT := HashTableSimCode.create(modelInfo.vars);
 
             simCode := SIM_CODE(
@@ -341,7 +343,7 @@ public
               param                     = param,
               no_ret                    = no_ret,
               algorithms                = algorithms,
-              event_blocks         = event_blocks,
+              event_blocks              = event_blocks,
               jac_blocks                = jac_blocks,
               start                     = start,
               init                      = init,
@@ -352,6 +354,7 @@ public
               jacobians                 = jacobians,
               simulationSettingsOpt     = simSettingsOpt,
               crefToSimVarHT            = crefToSimVarHT,
+              eventInfo                 = bdae.eventInfo,
               daeModeData               = daeModeData,
               inlineEquations           = inlineEquations
             );
@@ -369,6 +372,9 @@ public
     protected
       OldSimCode.ModelInfo modelInfo;
       list<DAE.ComponentRef> discreteModelVars = {};
+      list<OldBackendDAE.ZeroCrossing> zeroCrossings;
+      list<OldBackendDAE.ZeroCrossing> relations     "== zeroCrossings for the most part (only eq pointer different?)";
+      list<OldBackendDAE.TimeEvent> timeEvents;
       HashTableCrIListArray.HashTable varToArrayIndexMapping;
       HashTableCrILst.HashTable varToIndexMapping;
       list<OldSimCode.JacobianMatrix> jacobians = {};
@@ -377,6 +383,8 @@ public
       list<SimVar> residualVars;
     algorithm
       modelInfo := ModelInfo.convert(simCode.modelInfo);
+      (zeroCrossings, relations, timeEvents) := EventInfo.convert(simCode.eventInfo);
+
       (varToArrayIndexMapping, varToIndexMapping) := OldSimCodeUtil.createVarToArrayIndexMapping(modelInfo);
       for jac in listReverse(simCode.jacobians) loop
         jacobians := SimJacobian.convert(jac) :: jacobians;
@@ -416,9 +424,9 @@ public
         stateSets                     = {}, // ToDo: add this once state sets are supported
         constraints                   = {}, // ToDo: add this once constraints are supported
         classAttributes               = {}, // ToDo: add this once class attributes are supported
-        zeroCrossings                 = {}, // ToDo: add this once zero crossings are supported
-        relations                     = {}, // ToDo: add this once zero crossings are supported
-        timeEvents                    = {}, // ToDo: add this once zero crossings are supported
+        zeroCrossings                 = zeroCrossings,
+        relations                     = relations,
+        timeEvents                    = timeEvents,
         discreteModelVars             = discreteModelVars,
         extObjInfo                    = OldSimCode.EXTOBJINFO({}, {}), // ToDo: add this once external object info is supported
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
@@ -514,6 +522,7 @@ public
       input list<OldSimCodeFunction.Function> functions;
       input list<SimStrongComponent.Block> linearLoops;
       input list<SimStrongComponent.Block> nonlinearLoops;
+      input EventInfo eventInfo;
       output ModelInfo modelInfo;
       input output SimCodeIndices simCodeIndices;
     protected
@@ -521,7 +530,7 @@ public
       VarInfo info;
     algorithm
       (vars, simCodeIndices) := SimVars.create(varData, simCodeIndices);
-      info := VarInfo.create(vars, simCodeIndices);
+      info := VarInfo.create(vars, eventInfo, simCodeIndices);
       modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, true, linearLoops, nonlinearLoops);
     end create;
 
@@ -608,14 +617,15 @@ public
 
     function create
       input SimVars vars;
+      input EventInfo eventInfo;
       input SimCodeIndices simCodeIndices;
       output VarInfo varInfo;
     algorithm
       varInfo := VAR_INFO(
-        numZeroCrossings            = 0,
-        numTimeEvents               = 0,
-        numRelations                = 0,
-        numMathEventFunctions       = 0,
+        numZeroCrossings            = listLength(eventInfo.stateEvents),
+        numTimeEvents               = listLength(eventInfo.timeEvents),
+        numRelations                = listLength(eventInfo.stateEvents),
+        numMathEventFunctions       = eventInfo.numberMathEvents,
         numStateVars                = listLength(vars.stateVars),
         numAlgVars                  = listLength(vars.algVars),
         numDiscreteReal             = listLength(vars.discreteAlgVars),

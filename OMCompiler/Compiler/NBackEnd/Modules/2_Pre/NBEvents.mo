@@ -200,23 +200,13 @@ public
 
     function convert
       input EventInfo eventInfo;
-      output OldBackendDAE.EventInfo oldEventInfo;
-    protected
-      OldBackendDAE.ZeroCrossingSet oldSet;
+      output list<OldBackendDAE.ZeroCrossing> zeroCrossings;
+      output list<OldBackendDAE.ZeroCrossing> relations     "== zeroCrossings for the most part (only eq pointer different?)";
+      output list<OldBackendDAE.TimeEvent> timeEvents;
     algorithm
-     oldSet := OldBackendDAE.ZERO_CROSSING_SET(
-        zc    = DoubleEnded.fromList(list(StateEvent.convert(stateEvent) for stateEvent in eventInfo.stateEvents)),
-        tree  = arrayCreate(0, OldTree.new()) // not needed
-      );
-
-      oldEventInfo := OldBackendDAE.EVENT_INFO(
-        timeEvents        = list(TimeEvent.convert(te) for te in eventInfo.timeEvents),
-        zeroCrossings     = oldSet,
-        relations         = oldSet.zc,
-        // [deprecated] list of sample as before, only used by cpp runtime
-        samples           = OldZeroCrossings.new(),
-        numberMathEvents  = eventInfo.numberMathEvents
-      );
+      zeroCrossings := list(StateEvent.convert(stateEvent) for stateEvent in eventInfo.stateEvents);
+      relations := zeroCrossings;
+      timeEvents := list(TimeEvent.convert(te) for te in eventInfo.timeEvents);
     end convert;
   end EventInfo;
 
