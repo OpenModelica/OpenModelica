@@ -67,6 +67,7 @@ protected
   import NBEquation.EquationPointers;
   import NBEquation.Equation;
   import Initialization = NBInitialization;
+  import Module = NBModule;
   import Partitioning = NBPartitioning;
   import RemoveSimpleEquations = NBRemoveSimpleEquations;
   import Tearing = NBTearing;
@@ -208,30 +209,56 @@ public
 
   function solve
     input output BackendDAE bdae;
+  protected
+    list<tuple<Module.wrapper, String>> preOptModules;
+    list<tuple<Module.wrapper, String>> mainModules;
+    list<tuple<Module.wrapper, String>> postOptModules;
   algorithm
-    // first simplfy everything
-    bdae := simplify(bdae);
-
     // Pre-Partitioning Modules
-    // (do not change order RSE -> EVENTS -> DETECTSTATES)
-    bdae := RemoveSimpleEquations.main(bdae);
-    bdae := Events.main(bdae);
-    bdae := DetectStates.main(bdae);
+    // (do not change order SIMPLIFY -> RSE -> EVENTS -> DETECTSTATES)
+    preOptModules := {
+      (simplify,                    "simplify"),
+      (RemoveSimpleEquations.main,  "RemoveSimpleEquations"),
+      (Events.main,                 "Events"),
+      (DetectStates.main,           "DetectStates")
+    };
 
-    // Main-Modules
-    bdae := Partitioning.main(bdae, NBSystem.SystemType.ODE);
-    bdae := Causalize.main(bdae, NBSystem.SystemType.ODE);
-    bdae := Initialization.main(bdae);
+    mainModules := {
+      (function Partitioning.main(systemType = NBSystem.SystemType.ODE),  "Partitioning"),
+      (function Causalize.main(systemType = NBSystem.SystemType.ODE),     "Causalize"),
+      (Initialization.main,                                               "Initialization")
+    };
 
     if Flags.getConfigBool(Flags.DAE_MODE) then
-      bdae := DAEMode.main(bdae);
+      mainModules := (DAEMode.main, "DAE-Mode") :: mainModules;
     end if;
 
-    // Post-Partitioning Modules
-    bdae := Tearing.main(bdae, NBSystem.SystemType.ODE);
-    bdae := Partitioning.splitSystems(bdae);
-    bdae := Jacobian.main(bdae, NBSystem.SystemType.ODE);
+    postOptModules := {
+      (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
+      (Partitioning.splitSystems,                                     "Split Systems (ODE, ALG, ODE_EVT, ALG_EVT)"),
+      (function Jacobian.main(systemType = NBSystem.SystemType.ODE),  "Jacobian")
+    };
+
+    bdae := applyModules(bdae, preOptModules);
+    bdae := applyModules(bdae, mainModules);
+    bdae := applyModules(bdae, postOptModules);
   end solve;
+
+  function applyModules
+    input output BackendDAE bdae;
+    input list<tuple<Module.wrapper, String>> modules;
+  protected
+    Module.wrapper func;
+    String name;
+  algorithm
+    for module in modules loop
+      (func, name) := module;
+      bdae := func(bdae);
+      if Flags.isSet(Flags.OPT_DAE_DUMP) or (Flags.isSet(Flags.BLT_DUMP) and name == "Causalize") then
+        print(toString(bdae, "(" + name + ")"));
+      end if;
+    end for;
+  end applyModules;
 
   function simplify
     "ToDo: add simplification for bindings"

@@ -1013,12 +1013,7 @@ algorithm
         if Flags.isSet(Flags.OPT_DAE_DUMP) then
           print(NBackendDAE.toString(bdae, "(After Lowering)"));
         end if;
-
         bdae := NBackendDAE.solve(bdae);
-
-        if Flags.isSet(Flags.OPT_DAE_DUMP) or Flags.isSet(Flags.BLT_DUMP) then
-          print(NBackendDAE.toString(bdae, "(After Solve)"));
-        end if;
 
         (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, className, inSimSettingsOpt);
 

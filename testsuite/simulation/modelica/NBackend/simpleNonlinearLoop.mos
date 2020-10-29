@@ -20,93 +20,23 @@ simulate(simpleNonlinearLoop); getErrorString();
 // true
 // ################################################################################
 //
-// 	[ALG] Algebraic: (After Solve)
+// 	[ODE] Differential-Algebraic: (Causalize)
 //
 // ################################################################################
 //
 // ========================================
-// UNKNOWN ALG System
+// UNKNOWN ODE System
 // ========================================
 //
-// BLOCK 1: Torn Algebraic Loop (Linear = false, Mixed = false)
+// BLOCK 1: Algebraic Loop (Mixed = false)
 // ----------------------------------------
-// Strict Tearing Set
-// ****************************************
-// ### Iteration Variables:
+// ### Variables:
 // 	Real x
 // 	Real y
 //
-// ### Residual Equations:
+// ### Equations:
 // 	[SCAL] ($RES_SIM_0) y = sin(x)
 // 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
-//
-// Jacobian ODE_NLS_JAC_1: NLS
-// ----------------------------------------
-// Result EquationPointers (2)
-// ****************************************
-// (1)	[SCAL] ($RES_ODE_NLS_JAC_1_0) $SEED_ODE_NLS_JAC_1.y = cos(x) * $SEED_ODE_NLS_JAC_1.x
-// (2)	[SCAL] ($RES_ODE_NLS_JAC_1_1) $SEED_ODE_NLS_JAC_1.x = 2.0 * y * $SEED_ODE_NLS_JAC_1.y
-//
-//
-// ========================================
-// AdjacencyMatrix
-// ========================================
-//
-// Normal Adjacency Matrix (row = equation)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2, 1}
-//
-// Transposed Adjacency Matrix (row = variable)
-// ****************************************
-// 	(1)	{2, 1}
-// 	(2)	{2, 1}
-//
-//
-// ========================================
-// Scalar Matching
-// ========================================
-//
-// variable to equation
-// ****************************************
-// 	var 1 --> eqn 2
-// 	var 2 --> eqn 1
-//
-// equation to variable
-// ****************************************
-// 	eqn 1 --> var 2
-// 	eqn 2 --> var 1
-//
-//
-// ################################################################################
-//
-// 	[INI] Initialization: (After Solve)
-//
-// ################################################################################
-//
-// ========================================
-// UNKNOWN INI System
-// ========================================
-//
-// BLOCK 1: Torn Algebraic Loop (Linear = false, Mixed = false)
-// ----------------------------------------
-// Strict Tearing Set
-// ****************************************
-// ### Iteration Variables:
-// 	Real x
-// 	Real y
-//
-// ### Residual Equations:
-// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
-// 	[SCAL] ($RES_SIM_0) y = sin(x)
-//
-// Jacobian INI_NLS_JAC_1: NLS
-// ----------------------------------------
-// Result EquationPointers (2)
-// ****************************************
-// (1)	[SCAL] ($RES_INI_NLS_JAC_1_0) $SEED_INI_NLS_JAC_1.x = 2.0 * y * $SEED_INI_NLS_JAC_1.y
-// (2)	[SCAL] ($RES_INI_NLS_JAC_1_1) $SEED_INI_NLS_JAC_1.y = cos(x) * $SEED_INI_NLS_JAC_1.x
-//
 //
 // ========================================
 // AdjacencyMatrix
