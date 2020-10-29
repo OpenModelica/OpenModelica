@@ -1,45 +1,24 @@
-OMBUILDDIR = $(realpath ../../../../)/build
+TOP_BUILDDIR = $(realpath ../../../../)/build
 OMCOMPILER_ROOT = $(realpath ../../../)
 
-OPENMODELICA_INC=$(OMBUILDDIR)/include/omc/c/
+OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/c/
 PARMODELICAAUTO_INC=$(OPENMODELICA_INC)/ParModelica/auto/
-OPENMODELICA_LIB=$(OMBUILDDIR)/lib/omc/
-OPENMODELICA_BIN=$(OMBUILDDIR)/bin/
+OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
+OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
-TBB_INC = ../tbb/include
-TBB_LIB = $(OMC_TBB_LIB)
+TBB_ROOT = $(OMCOMPILER_ROOT)/3rdParty/tbb_cmake/
 BOOST_HOME = $(OMDEV)/lib/3rdParty/boost-1_49
-INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMCOMPILER_ROOT)/3rdParty/tbb/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
+INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(TBB_ROOT)/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
 
 CC=gcc
 CXX=g++
 CFLAGS= -O0 -g -Wall
 CPPFLAGS= $(CFLAGS) -std=c++11 -DGC_THREADS
 
-
 OS_SRCS = pm_win_timer.cpp
 
 EXEEXT=.exe
 DLLEXT=.dll
-
-# default number of threads if not specified.
-DEFAULT_NUM_THREADS=4
-
-
-ifeq ($(USE_LEVEL_SCHEDULER), 1)
-CPPFLAGS += -DUSE_LEVEL_SCHEDULER
-$(info ************  COMPILING FOR LEVEL SCHEDULER ************)
-else
-$(info ************  COMPILING FOR FLOW SCHEDULER ************)
-CPPFLAGS += -DUSE_FLOW_SCHEDULER
-endif
-
-ifeq ($(NUM_THREADS), )
-$(info ************  NUM THREADS NOT SET. SETTIN TO $(DEFAULT_NUM_THREADS) ************)
-CPPFLAGS += -DNUM_THREADS=$(DEFAULT_NUM_THREADS)
-else
-CPPFLAGS += -DNUM_THREADS=$(NUM_THREADS)
-endif
 
 all: transfer
 

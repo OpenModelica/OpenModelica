@@ -1,17 +1,14 @@
 TOP_BUILDDIR = @OMBUILDDIR@
-HOST_SHORT = @host_short@
-
 OMCOMPILER_ROOT = $(realpath ../../../)
 
 OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/c/
 PARMODELICAAUTO_INC=$(OPENMODELICA_INC)/ParModelica/auto/
-OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/$(HOST_SHORT)/omc
+OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/@host_short@/omc
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
+TBB_ROOT = $(OMCOMPILER_ROOT)/3rdParty/tbb_cmake/
 BOOST_HOME = @BOOSTHOME@
-INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(OMCOMPILER_ROOT)/3rdParty/tbb/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
-
-
+INCDIRS = -I"../../c" -I$(BOOST_HOME) -I$(TBB_ROOT)/include -I$(OMCOMPILER_ROOT)/3rdParty/gc/include
 
 CC=@CC@
 CXX=@CXX@
@@ -22,23 +19,6 @@ OS_SRCS = pm_posix_timer.cpp
 
 EXEEXT=
 DLLEXT=.so
-
-ifeq ($(USE_LEVEL_SCHEDULER), 1)
-CPPFLAGS += -DUSE_LEVEL_SCHEDULER
-$(info ************  COMPILING FOR LEVEL SCHEDULER ************)
-else ifeq ($(USE_FLOW_SCHEDULER), 1)
-$(info ************  COMPILING FOR FLOW SCHEDULER ************)
-CPPFLAGS += -DUSE_FLOW_SCHEDULER
-endif
-
-ifeq ($(NUM_THREADS), )
-$(info ************  NUM THREADS NOT SET ************)
-$(info ************  NUM THREADS NOT SET ************)
-$(info ************  NUM THREADS NOT SET ************)
-$(info ************  NUM THREADS NOT SET ************)
-else
-CPPFLAGS += -DNUM_THREADS=$(NUM_THREADS)
-endif
 
 all: transfer
 

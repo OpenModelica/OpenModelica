@@ -17,6 +17,25 @@ DPFLAGS = -MM
 
 .PHONY : clean
 
+# default number of threads if not specified.
+DEFAULT_NUM_THREADS=4
+
+ifeq ($(USE_LEVEL_SCHEDULER), 1)
+CPPFLAGS += -DUSE_LEVEL_SCHEDULER
+$(info ************  COMPILING FOR LEVEL SCHEDULER ************)
+else
+$(info ************  COMPILING FOR FLOW SCHEDULER ************)
+CPPFLAGS += -DUSE_FLOW_SCHEDULER
+endif
+
+ifeq ($(NUM_THREADS), )
+$(info ************  NUM THREADS NOT SET. SETTIN TO $(DEFAULT_NUM_THREADS) ************)
+CPPFLAGS += -DNUM_THREADS=$(DEFAULT_NUM_THREADS)
+else
+CPPFLAGS += -DNUM_THREADS=$(NUM_THREADS)
+endif
+
+
 libParModelicaAuto.a: $(OBJS)
 	@rm -f $@
 	$(AR_) $@ $(OBJS)
