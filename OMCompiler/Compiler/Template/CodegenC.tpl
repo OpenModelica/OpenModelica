@@ -82,7 +82,7 @@ import ExpressionDumpTpl.*;
     let &records += recordsFile(fileNamePrefix, recordDecls, true /*isSimulation*/)
     let &records += closeFile()
 
-    // adpro: write the main .c file last! Make on windows doesn't seem to realize that
+    // adpro: write the main .c file last! Make on windows does not seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
 
@@ -1019,7 +1019,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
   match simCode
     case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), hpcomData=HPCOMDATA(__)) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
-    let mainInit = if boolOr(boolNot(stringEq("",isModelExchangeFMU)), boolOr(Flags.getConfigBool(Flags.PARMODAUTO), Flags.isSet(HPCOM))) then
+    let mainInit = if boolOr(boolNot(stringEq("",isModelExchangeFMU)), Flags.isSet(HPCOM)) then
                      <<
                      mmc_init_nogc();
                      omc_alloc_interface = omc_alloc_interface_pooled;
@@ -3149,34 +3149,19 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Integer num
 ::=
   let () = System.tmpTickReset(0)
   let &eqfuncs = buffer ""
-  let &eqArray = buffer ""
-  let fncalls = if Flags.getConfigBool(Flags.PARMODAUTO) then
-                (initalEquations |> eq hasindex i0 =>
-              equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix, true)
-                    ;separator="\n")
-                else functionEquationsMultiFiles(initalEquations, numInitialEquations, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix,
-                  "functionInitialEquations", "06inz", &eqfuncs, /* not static */ false, /* do optimize */ false, /* initial */ init)
-  let eqArrayDecl = if Flags.getConfigBool(Flags.PARMODAUTO) then
-                <<
-                static void (*functionInitialEquations_systems[<%listLength(initalEquations)%>])(DATA *, threadData_t*) = {
-                    <%eqArray%>
-                };
-                >>
-              else
-                ""
+  let fncalls = functionEquationsMultiFiles(initalEquations, numInitialEquations, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE),
+                  fileNamePrefix, fullPathPrefix, modelNamePrefix, "functionInitialEquations", "06inz", &eqfuncs, /* not static */ false,
+                  /* do optimize */ false, /* initial */ init)
 
   <<
   <%eqfuncs%>
-
-  <%eqArrayDecl%>
 
   int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
 
     data->simulationInfo->discreteCall = 1;
-    <%if Flags.getConfigBool(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%numInitialEquations%>, data, threadData, functionInitialEquations_systems);'
-    else fncalls %>
+    <%fncalls %>
     data->simulationInfo->discreteCall = 0;
 
     TRACE_POP
@@ -3191,38 +3176,19 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
   let () = System.tmpTickReset(0)
   let nrfuncs = listLength(initalEquations_lambda0)
   let &eqfuncs = buffer ""
-  let &eqArray = buffer ""
-  let fncalls = if Flags.getConfigBool(Flags.PARMODAUTO) then
-                (initalEquations_lambda0 |> eq hasindex i0 =>
-              equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix, true)
-                    ;separator="\n")
-              else
-                let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 =>
-              equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix, true)
-                    ;separator="\n")
-                (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
-
-  let eqArrayDecl = if Flags.getConfigBool(Flags.PARMODAUTO) then
-                <<
-                static void (*functionInitialEquations_systems[<%listLength(initalEquations_lambda0)%>])(DATA *, threadData_t*) = {
-                    <%eqArray%>
-                };
-                >>
-              else
-                ""
-
+  let fncalls =
+              let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 => equation_impl(-1, eq, contextSimulationDiscrete,
+                  modelNamePrefix, true) ;separator="\n")
+              (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
   <<
   <%eqfuncs%>
-
-  <%eqArrayDecl%>
 
   int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
 
     data->simulationInfo->discreteCall = 1;
-    <%if Flags.getConfigBool(Flags.PARMODAUTO) then 'PM_functionInitialEquations_lambda0(<%nrfuncs%>, data, threadData, functionInitialEquations_lambda0_systems);'
-    else fncalls %>
+    <%fncalls %>
     data->simulationInfo->discreteCall = 0;
 
     TRACE_POP
@@ -3346,14 +3312,6 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
        let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
        let &varDecls += 'int id;<%\n%>'
        let &loop +=
-         if Flags.getConfigBool(Flags.PARMODAUTO) then /* Text for the loop body that calls the equations */
-         <<
-         #pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)
-         for(id=0; id<<%nFuncs%>; id++) {
-           function<%name%>_systems[id](data, threadData);
-         }
-         >>
-         else
          <<
          for(id=0; id<<%nFuncs%>; id++) {
            function<%name%>_systems[id](data, threadData);
@@ -3953,13 +3911,11 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     funcs //just the one function
   case nFuncs then //2 and more
     let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
-    let head = if Flags.getConfigBool(Flags.PARMODAUTO) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
     let &varDecls += 'int id;<%\n%>'
 
     let &loop +=
       /* Text for the loop body that calls the equations */
       <<
-      <%head%>
       for(id=0; id<<%nFuncs%>; id++) {
         function<%name%>_systems[id](data, threadData);
       }
@@ -4101,12 +4057,8 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
-  let &nrfuncs = buffer ""
   let &fncalls = buffer ""
-  let systems = if Flags.getConfigBool(Flags.PARMODAUTO) then
-                    (functionXXX_systems_arrayFormat(algebraicEquations, "Alg", &fncalls, &nrfuncs, &varDecls, modelNamePrefix))
-                else
-                    (functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix))
+  let systems = functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix)
 
 
   <<
@@ -4122,8 +4074,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   #endif
     data->simulationInfo->callStatistics.functionAlgebraics++;
 
-    <%if Flags.getConfigBool(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, threadData, functionAlg_systems);'
-    else fncalls %>
+    <%fncalls %>
 
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
 
@@ -4258,31 +4209,16 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   let nrfuncs = listLength(allEquationsPlusWhen)
   let &eqfuncs = buffer ""
   let &eqArray = buffer ""
-  let fncalls = if Flags.getConfigBool(Flags.PARMODAUTO) then
-                (allEquationsPlusWhen |> eq hasindex i0 =>
-              equation_arrayFormat(eq, "DAE", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix, false)
-                    ;separator="\n")
-              else
-                (allEquationsPlusWhen |> eq hasindex i0 =>
+  let fncalls = (allEquationsPlusWhen |> eq hasindex i0 =>
                     let &eqfuncs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix, false)
                     equation_call(eq, modelNamePrefix)
                     ;separator="\n")
-
-  let eqArrayDecl = if Flags.getConfigBool(Flags.PARMODAUTO) then
-                <<
-                static void (*functionDAE_systems[<%nrfuncs%>])(DATA *, threadData_t *) = {
-                    <%eqArray%>
-                };
-                >>
-              else
-                ""
 
 
   <<
   <%auxFunction%>
   <%&eqfuncs%>
 
-  <%eqArrayDecl%>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data, threadData_t *threadData)
   {
@@ -4296,8 +4232,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     data->simulationInfo->needToIterate = 0;
     data->simulationInfo->discreteCall = 1;
     <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
-    <%if Flags.getConfigBool(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, threadData, functionDAE_systems);'
-    else fncalls %>
+    <%fncalls %>
     data->simulationInfo->discreteCall = 0;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -6522,13 +6457,11 @@ template functionXXX_systemsPartial(list<list<SimEqSystem>> eqs, String name, Te
     funcs //just the one function
   case nFuncs then //2 and more
     let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
-    let head = if Flags.getConfigBool(Flags.PARMODAUTO) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
     let &varDecls += 'int id;<%\n%>'
 
     let &loop +=
       /* Text for the loop body that calls the equations */
       <<
-      <%head%>
       for(id=0; id<<%nFuncs%>; id++) {
         function<%name%>_systems[id](data, threadData);
       }
