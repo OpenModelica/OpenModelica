@@ -26,7 +26,6 @@ transfer: libParModelicaAuto.a
 	$(COPY) libParModelicaAuto.a $(OPENMODELICA_LIB)
 	mkdir -p $(PARMODELICAAUTO_INC)
 	$(COPY) om_pm_interface.hpp $(PARMODELICAAUTO_INC)
-	$(COPY) om_pm_model.hpp $(PARMODELICAAUTO_INC)
 
 Makefile: Makefile.in
 	(cd ../../../ && ./config.status)
