@@ -31,14 +31,6 @@
 
 encapsulated package SerializeModelInfo
 
-function serialize
-  input SimCode.SimCode code;
-  input Boolean withOperations;
-  output String fileName;
-algorithm
-  (true,fileName) := serializeWork(code,withOperations);
-end serialize;
-
 import Absyn;
 import BackendDAE;
 import DAE;
@@ -61,6 +53,56 @@ import SimCodeUtil;
 import SimCodeFunctionUtil;
 import SCodeDump;
 import Util;
+
+
+public 
+function serialize
+  input SimCode.SimCode code;
+  input Boolean withOperations;
+  output String fileName;
+algorithm
+  (true,fileName) := serializeWork(code,withOperations);
+end serialize;
+
+function serializeParMod
+  input SimCode.SimCode code;
+  input Boolean withOperations;
+  output String fileName;
+algorithm
+  (true,fileName) := serializeParModWork(code,withOperations);
+end serializeParMod;
+
+function serializeParModWork "Always succeeds in order to clean-up external objects"
+  input SimCode.SimCode code;
+  input Boolean withOperations;
+  output Boolean success; // We always need to return in order to clean up external objects
+  output String fileName;
+protected
+  File.File file = File.File();
+  SimCode.ModelInfo mi;
+  SimCodeVar.SimVars vars;
+algorithm
+  try
+    SimCode.SIMCODE(modelInfo=mi as SimCode.MODELINFO(vars=vars)) := code;
+    fileName := code.fileNamePrefix + "_ode.json";
+    File.open(file,fileName,File.Mode.Write);
+    File.write(file, "{\"format\":\"ParModlica task system info\",\"version\":1,\n\"info\":{\"name\":");
+    serializePath(file, mi.name);
+    File.write(file, ",\"description\":\"");
+    File.writeEscape(file, mi.description, escape=JSON);
+    File.write(file, "\"},\n\"ode-equations\":[");
+    // Handle no comma for the first equation
+    File.write(file,"{\"eqIndex\":0,\"tag\":\"dummy\"}");
+    min(serializeEquation(file,eq,"regular",withOperations) for eq in SimCodeUtil.sortEqSystems(List.flatten(code.odeEquations)));
+    File.write(file, "\n]\n}");
+    // file.close();
+    success := true;
+  else
+    Error.addInternalError("SerializeModelInfo.serializeParModWork failed", sourceInfo());
+    success := false;
+  end try;
+end serializeParModWork;
+
 
 function serializeWork "Always succeeds in order to clean-up external objects"
   input SimCode.SimCode code;
@@ -461,7 +503,7 @@ algorithm
       File.write(file, ",\"section\":\"");
       File.write(file, section);
       File.write(file, "\",\"tag\":\"residual\",\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
@@ -487,7 +529,7 @@ algorithm
       end if;
       writeCref(file,eq.cref,escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
@@ -513,7 +555,7 @@ algorithm
       end if;
       writeCref(file,eq.cref,escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
@@ -539,7 +581,7 @@ algorithm
       end if;
       writeCref(file,Expression.expCref(eq.lhs),escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");
@@ -728,7 +770,7 @@ algorithm
       File.write(file, section + "\",\"tag\":\"algorithm\",\"defines\":[\"");
       writeCref(file, Expression.expCref(stmt.exp1),escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(stmt.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(stmt.exp));
       File.write(file, "],\"equation\":[");
       serializeList(file,eq.statements,serializeStatement);
       File.write(file, "],\"source\":");
@@ -942,7 +984,7 @@ algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeExp(file,whenOp.left);
             File.write(file, "],\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.right)));
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.right)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.right);
             File.write(file, "],\"source\":");
@@ -953,7 +995,7 @@ algorithm
             File.write(file, "\",\"tag\":\"when\",\"defines\":[");
             serializeCref(file,whenOp.stateVar);
             File.write(file, "],\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.value)));
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.value)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.value);
             File.write(file, "],\"source\":");
@@ -963,7 +1005,7 @@ algorithm
           case whenOp as BackendDAE.ASSERT() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            crefs = listAppend(Expression.extractUniqueCrefsFromExp(whenOp.condition), Expression.extractUniqueCrefsFromExp(whenOp.message));
+            crefs = listAppend(Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.condition), Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message));
             serializeUses(file,List.union(eq.conditions,crefs));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
@@ -974,7 +1016,7 @@ algorithm
           case whenOp as BackendDAE.TERMINATE() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.message)));
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.message)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.message);
             File.write(file, "],\"source\":");
@@ -984,7 +1026,7 @@ algorithm
           case whenOp as BackendDAE.NORETCALL() equation
             File.write(file, "\",\"tag\":\"when\"");
             File.write(file, ",\"uses\":[");
-            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExp(whenOp.exp)));
+            serializeUses(file,List.union(eq.conditions,Expression.extractUniqueCrefsFromExpDerPreStart(whenOp.exp)));
             File.write(file, "],\"equation\":[");
             serializeExp(file,whenOp.exp);
             File.write(file, "],\"source\":");
@@ -1019,7 +1061,7 @@ algorithm
       end if;
       writeCref(file,eq.cref,escape=JSON);
       File.write(file, "\"],\"uses\":[");
-      serializeUses(file,Expression.extractUniqueCrefsFromExp(eq.exp));
+      serializeUses(file,Expression.extractUniqueCrefsFromExpDerPreStart(eq.exp));
       File.write(file, "],\"equation\":[\"");
       File.writeEscape(file,expStr(eq.exp),escape=JSON);
       File.write(file, "\"],\"source\":");

@@ -580,6 +580,7 @@ algorithm
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
 
         codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
+        codegenFuncs := (function runToStr(func=function SerializeModelInfo.serializeParMod(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
         numThreads := max(1, if Testsuite.isRunning() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
