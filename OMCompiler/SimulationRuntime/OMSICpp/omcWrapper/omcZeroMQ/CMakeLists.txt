@@ -26,7 +26,8 @@ ELSE()
 ENDIF(IS_MINGW32)
 MESSAGE(STATUS "Boost root for omc - zeromq:")
 MESSAGE(STATUS ${BOOST_ROOT})
-FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options )
+FIND_PACKAGE(Boost 1.60.0 COMPONENTS program_options system )
+if(Boost_FOUND)
 IF(NOT(COMPILER_SUPPORTS_CXX11))
   FIND_PACKAGE(Threads)
   IF(Boost_THREAD_FOUND AND Boost_ATOMIC_FOUND)
@@ -38,8 +39,11 @@ IF(NOT(COMPILER_SUPPORTS_CXX11))
 ELSE(NOT(COMPILER_SUPPORTS_CXX11))
  MESSAGE(STATUS "Boost thread disabled for omc zeromq because of available C++11 support")
 ENDIF(NOT(COMPILER_SUPPORTS_CXX11))
-
-
+else()
+MESSAGE(STATUS "Boost version is older than 1.60 therefore boost threads is needed for boost property tree")
+#older boost versions needs for boost property tree  library boost threads
+FIND_PACKAGE(Boost REQUIRED COMPONENTS program_options thread)
+endif()
 
 MESSAGE(STATUS "using boost include for omc - zeromq:  ${Boost_INCLUDE_DIR}")
 MESSAGE(STATUS "Boost Libraries for omc - zeromq:")
