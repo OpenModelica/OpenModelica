@@ -29,18 +29,13 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
 
 #include "pm_utility.hpp"
 
-
-namespace openmodelica {
-namespace parmodelica {
-
-namespace utility {
+namespace openmodelica { namespace parmodelica { namespace utility {
 
 std::ostringstream log_stream;
 std::ostringstream warning_stream;
@@ -57,7 +52,7 @@ std::ostream& log() {
 
 void indexed_dlog(int index, const std::string& message) {
 #ifdef OM_PM_LOG_VERBOSE
-    std::cerr << "INFO: "<< std::to_string(index) << " : " << message << std::endl;
+    std::cerr << "INFO: " << std::to_string(index) << " : " << message << std::endl;
 #endif
 }
 
@@ -90,9 +85,4 @@ void eq_index_fatal(int index, const std::string& message) {
     exit(1);
 }
 
-} // utility
-} // parmodelica
-} // openmodelica
-
-
-
+}}} // namespace openmodelica::parmodelica::utility

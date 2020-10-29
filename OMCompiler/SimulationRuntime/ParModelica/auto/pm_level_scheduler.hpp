@@ -2,7 +2,6 @@
 #ifndef idDB873A43_F8D8_4666_8209C3B5AB1F01C2
 #define idDB873A43_F8D8_4666_8209C3B5AB1F01C2
 
-
 /*
  * This file is part of OpenModelica.
  *
@@ -34,12 +33,9 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
-
-
 
 #include <iostream>
 
@@ -49,32 +45,21 @@
 #include "pm_task_system.hpp"
 #include "pm_timer.hpp"
 
+namespace openmodelica { namespace parmodelica {
 
-namespace openmodelica {
-namespace parmodelica {
-
-
-template<typename>
+template <typename>
 class LevelSchedulerThreadOblivious;
 
-template<typename>
+template <typename>
 class LevelSchedulerThreadAware;
 
 /*! Using the thread aware level scheduler by default*/
 // template<typename TaskTypeT>
 // using LevelScheduler = LevelSchedulerThreadAware<TaskTypeT>;
 
-
-
-template<typename TaskTypeT>
-struct Level :
-  public utility::pm_vector<
-    typename TaskSystem<
-      TaskTypeT
-    >::Node
-  >
-{
-    typedef TaskTypeT TaskType;
+template <typename TaskTypeT>
+struct Level : public utility::pm_vector<typename TaskSystem<TaskTypeT>::Node> {
+    typedef TaskTypeT                            TaskType;
     typedef typename TaskSystem<TaskTypeT>::Node NodeIdType;
 
     Level() : level_cost(0) {}
@@ -83,60 +68,58 @@ struct Level :
     std::vector<long> task_ids;
 };
 
-
-template<typename TaskTypeT>
+template <typename TaskTypeT>
 struct TBBLevelExecutor {
 
-    typedef TaskTypeT TaskType;
-    typedef typename TaskType::FunctionType FunctionType;
+    typedef TaskTypeT                         TaskType;
+    typedef typename TaskType::FunctionType   FunctionType;
     typedef std::vector<long>::const_iterator TaskIdIter;
 
-private:
+  private:
     FunctionType* function_systems;
-    void* data;
-public:
+    void*         data;
+
+  public:
     TBBLevelExecutor() : data(NULL) {}
     void set_up(FunctionType* function_systems_, void* data_) {
         data = data_;
         function_systems = function_systems_;
     }
 
-    void operator()( const tbb::blocked_range<TaskIdIter>& range ) const {
-        for(TaskIdIter iter = range.begin(); iter != range.end(); ++iter) {
+    void operator()(const tbb::blocked_range<TaskIdIter>& range) const {
+        for (TaskIdIter iter = range.begin(); iter != range.end(); ++iter) {
             function_systems[*iter](data);
         }
     }
-
 };
 
-
-template<typename TaskTypeT>
+template <typename TaskTypeT>
 class LevelSchedulerThreadOblivious : boost::noncopyable {
-public:
-    typedef TaskTypeT TaskType;
+  public:
+    typedef TaskTypeT                             TaskType;
     typedef typename TaskSystem<TaskTypeT>::Graph GraphType;
-    typedef typename TaskSystem<TaskTypeT>::Node NodeIdType;
+    typedef typename TaskSystem<TaskTypeT>::Node  NodeIdType;
 
     typedef typename TaskType::FunctionType FunctionType;
-    typedef std::vector< Level<TaskTypeT> > LevelsType;
+    typedef std::vector<Level<TaskTypeT>>   LevelsType;
 
-private:
-    bool is_set_up_;
-    int number_of_processors;
-    bool nodes_have_been_leveled;
-    std::vector< Level<TaskTypeT> > levels;
-    FunctionType* function_systems;
-    void* data;
-    bool profiled;
+  private:
+    bool                          is_set_up_;
+    int                           number_of_processors;
+    bool                          nodes_have_been_leveled;
+    std::vector<Level<TaskTypeT>> levels;
+    FunctionType*                 function_systems;
+    void*                         data;
+    bool                          profiled;
 
-public:
+  public:
     LevelSchedulerThreadOblivious(TaskSystem<TaskTypeT>& task_system);
 
-    TaskSystem<TaskTypeT>& task_system;
-    tbb::task_scheduler_init tbb_task_init;
+    TaskSystem<TaskTypeT>&      task_system;
+    tbb::task_scheduler_init    tbb_task_init;
     TBBLevelExecutor<TaskTypeT> level_executor;
 
-    double total_parallel_cost;
+    double  total_parallel_cost;
     PMTimer execution_timer;
 
     void get_node_levels();
@@ -147,27 +130,13 @@ public:
     void execute();
     void profile_execute();
 
-    void print_schedule(std::ostream& ) const;
-    void print_node_levels(std::ostream& ) const;
-
+    void print_schedule(std::ostream&) const;
+    void print_node_levels(std::ostream&) const;
 };
 
-
-
-
-
-
-
-
-template<typename TaskTypeT>
-struct TaskQueue :
-  public utility::pm_vector<
-    typename TaskSystem<
-      TaskTypeT
-    >::Node
-  >
-{
-    typedef TaskTypeT TaskType;
+template <typename TaskTypeT>
+struct TaskQueue : public utility::pm_vector<typename TaskSystem<TaskTypeT>::Node> {
+    typedef TaskTypeT                        TaskType;
     typedef typename TaskTypeT::FunctionType FunctionType;
 
     TaskQueue() : total_cost(0) {}
@@ -180,111 +149,94 @@ struct TaskQueue :
       it to launch tasks.*/
     std::vector<long> task_ids;
 
-    static bool
-    cost_comparator(const TaskQueue<TaskTypeT>& lhs,
-                    const TaskQueue<TaskTypeT>& rhs) {
+    static bool cost_comparator(const TaskQueue<TaskTypeT>& lhs, const TaskQueue<TaskTypeT>& rhs) {
         return lhs.total_cost < rhs.total_cost;
     }
 
     void execute(FunctionType* function_systems, void* data) const {
-        for(unsigned i = 0; i < this->size(); ++i) {
+        for (unsigned i = 0; i < this->size(); ++i) {
             function_systems[task_ids[i]](data);
         }
     }
-
 };
 
-
-template<typename TaskQueueTypeT>
-struct ConcurrentQueues :
-  public utility::pm_vector<
-    TaskQueueTypeT
-  >
-{
-    typedef TaskQueueTypeT TaskQueueType;
-    typedef typename TaskQueueType::FunctionType FunctionType;
+template <typename TaskQueueTypeT>
+struct ConcurrentQueues : public utility::pm_vector<TaskQueueTypeT> {
+    typedef TaskQueueTypeT                                              TaskQueueType;
+    typedef typename TaskQueueType::FunctionType                        FunctionType;
     typedef typename utility::pm_vector<TaskQueueTypeT>::const_iterator const_iterator;
 
-    ConcurrentQueues() :
-      total_cost(0),
-      parallel_cost(0)
-    {}
+    ConcurrentQueues() : total_cost(0), parallel_cost(0) {}
 
     double total_cost;
     double parallel_cost;
 
     void execute(FunctionType* function_systems, void* data) const {
         const_iterator iter;
-        for(iter = this->begin(); iter != this->end(); ++iter) {
+        for (iter = this->begin(); iter != this->end(); ++iter) {
             iter->execute(function_systems, data);
         }
     }
-
 };
 
-
-template<typename ConcurrentQueuesTypeT>
+template <typename ConcurrentQueuesTypeT>
 struct TBBConcurrentExecutor {
 
-    typedef ConcurrentQueuesTypeT ConcurrentQueuesType;
-    typedef typename ConcurrentQueuesType::FunctionType FunctionType;
+    typedef ConcurrentQueuesTypeT                         ConcurrentQueuesType;
+    typedef typename ConcurrentQueuesType::FunctionType   FunctionType;
     typedef typename ConcurrentQueuesType::const_iterator ConQueIter;
 
-private:
+  private:
     FunctionType* function_systems;
-    void* data;
+    void*         data;
 
-public:
+  public:
     TBBConcurrentExecutor() : data(NULL) {}
     void set_up(FunctionType* function_systems_, void* data_) {
         data = data_;
         function_systems = function_systems_;
     }
 
-    void operator()( const tbb::blocked_range<ConQueIter>& range ) const {
-        for(ConQueIter iter = range.begin(); iter != range.end(); ++iter) {
+    void operator()(const tbb::blocked_range<ConQueIter>& range) const {
+        for (ConQueIter iter = range.begin(); iter != range.end(); ++iter) {
             iter->execute(function_systems, data);
         }
     }
-
 };
 
-
-
-template<typename TaskTypeT>
+template <typename TaskTypeT>
 class LevelSchedulerThreadAware : boost::noncopyable {
-public:
-    typedef TaskTypeT TaskType;
+  public:
+    typedef TaskTypeT                             TaskType;
     typedef typename TaskSystem<TaskTypeT>::Graph GraphType;
-    typedef typename TaskSystem<TaskTypeT>::Node NodeIdType;
+    typedef typename TaskSystem<TaskTypeT>::Node  NodeIdType;
 
-    typedef TaskQueue<TaskTypeT> TaskQueueType;
+    typedef TaskQueue<TaskTypeT>                 TaskQueueType;
     typedef typename TaskQueueType::FunctionType FunctionType;
-    typedef ConcurrentQueues<TaskQueueType> ConcurrentQueuesType;
-    typedef std::vector<ConcurrentQueuesType> TaskQueueGroupAllLevelsType;
+    typedef ConcurrentQueues<TaskQueueType>      ConcurrentQueuesType;
+    typedef std::vector<ConcurrentQueuesType>    TaskQueueGroupAllLevelsType;
 
-private:
+  private:
     bool is_set_up_;
     bool profiled;
-    int number_of_processors;
+    int  number_of_processors;
     bool nodes_have_been_leveled;
 
-    std::vector< Level<TaskTypeT> > levels;
+    std::vector<Level<TaskTypeT>> levels;
 
     FunctionType* function_systems;
-    void* data;
+    void*         data;
 
-public:
+  public:
     LevelSchedulerThreadAware(TaskSystem<TaskTypeT>& task_system);
 
-    TaskSystem<TaskTypeT>& task_system;
-    tbb::task_scheduler_init tbb_task_init;
+    TaskSystem<TaskTypeT>&                      task_system;
+    tbb::task_scheduler_init                    tbb_task_init;
     TBBConcurrentExecutor<ConcurrentQueuesType> level_executor;
 
-    double total_parallel_cost;
-    PMTimer execution_timer;
+    double                      total_parallel_cost;
+    PMTimer                     execution_timer;
     TaskQueueGroupAllLevelsType processor_queue_levels;
-
 
     void get_node_levels();
     void set_up_executor(FunctionType*, void*);
@@ -297,17 +249,11 @@ public:
     void execute();
     void profile_execute();
 
-    void print_node_levels(std::ostream& ) const;
-    void print_schedule(std::ostream& ) const;
-
-
+    void print_node_levels(std::ostream&) const;
+    void print_schedule(std::ostream&) const;
 };
 
-
-
-} // parmodelica
-} // openmodelica
-
+}} // namespace openmodelica::parmodelica
 
 #include "pm_level_scheduler.inl"
 

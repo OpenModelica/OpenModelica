@@ -33,7 +33,6 @@
  *
  */
 
-
 /*
  Mahder.Gebremedhin@liu.se  2014-03-06
 */
@@ -43,52 +42,46 @@
 
 #include "pm_clustering.hpp"
 
+namespace openmodelica { namespace parmodelica {
 
-namespace openmodelica {
-namespace parmodelica {
-
-template<typename TaskType>
+template <typename TaskType>
 struct ClusterLauncher {
-    typedef TaskSystem_v2<TaskType> TaskSystemType;
+    typedef TaskSystem_v2<TaskType>              TaskSystemType;
     typedef typename TaskSystemType::ClusterType ClusterType;
-private:
+
+  private:
     ClusterType& clust;
 
-public:
-    ClusterLauncher(ClusterType& c)
-      : clust(c)
-    {}
+  public:
+    ClusterLauncher(ClusterType& c) : clust(c) {}
 
-    void operator()( tbb::flow::continue_msg ) const {
-        clust.execute();
-    }
+    void operator()(tbb::flow::continue_msg) const { clust.execute(); }
 };
 
-template<typename TaskType>
+template <typename TaskType>
 class ClusterDynamicScheduler {
-public:
+  public:
     typedef TaskSystem_v2<TaskType> TaskSystemType;
 
-    typedef typename TaskSystemType::GraphType GraphType;
-    typedef typename TaskSystemType::ClusterType ClusterType;
+    typedef typename TaskSystemType::GraphType     GraphType;
+    typedef typename TaskSystemType::ClusterType   ClusterType;
     typedef typename TaskSystemType::ClusterIdType ClusterIdType;
 
     typedef typename TaskType::FunctionType FunctionType;
 
-private:
+  private:
     tbb::task_scheduler_init tbb_system;
 
-    tbb::flow::graph dynamic_graph;
+    tbb::flow::graph                                   dynamic_graph;
     tbb::flow::broadcast_node<tbb::flow::continue_msg> flow_root;
 
     bool flow_graph_created;
 
+    std::map<ClusterIdType, tbb::flow::continue_node<tbb::flow::continue_msg>*> cluster_flow_id_map;
 
-    std::map<ClusterIdType, tbb::flow::continue_node<tbb::flow::continue_msg>* > cluster_flow_id_map;
-
-public:
-    PMTimer execution_timer;
-    PMTimer clustering_timer;
+  public:
+    PMTimer         execution_timer;
+    PMTimer         clustering_timer;
     TaskSystemType& task_system;
 
     int sequential_evaluations;
@@ -99,10 +92,9 @@ public:
         : tbb_system(NUM_THREADS)
         , flow_root(dynamic_graph)
         , flow_graph_created(false)
-        , task_system(task_system)
-    {
+        , task_system(task_system) {
         sequential_evaluations = 0;
-        parallel_evaluations =0;
+        parallel_evaluations = 0;
         total_evaluations = 0;
     }
 
@@ -115,11 +107,10 @@ public:
         clustering_timer.stop_timer();
     }
 
-    void construct_flow_graph()
-    {
+    void construct_flow_graph() {
 
         using namespace tbb;
-        GraphType& sys_graph = task_system.sys_graph;
+        GraphType&     sys_graph = task_system.sys_graph;
         ClusterIdType& root_node_id = task_system.root_node_id;
 
         typename GraphType::vertex_iterator vert_iter, vert_end;
@@ -127,28 +118,27 @@ public:
 
         /*! skip the root node. */
         ++vert_iter;
-        for ( ; vert_iter != vert_end; ++vert_iter) {
+        for (; vert_iter != vert_end; ++vert_iter) {
             ClusterIdType& curr_clust_id = *vert_iter;
-            ClusterType& curr_clust = sys_graph[curr_clust_id];
+            ClusterType&   curr_clust = sys_graph[curr_clust_id];
             // std::cout << "adding " << curr_b_node.index << std::endl;
 
             /*! create new flow node for tbb. */
             flow::continue_node<flow::continue_msg>* curr_f_node =
-                    new flow::continue_node<flow::continue_msg>(dynamic_graph,
-                        ClusterLauncher<TaskType>(curr_clust));
+                new flow::continue_node<flow::continue_msg>(dynamic_graph, ClusterLauncher<TaskType>(curr_clust));
 
             /*! create a maping. we use it to add edges from this node to its children later. */
-            cluster_flow_id_map.insert(std::make_pair(curr_clust_id,curr_f_node));
+            cluster_flow_id_map.insert(std::make_pair(curr_clust_id, curr_f_node));
 
             /*! Iterate through all parents of the current node and add edges.*/
             typename GraphType::inv_adjacency_iterator par_iter, par_end;
-            boost::tie(par_iter, par_end) = inv_adjacent_vertices( curr_clust_id, sys_graph );
-            for(; par_iter != par_end; ++par_iter) {
+            boost::tie(par_iter, par_end) = inv_adjacent_vertices(curr_clust_id, sys_graph);
+            for (; par_iter != par_end; ++par_iter) {
                 const ClusterIdType& curr_parent_id = *par_iter;
                 // ClusterType& curr_parent = sys_graph[curr_parent_id];
                 /*! the parent is the root in the task_graph. So here connect it to
                   the root of the flow graph*/
-                if(curr_parent_id == root_node_id) {
+                if (curr_parent_id == root_node_id) {
                     flow::make_edge(flow_root, *curr_f_node);
                     // std::cout << "   edge to root " << std::endl;
                 }
@@ -162,30 +152,22 @@ public:
         flow_graph_created = true;
     }
 
-
     void execute() {
 
-        if(!flow_graph_created) {
+        if (!flow_graph_created) {
             schedule();
         }
 
         execution_timer.start_timer();
-        flow_root.try_put( tbb::flow::continue_msg() );
+        flow_root.try_put(tbb::flow::continue_msg());
         dynamic_graph.wait_for_all();
         execution_timer.stop_timer();
 
         total_evaluations++;
         parallel_evaluations++;
     }
-
 };
 
-
-
-} // parmodelica
-} // openmodelica
-
-
-
+}} // namespace openmodelica::parmodelica
 
 #endif // header

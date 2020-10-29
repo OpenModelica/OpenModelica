@@ -33,16 +33,13 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
 
 #include "pm_task_system.hpp"
 
-
-namespace openmodelica {
-namespace parmodelica {
+namespace openmodelica { namespace parmodelica {
 
 // template<typename TaskTypeT>
 // void dump_graphml(const TaskSystem<TaskTypeT>& task_system, const std::string& filename);
@@ -50,10 +47,7 @@ namespace parmodelica {
 // template<typename TaskTypeT>
 // void dump_graphviz(const TaskSystem<TaskTypeT>& task_system, const std::string& filename);
 
-
-
-} // openmodelica
-} // parmodelica
+}} // namespace openmodelica::parmodelica
 
 #include "pm_graph_dump.inl"
 

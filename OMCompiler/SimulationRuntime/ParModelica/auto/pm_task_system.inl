@@ -29,72 +29,61 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
-
-
 
 #include <iostream>
 
-
-namespace openmodelica {
-namespace parmodelica {
-
+namespace openmodelica { namespace parmodelica {
 
 // template<typename TaskTypeT>
 // TaskSystem<TaskTypeT>::TaskSystem() :
-    // total_cost(0)
+// total_cost(0)
 // {
-    // root_node = boost::add_vertex(graph);
-    // graph[root_node].node_id = -1;
-    // node_count = 0;
+// root_node = boost::add_vertex(graph);
+// graph[root_node].node_id = -1;
+// node_count = 0;
 // }
-
 
 // template<typename TaskTypeT>
 // typename TaskSystem<TaskTypeT>::TaskType&
 // TaskSystem<TaskTypeT>::add_node() {
-    // Node node = boost::add_vertex(graph);
-    // graph[node].node_id = node_count;
-    // ++node_count;
+// Node node = boost::add_vertex(graph);
+// graph[node].node_id = node_count;
+// ++node_count;
 
-    // return graph[node];
+// return graph[node];
 // }
-
-
 
 // template<typename TaskTypeT>
 // void
 // TaskSystem<TaskTypeT>::construct_graph() {
 
-    // Edge edge;
+// Edge edge;
 
-    // std::pair<vertex_iterator, vertex_iterator> vp_out = boost::vertices(graph);
-    // for (unsigned i = 1; i != *vp_out.second; ++i) {
-        // int neigh_count = 0;
-        // for (unsigned j = i - 1; j > 0; --j) {
-            // bool found_dep = graph[i].depends_on(graph[j]);
-            // if(found_dep) {
-                // bool b;
-                // boost::tie(edge,b) = boost::add_edge(j,i,graph);
-                // if(!b)
-                    // utility::log() << "Error adding Edge- " << graph[j].index << " --> " << graph[i].index << newl;
-                // ++neigh_count;
-            // }
-        // }
+// std::pair<vertex_iterator, vertex_iterator> vp_out = boost::vertices(graph);
+// for (unsigned i = 1; i != *vp_out.second; ++i) {
+// int neigh_count = 0;
+// for (unsigned j = i - 1; j > 0; --j) {
+// bool found_dep = graph[i].depends_on(graph[j]);
+// if(found_dep) {
+// bool b;
+// boost::tie(edge,b) = boost::add_edge(j,i,graph);
+// if(!b)
+// utility::log() << "Error adding Edge- " << graph[j].index << " --> " << graph[i].index << newl;
+// ++neigh_count;
+// }
+// }
 
-        // if(!neigh_count) {
-            // bool b;
-            // boost::tie(edge,b) = boost::add_edge(root_node,i,graph);
-            // if(!b)
-                // utility::log() << "Error adding Edge- " << graph[root_node].index << " --> " << graph[i].index << newl;
-        // }
-    // }
+// if(!neigh_count) {
+// bool b;
+// boost::tie(edge,b) = boost::add_edge(root_node,i,graph);
+// if(!b)
+// utility::log() << "Error adding Edge- " << graph[root_node].index << " --> " << graph[i].index << newl;
+// }
+// }
 
 // }
 
-
-} // parmodelica
-} // openmodelica
+}} // namespace openmodelica::parmodelica

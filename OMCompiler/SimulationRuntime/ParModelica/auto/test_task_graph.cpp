@@ -29,25 +29,19 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
-
-
-
 
 // #include <pm_task_system.hpp>
 // #include <pm_level_scheduler.hpp>
 #include "om_pm_model.hpp"
 // #include <pm_graph_dump.hpp>
 
-#include "pm_cluster_system.hpp"
 #include "pm_cluster_level_scheduler.hpp"
-
+#include "pm_cluster_system.hpp"
 
 using namespace openmodelica::parmodelica;
-
 
 int main(int argc, char** argv) {
 
@@ -57,7 +51,7 @@ int main(int argc, char** argv) {
     std::cout << "Reading file: " << xml_file << std::endl;
 
     std::string eq_to_read;
-    if(argc == 3) {
+    if (argc == 3) {
         eq_to_read = argv[2];
         std::cout << "Reading eqs: " << eq_to_read << std::endl;
     }
@@ -71,7 +65,6 @@ int main(int argc, char** argv) {
     // task_system.cluster_merge_single_parent();
     // task_system.cluster_merge_level_for_cost();
     // task_system.cluster_merge_level_parents();
-
 
     StepLevels<Equation> level_scheduler(task_system);
     level_scheduler.schedule();
@@ -94,10 +87,7 @@ int main(int argc, char** argv) {
     // std::cout << "scheduler cost = " << level_scheduler.total_parallel_cost << std::endl;
     // std::cout << "Peak speedup = " << task_system.total_cost/level_scheduler.total_parallel_cost << std::endl;
 
-
     // DynamicScheduler<Equation> dyn_scheduler(task_system);
     // dyn_scheduler.schedule(4);
     // dyn_scheduler.execute();
-
-
 }

@@ -30,37 +30,32 @@
  *
  */
 
-
 /*
  Mahder.Gebremedhin@liu.se  2014-02-25
 */
 
-
 #include "pm_timer.hpp"
 
-namespace openmodelica {
-namespace parmodelica {
+namespace openmodelica { namespace parmodelica {
 
-PMTimer::PMTimer(){
+PMTimer::PMTimer() {
     total_time = boost::chrono::seconds::zero();
 }
 
-void PMTimer::start_timer(){
+void PMTimer::start_timer() {
     started_at = boost::chrono::system_clock::now();
 }
 
-void PMTimer::stop_timer(){
+void PMTimer::stop_timer() {
     total_time += (boost::chrono::system_clock::now() - started_at);
 }
 
-void PMTimer::reset_timer(){
+void PMTimer::reset_timer() {
     total_time = boost::chrono::seconds::zero();
 }
 
-double PMTimer::get_elapsed_time(){
+double PMTimer::get_elapsed_time() {
     return boost::chrono::nanoseconds(total_time).count() / 1000000.0;
 }
 
-} // parmodelica
-} // openmodelica
-
+}} // namespace openmodelica::parmodelica
