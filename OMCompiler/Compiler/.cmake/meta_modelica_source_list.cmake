@@ -378,6 +378,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeModelInfo.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeTaskSystemInfo.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeUtil.mo
@@ -419,7 +420,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphMLDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/NFInstDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeDump.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TaskSystemDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTpl.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlTree.mo
