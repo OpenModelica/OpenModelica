@@ -40,7 +40,6 @@
 #include "gc.h"
 
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
 #include <tbb/tick_count.h>
 
 // #include <sys/types.h>
@@ -65,10 +64,9 @@ struct TBBConcurrentStepExecutor {
 
   private:
     GraphType&       sys_graph;
-    std::set<pid_t>& knownthreads;
 
   public:
-    TBBConcurrentStepExecutor(GraphType& g, std::set<pid_t>& k) : sys_graph(g), knownthreads(k) {}
+    TBBConcurrentStepExecutor(GraphType& g, std::set<pid_t>& k) : sys_graph(g) {}
 
     void operator()(tbb::blocked_range<ClusteIdIter>& range) const {
 
@@ -101,9 +99,11 @@ struct TBBConcurrentStepExecutor {
     }
 };
 
-template <typename TaskType, typename clustetring1 = cluster_merge_common, /* for now default here*/
+template <typename TaskType,
+          typename clustetring1 = cluster_merge_common, /* for now default here*/
           typename clustetring2 = cluster_merge_level_for_bins,            /* for now default here*/
-          typename clustetring3 = cluster_none, typename clustetring4 = cluster_none,
+          typename clustetring3 = cluster_none,
+          typename clustetring4 = cluster_none,
           typename clustetring5 = cluster_none>
 class StepLevels : boost::noncopyable {
   public:
@@ -118,14 +118,12 @@ class StepLevels : boost::noncopyable {
   public:
     const TaskSystemType& task_system_org;
     TaskSystemType        task_system;
+    TBBConcurrentStepExecutor<TaskType> step_executor;
+
+    size_t max_num_threads;
 
     bool profiled;
     bool schedule_available;
-
-    tbb::task_scheduler_init            tbb_system;
-    TBBConcurrentStepExecutor<TaskType> step_executor;
-
-    std::set<pid_t> knownthreads;
 
     int total_evaluations;
     int parallel_evaluations;
@@ -148,9 +146,8 @@ class StepLevels : boost::noncopyable {
     StepLevels(TaskSystemType& ts)
         : task_system_org(ts)
         , task_system("invalid") // implement a constrctor with no parameters and remove this
-        , tbb_system(NUM_THREADS)
-        , step_executor(task_system.sys_graph, knownthreads) {
-        GC_allow_register_threads();
+        , step_executor(task_system.sys_graph) {
+        // GC_allow_register_threads();
         // GC_use_threads_discovery();
 
         profiled = false;
@@ -209,11 +206,11 @@ class StepLevels : boost::noncopyable {
         if (task_system.levels_valid == false)
             task_system.update_node_levels();
 
-        // clustetring1::apply(task_system);
-        // clustetring1::dump_graph(task_system, std::to_string(this->total_evaluations));
+        clustetring1::apply(task_system);
+        clustetring1::dump_graph(task_system);
 
         clustetring2::apply(task_system);
-        // clustetring2::dump_graph(task_system, std::to_string(this->total_evaluations));
+        clustetring2::dump_graph(task_system);
 
         clustetring3::apply(task_system);
         clustetring3::dump_graph(task_system);
@@ -231,7 +228,6 @@ class StepLevels : boost::noncopyable {
         estimate_speedup();
         clustering_timer.stop_timer();
 
-        // task_system_org.dump_graphml("original");
     }
 
     void execute() {

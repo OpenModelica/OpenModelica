@@ -47,8 +47,6 @@
 #define NOMINMAX
 #endif
 
-#define newl "\n"
-
 namespace openmodelica { namespace parmodelica { namespace utility {
 
 extern std::ostringstream log_stream;

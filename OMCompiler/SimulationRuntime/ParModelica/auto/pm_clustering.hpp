@@ -254,7 +254,7 @@ struct cluster_merge_level_for_cost {
     static std::string name() { return "cluster_merge_level_for_cost"; }
 
     template <typename TaskSystemType>
-    static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+    static void dump_graph(TaskSystemType& task_system, std::string suffix = "cluster_merge_level_for_cost") {
         task_system.dump_graphml(cluster_merge_level_for_cost::name() + "_" + suffix);
     }
 
@@ -348,7 +348,7 @@ struct cluster_merge_level_for_bins {
     static std::string name() { return "cluster_merge_level_for_bins"; }
 
     template <typename TaskSystemType>
-    static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+    static void dump_graph(TaskSystemType& task_system, std::string suffix = "cluster_merge_level_for_bins") {
         task_system.dump_graphml(cluster_merge_level_for_bins::name() + "_" + suffix);
     }
 
@@ -365,7 +365,7 @@ struct cluster_merge_level_for_bins {
         ClusterLevels& clusters_by_level = task_system.clusters_by_level;
         GraphType&     sys_graph = task_system.sys_graph;
 
-        unsigned nr_of_clusters = NUM_THREADS * 2;
+        unsigned nr_of_clusters = task_system.max_num_threads * 2;
 
         if (task_system.levels_valid == false)
             task_system.update_node_levels();
@@ -427,7 +427,7 @@ struct cluster_merge_common {
     static std::string name() { return "cluster_merge_common"; }
 
     template <typename TaskSystemType>
-    static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+    static void dump_graph(TaskSystemType& task_system, std::string suffix = "cluster_merge_common") {
         task_system.dump_graphml(cluster_merge_common::name() + "_" + suffix);
     }
 
@@ -543,7 +543,7 @@ struct cluster_merge_single_parent {
     static std::string name() { return "cluster_merge_single_parent"; }
 
     template <typename TaskSystemType>
-    static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+    static void dump_graph(TaskSystemType& task_system, std::string suffix = "cluster_merge_single_parent") {
         task_system.dump_graphml(cluster_merge_single_parent::name() + "_" + suffix);
     }
 
@@ -598,7 +598,7 @@ struct cluster_merge_level_parents {
     static std::string name() { return "cluster_merge_level_parents"; }
 
     template <typename TaskSystemType>
-    static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+    static void dump_graph(TaskSystemType& task_system, std::string suffix = "cluster_merge_level_parents") {
         task_system.dump_graphml(cluster_merge_level_parents::name() + "_" + suffix);
     }
 
@@ -672,7 +672,7 @@ struct cluster_merge_connected_for_cost {
     static std::string name() { return "cluster_merge_connected_for_cost"; }
 
     template <typename TaskSystemType>
-    static void dump_graph(TaskSystemType& task_system, std::string suffix = "") {
+    static void dump_graph(TaskSystemType& task_system, std::string suffix = "cluster_merge_connected_for_cost") {
         task_system.dump_graphml(cluster_merge_connected_for_cost::name() + "_" + suffix);
     }
 

@@ -110,6 +110,7 @@ public:
     bool intialized;
     DATA* data;
     threadData_t* threadData;
+    size_t max_num_threads;
 
 public:
     OMModel(const std::string&);

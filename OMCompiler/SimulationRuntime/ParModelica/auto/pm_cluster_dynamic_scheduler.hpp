@@ -38,8 +38,6 @@
 */
 
 #include <tbb/flow_graph.h>
-#include <tbb/task_scheduler_init.h>
-
 #include "pm_clustering.hpp"
 
 namespace openmodelica { namespace parmodelica {
@@ -70,7 +68,6 @@ class ClusterDynamicScheduler {
     typedef typename TaskType::FunctionType FunctionType;
 
   private:
-    tbb::task_scheduler_init tbb_system;
 
     tbb::flow::graph                                   dynamic_graph;
     tbb::flow::broadcast_node<tbb::flow::continue_msg> flow_root;
@@ -84,13 +81,14 @@ class ClusterDynamicScheduler {
     PMTimer         clustering_timer;
     TaskSystemType& task_system;
 
+    size_t max_num_threads;
+
     int sequential_evaluations;
     int total_evaluations;
     int parallel_evaluations;
 
     ClusterDynamicScheduler(TaskSystemType& task_system)
-        : tbb_system(NUM_THREADS)
-        , flow_root(dynamic_graph)
+        : flow_root(dynamic_graph)
         , flow_graph_created(false)
         , task_system(task_system) {
         sequential_evaluations = 0;

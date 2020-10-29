@@ -297,7 +297,7 @@ void OMModel::load_from_json(TaskSystemT& task_system, const std::string& eq_to_
         task_system.add_node(current_node);
     }
 
-    std::cout << "Number of tasks      = " << node_count << newl;
+    std::cout << "Number of tasks      = " << node_count << std::endl;
 }
 
 }} // namespace openmodelica::parmodelica

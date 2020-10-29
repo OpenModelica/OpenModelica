@@ -28,13 +28,6 @@ else
 CPPFLAGS += -DUSE_FLOW_SCHEDULER
 endif
 
-ifeq ($(NUM_THREADS), )
-# $(info ************  NUM THREADS NOT SET. SETTIN TO $(DEFAULT_NUM_THREADS) ************)
-CPPFLAGS += -DNUM_THREADS=$(DEFAULT_NUM_THREADS)
-else
-CPPFLAGS += -DNUM_THREADS=$(NUM_THREADS)
-endif
-
 
 libParModelicaAuto.a: $(OBJS)
 	@rm -f $@
