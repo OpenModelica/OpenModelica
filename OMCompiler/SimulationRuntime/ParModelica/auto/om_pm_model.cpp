@@ -341,6 +341,19 @@ void load_simple_assign(Equation& current_node, const nlohmann::json& json_eq) {
 }
 
 
+void load_algorithm(Equation& current_node, const nlohmann::json& json_eq) {
+
+    if (json_eq["defines"].size() != 1) {
+        utility::eq_index_error(current_node.index, "Algorithm with more than one define!");
+    }
+
+    current_node.lhs.insert(json_eq["defines"].front().get<std::string>());
+
+    for(auto use : json_eq["uses"]) {
+        current_node.rhs.insert(use.get<std::string>());
+    }
+}
+
 
 void load_simple_assign_check_local_define(Equation& current_node, const nlohmann::json& int_eq) {
 
@@ -438,6 +451,11 @@ void load_equation(Equation& current_node, const nlohmann::json& json_eq) {
 
     else if(tag == "residual") {
         load_simple_residual(current_node, json_eq);
+        return;
+    }
+
+    else if(tag == "algorithm") {
+        load_algorithm(current_node, json_eq);
         return;
     }
 
