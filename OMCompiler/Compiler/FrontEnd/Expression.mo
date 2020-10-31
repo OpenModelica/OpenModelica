@@ -6129,14 +6129,6 @@ algorithm
   outDims := if outChanged then listReverse(outDims) else inDims;
 end traverseExpTypeDims2;
 
-public function extractCrefsFromExp "
-Author: BZ 2008-06, Extracts all ComponentRef from an Expression."
-  input DAE.Exp inExp;
-  output list<DAE.ComponentRef> ocrefs;
-algorithm
-  (_,ocrefs) := traverseExpBottomUp(inExp, traversingComponentRefFinder, {});
-end extractCrefsFromExp;
-
 public function extractUniqueCrefsFromExp
   "Extracts all unique ComponentRef from an Expression."
   input DAE.Exp inExp;
@@ -6146,16 +6138,33 @@ algorithm
   ocrefs := List.unique(extractCrefsFromExp(inExp));
 end extractUniqueCrefsFromExp;
 
-public function extractCrefsFromExpDerPreStart
-" author mahge: Same as extractCrefsFromExp except:
-  This function will not treat der(), pre() and start() as calls
-  but as unique ids. i.e. x is different from der(x) and given der(x) x will not
-  be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start."
+public function extractCrefsFromExp "
+Author: BZ 2008-06, Extracts all ComponentRef from an Expression."
   input DAE.Exp inExp;
   output list<DAE.ComponentRef> ocrefs;
 algorithm
-  (_,ocrefs) := traverseExpDerPreStart(inExp, traversingComponentRefFinder, {});
-end extractCrefsFromExpDerPreStart;
+  (_,ocrefs) := traverseExpBottomUp(inExp, traversingComponentRefFinder, {});
+end extractCrefsFromExp;
+
+public function traversingComponentRefFinder "
+Author: BZ 2008-06
+Exp traverser that Union the current ComponentRef with list if it is already there.
+Returns a list containing, unique, all componentRef in an Expression."
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inCrefs;
+  output DAE.Exp outExp;
+  output list<DAE.ComponentRef> crefs;
+algorithm
+  (outExp,crefs) := match (inExp,inCrefs)
+    local
+      ComponentRef cr;
+    case (DAE.CREF(componentRef=cr), crefs)
+      equation
+        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+      then (inExp,crefs);
+    else (inExp,inCrefs);
+  end match;
+end traversingComponentRefFinder;
 
 public function extractUniqueCrefsFromExpDerPreStart
   "author mahge: Same as extractUniqueCrefsFromExp except:
@@ -6169,6 +6178,57 @@ algorithm
   ocrefs := List.unique(extractCrefsFromExpDerPreStart(inExp));
 end extractUniqueCrefsFromExpDerPreStart;
 
+public function extractCrefsFromExpDerPreStart
+" author mahge: Same as extractCrefsFromExp except:
+  This function will not treat der(), pre() and start() as calls
+  but as unique ids. i.e. x is different from der(x) and given der(x) x will not
+  be extreacted as a unique id. Instead you get $DER.x. Same oes for pre and start."
+  input DAE.Exp inExp;
+  output list<DAE.ComponentRef> ocrefs;
+algorithm
+  (_,ocrefs) := traverseExpTopDown(inExp, traversingComponentRefFinderDerPreStart, {});
+end extractCrefsFromExpDerPreStart;
+
+public function traversingComponentRefFinderDerPreStart "
+"
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inCrefs;
+  output DAE.Exp e;
+  output Boolean cont;
+  output list<DAE.ComponentRef> crefs;
+algorithm
+  (e,cont,crefs) := match (inExp,inCrefs)
+    local
+      ComponentRef cr;
+    case (DAE.CREF(componentRef=cr), crefs)
+      algorithm
+        crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReference.crefEqual);
+      then (inExp, false, crefs);
+
+    case (DAE.CALL(path = Absyn.IDENT(name="der"), expLst={DAE.CREF(componentRef=cr)}),_) algorithm
+      cr := ComponentReference.crefPrefixDer(cr);
+      crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReference.crefEqual);
+    then (inExp, false, crefs);
+      
+    case (DAE.CALL(path = Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr)}),_) algorithm
+      cr := ComponentReference.crefPrefixPre(cr);
+      crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReference.crefEqual);
+    then (inExp, false, crefs);
+      
+    case (DAE.CALL(path = Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr)}),_) algorithm
+      cr := ComponentReference.crefPrefixPrevious(cr);
+      crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReference.crefEqual);
+    then (inExp, false, crefs);
+      
+    case (DAE.CALL(path = Absyn.IDENT(name="start"), expLst={DAE.CREF(componentRef=cr)}),_) algorithm
+      Error.addInternalError(getInstanceName() + " - Found a start call expression " + ExpressionDump.printExpStr(inExp), sourceInfo());
+      cr := ComponentReference.crefPrefixStart(cr);
+      crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReference.crefEqual);
+    then (inExp, false, crefs);
+
+    else (inExp,true,inCrefs);
+  end match;
+end traversingComponentRefFinderDerPreStart;
 
 public function extractUniqueCrefsFromStatmentS
   "authot mahge: Extracts all unique ComponentRef from Statments."
@@ -6373,26 +6433,6 @@ algorithm
   end match;
 end traversingComponentRefPresent;
 
-public function traversingComponentRefFinder "
-Author: BZ 2008-06
-Exp traverser that Union the current ComponentRef with list if it is already there.
-Returns a list containing, unique, all componentRef in an Expression."
-  input DAE.Exp inExp;
-  input list<DAE.ComponentRef> inCrefs;
-  output DAE.Exp outExp;
-  output list<DAE.ComponentRef> crefs;
-algorithm
-  (outExp,crefs) := match (inExp,inCrefs)
-    local
-      ComponentRef cr;
-    case (DAE.CREF(componentRef=cr), crefs)
-      equation
-        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
-      then (inExp,crefs);
-    else (inExp,inCrefs);
-  end match;
-end traversingComponentRefFinder;
-
 public function traversingComponentRefFinderNoPreDer "
 Author: BZ 2008-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
@@ -6416,40 +6456,6 @@ algorithm
     else (inExp,true,inCrefs);
   end match;
 end traversingComponentRefFinderNoPreDer;
-
-public function traversingDerAndComponentRefFinder "
-Author: Frenkel TUD 2012-06
-Exp traverser that Union the current ComponentRef with list if it is already there.
-Returns a list containing, unique, all componentRef in an Expression and a second list
-containing all componentRef from a der function."
-  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>>> inExp;
-  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>>> outExp;
-algorithm
-  outExp := matchcontinue(inExp)
-    local
-      list<DAE.ComponentRef> crefs,dcrefs;
-      ComponentRef cr;
-      Type ty;
-      DAE.Exp e;
-
-    case((e as DAE.CREF(cr,_), (crefs,dcrefs)))
-      equation
-        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
-        // e = makeCrefExp(cr,ty);
-      then
-        ((e, (crefs,dcrefs) ));
-
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(cr,_)}), (crefs,dcrefs)))
-      equation
-        dcrefs = List.unionEltOnTrue(cr,dcrefs,ComponentReference.crefEqual);
-        // e = makeCrefExp(cr,ty);
-      then
-        ((e, (crefs,dcrefs) ));
-
-    else inExp;
-
-  end matchcontinue;
-end traversingDerAndComponentRefFinder;
 
 public function expHasCref "author: Frenkel TUD 2011-04
   returns true if the expression contains the cref"
@@ -11730,6 +11736,7 @@ algorithm
   end matchcontinue;
 end isCrefListWithEqualIdents;
 
+/*
 protected function traverseExpDerPreStart
 " TODO: REPLACE THIS ABOMINATION WITH A BETTER traverseExpBottomUp
 
@@ -12106,6 +12113,7 @@ algorithm
       then (expl,ext_arg);
   end match;
 end traverseExpDerPreStartList;
+*/
 
 public function renameExpCrefIdent
   input DAE.Exp inExp;

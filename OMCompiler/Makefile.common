@@ -1,5 +1,5 @@
 
-inclu.PHONY : all omc release clean .testvariables  checkMSVCwine bootstrap-dependencies-post bootstrap-dependencies-post-compiler-runtime bootstrap-dependencies-post-compiler-builtin bootstrap-dependencies-post-parser
+inclu.PHONY : all omc release clean .testvariables  checkMSVCwine bootstrap-dependencies-post bootstrap-dependencies-post-compiler-runtime bootstrap-dependencies-post-compiler-builtin bootstrap-dependencies-post-parser parmodauto
 
 
 unexport PREFIX
@@ -103,7 +103,7 @@ bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) cppzmq interactive-short
 antlr-copy:
 	cp ./3rdParty/antlr/3.2/tool/antlr-3.2.jar ./3rdParty/antlr/3.2/tool/antlr-2.7.7.jar ${builddir_java}/
 
-sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc
+sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc parmodauto
 
 install-openturns:
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
@@ -215,6 +215,17 @@ endif
 
 opencl_rt_clean:
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
+
+
+parmodauto: boehm-gc
+ifeq ("$(ENABLE_PARMODAUTO)","yes")
+	$(MAKE) -C $(OMC_TBB_ROOT)/build_cmake/ install_for_omc
+	$(MAKE) -C SimulationRuntime/ParModelica/auto/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
+endif
+
+parmodauto_clean:
+	$(MAKE) -C SimulationRuntime/ParModelica/auto/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
+
 
 breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
@@ -474,7 +485,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean parmodauto_clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))

@@ -96,7 +96,6 @@ import HpcOmSimCodeMain;
 import HpcOmTaskGraph;
 import RuntimeSources;
 import SerializeModelInfo;
-import TaskSystemDump;
 import SerializeInitXML;
 import SimCodeUtil;
 import StackOverflow;
@@ -106,6 +105,7 @@ import SymbolTable;
 import System;
 import Testsuite;
 import Util;
+import SerializeTaskSystemInfo;
 
 public
 constant Boolean debug=true;
@@ -538,7 +538,6 @@ algorithm
         System.realtimeTick(ClockIndexes.RT_PROFILER0);
         codegenFuncs := {};
         codegenFuncs := (function runToBoolean(func=function SerializeInitXML.simulationInitFileReturnBool(simCode=simCode, guid=guid))) :: codegenFuncs;
-        dumpTaskSystemIfFlag(simCode);
         codegenFuncs := (function runTpl(func=function CodegenC.translateModel(in_a_simCode=simCode))) :: codegenFuncs;
         for f in {
           // external objects
@@ -580,6 +579,11 @@ algorithm
         codegenFuncs := (function runTplWriteFile(func=function CodegenC.simulationFunctionsFile(a_filePrefix=simCode.fileNamePrefix, a_functions=simCode.modelInfo.functions), file=simCode.fileNamePrefix + "_functions.c")) :: codegenFuncs;
 
         codegenFuncs := (function runToStr(func=function SerializeModelInfo.serialize(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
+
+        if Flags.getConfigBool(Flags.PARMODAUTO) then
+          codegenFuncs := (function runToStr(func=function SerializeTaskSystemInfo.serializeParMod(code=simCode, withOperations=Flags.isSet(Flags.INFO_XML_OPERATIONS)))) :: codegenFuncs;
+        end if;
+
         // Test the parallel code generator in the test suite. Should give decent results given that the task is disk-intensive.
         numThreads := max(1, if Testsuite.isRunning() then min(2, System.numProcessors()) else Config.noProc());
         if (not Flags.isSet(Flags.PARALLEL_CODEGEN)) or numThreads==1 then
@@ -664,14 +668,6 @@ algorithm
   end if;
   setGlobalRoot(Global.optionSimCode, NONE());
 end callTargetTemplates;
-
-protected function dumpTaskSystemIfFlag
-  input SimCode.SimCode simCode;
-algorithm
-  if Flags.isSet(Flags.PARMODAUTO) then
-    Tpl.tplNoret2(TaskSystemDump.dumpTaskSystem, simCode, Flags.isSet(Flags.INFO_XML_OPERATIONS));
-  end if;
-end dumpTaskSystemIfFlag;
 
 protected function callTargetTemplatesCPP
   input SimCode.SimCode iSimCode;

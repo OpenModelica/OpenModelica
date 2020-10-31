@@ -177,392 +177,390 @@ constant DebugFlag CEVAL = DEBUG_FLAG(2, "ceval", false,
   Gettext.gettext("Prints extra information from Ceval."));
 constant DebugFlag CHECK_BACKEND_DAE = DEBUG_FLAG(3, "checkBackendDae", false,
   Gettext.gettext("Do some simple analyses on the datastructure from the frontend to check if it is consistent."));
-constant DebugFlag PARMODAUTO = DEBUG_FLAG(4, "parmodauto", false,
-  Gettext.gettext("Experimental: Enable parallelization of independent systems of equations in the translated model."));
-constant DebugFlag PTHREADS = DEBUG_FLAG(5, "pthreads", false,
+constant DebugFlag PTHREADS = DEBUG_FLAG(4, "pthreads", false,
   Gettext.gettext("Experimental: Unused parallelization."));
-constant DebugFlag EVENTS = DEBUG_FLAG(6, "events", true,
+constant DebugFlag EVENTS = DEBUG_FLAG(5, "events", true,
   Gettext.gettext("Turns on/off events handling."));
-constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(7, "dumpInlineSolver", false,
+constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(6, "dumpInlineSolver", false,
   Gettext.gettext("Dumps the inline solver equation system."));
-constant DebugFlag EVAL_FUNC = DEBUG_FLAG(8, "evalfunc", true,
+constant DebugFlag EVAL_FUNC = DEBUG_FLAG(7, "evalfunc", true,
   Gettext.gettext("Turns on/off symbolic function evaluation."));
-constant DebugFlag GEN = DEBUG_FLAG(9, "gen", false,
+constant DebugFlag GEN = DEBUG_FLAG(8, "gen", false,
   Gettext.gettext("Turns on/off dynamic loading of functions that are compiled during translation. Only enable this if external functions are needed to calculate structural parameters or constants."));
-constant DebugFlag DYN_LOAD = DEBUG_FLAG(10, "dynload", false,
+constant DebugFlag DYN_LOAD = DEBUG_FLAG(9, "dynload", false,
   Gettext.gettext("Display debug information about dynamic loading of compiled functions."));
-constant DebugFlag GENERATE_CODE_CHEAT = DEBUG_FLAG(11, "generateCodeCheat", false,
+constant DebugFlag GENERATE_CODE_CHEAT = DEBUG_FLAG(10, "generateCodeCheat", false,
   Gettext.gettext("Used to generate code for the bootstrapped compiler."));
-constant DebugFlag CGRAPH_GRAPHVIZ_FILE = DEBUG_FLAG(12, "cgraphGraphVizFile", false,
+constant DebugFlag CGRAPH_GRAPHVIZ_FILE = DEBUG_FLAG(11, "cgraphGraphVizFile", false,
   Gettext.gettext("Generates a graphviz file of the connection graph."));
-constant DebugFlag CGRAPH_GRAPHVIZ_SHOW = DEBUG_FLAG(13, "cgraphGraphVizShow", false,
+constant DebugFlag CGRAPH_GRAPHVIZ_SHOW = DEBUG_FLAG(12, "cgraphGraphVizShow", false,
   Gettext.gettext("Displays the connection graph with the GraphViz lefty tool."));
-constant DebugFlag GC_PROF = DEBUG_FLAG(14, "gcProfiling", false,
+constant DebugFlag GC_PROF = DEBUG_FLAG(13, "gcProfiling", false,
   Gettext.gettext("Prints garbage collection stats to standard output."));
-constant DebugFlag CHECK_DAE_CREF_TYPE = DEBUG_FLAG(15, "checkDAECrefType", false,
+constant DebugFlag CHECK_DAE_CREF_TYPE = DEBUG_FLAG(14, "checkDAECrefType", false,
   Gettext.gettext("Enables extra type checking for cref expressions."));
-constant DebugFlag CHECK_ASUB = DEBUG_FLAG(16, "checkASUB", false,
+constant DebugFlag CHECK_ASUB = DEBUG_FLAG(15, "checkASUB", false,
   Gettext.gettext("Prints out a warning if an ASUB is created from a CREF expression."));
-constant DebugFlag INSTANCE = DEBUG_FLAG(17, "instance", false,
+constant DebugFlag INSTANCE = DEBUG_FLAG(16, "instance", false,
   Gettext.gettext("Prints extra failtrace from InstanceHierarchy."));
-constant DebugFlag CACHE = DEBUG_FLAG(18, "Cache", true,
+constant DebugFlag CACHE = DEBUG_FLAG(17, "Cache", true,
   Gettext.gettext("Turns off the instantiation cache."));
-constant DebugFlag RML = DEBUG_FLAG(19, "rml", false,
+constant DebugFlag RML = DEBUG_FLAG(18, "rml", false,
   Gettext.gettext("Converts Modelica-style arrays to lists."));
-constant DebugFlag TAIL = DEBUG_FLAG(20, "tail", false,
+constant DebugFlag TAIL = DEBUG_FLAG(19, "tail", false,
   Gettext.gettext("Prints out a notification if tail recursion optimization has been applied."));
-constant DebugFlag LOOKUP = DEBUG_FLAG(21, "lookup", false,
+constant DebugFlag LOOKUP = DEBUG_FLAG(20, "lookup", false,
   Gettext.gettext("Print extra failtrace from lookup."));
-constant DebugFlag PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS = DEBUG_FLAG(22, "patternmSkipFilterUnusedBindings", false,
+constant DebugFlag PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS = DEBUG_FLAG(21, "patternmSkipFilterUnusedBindings", false,
   Gettext.notrans(""));
-constant DebugFlag PATTERNM_ALL_INFO = DEBUG_FLAG(23, "patternmAllInfo", false,
+constant DebugFlag PATTERNM_ALL_INFO = DEBUG_FLAG(22, "patternmAllInfo", false,
   Gettext.gettext("Adds notifications of all pattern-matching optimizations that are performed."));
-constant DebugFlag PATTERNM_DCE = DEBUG_FLAG(24, "patternmDeadCodeElimination", true,
+constant DebugFlag PATTERNM_DCE = DEBUG_FLAG(23, "patternmDeadCodeElimination", true,
   Gettext.gettext("Performs dead code elimination in match-expressions."));
-constant DebugFlag PATTERNM_MOVE_LAST_EXP = DEBUG_FLAG(25, "patternmMoveLastExp", true,
+constant DebugFlag PATTERNM_MOVE_LAST_EXP = DEBUG_FLAG(24, "patternmMoveLastExp", true,
   Gettext.gettext("Optimization that moves the last assignment(s) into the result of a match-expression. For example: equation c = fn(b); then c; => then fn(b);"));
-constant DebugFlag EXPERIMENTAL_REDUCTIONS = DEBUG_FLAG(26, "experimentalReductions", false,
+constant DebugFlag EXPERIMENTAL_REDUCTIONS = DEBUG_FLAG(25, "experimentalReductions", false,
   Gettext.gettext("Turns on custom reduction functions (OpenModelica extension)."));
-constant DebugFlag EVAL_PARAM = DEBUG_FLAG(27, "evaluateAllParameters", false,
+constant DebugFlag EVAL_PARAM = DEBUG_FLAG(26, "evaluateAllParameters", false,
   Gettext.gettext("Evaluates all parameters if set."));
-constant DebugFlag TYPES = DEBUG_FLAG(28, "types", false,
+constant DebugFlag TYPES = DEBUG_FLAG(27, "types", false,
   Gettext.gettext("Prints extra failtrace from Types."));
-constant DebugFlag SHOW_STATEMENT = DEBUG_FLAG(29, "showStatement", false,
+constant DebugFlag SHOW_STATEMENT = DEBUG_FLAG(28, "showStatement", false,
   Gettext.gettext("Shows the statement that is currently being evaluated when evaluating a script."));
-constant DebugFlag DUMP = DEBUG_FLAG(30, "dump", false,
+constant DebugFlag DUMP = DEBUG_FLAG(29, "dump", false,
   Gettext.gettext("Dumps the absyn representation of a program."));
-constant DebugFlag DUMP_GRAPHVIZ = DEBUG_FLAG(31, "graphviz", false,
+constant DebugFlag DUMP_GRAPHVIZ = DEBUG_FLAG(30, "graphviz", false,
   Gettext.gettext("Dumps the absyn representation of a program in graphviz format."));
-constant DebugFlag EXEC_STAT = DEBUG_FLAG(32, "execstat", false,
+constant DebugFlag EXEC_STAT = DEBUG_FLAG(31, "execstat", false,
   Gettext.gettext("Prints out execution statistics for the compiler."));
-constant DebugFlag TRANSFORMS_BEFORE_DUMP = DEBUG_FLAG(33, "transformsbeforedump", false,
+constant DebugFlag TRANSFORMS_BEFORE_DUMP = DEBUG_FLAG(32, "transformsbeforedump", false,
   Gettext.gettext("Applies transformations required for code generation before dumping flat code."));
-constant DebugFlag DAE_DUMP_GRAPHV = DEBUG_FLAG(34, "daedumpgraphv", false,
+constant DebugFlag DAE_DUMP_GRAPHV = DEBUG_FLAG(33, "daedumpgraphv", false,
   Gettext.gettext("Dumps the DAE in graphviz format."));
-constant DebugFlag INTERACTIVE_TCP = DEBUG_FLAG(35, "interactive", false,
+constant DebugFlag INTERACTIVE_TCP = DEBUG_FLAG(34, "interactive", false,
   Gettext.gettext("Starts omc as a server listening on the socket interface."));
-constant DebugFlag INTERACTIVE_CORBA = DEBUG_FLAG(36, "interactiveCorba", false,
+constant DebugFlag INTERACTIVE_CORBA = DEBUG_FLAG(35, "interactiveCorba", false,
   Gettext.gettext("Starts omc as a server listening on the Corba interface."));
-constant DebugFlag INTERACTIVE_DUMP = DEBUG_FLAG(37, "interactivedump", false,
+constant DebugFlag INTERACTIVE_DUMP = DEBUG_FLAG(36, "interactivedump", false,
   Gettext.gettext("Prints out debug information for the interactive server."));
-constant DebugFlag RELIDX = DEBUG_FLAG(38, "relidx", false,
+constant DebugFlag RELIDX = DEBUG_FLAG(37, "relidx", false,
   Gettext.notrans("Prints out debug information about relations, that are used as zero crossings."));
-constant DebugFlag DUMP_REPL = DEBUG_FLAG(39, "dumprepl", false,
+constant DebugFlag DUMP_REPL = DEBUG_FLAG(38, "dumprepl", false,
   Gettext.gettext("Dump the found replacements for simple equation removal."));
-constant DebugFlag DUMP_FP_REPL = DEBUG_FLAG(40, "dumpFPrepl", false,
+constant DebugFlag DUMP_FP_REPL = DEBUG_FLAG(39, "dumpFPrepl", false,
   Gettext.gettext("Dump the found replacements for final parameters."));
-constant DebugFlag DUMP_PARAM_REPL = DEBUG_FLAG(41, "dumpParamrepl", false,
+constant DebugFlag DUMP_PARAM_REPL = DEBUG_FLAG(40, "dumpParamrepl", false,
   Gettext.gettext("Dump the found replacements for remove parameters."));
-constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(42, "dumpPPrepl", false,
+constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(41, "dumpPPrepl", false,
   Gettext.gettext("Dump the found replacements for protected parameters."));
-constant DebugFlag DUMP_EA_REPL = DEBUG_FLAG(43, "dumpEArepl", false,
+constant DebugFlag DUMP_EA_REPL = DEBUG_FLAG(42, "dumpEArepl", false,
   Gettext.gettext("Dump the found replacements for evaluate annotations (evaluate=true) parameters."));
-constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(44, "debugAlias", false,
+constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(43, "debugAlias", false,
   Gettext.gettext("Dumps some information about the process of removeSimpleEquations."));
-constant DebugFlag TEARING_DUMP = DEBUG_FLAG(45, "tearingdump", false,
+constant DebugFlag TEARING_DUMP = DEBUG_FLAG(44, "tearingdump", false,
   Gettext.gettext("Dumps tearing information."));
-constant DebugFlag JAC_DUMP = DEBUG_FLAG(46, "symjacdump", false,
+constant DebugFlag JAC_DUMP = DEBUG_FLAG(45, "symjacdump", false,
   Gettext.gettext("Dumps information about symbolic Jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
-constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(47, "symjacdumpverbose", false,
+constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(46, "symjacdumpverbose", false,
   Gettext.gettext("Dumps information in verbose mode about symbolic Jacobians. Can be used only with postOptModules: generateSymbolicJacobian, generateSymbolicLinearization."));
-constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(48, "symjacdumpeqn", false,
+constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(47, "symjacdumpeqn", false,
   Gettext.gettext("Dump for debug purpose of symbolic Jacobians. (deactivated now)."));
-constant DebugFlag JAC_WARNINGS = DEBUG_FLAG(49, "symjacwarnings", false,
+constant DebugFlag JAC_WARNINGS = DEBUG_FLAG(48, "symjacwarnings", false,
   Gettext.gettext("Prints warnings regarding symoblic jacbians."));
-constant DebugFlag DUMP_SPARSE = DEBUG_FLAG(50, "dumpSparsePattern", false,
+constant DebugFlag DUMP_SPARSE = DEBUG_FLAG(49, "dumpSparsePattern", false,
   Gettext.gettext("Dumps sparse pattern with coloring used for simulation."));
-constant DebugFlag DUMP_SPARSE_VERBOSE = DEBUG_FLAG(51, "dumpSparsePatternVerbose", false,
+constant DebugFlag DUMP_SPARSE_VERBOSE = DEBUG_FLAG(50, "dumpSparsePatternVerbose", false,
   Gettext.gettext("Dumps in verbose mode sparse pattern with coloring used for simulation."));
-constant DebugFlag BLT_DUMP = DEBUG_FLAG(52, "bltdump", false,
+constant DebugFlag BLT_DUMP = DEBUG_FLAG(51, "bltdump", false,
   Gettext.gettext("Dumps information from index reduction."));
-constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(53, "dummyselect", false,
+constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(52, "dummyselect", false,
   Gettext.gettext("Dumps information from dummy state selection heuristic."));
-constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(54, "dumpdaelow", false,
+constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(53, "dumpdaelow", false,
   Gettext.gettext("Dumps the equation system at the beginning of the back end."));
-constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(55, "dumpindxdae", false,
+constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(54, "dumpindxdae", false,
   Gettext.gettext("Dumps the equation system after index reduction and optimization."));
-constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(56, "optdaedump", false,
+constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(55, "optdaedump", false,
   Gettext.gettext("Dumps information from the optimization modules."));
-constant DebugFlag EXEC_HASH = DEBUG_FLAG(57, "execHash", false,
+constant DebugFlag EXEC_HASH = DEBUG_FLAG(56, "execHash", false,
   Gettext.gettext("Measures the time it takes to hash all simcode variables before code generation."));
-constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(58, "paramdlowdump", false,
+constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(57, "paramdlowdump", false,
   Gettext.gettext("Enables dumping of the parameters in the order they are calculated."));
-constant DebugFlag DUMP_ENCAPSULATECONDITIONS = DEBUG_FLAG(59, "dumpEncapsulateConditions", false,
+constant DebugFlag DUMP_ENCAPSULATECONDITIONS = DEBUG_FLAG(58, "dumpEncapsulateConditions", false,
   Gettext.gettext("Dumps the results of the preOptModule encapsulateWhenConditions."));
-constant DebugFlag ON_RELAXATION = DEBUG_FLAG(60, "onRelaxation", false,
+constant DebugFlag ON_RELAXATION = DEBUG_FLAG(59, "onRelaxation", false,
   Gettext.gettext("Perform O(n) relaxation.\nDeprecated flag: Use --postOptModules+=relaxSystem instead."));
-constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(61, "shortOutput", false,
+constant DebugFlag SHORT_OUTPUT = DEBUG_FLAG(60, "shortOutput", false,
   Gettext.gettext("Enables short output of the simulate() command. Useful for tools like OMNotebook."));
-constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(62, "countOperations", false,
+constant DebugFlag COUNT_OPERATIONS = DEBUG_FLAG(61, "countOperations", false,
   Gettext.gettext("Count operations."));
-constant DebugFlag CGRAPH = DEBUG_FLAG(63, "cgraph", false,
+constant DebugFlag CGRAPH = DEBUG_FLAG(62, "cgraph", false,
   Gettext.gettext("Prints out connection graph information."));
-constant DebugFlag UPDMOD = DEBUG_FLAG(64, "updmod", false,
+constant DebugFlag UPDMOD = DEBUG_FLAG(63, "updmod", false,
   Gettext.gettext("Prints information about modification updates."));
-constant DebugFlag STATIC = DEBUG_FLAG(65, "static", false,
+constant DebugFlag STATIC = DEBUG_FLAG(64, "static", false,
   Gettext.gettext("Enables extra debug output from the static elaboration."));
-constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(66, "tplPerfTimes", false,
+constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(65, "tplPerfTimes", false,
   Gettext.gettext("Enables output of template performance data for rendering text to file."));
-constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(67, "checkSimplify", false,
+constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(66, "checkSimplify", false,
   Gettext.gettext("Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed."));
-constant DebugFlag SCODE_INST = DEBUG_FLAG(68, "newInst", false,
+constant DebugFlag SCODE_INST = DEBUG_FLAG(67, "newInst", false,
   Gettext.gettext("Enables experimental new instantiation phase."));
-constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(69, "writeToBuffer", false,
+constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(68, "writeToBuffer", false,
   Gettext.gettext("Enables writing simulation results to buffer."));
-constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(70, "backenddaeinfo", false,
+constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(69, "backenddaeinfo", false,
   Gettext.gettext("Enables dumping of back-end information about system (Number of equations before back-end,...)."));
-constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(71, "gendebugsymbols", false,
+constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(70, "gendebugsymbols", false,
   Gettext.gettext("Generate code with debugging symbols."));
-constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(72, "stateselection", false,
+constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(71, "stateselection", false,
   Gettext.gettext("Enables dumping of selected states. Extends -d=backenddaeinfo."));
-constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(73, "dumpeqninorder", false,
+constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(72, "dumpeqninorder", false,
   Gettext.gettext("Enables dumping of the equations in the order they are calculated."));
-constant DebugFlag SEMILINEAR = DEBUG_FLAG(74, "semiLinear", false,
+constant DebugFlag SEMILINEAR = DEBUG_FLAG(73, "semiLinear", false,
   Gettext.gettext("Enables dumping of the optimization information when optimizing calls to semiLinear."));
-constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(75, "uncertainties", false,
+constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(74, "uncertainties", false,
   Gettext.gettext("Enables dumping of status when calling modelEquationsUC."));
-constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(76, "showStartOrigin", false,
+constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(75, "showStartOrigin", false,
   Gettext.gettext("Enables dumping of the DAE startOrigin attribute of the variables."));
-constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(77, "dumpSimCode", false,
+constant DebugFlag DUMP_SIMCODE = DEBUG_FLAG(76, "dumpSimCode", false,
   Gettext.gettext("Dumps the simCode model used for code generation."));
-constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(78, "dumpinitialsystem", false,
+constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(77, "dumpinitialsystem", false,
   Gettext.gettext("Dumps the initial equation system."));
-constant DebugFlag GRAPH_INST = DEBUG_FLAG(79, "graphInst", false,
+constant DebugFlag GRAPH_INST = DEBUG_FLAG(78, "graphInst", false,
   Gettext.gettext("Do graph based instantiation."));
-constant DebugFlag GRAPH_INST_RUN_DEP = DEBUG_FLAG(80, "graphInstRunDep", false,
+constant DebugFlag GRAPH_INST_RUN_DEP = DEBUG_FLAG(79, "graphInstRunDep", false,
   Gettext.gettext("Run scode dependency analysis. Use with -d=graphInst"));
-constant DebugFlag GRAPH_INST_GEN_GRAPH = DEBUG_FLAG(81, "graphInstGenGraph", false,
+constant DebugFlag GRAPH_INST_GEN_GRAPH = DEBUG_FLAG(80, "graphInstGenGraph", false,
   Gettext.gettext("Dumps a graph of the program. Use with -d=graphInst"));
-constant DebugFlag GRAPH_INST_SHOW_GRAPH = DEBUG_FLAG(82, "graphInstShowGraph", false,
+constant DebugFlag GRAPH_INST_SHOW_GRAPH = DEBUG_FLAG(81, "graphInstShowGraph", false,
   Gettext.gettext("Display a graph of the program interactively. Use with -d=graphInst"));
-constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(83, "dumpConstrepl", false,
+constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(82, "dumpConstrepl", false,
   Gettext.gettext("Dump the found replacements for constants."));
-constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(84, "showEquationSource", false,
+constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(83, "showEquationSource", false,
   Gettext.gettext("Display the element source information in the dumped DAE for easier debugging."));
-constant DebugFlag LS_ANALYTIC_JACOBIAN = DEBUG_FLAG(85, "LSanalyticJacobian", false,
+constant DebugFlag LS_ANALYTIC_JACOBIAN = DEBUG_FLAG(84, "LSanalyticJacobian", false,
   Gettext.gettext("Enables analytical jacobian for linear strong components. Defaults to false"));
-constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(86, "NLSanalyticJacobian", true,
+constant DebugFlag NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(85, "NLSanalyticJacobian", true,
   Gettext.gettext("Enables analytical jacobian for non-linear strong components without user-defined function calls, for that see forceNLSanalyticJacobian"));
-constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(87, "inlineSolver", false,
+constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(86, "inlineSolver", false,
   Gettext.gettext("Generates code for inline solver."));
-constant DebugFlag HPCOM = DEBUG_FLAG(88, "hpcom", false,
+constant DebugFlag HPCOM = DEBUG_FLAG(87, "hpcom", false,
   Gettext.gettext("Enables parallel calculation based on task-graphs."));
-constant DebugFlag INITIALIZATION = DEBUG_FLAG(89, "initialization", false,
+constant DebugFlag INITIALIZATION = DEBUG_FLAG(88, "initialization", false,
   Gettext.gettext("Shows additional information from the initialization process."));
-constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(90, "inlineFunctions", true,
+constant DebugFlag INLINE_FUNCTIONS = DEBUG_FLAG(89, "inlineFunctions", true,
   Gettext.gettext("Controls if function inlining should be performed."));
-constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(91, "dumpSCCGraphML", false,
+constant DebugFlag DUMP_SCC_GRAPHML = DEBUG_FLAG(90, "dumpSCCGraphML", false,
   Gettext.gettext("Dumps graphml files with the strongly connected components."));
-constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(92, "tearingdumpV", false,
+constant DebugFlag TEARING_DUMPVERBOSE = DEBUG_FLAG(91, "tearingdumpV", false,
   Gettext.gettext("Dumps verbose tearing information."));
-constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(93, "disableSingleFlowEq", false,
+constant DebugFlag DISABLE_SINGLE_FLOW_EQ = DEBUG_FLAG(92, "disableSingleFlowEq", false,
   Gettext.gettext("Disables the generation of single flow equations."));
-constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(94, "discreteinfo", false,
+constant DebugFlag DUMP_DISCRETEVARS_INFO = DEBUG_FLAG(93, "discreteinfo", false,
   Gettext.gettext("Enables dumping of discrete variables. Extends -d=backenddaeinfo."));
-constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(95, "graphvizDump", false,
+constant DebugFlag ADDITIONAL_GRAPHVIZ_DUMP = DEBUG_FLAG(94, "graphvizDump", false,
   Gettext.gettext("Activates additional graphviz dumps (as .dot files). It can be used in addition to one of the following flags: {dumpdaelow|dumpinitialsystems|dumpindxdae}."));
-constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(96, "infoXmlOperations", false,
+constant DebugFlag INFO_XML_OPERATIONS = DEBUG_FLAG(95, "infoXmlOperations", false,
   Gettext.gettext("Enables output of the operations in the _info.xml file when translating models."));
-constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(97, "hpcomDump", false,
+constant DebugFlag HPCOM_DUMP = DEBUG_FLAG(96, "hpcomDump", false,
   Gettext.gettext("Dumps additional information on the parallel execution with hpcom."));
-constant DebugFlag RESOLVE_LOOPS_DUMP = DEBUG_FLAG(98, "resolveLoopsDump", false,
+constant DebugFlag RESOLVE_LOOPS_DUMP = DEBUG_FLAG(97, "resolveLoopsDump", false,
   Gettext.gettext("Debug Output for ResolveLoops Module."));
-constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(99, "disableWindowsPathCheckWarning", false,
+constant DebugFlag DISABLE_WINDOWS_PATH_CHECK_WARNING = DEBUG_FLAG(98, "disableWindowsPathCheckWarning", false,
   Gettext.gettext("Disables warnings on Windows if OPENMODELICAHOME/MinGW is missing."));
-constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(100, "disableRecordConstructorOutput", false,
+constant DebugFlag DISABLE_RECORD_CONSTRUCTOR_OUTPUT = DEBUG_FLAG(99, "disableRecordConstructorOutput", false,
   Gettext.gettext("Disables output of record constructors in the flat code."));
-constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(101, "dumpTransformedModelica", false,
+constant DebugFlag DUMP_TRANSFORMED_MODELICA_MODEL = DEBUG_FLAG(100, "dumpTransformedModelica", false,
   Gettext.gettext("Dumps the back-end DAE to a Modelica-like model after all symbolic transformations are applied."));
-constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(102, "evalConstFuncs", true,
+constant DebugFlag EVALUATE_CONST_FUNCTIONS = DEBUG_FLAG(101, "evalConstFuncs", true,
   Gettext.gettext("Evaluates functions complete and partially and checks for constant output.\nDeprecated flag: Use --preOptModules+=evalFunc instead."));
-constant DebugFlag IMPL_ODE = DEBUG_FLAG(103, "implOde", false,
+constant DebugFlag IMPL_ODE = DEBUG_FLAG(102, "implOde", false,
   Gettext.gettext("activates implicit codegen"));
-constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(104, "evalFuncDump", false,
+constant DebugFlag EVAL_FUNC_DUMP = DEBUG_FLAG(103, "evalFuncDump", false,
   Gettext.gettext("dumps debug information about the function evaluation"));
-constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(105, "printStructuralParameters", false,
+constant DebugFlag PRINT_STRUCTURAL = DEBUG_FLAG(104, "printStructuralParameters", false,
   Gettext.gettext("Prints the structural parameters identified by the front-end"));
-constant DebugFlag ITERATION_VARS = DEBUG_FLAG(106, "iterationVars", false,
+constant DebugFlag ITERATION_VARS = DEBUG_FLAG(105, "iterationVars", false,
   Gettext.gettext("Shows a list of all iteration variables."));
-constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(107, "acceptTooManyFields", false,
+constant DebugFlag ALLOW_RECORD_TOO_MANY_FIELDS = DEBUG_FLAG(106, "acceptTooManyFields", false,
   Gettext.gettext("Accepts passing records with more fields than expected to a function. This is not allowed, but is used in Fluid.Dissipation. See https://trac.modelica.org/Modelica/ticket/1245 for details."));
-constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(108, "hpcomMemoryOpt", false,
+constant DebugFlag HPCOM_MEMORY_OPT = DEBUG_FLAG(107, "hpcomMemoryOpt", false,
   Gettext.gettext("Optimize the memory structure regarding the selected scheduler"));
-constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(109, "dumpSynchronous", false,
+constant DebugFlag DUMP_SYNCHRONOUS = DEBUG_FLAG(108, "dumpSynchronous", false,
   Gettext.gettext("Dumps information of the clock partitioning."));
-constant DebugFlag STRIP_PREFIX = DEBUG_FLAG(110, "stripPrefix", true,
+constant DebugFlag STRIP_PREFIX = DEBUG_FLAG(109, "stripPrefix", true,
   Gettext.gettext("Strips the environment prefix from path/crefs. Defaults to true."));
-constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(111, "scodeDep", true,
+constant DebugFlag DO_SCODE_DEP = DEBUG_FLAG(110, "scodeDep", true,
   Gettext.gettext("Does scode dependency analysis prior to instantiation. Defaults to true."));
-constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(112, "showInstCacheInfo", false,
+constant DebugFlag SHOW_INST_CACHE_INFO = DEBUG_FLAG(111, "showInstCacheInfo", false,
   Gettext.gettext("Prints information about instantiation cache hits and additions. Defaults to false."));
-constant DebugFlag DUMP_UNIT = DEBUG_FLAG(113, "dumpUnits", false,
+constant DebugFlag DUMP_UNIT = DEBUG_FLAG(112, "dumpUnits", false,
   Gettext.gettext("Dumps all the calculated units."));
-constant DebugFlag DUMP_EQ_UNIT = DEBUG_FLAG(114, "dumpEqInUC", false,
+constant DebugFlag DUMP_EQ_UNIT = DEBUG_FLAG(113, "dumpEqInUC", false,
   Gettext.gettext("Dumps all equations handled by the unit checker."));
-constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(115, "dumpEqUCStruct", false,
+constant DebugFlag DUMP_EQ_UNIT_STRUCT = DEBUG_FLAG(114, "dumpEqUCStruct", false,
   Gettext.gettext("Dumps all the equations handled by the unit checker as tree-structure."));
-constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(116, "showDaeGeneration", false,
+constant DebugFlag SHOW_DAE_GENERATION = DEBUG_FLAG(115, "showDaeGeneration", false,
   Gettext.gettext("Show the dae variable declarations as they happen."));
-constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(117, "reshufflePost", false,
+constant DebugFlag RESHUFFLE_POST = DEBUG_FLAG(116, "reshufflePost", false,
   Gettext.gettext("Reshuffles the systems of equations."));
-constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(118, "showExpandableInfo", false,
+constant DebugFlag SHOW_EXPANDABLE_INFO = DEBUG_FLAG(117, "showExpandableInfo", false,
   Gettext.gettext("Show information about expandable connector handling."));
-constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(119, "dumpHomotopy", false,
+constant DebugFlag DUMP_HOMOTOPY = DEBUG_FLAG(118, "dumpHomotopy", false,
   Gettext.gettext("Dumps the results of the postOptModule optimizeHomotopyCalls."));
-constant DebugFlag OMC_RELOCATABLE_FUNCTIONS = DEBUG_FLAG(120, "relocatableFunctions", false,
+constant DebugFlag OMC_RELOCATABLE_FUNCTIONS = DEBUG_FLAG(119, "relocatableFunctions", false,
   Gettext.gettext("Generates relocatable code: all functions become function pointers and can be replaced at run-time."));
-constant DebugFlag GRAPHML = DEBUG_FLAG(121, "graphml", false,
+constant DebugFlag GRAPHML = DEBUG_FLAG(120, "graphml", false,
   Gettext.gettext("Dumps .graphml files for the bipartite graph after Index Reduction and a task graph for the SCCs. Can be displayed with yEd. "));
-constant DebugFlag USEMPI = DEBUG_FLAG(122, "useMPI", false,
+constant DebugFlag USEMPI = DEBUG_FLAG(121, "useMPI", false,
   Gettext.gettext("Add MPI init and finalize to main method (CPPruntime). "));
-constant DebugFlag DUMP_CSE = DEBUG_FLAG(123, "dumpCSE", false,
+constant DebugFlag DUMP_CSE = DEBUG_FLAG(122, "dumpCSE", false,
   Gettext.gettext("Additional output for CSE module."));
-constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(124, "dumpCSE_verbose", false,
+constant DebugFlag DUMP_CSE_VERBOSE = DEBUG_FLAG(123, "dumpCSE_verbose", false,
   Gettext.gettext("Additional output for CSE module."));
-constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(125, "addDerAliases", false,
+constant DebugFlag ADD_DER_ALIASES = DEBUG_FLAG(124, "addDerAliases", false,
   Gettext.gettext("Adds for every der-call an alias equation e.g. dx = der(x). It's a work-a-round flag,
                 which helps in some cases to simulate the models e.g.
                 Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation.
                 Deprecated flag: Use --preOptModules+=introduceDerAlias instead."));
-constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(126, "disableComSubExp", false,
+constant DebugFlag DISABLE_COMSUBEXP = DEBUG_FLAG(125, "disableComSubExp", false,
   Gettext.gettext("Deactivates module 'comSubExp'\nDeprecated flag: Use --preOptModules-=comSubExp instead."));
-constant DebugFlag NO_START_CALC = DEBUG_FLAG(127, "disableStartCalc", false,
+constant DebugFlag NO_START_CALC = DEBUG_FLAG(126, "disableStartCalc", false,
   Gettext.gettext("Deactivates the pre-calculation of start values during compile-time."));
-constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(128, "disablePartitioning", false,
+constant DebugFlag NO_PARTITIONING = DEBUG_FLAG(127, "disablePartitioning", false,
   Gettext.gettext("Deactivates partitioning of entire equation system.\nDeprecated flag: Use --preOptModules-=clockPartitioning instead."));
-constant DebugFlag CONSTJAC = DEBUG_FLAG(129, "constjac", false,
+constant DebugFlag CONSTJAC = DEBUG_FLAG(128, "constjac", false,
   Gettext.gettext("solves linear systems with constant Jacobian and variable b-Vector symbolically"));
-constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(130, "reduceDynOpt", false,
+constant DebugFlag REDUCE_DYN_OPT = DEBUG_FLAG(129, "reduceDynOpt", false,
   Gettext.gettext("remove eqs which not need for the calculations of cost and constraints\nDeprecated flag: Use --postOptModules+=reduceDynamicOptimization instead."));
-constant DebugFlag VISUAL_XML = DEBUG_FLAG(131, "visxml", false,
+constant DebugFlag VISUAL_XML = DEBUG_FLAG(130, "visxml", false,
   Gettext.gettext("Outputs a xml-file that contains information for visualization."));
-constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(132, "addScaledVars", false,
+constant DebugFlag ADD_SCALED_VARS = DEBUG_FLAG(131, "addScaledVars", false,
   Gettext.gettext("Adds an alias equation var_nrom = var/nominal where var is state\nDeprecated flag: Use --postOptModules+=addScaledVars_states instead."));
-constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(133, "addScaledVarsInput", false,
+constant DebugFlag ADD_SCALED_VARS_INPUT = DEBUG_FLAG(132, "addScaledVarsInput", false,
   Gettext.gettext("Adds an alias equation var_nrom = var/nominal where var is input\nDeprecated flag: Use --postOptModules+=addScaledVars_inputs instead."));
-constant DebugFlag VECTORIZE = DEBUG_FLAG(134, "vectorize", false,
+constant DebugFlag VECTORIZE = DEBUG_FLAG(133, "vectorize", false,
   Gettext.gettext("Activates vectorization in the backend."));
-constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(135, "buildExternalLibs", true,
+constant DebugFlag CHECK_EXT_LIBS = DEBUG_FLAG(134, "buildExternalLibs", true,
   Gettext.gettext("Use the autotools project in the Resources folder of the library to build missing external libraries."));
-constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(136, "runtimeStaticLinking", false,
+constant DebugFlag RUNTIME_STATIC_LINKING = DEBUG_FLAG(135, "runtimeStaticLinking", false,
   Gettext.gettext("Use the static simulation runtime libraries (C++ simulation runtime)."));
-constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(137, "dumpSortEqnsAndVars", false,
+constant DebugFlag SORT_EQNS_AND_VARS = DEBUG_FLAG(136, "dumpSortEqnsAndVars", false,
   Gettext.gettext("Dumps debug output for the modules sortEqnsVars."));
-constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(138, "dumpSimplifyLoops", false,
+constant DebugFlag DUMP_SIMPLIFY_LOOPS = DEBUG_FLAG(137, "dumpSimplifyLoops", false,
   Gettext.gettext("Dump between steps of simplifyLoops"));
-constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(139, "dumpRecursiveTearing", false,
+constant DebugFlag DUMP_RTEARING = DEBUG_FLAG(138, "dumpRecursiveTearing", false,
   Gettext.gettext("Dump between steps of recursiveTearing"));
-constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(140, "disableSimplifyComplexFunction", false,
+constant DebugFlag DIS_SIMP_FUN = DEBUG_FLAG(139, "disableSimplifyComplexFunction", false,
   Gettext.gettext("disable simplifyComplexFunction\nDeprecated flag: Use --postOptModules-=simplifyComplexFunction/--initOptModules-=simplifyComplexFunction instead."));
-constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(141, "disableDirectionalDerivatives", true,
+constant DebugFlag DIS_SYMJAC_FMI20 = DEBUG_FLAG(140, "disableDirectionalDerivatives", true,
   Gettext.gettext("For FMI 2.0 only dependecy analysis will be perform."));
-constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(142, "evalOutputOnly", false,
+constant DebugFlag EVAL_OUTPUT_ONLY = DEBUG_FLAG(141, "evalOutputOnly", false,
   Gettext.gettext("Generates equations to calculate outputs only."));
-constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(143, "hardcodedStartValues", false,
+constant DebugFlag HARDCODED_START_VALUES = DEBUG_FLAG(142, "hardcodedStartValues", false,
   Gettext.gettext("Embed the start values of variables and parameters into the c++ code and do not read it from xml file."));
-constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(144, "dumpFunctions", false,
+constant DebugFlag DUMP_FUNCTIONS = DEBUG_FLAG(143, "dumpFunctions", false,
   Gettext.gettext("Add functions to backend dumps."));
-constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(145, "debugDifferentiation", false,
+constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(144, "debugDifferentiation", false,
   Gettext.gettext("Dumps debug output for the differentiation process."));
-constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(146, "debugDifferentiationVerbose", false,
+constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(145, "debugDifferentiationVerbose", false,
   Gettext.gettext("Dumps verbose debug output for the differentiation process."));
-constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(147, "fmuExperimental", false,
-  Gettext.gettext("Include an extra function in the FMU fmi2GetSpecificDerivatives."));
-constant DebugFlag DUMP_DGESV = DEBUG_FLAG(148, "dumpdgesv", false,
+constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(146, "fmuExperimental", false,
+  Gettext.gettext("Include an extra function in the FMU fmi7GetSpecificDerivatives."));
+constant DebugFlag DUMP_DGESV = DEBUG_FLAG(147, "dumpdgesv", false,
   Gettext.gettext("Enables dumping of the information whether DGESV is used to solve linear systems."));
-constant DebugFlag MULTIRATE_PARTITION = DEBUG_FLAG(149, "multirate", false,
+constant DebugFlag MULTIRATE_PARTITION = DEBUG_FLAG(148, "multirate", false,
   Gettext.gettext("The solver can switch partitions in the system."));
-constant DebugFlag DUMP_EXCLUDED_EXP = DEBUG_FLAG(150, "dumpExcludedSymJacExps", false,
+constant DebugFlag DUMP_EXCLUDED_EXP = DEBUG_FLAG(149, "dumpExcludedSymJacExps", false,
   Gettext.gettext("This flags dumps all expression that are excluded from differentiation of a symbolic Jacobian."));
-constant DebugFlag DEBUG_ALGLOOP_JACOBIAN = DEBUG_FLAG(151, "debugAlgebraicLoopsJacobian", false,
+constant DebugFlag DEBUG_ALGLOOP_JACOBIAN = DEBUG_FLAG(150, "debugAlgebraicLoopsJacobian", false,
   Gettext.gettext("Dumps debug output while creating symbolic jacobians for non-linear systems."));
-constant DebugFlag DISABLE_JACSCC = DEBUG_FLAG(152, "disableJacsforSCC", false,
+constant DebugFlag DISABLE_JACSCC = DEBUG_FLAG(151, "disableJacsforSCC", false,
   Gettext.gettext("Disables calculation of jacobians to detect if a SCC is linear or non-linear. By disabling all SCC will handled like non-linear."));
-constant DebugFlag FORCE_NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(153, "forceNLSanalyticJacobian", false,
+constant DebugFlag FORCE_NLS_ANALYTIC_JACOBIAN = DEBUG_FLAG(152, "forceNLSanalyticJacobian", false,
   Gettext.gettext("Forces calculation analytical jacobian also for non-linear strong components with user-defined functions."));
-constant DebugFlag DUMP_LOOPS = DEBUG_FLAG(154, "dumpLoops", false,
+constant DebugFlag DUMP_LOOPS = DEBUG_FLAG(153, "dumpLoops", false,
   Gettext.gettext("Dumps loop equation."));
-constant DebugFlag DUMP_LOOPS_VERBOSE = DEBUG_FLAG(155, "dumpLoopsVerbose", false,
+constant DebugFlag DUMP_LOOPS_VERBOSE = DEBUG_FLAG(154, "dumpLoopsVerbose", false,
   Gettext.gettext("Dumps loop equation and enhanced adjacency matrix."));
-constant DebugFlag SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR = DEBUG_FLAG(156, "skipInputOutputSyntacticSugar", false,
+constant DebugFlag SKIP_INPUT_OUTPUT_SYNTACTIC_SUGAR = DEBUG_FLAG(155, "skipInputOutputSyntacticSugar", false,
   Gettext.gettext("Used when bootstrapping to preserve the input output parsing of the code output by the list command."));
-constant DebugFlag OMC_RECORD_ALLOC_WORDS = DEBUG_FLAG(157, "metaModelicaRecordAllocWords", false,
+constant DebugFlag OMC_RECORD_ALLOC_WORDS = DEBUG_FLAG(156, "metaModelicaRecordAllocWords", false,
   Gettext.gettext("Instrument the source code to record memory allocations (requires run-time and generated files compiled with -DOMC_RECORD_ALLOC_WORDS)."));
-constant DebugFlag TOTAL_TEARING_DUMP = DEBUG_FLAG(158, "totaltearingdump", false,
+constant DebugFlag TOTAL_TEARING_DUMP = DEBUG_FLAG(157, "totaltearingdump", false,
   Gettext.gettext("Dumps total tearing information."));
-constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(159, "totaltearingdumpV", false,
+constant DebugFlag TOTAL_TEARING_DUMPVERBOSE = DEBUG_FLAG(158, "totaltearingdumpV", false,
   Gettext.gettext("Dumps verbose total tearing information."));
-constant DebugFlag PARALLEL_CODEGEN = DEBUG_FLAG(160, "parallelCodegen", true,
+constant DebugFlag PARALLEL_CODEGEN = DEBUG_FLAG(159, "parallelCodegen", true,
   Gettext.gettext("Enables code generation in parallel (disable this if compiling a model causes you to run out of RAM)."));
-constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(161, "reportSerializedSize", false,
+constant DebugFlag SERIALIZED_SIZE = DEBUG_FLAG(160, "reportSerializedSize", false,
   Gettext.gettext("Reports serialized sizes of various data structures used in the compiler."));
-constant DebugFlag BACKEND_KEEP_ENV_GRAPH = DEBUG_FLAG(162, "backendKeepEnv", true,
+constant DebugFlag BACKEND_KEEP_ENV_GRAPH = DEBUG_FLAG(161, "backendKeepEnv", true,
   Gettext.gettext("When enabled, the environment is kept when entering the backend, which enables CevalFunction (function interpretation) to work. This module not essential for the backend to function in most cases, but can improve simulation performance by evaluating functions. The drawback to keeping the environment graph in memory is that it is huge (~80% of the total memory in use when returning the frontend DAE)."));
-constant DebugFlag DUMPBACKENDINLINE = DEBUG_FLAG(163, "dumpBackendInline", false,
+constant DebugFlag DUMPBACKENDINLINE = DEBUG_FLAG(162, "dumpBackendInline", false,
   Gettext.gettext("Dumps debug output while inline function."));
-constant DebugFlag DUMPBACKENDINLINE_VERBOSE = DEBUG_FLAG(164, "dumpBackendInlineVerbose", false,
+constant DebugFlag DUMPBACKENDINLINE_VERBOSE = DEBUG_FLAG(163, "dumpBackendInlineVerbose", false,
   Gettext.gettext("Dumps debug output while inline function."));
-constant DebugFlag BLT_MATRIX_DUMP = DEBUG_FLAG(165, "bltmatrixdump", false,
+constant DebugFlag BLT_MATRIX_DUMP = DEBUG_FLAG(164, "bltmatrixdump", false,
   Gettext.gettext("Dumps the blt matrix in html file. IE seems to be very good in displaying large matrices."));
-constant DebugFlag LIST_REVERSE_WRONG_ORDER = DEBUG_FLAG(166, "listAppendWrongOrder", true,
+constant DebugFlag LIST_REVERSE_WRONG_ORDER = DEBUG_FLAG(165, "listAppendWrongOrder", true,
   Gettext.gettext("Print notifications about bad usage of listAppend."));
-constant DebugFlag PARTITION_INITIALIZATION = DEBUG_FLAG(167, "partitionInitialization", true,
+constant DebugFlag PARTITION_INITIALIZATION = DEBUG_FLAG(166, "partitionInitialization", true,
   Gettext.gettext("This flag controls if partitioning is applied to the initialization system."));
-constant DebugFlag EVAL_PARAM_DUMP = DEBUG_FLAG(168, "evalParameterDump", false,
+constant DebugFlag EVAL_PARAM_DUMP = DEBUG_FLAG(167, "evalParameterDump", false,
   Gettext.gettext("Dumps information for evaluating parameters."));
-constant DebugFlag NF_UNITCHECK = DEBUG_FLAG(169, "frontEndUnitCheck", false,
+constant DebugFlag NF_UNITCHECK = DEBUG_FLAG(168, "frontEndUnitCheck", false,
   Gettext.gettext("Checks the consistency of units in equation."));
-constant DebugFlag DISABLE_COLORING = DEBUG_FLAG(170, "disableColoring", false,
+constant DebugFlag DISABLE_COLORING = DEBUG_FLAG(169, "disableColoring", false,
   Gettext.gettext("Disables coloring algorithm while spasity detection."));
-constant DebugFlag MERGE_ALGORITHM_SECTIONS = DEBUG_FLAG(171, "mergeAlgSections", false,
+constant DebugFlag MERGE_ALGORITHM_SECTIONS = DEBUG_FLAG(170, "mergeAlgSections", false,
   Gettext.gettext("Disables coloring algorithm while sparsity detection."));
-constant DebugFlag WARN_NO_NOMINAL = DEBUG_FLAG(172, "warnNoNominal", false,
+constant DebugFlag WARN_NO_NOMINAL = DEBUG_FLAG(171, "warnNoNominal", false,
   Gettext.gettext("Prints the iteration variables in the initialization and simulation DAE, which do not have a nominal value."));
-constant DebugFlag REDUCE_DAE = DEBUG_FLAG(173, "backendReduceDAE", false,
+constant DebugFlag REDUCE_DAE = DEBUG_FLAG(172, "backendReduceDAE", false,
   Gettext.gettext("Prints all Reduce DAE debug information."));
-constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(174, "ignoreCycles", false,
+constant DebugFlag IGNORE_CYCLES = DEBUG_FLAG(173, "ignoreCycles", false,
   Gettext.gettext("Ignores cycles between constant/parameter components."));
-constant DebugFlag ALIAS_CONFLICTS = DEBUG_FLAG(175, "aliasConflicts", false,
+constant DebugFlag ALIAS_CONFLICTS = DEBUG_FLAG(174, "aliasConflicts", false,
   Gettext.gettext("Dumps alias sets with different start or nominal values."));
-constant DebugFlag SUSAN_MATCHCONTINUE_DEBUG = DEBUG_FLAG(176, "susanDebug", false,
+constant DebugFlag SUSAN_MATCHCONTINUE_DEBUG = DEBUG_FLAG(175, "susanDebug", false,
   Gettext.gettext("Makes Susan generate code using try/else to better debug which function broke the expected match semantics."));
-constant DebugFlag OLD_FE_UNITCHECK = DEBUG_FLAG(177, "oldFrontEndUnitCheck", false,
+constant DebugFlag OLD_FE_UNITCHECK = DEBUG_FLAG(176, "oldFrontEndUnitCheck", false,
   Gettext.gettext("Checks the consistency of units in equation (for the old front-end)."));
-constant DebugFlag EXEC_STAT_EXTRA_GC = DEBUG_FLAG(178, "execstatGCcollect", false,
+constant DebugFlag EXEC_STAT_EXTRA_GC = DEBUG_FLAG(177, "execstatGCcollect", false,
   Gettext.gettext("When running execstat, also perform an extra full garbage collection."));
-constant DebugFlag DEBUG_DAEMODE = DEBUG_FLAG(179, "debugDAEmode", false,
+constant DebugFlag DEBUG_DAEMODE = DEBUG_FLAG(178, "debugDAEmode", false,
   Gettext.gettext("Dump debug output for the DAEmode."));
-constant DebugFlag NF_SCALARIZE = DEBUG_FLAG(180, "nfScalarize", true,
+constant DebugFlag NF_SCALARIZE = DEBUG_FLAG(179, "nfScalarize", true,
   Gettext.gettext("Run scalarization in NF, default true."));
-constant DebugFlag NF_EVAL_CONST_ARG_FUNCS = DEBUG_FLAG(181, "nfEvalConstArgFuncs", true,
+constant DebugFlag NF_EVAL_CONST_ARG_FUNCS = DEBUG_FLAG(180, "nfEvalConstArgFuncs", true,
   Gettext.gettext("Evaluate all functions with constant arguments in the new frontend."));
-constant DebugFlag NF_EXPAND_OPERATIONS = DEBUG_FLAG(182, "nfExpandOperations", true,
+constant DebugFlag NF_EXPAND_OPERATIONS = DEBUG_FLAG(181, "nfExpandOperations", true,
   Gettext.gettext("Expand all unary/binary operations to scalar expressions in the new frontend."));
-constant DebugFlag NF_API = DEBUG_FLAG(183, "nfAPI", false,
+constant DebugFlag NF_API = DEBUG_FLAG(182, "nfAPI", false,
   Gettext.gettext("Enables experimental new instantiation use in the OMC API."));
-constant DebugFlag NF_API_DYNAMIC_SELECT = DEBUG_FLAG(184, "nfAPIDynamicSelect", false,
+constant DebugFlag NF_API_DYNAMIC_SELECT = DEBUG_FLAG(183, "nfAPIDynamicSelect", false,
   Gettext.gettext("Show DynamicSelect(static, dynamic) in annotations. Default to false and will select the first (static) expression"));
-constant DebugFlag NF_API_NOISE = DEBUG_FLAG(185, "nfAPINoise", false,
+constant DebugFlag NF_API_NOISE = DEBUG_FLAG(184, "nfAPINoise", false,
   Gettext.gettext("Enables error display for the experimental new instantiation use in the OMC API."));
-constant DebugFlag FMI20_DEPENDENCIES = DEBUG_FLAG(186, "disableFMIDependency", false,
+constant DebugFlag FMI20_DEPENDENCIES = DEBUG_FLAG(185, "disableFMIDependency", false,
   Gettext.gettext("Disables the dependency analysis and generation for FMI 2.0."));
-constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(187, "warnMinMax", true,
+constant DebugFlag WARNING_MINMAX_ATTRIBUTES = DEBUG_FLAG(186, "warnMinMax", true,
   Gettext.gettext("Makes a warning assert from min/max variable attributes instead of error."));
-constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(188, "nfExpandFuncArgs", false,
+constant DebugFlag NF_EXPAND_FUNC_ARGS = DEBUG_FLAG(187, "nfExpandFuncArgs", false,
   Gettext.gettext("Expand all function arguments in the new frontend."));
-constant DebugFlag DUMP_JL = DEBUG_FLAG(189, "dumpJL", false,
+constant DebugFlag DUMP_JL = DEBUG_FLAG(188, "dumpJL", false,
   Gettext.gettext("Dumps the absyn representation of a program as a Julia representation"));
-constant DebugFlag DUMP_ASSC = DEBUG_FLAG(190, "dumpASSC", false,
+constant DebugFlag DUMP_ASSC = DEBUG_FLAG(189, "dumpASSC", false,
   Gettext.gettext("Dumps the conversion process of analytical to structural singularities."));
-constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(191, "symJacConstantSplit", false,
+constant DebugFlag SPLIT_CONSTANT_PARTS_SYMJAC = DEBUG_FLAG(190, "symJacConstantSplit", false,
   Gettext.gettext("Generates all symbolic Jacobians with splitted constant parts."));
-constant DebugFlag NF_DUMP_FLAT = DEBUG_FLAG(192, "nfDumpFlat", false,
+constant DebugFlag NF_DUMP_FLAT = DEBUG_FLAG(191, "nfDumpFlat", false,
   Gettext.gettext("Dumps the flat model structure before generating the DAE."));
-constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(193, "force-fmi-attributes", false,
+constant DebugFlag DUMP_FORCE_FMI_ATTRIBUTES = DEBUG_FLAG(192, "force-fmi-attributes", false,
   Gettext.gettext("Force to export all fmi attributes to the modelDescription.xml, including those which have default values"));
-constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(194, "dataReconciliation", false,
+constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(193, "dataReconciliation", false,
   Gettext.gettext("Dumps all the dataReconciliation extraction algorithm procedure"));
-constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(195, "arrayConnect", false,
+constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(194, "arrayConnect", false,
   Gettext.gettext("Use experimental array connection handler."));
 
 public
@@ -1382,6 +1380,10 @@ constant ConfigFlag FMI_FLAGS = CONFIG_FLAG(144, "fmiFlags", NONE(), EXTERNAL(),
 constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(145, "newBackend",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Activates experimental new backend for better array handling. This also activates the new frontend. [WIP]"));
+
+constant ConfigFlag PARMODAUTO = CONFIG_FLAG(146, "parmodauto",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Experimental: Enable parallelization of independent systems of equations in the translated model."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

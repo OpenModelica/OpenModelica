@@ -30,49 +30,42 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
-
 
 #include "pm_timer.hpp"
 
+namespace openmodelica { namespace parmodelica {
 
-namespace openmodelica {
-namespace parmodelica {
+double PMTimer::LI_to_milli_secs(LARGE_INTEGER& LI) {
+    return (((double)LI.QuadPart * 1000) / (double)frequency.QuadPart);
+}
 
-
-double PMTimer::LI_to_secs(LARGE_INTEGER &LI) {
-    return ((double)LI.QuadPart /(double)frequency.QuadPart) ;
- }
-
-PMTimer::PMTimer(){
-    timer.start.QuadPart=0;
-    timer.stop.QuadPart=0;
+PMTimer::PMTimer() {
+    timer.start.QuadPart = 0;
+    timer.stop.QuadPart = 0;
     total_time.QuadPart = 0;
     QueryPerformanceFrequency(&frequency);
 }
 
-void PMTimer::start_timer(){
-    QueryPerformanceCounter(&timer.start) ;
+void PMTimer::start_timer() {
+    QueryPerformanceCounter(&timer.start);
 }
 
-void PMTimer::stop_timer(){
-    QueryPerformanceCounter(&timer.stop) ;
+void PMTimer::stop_timer() {
+    QueryPerformanceCounter(&timer.stop);
     total_time.QuadPart += (timer.stop.QuadPart - timer.start.QuadPart);
 }
 
-void PMTimer::reset_timer(){
-    timer.start.QuadPart=0;
-    timer.stop.QuadPart=0;
+void PMTimer::reset_timer() {
+    timer.start.QuadPart = 0;
+    timer.stop.QuadPart = 0;
     total_time.QuadPart = 0;
 }
 
-double PMTimer::get_elapsed_time(){
-    return LI_to_secs(total_time) ;
+double PMTimer::get_elapsed_time() {
+    return LI_to_milli_secs(total_time);
 }
 
-} // parmodelica
-} // openmodelica
-
+}} // namespace openmodelica::parmodelica

@@ -33,17 +33,15 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
 
 #ifdef _WIN32 // OS
 
 #include <windows.h>
 
-namespace openmodelica {
-namespace parmodelica {
+namespace openmodelica { namespace parmodelica {
 
 struct PMStopWatch {
     LARGE_INTEGER start;
@@ -52,51 +50,45 @@ struct PMStopWatch {
 
 class PMTimer {
 
-private:
-    PMStopWatch timer;
+  private:
+    PMStopWatch   timer;
     LARGE_INTEGER total_time;
     LARGE_INTEGER frequency;
-    double LI_to_secs(LARGE_INTEGER &LI) ;
-public:
+    double        LI_to_milli_secs(LARGE_INTEGER& LI);
+
+  public:
     PMTimer();
-    void start_timer();
-    void stop_timer();
-    void reset_timer();
+    void   start_timer();
+    void   stop_timer();
+    void   reset_timer();
     double get_elapsed_time();
 };
 
-
-} // parmodelica
-} // openmodelica
+}} // namespace openmodelica::parmodelica
 
 #else // if not _WIN32
-
 
 #define BOOST_CHRONO_HEADER_ONLY
 #include <boost/chrono.hpp>
 
-
-namespace openmodelica {
-namespace parmodelica {
+namespace openmodelica { namespace parmodelica {
 
 class PMTimer {
 
-private:
-    boost::chrono::system_clock::duration total_time;
+  private:
+    boost::chrono::system_clock::duration   total_time;
     boost::chrono::system_clock::time_point started_at;
-public:
+
+  public:
     PMTimer();
-    void start_timer();
-    void stop_timer();
-    void reset_timer();
+    void   start_timer();
+    void   stop_timer();
+    void   reset_timer();
     double get_elapsed_time();
 };
 
-} // parmodelica
-} // openmodelica
+}} // namespace openmodelica::parmodelica
 
 #endif // OS
-
-
 
 #endif // header
