@@ -12,13 +12,10 @@ if(NOT WIN32)
   find_library(UUID_LIB NAMES uuid REQUIRED)
 endif()
 
-# ######################################################################################################################
-# Library: omcruntime
-add_library(omcruntime STATIC)
-add_library(omc::compiler::runtime ALIAS omcruntime)
 
 set(OMC_RUNTIIME_SOURCES
     Error_omc.cpp
+    Dynload_omc.cpp
     Print_omc.c
     ErrorMessage.cpp
     System_omc
@@ -37,6 +34,12 @@ set(OMC_RUNTIIME_SOURCES
     ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp)
+
+
+# ######################################################################################################################
+# Library: omcruntime
+add_library(omcruntime STATIC)
+add_library(omc::compiler::runtime ALIAS omcruntime)
 
 target_sources(omcruntime PRIVATE ${OMC_RUNTIIME_SOURCES})
 target_compile_features(omcruntime PRIVATE cxx_std_11)
@@ -101,7 +104,6 @@ set(OMC_BACKENDRUNTIIME_SOURCES
     BackendDAEEXT_omc.cpp
     matching.c
     matching_cheap.c
-    Dynload_omc.cpp
     FMI_omc.c
     cJSON.c)
 
