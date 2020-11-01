@@ -35,12 +35,13 @@ inline static int sgn(const double& c)
     return (c < 0) ? -1 : ((c == 0) ? 0 : 1);
 }
 
-/// Definition of Signum function
 double BOOST_EXTENSION_EXPORT_DECL division(const double& a, const double& b, bool throwEx, const char* text);
 
+/// Provides the modulus as defined in modelica (same sign as v2 and abs smaller than abs(v2))
 inline static int modelica_mod_int(int v1, int v2)
 {
-    return v1 % v2;
+    int tmp = v1 % v2;
+    return ((v2 > 0 && tmp < 0) || (v2 < 0 && tmp > 0)) ? (tmp + v2) : tmp;
 }
 
 inline static double semiLinear(double x, double positiveSlope, double negativeSlope)
@@ -86,7 +87,7 @@ inline static double euclidNorm(const int& length, const int* vector)
     return (sqrt((double)value));
 }
 
-/// Provides the scaled  errornorm (see Hairer, Norsett und Wanner; Section II.4 )
+/// Provides the scaled errornorm (see Hairer, Norsett und Wanner; Section II.4 )
 inline static double scaledErrNorm(const int& length, const double* vector, const double* tol)
 {
     double value = 0.0;

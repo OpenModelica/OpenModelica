@@ -48,9 +48,12 @@ static inline double modelica_mod_double(double x, double y)
   return (x - (floor(x/y) * y));
 }
 
+/* operator % in C++ does not work in the same way as mod defined by modelica, so
+ * we need to define our own mod. */
 static inline int modelica_mod_integer(int x, int y)
 {
-  return x % y;
+  int tmp = x % y;
+  return ((y > 0 && tmp < 0) || (y < 0 && tmp > 0)) ? (tmp + y) : tmp;
 }
 
 

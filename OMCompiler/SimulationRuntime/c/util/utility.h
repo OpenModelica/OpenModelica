@@ -134,10 +134,11 @@ static inline modelica_real modelica_real_mod(modelica_real x, modelica_real y)
   return x-floor(x/y)*y;
 }
 
+/* Returns res such that 0 <= abs(res) < abs(y) and res has the same sign as y */
 static inline modelica_integer modelica_integer_mod(modelica_integer x, modelica_integer y)
 {
-  modelica_integer res = x%y;
-  return res < 0 ? res+y : res /* % returns the remainder, which might be negative */;
+  modelica_integer res = x % y;
+  return ((y > 0 && res < 0) || (y < 0 && res > 0)) ? (res + y) : res;
 }
 
 #endif

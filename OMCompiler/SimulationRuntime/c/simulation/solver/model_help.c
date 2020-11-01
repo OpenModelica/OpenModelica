@@ -1402,8 +1402,8 @@ modelica_integer _event_mod_integer(modelica_integer x1, modelica_integer x2, mo
     data->simulationInfo->mathEventsValuePre[index] = (modelica_real)x1;
     data->simulationInfo->mathEventsValuePre[index+1] = (modelica_real)x2;
   }
-
-  return x1 - (x1 / x2) * x2;
+  modelica_integer tmp = x1 % x2;
+  return ((x2 > 0 && tmp < 0) || (x2 < 0 && tmp > 0)) ? (tmp + x2) : tmp;
 }
 
 /*! \fn _event_mod_real
