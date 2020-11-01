@@ -1332,11 +1332,17 @@ algorithm
       end if;
 
       /// Let's see what happens. Why is this needed.
+      /// OKAY so the index ( the DoubleEnded.length(relations) part here) seems to be used
+      /// to signify that this is a zero crossing relation. By default it is set to -1 for all
+      /// relations. Codegen checks if it is -1 and generates a normal comparison (e.g GreaterEq).
+      /// Otherwise it generates GreaterEqZC() instead. I am not sure why the last argument,
+      /// i.e, SOME((iterator, istart, istep) ) is needed though. We will see.
+
       // stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
       // istart = BackendDAEUtil.expInt(startvalue, globalKnownVars);
       // istep = BackendDAEUtil.expInt(stepvalue, globalKnownVars);
       // eres = DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), SOME((iterator, istart, istep)));
-      eres = inExp;
+      eres = DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), NONE());
       (explst, itmp) = replaceIteratorsWithStaticValues(inExp, iteratorExpansions, DoubleEnded.length(relations));
       if Flags.isSet(Flags.RELIDX) then
         print(" number of new zc (1): " + intString(listLength(explst)) + "\n");
