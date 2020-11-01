@@ -64,7 +64,10 @@ import Util;
 import ZeroCrossings;
 
 type ZCArgType  = tuple<tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
-type ForArgType = tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
+
+type IteratorExpansion = tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp>; // original_iterator_cref, constant_replacements, original_range
+type ForArgType = tuple<list<IteratorExpansion>, tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer>, tuple<Integer, BackendDAE.Variables, BackendDAE.Variables>>;
+
 // =============================================================================
 // section for preOptModule >>encapsulateWhenConditions<<
 //
@@ -654,7 +657,7 @@ algorithm
     // all algorithm stmts are processed firstly
     case (BackendDAE.ALGORITHM(size=size, alg=DAE.ALGORITHM_STMTS(stmts), source=source_, expand=expand, attr=eqAttr)::xs) equation
       eq_count = inEqnCount + 1;
-      (stmts_1, (_, _, _, (res, relationsLst, sampleLst, countMathFunctions), _)) = traverseStmtsExps(stmts, (DAE.SCONST("$$$"), {}, DAE.RCONST(0.0), (inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfMathFunctions), (eq_count, inVariables1, globalKnownVars)), globalKnownVars);
+      (stmts_1, (_, (res, relationsLst, sampleLst, countMathFunctions), _)) = traverseStmtsExps(stmts, ({}, (inZeroCrossingLst, inRelationsLst, inSamplesLst, inNumberOfMathFunctions), (eq_count, inVariables1, globalKnownVars)), globalKnownVars);
       eqnsAccum = BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(stmts_1), source_, expand, eqAttr)::inEquationLstAccum;
       (res1, eq_reslst, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(inVariables1, globalKnownVars, xs, eq_count, countMathFunctions, res, relationsLst, sampleLst, eqnsAccum);
     then (res1, eq_reslst, countMathFunctions, relationsLst, sampleLst);
@@ -1204,6 +1207,7 @@ algorithm
     local
       DAE.Exp e, e1, e2, e_1, e_2, eres, iterator, range, range2;
       list<DAE.Exp> inExpLst, explst;
+      list<IteratorExpansion> iteratorExpansions;
       BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.ZeroCrossingSet zeroCrossings, samples;
       DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
@@ -1228,7 +1232,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="smooth")), _)
     then (inExp, false, inTpl);
 
-    case (DAE.CALL(path=Absyn.IDENT(name="sample")), (_, _, _, (_, _, samples, _), (alg_indx, _, _))) equation
+    case (DAE.CALL(path=Absyn.IDENT(name="sample")), (_, (_, _, samples, _), (alg_indx, _, _))) equation
       eqs = {alg_indx};
       zc = createZeroCrossing(inExp, eqs);
       ZeroCrossings.add(samples, zc);
@@ -1237,20 +1241,20 @@ algorithm
       end if;
     then (inExp, true, inTpl);
 
-    case (DAE.LUNARY(exp=e1), (_, _, _, _, (_, vars, globalKnownVars)))
+    case (DAE.LUNARY(exp=e1), (_, _, (_, vars, globalKnownVars)))
       guard not BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars)
       then (inExp, true, inTpl);
 
     // conditions that are zerocrossings.
-    case (DAE.LUNARY(exp=e1, operator=op), (iterator, _, DAE.RANGE(), (zeroCrossings, relations, _, _), _))
-      guard Expression.expContains(inExp, iterator)
+    case (DAE.LUNARY(exp=e1, operator=op), (iteratorExpansions, (zeroCrossings, relations, _, _), _))
+      guard ExpContainsAtLeastOneIterator(inExp, iteratorExpansions)
       equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY with Iterator: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
-      (e1, tpl as (iterator, inExpLst, _, (_, relations, _, _), (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
+      (e1, tpl as (iteratorExpansions, (_, relations, _, _), (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
       e_1 = DAE.LUNARY(op, e1);
-      (explst,_) = replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEnded.length(relations));
+      (explst,_) = replaceIteratorsWithStaticValues(e_1, iteratorExpansions, DoubleEnded.length(relations));
       zc_lst = createZeroCrossings(explst, {alg_indx});
       ZeroCrossings.add_list(zeroCrossings, zc_lst);
       if Flags.isSet(Flags.RELIDX) then
@@ -1260,11 +1264,11 @@ algorithm
     then (e_1, false, tpl);
 
     // coditions that are zerocrossings.
-    case (DAE.LUNARY(exp=e1, operator=op), (_, _, _, (zeroCrossings, relations, _, _), _)) equation
+    case (DAE.LUNARY(exp=e1, operator=op), (_,(zeroCrossings, relations, _, _), _)) equation
       if Flags.isSet(Flags.RELIDX) then
         print("continues LUNARY: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
-      (e1, tpl as (_, _, _, (_, _, _, _), (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
+      (e1, tpl as (_, (_, _, _, _), (alg_indx, _, _))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, inTpl);
       e_1 = DAE.LUNARY(op, e1);
       zc = createZeroCrossing(e_1, {alg_indx});
       ZeroCrossings.add(zeroCrossings, zc);
@@ -1274,23 +1278,23 @@ algorithm
       end if;
     then (e_1, false, tpl);
 
-    case (DAE.LBINARY(exp1=e1, exp2=e2), (_, _, _, _, (_, vars, globalKnownVars)))
+    case (DAE.LBINARY(exp1=e1, exp2=e2), (_, _, (_, vars, globalKnownVars)))
       guard not (BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars) or BackendDAEUtil.hasExpContinuousParts(e2, vars, globalKnownVars))
       then (inExp, true, inTpl);
 
-    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1))
+    case (DAE.LBINARY(exp1=e1, operator=op, exp2=e2), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1))
       algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("continues LBINARY: " + intString(DoubleEnded.length(relations)) + "\n");
         BackendDump.debugExpStr(inExp, "\n");
       end if;
       oldNumRelations := DoubleEnded.length(relations);
-      (e_1, (_, inExpLst, range, tp2, tp1)) := Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator, inExpLst, range, (ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
-      (e_2, (_, inExpLst, range, (_, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) := Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator, inExpLst, range, tp2, tp1));
+      (e_1, (iteratorExpansions, tp2, tp1)) := Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iteratorExpansions, (ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
+      (e_2, (iteratorExpansions, (_, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _))) := Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iteratorExpansions, tp2, tp1));
       if intGt(DoubleEnded.length(relations), oldNumRelations) then
         e_1 := DAE.LBINARY(e_1, op, e_2);
-        if Expression.expContains(e1, iterator) or Expression.expContains(e2, iterator) then
-          (explst,_) := replaceIteratorWithStaticValues(e_1, iterator, inExpLst, DoubleEnded.length(relations));
+        if ExpContainsAtLeastOneIterator(e1, iteratorExpansions) or ExpContainsAtLeastOneIterator(e2, iteratorExpansions) then
+          (explst,_) := replaceIteratorsWithStaticValues(e_1, iteratorExpansions, DoubleEnded.length(relations));
           zc_lst := createZeroCrossings(explst, {alg_indx});
           ZeroCrossings.add_list(zeroCrossings, zc_lst);
           if Flags.isSet(Flags.RELIDX) then
@@ -1306,7 +1310,7 @@ algorithm
           end if;
         end if;
         cont := false;
-        tpl := (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1);
+        tpl := (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1);
       else
         e_1 := inExp;
         cont := true;
@@ -1315,22 +1319,25 @@ algorithm
     then (e_1, cont, tpl);
 
     // function with discrete expressions generate no zerocrossing.
-    case (DAE.RELATION(exp1=e1, exp2=e2), (_, _, _, _, (_, vars, globalKnownVars)))
+    case (DAE.RELATION(exp1=e1, exp2=e2), (_, _, (_, vars, globalKnownVars)))
       guard not (BackendDAEUtil.hasExpContinuousParts(e1, vars, globalKnownVars) or BackendDAEUtil.hasExpContinuousParts(e2, vars, globalKnownVars))
       then (inExp, true, inTpl);
 
     // All other functions generate zerocrossing.
-    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range as DAE.RANGE(start=startvalue, step=stepvalueopt), (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, globalKnownVars)))
-      guard if Flags.isSet(Flags.EVENTS) then (if Expression.expContains(e1, iterator) then true else Expression.expContains(e2, iterator)) else false
+    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, globalKnownVars)))
+      guard if Flags.isSet(Flags.EVENTS) then (if ExpContainsAtLeastOneIterator(e1, iteratorExpansions) then true else ExpContainsAtLeastOneIterator(e2, iteratorExpansions)) else false
       equation
       if Flags.isSet(Flags.RELIDX) then
         print(" number of relations: " + intString(DoubleEnded.length(relations)) + "\n");
       end if;
-      stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
-      istart = BackendDAEUtil.expInt(startvalue, globalKnownVars);
-      istep = BackendDAEUtil.expInt(stepvalue, globalKnownVars);
-      eres = DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), SOME((iterator, istart, istep)));
-      (explst, itmp) = replaceIteratorWithStaticValues(inExp, iterator, inExpLst, DoubleEnded.length(relations));
+
+      /// Let's see what happens. Why is this needed.
+      // stepvalue = Util.getOptionOrDefault(stepvalueopt, DAE.ICONST(1));
+      // istart = BackendDAEUtil.expInt(startvalue, globalKnownVars);
+      // istep = BackendDAEUtil.expInt(stepvalue, globalKnownVars);
+      // eres = DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), SOME((iterator, istart, istep)));
+      eres = inExp;
+      (explst, itmp) = replaceIteratorsWithStaticValues(inExp, iteratorExpansions, DoubleEnded.length(relations));
       if Flags.isSet(Flags.RELIDX) then
         print(" number of new zc (1): " + intString(listLength(explst)) + "\n");
       end if;
@@ -1347,11 +1354,11 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(DoubleEnded.length(relations)) + "\n");
       end if;
-    then (eres, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
+    then (eres, true, (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
     // All other functions generate zerocrossing.
-    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
-      guard Flags.isSet(Flags.EVENTS) // and (not Expression.expContains(e1, iterator) or Expression.expContains(e2, iterator))
+    case (DAE.RELATION(exp1=e1, operator=op, exp2=e2), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
+      guard Flags.isSet(Flags.EVENTS) // and (not ExpContainsAtLeastOneIterator(e1, iteratorExpansions) then true else ExpContainsAtLeastOneIterator(e2, iteratorExpansions))
       equation
       eres = DAE.RELATION(e1, op, e2, DoubleEnded.length(relations), NONE());
       zc = createZeroCrossing(eres, {alg_indx});
@@ -1360,10 +1367,10 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("collectZCAlgsFor result zc: " + ExpressionDump.printExpStr(eres)+ " index:" + intString(DoubleEnded.length(relations)) + "\n");
       end if;
-    then (eres, true, (iterator, inExpLst, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
+    then (eres, true, (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
     // math function that triggering events
-    case (DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("integer"), expLst={e1}, attr=attr), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1378,9 +1385,9 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
+    then (eres, true, (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
-    case (DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("floor"), expLst={e1}, attr=attr), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1395,9 +1402,9 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
+    then (eres, true, (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
-    case (DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("ceil"), expLst={e1}, attr=attr), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1412,9 +1419,9 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
+    then (eres, true, (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
-    case (DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("div"), expLst={e1, e2}, attr=attr), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1429,9 +1436,9 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
+    then (eres, true, (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
-    case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR()), (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("mod"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR()), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1446,10 +1453,10 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (eres, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
+    then (eres, true, (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
     // rem is rewritten to div(x/y)*y - x
-    case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
+    case (DAE.CALL(path=Absyn.IDENT("rem"), expLst={e1, e2}, attr=attr as DAE.CALL_ATTR(ty = ty)), (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1 as (alg_indx, _, _)))
       guard Flags.isSet(Flags.EVENTS)
       equation
       if Flags.isSet(Flags.RELIDX) then
@@ -1465,11 +1472,49 @@ algorithm
       if Flags.isSet(Flags.RELIDX) then
         print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + "\n");
       end if;
-    then (e_2, true, (iterator, le, range, (zeroCrossings, relations, samples, numMathFunctions), tp1));
+    then (e_2, true, (iteratorExpansions, (zeroCrossings, relations, samples, numMathFunctions), tp1));
 
     else (inExp, true, inTpl);
   end match;
 end collectZCAlgsFor;
+
+protected function replaceIteratorsWithStaticValues
+  input DAE.Exp inExp;
+  input list<IteratorExpansion> inIteratorExpansions;
+  input Integer inIndex;
+  output list<DAE.Exp> outExps;
+  output Integer outIndex;
+algorithm
+
+  outExps := {inExp};
+
+  for ieratorExpansion in inIteratorExpansions loop
+    (outExps, outIndex) := replaceIteratorsWithStaticValuesExps(outExps, ieratorExpansion, inIndex /*always pass inIndex. We want it to restart.*/);
+  end for;
+
+end replaceIteratorsWithStaticValues;
+
+protected function replaceIteratorsWithStaticValuesExps
+  input list<DAE.Exp> inExp;
+  input IteratorExpansion inIteratorExpansion;
+  input Integer inIndex;
+  output list<DAE.Exp> outExps;
+  output Integer outIndex;
+protected
+  DAE.Exp iter;
+  list<DAE.Exp> repls, explst;
+algorithm
+
+  outIndex := inIndex;
+  outExps := {};
+
+  for exp in inExp loop
+    (iter, repls, _) := inIteratorExpansion;
+    (explst, outIndex) := replaceIteratorWithStaticValues(exp, iter, repls, outIndex);
+    outExps := listAppend(outExps, explst) annotation(__OpenModelica_DisableListAppendWarning=true);
+  end for;
+
+end replaceIteratorsWithStaticValuesExps;
 
 protected function replaceIteratorWithStaticValues
   input DAE.Exp inExp;
@@ -1868,13 +1913,16 @@ algorithm
       list<DAE.Statement> statementLst;
       tuple<BackendDAE.ZeroCrossingSet, DoubleEnded.MutableList<BackendDAE.ZeroCrossing>, BackendDAE.ZeroCrossingSet, Integer> tpl2;
       tuple<Integer, BackendDAE.Variables, BackendDAE.Variables> tpl3;
+      list<IteratorExpansion> iteratorExpansions;
+      DAE.Exp range;
       ForArgType extraArg;
 
     case ({}, _)
     then (inStmts, inExtraArg);
 
-    case (_, (_, _, _, tpl2, tpl3)) equation
-      (statementLst, extraArg) = traverseStmtsExps(inStmts, (inIteratorExp, inExplst, inRange, tpl2, tpl3), inKnvars);
+    case (_, (iteratorExpansions, tpl2, tpl3)) algorithm
+      iteratorExpansions := (inIteratorExp, inExplst, inRange)::iteratorExpansions;
+      (statementLst, extraArg) := traverseStmtsExps(inStmts, (iteratorExpansions, tpl2, tpl3), inKnvars);
     then (statementLst, extraArg);
 
     else equation
@@ -1905,6 +1953,25 @@ algorithm
     else BackendDAE.ZERO_CROSSING(inRelation, inOccurEquLst);
   end match;
 end createZeroCrossing;
+
+
+protected function ExpContainsAtLeastOneIterator
+  input DAE.Exp inExp;
+  input list<IteratorExpansion> iteratorExpansions;
+  output Boolean contains_iterator;
+protected
+  DAE.Exp iterator;
+algorithm
+  contains_iterator := false;
+  for iteratorExpansion in iteratorExpansions loop
+    (iterator, _, _) := iteratorExpansion;
+
+    if Expression.expContains(inExp, iterator) then
+      contains_iterator := true;
+      break;
+    end if;
+  end for;
+end ExpContainsAtLeastOneIterator;
 
 annotation(__OpenModelica_Interface="backend");
 end FindZeroCrossings;
