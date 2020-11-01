@@ -99,6 +99,23 @@ endmacro(add_compile_step)
 
 
 
+add_custom_command(
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
+            ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ModelicaBuiltin.mo
+
+    # We want to generate OpenModelicaScriptingAPI.mo in scripts folder. Since the script
+    # generates it in the current working directory we go there. Later we can fix the script to
+    # take a path or change the MM source list to pick up the generated OpenModelicaScriptingAPI.mo
+    # from <build_dir>/Compiler.
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Script
+
+    COMMAND ${OMC_EXE} -g=MetaModelica -n=1 ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos
+
+    OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo
+    COMMENT "Generating ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mo using ${CMAKE_CURRENT_SOURCE_DIR}/Script/OpenModelicaScriptingAPI.mos"
+)
+
+
 
 
 
