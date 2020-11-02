@@ -915,24 +915,25 @@ AC_ARG_ENABLE([parmodauto],
     AS_HELP_STRING([--enable-parmodauto], [Enable support for automatic parallelization of simulations with parmodauto]))
 
 AS_IF([test "x$enable_parmodauto" = "xyes"], [
-  AC_MSG_NOTICE([parmodauto support is requested])
-  AC_MSG_NOTICE([Checking if omc version of tbb exists])
+  AC_MSG_NOTICE("parmodauto support is requested")
+  AC_MSG_NOTICE("Checking if omc version of tbb exists")
 
   OMC_TBB_ROOT="$ac_pwd/3rdParty/tbb_omc"
-  AC_CHECK_FILE($OMC_TBB_ROOT, []
-        , [AC_MSG_ERROR([parmodauto support (--enable-parmodauto) was requested but TBB library not found in $OMC_TBB_ROOT directory.])
-      ])
+  AC_CHECK_FILE($OMC_TBB_ROOT,
+      [],
+      [AC_MSG_ERROR("parmodauto support (--enable-parmodauto) was requested but TBB library not found in $OMC_TBB_ROOT directory.")])
 
-  AC_MSG_NOTICE([Configuring omc_tbb])
+  AC_MSG_NOTICE("Configuring omc_tbb")
   # This would have been the best way but the flags are not consistent.
   # cmake -S $OMC_TBB_ROOT -B $OMC_TBB_ROOT/build_cmake CFLAGS=$CFLAGS CXXFLAGS=$CXXFLAGS
   cmake -S $OMC_TBB_ROOT -B $OMC_TBB_ROOT/build_cmake -DOM_HOST_SHORT=$host_short -DOM_BUILD_DIR=$OMBUILDDIR
-  AC_MSG_NOTICE([omc_tbb has been configured])
+  AC_MSG_NOTICE("omc_tbb has been configured")
 
   ENABLE_PARMODAUTO="yes"
-  AC_MSG_NOTICE(parmodauto enabled... [$ENABLE_PARMODAUTO])
+  AC_MSG_NOTICE("parmodauto enabled ... $ENABLE_PARMODAUTO")
+], [
+  AC_MSG_NOTICE("parmodauto ... not enabled")
 ])
-
 
 m4_include([common/m4/semver.m4])
 
