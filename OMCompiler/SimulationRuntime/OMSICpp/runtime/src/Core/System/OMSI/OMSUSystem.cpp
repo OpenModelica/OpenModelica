@@ -8,10 +8,11 @@
 #include <Core/System/SimObjects.h>
 #include <Core/System/IExtendedSimObjects.h>
 #include <Core/System/OMSUSystem.h>
-//OpenModelica Simulation Interface
-#include <omsi.h>
-//3rdparty header
 
+// OpenModelica Simulation Interface
+#include <omsi.h>
+
+//3rdparty header
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 

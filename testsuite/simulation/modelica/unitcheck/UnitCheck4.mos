@@ -9,32 +9,37 @@ package unitCheckTests
     Real V(unit=\"m/s\");
     Real A;
   equation
-    der(S)=V;
-    A=der(V);
+    der(S) = V;
+    A = der(V);
     S = 5.0;
   end UnitCheck4;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
-translateModel(unitCheckTests.UnitCheck4); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+instantiateModel(unitCheckTests.UnitCheck4); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// #####################################
 // HashTable:
-// {A,{MASTER(A)}}
-// {V,{1.0 * m^(1) * s^(-1)}}
 // {S,{1.0 * m^(1)}}
-// HashTable:
+// {V,{1.0 * m^(1) * s^(-1)}}
 // {A,{1.0 * m^(1) * s^(-2)}}
-// {V,{1.0 * m^(1) * s^(-1)}}
-// {S,{1.0 * m^(1)}}
+// {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
-// true
+// "class unitCheckTests.UnitCheck4
+//   Real S(unit = \"m\");
+//   Real V(unit = \"m/s\");
+//   Real A(unit = \"m.s-2\");
+// equation
+//   der(S) = V;
+//   A = der(V);
+//   S = 5.0;
+// end unitCheckTests.UnitCheck4;
+// "
 // "Notification: \"A\" has the Unit \"m.s-2\"
 // "
 // endResult

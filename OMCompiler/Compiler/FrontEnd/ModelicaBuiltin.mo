@@ -3426,6 +3426,22 @@ external "builtin";
 annotation(preferredView="text");
 end getImportCount;
 
+function getMMfileTotalDependencies
+  input String in_package_name;
+  input String public_imports_dir;
+  output String[:] total_pub_imports;
+external "builtin";
+annotation(preferredView="text");
+end getMMfileTotalDependencies;
+
+function getImportedNames "Returns the prefix paths of all imports in a class."
+  input TypeName class_;
+  output String[:] out_public;
+  output String[:] out_protected;
+external "builtin";
+annotation(preferredView="text");
+end getImportedNames;
+
 function getNthImport "Returns the Nth Import as string."
   input TypeName class_;
   input Integer index;

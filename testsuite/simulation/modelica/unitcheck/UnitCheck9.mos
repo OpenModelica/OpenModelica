@@ -8,40 +8,44 @@ package unitCheckTests
     Real V(unit = \"m2/s2\");
     Real A;
     Real S(unit = \"m/s\");
-    Real C=1;
-    Real E=1;
+    Real C = 1;
+    Real E = 1;
   equation
-    A=5.0;
-    V=8.0;
-    V=E*C+S*(-A);
+    A = 5.0;
+    V = 8.0;
+    V = E*C + S*(-A);
   end UnitCheck9;
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
-translateModel(unitCheckTests.UnitCheck9); getErrorString();
-
+setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+instantiateModel(unitCheckTests.UnitCheck9); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// #####################################
 // HashTable:
-// {E,{MASTER(E)}}
-// {C,{MASTER(C)}}
-// {S,{1.0 * m^(1) * s^(-1)}}
-// {A,{MASTER(A)}}
 // {V,{1.0 * m^(2) * s^(-2)}}
-// HashTable:
-// {E,{MASTER(E)}}
-// {C,{MASTER(C)}}
-// {S,{1.0 * m^(1) * s^(-1)}}
 // {A,{1.0 * m^(1) * s^(-1)}}
-// {V,{1.0 * m^(2) * s^(-2)}}
+// {S,{1.0 * m^(1) * s^(-1)}}
+// {C,{MASTER(C)}}
+// {E,{MASTER(E)}}
+// {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
-// true
+// "class unitCheckTests.UnitCheck9
+//   Real V(unit = \"m2/s2\");
+//   Real A(unit = \"m/s\");
+//   Real S(unit = \"m/s\");
+//   Real C = 1.0;
+//   Real E = 1.0;
+// equation
+//   A = 5.0;
+//   V = 8.0;
+//   V = E * C + S * (-A);
+// end unitCheckTests.UnitCheck9;
+// "
 // "Notification: \"A\" has the Unit \"m/s\"
 // "
 // endResult

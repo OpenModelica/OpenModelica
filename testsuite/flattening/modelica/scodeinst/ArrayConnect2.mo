@@ -52,39 +52,27 @@ end ArrayConnect2;
 //   Real G.n.e;
 //   Real G.n.f;
 // equation
-//   for $i1 in 1:1 loop
-//     R[$i1].p.e = S.p.e;
-//   end for;
-//   for $i1 in 1:1 loop
-//     S.p.f + R[$i1].p.f = 0.0;
-//   end for;
-//   for $i1 in 1000:1000 loop
-//     C[$i1].n.e = S.n.e;
-//   end for;
-//   for $i1 in 2:999 loop
-//     C[$i1].n.e = S.n.e;
-//   end for;
-//   for $i1 in 1:1 loop
-//     C[$i1].n.e = S.n.e;
-//   end for;
+//   C[1000].n.e = C[1].n.e;
+//   C[1].n.f + C[1000].n.f = 0.0;
+//   R[1].p.e = S.p.e;
+//   S.p.f + R[1].p.f = 0.0;
 //   G.p.e = S.n.e;
-//   for $i1 in 1:1 loop
-//     S.n.f + G.p.f + C[$i1].n.f + sum(C[2:1:999].n.f) + C[$i1 + 999].n.f = 0.0;
+//   S.n.f + G.p.f = 0.0;
+//   for $i1 in 3:999 loop
+//     C[$i1].n.e = C[2].n.e;
 //   end for;
-//   for $i1 in 1:999 loop
-//     R[$i1].n.e = R[$i1 + 1].p.e;
-//   end for;
+//   sum(C[2:999].n.f) = 0.0;
 //   for $i1 in 1:999 loop
 //     C[$i1].p.e = R[$i1 + 1].p.e;
 //   end for;
 //   for $i1 in 2:1000 loop
-//     C[$i1 - 1].p.f + R[$i1 - 1].n.f + R[$i1].p.f = 0.0;
+//     C[$i1 - 1].p.f + R[$i1].p.f = 0.0;
 //   end for;
-//   for $i1 in 1000:1000 loop
-//     C[$i1].p.e = R[$i1].n.e;
+//   for $i1 in 1:999 loop
+//     R[$i1].n.f = 0.0;
 //   end for;
-//   for $i1 in 1000:1000 loop
-//     C[$i1].p.f + R[$i1].n.f = 0.0;
-//   end for;
+//   C[1000].p.e = R[1000].n.e;
+//   C[1000].p.f + R[1000].n.f = 0.0;
+//   G.n.f = 0.0;
 // end ArrayConnect2;
 // endResult

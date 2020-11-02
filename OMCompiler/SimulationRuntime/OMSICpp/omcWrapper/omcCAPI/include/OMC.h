@@ -8,7 +8,7 @@
 
 extern "C"
 {
-    OMC_DLL typedef struct OMCData data;
+    typedef struct OMCData data;
 
 
     void OMC_DLL InitMetaOMC();

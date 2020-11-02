@@ -12011,16 +12011,29 @@ public function qualifyPath
   input GraphicEnvCache inEnv;
   input Absyn.Path inPath;
   output Absyn.Path outPath;
+protected
+  String n;
 algorithm
-  try
-	  if Flags.isSet(Flags.NF_API) then
-	    (_, outPath) := Interactive.mkFullyQual(inEnv, inPath);
-	  else
-	    outPath := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), inPath);
-	  end if;
-	else
-	  outPath := inPath;
-	end try;
+  outPath := match inPath
+    case Absyn.FULLYQUALIFIED(__) then inPath;
+    case Absyn.IDENT("Real") then inPath;
+    case Absyn.IDENT("Integer") then inPath;
+    case Absyn.IDENT("Boolean") then inPath;
+    case Absyn.IDENT("String") then inPath;
+    else
+      algorithm
+        try
+          if Flags.isSet(Flags.NF_API) then
+            (_, outPath) := Interactive.mkFullyQual(inEnv, inPath);
+          else
+            outPath := qualifyType(Interactive.envFromGraphicEnvCache(inEnv), inPath);
+          end if;
+        else
+          outPath := inPath;
+        end try;
+      then
+        outPath;
+  end match;
 end qualifyPath;
 
 public function getConstrainClassStr
@@ -15971,9 +15984,9 @@ protected
   GraphicEnvCache genv;
 algorithm
   Absyn.PROGRAM(classes=classes) := inProgram;
-  strlst := List.map(classes, AbsynUtil.getClassName);
+  strlst := List.map(List.filterOnTrue(classes, AbsynUtil.isNotPartial), AbsynUtil.getClassName);
   result_path_lst := List.mapMap(strlst, AbsynUtil.makeIdentPathFromString, Util.makeOption);
-  (_,acc) := List.map3Fold(result_path_lst, getClassNamesRecursive, inProgram, true, false, {});
+  (_,acc) := List.map3Fold(result_path_lst, getClassNamesRecursiveNoPartial, inProgram, true, false, {});
 
   try
     genv := createEnvironment(inProgram, NONE(), inParentClass);
@@ -16419,6 +16432,195 @@ algorithm
 
   outEquations := Dangerous.listReverseInPlace(outEquations);
 end updateConnectionNamesInEqList;
+
+public function getClassNamesRecursiveNoPartial
+"Returns a string with all the classes for a given path."
+  input Option<Absyn.Path> inPath;
+  input Absyn.Program inProgram;
+  input Boolean inShowProtected;
+  input Boolean includeConstants;
+  input list<Absyn.Path> inAcc;
+  output Option<Absyn.Path> opath;
+  output list<Absyn.Path> paths;
+algorithm
+  (opath,paths) := matchcontinue (inPath,inProgram,inShowProtected,includeConstants,inAcc)
+    local
+      Absyn.Class cdef;
+      String s1;
+      list<String> strlst;
+      Absyn.Path pp;
+      Absyn.Program p;
+      list<Absyn.Class> classes;
+      list<Option<Absyn.Path>> result_path_lst;
+      list<Absyn.Path> acc;
+      Boolean b,c;
+
+    case (SOME(pp),p,b,c,acc)
+      equation
+        cdef = getPathedClassInProgram(pp, p);
+        if AbsynUtil.isNotPartial(cdef) then
+          acc = pp::acc;
+          strlst = getClassnamesInClassListNoPartial(pp, p, cdef, b, c);
+          result_path_lst = List.map(List.map1(strlst, joinPaths, pp), Util.makeOption);
+          (_,acc) = List.map3Fold(result_path_lst, getClassNamesRecursiveNoPartial, p, b, c, acc);
+        end if;
+      then (inPath,acc);
+
+    case (NONE(),p as Absyn.PROGRAM(classes=classes),b,c,acc)
+      equation
+        strlst = List.map(List.filterOnTrue(classes, AbsynUtil.isNotPartial), AbsynUtil.getClassName);
+        result_path_lst = List.mapMap(strlst, AbsynUtil.makeIdentPathFromString, Util.makeOption);
+        (_,acc) = List.map3Fold(result_path_lst, getClassNamesRecursiveNoPartial, p, b, c, acc);
+      then (inPath,acc);
+    case (SOME(pp),_,_,_,_)
+      equation
+        s1 = AbsynUtil.pathString(pp);
+        Error.addMessage(Error.LOOKUP_ERROR, {s1,"<TOP>"});
+      then (inPath,{});
+  end matchcontinue;
+end getClassNamesRecursiveNoPartial;
+
+protected function getClassnamesInClassListNoPartial
+  input Absyn.Path inPath;
+  input Absyn.Program inProgram;
+  input Absyn.Class inClass;
+  input Boolean inShowProtected;
+  input Boolean includeConstants;
+  output list<String> outString;
+algorithm
+  if AbsynUtil.isPartial(inClass) then
+    outString := {};
+    return;
+  end if;
+
+  outString:=
+  match (inPath,inProgram,inClass,inShowProtected,includeConstants)
+    local
+      list<String> strlist;
+      list<Absyn.ClassPart> parts;
+      Absyn.Path inmodel,path;
+      Absyn.Program p;
+      Boolean b,c;
+
+    case (_,_,Absyn.CLASS(body = Absyn.PARTS(classParts = parts)),b,c)
+      equation
+        strlist = getClassnamesInPartsNoPartial(parts,b,c);
+      then
+        strlist;
+
+    case (_,_,Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)),b,c)
+      equation
+        strlist = getClassnamesInPartsNoPartial(parts,b,c);
+      then strlist;
+
+    case (_,_,Absyn.CLASS(body = Absyn.DERIVED(typeSpec=Absyn.TPATH())),_,_)
+      equation
+        //(cdef,newpath) = lookupClassdef(path, inmodel, p);
+        //res = getClassnamesInClassListNoPartial(newpath, p, cdef);
+      then
+        {};//res;
+
+    case (_,_,Absyn.CLASS(body = Absyn.OVERLOAD()),_,_)
+      equation
+      then {};
+
+    case (_,_,Absyn.CLASS(body = Absyn.ENUMERATION()),_,_)
+      equation
+      then {};
+
+    case (_,_,Absyn.CLASS(body = Absyn.PDER()),_,_)
+      equation
+      then {};
+
+  end match;
+end getClassnamesInClassListNoPartial;
+
+public function getClassnamesInPartsNoPartial
+"Helper function to getClassnamesInClass."
+  input list<Absyn.ClassPart> inAbsynClassPartLst;
+  input Boolean inShowProtected;
+  input Boolean includeConstants;
+  output list<String> outStringLst;
+algorithm
+  outStringLst:=
+  matchcontinue (inAbsynClassPartLst,inShowProtected,includeConstants)
+    local
+      list<String> l1,l2,res;
+      list<Absyn.ElementItem> elts;
+      list<Absyn.ClassPart> rest;
+      Boolean b,c;
+
+    case ({},_,_) then {};
+
+    case ((Absyn.PUBLIC(contents = elts) :: rest),b,c)
+      equation
+        l1 = getClassnamesInEltsNoPartial(elts,c);
+        l2 = getClassnamesInPartsNoPartial(rest,b,c);
+        res = listAppend(l1, l2);
+      then
+        res;
+
+    // adeas31 2012-01-25: Also check the protected sections.
+    case ((Absyn.PROTECTED(contents = elts) :: rest), true, c)
+      equation
+        l1 = getClassnamesInEltsNoPartial(elts,c);
+        l2 = getClassnamesInPartsNoPartial(rest,true,c);
+        res = listAppend(l1, l2);
+      then
+        res;
+
+    case ((_ :: rest),b,c)
+      equation
+        res = getClassnamesInPartsNoPartial(rest,b,c);
+      then
+        res;
+
+  end matchcontinue;
+end getClassnamesInPartsNoPartial;
+
+public function getClassnamesInEltsNoPartial
+"Helper function to getClassnamesInPartsNoPartial."
+  input list<Absyn.ElementItem> inAbsynElementItemLst;
+  input Boolean includeConstants;
+  output list<String> outStringLst;
+protected
+  DoubleEnded.MutableList<String> delst;
+algorithm
+  delst := DoubleEnded.fromList({});
+  for elt in inAbsynElementItemLst loop
+  _ := match elt
+    local
+      list<String> res;
+      String id;
+      list<Absyn.ElementItem> rest;
+      Boolean c;
+      list<Absyn.ComponentItem> lst;
+      list<String> names;
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
+                 Absyn.CLASS(partialPrefix=false, body = Absyn.CLASS_EXTENDS(baseClassName = id)))))
+      algorithm
+        DoubleEnded.push_back(delst, id);
+      then ();
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ =
+                 Absyn.CLASS(partialPrefix=false, name = id))))
+      algorithm
+        DoubleEnded.push_back(delst, id);
+      then ();
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.COMPONENTS(attributes = Absyn.ATTR(variability = Absyn.CONST()),
+                 components = lst))) guard includeConstants
+      algorithm
+        DoubleEnded.push_list_back(delst, getComponentItemsName(lst,false));
+      then ();
+
+    else ();
+  end match;
+  end for;
+  outStringLst := DoubleEnded.toListAndClear(delst);
+end getClassnamesInEltsNoPartial;
+
 
 annotation(__OpenModelica_Interface="backend");
 end InteractiveUtil;

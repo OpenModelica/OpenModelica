@@ -1,0 +1,33 @@
+// name: UnitCheck16
+// keywords: initialization
+// status: correct
+
+loadString("
+model UnitCheck16
+  Real x(fixed=true, start=1);
+equation
+  der(x) = time;
+end UnitCheck16;
+"); getErrorString();
+
+setCommandLineOptions("--unitChecking -d=dumpUnits"); getErrorString();
+instantiateModel(UnitCheck16); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// HashTable:
+// {x,{1.0 * s^(2)}}
+// {jhagemann,{MASTER()}}
+// ######## UnitCheck COMPLETED ########
+// "class UnitCheck16
+//   Real x(unit = \"s2\", start = 1.0, fixed = true);
+// equation
+//   der(x) = time;
+// end UnitCheck16;
+// "
+// "Notification: \"x\" has the Unit \"s2\"
+// "
+// endResult

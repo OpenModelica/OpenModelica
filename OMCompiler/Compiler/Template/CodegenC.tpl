@@ -82,7 +82,7 @@ import ExpressionDumpTpl.*;
     let &records += recordsFile(fileNamePrefix, recordDecls, true /*isSimulation*/)
     let &records += closeFile()
 
-    // adpro: write the main .c file last! Make on windows doesn't seem to realize that
+    // adpro: write the main .c file last! Make on windows does not seem to realize that
     //        the .c file is newer than the .o file if we have succesive simulate commands
     //        for the same model (i.e. see testsuite/linearize/simextfunction.mos).
 
@@ -192,7 +192,7 @@ end translateModel;
 
     #include "<%fileNamePrefix%>_literals.h"
 
-    <%if Flags.isSet(Flags.PARMODAUTO) then "#include \"ParModelica/auto/om_pm_interface.hpp\""%>
+    <%if Flags.getConfigBool(Flags.PARMODAUTO) then "#include \"ParModelica/auto/om_pm_interface.hpp\""%>
 
     <%if stringEq(getConfigString(HPCOM_CODE),"pthreads_spin") then "#include \"util/omc_spinlock.h\""%>
 
@@ -1019,7 +1019,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
   match simCode
     case simCode as SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), hpcomData=HPCOMDATA(__)) then
     let modelNamePrefixStr = modelNamePrefix(simCode)
-    let mainInit = if boolOr(boolNot(stringEq("",isModelExchangeFMU)), boolOr(Flags.isSet(Flags.PARMODAUTO), Flags.isSet(HPCOM))) then
+    let mainInit = if boolOr(boolNot(stringEq("",isModelExchangeFMU)), Flags.isSet(HPCOM)) then
                      <<
                      mmc_init_nogc();
                      omc_alloc_interface = omc_alloc_interface_pooled;
@@ -1036,7 +1036,14 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
                      MMC_INIT(0);
                      omc_alloc_interface.init();
                      >>
-    let pminit = if Flags.isSet(Flags.PARMODAUTO) then 'PM_Model_init("<%fileNamePrefix%>", &data, threadData, functionODE_systems);' else ''
+    let pminit = if Flags.getConfigBool(Flags.PARMODAUTO) then
+                    <<
+
+                    pm_model = PM_Model_create("<%fileNamePrefix%>", &data, threadData, 0 /*num threads*/);
+                    PM_Model_load_ODE_system(pm_model, functionODE_systems);
+
+                    >>
+                 else ''
     let mainBody =
       <<
       <%symbolName(modelNamePrefixStr,"setupDataStruc")%>(&data, threadData);
@@ -1061,6 +1068,12 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     #define prefixedName_performQSSSimulation <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>
     #include <simulation/solver/perform_qss_simulation.c.inc>
+    >>
+    %>
+
+    <% if Flags.getConfigBool(Flags.PARMODAUTO) then
+    <<
+    void* pm_model = NULL;
     >>
     %>
 
@@ -1191,7 +1204,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
       <%mainTop(mainBody,"https://trac.openmodelica.org/OpenModelica/newticket")%>
 
       <%if Flags.isSet(HPCOM) then "terminateHpcOmThreads();" %>
-      <%if Flags.isSet(Flags.PARMODAUTO) then "dump_times();" %>
+      <%if Flags.getConfigBool(Flags.PARMODAUTO) then "dump_times(pm_model);" %>
       fflush(NULL);
       EXIT(res);
       return res;
@@ -3149,34 +3162,19 @@ template functionInitialEquations(list<SimEqSystem> initalEquations, Integer num
 ::=
   let () = System.tmpTickReset(0)
   let &eqfuncs = buffer ""
-  let &eqArray = buffer ""
-  let fncalls = if Flags.isSet(Flags.PARMODAUTO) then
-                (initalEquations |> eq hasindex i0 =>
-              equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix, true)
-                    ;separator="\n")
-                else functionEquationsMultiFiles(initalEquations, numInitialEquations, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), fileNamePrefix, fullPathPrefix, modelNamePrefix,
-                  "functionInitialEquations", "06inz", &eqfuncs, /* not static */ false, /* do optimize */ false, /* initial */ init)
-  let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
-                <<
-                static void (*functionInitialEquations_systems[<%listLength(initalEquations)%>])(DATA *, threadData_t*) = {
-                    <%eqArray%>
-                };
-                >>
-              else
-                ""
+  let fncalls = functionEquationsMultiFiles(initalEquations, numInitialEquations, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE),
+                  fileNamePrefix, fullPathPrefix, modelNamePrefix, "functionInitialEquations", "06inz", &eqfuncs, /* not static */ false,
+                  /* do optimize */ false, /* initial */ init)
 
   <<
   <%eqfuncs%>
-
-  <%eqArrayDecl%>
 
   int <%symbolName(modelNamePrefix,"functionInitialEquations")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
 
     data->simulationInfo->discreteCall = 1;
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations(<%numInitialEquations%>, data, threadData, functionInitialEquations_systems);'
-    else fncalls %>
+    <%fncalls %>
     data->simulationInfo->discreteCall = 0;
 
     TRACE_POP
@@ -3191,38 +3189,19 @@ template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lamb
   let () = System.tmpTickReset(0)
   let nrfuncs = listLength(initalEquations_lambda0)
   let &eqfuncs = buffer ""
-  let &eqArray = buffer ""
-  let fncalls = if Flags.isSet(Flags.PARMODAUTO) then
-                (initalEquations_lambda0 |> eq hasindex i0 =>
-              equation_arrayFormat(eq, "InitialEquations", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix, true)
-                    ;separator="\n")
-              else
-                let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 =>
-              equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix, true)
-                    ;separator="\n")
-                (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
-
-  let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
-                <<
-                static void (*functionInitialEquations_systems[<%listLength(initalEquations_lambda0)%>])(DATA *, threadData_t*) = {
-                    <%eqArray%>
-                };
-                >>
-              else
-                ""
-
+  let fncalls =
+              let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 => equation_impl(-1, eq, contextSimulationDiscrete,
+                  modelNamePrefix, true) ;separator="\n")
+              (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
   <<
   <%eqfuncs%>
-
-  <%eqArrayDecl%>
 
   int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
   {
     TRACE_PUSH
 
     data->simulationInfo->discreteCall = 1;
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionInitialEquations_lambda0(<%nrfuncs%>, data, threadData, functionInitialEquations_lambda0_systems);'
-    else fncalls %>
+    <%fncalls %>
     data->simulationInfo->discreteCall = 0;
 
     TRACE_POP
@@ -3346,14 +3325,6 @@ template functionXXX_systems_HPCOM(list<list<SimEqSystem>> eqs, String name, Tex
        let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
        let &varDecls += 'int id;<%\n%>'
        let &loop +=
-         if Flags.isSet(Flags.PARMODAUTO) then /* Text for the loop body that calls the equations */
-         <<
-         #pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)
-         for(id=0; id<<%nFuncs%>; id++) {
-           function<%name%>_systems[id](data, threadData);
-         }
-         >>
-         else
          <<
          for(id=0; id<<%nFuncs%>; id++) {
            function<%name%>_systems[id](data, threadData);
@@ -3953,13 +3924,11 @@ template functionXXX_systems(list<list<SimEqSystem>> eqs, String name, Text &loo
     funcs //just the one function
   case nFuncs then //2 and more
     let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
-    let head = if Flags.isSet(Flags.PARMODAUTO) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
     let &varDecls += 'int id;<%\n%>'
 
     let &loop +=
       /* Text for the loop body that calls the equations */
       <<
-      <%head%>
       for(id=0; id<<%nFuncs%>; id++) {
         function<%name%>_systems[id](data, threadData);
       }
@@ -4062,7 +4031,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
   let &fncalls = buffer ""
   let systems = if Flags.isSet(Flags.HPCOM) then
                     (functionXXX_systems_HPCOM(derivativEquations, "ODE", &fncalls, &varDecls, hpcOmSchedules, modelNamePrefix))
-                else if Flags.isSet(Flags.PARMODAUTO) then
+                else if Flags.getConfigBool(Flags.PARMODAUTO) then
                     (functionXXX_systems_arrayFormat(derivativEquations, "ODE", &fncalls, &nrfuncs, &varDecls, modelNamePrefix))
                 else
                     (functionXXX_systems(derivativEquations, "ODE", &fncalls, &varDecls, modelNamePrefix))
@@ -4084,7 +4053,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method, Op
     data->simulationInfo->callStatistics.functionODE++;
 
     <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionODE(<%nrfuncs%>, data, threadData, functionODE_systems);'
+    <%if Flags.getConfigBool(Flags.PARMODAUTO) then 'PM_evaluate_ODE_system(pm_model);'
     else fncalls %>
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -4101,12 +4070,8 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer ""
-  let &nrfuncs = buffer ""
   let &fncalls = buffer ""
-  let systems = if Flags.isSet(Flags.PARMODAUTO) then
-                    (functionXXX_systems_arrayFormat(algebraicEquations, "Alg", &fncalls, &nrfuncs, &varDecls, modelNamePrefix))
-                else
-                    (functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix))
+  let systems = functionXXX_systems(algebraicEquations, "Alg", &fncalls, &varDecls, modelNamePrefix)
 
 
   <<
@@ -4122,8 +4087,7 @@ template functionAlgebraic(list<list<SimEqSystem>> algebraicEquations, String mo
   #endif
     data->simulationInfo->callStatistics.functionAlgebraics++;
 
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionAlg(<%nrfuncs%>, data, threadData, functionAlg_systems);'
-    else fncalls %>
+    <%fncalls %>
 
     <%symbolName(modelNamePrefix,"function_savePreSynchronous")%>(data, threadData);
 
@@ -4258,31 +4222,16 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
   let nrfuncs = listLength(allEquationsPlusWhen)
   let &eqfuncs = buffer ""
   let &eqArray = buffer ""
-  let fncalls = if Flags.isSet(Flags.PARMODAUTO) then
-                (allEquationsPlusWhen |> eq hasindex i0 =>
-              equation_arrayFormat(eq, "DAE", contextSimulationDiscrete, i0, &eqArray, &eqfuncs, modelNamePrefix, false)
-                    ;separator="\n")
-              else
-                (allEquationsPlusWhen |> eq hasindex i0 =>
+  let fncalls = (allEquationsPlusWhen |> eq hasindex i0 =>
                     let &eqfuncs += equation_impl(-1, eq, contextSimulationDiscrete, modelNamePrefix, false)
                     equation_call(eq, modelNamePrefix)
                     ;separator="\n")
-
-  let eqArrayDecl = if Flags.isSet(Flags.PARMODAUTO) then
-                <<
-                static void (*functionDAE_systems[<%nrfuncs%>])(DATA *, threadData_t *) = {
-                    <%eqArray%>
-                };
-                >>
-              else
-                ""
 
 
   <<
   <%auxFunction%>
   <%&eqfuncs%>
 
-  <%eqArrayDecl%>
   OMC_DISABLE_OPT
   int <%symbolName(modelNamePrefix,"functionDAE")%>(DATA *data, threadData_t *threadData)
   {
@@ -4296,8 +4245,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen, String modelNamePre
     data->simulationInfo->needToIterate = 0;
     data->simulationInfo->discreteCall = 1;
     <%symbolName(modelNamePrefix,"functionLocalKnownVars")%>(data, threadData);
-    <%if Flags.isSet(Flags.PARMODAUTO) then 'PM_functionDAE(<%nrfuncs%>, data, threadData, functionDAE_systems);'
-    else fncalls %>
+    <%fncalls %>
     data->simulationInfo->discreteCall = 0;
 
   #if !defined(OMC_MINIMAL_RUNTIME)
@@ -6163,7 +6111,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD /link /NODEFAULTLIB:libcmt /STACK:0x2000000 /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/release/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib lis.lib  gc-lib.lib user32.lib pthreadVC2.lib wsock32.lib cminpack.lib umfpack.lib amd.lib
+  LDFLAGS=/MD /link /NODEFAULTLIB:libcmt /STACK:0x2000000 /pdb:"<%fileNamePrefix%>.pdb" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/msvc/release/" /LIBPATH:"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/cpp/msvc/" <%dirExtra%> <%libsPos1%> <%libsPos2%> f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib lis.lib  omcgc.lib user32.lib pthreadVC2.lib wsock32.lib cminpack.lib umfpack.lib amd.lib
 
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/msvc/debug
@@ -6200,7 +6148,6 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
   let ParModelicaExpLibs = if acceptParModelicaGrammar() then '-lParModelicaExpl -lOpenCL' // else ""
-  let ParModelicaAutoLibs = if Flags.isSet(Flags.PARMODAUTO) then '-lParModelicaAuto -ltbb -lpugixml -lboost_system' // else ""
   let ExtraStack = if boolOr(stringEq(makefileParams.platform, "win32"),stringEq(makefileParams.platform, "win64")) then '--stack,16777216,'
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     match s.method case "dassljac" then "-D_OMC_JACOBIAN "
@@ -6210,7 +6157,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   # Platform: <%makefileParams.platform%>
 
   # Simulations use -O3 by default
-  CC=<%if boolOr(Flags.isSet(Flags.PARMODAUTO),acceptParModelicaGrammar()) then 'g++' else '<%makefileParams.ccompiler%>'%>
+  CC=<%if acceptParModelicaGrammar() then 'g++' else '<%makefileParams.ccompiler%>'%>
   CXX=<%makefileParams.cxxcompiler%>
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
@@ -6222,7 +6169,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
   LDFLAGS=<%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
-  else <<-L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%ParModelicaAutoLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> >>
+  else <<-L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> >>
   %>
   DIREXTRA=<%stringReplace(dirExtra,"#","\\#") /* make strips everything after # */%>
   MAINFILE=<%fileNamePrefix%>.c
@@ -6241,7 +6188,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   .PHONY: $(CFILES)
 
   omc_main_target: $(MAINOBJ) <%fileNamePrefix%>_functions.h <%fileNamePrefix%>_literals.h $(OFILES)
-  <%\t%>$(CC) -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
+  <%\t%><% if Flags.getConfigBool(Flags.PARMODAUTO) then '$(CXX)' else '$(CC)'%> -I. -o <%fileNamePrefix%>$(EXEEXT) $(MAINOBJ) $(OFILES) $(CPPFLAGS) $(DIREXTRA) <%libsPos1%> <%libsPos2%> $(CFLAGS) $(CPPFLAGS) $(LDFLAGS)
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>rm -f <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>ln -s <%fileNamePrefix%>_node.js <%fileNamePrefix%>'%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then '<%\t%>chmod +x <%fileNamePrefix%>_node.js'%>
@@ -6522,13 +6469,11 @@ template functionXXX_systemsPartial(list<list<SimEqSystem>> eqs, String name, Te
     funcs //just the one function
   case nFuncs then //2 and more
     let funcNames = eqs |> e hasindex i0 fromindex 0 => 'function<%name%>_system<%i0%>' ; separator=",\n"
-    let head = if Flags.isSet(Flags.PARMODAUTO) then '#pragma omp parallel for private(id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)'
     let &varDecls += 'int id;<%\n%>'
 
     let &loop +=
       /* Text for the loop body that calls the equations */
       <<
-      <%head%>
       for(id=0; id<<%nFuncs%>; id++) {
         function<%name%>_systems[id](data, threadData);
       }

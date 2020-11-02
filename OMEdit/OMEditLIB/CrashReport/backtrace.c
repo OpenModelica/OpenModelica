@@ -37,6 +37,21 @@ output_print(struct output_buffer *ob, const char * format, ...)
   ob->ptr = strlen(ob->buf + ob->ptr) + ob->ptr;
 }
 
+
+/* adrpo: add support for newer binutils */
+#if !defined(bfd_get_section_flags)
+#define bfd_get_section_flags(dummy, section) bfd_section_flags(section)
+#endif
+
+#if !defined(bfd_get_section_vma)
+#define bfd_get_section_vma(dummy, section) bfd_section_vma(section)
+#endif
+
+#if !defined(bfd_get_section_size)
+#define bfd_get_section_size(section) bfd_section_size(section)
+#endif
+
+
 static void
 lookup_section(bfd *abfd, asection *sec, void *opaque_data)
 {

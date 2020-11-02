@@ -29,13 +29,9 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
-
-
-
 
 #include <iterator>
 #include <sstream>
@@ -43,13 +39,6 @@
 #include "om_pm_equation.hpp"
 #include "pm_utility.hpp"
 
+namespace openmodelica { namespace parmodelica {
 
-namespace openmodelica {
-namespace parmodelica {
-
-
-
-} // openmodelica
-} // parmodelica
-
-
+}} // namespace openmodelica::parmodelica

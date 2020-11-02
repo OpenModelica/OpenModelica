@@ -3,34 +3,31 @@
 // status: correct
 
 loadString("
-model test
+model UnitCheck16
   Real x(fixed=true, start=1);
 equation
   der(x) = time;
-end test;
+end UnitCheck16;
 "); getErrorString();
-setCommandLineOptions("--preOptModules+=unitChecking -d=dumpUnits"); getErrorString();
-simulate(test); getErrorString();
 
+setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+instantiateModel(UnitCheck16); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// #####################################
-// HashTable:
-// {x,{MASTER(x)}}
 // HashTable:
 // {x,{1.0 * s^(2)}}
+// {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
-// record SimulationResult
-//     resultFile = "test_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "class UnitCheck16
+//   Real x(unit = \"s2\", start = 1.0, fixed = true);
+// equation
+//   der(x) = time;
+// end UnitCheck16;
 // "
-// end SimulationResult;
 // "Notification: \"x\" has the Unit \"s2\"
 // "
 // endResult

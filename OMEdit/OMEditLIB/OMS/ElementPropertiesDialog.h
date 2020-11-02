@@ -41,6 +41,7 @@ class ElementPropertiesDialog : public QDialog
   Q_OBJECT
 public:
   ElementPropertiesDialog(Element *pComponent, QWidget *pParent = 0);
+  bool eventFilter(QObject *pObject, QEvent *pEvent);
 private:
   Element *mpComponent;
   Label *mpHeading;
@@ -91,6 +92,7 @@ private:
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
+  void deleteStartValueAndRestoreDefault(const QString name, QLineEdit * pLineEdit);
 private slots:
   void updateProperties();
 };

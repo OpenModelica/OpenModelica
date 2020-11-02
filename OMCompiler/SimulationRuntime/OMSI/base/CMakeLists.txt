@@ -48,7 +48,7 @@ ENDIF(WIN32)
 
 install(TARGETS ${OSUBaseName} DESTINATION ${LIBINSTALLEXT})
 
-install(FILES ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/libexpat.a DESTINATION ${LIBINSTALLEXT})
+install(FILES ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ThirdParty/Expat/expat-2.1.0/libexpat.a DESTINATION ${LIBINSTALLEXT})
 
 install(FILES
   ${CMAKE_SOURCE_DIR}/base/include/omsi_event_helper.h

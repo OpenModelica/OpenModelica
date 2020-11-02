@@ -37,13 +37,13 @@ encapsulated uniontype NFConnector
   import NFPrefixes.ConnectorType;
   import NFPrefixes.Variability;
   import DAE;
+  import Flags;
 
 protected
   import Origin = NFComponentRef.Origin;
   import Connector = NFConnector;
   import NFInstNode.InstNode;
   import ElementSource;
-  import Flags;
   import Component = NFComponent;
   import NFClassTree.ClassTree;
   import Class = NFClass;
@@ -198,6 +198,11 @@ public
     input Connector conn;
     output String str = ComponentRef.toString(conn.name);
   end toString;
+
+  function faceString
+    input Connector conn;
+    output String str = if conn.face == Face.INSIDE then "inside" else "outside";
+  end faceString;
 
   function hash
     input Connector conn;

@@ -38,7 +38,7 @@
 #include <utility>
 #include "errorext.h"
 #include "openmodelica.h"
-#include "meta_modelica.h"
+#include "meta/meta_modelica.h"
 #include "util/omc_error.h"
 #include "util/ModelicaUtilitiesExtra.h"
 

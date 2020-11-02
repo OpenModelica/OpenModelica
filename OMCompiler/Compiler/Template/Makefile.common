@@ -5,7 +5,7 @@ GENERATED_FILES=$(GENERATED_FILES_BOOT_STAGE2) CodegenC.mo CodegenUtilSimulation
 CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo \
 CodegenOMSI_common.mo CodegenOMSIC.mo CodegenOMSICpp.mo CodegenOMSIC_Equations.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo \
 CodegenMidToC.mo CodegenModelica.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo CodegenAdevs.mo CodegenSparseFMI.mo \
-CodegenXML.mo CodegenJava.mo CodegenJS.mo TaskSystemDump.mo VisualXMLTpl.mo \
+CodegenXML.mo CodegenJava.mo CodegenJS.mo VisualXMLTpl.mo \
 CodegenCppCommonOld.mo CodegenCppHpcomOld.mo CodegenCppOld.mo CodegenFMUCppHpcomOld.mo CodegenFMUCppOld.mo
 UNUSED=../boot/find-unused-import.sh
 
@@ -218,11 +218,6 @@ TplCodegen.mo : ../susan_codegen/TplCodegen.tpl ../susan_codegen/TplCodegenTV.mo
 	@echo " ** TplCodegen generation ** "
 	(cd ../susan_codegen && $(OMC) -d=failtrace TplCodegen.tpl) > $@.log || (cat $@.log && false)
 	cp -a ../susan_codegen/TplCodegen.mo $@
-
-TaskSystemDump.mo : TaskSystemDump.tpl SimCodeTV.mo CodegenUtil.tpl SCodeDumpTpl.tpl
-	@echo " ** TaskSystemDump template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " " && ($(UNUSED) "$@" || true)
 
 GenerateAPIFunctionsTpl.mo : GenerateAPIFunctionsTpl.tpl SimCodeTV.mo
 	@echo " ** GenerateAPIFunctionsTpl template compilation ** "

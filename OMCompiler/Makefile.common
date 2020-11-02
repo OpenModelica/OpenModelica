@@ -1,5 +1,5 @@
 
-inclu.PHONY : all omc release clean .testvariables  checkMSVCwine bootstrap-dependencies-post bootstrap-dependencies-post-compiler-runtime bootstrap-dependencies-post-compiler-builtin bootstrap-dependencies-post-parser
+inclu.PHONY : all omc release clean .testvariables  checkMSVCwine bootstrap-dependencies-post bootstrap-dependencies-post-compiler-runtime bootstrap-dependencies-post-compiler-builtin bootstrap-dependencies-post-parser parmodauto
 
 
 unexport PREFIX
@@ -66,7 +66,7 @@ else
 	UMFPACK_LIB_TARGET=$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
 endif
 
-.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr boehm-gc cppzmq $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
+.PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr boehm-gc libzmq cppzmq $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
 
 ifeq ($(OMENCRYPTION),yes)
 semla:
@@ -103,7 +103,7 @@ bootstrap-dependencies: $(BOOTSTRAP_FMIL_DEP) cppzmq interactive-short
 antlr-copy:
 	cp ./3rdParty/antlr/3.2/tool/antlr-3.2.jar ./3rdParty/antlr/3.2/tool/antlr-2.7.7.jar ${builddir_java}/
 
-sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc
+sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc parmodauto
 
 install-openturns:
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
@@ -215,6 +215,17 @@ endif
 
 opencl_rt_clean:
 	$(MAKE) -C SimulationRuntime/ParModelica/explicit/openclrt -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
+
+
+parmodauto: boehm-gc
+ifeq ("$(ENABLE_PARMODAUTO)","yes")
+	$(MAKE) -C $(OMC_TBB_ROOT)/build_cmake/ install_for_omc
+	$(MAKE) -C SimulationRuntime/ParModelica/auto/ -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
+endif
+
+parmodauto_clean:
+	$(MAKE) -C SimulationRuntime/ParModelica/auto/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
+
 
 breakprocess:
 	(cd tools/debugging/ && time g++ BreakProcess.cpp -o BreakProcess -static-libgcc)
@@ -357,7 +368,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DFMILIB_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
 
 # Install expat
 expat: fmil
@@ -384,7 +395,7 @@ $(builddir_lib_omc)/$(LIBCMINPACKLIB): 3rdParty/CMinpack/build/Makefile
 3rdParty/CMinpack/build/Makefile: 3rdParty/CMinpack/CMakeLists.txt
 	test -d 3rdParty/CMinpack
 	mkdir -p 3rdParty/CMinpack/build
-	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DBUILD_SHARED_LIBS:Bool=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install -DCMINPACK_LIB_INSTALL_DIR:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMINPACK_BUILD_SHARED_LIBS:Bool=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install -DCMINPACK_LIB_INSTALL_DIR:String=../install .. -G $(CMAKE_TARGET))
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	#This is a bad idea, because the cache contains the absolute path to cmake that was used for build -> if the cmake location has changed, the clean command will fail
@@ -474,7 +485,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean parmodauto_clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
@@ -592,7 +603,7 @@ sundials: umfpack
 	$(MAKE) -f $(defaultMakefileTarget) $(builddir_lib_omc)/libsundials_ida.a
 $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	mkdir -p 3rdParty/sundials/build
-	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY="" -DLAPACK_ENABLE:Bool=ON
+	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DSUNDIALS_KLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY="" -DSUNDIALS_LAPACK_ENABLE:Bool=ON
 	$(MAKE) -C 3rdParty/sundials/build install
 	# adrpo: do not copy the headers as they are not needed!
 	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials

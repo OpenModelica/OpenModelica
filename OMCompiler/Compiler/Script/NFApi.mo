@@ -174,11 +174,11 @@ algorithm
         algorithm
           // no need for the class if there are no crefs
           if AbsynUtil.onlyLiteralsInEqMod(eqmod) then
-            (program, top) := mkTop(absynProgram);
+            (program, top) := mkTop(absynProgram, annName);
             inst_cls := top;
           else
             // run the front-end front
-            (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+            (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
           exp := NFInst.instExp(absynExp, inst_cls, info);
@@ -196,11 +196,11 @@ algorithm
         algorithm
           // no need for the class if there are no crefs
           if AbsynUtil.onlyLiteralsInAnnotationMod(mod) then
-            (program, top) := mkTop(absynProgram);
+            (program, top) := mkTop(absynProgram, annName);
             inst_cls := top;
           else
             // run the front-end front
-            (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+            (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
           (stripped_mod, graphics_mod) := AbsynUtil.stripGraphicsAndInteractionModification(mod);
@@ -238,7 +238,7 @@ algorithm
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
         algorithm
-          (program, top) := mkTop(absynProgram);
+          (program, top) := mkTop(absynProgram, annName);
           inst_cls := top;
 
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
@@ -353,11 +353,11 @@ algorithm
         algorithm
           // no need for the class if there are no crefs
           if AbsynUtil.onlyLiteralsInEqMod(eqmod) then
-            (program, top) := mkTop(absynProgram);
+            (program, top) := mkTop(absynProgram, annName);
             inst_cls := top;
           else
             // run the front-end front
-            (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+            (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
           exp := NFInst.instExp(absynExp, inst_cls, info);
@@ -375,11 +375,11 @@ algorithm
         algorithm
           // no need for the class if there are no crefs
           if AbsynUtil.onlyLiteralsInAnnotationMod(mod) then
-            (program, top) := mkTop(absynProgram);
+            (program, top) := mkTop(absynProgram, annName);
             inst_cls := top;
           else
             // run the front-end front
-            (program, name, top, inst_cls) := frontEndFront(absynProgram, classPath);
+            (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
@@ -407,7 +407,7 @@ algorithm
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
         algorithm
-          (program, top) := mkTop(absynProgram);
+          (program, top) := mkTop(absynProgram, annName);
           inst_cls := top;
 
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
@@ -448,13 +448,25 @@ function mkFullyQual
   input Absyn.Program absynProgram;
   input Absyn.Path classPath;
   input Absyn.Path pathToQualify;
-  output Absyn.Path qualPath;
+  output Absyn.Path qualPath = pathToQualify;
 protected
   InstNode top, expanded_cls, cls;
   SCode.Program program;
-  String name;
+  String name, id1, id2;
   Boolean b, s;
 algorithm
+  // do some quick checks
+  // classPath is already fully qualified
+  // check if the paths start with the same id and the second path is qualified
+  _ := match (classPath, pathToQualify)
+    case (Absyn.QUALIFIED(id1, _), Absyn.QUALIFIED(id2, _)) guard id1 == id2
+      algorithm
+        return;
+      then ();
+    else ();
+  end match;
+
+  // else, do the hard stuff!
   b := FlagsUtil.set(Flags.SCODE_INST, true);
   s := FlagsUtil.set(Flags.NF_SCALARIZE, true); // #5689
   try
@@ -462,7 +474,8 @@ algorithm
       ErrorExt.setCheckpoint("NFApi.mkFullyQual");
     end if;
     // run the front-end front
-    (program, name, top, expanded_cls) := frontEndLookup(absynProgram, classPath);
+    (program, name, expanded_cls) := frontEndLookup(absynProgram, classPath);
+
     // if is derived qualify in the parent
     if InstNode.isDerivedClass(expanded_cls) then
       cls := Lookup.lookupClassName(pathToQualify, InstNode.classParent(expanded_cls), AbsynUtil.dummyInfo, checkAccessViolations = false);
@@ -489,6 +502,10 @@ algorithm
     FlagsUtil.set(Flags.SCODE_INST, b);
     FlagsUtil.set(Flags.NF_SCALARIZE, s);
   end try;
+
+  if Flags.isSet(Flags.EXEC_STAT) then
+    execStat("NFApi.mkFullyQual(" + AbsynUtil.pathString(classPath) + ", " + AbsynUtil.pathString(pathToQualify) + ") -> " + AbsynUtil.pathString(qualPath));
+  end if;
 end mkFullyQual;
 
 protected
@@ -497,38 +514,43 @@ function frontEndFront
   input Absyn.Path classPath;
   output SCode.Program program;
   output String name;
-  output InstNode top;
   output InstNode inst_cls;
 protected
-  list<tuple<tuple<Absyn.Program, Absyn.Path>, tuple<SCode.Program, String, InstNode, InstNode>>> cache;
+  list<tuple<tuple<Absyn.Program, Absyn.Path>, tuple<SCode.Program, String, InstNode>>> cache;
 algorithm
   cache := getGlobalRoot(Global.instNFInstCacheIndex);
   if not listEmpty(cache) then
     for i in cache loop
-      if AbsynUtil.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
-        if referenceEq(absynProgram, Util.tuple21(Util.tuple21(i))) then
-          (program, name, top, inst_cls) := Util.tuple22(i);
+      if referenceEq(absynProgram, Util.tuple21(Util.tuple21(i))) then
+        if AbsynUtil.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
+          (program, name, inst_cls) := Util.tuple22(i);
           return;
         end if;
+
         // program changed, wipe the cache!
         cache := {};
+        setGlobalRoot(Global.instNFInstCacheIndex, cache);
+
         break;
       end if;
     end for;
   end if;
-  (program, name, top, inst_cls) := frontEndFront_dispatch(absynProgram, classPath);
+
+  (program, name, inst_cls) := frontEndFront_dispatch(absynProgram, classPath);
+
   if listLength(cache) > 100 then
     // trim it down, keep 10
     cache := List.firstN(cache, 10);
   end if;
 
-  cache := ((absynProgram,classPath),(program, name, top, inst_cls))::cache;
+  cache := ((absynProgram,classPath), (program, name, inst_cls))::cache;
   setGlobalRoot(Global.instNFInstCacheIndex, cache);
 end frontEndFront;
 
 protected
 function mkTop
   input Absyn.Program absynProgram;
+  input String name;
   output SCode.Program program;
   output InstNode top;
 protected
@@ -546,6 +568,8 @@ algorithm
       update := false;
     else
       update := true;
+      cache := {};
+      setGlobalRoot(Global.instNFNodeCacheIndex, cache);
     end if;
   end if;
 
@@ -570,6 +594,10 @@ algorithm
     // Create a root node from the given top-level classes.
     top := NFInst.makeTopNode(program);
 
+    if Flags.isSet(Flags.EXEC_STAT) then
+      execStat("NFApi.mkTop("+ name +")");
+    end if;
+
     cache := {(absynProgram, (program, top))};
     setGlobalRoot(Global.instNFNodeCacheIndex, cache);
   end if;
@@ -581,19 +609,17 @@ function frontEndFront_dispatch
   input Absyn.Path classPath;
   output SCode.Program program;
   output String name;
-  output InstNode top;
   output InstNode inst_cls;
 protected
   SCode.Program scode_builtin, graphicProgramSCode;
   Absyn.Program placementProgram;
-  InstNode cls;
+  InstNode top, cls;
   list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
   Boolean update = true;
 algorithm
-  (program, top) := mkTop(absynProgram);
-
   name := AbsynUtil.pathString(classPath);
-  execStat("NFApi.mkTop("+ name +")");
+
+  (program, top) := mkTop(absynProgram, name);
 
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
@@ -613,7 +639,10 @@ algorithm
 
   // Mark structural parameters.
   NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
-  execStat("NFApi.frontEndFront_dispatch");
+
+  if Flags.isSet(Flags.EXEC_STAT) then
+    execStat("NFApi.frontEndFront_dispatch(" + name + ")");
+  end if;
 end frontEndFront_dispatch;
 
 protected
@@ -669,6 +698,11 @@ algorithm
 
   // Convert the flat model to a DAE.
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs);
+
+  if Flags.isSet(Flags.EXEC_STAT) then
+    execStat("NFApi.frontEndBack(" + name + ")");
+  end if;
+
 end frontEndBack;
 
 protected
@@ -677,32 +711,36 @@ function frontEndLookup
   input Absyn.Path classPath;
   output SCode.Program program;
   output String name;
-  output InstNode top;
   output InstNode expanded_cls;
 protected
-  list<tuple<tuple<Absyn.Program, Absyn.Path>, tuple<SCode.Program, String, InstNode, InstNode>>> cache;
+  list<tuple<tuple<Absyn.Program, Absyn.Path>, tuple<SCode.Program, String, InstNode>>> cache;
 algorithm
   cache := getGlobalRoot(Global.instNFLookupCacheIndex);
   if not listEmpty(cache) then
     for i in cache loop
-      if AbsynUtil.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
-        if referenceEq(absynProgram, Util.tuple21(Util.tuple21(i))) then
-          (program, name, top, expanded_cls) := Util.tuple22(i);
+      if referenceEq(absynProgram, Util.tuple21(Util.tuple21(i))) then
+        if AbsynUtil.pathEqual(classPath, Util.tuple22(Util.tuple21(i))) then
+          (program, name, expanded_cls) := Util.tuple22(i);
           return;
         end if;
+
         // program changed, wipe the cache!
         cache := {};
+        setGlobalRoot(Global.instNFLookupCacheIndex, cache);
+
         break;
       end if;
     end for;
   end if;
-  (program, name, top, expanded_cls) := frontEndLookup_dispatch(absynProgram, classPath);
+
+  (program, name, expanded_cls) := frontEndLookup_dispatch(absynProgram, classPath);
+
   if listLength(cache) > 100 then
     // trim it down, keep 10
     cache := List.firstN(cache, 10);
   end if;
 
-  cache := ((absynProgram,classPath),(program, name, top, expanded_cls))::cache;
+  cache := ((absynProgram,classPath), (program, name, expanded_cls))::cache;
   setGlobalRoot(Global.instNFLookupCacheIndex, cache);
 end frontEndLookup;
 
@@ -712,18 +750,17 @@ function frontEndLookup_dispatch
   input Absyn.Path classPath;
   output SCode.Program program;
   output String name;
-  output InstNode top;
   output InstNode expanded_cls;
 protected
   SCode.Program scode_builtin, graphicProgramSCode;
   Absyn.Program placementProgram;
-  InstNode cls;
+  InstNode top, cls;
   list<tuple<Absyn.Program, tuple<SCode.Program, InstNode>>> cache;
   Boolean update = true;
 algorithm
-  (program, top) := mkTop(absynProgram);
-
   name := AbsynUtil.pathString(classPath);
+
+  (program, top) := mkTop(absynProgram, name);
 
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
@@ -735,7 +772,10 @@ algorithm
   // Expand the class.
   expanded_cls := NFInst.expand(cls);
   NFInst.insertGeneratedInners(expanded_cls, top);
-  execStat("NFApi.frontEndLookup_dispatch("+ name +")");
+
+  if Flags.isSet(Flags.EXEC_STAT) then
+    execStat("NFApi.frontEndLookup_dispatch("+ name +")");
+  end if;
 
 end frontEndLookup_dispatch;
 

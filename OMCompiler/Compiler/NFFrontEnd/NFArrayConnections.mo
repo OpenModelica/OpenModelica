@@ -64,20 +64,20 @@ protected
 
   uniontype SetVertex
     record SET_VERTEX
-      ComponentRef name;
+      Connector name;
       SBSet vs;
     end SET_VERTEX;
 
     function isEqual
       input SetVertex v1;
       input SetVertex v2;
-      output Boolean equal = ComponentRef.isEqual(v1.name, v2.name);
+      output Boolean equal = Connector.isEqual(v1.name, v2.name);
     end isEqual;
 
     function isNamed
       input SetVertex v;
-      input ComponentRef name;
-      output Boolean equal = ComponentRef.isEqual(v.name, name);
+      input Connector name;
+      output Boolean equal = Connector.isEqual(v.name, name);
     end isNamed;
   end SetVertex;
 
@@ -162,13 +162,9 @@ public
 
     (flatModel, conns) := collect(flatModel);
 
-    if listEmpty(conns) then
-      return;
-    end if;
-
     graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual);
     nmv_table := NameVertexTable.new();
-    nmv_table := createGraph(conns, graph, v_count, e_count, nmv_table);
+    nmv_table := createGraph(flatModel.variables, conns, graph, v_count, e_count, nmv_table);
 
     (vss, emap1, emap2) := createMaps(graph);
     res := SBFunctions.connectedComponents(vss, emap1, emap2);
@@ -204,6 +200,37 @@ protected
   end isConnection;
 
   function createGraph
+    input list<Variable> variables;
+    input list<Equation> equations;
+    input SBGraph graph;
+    input Vector<Integer> vCount;
+    input Vector<Integer> eCount;
+    input output NameVertexTable.Table nmvTable;
+  algorithm
+    nmvTable := addFlowsToGraph(variables, graph, vCount, nmvTable);
+    nmvTable := addConnectionsToGraph(equations, graph, vCount, eCount, nmvTable);
+  end createGraph;
+
+  function addFlowsToGraph
+    input list<Variable> variables;
+    input SBGraph graph;
+    input Vector<Integer> vCount;
+    input output NameVertexTable.Table nmvTable;
+  protected
+    Connector conn;
+    ComponentRef parent_cr;
+  algorithm
+    for var in variables loop
+      if Variable.isFlow(var) then
+        parent_cr := ComponentRef.rest(var.name);
+        conn := Connector.fromFacedCref(parent_cr, ComponentRef.nodeType(parent_cr), NFConnector.Face.INSIDE,
+          ElementSource.createElementSource(var.info));
+        (_, _, nmvTable) := createVertex(conn, graph, vCount, nmvTable);
+      end if;
+    end for;
+  end addFlowsToGraph;
+
+  function addConnectionsToGraph
     input list<Equation> equations;
     input SBGraph graph;
     input Vector<Integer> vCount;
@@ -225,7 +252,7 @@ protected
           algorithm
             range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(eq)));
             body := applyIterator(eq.iterator, range, eq.body);
-            nmvTable := createGraph(body, graph, vCount, eCount, nmvTable);
+            nmvTable := addConnectionsToGraph(body, graph, vCount, eCount, nmvTable);
           then
             ();
 
@@ -237,7 +264,7 @@ protected
             fail();
       end match;
     end for;
-  end createGraph;
+  end addConnectionsToGraph;
 
   function applyIterator
     input InstNode iterator;
@@ -262,12 +289,17 @@ protected
     SBMultiInterval mi1, mi2;
     AdjacencyList.VertexDescriptor d1, d2;
     SourceInfo info = ElementSource.getInfo(source);
+    list<Connector> lhs_conns, rhs_conns;
+    Connector lhs_conn, rhs_conn;
   algorithm
     (lhs_cr, lhs_subs) := separate(Expression.toCref(lhs));
     (rhs_cr, rhs_subs) := separate(Expression.toCref(rhs));
 
-    (mi1, d1, nmvTable) := getConnectIntervals(lhs_cr, lhs_subs, graph, vCount, nmvTable, info);
-    (mi2, d2, nmvTable) := getConnectIntervals(rhs_cr, rhs_subs, graph, vCount, nmvTable, info);
+    lhs_conn := Connector.fromCref(lhs_cr, ComponentRef.nodeType(lhs_cr), source);
+    rhs_conn := Connector.fromCref(rhs_cr, ComponentRef.nodeType(rhs_cr), source);
+
+    (mi1, d1, nmvTable) := getConnectIntervals(lhs_conn, lhs_subs, graph, vCount, nmvTable, info);
+    (mi2, d2, nmvTable) := getConnectIntervals(rhs_conn, rhs_subs, graph, vCount, nmvTable, info);
 
     updateGraph(d1, d2, mi1, mi2, graph, eCount);
   end createConnection;
@@ -276,14 +308,14 @@ protected
     input output ComponentRef cref;
           output list<Subscript> subs;
   algorithm
+    cref := ComponentRef.fillSubscripts(cref);
+    cref := ComponentRef.replaceWholeSubscripts(cref);
     subs := ComponentRef.subscriptsAllFlat(cref);
     cref := ComponentRef.stripSubscriptsAll(cref);
-
-    // TODO: Replace any : in the subs with the correct dimension.
   end separate;
 
   function getConnectIntervals
-    input ComponentRef cr;
+    input Connector conn;
     input list<Subscript> subs;
     input SBGraph graph;
     input Vector<Integer> vCount;
@@ -307,14 +339,14 @@ protected
     Integer index, aux_lo;
     Expression sub_exp;
   algorithm
-    (outMI, d, outNmvTable) := createVertex(cr, graph, vCount, nmvTable);
+    (outMI, d, outNmvTable) := createVertex(conn, graph, vCount, nmvTable);
     miv := SBMultiInterval.intervals(outMI);
 
     if listEmpty(subs) then
       mi := Array.map(miv, make_lo_interval);
     else
       index := 1;
-      mi := arrayCreate(listLength(subs), SBInterval.newEmpty());
+      mi := arrayCopy(miv);
 
       for s in subs loop
         sub_exp := evalCrefs(Subscript.toExp(s));
@@ -333,13 +365,18 @@ protected
 
         index := index + 1;
       end for;
+
+      for i in listLength(subs)+1:arrayLength(mi) loop
+        aux_lo := SBInterval.lowerBound(miv[i]);
+        mi[index] := SBInterval.new(aux_lo, 1, aux_lo);
+      end for;
     end if;
 
     outMI := SBMultiInterval.fromArray(mi);
   end getConnectIntervals;
 
   function createVertex
-    input ComponentRef cr;
+    input Connector conn;
     input SBGraph graph;
     input Vector<Integer> vCount;
     input NameVertexTable.Table nmvTable;
@@ -355,8 +392,9 @@ protected
     array<SBInterval> ints;
     Vector<Integer> new_vc;
     SBInterval int;
+    String name;
   algorithm
-    od := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = cr));
+    od := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = conn));
 
     if isSome(od) then
       SOME(d) := od;
@@ -365,15 +403,15 @@ protected
       return;
     end if;
 
-    dims := crefDims(cr);
+    dims := crefDims(Connector.name(conn));
 
     if listEmpty(dims) then
       vc := Vector.get(vCount, 1);
       Vector.update(vCount, 1, vc + 1);
 
-      mi := SBMultiInterval.fromList({SBInterval.new(vc, 1, vc)});
+      mi := SBMultiInterval.fromArray(arrayCreate(Vector.size(vCount), SBInterval.new(vc, 1, vc)));
     else
-      ints := arrayCreate(listLength(dims), SBInterval.newEmpty());
+      ints := arrayCreate(Vector.size(vCount), SBInterval.newEmpty());
       new_vc := Vector.copy(vCount);
       index := 1;
 
@@ -398,6 +436,11 @@ protected
         index := index + 1;
       end for;
 
+      for i in listLength(dims)+1:Vector.size(vCount) loop
+        vc := Vector.get(vCount, 1);
+        ints[i] := SBInterval.new(vc, 1, vc);
+      end for;
+
       mi := SBMultiInterval.fromArray(ints);
 
       if not SBMultiInterval.isEmpty(mi) then
@@ -408,10 +451,11 @@ protected
     s := SBSet.newEmpty();
     s := SBSet.addAtomicSet(SBAtomicSet.new(mi), s);
 
-    v := SET_VERTEX(cr, s);
+    v := SET_VERTEX(conn, s);
     d := AdjacencyList.addVertex(graph, v);
 
-    outNmvTable := BaseHashTable.addUnique((ComponentRef.toString(cr), mi), nmvTable);
+    name := Connector.toString(conn) + "$" + Connector.faceString(conn);
+    outNmvTable := BaseHashTable.addUnique((name, mi), nmvTable);
   end createVertex;
 
   function crefDims
@@ -546,7 +590,7 @@ protected
     input Vector<Integer> eCount;
   protected
     array<SBInterval> ints1, ints2, mi;
-    Integer mi1_sz, mi2_sz, ints1_i, ints2_i, sz, sz1, sz2;
+    Integer mi1_sz, mi2_sz, sz, sz1, sz2;
     Integer count, aux_ec;
     array<Real> g1, g2, o1, o2;
     Real g1i, g2i, o1i, o2i;
@@ -559,11 +603,9 @@ protected
     SetEdge se;
   algorithm
     ints1 := SBMultiInterval.intervals(mi1);
-    ints1_i := 1;
     mi1_sz := SBMultiInterval.size(mi1);
 
     ints2 := SBMultiInterval.intervals(mi2);
-    ints2_i := 1;
     mi2_sz := SBMultiInterval.size(mi2);
 
     if SBMultiInterval.ndim(mi1) <> SBMultiInterval.ndim(mi2) and
@@ -580,8 +622,8 @@ protected
     new_ec := Vector.new(0);
 
     for i in 1:sz loop
-      sz1 := SBInterval.size(ints1[ints1_i]);
-      sz2 := SBInterval.size(ints2[ints2_i]);
+      sz1 := SBInterval.size(ints1[i]);
+      sz2 := SBInterval.size(ints2[i]);
 
       if sz1 <> sz2 and sz1 <> 1 and sz2 <> 1 then
         Error.assertion(false, getInstanceName() + " got incompatible connect", sourceInfo());
@@ -591,8 +633,8 @@ protected
       aux_ec := Vector.get(eCount, i);
       mi[i] := SBInterval.new(aux_ec, 1, aux_ec + count - 1);
 
-      i1 := ints1[ints1_i];
-      i2 := ints2[ints2_i];
+      i1 := ints1[i];
+      i2 := ints2[i];
 
       if sz1 == 1 then
         g1[i] := 0.0;
@@ -615,14 +657,6 @@ protected
       end if;
 
       Vector.push(new_ec, aux_ec + count);
-
-      if mi1_sz > 1 or mi2_sz == 1 then
-        ints1_i := ints1_i + 1;
-      end if;
-
-      if mi2_sz > 1 or mi1_sz == 1 then
-        ints2_i := ints2_i + 1;
-      end if;
     end for;
 
     Vector.swap(eCount, new_ec);
@@ -656,14 +690,21 @@ protected
       vss := SBSet.union(vss, v.vs);
     end for;
 
-    e :: es := AdjacencyList.edges(graph);
-    emap1 := e.es1;
-    emap2 := e.es2;
+    es := AdjacencyList.edges(graph);
 
-    for e in es loop
-      emap1 := SBPWLinearMap.combine(e.es1, emap1);
-      emap2 := SBPWLinearMap.combine(e.es2, emap2);
-    end for;
+    if listEmpty(es) then
+      emap1 := SBPWLinearMap.newEmpty();
+      emap2 := SBPWLinearMap.newEmpty();
+    else
+      e :: es := AdjacencyList.edges(graph);
+      emap1 := e.es1;
+      emap2 := e.es2;
+
+      for e in es loop
+        emap1 := SBPWLinearMap.combine(e.es1, emap1);
+        emap2 := SBPWLinearMap.combine(e.es2, emap2);
+      end for;
+    end if;
   end createMaps;
 
   function generateEquations
@@ -677,7 +718,7 @@ protected
     SBSet vc_dom, vc_im, aux_s, vc_domi, vc_domi_aux;
     array<InstNode> iterators;
     list<Variable> pot_vars, flow_vars;
-    list<tuple<String, ComponentRef>> vars;
+    list<ComponentRef> vars;
     list<Expression> iter_expl;
   algorithm
     vc_dom := SBPWLinearMap.wholeDom(pw);
@@ -687,7 +728,7 @@ protected
     for i in 1:arrayLength(iterators) loop
       iterators[i] := InstNode.fromComponent(
         "$i" + String(i),
-        Component.ITERATOR(Type.INTEGER(), Variability.IMPLICITLY_DISCRETE, AbsynUtil.dummyInfo),
+        Component.newIterator(Type.INTEGER(), AbsynUtil.dummyInfo),
         InstNode.EMPTY_NODE()
       );
     end for;
@@ -715,19 +756,20 @@ protected
     input SBInterval interval;
     output Expression range;
   protected
-    Integer step = SBInterval.stepValue(interval);
+    Integer lo = SBInterval.lowerBound(interval);
+    Integer hi = SBInterval.upperBound(interval);
   algorithm
-    range := Expression.makeRange(
-      Expression.INTEGER(SBInterval.lowerBound(interval)),
-      if step == 1 then NONE() else SOME(Expression.INTEGER(step)),
-      Expression.INTEGER(SBInterval.upperBound(interval))
-    );
+    if lo == hi then
+      range := Expression.INTEGER(lo);
+    else
+      range := Expression.makeIntegerRange(lo, SBInterval.stepValue(interval), hi);
+    end if;
   end intervalToRange;
 
   function generatePotentialEquations
     input SBAtomicSet aset;
     input SBSet dom;
-    input list<tuple<String, ComponentRef>> vars;
+    input list<ComponentRef> vars;
     input array<InstNode> iterators;
     input list<Expression> iterExps;
     input list<Variable> potVars;
@@ -739,7 +781,7 @@ protected
     SBMultiInterval mi, mi_range, aux_mi;
     array<SBInterval> inters;
     array<Expression> ranges;
-    list<tuple<String, ComponentRef>> vars1, vars2;
+    list<ComponentRef> vars1, vars2;
     list<Equation> eql;
     list<Expression> inds, iter_expl;
   algorithm
@@ -758,32 +800,27 @@ protected
       inds := transMulti(mi_range, aux_mi, iterators, false);
 
       eql := generatePotentialEquations2(vars1, vars, iterExps, inds);
-      equations := generateForLoop(eql, iterators, ranges) :: equations;
+      equations := generateForLoop(eql, iterators, ranges, equations);
     end for;
   end generatePotentialEquations;
 
   function generatePotentialEquations2
-    input list<tuple<String, ComponentRef>> vars1;
-    input list<tuple<String, ComponentRef>> vars2;
+    input list<ComponentRef> vars1;
+    input list<ComponentRef> vars2;
     input list<Expression> inds1;
     input list<Expression> inds2;
     output list<Equation> equations = {};
   protected
-    ComponentRef cr1, cr2;
     Expression l, r;
     Type ty;
     Equation eq;
     DAE.ElementSource src;
   algorithm
     for var1 in vars1 loop
-      (_, cr1) := var1;
-
       for var2 in vars2 loop
-        (_, cr2) := var2;
-
-        if ComponentRef.firstName(cr1) == ComponentRef.firstName(cr2) then
-          l := generateConnector(cr1, inds1);
-          r := generateConnector(cr2, inds2);
+        if ComponentRef.firstName(var1) == ComponentRef.firstName(var2) then
+          l := generateConnector(var1, inds1);
+          r := generateConnector(var2, inds2);
           ty := Expression.typeOf(l);
 
           if Type.isArray(ty) then
@@ -815,7 +852,7 @@ protected
     array<Expression> ranges;
     list<Expression> expl, inds;
     Boolean is_sum;
-    list<tuple<String, ComponentRef>> vars;
+    list<ComponentRef> vars;
     Expression e, sum_exp;
     Type ty;
     Equation eq;
@@ -836,7 +873,7 @@ protected
       vars := getVars(flowVars, sauxi, graph);
 
       for var in vars loop
-        e := generateConnector(Util.tuple22(var), inds);
+        e := generateConnector(var, inds);
 
         if is_sum then
           e := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SUM,
@@ -857,7 +894,7 @@ protected
 
       ty := Expression.typeOf(sum_exp);
       eq := Equation.EQUALITY(sum_exp, Expression.makeZero(ty), ty, DAE.emptyElementSource);
-      equations := generateForLoop({eq}, iterators, ranges) :: equations;
+      equations := generateForLoop({eq}, iterators, ranges, equations);
     end if;
   end generateFlowEquation;
 
@@ -872,23 +909,32 @@ protected
 
     if Type.isArray(Expression.typeOf(outExp)) then
       subs := list(Subscript.fromTypedExp(i) for i in indices);
+      subs := List.firstN(subs, Type.dimensionCount(Expression.typeOf(outExp)));
       outExp := Expression.applySubscripts(subs, outExp);
     end if;
   end generateConnector;
 
   function generateForLoop
-    input list<Equation> body;
+    input list<Equation> connects;
     input array<InstNode> iterators;
     input array<Expression> ranges;
-    output Equation forLoop;
+    input output list<Equation> equations;
   protected
-    Integer icount = arrayLength(iterators);
+    list<Equation> body = connects;
   algorithm
-    forLoop := Equation.FOR(iterators[icount], SOME(ranges[icount]), body, DAE.emptyElementSource);
-
-    for i in 1:icount-1 loop
-      forLoop := Equation.FOR(iterators[i], SOME(ranges[i]), {forLoop}, DAE.emptyElementSource);
+    for i in arrayLength(iterators):-1:1 loop
+      if Expression.isInteger(ranges[i]) then
+        // Scalar range means the interval had the same lower and upper bound,
+        // in which case the iterator can be replaced with the scalar expression
+        // instead of creating an unnecessary for loop here.
+        body := Equation.mapExpList(body,
+          function Expression.replaceIterator(iterator = iterators[i], iteratorValue = ranges[i]));
+      else
+        body := {Equation.FOR(iterators[i], SOME(ranges[i]), body, DAE.emptyElementSource)};
+      end if;
     end for;
+
+    equations := List.append_reverse(body, equations);
   end generateForLoop;
 
   function getConnectors
@@ -958,7 +1004,7 @@ protected
     input list<Variable> vars;
     input SBSet sauxi;
     input SBGraph graph;
-    output list<tuple<String, ComponentRef>> res = {};
+    output list<ComponentRef> res = {};
   protected
     list<SetVertex> vl;
   algorithm
@@ -966,8 +1012,8 @@ protected
     for v in vl loop
       if not SBSet.isEmpty(SBSet.intersection(v.vs, sauxi)) then
         for var in vars loop
-          if ComponentRef.isPrefix(v.name, var.name) then
-            res := (ComponentRef.toString(v.name), var.name) :: res;
+          if ComponentRef.isPrefix(Connector.name(v.name), var.name) then
+            res := var.name :: res;
           end if;
         end for;
       end if;
@@ -1002,7 +1048,7 @@ protected
       i1_sz := SBInterval.size(i1);
       i2_sz := SBInterval.size(i2);
 
-      x := Expression.fromCref(ComponentRef.makeIterator(iterators[1], Type.INTEGER()));
+      x := Expression.fromCref(ComponentRef.makeIterator(iterators[i], Type.INTEGER()));
 
       if i1_sz == i2_sz then
         m_int := intDiv(SBInterval.stepValue(i2), SBInterval.stepValue(i1));
@@ -1020,11 +1066,8 @@ protected
       elseif i2_sz == 1 and not forFlow then
         outExpl := Expression.INTEGER(SBInterval.lowerBound(i2)) :: outExpl;
       elseif i1_sz == 1 and forFlow then
-        e := Expression.makeRange(
-          Expression.INTEGER(SBInterval.lowerBound(i2)),
-          SOME(Expression.INTEGER(SBInterval.stepValue(i2))),
-          Expression.INTEGER(SBInterval.upperBound(i2))
-        );
+        e := Expression.makeIntegerRange(
+          SBInterval.lowerBound(i2), SBInterval.stepValue(i2), SBInterval.upperBound(i2));
         outExpl := e :: outExpl;
         flowRange := true;
       else

@@ -13,24 +13,28 @@ package unitCheckTests
 end unitCheckTests;
 "); getErrorString();
 
-setCommandLineOptions("--preOptModules+=unitChecking +d=dumpUnits"); getErrorString();
-translateModel(unitCheckTests.ticket3631); getErrorString();
+setCommandLineOptions("--unitChecking -d=dumpUnits,newInst"); getErrorString();
+instantiateModel(unitCheckTests.ticket3631); getErrorString();
 
 // Result:
 // true
 // ""
 // true
 // ""
-// #####################################
 // HashTable:
-// {y,{MASTER(y)}}
-// {x,{MASTER(x)}}
-// HashTable:
-// {y,{1.0 * s^(1)}}
 // {x,{1.0 * s^(1)}}
+// {y,{1.0 * s^(1)}}
+// {jhagemann,{MASTER()}}
 // ######## UnitCheck COMPLETED ########
-// true
-// "Notification: \"y\" has the Unit \"s\"
-// \"x\" has the Unit \"s\"
+// "class unitCheckTests.ticket3631
+//   Real x(unit = \"\");
+//   Real y(unit = \"\");
+// equation
+//   x = time;
+//   x + y = sin(time);
+// end unitCheckTests.ticket3631;
+// "
+// "Notification: \"x\" has the Unit \"s\"
+// \"y\" has the Unit \"s\"
 // "
 // endResult

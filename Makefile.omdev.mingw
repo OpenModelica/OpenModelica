@@ -1,3 +1,19 @@
+# see if we have the new omdev
+PREVIOUS_GCC_VERSION = "5.3.0"
+GCC_VERSION := "`gcc -dumpversion`"
+OLD_OMDEV := $(shell expr "$(GCC_VERSION)" "==" "$(PREVIOUS_GCC_VERSION)")
+
+ifeq "$(OLD_OMDEV)" "1"
+	IS_NEW_OMDEV = false
+	CC = gcc
+	CXX = g++
+else # new OMDev, use clang
+	IS_NEW_OMDEV = true
+	CC = clang
+	CXX = clang++
+endif
+
+# CFLAGS=-g -O2
 
 defaultMakefileTarget = Makefile.omdev.mingw
 REALPATH = $(realpath .)
@@ -42,61 +58,62 @@ endif
 all: omc testsuite-depends omlibrary-core
 
 omc:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION)
+	echo "Selected compiler: CC=$(CC), CXX=$(CXX)"
+	$(MAKE) -f $(defaultMakefileTarget) -C OMCompiler OMBUILDDIR=$(OMBUILDDIR) OMENCRYPTION=$(OMENCRYPTION) CC="$(CC)" CXX="$(CXX)"
 
 omc-diff:
-	$(MAKE) -C testsuite/ -f Makefile omc-diff OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C testsuite/ -f Makefile omc-diff OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 ReferenceFiles:
 	$(MAKE) -C testsuite/ReferenceFiles
 libs-for-testing: omc
 	$(MAKE) -C testsuite/libraries-for-testing/
 testsuite-depends: omc-diff ReferenceFiles libs-for-testing omsimulator
 test: testsuite-depends
-	$(MAKE) omc-diff
+	$(MAKE) omc-diff CC="$(CC)" CXX="$(CXX)"
 	cd testsuite/partest && echo "Running all $(./runtests.pl -counttests) tests"
 	cd testsuite/partest && ./runtests.pl -with-txt
 fast-test: testsuite-depends
-	$(MAKE) omc-diff
+	$(MAKE) omc-diff CC="$(CC)" CXX="$(CXX)"
 	cd testsuite/partest && echo "Running $(./runtests.pl -f -counttests) fast tests"
 	cd testsuite/partest && ./runtests.pl -f -with-txt
 
 omlibrary-core:
-	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core
+	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary core CC="$(CC)" CXX="$(CXX)"
 
 omlibrary-all:
-	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all
+	$(MAKE) -C libraries BUILD_DIR=$(OMBUILDDIR)/lib/omlibrary all CC="$(CC)" CXX="$(CXX)"
 
 omplot: omc qtclientsDLLs
-	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C OMPlot -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omedit: omparser omplot omsimulator qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omedit-testsuite: omedit testsuite-depends
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite OMBUILDDIR=$(OMBUILDDIR)
 
 omparser:
-	$(MAKE) -C OMParser OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C OMParser OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omsimulator:
-	$(MAKE) -C OMSimulator config-3rdParty
-	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR)
-	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -C OMSimulator config-3rdParty CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
+	$(MAKE) -C OMSimulator OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omnotebook: omc omplot qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C OMNotebook/OMNotebook/OMNotebookGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omshell: omc qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C OMShell/OMShell/OMShellGUI OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omoptim: omc omplot qtclientsDLLs
-	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omsens:
 	cp -rfp OMSens $(OMBUILDDIR)
 
 omsens_qt:
-	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 qtclients: omplot omedit omnotebook omshell omoptim omsens_qt
 
@@ -222,10 +239,10 @@ runtimeCPPmsvcinstall:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPmsvcinstall
 
 runtimeCPPinstall: OMSICPPinstall
-	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall CC="$(CC)" CXX="$(CXX)"
 
 OMSICPPinstall:
-	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) OMSICPPinstall
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) OMSICPPinstall CC="$(CC)" CXX="$(CXX)"
 
 all-runtimes:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall runtimeCPPmsvcinstall simulationruntimecmsvc

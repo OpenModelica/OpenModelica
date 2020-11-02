@@ -6,10 +6,10 @@
 /**
 Complete definition for OMCData
 */
-OMC_DLL typedef struct OMCData
+typedef struct OMCData
 {
-    OMCData(threadData_t* threadData);
-    ~OMCData();
+    OMC_DLL OMCData(threadData_t* threadData);
+    OMC_DLL ~OMCData();
     threadData_t* threadData;
 } data;
 

@@ -697,7 +697,6 @@ algorithm
   end if;
 end readSettings;
 
-
 protected function readSettingsFile
   input String filePath;
 protected
@@ -734,7 +733,12 @@ algorithm
         end if;
         msysBinDir = omdevPath + "\\tools\\msys\\usr\\bin";
         binDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\bin";
-        libBinDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+        // if compiler is gcc
+        if System.getCCompiler() == "gcc" then
+          libBinDir = omdevPath + "\\tools\\msys\\" + mingwDir + "\\lib\\gcc\\" + System.gccDumpMachine() + "\\" + System.gccVersion();
+        else // if is clang
+          libBinDir = binDir;
+        end if;
         // do we have bin and lib bin?
         hasBinDir = System.directoryExists(binDir);
         hasLibBinDir = System.directoryExists(libBinDir);
@@ -766,8 +770,9 @@ algorithm
 end setDefaultCC;
 
 public function init
-  input list<String> args;
-  output list<String> args_1;
+  "Does some things and also reads all flags from the command line arguments."
+  input list<String> args "command line arguments";
+  output list<String> args_1 "arguments that are not flags";
 algorithm
   // set glib G_SLICE to always-malloc as is rummored to be better for Boehm GC
   System.setEnv("G_SLICE", "always-malloc", true);
@@ -794,8 +799,8 @@ algorithm
 end init;
 
 public function main
-  "This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
-   start the translation."
+  "This is the main function that the MetaModelica Compiler (MMC) runtime system
+   calls to start the translation."
   input list<String> args;
 protected
   list<String> args_1;
@@ -804,27 +809,29 @@ protected
 algorithm
   execStatReset();
   try
-  try
-    args_1 := init(args);
+    try
+      args_1 := init(args);
+      if Flags.isSet(Flags.GC_PROF) then
+        print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
+      end if;
+      seconds := Flags.getConfigInt(Flags.ALARM);
+      if seconds > 0 then
+        System.alarm(seconds);
+      end if;
+      main2(args_1);
+    else
+      ErrorExt.clearMessages();
+      failure(_ := FlagsUtil.new(args));
+      print(ErrorExt.printMessagesStr(false)); print("\n");
+      fail();
+    end try;
     if Flags.isSet(Flags.GC_PROF) then
-      print(GC.profStatsStr(GC.getProfStats(), head="GC stats after initialization:") + "\n");
+      print(GC.profStatsStr(GC.getProfStats(), head="GC stats at end of program:") + "\n");
     end if;
-    seconds := Flags.getConfigInt(Flags.ALARM);
-    if seconds > 0 then
-      System.alarm(seconds);
-    end if;
-    main2(args_1);
   else
-    ErrorExt.clearMessages();
-    failure(_ := FlagsUtil.new(args));
-    print(ErrorExt.printMessagesStr(false)); print("\n");
-    fail();
-  end try;
-  if Flags.isSet(Flags.GC_PROF) then
-    print(GC.profStatsStr(GC.getProfStats(), head="GC stats at end of program:") + "\n");
-  end if;
-  else
-    print("Stack overflow detected and was not caught.\nSend us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\n    Include the following trace:\n");
+    print("Stack overflow detected and was not caught.\n" +
+          "Send us a bug report at https://trac.openmodelica.org/OpenModelica/newticket\n" +
+          "    Include the following trace:\n");
     for s in StackOverflow.readableStacktraceMessages() loop
       print(s);
       print("\n");
@@ -833,8 +840,8 @@ algorithm
 end main;
 
 protected function main2
-  "This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
-   start the translation."
+  "This is not the main function that the MetaModelica Compiler (MMC) runtime
+   system calls to start the translation."
   input list<String> args;
 protected
   String interactiveMode;
@@ -847,8 +854,7 @@ algorithm
 
   // Don't allow running omc as root due to security risks.
   interactiveMode := Flags.getConfigString(Flags.INTERACTIVE);
-  if System.userIsRoot() and (Flags.isSet(Flags.INTERACTIVE_TCP) or Flags.isSet(Flags.INTERACTIVE_CORBA)
-     or interactiveMode == "corba" or interactiveMode == "tcp" or interactiveMode == "zmq") then
+  if System.userIsRoot() and (interactiveMode == "corba" or interactiveMode == "tcp" or interactiveMode == "zmq") then
     Error.addMessage(Error.ROOT_USER_INTERACTIVE, {});
     print(ErrorExt.printMessagesStr(false));
     fail();
@@ -865,14 +871,8 @@ algorithm
     Settings.getInstallationDirectoryPath();
 
     readSettings(args);
-    if Flags.isSet(Flags.INTERACTIVE_TCP) then
-      print("The flag -d=interactive is depreciated. Please use --interactive=tcp\n");
+    if interactiveMode == "tcp" then
       interactivemode();
-    elseif interactiveMode == "tcp" then
-      interactivemode();
-    elseif Flags.isSet(Flags.INTERACTIVE_CORBA) then
-      print("The flag -d=interactiveCorba is depreciated. Please use --interactive=corba\n");
-      interactivemodeCorba();
     elseif interactiveMode == "corba" then
       interactivemodeCorba();
     elseif interactiveMode == "zmq" then

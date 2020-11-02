@@ -29,89 +29,96 @@
  *
  */
 
-
 /*
- Mahder.Gebremedhin@liu.se  2014-02-10
+ Mahder.Gebremedhin@liu.se  2020-10-12
 */
-
 
 #include <iostream>
 
 #include "om_pm_interface.hpp"
 #include "om_pm_model.hpp"
 
-
 extern "C" {
 
 using namespace openmodelica::parmodelica;
 typedef Equation::FunctionType FunctionType;
 
-OMModel pm_om_model;
+PMTimer seq_ode_timer;
 
-void PM_Model_init(const char* model_name, DATA* data, threadData_t* threadData, FunctionType* ode_system) {
-    pm_om_model.initialize(model_name, data, threadData, ode_system);
+void* PM_Model_create(const char* model_name, DATA* data, threadData_t* threadData, size_t in_max_num_threads) {
+
+    size_t max_num_threads = in_max_num_threads ? in_max_num_threads : tbb::this_task_arena::max_concurrency();
+
+    OMModel* pm_om_model = new OMModel(model_name, max_num_threads);
+    pm_om_model->data = data;
+    pm_om_model->threadData = threadData;
+
+    return pm_om_model;
 }
 
-void PM_functionInitialEquations(int size, DATA* data, threadData_t* threadData, FunctionType* functionInitialEquations_systems) {
+void PM_Model_load_ODE_system(void* v_model, FunctionType* ode_system_funcs) {
 
-    // pm_om_model.ini_system_funcs = functionInitialEquations_systems;
-    // pm_om_model.INI_scheduler.execute();
-  pm_om_model.INI_scheduler.execution_timer.start_timer();
-    for(int i = 0; i < size; ++i)
-        functionInitialEquations_systems[i](data, threadData);
-  pm_om_model.INI_scheduler.execution_timer.stop_timer();
-
+    OMModel& model = *(static_cast<OMModel*>(v_model));
+    model.ode_system_funcs = ode_system_funcs;
+    model.load_ODE_system();
 }
 
+void PM_evaluate_ODE_system(void* v_model) {
 
-void PM_functionDAE(int size, DATA* data, threadData_t* threadData, FunctionType* functionDAE_systems) {
+    OMModel& model = *(static_cast<OMModel*>(v_model));
+    model.ODE_scheduler.execute();
 
-    // pm_om_model.dae_system_funcs = functionDAE_systems;
-    // pm_om_model.DAE_scheduler.execute();
-
-  pm_om_model.DAE_scheduler.execution_timer.start_timer();
-    for(int i = 0; i < size; ++i)
-        functionDAE_systems[i](data, threadData);
-  pm_om_model.DAE_scheduler.execution_timer.stop_timer();
-
-}
-
-
-void PM_functionODE(int size, DATA* data, threadData_t* threadData, FunctionType* functionODE_systems) {
-
-    pm_om_model.ODE_scheduler.execute();
-
-  // pm_om_model.ODE_scheduler.execution_timer.start_timer();
+    // pm_om_model.ODE_scheduler.execution_timer.start_timer();
     // for(int i = 0; i < size; ++i)
-        // functionODE_systems[i](data, threadData);
-  // pm_om_model.ODE_scheduler.execution_timer.stop_timer();
-
-
-  // double step_cost = pm_om_model.ODE_scheduler.execution_timer.get_elapsed_time();
-  // std::cout << step_cost << std::endl;
-  // pm_om_model.ODE_scheduler.execution_timer.reset_timer();
+    // functionODE_systems[i](data, threadData);
+    // pm_om_model.ODE_scheduler.execution_timer.stop_timer();
 }
 
-void PM_functionAlg(int size, DATA* data, threadData_t* threadData, FunctionType* functionAlg_systems) {
-
-    pm_om_model.total_alg_time.start_timer();
-
-    for(int i = 0; i < size; ++i)
-        functionAlg_systems[i](data, threadData);
-
-    pm_om_model.total_alg_time.stop_timer();
-
+void seq_ode_timer_start() {
+    seq_ode_timer.start_timer();
 }
 
-void dump_times() {
-    utility::log("") << "Total INI: " << pm_om_model.INI_scheduler.execution_timer.get_elapsed_time() << std::endl;
-    utility::log("") << "Total DAE: " << pm_om_model.DAE_scheduler.execution_timer.get_elapsed_time() << std::endl;
-    utility::log("") << "Total ODE: " << pm_om_model.ODE_scheduler.execution_timer.get_elapsed_time() << std::endl;
-    utility::log("") << "Total ODE: " << pm_om_model.ODE_scheduler.clustering_timer.get_elapsed_time() << std::endl;
-    utility::log("") << "Total ALG: " << pm_om_model.total_alg_time.get_elapsed_time() << std::endl;
+void seq_ode_timer_stop() {
+    seq_ode_timer.stop_timer();
 }
 
+void seq_ode_timer_reset() {
+    seq_ode_timer.reset_timer();
+}
 
+void seq_ode_timer_get_elapsed_time2() {
+    std::cerr << seq_ode_timer.get_elapsed_time();
+}
 
+double seq_ode_timer_get_elapsed_time() {
+    return seq_ode_timer.get_elapsed_time();
+}
+
+void dump_times(void* v_model) {
+    OMModel& model = *(static_cast<OMModel*>(v_model));
+
+#ifdef USE_LEVEL_SCHEDULER
+    utility::log("") << "Using level scheduler" << std::endl;
+#else
+#ifdef USE_FLOW_SCHEDULER
+    utility::log("") << "Using flow scheduler" << std::endl;
+#else
+#error "please specify scheduler. See makefile"
+#endif
+#endif
+    utility::log("") << "Nr.of threads " << model.max_num_threads << std::endl;
+    utility::log("") << "Nr.of ODE evaluations: " << model.ODE_scheduler.total_evaluations << std::endl;
+    utility::log("") << "Nr.of profiling ODE Evaluations: " << model.ODE_scheduler.sequential_evaluations << std::endl;
+    // utility::log("") << "Total ODE evaluation time : " << model.ODE_scheduler.total_parallel_cost << std::endl;
+    utility::log("") << "Total ODE evaluation time : " << model.ODE_scheduler.execution_timer.get_elapsed_time()
+                     << std::endl;
+    utility::log("") << "Avg. ODE evaluation time : "
+                     << model.ODE_scheduler.execution_timer.get_elapsed_time() /
+                            model.ODE_scheduler.parallel_evaluations
+                     << std::endl;
+    utility::log("") << "Total ODE loading time: " << model.load_system_timer.get_elapsed_time() << std::endl;
+    utility::log("") << "Total ODE Clustering time: " << model.ODE_scheduler.clustering_timer.get_elapsed_time()
+                     << std::endl;
+}
 
 } // extern "C"

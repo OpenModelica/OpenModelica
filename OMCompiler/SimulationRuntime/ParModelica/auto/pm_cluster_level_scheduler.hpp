@@ -33,261 +33,339 @@
  *
  */
 
-
 /*
  Mahder.Gebremedhin@liu.se  2014-03-13
 */
 
+#include "gc.h"
+
 #include <tbb/parallel_for.h>
-#include <tbb/task_scheduler_init.h>
+#include <tbb/tick_count.h>
+
+// #include <sys/types.h>
+// #include <sys/syscall.h>
 
 #include "pm_clustering.hpp"
 
+namespace openmodelica { namespace parmodelica {
 
-namespace openmodelica {
-namespace parmodelica {
-
-
-template<typename TaskType>
+template <typename TaskType>
 struct TBBConcurrentStepExecutor {
 
     typedef TaskSystem_v2<TaskType> TaskSystemType;
 
-    typedef typename TaskSystemType::GraphType GraphType;
-    typedef typename TaskSystemType::ClusterType ClusterType;
+    typedef typename TaskSystemType::GraphType     GraphType;
+    typedef typename TaskSystemType::ClusterType   ClusterType;
     typedef typename TaskSystemType::ClusterIdType ClusterIdType;
 
-    typedef typename TaskSystemType::ClusterLevels ClusterLevels;
-    typedef typename ClusterLevels::value_type SameLevelClusterIdsType;
+    typedef typename TaskSystemType::ClusterLevels     ClusterLevels;
+    typedef typename ClusterLevels::value_type         SameLevelClusterIdsType;
     typedef typename SameLevelClusterIdsType::iterator ClusteIdIter;
 
-private:
-    GraphType& sys_graph;
+  private:
+    GraphType&       sys_graph;
 
-public:
+  public:
     TBBConcurrentStepExecutor(GraphType& g) : sys_graph(g) {}
 
-    void operator()( tbb::blocked_range<ClusteIdIter>& range ) const {
+    void operator()(tbb::blocked_range<ClusteIdIter>& range) const {
 
-        for(ClusteIdIter clustid_iter = range.begin(); clustid_iter != range.end(); ++clustid_iter) {
+        // pid_t id;
+        // /* Register thread to bohem GC if it is not registered already*/
+        // if(!GC_thread_is_registered()) {
+        // id = syscall(SYS_gettid);
+        // fprintf(stderr,"Found unregisterd thread =  %d \n", id);
+
+        // struct GC_stack_base sb;
+        // memset (&sb, 0, sizeof(sb));
+        // GC_get_stack_base(&sb);
+        // GC_register_my_thread (&sb);
+        // // std::cerr << "New Theread registerd = " << GC_thread_is_registered() << std::endl;
+        // }
+        // else {
+        // id = syscall(SYS_gettid);
+        // if(!knownthreads.count(id)) {
+        // fprintf(stderr,"parmod registerd thread =  %d \n", id);
+        // knownthreads.insert(id);
+        // }
+        // }
+
+        for (ClusteIdIter clustid_iter = range.begin(); clustid_iter != range.end(); ++clustid_iter) {
             ClusterIdType& curr_clust_id = *clustid_iter;
-            ClusterType& curr_clust = sys_graph[curr_clust_id];
+            ClusterType&   curr_clust = sys_graph[curr_clust_id];
 
             curr_clust.execute();
         }
     }
-
 };
 
-
-
-template<typename TaskType,
-         typename clustetring1 = cluster_merge_common, /* for now default here*/
-         typename clustetring2 = cluster_merge_level_for_cost, /* for now default here*/
-         typename clustetring3 = cluster_none,
-         typename clustetring4 = cluster_none,
-         typename clustetring5 = cluster_none
-        >
-class StepLevels :
-  boost::noncopyable {
-public:
-
-    typedef TaskSystem_v2<TaskType> TaskSystemType;
-    typedef typename TaskSystemType::GraphType GraphType;
-    typedef typename TaskSystemType::ClusterType ClusterType;
+template <typename TaskType,
+          typename clustetring1 = cluster_merge_common, /* for now default here*/
+          typename clustetring2 = cluster_merge_level_for_bins,            /* for now default here*/
+          typename clustetring3 = cluster_none,
+          typename clustetring4 = cluster_none,
+          typename clustetring5 = cluster_none>
+class StepLevels : boost::noncopyable {
+  public:
+    typedef TaskSystem_v2<TaskType>                TaskSystemType;
+    typedef typename TaskSystemType::GraphType     GraphType;
+    typedef typename TaskSystemType::ClusterType   ClusterType;
     typedef typename TaskSystemType::ClusterIdType ClusterIdType;
 
     typedef typename TaskSystemType::ClusterLevels ClusterLevels;
-    typedef typename ClusterLevels::value_type SameLevelClusterIdsType;
+    typedef typename ClusterLevels::value_type     SameLevelClusterIdsType;
 
+  public:
+    size_t max_num_threads;
 
-private:
-    TaskSystemType& task_system;
-    bool profiled;
-    bool schedule_valid;
-
-    tbb::task_scheduler_init tbb_system;
+    const TaskSystemType& task_system_org;
+    TaskSystemType        task_system;
     TBBConcurrentStepExecutor<TaskType> step_executor;
 
-public:
+
+    bool profiled;
+    bool schedule_available;
+
+    int total_evaluations;
+    int parallel_evaluations;
+    int sequential_evaluations;
+
+    double par_avg_at_last_sch;
+    double par_current_avg;
+    double total_parallel_cost;
+    bool   has_run_parallel;
+
+  public:
 
     PMTimer execution_timer;
-	PMTimer clustering_timer;
-    // PMTimer extra_timer;
+    PMTimer clustering_timer;
+    PMTimer step_timer;
 
-    StepLevels(TaskSystemType& ts) :
-      task_system(ts)
-      , tbb_system(4)
-      , step_executor(task_system.sys_graph)
-    {
+    std::vector<double> parallel_eval_costs;
+
+    StepLevels(TaskSystemType& ts, size_t mnt)
+        : max_num_threads(mnt)
+        , task_system_org(ts)
+        , task_system("invalid", mnt) // implement a constrctor with no parameters and remove this
+        , step_executor(task_system.sys_graph) {
+        // GC_allow_register_threads();
+        // GC_use_threads_discovery();
+
         profiled = false;
-        schedule_valid = false;
+        schedule_available = false;
+
+        total_evaluations = 0;
+        parallel_evaluations = 0;
+        sequential_evaluations = 0;
+
+        total_parallel_cost = 0;
+        par_avg_at_last_sch = 0;
+        has_run_parallel = false;
     }
 
-    void estimate_speedup() {
+    bool avg_needs_reschedule() {
 
-        if(task_system.levels_valid == false)
-            task_system.update_node_levels();
+        double diff = std::abs(par_avg_at_last_sch - par_current_avg);
+        double change = diff / par_avg_at_last_sch;
 
-        GraphType& sys_graph = task_system.sys_graph;
-
-        double total_level_scheduler_cost = 0;
-        double total_system_cost = 0;
-        typename ClusterLevels::iterator level_iter = task_system.clusters_by_level.begin();
-        /*! Skip the first level. Which contains only the root node and some invlaidated clusters.*/
-        ++level_iter;
-        int level_number = 1;
-        for( ;level_iter != task_system.clusters_by_level.end(); ++level_iter, ++level_number) {
-            SameLevelClusterIdsType& current_level = *level_iter;
-
-            cluster_cost_comparator_by_id<GraphType> cccbi(sys_graph);
-            std::sort(current_level.begin(), current_level.end(), cccbi);
-            total_level_scheduler_cost += sys_graph[current_level.front()].cost;
-
-            total_system_cost += current_level.level_cost;
+        if (change > 0.5) {
+            // std::cout << "Reschedule needed P: " << par_avg_at_last_sch << " :C: " << par_current_avg << std::endl;
+            return true;
         }
 
-        utility::log("") << "total_system_cost: " << total_system_cost << std::endl;
-        utility::log("") << "total_level_scheduler_cost: " << total_level_scheduler_cost << std::endl;
-        utility::log("") << "speedup: " << total_system_cost/total_level_scheduler_cost << std::endl;
+        return false;
+    }
 
+    bool reschedule_needed() {
+        if (!this->schedule_available)
+            return true;
+
+        if (this->avg_needs_reschedule())
+            return true;
+
+        return false;
+    }
+
+    void clear_schedule() {
+        task_system = task_system_org;
+
+        profiled = false;
+        schedule_available = false;
+    }
+
+    void execute_and_schedule() {
+        clear_schedule();
+        profile_execute();
+        schedule();
+        par_avg_at_last_sch = par_current_avg;
     }
 
     void schedule() {
 
-        if(schedule_valid)
-            return;
-
         clustering_timer.start_timer();
 
-        if(task_system.levels_valid == false)
+        if (task_system.levels_valid == false)
             task_system.update_node_levels();
 
-        task_system.dump_graphml("original");
-
         clustetring1::apply(task_system);
-		clustetring1::dump_graph(task_system);
+        clustetring1::dump_graph(task_system);
 
         clustetring2::apply(task_system);
-		clustetring2::dump_graph(task_system);
+        clustetring2::dump_graph(task_system);
 
         clustetring3::apply(task_system);
-		clustetring3::dump_graph(task_system);
+        clustetring3::dump_graph(task_system);
 
-		clustetring4::apply(task_system);
-		clustetring4::dump_graph(task_system);
+        clustetring4::apply(task_system);
+        clustetring4::dump_graph(task_system);
 
         clustetring5::apply(task_system);
-		clustetring5::dump_graph(task_system);
+        clustetring5::dump_graph(task_system);
 
-        schedule_valid = true;
+        schedule_available = true;
         task_system.levels_valid = false;
+        task_system.update_node_levels();
 
         estimate_speedup();
-		clustering_timer.stop_timer();
+        clustering_timer.stop_timer();
 
     }
 
+    void execute() {
 
-    void execute()
-    {
+        if (this->reschedule_needed())
+            return execute_and_schedule();
 
-        if(!this->profiled)
-            return profile_execute();
+        // paranoia
+        if (task_system.levels_valid == false)
+            exit(1);
 
         execution_timer.start_timer();
-        // extra_timer.start_timer();
-
-        // GraphType& sys_graph = task_system.sys_graph;
-
-        if(task_system.levels_valid == false)
-            task_system.update_node_levels();
+        step_timer.start_timer();
 
         typename ClusterLevels::iterator level_iter = task_system.clusters_by_level.begin();
         /*! Skip the first level. Which contains only the root node */
         ++level_iter;
         int level_number = 1;
-        for( ;level_iter != task_system.clusters_by_level.end(); ++level_iter, ++level_number) {
+        for (; level_iter != task_system.clusters_by_level.end(); ++level_iter, ++level_number) {
             SameLevelClusterIdsType& current_level = *level_iter;
 
             // if(current_level.level_cost > 0.009) {
-                tbb::parallel_for(
-                    tbb::blocked_range<typename SameLevelClusterIdsType::iterator>(
-                    current_level.begin(), current_level.end())
-                    , step_executor);
+            tbb::parallel_for(tbb::blocked_range<typename SameLevelClusterIdsType::iterator>(current_level.begin(),
+                                                                                             current_level.end()),
+                              step_executor);
             // }
             // else {
-                // typename SameLevelClusterIdsType::iterator clustid_iter = current_level.begin();
-                // for( ;clustid_iter != current_level.end(); ++clustid_iter) {
-                    // ClusterIdType& curr_clust_id = *clustid_iter;
-                    // ClusterType& curr_clust = sys_graph[curr_clust_id];
+            // typename SameLevelClusterIdsType::iterator clustid_iter = current_level.begin();
+            // for( ;clustid_iter != current_level.end(); ++clustid_iter) {
+            // ClusterIdType& curr_clust_id = *clustid_iter;
+            // ClusterType& curr_clust = sys_graph[curr_clust_id];
 
-                    // curr_clust.execute();
+            // curr_clust.execute();
 
-                // }
+            // }
             // }
         }
 
         execution_timer.stop_timer();
-        // extra_timer.stop_timer();
-        // double step_cost = extra_timer.get_elapsed_time();
-        // std::cout << "E: " << step_cost << std::endl;
-        // extra_timer.reset_timer();
+        step_timer.stop_timer();
 
+        ++this->total_evaluations;
+        ++this->parallel_evaluations;
+
+        // if(total_evaluations%100 == 0) {
+        double step_cost = step_timer.get_elapsed_time();
+        parallel_eval_costs.push_back(step_cost);
+        total_parallel_cost += step_cost;
+        par_current_avg = total_parallel_cost / this->parallel_evaluations;
+        // std::cout << total_evaluations << " : " << parallel_evaluations << " : " << step_cost << " : " <<
+        // par_current_avg << std::endl; std::cout << "P" <<  " : " << total_evaluations << " : " << step_cost << " :
+        // "<< par_current_avg << std::endl;
+        step_timer.reset_timer();
+        // }
+
+        if (!has_run_parallel) {
+            par_avg_at_last_sch = par_current_avg;
+            has_run_parallel = true;
+        }
     }
 
+    void profile_execute() {
 
-    void profile_execute()
-    {
-        execution_timer.start_timer();
-
+        // if(this->total_evaluations == 0)
+        // std::cout << "Type" <<  " : " << "Eval" << " : " << "Eval_cost" << " : "<< "Curr_Par_Avg" << " : " <<
+        // "Prev_Sch_Avg"<< std::endl;
 
         GraphType& sys_graph = task_system.sys_graph;
 
         typename GraphType::vertex_iterator vert_iter, vert_end;
         boost::tie(vert_iter, vert_end) = vertices(sys_graph);
+
+        execution_timer.start_timer();
+        step_timer.start_timer();
         /*! skip the root node. */
         ++vert_iter;
-        for ( ; vert_iter != vert_end; ++vert_iter) {
+        for (; vert_iter != vert_end; ++vert_iter) {
             sys_graph[*vert_iter].profile_execute();
         }
+        ++this->total_evaluations;
+        ++this->sequential_evaluations;
 
+        step_timer.stop_timer();
         execution_timer.stop_timer();
-        // double step_cost = execution_timer.get_elapsed_time();
-        // std::cout << "P: " << step_cost << std::endl;
-        // execution_timer.reset_timer();
+
+        double step_cost = step_timer.get_elapsed_time();
+        // utility::log("") << "Profiled on step :" << this->total_evaluations << " cost: " << step_cost << std::endl;
+        std::cout << "S"
+                  << " : " << this->total_evaluations << " : " << step_cost << " : " << par_current_avg << " : "
+                  << par_avg_at_last_sch << std::endl;
+        step_timer.reset_timer();
+
+        // task_system.dump_graphml("profiled_" + std::to_string(this->total_evaluations));
 
         this->profiled = true;
-        this->schedule_valid = false;
-        schedule();
-
     }
 
+    void estimate_speedup() {
+
+        if (task_system.levels_valid == false)
+            task_system.update_node_levels();
+
+        GraphType& sys_graph = task_system.sys_graph;
+
+        double                           total_level_scheduler_cost = 0;
+        double                           total_system_cost = 0;
+        typename ClusterLevels::iterator level_iter = task_system.clusters_by_level.begin();
+        /*! Skip the first level. Which contains only the root node and some invlaidated clusters.*/
+        ++level_iter;
+        int level_number = 1;
+        for (; level_iter != task_system.clusters_by_level.end(); ++level_iter, ++level_number) {
+            SameLevelClusterIdsType& current_level = *level_iter;
+
+            cluster_cost_comparator_by_id<GraphType> cccbi(sys_graph);
+            // sort in decreasing order
+            std::sort(current_level.rbegin(), current_level.rend(), cccbi);
+            total_level_scheduler_cost += sys_graph[current_level.front()].cost;
+
+            total_system_cost += current_level.total_level_cost;
+        }
+
+        // utility::log("") << "Total_system_cost: " << total_system_cost << std::endl;
+        // utility::log("") << "Total_level_scheduler_cost: " << total_level_scheduler_cost << std::endl;
+        // utility::log("") << "Ideal speedup: " << total_system_cost/total_level_scheduler_cost << std::endl;
+    }
 };
 
-
 /*! The default level scheduler uses these two clusterings*/
-//template<typename Tasktype>
-//using LevelScheduler = StepLevels<TaskType
-                                    // , cluster_merge_common
-                                    // , cluster_merge_level_for_cost
-                                   // >;
+// template<typename Tasktype>
+// using LevelScheduler = StepLevels<TaskType
+// , cluster_merge_common
+// , cluster_merge_level_for_bins
+// >;
 
-template<typename TaskType>
-struct LevelScheduler : StepLevels<TaskType
-                                    , cluster_merge_common
-                                    , cluster_merge_level_for_cost
-                                  > {};
+template <typename TaskType>
+struct LevelScheduler : StepLevels<TaskType, cluster_merge_common, cluster_merge_level_for_bins> {};
 
-
-
-
-} // openmodelica
-} // parmodelica
-
-
-
-
-
+}} // namespace openmodelica::parmodelica
 
 #endif // header

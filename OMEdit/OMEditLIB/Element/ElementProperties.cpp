@@ -184,15 +184,19 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
         int index = mpValueComboBox->findData(value);
         if (index > -1) {
           mpValueComboBox->setCurrentIndex(index);
-          mpValueComboBox->lineEdit()->setText(value);
-          mpValueComboBox->lineEdit()->setModified(valueModified);
+        } else { // if we fail to find the value in the combobox then add it to the combobox
+          mpValueComboBox->insertItem(1, value, value);
         }
+        mpValueComboBox->lineEdit()->setText(value);
+        mpValueComboBox->lineEdit()->setModified(valueModified);
         mpValueComboBox->blockSignals(state);
       }
       if (adjustSize) {
-        /* Set the minimum width so that the value text will be readable */
+        /* Set the minimum width so that the value text will be readable.
+         * If the items width is greater than the value text than use it.
+         */
         fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
-        mpValueComboBox->setMinimumWidth(fm.width(value) + 50);
+        mpValueComboBox->setMinimumWidth(qMax(fm.width(value), mpValueComboBox->minimumSizeHint().width()) + 50);
       }
       break;
     case Parameter::CheckBox:
@@ -318,7 +322,7 @@ void Parameter::createValueWidget()
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
   QString className = mpComponent->getComponentInfo()->getClassName();
   QString constrainedByClassName = QStringLiteral("$Any");
-  QString replaceable = "", replaceableText = "";
+  QString replaceable = "", replaceableText = "", replaceableChoice = "", parentClassName = "";
   QStringList enumerationLiterals, replaceableChoices;
 
   switch (mValueType) {
@@ -358,20 +362,25 @@ void Parameter::createValueWidget()
         constrainedByClassName = className;
       }
 
-      replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, mpComponent->getComponentInfo()->getParentClassName());
+      parentClassName = mpComponent->getComponentInfo()->getParentClassName();
+      replaceableChoices = pOMCProxy->getAllSubtypeOf(constrainedByClassName, parentClassName);
       for (i = 0 ; i < replaceableChoices.size(); i++) {
+        replaceableChoice = replaceableChoices[i];
+        // if replaceableChoices points to a class in this scope, remove scope
+        if (replaceableChoice.startsWith(parentClassName + "."))
+        {
+           replaceableChoice.remove(0, parentClassName.size() + 1);
+        }
         if (mValueType == Parameter::ReplaceableClass) {
-          if (i < replaceableChoices.size() - 1) { // skip the last one
-            replaceable = QString("redeclare %1 %2 = %3").arg(mpComponent->getComponentInfo()->getRestriction(), mpComponent->getName(), replaceableChoices[i]);
-            QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
-            if (!str.isEmpty()) {
-              str = " - " + str;
-            }
-            replaceableText = replaceableChoices[i] + str;
-            mpValueComboBox->addItem(replaceableText, replaceable);
+          replaceable = QString("redeclare %1 %2 = %3").arg(mpComponent->getComponentInfo()->getRestriction(), mpComponent->getName(), replaceableChoice);
+          QString str = (pOMCProxy->getClassInformation(replaceableChoices[i])).comment;
+          if (!str.isEmpty()) {
+            str = " - " + str;
           }
+          replaceableText = replaceableChoices[i] + str;
+          mpValueComboBox->addItem(replaceableText, replaceable);
         } else {
-          replaceable = QString("redeclare %1 %2").arg(replaceableChoices[i], mpComponent->getName());
+          replaceable = QString("redeclare %1 %2").arg(replaceableChoice, mpComponent->getName());
           mpValueComboBox->addItem(replaceable, replaceable);
         }
       }
@@ -909,6 +918,10 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem 
   int insertIndex = 0;
   pLibraryTreeItem->getModelWidget()->loadDiagramView();
   foreach (Element *pComponent, pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
+    // if we already have the parameter from one of the inherited class then just skip this one.
+    if (findParameter(pComponent->getName())) {
+      continue;
+    }
     /* Ticket #2531
      * Do not show the protected & final parameters.
      */

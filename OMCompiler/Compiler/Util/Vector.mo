@@ -269,7 +269,7 @@ public
     if newSize > sz then
       data := reserveCapacity(v, newSize);
 
-      for i in sz-1:newSize loop
+      for i in sz+1:newSize loop
         arrayUpdateNoBoundsChecking(data, i, fillValue);
       end for;
 

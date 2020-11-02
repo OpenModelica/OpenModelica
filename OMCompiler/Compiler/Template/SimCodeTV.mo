@@ -3851,7 +3851,6 @@ package Flags
   uniontype DebugFlag end DebugFlag;
   uniontype ConfigFlag end ConfigFlag;
 
-  constant DebugFlag PARMODAUTO;
   constant DebugFlag HPCOM;
   constant DebugFlag HPCOM_MEMORY_OPT;
   constant DebugFlag GEN_DEBUG_SYMBOLS;
@@ -3863,6 +3862,7 @@ package Flags
   constant DebugFlag OMC_RECORD_ALLOC_WORDS;
   constant DebugFlag OMC_RELOCATABLE_FUNCTIONS;
   constant DebugFlag NF_SCALARIZE;
+  constant ConfigFlag PARMODAUTO;
   constant ConfigFlag NUM_PROC;
   constant ConfigFlag HPCOM_CODE;
   constant ConfigFlag PROFILING_LEVEL;

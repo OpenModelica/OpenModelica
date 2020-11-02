@@ -2,7 +2,7 @@
 #include <Core/Modelica.h>
 #include <Core/SimController/threading/ToZeroMQEvent.h>
 #include "zhelpers.hpp"
- 
+#define BOOST_SPIRIT_THREADSAFE
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 // Short alias for this namespace
