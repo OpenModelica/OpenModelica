@@ -635,6 +635,28 @@ public
     end match;
   end replaceWholeSubscripts;
 
+  function combineSubscripts
+    "Moves all subscripts to the end of the cref.
+     Ex: a[1, 2].b[4] => a.b[1, 2, 4]"
+    input output ComponentRef cref;
+  protected
+    list<Subscript> subs;
+  algorithm
+    // Fill in : subscripts where needed so the cref is fully subscripted.
+    cref := fillSubscripts(cref);
+    // Fetch all the subscripts.
+    subs := List.flatten(subscriptsAll(cref));
+
+    if listEmpty(subs) then
+      return;
+    end if;
+
+    // Remove unnecessary : subscripts from the head of the list.
+    subs := List.trim(subs, Subscript.isWhole);
+    // Replace the cref's subscripts.
+    cref := setSubscripts(subs, stripSubscriptsAll(cref));
+  end combineSubscripts;
+
   function compare
     input ComponentRef cref1;
     input ComponentRef cref2;

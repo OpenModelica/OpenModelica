@@ -142,6 +142,19 @@ public
     binding := NFBinding.EMPTY_BINDING;
   end lookupTypeAttribute;
 
+  function mapExp
+    input output Variable var;
+    input MapFn fn;
+
+    partial function MapFn
+      input output Expression exp;
+    end MapFn;
+  algorithm
+    var.binding := Binding.mapExp(var.binding, fn);
+    var.typeAttributes := list(
+      (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
+  end mapExp;
+
   function toString
     input Variable var;
     input String indent = "";

@@ -562,6 +562,8 @@ constant DebugFlag DUMP_DATARECONCILIATION = DEBUG_FLAG(193, "dataReconciliation
   Gettext.gettext("Dumps all the dataReconciliation extraction algorithm procedure"));
 constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(194, "arrayConnect", false,
   Gettext.gettext("Use experimental array connection handler."));
+constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(195, "combineSubscripts", false,
+  Gettext.gettext("Move all subscripts to the end of component references."));
 
 public
 // CONFIGURATION FLAGS

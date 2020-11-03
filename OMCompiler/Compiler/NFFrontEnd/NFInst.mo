@@ -193,6 +193,10 @@ algorithm
 
   VerifyModel.verify(flatModel);
 
+  if Flags.isSet(Flags.COMBINE_SUBSCRIPTS) then
+    flatModel := FlatModel.mapExp(flatModel, combineSubscripts);
+  end if;
+
   if Flags.isSet(Flags.NF_DUMP_FLAT) then
     print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
   end if;
@@ -3585,6 +3589,20 @@ algorithm
     fail();
   end if;
 end checkPartialClass;
+
+function combineSubscripts
+  input output Expression exp;
+algorithm
+  () := match exp
+    case Expression.CREF()
+      algorithm
+        exp.cref := ComponentRef.combineSubscripts(exp.cref);
+      then
+        ();
+
+    else ();
+  end match;
+end combineSubscripts;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFInst;
