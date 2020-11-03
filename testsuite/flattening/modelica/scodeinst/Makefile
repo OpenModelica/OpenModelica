@@ -203,6 +203,8 @@ ClassMod4.mo \
 ClassMod5.mo \
 ClassMod6.mo \
 ClockConstructor1.mo \
+CombineSubscripts1.mo \
+CombineSubscripts2.mo \
 Comment1.mo \
 CompAsFunc.mo \
 ComponentAsTypeError.mo \

@@ -7690,6 +7690,21 @@ algorithm
   end for;
 end maxElement;
 
+function trim<T>
+  "Removes elements from the head of the list while the given function returns
+   true for the first element, or until the list is empty."
+  input output list<T> l;
+  input PredFn fn;
+
+  partial function PredFn
+    input T e;
+    output Boolean res;
+  end PredFn;
+algorithm
+  while not listEmpty(l) and fn(listHead(l)) loop
+    l := listRest(l);
+  end while;
+end trim;
 
 annotation(__OpenModelica_Interface="util");
 end List;

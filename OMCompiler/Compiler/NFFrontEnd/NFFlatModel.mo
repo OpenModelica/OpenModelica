@@ -94,6 +94,21 @@ public
     ElementSource source;
   end FLAT_MODEL;
 
+  function mapExp
+    input output FlatModel flatModel;
+    input MapFn fn;
+
+    partial function MapFn
+      input output Expression exp;
+    end MapFn;
+  algorithm
+    flatModel.variables := list(Variable.mapExp(v, fn) for v in flatModel.variables);
+    flatModel.equations := Equation.mapExpList(flatModel.equations, fn);
+    flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, fn);
+    flatModel.algorithms := Algorithm.mapExpList(flatModel.algorithms, fn);
+    flatModel.initialAlgorithms := Algorithm.mapExpList(flatModel.initialAlgorithms, fn);
+  end mapExp;
+
   function toString
     input FlatModel flatModel;
     input Boolean printBindingTypes = false;
