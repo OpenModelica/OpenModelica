@@ -7,10 +7,13 @@ ifeq "$(OLD_OMDEV)" "1"
 	IS_NEW_OMDEV = false
 	CC = gcc
 	CXX = g++
+	QT_EXTRA_DLLS=
 else # new OMDev, use clang
 	IS_NEW_OMDEV = true
 	CC = clang
 	CXX = clang++
+	QT_EXTRA_DLLS=libdouble-conversion.dll libzstd.dll libwoff2dec.dll libwoff2common.dll Qt5QmlModels.dll libnghttp2-14.dll \
+	              libunistring-2.dll libgraphite2.dll libbrotlidec.dll libbrotlicommon.dll libfontconfig-1.dll
 endif
 
 # CFLAGS=-g -O2
@@ -144,7 +147,6 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5Sql.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/Qt5OpenGL.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libxslt-1.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpcre-1.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/liblzma-5.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libxml2-2.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libwebp-*.dll $(builddir_bin)/
@@ -160,16 +162,17 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicuin*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicuuc*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libicudt*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpcre16-0.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libpcre*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libharfbuzz-0.dll $(builddir_bin)/
 	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/share/qt5/plugins/* $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libOpenThreads.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosg.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgViewer.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgDB.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgUtil.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgGA.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgText.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libOpenThreads.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosg.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgViewer.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgDB.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgUtil.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgGA.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libosgText.dll $(builddir_bin)/
+	for f in $(QT_EXTRA_DLLS); do cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/$$f $(builddir_bin)/; done
 else # mingw64
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libgcc_s*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libintl-8.dll $(builddir_bin)/
@@ -193,7 +196,6 @@ else # mingw64
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5WebChannel.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5Sql.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/Qt5OpenGL.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libpcre-1.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libxslt-1.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/liblzma-5.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libxml2-2.dll $(builddir_bin)/
@@ -210,16 +212,17 @@ else # mingw64
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicuin*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicuuc*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libicudt*.dll $(builddir_bin)/
-	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libpcre16-0.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libpcre*.dll $(builddir_bin)/
 	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libharfbuzz-0.dll $(builddir_bin)/
 	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/share/qt5/plugins/* $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libOpenThreads.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosg.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgViewer.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgDB.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgUtil.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgGA.dll $(builddir_bin)/
-	cp -pufr $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgText.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libOpenThreads.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosg.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgViewer.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgDB.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgUtil.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgGA.dll $(builddir_bin)/
+	cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libosgText.dll $(builddir_bin)/
+	for f in $(QT_EXTRA_DLLS); do cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/$$f $(builddir_bin)/; done
 endif
 
 clean-qtclients:
