@@ -220,7 +220,7 @@ public
     algorithm
       if b then
         b := match exp
-          case Expression.CREF() then ComponentRef.isTime(exp.cref);
+          case Expression.CREF() then ComponentRef.isTime(exp.cref) or BVariable.checkCref(exp.cref, BVariable.isParamOrConst);
           else true;
         end match;
       end if;

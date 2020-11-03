@@ -48,6 +48,7 @@ protected
   import Expression = NFExpression;
   import NFFlatten.FunctionTreeImpl;
   import Operator = NFOperator;
+  import Prefixes = NFPrefixes;
   import Variable = NFVariable;
 
   // OB
@@ -60,6 +61,7 @@ protected
   import BEquation = NBEquation;
   import NBEquation.Equation;
   import NBEquation.EqData;
+  import NBEquation.EquationAttributes;
   import NBEquation.EquationPointers;
   import NBEquation.IfEquationBody;
   import Solve = NBSolve;
@@ -73,6 +75,7 @@ protected
   import BackendUtil = NBBackendUtil;
   import DoubleEnded;
   import StringUtil;
+  import BuiltinSystem = System;
 
 // =========================================================================
 //                      MAIN ROUTINE, PLEASE DO NOT CHANGE
@@ -139,7 +142,7 @@ public
       if not isEmpty(eventInfo) then
         str := StringUtil.headline_2("Event Info") + "\n";
         str := str + TimeEvent.toStringList(eventInfo.timeEvents) + "\n";
-        str := str + StateEvent.toStringList(eventInfo.stateEvents) + "\n";
+        str := str + StateEvent.toStringList(eventInfo.stateEvents) + "\n\n";
       end if;
     end toString;
 
@@ -151,7 +154,7 @@ public
       output list<Pointer<Equation>> auxiliary_eqns = {};
     protected
       String context = "EVT";
-      list<TimeEvent> timeEvents = TimeEventSet.listKeys(bucket.timeEventSet);
+      list<TimeEvent> timeEvents = listReverse(TimeEventSet.listKeys(bucket.timeEventSet));
       list<StateEvent> stateEvents = StateEventTree.toEventList(bucket.stateEventTree);
       list<tuple<Expression, Pointer<Variable>>> full_time_event_list = TimeEventTree.toList(bucket.timeEventTree);
       Expression rhs;
@@ -161,7 +164,7 @@ public
       // get auxiliary eqns and vars from time events
       for tpl in full_time_event_list loop
         (rhs, aux_var) := tpl;
-        aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(aux_var)), rhs, idx, context);
+        aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(aux_var)), rhs, idx, context, NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
         auxiliary_vars := aux_var :: auxiliary_vars;
         auxiliary_eqns := aux_eqn :: auxiliary_eqns;
       end for;
@@ -169,7 +172,7 @@ public
       // get auxiliary eqns and vars from state events
       for stateEvent in stateEvents loop
         STATE_EVENT(auxiliary = aux_var, relation = rhs) := stateEvent;
-        aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(aux_var)), rhs, idx, context);
+        aux_eqn := Equation.fromLHSandRHS(Expression.fromCref(BVariable.getVarName(aux_var)), rhs, idx, context, NBEquation.EQ_ATTR_DEFAULT_DISCRETE);
         auxiliary_vars := aux_var :: auxiliary_vars;
         auxiliary_eqns := aux_eqn :: auxiliary_eqns;
       end for;
@@ -241,7 +244,7 @@ public
     algorithm
       str := StringUtil.headline_4("Time Events");
       if listEmpty(events_lst) then
-        str := str + "<No Time Events>\n";
+        str := str + "\t<No Time Events>\n";
       else
         str := str + stringDelimitList(list(toString(te) for te in events_lst), "\n");
       end if;
@@ -260,7 +263,7 @@ public
           Expression exp1, exp2;
           Boolean b1, b2;
 
-        case Expression.BINARY()
+        case Expression.LBINARY()
           guard(Operator.getMathClassification(condition.operator) == NFOperator.MathClassification.LOGICAL)
           algorithm
             (exp1, bucket, b1) := create(condition.exp1, bucket);
@@ -304,13 +307,14 @@ public
       input output Expression exp         "has to be BINARY() with comparing operator or a sample CALL()";
       input output Bucket bucket          "bucket containing the events";
       output Boolean failed               "true if it did not work to create a compact time event";
+    protected
+      Expression new_exp;
     algorithm
       failed := match exp
           local
             Equation tmpEqn;
             Solve.Status status;
             Call call;
-            Expression start, interval;
             Boolean invert;
             TimeEvent timeEvent;
 
@@ -332,40 +336,87 @@ public
               if not TimeEventSet.hasKey(bucket.timeEventSet, timeEvent) then
                 bucket.timeEventIndex := bucket.timeEventIndex + 1;
                 timeEvent := setIndex(timeEvent, bucket.timeEventIndex);
-                TimeEventSet.add(bucket.timeEventSet, timeEvent);
+                bucket.timeEventSet := TimeEventSet.add(bucket.timeEventSet, timeEvent);
               end if;
+              // change expression to sample(index, trigger, maxInt)
+              // ToDo: remove this! it is just a very ugly hack to have single events in current simcode/runtime
+              // but currently there is no way around this
+              new_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SAMPLE, {Expression.INTEGER(getIndex(timeEvent)), exp.exp2, Expression.REAL(BuiltinSystem.intMaxLit())}, NFPrefixes.Variability.PARAMETER));
               failed := false;
             else
+              new_exp := exp;
               failed := true;
             end if;
         then failed;
 
-        case Expression.CALL(call = call)
-        then match Call.getNameAndArgs(call)
+        case Expression.CALL(call = call) algorithm
+          (call, bucket, failed) := createSample(call, bucket);
+          exp.call := call;
+          new_exp := exp;
+        then failed;
+
+        else true;
+      end match;
+      exp := new_exp;
+    end createSingleOrSample;
+
+    function createSample
+      input output Call call;
+      input output Bucket bucket;
+      output Boolean failed;
+    algorithm
+      failed := match Call.getNameAndArgs(call)
           local
             Integer value;
+            Expression start, interval;
+            TimeEvent timeEvent;
 
           case ("sample", {start, interval}) algorithm
             timeEvent := SAMPLE(0, start, interval);
             if not TimeEventSet.hasKey(bucket.timeEventSet, timeEvent) then
               bucket.timeEventIndex := bucket.timeEventIndex + 1;
               timeEvent := setIndex(timeEvent, bucket.timeEventIndex);
-              TimeEventSet.add(bucket.timeEventSet, timeEvent);
+              bucket.timeEventSet := TimeEventSet.add(bucket.timeEventSet, timeEvent);
             end if;
-          then false;
+            // add index to sample interface
+            call := Call.setArguments(call, {Expression.INTEGER(TimeEvent.getIndex(timeEvent)), start, interval});
+        then false;
 
           case ("sample", _) algorithm
-            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for sample operator: " + Expression.toString(exp)});
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for sample operator: " + Call.toString(call)});
           then fail();
+
+          // Maybe add funky sin/cos stuff here
 
           else true;
         end match;
+    end createSample;
 
-        // Maybe add funky sine/cosine stuff here
-
-        else false;
+    function createSampleTraverse
+      "used only for StateEvent traversel to encapsulate sample operators"
+      input output Expression exp         "has to be BINARY() with comparing operator or a sample CALL()";
+      input output Bucket bucket          "bucket containing the events";
+    algorithm
+      exp := match exp
+        local
+          Call call;
+        case Expression.CALL(call = call) algorithm
+          (call, bucket, _) := createSample(call, bucket);
+          exp.call := call;
+        then exp;
+        else exp;
       end match;
-    end createSingleOrSample;
+    end createSampleTraverse;
+
+    function getIndex
+      input TimeEvent timeEvent;
+      output Integer index;
+    algorithm
+      index := match timeEvent
+        case SINGLE() then timeEvent.index;
+        case SAMPLE() then timeEvent.index;
+      end match;
+    end getIndex;
 
     function setIndex
       input output TimeEvent timeEvent;
@@ -399,11 +450,11 @@ public
       output OldBackendDAE.TimeEvent oldTimeEvent;
     algorithm
       oldTimeEvent := match timeEvent
-        // treat single time events as sample time events with negative interval
+        // treat single time events as sample time events with maximum integer as interval
         case SINGLE() then OldBackendDAE.TimeEvent.SAMPLE_TIME_EVENT(
           index       = timeEvent.index,
           startExp    = Expression.toDAE(timeEvent.trigger),
-          intervalExp = DAE.RCONST(-1.0));
+          intervalExp = DAE.RCONST(BuiltinSystem.intMaxLit()));
         case SAMPLE() then OldBackendDAE.TimeEvent.SAMPLE_TIME_EVENT(
           index       = timeEvent.index,
           startExp    = Expression.toDAE(timeEvent.start),
@@ -433,7 +484,7 @@ public
     algorithm
       str := StringUtil.headline_4("State Events");
       if listEmpty(events_lst) then
-        str := str + "<No State Events>\n";
+        str := str + "\t<No State Events>\n";
       else
         str := str + stringDelimitList(list(toString(te) for te in events_lst), "\n");
       end if;
@@ -448,6 +499,10 @@ public
       Pointer<Variable> aux_var;
       ComponentRef aux_cref;
     algorithm
+      // collect possible state events from condition
+      (condition, bucket) := Expression.mapFold(condition, TimeEvent.createSampleTraverse, bucket);
+
+      // create state event with dummy variable and update it later on if it does not already exist
       event := STATE_EVENT(
         auxiliary   = Pointer.create(NBVariable.DUMMY_VARIABLE),
         relation    = condition,
@@ -459,7 +514,9 @@ public
       else
         // otherwise make a new auxiliary variable representing the state
         (aux_var, aux_cref) := BVariable.makeEventVar(NBVariable.STATE_EVENT_STR, bucket.auxiliaryStateEventIndex);
+        event.auxiliary := aux_var;
         bucket.auxiliaryStateEventIndex := bucket.auxiliaryStateEventIndex + 1;
+
         // add the new event to the tree
         bucket.stateEventTree := StateEventTree.add(bucket.stateEventTree, event, {eqn});
         // also return the expression which replaces the zero crossing

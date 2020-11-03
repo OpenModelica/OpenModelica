@@ -578,9 +578,19 @@ public
   algorithm
     arguments := match call
       case UNTYPED_CALL() then call.arguments;
-      case TYPED_CALL() then call.arguments;
+      case TYPED_CALL()   then call.arguments;
     end match;
   end arguments;
+
+  function setArguments
+    input output NFCall call;
+    input list<Expression> arguments;
+  algorithm
+    call := match call
+      case UNTYPED_CALL() algorithm call.arguments := arguments; then call;
+      case TYPED_CALL()   algorithm call.arguments := arguments; then call;
+    end match;
+  end setArguments;
 
   function toRecordExpression
     input NFCall call;

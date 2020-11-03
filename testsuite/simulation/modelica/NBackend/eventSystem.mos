@@ -1,0 +1,172 @@
+// name: eventSystem
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model eventSystem
+  Real x1(start = 0.0, fixed = true);
+  Real x2(start = -1.0, fixed = true);
+  Real x3(start = 1.0, fixed = true);
+  Real z;
+  parameter Real t = 0.2;
+equation
+  when t < time then
+    x1 = pre(x1) + 1;
+  end when;
+
+    when sample(0.1, t) then
+      x2 = pre(x2) + 0.5;
+    end when;
+
+  z = sin(time);
+  when z > 0.5 then
+    x3 = pre(x3) + 2;
+  end when;
+end eventSystem;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=bltdump"); getErrorString();
+simulate(eventSystem); getErrorString();
+
+val(x1, 0.19);
+val(x1, 0.21);
+
+val(x2, 0.29);
+val(x2, 0.31);
+
+val(x3, 0.52);
+val(x3, 0.53);
+
+// Result:
+// true
+// ""
+// true
+// ""
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// UNKNOWN ODE System
+// ========================================
+//
+// BLOCK 1: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $TEV_1
+// ### Equation:	[SCAL] ($RES_EVT_5) $TEV_1 = sample(2, t, 4.611686018427388e+18)
+//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x1
+// ### Equation:	[WHEN] when $TEV_1 then
+// 	[----]   x1 := $PRE.x1 + 1.0
+// 	[----] end when;
+//
+// BLOCK 3: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $TEV_0
+// ### Equation:	[SCAL] ($RES_EVT_4) $TEV_0 = sample(1, 0.1, t)
+//
+// BLOCK 4: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x2
+// ### Equation:	[WHEN] when $TEV_0 then
+// 	[----]   x2 := $PRE.x2 + 0.5
+// 	[----] end when;
+//
+// BLOCK 5: Single Equation
+// ----------------------------------------
+// ### Variable:	Real z
+// ### Equation:	[SCAL] ($RES_SIM_1) z = sin(time)
+//
+// BLOCK 6: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $SEV_0
+// ### Equation:	[SCAL] ($RES_EVT_6) $SEV_0 = z > 0.5
+//
+// BLOCK 7: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x3
+// ### Equation:	[WHEN] when $SEV_0 then
+// 	[----]   x3 := $PRE.x3 + 2.0
+// 	[----] end when;
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{6, 1}
+// 	(2)	{7, 2}
+// 	(3)	{4}
+// 	(4)	{5, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6}
+// 	(7)	{7}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{4}
+// 	(4)	{5, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6, 1}
+// 	(7)	{7, 2}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 4
+// 	var 4 --> eqn 3
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 4
+// 	eqn 4 --> var 3
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+//
+//
+// ========================================
+// Event Info
+// ========================================
+//
+// Time Events
+// ****************************************
+// 	(1) sample(0.1, t)
+// 	(2) time > t
+// State Events
+// ****************************************
+// 	[DISC] Boolean $SEV_0 () = z > 0.5
+//
+// record SimulationResult
+//     resultFile = "eventSystem_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'eventSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 0.0
+// 1.0
+// -0.5
+// 0.0
+// 1.0
+// 3.0
+// endResult

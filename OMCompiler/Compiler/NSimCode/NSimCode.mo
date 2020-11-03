@@ -207,6 +207,7 @@ public
       for jac in simCode.jacobians loop
         str := str + SimJacobian.toString(jac);
       end for;
+      str := str + EventInfo.toString(simCode.eventInfo);
       //str := str + SimStrongComponent.Block.listToString(simCode.no_ret, "  ", "REMOVED / ALIAS / KNOWN") + "\n";
     end toString;
 

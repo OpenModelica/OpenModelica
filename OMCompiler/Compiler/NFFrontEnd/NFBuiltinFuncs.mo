@@ -310,6 +310,10 @@ constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
+constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path.IDENT("sample")),
+  InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
+    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {},
+    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Component CLOCK_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);

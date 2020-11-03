@@ -914,9 +914,6 @@ public
       variables := VariablePointers.addList(dummy_states, variables);
       // add new equations (after cleanup because equation names are added there)
       equations := EquationPointers.addList(new_eqns, equations);
-
-
-
     end main;
 
   protected

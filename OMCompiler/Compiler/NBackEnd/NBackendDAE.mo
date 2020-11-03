@@ -285,7 +285,7 @@ protected
     output BVariable.VarData variableData;
   protected
     Variable lowVar;
-    Pointer<Variable> lowVar_ptr, time_ptr;
+    Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
     list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
     list<Pointer<Variable>> parameters_lst = {}, constants_lst = {};
@@ -296,8 +296,11 @@ protected
     // instantiate variable data (with one more space for time variable);
     variables := VariablePointers.empty(listLength(varList) + 1);
 
-    /* create time var and add it*/
+    // create dummy and time var and add then
+    // needed to make function BVariable.getVarPointer() more universally applicable
+    dummy_ptr := Pointer.create(NBVariable.DUMMY_VARIABLE);
     time_ptr := Pointer.create(NBVariable.TIME_VARIABLE);
+    variables := VariablePointers.add(dummy_ptr, variables);
     variables := VariablePointers.add(time_ptr, variables);
 
     // routine to prepare the lists for pointer arrays
