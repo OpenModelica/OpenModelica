@@ -1,0 +1,212 @@
+#ifndef FlagsUtil__H
+#define FlagsUtil__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_SCRIPTING__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Flags_Flag_FLAGS__desc;
+extern struct record_description Flags_Flag_NO__FLAGS__desc;
+extern struct record_description Flags_FlagData_BOOL__FLAG__desc;
+extern struct record_description Flags_FlagData_ENUM__FLAG__desc;
+extern struct record_description Flags_FlagData_INT__FLAG__desc;
+extern struct record_description Flags_FlagData_INT__LIST__FLAG__desc;
+extern struct record_description Flags_FlagData_REAL__FLAG__desc;
+extern struct record_description Flags_FlagData_STRING__FLAG__desc;
+extern struct record_description Flags_FlagData_STRING__LIST__FLAG__desc;
+extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
+extern struct record_description Flags_FlagVisibility_INTERNAL__desc;
+extern struct record_description Flags_ValidOptions_STRING__DESC__OPTION__desc;
+extern struct record_description Flags_ValidOptions_STRING__OPTION__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description Gettext_TranslatableContent_notrans__desc;
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLExport
+modelica_metatype omc_FlagsUtil_unparseFlags(threadData_t *threadData);
+#define boxptr_FlagsUtil_unparseFlags omc_FlagsUtil_unparseFlags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_unparseFlags,2,0) {(void*) boxptr_FlagsUtil_unparseFlags,0}};
+#define boxvar_FlagsUtil_unparseFlags MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_unparseFlags)
+DLLExport
+modelica_string omc_FlagsUtil_flagDataString(threadData_t *threadData, modelica_metatype _flagData);
+#define boxptr_FlagsUtil_flagDataString omc_FlagsUtil_flagDataString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_flagDataString,2,0) {(void*) boxptr_FlagsUtil_flagDataString,0}};
+#define boxvar_FlagsUtil_flagDataString MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_flagDataString)
+DLLExport
+modelica_boolean omc_FlagsUtil_flagDataEq(threadData_t *threadData, modelica_metatype _data1, modelica_metatype _data2);
+DLLExport
+modelica_metatype boxptr_FlagsUtil_flagDataEq(threadData_t *threadData, modelica_metatype _data1, modelica_metatype _data2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_flagDataEq,2,0) {(void*) boxptr_FlagsUtil_flagDataEq,0}};
+#define boxvar_FlagsUtil_flagDataEq MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_flagDataEq)
+#define boxptr_FlagsUtil_getValidStringOptions omc_FlagsUtil_getValidStringOptions
+DLLExport
+modelica_string omc_FlagsUtil_configFlagName(threadData_t *threadData, modelica_metatype _inFlag);
+#define boxptr_FlagsUtil_configFlagName omc_FlagsUtil_configFlagName
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_configFlagName,2,0) {(void*) boxptr_FlagsUtil_configFlagName,0}};
+#define boxvar_FlagsUtil_configFlagName MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_configFlagName)
+DLLExport
+modelica_string omc_FlagsUtil_debugFlagName(threadData_t *threadData, modelica_metatype _inFlag);
+#define boxptr_FlagsUtil_debugFlagName omc_FlagsUtil_debugFlagName
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_debugFlagName,2,0) {(void*) boxptr_FlagsUtil_debugFlagName,0}};
+#define boxvar_FlagsUtil_debugFlagName MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_debugFlagName)
+#define boxptr_FlagsUtil_removeSphinxMathMode omc_FlagsUtil_removeSphinxMathMode
+#define boxptr_FlagsUtil_sphinxMathMode omc_FlagsUtil_sphinxMathMode
+#define boxptr_FlagsUtil_printFlagValidOptionsDesc omc_FlagsUtil_printFlagValidOptionsDesc
+#define boxptr_FlagsUtil_defaultFlagSphinx omc_FlagsUtil_defaultFlagSphinx
+#define boxptr_FlagsUtil_printValidOptionsSphinx omc_FlagsUtil_printValidOptionsSphinx
+#define boxptr_FlagsUtil_printValidOptions omc_FlagsUtil_printValidOptions
+#define boxptr_FlagsUtil_printConfigFlagSphinx omc_FlagsUtil_printConfigFlagSphinx
+#define boxptr_FlagsUtil_printConfigFlag omc_FlagsUtil_printConfigFlag
+DLLExport
+modelica_string omc_FlagsUtil_printAllConfigFlags(threadData_t *threadData);
+#define boxptr_FlagsUtil_printAllConfigFlags omc_FlagsUtil_printAllConfigFlags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_printAllConfigFlags,2,0) {(void*) boxptr_FlagsUtil_printAllConfigFlags,0}};
+#define boxvar_FlagsUtil_printAllConfigFlags MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_printAllConfigFlags)
+DLLExport
+modelica_string omc_FlagsUtil_printUsageSphinxAll(threadData_t *threadData);
+#define boxptr_FlagsUtil_printUsageSphinxAll omc_FlagsUtil_printUsageSphinxAll
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_printUsageSphinxAll,2,0) {(void*) boxptr_FlagsUtil_printUsageSphinxAll,0}};
+#define boxvar_FlagsUtil_printUsageSphinxAll MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_printUsageSphinxAll)
+DLLExport
+modelica_string omc_FlagsUtil_printUsage(threadData_t *threadData);
+#define boxptr_FlagsUtil_printUsage omc_FlagsUtil_printUsage
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_printUsage,2,0) {(void*) boxptr_FlagsUtil_printUsage,0}};
+#define boxvar_FlagsUtil_printUsage MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_printUsage)
+#define boxptr_FlagsUtil_makeTopicString omc_FlagsUtil_makeTopicString
+#define boxptr_FlagsUtil_getValidOptionsAndDescription2 omc_FlagsUtil_getValidOptionsAndDescription2
+DLLExport
+modelica_metatype omc_FlagsUtil_getValidOptionsAndDescription(threadData_t *threadData, modelica_string _flagName, modelica_string *out_mainDescriptionStr, modelica_metatype *out_descriptions);
+#define boxptr_FlagsUtil_getValidOptionsAndDescription omc_FlagsUtil_getValidOptionsAndDescription
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_getValidOptionsAndDescription,2,0) {(void*) boxptr_FlagsUtil_getValidOptionsAndDescription,0}};
+#define boxvar_FlagsUtil_getValidOptionsAndDescription MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_getValidOptionsAndDescription)
+DLLExport
+modelica_string omc_FlagsUtil_printHelp(threadData_t *threadData, modelica_metatype _inTopics);
+#define boxptr_FlagsUtil_printHelp omc_FlagsUtil_printHelp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_printHelp,2,0) {(void*) boxptr_FlagsUtil_printHelp,0}};
+#define boxvar_FlagsUtil_printHelp MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_printHelp)
+DLLExport
+void omc_FlagsUtil_setConfigEnum(threadData_t *threadData, modelica_metatype _inFlag, modelica_integer _inValue);
+DLLExport
+void boxptr_FlagsUtil_setConfigEnum(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _inValue);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigEnum,2,0) {(void*) boxptr_FlagsUtil_setConfigEnum,0}};
+#define boxvar_FlagsUtil_setConfigEnum MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigEnum)
+DLLExport
+void omc_FlagsUtil_setConfigStringList(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _inValue);
+#define boxptr_FlagsUtil_setConfigStringList omc_FlagsUtil_setConfigStringList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigStringList,2,0) {(void*) boxptr_FlagsUtil_setConfigStringList,0}};
+#define boxvar_FlagsUtil_setConfigStringList MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigStringList)
+DLLExport
+void omc_FlagsUtil_setConfigString(threadData_t *threadData, modelica_metatype _inFlag, modelica_string _inValue);
+#define boxptr_FlagsUtil_setConfigString omc_FlagsUtil_setConfigString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigString,2,0) {(void*) boxptr_FlagsUtil_setConfigString,0}};
+#define boxvar_FlagsUtil_setConfigString MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigString)
+DLLExport
+void omc_FlagsUtil_setConfigReal(threadData_t *threadData, modelica_metatype _inFlag, modelica_real _inValue);
+DLLExport
+void boxptr_FlagsUtil_setConfigReal(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _inValue);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigReal,2,0) {(void*) boxptr_FlagsUtil_setConfigReal,0}};
+#define boxvar_FlagsUtil_setConfigReal MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigReal)
+DLLExport
+void omc_FlagsUtil_setConfigInt(threadData_t *threadData, modelica_metatype _inFlag, modelica_integer _inValue);
+DLLExport
+void boxptr_FlagsUtil_setConfigInt(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _inValue);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigInt,2,0) {(void*) boxptr_FlagsUtil_setConfigInt,0}};
+#define boxvar_FlagsUtil_setConfigInt MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigInt)
+DLLExport
+void omc_FlagsUtil_setConfigBool(threadData_t *threadData, modelica_metatype _inFlag, modelica_boolean _inValue);
+DLLExport
+void boxptr_FlagsUtil_setConfigBool(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _inValue);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigBool,2,0) {(void*) boxptr_FlagsUtil_setConfigBool,0}};
+#define boxvar_FlagsUtil_setConfigBool MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigBool)
+DLLExport
+void omc_FlagsUtil_setConfigValue(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _inValue);
+#define boxptr_FlagsUtil_setConfigValue omc_FlagsUtil_setConfigValue
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigValue,2,0) {(void*) boxptr_FlagsUtil_setConfigValue,0}};
+#define boxvar_FlagsUtil_setConfigValue MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_setConfigValue)
+#define boxptr_FlagsUtil_applySideEffects omc_FlagsUtil_applySideEffects
+#define boxptr_FlagsUtil_printActualTypeStr omc_FlagsUtil_printActualTypeStr
+#define boxptr_FlagsUtil_printExpectedTypeStr omc_FlagsUtil_printExpectedTypeStr
+#define boxptr_FlagsUtil_stringFlagData omc_FlagsUtil_stringFlagData
+#define boxptr_FlagsUtil_setConfigFlag omc_FlagsUtil_setConfigFlag
+#define boxptr_FlagsUtil_setDebugFlag omc_FlagsUtil_setDebugFlag
+#define boxptr_FlagsUtil_evaluateConfigFlag omc_FlagsUtil_evaluateConfigFlag
+#define boxptr_FlagsUtil_setAdditionalOptModules omc_FlagsUtil_setAdditionalOptModules
+#define boxptr_FlagsUtil_lookupConfigFlag omc_FlagsUtil_lookupConfigFlag
+#define boxptr_FlagsUtil_parseConfigFlag omc_FlagsUtil_parseConfigFlag
+#define boxptr_FlagsUtil_parseFlag omc_FlagsUtil_parseFlag
+DLLExport
+modelica_metatype omc_FlagsUtil_readArgs(threadData_t *threadData, modelica_metatype _inArgs);
+#define boxptr_FlagsUtil_readArgs omc_FlagsUtil_readArgs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_readArgs,2,0) {(void*) boxptr_FlagsUtil_readArgs,0}};
+#define boxvar_FlagsUtil_readArgs MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_readArgs)
+#define boxptr_FlagsUtil_updateConfigFlagArray omc_FlagsUtil_updateConfigFlagArray
+DLLExport
+modelica_metatype omc_FlagsUtil_getConfigOptionsStringList(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype *out_outComments);
+#define boxptr_FlagsUtil_getConfigOptionsStringList omc_FlagsUtil_getConfigOptionsStringList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_getConfigOptionsStringList,2,0) {(void*) boxptr_FlagsUtil_getConfigOptionsStringList,0}};
+#define boxvar_FlagsUtil_getConfigOptionsStringList MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_getConfigOptionsStringList)
+DLLExport
+modelica_boolean omc_FlagsUtil_disableDebug(threadData_t *threadData, modelica_metatype _inFlag);
+DLLExport
+modelica_metatype boxptr_FlagsUtil_disableDebug(threadData_t *threadData, modelica_metatype _inFlag);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_disableDebug,2,0) {(void*) boxptr_FlagsUtil_disableDebug,0}};
+#define boxvar_FlagsUtil_disableDebug MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_disableDebug)
+DLLExport
+modelica_boolean omc_FlagsUtil_enableDebug(threadData_t *threadData, modelica_metatype _inFlag);
+DLLExport
+modelica_metatype boxptr_FlagsUtil_enableDebug(threadData_t *threadData, modelica_metatype _inFlag);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_enableDebug,2,0) {(void*) boxptr_FlagsUtil_enableDebug,0}};
+#define boxvar_FlagsUtil_enableDebug MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_enableDebug)
+DLLExport
+modelica_boolean omc_FlagsUtil_set(threadData_t *threadData, modelica_metatype _inFlag, modelica_boolean _inValue);
+DLLExport
+modelica_metatype boxptr_FlagsUtil_set(threadData_t *threadData, modelica_metatype _inFlag, modelica_metatype _inValue);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_set,2,0) {(void*) boxptr_FlagsUtil_set,0}};
+#define boxvar_FlagsUtil_set MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_set)
+#define boxptr_FlagsUtil_checkConfigFlags omc_FlagsUtil_checkConfigFlags
+#define boxptr_FlagsUtil_checkDebugFlags omc_FlagsUtil_checkDebugFlags
+DLLExport
+void omc_FlagsUtil_resetConfigFlags(threadData_t *threadData);
+#define boxptr_FlagsUtil_resetConfigFlags omc_FlagsUtil_resetConfigFlags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_resetConfigFlags,2,0) {(void*) boxptr_FlagsUtil_resetConfigFlags,0}};
+#define boxvar_FlagsUtil_resetConfigFlags MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_resetConfigFlags)
+DLLExport
+void omc_FlagsUtil_resetDebugFlags(threadData_t *threadData);
+#define boxptr_FlagsUtil_resetDebugFlags omc_FlagsUtil_resetDebugFlags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_resetDebugFlags,2,0) {(void*) boxptr_FlagsUtil_resetDebugFlags,0}};
+#define boxvar_FlagsUtil_resetDebugFlags MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_resetDebugFlags)
+DLLExport
+modelica_metatype omc_FlagsUtil_backupFlags(threadData_t *threadData);
+#define boxptr_FlagsUtil_backupFlags omc_FlagsUtil_backupFlags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_backupFlags,2,0) {(void*) boxptr_FlagsUtil_backupFlags,0}};
+#define boxvar_FlagsUtil_backupFlags MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_backupFlags)
+DLLExport
+modelica_metatype omc_FlagsUtil_loadFlags(threadData_t *threadData, modelica_boolean _initialize);
+DLLExport
+modelica_metatype boxptr_FlagsUtil_loadFlags(threadData_t *threadData, modelica_metatype _initialize);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_loadFlags,2,0) {(void*) boxptr_FlagsUtil_loadFlags,0}};
+#define boxvar_FlagsUtil_loadFlags MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_loadFlags)
+#define boxptr_FlagsUtil_createDebugFlags omc_FlagsUtil_createDebugFlags
+#define boxptr_FlagsUtil_createConfigFlags omc_FlagsUtil_createConfigFlags
+DLLExport
+void omc_FlagsUtil_saveFlags(threadData_t *threadData, modelica_metatype _inFlags);
+#define boxptr_FlagsUtil_saveFlags omc_FlagsUtil_saveFlags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_saveFlags,2,0) {(void*) boxptr_FlagsUtil_saveFlags,0}};
+#define boxvar_FlagsUtil_saveFlags MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_saveFlags)
+DLLExport
+modelica_metatype omc_FlagsUtil_new(threadData_t *threadData, modelica_metatype _inArgs);
+#define boxptr_FlagsUtil_new omc_FlagsUtil_new
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FlagsUtil_new,2,0) {(void*) boxptr_FlagsUtil_new,0}};
+#define boxvar_FlagsUtil_new MMC_REFSTRUCTLIT(boxvar_lit_FlagsUtil_new)
+#ifdef __cplusplus
+}
+#endif
+#endif

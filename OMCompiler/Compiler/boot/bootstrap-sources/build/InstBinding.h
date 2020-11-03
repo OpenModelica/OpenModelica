@@ -1,0 +1,107 @@
+#ifndef InstBinding__H
+#define InstBinding__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_Direction_BIDIR__desc;
+extern struct record_description Absyn_Exp_CREF__desc;
+extern struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
+extern struct record_description Absyn_Path_IDENT__desc;
+extern struct record_description ClassInf_State_RECORD__desc;
+extern struct record_description DAE_Attributes_ATTR__desc;
+extern struct record_description DAE_Binding_EQBOUND__desc;
+extern struct record_description DAE_Binding_UNBOUND__desc;
+extern struct record_description DAE_BindingSource_BINDING__FROM__DEFAULT__VALUE__desc;
+extern struct record_description DAE_BindingSource_BINDING__FROM__RECORD__SUBMODS__desc;
+extern struct record_description DAE_BindingSource_BINDING__FROM__START__VALUE__desc;
+extern struct record_description DAE_CallAttributes_CALL__ATTR__desc;
+extern struct record_description DAE_ComponentRef_CREF__IDENT__desc;
+extern struct record_description DAE_ConnectorType_NON__CONNECTOR__desc;
+extern struct record_description DAE_Const_C__CONST__desc;
+extern struct record_description DAE_Const_C__VAR__desc;
+extern struct record_description DAE_DAElist_DAE__desc;
+extern struct record_description DAE_Dimension_DIM__INTEGER__desc;
+extern struct record_description DAE_Dimension_DIM__UNKNOWN__desc;
+extern struct record_description DAE_Distribution_DISTRIBUTION__desc;
+extern struct record_description DAE_Exp_CALL__desc;
+extern struct record_description DAE_Exp_EMPTY__desc;
+extern struct record_description DAE_Exp_ICONST__desc;
+extern struct record_description DAE_Exp_SCONST__desc;
+extern struct record_description DAE_InlineType_NORM__INLINE__desc;
+extern struct record_description DAE_Properties_PROP__desc;
+extern struct record_description DAE_SymbolicOperation_FLATTEN__desc;
+extern struct record_description DAE_TailCall_NO__TAIL__desc;
+extern struct record_description DAE_Type_T__ARRAY__desc;
+extern struct record_description DAE_Type_T__BOOL__desc;
+extern struct record_description DAE_Type_T__COMPLEX__desc;
+extern struct record_description DAE_Type_T__ENUMERATION__desc;
+extern struct record_description DAE_Type_T__INTEGER__desc;
+extern struct record_description DAE_Type_T__REAL__desc;
+extern struct record_description DAE_Type_T__STRING__desc;
+extern struct record_description DAE_Uncertainty_GIVEN__desc;
+extern struct record_description DAE_Uncertainty_REFINE__desc;
+extern struct record_description DAE_Uncertainty_SOUGHT__desc;
+extern struct record_description DAE_Var_TYPES__VAR__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__BOOL__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__CLOCK__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__ENUMERATION__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__INT__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__REAL__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__STRING__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description SCode_Comment_COMMENT__desc;
+extern struct record_description SCode_EEquation_EQ__EQUALS__desc;
+extern struct record_description SCode_Initial_NON__INITIAL__desc;
+extern struct record_description SCode_Parallelism_NON__PARALLEL__desc;
+extern struct record_description SCode_Variability_PARAM__desc;
+extern struct record_description SCode_Visibility_PUBLIC__desc;
+extern struct record_description Values_Value_EMPTY__desc;
+extern struct record_description Values_Value_OPTION__desc;
+extern struct record_description Values_Value_RECORD__desc;
+DLLExport
+modelica_metatype omc_InstBinding_makeVariableBinding(threadData_t *threadData, modelica_metatype _inType, modelica_metatype _inMod, modelica_metatype _inConst, modelica_metatype _inPrefix, modelica_string _inName);
+#define boxptr_InstBinding_makeVariableBinding omc_InstBinding_makeVariableBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstBinding_makeVariableBinding,2,0) {(void*) boxptr_InstBinding_makeVariableBinding,0}};
+#define boxvar_InstBinding_makeVariableBinding MMC_REFSTRUCTLIT(boxvar_lit_InstBinding_makeVariableBinding)
+#define boxptr_InstBinding_makeRecordBinding3 omc_InstBinding_makeRecordBinding3
+DLLExport
+modelica_metatype omc_InstBinding_makeRecordBinding(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inRecordName, modelica_metatype _inRecordType, modelica_metatype _inRecordVars, modelica_metatype _inMods, modelica_metatype _inInfo);
+#define boxptr_InstBinding_makeRecordBinding omc_InstBinding_makeRecordBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstBinding_makeRecordBinding,2,0) {(void*) boxptr_InstBinding_makeRecordBinding,0}};
+#define boxvar_InstBinding_makeRecordBinding MMC_REFSTRUCTLIT(boxvar_lit_InstBinding_makeRecordBinding)
+DLLExport
+modelica_metatype omc_InstBinding_makeBinding(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inAttributes, modelica_metatype _inMod, modelica_metatype _inType, modelica_metatype _inPrefix, modelica_string _componentName, modelica_metatype _inInfo, modelica_metatype *out_outBinding);
+#define boxptr_InstBinding_makeBinding omc_InstBinding_makeBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstBinding_makeBinding,2,0) {(void*) boxptr_InstBinding_makeBinding,0}};
+#define boxvar_InstBinding_makeBinding MMC_REFSTRUCTLIT(boxvar_lit_InstBinding_makeBinding)
+DLLExport
+modelica_metatype omc_InstBinding_instModEquation(threadData_t *threadData, modelica_metatype _inComponentRef, modelica_metatype _inType, modelica_metatype _inMod, modelica_metatype _inSource, modelica_boolean _inImpl);
+DLLExport
+modelica_metatype boxptr_InstBinding_instModEquation(threadData_t *threadData, modelica_metatype _inComponentRef, modelica_metatype _inType, modelica_metatype _inMod, modelica_metatype _inSource, modelica_metatype _inImpl);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstBinding_instModEquation,2,0) {(void*) boxptr_InstBinding_instModEquation,0}};
+#define boxvar_InstBinding_instModEquation MMC_REFSTRUCTLIT(boxvar_lit_InstBinding_instModEquation)
+#define boxptr_InstBinding_getUncertainFromExpOption omc_InstBinding_getUncertainFromExpOption
+DLLExport
+modelica_metatype omc_InstBinding_instDaeVariableAttributes(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inMod, modelica_metatype _inType, modelica_metatype _inIntegerLst, modelica_metatype *out_outDAEVariableAttributesOption);
+#define boxptr_InstBinding_instDaeVariableAttributes omc_InstBinding_instDaeVariableAttributes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstBinding_instDaeVariableAttributes,2,0) {(void*) boxptr_InstBinding_instDaeVariableAttributes,0}};
+#define boxvar_InstBinding_instDaeVariableAttributes MMC_REFSTRUCTLIT(boxvar_lit_InstBinding_instDaeVariableAttributes)
+#define boxptr_InstBinding_instStartOrigin omc_InstBinding_instStartOrigin
+DLLExport
+modelica_metatype omc_InstBinding_instStartBindingExp(threadData_t *threadData, modelica_metatype _inMod, modelica_metatype _inExpectedType, modelica_metatype _inVariability);
+#define boxptr_InstBinding_instStartBindingExp omc_InstBinding_instStartBindingExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_InstBinding_instStartBindingExp,2,0) {(void*) boxptr_InstBinding_instStartBindingExp,0}};
+#define boxvar_InstBinding_instStartBindingExp MMC_REFSTRUCTLIT(boxvar_lit_InstBinding_instStartBindingExp)
+#ifdef __cplusplus
+}
+#endif
+#endif

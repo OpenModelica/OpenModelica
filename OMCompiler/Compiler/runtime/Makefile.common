@@ -129,9 +129,9 @@ GraphStreamExt_omc$(OBJEXT) : $(BOOTH) GraphStreamExt_impl.cpp $(RML_COMPAT)
 Settings_omc$(OBJEXT) : Settings_omc.cpp settingsimpl.c omc_config.h $(configUnix) $(BOOTH)
 
 %.boot.o: %.c
-	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS) -I../boot/tarball-include/
+	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS) -DOPENMODELICA_BOOTSTRAPPING_FILE -I../boot/tarball-include/
 %.boot.o: %.cpp
-	$(CXX) -c -o "$@" "$<" $(CXXFLAGS) $(CPPFLAGS) -I../boot/tarball-include/
+	$(CXX) -c -o "$@" "$<" $(CXXFLAGS) $(CPPFLAGS) -DOPENMODELICA_BOOTSTRAPPING_FILE -I../boot/tarball-include/
 %.o: %.c
 	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS) -I..
 %.o: %.cpp

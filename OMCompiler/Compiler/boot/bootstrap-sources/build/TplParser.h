@@ -1,0 +1,923 @@
+#ifndef TplParser__H
+#define TplParser__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+extern struct record_description Tpl_StringToken_ST__LINE__desc;
+extern struct record_description Tpl_StringToken_ST__NEW__LINE__desc;
+extern struct record_description Tpl_StringToken_ST__STRING__desc;
+extern struct record_description Tpl_StringToken_ST__STRING__LIST__desc;
+extern struct record_description TplAbsyn_ASTDef_AST__DEF__desc;
+extern struct record_description TplAbsyn_ExpressionBase_BOUND__VALUE__desc;
+extern struct record_description TplAbsyn_ExpressionBase_CONDITION__desc;
+extern struct record_description TplAbsyn_ExpressionBase_ERROR__EXP__desc;
+extern struct record_description TplAbsyn_ExpressionBase_ESCAPED__desc;
+extern struct record_description TplAbsyn_ExpressionBase_FUN__CALL__desc;
+extern struct record_description TplAbsyn_ExpressionBase_INDENTATION__desc;
+extern struct record_description TplAbsyn_ExpressionBase_LET__desc;
+extern struct record_description TplAbsyn_ExpressionBase_LITERAL__desc;
+extern struct record_description TplAbsyn_ExpressionBase_MAP__desc;
+extern struct record_description TplAbsyn_ExpressionBase_MAP__ARG__LIST__desc;
+extern struct record_description TplAbsyn_ExpressionBase_MATCH__desc;
+extern struct record_description TplAbsyn_ExpressionBase_NORET__CALL__desc;
+extern struct record_description TplAbsyn_ExpressionBase_SOFT__NEW__LINE__desc;
+extern struct record_description TplAbsyn_ExpressionBase_STR__TOKEN__desc;
+extern struct record_description TplAbsyn_ExpressionBase_TEMPLATE__desc;
+extern struct record_description TplAbsyn_ExpressionBase_TEXT__ADD__desc;
+extern struct record_description TplAbsyn_ExpressionBase_TEXT__CREATE__desc;
+extern struct record_description TplAbsyn_MatchingExp_BIND__AS__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_BIND__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_LIST__CONS__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_LIST__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_LITERAL__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_NONE__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_RECORD__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_REST__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_SOME__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_STRING__MATCH__desc;
+extern struct record_description TplAbsyn_MatchingExp_TUPLE__MATCH__desc;
+extern struct record_description TplAbsyn_PathIdent_IDENT__desc;
+extern struct record_description TplAbsyn_PathIdent_PATH__IDENT__desc;
+extern struct record_description TplAbsyn_TemplPackage_TEMPL__PACKAGE__desc;
+extern struct record_description TplAbsyn_TemplateDef_LITERAL__DEF__desc;
+extern struct record_description TplAbsyn_TemplateDef_STR__TOKEN__DEF__desc;
+extern struct record_description TplAbsyn_TemplateDef_TEMPLATE__DEF__desc;
+extern struct record_description TplAbsyn_TypeInfo_TI__ALIAS__TYPE__desc;
+extern struct record_description TplAbsyn_TypeInfo_TI__CONST__TYPE__desc;
+extern struct record_description TplAbsyn_TypeInfo_TI__FUN__TYPE__desc;
+extern struct record_description TplAbsyn_TypeInfo_TI__RECORD__TYPE__desc;
+extern struct record_description TplAbsyn_TypeInfo_TI__UNION__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_ARRAY__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_BOOLEAN__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_INTEGER__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_LIST__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_NAMED__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_OPTION__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_REAL__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_STRING__TOKEN__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_STRING__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_TEXT__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_TUPLE__TYPE__desc;
+extern struct record_description TplAbsyn_TypeSignature_UNRESOLVED__TYPE__desc;
+extern struct record_description TplParser_CacheTree_Tree_EMPTY__desc;
+extern struct record_description TplParser_CacheTree_Tree_LEAF__desc;
+extern struct record_description TplParser_CacheTree_Tree_NODE__desc;
+extern struct record_description TplParser_LineInfo_LINE__INFO__desc;
+extern struct record_description TplParser_ParseInfo_PARSE__INFO__desc;
+#define boxptr_TplParser_annotationFooter omc_TplParser_annotationFooter
+DLLExport
+modelica_metatype omc_TplParser_fieldBinding__rest(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outFieldBindingsRest);
+#define boxptr_TplParser_fieldBinding__rest omc_TplParser_fieldBinding__rest
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_fieldBinding__rest,2,0) {(void*) boxptr_TplParser_fieldBinding__rest,0}};
+#define boxvar_TplParser_fieldBinding__rest MMC_REFSTRUCTLIT(boxvar_lit_TplParser_fieldBinding__rest)
+DLLExport
+modelica_metatype omc_TplParser_fieldBinding(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outFieldBinding);
+#define boxptr_TplParser_fieldBinding omc_TplParser_fieldBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_fieldBinding,2,0) {(void*) boxptr_TplParser_fieldBinding,0}};
+#define boxvar_TplParser_fieldBinding MMC_REFSTRUCTLIT(boxvar_lit_TplParser_fieldBinding)
+DLLExport
+modelica_metatype omc_TplParser_afterIdentBinding(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inPathIdent, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchingExp);
+#define boxptr_TplParser_afterIdentBinding omc_TplParser_afterIdentBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_afterIdentBinding,2,0) {(void*) boxptr_TplParser_afterIdentBinding,0}};
+#define boxvar_TplParser_afterIdentBinding MMC_REFSTRUCTLIT(boxvar_lit_TplParser_afterIdentBinding)
+DLLExport
+modelica_metatype omc_TplParser_listMatch__rest(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchingExpListRest);
+#define boxptr_TplParser_listMatch__rest omc_TplParser_listMatch__rest
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_listMatch__rest,2,0) {(void*) boxptr_TplParser_listMatch__rest,0}};
+#define boxvar_TplParser_listMatch__rest MMC_REFSTRUCTLIT(boxvar_lit_TplParser_listMatch__rest)
+DLLExport
+modelica_metatype omc_TplParser_tupleOrSingleMatch(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inHeadMatchingExp, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchingExp);
+#define boxptr_TplParser_tupleOrSingleMatch omc_TplParser_tupleOrSingleMatch
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_tupleOrSingleMatch,2,0) {(void*) boxptr_TplParser_tupleOrSingleMatch,0}};
+#define boxvar_TplParser_tupleOrSingleMatch MMC_REFSTRUCTLIT(boxvar_lit_TplParser_tupleOrSingleMatch)
+DLLExport
+modelica_metatype omc_TplParser_takeEmptyBraces(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_takeEmptyBraces omc_TplParser_takeEmptyBraces
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_takeEmptyBraces,2,0) {(void*) boxptr_TplParser_takeEmptyBraces,0}};
+#define boxvar_TplParser_takeEmptyBraces MMC_REFSTRUCTLIT(boxvar_lit_TplParser_takeEmptyBraces)
+DLLExport
+modelica_metatype omc_TplParser_someBinding__rest(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchingExp);
+#define boxptr_TplParser_someBinding__rest omc_TplParser_someBinding__rest
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_someBinding__rest,2,0) {(void*) boxptr_TplParser_someBinding__rest,0}};
+#define boxvar_TplParser_someBinding__rest MMC_REFSTRUCTLIT(boxvar_lit_TplParser_someBinding__rest)
+DLLExport
+modelica_metatype omc_TplParser_matchBinding__base(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchingExp);
+#define boxptr_TplParser_matchBinding__base omc_TplParser_matchBinding__base
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchBinding__base,2,0) {(void*) boxptr_TplParser_matchBinding__base,0}};
+#define boxvar_TplParser_matchBinding__base MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchBinding__base)
+DLLExport
+modelica_metatype omc_TplParser_matchBinding__tail(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inHeadMatchingExp, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchingExp);
+#define boxptr_TplParser_matchBinding__tail omc_TplParser_matchBinding__tail
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchBinding__tail,2,0) {(void*) boxptr_TplParser_matchBinding__tail,0}};
+#define boxvar_TplParser_matchBinding__tail MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchBinding__tail)
+DLLExport
+modelica_metatype omc_TplParser_matchBinding(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchingExp);
+#define boxptr_TplParser_matchBinding omc_TplParser_matchBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchBinding,2,0) {(void*) boxptr_TplParser_matchBinding,0}};
+#define boxvar_TplParser_matchBinding MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchBinding)
+DLLExport
+modelica_metatype omc_TplParser_matchCaseListNoOpt(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchCases);
+#define boxptr_TplParser_matchCaseListNoOpt omc_TplParser_matchCaseListNoOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchCaseListNoOpt,2,0) {(void*) boxptr_TplParser_matchCaseListNoOpt,0}};
+#define boxvar_TplParser_matchCaseListNoOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchCaseListNoOpt)
+DLLExport
+modelica_metatype omc_TplParser_matchCaseList(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchCases);
+#define boxptr_TplParser_matchCaseList omc_TplParser_matchCaseList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchCaseList,2,0) {(void*) boxptr_TplParser_matchCaseList,0}};
+#define boxvar_TplParser_matchCaseList MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchCaseList)
+DLLExport
+modelica_metatype omc_TplParser_makeMatchCaseLst(threadData_t *threadData, modelica_metatype _inMExpHeadLst, modelica_metatype _inExpression);
+#define boxptr_TplParser_makeMatchCaseLst omc_TplParser_makeMatchCaseLst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_makeMatchCaseLst,2,0) {(void*) boxptr_TplParser_makeMatchCaseLst,0}};
+#define boxvar_TplParser_makeMatchCaseLst MMC_REFSTRUCTLIT(boxvar_lit_TplParser_makeMatchCaseLst)
+DLLExport
+modelica_metatype omc_TplParser_matchCaseHeads(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMExpHeadLst);
+#define boxptr_TplParser_matchCaseHeads omc_TplParser_matchCaseHeads
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchCaseHeads,2,0) {(void*) boxptr_TplParser_matchCaseHeads,0}};
+#define boxvar_TplParser_matchCaseHeads MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchCaseHeads)
+DLLExport
+modelica_metatype omc_TplParser_matchEndMatch(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_matchEndMatch omc_TplParser_matchEndMatch
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchEndMatch,2,0) {(void*) boxptr_TplParser_matchEndMatch,0}};
+#define boxvar_TplParser_matchEndMatch MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchEndMatch)
+DLLExport
+modelica_metatype omc_TplParser_matchElseCase(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchCaseLst);
+#define boxptr_TplParser_matchElseCase omc_TplParser_matchElseCase
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchElseCase,2,0) {(void*) boxptr_TplParser_matchElseCase,0}};
+#define boxvar_TplParser_matchElseCase MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchElseCase)
+DLLExport
+modelica_metatype omc_TplParser_matchCase(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outMatchCaseLst);
+#define boxptr_TplParser_matchCase omc_TplParser_matchCase
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchCase,2,0) {(void*) boxptr_TplParser_matchCase,0}};
+#define boxvar_TplParser_matchCase MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchCase)
+DLLExport
+modelica_metatype omc_TplParser_matchExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_matchExp omc_TplParser_matchExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_matchExp,2,0) {(void*) boxptr_TplParser_matchExp,0}};
+#define boxvar_TplParser_matchExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_matchExp)
+DLLExport
+modelica_metatype omc_TplParser_condArgExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_boolean *out_outIsNot, modelica_metatype *out_outLHSExpression, modelica_metatype *out_outRHSMExpOpt);
+DLLExport
+modelica_metatype boxptr_TplParser_condArgExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inLeftEsc, modelica_metatype _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outIsNot, modelica_metatype *out_outLHSExpression, modelica_metatype *out_outRHSMExpOpt);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_condArgExp,2,0) {(void*) boxptr_TplParser_condArgExp,0}};
+#define boxvar_TplParser_condArgExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_condArgExp)
+DLLExport
+modelica_metatype omc_TplParser_elseBranch(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outElseBranchOpt);
+#define boxptr_TplParser_elseBranch omc_TplParser_elseBranch
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_elseBranch,2,0) {(void*) boxptr_TplParser_elseBranch,0}};
+#define boxvar_TplParser_elseBranch MMC_REFSTRUCTLIT(boxvar_lit_TplParser_elseBranch)
+DLLExport
+modelica_metatype omc_TplParser_thenBranch(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTrueBranch);
+#define boxptr_TplParser_thenBranch omc_TplParser_thenBranch
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_thenBranch,2,0) {(void*) boxptr_TplParser_thenBranch,0}};
+#define boxvar_TplParser_thenBranch MMC_REFSTRUCTLIT(boxvar_lit_TplParser_thenBranch)
+DLLExport
+modelica_metatype omc_TplParser_conditionExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_conditionExp omc_TplParser_conditionExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_conditionExp,2,0) {(void*) boxptr_TplParser_conditionExp,0}};
+#define boxvar_TplParser_conditionExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_conditionExp)
+DLLExport
+modelica_metatype omc_TplParser_finalizeLastStringToken(threadData_t *threadData, modelica_metatype _inExpressionList);
+#define boxptr_TplParser_finalizeLastStringToken omc_TplParser_finalizeLastStringToken
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_finalizeLastStringToken,2,0) {(void*) boxptr_TplParser_finalizeLastStringToken,0}};
+#define boxvar_TplParser_finalizeLastStringToken MMC_REFSTRUCTLIT(boxvar_lit_TplParser_finalizeLastStringToken)
+DLLExport
+modelica_metatype omc_TplParser_addAccStringChars(threadData_t *threadData, modelica_metatype _inExpressionList, modelica_metatype _inAccStringChars);
+#define boxptr_TplParser_addAccStringChars omc_TplParser_addAccStringChars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_addAccStringChars,2,0) {(void*) boxptr_TplParser_addAccStringChars,0}};
+#define boxvar_TplParser_addAccStringChars MMC_REFSTRUCTLIT(boxvar_lit_TplParser_addAccStringChars)
+DLLExport
+modelica_metatype omc_TplParser_popIndentStack(threadData_t *threadData, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_integer _inActualIndent, modelica_integer _inLineIndent, modelica_metatype *out_outIndentStack, modelica_integer *out_outActualIndent);
+DLLExport
+modelica_metatype boxptr_TplParser_popIndentStack(threadData_t *threadData, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_metatype _inActualIndent, modelica_metatype _inLineIndent, modelica_metatype *out_outIndentStack, modelica_metatype *out_outActualIndent);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_popIndentStack,2,0) {(void*) boxptr_TplParser_popIndentStack,0}};
+#define boxvar_TplParser_popIndentStack MMC_REFSTRUCTLIT(boxvar_lit_TplParser_popIndentStack)
+DLLExport
+modelica_metatype omc_TplParser_onTemplEnd(threadData_t *threadData, modelica_boolean _inDropLastNewLine, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_integer _inActualIndent, modelica_integer _inLineIndent, modelica_metatype _inAccStringChars);
+DLLExport
+modelica_metatype boxptr_TplParser_onTemplEnd(threadData_t *threadData, modelica_metatype _inDropLastNewLine, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_metatype _inActualIndent, modelica_metatype _inLineIndent, modelica_metatype _inAccStringChars);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_onTemplEnd,2,0) {(void*) boxptr_TplParser_onTemplEnd,0}};
+#define boxvar_TplParser_onTemplEnd MMC_REFSTRUCTLIT(boxvar_lit_TplParser_onTemplEnd)
+DLLExport
+modelica_metatype omc_TplParser_onNewLine(threadData_t *threadData, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_integer _inActualIndent, modelica_integer _inLineIndent, modelica_metatype _inAccStringChars, modelica_metatype *out_outIndentStack, modelica_integer *out_outActualIndent, modelica_metatype *out_outError);
+DLLExport
+modelica_metatype boxptr_TplParser_onNewLine(threadData_t *threadData, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_metatype _inActualIndent, modelica_metatype _inLineIndent, modelica_metatype _inAccStringChars, modelica_metatype *out_outIndentStack, modelica_metatype *out_outActualIndent, modelica_metatype *out_outError);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_onNewLine,2,0) {(void*) boxptr_TplParser_onNewLine,0}};
+#define boxvar_TplParser_onNewLine MMC_REFSTRUCTLIT(boxvar_lit_TplParser_onNewLine)
+DLLExport
+modelica_metatype omc_TplParser_onEscapedExp(threadData_t *threadData, modelica_metatype _inExpression, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_integer _inActualIndent, modelica_integer _inLineIndent, modelica_metatype _inAccStringChars, modelica_metatype *out_outIndentStack, modelica_integer *out_outActualIndent, modelica_metatype *out_outError);
+DLLExport
+modelica_metatype boxptr_TplParser_onEscapedExp(threadData_t *threadData, modelica_metatype _inExpression, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_metatype _inActualIndent, modelica_metatype _inLineIndent, modelica_metatype _inAccStringChars, modelica_metatype *out_outIndentStack, modelica_metatype *out_outActualIndent, modelica_metatype *out_outError);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_onEscapedExp,2,0) {(void*) boxptr_TplParser_onEscapedExp,0}};
+#define boxvar_TplParser_onEscapedExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_onEscapedExp)
+DLLExport
+modelica_metatype omc_TplParser_makeTemplateFromExpList(threadData_t *threadData, modelica_metatype _inExpressionList, modelica_string _inLeftQuote, modelica_string _inRightQuote);
+#define boxptr_TplParser_makeTemplateFromExpList omc_TplParser_makeTemplateFromExpList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_makeTemplateFromExpList,2,0) {(void*) boxptr_TplParser_makeTemplateFromExpList,0}};
+#define boxvar_TplParser_makeTemplateFromExpList MMC_REFSTRUCTLIT(boxvar_lit_TplParser_makeTemplateFromExpList)
+DLLExport
+modelica_metatype omc_TplParser_dropNewLineAfterEmptyExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_integer _inLineIndent, modelica_metatype _inAccStringChars, modelica_metatype *out_outLineInfo, modelica_integer *out_outLineIndent);
+DLLExport
+modelica_metatype boxptr_TplParser_dropNewLineAfterEmptyExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inLineIndent, modelica_metatype _inAccStringChars, modelica_metatype *out_outLineInfo, modelica_metatype *out_outLineIndent);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_dropNewLineAfterEmptyExp,2,0) {(void*) boxptr_TplParser_dropNewLineAfterEmptyExp,0}};
+#define boxvar_TplParser_dropNewLineAfterEmptyExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_dropNewLineAfterEmptyExp)
+DLLExport
+modelica_metatype omc_TplParser_restOfTemplLine(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_boolean _inIsSingleQuote, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_integer _inActualIndent, modelica_integer _inLineIndent, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpressionBase);
+DLLExport
+modelica_metatype boxptr_TplParser_restOfTemplLine(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inLeftEsc, modelica_metatype _inRightEsc, modelica_metatype _inIsSingleQuote, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_metatype _inActualIndent, modelica_metatype _inLineIndent, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpressionBase);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_restOfTemplLine,2,0) {(void*) boxptr_TplParser_restOfTemplLine,0}};
+#define boxvar_TplParser_restOfTemplLine MMC_REFSTRUCTLIT(boxvar_lit_TplParser_restOfTemplLine)
+DLLExport
+modelica_metatype omc_TplParser_lineIndent(threadData_t *threadData, modelica_metatype _inChars, modelica_integer _inLineIndent, modelica_integer *out_outLineIndent);
+DLLExport
+modelica_metatype boxptr_TplParser_lineIndent(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineIndent, modelica_metatype *out_outLineIndent);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_lineIndent,2,0) {(void*) boxptr_TplParser_lineIndent,0}};
+#define boxvar_TplParser_lineIndent MMC_REFSTRUCTLIT(boxvar_lit_TplParser_lineIndent)
+DLLExport
+modelica_metatype omc_TplParser_templateBody(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_boolean _inIsSingleQuote, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_integer _inActualIndent, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpressionBase);
+DLLExport
+modelica_metatype boxptr_TplParser_templateBody(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inLeftEsc, modelica_metatype _inRightEsc, modelica_metatype _inIsSingleQuote, modelica_metatype _inExpressionList, modelica_metatype _inIndentStack, modelica_metatype _inActualIndent, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpressionBase);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templateBody,2,0) {(void*) boxptr_TplParser_templateBody,0}};
+#define boxvar_TplParser_templateBody MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templateBody)
+DLLExport
+modelica_metatype omc_TplParser_takeSpaceAndNewLine(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_takeSpaceAndNewLine omc_TplParser_takeSpaceAndNewLine
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_takeSpaceAndNewLine,2,0) {(void*) boxptr_TplParser_takeSpaceAndNewLine,0}};
+#define boxvar_TplParser_takeSpaceAndNewLine MMC_REFSTRUCTLIT(boxvar_lit_TplParser_takeSpaceAndNewLine)
+DLLExport
+modelica_metatype omc_TplParser_templateExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_templateExp omc_TplParser_templateExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templateExp,2,0) {(void*) boxptr_TplParser_templateExp,0}};
+#define boxvar_TplParser_templateExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templateExp)
+DLLExport
+modelica_metatype omc_TplParser_exponent(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLitType, modelica_string *out_outExponent, modelica_metatype *out_outLitType);
+#define boxptr_TplParser_exponent omc_TplParser_exponent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_exponent,2,0) {(void*) boxptr_TplParser_exponent,0}};
+#define boxvar_TplParser_exponent MMC_REFSTRUCTLIT(boxvar_lit_TplParser_exponent)
+DLLExport
+modelica_metatype omc_TplParser_dotNumber(threadData_t *threadData, modelica_metatype _inChars, modelica_string *out_outDotNumber, modelica_metatype *out_outLitType);
+#define boxptr_TplParser_dotNumber omc_TplParser_dotNumber
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_dotNumber,2,0) {(void*) boxptr_TplParser_dotNumber,0}};
+#define boxvar_TplParser_dotNumber MMC_REFSTRUCTLIT(boxvar_lit_TplParser_dotNumber)
+DLLExport
+modelica_metatype omc_TplParser_digits(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype *out_outDigits);
+#define boxptr_TplParser_digits omc_TplParser_digits
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_digits,2,0) {(void*) boxptr_TplParser_digits,0}};
+#define boxvar_TplParser_digits MMC_REFSTRUCTLIT(boxvar_lit_TplParser_digits)
+DLLExport
+modelica_metatype omc_TplParser_plusMinus(threadData_t *threadData, modelica_metatype _inChars, modelica_string *out_outSign);
+#define boxptr_TplParser_plusMinus omc_TplParser_plusMinus
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_plusMinus,2,0) {(void*) boxptr_TplParser_plusMinus,0}};
+#define boxvar_TplParser_plusMinus MMC_REFSTRUCTLIT(boxvar_lit_TplParser_plusMinus)
+DLLExport
+modelica_metatype omc_TplParser_makeStrTokFromRevStrList(threadData_t *threadData, modelica_metatype _inRevStrList);
+#define boxptr_TplParser_makeStrTokFromRevStrList omc_TplParser_makeStrTokFromRevStrList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_makeStrTokFromRevStrList,2,0) {(void*) boxptr_TplParser_makeStrTokFromRevStrList,0}};
+#define boxvar_TplParser_makeStrTokFromRevStrList MMC_REFSTRUCTLIT(boxvar_lit_TplParser_makeStrTokFromRevStrList)
+DLLExport
+modelica_metatype omc_TplParser_escUnquotedChars(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inAccChars, modelica_metatype _inAccStrList, modelica_metatype *out_outLineInfo, modelica_metatype *out_outStrRevList);
+#define boxptr_TplParser_escUnquotedChars omc_TplParser_escUnquotedChars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_escUnquotedChars,2,0) {(void*) boxptr_TplParser_escUnquotedChars,0}};
+#define boxvar_TplParser_escUnquotedChars MMC_REFSTRUCTLIT(boxvar_lit_TplParser_escUnquotedChars)
+DLLExport
+modelica_metatype omc_TplParser_verbatimConst(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inRightQuote, modelica_metatype _inAccChars, modelica_metatype _inAccStrList, modelica_metatype *out_outLineInfo, modelica_metatype *out_outStrRevList, modelica_metatype *out_outError);
+#define boxptr_TplParser_verbatimConst omc_TplParser_verbatimConst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_verbatimConst,2,0) {(void*) boxptr_TplParser_verbatimConst,0}};
+#define boxvar_TplParser_verbatimConst MMC_REFSTRUCTLIT(boxvar_lit_TplParser_verbatimConst)
+DLLExport
+modelica_string omc_TplParser_escChar(threadData_t *threadData, modelica_string _inEscChar);
+#define boxptr_TplParser_escChar omc_TplParser_escChar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_escChar,2,0) {(void*) boxptr_TplParser_escChar,0}};
+#define boxvar_TplParser_escChar MMC_REFSTRUCTLIT(boxvar_lit_TplParser_escChar)
+DLLExport
+modelica_metatype omc_TplParser_doubleQuoteConst(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inAccChars, modelica_metatype _inAccStrList, modelica_metatype *out_outLineInfo, modelica_metatype *out_outStrRevList, modelica_metatype *out_outError);
+#define boxptr_TplParser_doubleQuoteConst omc_TplParser_doubleQuoteConst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_doubleQuoteConst,2,0) {(void*) boxptr_TplParser_doubleQuoteConst,0}};
+#define boxvar_TplParser_doubleQuoteConst MMC_REFSTRUCTLIT(boxvar_lit_TplParser_doubleQuoteConst)
+DLLExport
+modelica_string omc_TplParser_rightVerbatimConstQuote(threadData_t *threadData, modelica_string _inLeftQuote);
+#define boxptr_TplParser_rightVerbatimConstQuote omc_TplParser_rightVerbatimConstQuote
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_rightVerbatimConstQuote,2,0) {(void*) boxptr_TplParser_rightVerbatimConstQuote,0}};
+#define boxvar_TplParser_rightVerbatimConstQuote MMC_REFSTRUCTLIT(boxvar_lit_TplParser_rightVerbatimConstQuote)
+DLLExport
+modelica_metatype omc_TplParser_stripFirstNewLine(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_stripFirstNewLine omc_TplParser_stripFirstNewLine
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_stripFirstNewLine,2,0) {(void*) boxptr_TplParser_stripFirstNewLine,0}};
+#define boxvar_TplParser_stripFirstNewLine MMC_REFSTRUCTLIT(boxvar_lit_TplParser_stripFirstNewLine)
+DLLExport
+modelica_metatype omc_TplParser_literalConstant(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_string *out_outConstantValue, modelica_metatype *out_outConstantType);
+#define boxptr_TplParser_literalConstant omc_TplParser_literalConstant
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_literalConstant,2,0) {(void*) boxptr_TplParser_literalConstant,0}};
+#define boxvar_TplParser_literalConstant MMC_REFSTRUCTLIT(boxvar_lit_TplParser_literalConstant)
+DLLExport
+modelica_metatype omc_TplParser_stringConstant(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outStrRevList);
+#define boxptr_TplParser_stringConstant omc_TplParser_stringConstant
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_stringConstant,2,0) {(void*) boxptr_TplParser_stringConstant,0}};
+#define boxvar_TplParser_stringConstant MMC_REFSTRUCTLIT(boxvar_lit_TplParser_stringConstant)
+DLLExport
+modelica_metatype omc_TplParser_expressionList__rest(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpressionList);
+#define boxptr_TplParser_expressionList__rest omc_TplParser_expressionList__rest
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expressionList__rest,2,0) {(void*) boxptr_TplParser_expressionList__rest,0}};
+#define boxvar_TplParser_expressionList__rest MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expressionList__rest)
+DLLExport
+modelica_metatype omc_TplParser_funCall(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inName, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpressionBase);
+#define boxptr_TplParser_funCall omc_TplParser_funCall
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_funCall,2,0) {(void*) boxptr_TplParser_funCall,0}};
+#define boxvar_TplParser_funCall MMC_REFSTRUCTLIT(boxvar_lit_TplParser_funCall)
+DLLExport
+modelica_metatype omc_TplParser_boundValueOrFunCall(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inName, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpressionBase);
+#define boxptr_TplParser_boundValueOrFunCall omc_TplParser_boundValueOrFunCall
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_boundValueOrFunCall,2,0) {(void*) boxptr_TplParser_boundValueOrFunCall,0}};
+#define boxvar_TplParser_boundValueOrFunCall MMC_REFSTRUCTLIT(boxvar_lit_TplParser_boundValueOrFunCall)
+DLLExport
+modelica_metatype omc_TplParser_expression__base(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_expression__base omc_TplParser_expression__base
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expression__base,2,0) {(void*) boxptr_TplParser_expression__base,0}};
+#define boxvar_TplParser_expression__base MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expression__base)
+DLLExport
+modelica_metatype omc_TplParser_concatExp__rest(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpressionList);
+#define boxptr_TplParser_concatExp__rest omc_TplParser_concatExp__rest
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_concatExp__rest,2,0) {(void*) boxptr_TplParser_concatExp__rest,0}};
+#define boxvar_TplParser_concatExp__rest MMC_REFSTRUCTLIT(boxvar_lit_TplParser_concatExp__rest)
+DLLExport
+modelica_metatype omc_TplParser_plusTailOpt(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inBaseExpression, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_plusTailOpt omc_TplParser_plusTailOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_plusTailOpt,2,0) {(void*) boxptr_TplParser_plusTailOpt,0}};
+#define boxvar_TplParser_plusTailOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_plusTailOpt)
+DLLExport
+modelica_metatype omc_TplParser_expressionPlus(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_expressionPlus omc_TplParser_expressionPlus
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expressionPlus,2,0) {(void*) boxptr_TplParser_expressionPlus,0}};
+#define boxvar_TplParser_expressionPlus MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expressionPlus)
+DLLExport
+modelica_metatype omc_TplParser_expressionIf(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_expressionIf omc_TplParser_expressionIf
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expressionIf,2,0) {(void*) boxptr_TplParser_expressionIf,0}};
+#define boxvar_TplParser_expressionIf MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expressionIf)
+DLLExport
+modelica_metatype omc_TplParser_expressionMatch(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_expressionMatch omc_TplParser_expressionMatch
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expressionMatch,2,0) {(void*) boxptr_TplParser_expressionMatch,0}};
+#define boxvar_TplParser_expressionMatch MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expressionMatch)
+DLLExport
+modelica_metatype omc_TplParser_letExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_letExp omc_TplParser_letExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_letExp,2,0) {(void*) boxptr_TplParser_letExp,0}};
+#define boxvar_TplParser_letExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_letExp)
+DLLExport
+modelica_metatype omc_TplParser_expressionLet(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+#define boxptr_TplParser_expressionLet omc_TplParser_expressionLet
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expressionLet,2,0) {(void*) boxptr_TplParser_expressionLet,0}};
+#define boxvar_TplParser_expressionLet MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expressionLet)
+DLLExport
+modelica_metatype omc_TplParser_fromOpt(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outIndexOffsetOption);
+#define boxptr_TplParser_fromOpt omc_TplParser_fromOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_fromOpt,2,0) {(void*) boxptr_TplParser_fromOpt,0}};
+#define boxvar_TplParser_fromOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_fromOpt)
+DLLExport
+modelica_metatype omc_TplParser_indexedByOpt(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outIndexNameOpt, modelica_metatype *out_outIndexOffsetOption);
+#define boxptr_TplParser_indexedByOpt omc_TplParser_indexedByOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_indexedByOpt,2,0) {(void*) boxptr_TplParser_indexedByOpt,0}};
+#define boxvar_TplParser_indexedByOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_indexedByOpt)
+DLLExport
+modelica_metatype omc_TplParser_mapTailOpt(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inHeadExpression, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression, modelica_metatype *out_outIndexOffsetOption);
+#define boxptr_TplParser_mapTailOpt omc_TplParser_mapTailOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_mapTailOpt,2,0) {(void*) boxptr_TplParser_mapTailOpt,0}};
+#define boxvar_TplParser_mapTailOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_mapTailOpt)
+DLLExport
+modelica_metatype omc_TplParser_expressionNoOptions(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression, modelica_metatype *out_outIndexOffsetOption);
+#define boxptr_TplParser_expressionNoOptions omc_TplParser_expressionNoOptions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expressionNoOptions,2,0) {(void*) boxptr_TplParser_expressionNoOptions,0}};
+#define boxvar_TplParser_expressionNoOptions MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expressionNoOptions)
+DLLExport
+modelica_metatype omc_TplParser_escOptionExp(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpOption);
+#define boxptr_TplParser_escOptionExp omc_TplParser_escOptionExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_escOptionExp,2,0) {(void*) boxptr_TplParser_escOptionExp,0}};
+#define boxvar_TplParser_escOptionExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_escOptionExp)
+DLLExport
+modelica_metatype omc_TplParser_escapedOptions(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_metatype *out_outLineInfo, modelica_metatype *out_outOptions);
+#define boxptr_TplParser_escapedOptions omc_TplParser_escapedOptions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_escapedOptions,2,0) {(void*) boxptr_TplParser_escapedOptions,0}};
+#define boxvar_TplParser_escapedOptions MMC_REFSTRUCTLIT(boxvar_lit_TplParser_escapedOptions)
+DLLExport
+modelica_metatype omc_TplParser_makeEscapedExp(threadData_t *threadData, modelica_metatype _inEndChars, modelica_metatype _inEndLineInfo, modelica_metatype _inExpression, modelica_metatype _inOptions);
+#define boxptr_TplParser_makeEscapedExp omc_TplParser_makeEscapedExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_makeEscapedExp,2,0) {(void*) boxptr_TplParser_makeEscapedExp,0}};
+#define boxvar_TplParser_makeEscapedExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_makeEscapedExp)
+DLLExport
+modelica_metatype omc_TplParser_expression(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inLeftEsc, modelica_string _inRightEsc, modelica_boolean _isOptional, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+DLLExport
+modelica_metatype boxptr_TplParser_expression(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inLeftEsc, modelica_metatype _inRightEsc, modelica_metatype _isOptional, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expression,2,0) {(void*) boxptr_TplParser_expression,0}};
+#define boxvar_TplParser_expression MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expression)
+DLLExport
+modelica_metatype omc_TplParser_templArgs__rest(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outArgs);
+#define boxptr_TplParser_templArgs__rest omc_TplParser_templArgs__rest
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templArgs__rest,2,0) {(void*) boxptr_TplParser_templArgs__rest,0}};
+#define boxvar_TplParser_templArgs__rest MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templArgs__rest)
+DLLExport
+modelica_metatype omc_TplParser_templArgs(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outArgs);
+#define boxptr_TplParser_templArgs omc_TplParser_templArgs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templArgs,2,0) {(void*) boxptr_TplParser_templArgs,0}};
+#define boxvar_TplParser_templArgs MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templArgs)
+DLLExport
+modelica_metatype omc_TplParser_templDef__Templ(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outExpression, modelica_string *out_outLeftEsc, modelica_string *out_outRightEsc);
+#define boxptr_TplParser_templDef__Templ omc_TplParser_templDef__Templ
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templDef__Templ,2,0) {(void*) boxptr_TplParser_templDef__Templ,0}};
+#define boxvar_TplParser_templDef__Templ MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templDef__Templ)
+DLLExport
+modelica_metatype omc_TplParser_checkConstantType(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inConstType, modelica_metatype _inConstTypeLiteral, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_checkConstantType omc_TplParser_checkConstantType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_checkConstantType,2,0) {(void*) boxptr_TplParser_checkConstantType,0}};
+#define boxvar_TplParser_checkConstantType MMC_REFSTRUCTLIT(boxvar_lit_TplParser_checkConstantType)
+DLLExport
+modelica_metatype omc_TplParser_constantType(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outConstType);
+#define boxptr_TplParser_constantType omc_TplParser_constantType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_constantType,2,0) {(void*) boxptr_TplParser_constantType,0}};
+#define boxvar_TplParser_constantType MMC_REFSTRUCTLIT(boxvar_lit_TplParser_constantType)
+DLLExport
+modelica_metatype omc_TplParser_templDef__Const(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTemplDef, modelica_metatype *out_outConstType);
+#define boxptr_TplParser_templDef__Const omc_TplParser_templDef__Const
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templDef__Const,2,0) {(void*) boxptr_TplParser_templDef__Const,0}};
+#define boxvar_TplParser_templDef__Const MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templDef__Const)
+DLLExport
+modelica_metatype omc_TplParser_templDef(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_string *out_outTemplName, modelica_metatype *out_outTemplDef);
+#define boxptr_TplParser_templDef omc_TplParser_templDef
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templDef,2,0) {(void*) boxptr_TplParser_templDef,0}};
+#define boxvar_TplParser_templDef MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templDef)
+DLLExport
+modelica_metatype omc_TplParser_typeVars(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inTyVars, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTyVars);
+#define boxptr_TplParser_typeVars omc_TplParser_typeVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_typeVars,2,0) {(void*) boxptr_TplParser_typeVars,0}};
+#define boxvar_TplParser_typeVars MMC_REFSTRUCTLIT(boxvar_lit_TplParser_typeVars)
+DLLExport
+modelica_metatype omc_TplParser_outputFunArgs(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTypedIdents);
+#define boxptr_TplParser_outputFunArgs omc_TplParser_outputFunArgs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_outputFunArgs,2,0) {(void*) boxptr_TplParser_outputFunArgs,0}};
+#define boxvar_TplParser_outputFunArgs MMC_REFSTRUCTLIT(boxvar_lit_TplParser_outputFunArgs)
+DLLExport
+modelica_metatype omc_TplParser_inputFunArgs(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTypedIdents);
+#define boxptr_TplParser_inputFunArgs omc_TplParser_inputFunArgs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_inputFunArgs,2,0) {(void*) boxptr_TplParser_inputFunArgs,0}};
+#define boxvar_TplParser_inputFunArgs MMC_REFSTRUCTLIT(boxvar_lit_TplParser_inputFunArgs)
+DLLExport
+modelica_metatype omc_TplParser_recordTags(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _id, modelica_metatype *out_outLineInfo, modelica_metatype *out_outRecordTags);
+#define boxptr_TplParser_recordTags omc_TplParser_recordTags
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_recordTags,2,0) {(void*) boxptr_TplParser_recordTags,0}};
+#define boxvar_TplParser_recordTags MMC_REFSTRUCTLIT(boxvar_lit_TplParser_recordTags)
+DLLExport
+modelica_metatype omc_TplParser_typeDecls(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTypeDecls);
+#define boxptr_TplParser_typeDecls omc_TplParser_typeDecls
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_typeDecls,2,0) {(void*) boxptr_TplParser_typeDecls,0}};
+#define boxvar_TplParser_typeDecls MMC_REFSTRUCTLIT(boxvar_lit_TplParser_typeDecls)
+DLLExport
+modelica_metatype omc_TplParser_recordType(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outRecordType);
+#define boxptr_TplParser_recordType omc_TplParser_recordType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_recordType,2,0) {(void*) boxptr_TplParser_recordType,0}};
+#define boxvar_TplParser_recordType MMC_REFSTRUCTLIT(boxvar_lit_TplParser_recordType)
+DLLExport
+modelica_metatype omc_TplParser_absynType(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outType);
+#define boxptr_TplParser_absynType omc_TplParser_absynType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_absynType,2,0) {(void*) boxptr_TplParser_absynType,0}};
+#define boxvar_TplParser_absynType MMC_REFSTRUCTLIT(boxvar_lit_TplParser_absynType)
+DLLExport
+modelica_metatype omc_TplParser_absynTypes(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTypes);
+#define boxptr_TplParser_absynTypes omc_TplParser_absynTypes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_absynTypes,2,0) {(void*) boxptr_TplParser_absynTypes,0}};
+#define boxvar_TplParser_absynTypes MMC_REFSTRUCTLIT(boxvar_lit_TplParser_absynTypes)
+DLLExport
+modelica_metatype omc_TplParser_endDefIdent(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inIdentToMatch, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_endDefIdent omc_TplParser_endDefIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_endDefIdent,2,0) {(void*) boxptr_TplParser_endDefIdent,0}};
+#define boxvar_TplParser_endDefIdent MMC_REFSTRUCTLIT(boxvar_lit_TplParser_endDefIdent)
+DLLExport
+modelica_metatype omc_TplParser_endDefPathIdent(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inPathIdentToMatch, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_endDefPathIdent omc_TplParser_endDefPathIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_endDefPathIdent,2,0) {(void*) boxptr_TplParser_endDefPathIdent,0}};
+#define boxvar_TplParser_endDefPathIdent MMC_REFSTRUCTLIT(boxvar_lit_TplParser_endDefPathIdent)
+DLLExport
+modelica_metatype omc_TplParser_absynDef(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outASTDef);
+#define boxptr_TplParser_absynDef omc_TplParser_absynDef
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_absynDef,2,0) {(void*) boxptr_TplParser_absynDef,0}};
+#define boxvar_TplParser_absynDef MMC_REFSTRUCTLIT(boxvar_lit_TplParser_absynDef)
+DLLExport
+modelica_metatype omc_TplParser_typeviewDefs(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inAccASTDefs, modelica_metatype *out_outLineInfo, modelica_metatype *out_outASTDefs);
+#define boxptr_TplParser_typeviewDefs omc_TplParser_typeviewDefs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_typeviewDefs,2,0) {(void*) boxptr_TplParser_typeviewDefs,0}};
+#define boxvar_TplParser_typeviewDefs MMC_REFSTRUCTLIT(boxvar_lit_TplParser_typeviewDefs)
+DLLExport
+modelica_metatype omc_TplParser_interfacePackage(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inAccASTDefs, modelica_metatype *out_outLineInfo, modelica_metatype *out_outPid, modelica_metatype *out_outAccASTDefs);
+#define boxptr_TplParser_interfacePackage omc_TplParser_interfacePackage
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_interfacePackage,2,0) {(void*) boxptr_TplParser_interfacePackage,0}};
+#define boxvar_TplParser_interfacePackage MMC_REFSTRUCTLIT(boxvar_lit_TplParser_interfacePackage)
+DLLExport
+modelica_metatype omc_TplParser_semicolon(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_semicolon omc_TplParser_semicolon
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_semicolon,2,0) {(void*) boxptr_TplParser_semicolon,0}};
+#define boxvar_TplParser_semicolon MMC_REFSTRUCTLIT(boxvar_lit_TplParser_semicolon)
+DLLExport
+modelica_metatype omc_TplParser_stringCommentRest(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outError);
+#define boxptr_TplParser_stringCommentRest omc_TplParser_stringCommentRest
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_stringCommentRest,2,0) {(void*) boxptr_TplParser_stringCommentRest,0}};
+#define boxvar_TplParser_stringCommentRest MMC_REFSTRUCTLIT(boxvar_lit_TplParser_stringCommentRest)
+DLLExport
+modelica_metatype omc_TplParser_stringComment(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_stringComment omc_TplParser_stringComment
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_stringComment,2,0) {(void*) boxptr_TplParser_stringComment,0}};
+#define boxvar_TplParser_stringComment MMC_REFSTRUCTLIT(boxvar_lit_TplParser_stringComment)
+DLLExport
+modelica_metatype omc_TplParser_publicProtected(threadData_t *threadData, modelica_metatype _inChars, modelica_boolean *out_outIsDefault);
+DLLExport
+modelica_metatype boxptr_TplParser_publicProtected(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype *out_outIsDefault);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_publicProtected,2,0) {(void*) boxptr_TplParser_publicProtected,0}};
+#define boxvar_TplParser_publicProtected MMC_REFSTRUCTLIT(boxvar_lit_TplParser_publicProtected)
+DLLExport
+modelica_metatype omc_TplParser_typeSigFromPathIdent(threadData_t *threadData, modelica_metatype _inPathIdent);
+#define boxptr_TplParser_typeSigFromPathIdent omc_TplParser_typeSigFromPathIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_typeSigFromPathIdent,2,0) {(void*) boxptr_TplParser_typeSigFromPathIdent,0}};
+#define boxvar_TplParser_typeSigFromPathIdent MMC_REFSTRUCTLIT(boxvar_lit_TplParser_typeSigFromPathIdent)
+DLLExport
+modelica_metatype omc_TplParser_typeSig__restList(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTypeSignatureList);
+#define boxptr_TplParser_typeSig__restList omc_TplParser_typeSig__restList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_typeSig__restList,2,0) {(void*) boxptr_TplParser_typeSig__restList,0}};
+#define boxvar_TplParser_typeSig__restList MMC_REFSTRUCTLIT(boxvar_lit_TplParser_typeSig__restList)
+DLLExport
+modelica_metatype omc_TplParser_typeSig__base(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTypeSignature);
+#define boxptr_TplParser_typeSig__base omc_TplParser_typeSig__base
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_typeSig__base,2,0) {(void*) boxptr_TplParser_typeSig__base,0}};
+#define boxvar_TplParser_typeSig__base MMC_REFSTRUCTLIT(boxvar_lit_TplParser_typeSig__base)
+DLLExport
+modelica_metatype omc_TplParser_typeSigNoOpt(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTypeSignature);
+#define boxptr_TplParser_typeSigNoOpt omc_TplParser_typeSigNoOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_typeSigNoOpt,2,0) {(void*) boxptr_TplParser_typeSigNoOpt,0}};
+#define boxvar_TplParser_typeSigNoOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_typeSigNoOpt)
+DLLExport
+modelica_metatype omc_TplParser_typeSig(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTypeSignature);
+#define boxptr_TplParser_typeSig omc_TplParser_typeSig
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_typeSig,2,0) {(void*) boxptr_TplParser_typeSig,0}};
+#define boxvar_TplParser_typeSig MMC_REFSTRUCTLIT(boxvar_lit_TplParser_typeSig)
+DLLExport
+modelica_metatype omc_TplParser_unqualImportPostfix(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_boolean *out_outIsUnqual);
+DLLExport
+modelica_metatype boxptr_TplParser_unqualImportPostfix(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outIsUnqual);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_unqualImportPostfix,2,0) {(void*) boxptr_TplParser_unqualImportPostfix,0}};
+#define boxvar_TplParser_unqualImportPostfix MMC_REFSTRUCTLIT(boxvar_lit_TplParser_unqualImportPostfix)
+DLLExport
+modelica_metatype omc_TplParser_definitions(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inAccASTDefs, modelica_metatype _inAccTemplDefs, modelica_metatype __omcQ_24in_5FcachedDefs, modelica_metatype *out_outLineInfo, modelica_metatype *out_outASTDefs, modelica_metatype *out_outTemplDefs, modelica_metatype *out_cachedDefs);
+#define boxptr_TplParser_definitions omc_TplParser_definitions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_definitions,2,0) {(void*) boxptr_TplParser_definitions,0}};
+#define boxvar_TplParser_definitions MMC_REFSTRUCTLIT(boxvar_lit_TplParser_definitions)
+DLLExport
+modelica_metatype omc_TplParser_templPackage(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype __omcQ_24in_5FcachedDefs, modelica_metatype *out_outLineInfo, modelica_metatype *out_outTemplPackage, modelica_metatype *out_cachedDefs);
+#define boxptr_TplParser_templPackage omc_TplParser_templPackage
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templPackage,2,0) {(void*) boxptr_TplParser_templPackage,0}};
+#define boxvar_TplParser_templPackage MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templPackage)
+DLLExport
+modelica_metatype omc_TplParser_pathIdentNoOpt(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outPathIdent);
+#define boxptr_TplParser_pathIdentNoOpt omc_TplParser_pathIdentNoOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_pathIdentNoOpt,2,0) {(void*) boxptr_TplParser_pathIdentNoOpt,0}};
+#define boxvar_TplParser_pathIdentNoOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_pathIdentNoOpt)
+DLLExport
+modelica_metatype omc_TplParser_identifierNoOpt(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_string *out_outIdent);
+#define boxptr_TplParser_identifierNoOpt omc_TplParser_identifierNoOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_identifierNoOpt,2,0) {(void*) boxptr_TplParser_identifierNoOpt,0}};
+#define boxvar_TplParser_identifierNoOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_identifierNoOpt)
+DLLExport
+modelica_metatype omc_TplParser_pathIdentPath(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inHeadIdent, modelica_metatype *out_outLineInfo, modelica_metatype *out_outPathIdent);
+#define boxptr_TplParser_pathIdentPath omc_TplParser_pathIdentPath
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_pathIdentPath,2,0) {(void*) boxptr_TplParser_pathIdentPath,0}};
+#define boxvar_TplParser_pathIdentPath MMC_REFSTRUCTLIT(boxvar_lit_TplParser_pathIdentPath)
+DLLExport
+modelica_metatype omc_TplParser_pathIdent(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo, modelica_metatype *out_outPathIdent);
+#define boxptr_TplParser_pathIdent omc_TplParser_pathIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_pathIdent,2,0) {(void*) boxptr_TplParser_pathIdent,0}};
+#define boxvar_TplParser_pathIdent MMC_REFSTRUCTLIT(boxvar_lit_TplParser_pathIdent)
+DLLExport
+modelica_metatype omc_TplParser_identifier__rest(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype *out_outRestIdentChars);
+#define boxptr_TplParser_identifier__rest omc_TplParser_identifier__rest
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_identifier__rest,2,0) {(void*) boxptr_TplParser_identifier__rest,0}};
+#define boxvar_TplParser_identifier__rest MMC_REFSTRUCTLIT(boxvar_lit_TplParser_identifier__rest)
+DLLExport
+modelica_metatype omc_TplParser_identifier(threadData_t *threadData, modelica_metatype _inChars, modelica_string *out_outIdent);
+#define boxptr_TplParser_identifier omc_TplParser_identifier
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_identifier,2,0) {(void*) boxptr_TplParser_identifier,0}};
+#define boxvar_TplParser_identifier MMC_REFSTRUCTLIT(boxvar_lit_TplParser_identifier)
+DLLExport
+void omc_TplParser_afterKeyword(threadData_t *threadData, modelica_metatype _inChars);
+#define boxptr_TplParser_afterKeyword omc_TplParser_afterKeyword
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_afterKeyword,2,0) {(void*) boxptr_TplParser_afterKeyword,0}};
+#define boxvar_TplParser_afterKeyword MMC_REFSTRUCTLIT(boxvar_lit_TplParser_afterKeyword)
+DLLExport
+modelica_metatype omc_TplParser_comment(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_comment omc_TplParser_comment
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_comment,2,0) {(void*) boxptr_TplParser_comment,0}};
+#define boxvar_TplParser_comment MMC_REFSTRUCTLIT(boxvar_lit_TplParser_comment)
+DLLExport
+modelica_metatype omc_TplParser_toEndOfLine(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_toEndOfLine omc_TplParser_toEndOfLine
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_toEndOfLine,2,0) {(void*) boxptr_TplParser_toEndOfLine,0}};
+#define boxvar_TplParser_toEndOfLine MMC_REFSTRUCTLIT(boxvar_lit_TplParser_toEndOfLine)
+DLLExport
+modelica_metatype omc_TplParser_interleave(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_interleave omc_TplParser_interleave
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_interleave,2,0) {(void*) boxptr_TplParser_interleave,0}};
+#define boxvar_TplParser_interleave MMC_REFSTRUCTLIT(boxvar_lit_TplParser_interleave)
+DLLExport
+modelica_metatype omc_TplParser_newLine(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_newLine omc_TplParser_newLine
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_newLine,2,0) {(void*) boxptr_TplParser_newLine,0}};
+#define boxvar_TplParser_newLine MMC_REFSTRUCTLIT(boxvar_lit_TplParser_newLine)
+DLLExport
+modelica_metatype omc_TplParser_templateDefToAstDefType(threadData_t *threadData, modelica_metatype _inTemplateDef);
+#define boxptr_TplParser_templateDefToAstDefType omc_TplParser_templateDefToAstDefType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templateDefToAstDefType,2,0) {(void*) boxptr_TplParser_templateDefToAstDefType,0}};
+#define boxvar_TplParser_templateDefToAstDefType MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templateDefToAstDefType)
+#define boxptr_TplParser_typeviewDefsFromInterfaceFile omc_TplParser_typeviewDefsFromInterfaceFile
+DLLExport
+modelica_metatype omc_TplParser_templPackageFromFile(threadData_t *threadData, modelica_string _inFile);
+#define boxptr_TplParser_templPackageFromFile omc_TplParser_templPackageFromFile
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_templPackageFromFile,2,0) {(void*) boxptr_TplParser_templPackageFromFile,0}};
+#define boxvar_TplParser_templPackageFromFile MMC_REFSTRUCTLIT(boxvar_lit_TplParser_templPackageFromFile)
+DLLExport
+modelica_metatype omc_TplParser_openFile(threadData_t *threadData, modelica_string _inFile, modelica_metatype *out_outLineInfo, modelica_metatype *out_outErrorOpt);
+#define boxptr_TplParser_openFile omc_TplParser_openFile
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_openFile,2,0) {(void*) boxptr_TplParser_openFile,0}};
+#define boxvar_TplParser_openFile MMC_REFSTRUCTLIT(boxvar_lit_TplParser_openFile)
+DLLExport
+modelica_metatype omc_TplParser_interleaveExpectEndOfFile(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_interleaveExpectEndOfFile omc_TplParser_interleaveExpectEndOfFile
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_interleaveExpectEndOfFile,2,0) {(void*) boxptr_TplParser_interleaveExpectEndOfFile,0}};
+#define boxvar_TplParser_interleaveExpectEndOfFile MMC_REFSTRUCTLIT(boxvar_lit_TplParser_interleaveExpectEndOfFile)
+DLLExport
+modelica_metatype omc_TplParser_interleaveExpectKeyWord(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inKeywordChars, modelica_boolean _isFatal, modelica_metatype *out_outLineInfo);
+DLLExport
+modelica_metatype boxptr_TplParser_interleaveExpectKeyWord(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inKeywordChars, modelica_metatype _isFatal, modelica_metatype *out_outLineInfo);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_interleaveExpectKeyWord,2,0) {(void*) boxptr_TplParser_interleaveExpectKeyWord,0}};
+#define boxvar_TplParser_interleaveExpectKeyWord MMC_REFSTRUCTLIT(boxvar_lit_TplParser_interleaveExpectKeyWord)
+DLLExport
+modelica_metatype omc_TplParser_isKeyword(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inKeywordChars, modelica_boolean *out_isKeyword);
+DLLExport
+modelica_metatype boxptr_TplParser_isKeyword(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inKeywordChars, modelica_metatype *out_isKeyword);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_isKeyword,2,0) {(void*) boxptr_TplParser_isKeyword,0}};
+#define boxvar_TplParser_isKeyword MMC_REFSTRUCTLIT(boxvar_lit_TplParser_isKeyword)
+DLLExport
+modelica_metatype omc_TplParser_takeKeywordChars(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inKeywordChars);
+#define boxptr_TplParser_takeKeywordChars omc_TplParser_takeKeywordChars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_takeKeywordChars,2,0) {(void*) boxptr_TplParser_takeKeywordChars,0}};
+#define boxvar_TplParser_takeKeywordChars MMC_REFSTRUCTLIT(boxvar_lit_TplParser_takeKeywordChars)
+DLLExport
+modelica_metatype omc_TplParser_interleaveExpectChar(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inExpectedChar, modelica_metatype *out_outLineInfo);
+#define boxptr_TplParser_interleaveExpectChar omc_TplParser_interleaveExpectChar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_interleaveExpectChar,2,0) {(void*) boxptr_TplParser_interleaveExpectChar,0}};
+#define boxvar_TplParser_interleaveExpectChar MMC_REFSTRUCTLIT(boxvar_lit_TplParser_interleaveExpectChar)
+DLLExport
+modelica_metatype omc_TplParser_expectChar(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fchars, modelica_metatype __omcQ_24in_5FlineInfo, modelica_string _inExpectedChar, modelica_metatype *out_lineInfo);
+#define boxptr_TplParser_expectChar omc_TplParser_expectChar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_expectChar,2,0) {(void*) boxptr_TplParser_expectChar,0}};
+#define boxvar_TplParser_expectChar MMC_REFSTRUCTLIT(boxvar_lit_TplParser_expectChar)
+DLLExport
+modelica_metatype omc_TplParser_parseErrorPrevPositionOptInfoChars(threadData_t *threadData, modelica_metatype _inLineInfoPrevPos, modelica_metatype _inLineInfo, modelica_metatype _inErrMessage, modelica_boolean _isFatal);
+DLLExport
+modelica_metatype boxptr_TplParser_parseErrorPrevPositionOptInfoChars(threadData_t *threadData, modelica_metatype _inLineInfoPrevPos, modelica_metatype _inLineInfo, modelica_metatype _inErrMessage, modelica_metatype _isFatal);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_parseErrorPrevPositionOptInfoChars,2,0) {(void*) boxptr_TplParser_parseErrorPrevPositionOptInfoChars,0}};
+#define boxvar_TplParser_parseErrorPrevPositionOptInfoChars MMC_REFSTRUCTLIT(boxvar_lit_TplParser_parseErrorPrevPositionOptInfoChars)
+DLLExport
+modelica_metatype omc_TplParser_parseErrorPrevPositionOpt(threadData_t *threadData, modelica_metatype _inCharsPrevPos, modelica_metatype _inLineInfoPrevPos, modelica_metatype _inLineInfo, modelica_metatype _inErrMessage, modelica_boolean _isFatal);
+DLLExport
+modelica_metatype boxptr_TplParser_parseErrorPrevPositionOpt(threadData_t *threadData, modelica_metatype _inCharsPrevPos, modelica_metatype _inLineInfoPrevPos, modelica_metatype _inLineInfo, modelica_metatype _inErrMessage, modelica_metatype _isFatal);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_parseErrorPrevPositionOpt,2,0) {(void*) boxptr_TplParser_parseErrorPrevPositionOpt,0}};
+#define boxvar_TplParser_parseErrorPrevPositionOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_parseErrorPrevPositionOpt)
+DLLExport
+modelica_metatype omc_TplParser_mergeErrors(threadData_t *threadData, modelica_metatype _inLineInfo, modelica_metatype _inLineInfoToAddErrorsFrom);
+#define boxptr_TplParser_mergeErrors omc_TplParser_mergeErrors
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_mergeErrors,2,0) {(void*) boxptr_TplParser_mergeErrors,0}};
+#define boxvar_TplParser_mergeErrors MMC_REFSTRUCTLIT(boxvar_lit_TplParser_mergeErrors)
+DLLExport
+modelica_boolean omc_TplParser_wasFatalError(threadData_t *threadData, modelica_metatype _inLineInfo);
+DLLExport
+modelica_metatype boxptr_TplParser_wasFatalError(threadData_t *threadData, modelica_metatype _inLineInfo);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_wasFatalError,2,0) {(void*) boxptr_TplParser_wasFatalError,0}};
+#define boxvar_TplParser_wasFatalError MMC_REFSTRUCTLIT(boxvar_lit_TplParser_wasFatalError)
+DLLExport
+modelica_metatype omc_TplParser_parseErrorPrevPosition(threadData_t *threadData, modelica_metatype _inCharsPrevPos, modelica_metatype _inLineInfoPrevPos, modelica_metatype _inLineInfo, modelica_string _inErrMessage, modelica_boolean _isFatal);
+DLLExport
+modelica_metatype boxptr_TplParser_parseErrorPrevPosition(threadData_t *threadData, modelica_metatype _inCharsPrevPos, modelica_metatype _inLineInfoPrevPos, modelica_metatype _inLineInfo, modelica_metatype _inErrMessage, modelica_metatype _isFatal);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_parseErrorPrevPosition,2,0) {(void*) boxptr_TplParser_parseErrorPrevPosition,0}};
+#define boxvar_TplParser_parseErrorPrevPosition MMC_REFSTRUCTLIT(boxvar_lit_TplParser_parseErrorPrevPosition)
+DLLExport
+modelica_metatype omc_TplParser_parseError(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_string _inErrMessage, modelica_boolean _isFatal);
+DLLExport
+modelica_metatype boxptr_TplParser_parseError(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inErrMessage, modelica_metatype _isFatal);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_parseError,2,0) {(void*) boxptr_TplParser_parseError,0}};
+#define boxvar_TplParser_parseError MMC_REFSTRUCTLIT(boxvar_lit_TplParser_parseError)
+DLLExport
+void omc_TplParser_printAndFailIfError(threadData_t *threadData, modelica_metatype _inLineInfo);
+#define boxptr_TplParser_printAndFailIfError omc_TplParser_printAndFailIfError
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_printAndFailIfError,2,0) {(void*) boxptr_TplParser_printAndFailIfError,0}};
+#define boxvar_TplParser_printAndFailIfError MMC_REFSTRUCTLIT(boxvar_lit_TplParser_printAndFailIfError)
+DLLExport
+modelica_metatype omc_TplParser_makeStartLineInfo(threadData_t *threadData, modelica_metatype _inChars, modelica_string _inFileName);
+#define boxptr_TplParser_makeStartLineInfo omc_TplParser_makeStartLineInfo
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_makeStartLineInfo,2,0) {(void*) boxptr_TplParser_makeStartLineInfo,0}};
+#define boxvar_TplParser_makeStartLineInfo MMC_REFSTRUCTLIT(boxvar_lit_TplParser_makeStartLineInfo)
+DLLExport
+modelica_integer omc_TplParser_charsTillEndOfLine(threadData_t *threadData, modelica_metatype _inChars, modelica_integer __omcQ_24in_5FoutCharsTillEnd);
+DLLExport
+modelica_metatype boxptr_TplParser_charsTillEndOfLine(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype __omcQ_24in_5FoutCharsTillEnd);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_charsTillEndOfLine,2,0) {(void*) boxptr_TplParser_charsTillEndOfLine,0}};
+#define boxvar_TplParser_charsTillEndOfLine MMC_REFSTRUCTLIT(boxvar_lit_TplParser_charsTillEndOfLine)
+DLLExport
+modelica_metatype omc_TplParser_startPositionFromExp(threadData_t *threadData, modelica_metatype _inExpression);
+#define boxptr_TplParser_startPositionFromExp omc_TplParser_startPositionFromExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_startPositionFromExp,2,0) {(void*) boxptr_TplParser_startPositionFromExp,0}};
+#define boxvar_TplParser_startPositionFromExp MMC_REFSTRUCTLIT(boxvar_lit_TplParser_startPositionFromExp)
+DLLExport
+modelica_metatype omc_TplParser_tplSourceInfo(threadData_t *threadData, modelica_metatype _inStartLineColumnNumber, modelica_metatype _inEndChars, modelica_metatype _inEndLineInfo);
+#define boxptr_TplParser_tplSourceInfo omc_TplParser_tplSourceInfo
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_tplSourceInfo,2,0) {(void*) boxptr_TplParser_tplSourceInfo,0}};
+#define boxvar_TplParser_tplSourceInfo MMC_REFSTRUCTLIT(boxvar_lit_TplParser_tplSourceInfo)
+DLLExport
+modelica_metatype omc_TplParser_captureStartPosition(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_integer _inColumnOffset);
+DLLExport
+modelica_metatype boxptr_TplParser_captureStartPosition(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype _inColumnOffset);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_captureStartPosition,2,0) {(void*) boxptr_TplParser_captureStartPosition,0}};
+#define boxvar_TplParser_captureStartPosition MMC_REFSTRUCTLIT(boxvar_lit_TplParser_captureStartPosition)
+DLLExport
+modelica_integer omc_TplParser_getPosition(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_integer *out_outColumnNumber);
+DLLExport
+modelica_metatype boxptr_TplParser_getPosition(threadData_t *threadData, modelica_metatype _inChars, modelica_metatype _inLineInfo, modelica_metatype *out_outColumnNumber);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_getPosition,2,0) {(void*) boxptr_TplParser_getPosition,0}};
+#define boxvar_TplParser_getPosition MMC_REFSTRUCTLIT(boxvar_lit_TplParser_getPosition)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_add(threadData_t *threadData, modelica_metatype _inTree, modelica_string _inKey, modelica_metatype _inValue, modelica_fnptr _conflictFunc);
+#define boxptr_TplParser_CacheTree_add omc_TplParser_CacheTree_add
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_add,2,0) {(void*) boxptr_TplParser_CacheTree_add,0}};
+#define boxvar_TplParser_CacheTree_add MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_add)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_addConflictDefault(threadData_t *threadData, modelica_metatype _newValue, modelica_metatype _oldValue, modelica_string _key);
+#define boxptr_TplParser_CacheTree_addConflictDefault omc_TplParser_CacheTree_addConflictDefault
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addConflictDefault,2,0) {(void*) boxptr_TplParser_CacheTree_addConflictDefault,0}};
+#define boxvar_TplParser_CacheTree_addConflictDefault MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addConflictDefault)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_addConflictFail(threadData_t *threadData, modelica_metatype _newValue, modelica_metatype _oldValue, modelica_string _key);
+#define boxptr_TplParser_CacheTree_addConflictFail omc_TplParser_CacheTree_addConflictFail
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addConflictFail,2,0) {(void*) boxptr_TplParser_CacheTree_addConflictFail,0}};
+#define boxvar_TplParser_CacheTree_addConflictFail MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addConflictFail)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_addConflictKeep(threadData_t *threadData, modelica_metatype _newValue, modelica_metatype _oldValue, modelica_string _key);
+#define boxptr_TplParser_CacheTree_addConflictKeep omc_TplParser_CacheTree_addConflictKeep
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addConflictKeep,2,0) {(void*) boxptr_TplParser_CacheTree_addConflictKeep,0}};
+#define boxvar_TplParser_CacheTree_addConflictKeep MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addConflictKeep)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_addConflictReplace(threadData_t *threadData, modelica_metatype _newValue, modelica_metatype _oldValue, modelica_string _key);
+#define boxptr_TplParser_CacheTree_addConflictReplace omc_TplParser_CacheTree_addConflictReplace
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addConflictReplace,2,0) {(void*) boxptr_TplParser_CacheTree_addConflictReplace,0}};
+#define boxvar_TplParser_CacheTree_addConflictReplace MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addConflictReplace)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_addList(threadData_t *threadData, modelica_metatype __omcQ_24in_5Ftree, modelica_metatype _inValues, modelica_fnptr _conflictFunc);
+#define boxptr_TplParser_CacheTree_addList omc_TplParser_CacheTree_addList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addList,2,0) {(void*) boxptr_TplParser_CacheTree_addList,0}};
+#define boxvar_TplParser_CacheTree_addList MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_addList)
+#define boxptr_TplParser_CacheTree_balance omc_TplParser_CacheTree_balance
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_fold(threadData_t *threadData, modelica_metatype _inTree, modelica_fnptr _inFunc, modelica_metatype _inStartValue);
+#define boxptr_TplParser_CacheTree_fold omc_TplParser_CacheTree_fold
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_fold,2,0) {(void*) boxptr_TplParser_CacheTree_fold,0}};
+#define boxvar_TplParser_CacheTree_fold MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_fold)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_foldCond(threadData_t *threadData, modelica_metatype _tree, modelica_fnptr _foldFunc, modelica_metatype __omcQ_24in_5Fvalue);
+#define boxptr_TplParser_CacheTree_foldCond omc_TplParser_CacheTree_foldCond
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_foldCond,2,0) {(void*) boxptr_TplParser_CacheTree_foldCond,0}};
+#define boxvar_TplParser_CacheTree_foldCond MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_foldCond)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_fold__2(threadData_t *threadData, modelica_metatype _tree, modelica_fnptr _foldFunc, modelica_metatype __omcQ_24in_5FfoldArg1, modelica_metatype __omcQ_24in_5FfoldArg2, modelica_metatype *out_foldArg2);
+#define boxptr_TplParser_CacheTree_fold__2 omc_TplParser_CacheTree_fold__2
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_fold__2,2,0) {(void*) boxptr_TplParser_CacheTree_fold__2,0}};
+#define boxvar_TplParser_CacheTree_fold__2 MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_fold__2)
+DLLExport
+void omc_TplParser_CacheTree_forEach(threadData_t *threadData, modelica_metatype _tree, modelica_fnptr _func);
+#define boxptr_TplParser_CacheTree_forEach omc_TplParser_CacheTree_forEach
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_forEach,2,0) {(void*) boxptr_TplParser_CacheTree_forEach,0}};
+#define boxvar_TplParser_CacheTree_forEach MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_forEach)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_fromList(threadData_t *threadData, modelica_metatype _inValues, modelica_fnptr _conflictFunc);
+#define boxptr_TplParser_CacheTree_fromList omc_TplParser_CacheTree_fromList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_fromList,2,0) {(void*) boxptr_TplParser_CacheTree_fromList,0}};
+#define boxvar_TplParser_CacheTree_fromList MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_fromList)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_get(threadData_t *threadData, modelica_metatype _tree, modelica_string _key);
+#define boxptr_TplParser_CacheTree_get omc_TplParser_CacheTree_get
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_get,2,0) {(void*) boxptr_TplParser_CacheTree_get,0}};
+#define boxvar_TplParser_CacheTree_get MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_get)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_getOpt(threadData_t *threadData, modelica_metatype _tree, modelica_string _key);
+#define boxptr_TplParser_CacheTree_getOpt omc_TplParser_CacheTree_getOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_getOpt,2,0) {(void*) boxptr_TplParser_CacheTree_getOpt,0}};
+#define boxvar_TplParser_CacheTree_getOpt MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_getOpt)
+DLLExport
+modelica_boolean omc_TplParser_CacheTree_hasKey(threadData_t *threadData, modelica_metatype _inTree, modelica_string _inKey);
+DLLExport
+modelica_metatype boxptr_TplParser_CacheTree_hasKey(threadData_t *threadData, modelica_metatype _inTree, modelica_metatype _inKey);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_hasKey,2,0) {(void*) boxptr_TplParser_CacheTree_hasKey,0}};
+#define boxvar_TplParser_CacheTree_hasKey MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_hasKey)
+DLLExport
+void omc_TplParser_CacheTree_intersection(threadData_t *threadData);
+#define boxptr_TplParser_CacheTree_intersection omc_TplParser_CacheTree_intersection
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_intersection,2,0) {(void*) boxptr_TplParser_CacheTree_intersection,0}};
+#define boxvar_TplParser_CacheTree_intersection MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_intersection)
+DLLExport
+modelica_boolean omc_TplParser_CacheTree_isEmpty(threadData_t *threadData, modelica_metatype _tree);
+DLLExport
+modelica_metatype boxptr_TplParser_CacheTree_isEmpty(threadData_t *threadData, modelica_metatype _tree);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_isEmpty,2,0) {(void*) boxptr_TplParser_CacheTree_isEmpty,0}};
+#define boxvar_TplParser_CacheTree_isEmpty MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_isEmpty)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_join(threadData_t *threadData, modelica_metatype __omcQ_24in_5Ftree, modelica_metatype _treeToJoin, modelica_fnptr _conflictFunc);
+#define boxptr_TplParser_CacheTree_join omc_TplParser_CacheTree_join
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_join,2,0) {(void*) boxptr_TplParser_CacheTree_join,0}};
+#define boxvar_TplParser_CacheTree_join MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_join)
+DLLExport
+modelica_integer omc_TplParser_CacheTree_keyCompare(threadData_t *threadData, modelica_string _inKey1, modelica_string _inKey2);
+DLLExport
+modelica_metatype boxptr_TplParser_CacheTree_keyCompare(threadData_t *threadData, modelica_metatype _inKey1, modelica_metatype _inKey2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_keyCompare,2,0) {(void*) boxptr_TplParser_CacheTree_keyCompare,0}};
+#define boxvar_TplParser_CacheTree_keyCompare MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_keyCompare)
+DLLExport
+modelica_string omc_TplParser_CacheTree_keyStr(threadData_t *threadData, modelica_string _inKey);
+#define boxptr_TplParser_CacheTree_keyStr omc_TplParser_CacheTree_keyStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_keyStr,2,0) {(void*) boxptr_TplParser_CacheTree_keyStr,0}};
+#define boxvar_TplParser_CacheTree_keyStr MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_keyStr)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_listKeys(threadData_t *threadData, modelica_metatype _inTree, modelica_metatype __omcQ_24in_5Flst);
+#define boxptr_TplParser_CacheTree_listKeys omc_TplParser_CacheTree_listKeys
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_listKeys,2,0) {(void*) boxptr_TplParser_CacheTree_listKeys,0}};
+#define boxvar_TplParser_CacheTree_listKeys MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_listKeys)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_listKeysReverse(threadData_t *threadData, modelica_metatype _inTree, modelica_metatype __omcQ_24in_5Flst);
+#define boxptr_TplParser_CacheTree_listKeysReverse omc_TplParser_CacheTree_listKeysReverse
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_listKeysReverse,2,0) {(void*) boxptr_TplParser_CacheTree_listKeysReverse,0}};
+#define boxvar_TplParser_CacheTree_listKeysReverse MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_listKeysReverse)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_listValues(threadData_t *threadData, modelica_metatype _tree, modelica_metatype __omcQ_24in_5Flst);
+#define boxptr_TplParser_CacheTree_listValues omc_TplParser_CacheTree_listValues
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_listValues,2,0) {(void*) boxptr_TplParser_CacheTree_listValues,0}};
+#define boxvar_TplParser_CacheTree_listValues MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_listValues)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_map(threadData_t *threadData, modelica_metatype _inTree, modelica_fnptr _inFunc);
+#define boxptr_TplParser_CacheTree_map omc_TplParser_CacheTree_map
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_map,2,0) {(void*) boxptr_TplParser_CacheTree_map,0}};
+#define boxvar_TplParser_CacheTree_map MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_map)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_mapFold(threadData_t *threadData, modelica_metatype _inTree, modelica_fnptr _inFunc, modelica_metatype _inStartValue, modelica_metatype *out_outResult);
+#define boxptr_TplParser_CacheTree_mapFold omc_TplParser_CacheTree_mapFold
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_mapFold,2,0) {(void*) boxptr_TplParser_CacheTree_mapFold,0}};
+#define boxvar_TplParser_CacheTree_mapFold MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_mapFold)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_new(threadData_t *threadData);
+#define boxptr_TplParser_CacheTree_new omc_TplParser_CacheTree_new
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_new,2,0) {(void*) boxptr_TplParser_CacheTree_new,0}};
+#define boxvar_TplParser_CacheTree_new MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_new)
+DLLExport
+modelica_string omc_TplParser_CacheTree_printNodeStr(threadData_t *threadData, modelica_metatype _inNode);
+#define boxptr_TplParser_CacheTree_printNodeStr omc_TplParser_CacheTree_printNodeStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_printNodeStr,2,0) {(void*) boxptr_TplParser_CacheTree_printNodeStr,0}};
+#define boxvar_TplParser_CacheTree_printNodeStr MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_printNodeStr)
+DLLExport
+modelica_string omc_TplParser_CacheTree_printTreeStr(threadData_t *threadData, modelica_metatype _inTree);
+#define boxptr_TplParser_CacheTree_printTreeStr omc_TplParser_CacheTree_printTreeStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_printTreeStr,2,0) {(void*) boxptr_TplParser_CacheTree_printTreeStr,0}};
+#define boxvar_TplParser_CacheTree_printTreeStr MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_printTreeStr)
+#define boxptr_TplParser_CacheTree_rotateLeft omc_TplParser_CacheTree_rotateLeft
+#define boxptr_TplParser_CacheTree_rotateRight omc_TplParser_CacheTree_rotateRight
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_setTreeLeftRight(threadData_t *threadData, modelica_metatype _orig, modelica_metatype _left, modelica_metatype _right);
+#define boxptr_TplParser_CacheTree_setTreeLeftRight omc_TplParser_CacheTree_setTreeLeftRight
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_setTreeLeftRight,2,0) {(void*) boxptr_TplParser_CacheTree_setTreeLeftRight,0}};
+#define boxvar_TplParser_CacheTree_setTreeLeftRight MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_setTreeLeftRight)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_toList(threadData_t *threadData, modelica_metatype _inTree, modelica_metatype __omcQ_24in_5Flst);
+#define boxptr_TplParser_CacheTree_toList omc_TplParser_CacheTree_toList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_toList,2,0) {(void*) boxptr_TplParser_CacheTree_toList,0}};
+#define boxvar_TplParser_CacheTree_toList MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_toList)
+DLLExport
+modelica_metatype omc_TplParser_CacheTree_update(threadData_t *threadData, modelica_metatype _tree, modelica_string _key, modelica_metatype _value);
+#define boxptr_TplParser_CacheTree_update omc_TplParser_CacheTree_update
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_update,2,0) {(void*) boxptr_TplParser_CacheTree_update,0}};
+#define boxvar_TplParser_CacheTree_update MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_update)
+DLLExport
+modelica_string omc_TplParser_CacheTree_valueStr(threadData_t *threadData, modelica_metatype _inValue);
+#define boxptr_TplParser_CacheTree_valueStr omc_TplParser_CacheTree_valueStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_valueStr,2,0) {(void*) boxptr_TplParser_CacheTree_valueStr,0}};
+#define boxvar_TplParser_CacheTree_valueStr MMC_REFSTRUCTLIT(boxvar_lit_TplParser_CacheTree_valueStr)
+#ifdef __cplusplus
+}
+#endif
+#endif

@@ -5,6 +5,7 @@ if true then /* Suppress output */
   setCommandLineOptions("-g=MetaModelica");
   alwaysfiles := {
     // "../Util/MessagePack.mo", // TODO: Add once we bootstrapped omc, maybe
+    // Only files needed for compiling MetaModelica
     "../Util/File.mo",
     "../FrontEnd/Absyn.mo",
     "../FrontEnd/AbsynToSCode.mo",
@@ -26,6 +27,7 @@ if true then /* Suppress output */
     "../FrontEnd/Dump.mo",
     "../FrontEnd/ElementSource.mo",
     "../FrontEnd/ExpressionDump.mo",
+  // Remember: Only files needed for compiling MetaModelica
     "../FrontEnd/Expression.mo",
     "../FrontEnd/ExpressionSimplify.mo",
     "../FrontEnd/ExpressionSimplifyTypes.mo",
@@ -42,12 +44,13 @@ if true then /* Suppress output */
     "../FrontEnd/InstUtil.mo",
     "../FrontEnd/InstExtends.mo",
     "../FrontEnd/InstSection.mo",
-    "../FrontEnd/InstStateMachineUtil.mo",
     "../FrontEnd/InstTypes.mo",
     "../FrontEnd/Lookup.mo",
     "../FrontEnd/MetaUtil.mo",
     "../FrontEnd/MMath.mo",
     "../FrontEnd/Mod.mo",
+  // Remember: Only files needed for compiling MetaModelica
+    "../FrontEnd/NFInstUtil.mo",
     "../FrontEnd/OperatorOverloading.mo",
     "../FrontEnd/Parser.mo",
     "../FrontEnd/ParserExt.mo",
@@ -59,29 +62,14 @@ if true then /* Suppress output */
     "../FrontEnd/SCodeUtil.mo",
     "../FrontEnd/Static.mo",
     //"../FrontEnd/SCodeSimplify.mo",
-    "../FrontEnd/NFEnvExtends.mo",
-    "../FrontEnd/NFInstPrefix.mo",
-    "../FrontEnd/NFInstTypes.mo",
-    "../FrontEnd/NFInstUtil.mo",
-    "../FrontEnd/NFSCodeDependency.mo",
-    "../FrontEnd/NFSCodeEnv.mo",
-    "../FrontEnd/NFSCodeFlattenImports.mo",
-    "../FrontEnd/NFSCodeFlatten.mo",
-    "../FrontEnd/NFSCodeFlattenRedeclare.mo",
-    "../FrontEnd/NFSCodeLookup.mo",
-    "../FrontEnd/NFSCodeCheck.mo",
     "../FrontEnd/StateMachineFlatten.mo",
     "../FrontEnd/Types.mo",
     "../FrontEnd/UnitAbsyn.mo",
     "../FrontEnd/UnitParserExt.mo",
     "../FrontEnd/Values.mo",
     "../FrontEnd/ValuesUtil.mo",
-    "../FrontEnd/FUnit.mo",
-    "../FrontEnd/FUnitCheck.mo",
-    "../FrontEnd/FHashTableCrToUnit.mo",
-    "../FrontEnd/FHashTableStringToUnit.mo",
-    "../FrontEnd/FHashTableUnitToString.mo",
 
+  // Only files needed for compiling MetaModelica
   // "FFrontEnd";
     "../FFrontEnd/FBuiltin.mo",
     "../FFrontEnd/FCore.mo",
@@ -99,32 +87,31 @@ if true then /* Suppress output */
    // NF files required for bootstrapping are put in the FrontEnd folder
    // NF files not required for bootstrapping are put together with the backend files
 
+  // Only files needed for compiling MetaModelica
   // "BackEnd";
     "../BackEnd/BackendDAE.mo",
 
+  // Only files needed for compiling MetaModelica
   // "SimCode";
     "../SimCode/HpcOmSimCode.mo",
     "../SimCode/SimCodeFunction.mo",
     "../SimCode/SimCodeFunctionUtil.mo",
     "../SimCode/SimCodeVar.mo",
 
+  // Only files needed for compiling MetaModelica
   // "Script";
     "../Script/CevalScript.mo",
     "../Script/GlobalScript.mo",
     "../Script/GlobalScriptDump.mo",
     "../Script/GlobalScriptUtil.mo",
     "../Script/Interactive.mo",
-    "../Script/NFApi.mo",
-    "../Script/MMToJuliaUtil.mo",
     "../Script/StaticScript.mo",
     "../Script/SymbolTable.mo",
     "../Script/InteractiveUtil.mo",
-    "../Script/CevalScriptOMSimulator.mo",
 
+// Only files needed for compiling MetaModelica
 // "Template";
     "../Template/AbsynDumpTpl.mo",
-    "../Template/AbsynJLDumpTpl.mo",
-    "../Template/AbsynToJulia.mo",
     "../Template/CodegenCFunctions.mo",
     "../Template/CodegenUtil.mo",
     "../Template/DAEDumpTpl.mo",
@@ -138,15 +125,17 @@ if true then /* Suppress output */
     "../Template/TplParser.mo",
     "../Template/Unparsing.mo",
 
+  // Only files needed for compiling MetaModelica
   // "Global";
     "../Global/Global.mo",
 
+  // Only files needed for compiling MetaModelica
   // "Main";
     "../Main/Main.mo",
 
+  // Only files needed for compiling MetaModelica
   // "Util";
     "../Util/Array.mo",
-    "../Util/Autoconf.mo",
     "../Util/AvlSetCR.mo",
     "../Util/AvlSetPath.mo",
     "../Util/AvlSetString.mo",
@@ -156,20 +145,17 @@ if true then /* Suppress output */
     "../Util/BaseAvlSet.mo",
     "../Util/BaseHashTable.mo",
     "../Util/BaseHashSet.mo",
-    "../Util/BasePVector.mo",
     "../Util/ClockIndexes.mo",
     "../Util/Config.mo",
     "../Util/Corba.mo",
     //"../Util/Database.mo",
     "../Util/Debug.mo",
-    "../Util/DisjointSets.mo",
     "../Util/DoubleEnded.mo",
     "../Util/DynLoad.mo",
     "../Util/ErrorExt.mo",
     "../Util/Error.mo",
     "../Util/ErrorTypes.mo",
     "../Util/ExecStat.mo",
-    "../Util/ExpandableArray.mo",
     "../Util/Flags.mo",
     "../Util/FlagsUtil.mo",
     "../Util/GC.mo",
@@ -177,6 +163,7 @@ if true then /* Suppress output */
     "../Util/Graph.mo",
     "../Util/GraphStream.mo",
     "../Util/GraphStreamExt.mo",
+  // Remember: Only files needed for compiling MetaModelica
     "../Util/HashSet.mo",
     "../Util/HashSetExp.mo",
     "../Util/HashSetString.mo",
@@ -191,7 +178,6 @@ if true then /* Suppress output */
     "../Util/HashTable.mo",
     "../Util/HashTableExpToIndex.mo",
     //"../Util/HashTablePathToFunction.mo",
-    "../Util/HashTableSM1.mo",
     "../Util/HashTableStringToPath.mo",
     "../Util/HashTableStringToProgram.mo",
     "../Util/IOStreamExt.mo",
@@ -211,21 +197,27 @@ if true then /* Suppress output */
     "../Util/Testsuite.mo",
     "../Util/Util.mo",
     "../Util/VarTransform.mo",
-    "../Util/ZeroMQ.mo",
-    "../Util/OMSimulator.mo"
+    "../Util/ZeroMQ.mo"
   };
   backendfiles := if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS")<>"" then
   {
+    "../Stubs/AbsynJLDumpTpl.mo",
+    "../Stubs/Autoconf.mo",
     "../Stubs/BackendDAECreate.mo",
     "../Stubs/BackendDAEUtil.mo",
     "../Stubs/CevalScriptBackend.mo",
+    "../Stubs/CevalScriptOMSimulator.mo",
     "../Stubs/CodegenMidToC.mo",
     "../Stubs/DAEToMid.mo",
     "../Stubs/DumpGraphviz.mo",
+    "../Stubs/ExpandableArray.mo",
     "../Stubs/FGraphStream.mo",
+    "../Stubs/FUnitCheck.mo",
+    "../Stubs/InstStateMachineUtil.mo",
     "../Stubs/MidCode.mo",
     "../Stubs/NFApi.mo",
     "../Stubs/NFInstDump.mo",
+    "../Stubs/NFSCodeFlatten.mo",
     "../Stubs/NFUnitCheck.mo",
     "../Stubs/PackageManagement.mo",
     "../Stubs/Refactor.mo",
@@ -299,7 +291,23 @@ if true then /* Suppress output */
 
     "../FrontEnd/CheckModel.mo",
     "../FrontEnd/DumpGraphviz.mo",
+    "../FrontEnd/InstStateMachineUtil.mo",
+    "../FrontEnd/FUnit.mo",
+    "../FrontEnd/FUnitCheck.mo",
+    "../FrontEnd/FHashTableCrToUnit.mo",
+    "../FrontEnd/FHashTableStringToUnit.mo",
+    "../FrontEnd/FHashTableUnitToString.mo",
+    "../FrontEnd/NFEnvExtends.mo",
     "../FrontEnd/NFInstDump.mo",
+    "../FrontEnd/NFInstPrefix.mo",
+    "../FrontEnd/NFInstTypes.mo",
+    "../FrontEnd/NFSCodeDependency.mo",
+    "../FrontEnd/NFSCodeEnv.mo",
+    "../FrontEnd/NFSCodeFlattenImports.mo",
+    "../FrontEnd/NFSCodeFlatten.mo",
+    "../FrontEnd/NFSCodeFlattenRedeclare.mo",
+    "../FrontEnd/NFSCodeLookup.mo",
+    "../FrontEnd/NFSCodeCheck.mo",
     "../FrontEnd/UnitAbsynBuilder.mo",
     "../FrontEnd/UnitChecker.mo",
 
@@ -390,6 +398,7 @@ if true then /* Suppress output */
     "../Parsers/JSON.mo",
     "../Parsers/SimpleModelicaParser.mo",
 
+    "../Script/CevalScriptOMSimulator.mo",
     "../Script/Refactor.mo",
     "../Script/RewriteRules.mo",
     "../Script/Figaro.mo",
@@ -400,6 +409,7 @@ if true then /* Suppress output */
     "../Script/PackageManagement.mo",
     "../Script/MMToJuliaUtil.mo",
     "../Script/MMToJuliaKeywords.mo",
+    "../Script/NFApi.mo",
 
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",
@@ -448,13 +458,17 @@ if true then /* Suppress output */
     "../Template/SimCodeDump.mo",
     "../Template/VisualXMLTpl.mo",
 
+    "../Util/Autoconf.mo",
     "../Util/AvlTree.mo",
     "../Util/AvlTreeString.mo",
     "../Util/AvlSetInt.mo",
 
     "../Util/AdjacencyList.mo",
+    // "../Util/BasePVector.mo",
     "../Util/Curl.mo",
     "../Util/DiffAlgorithm.mo",
+    "../Util/DisjointSets.mo",
+    "../Util/ExpandableArray.mo",
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",
     "../Util/GraphML.mo",
@@ -467,6 +481,8 @@ if true then /* Suppress output */
     "../Util/HashTableCrToExpSourceTpl.mo",
     "../Util/HashTableCrToCrEqLst.mo",
     "../Util/HashTableSimCodeEqCache.mo",
+    "../Util/HashTableSM1.mo",
+    "../Util/OMSimulator.mo",
     "../Util/PriorityQueue.mo",
     "../Util/SBAtomicSet.mo",
     "../Util/SBFunctions.mo",

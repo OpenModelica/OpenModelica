@@ -1,0 +1,32 @@
+#ifndef HashTableCrefSimVar__H
+#define HashTableCrefSimVar__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLExport
+modelica_metatype omc_HashTableCrefSimVar_addSimVarToHashTable(threadData_t *threadData, modelica_metatype _simvarIn, modelica_metatype _inHT);
+#define boxptr_HashTableCrefSimVar_addSimVarToHashTable omc_HashTableCrefSimVar_addSimVarToHashTable
+static const MMC_DEFSTRUCTLIT(boxvar_lit_HashTableCrefSimVar_addSimVarToHashTable,2,0) {(void*) boxptr_HashTableCrefSimVar_addSimVarToHashTable,0}};
+#define boxvar_HashTableCrefSimVar_addSimVarToHashTable MMC_REFSTRUCTLIT(boxvar_lit_HashTableCrefSimVar_addSimVarToHashTable)
+#define boxptr_HashTableCrefSimVar_opaqueStr omc_HashTableCrefSimVar_opaqueStr
+DLLExport
+modelica_metatype omc_HashTableCrefSimVar_emptyHashTableSized(threadData_t *threadData, modelica_integer _size);
+DLLExport
+modelica_metatype boxptr_HashTableCrefSimVar_emptyHashTableSized(threadData_t *threadData, modelica_metatype _size);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_HashTableCrefSimVar_emptyHashTableSized,2,0) {(void*) boxptr_HashTableCrefSimVar_emptyHashTableSized,0}};
+#define boxvar_HashTableCrefSimVar_emptyHashTableSized MMC_REFSTRUCTLIT(boxvar_lit_HashTableCrefSimVar_emptyHashTableSized)
+DLLExport
+modelica_metatype omc_HashTableCrefSimVar_emptyHashTable(threadData_t *threadData);
+#define boxptr_HashTableCrefSimVar_emptyHashTable omc_HashTableCrefSimVar_emptyHashTable
+static const MMC_DEFSTRUCTLIT(boxvar_lit_HashTableCrefSimVar_emptyHashTable,2,0) {(void*) boxptr_HashTableCrefSimVar_emptyHashTable,0}};
+#define boxvar_HashTableCrefSimVar_emptyHashTable MMC_REFSTRUCTLIT(boxvar_lit_HashTableCrefSimVar_emptyHashTable)
+#ifdef __cplusplus
+}
+#endif
+#endif

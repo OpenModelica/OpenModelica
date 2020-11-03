@@ -47,22 +47,6 @@ extern "C" {
 #if !defined(Util__notrans)
 #define Util__notrans Gettext__notrans
 #endif
-#if !defined(Error__INTERNAL_3dBOX0)
-#define Error__INTERNAL ErrorTypes__INTERNAL
-#define Error__NOTIFICATION ErrorTypes__NOTIFICATION
-#define Error__WARNING ErrorTypes__WARNING
-#define Error__ERROR ErrorTypes__ERROR
-#define Error__SYNTAX ErrorTypes__SYNTAX
-#define Error__TRANSLATION ErrorTypes__TRANSLATION
-#define Error__SYMBOLIC ErrorTypes__SYMBOLIC
-#define Error__SCRIPTING ErrorTypes__SCRIPTING
-#define Error__GRAMMAR ErrorTypes__GRAMMAR
-#define Error__SIMULATION ErrorTypes__SIMULATION
-#define Error__MESSAGE ErrorTypes__MESSAGE
-#define Error__TOTALMESSAGE ErrorTypes__TOTALMESSAGE
-#define Error__SYNTAX_3dBOX0 ErrorTypes__SYNTAX_3dBOX0
-#define Error__INTERNAL_3dBOX0 ErrorTypes__INTERNAL_3dBOX0
-#endif
 
 }
 
@@ -93,22 +77,6 @@ extern const char* Error_printMessagesStr(threadData_t *threadData,int warningsA
   return omc_alloc_interface.malloc_strdup(res.c_str());
 }
 
-#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
-extern void Error_addMessage(threadData_t *threadData,int errorID, void *msg_type, void *severity, const char* message, modelica_metatype tokenlst)
-{
-  ErrorMessage::TokenList tokens;
-  while (MMC_GETHDR(tokenlst) != MMC_NILHDR) {
-    const char* token = MMC_STRINGDATA(MMC_CAR(tokenlst));
-    tokens.push_back(string(token));
-    tokenlst=MMC_CDR(tokenlst);
-  }
-  add_source_message(threadData,errorID,
-              (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-              (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__INTERNAL_3dBOX0),
-              message,tokens,0,0,0,0,0,"");
-}
-#endif
-
 extern void Error_addSourceMessage(threadData_t *threadData,int _id, void *msg_type, void *severity, int _sline, int _scol, int _eline, int _ecol, int _read_only, const char* _filename, const char* _msg, void* tokenlst)
 {
   ErrorMessage::TokenList tokens;
@@ -117,8 +85,8 @@ extern void Error_addSourceMessage(threadData_t *threadData,int _id, void *msg_t
     tokenlst=MMC_CDR(tokenlst);
   }
   add_source_message(threadData,_id,
-                     (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-Error__SYNTAX_3dBOX0),
-                     (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-Error__INTERNAL_3dBOX0),
+                     (ErrorType) (MMC_HDRCTOR(MMC_GETHDR(msg_type))-ErrorTypes__SYNTAX_3dBOX0),
+                     (ErrorLevel) (MMC_HDRCTOR(MMC_GETHDR(severity))-ErrorTypes__INTERNAL_3dBOX0),
                      _msg,tokens,_sline,_scol,_eline,_ecol,_read_only,_filename);
 }
 
@@ -160,10 +128,8 @@ static void omc_assert_compiler_warning(FILE_INFO info, const char *msg, ...)
 
 void Error_initAssertionFunctions()
 {
-#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
   omc_assert = omc_assert_compiler;
   omc_assert_warning = omc_assert_compiler_warning;
-#endif
 }
 
 }

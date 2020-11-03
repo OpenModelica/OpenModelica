@@ -1,0 +1,38 @@
+#ifndef MetaUtil__H
+#define MetaUtil__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_Exp_LIST__desc;
+extern struct record_description Absyn_Path_IDENT__desc;
+extern struct record_description Absyn_Restriction_R__METARECORD__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+DLLExport
+modelica_metatype omc_MetaUtil_transformArrayNodesToListNodes(threadData_t *threadData, modelica_metatype _inList);
+#define boxptr_MetaUtil_transformArrayNodesToListNodes omc_MetaUtil_transformArrayNodesToListNodes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_MetaUtil_transformArrayNodesToListNodes,2,0) {(void*) boxptr_MetaUtil_transformArrayNodesToListNodes,0}};
+#define boxvar_MetaUtil_transformArrayNodesToListNodes MMC_REFSTRUCTLIT(boxvar_lit_MetaUtil_transformArrayNodesToListNodes)
+#define boxptr_MetaUtil_fixElementItems omc_MetaUtil_fixElementItems
+#define boxptr_MetaUtil_fixClassParts omc_MetaUtil_fixClassParts
+#define boxptr_MetaUtil_convertElementToClass omc_MetaUtil_convertElementToClass
+#define boxptr_MetaUtil_setElementItemClass omc_MetaUtil_setElementItemClass
+#define boxptr_MetaUtil_createMetaClassesFromElementItems omc_MetaUtil_createMetaClassesFromElementItems
+#define boxptr_MetaUtil_createMetaClassesFromClassParts omc_MetaUtil_createMetaClassesFromClassParts
+#define boxptr_MetaUtil_createMetaClasses omc_MetaUtil_createMetaClasses
+DLLExport
+modelica_metatype omc_MetaUtil_createMetaClassesInProgram(threadData_t *threadData, modelica_metatype _inProgram);
+#define boxptr_MetaUtil_createMetaClassesInProgram omc_MetaUtil_createMetaClassesInProgram
+static const MMC_DEFSTRUCTLIT(boxvar_lit_MetaUtil_createMetaClassesInProgram,2,0) {(void*) boxptr_MetaUtil_createMetaClassesInProgram,0}};
+#define boxvar_MetaUtil_createMetaClassesInProgram MMC_REFSTRUCTLIT(boxvar_lit_MetaUtil_createMetaClassesInProgram)
+#ifdef __cplusplus
+}
+#endif
+#endif

@@ -1,0 +1,59 @@
+#include <meta/meta_modelica.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstHashTable_CachedInstItem_FUNC__instClassIn__desc_added
+#define InstHashTable_CachedInstItem_FUNC__instClassIn__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstHashTable_CachedInstItem_FUNC__instClassIn__desc__fields[2] = {"inputs","outputs"};
+ADD_METARECORD_DEFINITIONS struct record_description InstHashTable_CachedInstItem_FUNC__instClassIn__desc = {
+"InstHashTable_CachedInstItem_FUNC__instClassIn",
+"InstHashTable.CachedInstItem.FUNC_instClassIn",
+InstHashTable_CachedInstItem_FUNC__instClassIn__desc__fields
+};
+#endif
+#else
+extern struct record_description InstHashTable_CachedInstItem_FUNC__instClassIn__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc_added
+#define InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc__fields[2] = {"inputs","outputs"};
+ADD_METARECORD_DEFINITIONS struct record_description InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc = {
+"InstHashTable_CachedInstItem_FUNC__partialInstClassIn",
+"InstHashTable.CachedInstItem.FUNC_partialInstClassIn",
+InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc__fields
+};
+#endif
+#else
+extern struct record_description InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc_added
+#define InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc__fields[2] = {"inputs","outputs"};
+ADD_METARECORD_DEFINITIONS struct record_description InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc = {
+"InstHashTable_CachedInstItem_FUNC__partialInstClassIn",
+"InstHashTable.CachedInstItem.FUNC_partialInstClassIn",
+InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc__fields
+};
+#endif
+#else
+extern struct record_description InstHashTable_CachedInstItem_FUNC__partialInstClassIn__desc;
+#endif
+#ifdef ADD_METARECORD_DEFINITIONS
+#ifndef InstHashTable_CachedInstItem_FUNC__instClassIn__desc_added
+#define InstHashTable_CachedInstItem_FUNC__instClassIn__desc_added
+ADD_METARECORD_DEFINITIONS const char* InstHashTable_CachedInstItem_FUNC__instClassIn__desc__fields[2] = {"inputs","outputs"};
+ADD_METARECORD_DEFINITIONS struct record_description InstHashTable_CachedInstItem_FUNC__instClassIn__desc = {
+"InstHashTable_CachedInstItem_FUNC__instClassIn",
+"InstHashTable.CachedInstItem.FUNC_instClassIn",
+InstHashTable_CachedInstItem_FUNC__instClassIn__desc__fields
+};
+#endif
+#else
+extern struct record_description InstHashTable_CachedInstItem_FUNC__instClassIn__desc;
+#endif
+#ifdef __cplusplus
+}
+#endif

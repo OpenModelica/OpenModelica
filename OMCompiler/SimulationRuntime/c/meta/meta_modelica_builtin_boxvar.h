@@ -2,7 +2,7 @@
 
 #if !(defined(OMC_MINIMAL_RUNTIME) || defined(OMC_FMI_RUNTIME))
 
-#if !defined(OMC_GENERATE_RELOCATABLE_CODE) || defined(OMC_BOOTSTRAPPING_STAGE_1) || defined(OMC_BOOTSTRAPPING_STAGE_2)
+#if !defined(OMC_GENERATE_RELOCATABLE_CODE)
 #define OMC_SYM_BOXPTR(X) &boxptr_##X
 #else
 #define OMC_SYM_BOXPTR(X) &boxvar_fn_##X

@@ -1,0 +1,205 @@
+#ifndef Inline__H
+#define Inline__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description AvlSetPath_Tree_EMPTY__desc;
+extern struct record_description DAE_Algorithm_ALGORITHM__STMTS__desc;
+extern struct record_description DAE_CallAttributes_CALL__ATTR__desc;
+extern struct record_description DAE_ComponentRef_WILD__desc;
+extern struct record_description DAE_Element_ALGORITHM__desc;
+extern struct record_description DAE_Element_ARRAY__EQUATION__desc;
+extern struct record_description DAE_Element_ASSERT__desc;
+extern struct record_description DAE_Element_COMP__desc;
+extern struct record_description DAE_Element_COMPLEX__EQUATION__desc;
+extern struct record_description DAE_Element_DEFINE__desc;
+extern struct record_description DAE_Element_EQUATION__desc;
+extern struct record_description DAE_Element_IF__EQUATION__desc;
+extern struct record_description DAE_Element_INITIALALGORITHM__desc;
+extern struct record_description DAE_Element_INITIALDEFINE__desc;
+extern struct record_description DAE_Element_INITIALEQUATION__desc;
+extern struct record_description DAE_Element_INITIAL__ARRAY__EQUATION__desc;
+extern struct record_description DAE_Element_INITIAL__ASSERT__desc;
+extern struct record_description DAE_Element_INITIAL__COMPLEX__EQUATION__desc;
+extern struct record_description DAE_Element_INITIAL__IF__EQUATION__desc;
+extern struct record_description DAE_Element_INITIAL__NORETCALL__desc;
+extern struct record_description DAE_Element_INITIAL__TERMINATE__desc;
+extern struct record_description DAE_Element_NORETCALL__desc;
+extern struct record_description DAE_Element_REINIT__desc;
+extern struct record_description DAE_Element_TERMINATE__desc;
+extern struct record_description DAE_Element_VAR__desc;
+extern struct record_description DAE_Element_WHEN__EQUATION__desc;
+extern struct record_description DAE_Else_ELSE__desc;
+extern struct record_description DAE_Else_ELSEIF__desc;
+extern struct record_description DAE_EquationExp_EQUALITY__EXPS__desc;
+extern struct record_description DAE_EquationExp_PARTIAL__EQUATION__desc;
+extern struct record_description DAE_EquationExp_RESIDUAL__EXP__desc;
+extern struct record_description DAE_Exp_BOX__desc;
+extern struct record_description DAE_Exp_CALL__desc;
+extern struct record_description DAE_Exp_IFEXP__desc;
+extern struct record_description DAE_Exp_RECORD__desc;
+extern struct record_description DAE_Exp_RSUB__desc;
+extern struct record_description DAE_Exp_TSUB__desc;
+extern struct record_description DAE_InlineType_BUILTIN__EARLY__INLINE__desc;
+extern struct record_description DAE_InlineType_NO__INLINE__desc;
+extern struct record_description DAE_Statement_STMT__ASSERT__desc;
+extern struct record_description DAE_Statement_STMT__ASSIGN__desc;
+extern struct record_description DAE_Statement_STMT__ASSIGN__ARR__desc;
+extern struct record_description DAE_Statement_STMT__FAILURE__desc;
+extern struct record_description DAE_Statement_STMT__FOR__desc;
+extern struct record_description DAE_Statement_STMT__IF__desc;
+extern struct record_description DAE_Statement_STMT__NORETCALL__desc;
+extern struct record_description DAE_Statement_STMT__REINIT__desc;
+extern struct record_description DAE_Statement_STMT__TERMINATE__desc;
+extern struct record_description DAE_Statement_STMT__TUPLE__ASSIGN__desc;
+extern struct record_description DAE_Statement_STMT__WHEN__desc;
+extern struct record_description DAE_Statement_STMT__WHILE__desc;
+extern struct record_description DAE_SymbolicOperation_OP__INLINE__desc;
+extern struct record_description DAE_TailCall_NO__TAIL__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__BOOL__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__ENUMERATION__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__INT__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__REAL__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__STRING__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+#define boxptr_Inline_getInlineHashTableVarTransform omc_Inline_getInlineHashTableVarTransform
+#define boxptr_Inline_getReplacementCheckComplex omc_Inline_getReplacementCheckComplex
+DLLExport
+modelica_metatype omc_Inline_inlineEquationExp(threadData_t *threadData, modelica_metatype _inExp, modelica_fnptr _fn, modelica_metatype _inSource, modelica_metatype *out_source);
+#define boxptr_Inline_inlineEquationExp omc_Inline_inlineEquationExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineEquationExp,2,0) {(void*) boxptr_Inline_inlineEquationExp,0}};
+#define boxvar_Inline_inlineEquationExp MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineEquationExp)
+DLLExport
+modelica_metatype omc_Inline_simplifyAndForceInlineEquationExp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _fns, modelica_metatype _inSource, modelica_metatype *out_source);
+#define boxptr_Inline_simplifyAndForceInlineEquationExp omc_Inline_simplifyAndForceInlineEquationExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_simplifyAndForceInlineEquationExp,2,0) {(void*) boxptr_Inline_simplifyAndForceInlineEquationExp,0}};
+#define boxvar_Inline_simplifyAndForceInlineEquationExp MMC_REFSTRUCTLIT(boxvar_lit_Inline_simplifyAndForceInlineEquationExp)
+DLLExport
+modelica_metatype omc_Inline_simplifyAndInlineEquationExp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _fns, modelica_metatype _inSource, modelica_metatype *out_source);
+#define boxptr_Inline_simplifyAndInlineEquationExp omc_Inline_simplifyAndInlineEquationExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_simplifyAndInlineEquationExp,2,0) {(void*) boxptr_Inline_simplifyAndInlineEquationExp,0}};
+#define boxvar_Inline_simplifyAndInlineEquationExp MMC_REFSTRUCTLIT(boxvar_lit_Inline_simplifyAndInlineEquationExp)
+DLLExport
+modelica_string omc_Inline_printInlineTypeStr(threadData_t *threadData, modelica_metatype _it);
+#define boxptr_Inline_printInlineTypeStr omc_Inline_printInlineTypeStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_printInlineTypeStr,2,0) {(void*) boxptr_Inline_printInlineTypeStr,0}};
+#define boxvar_Inline_printInlineTypeStr MMC_REFSTRUCTLIT(boxvar_lit_Inline_printInlineTypeStr)
+#define boxptr_Inline_getInputCrefs omc_Inline_getInputCrefs
+#define boxptr_Inline_getExpFromArgMap omc_Inline_getExpFromArgMap
+#define boxptr_Inline_functionReferenceType omc_Inline_functionReferenceType
+#define boxptr_Inline_boxIfUnboxedFunRef omc_Inline_boxIfUnboxedFunRef
+DLLExport
+modelica_metatype omc_Inline_replaceArgs(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inTuple, modelica_metatype *out_outTuple);
+#define boxptr_Inline_replaceArgs omc_Inline_replaceArgs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_replaceArgs,2,0) {(void*) boxptr_Inline_replaceArgs,0}};
+#define boxvar_Inline_replaceArgs MMC_REFSTRUCTLIT(boxvar_lit_Inline_replaceArgs)
+#define boxptr_Inline_getRhsExp omc_Inline_getRhsExp
+DLLExport
+modelica_metatype omc_Inline_getFunctionBody(threadData_t *threadData, modelica_metatype _p, modelica_metatype _fns, modelica_metatype *out_oComment);
+#define boxptr_Inline_getFunctionBody omc_Inline_getFunctionBody
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_getFunctionBody,2,0) {(void*) boxptr_Inline_getFunctionBody,0}};
+#define boxvar_Inline_getFunctionBody MMC_REFSTRUCTLIT(boxvar_lit_Inline_getFunctionBody)
+#define boxptr_Inline_extendCrefRecords2 omc_Inline_extendCrefRecords2
+#define boxptr_Inline_extendCrefRecords1 omc_Inline_extendCrefRecords1
+#define boxptr_Inline_getCheckCref omc_Inline_getCheckCref
+DLLExport
+modelica_metatype omc_Inline_extendCrefRecords(threadData_t *threadData, modelica_metatype _inArgmap, modelica_metatype _inCheckCr, modelica_metatype *out_outCheckCr);
+#define boxptr_Inline_extendCrefRecords omc_Inline_extendCrefRecords
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_extendCrefRecords,2,0) {(void*) boxptr_Inline_extendCrefRecords,0}};
+#define boxvar_Inline_extendCrefRecords MMC_REFSTRUCTLIT(boxvar_lit_Inline_extendCrefRecords)
+DLLExport
+modelica_boolean omc_Inline_checkInlineType(threadData_t *threadData, modelica_metatype _inIT, modelica_metatype _fns);
+DLLExport
+modelica_metatype boxptr_Inline_checkInlineType(threadData_t *threadData, modelica_metatype _inIT, modelica_metatype _fns);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_checkInlineType,2,0) {(void*) boxptr_Inline_checkInlineType,0}};
+#define boxvar_Inline_checkInlineType MMC_REFSTRUCTLIT(boxvar_lit_Inline_checkInlineType)
+#define boxptr_Inline_addReplacement omc_Inline_addReplacement
+#define boxptr_Inline_addOptBindingReplacements omc_Inline_addOptBindingReplacements
+#define boxptr_Inline_makeComplexBinding omc_Inline_makeComplexBinding
+#define boxptr_Inline_getFunctionInputsOutputBody omc_Inline_getFunctionInputsOutputBody
+#define boxptr_Inline_mergeFunctionBody omc_Inline_mergeFunctionBody
+DLLExport
+modelica_metatype omc_Inline_forceInlineCall(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fexp, modelica_metatype __omcQ_24in_5FassrtLst, modelica_metatype _fns, modelica_metatype _visitedPaths, modelica_metatype *out_assrtLst);
+#define boxptr_Inline_forceInlineCall omc_Inline_forceInlineCall
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_forceInlineCall,2,0) {(void*) boxptr_Inline_forceInlineCall,0}};
+#define boxvar_Inline_forceInlineCall MMC_REFSTRUCTLIT(boxvar_lit_Inline_forceInlineCall)
+#define boxptr_Inline_dumpArgmap omc_Inline_dumpArgmap
+DLLExport
+modelica_boolean omc_Inline_hasGenerateEventsAnnotation(threadData_t *threadData, modelica_metatype _comment);
+DLLExport
+modelica_metatype boxptr_Inline_hasGenerateEventsAnnotation(threadData_t *threadData, modelica_metatype _comment);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_hasGenerateEventsAnnotation,2,0) {(void*) boxptr_Inline_hasGenerateEventsAnnotation,0}};
+#define boxvar_Inline_hasGenerateEventsAnnotation MMC_REFSTRUCTLIT(boxvar_lit_Inline_hasGenerateEventsAnnotation)
+#define boxptr_Inline_inlineAssert omc_Inline_inlineAssert
+DLLExport
+modelica_metatype omc_Inline_inlineCall(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fexp, modelica_metatype __omcQ_24in_5FassrtLst, modelica_metatype _fns, modelica_metatype *out_assrtLst);
+#define boxptr_Inline_inlineCall omc_Inline_inlineCall
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineCall,2,0) {(void*) boxptr_Inline_inlineCall,0}};
+#define boxvar_Inline_inlineCall MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineCall)
+DLLExport
+modelica_boolean omc_Inline_checkExpsTypeEquiv(threadData_t *threadData, modelica_metatype _inExp1, modelica_metatype _inExp2);
+DLLExport
+modelica_metatype boxptr_Inline_checkExpsTypeEquiv(threadData_t *threadData, modelica_metatype _inExp1, modelica_metatype _inExp2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_checkExpsTypeEquiv,2,0) {(void*) boxptr_Inline_checkExpsTypeEquiv,0}};
+#define boxvar_Inline_checkExpsTypeEquiv MMC_REFSTRUCTLIT(boxvar_lit_Inline_checkExpsTypeEquiv)
+DLLExport
+modelica_metatype omc_Inline_inlineExps(threadData_t *threadData, modelica_metatype _inExps, modelica_metatype _inElementList, modelica_metatype _inSource, modelica_metatype *out_outSource, modelica_boolean *out_inlined);
+DLLExport
+modelica_metatype boxptr_Inline_inlineExps(threadData_t *threadData, modelica_metatype _inExps, modelica_metatype _inElementList, modelica_metatype _inSource, modelica_metatype *out_outSource, modelica_metatype *out_inlined);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineExps,2,0) {(void*) boxptr_Inline_inlineExps,0}};
+#define boxvar_Inline_inlineExps MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineExps)
+DLLExport
+modelica_metatype omc_Inline_forceInlineExp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inElementList, modelica_metatype _inSource, modelica_metatype *out_outSource, modelica_boolean *out_inlineperformed);
+DLLExport
+modelica_metatype boxptr_Inline_forceInlineExp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inElementList, modelica_metatype _inSource, modelica_metatype *out_outSource, modelica_metatype *out_inlineperformed);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_forceInlineExp,2,0) {(void*) boxptr_Inline_forceInlineExp,0}};
+#define boxvar_Inline_forceInlineExp MMC_REFSTRUCTLIT(boxvar_lit_Inline_forceInlineExp)
+DLLExport
+modelica_metatype omc_Inline_inlineExp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inElementList, modelica_metatype _inSource, modelica_metatype *out_outSource, modelica_boolean *out_inlined, modelica_metatype *out_assrtLstOut);
+DLLExport
+modelica_metatype boxptr_Inline_inlineExp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _inElementList, modelica_metatype _inSource, modelica_metatype *out_outSource, modelica_metatype *out_inlined, modelica_metatype *out_assrtLstOut);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineExp,2,0) {(void*) boxptr_Inline_inlineExp,0}};
+#define boxvar_Inline_inlineExp MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineExp)
+DLLExport
+modelica_metatype omc_Inline_inlineExpOpt(threadData_t *threadData, modelica_metatype _inExpOption, modelica_metatype _inElementList, modelica_metatype _inSource, modelica_metatype *out_outSource, modelica_boolean *out_inlined);
+DLLExport
+modelica_metatype boxptr_Inline_inlineExpOpt(threadData_t *threadData, modelica_metatype _inExpOption, modelica_metatype _inElementList, modelica_metatype _inSource, modelica_metatype *out_outSource, modelica_metatype *out_inlined);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineExpOpt,2,0) {(void*) boxptr_Inline_inlineExpOpt,0}};
+#define boxvar_Inline_inlineExpOpt MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineExpOpt)
+DLLExport
+modelica_metatype omc_Inline_inlineStatements(threadData_t *threadData, modelica_metatype _inStatements, modelica_metatype _inElementList, modelica_metatype _iAcc, modelica_boolean _iInlined, modelica_boolean *out_OInlined);
+DLLExport
+modelica_metatype boxptr_Inline_inlineStatements(threadData_t *threadData, modelica_metatype _inStatements, modelica_metatype _inElementList, modelica_metatype _iAcc, modelica_metatype _iInlined, modelica_metatype *out_OInlined);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineStatements,2,0) {(void*) boxptr_Inline_inlineStatements,0}};
+#define boxvar_Inline_inlineStatements MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineStatements)
+DLLExport
+modelica_metatype omc_Inline_inlineAlgorithm(threadData_t *threadData, modelica_metatype _inAlgorithm, modelica_metatype _inElementList, modelica_boolean *out_inlined);
+DLLExport
+modelica_metatype boxptr_Inline_inlineAlgorithm(threadData_t *threadData, modelica_metatype _inAlgorithm, modelica_metatype _inElementList, modelica_metatype *out_inlined);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineAlgorithm,2,0) {(void*) boxptr_Inline_inlineAlgorithm,0}};
+#define boxvar_Inline_inlineAlgorithm MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineAlgorithm)
+DLLExport
+modelica_metatype omc_Inline_inlineCallsInFunctions(threadData_t *threadData, modelica_metatype _inElementList, modelica_metatype _inFunctions);
+#define boxptr_Inline_inlineCallsInFunctions omc_Inline_inlineCallsInFunctions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineCallsInFunctions,2,0) {(void*) boxptr_Inline_inlineCallsInFunctions,0}};
+#define boxvar_Inline_inlineCallsInFunctions MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineCallsInFunctions)
+DLLExport
+modelica_metatype omc_Inline_inlineStartAttribute(threadData_t *threadData, modelica_metatype _inVariableAttributesOption, modelica_metatype _isource, modelica_metatype _fns, modelica_metatype *out_osource, modelica_boolean *out_b);
+DLLExport
+modelica_metatype boxptr_Inline_inlineStartAttribute(threadData_t *threadData, modelica_metatype _inVariableAttributesOption, modelica_metatype _isource, modelica_metatype _fns, modelica_metatype *out_osource, modelica_metatype *out_b);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Inline_inlineStartAttribute,2,0) {(void*) boxptr_Inline_inlineStartAttribute,0}};
+#define boxvar_Inline_inlineStartAttribute MMC_REFSTRUCTLIT(boxvar_lit_Inline_inlineStartAttribute)
+#ifdef __cplusplus
+}
+#endif
+#endif

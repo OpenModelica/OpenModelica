@@ -1,0 +1,135 @@
+#ifndef NFInstUtil__H
+#define NFInstUtil__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_Direction_BIDIR__desc;
+extern struct record_description Absyn_Direction_INPUT__desc;
+extern struct record_description Absyn_Direction_OUTPUT__desc;
+extern struct record_description Absyn_InnerOuter_INNER__desc;
+extern struct record_description Absyn_InnerOuter_INNER__OUTER__desc;
+extern struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
+extern struct record_description Absyn_InnerOuter_OUTER__desc;
+extern struct record_description DAE_ConnectorType_FLOW__desc;
+extern struct record_description DAE_ConnectorType_NON__CONNECTOR__desc;
+extern struct record_description DAE_ConnectorType_STREAM__desc;
+extern struct record_description DAE_Const_C__CONST__desc;
+extern struct record_description DAE_Const_C__PARAM__desc;
+extern struct record_description DAE_Const_C__VAR__desc;
+extern struct record_description DAE_VarDirection_BIDIR__desc;
+extern struct record_description DAE_VarDirection_INPUT__desc;
+extern struct record_description DAE_VarDirection_OUTPUT__desc;
+extern struct record_description DAE_VarInnerOuter_INNER__desc;
+extern struct record_description DAE_VarInnerOuter_INNER__OUTER__desc;
+extern struct record_description DAE_VarInnerOuter_NOT__INNER__OUTER__desc;
+extern struct record_description DAE_VarInnerOuter_OUTER__desc;
+extern struct record_description DAE_VarKind_CONST__desc;
+extern struct record_description DAE_VarKind_DISCRETE__desc;
+extern struct record_description DAE_VarKind_PARAM__desc;
+extern struct record_description DAE_VarKind_VARIABLE__desc;
+extern struct record_description DAE_VarParallelism_NON__PARALLEL__desc;
+extern struct record_description DAE_VarParallelism_PARGLOBAL__desc;
+extern struct record_description DAE_VarParallelism_PARLOCAL__desc;
+extern struct record_description DAE_VarVisibility_PROTECTED__desc;
+extern struct record_description DAE_VarVisibility_PUBLIC__desc;
+extern struct record_description SCode_ConnectorType_FLOW__desc;
+extern struct record_description SCode_ConnectorType_POTENTIAL__desc;
+extern struct record_description SCode_ConnectorType_STREAM__desc;
+extern struct record_description SCode_Parallelism_NON__PARALLEL__desc;
+extern struct record_description SCode_Parallelism_PARGLOBAL__desc;
+extern struct record_description SCode_Parallelism_PARLOCAL__desc;
+extern struct record_description SCode_Variability_CONST__desc;
+extern struct record_description SCode_Variability_DISCRETE__desc;
+extern struct record_description SCode_Variability_PARAM__desc;
+extern struct record_description SCode_Variability_VAR__desc;
+extern struct record_description SCode_Visibility_PROTECTED__desc;
+extern struct record_description SCode_Visibility_PUBLIC__desc;
+DLLExport
+modelica_string omc_NFInstUtil_variabilityString(threadData_t *threadData, modelica_metatype _var);
+#define boxptr_NFInstUtil_variabilityString omc_NFInstUtil_variabilityString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_variabilityString,2,0) {(void*) boxptr_NFInstUtil_variabilityString,0}};
+#define boxvar_NFInstUtil_variabilityString MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_variabilityString)
+DLLExport
+modelica_metatype omc_NFInstUtil_variabilityOr(threadData_t *threadData, modelica_metatype _var1, modelica_metatype _var2);
+#define boxptr_NFInstUtil_variabilityOr omc_NFInstUtil_variabilityOr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_variabilityOr,2,0) {(void*) boxptr_NFInstUtil_variabilityOr,0}};
+#define boxvar_NFInstUtil_variabilityOr MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_variabilityOr)
+DLLExport
+modelica_metatype omc_NFInstUtil_variabilityAnd(threadData_t *threadData, modelica_metatype _var1, modelica_metatype _var2);
+#define boxptr_NFInstUtil_variabilityAnd omc_NFInstUtil_variabilityAnd
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_variabilityAnd,2,0) {(void*) boxptr_NFInstUtil_variabilityAnd,0}};
+#define boxvar_NFInstUtil_variabilityAnd MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_variabilityAnd)
+DLLExport
+modelica_metatype omc_NFInstUtil_toConst(threadData_t *threadData, modelica_metatype _inVar);
+#define boxptr_NFInstUtil_toConst omc_NFInstUtil_toConst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_toConst,2,0) {(void*) boxptr_NFInstUtil_toConst,0}};
+#define boxvar_NFInstUtil_toConst MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_toConst)
+DLLExport
+modelica_metatype omc_NFInstUtil_translateVisibility(threadData_t *threadData, modelica_metatype _inVisibility);
+#define boxptr_NFInstUtil_translateVisibility omc_NFInstUtil_translateVisibility
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_translateVisibility,2,0) {(void*) boxptr_NFInstUtil_translateVisibility,0}};
+#define boxvar_NFInstUtil_translateVisibility MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_translateVisibility)
+DLLExport
+modelica_metatype omc_NFInstUtil_translateInnerOuter(threadData_t *threadData, modelica_metatype _inInnerOuter);
+#define boxptr_NFInstUtil_translateInnerOuter omc_NFInstUtil_translateInnerOuter
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_translateInnerOuter,2,0) {(void*) boxptr_NFInstUtil_translateInnerOuter,0}};
+#define boxvar_NFInstUtil_translateInnerOuter MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_translateInnerOuter)
+DLLExport
+modelica_metatype omc_NFInstUtil_translateDirection(threadData_t *threadData, modelica_metatype _inDirection);
+#define boxptr_NFInstUtil_translateDirection omc_NFInstUtil_translateDirection
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_translateDirection,2,0) {(void*) boxptr_NFInstUtil_translateDirection,0}};
+#define boxvar_NFInstUtil_translateDirection MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_translateDirection)
+DLLExport
+modelica_metatype omc_NFInstUtil_translateVariability(threadData_t *threadData, modelica_metatype _inVariability);
+#define boxptr_NFInstUtil_translateVariability omc_NFInstUtil_translateVariability
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_translateVariability,2,0) {(void*) boxptr_NFInstUtil_translateVariability,0}};
+#define boxvar_NFInstUtil_translateVariability MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_translateVariability)
+DLLExport
+modelica_metatype omc_NFInstUtil_translateParallelism(threadData_t *threadData, modelica_metatype _inParallelism);
+#define boxptr_NFInstUtil_translateParallelism omc_NFInstUtil_translateParallelism
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_translateParallelism,2,0) {(void*) boxptr_NFInstUtil_translateParallelism,0}};
+#define boxvar_NFInstUtil_translateParallelism MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_translateParallelism)
+DLLExport
+modelica_metatype omc_NFInstUtil_translateConnectorType(threadData_t *threadData, modelica_metatype _inConnectorType);
+#define boxptr_NFInstUtil_translateConnectorType omc_NFInstUtil_translateConnectorType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_translateConnectorType,2,0) {(void*) boxptr_NFInstUtil_translateConnectorType,0}};
+#define boxvar_NFInstUtil_translateConnectorType MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_translateConnectorType)
+DLLExport
+modelica_metatype omc_NFInstUtil_daeToSCodeVisibility(threadData_t *threadData, modelica_metatype _inVisibility);
+#define boxptr_NFInstUtil_daeToSCodeVisibility omc_NFInstUtil_daeToSCodeVisibility
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToSCodeVisibility,2,0) {(void*) boxptr_NFInstUtil_daeToSCodeVisibility,0}};
+#define boxvar_NFInstUtil_daeToSCodeVisibility MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToSCodeVisibility)
+DLLExport
+modelica_metatype omc_NFInstUtil_daeToAbsynInnerOuter(threadData_t *threadData, modelica_metatype _inInnerOuter);
+#define boxptr_NFInstUtil_daeToAbsynInnerOuter omc_NFInstUtil_daeToAbsynInnerOuter
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToAbsynInnerOuter,2,0) {(void*) boxptr_NFInstUtil_daeToAbsynInnerOuter,0}};
+#define boxvar_NFInstUtil_daeToAbsynInnerOuter MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToAbsynInnerOuter)
+DLLExport
+modelica_metatype omc_NFInstUtil_daeToAbsynDirection(threadData_t *threadData, modelica_metatype _inDirection);
+#define boxptr_NFInstUtil_daeToAbsynDirection omc_NFInstUtil_daeToAbsynDirection
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToAbsynDirection,2,0) {(void*) boxptr_NFInstUtil_daeToAbsynDirection,0}};
+#define boxvar_NFInstUtil_daeToAbsynDirection MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToAbsynDirection)
+DLLExport
+modelica_metatype omc_NFInstUtil_daeToSCodeVariability(threadData_t *threadData, modelica_metatype _inVariability);
+#define boxptr_NFInstUtil_daeToSCodeVariability omc_NFInstUtil_daeToSCodeVariability
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToSCodeVariability,2,0) {(void*) boxptr_NFInstUtil_daeToSCodeVariability,0}};
+#define boxvar_NFInstUtil_daeToSCodeVariability MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToSCodeVariability)
+DLLExport
+modelica_metatype omc_NFInstUtil_daeToSCodeParallelism(threadData_t *threadData, modelica_metatype _inParallelism);
+#define boxptr_NFInstUtil_daeToSCodeParallelism omc_NFInstUtil_daeToSCodeParallelism
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToSCodeParallelism,2,0) {(void*) boxptr_NFInstUtil_daeToSCodeParallelism,0}};
+#define boxvar_NFInstUtil_daeToSCodeParallelism MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToSCodeParallelism)
+DLLExport
+modelica_metatype omc_NFInstUtil_daeToSCodeConnectorType(threadData_t *threadData, modelica_metatype _inConnectorType);
+#define boxptr_NFInstUtil_daeToSCodeConnectorType omc_NFInstUtil_daeToSCodeConnectorType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToSCodeConnectorType,2,0) {(void*) boxptr_NFInstUtil_daeToSCodeConnectorType,0}};
+#define boxvar_NFInstUtil_daeToSCodeConnectorType MMC_REFSTRUCTLIT(boxvar_lit_NFInstUtil_daeToSCodeConnectorType)
+#ifdef __cplusplus
+}
+#endif
+#endif

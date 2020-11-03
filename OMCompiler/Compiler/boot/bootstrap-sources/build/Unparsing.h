@@ -1,0 +1,90 @@
+#ifndef Unparsing__H
+#define Unparsing__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Tpl_BlockType_BT__INDENT__desc;
+extern struct record_description Tpl_IterOptions_ITER__OPTIONS__desc;
+extern struct record_description Tpl_StringToken_ST__LINE__desc;
+extern struct record_description Tpl_StringToken_ST__NEW__LINE__desc;
+extern struct record_description Tpl_StringToken_ST__STRING__desc;
+extern struct record_description Tpl_StringToken_ST__STRING__LIST__desc;
+extern struct record_description Tpl_Text_MEM__TEXT__desc;
+DLLExport
+modelica_metatype omc_Unparsing_elementExternalHeaderJulia(threadData_t *threadData, modelica_metatype _txt, modelica_metatype _a_buf1, modelica_metatype _a_buf2, modelica_metatype _a_elt, modelica_string _a_pack, modelica_metatype *out_out_a_buf1, modelica_metatype *out_out_a_buf2);
+#define boxptr_Unparsing_elementExternalHeaderJulia omc_Unparsing_elementExternalHeaderJulia
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_elementExternalHeaderJulia,2,0) {(void*) boxptr_Unparsing_elementExternalHeaderJulia,0}};
+#define boxvar_Unparsing_elementExternalHeaderJulia MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_elementExternalHeaderJulia)
+#define boxptr_Unparsing_fun__65 omc_Unparsing_fun__65
+#define boxptr_Unparsing_lm__63 omc_Unparsing_lm__63
+#define boxptr_Unparsing_lm__62 omc_Unparsing_lm__62
+#define boxptr_Unparsing_lm__61 omc_Unparsing_lm__61
+DLLExport
+modelica_metatype omc_Unparsing_classExternalHeaderJuliaWork(threadData_t *threadData, modelica_metatype _txt, modelica_metatype _a_buf1, modelica_metatype _a_buf2, modelica_metatype _a_cl, modelica_string _a_pack, modelica_metatype *out_out_a_buf1, modelica_metatype *out_out_a_buf2);
+#define boxptr_Unparsing_classExternalHeaderJuliaWork omc_Unparsing_classExternalHeaderJuliaWork
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_classExternalHeaderJuliaWork,2,0) {(void*) boxptr_Unparsing_classExternalHeaderJuliaWork,0}};
+#define boxvar_Unparsing_classExternalHeaderJuliaWork MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_classExternalHeaderJuliaWork)
+#define boxptr_Unparsing_fun__59 omc_Unparsing_fun__59
+#define boxptr_Unparsing_lm__58 omc_Unparsing_lm__58
+DLLExport
+modelica_metatype omc_Unparsing_classExternalHeaderJulia(threadData_t *threadData, modelica_metatype _txt, modelica_metatype _a_buf1, modelica_metatype _a_buf2, modelica_metatype _a_cl, modelica_string _a_pack, modelica_metatype *out_out_a_buf1, modelica_metatype *out_out_a_buf2);
+#define boxptr_Unparsing_classExternalHeaderJulia omc_Unparsing_classExternalHeaderJulia
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_classExternalHeaderJulia,2,0) {(void*) boxptr_Unparsing_classExternalHeaderJulia,0}};
+#define boxvar_Unparsing_classExternalHeaderJulia MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_classExternalHeaderJulia)
+#define boxptr_Unparsing_fun__56 omc_Unparsing_fun__56
+DLLExport
+modelica_metatype omc_Unparsing_programExternalHeaderJulia(threadData_t *threadData, modelica_metatype _txt, modelica_metatype _a_program);
+#define boxptr_Unparsing_programExternalHeaderJulia omc_Unparsing_programExternalHeaderJulia
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_programExternalHeaderJulia,2,0) {(void*) boxptr_Unparsing_programExternalHeaderJulia,0}};
+#define boxvar_Unparsing_programExternalHeaderJulia MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_programExternalHeaderJulia)
+#define boxptr_Unparsing_lm__54 omc_Unparsing_lm__54
+DLLExport
+modelica_metatype omc_Unparsing_elementExternalHeader(threadData_t *threadData, modelica_metatype _in_txt, modelica_metatype _in_a_elt, modelica_string _in_a_pack);
+#define boxptr_Unparsing_elementExternalHeader omc_Unparsing_elementExternalHeader
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_elementExternalHeader,2,0) {(void*) boxptr_Unparsing_elementExternalHeader,0}};
+#define boxvar_Unparsing_elementExternalHeader MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_elementExternalHeader)
+#define boxptr_Unparsing_fun__52 omc_Unparsing_fun__52
+#define boxptr_Unparsing_fun__51 omc_Unparsing_fun__51
+#define boxptr_Unparsing_lm__50 omc_Unparsing_lm__50
+#define boxptr_Unparsing_lm__49 omc_Unparsing_lm__49
+DLLExport
+modelica_metatype omc_Unparsing_metaHelperBoxStart(threadData_t *threadData, modelica_metatype _in_txt, modelica_integer _in_a_numVariables);
+DLLExport
+modelica_metatype boxptr_Unparsing_metaHelperBoxStart(threadData_t *threadData, modelica_metatype _in_txt, modelica_metatype _in_a_numVariables);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_metaHelperBoxStart,2,0) {(void*) boxptr_Unparsing_metaHelperBoxStart,0}};
+#define boxvar_Unparsing_metaHelperBoxStart MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_metaHelperBoxStart)
+DLLExport
+modelica_metatype omc_Unparsing_pathString(threadData_t *threadData, modelica_metatype _in_txt, modelica_metatype _in_a_path);
+#define boxptr_Unparsing_pathString omc_Unparsing_pathString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_pathString,2,0) {(void*) boxptr_Unparsing_pathString,0}};
+#define boxvar_Unparsing_pathString MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_pathString)
+DLLExport
+modelica_metatype omc_Unparsing_classExternalHeader(threadData_t *threadData, modelica_metatype _txt, modelica_metatype _a_cl, modelica_string _a_pack);
+#define boxptr_Unparsing_classExternalHeader omc_Unparsing_classExternalHeader
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_classExternalHeader,2,0) {(void*) boxptr_Unparsing_classExternalHeader,0}};
+#define boxvar_Unparsing_classExternalHeader MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_classExternalHeader)
+#define boxptr_Unparsing_fun__45 omc_Unparsing_fun__45
+#define boxptr_Unparsing_lm__44 omc_Unparsing_lm__44
+DLLExport
+modelica_metatype omc_Unparsing_programExternalHeaderFromTypes(threadData_t *threadData, modelica_metatype _txt, modelica_metatype _a_tys);
+#define boxptr_Unparsing_programExternalHeaderFromTypes omc_Unparsing_programExternalHeaderFromTypes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_programExternalHeaderFromTypes,2,0) {(void*) boxptr_Unparsing_programExternalHeaderFromTypes,0}};
+#define boxvar_Unparsing_programExternalHeaderFromTypes MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_programExternalHeaderFromTypes)
+#define boxptr_Unparsing_lm__42 omc_Unparsing_lm__42
+#define boxptr_Unparsing_fun__41 omc_Unparsing_fun__41
+#define boxptr_Unparsing_lm__40 omc_Unparsing_lm__40
+DLLExport
+modelica_metatype omc_Unparsing_programExternalHeader(threadData_t *threadData, modelica_metatype _txt, modelica_metatype _a_program);
+#define boxptr_Unparsing_programExternalHeader omc_Unparsing_programExternalHeader
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Unparsing_programExternalHeader,2,0) {(void*) boxptr_Unparsing_programExternalHeader,0}};
+#define boxvar_Unparsing_programExternalHeader MMC_REFSTRUCTLIT(boxvar_lit_Unparsing_programExternalHeader)
+#define boxptr_Unparsing_lm__38 omc_Unparsing_lm__38
+#ifdef __cplusplus
+}
+#endif
+#endif

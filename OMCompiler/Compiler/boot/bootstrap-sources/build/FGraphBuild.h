@@ -1,0 +1,208 @@
+#ifndef FGraphBuild__H
+#define FGraphBuild__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_Exp_END__desc;
+extern struct record_description Absyn_ForIterator_ITERATOR__desc;
+extern struct record_description DAE_Mod_NOMOD__desc;
+extern struct record_description DAE_Prefix_NOPRE__desc;
+extern struct record_description FCore_Data_AL__desc;
+extern struct record_description FCore_Data_ASSERT__desc;
+extern struct record_description FCore_Data_CC__desc;
+extern struct record_description FCore_Data_CL__desc;
+extern struct record_description FCore_Data_CR__desc;
+extern struct record_description FCore_Data_DIMS__desc;
+extern struct record_description FCore_Data_DU__desc;
+extern struct record_description FCore_Data_ED__desc;
+extern struct record_description FCore_Data_EQ__desc;
+extern struct record_description FCore_Data_EX__desc;
+extern struct record_description FCore_Data_EXP__desc;
+extern struct record_description FCore_Data_FI__desc;
+extern struct record_description FCore_Data_FS__desc;
+extern struct record_description FCore_Data_FT__desc;
+extern struct record_description FCore_Data_IM__desc;
+extern struct record_description FCore_Data_IT__desc;
+extern struct record_description FCore_Data_MO__desc;
+extern struct record_description FCore_Data_MS__desc;
+extern struct record_description FCore_Data_ND__desc;
+extern struct record_description FCore_Data_OT__desc;
+extern struct record_description FCore_Data_REF__desc;
+extern struct record_description FCore_ImportTable_IMPORT__TABLE__desc;
+extern struct record_description FCore_ModScope_MS__CLASS__EXTENDS__desc;
+extern struct record_description FCore_ModScope_MS__COMPONENT__desc;
+extern struct record_description FCore_ModScope_MS__CONSTRAINEDBY__desc;
+extern struct record_description FCore_ModScope_MS__DERIVED__desc;
+extern struct record_description FCore_ModScope_MS__EXTENDS__desc;
+extern struct record_description FCore_Status_VAR__UNTYPED__desc;
+extern struct record_description SCode_Visibility_PROTECTED__desc;
+extern struct record_description SCodeDump_SCodeDumpOptions_OPTIONS__desc;
+DLLExport
+modelica_metatype omc_FGraphBuild_mkAssertNode(threadData_t *threadData, modelica_string _inName, modelica_string _inMessage, modelica_metatype _inParentRef, modelica_metatype _inGraph, modelica_metatype *out_outRef);
+#define boxptr_FGraphBuild_mkAssertNode omc_FGraphBuild_mkAssertNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkAssertNode,2,0) {(void*) boxptr_FGraphBuild_mkAssertNode,0}};
+#define boxvar_FGraphBuild_mkAssertNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkAssertNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkRefNode(threadData_t *threadData, modelica_string _inName, modelica_metatype _inTargetScope, modelica_metatype _inParentRef, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkRefNode omc_FGraphBuild_mkRefNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkRefNode,2,0) {(void*) boxptr_FGraphBuild_mkRefNode,0}};
+#define boxvar_FGraphBuild_mkRefNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkRefNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_addMatchScope__helper(threadData_t *threadData, modelica_metatype _inElements, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_addMatchScope__helper omc_FGraphBuild_addMatchScope__helper
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_addMatchScope__helper,2,0) {(void*) boxptr_FGraphBuild_addMatchScope__helper,0}};
+#define boxvar_FGraphBuild_addMatchScope__helper MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_addMatchScope__helper)
+DLLExport
+modelica_metatype omc_FGraphBuild_addMatchScope(threadData_t *threadData, modelica_metatype _inMatchExp, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_addMatchScope omc_FGraphBuild_addMatchScope
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_addMatchScope,2,0) {(void*) boxptr_FGraphBuild_addMatchScope,0}};
+#define boxvar_FGraphBuild_addMatchScope MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_addMatchScope)
+DLLExport
+modelica_metatype omc_FGraphBuild_addIterators__helper(threadData_t *threadData, modelica_metatype _inIterators, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_addIterators__helper omc_FGraphBuild_addIterators__helper
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_addIterators__helper,2,0) {(void*) boxptr_FGraphBuild_addIterators__helper,0}};
+#define boxvar_FGraphBuild_addIterators__helper MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_addIterators__helper)
+DLLExport
+modelica_metatype omc_FGraphBuild_addIterators(threadData_t *threadData, modelica_metatype _inIterators, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_addIterators omc_FGraphBuild_addIterators
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_addIterators,2,0) {(void*) boxptr_FGraphBuild_addIterators,0}};
+#define boxvar_FGraphBuild_addIterators MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_addIterators)
+#define boxptr_FGraphBuild_analyseStatementTraverser omc_FGraphBuild_analyseStatementTraverser
+#define boxptr_FGraphBuild_analyseStatement omc_FGraphBuild_analyseStatement
+#define boxptr_FGraphBuild_analyseAlgorithm omc_FGraphBuild_analyseAlgorithm
+#define boxptr_FGraphBuild_traverseExp omc_FGraphBuild_traverseExp
+#define boxptr_FGraphBuild_analyseEEquationTraverser omc_FGraphBuild_analyseEEquationTraverser
+#define boxptr_FGraphBuild_analyseEquation omc_FGraphBuild_analyseEquation
+#define boxptr_FGraphBuild_analyseExpTraverserExit omc_FGraphBuild_analyseExpTraverserExit
+#define boxptr_FGraphBuild_analyseCref omc_FGraphBuild_analyseCref
+#define boxptr_FGraphBuild_analyseExp2 omc_FGraphBuild_analyseExp2
+#define boxptr_FGraphBuild_analyseExpTraverserEnter omc_FGraphBuild_analyseExpTraverserEnter
+#define boxptr_FGraphBuild_analyseOptExp omc_FGraphBuild_analyseOptExp
+#define boxptr_FGraphBuild_analyseExp omc_FGraphBuild_analyseExp
+DLLExport
+modelica_metatype omc_FGraphBuild_mkCrefsFromExps(threadData_t *threadData, modelica_metatype _inExps, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkCrefsFromExps omc_FGraphBuild_mkCrefsFromExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkCrefsFromExps,2,0) {(void*) boxptr_FGraphBuild_mkCrefsFromExps,0}};
+#define boxvar_FGraphBuild_mkCrefsFromExps MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkCrefsFromExps)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkExternalNode(threadData_t *threadData, modelica_string _inName, modelica_metatype _inExternalDeclOpt, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkExternalNode omc_FGraphBuild_mkExternalNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkExternalNode,2,0) {(void*) boxptr_FGraphBuild_mkExternalNode,0}};
+#define boxvar_FGraphBuild_mkExternalNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkExternalNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkOptNode(threadData_t *threadData, modelica_string _inName, modelica_metatype _inConstraintLst, modelica_metatype _inClsAttrs, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkOptNode omc_FGraphBuild_mkOptNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkOptNode,2,0) {(void*) boxptr_FGraphBuild_mkOptNode,0}};
+#define boxvar_FGraphBuild_mkOptNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkOptNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkAlNode(threadData_t *threadData, modelica_string _inName, modelica_metatype _inAlgs, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkAlNode omc_FGraphBuild_mkAlNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkAlNode,2,0) {(void*) boxptr_FGraphBuild_mkAlNode,0}};
+#define boxvar_FGraphBuild_mkAlNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkAlNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkEqNode(threadData_t *threadData, modelica_string _inName, modelica_metatype _inEqs, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkEqNode omc_FGraphBuild_mkEqNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkEqNode,2,0) {(void*) boxptr_FGraphBuild_mkEqNode,0}};
+#define boxvar_FGraphBuild_mkEqNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkEqNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkTypeNode(threadData_t *threadData, modelica_metatype _inTypes, modelica_metatype _inParentRef, modelica_string _inName, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkTypeNode omc_FGraphBuild_mkTypeNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkTypeNode,2,0) {(void*) boxptr_FGraphBuild_mkTypeNode,0}};
+#define boxvar_FGraphBuild_mkTypeNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkTypeNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkCrefNode(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkCrefNode omc_FGraphBuild_mkCrefNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkCrefNode,2,0) {(void*) boxptr_FGraphBuild_mkCrefNode,0}};
+#define boxvar_FGraphBuild_mkCrefNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkCrefNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkCrefsNodes(threadData_t *threadData, modelica_metatype _inCrefs, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkCrefsNodes omc_FGraphBuild_mkCrefsNodes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkCrefsNodes,2,0) {(void*) boxptr_FGraphBuild_mkCrefsNodes,0}};
+#define boxvar_FGraphBuild_mkCrefsNodes MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkCrefsNodes)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkExpressionNode(threadData_t *threadData, modelica_string _inName, modelica_metatype _inExp, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkExpressionNode omc_FGraphBuild_mkExpressionNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkExpressionNode,2,0) {(void*) boxptr_FGraphBuild_mkExpressionNode,0}};
+#define boxvar_FGraphBuild_mkExpressionNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkExpressionNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkConditionNode(threadData_t *threadData, modelica_metatype _inCondition, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkConditionNode omc_FGraphBuild_mkConditionNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkConditionNode,2,0) {(void*) boxptr_FGraphBuild_mkConditionNode,0}};
+#define boxvar_FGraphBuild_mkConditionNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkConditionNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkInstNode(threadData_t *threadData, modelica_metatype _inVar, modelica_metatype _inParentRef, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkInstNode omc_FGraphBuild_mkInstNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkInstNode,2,0) {(void*) boxptr_FGraphBuild_mkInstNode,0}};
+#define boxvar_FGraphBuild_mkInstNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkInstNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkCompNode(threadData_t *threadData, modelica_metatype _inComp, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkCompNode omc_FGraphBuild_mkCompNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkCompNode,2,0) {(void*) boxptr_FGraphBuild_mkCompNode,0}};
+#define boxvar_FGraphBuild_mkCompNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkCompNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkDimsNode__helper(threadData_t *threadData, modelica_integer _inStartWith, modelica_metatype _inArrayDims, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+DLLExport
+modelica_metatype boxptr_FGraphBuild_mkDimsNode__helper(threadData_t *threadData, modelica_metatype _inStartWith, modelica_metatype _inArrayDims, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkDimsNode__helper,2,0) {(void*) boxptr_FGraphBuild_mkDimsNode__helper,0}};
+#define boxvar_FGraphBuild_mkDimsNode__helper MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkDimsNode__helper)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkDimsNode(threadData_t *threadData, modelica_string _inName, modelica_metatype _inArrayDims, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkDimsNode omc_FGraphBuild_mkDimsNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkDimsNode,2,0) {(void*) boxptr_FGraphBuild_mkDimsNode,0}};
+#define boxvar_FGraphBuild_mkDimsNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkDimsNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkImportNode(threadData_t *threadData, modelica_metatype _inElement, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkImportNode omc_FGraphBuild_mkImportNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkImportNode,2,0) {(void*) boxptr_FGraphBuild_mkImportNode,0}};
+#define boxvar_FGraphBuild_mkImportNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkImportNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkUnitsNode(threadData_t *threadData, modelica_metatype _inElement, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkUnitsNode omc_FGraphBuild_mkUnitsNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkUnitsNode,2,0) {(void*) boxptr_FGraphBuild_mkUnitsNode,0}};
+#define boxvar_FGraphBuild_mkUnitsNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkUnitsNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkElementNode(threadData_t *threadData, modelica_metatype _inElement, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkElementNode omc_FGraphBuild_mkElementNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkElementNode,2,0) {(void*) boxptr_FGraphBuild_mkElementNode,0}};
+#define boxvar_FGraphBuild_mkElementNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkElementNode)
+#define boxptr_FGraphBuild_mkClassChildren omc_FGraphBuild_mkClassChildren
+DLLExport
+modelica_metatype omc_FGraphBuild_mkBindingNode(threadData_t *threadData, modelica_metatype _inBinding, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkBindingNode omc_FGraphBuild_mkBindingNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkBindingNode,2,0) {(void*) boxptr_FGraphBuild_mkBindingNode,0}};
+#define boxvar_FGraphBuild_mkBindingNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkBindingNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkSubMods(threadData_t *threadData, modelica_metatype _inSubMod, modelica_metatype _inModScope, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkSubMods omc_FGraphBuild_mkSubMods
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkSubMods,2,0) {(void*) boxptr_FGraphBuild_mkSubMods,0}};
+#define boxvar_FGraphBuild_mkSubMods MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkSubMods)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkModNode(threadData_t *threadData, modelica_string _inName, modelica_metatype _inMod, modelica_metatype _inModScope, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkModNode omc_FGraphBuild_mkModNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkModNode,2,0) {(void*) boxptr_FGraphBuild_mkModNode,0}};
+#define boxvar_FGraphBuild_mkModNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkModNode)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkConstrainClass(threadData_t *threadData, modelica_metatype _inElement, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkConstrainClass omc_FGraphBuild_mkConstrainClass
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkConstrainClass,2,0) {(void*) boxptr_FGraphBuild_mkConstrainClass,0}};
+#define boxvar_FGraphBuild_mkConstrainClass MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkConstrainClass)
+DLLExport
+modelica_metatype omc_FGraphBuild_mkClassNode(threadData_t *threadData, modelica_metatype _inClass, modelica_metatype _inParentRef, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkClassNode omc_FGraphBuild_mkClassNode
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkClassNode,2,0) {(void*) boxptr_FGraphBuild_mkClassNode,0}};
+#define boxvar_FGraphBuild_mkClassNode MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkClassNode)
+#define boxptr_FGraphBuild_mkClassGraph omc_FGraphBuild_mkClassGraph
+DLLExport
+modelica_metatype omc_FGraphBuild_mkProgramGraph(threadData_t *threadData, modelica_metatype _inProgram, modelica_metatype _inKind, modelica_metatype _inGraph);
+#define boxptr_FGraphBuild_mkProgramGraph omc_FGraphBuild_mkProgramGraph
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FGraphBuild_mkProgramGraph,2,0) {(void*) boxptr_FGraphBuild_mkProgramGraph,0}};
+#define boxvar_FGraphBuild_mkProgramGraph MMC_REFSTRUCTLIT(boxvar_lit_FGraphBuild_mkProgramGraph)
+#ifdef __cplusplus
+}
+#endif
+#endif

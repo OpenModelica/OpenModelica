@@ -140,12 +140,4 @@ static inline modelica_integer modelica_integer_mod(modelica_integer x, modelica
   return res < 0 ? res+y : res /* % returns the remainder, which might be negative */;
 }
 
-#if defined(OMC_BOOTSTRAPPING_STAGE_1) || defined(OMC_BOOTSTRAPPING_STAGE_2)
-#define modelica_mod_real modelica_real_mod
-static inline modelica_integer modelica_mod_integer(modelica_integer x, modelica_integer y)
-{
-  return x%y;
-}
-#endif
-
 #endif

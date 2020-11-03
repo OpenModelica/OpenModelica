@@ -2,8 +2,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#define OPENMODELICA_BOOTSTRAPPING_STAGE_1
-
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef FMI_Info_INFO__desc_added
 #define FMI_Info_INFO__desc_added
@@ -155,287 +153,225 @@ extern struct record_description FMI_FmiImport_FMIIMPORT__desc;
 #define FMI__FMIIMPORT_3dBOX14 3
 #define FMI__FMIIMPORT(platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiTypeDefinitionsList,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList,generateInputConnectors,generateOutputConnectors) (mmc_mk_box(15, 3,&FMI_FmiImport_FMIIMPORT__desc,platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiTypeDefinitionsList,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList,generateInputConnectors,generateOutputConnectors))
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Util_ReplacePattern_REPLACEPATTERN__desc_added
-#define Util_ReplacePattern_REPLACEPATTERN__desc_added
-ADD_METARECORD_DEFINITIONS const char* Util_ReplacePattern_REPLACEPATTERN__desc__fields[2] = {"from","to"};
-ADD_METARECORD_DEFINITIONS struct record_description Util_ReplacePattern_REPLACEPATTERN__desc = {
-  "Util_ReplacePattern_REPLACEPATTERN",
-  "Util.ReplacePattern.REPLACEPATTERN",
-  Util_ReplacePattern_REPLACEPATTERN__desc__fields
+#ifndef Gettext_TranslatableContent_notrans__desc_added
+#define Gettext_TranslatableContent_notrans__desc_added
+ADD_METARECORD_DEFINITIONS const char* Gettext_TranslatableContent_notrans__desc__fields[1] = {"str"};
+ADD_METARECORD_DEFINITIONS struct record_description Gettext_TranslatableContent_notrans__desc = {
+  "Gettext_TranslatableContent_notrans",
+  "Gettext.TranslatableContent.notrans",
+  Gettext_TranslatableContent_notrans__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Util_ReplacePattern_REPLACEPATTERN__desc;
+extern struct record_description Gettext_TranslatableContent_notrans__desc;
 #endif
-#define Util__REPLACEPATTERN_3dBOX2 3
-#define Util__REPLACEPATTERN(from,to) (mmc_mk_box3(3,&Util_ReplacePattern_REPLACEPATTERN__desc,from,to))
+#define Gettext__notrans_3dBOX1 4
+#define Gettext__notrans(str) (mmc_mk_box2(4,&Gettext_TranslatableContent_notrans__desc,str))
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Util_Status_FAILURE__desc_added
-#define Util_Status_FAILURE__desc_added
-ADD_METARECORD_DEFINITIONS const char* Util_Status_FAILURE__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Util_Status_FAILURE__desc = {
-  "Util_Status_FAILURE",
-  "Util.Status.FAILURE",
-  Util_Status_FAILURE__desc__fields
+#ifndef Gettext_TranslatableContent_gettext__desc_added
+#define Gettext_TranslatableContent_gettext__desc_added
+ADD_METARECORD_DEFINITIONS const char* Gettext_TranslatableContent_gettext__desc__fields[1] = {"msgid"};
+ADD_METARECORD_DEFINITIONS struct record_description Gettext_TranslatableContent_gettext__desc = {
+  "Gettext_TranslatableContent_gettext",
+  "Gettext.TranslatableContent.gettext",
+  Gettext_TranslatableContent_gettext__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Util_Status_FAILURE__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
 #endif
-#define Util__FAILURE_3dBOX0 4
-static const MMC_DEFSTRUCTLIT(Util__FAILURE__struct,1,4) {&Util_Status_FAILURE__desc}};
-static void *Util__FAILURE = MMC_REFSTRUCTLIT(Util__FAILURE__struct);
+#define Gettext__gettext_3dBOX1 3
+#define Gettext__gettext(msgid) (mmc_mk_box2(3,&Gettext_TranslatableContent_gettext__desc,msgid))
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Util_Status_SUCCESS__desc_added
-#define Util_Status_SUCCESS__desc_added
-ADD_METARECORD_DEFINITIONS const char* Util_Status_SUCCESS__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Util_Status_SUCCESS__desc = {
-  "Util_Status_SUCCESS",
-  "Util.Status.SUCCESS",
-  Util_Status_SUCCESS__desc__fields
+#ifndef ErrorTypes_Severity_NOTIFICATION__desc_added
+#define ErrorTypes_Severity_NOTIFICATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_Severity_NOTIFICATION__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_Severity_NOTIFICATION__desc = {
+  "ErrorTypes_Severity_NOTIFICATION",
+  "ErrorTypes.Severity.NOTIFICATION",
+  ErrorTypes_Severity_NOTIFICATION__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Util_Status_SUCCESS__desc;
+extern struct record_description ErrorTypes_Severity_NOTIFICATION__desc;
 #endif
-#define Util__SUCCESS_3dBOX0 3
-static const MMC_DEFSTRUCTLIT(Util__SUCCESS__struct,1,3) {&Util_Status_SUCCESS__desc}};
-static void *Util__SUCCESS = MMC_REFSTRUCTLIT(Util__SUCCESS__struct);
+#define ErrorTypes__NOTIFICATION_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(ErrorTypes__NOTIFICATION__struct,1,6) {&ErrorTypes_Severity_NOTIFICATION__desc}};
+static void *ErrorTypes__NOTIFICATION = MMC_REFSTRUCTLIT(ErrorTypes__NOTIFICATION__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Util_DateTime_DATETIME__desc_added
-#define Util_DateTime_DATETIME__desc_added
-ADD_METARECORD_DEFINITIONS const char* Util_DateTime_DATETIME__desc__fields[6] = {"sec","min","hour","mday","mon","year"};
-ADD_METARECORD_DEFINITIONS struct record_description Util_DateTime_DATETIME__desc = {
-  "Util_DateTime_DATETIME",
-  "Util.DateTime.DATETIME",
-  Util_DateTime_DATETIME__desc__fields
+#ifndef ErrorTypes_Severity_WARNING__desc_added
+#define ErrorTypes_Severity_WARNING__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_Severity_WARNING__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_Severity_WARNING__desc = {
+  "ErrorTypes_Severity_WARNING",
+  "ErrorTypes.Severity.WARNING",
+  ErrorTypes_Severity_WARNING__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Util_DateTime_DATETIME__desc;
+extern struct record_description ErrorTypes_Severity_WARNING__desc;
 #endif
-#define Util__DATETIME_3dBOX6 3
-#define Util__DATETIME(sec,min,hour,mday,mon,year) (mmc_mk_box7(3,&Util_DateTime_DATETIME__desc,sec,min,hour,mday,mon,year))
+#define ErrorTypes__WARNING_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(ErrorTypes__WARNING__struct,1,5) {&ErrorTypes_Severity_WARNING__desc}};
+static void *ErrorTypes__WARNING = MMC_REFSTRUCTLIT(ErrorTypes__WARNING__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Util_TranslatableContent_notrans__desc_added
-#define Util_TranslatableContent_notrans__desc_added
-ADD_METARECORD_DEFINITIONS const char* Util_TranslatableContent_notrans__desc__fields[1] = {"str"};
-ADD_METARECORD_DEFINITIONS struct record_description Util_TranslatableContent_notrans__desc = {
-  "Util_TranslatableContent_notrans",
-  "Util.TranslatableContent.notrans",
-  Util_TranslatableContent_notrans__desc__fields
+#ifndef ErrorTypes_Severity_ERROR__desc_added
+#define ErrorTypes_Severity_ERROR__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_Severity_ERROR__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_Severity_ERROR__desc = {
+  "ErrorTypes_Severity_ERROR",
+  "ErrorTypes.Severity.ERROR",
+  ErrorTypes_Severity_ERROR__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Util_TranslatableContent_notrans__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
 #endif
-#define Util__notrans_3dBOX1 4
-#define Util__notrans(str) (mmc_mk_box2(4,&Util_TranslatableContent_notrans__desc,str))
+#define ErrorTypes__ERROR_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(ErrorTypes__ERROR__struct,1,4) {&ErrorTypes_Severity_ERROR__desc}};
+static void *ErrorTypes__ERROR = MMC_REFSTRUCTLIT(ErrorTypes__ERROR__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Util_TranslatableContent_gettext__desc_added
-#define Util_TranslatableContent_gettext__desc_added
-ADD_METARECORD_DEFINITIONS const char* Util_TranslatableContent_gettext__desc__fields[1] = {"msgid"};
-ADD_METARECORD_DEFINITIONS struct record_description Util_TranslatableContent_gettext__desc = {
-  "Util_TranslatableContent_gettext",
-  "Util.TranslatableContent.gettext",
-  Util_TranslatableContent_gettext__desc__fields
+#ifndef ErrorTypes_Severity_INTERNAL__desc_added
+#define ErrorTypes_Severity_INTERNAL__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_Severity_INTERNAL__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_Severity_INTERNAL__desc = {
+  "ErrorTypes_Severity_INTERNAL",
+  "ErrorTypes.Severity.INTERNAL",
+  ErrorTypes_Severity_INTERNAL__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Util_TranslatableContent_gettext__desc;
+extern struct record_description ErrorTypes_Severity_INTERNAL__desc;
 #endif
-#define Util__gettext_3dBOX1 3
-#define Util__gettext(msgid) (mmc_mk_box2(3,&Util_TranslatableContent_gettext__desc,msgid))
+#define ErrorTypes__INTERNAL_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(ErrorTypes__INTERNAL__struct,1,3) {&ErrorTypes_Severity_INTERNAL__desc}};
+static void *ErrorTypes__INTERNAL = MMC_REFSTRUCTLIT(ErrorTypes__INTERNAL__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_Severity_NOTIFICATION__desc_added
-#define Error_Severity_NOTIFICATION__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_Severity_NOTIFICATION__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_Severity_NOTIFICATION__desc = {
-  "Error_Severity_NOTIFICATION",
-  "Error.Severity.NOTIFICATION",
-  Error_Severity_NOTIFICATION__desc__fields
+#ifndef ErrorTypes_MessageType_SCRIPTING__desc_added
+#define ErrorTypes_MessageType_SCRIPTING__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_MessageType_SCRIPTING__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_MessageType_SCRIPTING__desc = {
+  "ErrorTypes_MessageType_SCRIPTING",
+  "ErrorTypes.MessageType.SCRIPTING",
+  ErrorTypes_MessageType_SCRIPTING__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Error_Severity_NOTIFICATION__desc;
+extern struct record_description ErrorTypes_MessageType_SCRIPTING__desc;
 #endif
-#define Error__NOTIFICATION_3dBOX0 6
-static const MMC_DEFSTRUCTLIT(Error__NOTIFICATION__struct,1,6) {&Error_Severity_NOTIFICATION__desc}};
-static void *Error__NOTIFICATION = MMC_REFSTRUCTLIT(Error__NOTIFICATION__struct);
+#define ErrorTypes__SCRIPTING_3dBOX0 8
+static const MMC_DEFSTRUCTLIT(ErrorTypes__SCRIPTING__struct,1,8) {&ErrorTypes_MessageType_SCRIPTING__desc}};
+static void *ErrorTypes__SCRIPTING = MMC_REFSTRUCTLIT(ErrorTypes__SCRIPTING__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_Severity_WARNING__desc_added
-#define Error_Severity_WARNING__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_Severity_WARNING__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_Severity_WARNING__desc = {
-  "Error_Severity_WARNING",
-  "Error.Severity.WARNING",
-  Error_Severity_WARNING__desc__fields
+#ifndef ErrorTypes_MessageType_SIMULATION__desc_added
+#define ErrorTypes_MessageType_SIMULATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_MessageType_SIMULATION__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_MessageType_SIMULATION__desc = {
+  "ErrorTypes_MessageType_SIMULATION",
+  "ErrorTypes.MessageType.SIMULATION",
+  ErrorTypes_MessageType_SIMULATION__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Error_Severity_WARNING__desc;
+extern struct record_description ErrorTypes_MessageType_SIMULATION__desc;
 #endif
-#define Error__WARNING_3dBOX0 5
-static const MMC_DEFSTRUCTLIT(Error__WARNING__struct,1,5) {&Error_Severity_WARNING__desc}};
-static void *Error__WARNING = MMC_REFSTRUCTLIT(Error__WARNING__struct);
+#define ErrorTypes__SIMULATION_3dBOX0 7
+static const MMC_DEFSTRUCTLIT(ErrorTypes__SIMULATION__struct,1,7) {&ErrorTypes_MessageType_SIMULATION__desc}};
+static void *ErrorTypes__SIMULATION = MMC_REFSTRUCTLIT(ErrorTypes__SIMULATION__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_Severity_ERROR__desc_added
-#define Error_Severity_ERROR__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_Severity_ERROR__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_Severity_ERROR__desc = {
-  "Error_Severity_ERROR",
-  "Error.Severity.ERROR",
-  Error_Severity_ERROR__desc__fields
+#ifndef ErrorTypes_MessageType_SYMBOLIC__desc_added
+#define ErrorTypes_MessageType_SYMBOLIC__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_MessageType_SYMBOLIC__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_MessageType_SYMBOLIC__desc = {
+  "ErrorTypes_MessageType_SYMBOLIC",
+  "ErrorTypes.MessageType.SYMBOLIC",
+  ErrorTypes_MessageType_SYMBOLIC__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Error_Severity_ERROR__desc;
+extern struct record_description ErrorTypes_MessageType_SYMBOLIC__desc;
 #endif
-#define Error__ERROR_3dBOX0 4
-static const MMC_DEFSTRUCTLIT(Error__ERROR__struct,1,4) {&Error_Severity_ERROR__desc}};
-static void *Error__ERROR = MMC_REFSTRUCTLIT(Error__ERROR__struct);
+#define ErrorTypes__SYMBOLIC_3dBOX0 6
+static const MMC_DEFSTRUCTLIT(ErrorTypes__SYMBOLIC__struct,1,6) {&ErrorTypes_MessageType_SYMBOLIC__desc}};
+static void *ErrorTypes__SYMBOLIC = MMC_REFSTRUCTLIT(ErrorTypes__SYMBOLIC__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_Severity_INTERNAL__desc_added
-#define Error_Severity_INTERNAL__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_Severity_INTERNAL__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_Severity_INTERNAL__desc = {
-  "Error_Severity_INTERNAL",
-  "Error.Severity.INTERNAL",
-  Error_Severity_INTERNAL__desc__fields
+#ifndef ErrorTypes_MessageType_TRANSLATION__desc_added
+#define ErrorTypes_MessageType_TRANSLATION__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_MessageType_TRANSLATION__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_MessageType_TRANSLATION__desc = {
+  "ErrorTypes_MessageType_TRANSLATION",
+  "ErrorTypes.MessageType.TRANSLATION",
+  ErrorTypes_MessageType_TRANSLATION__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Error_Severity_INTERNAL__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
 #endif
-#define Error__INTERNAL_3dBOX0 3
-static const MMC_DEFSTRUCTLIT(Error__INTERNAL__struct,1,3) {&Error_Severity_INTERNAL__desc}};
-static void *Error__INTERNAL = MMC_REFSTRUCTLIT(Error__INTERNAL__struct);
+#define ErrorTypes__TRANSLATION_3dBOX0 5
+static const MMC_DEFSTRUCTLIT(ErrorTypes__TRANSLATION__struct,1,5) {&ErrorTypes_MessageType_TRANSLATION__desc}};
+static void *ErrorTypes__TRANSLATION = MMC_REFSTRUCTLIT(ErrorTypes__TRANSLATION__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_MessageType_SCRIPTING__desc_added
-#define Error_MessageType_SCRIPTING__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_MessageType_SCRIPTING__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_MessageType_SCRIPTING__desc = {
-  "Error_MessageType_SCRIPTING",
-  "Error.MessageType.SCRIPTING",
-  Error_MessageType_SCRIPTING__desc__fields
+#ifndef ErrorTypes_MessageType_GRAMMAR__desc_added
+#define ErrorTypes_MessageType_GRAMMAR__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_MessageType_GRAMMAR__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_MessageType_GRAMMAR__desc = {
+  "ErrorTypes_MessageType_GRAMMAR",
+  "ErrorTypes.MessageType.GRAMMAR",
+  ErrorTypes_MessageType_GRAMMAR__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Error_MessageType_SCRIPTING__desc;
+extern struct record_description ErrorTypes_MessageType_GRAMMAR__desc;
 #endif
-#define Error__SCRIPTING_3dBOX0 8
-static const MMC_DEFSTRUCTLIT(Error__SCRIPTING__struct,1,8) {&Error_MessageType_SCRIPTING__desc}};
-static void *Error__SCRIPTING = MMC_REFSTRUCTLIT(Error__SCRIPTING__struct);
+#define ErrorTypes__GRAMMAR_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(ErrorTypes__GRAMMAR__struct,1,4) {&ErrorTypes_MessageType_GRAMMAR__desc}};
+static void *ErrorTypes__GRAMMAR = MMC_REFSTRUCTLIT(ErrorTypes__GRAMMAR__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_MessageType_SIMULATION__desc_added
-#define Error_MessageType_SIMULATION__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_MessageType_SIMULATION__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_MessageType_SIMULATION__desc = {
-  "Error_MessageType_SIMULATION",
-  "Error.MessageType.SIMULATION",
-  Error_MessageType_SIMULATION__desc__fields
+#ifndef ErrorTypes_MessageType_SYNTAX__desc_added
+#define ErrorTypes_MessageType_SYNTAX__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_MessageType_SYNTAX__desc__fields[1] = {"no fields"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_MessageType_SYNTAX__desc = {
+  "ErrorTypes_MessageType_SYNTAX",
+  "ErrorTypes.MessageType.SYNTAX",
+  ErrorTypes_MessageType_SYNTAX__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Error_MessageType_SIMULATION__desc;
+extern struct record_description ErrorTypes_MessageType_SYNTAX__desc;
 #endif
-#define Error__SIMULATION_3dBOX0 7
-static const MMC_DEFSTRUCTLIT(Error__SIMULATION__struct,1,7) {&Error_MessageType_SIMULATION__desc}};
-static void *Error__SIMULATION = MMC_REFSTRUCTLIT(Error__SIMULATION__struct);
+#define ErrorTypes__SYNTAX_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(ErrorTypes__SYNTAX__struct,1,3) {&ErrorTypes_MessageType_SYNTAX__desc}};
+static void *ErrorTypes__SYNTAX = MMC_REFSTRUCTLIT(ErrorTypes__SYNTAX__struct);
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_MessageType_SYMBOLIC__desc_added
-#define Error_MessageType_SYMBOLIC__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_MessageType_SYMBOLIC__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_MessageType_SYMBOLIC__desc = {
-  "Error_MessageType_SYMBOLIC",
-  "Error.MessageType.SYMBOLIC",
-  Error_MessageType_SYMBOLIC__desc__fields
+#ifndef ErrorTypes_Message_MESSAGE__desc_added
+#define ErrorTypes_Message_MESSAGE__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_Message_MESSAGE__desc__fields[4] = {"id","ty","severity","message"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_Message_MESSAGE__desc = {
+  "ErrorTypes_Message_MESSAGE",
+  "ErrorTypes.Message.MESSAGE",
+  ErrorTypes_Message_MESSAGE__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Error_MessageType_SYMBOLIC__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
 #endif
-#define Error__SYMBOLIC_3dBOX0 6
-static const MMC_DEFSTRUCTLIT(Error__SYMBOLIC__struct,1,6) {&Error_MessageType_SYMBOLIC__desc}};
-static void *Error__SYMBOLIC = MMC_REFSTRUCTLIT(Error__SYMBOLIC__struct);
+#define ErrorTypes__MESSAGE_3dBOX4 3
+#define ErrorTypes__MESSAGE(id,ty,severity,message) (mmc_mk_box5(3,&ErrorTypes_Message_MESSAGE__desc,id,ty,severity,message))
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_MessageType_TRANSLATION__desc_added
-#define Error_MessageType_TRANSLATION__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_MessageType_TRANSLATION__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_MessageType_TRANSLATION__desc = {
-  "Error_MessageType_TRANSLATION",
-  "Error.MessageType.TRANSLATION",
-  Error_MessageType_TRANSLATION__desc__fields
+#ifndef ErrorTypes_TotalMessage_TOTALMESSAGE__desc_added
+#define ErrorTypes_TotalMessage_TOTALMESSAGE__desc_added
+ADD_METARECORD_DEFINITIONS const char* ErrorTypes_TotalMessage_TOTALMESSAGE__desc__fields[2] = {"msg","info"};
+ADD_METARECORD_DEFINITIONS struct record_description ErrorTypes_TotalMessage_TOTALMESSAGE__desc = {
+  "ErrorTypes_TotalMessage_TOTALMESSAGE",
+  "ErrorTypes.TotalMessage.TOTALMESSAGE",
+  ErrorTypes_TotalMessage_TOTALMESSAGE__desc__fields
 };
 #endif
 #else /* Only use the file as a header */
-extern struct record_description Error_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_TotalMessage_TOTALMESSAGE__desc;
 #endif
-#define Error__TRANSLATION_3dBOX0 5
-static const MMC_DEFSTRUCTLIT(Error__TRANSLATION__struct,1,5) {&Error_MessageType_TRANSLATION__desc}};
-static void *Error__TRANSLATION = MMC_REFSTRUCTLIT(Error__TRANSLATION__struct);
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_MessageType_GRAMMAR__desc_added
-#define Error_MessageType_GRAMMAR__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_MessageType_GRAMMAR__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_MessageType_GRAMMAR__desc = {
-  "Error_MessageType_GRAMMAR",
-  "Error.MessageType.GRAMMAR",
-  Error_MessageType_GRAMMAR__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Error_MessageType_GRAMMAR__desc;
-#endif
-#define Error__GRAMMAR_3dBOX0 4
-static const MMC_DEFSTRUCTLIT(Error__GRAMMAR__struct,1,4) {&Error_MessageType_GRAMMAR__desc}};
-static void *Error__GRAMMAR = MMC_REFSTRUCTLIT(Error__GRAMMAR__struct);
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_MessageType_SYNTAX__desc_added
-#define Error_MessageType_SYNTAX__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_MessageType_SYNTAX__desc__fields[1] = {"no fields"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_MessageType_SYNTAX__desc = {
-  "Error_MessageType_SYNTAX",
-  "Error.MessageType.SYNTAX",
-  Error_MessageType_SYNTAX__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Error_MessageType_SYNTAX__desc;
-#endif
-#define Error__SYNTAX_3dBOX0 3
-static const MMC_DEFSTRUCTLIT(Error__SYNTAX__struct,1,3) {&Error_MessageType_SYNTAX__desc}};
-static void *Error__SYNTAX = MMC_REFSTRUCTLIT(Error__SYNTAX__struct);
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_Message_MESSAGE__desc_added
-#define Error_Message_MESSAGE__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_Message_MESSAGE__desc__fields[4] = {"id","ty","severity","message"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_Message_MESSAGE__desc = {
-  "Error_Message_MESSAGE",
-  "Error.Message.MESSAGE",
-  Error_Message_MESSAGE__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Error_Message_MESSAGE__desc;
-#endif
-#define Error__MESSAGE_3dBOX4 3
-#define Error__MESSAGE(id,ty,severity,message) (mmc_mk_box5(3,&Error_Message_MESSAGE__desc,id,ty,severity,message))
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef Error_TotalMessage_TOTALMESSAGE__desc_added
-#define Error_TotalMessage_TOTALMESSAGE__desc_added
-ADD_METARECORD_DEFINITIONS const char* Error_TotalMessage_TOTALMESSAGE__desc__fields[2] = {"msg","info"};
-ADD_METARECORD_DEFINITIONS struct record_description Error_TotalMessage_TOTALMESSAGE__desc = {
-  "Error_TotalMessage_TOTALMESSAGE",
-  "Error.TotalMessage.TOTALMESSAGE",
-  Error_TotalMessage_TOTALMESSAGE__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Error_TotalMessage_TOTALMESSAGE__desc;
-#endif
-#define Error__TOTALMESSAGE_3dBOX2 3
-#define Error__TOTALMESSAGE(msg,info) (mmc_mk_box3(3,&Error_TotalMessage_TOTALMESSAGE__desc,msg,info))
+#define ErrorTypes__TOTALMESSAGE_3dBOX2 3
+#define ErrorTypes__TOTALMESSAGE(msg,info) (mmc_mk_box3(3,&ErrorTypes_TotalMessage_TOTALMESSAGE__desc,msg,info))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Values_Value_EMPTY__desc_added
 #define Values_Value_EMPTY__desc_added
@@ -805,21 +741,6 @@ extern struct record_description GlobalScript_SimulationOptions_SIMULATION__OPTI
 #define GlobalScript__SIMULATION_5fOPTIONS_3dBOX12 3
 #define GlobalScript__SIMULATION_5fOPTIONS(startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags) (mmc_mk_box(13, 3,&GlobalScript_SimulationOptions_SIMULATION__OPTIONS__desc,startTime,stopTime,numberOfIntervals,stepSize,tolerance,method,fileNamePrefix,options,outputFormat,variableFilter,cflags,simflags))
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef GlobalScript_CompiledCFunction_CFunction__desc_added
-#define GlobalScript_CompiledCFunction_CFunction__desc_added
-ADD_METARECORD_DEFINITIONS const char* GlobalScript_CompiledCFunction_CFunction__desc__fields[5] = {"path","retType","funcHandle","buildTime","loadedFromFile"};
-ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_CompiledCFunction_CFunction__desc = {
-  "GlobalScript_CompiledCFunction_CFunction",
-  "GlobalScript.CompiledCFunction.CFunction",
-  GlobalScript_CompiledCFunction_CFunction__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description GlobalScript_CompiledCFunction_CFunction__desc;
-#endif
-#define GlobalScript__CFunction_3dBOX5 3
-#define GlobalScript__CFunction(path,retType,funcHandle,buildTime,loadedFromFile) (mmc_mk_box6(3,&GlobalScript_CompiledCFunction_CFunction__desc,path,retType,funcHandle,buildTime,loadedFromFile))
-#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_Statement_IEXP__desc_added
 #define GlobalScript_Statement_IEXP__desc_added
 ADD_METARECORD_DEFINITIONS const char* GlobalScript_Statement_IEXP__desc__fields[2] = {"exp","info"};
@@ -865,21 +786,6 @@ extern struct record_description GlobalScript_Statements_ISTMTS__desc;
 #define GlobalScript__ISTMTS_3dBOX2 3
 #define GlobalScript__ISTMTS(interactiveStmtLst,semicolon) (mmc_mk_box3(3,&GlobalScript_Statements_ISTMTS__desc,interactiveStmtLst,semicolon))
 #ifdef ADD_METARECORD_DEFINITIONS
-#ifndef GlobalScript_InstantiatedClass_INSTCLASS__desc_added
-#define GlobalScript_InstantiatedClass_INSTCLASS__desc_added
-ADD_METARECORD_DEFINITIONS const char* GlobalScript_InstantiatedClass_INSTCLASS__desc__fields[3] = {"qualName","daeElementLst","env"};
-ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_InstantiatedClass_INSTCLASS__desc = {
-  "GlobalScript_InstantiatedClass_INSTCLASS",
-  "GlobalScript.InstantiatedClass.INSTCLASS",
-  GlobalScript_InstantiatedClass_INSTCLASS__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description GlobalScript_InstantiatedClass_INSTCLASS__desc;
-#endif
-#define GlobalScript__INSTCLASS_3dBOX3 3
-#define GlobalScript__INSTCLASS(qualName,daeElementLst,env) (mmc_mk_box4(3,&GlobalScript_InstantiatedClass_INSTCLASS__desc,qualName,daeElementLst,env))
-#ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_Variable_IVAR__desc_added
 #define GlobalScript_Variable_IVAR__desc_added
 ADD_METARECORD_DEFINITIONS const char* GlobalScript_Variable_IVAR__desc__fields[3] = {"varIdent","value","type_"};
@@ -894,36 +800,6 @@ extern struct record_description GlobalScript_Variable_IVAR__desc;
 #endif
 #define GlobalScript__IVAR_3dBOX3 3
 #define GlobalScript__IVAR(varIdent,value,type_) (mmc_mk_box4(3,&GlobalScript_Variable_IVAR__desc,varIdent,value,type_))
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef GlobalScript_LoadedFile_FILE__desc_added
-#define GlobalScript_LoadedFile_FILE__desc_added
-ADD_METARECORD_DEFINITIONS const char* GlobalScript_LoadedFile_FILE__desc__fields[3] = {"fileName","loadTime","classNamesQualified"};
-ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_LoadedFile_FILE__desc = {
-  "GlobalScript_LoadedFile_FILE",
-  "GlobalScript.LoadedFile.FILE",
-  GlobalScript_LoadedFile_FILE__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description GlobalScript_LoadedFile_FILE__desc;
-#endif
-#define GlobalScript__FILE_3dBOX3 3
-#define GlobalScript__FILE(fileName,loadTime,classNamesQualified) (mmc_mk_box4(3,&GlobalScript_LoadedFile_FILE__desc,fileName,loadTime,classNamesQualified))
-#ifdef ADD_METARECORD_DEFINITIONS
-#ifndef GlobalScript_SymbolTable_SYMBOLTABLE__desc_added
-#define GlobalScript_SymbolTable_SYMBOLTABLE__desc_added
-ADD_METARECORD_DEFINITIONS const char* GlobalScript_SymbolTable_SYMBOLTABLE__desc__fields[6] = {"ast","explodedAst","instClsLst","lstVarVal","compiledFunctions","loadedFiles"};
-ADD_METARECORD_DEFINITIONS struct record_description GlobalScript_SymbolTable_SYMBOLTABLE__desc = {
-  "GlobalScript_SymbolTable_SYMBOLTABLE",
-  "GlobalScript.SymbolTable.SYMBOLTABLE",
-  GlobalScript_SymbolTable_SYMBOLTABLE__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description GlobalScript_SymbolTable_SYMBOLTABLE__desc;
-#endif
-#define GlobalScript__SYMBOLTABLE_3dBOX6 3
-#define GlobalScript__SYMBOLTABLE(ast,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles) (mmc_mk_box7(3,&GlobalScript_SymbolTable_SYMBOLTABLE__desc,ast,explodedAst,instClsLst,lstVarVal,compiledFunctions,loadedFiles))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef GlobalScript_Component_EXTENDSITEM__desc_added
 #define GlobalScript_Component_EXTENDSITEM__desc_added
@@ -1409,7 +1285,7 @@ extern struct record_description Absyn_Element_TEXT__desc;
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Element_DEFINEUNIT__desc_added
 #define Absyn_Element_DEFINEUNIT__desc_added
-ADD_METARECORD_DEFINITIONS const char* Absyn_Element_DEFINEUNIT__desc__fields[3] = {"name","args", "info"};
+ADD_METARECORD_DEFINITIONS const char* Absyn_Element_DEFINEUNIT__desc__fields[3] = {"name","args","info"};
 ADD_METARECORD_DEFINITIONS struct record_description Absyn_Element_DEFINEUNIT__desc = {
   "Absyn_Element_DEFINEUNIT",
   "Absyn.Element.DEFINEUNIT",
@@ -1419,8 +1295,8 @@ ADD_METARECORD_DEFINITIONS struct record_description Absyn_Element_DEFINEUNIT__d
 #else /* Only use the file as a header */
 extern struct record_description Absyn_Element_DEFINEUNIT__desc;
 #endif
-#define Absyn__DEFINEUNIT_3dBOX2 4
-#define Absyn__DEFINEUNIT(name,args, info) (mmc_mk_box4(4,&Absyn_Element_DEFINEUNIT__desc,name,args, info))
+#define Absyn__DEFINEUNIT_3dBOX3 4
+#define Absyn__DEFINEUNIT(name,args,info) (mmc_mk_box4(4,&Absyn_Element_DEFINEUNIT__desc,name,args,info))
 #ifdef ADD_METARECORD_DEFINITIONS
 #ifndef Absyn_Element_ELEMENT__desc_added
 #define Absyn_Element_ELEMENT__desc_added
@@ -4211,3 +4087,4 @@ extern struct record_description Absyn_Msg_MSG__desc;
 #ifdef __cplusplus
 }
 #endif
+

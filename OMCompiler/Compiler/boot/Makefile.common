@@ -14,11 +14,11 @@ generate-files-in-steps:
 	$(MAKE) -f $(defaultMakefileTarget) Makefile.depends INCLUDESOURCES=1
 	$(MAKE) -f $(defaultMakefileTarget) generate-files INCLUDESOURCES=1 INCLUDEDEPENDS=1
 
-.PHONY: interfaces generate-files runtime-depends parser compilerruntime patch-files
+.PHONY: interfaces generate-files runtime-depends parser compilerruntime patch-files bootstrap-from-tarball bootstrap-from-tarball2
 
 GEN_DIR=build/
 
-PATCH_SOURCES=sed -i=.bak 's/ = omc_assert_function/__attribute__((noreturn)) = omc_assert_function/' build/_main.c
+PATCH_SOURCES=true
 
 PATCHES := $(patsubst %.patch.xz,%.patch,$(wildcard patches/*.patch.xz))
 
@@ -36,39 +36,32 @@ LCOMPILERRUNTIME=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a $(TOP_DIR)/Comp
 FMILIB_OR_BOOT=$(FMILIB) -lexpat
 endif
 
-ifeq ($(BOOTSTRAP_OMHOME),1)
-else
-export OPENMODELICAHOME := $(OMBUILDDIR)
-endif
-
 %.patch: %.patch.xz
 	xz --keep --decompress --force $<
 
 patch-files: $(PATCHES)
 
 bootstrap-from-tarball:
+	OPENMODELICAHOME="$(OMBUILDDIR)" $(MAKE) -f $(defaultMakefileTarget) bootstrap-from-tarball2
+
+bootstrap-from-tarball2:
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC=.omc
-	tar xJf bootstrap-sources.tar.xz
+	rm -rf $(GEN_DIR)
+	mkdir -p $(GEN_DIR)
+	cp -r bootstrap-sources/* .
 	# Patch _main.c to avoid a new tarball
-	$(MAKE) -f $(defaultMakefileTarget) patch-files
-	$(PATCH_SOURCES)
-	cd build && patch -i ../patches/Absyn.h.1.patch Absyn.h
-	cd build && patch -i ../patches/Absyn.c.1.patch Absyn.c
-	cd build && patch -i ../patches/CevalScript.c.1.patch CevalScript.c
-	cd build && patch -i ../patches/System_includes.h.patch System_includes.h
+	#$(MAKE) -f $(defaultMakefileTarget) patch-files
+	#$(PATCH_SOURCES)
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
 	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC=.omc BOOTSTRAP_STAGE_1=1 CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_1"
 	@echo "Bootstrapping phase 1/3 completed"
-	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
-	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR) OMC="$(BOOTSTRAP_OMC)" BOOTSTRAP_OMHOME=1
-	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" OMC_EXTRA_FLAGS= BOOTSTRAP_OMHOME=1 TEMPLATES_TARGET=templates-bootstrap
-	# Patch _main.c to avoid a new tarball
-	$(PATCH_SOURCES)
-	echo '#include "Patternm.h"' >> build/SimCodeFunctionUtil_includes.h
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory clean OMC="$(BOOTSTRAP_OMC)"
+	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory runtime-depends OMBUILDDIR=$(OMBUILDDIR) OMC="$(BOOTSTRAP_OMC)"
+	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps OMC="$(BOOTSTRAP_OMC)" OMC_EXTRA_FLAGS= TEMPLATES_TARGET=templates-bootstrap
 	# We have not compiled OpenModelicaScriptingAPI.mo yet
 	touch build/OpenModelicaScriptingAPI.h
-	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_2" BOOTSTRAP_OMHOME=1
+	$(MAKE) -f $(defaultMakefileTarget) install INCLUDESOURCES=1 OMC="$(BOOTSTRAP_OMC)" CPPFLAGS="$(CPPFLAGS) -DOMC_BOOTSTRAPPING_STAGE_2"
 	@echo "Bootstrapping phase 2/3 completed"
 	$(MAKE) -f $(defaultMakefileTarget) clean OMC="$(BOOTSTRAP_OMC)"
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMC="$(BOOTSTRAP_OMC)" clean
@@ -94,8 +87,11 @@ make-bootstrap-tarball: clean
 	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps
 	rm -rf $(GEN_DIR)/*.mo $(GEN_DIR)/tmp $(GEN_DIR)/*.deps $(GEN_DIR)/*.mos $(GEN_DIR)/*.stamp
 	sed -i.bak -e "s/^ *//" -e "/^[/][/]/d" -e "/^#line /d" -e "s/ *[/][*].*[*][/]\([;)]\?\) *$$/\1/" -e "s/^ *[/][*].*[*][/]\(;\?\) */\1/" -e "/^ *$$/d" $(GEN_DIR)/*.c $(GEN_DIR)/*.h
-	tar cf bootstrap-sources.tar $(GEN_DIR) Makefile.sources
-	xz --best --force bootstrap-sources.tar
+	rm -f $(GEN_DIR)/*.bak
+	rm -rf bootstrap-sources patches/ bootstrap-sources.tar
+	mkdir -p bootstrap-sources
+	mv $(GEN_DIR) Makefile.sources bootstrap-sources/
+	git add bootstrap-sources/
 
 templates:
 	$(MAKE) -f $(defaultMakefileTarget) --no-print-directory -C $(TOP_DIR)/Compiler/Template OMBUILDDIR=$(OMBUILDDIR) $(TEMPLATES_TARGET)

@@ -1,0 +1,137 @@
+#ifndef FBuiltin__H
+#define FBuiltin__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_ComponentRef_CREF__IDENT__desc;
+extern struct record_description Absyn_ComponentRef_CREF__QUAL__desc;
+extern struct record_description Absyn_Direction_BIDIR__desc;
+extern struct record_description Absyn_Direction_INPUT__desc;
+extern struct record_description Absyn_Exp_BOOL__desc;
+extern struct record_description Absyn_Exp_CREF__desc;
+extern struct record_description Absyn_Exp_INTEGER__desc;
+extern struct record_description Absyn_Exp_REAL__desc;
+extern struct record_description Absyn_Exp_STRING__desc;
+extern struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
+extern struct record_description Absyn_IsField_NONFIELD__desc;
+extern struct record_description Absyn_Path_IDENT__desc;
+extern struct record_description Absyn_Program_PROGRAM__desc;
+extern struct record_description Absyn_TypeSpec_TPATH__desc;
+extern struct record_description Absyn_Within_TOP__desc;
+extern struct record_description ClassInf_State_CONNECTOR__desc;
+extern struct record_description DAE_Attributes_ATTR__desc;
+extern struct record_description DAE_Binding_UNBOUND__desc;
+extern struct record_description DAE_ConnectorType_NON__CONNECTOR__desc;
+extern struct record_description DAE_Const_C__VAR__desc;
+extern struct record_description DAE_FuncArg_FUNCARG__desc;
+extern struct record_description DAE_FunctionAttributes_FUNCTION__ATTRIBUTES__desc;
+extern struct record_description DAE_FunctionBuiltin_FUNCTION__BUILTIN__desc;
+extern struct record_description DAE_FunctionParallelism_FP__NON__PARALLEL__desc;
+extern struct record_description DAE_InlineType_NO__INLINE__desc;
+extern struct record_description DAE_Type_T__ANYTYPE__desc;
+extern struct record_description DAE_Type_T__ENUMERATION__desc;
+extern struct record_description DAE_Type_T__FUNCTION__desc;
+extern struct record_description DAE_Type_T__INTEGER__desc;
+extern struct record_description DAE_Type_T__METABOXED__desc;
+extern struct record_description DAE_Type_T__REAL__desc;
+extern struct record_description DAE_Type_T__UNKNOWN__desc;
+extern struct record_description DAE_Var_TYPES__VAR__desc;
+extern struct record_description DAE_VarParallelism_NON__PARALLEL__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_SCRIPTING__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description FCore_Kind_BASIC__TYPE__desc;
+extern struct record_description FCore_Kind_BUILTIN__desc;
+extern struct record_description FCore_Status_VAR__UNTYPED__desc;
+extern struct record_description Flags_ConfigFlag_CONFIG__FLAG__desc;
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Flags_FlagData_ENUM__FLAG__desc;
+extern struct record_description Flags_FlagVisibility_EXTERNAL__desc;
+extern struct record_description Flags_ValidOptions_STRING__OPTION__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description SCode_Attributes_ATTR__desc;
+extern struct record_description SCode_ClassDef_PARTS__desc;
+extern struct record_description SCode_Comment_COMMENT__desc;
+extern struct record_description SCode_ConnectorType_POTENTIAL__desc;
+extern struct record_description SCode_Each_NOT__EACH__desc;
+extern struct record_description SCode_Element_CLASS__desc;
+extern struct record_description SCode_Element_COMPONENT__desc;
+extern struct record_description SCode_Encapsulated_NOT__ENCAPSULATED__desc;
+extern struct record_description SCode_Final_FINAL__desc;
+extern struct record_description SCode_Final_NOT__FINAL__desc;
+extern struct record_description SCode_Mod_MOD__desc;
+extern struct record_description SCode_Mod_NOMOD__desc;
+extern struct record_description SCode_Parallelism_NON__PARALLEL__desc;
+extern struct record_description SCode_Partial_NOT__PARTIAL__desc;
+extern struct record_description SCode_Prefixes_PREFIXES__desc;
+extern struct record_description SCode_Redeclare_NOT__REDECLARE__desc;
+extern struct record_description SCode_Replaceable_NOT__REPLACEABLE__desc;
+extern struct record_description SCode_Restriction_R__CLASS__desc;
+extern struct record_description SCode_Restriction_R__ENUMERATION__desc;
+extern struct record_description SCode_Restriction_R__PREDEFINED__BOOLEAN__desc;
+extern struct record_description SCode_Restriction_R__PREDEFINED__CLOCK__desc;
+extern struct record_description SCode_Restriction_R__PREDEFINED__ENUMERATION__desc;
+extern struct record_description SCode_Restriction_R__PREDEFINED__INTEGER__desc;
+extern struct record_description SCode_Restriction_R__PREDEFINED__REAL__desc;
+extern struct record_description SCode_Restriction_R__PREDEFINED__STRING__desc;
+extern struct record_description SCode_Variability_CONST__desc;
+extern struct record_description SCode_Variability_PARAM__desc;
+extern struct record_description SCode_Variability_VAR__desc;
+extern struct record_description SCode_Visibility_PUBLIC__desc;
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLExport
+modelica_metatype omc_FBuiltin_getElementWithPathCheckBuiltin(threadData_t *threadData, modelica_metatype _inProgram, modelica_metatype _inPath);
+#define boxptr_FBuiltin_getElementWithPathCheckBuiltin omc_FBuiltin_getElementWithPathCheckBuiltin
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_getElementWithPathCheckBuiltin,2,0) {(void*) boxptr_FBuiltin_getElementWithPathCheckBuiltin,0}};
+#define boxvar_FBuiltin_getElementWithPathCheckBuiltin MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_getElementWithPathCheckBuiltin)
+DLLExport
+modelica_metatype omc_FBuiltin_initialGraphOptimica(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fgraph, modelica_fnptr _mkCompNode);
+#define boxptr_FBuiltin_initialGraphOptimica omc_FBuiltin_initialGraphOptimica
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_initialGraphOptimica,2,0) {(void*) boxptr_FBuiltin_initialGraphOptimica,0}};
+#define boxvar_FBuiltin_initialGraphOptimica MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_initialGraphOptimica)
+DLLExport
+modelica_metatype omc_FBuiltin_initialGraphMetaModelica(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fgraph, modelica_fnptr _mkTypeNode);
+#define boxptr_FBuiltin_initialGraphMetaModelica omc_FBuiltin_initialGraphMetaModelica
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_initialGraphMetaModelica,2,0) {(void*) boxptr_FBuiltin_initialGraphMetaModelica,0}};
+#define boxvar_FBuiltin_initialGraphMetaModelica MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_initialGraphMetaModelica)
+DLLExport
+modelica_metatype omc_FBuiltin_initialGraphModelica(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fgraph, modelica_fnptr _mkTypeNode, modelica_fnptr _mkCompNode);
+#define boxptr_FBuiltin_initialGraphModelica omc_FBuiltin_initialGraphModelica
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_initialGraphModelica,2,0) {(void*) boxptr_FBuiltin_initialGraphModelica,0}};
+#define boxvar_FBuiltin_initialGraphModelica MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_initialGraphModelica)
+#define boxptr_FBuiltin_getSetInitialGraph omc_FBuiltin_getSetInitialGraph
+DLLExport
+modelica_metatype omc_FBuiltin_initialGraph(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype *out_graph);
+#define boxptr_FBuiltin_initialGraph omc_FBuiltin_initialGraph
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_initialGraph,2,0) {(void*) boxptr_FBuiltin_initialGraph,0}};
+#define boxvar_FBuiltin_initialGraph MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_initialGraph)
+DLLExport
+modelica_metatype omc_FBuiltin_getInitialFunctions(threadData_t *threadData, modelica_metatype *out_initialSCodeProgram);
+#define boxptr_FBuiltin_getInitialFunctions omc_FBuiltin_getInitialFunctions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_getInitialFunctions,2,0) {(void*) boxptr_FBuiltin_getInitialFunctions,0}};
+#define boxvar_FBuiltin_getInitialFunctions MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_getInitialFunctions)
+DLLExport
+void omc_FBuiltin_isDer(threadData_t *threadData, modelica_metatype _inPath);
+#define boxptr_FBuiltin_isDer omc_FBuiltin_isDer
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_isDer,2,0) {(void*) boxptr_FBuiltin_isDer,0}};
+#define boxvar_FBuiltin_isDer MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_isDer)
+DLLExport
+modelica_boolean omc_FBuiltin_variableIsBuiltin(threadData_t *threadData, modelica_metatype _cref, modelica_boolean _useOptimica);
+DLLExport
+modelica_metatype boxptr_FBuiltin_variableIsBuiltin(threadData_t *threadData, modelica_metatype _cref, modelica_metatype _useOptimica);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_variableIsBuiltin,2,0) {(void*) boxptr_FBuiltin_variableIsBuiltin,0}};
+#define boxvar_FBuiltin_variableIsBuiltin MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_variableIsBuiltin)
+DLLExport
+modelica_metatype omc_FBuiltin_getBasicTypes(threadData_t *threadData);
+#define boxptr_FBuiltin_getBasicTypes omc_FBuiltin_getBasicTypes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_FBuiltin_getBasicTypes,2,0) {(void*) boxptr_FBuiltin_getBasicTypes,0}};
+#define boxvar_FBuiltin_getBasicTypes MMC_REFSTRUCTLIT(boxvar_lit_FBuiltin_getBasicTypes)
+#ifdef __cplusplus
+}
+#endif
+#endif

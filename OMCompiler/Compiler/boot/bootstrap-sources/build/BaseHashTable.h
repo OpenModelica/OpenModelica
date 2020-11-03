@@ -1,0 +1,142 @@
+#ifndef BaseHashTable__H
+#define BaseHashTable__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+DLLExport
+void omc_BaseHashTable_clearAssumeNoDelete(threadData_t *threadData, modelica_metatype _ht);
+#define boxptr_BaseHashTable_clearAssumeNoDelete omc_BaseHashTable_clearAssumeNoDelete
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_clearAssumeNoDelete,2,0) {(void*) boxptr_BaseHashTable_clearAssumeNoDelete,0}};
+#define boxvar_BaseHashTable_clearAssumeNoDelete MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_clearAssumeNoDelete)
+DLLExport
+modelica_metatype omc_BaseHashTable_clear(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fht);
+#define boxptr_BaseHashTable_clear omc_BaseHashTable_clear
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_clear,2,0) {(void*) boxptr_BaseHashTable_clear,0}};
+#define boxvar_BaseHashTable_clear MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_clear)
+DLLExport
+modelica_metatype omc_BaseHashTable_copy(threadData_t *threadData, modelica_metatype _inHashTable);
+#define boxptr_BaseHashTable_copy omc_BaseHashTable_copy
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_copy,2,0) {(void*) boxptr_BaseHashTable_copy,0}};
+#define boxvar_BaseHashTable_copy MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_copy)
+DLLExport
+modelica_integer omc_BaseHashTable_valueArrayLength(threadData_t *threadData, modelica_metatype _valueArray);
+DLLExport
+modelica_metatype boxptr_BaseHashTable_valueArrayLength(threadData_t *threadData, modelica_metatype _valueArray);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_valueArrayLength,2,0) {(void*) boxptr_BaseHashTable_valueArrayLength,0}};
+#define boxvar_BaseHashTable_valueArrayLength MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_valueArrayLength)
+DLLExport
+modelica_integer omc_BaseHashTable_hashTableCurrentSize(threadData_t *threadData, modelica_metatype _hashTable);
+DLLExport
+modelica_metatype boxptr_BaseHashTable_hashTableCurrentSize(threadData_t *threadData, modelica_metatype _hashTable);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableCurrentSize,2,0) {(void*) boxptr_BaseHashTable_hashTableCurrentSize,0}};
+#define boxvar_BaseHashTable_hashTableCurrentSize MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableCurrentSize)
+DLLExport
+modelica_metatype omc_BaseHashTable_valueArrayListReversed(threadData_t *threadData, modelica_metatype _valueArray);
+#define boxptr_BaseHashTable_valueArrayListReversed omc_BaseHashTable_valueArrayListReversed
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_valueArrayListReversed,2,0) {(void*) boxptr_BaseHashTable_valueArrayListReversed,0}};
+#define boxvar_BaseHashTable_valueArrayListReversed MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_valueArrayListReversed)
+DLLExport
+modelica_metatype omc_BaseHashTable_valueArrayList(threadData_t *threadData, modelica_metatype _valueArray);
+#define boxptr_BaseHashTable_valueArrayList omc_BaseHashTable_valueArrayList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_valueArrayList,2,0) {(void*) boxptr_BaseHashTable_valueArrayList,0}};
+#define boxvar_BaseHashTable_valueArrayList MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_valueArrayList)
+DLLExport
+modelica_metatype omc_BaseHashTable_hashTableListReversed(threadData_t *threadData, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_hashTableListReversed omc_BaseHashTable_hashTableListReversed
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableListReversed,2,0) {(void*) boxptr_BaseHashTable_hashTableListReversed,0}};
+#define boxvar_BaseHashTable_hashTableListReversed MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableListReversed)
+DLLExport
+modelica_metatype omc_BaseHashTable_hashTableList(threadData_t *threadData, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_hashTableList omc_BaseHashTable_hashTableList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableList,2,0) {(void*) boxptr_BaseHashTable_hashTableList,0}};
+#define boxvar_BaseHashTable_hashTableList MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableList)
+DLLExport
+modelica_metatype omc_BaseHashTable_hashTableKeyList(threadData_t *threadData, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_hashTableKeyList omc_BaseHashTable_hashTableKeyList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableKeyList,2,0) {(void*) boxptr_BaseHashTable_hashTableKeyList,0}};
+#define boxvar_BaseHashTable_hashTableKeyList MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableKeyList)
+DLLExport
+modelica_metatype omc_BaseHashTable_hashTableValueList(threadData_t *threadData, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_hashTableValueList omc_BaseHashTable_hashTableValueList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableValueList,2,0) {(void*) boxptr_BaseHashTable_hashTableValueList,0}};
+#define boxvar_BaseHashTable_hashTableValueList MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_hashTableValueList)
+#define boxptr_BaseHashTable_dumpTuple omc_BaseHashTable_dumpTuple
+DLLExport
+void omc_BaseHashTable_debugDump(threadData_t *threadData, modelica_metatype _ht);
+#define boxptr_BaseHashTable_debugDump omc_BaseHashTable_debugDump
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_debugDump,2,0) {(void*) boxptr_BaseHashTable_debugDump,0}};
+#define boxvar_BaseHashTable_debugDump MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_debugDump)
+DLLExport
+void omc_BaseHashTable_dumpHashTable(threadData_t *threadData, modelica_metatype _t);
+#define boxptr_BaseHashTable_dumpHashTable omc_BaseHashTable_dumpHashTable
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_dumpHashTable,2,0) {(void*) boxptr_BaseHashTable_dumpHashTable,0}};
+#define boxvar_BaseHashTable_dumpHashTable MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_dumpHashTable)
+DLLExport
+modelica_metatype omc_BaseHashTable_get(threadData_t *threadData, modelica_metatype _key, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_get omc_BaseHashTable_get
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_get,2,0) {(void*) boxptr_BaseHashTable_get,0}};
+#define boxvar_BaseHashTable_get MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_get)
+DLLExport
+modelica_boolean omc_BaseHashTable_anyKeyInHashTable(threadData_t *threadData, modelica_metatype _keys, modelica_metatype _ht);
+DLLExport
+modelica_metatype boxptr_BaseHashTable_anyKeyInHashTable(threadData_t *threadData, modelica_metatype _keys, modelica_metatype _ht);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_anyKeyInHashTable,2,0) {(void*) boxptr_BaseHashTable_anyKeyInHashTable,0}};
+#define boxvar_BaseHashTable_anyKeyInHashTable MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_anyKeyInHashTable)
+DLLExport
+modelica_boolean omc_BaseHashTable_hasKey(threadData_t *threadData, modelica_metatype _key, modelica_metatype _hashTable);
+DLLExport
+modelica_metatype boxptr_BaseHashTable_hasKey(threadData_t *threadData, modelica_metatype _key, modelica_metatype _hashTable);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_hasKey,2,0) {(void*) boxptr_BaseHashTable_hasKey,0}};
+#define boxvar_BaseHashTable_hasKey MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_hasKey)
+DLLExport
+void omc_BaseHashTable_delete(threadData_t *threadData, modelica_metatype _key, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_delete omc_BaseHashTable_delete
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_delete,2,0) {(void*) boxptr_BaseHashTable_delete,0}};
+#define boxvar_BaseHashTable_delete MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_delete)
+DLLExport
+void omc_BaseHashTable_update(threadData_t *threadData, modelica_metatype _entry, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_update omc_BaseHashTable_update
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_update,2,0) {(void*) boxptr_BaseHashTable_update,0}};
+#define boxvar_BaseHashTable_update MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_update)
+DLLExport
+modelica_metatype omc_BaseHashTable_addUnique(threadData_t *threadData, modelica_metatype _entry, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_addUnique omc_BaseHashTable_addUnique
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_addUnique,2,0) {(void*) boxptr_BaseHashTable_addUnique,0}};
+#define boxvar_BaseHashTable_addUnique MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_addUnique)
+DLLExport
+modelica_metatype omc_BaseHashTable_addNoUpdCheck(threadData_t *threadData, modelica_metatype _entry, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_addNoUpdCheck omc_BaseHashTable_addNoUpdCheck
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_addNoUpdCheck,2,0) {(void*) boxptr_BaseHashTable_addNoUpdCheck,0}};
+#define boxvar_BaseHashTable_addNoUpdCheck MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_addNoUpdCheck)
+DLLExport
+void omc_BaseHashTable_dumpHashTableStatistics(threadData_t *threadData, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_dumpHashTableStatistics omc_BaseHashTable_dumpHashTableStatistics
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_dumpHashTableStatistics,2,0) {(void*) boxptr_BaseHashTable_dumpHashTableStatistics,0}};
+#define boxvar_BaseHashTable_dumpHashTableStatistics MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_dumpHashTableStatistics)
+DLLExport
+modelica_metatype omc_BaseHashTable_add(threadData_t *threadData, modelica_metatype _entry, modelica_metatype _hashTable);
+#define boxptr_BaseHashTable_add omc_BaseHashTable_add
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_add,2,0) {(void*) boxptr_BaseHashTable_add,0}};
+#define boxvar_BaseHashTable_add MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_add)
+DLLExport
+modelica_metatype omc_BaseHashTable_emptyHashTableWork(threadData_t *threadData, modelica_integer _szBucket, modelica_metatype _fntpl);
+DLLExport
+modelica_metatype boxptr_BaseHashTable_emptyHashTableWork(threadData_t *threadData, modelica_metatype _szBucket, modelica_metatype _fntpl);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_emptyHashTableWork,2,0) {(void*) boxptr_BaseHashTable_emptyHashTableWork,0}};
+#define boxvar_BaseHashTable_emptyHashTableWork MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_emptyHashTableWork)
+DLLExport
+modelica_integer omc_BaseHashTable_bucketToValuesSize(threadData_t *threadData, modelica_integer _szBucket);
+DLLExport
+modelica_metatype boxptr_BaseHashTable_bucketToValuesSize(threadData_t *threadData, modelica_metatype _szBucket);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_BaseHashTable_bucketToValuesSize,2,0) {(void*) boxptr_BaseHashTable_bucketToValuesSize,0}};
+#define boxvar_BaseHashTable_bucketToValuesSize MMC_REFSTRUCTLIT(boxvar_lit_BaseHashTable_bucketToValuesSize)
+#ifdef __cplusplus
+}
+#endif
+#endif

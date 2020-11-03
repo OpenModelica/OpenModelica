@@ -1,0 +1,1319 @@
+#ifndef DAEUtil__H
+#define DAEUtil__H
+#include "meta/meta_modelica.h"
+#include "util/modelica.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+extern struct record_description Absyn_Direction_BIDIR__desc;
+extern struct record_description Absyn_InnerOuter_NOT__INNER__OUTER__desc;
+extern struct record_description Absyn_InnerOuter_OUTER__desc;
+extern struct record_description Absyn_Msg_MSG__desc;
+extern struct record_description Absyn_Msg_NO__MSG__desc;
+extern struct record_description DAE_Algorithm_ALGORITHM__STMTS__desc;
+extern struct record_description DAE_Attributes_ATTR__desc;
+extern struct record_description DAE_AvlTreePathFunction_Tree_EMPTY__desc;
+extern struct record_description DAE_Binding_EQBOUND__desc;
+extern struct record_description DAE_Binding_UNBOUND__desc;
+extern struct record_description DAE_Binding_VALBOUND__desc;
+extern struct record_description DAE_ComponentPrefix_NOCOMPPRE__desc;
+extern struct record_description DAE_ComponentRef_WILD__desc;
+extern struct record_description DAE_Connect_Face_OUTSIDE__desc;
+extern struct record_description DAE_ConnectorType_FLOW__desc;
+extern struct record_description DAE_ConnectorType_NON__CONNECTOR__desc;
+extern struct record_description DAE_ConnectorType_POTENTIAL__desc;
+extern struct record_description DAE_ConnectorType_STREAM__desc;
+extern struct record_description DAE_Const_C__CONST__desc;
+extern struct record_description DAE_Constraint_CONSTRAINT__EXPS__desc;
+extern struct record_description DAE_DAElist_DAE__desc;
+extern struct record_description DAE_Dimension_DIM__EXP__desc;
+extern struct record_description DAE_Element_ALGORITHM__desc;
+extern struct record_description DAE_Element_ASSERT__desc;
+extern struct record_description DAE_Element_COMP__desc;
+extern struct record_description DAE_Element_COMPLEX__EQUATION__desc;
+extern struct record_description DAE_Element_DEFINE__desc;
+extern struct record_description DAE_Element_EQUATION__desc;
+extern struct record_description DAE_Element_EQUEQUATION__desc;
+extern struct record_description DAE_Element_IF__EQUATION__desc;
+extern struct record_description DAE_Element_INITIALALGORITHM__desc;
+extern struct record_description DAE_Element_INITIALDEFINE__desc;
+extern struct record_description DAE_Element_INITIALEQUATION__desc;
+extern struct record_description DAE_Element_INITIAL__ARRAY__EQUATION__desc;
+extern struct record_description DAE_Element_INITIAL__ASSERT__desc;
+extern struct record_description DAE_Element_INITIAL__COMPLEX__EQUATION__desc;
+extern struct record_description DAE_Element_INITIAL__IF__EQUATION__desc;
+extern struct record_description DAE_Element_INITIAL__NORETCALL__desc;
+extern struct record_description DAE_Element_INITIAL__TERMINATE__desc;
+extern struct record_description DAE_Element_TERMINATE__desc;
+extern struct record_description DAE_Element_VAR__desc;
+extern struct record_description DAE_Element_WHEN__EQUATION__desc;
+extern struct record_description DAE_ElementSource_SOURCE__desc;
+extern struct record_description DAE_Else_ELSE__desc;
+extern struct record_description DAE_Else_NOELSE__desc;
+extern struct record_description DAE_Exp_ARRAY__desc;
+extern struct record_description DAE_Exp_BINARY__desc;
+extern struct record_description DAE_Exp_CALL__desc;
+extern struct record_description DAE_Exp_CAST__desc;
+extern struct record_description DAE_Exp_ICONST__desc;
+extern struct record_description DAE_Exp_IFEXP__desc;
+extern struct record_description DAE_Exp_LBINARY__desc;
+extern struct record_description DAE_Exp_LUNARY__desc;
+extern struct record_description DAE_Exp_RCONST__desc;
+extern struct record_description DAE_Exp_RELATION__desc;
+extern struct record_description DAE_Exp_SCONST__desc;
+extern struct record_description DAE_Exp_SIZE__desc;
+extern struct record_description DAE_Exp_TUPLE__desc;
+extern struct record_description DAE_Exp_UNARY__desc;
+extern struct record_description DAE_Statement_STMT__ASSERT__desc;
+extern struct record_description DAE_Statement_STMT__ASSIGN__desc;
+extern struct record_description DAE_Statement_STMT__ASSIGN__ARR__desc;
+extern struct record_description DAE_Statement_STMT__FAILURE__desc;
+extern struct record_description DAE_Statement_STMT__FOR__desc;
+extern struct record_description DAE_Statement_STMT__NORETCALL__desc;
+extern struct record_description DAE_Statement_STMT__PARFOR__desc;
+extern struct record_description DAE_Statement_STMT__REINIT__desc;
+extern struct record_description DAE_Statement_STMT__TERMINATE__desc;
+extern struct record_description DAE_Statement_STMT__TUPLE__ASSIGN__desc;
+extern struct record_description DAE_Statement_STMT__WHEN__desc;
+extern struct record_description DAE_Statement_STMT__WHILE__desc;
+extern struct record_description DAE_Type_T__UNKNOWN__desc;
+extern struct record_description DAE_Var_TYPES__VAR__desc;
+extern struct record_description DAE_VarInnerOuter_INNER__desc;
+extern struct record_description DAE_VarInnerOuter_INNER__OUTER__desc;
+extern struct record_description DAE_VarInnerOuter_NOT__INNER__OUTER__desc;
+extern struct record_description DAE_VarInnerOuter_OUTER__desc;
+extern struct record_description DAE_VarKind_CONST__desc;
+extern struct record_description DAE_VarKind_PARAM__desc;
+extern struct record_description DAE_VarKind_VARIABLE__desc;
+extern struct record_description DAE_VarParallelism_NON__PARALLEL__desc;
+extern struct record_description DAE_VarParallelism_PARGLOBAL__desc;
+extern struct record_description DAE_VarParallelism_PARLOCAL__desc;
+extern struct record_description DAE_VarVisibility_PUBLIC__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__BOOL__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__CLOCK__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__ENUMERATION__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__INT__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__REAL__desc;
+extern struct record_description DAE_VariableAttributes_VAR__ATTR__STRING__desc;
+extern struct record_description DAEDump_compWithSplitElements_COMP__WITH__SPLIT__desc;
+extern struct record_description DAEDump_splitElements_SPLIT__ELEMENTS__desc;
+extern struct record_description DAEUtil_TraverseStatementsOptions_TRAVERSE__ALL__desc;
+extern struct record_description DAEUtil_TraverseStatementsOptions_TRAVERSE__RHS__ONLY__desc;
+extern struct record_description ErrorTypes_Message_MESSAGE__desc;
+extern struct record_description ErrorTypes_MessageType_SYMBOLIC__desc;
+extern struct record_description ErrorTypes_MessageType_TRANSLATION__desc;
+extern struct record_description ErrorTypes_Severity_ERROR__desc;
+extern struct record_description ErrorTypes_Severity_NOTIFICATION__desc;
+extern struct record_description ErrorTypes_Severity_WARNING__desc;
+extern struct record_description Flags_DebugFlag_DEBUG__FLAG__desc;
+extern struct record_description Gettext_TranslatableContent_gettext__desc;
+extern struct record_description Gettext_TranslatableContent_notrans__desc;
+extern struct record_description SCode_Comment_COMMENT__desc;
+extern struct record_description SCode_ConnectorType_FLOW__desc;
+extern struct record_description SCode_ConnectorType_POTENTIAL__desc;
+extern struct record_description SCode_ConnectorType_STREAM__desc;
+extern struct record_description SCode_Parallelism_NON__PARALLEL__desc;
+extern struct record_description SCode_Variability_VAR__desc;
+extern struct record_description SCode_Visibility_PUBLIC__desc;
+extern struct record_description SourceInfo_SOURCEINFO__desc;
+extern struct record_description Values_Value_RECORD__desc;
+DLLExport
+modelica_metatype omc_DAEUtil_getParameters(threadData_t *threadData, modelica_metatype _elts, modelica_metatype _acc);
+#define boxptr_DAEUtil_getParameters omc_DAEUtil_getParameters
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getParameters,2,0) {(void*) boxptr_DAEUtil_getParameters,0}};
+#define boxvar_DAEUtil_getParameters MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getParameters)
+DLLExport
+modelica_metatype omc_DAEUtil_moveElementToInitialSection(threadData_t *threadData, modelica_metatype __omcQ_24in_5Felt);
+#define boxptr_DAEUtil_moveElementToInitialSection omc_DAEUtil_moveElementToInitialSection
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_moveElementToInitialSection,2,0) {(void*) boxptr_DAEUtil_moveElementToInitialSection,0}};
+#define boxvar_DAEUtil_moveElementToInitialSection MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_moveElementToInitialSection)
+DLLExport
+modelica_metatype omc_DAEUtil_mergeAlgorithmSections(threadData_t *threadData, modelica_metatype _inDae);
+#define boxptr_DAEUtil_mergeAlgorithmSections omc_DAEUtil_mergeAlgorithmSections
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_mergeAlgorithmSections,2,0) {(void*) boxptr_DAEUtil_mergeAlgorithmSections,0}};
+#define boxvar_DAEUtil_mergeAlgorithmSections MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_mergeAlgorithmSections)
+DLLExport
+modelica_metatype omc_DAEUtil_toSCodeConnectorType(threadData_t *threadData, modelica_metatype _daeConnectorType);
+#define boxptr_DAEUtil_toSCodeConnectorType omc_DAEUtil_toSCodeConnectorType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_toSCodeConnectorType,2,0) {(void*) boxptr_DAEUtil_toSCodeConnectorType,0}};
+#define boxvar_DAEUtil_toSCodeConnectorType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_toSCodeConnectorType)
+DLLExport
+modelica_boolean omc_DAEUtil_connectorTypeEqual(threadData_t *threadData, modelica_metatype _inConnectorType1, modelica_metatype _inConnectorType2);
+DLLExport
+modelica_metatype boxptr_DAEUtil_connectorTypeEqual(threadData_t *threadData, modelica_metatype _inConnectorType1, modelica_metatype _inConnectorType2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_connectorTypeEqual,2,0) {(void*) boxptr_DAEUtil_connectorTypeEqual,0}};
+#define boxvar_DAEUtil_connectorTypeEqual MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_connectorTypeEqual)
+DLLExport
+modelica_boolean omc_DAEUtil_potentialBool(threadData_t *threadData, modelica_metatype _inConnectorType);
+DLLExport
+modelica_metatype boxptr_DAEUtil_potentialBool(threadData_t *threadData, modelica_metatype _inConnectorType);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_potentialBool,2,0) {(void*) boxptr_DAEUtil_potentialBool,0}};
+#define boxvar_DAEUtil_potentialBool MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_potentialBool)
+DLLExport
+modelica_boolean omc_DAEUtil_streamBool(threadData_t *threadData, modelica_metatype _inStream);
+DLLExport
+modelica_metatype boxptr_DAEUtil_streamBool(threadData_t *threadData, modelica_metatype _inStream);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_streamBool,2,0) {(void*) boxptr_DAEUtil_streamBool,0}};
+#define boxvar_DAEUtil_streamBool MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_streamBool)
+DLLExport
+modelica_string omc_DAEUtil_connectorTypeStr(threadData_t *threadData, modelica_metatype _connectorType);
+#define boxptr_DAEUtil_connectorTypeStr omc_DAEUtil_connectorTypeStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_connectorTypeStr,2,0) {(void*) boxptr_DAEUtil_connectorTypeStr,0}};
+#define boxvar_DAEUtil_connectorTypeStr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_connectorTypeStr)
+#define boxptr_DAEUtil_replaceCompRef omc_DAEUtil_replaceCompRef
+DLLExport
+modelica_metatype omc_DAEUtil_replaceCrefBottomUp(threadData_t *threadData, modelica_metatype _inExp, modelica_metatype _replIn, modelica_metatype *out_replOut);
+#define boxptr_DAEUtil_replaceCrefBottomUp omc_DAEUtil_replaceCrefBottomUp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCrefBottomUp,2,0) {(void*) boxptr_DAEUtil_replaceCrefBottomUp,0}};
+#define boxvar_DAEUtil_replaceCrefBottomUp MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCrefBottomUp)
+DLLExport
+modelica_metatype omc_DAEUtil_replaceCrefInDAEElements(threadData_t *threadData, modelica_metatype _inElements, modelica_metatype _inCref, modelica_metatype _inExp);
+#define boxptr_DAEUtil_replaceCrefInDAEElements omc_DAEUtil_replaceCrefInDAEElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCrefInDAEElements,2,0) {(void*) boxptr_DAEUtil_replaceCrefInDAEElements,0}};
+#define boxvar_DAEUtil_replaceCrefInDAEElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCrefInDAEElements)
+DLLExport
+modelica_metatype omc_DAEUtil_evaluateExp(threadData_t *threadData, modelica_metatype _iexp, modelica_metatype _iels);
+#define boxptr_DAEUtil_evaluateExp omc_DAEUtil_evaluateExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_evaluateExp,2,0) {(void*) boxptr_DAEUtil_evaluateExp,0}};
+#define boxvar_DAEUtil_evaluateExp MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_evaluateExp)
+DLLExport
+modelica_metatype omc_DAEUtil_evaluateCref(threadData_t *threadData, modelica_metatype _icr, modelica_metatype _iels);
+#define boxptr_DAEUtil_evaluateCref omc_DAEUtil_evaluateCref
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_evaluateCref,2,0) {(void*) boxptr_DAEUtil_evaluateCref,0}};
+#define boxvar_DAEUtil_evaluateCref MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_evaluateCref)
+DLLExport
+modelica_metatype omc_DAEUtil_getVarBinding(threadData_t *threadData, modelica_metatype _iels, modelica_metatype _icr);
+#define boxptr_DAEUtil_getVarBinding omc_DAEUtil_getVarBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getVarBinding,2,0) {(void*) boxptr_DAEUtil_getVarBinding,0}};
+#define boxvar_DAEUtil_getVarBinding MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getVarBinding)
+DLLExport
+modelica_boolean omc_DAEUtil_statementsContainTryBlock(threadData_t *threadData, modelica_metatype _stmts);
+DLLExport
+modelica_metatype boxptr_DAEUtil_statementsContainTryBlock(threadData_t *threadData, modelica_metatype _stmts);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_statementsContainTryBlock,2,0) {(void*) boxptr_DAEUtil_statementsContainTryBlock,0}};
+#define boxvar_DAEUtil_statementsContainTryBlock MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_statementsContainTryBlock)
+DLLExport
+modelica_boolean omc_DAEUtil_statementsContainReturn(threadData_t *threadData, modelica_metatype _stmts);
+DLLExport
+modelica_metatype boxptr_DAEUtil_statementsContainReturn(threadData_t *threadData, modelica_metatype _stmts);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_statementsContainReturn,2,0) {(void*) boxptr_DAEUtil_statementsContainReturn,0}};
+#define boxvar_DAEUtil_statementsContainReturn MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_statementsContainReturn)
+DLLExport
+modelica_metatype omc_DAEUtil_bindingValue(threadData_t *threadData, modelica_metatype _inBinding);
+#define boxptr_DAEUtil_bindingValue omc_DAEUtil_bindingValue
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_bindingValue,2,0) {(void*) boxptr_DAEUtil_bindingValue,0}};
+#define boxvar_DAEUtil_bindingValue MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_bindingValue)
+DLLExport
+modelica_integer omc_DAEUtil_getSubscriptIndex(threadData_t *threadData, modelica_metatype _iSubscript);
+DLLExport
+modelica_metatype boxptr_DAEUtil_getSubscriptIndex(threadData_t *threadData, modelica_metatype _iSubscript);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getSubscriptIndex,2,0) {(void*) boxptr_DAEUtil_getSubscriptIndex,0}};
+#define boxvar_DAEUtil_getSubscriptIndex MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getSubscriptIndex)
+DLLExport
+modelica_metatype omc_DAEUtil_getAssertConditionCrefs(threadData_t *threadData, modelica_metatype _stmt, modelica_metatype _crefsIn);
+#define boxptr_DAEUtil_getAssertConditionCrefs omc_DAEUtil_getAssertConditionCrefs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getAssertConditionCrefs,2,0) {(void*) boxptr_DAEUtil_getAssertConditionCrefs,0}};
+#define boxvar_DAEUtil_getAssertConditionCrefs MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getAssertConditionCrefs)
+DLLExport
+modelica_metatype omc_DAEUtil_toDAEInnerOuter(threadData_t *threadData, modelica_metatype _ioIn);
+#define boxptr_DAEUtil_toDAEInnerOuter omc_DAEUtil_toDAEInnerOuter
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_toDAEInnerOuter,2,0) {(void*) boxptr_DAEUtil_toDAEInnerOuter,0}};
+#define boxvar_DAEUtil_toDAEInnerOuter MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_toDAEInnerOuter)
+DLLExport
+modelica_integer omc_DAEUtil_funcArgDim(threadData_t *threadData, modelica_metatype _argIn);
+DLLExport
+modelica_metatype boxptr_DAEUtil_funcArgDim(threadData_t *threadData, modelica_metatype _argIn);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_funcArgDim,2,0) {(void*) boxptr_DAEUtil_funcArgDim,0}};
+#define boxvar_DAEUtil_funcArgDim MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_funcArgDim)
+DLLExport
+modelica_boolean omc_DAEUtil_funcIsRecord(threadData_t *threadData, modelica_metatype _func);
+DLLExport
+modelica_metatype boxptr_DAEUtil_funcIsRecord(threadData_t *threadData, modelica_metatype _func);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_funcIsRecord,2,0) {(void*) boxptr_DAEUtil_funcIsRecord,0}};
+#define boxvar_DAEUtil_funcIsRecord MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_funcIsRecord)
+DLLExport
+modelica_metatype omc_DAEUtil_replaceCallAttrType(threadData_t *threadData, modelica_metatype _caIn, modelica_metatype _typeIn);
+#define boxptr_DAEUtil_replaceCallAttrType omc_DAEUtil_replaceCallAttrType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCallAttrType,2,0) {(void*) boxptr_DAEUtil_replaceCallAttrType,0}};
+#define boxvar_DAEUtil_replaceCallAttrType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCallAttrType)
+DLLExport
+modelica_string omc_DAEUtil_daeDescription(threadData_t *threadData, modelica_metatype _inDAE);
+#define boxptr_DAEUtil_daeDescription omc_DAEUtil_daeDescription
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_daeDescription,2,0) {(void*) boxptr_DAEUtil_daeDescription,0}};
+#define boxvar_DAEUtil_daeDescription MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_daeDescription)
+#define boxptr_DAEUtil_collectAllExpandableCrefsInExp omc_DAEUtil_collectAllExpandableCrefsInExp
+DLLExport
+modelica_metatype omc_DAEUtil_getAllExpandableCrefsFromDAE(threadData_t *threadData, modelica_metatype _inDAE);
+#define boxptr_DAEUtil_getAllExpandableCrefsFromDAE omc_DAEUtil_getAllExpandableCrefsFromDAE
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getAllExpandableCrefsFromDAE,2,0) {(void*) boxptr_DAEUtil_getAllExpandableCrefsFromDAE,0}};
+#define boxvar_DAEUtil_getAllExpandableCrefsFromDAE MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getAllExpandableCrefsFromDAE)
+#define boxptr_DAEUtil_splitVariableNamed omc_DAEUtil_splitVariableNamed
+#define boxptr_DAEUtil_sortDAEElementsInModelicaCodeOrder omc_DAEUtil_sortDAEElementsInModelicaCodeOrder
+DLLExport
+modelica_metatype omc_DAEUtil_sortDAEInModelicaCodeOrder(threadData_t *threadData, modelica_boolean _inShouldSort, modelica_metatype _inElements, modelica_metatype _inDae);
+DLLExport
+modelica_metatype boxptr_DAEUtil_sortDAEInModelicaCodeOrder(threadData_t *threadData, modelica_metatype _inShouldSort, modelica_metatype _inElements, modelica_metatype _inDae);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_sortDAEInModelicaCodeOrder,2,0) {(void*) boxptr_DAEUtil_sortDAEInModelicaCodeOrder,0}};
+#define boxvar_DAEUtil_sortDAEInModelicaCodeOrder MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_sortDAEInModelicaCodeOrder)
+DLLExport
+modelica_metatype omc_DAEUtil_mkEmptyVar(threadData_t *threadData, modelica_string _name);
+#define boxptr_DAEUtil_mkEmptyVar omc_DAEUtil_mkEmptyVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_mkEmptyVar,2,0) {(void*) boxptr_DAEUtil_mkEmptyVar,0}};
+#define boxvar_DAEUtil_mkEmptyVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_mkEmptyVar)
+DLLExport
+modelica_metatype omc_DAEUtil_getElements(threadData_t *threadData, modelica_metatype _inDAE);
+#define boxptr_DAEUtil_getElements omc_DAEUtil_getElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getElements,2,0) {(void*) boxptr_DAEUtil_getElements,0}};
+#define boxvar_DAEUtil_getElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getElements)
+DLLExport
+modelica_boolean omc_DAEUtil_isComplexVar(threadData_t *threadData, modelica_metatype _inVar);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isComplexVar(threadData_t *threadData, modelica_metatype _inVar);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isComplexVar,2,0) {(void*) boxptr_DAEUtil_isComplexVar,0}};
+#define boxvar_DAEUtil_isComplexVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isComplexVar)
+DLLExport
+modelica_boolean omc_DAEUtil_varDirectionEqual(threadData_t *threadData, modelica_metatype _inDirection1, modelica_metatype _inDirection2);
+DLLExport
+modelica_metatype boxptr_DAEUtil_varDirectionEqual(threadData_t *threadData, modelica_metatype _inDirection1, modelica_metatype _inDirection2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_varDirectionEqual,2,0) {(void*) boxptr_DAEUtil_varDirectionEqual,0}};
+#define boxvar_DAEUtil_varDirectionEqual MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_varDirectionEqual)
+DLLExport
+modelica_boolean omc_DAEUtil_varKindEqual(threadData_t *threadData, modelica_metatype _inVariability1, modelica_metatype _inVariability2);
+DLLExport
+modelica_metatype boxptr_DAEUtil_varKindEqual(threadData_t *threadData, modelica_metatype _inVariability1, modelica_metatype _inVariability2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_varKindEqual,2,0) {(void*) boxptr_DAEUtil_varKindEqual,0}};
+#define boxvar_DAEUtil_varKindEqual MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_varKindEqual)
+DLLExport
+modelica_metatype omc_DAEUtil_setAttributeDirection(threadData_t *threadData, modelica_metatype _inDirection, modelica_metatype _inAttributes);
+#define boxptr_DAEUtil_setAttributeDirection omc_DAEUtil_setAttributeDirection
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setAttributeDirection,2,0) {(void*) boxptr_DAEUtil_setAttributeDirection,0}};
+#define boxvar_DAEUtil_setAttributeDirection MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setAttributeDirection)
+DLLExport
+modelica_boolean omc_DAEUtil_isNotCompleteFunction(threadData_t *threadData, modelica_metatype _f);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isNotCompleteFunction(threadData_t *threadData, modelica_metatype _f);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isNotCompleteFunction,2,0) {(void*) boxptr_DAEUtil_isNotCompleteFunction,0}};
+#define boxvar_DAEUtil_isNotCompleteFunction MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isNotCompleteFunction)
+DLLExport
+modelica_boolean omc_DAEUtil_isCompleteFunctionBody(threadData_t *threadData, modelica_metatype _functions);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isCompleteFunctionBody(threadData_t *threadData, modelica_metatype _functions);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isCompleteFunctionBody,2,0) {(void*) boxptr_DAEUtil_isCompleteFunctionBody,0}};
+#define boxvar_DAEUtil_isCompleteFunctionBody MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isCompleteFunctionBody)
+DLLExport
+modelica_boolean omc_DAEUtil_isCompleteFunction(threadData_t *threadData, modelica_metatype _f);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isCompleteFunction(threadData_t *threadData, modelica_metatype _f);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isCompleteFunction,2,0) {(void*) boxptr_DAEUtil_isCompleteFunction,0}};
+#define boxvar_DAEUtil_isCompleteFunction MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isCompleteFunction)
+DLLExport
+modelica_boolean omc_DAEUtil_isBound(threadData_t *threadData, modelica_metatype _inBinding);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isBound(threadData_t *threadData, modelica_metatype _inBinding);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isBound,2,0) {(void*) boxptr_DAEUtil_isBound,0}};
+#define boxvar_DAEUtil_isBound MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isBound)
+DLLExport
+modelica_metatype omc_DAEUtil_bindingExp(threadData_t *threadData, modelica_metatype _bind);
+#define boxptr_DAEUtil_bindingExp omc_DAEUtil_bindingExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_bindingExp,2,0) {(void*) boxptr_DAEUtil_bindingExp,0}};
+#define boxvar_DAEUtil_bindingExp MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_bindingExp)
+DLLExport
+modelica_metatype omc_DAEUtil_varType(threadData_t *threadData, modelica_metatype _var);
+#define boxptr_DAEUtil_varType omc_DAEUtil_varType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_varType,2,0) {(void*) boxptr_DAEUtil_varType,0}};
+#define boxvar_DAEUtil_varType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_varType)
+DLLExport
+modelica_boolean omc_DAEUtil_typeVarIdentEqual(threadData_t *threadData, modelica_metatype _var, modelica_string _name);
+DLLExport
+modelica_metatype boxptr_DAEUtil_typeVarIdentEqual(threadData_t *threadData, modelica_metatype _var, modelica_metatype _name);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_typeVarIdentEqual,2,0) {(void*) boxptr_DAEUtil_typeVarIdentEqual,0}};
+#define boxvar_DAEUtil_typeVarIdentEqual MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_typeVarIdentEqual)
+DLLExport
+modelica_string omc_DAEUtil_typeVarIdent(threadData_t *threadData, modelica_metatype _var);
+#define boxptr_DAEUtil_typeVarIdent omc_DAEUtil_typeVarIdent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_typeVarIdent,2,0) {(void*) boxptr_DAEUtil_typeVarIdent,0}};
+#define boxvar_DAEUtil_typeVarIdent MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_typeVarIdent)
+DLLExport
+modelica_string omc_DAEUtil_varName(threadData_t *threadData, modelica_metatype _var);
+#define boxptr_DAEUtil_varName omc_DAEUtil_varName
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_varName,2,0) {(void*) boxptr_DAEUtil_varName,0}};
+#define boxvar_DAEUtil_varName MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_varName)
+DLLExport
+modelica_metatype omc_DAEUtil_translateSCodeAttrToDAEAttr(threadData_t *threadData, modelica_metatype _inAttributes, modelica_metatype _inPrefixes);
+#define boxptr_DAEUtil_translateSCodeAttrToDAEAttr omc_DAEUtil_translateSCodeAttrToDAEAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_translateSCodeAttrToDAEAttr,2,0) {(void*) boxptr_DAEUtil_translateSCodeAttrToDAEAttr,0}};
+#define boxvar_DAEUtil_translateSCodeAttrToDAEAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_translateSCodeAttrToDAEAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_getAttrInnerOuter(threadData_t *threadData, modelica_metatype _attr);
+#define boxptr_DAEUtil_getAttrInnerOuter omc_DAEUtil_getAttrInnerOuter
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getAttrInnerOuter,2,0) {(void*) boxptr_DAEUtil_getAttrInnerOuter,0}};
+#define boxvar_DAEUtil_getAttrInnerOuter MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getAttrInnerOuter)
+DLLExport
+modelica_metatype omc_DAEUtil_setAttrInnerOuter(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fattr, modelica_metatype _io);
+#define boxptr_DAEUtil_setAttrInnerOuter omc_DAEUtil_setAttrInnerOuter
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setAttrInnerOuter,2,0) {(void*) boxptr_DAEUtil_setAttrInnerOuter,0}};
+#define boxvar_DAEUtil_setAttrInnerOuter MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setAttrInnerOuter)
+DLLExport
+modelica_metatype omc_DAEUtil_getAttrDirection(threadData_t *threadData, modelica_metatype _attr);
+#define boxptr_DAEUtil_getAttrDirection omc_DAEUtil_getAttrDirection
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getAttrDirection,2,0) {(void*) boxptr_DAEUtil_getAttrDirection,0}};
+#define boxvar_DAEUtil_getAttrDirection MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getAttrDirection)
+DLLExport
+modelica_metatype omc_DAEUtil_setAttrDirection(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fattr, modelica_metatype _dir);
+#define boxptr_DAEUtil_setAttrDirection omc_DAEUtil_setAttrDirection
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setAttrDirection,2,0) {(void*) boxptr_DAEUtil_setAttrDirection,0}};
+#define boxvar_DAEUtil_setAttrDirection MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setAttrDirection)
+DLLExport
+modelica_metatype omc_DAEUtil_getAttrVariability(threadData_t *threadData, modelica_metatype _attr);
+#define boxptr_DAEUtil_getAttrVariability omc_DAEUtil_getAttrVariability
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getAttrVariability,2,0) {(void*) boxptr_DAEUtil_getAttrVariability,0}};
+#define boxvar_DAEUtil_getAttrVariability MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getAttrVariability)
+DLLExport
+modelica_metatype omc_DAEUtil_setAttrVariability(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fattr, modelica_metatype _var);
+#define boxptr_DAEUtil_setAttrVariability omc_DAEUtil_setAttrVariability
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setAttrVariability,2,0) {(void*) boxptr_DAEUtil_setAttrVariability,0}};
+#define boxvar_DAEUtil_setAttrVariability MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setAttrVariability)
+#define boxptr_DAEUtil_showCacheFuncs omc_DAEUtil_showCacheFuncs
+DLLExport
+modelica_string omc_DAEUtil_getInfo(threadData_t *threadData, modelica_metatype _tpl);
+#define boxptr_DAEUtil_getInfo omc_DAEUtil_getInfo
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getInfo,2,0) {(void*) boxptr_DAEUtil_getInfo,0}};
+#define boxvar_DAEUtil_getInfo MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getInfo)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionsInfo(threadData_t *threadData, modelica_metatype _ft);
+#define boxptr_DAEUtil_getFunctionsInfo omc_DAEUtil_getFunctionsInfo
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionsInfo,2,0) {(void*) boxptr_DAEUtil_getFunctionsInfo,0}};
+#define boxvar_DAEUtil_getFunctionsInfo MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionsInfo)
+DLLExport
+modelica_metatype omc_DAEUtil_addDaeExtFunction(threadData_t *threadData, modelica_metatype _ifuncs, modelica_metatype _itree);
+#define boxptr_DAEUtil_addDaeExtFunction omc_DAEUtil_addDaeExtFunction
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_addDaeExtFunction,2,0) {(void*) boxptr_DAEUtil_addDaeExtFunction,0}};
+#define boxvar_DAEUtil_addDaeExtFunction MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_addDaeExtFunction)
+DLLExport
+modelica_metatype omc_DAEUtil_addFunctionDefinition(threadData_t *threadData, modelica_metatype _ifunc, modelica_metatype _iFuncDef);
+#define boxptr_DAEUtil_addFunctionDefinition omc_DAEUtil_addFunctionDefinition
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_addFunctionDefinition,2,0) {(void*) boxptr_DAEUtil_addFunctionDefinition,0}};
+#define boxvar_DAEUtil_addFunctionDefinition MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_addFunctionDefinition)
+DLLExport
+modelica_metatype omc_DAEUtil_addDaeFunction(threadData_t *threadData, modelica_metatype _functions, modelica_metatype __omcQ_24in_5FfunctionTree);
+#define boxptr_DAEUtil_addDaeFunction omc_DAEUtil_addDaeFunction
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_addDaeFunction,2,0) {(void*) boxptr_DAEUtil_addDaeFunction,0}};
+#define boxvar_DAEUtil_addDaeFunction MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_addDaeFunction)
+DLLExport
+modelica_metatype omc_DAEUtil_collectFunctionRefVarPaths(threadData_t *threadData, modelica_metatype _inElem, modelica_metatype _acc);
+#define boxptr_DAEUtil_collectFunctionRefVarPaths omc_DAEUtil_collectFunctionRefVarPaths
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_collectFunctionRefVarPaths,2,0) {(void*) boxptr_DAEUtil_collectFunctionRefVarPaths,0}};
+#define boxvar_DAEUtil_collectFunctionRefVarPaths MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_collectFunctionRefVarPaths)
+DLLExport
+modelica_metatype omc_DAEUtil_collectValueblockFunctionRefVars(threadData_t *threadData, modelica_metatype _exp, modelica_metatype _acc, modelica_metatype *out_outAcc);
+#define boxptr_DAEUtil_collectValueblockFunctionRefVars omc_DAEUtil_collectValueblockFunctionRefVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_collectValueblockFunctionRefVars,2,0) {(void*) boxptr_DAEUtil_collectValueblockFunctionRefVars,0}};
+#define boxvar_DAEUtil_collectValueblockFunctionRefVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_collectValueblockFunctionRefVars)
+DLLExport
+modelica_string omc_DAEUtil_printBindingSourceStr(threadData_t *threadData, modelica_metatype _bindingSource);
+#define boxptr_DAEUtil_printBindingSourceStr omc_DAEUtil_printBindingSourceStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_printBindingSourceStr,2,0) {(void*) boxptr_DAEUtil_printBindingSourceStr,0}};
+#define boxvar_DAEUtil_printBindingSourceStr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_printBindingSourceStr)
+DLLExport
+modelica_string omc_DAEUtil_printBindingExpStr(threadData_t *threadData, modelica_metatype _binding);
+#define boxptr_DAEUtil_printBindingExpStr omc_DAEUtil_printBindingExpStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_printBindingExpStr,2,0) {(void*) boxptr_DAEUtil_printBindingExpStr,0}};
+#define boxvar_DAEUtil_printBindingExpStr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_printBindingExpStr)
+DLLExport
+modelica_metatype omc_DAEUtil_setBindingSource(threadData_t *threadData, modelica_metatype _inBinding, modelica_metatype _bindingSource);
+#define boxptr_DAEUtil_setBindingSource omc_DAEUtil_setBindingSource
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setBindingSource,2,0) {(void*) boxptr_DAEUtil_setBindingSource,0}};
+#define boxvar_DAEUtil_setBindingSource MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setBindingSource)
+#define boxptr_DAEUtil_makeEvaluatedParamFinal omc_DAEUtil_makeEvaluatedParamFinal
+#define boxptr_DAEUtil_transformationsBeforeBackendNotification omc_DAEUtil_transformationsBeforeBackendNotification
+DLLExport
+modelica_metatype omc_DAEUtil_transformationsBeforeBackend(threadData_t *threadData, modelica_metatype _cache, modelica_metatype _env, modelica_metatype _inDAElist);
+#define boxptr_DAEUtil_transformationsBeforeBackend omc_DAEUtil_transformationsBeforeBackend
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_transformationsBeforeBackend,2,0) {(void*) boxptr_DAEUtil_transformationsBeforeBackend,0}};
+#define boxvar_DAEUtil_transformationsBeforeBackend MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_transformationsBeforeBackend)
+#define boxptr_DAEUtil_getDAEDeclsFromValueblocks omc_DAEUtil_getDAEDeclsFromValueblocks
+#define boxptr_DAEUtil_getUniontypePathsElements omc_DAEUtil_getUniontypePathsElements
+#define boxptr_DAEUtil_getUniontypePathsFunctions omc_DAEUtil_getUniontypePathsFunctions
+DLLExport
+modelica_metatype omc_DAEUtil_getUniontypePaths(threadData_t *threadData, modelica_metatype _funcs, modelica_metatype _els);
+#define boxptr_DAEUtil_getUniontypePaths omc_DAEUtil_getUniontypePaths
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getUniontypePaths,2,0) {(void*) boxptr_DAEUtil_getUniontypePaths,0}};
+#define boxvar_DAEUtil_getUniontypePaths MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getUniontypePaths)
+DLLExport
+modelica_metatype omc_DAEUtil_collectLocalDecls(threadData_t *threadData, modelica_metatype _e, modelica_metatype _inElements, modelica_metatype *out_outElements);
+#define boxptr_DAEUtil_collectLocalDecls omc_DAEUtil_collectLocalDecls
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_collectLocalDecls,2,0) {(void*) boxptr_DAEUtil_collectLocalDecls,0}};
+#define boxvar_DAEUtil_collectLocalDecls MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_collectLocalDecls)
+#define boxptr_DAEUtil_isIfEquation omc_DAEUtil_isIfEquation
+DLLExport
+modelica_metatype omc_DAEUtil_splitComponent(threadData_t *threadData, modelica_metatype _component);
+#define boxptr_DAEUtil_splitComponent omc_DAEUtil_splitComponent
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_splitComponent,2,0) {(void*) boxptr_DAEUtil_splitComponent,0}};
+#define boxvar_DAEUtil_splitComponent MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_splitComponent)
+DLLExport
+modelica_metatype omc_DAEUtil_splitElements(threadData_t *threadData, modelica_metatype _elements, modelica_metatype *out_initialEquations, modelica_metatype *out_initialAlgorithms, modelica_metatype *out_equations, modelica_metatype *out_algorithms, modelica_metatype *out_classAttributes, modelica_metatype *out_constraints, modelica_metatype *out_externalObjects, modelica_metatype *out_stateMachineComps, modelica_metatype *out_comments);
+#define boxptr_DAEUtil_splitElements omc_DAEUtil_splitElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_splitElements,2,0) {(void*) boxptr_DAEUtil_splitElements,0}};
+#define boxvar_DAEUtil_splitElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_splitElements)
+DLLExport
+modelica_metatype omc_DAEUtil_joinDaeLst(threadData_t *threadData, modelica_metatype _idaeLst);
+#define boxptr_DAEUtil_joinDaeLst omc_DAEUtil_joinDaeLst
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_joinDaeLst,2,0) {(void*) boxptr_DAEUtil_joinDaeLst,0}};
+#define boxvar_DAEUtil_joinDaeLst MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_joinDaeLst)
+DLLExport
+modelica_metatype omc_DAEUtil_joinDaes(threadData_t *threadData, modelica_metatype _dae1, modelica_metatype _dae2);
+#define boxptr_DAEUtil_joinDaes omc_DAEUtil_joinDaes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_joinDaes,2,0) {(void*) boxptr_DAEUtil_joinDaes,0}};
+#define boxvar_DAEUtil_joinDaes MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_joinDaes)
+DLLExport
+modelica_metatype omc_DAEUtil_daeElements(threadData_t *threadData, modelica_metatype _dae);
+#define boxptr_DAEUtil_daeElements omc_DAEUtil_daeElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_daeElements,2,0) {(void*) boxptr_DAEUtil_daeElements,0}};
+#define boxvar_DAEUtil_daeElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_daeElements)
+DLLExport
+modelica_boolean omc_DAEUtil_convertInlineTypeToBool(threadData_t *threadData, modelica_metatype _it);
+DLLExport
+modelica_metatype boxptr_DAEUtil_convertInlineTypeToBool(threadData_t *threadData, modelica_metatype _it);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_convertInlineTypeToBool,2,0) {(void*) boxptr_DAEUtil_convertInlineTypeToBool,0}};
+#define boxvar_DAEUtil_convertInlineTypeToBool MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_convertInlineTypeToBool)
+DLLExport
+modelica_metatype omc_DAEUtil_functionName(threadData_t *threadData, modelica_metatype _elt);
+#define boxptr_DAEUtil_functionName omc_DAEUtil_functionName
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_functionName,2,0) {(void*) boxptr_DAEUtil_functionName,0}};
+#define boxvar_DAEUtil_functionName MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_functionName)
+DLLExport
+modelica_boolean omc_DAEUtil_isExtFunction(threadData_t *threadData, modelica_metatype _elt);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isExtFunction(threadData_t *threadData, modelica_metatype _elt);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isExtFunction,2,0) {(void*) boxptr_DAEUtil_isExtFunction,0}};
+#define boxvar_DAEUtil_isExtFunction MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isExtFunction)
+#define boxptr_DAEUtil_addComponentType2 omc_DAEUtil_addComponentType2
+DLLExport
+modelica_metatype omc_DAEUtil_addComponentType(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fdae, modelica_metatype _newtype);
+#define boxptr_DAEUtil_addComponentType omc_DAEUtil_addComponentType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_addComponentType,2,0) {(void*) boxptr_DAEUtil_addComponentType,0}};
+#define boxvar_DAEUtil_addComponentType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_addComponentType)
+DLLExport
+modelica_metatype omc_DAEUtil_addComponentTypeOpt(threadData_t *threadData, modelica_metatype _inDae, modelica_metatype _inPath);
+#define boxptr_DAEUtil_addComponentTypeOpt omc_DAEUtil_addComponentTypeOpt
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_addComponentTypeOpt,2,0) {(void*) boxptr_DAEUtil_addComponentTypeOpt,0}};
+#define boxvar_DAEUtil_addComponentTypeOpt MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_addComponentTypeOpt)
+#define boxptr_DAEUtil_traverseDAEVarAttr omc_DAEUtil_traverseDAEVarAttr
+#define boxptr_DAEUtil_traverseDAEExpListStmt omc_DAEUtil_traverseDAEExpListStmt
+#define boxptr_DAEUtil_traverseDAEStmtsElse omc_DAEUtil_traverseDAEStmtsElse
+DLLExport
+modelica_metatype omc_DAEUtil_traverseDAEStmts(threadData_t *threadData, modelica_metatype _inStmts, modelica_fnptr _func, modelica_metatype _iextraArg, modelica_metatype *out_oextraArg);
+#define boxptr_DAEUtil_traverseDAEStmts omc_DAEUtil_traverseDAEStmts
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEStmts,2,0) {(void*) boxptr_DAEUtil_traverseDAEStmts,0}};
+#define boxvar_DAEUtil_traverseDAEStmts MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEStmts)
+#define boxptr_DAEUtil_traverseDAEEquationsStmtsElse omc_DAEUtil_traverseDAEEquationsStmtsElse
+#define boxptr_DAEUtil_traverseDAEEquationsStmtsWork omc_DAEUtil_traverseDAEEquationsStmtsWork
+#define boxptr_DAEUtil_traverseStatementsOptionsEvalLhs omc_DAEUtil_traverseStatementsOptionsEvalLhs
+#define boxptr_DAEUtil_traverseDAEEquationsStmtsList omc_DAEUtil_traverseDAEEquationsStmtsList
+DLLExport
+modelica_metatype omc_DAEUtil_traverseDAEEquationsStmtsRhsOnly(threadData_t *threadData, modelica_metatype _inStmts, modelica_fnptr _func, modelica_metatype _iextraArg, modelica_metatype *out_oextraArg);
+#define boxptr_DAEUtil_traverseDAEEquationsStmtsRhsOnly omc_DAEUtil_traverseDAEEquationsStmtsRhsOnly
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEEquationsStmtsRhsOnly,2,0) {(void*) boxptr_DAEUtil_traverseDAEEquationsStmtsRhsOnly,0}};
+#define boxvar_DAEUtil_traverseDAEEquationsStmtsRhsOnly MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEEquationsStmtsRhsOnly)
+DLLExport
+modelica_metatype omc_DAEUtil_traverseDAEEquationsStmts(threadData_t *threadData, modelica_metatype _inStmts, modelica_fnptr _func, modelica_metatype _iextraArg, modelica_metatype *out_oextraArg);
+#define boxptr_DAEUtil_traverseDAEEquationsStmts omc_DAEUtil_traverseDAEEquationsStmts
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEEquationsStmts,2,0) {(void*) boxptr_DAEUtil_traverseDAEEquationsStmts,0}};
+#define boxvar_DAEUtil_traverseDAEEquationsStmts MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEEquationsStmts)
+DLLExport
+modelica_metatype omc_DAEUtil_traverseAlgorithmExps(threadData_t *threadData, modelica_metatype _inAlgorithm, modelica_fnptr _func, modelica_metatype _inTypeA);
+#define boxptr_DAEUtil_traverseAlgorithmExps omc_DAEUtil_traverseAlgorithmExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_traverseAlgorithmExps,2,0) {(void*) boxptr_DAEUtil_traverseAlgorithmExps,0}};
+#define boxvar_DAEUtil_traverseAlgorithmExps MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_traverseAlgorithmExps)
+#define boxptr_DAEUtil_traverseDAEElement omc_DAEUtil_traverseDAEElement
+DLLExport
+modelica_metatype omc_DAEUtil_traverseDAEElementList(threadData_t *threadData, modelica_metatype __omcQ_24in_5Felements, modelica_fnptr _func, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
+#define boxptr_DAEUtil_traverseDAEElementList omc_DAEUtil_traverseDAEElementList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEElementList,2,0) {(void*) boxptr_DAEUtil_traverseDAEElementList,0}};
+#define boxvar_DAEUtil_traverseDAEElementList MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEElementList)
+#define boxptr_DAEUtil_traverseDAEFunc omc_DAEUtil_traverseDAEFunc
+DLLExport
+modelica_metatype omc_DAEUtil_traverseDAEFunctions(threadData_t *threadData, modelica_metatype __omcQ_24in_5Ffunctions, modelica_fnptr _func, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_arg);
+#define boxptr_DAEUtil_traverseDAEFunctions omc_DAEUtil_traverseDAEFunctions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEFunctions,2,0) {(void*) boxptr_DAEUtil_traverseDAEFunctions,0}};
+#define boxvar_DAEUtil_traverseDAEFunctions MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAEFunctions)
+#define boxptr_DAEUtil_traverseDAEFuncHelper omc_DAEUtil_traverseDAEFuncHelper
+DLLExport
+modelica_metatype omc_DAEUtil_traverseDAE(threadData_t *threadData, modelica_metatype __omcQ_24in_5Fdae, modelica_metatype __omcQ_24in_5FfunctionTree, modelica_fnptr _func, modelica_metatype __omcQ_24in_5Farg, modelica_metatype *out_functionTree, modelica_metatype *out_arg);
+#define boxptr_DAEUtil_traverseDAE omc_DAEUtil_traverseDAE
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAE,2,0) {(void*) boxptr_DAEUtil_traverseDAE,0}};
+#define boxvar_DAEUtil_traverseDAE MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_traverseDAE)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionNames(threadData_t *threadData, modelica_metatype _ft);
+#define boxptr_DAEUtil_getFunctionNames omc_DAEUtil_getFunctionNames
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionNames,2,0) {(void*) boxptr_DAEUtil_getFunctionNames,0}};
+#define boxvar_DAEUtil_getFunctionNames MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionNames)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionList(threadData_t *threadData, modelica_metatype _ft, modelica_boolean _failOnError);
+DLLExport
+modelica_metatype boxptr_DAEUtil_getFunctionList(threadData_t *threadData, modelica_metatype _ft, modelica_metatype _failOnError);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionList,2,0) {(void*) boxptr_DAEUtil_getFunctionList,0}};
+#define boxvar_DAEUtil_getFunctionList MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionList)
+#define boxptr_DAEUtil_traverseDAEList omc_DAEUtil_traverseDAEList
+#define boxptr_DAEUtil_traverseDAEExpList omc_DAEUtil_traverseDAEExpList
+#define boxptr_DAEUtil_traverseDAEOptExp omc_DAEUtil_traverseDAEOptExp
+#define boxptr_DAEUtil_addUniqueIdentifierToCref omc_DAEUtil_addUniqueIdentifierToCref
+DLLExport
+modelica_metatype omc_DAEUtil_nameUniqueOuterVars(threadData_t *threadData, modelica_metatype _dae);
+#define boxptr_DAEUtil_nameUniqueOuterVars omc_DAEUtil_nameUniqueOuterVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_nameUniqueOuterVars,2,0) {(void*) boxptr_DAEUtil_nameUniqueOuterVars,0}};
+#define boxvar_DAEUtil_nameUniqueOuterVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_nameUniqueOuterVars)
+#define boxptr_DAEUtil_removeUniqieIdentifierFromCref omc_DAEUtil_removeUniqieIdentifierFromCref
+DLLExport
+modelica_metatype omc_DAEUtil_renameUniqueOuterVars(threadData_t *threadData, modelica_metatype _dae);
+#define boxptr_DAEUtil_renameUniqueOuterVars omc_DAEUtil_renameUniqueOuterVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_renameUniqueOuterVars,2,0) {(void*) boxptr_DAEUtil_renameUniqueOuterVars,0}};
+#define boxvar_DAEUtil_renameUniqueOuterVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_renameUniqueOuterVars)
+#define boxptr_DAEUtil_evaluateAnnotation3 omc_DAEUtil_evaluateAnnotation3
+#define boxptr_DAEUtil_evaluateAnnotation2 omc_DAEUtil_evaluateAnnotation2
+#define boxptr_DAEUtil_evaluateParameter omc_DAEUtil_evaluateParameter
+#define boxptr_DAEUtil_evaluateAnnotation1Fold omc_DAEUtil_evaluateAnnotation1Fold
+DLLExport
+modelica_metatype omc_DAEUtil_evaluateAnnotation1(threadData_t *threadData, modelica_metatype _dae, modelica_metatype _pv, modelica_metatype _ht, modelica_boolean *out_hasEvaluate);
+DLLExport
+modelica_metatype boxptr_DAEUtil_evaluateAnnotation1(threadData_t *threadData, modelica_metatype _dae, modelica_metatype _pv, modelica_metatype _ht, modelica_metatype *out_hasEvaluate);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_evaluateAnnotation1,2,0) {(void*) boxptr_DAEUtil_evaluateAnnotation1,0}};
+#define boxvar_DAEUtil_evaluateAnnotation1 MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_evaluateAnnotation1)
+#define boxptr_DAEUtil_getParameterVars2 omc_DAEUtil_getParameterVars2
+DLLExport
+modelica_metatype omc_DAEUtil_getParameterVars(threadData_t *threadData, modelica_metatype _dae, modelica_metatype _ht);
+#define boxptr_DAEUtil_getParameterVars omc_DAEUtil_getParameterVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getParameterVars,2,0) {(void*) boxptr_DAEUtil_getParameterVars,0}};
+#define boxvar_DAEUtil_getParameterVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getParameterVars)
+#define boxptr_DAEUtil_replaceCrefInAnnotation omc_DAEUtil_replaceCrefInAnnotation
+#define boxptr_DAEUtil_evaluateAnnotationTraverse omc_DAEUtil_evaluateAnnotationTraverse
+DLLExport
+modelica_metatype omc_DAEUtil_evaluateAnnotation(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _env, modelica_metatype _inDAElist);
+#define boxptr_DAEUtil_evaluateAnnotation omc_DAEUtil_evaluateAnnotation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_evaluateAnnotation,2,0) {(void*) boxptr_DAEUtil_evaluateAnnotation,0}};
+#define boxvar_DAEUtil_evaluateAnnotation MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_evaluateAnnotation)
+#define boxptr_DAEUtil_collectWhenCrefs1 omc_DAEUtil_collectWhenCrefs1
+#define boxptr_DAEUtil_collectWhenCrefs omc_DAEUtil_collectWhenCrefs
+#define boxptr_DAEUtil_verifyBoolWhenEquationBranch omc_DAEUtil_verifyBoolWhenEquationBranch
+#define boxptr_DAEUtil_collectWhenEquationBranches omc_DAEUtil_collectWhenEquationBranches
+#define boxptr_DAEUtil_verifyBoolWhenEquation omc_DAEUtil_verifyBoolWhenEquation
+#define boxptr_DAEUtil_verifyClockWhenEquation1 omc_DAEUtil_verifyClockWhenEquation1
+#define boxptr_DAEUtil_verifyClockWhenEquation omc_DAEUtil_verifyClockWhenEquation
+#define boxptr_DAEUtil_verifyWhenEquation omc_DAEUtil_verifyWhenEquation
+DLLExport
+void omc_DAEUtil_verifyEquationsDAE(threadData_t *threadData, modelica_metatype _dae);
+#define boxptr_DAEUtil_verifyEquationsDAE omc_DAEUtil_verifyEquationsDAE
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_verifyEquationsDAE,2,0) {(void*) boxptr_DAEUtil_verifyEquationsDAE,0}};
+#define boxvar_DAEUtil_verifyEquationsDAE MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_verifyEquationsDAE)
+#define boxptr_DAEUtil_crefToExp omc_DAEUtil_crefToExp
+DLLExport
+modelica_metatype omc_DAEUtil_getTupleExps(threadData_t *threadData, modelica_metatype _inExp);
+#define boxptr_DAEUtil_getTupleExps omc_DAEUtil_getTupleExps
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getTupleExps,2,0) {(void*) boxptr_DAEUtil_getTupleExps,0}};
+#define boxvar_DAEUtil_getTupleExps MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getTupleExps)
+DLLExport
+modelica_integer omc_DAEUtil_getTupleSize(threadData_t *threadData, modelica_metatype _inExp);
+DLLExport
+modelica_metatype boxptr_DAEUtil_getTupleSize(threadData_t *threadData, modelica_metatype _inExp);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getTupleSize,2,0) {(void*) boxptr_DAEUtil_getTupleSize,0}};
+#define boxvar_DAEUtil_getTupleSize MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getTupleSize)
+DLLExport
+modelica_metatype omc_DAEUtil_getStatement(threadData_t *threadData, modelica_metatype _inElement);
+#define boxptr_DAEUtil_getStatement omc_DAEUtil_getStatement
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getStatement,2,0) {(void*) boxptr_DAEUtil_getStatement,0}};
+#define boxvar_DAEUtil_getStatement MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getStatement)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionAlgorithmStmts(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionAlgorithmStmts omc_DAEUtil_getFunctionAlgorithmStmts
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionAlgorithmStmts,2,0) {(void*) boxptr_DAEUtil_getFunctionAlgorithmStmts,0}};
+#define boxvar_DAEUtil_getFunctionAlgorithmStmts MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionAlgorithmStmts)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionAlgorithms(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionAlgorithms omc_DAEUtil_getFunctionAlgorithms
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionAlgorithms,2,0) {(void*) boxptr_DAEUtil_getFunctionAlgorithms,0}};
+#define boxvar_DAEUtil_getFunctionAlgorithms MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionAlgorithms)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionProtectedVars(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionProtectedVars omc_DAEUtil_getFunctionProtectedVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionProtectedVars,2,0) {(void*) boxptr_DAEUtil_getFunctionProtectedVars,0}};
+#define boxvar_DAEUtil_getFunctionProtectedVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionProtectedVars)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionOutputVars(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionOutputVars omc_DAEUtil_getFunctionOutputVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionOutputVars,2,0) {(void*) boxptr_DAEUtil_getFunctionOutputVars,0}};
+#define boxvar_DAEUtil_getFunctionOutputVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionOutputVars)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionInputVars(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionInputVars omc_DAEUtil_getFunctionInputVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionInputVars,2,0) {(void*) boxptr_DAEUtil_getFunctionInputVars,0}};
+#define boxvar_DAEUtil_getFunctionInputVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionInputVars)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionInlineType(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionInlineType omc_DAEUtil_getFunctionInlineType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionInlineType,2,0) {(void*) boxptr_DAEUtil_getFunctionInlineType,0}};
+#define boxvar_DAEUtil_getFunctionInlineType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionInlineType)
+DLLExport
+modelica_boolean omc_DAEUtil_getFunctionImpureAttribute(threadData_t *threadData, modelica_metatype _fn);
+DLLExport
+modelica_metatype boxptr_DAEUtil_getFunctionImpureAttribute(threadData_t *threadData, modelica_metatype _fn);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionImpureAttribute,2,0) {(void*) boxptr_DAEUtil_getFunctionImpureAttribute,0}};
+#define boxvar_DAEUtil_getFunctionImpureAttribute MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionImpureAttribute)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionType(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionType omc_DAEUtil_getFunctionType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionType,2,0) {(void*) boxptr_DAEUtil_getFunctionType,0}};
+#define boxvar_DAEUtil_getFunctionType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionType)
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionElements(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionElements omc_DAEUtil_getFunctionElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionElements,2,0) {(void*) boxptr_DAEUtil_getFunctionElements,0}};
+#define boxvar_DAEUtil_getFunctionElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionElements)
+#define boxptr_DAEUtil_getFunctionsElements omc_DAEUtil_getFunctionsElements
+DLLExport
+modelica_metatype omc_DAEUtil_getFunctionVisibility(threadData_t *threadData, modelica_metatype _fn);
+#define boxptr_DAEUtil_getFunctionVisibility omc_DAEUtil_getFunctionVisibility
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionVisibility,2,0) {(void*) boxptr_DAEUtil_getFunctionVisibility,0}};
+#define boxvar_DAEUtil_getFunctionVisibility MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFunctionVisibility)
+DLLExport
+modelica_metatype omc_DAEUtil_getNamedFunctionFromList(threadData_t *threadData, modelica_metatype _ipath, modelica_metatype _ifns);
+#define boxptr_DAEUtil_getNamedFunctionFromList omc_DAEUtil_getNamedFunctionFromList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getNamedFunctionFromList,2,0) {(void*) boxptr_DAEUtil_getNamedFunctionFromList,0}};
+#define boxvar_DAEUtil_getNamedFunctionFromList MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getNamedFunctionFromList)
+DLLExport
+modelica_metatype omc_DAEUtil_getNamedFunctionWithError(threadData_t *threadData, modelica_metatype _path, modelica_metatype _functions, modelica_metatype _info);
+#define boxptr_DAEUtil_getNamedFunctionWithError omc_DAEUtil_getNamedFunctionWithError
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getNamedFunctionWithError,2,0) {(void*) boxptr_DAEUtil_getNamedFunctionWithError,0}};
+#define boxvar_DAEUtil_getNamedFunctionWithError MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getNamedFunctionWithError)
+DLLExport
+modelica_metatype omc_DAEUtil_getNamedFunction(threadData_t *threadData, modelica_metatype _path, modelica_metatype _functions);
+#define boxptr_DAEUtil_getNamedFunction omc_DAEUtil_getNamedFunction
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getNamedFunction,2,0) {(void*) boxptr_DAEUtil_getNamedFunction,0}};
+#define boxvar_DAEUtil_getNamedFunction MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getNamedFunction)
+#define boxptr_DAEUtil_toModelicaFormExp omc_DAEUtil_toModelicaFormExp
+#define boxptr_DAEUtil_toModelicaFormCref omc_DAEUtil_toModelicaFormCref
+#define boxptr_DAEUtil_toModelicaFormExpOpt omc_DAEUtil_toModelicaFormExpOpt
+DLLExport
+modelica_metatype omc_DAEUtil_replaceBindungInVar(threadData_t *threadData, modelica_metatype _newBindung, modelica_metatype _inelem);
+#define boxptr_DAEUtil_replaceBindungInVar omc_DAEUtil_replaceBindungInVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_replaceBindungInVar,2,0) {(void*) boxptr_DAEUtil_replaceBindungInVar,0}};
+#define boxvar_DAEUtil_replaceBindungInVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_replaceBindungInVar)
+DLLExport
+modelica_metatype omc_DAEUtil_replaceCrefandTypeInVar(threadData_t *threadData, modelica_metatype _newCr, modelica_metatype _newType, modelica_metatype _inelem);
+#define boxptr_DAEUtil_replaceCrefandTypeInVar omc_DAEUtil_replaceCrefandTypeInVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCrefandTypeInVar,2,0) {(void*) boxptr_DAEUtil_replaceCrefandTypeInVar,0}};
+#define boxvar_DAEUtil_replaceCrefandTypeInVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCrefandTypeInVar)
+DLLExport
+modelica_metatype omc_DAEUtil_replaceTypeInVar(threadData_t *threadData, modelica_metatype _newType, modelica_metatype _inelem);
+#define boxptr_DAEUtil_replaceTypeInVar omc_DAEUtil_replaceTypeInVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_replaceTypeInVar,2,0) {(void*) boxptr_DAEUtil_replaceTypeInVar,0}};
+#define boxvar_DAEUtil_replaceTypeInVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_replaceTypeInVar)
+DLLExport
+modelica_metatype omc_DAEUtil_replaceCrefInVar(threadData_t *threadData, modelica_metatype _newCr, modelica_metatype _inelem);
+#define boxptr_DAEUtil_replaceCrefInVar omc_DAEUtil_replaceCrefInVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCrefInVar,2,0) {(void*) boxptr_DAEUtil_replaceCrefInVar,0}};
+#define boxvar_DAEUtil_replaceCrefInVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_replaceCrefInVar)
+#define boxptr_DAEUtil_toModelicaFormElts omc_DAEUtil_toModelicaFormElts
+DLLExport
+modelica_metatype omc_DAEUtil_toModelicaForm(threadData_t *threadData, modelica_metatype _inDAElist);
+#define boxptr_DAEUtil_toModelicaForm omc_DAEUtil_toModelicaForm
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_toModelicaForm,2,0) {(void*) boxptr_DAEUtil_toModelicaForm,0}};
+#define boxvar_DAEUtil_toModelicaForm MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_toModelicaForm)
+DLLExport
+modelica_metatype omc_DAEUtil_daeToRecordValue(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath, modelica_metatype _inElementLst, modelica_boolean _inBoolean, modelica_metatype *out_outValue);
+DLLExport
+modelica_metatype boxptr_DAEUtil_daeToRecordValue(threadData_t *threadData, modelica_metatype _inCache, modelica_metatype _inEnv, modelica_metatype _inPath, modelica_metatype _inElementLst, modelica_metatype _inBoolean, modelica_metatype *out_outValue);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_daeToRecordValue,2,0) {(void*) boxptr_DAEUtil_daeToRecordValue,0}};
+#define boxvar_DAEUtil_daeToRecordValue MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_daeToRecordValue)
+#define boxptr_DAEUtil_getStreamVariables2 omc_DAEUtil_getStreamVariables2
+DLLExport
+modelica_metatype omc_DAEUtil_getStreamVariables(threadData_t *threadData, modelica_metatype _inElementLst);
+#define boxptr_DAEUtil_getStreamVariables omc_DAEUtil_getStreamVariables
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getStreamVariables,2,0) {(void*) boxptr_DAEUtil_getStreamVariables,0}};
+#define boxvar_DAEUtil_getStreamVariables MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getStreamVariables)
+#define boxptr_DAEUtil_getFlowVariables2 omc_DAEUtil_getFlowVariables2
+DLLExport
+modelica_metatype omc_DAEUtil_getFlowVariables(threadData_t *threadData, modelica_metatype _inElementLst);
+#define boxptr_DAEUtil_getFlowVariables omc_DAEUtil_getFlowVariables
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFlowVariables,2,0) {(void*) boxptr_DAEUtil_getFlowVariables,0}};
+#define boxvar_DAEUtil_getFlowVariables MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFlowVariables)
+DLLExport
+modelica_boolean omc_DAEUtil_daeParallelismEqual(threadData_t *threadData, modelica_metatype _inParallelism1, modelica_metatype _inParallelism2);
+DLLExport
+modelica_metatype boxptr_DAEUtil_daeParallelismEqual(threadData_t *threadData, modelica_metatype _inParallelism1, modelica_metatype _inParallelism2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_daeParallelismEqual,2,0) {(void*) boxptr_DAEUtil_daeParallelismEqual,0}};
+#define boxvar_DAEUtil_daeParallelismEqual MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_daeParallelismEqual)
+DLLExport
+modelica_metatype omc_DAEUtil_scodePrlToDaePrl(threadData_t *threadData, modelica_metatype _inParallelism);
+#define boxptr_DAEUtil_scodePrlToDaePrl omc_DAEUtil_scodePrlToDaePrl
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_scodePrlToDaePrl,2,0) {(void*) boxptr_DAEUtil_scodePrlToDaePrl,0}};
+#define boxvar_DAEUtil_scodePrlToDaePrl MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_scodePrlToDaePrl)
+DLLExport
+modelica_metatype omc_DAEUtil_toDaeParallelism(threadData_t *threadData, modelica_metatype _inCref, modelica_metatype _inParallelism, modelica_metatype _inState, modelica_metatype _inInfo);
+#define boxptr_DAEUtil_toDaeParallelism omc_DAEUtil_toDaeParallelism
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_toDaeParallelism,2,0) {(void*) boxptr_DAEUtil_toDaeParallelism,0}};
+#define boxvar_DAEUtil_toDaeParallelism MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_toDaeParallelism)
+DLLExport
+modelica_metatype omc_DAEUtil_toConnectorTypeNoState(threadData_t *threadData, modelica_metatype _scodeConnectorType, modelica_metatype _flowName);
+#define boxptr_DAEUtil_toConnectorTypeNoState omc_DAEUtil_toConnectorTypeNoState
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_toConnectorTypeNoState,2,0) {(void*) boxptr_DAEUtil_toConnectorTypeNoState,0}};
+#define boxvar_DAEUtil_toConnectorTypeNoState MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_toConnectorTypeNoState)
+DLLExport
+modelica_metatype omc_DAEUtil_toConnectorType(threadData_t *threadData, modelica_metatype _inConnectorType, modelica_metatype _inState);
+#define boxptr_DAEUtil_toConnectorType omc_DAEUtil_toConnectorType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_toConnectorType,2,0) {(void*) boxptr_DAEUtil_toConnectorType,0}};
+#define boxvar_DAEUtil_toConnectorType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_toConnectorType)
+DLLExport
+modelica_metatype omc_DAEUtil_getBindings(threadData_t *threadData, modelica_metatype _inElementLst, modelica_metatype *out_oute);
+#define boxptr_DAEUtil_getBindings omc_DAEUtil_getBindings
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getBindings,2,0) {(void*) boxptr_DAEUtil_getBindings,0}};
+#define boxvar_DAEUtil_getBindings MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getBindings)
+#define boxptr_DAEUtil_getBindingsStr omc_DAEUtil_getBindingsStr
+DLLExport
+modelica_metatype omc_DAEUtil_getVariableType(threadData_t *threadData, modelica_metatype _inElement);
+#define boxptr_DAEUtil_getVariableType omc_DAEUtil_getVariableType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getVariableType,2,0) {(void*) boxptr_DAEUtil_getVariableType,0}};
+#define boxvar_DAEUtil_getVariableType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getVariableType)
+#define boxptr_DAEUtil_getVariableList omc_DAEUtil_getVariableList
+DLLExport
+modelica_string omc_DAEUtil_getVariableBindingsStr(threadData_t *threadData, modelica_metatype _elts);
+#define boxptr_DAEUtil_getVariableBindingsStr omc_DAEUtil_getVariableBindingsStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getVariableBindingsStr,2,0) {(void*) boxptr_DAEUtil_getVariableBindingsStr,0}};
+#define boxvar_DAEUtil_getVariableBindingsStr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getVariableBindingsStr)
+DLLExport
+modelica_metatype omc_DAEUtil_findElement(threadData_t *threadData, modelica_metatype _inElementLst, modelica_fnptr _inFuncTypeElementTo);
+#define boxptr_DAEUtil_findElement omc_DAEUtil_findElement
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_findElement,2,0) {(void*) boxptr_DAEUtil_findElement,0}};
+#define boxvar_DAEUtil_findElement MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_findElement)
+DLLExport
+modelica_boolean omc_DAEUtil_isFunctionInlineFalse(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isFunctionInlineFalse(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isFunctionInlineFalse,2,0) {(void*) boxptr_DAEUtil_isFunctionInlineFalse,0}};
+#define boxvar_DAEUtil_isFunctionInlineFalse MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isFunctionInlineFalse)
+DLLExport
+modelica_boolean omc_DAEUtil_isComplexEquation(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isComplexEquation(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isComplexEquation,2,0) {(void*) boxptr_DAEUtil_isComplexEquation,0}};
+#define boxvar_DAEUtil_isComplexEquation MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isComplexEquation)
+DLLExport
+modelica_boolean omc_DAEUtil_isStmtTerminate(threadData_t *threadData, modelica_metatype _stmt);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isStmtTerminate(threadData_t *threadData, modelica_metatype _stmt);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isStmtTerminate,2,0) {(void*) boxptr_DAEUtil_isStmtTerminate,0}};
+#define boxvar_DAEUtil_isStmtTerminate MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isStmtTerminate)
+DLLExport
+modelica_boolean omc_DAEUtil_isStmtReinit(threadData_t *threadData, modelica_metatype _stmt);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isStmtReinit(threadData_t *threadData, modelica_metatype _stmt);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isStmtReinit,2,0) {(void*) boxptr_DAEUtil_isStmtReinit,0}};
+#define boxvar_DAEUtil_isStmtReinit MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isStmtReinit)
+DLLExport
+modelica_boolean omc_DAEUtil_isStmtReturn(threadData_t *threadData, modelica_metatype _stmt);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isStmtReturn(threadData_t *threadData, modelica_metatype _stmt);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isStmtReturn,2,0) {(void*) boxptr_DAEUtil_isStmtReturn,0}};
+#define boxvar_DAEUtil_isStmtReturn MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isStmtReturn)
+DLLExport
+modelica_boolean omc_DAEUtil_isStmtAssert(threadData_t *threadData, modelica_metatype _stmt);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isStmtAssert(threadData_t *threadData, modelica_metatype _stmt);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isStmtAssert,2,0) {(void*) boxptr_DAEUtil_isStmtAssert,0}};
+#define boxvar_DAEUtil_isStmtAssert MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isStmtAssert)
+DLLExport
+modelica_boolean omc_DAEUtil_isAlgorithm(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isAlgorithm(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isAlgorithm,2,0) {(void*) boxptr_DAEUtil_isAlgorithm,0}};
+#define boxvar_DAEUtil_isAlgorithm MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isAlgorithm)
+DLLExport
+modelica_boolean omc_DAEUtil_isComment(threadData_t *threadData, modelica_metatype _elt);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isComment(threadData_t *threadData, modelica_metatype _elt);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isComment,2,0) {(void*) boxptr_DAEUtil_isComment,0}};
+#define boxvar_DAEUtil_isComment MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isComment)
+DLLExport
+modelica_boolean omc_DAEUtil_isFunctionRefVar(threadData_t *threadData, modelica_metatype _inElem);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isFunctionRefVar(threadData_t *threadData, modelica_metatype _inElem);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isFunctionRefVar,2,0) {(void*) boxptr_DAEUtil_isFunctionRefVar,0}};
+#define boxvar_DAEUtil_isFunctionRefVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isFunctionRefVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isVar(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isVar(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isVar,2,0) {(void*) boxptr_DAEUtil_isVar,0}};
+#define boxvar_DAEUtil_isVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isNotVar(threadData_t *threadData, modelica_metatype _e);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isNotVar(threadData_t *threadData, modelica_metatype _e);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isNotVar,2,0) {(void*) boxptr_DAEUtil_isNotVar,0}};
+#define boxvar_DAEUtil_isNotVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isNotVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isInput(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isInput(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isInput,2,0) {(void*) boxptr_DAEUtil_isInput,0}};
+#define boxvar_DAEUtil_isInput MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isInput)
+DLLExport
+modelica_boolean omc_DAEUtil_isInputVar(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isInputVar(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isInputVar,2,0) {(void*) boxptr_DAEUtil_isInputVar,0}};
+#define boxvar_DAEUtil_isInputVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isInputVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isBidirVarDirection(threadData_t *threadData, modelica_metatype _inVarDirection);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isBidirVarDirection(threadData_t *threadData, modelica_metatype _inVarDirection);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isBidirVarDirection,2,0) {(void*) boxptr_DAEUtil_isBidirVarDirection,0}};
+#define boxvar_DAEUtil_isBidirVarDirection MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isBidirVarDirection)
+DLLExport
+modelica_boolean omc_DAEUtil_isBidirVar(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isBidirVar(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isBidirVar,2,0) {(void*) boxptr_DAEUtil_isBidirVar,0}};
+#define boxvar_DAEUtil_isBidirVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isBidirVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isPublicVar(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isPublicVar(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isPublicVar,2,0) {(void*) boxptr_DAEUtil_isPublicVar,0}};
+#define boxvar_DAEUtil_isPublicVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isPublicVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isProtectedVar(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isProtectedVar(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isProtectedVar,2,0) {(void*) boxptr_DAEUtil_isProtectedVar,0}};
+#define boxvar_DAEUtil_isProtectedVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isProtectedVar)
+DLLExport
+void omc_DAEUtil_assertProtectedVar(threadData_t *threadData, modelica_metatype _inElement);
+#define boxptr_DAEUtil_assertProtectedVar omc_DAEUtil_assertProtectedVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_assertProtectedVar,2,0) {(void*) boxptr_DAEUtil_assertProtectedVar,0}};
+#define boxvar_DAEUtil_assertProtectedVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_assertProtectedVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isOutputVar(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isOutputVar(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isOutputVar,2,0) {(void*) boxptr_DAEUtil_isOutputVar,0}};
+#define boxvar_DAEUtil_isOutputVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isOutputVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isStream(threadData_t *threadData, modelica_metatype _inStream);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isStream(threadData_t *threadData, modelica_metatype _inStream);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isStream,2,0) {(void*) boxptr_DAEUtil_isStream,0}};
+#define boxvar_DAEUtil_isStream MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isStream)
+DLLExport
+modelica_boolean omc_DAEUtil_isFlow(threadData_t *threadData, modelica_metatype _inFlow);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isFlow(threadData_t *threadData, modelica_metatype _inFlow);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isFlow,2,0) {(void*) boxptr_DAEUtil_isFlow,0}};
+#define boxvar_DAEUtil_isFlow MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isFlow)
+DLLExport
+void omc_DAEUtil_isStreamVar(threadData_t *threadData, modelica_metatype _inElement);
+#define boxptr_DAEUtil_isStreamVar omc_DAEUtil_isStreamVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isStreamVar,2,0) {(void*) boxptr_DAEUtil_isStreamVar,0}};
+#define boxvar_DAEUtil_isStreamVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isStreamVar)
+DLLExport
+void omc_DAEUtil_isFlowVar(threadData_t *threadData, modelica_metatype _inElement);
+#define boxptr_DAEUtil_isFlowVar omc_DAEUtil_isFlowVar
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isFlowVar,2,0) {(void*) boxptr_DAEUtil_isFlowVar,0}};
+#define boxvar_DAEUtil_isFlowVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isFlowVar)
+DLLExport
+modelica_metatype omc_DAEUtil_getInputVars(threadData_t *threadData, modelica_metatype _vl);
+#define boxptr_DAEUtil_getInputVars omc_DAEUtil_getInputVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getInputVars,2,0) {(void*) boxptr_DAEUtil_getInputVars,0}};
+#define boxvar_DAEUtil_getInputVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getInputVars)
+DLLExport
+modelica_metatype omc_DAEUtil_getBidirVars(threadData_t *threadData, modelica_metatype _vl);
+#define boxptr_DAEUtil_getBidirVars omc_DAEUtil_getBidirVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getBidirVars,2,0) {(void*) boxptr_DAEUtil_getBidirVars,0}};
+#define boxvar_DAEUtil_getBidirVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getBidirVars)
+DLLExport
+modelica_metatype omc_DAEUtil_getProtectedVars(threadData_t *threadData, modelica_metatype _vl);
+#define boxptr_DAEUtil_getProtectedVars omc_DAEUtil_getProtectedVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getProtectedVars,2,0) {(void*) boxptr_DAEUtil_getProtectedVars,0}};
+#define boxvar_DAEUtil_getProtectedVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getProtectedVars)
+DLLExport
+modelica_metatype omc_DAEUtil_getOutputVars(threadData_t *threadData, modelica_metatype _vl);
+#define boxptr_DAEUtil_getOutputVars omc_DAEUtil_getOutputVars
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getOutputVars,2,0) {(void*) boxptr_DAEUtil_getOutputVars,0}};
+#define boxvar_DAEUtil_getOutputVars MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getOutputVars)
+DLLExport
+void omc_DAEUtil_isComp(threadData_t *threadData, modelica_metatype _inElement);
+#define boxptr_DAEUtil_isComp omc_DAEUtil_isComp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isComp,2,0) {(void*) boxptr_DAEUtil_isComp,0}};
+#define boxvar_DAEUtil_isComp MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isComp)
+DLLExport
+modelica_boolean omc_DAEUtil_isOuterVar(threadData_t *threadData, modelica_metatype _element);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isOuterVar(threadData_t *threadData, modelica_metatype _element);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isOuterVar,2,0) {(void*) boxptr_DAEUtil_isOuterVar,0}};
+#define boxvar_DAEUtil_isOuterVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isOuterVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isInnerVar(threadData_t *threadData, modelica_metatype _element);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isInnerVar(threadData_t *threadData, modelica_metatype _element);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isInnerVar,2,0) {(void*) boxptr_DAEUtil_isInnerVar,0}};
+#define boxvar_DAEUtil_isInnerVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isInnerVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isParamOrConstVarKind(threadData_t *threadData, modelica_metatype _inVarKind);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isParamOrConstVarKind(threadData_t *threadData, modelica_metatype _inVarKind);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isParamOrConstVarKind,2,0) {(void*) boxptr_DAEUtil_isParamOrConstVarKind,0}};
+#define boxvar_DAEUtil_isParamOrConstVarKind MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isParamOrConstVarKind)
+DLLExport
+modelica_boolean omc_DAEUtil_isParamConstOrComplexVar(threadData_t *threadData, modelica_metatype _inVar);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isParamConstOrComplexVar(threadData_t *threadData, modelica_metatype _inVar);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isParamConstOrComplexVar,2,0) {(void*) boxptr_DAEUtil_isParamConstOrComplexVar,0}};
+#define boxvar_DAEUtil_isParamConstOrComplexVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isParamConstOrComplexVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isNotParamOrConstVar(threadData_t *threadData, modelica_metatype _inVar);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isNotParamOrConstVar(threadData_t *threadData, modelica_metatype _inVar);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isNotParamOrConstVar,2,0) {(void*) boxptr_DAEUtil_isNotParamOrConstVar,0}};
+#define boxvar_DAEUtil_isNotParamOrConstVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isNotParamOrConstVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isParamOrConstVar(threadData_t *threadData, modelica_metatype _inVar);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isParamOrConstVar(threadData_t *threadData, modelica_metatype _inVar);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isParamOrConstVar,2,0) {(void*) boxptr_DAEUtil_isParamOrConstVar,0}};
+#define boxvar_DAEUtil_isParamOrConstVar MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isParamOrConstVar)
+DLLExport
+modelica_boolean omc_DAEUtil_isParameterOrConstant(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isParameterOrConstant(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isParameterOrConstant,2,0) {(void*) boxptr_DAEUtil_isParameterOrConstant,0}};
+#define boxvar_DAEUtil_isParameterOrConstant MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isParameterOrConstant)
+DLLExport
+modelica_boolean omc_DAEUtil_isParameter(threadData_t *threadData, modelica_metatype _inElement);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isParameter(threadData_t *threadData, modelica_metatype _inElement);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isParameter,2,0) {(void*) boxptr_DAEUtil_isParameter,0}};
+#define boxvar_DAEUtil_isParameter MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isParameter)
+DLLExport
+modelica_boolean omc_DAEUtil_isAfterIndexInlineFunc(threadData_t *threadData, modelica_metatype _inElem);
+DLLExport
+modelica_metatype boxptr_DAEUtil_isAfterIndexInlineFunc(threadData_t *threadData, modelica_metatype _inElem);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_isAfterIndexInlineFunc,2,0) {(void*) boxptr_DAEUtil_isAfterIndexInlineFunc,0}};
+#define boxvar_DAEUtil_isAfterIndexInlineFunc MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_isAfterIndexInlineFunc)
+#define boxptr_DAEUtil_findAllMatchingElements2 omc_DAEUtil_findAllMatchingElements2
+DLLExport
+modelica_metatype omc_DAEUtil_findAllMatchingElements(threadData_t *threadData, modelica_metatype _dae, modelica_fnptr _cond1, modelica_fnptr _cond2, modelica_metatype *out_secondList);
+#define boxptr_DAEUtil_findAllMatchingElements omc_DAEUtil_findAllMatchingElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_findAllMatchingElements,2,0) {(void*) boxptr_DAEUtil_findAllMatchingElements,0}};
+#define boxvar_DAEUtil_findAllMatchingElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_findAllMatchingElements)
+DLLExport
+modelica_metatype omc_DAEUtil_getAllMatchingElements(threadData_t *threadData, modelica_metatype _elist, modelica_fnptr _cond);
+#define boxptr_DAEUtil_getAllMatchingElements omc_DAEUtil_getAllMatchingElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getAllMatchingElements,2,0) {(void*) boxptr_DAEUtil_getAllMatchingElements,0}};
+#define boxvar_DAEUtil_getAllMatchingElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getAllMatchingElements)
+DLLExport
+modelica_metatype omc_DAEUtil_getMatchingElements(threadData_t *threadData, modelica_metatype _elist, modelica_fnptr _cond);
+#define boxptr_DAEUtil_getMatchingElements omc_DAEUtil_getMatchingElements
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getMatchingElements,2,0) {(void*) boxptr_DAEUtil_getMatchingElements,0}};
+#define boxvar_DAEUtil_getMatchingElements MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getMatchingElements)
+DLLExport
+modelica_string omc_DAEUtil_getStartAttrString(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getStartAttrString omc_DAEUtil_getStartAttrString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getStartAttrString,2,0) {(void*) boxptr_DAEUtil_getStartAttrString,0}};
+#define boxvar_DAEUtil_getStartAttrString MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getStartAttrString)
+DLLExport
+modelica_boolean omc_DAEUtil_hasStartAttr(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+DLLExport
+modelica_metatype boxptr_DAEUtil_hasStartAttr(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_hasStartAttr,2,0) {(void*) boxptr_DAEUtil_hasStartAttr,0}};
+#define boxvar_DAEUtil_hasStartAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_hasStartAttr)
+DLLExport
+modelica_boolean omc_DAEUtil_boolVarVisibility(threadData_t *threadData, modelica_metatype _vp);
+DLLExport
+modelica_metatype boxptr_DAEUtil_boolVarVisibility(threadData_t *threadData, modelica_metatype _vp);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_boolVarVisibility,2,0) {(void*) boxptr_DAEUtil_boolVarVisibility,0}};
+#define boxvar_DAEUtil_boolVarVisibility MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_boolVarVisibility)
+DLLExport
+modelica_boolean omc_DAEUtil_getFinalAttr(threadData_t *threadData, modelica_metatype _attr);
+DLLExport
+modelica_metatype boxptr_DAEUtil_getFinalAttr(threadData_t *threadData, modelica_metatype _attr);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getFinalAttr,2,0) {(void*) boxptr_DAEUtil_getFinalAttr,0}};
+#define boxvar_DAEUtil_getFinalAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getFinalAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_setFinalAttr(threadData_t *threadData, modelica_metatype _attr, modelica_boolean _finalPrefix);
+DLLExport
+modelica_metatype boxptr_DAEUtil_setFinalAttr(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _finalPrefix);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setFinalAttr,2,0) {(void*) boxptr_DAEUtil_setFinalAttr,0}};
+#define boxvar_DAEUtil_setFinalAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setFinalAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_setFixedAttr(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _fixed);
+#define boxptr_DAEUtil_setFixedAttr omc_DAEUtil_setFixedAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setFixedAttr,2,0) {(void*) boxptr_DAEUtil_setFixedAttr,0}};
+#define boxvar_DAEUtil_setFixedAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setFixedAttr)
+DLLExport
+modelica_boolean omc_DAEUtil_getProtectedAttr(threadData_t *threadData, modelica_metatype _attr);
+DLLExport
+modelica_metatype boxptr_DAEUtil_getProtectedAttr(threadData_t *threadData, modelica_metatype _attr);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getProtectedAttr,2,0) {(void*) boxptr_DAEUtil_getProtectedAttr,0}};
+#define boxvar_DAEUtil_getProtectedAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getProtectedAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_setProtectedAttr(threadData_t *threadData, modelica_metatype _attr, modelica_boolean _isProtected);
+DLLExport
+modelica_metatype boxptr_DAEUtil_setProtectedAttr(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _isProtected);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setProtectedAttr,2,0) {(void*) boxptr_DAEUtil_setProtectedAttr,0}};
+#define boxvar_DAEUtil_setProtectedAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setProtectedAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_setElementVarBinding(threadData_t *threadData, modelica_metatype _elt, modelica_metatype _binding);
+#define boxptr_DAEUtil_setElementVarBinding omc_DAEUtil_setElementVarBinding
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setElementVarBinding,2,0) {(void*) boxptr_DAEUtil_setElementVarBinding,0}};
+#define boxvar_DAEUtil_setElementVarBinding MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setElementVarBinding)
+DLLExport
+modelica_metatype omc_DAEUtil_setElementVarDirection(threadData_t *threadData, modelica_metatype _elt, modelica_metatype _direction);
+#define boxptr_DAEUtil_setElementVarDirection omc_DAEUtil_setElementVarDirection
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setElementVarDirection,2,0) {(void*) boxptr_DAEUtil_setElementVarDirection,0}};
+#define boxvar_DAEUtil_setElementVarDirection MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setElementVarDirection)
+DLLExport
+modelica_metatype omc_DAEUtil_setElementVarVisibility(threadData_t *threadData, modelica_metatype _elt, modelica_metatype _visibility);
+#define boxptr_DAEUtil_setElementVarVisibility omc_DAEUtil_setElementVarVisibility
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setElementVarVisibility,2,0) {(void*) boxptr_DAEUtil_setElementVarVisibility,0}};
+#define boxvar_DAEUtil_setElementVarVisibility MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setElementVarVisibility)
+DLLExport
+modelica_metatype omc_DAEUtil_setUnitAttr(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _unit);
+#define boxptr_DAEUtil_setUnitAttr omc_DAEUtil_setUnitAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setUnitAttr,2,0) {(void*) boxptr_DAEUtil_setUnitAttr,0}};
+#define boxvar_DAEUtil_setUnitAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setUnitAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_setNominalAttr(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _nominal);
+#define boxptr_DAEUtil_setNominalAttr omc_DAEUtil_setNominalAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setNominalAttr,2,0) {(void*) boxptr_DAEUtil_setNominalAttr,0}};
+#define boxvar_DAEUtil_setNominalAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setNominalAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_getNominalAttr(threadData_t *threadData, modelica_metatype _attr);
+#define boxptr_DAEUtil_getNominalAttr omc_DAEUtil_getNominalAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getNominalAttr,2,0) {(void*) boxptr_DAEUtil_getNominalAttr,0}};
+#define boxvar_DAEUtil_getNominalAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getNominalAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_setStartOrigin(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _startOrigin);
+#define boxptr_DAEUtil_setStartOrigin omc_DAEUtil_setStartOrigin
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setStartOrigin,2,0) {(void*) boxptr_DAEUtil_setStartOrigin,0}};
+#define boxvar_DAEUtil_setStartOrigin MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setStartOrigin)
+DLLExport
+modelica_metatype omc_DAEUtil_setStartAttrOption(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _start);
+#define boxptr_DAEUtil_setStartAttrOption omc_DAEUtil_setStartAttrOption
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setStartAttrOption,2,0) {(void*) boxptr_DAEUtil_setStartAttrOption,0}};
+#define boxvar_DAEUtil_setStartAttrOption MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setStartAttrOption)
+DLLExport
+modelica_metatype omc_DAEUtil_setStartAttr(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _start);
+#define boxptr_DAEUtil_setStartAttr omc_DAEUtil_setStartAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setStartAttr,2,0) {(void*) boxptr_DAEUtil_setStartAttr,0}};
+#define boxvar_DAEUtil_setStartAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setStartAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_setStateSelect(threadData_t *threadData, modelica_metatype _attr, modelica_metatype _s);
+#define boxptr_DAEUtil_setStateSelect omc_DAEUtil_setStateSelect
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setStateSelect,2,0) {(void*) boxptr_DAEUtil_setStateSelect,0}};
+#define boxvar_DAEUtil_setStateSelect MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setStateSelect)
+DLLExport
+modelica_metatype omc_DAEUtil_setVariableAttributes(threadData_t *threadData, modelica_metatype _var, modelica_metatype _varOpt);
+#define boxptr_DAEUtil_setVariableAttributes omc_DAEUtil_setVariableAttributes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setVariableAttributes,2,0) {(void*) boxptr_DAEUtil_setVariableAttributes,0}};
+#define boxvar_DAEUtil_setVariableAttributes MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setVariableAttributes)
+DLLExport
+modelica_metatype omc_DAEUtil_getMaxAttrFail(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getMaxAttrFail omc_DAEUtil_getMaxAttrFail
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getMaxAttrFail,2,0) {(void*) boxptr_DAEUtil_getMaxAttrFail,0}};
+#define boxvar_DAEUtil_getMaxAttrFail MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getMaxAttrFail)
+DLLExport
+modelica_metatype omc_DAEUtil_getMinAttrFail(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getMinAttrFail omc_DAEUtil_getMinAttrFail
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getMinAttrFail,2,0) {(void*) boxptr_DAEUtil_getMinAttrFail,0}};
+#define boxvar_DAEUtil_getMinAttrFail MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getMinAttrFail)
+DLLExport
+modelica_metatype omc_DAEUtil_getNominalAttrFail(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getNominalAttrFail omc_DAEUtil_getNominalAttrFail
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getNominalAttrFail,2,0) {(void*) boxptr_DAEUtil_getNominalAttrFail,0}};
+#define boxvar_DAEUtil_getNominalAttrFail MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getNominalAttrFail)
+DLLExport
+modelica_metatype omc_DAEUtil_getStartAttrFail(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getStartAttrFail omc_DAEUtil_getStartAttrFail
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getStartAttrFail,2,0) {(void*) boxptr_DAEUtil_getStartAttrFail,0}};
+#define boxvar_DAEUtil_getStartAttrFail MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getStartAttrFail)
+DLLExport
+modelica_metatype omc_DAEUtil_getStartOrigin(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getStartOrigin omc_DAEUtil_getStartOrigin
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getStartOrigin,2,0) {(void*) boxptr_DAEUtil_getStartOrigin,0}};
+#define boxvar_DAEUtil_getStartOrigin MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getStartOrigin)
+DLLExport
+modelica_metatype omc_DAEUtil_getStartAttr(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getStartAttr omc_DAEUtil_getStartAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getStartAttr,2,0) {(void*) boxptr_DAEUtil_getStartAttr,0}};
+#define boxvar_DAEUtil_getStartAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getStartAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_setMinMax(threadData_t *threadData, modelica_metatype _inAttr, modelica_metatype _inMin, modelica_metatype _inMax);
+#define boxptr_DAEUtil_setMinMax omc_DAEUtil_setMinMax
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_setMinMax,2,0) {(void*) boxptr_DAEUtil_setMinMax,0}};
+#define boxvar_DAEUtil_setMinMax MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_setMinMax)
+DLLExport
+modelica_metatype omc_DAEUtil_getMinMaxValues(threadData_t *threadData, modelica_metatype _inVariableAttributesOption, modelica_metatype *out_outMaxValue);
+#define boxptr_DAEUtil_getMinMaxValues omc_DAEUtil_getMinMaxValues
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getMinMaxValues,2,0) {(void*) boxptr_DAEUtil_getMinMaxValues,0}};
+#define boxvar_DAEUtil_getMinMaxValues MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getMinMaxValues)
+DLLExport
+modelica_metatype omc_DAEUtil_getMinMax(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getMinMax omc_DAEUtil_getMinMax
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getMinMax,2,0) {(void*) boxptr_DAEUtil_getMinMax,0}};
+#define boxvar_DAEUtil_getMinMax MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getMinMax)
+DLLExport
+modelica_metatype omc_DAEUtil_getStartAttrEmpty(threadData_t *threadData, modelica_metatype _inVariableAttributesOption, modelica_metatype _optExp);
+#define boxptr_DAEUtil_getStartAttrEmpty omc_DAEUtil_getStartAttrEmpty
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getStartAttrEmpty,2,0) {(void*) boxptr_DAEUtil_getStartAttrEmpty,0}};
+#define boxvar_DAEUtil_getStartAttrEmpty MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getStartAttrEmpty)
+DLLExport
+modelica_metatype omc_DAEUtil_getUnitAttr(threadData_t *threadData, modelica_metatype _inVariableAttributesOption);
+#define boxptr_DAEUtil_getUnitAttr omc_DAEUtil_getUnitAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getUnitAttr,2,0) {(void*) boxptr_DAEUtil_getUnitAttr,0}};
+#define boxvar_DAEUtil_getUnitAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getUnitAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_getVariableAttributes(threadData_t *threadData, modelica_metatype _elt);
+#define boxptr_DAEUtil_getVariableAttributes omc_DAEUtil_getVariableAttributes
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getVariableAttributes,2,0) {(void*) boxptr_DAEUtil_getVariableAttributes,0}};
+#define boxvar_DAEUtil_getVariableAttributes MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getVariableAttributes)
+DLLExport
+modelica_metatype omc_DAEUtil_varCref(threadData_t *threadData, modelica_metatype _elt);
+#define boxptr_DAEUtil_varCref omc_DAEUtil_varCref
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_varCref,2,0) {(void*) boxptr_DAEUtil_varCref,0}};
+#define boxvar_DAEUtil_varCref MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_varCref)
+#define boxptr_DAEUtil_removeInnerAttribute omc_DAEUtil_removeInnerAttribute
+DLLExport
+modelica_metatype omc_DAEUtil_unNameInnerouterUniqueCref(threadData_t *threadData, modelica_metatype _cr, modelica_string _removalString);
+#define boxptr_DAEUtil_unNameInnerouterUniqueCref omc_DAEUtil_unNameInnerouterUniqueCref
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_unNameInnerouterUniqueCref,2,0) {(void*) boxptr_DAEUtil_unNameInnerouterUniqueCref,0}};
+#define boxvar_DAEUtil_unNameInnerouterUniqueCref MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_unNameInnerouterUniqueCref)
+DLLExport
+modelica_metatype omc_DAEUtil_nameInnerouterUniqueCref(threadData_t *threadData, modelica_metatype _inCr);
+#define boxptr_DAEUtil_nameInnerouterUniqueCref omc_DAEUtil_nameInnerouterUniqueCref
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_nameInnerouterUniqueCref,2,0) {(void*) boxptr_DAEUtil_nameInnerouterUniqueCref,0}};
+#define boxvar_DAEUtil_nameInnerouterUniqueCref MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_nameInnerouterUniqueCref)
+DLLExport
+modelica_metatype omc_DAEUtil_removeInnerAttr(threadData_t *threadData, modelica_metatype _var, modelica_metatype _dae);
+#define boxptr_DAEUtil_removeInnerAttr omc_DAEUtil_removeInnerAttr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_removeInnerAttr,2,0) {(void*) boxptr_DAEUtil_removeInnerAttr,0}};
+#define boxvar_DAEUtil_removeInnerAttr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_removeInnerAttr)
+DLLExport
+modelica_metatype omc_DAEUtil_removeInnerAttrs(threadData_t *threadData, modelica_metatype _dae, modelica_metatype _vars);
+#define boxptr_DAEUtil_removeInnerAttrs omc_DAEUtil_removeInnerAttrs
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_removeInnerAttrs,2,0) {(void*) boxptr_DAEUtil_removeInnerAttrs,0}};
+#define boxvar_DAEUtil_removeInnerAttrs MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_removeInnerAttrs)
+#define boxptr_DAEUtil_removeVariable omc_DAEUtil_removeVariable
+#define boxptr_DAEUtil_removeVariablesFromElements omc_DAEUtil_removeVariablesFromElements
+DLLExport
+modelica_metatype omc_DAEUtil_removeVariables(threadData_t *threadData, modelica_metatype _dae, modelica_metatype _vars);
+#define boxptr_DAEUtil_removeVariables omc_DAEUtil_removeVariables
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_removeVariables,2,0) {(void*) boxptr_DAEUtil_removeVariables,0}};
+#define boxvar_DAEUtil_removeVariables MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_removeVariables)
+DLLExport
+modelica_metatype omc_DAEUtil_splitDAEIntoVarsAndEquations(threadData_t *threadData, modelica_metatype _inDae, modelica_metatype *out_allEqs);
+#define boxptr_DAEUtil_splitDAEIntoVarsAndEquations omc_DAEUtil_splitDAEIntoVarsAndEquations
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_splitDAEIntoVarsAndEquations,2,0) {(void*) boxptr_DAEUtil_splitDAEIntoVarsAndEquations,0}};
+#define boxvar_DAEUtil_splitDAEIntoVarsAndEquations MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_splitDAEIntoVarsAndEquations)
+DLLExport
+modelica_metatype omc_DAEUtil_getBoundStartEquation(threadData_t *threadData, modelica_metatype _attr);
+#define boxptr_DAEUtil_getBoundStartEquation omc_DAEUtil_getBoundStartEquation
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getBoundStartEquation,2,0) {(void*) boxptr_DAEUtil_getBoundStartEquation,0}};
+#define boxvar_DAEUtil_getBoundStartEquation MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getBoundStartEquation)
+DLLExport
+modelica_metatype omc_DAEUtil_getClassList(threadData_t *threadData, modelica_metatype _v);
+#define boxptr_DAEUtil_getClassList omc_DAEUtil_getClassList
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getClassList,2,0) {(void*) boxptr_DAEUtil_getClassList,0}};
+#define boxvar_DAEUtil_getClassList MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getClassList)
+DLLExport
+modelica_metatype omc_DAEUtil_addEquationBoundString(threadData_t *threadData, modelica_metatype _bindExp, modelica_metatype _attr);
+#define boxptr_DAEUtil_addEquationBoundString omc_DAEUtil_addEquationBoundString
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_addEquationBoundString,2,0) {(void*) boxptr_DAEUtil_addEquationBoundString,0}};
+#define boxvar_DAEUtil_addEquationBoundString MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_addEquationBoundString)
+DLLExport
+modelica_metatype omc_DAEUtil_getDerivativePaths(threadData_t *threadData, modelica_metatype _inFuncDefs);
+#define boxptr_DAEUtil_getDerivativePaths omc_DAEUtil_getDerivativePaths
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_getDerivativePaths,2,0) {(void*) boxptr_DAEUtil_getDerivativePaths,0}};
+#define boxvar_DAEUtil_getDerivativePaths MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_getDerivativePaths)
+DLLExport
+modelica_boolean omc_DAEUtil_derivativeOrder(threadData_t *threadData, modelica_metatype _e1, modelica_metatype _e2);
+DLLExport
+modelica_metatype boxptr_DAEUtil_derivativeOrder(threadData_t *threadData, modelica_metatype _e1, modelica_metatype _e2);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_derivativeOrder,2,0) {(void*) boxptr_DAEUtil_derivativeOrder,0}};
+#define boxvar_DAEUtil_derivativeOrder MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_derivativeOrder)
+DLLExport
+modelica_metatype omc_DAEUtil_dimExp(threadData_t *threadData, modelica_metatype _dim);
+#define boxptr_DAEUtil_dimExp omc_DAEUtil_dimExp
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_dimExp,2,0) {(void*) boxptr_DAEUtil_dimExp,0}};
+#define boxvar_DAEUtil_dimExp MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_dimExp)
+DLLExport
+modelica_metatype omc_DAEUtil_expTypeArrayDimensions(threadData_t *threadData, modelica_metatype _tp);
+#define boxptr_DAEUtil_expTypeArrayDimensions omc_DAEUtil_expTypeArrayDimensions
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeArrayDimensions,2,0) {(void*) boxptr_DAEUtil_expTypeArrayDimensions,0}};
+#define boxvar_DAEUtil_expTypeArrayDimensions MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeArrayDimensions)
+DLLExport
+modelica_boolean omc_DAEUtil_expTypeTuple(threadData_t *threadData, modelica_metatype _tp);
+DLLExport
+modelica_metatype boxptr_DAEUtil_expTypeTuple(threadData_t *threadData, modelica_metatype _tp);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeTuple,2,0) {(void*) boxptr_DAEUtil_expTypeTuple,0}};
+#define boxvar_DAEUtil_expTypeTuple MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeTuple)
+DLLExport
+modelica_boolean omc_DAEUtil_expTypeArray(threadData_t *threadData, modelica_metatype _tp);
+DLLExport
+modelica_metatype boxptr_DAEUtil_expTypeArray(threadData_t *threadData, modelica_metatype _tp);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeArray,2,0) {(void*) boxptr_DAEUtil_expTypeArray,0}};
+#define boxvar_DAEUtil_expTypeArray MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeArray)
+DLLExport
+modelica_boolean omc_DAEUtil_expTypeComplex(threadData_t *threadData, modelica_metatype _tp);
+DLLExport
+modelica_metatype boxptr_DAEUtil_expTypeComplex(threadData_t *threadData, modelica_metatype _tp);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeComplex,2,0) {(void*) boxptr_DAEUtil_expTypeComplex,0}};
+#define boxvar_DAEUtil_expTypeComplex MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeComplex)
+DLLExport
+modelica_metatype omc_DAEUtil_expTypeElementType(threadData_t *threadData, modelica_metatype _tp);
+#define boxptr_DAEUtil_expTypeElementType omc_DAEUtil_expTypeElementType
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeElementType,2,0) {(void*) boxptr_DAEUtil_expTypeElementType,0}};
+#define boxvar_DAEUtil_expTypeElementType MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeElementType)
+DLLExport
+modelica_boolean omc_DAEUtil_expTypeSimple(threadData_t *threadData, modelica_metatype _tp);
+DLLExport
+modelica_metatype boxptr_DAEUtil_expTypeSimple(threadData_t *threadData, modelica_metatype _tp);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeSimple,2,0) {(void*) boxptr_DAEUtil_expTypeSimple,0}};
+#define boxvar_DAEUtil_expTypeSimple MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_expTypeSimple)
+DLLExport
+modelica_boolean omc_DAEUtil_topLevelOutput(threadData_t *threadData, modelica_metatype _componentRef, modelica_metatype _varDirection, modelica_metatype _connectorType);
+DLLExport
+modelica_metatype boxptr_DAEUtil_topLevelOutput(threadData_t *threadData, modelica_metatype _componentRef, modelica_metatype _varDirection, modelica_metatype _connectorType);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_topLevelOutput,2,0) {(void*) boxptr_DAEUtil_topLevelOutput,0}};
+#define boxvar_DAEUtil_topLevelOutput MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_topLevelOutput)
+DLLExport
+modelica_boolean omc_DAEUtil_topLevelInput(threadData_t *threadData, modelica_metatype _componentRef, modelica_metatype _varDirection, modelica_metatype _connectorType, modelica_metatype _visibility);
+DLLExport
+modelica_metatype boxptr_DAEUtil_topLevelInput(threadData_t *threadData, modelica_metatype _componentRef, modelica_metatype _varDirection, modelica_metatype _connectorType, modelica_metatype _visibility);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_topLevelInput,2,0) {(void*) boxptr_DAEUtil_topLevelInput,0}};
+#define boxvar_DAEUtil_topLevelInput MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_topLevelInput)
+DLLExport
+modelica_string omc_DAEUtil_dumpVarParallelismStr(threadData_t *threadData, modelica_metatype _inVarParallelism);
+#define boxptr_DAEUtil_dumpVarParallelismStr omc_DAEUtil_dumpVarParallelismStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_dumpVarParallelismStr,2,0) {(void*) boxptr_DAEUtil_dumpVarParallelismStr,0}};
+#define boxvar_DAEUtil_dumpVarParallelismStr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_dumpVarParallelismStr)
+DLLExport
+modelica_metatype omc_DAEUtil_const2VarKind(threadData_t *threadData, modelica_metatype _const);
+#define boxptr_DAEUtil_const2VarKind omc_DAEUtil_const2VarKind
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_const2VarKind,2,0) {(void*) boxptr_DAEUtil_const2VarKind,0}};
+#define boxvar_DAEUtil_const2VarKind MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_const2VarKind)
+DLLExport
+modelica_string omc_DAEUtil_constStrFriendly(threadData_t *threadData, modelica_metatype _const);
+#define boxptr_DAEUtil_constStrFriendly omc_DAEUtil_constStrFriendly
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_constStrFriendly,2,0) {(void*) boxptr_DAEUtil_constStrFriendly,0}};
+#define boxvar_DAEUtil_constStrFriendly MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_constStrFriendly)
+DLLExport
+modelica_string omc_DAEUtil_constStr(threadData_t *threadData, modelica_metatype _const);
+#define boxptr_DAEUtil_constStr omc_DAEUtil_constStr
+static const MMC_DEFSTRUCTLIT(boxvar_lit_DAEUtil_constStr,2,0) {(void*) boxptr_DAEUtil_constStr,0}};
+#define boxvar_DAEUtil_constStr MMC_REFSTRUCTLIT(boxvar_lit_DAEUtil_constStr)
+#ifdef __cplusplus
+}
+#endif
+#endif

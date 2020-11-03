@@ -184,12 +184,6 @@ void add_source_message(threadData_t *threadData,
 extern "C"
 {
 
-#if defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
-extern void ErrorImpl__updateCurrentComponent(threadData_t *threadData,const char* newVar, int wr, const char* fn, int rs, int re, int cs, int ce)
-{
-}
-#endif
-
 static void printCheckpointStack(threadData_t *threadData)
 {
   errorext_members *members = getMembers(threadData);
@@ -423,14 +417,12 @@ static const char* ErrorImpl__getLastDeletedCheckpoint(threadData_t *threadData)
   return getMembers(threadData)->lastDeletedCheckpoint->c_str();
 }
 
-#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
 #if !defined(OMC_GENERATE_RELOCATABLE_CODE)
 extern void* omc_Error_getCurrentComponent
 #else
 extern void* (*omc_Error_getCurrentComponent)
 #endif
   (threadData_t *threadData, modelica_integer *sline, modelica_integer *scol, modelica_integer *eline, modelica_integer *ecol, modelica_integer *read_only, void **filename);
-#endif
 
 extern void c_add_message(threadData_t *threadData,int errorID, ErrorType type, ErrorLevel severity, const char* message, const char** ctokens, int nTokens)
 {
@@ -443,19 +435,9 @@ extern void c_add_message(threadData_t *threadData,int errorID, ErrorType type, 
   for (int i=nTokens-1; i>=0; i--) {
     tokens.push_back(std::string(ctokens[i]));
   }
-#if !defined(OPENMODELICA_BOOTSTRAPPING_STAGE_1)
   void *mmc_filename;
   str = MMC_STRINGDATA(omc_Error_getCurrentComponent(threadData, &sline, &scol, &eline, &ecol, &read_only, &mmc_filename));
   filename = MMC_STRINGDATA(mmc_filename);
-#else
-  sline=0;
-  scol=0;
-  eline=0;
-  ecol=0;
-  read_only=0;
-  str="";
-  filename="";
-#endif
   ErrorMessage *msg = *(const char*)MMC_STRINGDATA(str) ?
     new ErrorMessage((long)errorID, type, severity, std::string((const char*)MMC_STRINGDATA(str)) + std::string(message), tokens, sline , scol, eline, ecol, read_only, MMC_STRINGDATA(filename)) :
     new ErrorMessage((long)errorID, type, severity, message, tokens);
@@ -493,23 +475,23 @@ static void* get_message_alloc(errorext_members *members)
   void *ty,*severity;
 
   switch (members->errorMessageQueue->back()->getSeverity()) {
-    case ErrorLevel_internal:     severity = Error__INTERNAL;     break;
-    case ErrorLevel_error:        severity = Error__ERROR;        break;
-    case ErrorLevel_warning:      severity = Error__WARNING;      break;
-    case ErrorLevel_notification: severity = Error__NOTIFICATION; break;
+    case ErrorLevel_internal:     severity = ErrorTypes__INTERNAL;     break;
+    case ErrorLevel_error:        severity = ErrorTypes__ERROR;        break;
+    case ErrorLevel_warning:      severity = ErrorTypes__WARNING;      break;
+    case ErrorLevel_notification: severity = ErrorTypes__NOTIFICATION; break;
   }
 
   switch (members->errorMessageQueue->back()->getType()) {
-    case ErrorType_syntax:      ty=Error__SYNTAX;      break;
-    case ErrorType_grammar:     ty=Error__GRAMMAR;     break;
-    case ErrorType_translation: ty=Error__TRANSLATION; break;
-    case ErrorType_symbolic:    ty=Error__SYMBOLIC;    break;
-    case ErrorType_runtime:     ty=Error__SIMULATION;  break;
-    case ErrorType_scripting:   ty=Error__SCRIPTING;   break;
+    case ErrorType_syntax:      ty=ErrorTypes__SYNTAX;      break;
+    case ErrorType_grammar:     ty=ErrorTypes__GRAMMAR;     break;
+    case ErrorType_translation: ty=ErrorTypes__TRANSLATION; break;
+    case ErrorType_symbolic:    ty=ErrorTypes__SYMBOLIC;    break;
+    case ErrorType_runtime:     ty=ErrorTypes__SIMULATION;  break;
+    case ErrorType_scripting:   ty=ErrorTypes__SCRIPTING;   break;
   }
 
   void *message = Util__notrans(mmc_mk_scon(members->errorMessageQueue->back()->getShortMessage().c_str()));
-  void *msg = Error__MESSAGE(id,ty,severity,message);
+  void *msg = ErrorTypes__MESSAGE(id,ty,severity,message);
   void *sl = mmc_mk_icon(members->errorMessageQueue->back()->getStartLineNo());
   void *sc = mmc_mk_icon(members->errorMessageQueue->back()->getStartColumnNo());
   void *el = mmc_mk_icon(members->errorMessageQueue->back()->getEndLineNo());
@@ -517,7 +499,7 @@ static void* get_message_alloc(errorext_members *members)
   void *filename = mmc_mk_scon(members->errorMessageQueue->back()->getFileName().c_str());
   void *readonly = mmc_mk_icon(members->errorMessageQueue->back()->getIsFileReadOnly());
   void *info = SourceInfo__SOURCEINFO(filename,readonly,sl,sc,el,ec,mmc_mk_rcon(0));
-  return Error__TOTALMESSAGE(msg, info);
+  return ErrorTypes__TOTALMESSAGE(msg, info);
 }
 
 // TODO: Use a string builder instead of creating intermediate results all the time?
