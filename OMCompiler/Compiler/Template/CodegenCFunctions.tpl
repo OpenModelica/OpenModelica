@@ -3417,6 +3417,7 @@ match stmt
 case STMT_FOR(__) then
   let iterType = match expType(type_, iterIsArray)
     case "modelica_string" then "modelica_metatype"
+    case "modelica_fnptr" then "modelica_metatype"
     case s then s
   let arrayType = expTypeArray(type_)
   let tvar = match iterType
