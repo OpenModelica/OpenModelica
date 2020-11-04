@@ -250,6 +250,8 @@ ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/lis/liblis.la $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/lis/liblis.a $(builddir_lib)/omc/)
+	test ! -f $(OMDEVMSYS)/tools/msys/mingw32/bin/libnghttp2-14.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libnghttp2-14.dll $(builddir_bin)/
+	test ! -f $(OMDEVMSYS)/tools/msys/mingw32/bin/libunistring-2.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw32/bin/libunistring-2.dll $(builddir_bin)/
 else # mingw64
   # build 64 bit libOpenCL.a
 	test ! -f $(WROOT)/system32/OpenCL.dll || gendef - $(WROOT)/system32/OpenCL.dll > $(builddir_lib)/omc/OpenCL.def || true
@@ -279,6 +281,8 @@ else # mingw64
 	(cp -puf $(OMDEVMSYS)/lib/3rdParty/Sundials64/lib/release/mingw/libsundials_nvecserial.a $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/lis64/liblis.la $(builddir_lib)/omc/)
 	(cp -puf $(OMDEVMSYS)/lib/lis64/liblis.a $(builddir_lib)/omc/)
+	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libnghttp2-14.dll $(builddir_bin)/
+	test ! -f $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll || cp -puf $(OMDEVMSYS)/tools/msys/mingw64/bin/libunistring-2.dll $(builddir_bin)/
 endif
 	(cp -pf $(OMDEVMSYS)/lib/expat-win32-msvc/libexpat.dll $(builddir_bin)/)
 	(cp -pf $(OMDEVMSYS)/lib/lapack-win32-msvc/blas_win32_MT.dll $(builddir_bin)/)
