@@ -8615,13 +8615,10 @@ algorithm
     return;
   end if;
 
-  poly_types := match funcTy
-    case DAE.T_FUNCTION()
-      then list("$" + Types.polymorphicTypeName(t)
-                for t in Types.getAllInnerTypesOfType(funcTy.funcResultType, Types.isPolymorphic));
-    case DAE.T_METAPOLYMORPHIC() then {"$" + funcTy.name};
-    else {};
-  end match;
+  (cache, e, _) := Lookup.lookupClass(cache, env, fnPath);
+
+  poly_types := list("$" + SCodeUtil.getElementName(c)
+    for c guard SCodeUtil.isPolymorphicTypeVar(c) in SCodeUtil.getClassElements(e));
 
   if listLength(typeVars) > listLength(poly_types) then
     Error.addSourceMessage(Error.TOO_MANY_TYPE_VARS_IN_CALL,

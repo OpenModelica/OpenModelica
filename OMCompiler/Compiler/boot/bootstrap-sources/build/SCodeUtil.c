@@ -123,9 +123,9 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT47,33,_OMC_LIT47_data);
 #define _OMC_LIT48_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/SCodeUtil.mo"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT48,74,_OMC_LIT48_data);
 #define _OMC_LIT48 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT48)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT49_6,1594126855.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT49_6,1604496744.0);
 #define _OMC_LIT49_6 MMC_REFREALLIT(_OMC_LIT_STRUCT49_6)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT49,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT48,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2703)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2703)),MMC_IMMEDIATE(MMC_TAGFIXNUM(82)),_OMC_LIT49_6}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT49,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT48,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2717)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2717)),MMC_IMMEDIATE(MMC_TAGFIXNUM(82)),_OMC_LIT49_6}};
 #define _OMC_LIT49 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT49)
 #define _OMC_LIT50_data "sin"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT50,3,_OMC_LIT50_data);
@@ -248,6 +248,9 @@ static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT99,2,4) {&Absyn_Path_IDENT__desc,_O
 #define _OMC_LIT99 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT99)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT100,3,3) {&Absyn_TypeSpec_TPATH__desc,_OMC_LIT99,MMC_REFSTRUCTLIT(mmc_none)}};
 #define _OMC_LIT100 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT100)
+#define _OMC_LIT101_data "polymorphic"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT101,11,_OMC_LIT101_data);
+#define _OMC_LIT101 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT101)
 #include "util/modelica.h"
 #include "SCodeUtil_includes.h"
 #if !defined(PROTECTED_FUNCTION_STATIC)
@@ -15887,6 +15890,65 @@ modelica_metatype out_outBoolean;
 _outBoolean = omc_SCodeUtil_isOperatorRecord(threadData, _inClass);
 out_outBoolean = mmc_mk_icon(_outBoolean);
 return out_outBoolean;
+}
+DLLExport
+modelica_boolean omc_SCodeUtil_isPolymorphicTypeVar(threadData_t *threadData, modelica_metatype _cls)
+{
+modelica_boolean _res;
+modelica_boolean tmp1 = 0;
+modelica_metatype tmpMeta[5] __attribute__((unused)) = {0};
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+{
+modelica_metatype tmp4_1;
+tmp4_1 = _cls;
+{
+volatile mmc_switch_type tmp4;
+int tmp5;
+tmp4 = 0;
+for (; tmp4 < 2; tmp4++) {
+switch (MMC_SWITCH_CAST(tmp4)) {
+case 0: {
+if (mmc__uniontype__metarecord__typedef__equal(tmp4_1,2,8) == 0) goto tmp3_end;
+tmpMeta[0] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 6));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],7,0) == 0) goto tmp3_end;
+tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmp4_1), 7));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],2,3) == 0) goto tmp3_end;
+tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 2));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[2],1,3) == 0) goto tmp3_end;
+tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
+if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],1,1) == 0) goto tmp3_end;
+tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
+if (11 != MMC_STRLEN(tmpMeta[4]) || strcmp(MMC_STRINGDATA(_OMC_LIT101), MMC_STRINGDATA(tmpMeta[4])) != 0) goto tmp3_end;
+tmp1 = 1;
+goto tmp3_done;
+}
+case 1: {
+tmp1 = 0;
+goto tmp3_done;
+}
+}
+goto tmp3_end;
+tmp3_end: ;
+}
+goto goto_2;
+goto_2:;
+MMC_THROW_INTERNAL();
+goto tmp3_done;
+tmp3_done:;
+}
+}
+_res = tmp1;
+_return: OMC_LABEL_UNUSED
+return _res;
+}
+modelica_metatype boxptr_SCodeUtil_isPolymorphicTypeVar(threadData_t *threadData, modelica_metatype _cls)
+{
+modelica_boolean _res;
+modelica_metatype out_res;
+_res = omc_SCodeUtil_isPolymorphicTypeVar(threadData, _cls);
+out_res = mmc_mk_icon(_res);
+return out_res;
 }
 DLLExport
 modelica_boolean omc_SCodeUtil_isTypeVar(threadData_t *threadData, modelica_metatype _inClass)

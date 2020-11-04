@@ -100,6 +100,7 @@ Polymorphic.mos \
 Polymorphic2.mos \
 PolymorphicCallTypeSpec1.mos \
 PolymorphicCallTypeSpec2.mos \
+PolymorphicCallTypeSpec3.mos \
 PolymorphicReduction.mos \
 Recursive.mos \
 ReturnInTryBlock.mos \

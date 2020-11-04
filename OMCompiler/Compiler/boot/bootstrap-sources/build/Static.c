@@ -419,9 +419,9 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT171,37,_OMC_LIT171_data);
 #define _OMC_LIT172_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/Static.mo"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT172,71,_OMC_LIT172_data);
 #define _OMC_LIT172 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT172)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT173_6,1604414246.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT173_6,1604496744.0);
 #define _OMC_LIT173_6 MMC_REFREALLIT(_OMC_LIT_STRUCT173_6)
-static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT173,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT172,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9295)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9295)),MMC_IMMEDIATE(MMC_TAGFIXNUM(86)),_OMC_LIT173_6}};
+static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT173,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT172,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9292)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9292)),MMC_IMMEDIATE(MMC_TAGFIXNUM(86)),_OMC_LIT173_6}};
 #define _OMC_LIT173 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT173)
 #define _OMC_LIT174_data "- Static.getProperties failed: "
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT174,31,_OMC_LIT174_data);
@@ -1953,7 +1953,7 @@ static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT798,5,3) {&ErrorTypes_Message_MESSA
 #define _OMC_LIT799_data "Static.fromEquationsToAlgAssignments: Unknown classPart in match expression:\n"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT799,77,_OMC_LIT799_data);
 #define _OMC_LIT799 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT799)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT800_6,1604414246.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT800_6,1604496744.0);
 #define _OMC_LIT800_6 MMC_REFREALLIT(_OMC_LIT_STRUCT800_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT800,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT172,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1107)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1107)),MMC_IMMEDIATE(MMC_TAGFIXNUM(133)),_OMC_LIT800_6}};
 #define _OMC_LIT800 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT800)
@@ -11520,71 +11520,41 @@ if(listEmpty(_typeVars))
 {
 goto _return;
 }
-{
-modelica_metatype tmp3_1;
-tmp3_1 = _funcTy;
-{
-int tmp3;
-{
-switch (MMC_SWITCH_CAST(valueConstructor(tmp3_1))) {
-case 14: {
+_cache = omc_Lookup_lookupClass(threadData, _cache, _env, _fnPath, mmc_mk_none() ,&_e ,NULL);
 {
 modelica_metatype __omcQ_24tmpVar39;
-modelica_metatype* tmp4;
+modelica_metatype* tmp1;
 modelica_string __omcQ_24tmpVar38;
-int tmp5;
-modelica_metatype _t_loopVar = 0;
-modelica_metatype _t;
-_t_loopVar = omc_Types_getAllInnerTypesOfType(threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_funcTy), 3))), boxvar_Types_isPolymorphic);
-tmpMeta[2] = MMC_REFSTRUCTLIT(mmc_nil);
-__omcQ_24tmpVar39 = tmpMeta[2];
-tmp4 = &__omcQ_24tmpVar39;
+int tmp2;
+modelica_metatype _c_loopVar = 0;
+modelica_metatype _c;
+_c_loopVar = omc_SCodeUtil_getClassElements(threadData, _e);
+tmpMeta[1] = MMC_REFSTRUCTLIT(mmc_nil);
+__omcQ_24tmpVar39 = tmpMeta[1];
+tmp1 = &__omcQ_24tmpVar39;
 while(1) {
-tmp5 = 1;
-if (!listEmpty(_t_loopVar)) {
-_t = MMC_CAR(_t_loopVar);
-_t_loopVar = MMC_CDR(_t_loopVar);
-tmp5--;
+tmp2 = 1;
+while (!listEmpty(_c_loopVar)) {
+_c = MMC_CAR(_c_loopVar);
+_c_loopVar = MMC_CDR(_c_loopVar);
+if (omc_SCodeUtil_isPolymorphicTypeVar(threadData, _c)) {
+tmp2--;
+break;
 }
-if (tmp5 == 0) {
-tmpMeta[3] = stringAppend(_OMC_LIT197,omc_Types_polymorphicTypeName(threadData, _t));
-__omcQ_24tmpVar38 = tmpMeta[3];
-*tmp4 = mmc_mk_cons(__omcQ_24tmpVar38,0);
-tmp4 = &MMC_CDR(*tmp4);
-} else if (tmp5 == 1) {
+}
+if (tmp2 == 0) {
+tmpMeta[2] = stringAppend(_OMC_LIT197,omc_SCodeUtil_getElementName(threadData, _c));
+__omcQ_24tmpVar38 = tmpMeta[2];
+*tmp1 = mmc_mk_cons(__omcQ_24tmpVar38,0);
+tmp1 = &MMC_CDR(*tmp1);
+} else if (tmp2 == 1) {
 break;
 } else {
-goto goto_1;
-}
-}
-*tmp4 = mmc_mk_nil();
-tmpMeta[1] = __omcQ_24tmpVar39;
-}
-tmpMeta[0] = tmpMeta[1];
-goto tmp2_done;
-}
-case 27: {
-tmpMeta[2] = stringAppend(_OMC_LIT197,(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_funcTy), 2))));
-tmpMeta[1] = mmc_mk_cons(tmpMeta[2], MMC_REFSTRUCTLIT(mmc_nil));
-tmpMeta[0] = tmpMeta[1];
-goto tmp2_done;
-}
-default:
-tmp2_default: OMC_LABEL_UNUSED; {
-tmpMeta[1] = MMC_REFSTRUCTLIT(mmc_nil);
-tmpMeta[0] = tmpMeta[1];
-goto tmp2_done;
-}
-}
-goto tmp2_end;
-tmp2_end: ;
-}
-goto goto_1;
-goto_1:;
 MMC_THROW_INTERNAL();
-goto tmp2_done;
-tmp2_done:;
 }
+}
+*tmp1 = mmc_mk_nil();
+tmpMeta[0] = __omcQ_24tmpVar39;
 }
 _poly_types = tmpMeta[0];
 if((listLength(_typeVars) > listLength(_poly_types)))
