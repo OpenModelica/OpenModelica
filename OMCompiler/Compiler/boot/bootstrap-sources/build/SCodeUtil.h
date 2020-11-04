@@ -1329,6 +1329,12 @@ modelica_metatype boxptr_SCodeUtil_isOperatorRecord(threadData_t *threadData, mo
 static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_isOperatorRecord,2,0) {(void*) boxptr_SCodeUtil_isOperatorRecord,0}};
 #define boxvar_SCodeUtil_isOperatorRecord MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_isOperatorRecord)
 DLLExport
+modelica_boolean omc_SCodeUtil_isPolymorphicTypeVar(threadData_t *threadData, modelica_metatype _cls);
+DLLExport
+modelica_metatype boxptr_SCodeUtil_isPolymorphicTypeVar(threadData_t *threadData, modelica_metatype _cls);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_SCodeUtil_isPolymorphicTypeVar,2,0) {(void*) boxptr_SCodeUtil_isPolymorphicTypeVar,0}};
+#define boxvar_SCodeUtil_isPolymorphicTypeVar MMC_REFSTRUCTLIT(boxvar_lit_SCodeUtil_isPolymorphicTypeVar)
+DLLExport
 modelica_boolean omc_SCodeUtil_isTypeVar(threadData_t *threadData, modelica_metatype _inClass);
 DLLExport
 modelica_metatype boxptr_SCodeUtil_isTypeVar(threadData_t *threadData, modelica_metatype _inClass);

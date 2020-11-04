@@ -453,6 +453,20 @@ algorithm
   end match;
 end isTypeVar;
 
+public function isPolymorphicTypeVar
+  input SCode.Element cls;
+  output Boolean res;
+algorithm
+  res := match cls
+    case SCode.CLASS(restriction = SCode.R_TYPE(),
+                     classDef = SCode.DERIVED(
+                       typeSpec = Absyn.TCOMPLEX(
+                         path = Absyn.IDENT(name = "polymorphic")))) then true;
+
+    else false;
+  end match;
+end isPolymorphicTypeVar;
+
 public function isOperatorRecord
 "Return true if Class is a operator record."
   input SCode.Element inClass;
