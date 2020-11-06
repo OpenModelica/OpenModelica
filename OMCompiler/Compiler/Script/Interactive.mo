@@ -17516,7 +17516,7 @@ public function parseFile
 protected
   Absyn.Program parsed;
   String dir,filename;
-  Boolean lveStarted;
+  Boolean lveStarted = false;
   Option<Integer> lveInstance = NONE();
   list<String> features;
   String libraryKey, licenseFile;
