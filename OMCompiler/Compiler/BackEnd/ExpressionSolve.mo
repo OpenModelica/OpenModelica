@@ -140,9 +140,9 @@ algorithm
     eqn := BackendEquation.generateEquation(varexp, e, source, attr);
     solved := true;
   else
-    //eqn is change by possible simplification inside preprocessingSolve for solve the eqn with respect to varexp
-    //source := ElementSource.addSymbolicTransformationSimplify(true, source, DAE.PARTIAL_EQUATION(e1), DAE.PARTIAL_EQUATION(e2));
-    eqn := BackendEquation.generateEquation(e1, e2, source, attr);
+    // only return new eqn if it can be solved explicitely because intermediate results can be numerically bad
+    // solves ticket #4293
+    // ToDo: do other preprocessing like multiplying by divisors?
     solved := false;
   end try;
 

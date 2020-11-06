@@ -26,21 +26,19 @@ val(z,1.0);
 // true
 // ""
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "ModelTestSolve18_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 0.001, method = 'dassl', fileNamePrefix = 'ModelTestSolve18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: ModelTestSolve18
-// assert            | debug   | Solving non-linear system 5 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// assert            | info    | simulation terminated by an assertion at initialization
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // "[BackEnd/ExpressionSolve.mo:0:0-0:0:writable] Error: Internal error Failed to solve \"(-exp(if y > 0.0 then time else 2.0 * time)) * y = -1.0 - time\" w.r.t. \"y\"
 // [BackEnd/ExpressionSolve.mo:0:0-0:0:writable] Error: Internal error Failed to solve \"/*Real*/(sign(1.0 + 2.0 * x)) = log(1.0 - (-0.2) * time)\" w.r.t. \"x\"
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
-// [BackEnd/ExpressionSolve.mo:0:0-0:0:writable] Error: Internal error Failed to solve \"(-exp(if y > 0.0 then time else 2.0 * time)) * y = -1.0 - time\" w.r.t. \"y\"
-// [BackEnd/ExpressionSolve.mo:0:0-0:0:writable] Error: Internal error Failed to solve \"/*Real*/(sign(1.0 + 2.0 * x)) = log(1.0 - (-0.2) * time)\" w.r.t. \"x\"
+// [BackEnd/ExpressionSolve.mo:0:0-0:0:writable] Error: Internal error Failed to solve \"time = -1.0 + y * exp(if y > 0.0 then time else 2.0 * time)\" w.r.t. \"y\"
+// [BackEnd/ExpressionSolve.mo:0:0-0:0:writable] Error: Internal error Failed to solve \"time = 5.0 * (-1.0 + exp(/*Real*/(sign(1.0 + 2.0 * x))))\" w.r.t. \"x\"
 // [BackEnd/Differentiate.mo:200:7-200:147:writable] Error: Derivative of expression \"der(z) - (x - y)\" w.r.t. \"z\" is non-existent.
 // [BackEnd/ExpressionSolve.mo:0:0-0:0:writable] Error: Internal error Failed to solve \"der(z) = x - y\" w.r.t. \"z\"
 // "
-//
+// -1.5
 // endResult

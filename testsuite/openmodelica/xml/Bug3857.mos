@@ -4096,10 +4096,6 @@ readFile("Bug3857.xml"); getErrorString();
 //     <equ:Equation>
 //       <exp:Sub>
 //           <exp:Sub>
-//             <exp:Identifier>
-//               <exp:QualifiedNamePart name=\"PI\"/>
-//               <exp:QualifiedNamePart name=\"y\"/>
-//             </exp:Identifier>
 //             <exp:Homotopy>
 //               <exp:Smooth>
 //                 <fun:If>
@@ -4164,6 +4160,10 @@ readFile("Bug3857.xml"); getErrorString();
 //                 <exp:QualifiedNamePart name=\"u2\"/>
 //               </exp:Identifier>
 //             </exp:Homotopy>
+//             <exp:Identifier>
+//               <exp:QualifiedNamePart name=\"PI\"/>
+//               <exp:QualifiedNamePart name=\"y\"/>
+//             </exp:Identifier>
 //           </exp:Sub>;
 //       </exp:Sub>
 //     </equ:Equation>
