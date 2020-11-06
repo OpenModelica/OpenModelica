@@ -47,16 +47,16 @@ CONFIG(release, debug|release) { # release
   QMAKE_LFLAGS_RELEASE =
   # win32 vs. win64
   contains(QT_ARCH, i386) { # 32-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin -L$$(OMDEV)/tools/msys/mingw32/lib
+    LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib/binutils -L$$(OMDEV)/tools/msys/mingw32/bin
   } else { # 64-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin -L$$(OMDEV)/tools/msys/mingw64/lib
+    LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib/binutils -L$$(OMDEV)/tools/msys/mingw64/bin
   }
   LIBS += -limagehlp -lbfd -lintl -liberty -llibosg.dll -llibosgViewer.dll -llibOpenThreads.dll -llibosgDB.dll -llibosgGA.dll
 } else { # debug
   contains(QT_ARCH, i386) { # 32-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw32/lib
+    LIBS += -L$$(OMDEV)/tools/msys/mingw32/bin
   } else { # 64-bit
-    LIBS += -L$$(OMDEV)/tools/msys/mingw64/lib
+    LIBS += -L$$(OMDEV)/tools/msys/mingw64/bin
   }
   LIBS += -llibosgd.dll -llibosgViewerd.dll -llibOpenThreadsd.dll -llibosgDBd.dll -llibosgGAd.dll
 }
