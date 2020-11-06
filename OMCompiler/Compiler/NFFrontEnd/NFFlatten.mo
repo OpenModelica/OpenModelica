@@ -1532,11 +1532,42 @@ function evaluateEquationsConnOp
   input array<list<Connector>> setsArray;
   input CardinalityTable.Table ctable;
 algorithm
-  equations := list(
-      Equation.mapExp(eq,
-        function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable))
-    for eq in equations);
+  equations := list(evaluateEquationConnOp(eq, sets, setsArray, ctable) for eq in equations);
 end evaluateEquationsConnOp;
+
+function evaluateEquationConnOp
+  input output Equation eq;
+  input ConnectionSets.Sets sets;
+  input array<list<Connector>> setsArray;
+  input CardinalityTable.Table ctable;
+algorithm
+  eq := Equation.mapExp(eq,
+    function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable));
+
+  () := match eq
+    case Equation.IF()
+      algorithm
+        for b in eq.branches loop
+          () := match b
+            case Equation.Branch.BRANCH()
+              algorithm
+                if b.conditionVar == Variability.PARAMETER and not
+                   Structural.isExpressionNotFixed(b.condition, maxDepth = 100)
+                then
+                  Structural.markExp(b.condition);
+                end if;
+              then
+                ();
+
+            else ();
+          end match;
+        end for;
+      then
+        ();
+
+    else ();
+  end match;
+end evaluateEquationConnOp;
 
 function resolveArrayConnections
   "Generates the connect equations and adds them to the equation list"
