@@ -2311,33 +2311,12 @@ algorithm
           eqSystlst := listAppend(eqs,resEqs);
           tempvars := createTempVarsforCrefs(List.map(solveCr, Expression.crefExp),itempvars);
         else
-          if match (e1,e2) case (DAE.RCONST(),DAE.IFEXP()) then true; else false; end match then
-            try
-              // single equation from if-equation -> 0.0 = if .. then bla else lbu and var is not in all branches
-              // change branches without variable to var - pre(var)
-              prevarexp := Expression.makePureBuiltinCall("pre", {varexp}, Expression.typeof(varexp));
-              prevarexp := Expression.expSub(varexp, prevarexp);
-              (e2, _) := Expression.traverseExpBottomUp(e2, replaceIFBrancheswithoutVar, (varexp, prevarexp));
-              eqn := BackendDAE.EQUATION(e1, e2, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-              (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars, shared.functionTree);
-              cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
-              (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
-              eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
-              uniqueEqIndex := uniqueEqIndex + 1;
-            else
-              b := false;
-            end try;
-          else
-            b := false;
-          end if;
-          if not b then
-            // non-linear
-            (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars, shared.functionTree);
-            cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
-            (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
-            eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
-            uniqueEqIndex := uniqueEqIndex+1;
-          end if;
+          // non-linear
+          (resEqs, uniqueEqIndex, tempvars) := createNonlinearResidualEquations({eqn}, iuniqueEqIndex, itempvars, shared.functionTree);
+          cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
+          (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
+          eqSystlst := {SimCode.SES_NONLINEAR(SimCode.NONLINEARSYSTEM(uniqueEqIndex, resEqs, {cr}, 0, 1, NONE(), homotopySupport, false, false, partitionKindToClockIndex(partitionKind)), NONE(), eqAttr)};
+          uniqueEqIndex := uniqueEqIndex+1;
         end if;
       then (eqSystlst, uniqueEqIndex,tempvars);
 
