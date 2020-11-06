@@ -154,7 +154,7 @@ public
       output list<Pointer<Equation>> auxiliary_eqns = {};
     protected
       String context = "EVT";
-      list<TimeEvent> timeEvents = listReverse(TimeEventSet.listKeys(bucket.timeEventSet));
+      list<TimeEvent> timeEvents = TimeEventSet.listKeys(bucket.timeEventSet);
       list<StateEvent> stateEvents = StateEventTree.toEventList(bucket.stateEventTree);
       list<tuple<Expression, Pointer<Variable>>> full_time_event_list = TimeEventTree.toList(bucket.timeEventTree);
       Expression rhs;
@@ -209,7 +209,8 @@ public
     algorithm
       zeroCrossings := list(StateEvent.convert(stateEvent) for stateEvent in eventInfo.stateEvents);
       relations := zeroCrossings;
-      timeEvents := list(TimeEvent.convert(te) for te in eventInfo.timeEvents);
+      // for some reason this needs to be reverted
+      timeEvents := listReverse(list(TimeEvent.convert(te) for te in eventInfo.timeEvents));
     end convert;
   end EventInfo;
 
