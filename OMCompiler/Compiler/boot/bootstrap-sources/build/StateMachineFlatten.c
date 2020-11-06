@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/StateMachineFlatten.c"
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/StateMachineFlatten.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "StateMachineFlatten.h"
@@ -4316,7 +4316,7 @@ _eqnLst = omc_List_extractOnTrue(threadData, _otherLst3, boxvar_StateMachineFlat
 if(!(listLength(_otherLst4) == ((modelica_integer) 0)))
 {
 {
-FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/StateMachineFlatten.mo",197,3,197,108,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/FrontEnd/StateMachineFlatten.mo",197,3,197,108,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT134));
 }
 }
@@ -4469,7 +4469,7 @@ _elementLst = tmpMeta[1];
 if(!(listLength(_elementLst) == ((modelica_integer) 1)))
 {
 {
-FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/StateMachineFlatten.mo",115,3,115,110,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/FrontEnd/StateMachineFlatten.mo",115,3,115,110,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT135));
 }
 }

@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/UnitAbsynBuilder.c"
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/UnitAbsynBuilder.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "UnitAbsynBuilder.h"
@@ -29,7 +29,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/UnitAbsynBuilder.mo",39,3,39,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/UnitAbsynBuilder.mo",39,3,39,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT0));
 }
 }
@@ -57,7 +57,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/UnitAbsynBuilder.mo",25,3,25,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/UnitAbsynBuilder.mo",25,3,25,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT1));
 }
 }
@@ -77,7 +77,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 if(!0)
 {
 {
-FILE_INFO info = {"/home/per/workspace/OpenModelica/OMCompiler/Compiler/Stubs/UnitAbsynBuilder.mo",17,3,17,35,0};
+FILE_INFO info = {"/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Stubs/UnitAbsynBuilder.mo",17,3,17,35,0};
 omc_assert(threadData, info, MMC_STRINGDATA(_OMC_LIT2));
 }
 }

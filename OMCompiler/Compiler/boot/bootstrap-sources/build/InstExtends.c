@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstExtends.c"
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/InstExtends.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "InstExtends.h"
@@ -28,10 +28,10 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT7,35,_OMC_LIT7_data);
 #define _OMC_LIT8_data "InstExtends.fixStatement failed: "
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT8,33,_OMC_LIT8_data);
 #define _OMC_LIT8 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT8)
-#define _OMC_LIT9_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/InstExtends.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT9,76,_OMC_LIT9_data);
+#define _OMC_LIT9_data "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/FrontEnd/InstExtends.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT9,72,_OMC_LIT9_data);
 #define _OMC_LIT9 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT9)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT10_6,1604426282.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT10_6,1604657436.0);
 #define _OMC_LIT10_6 MMC_REFREALLIT(_OMC_LIT_STRUCT10_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT10,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT9,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1390)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1391)),MMC_IMMEDIATE(MMC_TAGFIXNUM(94)),_OMC_LIT10_6}};
 #define _OMC_LIT10 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT10)
