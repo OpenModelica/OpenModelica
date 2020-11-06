@@ -826,7 +826,7 @@ algorithm
   if InstNode.isClass(scope) then
     scope := Inst.instPackage(node);
 
-    if InstNode.isPartial(scope) then
+    if InstNode.isPartial(scope) and not Flags.isSet(Flags.NF_API) then
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
