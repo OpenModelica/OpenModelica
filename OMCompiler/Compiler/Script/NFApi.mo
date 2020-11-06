@@ -243,7 +243,7 @@ algorithm
 
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
 
-          inst_anncls := NFInst.instantiate(anncls, InstNode.EMPTY_NODE(), true);
+          inst_anncls := NFInst.instantiate(anncls, instPartial = true);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
@@ -412,7 +412,7 @@ algorithm
 
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
 
-          inst_anncls := NFInst.instantiate(anncls);
+          inst_anncls := NFInst.instantiate(anncls, instPartial = true);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
@@ -629,7 +629,8 @@ algorithm
   top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
 
   // Instantiate the class.
-  inst_cls := NFInst.instantiate(cls);
+  inst_cls := NFInst.instantiate(cls, instPartial = true);
+
   NFInst.insertGeneratedInners(inst_cls, top);
 
   // Instantiate expressions (i.e. anything that can contains crefs, like

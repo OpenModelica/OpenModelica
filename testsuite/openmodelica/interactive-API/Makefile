@@ -85,6 +85,7 @@ Ticket5565.mos \
 Ticket5680.mos \
 Ticket5696.mos \
 Ticket5871.mos \
+Ticket6167.mos \
 ReadOnlyPkg.mos
 
 # test that currently fail. Move up when fixed.
