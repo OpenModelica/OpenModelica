@@ -1,8 +1,10 @@
 
 omc_add_subdirectory(runtime)
+omc_add_subdirectory(boot)
 
 
-set(OMC_EXE ${PROJECT_SOURCE_DIR}/../build/bin/omc)
+# set(OMC_EXE ${PROJECT_SOURCE_DIR}/../build/bin/omc)
+set(OMC_EXE $<TARGET_FILE:bomc>)
 
 # list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/.cmake")
 # enable_language(MODELICA)
