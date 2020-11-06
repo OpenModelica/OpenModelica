@@ -1,0 +1,24 @@
+// name: Ticket6167.mos
+// keywords:
+// status: correct
+//
+// Tests if -nfAPI doesn't output DynamicSelect
+//
+
+setCommandLineOptions("-d=nfAPI"); getErrorString();
+
+loadModel(Modelica); getErrorString();
+getIconAnnotation(Modelica.Fluid.Valves.ValveLinear); getErrorString();
+getIconAnnotation(Modelica.Fluid.Vessels.OpenTank); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {-100.0,-100.0,100.0,100.0,true,-,-,, {Line(true, {0.0, 0.0}, 0.0, {{0.0, 50.0}, {0.0, 0.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, Smooth.None), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.Solid, 0.25, BorderPattern.None, {{-20.0, 60.0}, {20.0, 50.0}}, 0.0), Polygon(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {255, 255, 255}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 50.0}, {100.0, -50.0}, {100.0, 50.0}, {0.0, 0.0}, {-100.0, -50.0}, {-100.0, 50.0}}, Smooth.None), Polygon(true, {0.0, 0.0}, 0.0, {255, 255, 255}, {0, 255, 0}, LinePattern.Solid, FillPattern.Solid, 0.25, {{-100.0, 0.0}, {100.0, 0.0}, {100.0, 0.0}, {0.0, 0.0}, {-100.0, 0.0}, {-100.0, 0.0}}, Smooth.None), Polygon(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-100.0, 50.0}, {100.0, -50.0}, {100.0, 50.0}, {0.0, 0.0}, {-100.0, -50.0}, {-100.0, 50.0}}, Smooth.None)}}
+// ""
+// {-100.0,-100.0,100.0,100.0,true,0.2,-,, {Rectangle(true, {0.0, 0.0}, 0.0, {255, 255, 255}, {255, 255, 255}, LinePattern.Solid, FillPattern.VerticalCylinder, 0.25, BorderPattern.None, {{-100.0, 100.0}, {100.0, -100.0}}, 0.0), Rectangle(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {85, 170, 255}, LinePattern.Solid, FillPattern.VerticalCylinder, 0.25, BorderPattern.None, {{-100.0, -100.0}, {100.0, 10.0}}, 0.0), Line(true, {0.0, 0.0}, 0.0, {{-100.0, 100.0}, {-100.0, -100.0}, {100.0, -100.0}, {100.0, 100.0}}, {0, 0, 0}, LinePattern.Solid, 0.25, {Arrow.None, Arrow.None}, 3.0, Smooth.None), Text(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-95.0, 60.0}, {95.0, 40.0}}, "level =", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center), Text(true, {0.0, 0.0}, 0.0, {0, 0, 0}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-95.0, -24.0}, {95.0, -44.0}}, "%level_start", 0.0, {-1, -1, -1}, "", {}, TextAlignment.Center)}}
+// ""
+// endResult
