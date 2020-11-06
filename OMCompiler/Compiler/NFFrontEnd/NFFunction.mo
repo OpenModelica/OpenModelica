@@ -332,7 +332,7 @@ uniontype Function
     fn_ref := lookupFunction(functionName, scope, info);
     (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, info);
 
-    if InstNode.isClass(ComponentRef.node(fn_ref)) and InstNode.isPartial(fn_node) then
+    if (InstNode.isClass(ComponentRef.node(fn_ref)) and InstNode.isPartial(fn_node)) and not Flags.isSet(Flags.NF_API) then
       Error.addSourceMessage(Error.PARTIAL_FUNCTION_CALL,
         {InstNode.name(fn_node)}, info);
       fail();

@@ -298,10 +298,13 @@ uniontype LookupState
 
       case (ERROR(errorState = PARTIAL_CLASS()), _)
         algorithm
-          Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS,
-            {InstNode.name(node)}, info);
+          if not Flags.isSet(Flags.NF_API) then
+            Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS,
+              {InstNode.name(node)}, info);
+            fail();
+          end if;
         then
-          fail();
+          ();
 
       // Found some element when looking for import.
       case (_, IMPORT()) then ();
