@@ -24,7 +24,7 @@ ToZeroMQEvent::ToZeroMQEvent(int pubPort, int subPort, string zeroMQJobiID, stri
     //Needed to establish connection
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-   
+
 }
 ToZeroMQEvent::~ToZeroMQEvent()
 {
@@ -58,7 +58,7 @@ void ToZeroMQEvent::NotifyResults(double progress)
 }
 void ToZeroMQEvent::NotifyWaitForStarting()
 {
-    
+
     s_sendmore(publisher_, _zeromq_server_id);
     s_sendmore(publisher_, "SimulationThreadWatingForID");
     s_send(publisher_, "{\"jobId\":\"" + _zeromq_job_id + "\"}");
@@ -85,10 +85,10 @@ bool ToZeroMQEvent::AskForStop()
     std::string message = s_recv(subscriber_, false);
     if (!message.empty())
     {
-       
+
         //  Read message contents
         std::string type = s_recv(subscriber_,false);
-        
+
         if (type == "StopSimulationThread")
         {
             
@@ -125,7 +125,7 @@ if (!_zeromq_job_id.empty())
         s_sendmore(publisher_, _zeromq_client_id);
         s_sendmore(publisher_, "SimulationFinished");
         string finished = string("{\"Succeeded\":false,\"JobId\":\"") + _zeromq_job_id + string("\",\"ResultFile\":\"\",\"Error\":\"") + message + string("\"}");
-      
+
         s_send(publisher_,finished.c_str());
     }
     else

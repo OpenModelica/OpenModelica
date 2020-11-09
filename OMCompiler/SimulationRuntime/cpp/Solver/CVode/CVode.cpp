@@ -48,6 +48,9 @@ Cvode::Cvode(IMixedSystem* system, ISolverSettings* settings)
 	_CV_y0(),
 	_CV_y(),
 	_CV_yWrite(),
+	_CV_ySolver(NULL),
+	_CV_linSol(NULL),
+	_CV_J(NULL),
 	_maxColors(0),
 	_jacobianANonzeros(0)
 {
@@ -105,6 +108,9 @@ Cvode::~Cvode()
 		N_VDestroy_Serial(_CV_y);
 		N_VDestroy_Serial(_CV_yWrite);
 		N_VDestroy_Serial(_CV_absTol);
+		N_VDestroy_Serial(_CV_ySolver);
+		SUNMatDestroy(_CV_J);
+		SUNLinSolFree(_CV_linSol);
 		CVodeFree(&_cvodeMem);
 	}
 
@@ -197,7 +203,7 @@ void Cvode::initialize()
 		}
 
 		// Allocate memory for the solver
-		_cvodeMem = CVodeCreate(CV_BDF, CV_NEWTON);
+		_cvodeMem = CVodeCreate(CV_BDF);
 		if (check_flag((void*)_cvodeMem, "CVodeCreate", 0))
 		{
 			_idid = -5;
@@ -223,6 +229,7 @@ void Cvode::initialize()
 		_CV_y = N_VMake_Serial(_dimSys, _z);
 		_CV_yWrite = N_VMake_Serial(_dimSys, _zWrite);
 		_CV_absTol = N_VMake_Serial(_dimSys, _absTol);
+		_CV_ySolver = N_VNew_Serial(_dimSys);
 
 		if (check_flag((void*)_CV_y0, "N_VMake_Serial", 0))
 		{
@@ -260,7 +267,7 @@ void Cvode::initialize()
 		if (_idid < 0)
 			throw ModelicaSimulationError(SOLVER, "CVoder::initialize()");
 
-		_idid = CVodeSetStabLimDet(_cvodeMem, TRUE);       // Stability Detection
+		_idid = CVodeSetStabLimDet(_cvodeMem, SUNTRUE);       // Stability Detection
 		if (_idid < 0)
 			throw ModelicaSimulationError(SOLVER, "CVoder::initialize()");
 
@@ -283,12 +290,14 @@ void Cvode::initialize()
 		if (_idid < 0)
 			throw ModelicaSimulationError(SOLVER,/*_idid,_tCurrent,*/"Cvode::initialize()");
 
-		// Initialize linear solver
+		// Initialize dense linear solver
+		_CV_J = SUNDenseMatrix(_dimSys, _dimSys);
 #ifdef USE_SUNDIALS_LAPACK
-		_idid = CVLapackDense(_cvodeMem, _dimSys);
+		_cvode_linSol = SUNLinSol_LapackDense(_CV_ySolver, _cvode_J);
 #else
-		_idid = CVDense(_cvodeMem, _dimSys);
+		_CV_linSol = SUNLinSol_Dense(_CV_ySolver, _CV_J);
 #endif
+		_idid = CVodeSetLinearSolver(_cvodeMem, _CV_linSol, _CV_J);
 		if (_idid < 0)
 			throw ModelicaSimulationError(SOLVER, "Cvode::initialize()");
 

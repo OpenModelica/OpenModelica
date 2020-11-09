@@ -37,29 +37,42 @@
 #include "openmodelica.h"
 #include "simulation_data.h"
 #include "util/simulation_options.h"
+#include "sundials_error.h"
 #include "simulation/solver/solver_main.h"
 #include "omc_config.h" /* for WITH_SUNDIALS */
 
 #ifdef WITH_SUNDIALS
 
-/* adrpo: on mingw link with static sundials */
-#if defined(__MINGW32__)
-#if !defined(LINK_SUNDIALS_STATIC)
-#define LINK_SUNDIALS_STATIC 1
-#endif
+#include <idas/idas.h>
+#include <nvector/nvector_serial.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+#include <sunlinsol/sunlinsol_klu.h>         /* Sparse linear solver KLU */
+#include <sunlinsol/sunlinsol_spgmr.h>      /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver */
+#include <sunlinsol/sunlinsol_spbcgs.h>     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver */
+#include <sunlinsol/sunlinsol_sptfqmr.h>    /* Scaled, Preconditioned Transpose-Free Quasi-Minimal Residual iterative linear solver */
+
+
+/* readability */
+#define MINIMAL_SCALE_FACTOR 1e-8
+
+#ifndef booleantype
+#define booleantype int
 #endif
 
-#include <sundials/sundials_nvector.h>
-#include <nvector/nvector_serial.h>
-#include <idas/idas.h>
-#include <idas/idas_dense.h>
-#include <idas/idas_sparse.h>
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
 
 typedef struct IDA_USERDATA
 {
   DATA* data;
   threadData_t* threadData;
-}IDA_USERDATA;
+} IDA_USERDATA;
 
 typedef struct IDA_SOLVER
 {
@@ -72,8 +85,8 @@ typedef struct IDA_SOLVER
   double stepsTime;              /* value specifies the time increment when output happens. Used in internal steps mode. */
 
   /* ### work arrays ### */
-  N_Vector y;
-  N_Vector yp;
+  N_Vector y;                   /* State vector */
+  N_Vector yp;                  /* State derivative vector */
 
   /* ### scaling data ### */
   double *yScale;
@@ -81,7 +94,7 @@ typedef struct IDA_SOLVER
   double *resScale;
   int disableScaling;           /* = 1 disables scaling temporary for particular calculations */
 
-  /* ### work array used in jacobian calculation */
+  /* ### work array used in jacobian calculation ### */
   double sqrteps;
   double *ysave;
   double *ypsave;
@@ -89,33 +102,38 @@ typedef struct IDA_SOLVER
   N_Vector errwgt;
   N_Vector newdelta;
 
-  /* ### ida internal data */
+  /* ### ida internal data ### */
   void* ida_mem;
   int (*residualFunction)(double time, N_Vector yy, N_Vector yp, N_Vector res, void* userData);
-  IDA_USERDATA* simData;
-  SlsMat tmpJac;
-  DlsMat denseJac;
+  IDA_USERDATA* userData;
+  SUNMatrix tmpJac;
+  SUNMatrix denseJac;
+
+  /* linear solver data */
+  SUNLinearSolver linSol;   /* Linear solver object */
+  N_Vector y_linSol;        /* Template for cloning vectors needed inside linear solver */
+  SUNMatrix J;              /* Sparse matrix template for cloning matrices needed within
+                               linear solver */
 
   /* ### daeMode ### */
-  int daeMode;                  /* if TRUE then solve dae more with a reals residual function */
-  long int N;
-  long int NNZ;
-  double *states;
-  double *statesDer;
+  booleantype daeMode;      /* If TRUE then solve dae more with a reals residual function */
+  long int N;               /* Number of unknowns */
+  long int NNZ;             /* Number of non-zero elemetes of ... */
+  double *states;           /* Array of states. Only used in DAE mode, NULL otherwise */
+  double *statesDer;        /* Array of state derivatives. Only used in DAE mode, NULL otherwise */
 
   /* ### ida sensitivities ### */
-  int idaSmode;
-  int Np;
-  N_Vector* yS;
-  N_Vector* ySp;
+  int idaSmode;             /* 1 if used, 0 else */
+  int Ns;                   /* Number of sensitivitys parameters which the IVP depends on */
+  N_Vector* yS;             /* Array of sensitifity vectors of state vector */
+  N_Vector* ySp;            /* Array of sensitfity vectors of state derivatives */
   N_Vector* ySResult;
 
 #ifdef USE_PARJAC
   ANALYTIC_JACOBIAN* jacColumns;
 #endif
   int allocatedParMem; /* indicated if parallel memory was allocated, 0=false, 1=true*/
-
-}IDA_SOLVER;
+} IDA_SOLVER;
 
 /* initialize main ida Data */
 int ida_solver_initial(DATA* data, threadData_t *threadData,

@@ -496,7 +496,7 @@ clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPcl
 	if test -f 3rdParty/Ipopt/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt/Makefile || true; fi
 	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
 	(rm -rf SimulationRuntime/build_c)
-	rm -rf 3rdParty/sundials/build
+	rm -rf 3rdParty/sundials-5.4.0/build
 	rm -rf 3rdParty/SuitesParse/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
 	$(OMBUILDDIR)/bin/omc $(OMBUILDDIR)/bin/omc.exe $(OMBUILDDIR)/bin/omc-diff $(OMBUILDDIR)/bin/omc-diff.exe \
@@ -591,6 +591,7 @@ $(builddir_lib_omc)/liblpsolve55.a: 3rdParty/lpsolve/Makefile
 clean-lpsolve:
 	rm -rf 3rdParty/lpsolve/build
 	rm -rf $(builddir_lib_omc)/lpsolve*
+
 # build sqlite3
 sqlite3: 3rdParty/sqlite3/Makefile
 	$(MAKE) -C 3rdParty/sqlite3/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)"
@@ -598,18 +599,30 @@ sqlite3: 3rdParty/sqlite3/Makefile
 	(cd 3rdParty/sqlite3 && autoreconf -vif && automake --add-missing && ./configure --prefix="`pwd`/build" "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)")
 clean-sqlite3:
 	rm -rf 3rdParty/sqlite3/build
+
 # build sundials
 sundials: umfpack
 	$(MAKE) -f $(defaultMakefileTarget) $(builddir_lib_omc)/libsundials_ida.a
-$(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
-	mkdir -p 3rdParty/sundials/build
-	cd 3rdParty/sundials/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DSUNDIALS_KLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY="" -DSUNDIALS_LAPACK_ENABLE:Bool=ON
-	$(MAKE) -C 3rdParty/sundials/build install
-	# adrpo: do not copy the headers as they are not needed!
+$(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
+	mkdir -p 3rdParty/sundials-5.4.0/build
+	(cd 3rdParty/sundials-5.4.0/build && \
+	    $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" \
+	    -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
+	    -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" -DLDFLAGS="$(LDFLAGS)" \
+	    -DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" \
+	    $(SUITESPARSE_LIBS) -DSUITESPARSECONFIG_LIBRARY="" \
+	    -DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF -DSUNDIALS_EXAMPLES_INSTALL_PATH=./examples_install \
+	    $(IS_MINGW32) $(IS_MINGW64) \
+	    -DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)")
+	$(MAKE) -C 3rdParty/sundials-5.4.0/build install
+	# Test SUNDIALS but allow it to fail
+	#-$(MAKE) -C 3rdParty/sundials-5.4.0/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
 	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
-	(cp -pfr 3rdParty/sundials/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
+	# adrpo: do not copy the headers as they are not needed!
+	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
+	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
 	# copy the libs to the build/lib/omc directory
-	(cp -pf 3rdParty/sundials/build/lib/* $(builddir_lib_omc))
+	(cp -pf 3rdParty/sundials-5.4.0/build/lib/* $(builddir_lib_omc))
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.1.0.0.dylib "$(builddir_lib_omc)/libsundials_arkode.1.0.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.1.dylib     "$(builddir_lib_omc)/libsundials_arkode.1.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.dylib       "$(builddir_lib_omc)/libsundials_arkode.dylib"
@@ -638,10 +651,11 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials/CMakeLists.txt
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.0.dylib     "$(builddir_lib_omc)/libsundials_nvecserial.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.dylib       "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
 	# copy the dlls to the build bin directory
-	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials/build/lib/*$(SHREXT) $(builddir_bin))
+	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials-5.4.0/build/lib/*$(SHREXT) $(builddir_bin))
 	@touch "$@"
+
 clean-sundials:
-	rm -rf 3rdParty/sundials/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/c/sundials"
+	rm -rf 3rdParty/sundials-5.4.0/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/c/sundials"
 
 # Build Nox
 nox: 3rdParty/trilinos-nox/CMakeLists.txt

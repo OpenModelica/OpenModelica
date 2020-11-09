@@ -12,7 +12,14 @@ encapsulated package Autoconf
   constant String dllExt = ".dll";
   constant String libFortran = if not isNewOMDev then "-lgfortranbegin " else " ";
   constant String libMsvcrt = if not isNewOMDev then "-lmsvcrt " else " ";
-  constant String ldflags_basic = " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis -lumfpack -lklu -lcolamd -lbtf -lamd  -lsundials_idas -lsundials_cvodes -lsundials_kinsol -lsundials_nvecserial -lipopt -lcoinmumps -lpthread -lm " +
+  constant String ldflags_umfpack = " -lumfpack -lklu -lcolamd -lbtf -lamd";
+  constant String ldflags_sundials = " -lsundials_nvecserial -lsundials_sunmatrixdense -lsundials_sunmatrixsparse" +
+                                     " -lsundials_sunlinsoldense -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense -lsundials_sunlinsolspbcgs -lsundials_sunlinsolspfgmr -lsundials_sunlinsolspgmr -lsundials_sunlinsolsptfqmr -lsundials_sunnonlinsolnewton" +
+                                     " -lsundials_cvode -lsundials_cvodes -lsundials_idas -lsundials_kinsol";
+  constant String ldflags_basic = " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis" +
+                                  ldflags_sundials +
+                                  ldflags_umfpack +
+                                  " -lipopt -lcoinmumps -lpthread -lm " +
                                   libFortran +
                                   "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
                                   libMsvcrt +

@@ -235,16 +235,16 @@ Indicates  simulation thread is finished
 void Communicator::setSimStopedByException(std::exception& except)
 {
 
-    
+
     std::lock_guard<std::mutex> lockGuard(_mutex);
     //cout << "sim stoped" << std::endl;
     _paused = false;
     _simstopped = true;
     _stop = true;
-    
+
     if (_notify)
         _notify->NotifyException(except.what());
-    
+
     _simulation_finish.notify_all();
 
 }

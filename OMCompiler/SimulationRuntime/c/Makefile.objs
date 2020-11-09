@@ -1,18 +1,16 @@
 
 #Files for meta folder
-META_OBJS = \
-meta_modelica_builtin$(OBJ_EXT) \
-meta_modelica_segv$(OBJ_EXT) \
-realString$(OBJ_EXT) \
-meta_modelica$(OBJ_EXT)
+META_OBJS = meta_modelica_builtin$(OBJ_EXT) \
+            meta_modelica_segv$(OBJ_EXT) \
+            meta_modelica$(OBJ_EXT) \
+            realString$(OBJ_EXT)
 
-META_HFILES = \
-meta_modelica_builtin.h \
-meta_modelica_builtin_boxptr.h \
-meta_modelica_builtin_boxvar.h \
-meta_modelica_segv.h \
-meta_modelica.h \
-meta_modelica_mk_box.h
+META_HFILES = meta_modelica_builtin_boxptr.h \
+              meta_modelica_builtin_boxvar.h \
+              meta_modelica_builtin.h \
+              meta_modelica_mk_box.h \
+              meta_modelica_segv.h \
+              meta_modelica.h
 
 #Files for gc folder
 GC_OBJS_MINIMAL = memory_pool$(OBJ_EXT) omc_gc$(OBJ_EXT)
@@ -28,12 +26,76 @@ else
   UTIL_OBJS_NO_FMI=
 endif
 
-UTIL_OBJS_MINIMAL=base_array$(OBJ_EXT) boolean_array$(OBJ_EXT) omc_error$(OBJ_EXT) omc_file$(OBJ_EXT) division$(OBJ_EXT) generic_array$(OBJ_EXT) index_spec$(OBJ_EXT) integer_array$(OBJ_EXT) list$(OBJ_EXT) modelica_string$(OBJ_EXT) real_array$(OBJ_EXT) ringbuffer$(OBJ_EXT) string_array$(OBJ_EXT) utility$(OBJ_EXT) varinfo$(OBJ_EXT) ModelicaUtilities$(OBJ_EXT) omc_msvc$(OBJ_EXT) omc_numbers$(OBJ_EXT) parallel_helper$(OBJ_EXT) simulation_options$(OBJ_EXT) rational$(OBJ_EXT) modelica_string_lit$(OBJ_EXT) omc_init$(OBJ_EXT) omc_mmap$(OBJ_EXT) jacobian_util$(OBJ_EXT) $(UTIL_OBJS_NO_FMI)
-UTIL_HFILES_MINIMAL=base_array.h boolean_array.h division.h generic_array.h omc_error.h omc_file.h index_spec.h integer_array.h list.h modelica.h modelica_string.h read_write.h real_array.h ringbuffer.h rtclock.h string_array.h utility.h varinfo.h simulation_options.h omc_mmap.h modelica_string_lit.h omc_init.h
+UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
+                  base_array$(OBJ_EXT) \
+                  boolean_array$(OBJ_EXT) \
+                  division$(OBJ_EXT) \
+                  generic_array$(OBJ_EXT) \
+                  index_spec$(OBJ_EXT) \
+                  integer_array$(OBJ_EXT) \
+                  jacobian_util$(OBJ_EXT) \
+                  list$(OBJ_EXT) \
+                  modelica_string_lit$(OBJ_EXT) \
+                  modelica_string$(OBJ_EXT) \
+                  ModelicaUtilities$(OBJ_EXT) \
+                  omc_error$(OBJ_EXT) \
+                  omc_file$(OBJ_EXT) \
+                  omc_init$(OBJ_EXT) \
+                  omc_mmap$(OBJ_EXT) \
+                  omc_msvc$(OBJ_EXT) \
+                  omc_numbers$(OBJ_EXT) \
+                  parallel_helper$(OBJ_EXT) \
+                  rational$(OBJ_EXT) \
+                  real_array$(OBJ_EXT) \
+                  ringbuffer$(OBJ_EXT) \
+                  simulation_options$(OBJ_EXT) \
+                  string_array$(OBJ_EXT) \
+                  utility$(OBJ_EXT) \
+                  varinfo$(OBJ_EXT)
+
+UTIL_HFILES_MINIMAL=base_array.h \
+                    boolean_array.h \
+                    division.h \
+                    generic_array.h \
+                    index_spec.h \
+                    integer_array.h \
+                    list.h \
+                    modelica_string_lit.h \
+                    modelica_string.h \
+                    modelica.h \
+                    omc_error.h \
+                    omc_file.h \
+                    omc_init.h \
+                    omc_mmap.h \
+                    read_write.h \
+                    real_array.h \
+                    ringbuffer.h \
+                    rtclock.h \
+                    simulation_options.h \
+                    string_array.h \
+                    utility.h \
+                    varinfo.h
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-  UTIL_OBJS=$(UTIL_OBJS_MINIMAL) java_interface$(OBJ_EXT) libcsv$(OBJ_EXT) read_csv$(OBJ_EXT) OldModelicaTables$(OBJ_EXT) tinymt64$(OBJ_EXT) write_csv$(OBJ_EXT) rtclock$(OBJ_EXT)
-  UTIL_HFILES=$(UTIL_HFILES_MINIMAL) java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h write_matlab4.h read_matlab4.h read_csv.h libcsv.h tinymt64.h
+  UTIL_OBJS=$(UTIL_OBJS_MINIMAL) \
+            java_interface$(OBJ_EXT) \
+            libcsv$(OBJ_EXT) \
+            OldModelicaTables$(OBJ_EXT) \
+            read_csv$(OBJ_EXT) \
+            rtclock$(OBJ_EXT) \
+            tinymt64$(OBJ_EXT) \
+            write_csv$(OBJ_EXT)
+  UTIL_HFILES=$(UTIL_HFILES_MINIMAL) \
+              java_interface.h \
+              jni_md_solaris.h \
+              jni_md_windows.h \
+              jni_md.h \
+              jni.h \
+              libcsv.h \
+              read_csv.h \
+              read_matlab4.h \
+              tinymt64.h \
+              write_matlab4.h
 else
   UTIL_OBJS=$(UTIL_OBJS_MINIMAL)
   UTIL_HFILES=$(UTIL_HFILES_MINIMAL)
@@ -46,62 +108,156 @@ MATH_HFILES =
 ifeq ($(OMC_NUM_NONLINEAR_SYSTEMS),0)
   SOLVER_OBJS_NONLINEAR_SYSTEMS=
 else
-  SOLVER_OBJS_NONLINEAR_SYSTEMS=nonlinearSystem$(OBJ_EXT) nonlinearValuesList$(OBJ_EXT) nonlinearSolverHybrd$(OBJ_EXT) nonlinearSolverHomotopy$(OBJ_EXT)
+  SOLVER_OBJS_NONLINEAR_SYSTEMS=nonlinearSolverHomotopy$(OBJ_EXT) \
+                                nonlinearSolverHybrd$(OBJ_EXT) \
+                                nonlinearValuesList$(OBJ_EXT) \
+                                nonlinearSystem$(OBJ_EXT)
 endif
 
 ifeq ($(OMC_NUM_LINEAR_SYSTEMS),0)
   SOLVER_OBJS_LINEAR_SYSTEMS=
 else
-  SOLVER_OBJS_LINEAR_SYSTEMS=linearSystem$(OBJ_EXT) linearSolverLapack$(OBJ_EXT) linearSolverTotalPivot$(OBJ_EXT)
+  SOLVER_OBJS_LINEAR_SYSTEMS=linearSystem$(OBJ_EXT) \
+                             linearSolverLapack$(OBJ_EXT) \
+                             linearSolverTotalPivot$(OBJ_EXT)
 endif
 
 ifeq ($(OMC_NUM_MIXED_SYSTEMS),0)
   SOLVER_OBJS_MIXED_SYSTEMS=
 else
-  SOLVER_OBJS_MIXED_SYSTEMS=mixedSystem$(OBJ_EXT) mixedSearchSolver$(OBJ_EXT)
+  SOLVER_OBJS_MIXED_SYSTEMS=mixedSearchSolver$(OBJ_EXT) \
+                            mixedSystem$(OBJ_EXT)
 endif
 
-SOLVER_OBJS_FMU=delay$(OBJ_EXT) $(SOLVER_OBJS_LINEAR_SYSTEMS) $(SOLVER_OBJS_MIXED_SYSTEMS) $(SOLVER_OBJS_NONLINEAR_SYSTEMS) fmi_events$(OBJ_EXT) omc_math$(OBJ_EXT) model_help$(OBJ_EXT) stateset$(OBJ_EXT) synchronous$(OBJ_EXT)
+SOLVER_OBJS_FMU=$(SOLVER_OBJS_LINEAR_SYSTEMS) \
+                $(SOLVER_OBJS_MIXED_SYSTEMS) \
+                $(SOLVER_OBJS_NONLINEAR_SYSTEMS) \
+                delay$(OBJ_EXT) \
+                fmi_events$(OBJ_EXT) \
+                model_help$(OBJ_EXT) \
+                omc_math$(OBJ_EXT) \
+                stateset$(OBJ_EXT) \
+                synchronous$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
-  SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) events$(OBJ_EXT) external_input$(OBJ_EXT) solver_main$(OBJ_EXT) real_time_sync$(OBJ_EXT) embedded_server$(OBJ_EXT)
+  SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU) \
+                      embedded_server$(OBJ_EXT) \
+                      events$(OBJ_EXT) \
+                      external_input$(OBJ_EXT) \
+                      real_time_sync$(OBJ_EXT) \
+                      solver_main$(OBJ_EXT)
 else
   SOLVER_OBJS_MINIMAL=$(SOLVER_OBJS_FMU)
 endif
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-  SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) kinsolSolver$(OBJ_EXT) linearSolverKlu$(OBJ_EXT) linearSolverLis$(OBJ_EXT) linearSolverUmfpack$(OBJ_EXT) dassl$(OBJ_EXT) radau$(OBJ_EXT) sym_solver_ssc$(OBJ_EXT) nonlinearSolverNewton$(OBJ_EXT) newtonIteration$(OBJ_EXT) ida_solver$(OBJ_EXT) cvode_solver$(OBJ_EXT) irksco$(OBJ_EXT) dae_mode$(OBJ_EXT) jacobianSymbolical$(OBJ_EXT)
+  SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL) \
+              cvode_solver$(OBJ_EXT) \
+              dae_mode$(OBJ_EXT) \
+              dassl$(OBJ_EXT) \
+              ida_solver$(OBJ_EXT) \
+              irksco$(OBJ_EXT) \
+              jacobianSymbolical$(OBJ_EXT) \
+              kinsolSolver$(OBJ_EXT) \
+              linearSolverKlu$(OBJ_EXT) \
+              linearSolverLis$(OBJ_EXT) \
+              linearSolverUmfpack$(OBJ_EXT) \
+              newtonIteration$(OBJ_EXT) \
+              nonlinearSolverNewton$(OBJ_EXT) \
+              radau$(OBJ_EXT) \
+              sundials_error$(OBJ_EXT) \
+              sym_solver_ssc$(OBJ_EXT)
 else
   SOLVER_OBJS=$(SOLVER_OBJS_MINIMAL)
 endif
-SOLVER_HFILES = dassl.h dae_mode.h delay.h epsilon.h events.h external_input.h fmi_events.h ida_solver.h cvode_solver.h linearSystem.h mixedSystem.h model_help.h nonlinearSystem.h nonlinearValuesList.h radau.h sym_solver_ssc.h solver_main.h stateset.h jacobianSymbolical.h
+SOLVER_HFILES = cvode_solver.h \
+                dae_mode.h \
+                dassl.h \
+                delay.h \
+                epsilon.h \
+                events.h \
+                external_input.h \
+                fmi_events.h \
+                ida_solver.h \
+                jacobianSymbolical.h \
+                linearSystem.h \
+                mixedSystem.h \
+                model_help.h \
+                nonlinearSystem.h \
+                nonlinearValuesList.h \
+                radau.h \
+                solver_main.h \
+                stateset.h \
+                sundials_error.h \
+                sym_solver_ssc.h
 
 INITIALIZATION_OBJS = initialization$(OBJ_EXT)
 INITIALIZATION_HFILES = initialization.h
 
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-  OPTIMIZATION_OBJS=DataManagement/MoveData$(OBJ_EXT) DataManagement/DerStructure$(OBJ_EXT) DataManagement/InitialGuess$(OBJ_EXT) DataManagement/DebugeOptimization$(OBJ_EXT) optimizer_main$(OBJ_EXT) eval_all/EvalG$(OBJ_EXT) eval_all/EvalF$(OBJ_EXT) eval_all/EvalL$(OBJ_EXT)
-  OPTIMIZATION_HFILES=OptimizerData.h OptimizerLocalFunction.h OptimizerInterface.h
+  OPTIMIZATION_OBJS=DataManagement/DebugeOptimization$(OBJ_EXT) \
+                    DataManagement/DerStructure$(OBJ_EXT) \
+                    DataManagement/InitialGuess$(OBJ_EXT) \
+                    DataManagement/MoveData$(OBJ_EXT) \
+                    eval_all/EvalF$(OBJ_EXT) \
+                    eval_all/EvalG$(OBJ_EXT) \
+                    eval_all/EvalL$(OBJ_EXT) \
+                    optimizer_main$(OBJ_EXT)
+  OPTIMIZATION_HFILES=OptimizerData.h \
+                      OptimizerInterface.h \
+                      OptimizerLocalFunction.h
 else
   OPTIMIZATION_OBJS=
   OPTIMIZATION_HFILES=
 endif
 
-RESULTS_OBJS_MINIMAL=simulation_result$(OBJ_EXT) simulation_result_csv$(OBJ_EXT) simulation_result_mat4$(OBJ_EXT) MatVer4$(OBJ_EXT)
+RESULTS_OBJS_MINIMAL=MatVer4$(OBJ_EXT) \
+                     simulation_result_csv$(OBJ_EXT) \
+                     simulation_result_mat4$(OBJ_EXT) \
+                     simulation_result$(OBJ_EXT)
 ifeq ($(OMC_MINIMAL_RUNTIME),)
-  RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL) simulation_result_ia$(OBJ_EXT) simulation_result_plt$(OBJ_EXT) simulation_result_wall$(OBJ_EXT)
+  RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL) \
+               simulation_result_ia$(OBJ_EXT) \
+               simulation_result_plt$(OBJ_EXT) \
+               simulation_result_wall$(OBJ_EXT)
 else
   RESULTS_OBJS=$(RESULTS_OBJS_MINIMAL)
 endif
-RESULTS_HFILES = simulation_result_ia.h simulation_result.h simulation_result_csv.h simulation_result_mat4.h MatVer4.h simulation_result_plt.h simulation_result_wall.h
-RESULTS_FILES = simulation_result_ia.cpp simulation_result_csv.cpp simulation_result_mat4.cpp MatVer4.cpp simulation_result_plt.cpp simulation_result_wall.cpp
+RESULTS_HFILES = MatVer4.h \
+                 simulation_result_csv.h \
+                 simulation_result_ia.h \
+                 simulation_result_mat4.h \
+                 simulation_result_plt.h \
+                 simulation_result_wall.h \
+                 simulation_result.h
+RESULTS_FILES = MatVer4.cpp \
+                simulation_result_csv.cpp \
+                simulation_result_ia.cpp \
+                simulation_result_mat4.cpp \
+                simulation_result_plt.cpp \
+                simulation_result_wall.cpp
 
-SIM_OBJS = simulation_runtime$(OBJ_EXT) ../linearization/linearize$(OBJ_EXT) ../dataReconciliation/dataReconciliation$(OBJ_EXT) socket$(OBJ_EXT)
+SIM_OBJS = ../dataReconciliation/dataReconciliation$(OBJ_EXT) \
+           ../linearization/linearize$(OBJ_EXT) \
+           simulation_runtime$(OBJ_EXT) \
+           socket$(OBJ_EXT)
 ifeq ($(OMC_FMI_RUNTIME),)
   SIM_OBJS_C_FMI=modelinfo$(OBJ_EXT) simulation_input_xml$(OBJ_EXT)
 else
   SIM_OBJS_C_FMI=
 endif
-SIM_OBJS_C = $(SIM_OBJS_C_FMI) simulation_info_json$(OBJ_EXT) options$(OBJ_EXT) simulation_omc_assert$(OBJ_EXT) omc_simulation_util$(OBJ_EXT)
-SIM_HFILES = options.h simulation_input_xml.h simulation_info_json.h modelinfo.h simulation_runtime.h ../linearization/linearize.h ../dataReconciliation/dataReconciliation.h socket.h omc_simulation_util.h
+SIM_OBJS_C = $(SIM_OBJS_C_FMI) \
+             omc_simulation_util$(OBJ_EXT) \
+             options$(OBJ_EXT) \
+             simulation_info_json$(OBJ_EXT) \
+             simulation_omc_assert$(OBJ_EXT)
+SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
+             ../linearization/linearize.h \
+             modelinfo.h \
+             omc_simulation_util.h \
+             simulation_info_json.h \
+             simulation_input_xml.h \
+             simulation_runtime.h \
+             socket.h \
+             options.h
 
 FMIPATH = ./fmi/
 FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)

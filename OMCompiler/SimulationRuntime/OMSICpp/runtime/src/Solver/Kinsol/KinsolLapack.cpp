@@ -1,23 +1,19 @@
-#include <Core/ModelicaDefine.h>
-#include <Core/Modelica.h>
 /** @addtogroup solverKinsol
 *
 *  @{
 */
-#include <kinsol/kinsol_direct.h>
-#include <sundials/sundials_dense.h>
-#include <kinsol/kinsol_impl.h>
-#include <kinsol/kinsol_spbcgs.h>
-#include <kinsol/kinsol_sptfqmr.h>
-//#include <kinsol/kinsol_klu.h>
-#include <nvector/nvector_serial.h>
-#include <Solver/Kinsol/KinsolLapack.h>
-
 
 /**
- *  \file KinsolLapack.cpp
- *  \brief Alernative linear solver for Kinsol. The linear solver uses Lapack with complete pivoting for LU factorisation
+ * \file KinsolLapack.cpp
+ * \brief Alernative linear solver for Kinsol.
+ *
+ * The linear solver uses Lapack with complete pivoting for LU factorisation
  */
+
+#include <Core/ModelicaDefine.h>
+#include <Core/Modelica.h>
+
+#include <Solver/Kinsol/KinsolLapack.h>
 
 
 /**
@@ -40,7 +36,6 @@ int KINLapackCompletePivoting(void* kinmem, int N)
     kin_mem->kin_lsetup = KINLapackCompletePivotingSetup;
     kin_mem->kin_lsolve = KINLapackCompletePivotingSolve;
     kin_mem->kin_lfree = KINLapackCompletePivotingFree;
-    kin_mem->kin_setupNonNull = TRUE;
     linSysData* data = new linSysData();
     data->jac = new double[N * N];
     data->scale = new double[N];
@@ -87,11 +82,7 @@ static int KINLapackCompletePivotingSetup(KINMem kin_mem)
  */
 
 
-#if(SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION > 6)
 static int KINLapackCompletePivotingFree(KINMem kin_mem)
-#else
-static void KINLapackCompletePivotingFree(KINMem kin_mem)
-#endif
 {
     linSysData* data = (linSysData*)kin_mem->kin_lmem;
 
@@ -100,9 +91,8 @@ static void KINLapackCompletePivotingFree(KINMem kin_mem)
     delete [] data->ihelpArray;
     delete [] data->jhelpArray;
     delete data;
-#if (SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION > 6)
+
     return 0;
-#endif
 }
 
 /**\brief Brief callback function to solve linear system
@@ -114,11 +104,7 @@ static void KINLapackCompletePivotingFree(KINMem kin_mem)
  *  \return Return_Description
  *  \details Details
  */
-#if SUNDIALS_MAJOR_VERSION > 2 || (SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION > 5)
-  static int     KINLapackCompletePivotingSolve(KINMem kin_mem, N_Vector x, N_Vector b, realtype *sJpnorm, realtype *sFdotJp)
-#else
-static int KINLapackCompletePivotingSolve(KINMem kin_mem, N_Vector x, N_Vector b, realtype* res_norm)
-#endif
+static int KINLapackCompletePivotingSolve(KINMem kin_mem, N_Vector x, N_Vector b, realtype *sJpnorm, realtype *sFdotJp)
 {
     int flag = 0;
     linSysData* data = (linSysData*)kin_mem->kin_lmem;
@@ -126,11 +112,7 @@ static int KINLapackCompletePivotingSolve(KINMem kin_mem, N_Vector x, N_Vector b
     dgesc2_(&data->n, data->jac, &data->n, NV_DATA_S(b), data->ihelpArray, data->jhelpArray, data->scale);
 
     memcpy(NV_DATA_S(x), NV_DATA_S(b), data->n * sizeof(double));
-#if SUNDIALS_MAJOR_VERSION > 2 || (SUNDIALS_MAJOR_VERSION == 2 && SUNDIALS_MINOR_VERSION > 5)
     *sFdotJp = N_VDotProd(kin_mem->kin_fval, b);
-#else
-    N_VProd(b, kin_mem->kin_fscale, b);
-#endif
 
     return (flag);
 }

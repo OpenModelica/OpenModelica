@@ -7,15 +7,14 @@
 #include "FactoryExport.h"
 
 #include <Core/Solver/SolverDefaultImplementation.h>
+
 #include <cvode/cvode.h>
-#ifdef USE_SUNDIALS_LAPACK
-  #include <cvode/cvode_lapack.h>
-#else
-#include <cvode/cvode_spgmr.h>
-#include <cvode/cvode_dense.h>
-#endif //USE_SUNDIALS_LAPACK
 #include <nvector/nvector_serial.h>
-#include <sundials/sundials_direct.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+#ifdef USE_SUNDIALS_LAPACK
+  #include <sunlinsol/sunlinsol_lapackdense.h> /* Lapack dense linear solver */
+#endif //USE_SUNDIALS_LAPACK
+#include <sunlinsol/sunlinsol_spgmr.h>       /* Iterative linear solver */
 
 #ifdef RUNTIME_PROFILING
   #include <Core/Utils/extension/measure_time.hpp>
@@ -113,35 +112,35 @@ private:
 
 
     ISolverSettings
-    * _cvodesettings; ///< Input      - Solver settings
+    * _cvodesettings;   ///< Input      - Solver settings
 
     void
-        *_cvodeMem, ///< Temp      - Memory for the solver
-        *_data; ///< Temp      - User data. Contains pointer to Cvode
+        *_cvodeMem,     ///< Temp      - Memory for the solver
+        *_data;         ///< Temp      - User data. Contains pointer to Cvode
 
     long int
-        _dimSys, ///< Input       - (total) Dimension of system (=number of ODE)
-        _idid, ///< Input, Output  - Status Flag
-        _locStps, ///< Output      - Number of Steps between two events
-        _cv_rt; ///< Temp    - CVode return flag
+        _dimSys,        ///< Input     - (total) Dimension of system (=number of ODE)
+        _idid,          ///< Input, Output  - Status Flag
+        _locStps,       ///< Output    - Number of Steps between two events
+        _cv_rt;         ///< Temp      - CVode return flag
 
     int
-        _outStps, ///< Output      - Total number of output-steps
+        _outStps,       ///< Output    - Total number of output-steps
         *_zeroSign;
 
 
     double
-        *_z, ///< Output      - (Current) State vector
-        *_zInit, ///< Temp      - Initial state vector
-        *_zWrite, ///< Temp      - Zustand den das System rausschreibt
-        *_absTol, ///         - Vektor für absolute Toleranzen
+        *_z,            ///< Output    - (Current) State vector
+        *_zInit,        ///< Temp      - Initial state vector
+        *_zWrite,       ///< Temp      - Zustand den das System rausschreibt
+        *_absTol,       ///            - Vektor für absolute Toleranzen
         *_delta,
         *_deltaInv,
         *_ysave;
 
 
     double
-    _hOut; ///< Temp      - Ouput step size for dense output
+    _hOut;              ///< Temp      - Ouput step size for dense output
 
     unsigned int
     _event_n;
@@ -149,20 +148,27 @@ private:
     _tLastEvent;
 
     double
-        _tOut, ///< Output      - Time for dense output
-        _tZero, ///< Temp      - Nullstelle
-        _tLastWrite; ///< Temp      - Letzter Ausgabezeitpunkt
+        _tOut,          ///< Output    - Time for dense output
+        _tZero,         ///< Temp      - Nullstelle
+        _tLastWrite;    ///< Temp      - Letzter Ausgabezeitpunkt
 
     bool
-        _bWritten, ///< Temp      - Is output already written
+        _bWritten,      ///< Temp      - Is output already written
         _zeroFound;
 
 
     N_Vector
-        _CV_y0, ///< Temp      - Initial values in the Cvode Format
-        _CV_y, ///< Temp      - State in Cvode Format
-        _CV_yWrite, ///< Temp      - Vector for dense out
-        _CV_absTol;
+        _CV_y0,         ///< Temp      - Initial values in the Cvode Format
+        _CV_y,          ///< Temp      - State in Cvode Format
+        _CV_yWrite,     ///< Temp      - Vector for dense out
+        _CV_absTol,
+        _CV_ySolver;    ///< Temp      - Vector templated used by linear solver
+
+    SUNLinearSolver
+        _CV_linSol;     ///< Temp      - Linear solver object used by CVODE
+
+    SUNMatrix
+        _CV_J;          ///< Temp      - Matrix template for cloning matrices needed within linear solver
 
     // Variables for Coloured Jacobians
     int* _colorOfColumn;

@@ -23,6 +23,8 @@ ifeq ($(OMBUILDDIR),)
 OMBUILDDIR=$(CURDIR)/build
 endif
 
+OMBUILDDIR_MSVC=$(shell cygpath -m $(OMBUILDDIR))
+
 builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
@@ -387,8 +389,7 @@ $(OMBUILDDIR)/lib/omc/msvc/cminpack.lib: getMSVCversion
 
 Umfpack_msvc: $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
 $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion
-	rm -f $(OMBUILDDIR)/lib/omc/msvc/amd.lib
-	rm -f $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/amd.lib $(OMBUILDDIR)/lib/omc/msvc/klu.lib $(OMBUILDDIR)/lib/omc/msvc/btf.lib  $(OMBUILDDIR)/lib/omc/msvc/colamd.lib $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
 	rm -rf $(OMBUILDDIR)/include/omc/msvc/suitesparse
 	rm -rf 3rdParty/SuiteSparse/build_msvc
 	rm -rf 3rdParty/SuiteSparse/install_msvc
@@ -417,39 +418,51 @@ $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion
 	# copy dll to bin folder
 	(mkdir -p $(OMBUILDDIR)/include/omc/msvc/suitesparse)
 	(cp -puf 3rdParty/SuiteSparse/install_msvc/lib/omc/*.lib $(OMBUILDDIR)/lib/omc/msvc/)
-	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/ $(OMBUILDDIR)/include/omc/msvc/suitesparse)
+	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/*.h $(OMBUILDDIR)/include/omc/msvc/suitesparse/)
 
 # build sundials
+# TODO: We need Umfpack_msvc as a dependency, but Make doesn't wait for Umfpack_msvc to be finishes
 sundials_msvc: $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll
-$(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials/CMakeLists.txt
+$(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.4.0/CMakeLists.txt
+	echo "Using OMBUILDDIR_MSVC: $(OMBUILDDIR_MSVC)"
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/sundials*
 	rm -f $(OMBUILDDIR)/bin/sundials*
-	rm -rf 3rdParty/sundials/build_msvc
+	rm -rf 3rdParty/sundials-5.4.0/build_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
 	# Goto build msvc directory
-	test -d 3rdParty/sundials
-	mkdir -p 3rdParty/sundials/build_msvc
+	test -d 3rdParty/sundials-5.4.0
+	mkdir -p 3rdParty/sundials-5.4.0/build_msvc
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
+	# Test if KLU is installed
+	test -f "$(OMBUILDDIR_MSVC)/lib/omc/msvc/klu.lib"
+
 	echo 'Building sundials with MSVC'
-	echo @echo on > 3rdParty/sundials/build_msvc/build.bat
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/sundials/build_msvc/build.bat
-	echo echo Calling CMake >> 3rdParty/sundials/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSUNDIALS_BUILD_STATIC_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/sundials/build_msvc/build.bat
-	echo echo Building sundials >> 3rdParty/sundials/build_msvc/build.bat
-	echo @echo on >> 3rdParty/sundials/build_msvc/build.bat
-	echo set MAKE= >> 3rdParty/sundials/build_msvc/build.bat
-	echo set MAKEFLAGS= >> 3rdParty/sundials/build_msvc/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/sundials/build_msvc/build.bat
+	echo @echo on > 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo echo Calling CMake >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo '-DSUNDIALS_BUILD_STATIC_LIBS:Bool=OFF -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo '-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo '-DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="%OMDEV%\\lib\\3rdParty\\Lapack\\Lib\\blas_win32.lib;%OMDEV%\\lib\\3rdParty\\Lapack\\Lib\\lapack_win32.lib" -DSUNDIALS_F77_FUNC_UNDERSCORES=one -DSUNDIALS_F77_FUNC_CASE=lower ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo '-DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(OMBUILDDIR_MSVC)\\lib\\omc\\msvc\\" -DKLU_INCLUDE_DIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc\\suitesparse" ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo '../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo echo Building sundials >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo @echo on >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	# Change into directory and run batch file
-	cd ./3rdParty/sundials/build_msvc; echo "change to 3rdParty/sundials/build_msvc";\
+	cd ./3rdParty/sundials-5.4.0/build_msvc; echo "change to 3rdParty/sundials-5.4.0/build_msvc";\
 	cmd /c build.bat
 	# copy dll to lib and bin folder
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
-	(cp -pufr 3rdParty/sundials/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
-	(cp -puf 3rdParty/sundials/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
+	(cp -pufr 3rdParty/sundials-5.4.0/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
+	(cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/msvc/sundials/kinsol/)
+	(cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h 3rdParty/sundials-5.4.0/build_msvc/include/kinsol/)
+	(cp -puf 3rdParty/sundials-5.4.0/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
 	mkdir -p $(OMBUILDDIR)/bin/msvc
-	(cp -puf 3rdParty/sundials/build_msvc/lib/*.dll $(OMBUILDDIR)/bin/msvc)
+	(cp -puf 3rdParty/sundials-5.4.0/build_msvc/lib/*.dll $(OMBUILDDIR)/bin/msvc)
 
 # build trilinos nox
 nox_msvc: getMSVCversion 3rdParty/trilinos-nox/CMakeLists.txt
@@ -484,15 +497,31 @@ runtimeCPPmsvcinstall_old: copycppmsvcheader_old
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/cpp/msvc
 
-runtimeCPPmsvcinstall: getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc OMSIBaseMSVC copycppmsvcheader runtimeCPPmsvcinstall_old
+runtimeCPPmsvcinstall: getMSVCversion
+	# Force make to do suitesparse and sundials in the correct order and wait for umfpack to be finished before starting sundials
+	# This is a terrible idea
+	rm -rf $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) Umfpack_msvc
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) sundials_msvc
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) fmil_msvc
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CMinpack_msvc
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) OMSIBaseMSVC
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) copycppmsvcheader
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) runtimeCPPmsvcinstall_old
 	$(MAKE) -C SimulationRuntime/OMSICpp/ -f Makefile.omdev.mingw runtimeCPPmsvc OMBUILDDIR=$(OMBUILDDIR)
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.dll $(OMBUILDDIR)/bin/msvc
 	cp -p $(BOOST_PATH_MSVC)/lib/*vc*.lib $(OMBUILDDIR)/lib/omc/omsicpp/msvc
 
+# TODO: This relies on the static expat libexpat.a on MSVC but it's only build for mingw target!
 runtimeOMSIBaseMSVCInstall:
 	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
 
-simulationruntimecmsvc: getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sundials_msvc
+simulationruntimecmsvc: getMSVCversion CMinpack_msvc fmil_msvc
+	# Force make to do suitesparse and sundials in the correct order and wait for umfpack to be finished before starting sundials
+	# This should be done smarter
+	rm -rf $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) Umfpack_msvc
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) sundials_msvc
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/debug
@@ -501,7 +530,7 @@ simulationruntimecmsvc: getMSVCversion Umfpack_msvc CMinpack_msvc fmil_msvc sund
 	mkdir -p SimulationRuntime/build_c
 	echo @echo on > SimulationRuntime/build_c/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> SimulationRuntime/build_c/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:String=../../build ../c -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/build_c/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX:String=../../build ../c -DOMBUILDDIR=$(OMBUILDDIR) -G "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> SimulationRuntime/build_c/build.bat
 	echo @echo on >> SimulationRuntime/build_c/build.bat
 	echo set MAKE= >> SimulationRuntime/build_c/build.bat
 	echo set MAKEFLAGS= >> SimulationRuntime/build_c/build.bat

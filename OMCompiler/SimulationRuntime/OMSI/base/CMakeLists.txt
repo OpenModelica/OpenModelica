@@ -3,15 +3,18 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 PROJECT(OMSIBASE)
 SET(CMAKE_VERBOSE_MAKEFILE ON)
 
-#set exapat lib for visual studio compiler
+# Set exapat lib for visual studio compiler
+# TODO: This relies on the static expat libexpat.a on MSVC but it's only build for mingw target!
 IF(MSVC)
   INCLUDE_DIRECTORIES($ENV{OMDEV}/lib/expat-win32-msvc)
-  link_directories($ENV{OMDEV}/lib/expat-win32-msvc)
-  link_directories($ENV{OMDEV}/lib/lapack-win32-msvc)
-  set(expat_lib "libexpat")
+  FIND_LIBRARY(LIB_EXPAT NAMES expat libexpat PATHS ${OMBUILDDIR}/lib/omc ${OMBUILDDIR}/lib/omc/msvc ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/ $ENV{OMDEV}/lib/expat-win32-msvc $ENV{OMDEV}/lib/lapack-win32-msvc)
 ELSE(MSVC)
-  set(expat_lib "expat")
+  FIND_LIBRARY(LIB_EXPAT NAMES expat libexpat PATHS ${OMBUILDDIR}/lib/omc ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/)
 ENDIF(MSVC)
+IF(NOT LIB_EXPAT)
+  MESSAGE(FATAL_ERROR "Could not find static expat library!\nSearched in:\n${OMBUILDDIR}/lib/omc ${OMBUILDDIR}/lib/omc/msvc ${CMAKE_SOURCE_DIR}/../../3rdParty/FMIL/build/ExpatEx/ $ENV{OMDEV}/lib/expat-win32-msvc $ENV{OMDEV}/lib/lapack-win32-msvc")
+ENDIF(NOT LIB_EXPAT)
+MESSAGE(STATUS "Using expat library ${LIB_EXPAT}")
 
 include_directories ("${CMAKE_SOURCE_DIR}/base/include" "${CMAKE_SOURCE_DIR}/solver/include")
 add_library( ${OSUBaseName} 
@@ -40,9 +43,9 @@ IF("${isSystemDir}" STREQUAL "-1")
 ENDIF("${isSystemDir}" STREQUAL "-1")
 
 IF(WIN32)
-  target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} wsock32 ws2_32 ${expat_lib})
+  target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} wsock32 ws2_32 ${LIB_EXPAT})
 ELSE(WIN32)
-  target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} ${expat_lib})
+  target_link_libraries(${OSUBaseName} ${OMSISolverName} ${CMAKE_DL_LIBS} ${LIB_EXPAT})
 ENDIF(WIN32)
 
 

@@ -7,15 +7,14 @@
 #include "FactoryExport.h"
 
 #include <Core/Solver/SolverDefaultImplementation.h>
+
 #include <cvode/cvode.h>
-#ifdef USE_SUNDIALS_LAPACK
-  #include <cvode/cvode_lapack.h>
-#else
-  #include <cvode/cvode_spgmr.h>
-  #include <cvode/cvode_dense.h>
-#endif //USE_SUNDIALS_LAPACK
 #include <nvector/nvector_serial.h>
-#include <sundials/sundials_direct.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
+#ifdef USE_SUNDIALS_LAPACK
+  #include <sunlinsol/sunlinsol_lapackdense.h> /* Lapack dense linear solver */
+#endif //USE_SUNDIALS_LAPACK
+#include <sunlinsol/sunlinsol_spgmr.h>       /* Iterative linear solver */
 
 #ifdef RUNTIME_PROFILING
   #include <Core/Utils/extension/measure_time.hpp>
@@ -109,8 +108,6 @@ private:
   int calcJacobian(double t, long int N, N_Vector fHelp, N_Vector errorWeight, N_Vector jthcol, double* y, N_Vector fy, DlsMat Jac);
   void initializeColoredJac();
 
-
-
   ISolverSettings
     *_cvodesettings;              ///< Input      - Solver settings
 
@@ -163,7 +160,15 @@ double
     _CV_y0,                  ///< Temp      - Initial values in the Cvode Format
     _CV_y,                  ///< Temp      - State in Cvode Format
     _CV_yWrite,        ///< Temp      - Vector for dense out
-    _CV_absTol;
+    _CV_absTol,
+    _CV_ySolver;    ///< Temp      - Vector templated used by linear solver
+
+  SUNLinearSolver
+    _CV_linSol;     ///< Temp      - Linear solver object used by CVODE
+
+  SUNMatrix
+    _CV_J;          ///< Temp      - Matrix template for cloning matrices needed within linear solver
+
 
   // Variables for Coloured Jacobians
   int* _colorOfColumn;

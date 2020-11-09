@@ -7,6 +7,9 @@
 #include "FactoryExport.h"
 #include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 
+#include <kinsol/kinsol.h>
+#include <nvector/nvector_serial.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 
 class Kinsol : public INonLinearAlgLoopSolver, public AlgLoopSolverDefaultImplementation
 {
@@ -63,15 +66,15 @@ private:
     _firstCall; ///< Temp   - Denotes the first call to the solver, init() is called
 
     double
-        *_y, ///< Temp   - Unknowns
-        *_f, ///< Temp   - Residuals
+        *_y,                ///< Temp       - Unknowns
+        *_f,                ///< Temp       - Residuals
         *_helpArray,
-        *_y0, ///< Temp   - Auxillary variables
-        *_yScale, ///< Temp   - Auxillary variables
-        *_fScale, ///< Temp   - Auxillary variables
+        *_y0,               ///< Temp       - Auxillary variables
+        *_yScale,           ///< Temp       - Auxillary variables
+        *_fScale,           ///< Temp       - Auxillary variables
         *_jac,
-        *_yHelp, ///< Temp   - Auxillary variables
-        *_fHelp, ///< Temp   - Auxillary variables
+        *_yHelp,            ///< Temp       - Auxillary variables
+        *_fHelp,            ///< Temp       - Auxillary variables
         *_currentIterate,
         *_y_old,
         *_y_new;
@@ -80,14 +83,21 @@ private:
         _scsteptol;
 
     N_Vector
-        _Kin_y, ///< Temp   - Initial values in the Sundials Format
+        _Kin_y,             ///< Temp       - Initial values in the Sundials Format
         _Kin_y0,
         _Kin_yScale,
-        _Kin_fScale;
+        _Kin_fScale,
+        _Kin_ySolver;      ///< Temp        - Vector templated used by linear solver
+
+    SUNLinearSolver
+        _Kin_linSol;        ///< Temp       - Linear solver object used by KINSOL
+
+    SUNMatrix
+        _Kin_J;             ///< Temp       - Matrix template for cloning matrices needed within linear solver
 
     void
-        *_kinMem, ///< Temp   - Memory for the solver
-        *_data; ///< Temp   - User data. Contains pointer to Kinsol
+        *_kinMem,           ///< Temp       - Memory for the solver
+        *_data;             ///< Temp       - User data. Contains pointer to Kinsol
 
     bool
         _eventRetry,

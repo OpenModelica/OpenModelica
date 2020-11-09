@@ -102,7 +102,7 @@ weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib, string modelKe
     //create system
     shared_ptr<IMixedSystem> system = createSystem(modelLib, modelKey, _config->getGlobalSettings());
 
-   
+
 
     _systems[modelKey] = system;
     return system;
@@ -222,7 +222,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         }
 #endif
 
-        
+
     if (!_startZeroMQ)
     {
         //initialize for zeromq simulation is done in simulation thread

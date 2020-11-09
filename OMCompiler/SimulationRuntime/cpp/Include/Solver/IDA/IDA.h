@@ -6,8 +6,7 @@
 #include <Core/Solver/SolverDefaultImplementation.h>
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
-#include <sundials/sundials_direct.h>
-#include <idas/idas_dense.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 
 
 #ifdef RUNTIME_PROFILING
@@ -166,7 +165,14 @@ double
     _CV_yp,    ///<Temp   - Stateders in ida Format
     _CV_yWrite,        ///< Temp      - Vector for dense out
     _CV_ypWrite,
-    _CV_absTol;
+    _CV_absTol,
+    _ida_ySolver;   ///< Temp       - Vector templated used by linear solver
+
+  SUNLinearSolver
+    _ida_linSol;     ///< Temp      - Linear solver object used by IDA
+
+  SUNMatrix
+    _ida_J;          ///< Temp      - Matrix template for cloning matrices needed within linear solver
 
   // Variables for Coloured Jacobians
   int* _colorOfColumn;

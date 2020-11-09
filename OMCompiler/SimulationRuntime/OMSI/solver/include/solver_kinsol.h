@@ -49,7 +49,7 @@
 /* Headers for sundials kinsol */
 #include <kinsol/kinsol.h>
 #include <nvector/nvector_serial.h>
-#include <kinsol/kinsol_dense.h>
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +81,10 @@ typedef struct solver_data_kinsol {
     N_Vector u_scale;
     N_Vector f_scale;
 
-    DlsMat Jacobian;                        /**< Optional Jacobian matrix used by Kinsol. */
+    SUNLinearSolver linSol; /* Linear solver object used by KINSOL */
+    N_Vector y;  /* Template for cloning vectors needed inside linear solver */
+    SUNMatrix J; /* Sparse matrix template for cloning matrices needed within
+                    linear solver */
 
     solver_int strategy;                    /**< Strategy used by KINSOL solver. Possible values:
                                                  `KIN_NONE`, `KIN_LINESEARCH`, `KIN_FP` or `KIN_PICARD` */

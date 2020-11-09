@@ -37,7 +37,7 @@ omcZeromqTask::omcZeromqTask(int pub_port, int sub_port, OMCData* omc2, string w
 
 void omcZeromqTask::run()
 {
- 
+
     try
     {
         GC_stack_base sb;
@@ -60,13 +60,13 @@ void omcZeromqTask::run()
              throw;
         }
         string zeromq_simultaion_thread_id = _simulation_id + string("Thread");
-        
+
         // Create a root
         pt::ptree root;
-        
-        
-        
-      
+
+
+
+
         int status = 0;
         char* errorMsg = 0;
         char* result = 0;
@@ -74,7 +74,7 @@ void omcZeromqTask::run()
         string result_msg;
 
 
-         
+
         
         
         
@@ -85,20 +85,20 @@ void omcZeromqTask::run()
         result_msg = "";
         if (!checkStatus(_omc,status,error_msg,result_msg))
         {
-            
+
             string  exception_msg  = "Coudl not load MSL " + error_msg;
             throw std::invalid_argument(exception_msg);
         }
 
 
         while (1) {
-            
-            
+
+
            
             if(_debug)
                std::cout << "Waiting for user commands" << std::endl;
             string jobId;
-           
+
             //  Read envelope with address
             std::string topic = s_recv(subscriber_);
             //  Read message contents
@@ -106,33 +106,33 @@ void omcZeromqTask::run()
             //  Read message contents
             std::string message = s_recv(subscriber_);
             std::stringstream ss(message);
-            
+
             if(_debug)
             { 
                 std::cout << "Received user command with: " << std::endl;
                 std::cout << "\t Topic: " << topic <<  std::endl;
-                std::cout << "\t Type: " << type  <<  std::endl; 
+                std::cout << "\t Type: " << type  <<  std::endl;
                 std::cout << "\t Message: " << message << std::endl;
             }
-            
+
             pt::read_json(ss, root);
-           
+
             //read simulation id
             jobId = root.get < std::string >("jobId");
-           
-            
-            
 
 
-            
+
+
+
+
 
             if (type == "StartSimulation")
             {
-             
-               
+
+
                 string error;
                 setZeroMQID(_omc, jobId, error);
-             
+
                 std::thread simulation = std::thread(&omcZeromqTask::startSimulation, this, std::ref(root));
                 simulation.detach();
 
@@ -143,7 +143,7 @@ void omcZeromqTask::run()
             else if (type == "SimulationThreadWatingForID")
             {
                 if(_debug)
-                { 
+                {
                     std::cout << "simulation Thread started: " << std::endl;
                 }
                 s_sendmore(publisher_, zeromq_simultaion_thread_id);
@@ -160,7 +160,7 @@ void omcZeromqTask::run()
             {
 
                 if(_debug)
-                { 
+                {
                     std::cout << "simulation Thread stoped: " << std::endl;
                 }
                 s_sendmore(publisher_, zeromq_simultaion_thread_id);
@@ -170,11 +170,11 @@ void omcZeromqTask::run()
             }
         }
         GC_unregister_my_thread();
-    
+
     }
     catch (...)
     {
-      
+
         globalZeroMQTaskExceptionPtr = std::current_exception();
     }
 }
@@ -185,20 +185,20 @@ void omcZeromqTask::startSimulation(pt::ptree& node)
         GC_stack_base sb;
         GC_get_stack_base(&sb);
         GC_register_my_thread(&sb);
-      
+
         std::string classPath;
         int status = 0;
         bool command_status = false;
         string error_msg;
         string result_msg;
-        
+
         //read model name
         classPath = node.get < std::string >("classPath");
         if(_debug)
-        { 
+        {
             std::cout << "startSimulation for: " << classPath << std::endl;
         }
-       
+
         //read modelica file names which has to be loaded
         BOOST_FOREACH(const pt::ptree::value_type & child,
             node.get_child("moFiles"))
@@ -225,7 +225,7 @@ void omcZeromqTask::startSimulation(pt::ptree& node)
         }
         command_status = simulateModel(_omc, classPath, node, _working_directory, results, error);
         if(_debug)
-        { 
+        {
             std::cout << "received simulatoin results: " << std::endl;
             std::cout << "\t" << results;
         }
@@ -239,7 +239,7 @@ void omcZeromqTask::startSimulation(pt::ptree& node)
     }
     catch (...)
     {
-      
+
         globalSimulationExceptionPtr = std::current_exception();
     }
 }
@@ -251,7 +251,7 @@ bool  omcZeromqTask::setModelParameter(OMCData* omc, string model_name, pt::ptre
     char* result = 0;
     string error_msg;
     string result_msg;
-    
+
     //Read model paramater
     BOOST_FOREACH(const pt::ptree::value_type & parameter,
         node.get_child("parameters"))
@@ -336,7 +336,7 @@ bool  omcZeromqTask::setModelParameter(OMCData* omc, string model_name, pt::ptre
         result_msg = "";
         if (!checkStatus(_omc,status,error_msg,result_msg))
         {
-            
+
             error = error_msg;
             return false;
         }
@@ -444,12 +444,12 @@ bool omcZeromqTask::simulateModel(OMCData* omc, string model_name, pt::ptree& no
     }
     if (!checkStatus(_omc,status,error_msg,result_msg))
     {
-    
+
         error = error_msg;
         return false;
     }
     results = result_msg;
-    
+
     return true;
 
 
@@ -462,16 +462,16 @@ bool omcZeromqTask::checkStatus(OMCData* omc,int status,string& error_msg,string
     error_msg = string(errorMsg);
     if (status<0)
     {
-        
+
         if(_debug)
         {
-          std::cout << "received  errors: " << std::endl; 
-          std::cout <<  "\t" << errorMsg << std::endl; 
+          std::cout << "received  errors: " << std::endl;
+          std::cout <<  "\t" << errorMsg << std::endl;
         }
         return false;
     }
     std::vector<std::string> error_keywords{"failed", "error", "aborted"};
-    
+
     for(const auto& keyword : error_keywords)
     {
         auto pos = error_msg.find(keyword);
@@ -479,10 +479,10 @@ bool omcZeromqTask::checkStatus(OMCData* omc,int status,string& error_msg,string
         {
           if(_debug)
           {
-            std::cout << "received  errors: " << std::endl; 
-            std::cout <<  "\t" << errorMsg << std::endl; 
-          
-          
+            std::cout << "received  errors: " << std::endl;
+            std::cout <<  "\t" << errorMsg << std::endl;
+
+
             return false;
           }
         }
@@ -494,16 +494,16 @@ bool omcZeromqTask::checkStatus(OMCData* omc,int status,string& error_msg,string
         {
           if(_debug)
           {
-            std::cout << "received  errors: " << std::endl; 
-            std::cout <<  "\t" << errorMsg << std::endl; 
-          
-          
+            std::cout << "received  errors: " << std::endl;
+            std::cout <<  "\t" << errorMsg << std::endl;
+
+
             return false;
           }
         }
     }
     return true;
-    
+
 }
 
 

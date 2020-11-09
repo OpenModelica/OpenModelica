@@ -6209,17 +6209,17 @@ algorithm
       cr := ComponentReference.crefPrefixDer(cr);
       crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReference.crefEqual);
     then (inExp, false, crefs);
-      
+
     case (DAE.CALL(path = Absyn.IDENT(name="pre"), expLst={DAE.CREF(componentRef=cr)}),_) algorithm
       cr := ComponentReference.crefPrefixPre(cr);
       crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReference.crefEqual);
     then (inExp, false, crefs);
-      
+
     case (DAE.CALL(path = Absyn.IDENT(name="previous"), expLst={DAE.CREF(componentRef=cr)}),_) algorithm
       cr := ComponentReference.crefPrefixPrevious(cr);
       crefs := List.unionEltOnTrue(cr,inCrefs,ComponentReference.crefEqual);
     then (inExp, false, crefs);
-      
+
     case (DAE.CALL(path = Absyn.IDENT(name="start"), expLst={DAE.CREF(componentRef=cr)}),_) algorithm
       Error.addInternalError(getInstanceName() + " - Found a start call expression " + ExpressionDump.printExpStr(inExp), sourceInfo());
       cr := ComponentReference.crefPrefixStart(cr);
