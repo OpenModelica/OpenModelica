@@ -2061,6 +2061,7 @@ void GraphicsView::addConnection(Element *pComponent)
       mpConnectionLineAnnotation->setLineThickness(0.5);
     }
   } else { // When clicking the end component
+    setIsCreatingConnection(false);
     mpConnectionLineAnnotation->setEndComponent(pComponent);
     // update the last point to the center of component
     QPointF newPos;
@@ -2223,7 +2224,6 @@ void GraphicsView::addConnection(Element *pComponent)
           mpModelWidget->updateModelText();
         }
       }
-      setIsCreatingConnection(false);
     }
   }
 }
