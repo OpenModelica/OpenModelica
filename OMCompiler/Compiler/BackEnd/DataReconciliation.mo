@@ -88,7 +88,7 @@ protected
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName;
+  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations;
 
   list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
@@ -401,7 +401,7 @@ algorithm
   //BackendDump.dumpVariables(BackendVariable.listVar(setSVars),"Unknown variables in SET_S_checks ");
   BackendDump.dumpVariables(BackendVariable.listVar(paramVars),"Parameters in SET_S");
 
-  VerifyDataReconciliation(tempSetC, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq);
+  VerifyDataReconciliation(tempSetC, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq, shared);
 
   if debug then
     BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
@@ -446,6 +446,11 @@ algorithm
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outOtherEqns, "remaining equations in Set-S");
   modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
+
+  // write set-C equation to HTML file
+  auxillaryConditionsFilename := shared.info.fileNamePrefix + "_AuxiliaryConditions.html";
+  auxillaryEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setC_Eq), "Auxiliary conditions");
+  System.writeFile(auxillaryConditionsFilename, auxillaryEquations);
 
   // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
   outDAE := BackendDAE.DAE({currentSystem}, shared);
@@ -634,6 +639,19 @@ algorithm
   end for;
   outstring := instring+outstring;
 end dumpExtractedEquations;
+
+protected function dumpExtractedEquationsToHTML
+  "returns the list of set-c equations in html file"
+  input BackendDAE.EquationArray eqs;
+  input String comment;
+  output String outstring="";
+algorithm
+  outstring := "<html>\n<body>\n<h2>" + comment + "</h2>\n<ol>";
+  for eq in BackendEquation.equationList(eqs) loop
+    outstring := outstring + "\n" + "  <li>" + BackendDump.equationString(eq) + " </li>";
+  end for;
+  outstring := outstring + "\n</ol>\n</body>\n</html>";
+end dumpExtractedEquationsToHTML;
 
 public function setBoundaryConditionEquationsAndVars
   "Function which iterates shared.globalKnownVars Real parameters and
@@ -1786,6 +1804,7 @@ public function VerifyDataReconciliation
   input array<Integer> mapIncRowEqn;
   input BackendDAE.Variables outsetS_vars;
   input list<BackendDAE.Equation> outsetS_eq;
+  input BackendDAE.Shared shared;
 protected
   list<Integer> matchedeq, matchedknownssetc, matchedunknownssetc, matchedknownssets, matchedunknownssets;
   list<Integer> tmpunknowns, tmpknowns, tmplist1, tmplist2, tmplist3, tmplist1sets, setstmp;
@@ -1794,6 +1813,7 @@ protected
   list<tuple<Integer,list<Integer>>> var_dependencytree, eq_dependencytree;
   String str, resstr;
   list<BackendDAE.Var> var, convar;
+  Boolean rule2 = true;
 algorithm
 
   print("\n\nAutomatic Verification Steps of DataReconciliation Algorithm"+ "\n" + UNDERLINE + "\n");
@@ -1832,9 +1852,14 @@ algorithm
       print("-Failed\n");
       BackendDump.dumpVarList(List.map1r(tmplist2, BackendVariable.getVarAt, allVars), "knownVariables not Found:" + dumplistInteger(tmplist2));
       Error.addMessage(Error.INTERNAL_ERROR, {": Condition 2- Failed : The system is ill-posed."});
-      fail();
+      rule2 := false;
+      str := dumpToCsv("", List.map1r(tmplist2, BackendVariable.getVarAt, allVars));
+      System.writeFile(shared.info.fileNamePrefix + "_NonReconcilcedVars.txt", str);
+      //fail();
     end if;
-    print("-Passed \n");
+    if (rule2) then
+      print("-Passed \n");
+    end if;
     BackendDump.dumpVarList(List.map1r(tmplist1, BackendVariable.getVarAt, allVars), "-SET_C has known variables:" + dumplistInteger(tmplist1));
     BackendDump.dumpVarList(List.map1r(tmplist1sets, BackendVariable.getVarAt, allVars), "-SET_S has known variables:" + dumplistInteger(tmplist1sets));
   end if;
@@ -1933,6 +1958,19 @@ algorithm
   end for;
   outstring := instring+outstring;
 end dumpToCsv;
+
+/* function which dumps non reconciledVars failing for condition -2 to a log file*/
+public function dumpNonReconciledVars
+  input list<BackendDAE.Var> invar;
+  output String outstring="";
+protected
+  DAE.ComponentRef cr;
+algorithm
+  for i in invar loop
+    cr := BackendVariable.varCref(i);
+    outstring := outstring + ComponentReference.crefStr(cr) + "\n";
+  end for;
+end dumpNonReconciledVars;
 
 protected function dumpEquationString "Helper function to e.g. dump equations"
   input BackendDAE.Equation inEquation;

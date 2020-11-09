@@ -186,6 +186,7 @@ end translateModel;
     extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
+    extern int <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>(DATA* data, char ** names);
     extern int <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>(DATA *data, DAEMODE_DATA*);
     extern int <%symbolName(modelNamePrefixStr,"functionLocalKnownVars")%>(DATA*, threadData_t*);
     extern int <%symbolName(modelNamePrefixStr,"symbolicInlineSystem")%>(DATA*, threadData_t*);
@@ -1083,7 +1084,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
 
     <%functionInput(simCode, modelInfo, modelNamePrefixStr)%>
 
-    <%functionDataInput(modelInfo, modelNamePrefixStr)%>
+    <%functionDataInput(simCode, modelInfo, modelNamePrefixStr)%>
 
     <%functionOutput(modelInfo, modelNamePrefixStr)%>
 
@@ -1166,6 +1167,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>,
        <%symbolName(modelNamePrefixStr,"inputNames")%>,
+       <%symbolName(modelNamePrefixStr,"dataReconciliationInputNames")%>,
        <% if isModelExchangeFMU then symbolName(modelNamePrefixStr,"read_input_fmu") else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"initialAnalyticJacobianFMIDER") else "NULL" else "NULL" %>,
        <% if isSome(modelStructure) then match modelStructure case SOME(FMIMODELSTRUCTURE(continuousPartialDerivatives=SOME(__))) then symbolName(modelNamePrefixStr,"functionJacFMIDER_column") else "NULL" else "NULL" %>,
@@ -1711,7 +1713,7 @@ template functionInput(SimCode simCode, ModelInfo modelInfo, String modelNamePre
   end match
 end functionInput;
 
-template functionDataInput(ModelInfo modelInfo, String modelNamePrefix)
+template functionDataInput(SimCode simCode, ModelInfo modelInfo, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
   match modelInfo
@@ -1725,6 +1727,21 @@ template functionDataInput(ModelInfo modelInfo, String modelNamePrefix)
         '<%cref(name)%> = data->simulationInfo->datainputVars[<%i0%>];'
         ;separator="\n"
       %>
+      TRACE_POP
+      return 0;
+    }
+
+    int <%symbolName(modelNamePrefix,"dataReconciliationInputNames")%>(DATA *data, char ** names){
+      TRACE_PUSH
+
+      <%vars.dataReconinputVars |> simVar as SIMVAR(__) hasindex i0 =>
+        match cref2simvar(name, simCode)
+        case SIMVAR(aliasvar=NOALIAS()) then
+        'names[<%i0%>] = (char *) data->modelData-><%expTypeShort(type_)%>VarsData[<%index%>].info.name;'
+        else error(sourceInfo(), 'Cannot get attributes of alias variable <%crefStr(name)%>. Alias variables should have been replaced by the compiler before SimCode')
+        ;separator="\n"
+      %>
+
       TRACE_POP
       return 0;
     }

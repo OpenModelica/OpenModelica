@@ -1,22 +1,16 @@
 // name:     Splitter4
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Splitter4_Inputs.csv
+// depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Splitter4_Inputs.csv
 // cflags: -d=-newInst
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
 
-loadFile("DataReconciliationSimpleTests/package.mo");
+loadFile("NewDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-//translateModel(DataReconciliationSimpleTests.Splitter4);
-//getErrorString();
-
-//system("DataReconciliationSimpleTests.Splitter4.exe -reconcile -sx=DataReconciliationSimpleTests.Splitter4_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
-//getErrorString()
-
-simulate(DataReconciliationSimpleTests.Splitter4, simflags="-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Splitter4_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
+simulate(NewDataReconciliationSimpleTests.Splitter4, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Splitter4_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
 
@@ -31,7 +25,7 @@ getErrorString();
 // Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation.
 // "
 //
-// ModelInfo: DataReconciliationSimpleTests.Splitter4
+// ModelInfo: NewDataReconciliationSimpleTests.Splitter4
 // ==========================================================================
 //
 //
@@ -411,11 +405,11 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.Splitter4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Splitter4_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Splitter4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Splitter4_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | DataReconciliationSimpleTests.Splitter4
+// stdout            | info    | NewDataReconciliationSimpleTests.Splitter4
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
