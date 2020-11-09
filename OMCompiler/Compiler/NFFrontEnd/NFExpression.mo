@@ -2126,6 +2126,12 @@ public
         list<Expression> rest;
         DAE.Exp exp;
 
+      // list is empty from the get-go: create neutral element
+      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.ADDITION)
+      then Expression.toDAE(Expression.makeZero(operator.ty));
+      case {} guard(Operator.getMathClassification(operator) == NFOperator.MathClassification.MULTIPLICATION)
+      then Expression.toDAE(Expression.makeOne(operator.ty));
+
       // no rest, just return the DAE representation of last argument
       case arg :: {} then Expression.toDAE(arg);
 
