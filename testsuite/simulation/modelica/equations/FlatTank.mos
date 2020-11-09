@@ -4,6 +4,7 @@
 // teardown_command: rm -rf FlatTank_* FlatTank FlatTank.exe FlatTank.cpp FlatTank.makefile FlatTank.libs FlatTank.log output.log
 // 
 // Drmodelica: 12.1 Traditional Methodology (p. 385)
+// cflags: -d=-newInst
 //
 loadFile("FlatTank.mo");
 simulate(FlatTank,stopTime=150, tolerance=1e-4, numberOfIntervals=150); // 2 intervals == 3 values

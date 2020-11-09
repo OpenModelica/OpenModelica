@@ -1,6 +1,7 @@
 // name:     Constant1
 // keywords: declaration
 // status:   correct
+// cflags: -d=-newInst
 //
 // Basic constant definitions.
 //

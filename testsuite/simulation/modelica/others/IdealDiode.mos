@@ -2,6 +2,7 @@
 // keywords: events, mixed systems
 // status: correct
 // teardown_command: rm -rf ideal_diode_* ideal_diode ideal_diode.exe ideal_diode.log ideal_diode.cpp ideal_diode.makefile ideal_diode.libs output.log
+// cflags: -d=-newInst
 //
 // Event handling
 //

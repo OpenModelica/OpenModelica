@@ -2,6 +2,7 @@
 // keywords: tuples, equation counting
 // status: correct
 // teardown_command: rm -rf ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar_* ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.exe ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.cpp ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.makefile ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.libs ModelicaTest.Fluid.Dissipation.Verifications.HeatTransfer.Channel.kc_evenGapLaminar.log
+// cflags: -d=-newInst
 //
 // Checks that tuple equations are counted correctly
 //

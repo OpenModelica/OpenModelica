@@ -1,6 +1,7 @@
 // name: RealAdd
 // keywords: real, addition
 // status: correct
+// cflags: -d=-newInst
 //
 // tests Real addition
 //

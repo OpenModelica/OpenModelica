@@ -1,6 +1,7 @@
 // name:     PolynomialEvaluatorB
 // keywords:
 // status:   correct
+// cflags: -d=-newInst
 //
 
 block PolynomialEvaluator

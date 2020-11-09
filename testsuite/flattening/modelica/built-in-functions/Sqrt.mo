@@ -1,6 +1,7 @@
 // name: Sqrt
 // keywords: sqrt
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing the built-in sqrt function
 //

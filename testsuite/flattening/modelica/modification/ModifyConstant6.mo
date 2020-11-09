@@ -1,6 +1,7 @@
 // name:     ModifyConstant6
 // keywords: scoping,modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Finalized constants can not be modified.
 //

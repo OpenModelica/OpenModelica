@@ -4,6 +4,7 @@
 // cflags:
 //
 // ticket:4253
+// cflags: -d=-newInst
 
 loadString("
 function x_to_y

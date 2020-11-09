@@ -1,6 +1,7 @@
 // name:     ReinitArray
 // keywords: reinit array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests reinit operator on an array.
 //

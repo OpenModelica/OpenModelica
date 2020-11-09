@@ -1,6 +1,7 @@
 // name: PublicAccess
 // keywords: public, access
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests access to public elements of another class
 //

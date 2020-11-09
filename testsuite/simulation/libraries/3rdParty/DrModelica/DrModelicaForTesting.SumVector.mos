@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.SumVector
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.SumVector.* DrModelicaForTesting.SumVector_* DrModelicaForTesting.SumVector DrModelicaForTesting.SumVector.exe DrModelicaForTesting.SumVector.cpp DrModelicaForTesting.SumVector.makefile DrModelicaForTesting.SumVector.libs DrModelicaForTesting.SumVector.log DrModelicaForTesting.SumVector.c DrModelicaForTesting.SumVector.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

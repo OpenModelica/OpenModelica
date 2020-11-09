@@ -1,6 +1,7 @@
 // name: CyclicBindingConst
 // keywords: cyclic
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests cyclic binding of constants
 //

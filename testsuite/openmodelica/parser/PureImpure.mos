@@ -1,6 +1,7 @@
 // name: PureImpure.mos
 // keywords: test pure/impure Modelica 3.3 keywords
 // status: correct
+// cflags: -d=-newInst
 //
 // Test pure/impure keywords
 //

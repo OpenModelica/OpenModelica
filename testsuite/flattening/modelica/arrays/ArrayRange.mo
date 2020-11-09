@@ -1,6 +1,7 @@
 // name: ArrayRange
 // keywords: array, range
 // status: correct
+// cflags: -d=-newInst
 //
 // tests construction of arrays with range initialization
 //

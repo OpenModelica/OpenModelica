@@ -1,6 +1,7 @@
 // name:     Array1
 // keywords: arrays
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Using end in array subscripts.
 //

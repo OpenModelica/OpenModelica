@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 7.2  Array Constructor (p. 210)
+// cflags: -d=-newInst
 //
 
 class RangeVector

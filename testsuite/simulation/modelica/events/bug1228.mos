@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf eventTests.bug1228*  output.log
+// cflags: -d=-newInst
 //
 //
 

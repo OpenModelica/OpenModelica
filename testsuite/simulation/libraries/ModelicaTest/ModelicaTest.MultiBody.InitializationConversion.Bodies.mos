@@ -1,6 +1,7 @@
 // name:     ModelicaTest.MultiBody.InitializationConversion.Bodies
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

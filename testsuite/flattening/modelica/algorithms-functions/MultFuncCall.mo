@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 2.2 Restricted Classes (p.28)
+// cflags: -d=-newInst
 //
 function Multiply
   input Real x;

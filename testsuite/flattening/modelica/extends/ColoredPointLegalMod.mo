@@ -9,6 +9,7 @@
 // superclass are inherited with their own protection.
 //
 // Drmodelica: 4.1 Public Respectively Protected Elements (p. 117)
+// cflags: -d=-newInst
 //
 record ColorData
   Real dummy;

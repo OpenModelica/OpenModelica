@@ -1,6 +1,7 @@
 // name: OperatorOverloadComplex.mo
 // keywords: operator overload
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests operator overloading on Complex numbers, operators can only contain function declarations
 //

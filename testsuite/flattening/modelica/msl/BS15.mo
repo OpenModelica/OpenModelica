@@ -1,6 +1,7 @@
 // name:     BS15 - BooleanConstant component
 // keywords: BooleanConstant
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the BooleanConstant component.
 //

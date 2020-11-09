@@ -1,6 +1,7 @@
 // name:     ModifiersOnExtends.mo [BUG: #2727]
 // keywords: extends modifier handling
 // status:   correct
+// cflags: -d=-newInst
 //
 // check that modifiers on extends are not lost
 //

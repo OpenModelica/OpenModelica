@@ -1,6 +1,7 @@
 // name: ArrayAccess
 // keywords: array
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing simple array access
 //

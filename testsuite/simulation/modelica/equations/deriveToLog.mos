@@ -2,6 +2,7 @@
 // keywords: differentiation
 // status: correct
 // teardown_command: rm -rf modelDiffLog* output.log
+// cflags: -d=-newInst
 //
 // Equation handling
 //

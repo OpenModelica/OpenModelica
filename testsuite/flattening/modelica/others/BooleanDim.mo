@@ -1,6 +1,7 @@
 // name:     BooleanDim
 // keywords: boolean dimension
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the use of Boolean as dimension.
 //

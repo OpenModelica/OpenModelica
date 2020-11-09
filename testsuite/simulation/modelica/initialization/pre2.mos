@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.test_1195b* _initializationTests.test_1195b* output.log
+// cflags: -d=-newInst
 //
 //  case for pre variables during initialization
 //

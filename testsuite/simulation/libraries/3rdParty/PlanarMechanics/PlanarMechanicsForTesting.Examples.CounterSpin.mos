@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.CounterSpin.* PlanarMechanicsForTesting.Examples.CounterSpin_* PlanarMechanicsForTesting.Examples.CounterSpin PlanarMechanicsForTesting.Examples.CounterSpin.exe PlanarMechanicsForTesting.Examples.CounterSpin.cpp PlanarMechanicsForTesting.Examples.CounterSpin.makefile PlanarMechanicsForTesting.Examples.CounterSpin.libs PlanarMechanicsForTesting.Examples.CounterSpin.log PlanarMechanicsForTesting.Examples.CounterSpin.c PlanarMechanicsForTesting.Examples.CounterSpin.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

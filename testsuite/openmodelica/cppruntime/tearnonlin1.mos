@@ -2,7 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf  BouncingBall.log libModelica.dll tearnonlin1.cpp tearnonlin1.libs tearnonlin1.h tearnonlin1.makefile  tearnonlin1Algloop4.cpp tearnonlin1Algloop4.h output.log Functions.h Functions.cpp
-// cflags: 	 +simCodeTarget=Cpp
+// cflags: 	 +simCodeTarget=Cpp -d=-newInst
 //
 // Algebraic loop
 //

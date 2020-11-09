@@ -1,5 +1,6 @@
 // name: Bug2788.mos
 // status: correct
+// cflags: -d=-newInst
 //
 // tests reported Bug 2788
 //

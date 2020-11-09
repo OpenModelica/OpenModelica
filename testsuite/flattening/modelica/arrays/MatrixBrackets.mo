@@ -1,6 +1,7 @@
 // name: MatrixBrackets
 // keywords: array, matrix
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests matrix construction with [] syntax
 //

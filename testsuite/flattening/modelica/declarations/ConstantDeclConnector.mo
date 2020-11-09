@@ -1,6 +1,7 @@
 // name: ConstantDeclConnector
 // keywords: constant
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the constant prefix used on a connector
 //

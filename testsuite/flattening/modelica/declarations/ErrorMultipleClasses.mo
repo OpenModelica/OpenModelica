@@ -1,5 +1,6 @@
 // name: ErrorMultipleClasses
 // status: incorrect
+// cflags: -d=-newInst
 
 class A
 end A;

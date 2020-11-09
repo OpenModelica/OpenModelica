@@ -1,6 +1,7 @@
 // name:      userDefinedTearing2
 // keywords:  user defined tearing
 // status:    correct
+// cflags: -d=-newInst
 
 loadFile("Algorithm2.mo"); getErrorString();
 

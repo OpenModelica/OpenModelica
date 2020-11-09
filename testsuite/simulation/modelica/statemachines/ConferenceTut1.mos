@@ -1,6 +1,7 @@
 // name:     ConferenceTut1
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("ConferenceTut1.mo");

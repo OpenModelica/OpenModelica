@@ -1,6 +1,7 @@
 // name:     06  Advanced
 // keywords: MetaModelica
 // status:   correct
+// cflags: -d=-newInst
 //
 // OpenModelica Development Course at PELAB
 //

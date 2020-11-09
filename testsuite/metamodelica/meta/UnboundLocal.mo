@@ -1,4 +1,4 @@
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: correct
 
 model UnboundLocal

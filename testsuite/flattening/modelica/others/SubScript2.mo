@@ -1,6 +1,7 @@
 // name:     SubScript2
 // keywords: SubScript simplifications
 // status:   correct
+// cflags: -d=-newInst
 //
 // Check that subscripts are simplified correctly.
 //

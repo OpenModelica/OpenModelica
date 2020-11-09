@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Polynomial Evaluator (p. 242)
+// cflags: -d=-newInst
 //
 
 block PolynomialEvaluator

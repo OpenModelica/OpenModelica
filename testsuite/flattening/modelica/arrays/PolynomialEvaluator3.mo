@@ -5,6 +5,7 @@
 // Tests named arguments, dynamic array sizes etc.
 //
 // Drmodelica: 9.2 called (p. 300)
+// cflags: -d=-newInst
 //
 
 

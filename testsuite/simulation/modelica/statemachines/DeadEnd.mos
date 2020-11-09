@@ -1,6 +1,7 @@
 // name:     DeadEnd
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("DeadEnd.mo");

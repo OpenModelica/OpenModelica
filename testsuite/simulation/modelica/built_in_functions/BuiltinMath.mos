@@ -2,6 +2,7 @@
 // keywords: Built-in Mathematical Functions
 // status: correct
 // teardown_command: rm -rf BuiltinMath_* BuiltinMath.log BuiltinMath.libs BuiltinMath BuiltinMath.exe BuiltinMath.cpp BuiltinMath.makefile output.log
+// cflags: -d=-newInst
 //
 // Built-in Mathematical Functions
 //

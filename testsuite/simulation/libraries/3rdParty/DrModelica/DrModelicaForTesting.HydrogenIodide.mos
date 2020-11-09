@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.HydrogenIodide
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.HydrogenIodide.* DrModelicaForTesting.HydrogenIodide_* DrModelicaForTesting.HydrogenIodide DrModelicaForTesting.HydrogenIodide.exe DrModelicaForTesting.HydrogenIodide.cpp DrModelicaForTesting.HydrogenIodide.makefile DrModelicaForTesting.HydrogenIodide.libs DrModelicaForTesting.HydrogenIodide.log DrModelicaForTesting.HydrogenIodide.c DrModelicaForTesting.HydrogenIodide.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

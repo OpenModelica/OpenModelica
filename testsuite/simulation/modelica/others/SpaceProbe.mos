@@ -2,6 +2,7 @@
 // keywords: DOPRI5
 // status: correct
 // teardown_command: rm -rf SpaceProbe_* SpaceProbe SpaceProbe.exe SpaceProbe.cpp SpaceProbe.makefile SpaceProbe.libs SpaceProbe.log output.log
+// cflags: -d=-newInst
 // 
 //  <insert description here>
 //

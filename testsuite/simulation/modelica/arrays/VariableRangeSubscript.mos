@@ -2,6 +2,7 @@
 // keywords: array range subscript bug2192
 // status:   correct
 // teardown_command: rm -rf VariableRangeSubscript VariableRangeSubscript_* VariableRangeSubscript.exe VariableRangeSubscript.cpp VariableRangeSubscript.makefile VariableRangeSubscript.libs VariableRangeSubscript.log output.log
+// cflags: -d=-newInst
 // 
 // Tests code generation for a range with variable length used as a subscript.
 // 

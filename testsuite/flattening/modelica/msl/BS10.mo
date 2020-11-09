@@ -1,6 +1,7 @@
 // name:     BS10 - Step component
 // keywords: Step
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Step component.
 //

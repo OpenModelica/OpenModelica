@@ -2,6 +2,7 @@
 // keywords: handling of array equations
 // teardown_command: rm -rf PowerSystems.Examples.Spot.AC3ph.Breaker*
 // status:   correct
+// cflags: -d=-newInst
 
 loadFile("Breaker_total.mo"); getErrorString();
 simulate(PowerSystems.Examples.Spot.AC3ph.Breaker); getErrorString();

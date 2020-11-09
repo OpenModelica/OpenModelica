@@ -1,5 +1,6 @@
 // name: testFinalCon_6
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+gDynopt");
 getErrorString();

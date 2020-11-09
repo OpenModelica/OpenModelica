@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.* ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger_* ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.log ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.c ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterWaterExchanger.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

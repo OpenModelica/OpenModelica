@@ -1,6 +1,6 @@
 // name:     HeatTankExpanded
 // keywords:
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 //

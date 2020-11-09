@@ -2,6 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf otherTests.pendulum4* output.log
+// cflags: -d=-newInst
 //
 // Event handling
 //

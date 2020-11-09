@@ -1,6 +1,7 @@
 // name:     Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Glycol47
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

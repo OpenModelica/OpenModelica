@@ -1,6 +1,7 @@
 // name: InitialStateTest
 // keywords: state machines features
 // status: wrong
+// cflags: -d=-newInst
 
 model InitialStateTest
   block AState

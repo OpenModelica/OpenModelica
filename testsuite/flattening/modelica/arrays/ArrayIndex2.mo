@@ -1,6 +1,7 @@
 // name:     ArrayIndex2
 // keywords: array indices bug1241
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that array indices are correct when using :.
 //

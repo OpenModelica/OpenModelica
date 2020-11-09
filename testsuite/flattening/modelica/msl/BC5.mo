@@ -1,6 +1,7 @@
 // name:     BC5 - LimIntegrator component
 // keywords: LimIntegrator
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the LimIntegrator component.
 //

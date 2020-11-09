@@ -1,6 +1,7 @@
 // name:     ArraySlice2
 // keywords: array slicing
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests array slicing where some subscripts are scalar variables.
 //

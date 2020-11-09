@@ -1,6 +1,7 @@
 // name:     ScopeDeclaration3
 // keywords: scoping,declaration
 // status:   correct
+// cflags: -d=-newInst
 //
 // Modelica is a strict define-before-use language. A variable must be
 // fully instantiated (defined after end of declaration, semicolon)

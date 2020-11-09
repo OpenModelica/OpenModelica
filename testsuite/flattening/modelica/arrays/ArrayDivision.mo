@@ -1,6 +1,7 @@
 // name: ArrayDivision
 // keywords: array, division
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests elementwise array division
 //

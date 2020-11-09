@@ -2,6 +2,7 @@
 // keywords: array slice
 // status: correct
 // teardown_command: rm -rf ArraySlice_* ArraySlice ArraySlice.exe ArraySlice.cpp ArraySlice.makefile ArraySlice.libs ArraySlice.log output.log
+// cflags: -d=-newInst
 // 
 // Tests assignment of one slice to another slice.
 // 

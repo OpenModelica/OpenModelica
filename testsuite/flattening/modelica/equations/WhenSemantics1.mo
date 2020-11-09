@@ -1,6 +1,7 @@
 // name:     WhenSemantics1
 // keywords: when semantics
 // status:   correct
+// cflags: -d=-newInst
 //
 // Simple when
 

@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.singularJacobian_* _initializationTests.singularJacobian_* output.log
+// cflags: -d=-newInst
 //
 //  case for nonlinear problems with singular jacobian
 //

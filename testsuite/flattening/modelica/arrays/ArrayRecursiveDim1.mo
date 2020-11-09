@@ -1,6 +1,7 @@
 // name:     ArrayRecursiveDim
 // keywords: array, recursive, dimension, bug #2057
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that the compiler can handle modificaations that reference the
 // modified arrays dimensions.

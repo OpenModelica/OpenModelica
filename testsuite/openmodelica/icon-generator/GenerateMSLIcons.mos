@@ -2,6 +2,7 @@
 // keywords: generate MSL icons
 // status: correct
 // teardown_command: rm -rf ModelicaIcons *.log
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica);

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.Concat3
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.Concat3.* DrModelicaForTesting.Concat3_* DrModelicaForTesting.Concat3 DrModelicaForTesting.Concat3.exe DrModelicaForTesting.Concat3.cpp DrModelicaForTesting.Concat3.makefile DrModelicaForTesting.Concat3.libs DrModelicaForTesting.Concat3.log DrModelicaForTesting.Concat3.c DrModelicaForTesting.Concat3.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

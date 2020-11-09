@@ -6,6 +6,7 @@
 // Event handling
 //
 // Bug: https://openmodelica.org:8443/cb/issue/1209?navigation=true
+// cflags: -d=-newInst
 // 
 loadFile("PreAndAliasedVar.mo");
 simulate(PreAndAliasedVar);

@@ -1,6 +1,7 @@
 // name: Sinh
 // keywords: sinh
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in sinh function
 //

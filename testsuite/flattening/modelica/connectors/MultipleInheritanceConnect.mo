@@ -1,6 +1,7 @@
 // name: MultipleInheritanceConnect
 // keywords: connector
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that multiple inheritance is handled correctly with regards to connect.
 //

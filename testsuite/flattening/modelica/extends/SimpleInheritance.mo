@@ -1,6 +1,7 @@
 // name: SimpleInheritance
 // keywords: class, inheritance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple inheritance using the extends keyword
 //

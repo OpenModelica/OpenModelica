@@ -1,6 +1,7 @@
 // name: OverdeterminedInitialization.Fluid.DynamicPipeInitialValues
 // keywords: initialization, over-determined
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();

@@ -5,6 +5,7 @@
 // omc debug dump: +d=dumpSparsePatternVerbose
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=dumpSparsePatternVerbose
 loadString("
 model testDumpSparsePatternVerbose \"testsuite/simulation/modelica/nonlinear_system/nlsTestPackage.mo: model problem6\"

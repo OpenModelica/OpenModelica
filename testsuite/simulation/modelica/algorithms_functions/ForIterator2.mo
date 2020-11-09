@@ -1,6 +1,7 @@
 // name:     ForIterator2
 // keywords: for iterator
 // status:   correct
+// cflags: -d=-newInst
 //
 // For iterator handling
 //

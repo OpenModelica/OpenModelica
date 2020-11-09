@@ -2,6 +2,7 @@
 // keywords: Simulate, readSimulationData
 // status: correct
 // teardown_command: rm -rf Interpol2Test Interpol2Test.* Interpol2Test_* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate Modelica.Math.tempInterpol functions
 //

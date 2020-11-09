@@ -2,6 +2,7 @@
 // keywords: Tests the export and import of read only packages i.e, package.mol
 // status: correct
 // teardown_command: rm -rf buildEncryptedPackage.log "ReadOnlyPkg 1.1.mol"
+// cflags: -d=-newInst
 //
 
 loadFile("ReadOnlyPkg/package.mo");

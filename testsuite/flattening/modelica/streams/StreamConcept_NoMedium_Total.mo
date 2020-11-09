@@ -1,6 +1,7 @@
 // name: StreamConcept_NoMedium_Total.mo
 // keywords: stream instream connector
 // status: correct
+// cflags: -d=-newInst
 //
 // Test model from SiemensPower that tests stream connectors.
 //

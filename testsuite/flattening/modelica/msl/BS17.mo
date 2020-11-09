@@ -1,6 +1,7 @@
 // name:     BS17 - BooleanStep component
 // keywords: BooleanStep
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the BooleanStep component.
 //

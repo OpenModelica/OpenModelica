@@ -1,6 +1,7 @@
 // name:     Type1
 // keywords: type
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // You cannot define your own types, only derive them from the builtings.
 //

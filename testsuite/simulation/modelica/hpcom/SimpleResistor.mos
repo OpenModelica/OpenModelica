@@ -2,6 +2,7 @@
 // keywords:  hpcom
 // status:    correct
 // depends: SimpleResistor_eqs_prof.json
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();

@@ -2,6 +2,7 @@
 // keywords: ExternalObject
 // status:   correct
 // teardown_command: rm -rf ExtObjOrder_*
+// cflags: -d=-newInst
 //
 //  Checks that external objects are constructed in the same order as they are defined.
 //

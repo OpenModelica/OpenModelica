@@ -1,6 +1,7 @@
 // name: ConnectInWhen
 // keywords: connect, when, equation
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Checks that connect equations are not allowed in when equations.
 //
@@ -20,7 +21,7 @@ end ConnectInWhen;
 
 // Result:
 // Error processing file: ConnectInWhen.mo
-// [flattening/modelica/equations/ConnectInWhen.mo:17:5-17:20:writable] Error: connect may not be used inside when-equations (found connect(c1, c2)).
+// [flattening/modelica/equations/ConnectInWhen.mo:18:5-18:20:writable] Error: connect may not be used inside when-equations (found connect(c1, c2)).
 // Error: Error occurred while flattening model ConnectInWhen
 //
 // # Error encountered! Exiting...

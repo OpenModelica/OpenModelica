@@ -1,6 +1,6 @@
 // name: Connect14
 // keywords:  connector, primitive types
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status: correct
 //
 // Test that all primitive types can be used in connectors.

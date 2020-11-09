@@ -1,5 +1,5 @@
 // name: ErrorInvalidMetarecord
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
 
 model ErrorInvalidMetarecord

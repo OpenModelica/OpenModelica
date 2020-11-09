@@ -1,6 +1,7 @@
 // name:     NotDependsRecursive
 // keywords: scoping
 // status:   correct
+// cflags: -d=-newInst
 //
 // A recursive model can not be instantiated. But this one can.
 //

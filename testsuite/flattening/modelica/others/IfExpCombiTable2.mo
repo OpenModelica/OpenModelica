@@ -1,5 +1,6 @@
 // name: IfExpCombiTable2
 // status: incorrect
+// cflags: -d=-newInst
 // This should succeed fail with a good error message (for example, c not found)
 
 class IfExpCombiTable2
@@ -9,7 +10,7 @@ end IfExpCombiTable2;
 
 // Result:
 // Error processing file: IfExpCombiTable2.mo
-// [flattening/modelica/others/IfExpCombiTable2.mo:7:3-7:36:writable] Error: Variable c not found in scope IfExpCombiTable2.
+// [flattening/modelica/others/IfExpCombiTable2.mo:8:3-8:36:writable] Error: Variable c not found in scope IfExpCombiTable2.
 // Error: Error occurred while flattening model IfExpCombiTable2
 //
 // # Error encountered! Exiting...

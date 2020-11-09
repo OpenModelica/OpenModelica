@@ -1,6 +1,7 @@
 // name: bug_2217
 // keywords: array,codegen
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model bug_2217

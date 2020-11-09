@@ -1,6 +1,7 @@
 // name:     Function bubblesort
 // keywords: function for statement array
 // status:   correct, however ut does not work together with the test suite
+// cflags: -d=-newInst
 // 
 //  Testing:
 //    - Calling a function with a Real array

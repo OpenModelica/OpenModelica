@@ -2,6 +2,7 @@
 // keywords: fmu export QSS multirate
 // status: correct
 // teardown_command: rm -rf log.txt
+// cflags: -d=-newInst
 
 loadString("
 model advection

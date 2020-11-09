@@ -1,6 +1,7 @@
 // name:     BM21 -  Sin component
 // keywords: Sin
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sin component.
 //

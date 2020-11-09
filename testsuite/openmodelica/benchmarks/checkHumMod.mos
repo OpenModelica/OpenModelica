@@ -2,6 +2,7 @@
 // keywords: instantiation
 // status:   correct
 // teardown_command: rm -f *.so *.dll *.log *.c* *.makefile *.libs
+// cflags: -d=-newInst
 // 
 //  Modelica HumMod_HumMod_GolemEdition
 //

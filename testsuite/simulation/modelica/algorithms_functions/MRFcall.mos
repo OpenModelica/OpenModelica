@@ -5,6 +5,7 @@
 //  Tests when, elsewhen
 //
 // Drmodelica: 9.2 Multiple Results (p. 302)
+// cflags: -d=-newInst
 // 
 loadFile("MRFcall.mo");
 simulate(MRFcall,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

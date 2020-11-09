@@ -1,6 +1,7 @@
 // name: UtilTest
 // status: correct
 // teardown_command: rm -f Util_* UtilTest_*
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -n=1");
 echo(false);

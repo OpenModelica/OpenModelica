@@ -1,6 +1,7 @@
 // name:     Modelica.Fluid.Examples.BranchingDynamicPipes_HPCOM_Levelfix_pThreads
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

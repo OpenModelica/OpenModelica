@@ -1,6 +1,7 @@
 // name: LhsIf
 // keywords: if flattening
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests flattening of if-expressions, to make sure that the parentheses are
 // kept in the flattened model.

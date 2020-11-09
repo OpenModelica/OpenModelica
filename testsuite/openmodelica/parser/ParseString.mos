@@ -1,5 +1,6 @@
 // name: ParseString
 // status: correct
+// cflags: -d=-newInst
 
 parseString("class A end A;");getErrorString();
 parseString("within D.C; class A end A;");getErrorString();

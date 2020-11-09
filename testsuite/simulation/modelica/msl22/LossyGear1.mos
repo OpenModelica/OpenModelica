@@ -2,6 +2,7 @@
 // keywords: Simulation
 // status:   correct
 // teardown_command: rm -f LossyGearDemo1* output.log
+// cflags: -d=-newInst
 // LossyGearDemo1 in Modelica.Mechanics.Rotational.Examples
 //
 loadModel(Modelica,{"2.2.2"});

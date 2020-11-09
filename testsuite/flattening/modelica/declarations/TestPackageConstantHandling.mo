@@ -1,6 +1,7 @@
 // name:     TestPackageConstantHandling.mo
 // keywords: declaration, import
 // status:   correct
+// cflags: -d=-newInst
 //
 // test that the imported constant can be used
 //

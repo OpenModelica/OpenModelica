@@ -1,6 +1,7 @@
 // name:     SimplifyRangeInCall
 // keywords: simplify call range
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that ranges in calls are simplified.
 //

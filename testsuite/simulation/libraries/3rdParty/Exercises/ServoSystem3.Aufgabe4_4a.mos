@@ -1,5 +1,6 @@
 // name: ServoSystem3.Aufgabe4_4a [simulate]
 // status: correct
+// cflags: -d=-newInst
 // provided by Martin Otter
 //
 

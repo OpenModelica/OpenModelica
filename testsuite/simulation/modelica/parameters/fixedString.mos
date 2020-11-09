@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model NonFixedString

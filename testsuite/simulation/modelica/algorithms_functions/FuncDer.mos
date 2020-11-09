@@ -5,6 +5,7 @@
 // 
 //  undefined reference to `read_modelica_boolean'
 // Drmodelica: 11.1 Function Annotations (p. 372)
+// cflags: -d=-newInst
 // 
 //loadModel(Modelica);
 loadFile("FuncDer.mo");

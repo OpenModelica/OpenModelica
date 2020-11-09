@@ -4,6 +4,7 @@
 //
 // Addition and substraction ops applied on arrays
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// cflags: -d=-newInst
 //
 
 class AddSub1

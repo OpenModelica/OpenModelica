@@ -1,6 +1,7 @@
 // name: PackageComponents
 // keywords: package
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple package creation and instantation of its components
 //

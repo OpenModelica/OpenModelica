@@ -5,6 +5,7 @@
 // omc debug dump: +d=interactivedump
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=interactivedump
 loadString("
 model testInteractivedump

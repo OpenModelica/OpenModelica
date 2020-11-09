@@ -1,6 +1,7 @@
 // name:     DAEexample
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Equation handling
 //

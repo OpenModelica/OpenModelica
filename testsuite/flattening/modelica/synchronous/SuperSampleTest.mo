@@ -1,6 +1,7 @@
 // name: SuperSampleTest
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 model SuperSampleTest
   output Real x;

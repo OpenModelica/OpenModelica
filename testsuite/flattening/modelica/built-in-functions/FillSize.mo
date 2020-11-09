@@ -1,6 +1,7 @@
 // name:     FillSize
 // keywords: fill, ones, zeros, wholedim, size, bug1146
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the fill function with ones and zeros where the function argument is
 // the size of an array of unknown size.

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.VanDerPol
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.VanDerPol.* DrModelicaForTesting.VanDerPol_* DrModelicaForTesting.VanDerPol DrModelicaForTesting.VanDerPol.exe DrModelicaForTesting.VanDerPol.cpp DrModelicaForTesting.VanDerPol.makefile DrModelicaForTesting.VanDerPol.libs DrModelicaForTesting.VanDerPol.log DrModelicaForTesting.VanDerPol.c DrModelicaForTesting.VanDerPol.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

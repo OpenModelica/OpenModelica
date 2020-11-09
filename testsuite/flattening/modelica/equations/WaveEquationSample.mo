@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: "15: Pressure Dynamics in 1D Ducts - Solving Wave Equations by Discretized PDEs (p. 587)
+// cflags: -d=-newInst
 //
 
 model WaveEquationSample

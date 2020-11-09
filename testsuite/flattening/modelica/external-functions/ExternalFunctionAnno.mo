@@ -1,6 +1,7 @@
 // name:     Derivative Annotation
 // keywords: functions, index reduction
 // status:   correct
+// cflags: -d=-newInst
 //
 
 function f1
@@ -122,9 +123,9 @@ end extfunction;
 //   der(u[1]) = u[2];
 //   der(u[2]) = u[3];
 // end extfunction;
-// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:35:3-35:19:writable] Warning: Unused input variable der_x in function .FooFunctions.foo2.
-// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:36:3-36:22:writable] Warning: Unused input variable derder_x in function .FooFunctions.foo2.
-// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:37:3-37:25:writable] Warning: Unused input variable derderder_x in function .FooFunctions.foo2.
-// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:28:3-28:19:writable] Warning: Unused input variable der_x in function .FooFunctions.foo1.
+// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:36:3-36:19:writable] Warning: Unused input variable der_x in function .FooFunctions.foo2.
+// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:37:3-37:22:writable] Warning: Unused input variable derder_x in function .FooFunctions.foo2.
+// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:38:3-38:25:writable] Warning: Unused input variable derderder_x in function .FooFunctions.foo2.
+// [flattening/modelica/external-functions/ExternalFunctionAnno.mo:29:3-29:19:writable] Warning: Unused input variable der_x in function .FooFunctions.foo1.
 //
 // endResult

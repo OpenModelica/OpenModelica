@@ -1,6 +1,7 @@
 // name: RecordSimple
 // keywords: record
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests very simple record declaration and instantiation
 //

@@ -2,6 +2,7 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf reset.fmu reset.log reset_systemCall.log temp-reset test_res.mat
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica");
 

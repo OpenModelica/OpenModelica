@@ -5,6 +5,7 @@
 // omc debug dump: +d=showStartOrigin
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=showStartOrigin
 loadString("
 model testShowStartOrigin

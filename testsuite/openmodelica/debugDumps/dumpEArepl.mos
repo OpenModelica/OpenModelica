@@ -5,6 +5,7 @@
 // omc debug dump: +d=dumpEArepl
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=dumpEArepl
 loadString("
 model test_dumpEArepl

@@ -1,6 +1,7 @@
 // name:     device
 // keywords: visualization
 // status:   correct
+// cflags: -d=-newInst
 // A test to check the proper generation of the visualization xml.
 //
 

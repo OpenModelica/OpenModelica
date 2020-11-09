@@ -1,6 +1,7 @@
 // name: LessThan
 // keywords: logic, operator
 // status: correct
+// cflags: -d=-newInst
 //
 // tests the LessThan operator (<)
 //

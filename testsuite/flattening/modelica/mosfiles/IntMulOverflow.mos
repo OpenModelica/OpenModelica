@@ -1,6 +1,7 @@
 // name:     Integer Multiplication Overflow
 // keywords: 
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Making sure that multiplication is correct when multiplying large integers
 //

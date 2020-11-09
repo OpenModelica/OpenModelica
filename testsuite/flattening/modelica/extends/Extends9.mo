@@ -1,6 +1,7 @@
 // name:     Extends9
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing modifiers that are looked up through the same base class
 //

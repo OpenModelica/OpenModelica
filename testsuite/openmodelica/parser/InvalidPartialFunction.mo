@@ -1,4 +1,5 @@
 // status: incorrect
+// cflags: -d=-newInst
 // Bug #2401
 
 model InvalidPartialFunction
@@ -9,7 +10,7 @@ end InvalidPartialFunction;
 // Error processing file: InvalidPartialFunction.mo
 // Failed to parse file: InvalidPartialFunction.mo!
 //
-// [openmodelica/parser/InvalidPartialFunction.mo:5:18-5:36:writable] Error: Function partial application expressions are only allowed as inputs to functions.
+// [openmodelica/parser/InvalidPartialFunction.mo:6:18-6:36:writable] Error: Function partial application expressions are only allowed as inputs to functions.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

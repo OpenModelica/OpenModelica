@@ -2,6 +2,7 @@
 // keywords: external media
 // status:   correct
 // teardown_command: rm -f ExternalMedia.Test.TestMedium.TestState* ExternalMedia_*
+// cflags: -d=-newInst
 //
 // Checks that simulation of a model with external definitions from ExternalMedia library works correctly
 //

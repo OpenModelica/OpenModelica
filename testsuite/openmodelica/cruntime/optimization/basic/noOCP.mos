@@ -1,5 +1,6 @@
 // name: none_ocp
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+gDynOpt");
 

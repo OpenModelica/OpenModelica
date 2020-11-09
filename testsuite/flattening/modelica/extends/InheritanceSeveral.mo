@@ -1,6 +1,7 @@
 // name: InheritanceSeveral
 // keywords: inheritance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple inheritance in several steps
 //

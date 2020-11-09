@@ -1,6 +1,7 @@
 // name: cseFunctionCall4b
 // keywords: cse
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 package CSE

@@ -1,6 +1,7 @@
 // name: ticket4271
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model ticket4271

@@ -1,6 +1,7 @@
 // name:     ClassExtends2
 // keywords: class,extends
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 class Y

@@ -1,6 +1,7 @@
 // name:     Min & Max
 // keywords: builtin functions min max
 // status:   correct
+// cflags: -d=-newInst
 //
 // Usage of the min and max functions
 model MinMax

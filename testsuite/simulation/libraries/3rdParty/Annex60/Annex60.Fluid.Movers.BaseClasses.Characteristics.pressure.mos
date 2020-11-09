@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("-d=gen");
 loadFile("Annex60.Fluid.Movers.BaseClasses.Characteristics.pressure.mo");getErrorString();

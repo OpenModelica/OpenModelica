@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.* PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection_* PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.exe PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.cpp PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.makefile PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.libs PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.log PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.c PlanarMechanicsForTesting.Examples.PistonEngine_DynamicStateSelection.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

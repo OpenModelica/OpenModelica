@@ -1,6 +1,7 @@
 // name:     Class1
 // keywords:
 // status:   correct
+// cflags: -d=-newInst
 //
 // An empty class should be allowed.
 //

@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Bug #2817
 
 loadFile("TestRoots.mo");getErrorString();

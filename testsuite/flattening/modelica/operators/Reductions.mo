@@ -1,6 +1,7 @@
 // name:     Reductions
 // keywords: reductions
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests flattening of non-constant reductions.
 //

@@ -1,6 +1,7 @@
 // name: OutputDeclConnector
 // keywords: output
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the output prefix on a connector type
 //

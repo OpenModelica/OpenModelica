@@ -1,6 +1,7 @@
 // name: Asin
 // keywords: asin
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in asin function
 //

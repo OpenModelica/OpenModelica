@@ -1,6 +1,7 @@
 // name: ForIf
 // keywords: for if
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests an if expression that uses a for iterator as condition.
 //

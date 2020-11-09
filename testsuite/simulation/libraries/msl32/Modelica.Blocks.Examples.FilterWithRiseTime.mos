@@ -1,6 +1,7 @@
 // name:     Modelica.Blocks.Examples.FilterWithRiseTime
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

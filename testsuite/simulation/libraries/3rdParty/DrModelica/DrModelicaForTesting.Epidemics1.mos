@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.Epidemics1
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.Epidemics1.* DrModelicaForTesting.Epidemics1_* DrModelicaForTesting.Epidemics1 DrModelicaForTesting.Epidemics1.exe DrModelicaForTesting.Epidemics1.cpp DrModelicaForTesting.Epidemics1.makefile DrModelicaForTesting.Epidemics1.libs DrModelicaForTesting.Epidemics1.log DrModelicaForTesting.Epidemics1.c DrModelicaForTesting.Epidemics1.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

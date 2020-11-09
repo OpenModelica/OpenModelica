@@ -1,5 +1,6 @@
 // name: CatalystMixing_2
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+g=Optimica");
 getErrorString();

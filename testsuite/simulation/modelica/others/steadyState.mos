@@ -1,5 +1,6 @@
 // name: steadyState
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model Hydrogen_Iodide

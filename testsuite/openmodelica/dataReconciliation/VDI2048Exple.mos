@@ -1,6 +1,7 @@
 // name:     VDI2048Exple
 // keywords: extraction algorithm
 // status:   correct
+// cflags: -d=-newInst
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");

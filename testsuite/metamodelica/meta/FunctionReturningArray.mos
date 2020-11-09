@@ -1,4 +1,4 @@
-// cflags: -g=MetaModelica -d=gen
+// cflags: -g=MetaModelica -d=gen -d=-newInst
 // status: correct
 
 loadString("package FunctionReturningArray

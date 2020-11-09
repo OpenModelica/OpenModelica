@@ -2,6 +2,7 @@
 // keywords: array cref newInst
 // status: correct
 // teardown_command: rm -rf Test5114*
+// cflags: -d=-newInst
 
 loadModel(Modelica);
 loadString("

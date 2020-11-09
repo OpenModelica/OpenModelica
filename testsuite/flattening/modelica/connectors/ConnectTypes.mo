@@ -1,6 +1,6 @@
 // name:     ConnectTypes
 // keywords: connect,type
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 // Check generation of connection equations.

@@ -2,6 +2,7 @@
 // keywords: EventHandling, EventIterationLoop
 // status: correct
 // teardown_command: rm -rf EventIterationLoop* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate model containing EventIterationsLoop
 //

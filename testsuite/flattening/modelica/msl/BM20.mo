@@ -1,6 +1,7 @@
 // name:     BM20 -  Sign component
 // keywords: Sign
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sign component.
 //

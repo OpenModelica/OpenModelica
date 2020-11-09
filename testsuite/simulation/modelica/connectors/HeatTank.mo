@@ -4,6 +4,7 @@
 //
 // Error in implementation, replaceable connector.
 // Drmodelica: 4.4 Parameterization and extension of Interfaces (p. 136).
+// cflags: -d=-newInst
 //
 
 connector Stream   //Connector class

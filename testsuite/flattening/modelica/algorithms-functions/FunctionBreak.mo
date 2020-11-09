@@ -1,6 +1,7 @@
 // name:     FunctionBreak
 // keywords: function break
 // status:   correct
+// cflags: -d=-newInst
 //
 // break statement in function
 

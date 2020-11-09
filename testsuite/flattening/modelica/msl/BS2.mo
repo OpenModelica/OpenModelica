@@ -1,6 +1,7 @@
 // name:     BS2 - Constant component
 // keywords: Constant
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Constant component.
 //

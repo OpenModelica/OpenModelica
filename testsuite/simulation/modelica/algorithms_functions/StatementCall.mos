@@ -6,6 +6,7 @@
 //  Tests when, elsewhen
 //
 // Drmodelica: 9.2 Multiple Results (p. 302)
+// cflags: -d=-newInst
 // 
 loadFile("StatementCall.mo");
 simulate(StatementCall,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

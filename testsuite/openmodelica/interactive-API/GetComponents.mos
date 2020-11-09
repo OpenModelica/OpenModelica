@@ -1,6 +1,7 @@
 // name: GetComponents
 // keywords: 
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the getComponents API functions.
 //

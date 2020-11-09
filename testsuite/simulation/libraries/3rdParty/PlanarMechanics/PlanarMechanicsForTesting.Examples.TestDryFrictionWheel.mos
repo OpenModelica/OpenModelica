@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_i* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_d* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_r* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel_f* PlanarMechanicsForTesting.Examples.TestDryFrictionWheel PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.exe PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.cpp PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.makefile PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.libs PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.log PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.c PlanarMechanicsForTesting.Examples.TestDryFrictionWheel.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

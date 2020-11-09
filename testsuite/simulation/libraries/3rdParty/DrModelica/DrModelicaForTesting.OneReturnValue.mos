@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.OneReturnValue
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.OneReturnValue.* DrModelicaForTesting.OneReturnValue_* DrModelicaForTesting.OneReturnValue DrModelicaForTesting.OneReturnValue.exe DrModelicaForTesting.OneReturnValue.cpp DrModelicaForTesting.OneReturnValue.makefile DrModelicaForTesting.OneReturnValue.libs DrModelicaForTesting.OneReturnValue.log DrModelicaForTesting.OneReturnValue.c DrModelicaForTesting.OneReturnValue.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

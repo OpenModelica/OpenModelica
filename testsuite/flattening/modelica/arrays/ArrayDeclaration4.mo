@@ -1,6 +1,7 @@
 // name: ArrayDeclaration4
 // keywords: array
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests declaring arrays with negative dimensions
 // This test should fail
@@ -12,7 +13,7 @@ end ArrayDeclaration4;
 
 // Result:
 // Error processing file: ArrayDeclaration4.mo
-// [flattening/modelica/arrays/ArrayDeclaration4.mo:10:3-10:18:writable] Error: Negative dimension index (-2) for component errArr.
+// [flattening/modelica/arrays/ArrayDeclaration4.mo:11:3-11:18:writable] Error: Negative dimension index (-2) for component errArr.
 // Error: Error occurred while flattening model ArrayDeclaration4
 //
 // # Error encountered! Exiting...

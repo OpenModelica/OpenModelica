@@ -1,6 +1,7 @@
 // name: EngineSAAB95Total
 // keywords: record
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in cos function
 //

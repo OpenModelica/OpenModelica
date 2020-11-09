@@ -1,6 +1,7 @@
 // name:     FunctionDefaultArgs2
 // keywords: functions, default arguments, #2640
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests default arguments in functions where the values are defined in the
 // function scope.

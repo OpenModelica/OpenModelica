@@ -1,6 +1,7 @@
 // name:     RecordEquationSize
 // keywords: #4611 
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that checkModel counts arrays of complex type correctly.
 //

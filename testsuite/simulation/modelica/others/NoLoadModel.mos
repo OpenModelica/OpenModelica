@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 buildModel(Modelica.Blocks.Examples.Filter);getErrorString();
 

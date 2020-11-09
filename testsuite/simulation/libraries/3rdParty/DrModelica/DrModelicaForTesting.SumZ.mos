@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.SumZ
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.SumZ.* DrModelicaForTesting.SumZ_* DrModelicaForTesting.SumZ DrModelicaForTesting.SumZ.exe DrModelicaForTesting.SumZ.cpp DrModelicaForTesting.SumZ.makefile DrModelicaForTesting.SumZ.libs DrModelicaForTesting.SumZ.log DrModelicaForTesting.SumZ.c DrModelicaForTesting.SumZ.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

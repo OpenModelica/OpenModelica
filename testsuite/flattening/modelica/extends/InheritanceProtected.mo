@@ -1,6 +1,7 @@
 // name: InheritanceProtected
 // keywords: inheritance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests protected inheritance
 //

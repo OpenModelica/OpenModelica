@@ -1,6 +1,7 @@
 // name: AssignmentSimple
 // keywords: assignment
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple assignment
 //

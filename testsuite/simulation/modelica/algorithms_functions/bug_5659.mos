@@ -2,6 +2,7 @@
 // keywords:
 // status: correct
 // teardown_command: rm -rf bug_5659_* _bug_5659_* output.log
+// cflags: -d=-newInst
 //
 //  tests for counting of algorithm section output variables involving
 //  arrays and records combined.

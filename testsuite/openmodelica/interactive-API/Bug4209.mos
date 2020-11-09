@@ -1,6 +1,7 @@
 // name: Bug4209.mos
 // keywords:
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica); getErrorString();

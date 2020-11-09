@@ -1,6 +1,7 @@
 // name:     BM24 -  Sum component
 // keywords: Sum
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sum component.
 //

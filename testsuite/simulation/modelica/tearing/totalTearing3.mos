@@ -1,6 +1,7 @@
 // name:      totalTearing3
 // keywords:  total tearing
 // status:    correct
+// cflags: -d=-newInst
 
 
 loadFile("Tearing11.mo"); getErrorString();

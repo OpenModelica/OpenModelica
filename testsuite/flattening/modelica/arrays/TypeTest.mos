@@ -1,6 +1,7 @@
 // name:     TypeTest.mos
 // keywords: type as array of type
 // status:   correct
+// cflags: -d=-newInst
 // 
 // This is a test of:
 // type A = Real[2]; A[3] a; a should have [2][3] dimensions!

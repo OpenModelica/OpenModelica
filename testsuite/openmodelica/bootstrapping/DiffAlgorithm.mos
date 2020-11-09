@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -n=1 -d=noevalfunc,gen");
 echo(false);

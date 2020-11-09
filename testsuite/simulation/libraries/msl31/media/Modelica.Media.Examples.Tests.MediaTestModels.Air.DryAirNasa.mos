@@ -1,6 +1,7 @@
 //name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa)
 //keyword:     simulation
 //status:      correct
+// cflags: -d=-newInst
 // instantiate/check model example
 //
 

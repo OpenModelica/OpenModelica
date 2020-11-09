@@ -2,6 +2,7 @@
 // keywords: differentiation linearization array algorithm
 // status:   correct
 // teardown_command: rm -rf ticket4545* output.log linearized_model*
+// cflags: -d=-newInst
 //
 //
 

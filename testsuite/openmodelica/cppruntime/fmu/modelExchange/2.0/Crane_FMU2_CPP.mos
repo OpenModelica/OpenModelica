@@ -2,6 +2,7 @@
 // keywords: Crane FMI export import
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *cranes.crane* *cranes_crane*
+// cflags: -d=-newInst
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
 loadModel(Modelica); getErrorString();

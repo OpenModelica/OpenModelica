@@ -1,6 +1,7 @@
 // name:     Discrete2
 // keywords: declaration,unknown
 // status:   erroneous
+// cflags: -d=-newInst
 //
 // This is not valid, but should it complain now or later?
 

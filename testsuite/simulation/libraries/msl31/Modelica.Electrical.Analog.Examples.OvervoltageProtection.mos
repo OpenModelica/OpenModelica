@@ -6,6 +6,7 @@
 // Modelica Standard Library
 //
 
+// cflags: -d=-newInst
 // wbraun: results need to check by some one else
 
 loadModel(Modelica,{"3.1"});

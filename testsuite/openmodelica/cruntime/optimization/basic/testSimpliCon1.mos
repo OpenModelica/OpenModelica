@@ -1,5 +1,6 @@
 // name: simplifyCon1
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica);
 getErrorString();

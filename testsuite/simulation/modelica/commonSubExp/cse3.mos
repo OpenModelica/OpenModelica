@@ -1,6 +1,7 @@
 // name: cse3
 // keywords: cse
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model testCSE

@@ -6,6 +6,7 @@
 // to a form where the result variable is on the left-hand side
 //
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 //
 
 model WhenNotValid
@@ -28,7 +29,7 @@ end WhenNotValid;
 // end WhenNotValid;
 // Result:
 // Error processing file: WhenNotValid.mo
-// [flattening/modelica/equations/WhenNotValid.mo:16:5-16:16:writable] Error: Invalid left-hand side of when-equation: 2.0 * x + y.
+// [flattening/modelica/equations/WhenNotValid.mo:17:5-17:16:writable] Error: Invalid left-hand side of when-equation: 2.0 * x + y.
 // Error: Error occurred while flattening model WhenNotValid
 //
 // # Error encountered! Exiting...

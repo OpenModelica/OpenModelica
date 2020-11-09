@@ -1,6 +1,7 @@
 // name:     ArrayVectorMatrixMul1
 // keywords: expression simplification array multiplication
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks simplification of matrix-vector multiplication.
 //

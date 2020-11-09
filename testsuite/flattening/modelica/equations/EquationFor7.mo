@@ -1,6 +1,7 @@
 // name:     EquationFor7
 // keywords: equation,array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test for multiple loops in equations.
 //

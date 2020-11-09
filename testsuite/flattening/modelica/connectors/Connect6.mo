@@ -1,6 +1,7 @@
 // name:     Connect6
 // keywords: connect,type
 // status:   correct
+// cflags: -d=-newInst
 //
 // Strings are allowed in connectors
 //

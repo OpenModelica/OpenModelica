@@ -1,6 +1,7 @@
 // name: EnumDimSum
 // keywords: enum dimension sum
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that sum of an array whose dimension is an enumeration is expanded
 // correctly.

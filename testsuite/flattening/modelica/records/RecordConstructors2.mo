@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 model RecordConstructors2
   record R

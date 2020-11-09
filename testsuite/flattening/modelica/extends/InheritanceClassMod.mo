@@ -1,6 +1,7 @@
 // name: InheritanceClassMod
 // keywords: inheritance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple inheritance with class modifications
 //

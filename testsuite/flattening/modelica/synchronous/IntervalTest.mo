@@ -1,6 +1,7 @@
 // name: IntervalTest
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 model IntervalTest
   Real y[2], u[2];

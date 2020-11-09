@@ -2,6 +2,7 @@
 // keywords: array, record
 // status:   correct
 // teardown_command: rm -rf TestPkg.subm* m m.* m_* _m.h _TestPkg* output.log
+// cflags: -d=-newInst
 
 
 loadFile("InOutRecord.mo"); getErrorString();

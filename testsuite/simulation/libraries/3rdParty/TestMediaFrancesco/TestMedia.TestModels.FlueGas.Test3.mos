@@ -2,6 +2,7 @@
 // keywords: simulation TestMedia.TestModels.FlueGas.Test3
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.FlueGas.Test3.* TestMedia.TestModels.FlueGas.Test3_* TestMedia.TestModels.FlueGas.Test3 TestMedia.TestModels.FlueGas.Test3.exe TestMedia.TestModels.FlueGas.Test3.cpp TestMedia.TestModels.FlueGas.Test3.makefile TestMedia.TestModels.FlueGas.Test3.libs TestMedia.TestModels.FlueGas.Test3.log TestMedia.TestModels.FlueGas.Test3.c TestMedia.TestModels.FlueGas.Test3.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

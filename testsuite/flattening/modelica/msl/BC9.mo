@@ -1,6 +1,7 @@
 // name:     BC9 - SecondOrder component
 // keywords: SecondOrder
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the SecondOrder component.
 //

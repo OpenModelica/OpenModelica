@@ -1,6 +1,7 @@
 // name: ArrayAssignWholeDim
 // keywords: slice array assign
 // status: correct
+// cflags: -d=-newInst
 //
 // Fix for bugs in c_runtime/real_array.c indexed_assign_real_array() and index_real_array()
 // Should be moved to mosfiles to ensure c-runtime invocation

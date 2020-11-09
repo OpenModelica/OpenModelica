@@ -2,6 +2,7 @@
 // keywords: start value selection
 // status:   correct
 // teardown_command: rm -rf TestInitStart* _TestInitStart*
+// cflags: -d=-newInst
 
 loadString("
 model TestInitStart

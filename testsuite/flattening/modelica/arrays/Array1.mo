@@ -1,6 +1,7 @@
 // name:     Array1
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is a simple test of basic array handling.
 //

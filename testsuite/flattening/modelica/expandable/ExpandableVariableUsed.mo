@@ -1,6 +1,7 @@
 //name:        ExpandableVariableUsed.mo [BUG: #2385]
 //keyword:     expandable
 //status:      correct
+// cflags: -d=-newInst
 //
 // instantiate/check model example
 //

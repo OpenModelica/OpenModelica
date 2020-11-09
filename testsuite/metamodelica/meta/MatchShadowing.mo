@@ -1,6 +1,6 @@
 // name: MatchShadowing
 // status: incorrect
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 
 model MatchShadowing
 

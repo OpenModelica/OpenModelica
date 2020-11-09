@@ -1,6 +1,6 @@
 // name: FlowDeclConnector
 // keywords: flow
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status: correct
 //
 // Tests the flow prefix on a connector type

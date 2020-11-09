@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.* ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating_* ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.log ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.c ThermoSysPro.Examples.SimpleExamples.TestDynamicWaterHeating.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -5,6 +5,7 @@
 // 
 //  arithmetic ops on arrays
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// cflags: -d=-newInst
 //
 loadFile("ArrayAddSub1.mo");
 simulate(AddSub1,startTime = 0.0, stopTime = 1.0 ,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

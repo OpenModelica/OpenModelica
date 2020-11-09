@@ -1,6 +1,7 @@
 // name:     Dependency.mos [BUG: #2359]
 // keywords: redeclare of package used via qualified path where replaced
 // status:   correct
+// cflags: -d=-newInst
 // 
 // Tests that the depenedency analysis works correctly in the presence of redeclares
 //

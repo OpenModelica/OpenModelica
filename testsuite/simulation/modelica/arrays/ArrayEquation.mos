@@ -2,6 +2,7 @@
 // keywords: Simulate, readSimulationData, arrays
 // status: correct
 // teardown_command: rm -rf ArrayEqn.log ArrayEqn.cpp ArrayEqn.libs ArrayEqn.makefile ArrayEqn ArrayEqn.exe ArrayEqn_* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate model with array equations
 //

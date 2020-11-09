@@ -1,6 +1,7 @@
 // name:     BM25 -  Tan component
 // keywords: Tan
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Tan component.
 //

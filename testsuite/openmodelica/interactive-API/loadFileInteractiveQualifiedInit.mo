@@ -1,6 +1,7 @@
 // name:     loadFileInteractiveQualifiedInit
 // keywords: package hierarchy loading
 // status: correct
+// cflags: -d=-newInst
 //
 // Package hierachy loading
 //

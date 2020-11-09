@@ -1,6 +1,7 @@
 // name: TestAsub
 // status: correct
 // teardown_command: rm -f TestAsub_* TestAsub TestAsub.exe
+// cflags: -d=-newInst
 
 loadString("
 model TestAsub

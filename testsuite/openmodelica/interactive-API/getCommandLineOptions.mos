@@ -1,6 +1,7 @@
 // name: getCommandLineOptions
 // keywords: 
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the getCommandLineOptions API function.
 //

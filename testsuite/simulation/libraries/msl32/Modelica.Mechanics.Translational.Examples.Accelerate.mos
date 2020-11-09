@@ -1,6 +1,7 @@
 // name:     Modelica.Mechanics.Translational.Examples.Accelerate
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

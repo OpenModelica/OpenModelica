@@ -1,6 +1,7 @@
 // name:     Cardinality
 // keywords: cardinality
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing the cardinality operator
 //

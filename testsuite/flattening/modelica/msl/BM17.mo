@@ -1,6 +1,7 @@
 // name:     BM17 -  Max component
 // keywords: Max
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Max component.
 //

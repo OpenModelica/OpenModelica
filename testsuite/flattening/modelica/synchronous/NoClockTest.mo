@@ -1,6 +1,7 @@
 // name: NoClockTest
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 model NoClockTest
   output Real x;

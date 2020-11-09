@@ -1,6 +1,7 @@
 // name:     Java Interactive
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 // 
 // Tests that the interactive interface works from Java
 //

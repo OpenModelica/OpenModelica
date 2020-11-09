@@ -1,6 +1,7 @@
 // name:     ArrayEWOps3
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Array elementwise operators: subtraction
 

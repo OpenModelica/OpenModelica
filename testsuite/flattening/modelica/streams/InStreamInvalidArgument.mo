@@ -1,6 +1,7 @@
 // name: InStreamInvalidArgument
 // keywords: inStream invalid argument
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Checks that an error message is generated if the argument to inStream is not
 // a stream connector.
@@ -15,7 +16,7 @@ end InStreamInvalidArgument;
 
 // Result:
 // Error processing file: InStreamInvalidArgument.mo
-// [flattening/modelica/streams/InStreamInvalidArgument.mo:13:3-13:25:writable] Error: Operand ‘r‘ to operator ‘inStream‘ is not a stream variable.
+// [flattening/modelica/streams/InStreamInvalidArgument.mo:14:3-14:25:writable] Error: Operand ‘r‘ to operator ‘inStream‘ is not a stream variable.
 // Error: Error occurred while flattening model InStreamInvalidArgument
 //
 // # Error encountered! Exiting...

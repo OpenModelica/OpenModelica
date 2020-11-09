@@ -1,6 +1,7 @@
 // name:     BC7 - PI component
 // keywords: PI
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the PI component.
 //

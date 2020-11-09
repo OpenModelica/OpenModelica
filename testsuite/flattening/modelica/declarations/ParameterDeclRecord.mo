@@ -1,6 +1,7 @@
 // name: ParameterDeclRecord
 // keywords: parameter
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the parameter prefix on a record type
 //

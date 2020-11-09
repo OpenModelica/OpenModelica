@@ -1,6 +1,7 @@
 // name:     Extends6
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing that you can extend packages and use its constants in instances of
 // models defined in that package.

@@ -1,6 +1,7 @@
 // name: RealSub
 // keywords: real, subtraction
 // status: correct
+// cflags: -d=-newInst
 //
 // tests Real subtraction
 //

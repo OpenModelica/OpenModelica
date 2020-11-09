@@ -1,6 +1,7 @@
 // name:     BM3 -  Add component
 // keywords: Add
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Add component.
 //

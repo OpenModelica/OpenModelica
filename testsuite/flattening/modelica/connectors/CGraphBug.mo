@@ -1,6 +1,7 @@
 // name:     CGraphBug
 // keywords: <insert keywords here>
 // status:   correct
+// cflags: -d=-newInst
 
 model Test
 

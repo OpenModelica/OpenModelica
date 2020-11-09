@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.DAEexample
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.DAEexample.* DrModelicaForTesting.DAEexample_* DrModelicaForTesting.DAEexample DrModelicaForTesting.DAEexample.exe DrModelicaForTesting.DAEexample.cpp DrModelicaForTesting.DAEexample.makefile DrModelicaForTesting.DAEexample.libs DrModelicaForTesting.DAEexample.log DrModelicaForTesting.DAEexample.c DrModelicaForTesting.DAEexample.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

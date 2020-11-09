@@ -1,6 +1,7 @@
 // name:     DuplicateRedeclares1
 // keywords: redeclare
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Checks that the compiler issues an error on duplicate redeclares.
 //
@@ -17,8 +18,8 @@ end DuplicateRedeclares1;
 
 // Result:
 // Error processing file: DuplicateRedeclares1.mo
-// [flattening/modelica/redeclare/DuplicateRedeclares1.mo:13:23-13:47:writable] Notification: From here:
-// [flattening/modelica/redeclare/DuplicateRedeclares1.mo:15:3-15:37:writable] Error: r is already redeclared in this scope.
+// [flattening/modelica/redeclare/DuplicateRedeclares1.mo:14:23-14:47:writable] Notification: From here:
+// [flattening/modelica/redeclare/DuplicateRedeclares1.mo:16:3-16:37:writable] Error: r is already redeclared in this scope.
 // Error: Error occurred while flattening model DuplicateRedeclares1
 //
 // # Error encountered! Exiting...

@@ -6,6 +6,7 @@
 //  <insert description here>
 //
 // Drmodelica: 
+// cflags: -d=-newInst
 // 
 loadFile("Switch.mo");
 simulate(Switch, numberOfIntervals=10, tolerance=1e-5); // 2 intervals == 3 values

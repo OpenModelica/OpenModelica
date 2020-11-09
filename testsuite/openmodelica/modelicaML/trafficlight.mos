@@ -5,6 +5,7 @@
 // 
 // ModelicaML: 1.3.6 Examples from 29.Nov 2010
 // TODO: check TrafficLight doesn't deactived if battery is empty 
+// cflags: -d=-newInst
 //
 loadFile("TrafficLight/myUmlModel.mo");getErrorString();
 loadFile("TrafficLight/TrafficLight.mo");getErrorString();

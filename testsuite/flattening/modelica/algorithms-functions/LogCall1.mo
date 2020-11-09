@@ -1,6 +1,7 @@
 // name:     LogCall1
 // keywords: external function, equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Drmodelica:
 //

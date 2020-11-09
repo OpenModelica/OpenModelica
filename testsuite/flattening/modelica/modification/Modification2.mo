@@ -1,6 +1,7 @@
 // name:     Modification2
 // keywords: modification
 // status:   correct
+// cflags: -d=-newInst
 //
 // Modifying a parameter in a local class is allowed.
 

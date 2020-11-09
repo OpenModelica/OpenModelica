@@ -1,6 +1,7 @@
 // name:     InnerOuterSamePrefix.mo [BUG: #2650]
 // keywords: dynamic scope, lookup
 // status:   correct
+// cflags: -d=-newInst
 //
 //  components with inner prefix references an outer component with
 //  the same name and one variable is generated for all of them.

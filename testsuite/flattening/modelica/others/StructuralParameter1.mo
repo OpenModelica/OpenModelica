@@ -1,6 +1,7 @@
 // name:     StructuralParameter1
 // keywords: parameter, array
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is a test of structural parameters. A structural parameter is a
 // parameter that affects the structure of the model, i.e. used in array

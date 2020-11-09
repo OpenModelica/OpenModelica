@@ -1,6 +1,7 @@
 // name:     Array4
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is a test of arrays of arrays.  The type T2 is equivalent or
 // similar to Real[2,3].

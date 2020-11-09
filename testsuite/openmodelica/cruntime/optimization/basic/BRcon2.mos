@@ -1,5 +1,6 @@
 // name: BatchReactorCon2
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+g=Optimica");
 getErrorString();

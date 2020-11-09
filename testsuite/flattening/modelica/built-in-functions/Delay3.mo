@@ -1,6 +1,7 @@
 // name:     Delay3
 // keywords: builtin
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test builtin function delay.
 //

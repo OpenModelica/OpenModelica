@@ -1,7 +1,7 @@
 // name:     MatchNoRetCall
 // keywords: match noretcall #3633
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Checks that using a match as a non-returning call works.
 //

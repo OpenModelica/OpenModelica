@@ -1,6 +1,7 @@
 // name:     UnknownDimensionMod.mo
 // keywords: deduce unknown dimensions from modifier
 // status:   correct
+// cflags: -d=-newInst
 //
 // check that we can deduce dimensions from array/matrix modifiers
 //

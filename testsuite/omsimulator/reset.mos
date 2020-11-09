@@ -1,6 +1,7 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf reset.lua reset.fmu reset.log reset_systemCall.log temp-reset/
+// cflags: -d=-newInst
 
 loadString("
 model reset

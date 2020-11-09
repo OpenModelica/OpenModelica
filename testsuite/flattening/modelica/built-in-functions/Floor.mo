@@ -1,6 +1,7 @@
 // name: Floor
 // keywords: floor
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in floor function
 //

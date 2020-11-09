@@ -1,6 +1,7 @@
 // name: Atan
 // keywords: atan
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in atan function
 //

@@ -1,6 +1,7 @@
 // name: RecordConstructors
 // keywords: record
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests record constructor functions
 //

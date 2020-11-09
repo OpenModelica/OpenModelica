@@ -1,7 +1,7 @@
 // name: Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum
 // keywords: simulation MSL Examples
 // status: correct
-// cflags:   +target=msvc
+// cflags:   +target=msvc -d=-newInst
 // teardown_command: rm -f *.obj Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.exe *.exp *.lib *.ilk *.h
 //
 // Simulation Results

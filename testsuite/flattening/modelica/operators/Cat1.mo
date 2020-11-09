@@ -1,6 +1,7 @@
 // name:     Cat1
 // keywords: cat
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the builtin cat operator.
 //

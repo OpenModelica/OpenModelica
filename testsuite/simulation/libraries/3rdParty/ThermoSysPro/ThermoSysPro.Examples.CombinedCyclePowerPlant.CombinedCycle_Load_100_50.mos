@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.* ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50_* ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50 ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.exe ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.cpp ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.makefile ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.libs ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.log ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.c ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_Load_100_50.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

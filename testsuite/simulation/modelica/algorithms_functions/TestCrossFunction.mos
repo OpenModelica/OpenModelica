@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica);getErrorString();
 loadString("model TestCrossFunction

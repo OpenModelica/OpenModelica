@@ -4,6 +4,7 @@
 //
 // <insert description here>
 // Drmodelica: 15.3.1 Chemical Reaction Kinetics of Hydrogen Iodine (p. 555) Not in the notebook
+// cflags: -d=-newInst
 //
 
 type Concentration = Real(final quantity ="Concentration",final unit = "mol/m3");

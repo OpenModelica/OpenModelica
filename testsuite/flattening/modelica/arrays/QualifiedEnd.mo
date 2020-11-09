@@ -1,6 +1,7 @@
 // name:     QualifiedEnd
 // keywords: array, end, #3250
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the usage of end as subscript of a qualified or fully qualified cref.
 //

@@ -1,6 +1,7 @@
 // name: Bug2633.mos
 // keywords: division zero
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model Bug2633

@@ -1,6 +1,7 @@
 // name: SimResultScripting
 // status: correct
 // teardown_command: rm -rf SimResultScripting_* SimResultScripting SimResultScripting.exe SimResultScripting.cpp SimResultScripting.makefile SimResultScripting.libs SimResultScripting.log output.log
+// cflags: -d=-newInst
 //
 // Tests that you can get the fields of a SimulationResult (or any record),
 // and use it to script a program flow.

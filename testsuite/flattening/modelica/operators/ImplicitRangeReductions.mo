@@ -1,6 +1,7 @@
 // name:     ImplicitRangeReductions
 // keywords: reductions implicit range
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests deduction of implicit iteration ranges in reductions.
 //
@@ -140,6 +141,6 @@ end ImplicitRangeReductions;
 //   m[1] = 1.0;
 //   m[2] = 2.0;
 // end ImplicitRangeReductions;
-// [flattening/modelica/operators/ImplicitRangeReductions.mo:43:3-43:22:writable] Error: Variable i not found in scope <global scope>.
+// [flattening/modelica/operators/ImplicitRangeReductions.mo:44:3-44:22:writable] Error: Variable i not found in scope <global scope>.
 //
 // endResult

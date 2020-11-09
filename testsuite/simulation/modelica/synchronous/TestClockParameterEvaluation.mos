@@ -1,6 +1,7 @@
 // name:     TestClockParameterEvaluation.mos
 // keywords: synchronous features, check that the parameters of Clock are evaluated properly
 // status: correct
+// cflags: -d=-newInst
 //
 
 setCommandLineOptions("+std=3.3"); getErrorString();

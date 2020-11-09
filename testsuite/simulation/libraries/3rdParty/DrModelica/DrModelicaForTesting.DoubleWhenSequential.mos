@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.DoubleWhenSequential
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.DoubleWhenSequential.* DrModelicaForTesting.DoubleWhenSequential_* DrModelicaForTesting.DoubleWhenSequential DrModelicaForTesting.DoubleWhenSequential.exe DrModelicaForTesting.DoubleWhenSequential.cpp DrModelicaForTesting.DoubleWhenSequential.makefile DrModelicaForTesting.DoubleWhenSequential.libs DrModelicaForTesting.DoubleWhenSequential.log DrModelicaForTesting.DoubleWhenSequential.c DrModelicaForTesting.DoubleWhenSequential.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

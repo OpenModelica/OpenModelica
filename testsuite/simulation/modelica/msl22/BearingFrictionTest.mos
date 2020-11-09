@@ -5,6 +5,7 @@
 // 
 //  Simulate models and read in data.
 //  wbraun: The results do not fit to them of dymola.
+// cflags: -d=-newInst
 //          They differs after initialization.
 //
 

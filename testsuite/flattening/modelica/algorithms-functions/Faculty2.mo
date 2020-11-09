@@ -1,6 +1,7 @@
 // name:     Faculty2
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 //
 // Definition of faculty using a for loop. The for loop can not be
 // unrolled.

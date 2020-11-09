@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf gaspropreties.intake1* _gaspropreties.intake1* output.log
+// cflags: -d=-newInst
 //
 //  case for #BUG-1721
 //

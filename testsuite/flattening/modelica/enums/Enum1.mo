@@ -1,6 +1,7 @@
 // name:     Enumeration1
 // keywords: enumeration enum
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 //

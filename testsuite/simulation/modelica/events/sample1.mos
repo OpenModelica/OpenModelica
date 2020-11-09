@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf eventTests.sample1* _eventTests.sample1* output.log
+// cflags: -d=-newInst
 //
 //  case for a sample call
 //

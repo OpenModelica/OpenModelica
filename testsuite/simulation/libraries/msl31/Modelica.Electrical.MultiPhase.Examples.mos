@@ -1,6 +1,7 @@
 
 //name:        Simulate Modelica.Electrical.MultiPhase.Examples [version 3.1]
 //keyword:     instantiating/check/simulate MSL 3.1 Modelica.Electrical.MultiPhase.Examples
+// cflags: -d=-newInst
 //status:      correct
 
 //

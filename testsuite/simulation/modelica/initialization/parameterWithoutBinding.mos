@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.parameterWithoutBinding* _initializationTests.parameterWithoutBinding* output.log
+// cflags: -d=-newInst
 //
 //  case for parameters without bindings (#2557)
 //

@@ -3,6 +3,7 @@
 //
 // Checks that -r in simflags gives correct file in SimulationResult.resultFile record
 // teardown_command: rm -f blah*mat
+// cflags: -d=-newInst
 //
 
 

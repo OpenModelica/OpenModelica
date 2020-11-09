@@ -2,6 +2,7 @@
 // keywords:
 // status: correct
 // teardown_command: rm -rf bug_2271_* _bug_2271_* output.log
+// cflags: -d=-newInst
 //
 //  tests for algorithms with arrays as lhs
 //

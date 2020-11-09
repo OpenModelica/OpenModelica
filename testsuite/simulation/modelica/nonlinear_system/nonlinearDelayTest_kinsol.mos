@@ -1,6 +1,7 @@
 // name: nonlinearDelayTest [kinsol]
 // status: correct
 // teardown_command: rm -f nonlinear_system.nonlinearDelayTest* _nonlinear_system.nonlinearDelayTest* output.log
+// cflags: -d=-newInst
 
 loadFile("nonlinearDelayTest.mo"); getErrorString();
 simulate(nonlinear_system.nonlinearDelayTest, simflags="-nls=kinsol"); getErrorString();

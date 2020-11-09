@@ -1,6 +1,7 @@
 // name:     TestPackageInheritance.mos [BUG: https://trac.openmodelica.org/OpenModelica/ticket/132]
 // keywords: redeclare functions
 // status:   correct
+// cflags: -d=-newInst
 // 
 // Checks that the compiler correctly handles inheritance and redeclare of functions in packages
 // 

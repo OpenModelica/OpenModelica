@@ -1,6 +1,7 @@
 // name: NumericFunctions
 // keywords: builtin, function, numeric
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing the built-in numeric functions abs, sign, and sqrt
 //

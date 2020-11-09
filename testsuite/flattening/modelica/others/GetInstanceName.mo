@@ -1,5 +1,5 @@
 // name: GetInstanceName
-// cflags: +i=O.N
+// cflags: +i=O.N -d=-newInst
 // status: correct
 
 function f

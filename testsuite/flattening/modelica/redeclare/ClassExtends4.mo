@@ -1,6 +1,7 @@
 // name: ClassExtends4
 // keywords: class, extends
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that partial packages may be extended, and functions inside
 // redeclared.

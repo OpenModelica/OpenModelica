@@ -1,6 +1,7 @@
 // name:     Lookup with arrays
 // keywords: Lookup array
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 // To test that the lookup of model vars with arrays works correctly.

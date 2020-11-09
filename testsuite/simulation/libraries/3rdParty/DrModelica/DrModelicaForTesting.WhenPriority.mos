@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.WhenPriority
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.WhenPriority.* DrModelicaForTesting.WhenPriority_* DrModelicaForTesting.WhenPriority DrModelicaForTesting.WhenPriority.exe DrModelicaForTesting.WhenPriority.cpp DrModelicaForTesting.WhenPriority.makefile DrModelicaForTesting.WhenPriority.libs DrModelicaForTesting.WhenPriority.log DrModelicaForTesting.WhenPriority.c DrModelicaForTesting.WhenPriority.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

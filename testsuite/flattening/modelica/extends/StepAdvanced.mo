@@ -1,6 +1,7 @@
 // name:     StepAdvanced
 // keywords:
 // status:   correct
+// cflags: -d=-newInst
 //
 
 

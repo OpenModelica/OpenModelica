@@ -1,6 +1,7 @@
 // name:     ModifiersPriority.mo
 // keywords: extends modifier handling
 // status:   correct
+// cflags: -d=-newInst
 //
 // check that modifiers on extends are not lost (constrainedby mods for short class def)
 //

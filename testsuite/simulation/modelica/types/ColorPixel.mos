@@ -4,6 +4,7 @@
 // teardown_command: rm -rf ColorPixel_* ColorPixel ColorPixel.exe ColorPixel.cpp ColorPixel.makefile ColorPixel.libs ColorPixel.log output.log
 // 
 // Drmodelica: 7.1 Type Checking (p. 209)
+// cflags: -d=-newInst
 //
 loadFile("ColorPixel.mo");
 simulate(ColorPixel,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

@@ -1,6 +1,7 @@
 // name:     Lookup9
 // keywords: scoping
 // status:   correct
+// cflags: -d=-newInst
 //
 
 package A

@@ -1,6 +1,7 @@
 // name:     RecordEnumBinding
 // keywords: record, enumeration, #2616
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that it's possible to have enumeration variables with bindings in
 // records.

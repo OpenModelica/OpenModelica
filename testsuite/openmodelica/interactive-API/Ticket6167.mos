@@ -1,6 +1,7 @@
 // name: Ticket6167.mos
 // keywords:
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests if -nfAPI doesn't output DynamicSelect
 //

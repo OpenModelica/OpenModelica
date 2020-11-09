@@ -1,7 +1,7 @@
 // name:     BuiltinReal
 // keywords: Builtin
 // status:   correct
-// cflags:   -g=MetaModelica -d=noevalfunc,gen
+// cflags:   -g=MetaModelica -d=noevalfunc,gen -d=-newInst
 //
 // Builtin function testing
 //

@@ -1,6 +1,7 @@
 // name:     SMGraphicalTestCases_DeepHierarchy
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("SMGraphicalTestCases.mo");

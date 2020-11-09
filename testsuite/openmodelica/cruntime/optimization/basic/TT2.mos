@@ -1,5 +1,6 @@
 // name: CombiTimeTable
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.1"});
 getErrorString();

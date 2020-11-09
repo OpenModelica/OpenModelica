@@ -1,7 +1,7 @@
 // name:     BS1 - Clock component
 // keywords: Clock
 // status:   correct
-// cflags: +std=1.x
+// cflags: +std=1.x -d=-newInst
 //
 // Testing instantiation of the Clock component.
 //

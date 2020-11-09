@@ -1,6 +1,7 @@
 // name: Bug2833.mos
 // keywords: delay
 // status: correct
+// cflags: -d=-newInst
 // 
 // test for #2833
 // 

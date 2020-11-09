@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.KinematicLoop.* PlanarMechanicsForTesting.Examples.KinematicLoop_i* PlanarMechanicsForTesting.Examples.KinematicLoop_d* PlanarMechanicsForTesting.Examples.KinematicLoop_r* PlanarMechanicsForTesting.Examples.KinematicLoop_f* PlanarMechanicsForTesting.Examples.KinematicLoop PlanarMechanicsForTesting.Examples.KinematicLoop.exe PlanarMechanicsForTesting.Examples.KinematicLoop.cpp PlanarMechanicsForTesting.Examples.KinematicLoop.makefile PlanarMechanicsForTesting.Examples.KinematicLoop.libs PlanarMechanicsForTesting.Examples.KinematicLoop.log PlanarMechanicsForTesting.Examples.KinematicLoop.c PlanarMechanicsForTesting.Examples.KinematicLoop.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

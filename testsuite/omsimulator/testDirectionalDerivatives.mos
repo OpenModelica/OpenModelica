@@ -2,6 +2,7 @@
 // keywords: FMI 2.0 fmi2GetDirectionalDerivative OMSimulator
 // status: correct
 // teardown_command: rm -rf temp_testDirectionalDerivatives/ test_res.mat directionalDerivatives.csv directionalDerivatives.lua directionalDerivatives_systemCall.log Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu Modelica_Electrical_Analog_Examples_CauerLowPassAnalog.log
+// cflags: -d=-newInst
 //
 // Test initialization, simulation with fmi2GetDirectionalDerivative and deinitialization of FMU with OMSimulator
 

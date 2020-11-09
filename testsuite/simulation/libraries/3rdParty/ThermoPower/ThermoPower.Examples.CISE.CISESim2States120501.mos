@@ -1,6 +1,7 @@
 // name: ThermoPower.Examples.CISE.CISESim2States120501
 // keywords: over-determined initialization
 // status: correct
+// cflags: -d=-newInst
 
 // Test1
 loadModel(ThermoPower); getErrorString();

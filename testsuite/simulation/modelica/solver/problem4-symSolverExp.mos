@@ -1,6 +1,7 @@
 // name: problem4-symSolverExp
 // status: correct
 // teardown_command: rm -f testSolver.problem4* output.log
+// cflags: -d=-newInst
 
 loadFile("./testSolverPackage.mo");
 getErrorString();

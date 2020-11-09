@@ -2,6 +2,7 @@
 // keywords: enum array #3213
 // status: correct
 // teardown_command: rm -rf EnumArrayArray_*
+// cflags: -d=-newInst
 //
 // Checks that models with arrays of arrays with enumeration dimensions can be
 // simulated.

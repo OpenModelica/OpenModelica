@@ -1,6 +1,7 @@
 // name:     WhenWithArray
 // keywords: when
 // status:   correct
+// cflags: -d=-newInst
 //
 // check if we support conditions with cref arrays
 //

@@ -1,6 +1,7 @@
 // name:     ComplexBinding1
 // keywords: #4606 
 // status:   correct
+// cflags: -d=-newInst
 //
 
 operator record Complex 

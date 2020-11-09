@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("Buildings.HeatTransfer.Examples.ConductorMultiLayer.mo");getErrorString();
 simulate(Buildings.HeatTransfer.Examples.ConductorMultiLayer);getErrorString();

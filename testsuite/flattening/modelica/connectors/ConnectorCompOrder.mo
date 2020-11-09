@@ -1,6 +1,7 @@
 // name:     ConnectorCompOrder
 // keywords: connector, binding, modification, bug2159
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that order of the components in connectors doesn't matter.
 //

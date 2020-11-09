@@ -6,6 +6,7 @@
 //  Tests when, elsewhen
 //
 // Drmodelica: 9.2 called (p. 300)
+// cflags: -d=-newInst
 //
 loadFile("PolynomialEvaluator1.mo");
 simulate(PositionalCall,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

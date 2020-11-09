@@ -2,6 +2,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // depends: Modelica.Electrical.Analog.Examples.OvervoltageProtection_eqs_prof.json
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -4,6 +4,7 @@
 //
 // Nested whens are not allowed
 // Drmodelica:   8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 //
 
 model ErrorNestedWhen

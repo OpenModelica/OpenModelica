@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.Xpowers2
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.Xpowers2.* DrModelicaForTesting.Xpowers2_* DrModelicaForTesting.Xpowers2 DrModelicaForTesting.Xpowers2.exe DrModelicaForTesting.Xpowers2.cpp DrModelicaForTesting.Xpowers2.makefile DrModelicaForTesting.Xpowers2.libs DrModelicaForTesting.Xpowers2.log DrModelicaForTesting.Xpowers2.c DrModelicaForTesting.Xpowers2.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

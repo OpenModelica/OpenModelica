@@ -2,7 +2,7 @@
 // teardown_command: rm -f Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe1_*.mat
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: 	 +simCodeTarget=Cpp
+// cflags: 	 +simCodeTarget=Cpp -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

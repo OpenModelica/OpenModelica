@@ -1,5 +1,6 @@
 // name: Delay8
 // status: correct
+// cflags: -d=-newInst
 
 block Delay8 "Delay block with variable DelayTime"
   parameter Integer n=3;

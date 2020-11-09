@@ -1,6 +1,7 @@
 // name:     Lookup10
 // keywords: lookup, extends, scoping, bug1151
 // status:   correct
+// cflags: -d=-newInst
 //
 // Fix for bug #1151: http://openmodelica.ida.liu.se:8080/cb/issue/1151?navigation=true
 //

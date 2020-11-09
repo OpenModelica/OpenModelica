@@ -2,6 +2,7 @@
 // keywords: fmu export simulation flags
 // status: correct
 // teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum* Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum* Pendulum-static* Pendulum_static* Pendulum_me_cs_systemCall.log Pendulum_flags_static.json
+// cflags: -d=-newInst
 //
 // Export Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum as 2.0 CS FMU with CVODE solver
 

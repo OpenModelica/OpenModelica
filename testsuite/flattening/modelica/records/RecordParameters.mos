@@ -1,6 +1,7 @@
 // name:     Record Constructor with Parameters
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 
 loadFile("RecordTest.mo");
 // CEval

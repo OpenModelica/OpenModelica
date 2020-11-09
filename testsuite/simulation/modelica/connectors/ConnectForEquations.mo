@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 8.2  connect equations (p. 244)
+// cflags: -d=-newInst
 //
 
 model Test

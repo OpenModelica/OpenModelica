@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 3.4 Access Control (p. 88)
+// cflags: -d=-newInst
 //
 
 class Activate

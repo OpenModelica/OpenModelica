@@ -1,6 +1,7 @@
 // name:     Pow
 // keywords: pow, exponentation, simplification, bug1161
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test fix for bug #1161: http://openmodelica.ida.liu.se:8080/cb/issue/1161?navigation=true
 //

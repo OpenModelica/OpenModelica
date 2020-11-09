@@ -1,6 +1,7 @@
 // name:     Extends Order
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Verifies that no error messages are printed based on the order
 // of the parameter (this used to fail and produce very long error

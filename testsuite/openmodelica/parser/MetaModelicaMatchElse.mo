@@ -1,6 +1,6 @@
 // name: MetaModelicaMatchElse
 // status: correct
-// cflags: +g=MetaModelica +i=MetaModelicaMatchElse.A
+// cflags: +g=MetaModelica +i=MetaModelicaMatchElse.A -d=-newInst
 //
 // Tests that the parser can handle all sorts of match/matchcontinue
 

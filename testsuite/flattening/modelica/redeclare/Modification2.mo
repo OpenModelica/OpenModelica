@@ -1,6 +1,7 @@
 // name:     Modification2
 // keywords: redeclare, modification
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that modifiers are propagated and merged correctly when redeclaring
 // classes.

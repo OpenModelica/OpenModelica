@@ -1,6 +1,7 @@
 // name: ModifierClass
 // keywords: modifier
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests modification of short class declarations
 //

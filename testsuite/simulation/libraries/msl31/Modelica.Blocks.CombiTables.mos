@@ -1,6 +1,7 @@
 //name:        Simulate Modelica.Blocks.Examples [version 3.1]
 //keyword:     simulate MSL 3.1 Modelica.Blocks.CombiTables
 //status:      correct
+// cflags: -d=-newInst
 //
 // instantiate/check/simulate model example
 //

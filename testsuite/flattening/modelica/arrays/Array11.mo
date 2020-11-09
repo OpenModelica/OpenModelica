@@ -1,6 +1,7 @@
 // name:     Array11
 // keywords: matrix
 // status:   correct
+// cflags: -d=-newInst
 //
 // Fixes bug #38
 //

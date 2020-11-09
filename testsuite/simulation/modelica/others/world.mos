@@ -1,6 +1,7 @@
 // name:      world
 // keywords:  visualization
 // status:    correct
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();

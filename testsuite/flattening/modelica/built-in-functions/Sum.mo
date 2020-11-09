@@ -1,6 +1,7 @@
 // name: Sum
 // keywords: sum
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing the built-in sum function.
 //

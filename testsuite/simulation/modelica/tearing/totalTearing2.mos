@@ -1,6 +1,7 @@
 // name:      totalTearing2
 // keywords:  total tearing
 // status:    correct
+// cflags: -d=-newInst
 
 loadString("
 model totalTearing2

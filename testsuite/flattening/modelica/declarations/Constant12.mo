@@ -1,5 +1,6 @@
 // name: Constant12
 // status: correct
+// cflags: -d=-newInst
 
 class A
   class B

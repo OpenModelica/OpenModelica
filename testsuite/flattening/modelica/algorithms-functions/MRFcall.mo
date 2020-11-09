@@ -1,6 +1,7 @@
 // name:     MultipleResultsFunction
 // keywords: multiple results
 // status:   correct
+// cflags: -d=-newInst
 //
 // Multipe results from a function
 //

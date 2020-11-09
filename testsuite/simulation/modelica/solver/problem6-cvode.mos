@@ -1,6 +1,7 @@
 // name: problem6-cvode
 // status: correct
 // teardown_command: rm -f testSolver.problem6* output.log testSolver_problem6_*
+// cflags: -d=-newInst
 //
 // Test different settings for CVODE solver on bouncing ball example
 //   Use solver for stiff and non-stiff problems

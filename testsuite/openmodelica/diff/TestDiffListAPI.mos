@@ -1,5 +1,6 @@
 // status: correct
 // depends: manual
+// cflags: -d=-newInst
 
 n:=5;
 min(writeFile(

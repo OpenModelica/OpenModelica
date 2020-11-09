@@ -3,6 +3,7 @@
 // status: correct
 //
 // ticket:4329,4603
+// cflags: -d=-newInst
 
 loadString("
 model start

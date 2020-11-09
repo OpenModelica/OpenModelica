@@ -1,6 +1,7 @@
 // name: Sign
 // keywords: sign
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing the built-in sign function in c code
 //

@@ -1,6 +1,7 @@
 // name:     Import7
 // keywords: import
 // status:   correct
+// cflags: -d=-newInst
 //
 // Import of constants in packages.
 

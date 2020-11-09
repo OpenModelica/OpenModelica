@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // #2521
 
 model Vector

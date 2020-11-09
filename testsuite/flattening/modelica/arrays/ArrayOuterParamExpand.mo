@@ -1,6 +1,7 @@
 // name:     ArrayOuterParamExpand
 // keywords: array inner outer parameter
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that outer parameters are expanded correctly.
 //

@@ -1,6 +1,7 @@
 // name:     Differentiate
 // keywords: Differentiate, Expression
 // status:   correct
+// cflags: -d=-newInst
 //
 //  testing differentiate in exp
 //

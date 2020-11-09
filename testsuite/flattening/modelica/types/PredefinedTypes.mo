@@ -1,6 +1,7 @@
 // name:     PredefinedTypes
 // keywords: Predefined types, modifications
 // status:   correct
+// cflags: -d=-newInst
 
 type enum = enumeration(a,b,c);
 model PredefinedTypes

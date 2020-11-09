@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestVolumes2.* ThermoSysPro.Examples.SimpleExamples.TestVolumes2_* ThermoSysPro.Examples.SimpleExamples.TestVolumes2 ThermoSysPro.Examples.SimpleExamples.TestVolumes2.exe ThermoSysPro.Examples.SimpleExamples.TestVolumes2.cpp ThermoSysPro.Examples.SimpleExamples.TestVolumes2.makefile ThermoSysPro.Examples.SimpleExamples.TestVolumes2.libs ThermoSysPro.Examples.SimpleExamples.TestVolumes2.log ThermoSysPro.Examples.SimpleExamples.TestVolumes2.c ThermoSysPro.Examples.SimpleExamples.TestVolumes2.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

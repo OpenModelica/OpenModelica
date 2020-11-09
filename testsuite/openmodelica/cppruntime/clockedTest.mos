@@ -2,6 +2,7 @@
 // keywords: synchronous clocked equations, continuous-time partition
 // status: correct
 // teardown_command: rm -f *DID*
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

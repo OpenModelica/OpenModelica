@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// cflags: -d=-newInst
 //
 
 class Exp

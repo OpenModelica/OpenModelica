@@ -1,6 +1,7 @@
 // name:     Import3
 // keywords: import
 // status:   correct
+// cflags: -d=-newInst
 //
 // Import in enclosing scopes is valid.
 

@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+g=MetaModelica");loadString("function polymorphicReduction
   input list<list<Integer>> ll = {{1}, {2}};

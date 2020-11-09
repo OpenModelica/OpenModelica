@@ -4,6 +4,7 @@
 // teardown_command: rm -rf DoubleWhenSequential_* DoubleWhenSequential DoubleWhenSequential.exe DoubleWhenSequential.cpp DoubleWhenSequential.makefile DoubleWhenSequential.libs DoubleWhenSequential.log output.log
 // 
 // Drmodelica: 9.1 When-Statements (p. 293)
+// cflags: -d=-newInst
 // 
 loadFile("DoubleWhenSequential.mo");
 simulate(DoubleWhenSequential, tolerance=1e-5, numberOfIntervals=100); // 2 intervals == 3 values

@@ -1,7 +1,7 @@
 // name:     SineSpeed
 // keywords: Simulate, readSimulationData
 // status:   correct
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 // teardown_command: rm -f TestModels.RotationalModels.SpringInertia.SineSpeed* output.log
 // 
 //  Simulate Rotational inertias with springs 

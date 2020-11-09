@@ -1,6 +1,7 @@
 // name:     WhenStatement1
 // keywords: when
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 //

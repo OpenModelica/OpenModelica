@@ -1,6 +1,7 @@
 // name: TypeArray
 // keywords: type, array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaration of types from an array
 //

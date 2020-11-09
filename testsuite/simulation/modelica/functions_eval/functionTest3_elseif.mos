@@ -1,6 +1,7 @@
 // name:      functionTest3_elseif
 // keywords:  evalConstFunc
 // status:    correct
+// cflags: -d=-newInst
 //
 
 

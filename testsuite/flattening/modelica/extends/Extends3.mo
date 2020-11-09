@@ -1,7 +1,7 @@
 // name:     Extends3
 // keywords: extends basictype operators
 // status:   correct
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 //
 // Testing extending basic type and matrix multiplication operators (MC bug #643)
 

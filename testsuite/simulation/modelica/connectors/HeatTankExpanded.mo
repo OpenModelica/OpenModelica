@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 4.4 Parameterization and extension of Interfaces (p. 136).
+// cflags: -d=-newInst
 //
 
 model HeatTankExpanded  //Modelica Book version, Added start values etc.

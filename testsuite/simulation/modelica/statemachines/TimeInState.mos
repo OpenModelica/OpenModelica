@@ -1,6 +1,7 @@
 // name:     TimeInState
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("TimeInState.mo");

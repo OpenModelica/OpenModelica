@@ -1,6 +1,7 @@
 // name:     ModelicaTest.MultiBody.FourbarVariants.JointSSR
 // keywords: simulation ModelicaTest library models
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // ModelicaTest library

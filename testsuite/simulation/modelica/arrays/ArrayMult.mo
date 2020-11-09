@@ -4,6 +4,7 @@
 //
 // Array multiplication
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// cflags: -d=-newInst
 //
 class ArrayMult
   Real m1[3] = {1, 2, 3} * 2;       // Elementwise mult: {2, 4, 6};

@@ -2,6 +2,7 @@
 // keywords: <...>
 // status:   correct
 // teardown_command: rm -rf *simple_test* linearized_model* output.log
+// cflags: -d=-newInst
 //
 // <insert description here>
 //

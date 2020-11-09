@@ -1,6 +1,7 @@
 // name:     Array8
 // keywords: array,declaration
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is a test of full slices [:]
 //

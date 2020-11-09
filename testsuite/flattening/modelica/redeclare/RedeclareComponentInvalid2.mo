@@ -1,6 +1,7 @@
 // name:     RedeclareComponentInvalid2
 // keywords: redeclare component
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Tests that only inherited components can be redeclared.
 //

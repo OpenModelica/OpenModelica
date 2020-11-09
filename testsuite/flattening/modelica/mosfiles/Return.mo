@@ -1,6 +1,7 @@
 // name: Return
 // keywords: function, return
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests return within a function algorithm
 //

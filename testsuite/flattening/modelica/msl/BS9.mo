@@ -1,6 +1,7 @@
 // name:     BS9 - Sine component
 // keywords: Sine
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Sine component.
 //

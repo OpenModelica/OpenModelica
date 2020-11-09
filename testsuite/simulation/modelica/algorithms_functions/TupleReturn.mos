@@ -2,6 +2,7 @@
 // keywords:  tuple function return
 // status:    correct
 // teardown_command: rm -rf TupleReturn_* TupleReturn TupleReturn.exe TupleReturn.cpp TupleReturn.makefile TupleReturn.libs TupleReturn.log output.log
+// cflags: -d=-newInst
 //
 // Tests code generation for functions returning tuples, both simulation and
 // function code.

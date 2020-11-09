@@ -1,6 +1,7 @@
 // name:     Bug3503.mos
 // keywords: synchronous features, prefixing of clocks
 // status: correct
+// cflags: -d=-newInst
 //
 
 setCommandLineOptions("+std=3.3"); getErrorString();

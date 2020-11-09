@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.bug_6001* _initializationTests.bug_6001* output.log
+// cflags: -d=-newInst
 
 loadString("
 model M

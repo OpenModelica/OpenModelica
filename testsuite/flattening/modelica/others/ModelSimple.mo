@@ -1,6 +1,7 @@
 // name: ModelSimple
 // keywords: model
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple model declaration and instantiation
 //

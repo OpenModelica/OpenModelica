@@ -1,5 +1,6 @@
 // name:     DoubleFuncDeclaration.mo
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Checks that duplicate functions are detected.
 //
@@ -20,8 +21,8 @@ end DoubleFuncDeclaration;
 
 // Result:
 // Error processing file: DoubleFuncDeclaration.mo
-// [flattening/modelica/declarations/DoubleFuncDeclaration.mo:8:3-11:8:writable] Notification: From here:
-// [flattening/modelica/declarations/DoubleFuncDeclaration.mo:13:3-16:8:writable] Error: An element with name f is already declared in this scope.
+// [flattening/modelica/declarations/DoubleFuncDeclaration.mo:9:3-12:8:writable] Notification: From here:
+// [flattening/modelica/declarations/DoubleFuncDeclaration.mo:14:3-17:8:writable] Error: An element with name f is already declared in this scope.
 // Error: Error occurred while flattening model DoubleFuncDeclaration
 //
 // # Error encountered! Exiting...

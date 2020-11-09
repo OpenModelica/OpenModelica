@@ -2,6 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf *sampleTests.sample2* output.log
+// cflags: -d=-newInst
 //
 // Event handling
 //

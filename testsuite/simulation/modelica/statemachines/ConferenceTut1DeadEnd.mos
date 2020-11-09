@@ -1,6 +1,7 @@
 // name:     ConferenceTut1DeadEnd
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 // Test case for ticket:4527
 

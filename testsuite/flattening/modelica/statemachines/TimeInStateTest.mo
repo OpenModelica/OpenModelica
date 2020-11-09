@@ -1,6 +1,7 @@
 // name: TimeInStateTest
 // keywords: state machines features
 // status: correct
+// cflags: -d=-newInst
 
 model TimeInStateTest
   output Real t;

@@ -2,6 +2,7 @@
 // keywords: omsi omsicpp fmu fmi
 // status: correct
 // teardown_command: rm -rf BouncingBall.fmu BouncingBall_res.mat BouncingBall_diff.log
+// cflags: -d=-newInst
 //
 // Tests generating and simulating an OMSICPP FMU
 //

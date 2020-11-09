@@ -1,7 +1,7 @@
 // name:     MatchCase4
 // keywords: Match Cases
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Match Testing
 //

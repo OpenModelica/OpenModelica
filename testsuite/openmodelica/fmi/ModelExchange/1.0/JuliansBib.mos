@@ -2,6 +2,7 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml JuliansBib_Connector_Hebelarm_einfach.fmu JuliansBib_Connector_Hebelarm_einfach_* JuliansBib_Connector_Hebelarm_einfach_* JuliansBib_Connector_Hebelarm_einfach.libs JuliansBib_Connector_Hebelarm_einfach.lib JuliansBib_Connector_Hebelarm_einfach JuliansBib_Connector_Hebelarm_einfach.exe JuliansBib_Connector_Hebelarm_einfach.so JuliansBib_Connector_Hebelarm_einfach.dll JuliansBib_Connector_Hebelarm_einfach.c JuliansBib_Connector_Hebelarm_einfach.makefile JuliansBib.Connector_Hebelarm_einfach_*
+// cflags: -d=-newInst
 
 loadFile("PlanarMechanicsStandard.mo"); getErrorString();
 loadFile("JuliansBib.mo"); getErrorString();

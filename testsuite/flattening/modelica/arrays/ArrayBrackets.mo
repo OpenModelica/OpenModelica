@@ -1,6 +1,7 @@
 // name: ArrayBrackets
 // keywords: array
 // status: correct
+// cflags: -d=-newInst
 //
 // tests array construction with bracket syntax
 //

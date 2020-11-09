@@ -1,6 +1,7 @@
 // name: Ticket5680.mos
 // keywords:
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests if the -m Modelica output doesn't interfere with list()
 //

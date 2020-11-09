@@ -1,6 +1,7 @@
 // name:     Record-in-Record Input
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 
 loadFile("RecordTest.mo");
 

@@ -1,5 +1,6 @@
 // name: testAlgLoop5
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+gDynOpt --tearingStrictness=casual +loop2con=all");
 //setCommandLineOptions("+gDynOpt");

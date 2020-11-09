@@ -1,5 +1,5 @@
 // name: StringPool
-// cflags: -d=noevalfunc,gen
+// cflags: -d=noevalfunc,gen -d=-newInst
 // status: correct
 // teardown_command: rm -f StringPool_*
 //

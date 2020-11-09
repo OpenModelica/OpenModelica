@@ -8,6 +8,7 @@
 // c:=1
 // b:=1+c
 // d:=a+b+c
+// cflags: -d=-newInst
 // ;
 // d+1
 // or something that generates the same output.

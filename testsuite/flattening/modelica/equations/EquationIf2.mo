@@ -1,6 +1,7 @@
 // name:     EquationIf2
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing `if' clauses in equations.
 // The branches need not have the same

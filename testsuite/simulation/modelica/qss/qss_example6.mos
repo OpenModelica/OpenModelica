@@ -1,5 +1,6 @@
 // name: qss_example6
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 within ;

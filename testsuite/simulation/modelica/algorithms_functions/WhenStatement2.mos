@@ -5,6 +5,7 @@
 // 
 //  
 // Drmodelica: 9.1 When-Statements (p. 293)
+// cflags: -d=-newInst
 // 
 loadFile("WhenStatement2.mo");
 simulate(WhenStat2, tolerance=1e-3, numberOfIntervals=400); // 2 intervals == 3 values

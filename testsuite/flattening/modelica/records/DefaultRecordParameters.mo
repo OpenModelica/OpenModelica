@@ -1,6 +1,7 @@
 // name:     DefaultRecordParameters
 // keywords: record parameters with default values, record extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing of record component parameters with default values and extends of records
 //

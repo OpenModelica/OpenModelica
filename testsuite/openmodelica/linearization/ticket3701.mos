@@ -2,6 +2,7 @@
 // keywords: differentiation partial functions matrix argument
 // status:   correct
 // teardown_command: rm -rf A* output.log linearized_model*
+// cflags: -d=-newInst
 //
 //
 

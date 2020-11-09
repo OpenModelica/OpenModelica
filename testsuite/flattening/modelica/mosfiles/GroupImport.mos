@@ -1,5 +1,6 @@
 // name: GroupImport
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("GroupImport.mo");
 list();getErrorString();

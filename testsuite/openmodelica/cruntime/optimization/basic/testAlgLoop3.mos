@@ -1,5 +1,6 @@
 // name: testAlgLoop3
 // status: correct
+// cflags: -d=-newInst
 
 
 setCommandLineOptions("+gDynOpt +loop2con=all");

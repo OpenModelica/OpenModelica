@@ -1,6 +1,7 @@
 // name: StringConcatenation
 // keywords: string
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests string concatenation
 //

@@ -4,6 +4,7 @@
 //
 // <insert description here>
 // Drmodelica: 7.2  Array Constructor (p. 210)
+// cflags: -d=-newInst
 //
 
 type Angle = Real(unit="rad"); // The type Angle is a subtype of Real

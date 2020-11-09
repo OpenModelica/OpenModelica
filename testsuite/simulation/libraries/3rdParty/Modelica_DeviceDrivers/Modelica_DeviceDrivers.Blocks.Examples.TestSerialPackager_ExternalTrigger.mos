@@ -1,6 +1,7 @@
 // name: Modelica_DeviceDrivers.Blocks.Examples.TestSerialPackager_ExternalTrigger
 // keywords: simulation Modelica_DeviceDrivers examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica_DeviceDrivers

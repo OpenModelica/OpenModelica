@@ -1,7 +1,7 @@
 // name:      Tearing10-celMC4
 // keywords:  tearing
 // status:    correct
-// cflags:   +d=backenddaeinfo
+// cflags:   +d=backenddaeinfo -d=-newInst
 
 
 loadModel(Modelica,{"3.2.2"}); getErrorString();

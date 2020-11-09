@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.getPerson
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.getPerson.* DrModelicaForTesting.getPerson_* DrModelicaForTesting.getPerson DrModelicaForTesting.getPerson.exe DrModelicaForTesting.getPerson.cpp DrModelicaForTesting.getPerson.makefile DrModelicaForTesting.getPerson.libs DrModelicaForTesting.getPerson.log DrModelicaForTesting.getPerson.c DrModelicaForTesting.getPerson.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

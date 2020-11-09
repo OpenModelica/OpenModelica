@@ -1,6 +1,7 @@
 // Name: ComplexNumbers
 // status: correct
 // teardown_command: rm -rf ComplexNumbers ComplexNumbers.exe ComplexNumbers.c ComplexNumbers.cpp ComplexNumbers.libs ComplexNumbers.log ComplexNumbers.makefile ComplexNumbers.plt ComplexNumbers_* output.log
+// cflags: -d=-newInst
 // 
 
 loadFile("ComplexNumbers.mo");

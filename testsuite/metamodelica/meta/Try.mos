@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -d=gen");getErrorString();
 loadString("package Try

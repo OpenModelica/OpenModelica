@@ -1,5 +1,6 @@
 // name: AlgorithmNoRetCall
 // status: correct
+// cflags: -d=-newInst
 
 package Modelica
 package Utilities

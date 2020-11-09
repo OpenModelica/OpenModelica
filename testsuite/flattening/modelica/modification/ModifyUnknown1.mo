@@ -1,6 +1,7 @@
 // name:     ModifyUnknown1
 // keywords: modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Try to introduce a new member via modification.
 //

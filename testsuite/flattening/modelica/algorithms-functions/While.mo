@@ -1,6 +1,7 @@
 // name: While
 // keywords: while
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests a simple while-loop
 //

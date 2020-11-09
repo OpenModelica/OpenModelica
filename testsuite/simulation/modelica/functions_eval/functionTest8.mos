@@ -1,6 +1,7 @@
 // name:      functionTest8
 // keywords:  evalConstFunc
 // status:    correct
+// cflags: -d=-newInst
 //
 
 loadString("

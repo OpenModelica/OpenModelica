@@ -2,6 +2,7 @@
 // keywords: vectorized components, array equations, for loops
 // status: correct
 // teardown_command: rm -f *VectorizedBlocksTest*
+// cflags: -d=-newInst
 
 setCommandLineOptions("--std=3.3"); getErrorString();
 setCommandLineOptions("-d=newInst,-nfScalarize"); getErrorString();

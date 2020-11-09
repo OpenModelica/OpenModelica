@@ -4,6 +4,7 @@
 // 
 //  Erroneous model: close defined by two equations!
 // Drmodelica: 9.1 When-Statements (p. 293)
+// cflags: -d=-newInst
 // 
 loadFile("DoubleWhenConflict.mo");
 simulate(DoubleWhenConflict,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

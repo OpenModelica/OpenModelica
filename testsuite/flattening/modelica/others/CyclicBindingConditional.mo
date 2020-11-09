@@ -1,6 +1,7 @@
 // name: CyclicBindingConditional
 // keywords: cyclic
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests cyclic binding of parameters
 //

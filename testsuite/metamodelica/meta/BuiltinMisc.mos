@@ -1,7 +1,7 @@
 // name:     BuiltinMisc
 // keywords: Builtin
 // status:   correct
-// cflags:   -g=MetaModelica -d=gen
+// cflags:   -g=MetaModelica -d=gen -d=-newInst
 //
 // Builtin function testing
 //

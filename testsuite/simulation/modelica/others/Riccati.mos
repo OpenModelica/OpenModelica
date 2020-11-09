@@ -2,6 +2,7 @@
 // keywords:  Nonlinear equation system
 // status:    correct
 // teardown_command: rm -rf Riccati Riccati.exe Riccati.cpp Riccati_functions.cpp Riccati_functions.h Riccati_init.xml Riccati.libs Riccati.log Riccati.makefile Riccati_records.c Riccati_res.mat output.log
+// cflags: -d=-newInst
 
 loadFile("Riccati.mo");
 simulate(Riccati, tolerance=1e-5, numberOfIntervals=100);

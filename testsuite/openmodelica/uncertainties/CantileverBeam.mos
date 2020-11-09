@@ -4,6 +4,7 @@
 // status:   correct
 // The CantileverBeam example for OpenTURNS connectivity.
 // http://doc.openturns.org/openturns-latest/html/ExamplesGuide/cid1.xhtml#cid1
+// cflags: -d=-newInst
 // 
 
 loadModel(Modelica, {"3.1"}); getErrorString();

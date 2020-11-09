@@ -2,6 +2,7 @@
 // status: correct
 // provided by VTT
 // teardown_command: rm -f _FreeBody18*.h FreeBody18*.c FreeBody18*.libs FreeBody18*.makefile FreeBody18*.log FreeBody18*.h FreeBody18 FreeBody18*.exe FreeBody18*.o FreeBody18*.xml FreeBody18*.mat
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2"}); getErrorString();

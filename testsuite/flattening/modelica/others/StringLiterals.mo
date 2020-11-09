@@ -1,6 +1,7 @@
 // name: StringLiterals
 // keywords: string
 // status: correct
+// cflags: -d=-newInst
 
 model StringLiterals
   // Skipping \r since it's weird :)

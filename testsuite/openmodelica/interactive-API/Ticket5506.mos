@@ -1,7 +1,7 @@
 // name: Ticket5506.mos
 // keywords: test that -d=nfAPI works fine
 // status: correct
-// cflags: -d=nfAPI
+// cflags: -d=nfAPI -d=-newInst
 //
 // test for ticket:5506
 //

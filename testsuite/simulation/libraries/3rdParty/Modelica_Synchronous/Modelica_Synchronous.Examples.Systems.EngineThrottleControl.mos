@@ -1,6 +1,7 @@
 // name: Modelica_Synchronous.Examples.Systems.EngineThrottleControl
 // keywords: simulation Modelica_Synchronous examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica_Synchronous

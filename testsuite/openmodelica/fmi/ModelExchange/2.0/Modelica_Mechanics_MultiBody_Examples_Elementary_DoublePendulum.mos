@@ -2,6 +2,7 @@
 // keywords: DoublePendulum FMI-Export FMI-Import
 // status: correct
 // teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum.* Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum_* binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.lib* Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.so Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_*.c Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_*.h Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_*.o Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_*.json
+// cflags: -d=-newInst
 // Simulation Results 
 // Modelica Standard Library
 //

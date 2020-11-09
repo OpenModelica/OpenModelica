@@ -2,6 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf EquationCallIntegerArray_* EquationCallIntegerArray EquationCallIntegerArray.exe EquationCallIntegerArray.cpp EquationCallIntegerArray.makefile EquationCallIntegerArray.libs EquationCallIntegerArray.log output.log
+// cflags: -d=-newInst
 //
 // Array calls
 // 

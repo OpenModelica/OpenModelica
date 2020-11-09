@@ -1,6 +1,7 @@
 // name:     modelica_1_1_Type9
 // keywords: types
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that subscripts are handled in a correct manner int the component clause.
 //

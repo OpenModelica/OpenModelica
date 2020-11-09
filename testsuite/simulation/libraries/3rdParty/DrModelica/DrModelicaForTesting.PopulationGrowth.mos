@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.PopulationGrowth
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.PopulationGrowth.* DrModelicaForTesting.PopulationGrowth_* DrModelicaForTesting.PopulationGrowth DrModelicaForTesting.PopulationGrowth.exe DrModelicaForTesting.PopulationGrowth.cpp DrModelicaForTesting.PopulationGrowth.makefile DrModelicaForTesting.PopulationGrowth.libs DrModelicaForTesting.PopulationGrowth.log DrModelicaForTesting.PopulationGrowth.c DrModelicaForTesting.PopulationGrowth.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

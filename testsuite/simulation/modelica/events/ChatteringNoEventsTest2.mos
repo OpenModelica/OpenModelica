@@ -2,6 +2,7 @@
 // keywords: EventHandling, Chattering
 // status: correct
 // teardown_command: rm -rf ChatteringNoEventsTest2* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate model containing EventIterations
 //

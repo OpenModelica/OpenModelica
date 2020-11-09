@@ -2,6 +2,7 @@
 // keywords: simulation TestMedia.TestModels.Nitrogen.Test1
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.Nitrogen.Test1.* TestMedia.TestModels.Nitrogen.Test1_* TestMedia.TestModels.Nitrogen.Test1 TestMedia.TestModels.Nitrogen.Test1.exe TestMedia.TestModels.Nitrogen.Test1.cpp TestMedia.TestModels.Nitrogen.Test1.makefile TestMedia.TestModels.Nitrogen.Test1.libs TestMedia.TestModels.Nitrogen.Test1.log TestMedia.TestModels.Nitrogen.Test1.c TestMedia.TestModels.Nitrogen.Test1.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

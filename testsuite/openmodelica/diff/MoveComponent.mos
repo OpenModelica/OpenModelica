@@ -1,5 +1,6 @@
 // status: correct
 // ticket:4110
+// cflags: -d=-newInst
 
 echo(false);
 a := "model Test\n  Comp component1(x = 5)\n    annotation(origin = {0, 0});\nend Test;";

@@ -1,6 +1,7 @@
 // name:     reinit
 // keywords: reinit
 // status:   correct
+// cflags: -d=-newInst
 //
 // using reinit in when initial() is not allowed, changed to assignment
 //

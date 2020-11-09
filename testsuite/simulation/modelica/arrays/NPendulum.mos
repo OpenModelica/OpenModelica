@@ -1,6 +1,7 @@
 // name:      NPendulum
 // keywords:  arrays
 // status:    correct
+// cflags: -d=-newInst
 //
 
 //setCommandLineOptions("+preOptModules=simplifyIfEquations,removeEqualFunctionCalls,partitionIndependentBlocks,expandDerOperator,findStateOrder,replaceEdgeChange,inlineArrayEqn,removeSimpleEquations,resolveLoops,evalFunc");

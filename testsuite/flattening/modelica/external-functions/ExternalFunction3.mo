@@ -1,7 +1,7 @@
 // name:     ExternalFunction3
 // keywords: external function,code generation,constant propagation
 // status:   correct
-// cflags: -d=gen
+// cflags: -d=gen -d=-newInst
 // setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o ExternalFunction3-addmatrices.o ExternalFunction3-addmatrices.c
 // teardown_command: rm -f ExternalFunction3-addmatrices.o ExternalFunction3_*
 //

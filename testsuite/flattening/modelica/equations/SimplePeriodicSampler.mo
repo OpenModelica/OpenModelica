@@ -5,6 +5,7 @@
 // <insert description here>
 //
 // Drmodelica: 13.2  Sampled Systems (p. 429)
+// cflags: -d=-newInst
 //
 model Sampler
   parameter Real sample_interval = 0.1        "Sample period";

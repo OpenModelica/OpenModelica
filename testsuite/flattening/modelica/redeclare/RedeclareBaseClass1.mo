@@ -1,6 +1,7 @@
 // name:     RedeclareBaseClass1
 // keywords: class extends, redeclare
 // status:   correct
+// cflags: -d=-newInst
 //
 // This test checks that it's possible to redeclare the base class in a class
 // extends. It doesn't really check that it's done correctly, but that the

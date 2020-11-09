@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.EquationCall
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.EquationCall.* DrModelicaForTesting.EquationCall_* DrModelicaForTesting.EquationCall DrModelicaForTesting.EquationCall.exe DrModelicaForTesting.EquationCall.cpp DrModelicaForTesting.EquationCall.makefile DrModelicaForTesting.EquationCall.libs DrModelicaForTesting.EquationCall.log DrModelicaForTesting.EquationCall.c DrModelicaForTesting.EquationCall.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -1,6 +1,7 @@
 // name: NonfixedParamSubscript
 // keywords: parameter fixed subscript
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests non-fixed parameters as subscripts.
 //

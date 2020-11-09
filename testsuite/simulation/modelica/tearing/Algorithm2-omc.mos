@@ -1,6 +1,7 @@
 // name:      Algorithm2-omc
 // keywords:  tearing, algorithm
 // status:    correct
+// cflags: -d=-newInst
 
 loadFile("Algorithm2.mo"); getErrorString();
 

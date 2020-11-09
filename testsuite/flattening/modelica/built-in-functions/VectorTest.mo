@@ -1,6 +1,7 @@
 // name:     VectorTest
 // keywords: vector wholedim bug1170
 // status:   correct
+// cflags: -d=-newInst
 // Tests the vector function, and determination of unspecified vector dimensions
 // from a function call.
 //

@@ -1,6 +1,7 @@
 // name:     Lookup5
 // keywords: scoping
 // status:   correct
+// cflags: -d=-newInst
 //
 // Modelica no longer requires declare before use.
 // Thus the = -a refers to the 'a' declared

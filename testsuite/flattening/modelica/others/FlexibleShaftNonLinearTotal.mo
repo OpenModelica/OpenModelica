@@ -1,6 +1,7 @@
 // name:     FlexibleShaft
 // keywords: Rotational Mechanics, Arrays of components.
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is an application example for a flexible rotational axis.
 //

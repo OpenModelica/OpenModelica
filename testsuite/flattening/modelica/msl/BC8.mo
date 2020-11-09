@@ -1,6 +1,7 @@
 // name:     BC8 - PID component
 // keywords: PID
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the PID component.
 //

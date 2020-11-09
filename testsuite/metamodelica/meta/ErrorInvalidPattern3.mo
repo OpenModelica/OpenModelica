@@ -1,5 +1,5 @@
 // name: ErrorInvalidPattern3
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
 package ErrorInvalidPattern3
 

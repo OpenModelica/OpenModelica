@@ -2,6 +2,7 @@
 // keywords: for iterators
 // status: correct
 // teardown_command: rm -rf ForIterator2_* ForIterator2 ForIterator2.exe ForIterator2.cpp ForIterator2.makefile ForIterator2.libs ForIterator2.log output.log
+// cflags: -d=-newInst
 //
 // For Iterator handling
 //

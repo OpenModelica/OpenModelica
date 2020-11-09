@@ -1,6 +1,7 @@
 // name: wrapFunctionCalls7
 // keywords: cse, wrapFunctionCalls
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model wrapFunctionCalls7

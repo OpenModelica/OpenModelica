@@ -2,6 +2,7 @@
 // keywords: complex equation record system
 // status: correct
 // teardown_command: rm -rf M_* M M.exe M.c _M.h M.makefile M.libs M.log output.log
+// cflags: -d=-newInst
 // 
 // Tests complex equations in strong components.
 // 

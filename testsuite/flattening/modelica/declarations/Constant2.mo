@@ -1,6 +1,7 @@
 // name:     Constant2
 // keywords: declaration,type
 // status:   correct
+// cflags: -d=-newInst
 //
 // Constants and their use in expressions. This tests that the
 // translator checks that the equation modifications are constant.

@@ -1,6 +1,7 @@
 // name: RealAddEw
 // keywords: real, addition, element-wise
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests element-wise scalar-array addition.
 //

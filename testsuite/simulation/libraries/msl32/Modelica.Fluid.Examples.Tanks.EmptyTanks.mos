@@ -1,6 +1,7 @@
 // name:     Modelica.Fluid.Examples.Tanks.EmptyTanks
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

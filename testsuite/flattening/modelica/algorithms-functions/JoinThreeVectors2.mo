@@ -4,6 +4,7 @@
 //
 // External C function with column-major arrays
 // Drmodelica: 11.1 Function Annotations (p. 372)
+// cflags: -d=-newInst
 //
 
 

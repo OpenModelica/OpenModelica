@@ -1,6 +1,7 @@
 // name: Connect15
 // keywords:  connector, arrays
 // status: correct
+// cflags: -d=-newInst
 //
 // Test that it is possible to connect to array of connector.
 //

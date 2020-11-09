@@ -1,5 +1,6 @@
 // name: bug2756.mos
 // status: correct
+// cflags: -d=-newInst
 //
 // test for #2756
 //

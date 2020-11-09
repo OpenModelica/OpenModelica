@@ -2,6 +2,7 @@
 // keywords: Simulate, readSimulationData
 // status:   correct
 // teardown_command: rm -f TestModels.RotationalModels.* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate Rotational gear models and simulate. 
 //

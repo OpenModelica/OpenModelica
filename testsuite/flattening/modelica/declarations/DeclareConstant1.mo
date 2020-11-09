@@ -1,6 +1,7 @@
 // name:     DeclareConstant1
 // keywords: declaration,equation
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // A constant requires a declaration equation.
 // A normal equation from which we can compute

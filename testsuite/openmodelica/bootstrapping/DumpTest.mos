@@ -1,5 +1,5 @@
 // name: DumpTest
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: correct
 
 runScript("LoadCompilerSources.mos");getErrorString();

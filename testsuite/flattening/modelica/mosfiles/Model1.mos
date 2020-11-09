@@ -1,6 +1,7 @@
 //name:        Model1.mos Test for BUG 1238
 //keyword:     handling modifications
 //status:      correct
+// cflags: -d=-newInst
 //
 // instantiate/check model example
 // Many of these models use parameters with unknown dimensions, so it's not

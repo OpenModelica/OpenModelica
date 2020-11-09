@@ -1,6 +1,7 @@
 // name: SynchronousFeatures.ControlledMass
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
 

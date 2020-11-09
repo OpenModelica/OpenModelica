@@ -1,6 +1,7 @@
 // name: Ceil
 // keywords: ceil
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in ceil function
 //

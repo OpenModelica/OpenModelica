@@ -1,6 +1,7 @@
 // name: Symmetric2
 // keywords: symmetric builtin bug2126
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing the built-in symmetric function.
 //

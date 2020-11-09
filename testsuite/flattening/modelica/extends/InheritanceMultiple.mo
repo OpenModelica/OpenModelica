@@ -1,6 +1,7 @@
 // name: InheritanceMultiple
 // keywords: inheritance:
 // status: correct
+// cflags: -d=-newInst
 //
 // tests multiple inheritance
 //

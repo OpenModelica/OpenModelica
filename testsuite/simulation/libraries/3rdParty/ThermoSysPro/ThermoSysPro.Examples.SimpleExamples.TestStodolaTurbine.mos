@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.* ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine_* ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.exe ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.cpp ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.makefile ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.libs ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.log ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.c ThermoSysPro.Examples.SimpleExamples.TestStodolaTurbine.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

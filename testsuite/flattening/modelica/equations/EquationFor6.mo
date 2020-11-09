@@ -1,6 +1,7 @@
 // name:     EquationFor6
 // keywords: equation,array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test for loops with implicit range in equations.
 //

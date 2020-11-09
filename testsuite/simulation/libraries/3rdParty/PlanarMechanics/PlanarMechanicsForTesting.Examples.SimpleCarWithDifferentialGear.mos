@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.* PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear_* PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.exe PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.cpp PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.makefile PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.libs PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.log PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.c PlanarMechanicsForTesting.Examples.SimpleCarWithDifferentialGear.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

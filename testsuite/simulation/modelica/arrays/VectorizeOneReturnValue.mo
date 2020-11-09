@@ -4,6 +4,7 @@
 //
 //
 // Drmodelica: 7.8  Applied to Arrays  element-wise (p. 229)
+// cflags: -d=-newInst
 //
 class OneReturnValue
   Real a = 1, b = 0, c = 1;

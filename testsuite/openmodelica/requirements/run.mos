@@ -1,6 +1,7 @@
 // name:     TwoTanksExample.UserDefinedVerificationModels.UDVModel1
 // keywords: requirements, bindings, inference
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing requirements bindings inference
 //

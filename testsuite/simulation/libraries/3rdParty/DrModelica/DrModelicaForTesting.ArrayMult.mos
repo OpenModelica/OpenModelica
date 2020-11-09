@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ArrayMult
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ArrayMult.* DrModelicaForTesting.ArrayMult_* DrModelicaForTesting.ArrayMult DrModelicaForTesting.ArrayMult.exe DrModelicaForTesting.ArrayMult.cpp DrModelicaForTesting.ArrayMult.makefile DrModelicaForTesting.ArrayMult.libs DrModelicaForTesting.ArrayMult.log DrModelicaForTesting.ArrayMult.c DrModelicaForTesting.ArrayMult.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

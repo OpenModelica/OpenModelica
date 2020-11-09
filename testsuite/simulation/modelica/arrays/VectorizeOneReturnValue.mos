@@ -6,6 +6,7 @@
 // not yet implmeneted
 //
 // Drmodelica: 7.8  Applied to Arrays  element-wise (p. 229)
+// cflags: -d=-newInst
 // 
 loadFile("VectorizeOneReturnValue.mo");
 simulate(OneReturnValue,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

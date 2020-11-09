@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.WhenStat3
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.WhenStat3.* DrModelicaForTesting.WhenStat3_* DrModelicaForTesting.WhenStat3 DrModelicaForTesting.WhenStat3.exe DrModelicaForTesting.WhenStat3.cpp DrModelicaForTesting.WhenStat3.makefile DrModelicaForTesting.WhenStat3.libs DrModelicaForTesting.WhenStat3.log DrModelicaForTesting.WhenStat3.c DrModelicaForTesting.WhenStat3.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

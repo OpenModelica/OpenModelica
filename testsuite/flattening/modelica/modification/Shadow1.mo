@@ -1,6 +1,7 @@
 // name:     Shadow1
 // keywords: modification,shadow
 // status:   correct
+// cflags: -d=-newInst
 //
 // Modifications override declarations but not equations.
 

@@ -1,6 +1,7 @@
 // name:     InnerOuterArray2
 // keywords: dynamic scope, inner outer, lookup, array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that inner/outer arrays are handled correctly.
 //

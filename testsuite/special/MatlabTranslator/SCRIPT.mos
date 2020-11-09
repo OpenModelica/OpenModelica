@@ -1,5 +1,6 @@
 // name: OMCC
 // status: correct
+// cflags: -d=-newInst
 //
 
 // setCommandLineOptions({"+g=MetaModelica","+d=rml,gen"}); getErrorString();

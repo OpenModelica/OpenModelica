@@ -1,6 +1,7 @@
 // name:     Units1
 // keywords: connect,modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Conversion between units is not supported within the Modelica
 // language. Consequently in the following example the generation

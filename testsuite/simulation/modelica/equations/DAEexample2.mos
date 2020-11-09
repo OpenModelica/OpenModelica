@@ -5,6 +5,7 @@
 //
 // Equation handling
 // Drmodelica: 2.1 Differential Algebraic Equation System (p. 19)
+// cflags: -d=-newInst
 //
 loadFile("DAEexample2.mo");
 simulate(DAEexample, startTime=0.0, stopTime=1.0, numberOfIntervals=3, tolerance=1e-5);

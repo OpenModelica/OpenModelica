@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.Pendulum.* PlanarMechanicsForTesting.Examples.Pendulum_* PlanarMechanicsForTesting.Examples.Pendulum PlanarMechanicsForTesting.Examples.Pendulum.exe PlanarMechanicsForTesting.Examples.Pendulum.cpp PlanarMechanicsForTesting.Examples.Pendulum.makefile PlanarMechanicsForTesting.Examples.Pendulum.libs PlanarMechanicsForTesting.Examples.Pendulum.log PlanarMechanicsForTesting.Examples.Pendulum.c PlanarMechanicsForTesting.Examples.Pendulum.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

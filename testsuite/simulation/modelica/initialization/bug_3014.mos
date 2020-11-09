@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.bug_3014* _initializationTests.bug_3014* output.log bug_3014.mat
+// cflags: -d=-newInst
 
 loadString("
 within ;

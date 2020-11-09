@@ -2,6 +2,7 @@
 // keywords: simulation TestMedia.TestModels.WaterIF97.Test5
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.WaterIF97.Test5.* TestMedia.TestModels.WaterIF97.Test5_* TestMedia.TestModels.WaterIF97.Test5 TestMedia.TestModels.WaterIF97.Test5.exe TestMedia.TestModels.WaterIF97.Test5.cpp TestMedia.TestModels.WaterIF97.Test5.makefile TestMedia.TestModels.WaterIF97.Test5.libs TestMedia.TestModels.WaterIF97.Test5.log TestMedia.TestModels.WaterIF97.Test5.c TestMedia.TestModels.WaterIF97.Test5.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

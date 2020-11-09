@@ -1,6 +1,7 @@
 // name: Bug3885.mos
 // keywords: delay
 // status: correct
+// cflags: -d=-newInst
 // 
 // refs ticket:3885, ticket:4441
 // 

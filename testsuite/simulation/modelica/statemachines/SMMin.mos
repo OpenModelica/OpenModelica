@@ -1,6 +1,7 @@
 // name:     SMMin
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("SMMin.mo");

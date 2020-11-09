@@ -1,6 +1,7 @@
 // name:     ParseFullModelica3.2
 // keywords: parse
 // status:   correct
+// cflags: -d=-newInst
 //
 // Parse/Unparse entire MSL 3.2
 //

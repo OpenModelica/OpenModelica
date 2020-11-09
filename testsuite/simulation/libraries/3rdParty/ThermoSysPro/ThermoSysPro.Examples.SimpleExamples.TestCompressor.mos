@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -f _ThermoSysPro.Examples.SimpleExamples.TestCompressor.* ThermoSysPro.Examples.SimpleExamples.TestCompressor_* ThermoSysPro.Examples.SimpleExamples.TestCompressor ThermoSysPro.Examples.SimpleExamples.TestCompressor.cpp ThermoSysPro.Examples.SimpleExamples.TestCompressor.makefile ThermoSysPro.Examples.SimpleExamples.TestCompressor.libs ThermoSysPro.Examples.SimpleExamples.TestCompressor.log ThermoSysPro.Examples.SimpleExamples.TestCompressor.c ThermoSysPro.Examples.SimpleExamples.TestCompressor.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

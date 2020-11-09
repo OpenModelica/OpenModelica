@@ -1,6 +1,7 @@
 // name:     MissingModifiers.mo [BUG: #3051]
 // keywords: class modification handling
 // status:   correct
+// cflags: -d=-newInst
 //
 
 model A

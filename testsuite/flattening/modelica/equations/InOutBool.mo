@@ -1,6 +1,7 @@
 // name:     InOutBool
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 
 function testBool
   input Integer x;

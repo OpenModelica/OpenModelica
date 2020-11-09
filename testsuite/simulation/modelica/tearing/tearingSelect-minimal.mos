@@ -1,6 +1,7 @@
 // name:      tearingSelect-minimal
 // keywords:  minimal tearing, linear, tearingSelect
 // status:    correct
+// cflags: -d=-newInst
 
 loadFile("tearingSelect.mo"); getErrorString();
 

@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Repetitive Equation Structures with for-Equations (p. 241)
+// cflags: -d=-newInst
 //
 class HideVariableForEquations
   constant Integer k = 4;

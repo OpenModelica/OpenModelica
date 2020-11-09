@@ -2,6 +2,7 @@
 // keywords: function array #3214
 // status: correct
 // teardown_command: rm -rf ArrayReturn.NextAIAI*
+// cflags: -d=-newInst
 // 
 // Test so functions returning arrays of arrays works fine. Bug #3214.
 // 

@@ -4,6 +4,7 @@
 // teardown_command: rm -rf DimSize_* DimSize DimSize.exe DimSize.cpp DimSize.makefile DimSize.libs DimSize.log output.log
 // 
 // Drmodelica: 7.7 Built-in Functions (p. 225)
+// cflags: -d=-newInst
 //
 loadFile("DimSize.mo");
 simulate(DimSize,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

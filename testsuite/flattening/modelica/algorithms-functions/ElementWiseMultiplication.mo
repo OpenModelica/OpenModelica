@@ -1,6 +1,7 @@
 // name:     ElementWiseMultiplication.mo
 // keywords: function, array, algorithm
 // status:   correct
+// cflags: -d=-newInst
 //
 // Drmodelica:
 //

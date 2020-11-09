@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ABCDsystem
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ABCDsystem.* DrModelicaForTesting.ABCDsystem_* DrModelicaForTesting.ABCDsystem DrModelicaForTesting.ABCDsystem.exe DrModelicaForTesting.ABCDsystem.cpp DrModelicaForTesting.ABCDsystem.makefile DrModelicaForTesting.ABCDsystem.libs DrModelicaForTesting.ABCDsystem.log DrModelicaForTesting.ABCDsystem.c DrModelicaForTesting.ABCDsystem.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

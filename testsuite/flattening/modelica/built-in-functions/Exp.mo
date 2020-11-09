@@ -1,6 +1,7 @@
 // name: Exp
 // keywords: exp
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in exp function
 //

@@ -1,5 +1,6 @@
 // name: MaxArray
 // status: correct
+// cflags: -d=-newInst
 // Checks that we can simplify max(array)=>max(scalar1,scalar2)
 
 class MaxArray

@@ -1,6 +1,7 @@
 // name: bug_2286
 // keywords: boolean, array
 // status: correct
+// cflags: -d=-newInst
 //
 //  tests for logical operations on boolen arrays
 //

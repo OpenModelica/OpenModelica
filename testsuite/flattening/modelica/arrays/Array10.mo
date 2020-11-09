@@ -1,6 +1,7 @@
 // name:     Array10
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // An array of mixed integer and reals is automatically cast to an
 // array of Reals. Fixes bug #37

@@ -5,6 +5,7 @@
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 //
 // Drmodelica: 7.4 Array Indexing operator (p. 216)
+// cflags: -d=-newInst
 //
 class SubArrayIndex
   Real[2, 2] B = {{1, 2}, {4, 5}};

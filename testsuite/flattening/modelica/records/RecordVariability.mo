@@ -1,6 +1,7 @@
 // name:     Record Variability
 // keywords: record
 // status:   correct
+// cflags: -d=-newInst
 
 record abcRec
   Integer a;

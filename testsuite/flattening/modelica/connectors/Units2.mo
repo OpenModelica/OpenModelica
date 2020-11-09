@@ -1,6 +1,6 @@
 // name:     Units2
 // keywords: connect
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status:   incorrect
 //
 // Connections of flow variables with non-flow variables are not

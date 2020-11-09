@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.underdeterminedTest1* _initializationTests.underdeterminedTest1* output.log
+// cflags: -d=-newInst
 //
 //  case for initialization of under-determined system
 //

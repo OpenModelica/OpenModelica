@@ -1,6 +1,7 @@
 // name: InheritanceRestrictions
 // keywords: inheritance
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests inheritance of specialized classes
 //

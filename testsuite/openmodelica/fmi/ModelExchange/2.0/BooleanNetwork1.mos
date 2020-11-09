@@ -2,6 +2,7 @@
 // keywords: BooleanNetwork1 FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf BooleanNetwork1.fmu BooleanNetwork1.log BooleanNetwork1_init.xml BooleanNetwork1_me_FMU.mo BooleanNetwork1_me_FMU_init.xml binaries/ modelDescription.xml resources/ sources/
+// cflags: -d=-newInst
 // Boolean variables, Boolean input variable, no continuous-time states, time events
 
 loadModel(Modelica); getErrorString();

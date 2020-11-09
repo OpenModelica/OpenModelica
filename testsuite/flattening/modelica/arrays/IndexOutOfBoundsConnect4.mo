@@ -1,6 +1,7 @@
 // name:     IndexOutOfBoundsConnect4
 // keywords: array subscript connect
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Tests that indices out of bounds are caught in connect statements.
 //

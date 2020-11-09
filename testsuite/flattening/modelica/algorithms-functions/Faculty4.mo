@@ -1,6 +1,7 @@
 // name:     Faculty4
 // keywords: equation,array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Definition of faculty using equations. It is a matter of
 // quality of implementation if the model can be treated with

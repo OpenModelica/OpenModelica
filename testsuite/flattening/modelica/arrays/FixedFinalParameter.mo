@@ -1,6 +1,7 @@
 // name:     FixedFinalParameter
 // keywords: fixed, final, parameter, array, initial equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests fixed=false for final array parameters with initial equations.
 //

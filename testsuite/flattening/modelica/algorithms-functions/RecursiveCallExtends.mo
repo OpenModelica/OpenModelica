@@ -1,6 +1,7 @@
 // name:     RecursiveCallExtends
 // keywords: function, recursive, recursion, #2662
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that it's possible to create recursive functions via extends.
 //

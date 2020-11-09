@@ -1,6 +1,7 @@
 // name:      NPendulum10
 // keywords:  arrays
 // status:    correct
+// cflags: -d=-newInst
 //
 
 package NPendulum

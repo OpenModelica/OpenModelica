@@ -1,6 +1,7 @@
 // name: FlagParsing
 // keywords: command line flag
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the parsing of command line flags. This test uses actual compiler
 // flags, so it might need to be updated if the flags change.

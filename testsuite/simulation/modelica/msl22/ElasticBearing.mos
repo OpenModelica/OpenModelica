@@ -1,7 +1,7 @@
 // name:     ElasticBearing
 // keywords: Simulate, readSimulationData
 // status:   correct
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 // teardown_command: rm -f TestModels_* output.log
 // 
 //  Simulate Rotational Systems

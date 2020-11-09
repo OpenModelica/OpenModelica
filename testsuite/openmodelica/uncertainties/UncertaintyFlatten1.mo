@@ -1,6 +1,7 @@
 // name:     UncertaintyFlatten1
 // keywords: uncertainty, distribution, uncertain
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is a simple test of uncertainty attributes.
 //

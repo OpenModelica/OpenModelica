@@ -1,6 +1,7 @@
 // name:     AlgorithmFor5
 // keywords: algorithm,array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test for loops in algorithms. The range is implicit.
 //

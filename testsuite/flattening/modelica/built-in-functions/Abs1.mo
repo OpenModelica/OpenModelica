@@ -1,6 +1,7 @@
 // name:     Abs1
 // keywords: abs operator
 // status:   correct
+// cflags: -d=-newInst
 //
 //  The abs operator
 //

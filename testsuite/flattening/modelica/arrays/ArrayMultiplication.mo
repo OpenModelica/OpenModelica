@@ -1,6 +1,7 @@
 // name: ArrayMultiplication
 // keywords: array, multiplication
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests elementwise array multiplication
 //

@@ -1,6 +1,7 @@
 // name: SumScalar
 // keywords: sum scalar
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests that sum(scalar) is invalid.
 //
@@ -13,7 +14,7 @@ end SumScalar;
 
 // Result:
 // Error processing file: SumScalar.mo
-// [flattening/modelica/built-in-functions/SumScalar.mo:11:3-11:13:writable] Error: In sum(x), the expression is of type Real, but is required to be of builtin array type (of any number of dimensions).
+// [flattening/modelica/built-in-functions/SumScalar.mo:12:3-12:13:writable] Error: In sum(x), the expression is of type Real, but is required to be of builtin array type (of any number of dimensions).
 // Error: Error occurred while flattening model SumScalar
 //
 // # Error encountered! Exiting...

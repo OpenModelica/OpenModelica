@@ -1,6 +1,7 @@
 // name:     CGraphBug
 // keywords: <insert keywords here>
 // status:   correct
+// cflags: -d=-newInst
 
 loadFile("Bug3649.mo"); getErrorString();
 instantiateModel(Transformer.SC1); getErrorString();

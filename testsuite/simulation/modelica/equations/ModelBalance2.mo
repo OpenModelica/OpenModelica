@@ -1,6 +1,7 @@
 // name: ModelBalance2
 // keywords: balance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests an unbalanced model with too few equations
 //

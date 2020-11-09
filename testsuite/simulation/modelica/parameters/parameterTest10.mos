@@ -1,6 +1,7 @@
 // name:      parameterTest10
 // keywords:  parameter evaluation
 // status:    correct
+// cflags: -d=-newInst
 
 loadString("
 model parameterTest10

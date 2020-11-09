@@ -1,5 +1,6 @@
 // name: IfElseIf
 // status: incorrect
+// cflags: -d=-newInst
 
 model IfElseIf
 equation

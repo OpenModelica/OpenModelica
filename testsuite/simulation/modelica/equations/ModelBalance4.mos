@@ -1,6 +1,7 @@
 // name: ModelBalance4
 // keywords: balance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests an unbalanced model with too many equations
 // ticket 4061

@@ -1,6 +1,7 @@
 // name: choicesAllMatching.mos [BUG: #3254, #3255]
 // keywords: Graphical API, component annotations
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadString("model M

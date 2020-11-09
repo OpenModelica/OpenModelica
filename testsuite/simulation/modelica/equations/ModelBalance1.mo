@@ -1,6 +1,7 @@
 // name: ModelBalance1
 // keywords: balance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests a balanced model
 //

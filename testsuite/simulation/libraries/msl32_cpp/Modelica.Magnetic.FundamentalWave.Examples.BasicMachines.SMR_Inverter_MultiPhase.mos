@@ -1,6 +1,7 @@
 // name:     Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMR_Inverter_MultiPhase
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

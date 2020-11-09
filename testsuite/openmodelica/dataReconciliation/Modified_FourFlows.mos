@@ -1,6 +1,7 @@
 // name:     Modified_FourFlows.mos
 // keywords: extraction algorithm
 // status:   correct
+// cflags: -d=-newInst
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");

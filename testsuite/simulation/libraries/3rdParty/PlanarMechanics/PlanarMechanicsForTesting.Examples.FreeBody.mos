@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.FreeBody.* PlanarMechanicsForTesting.Examples.FreeBody_* PlanarMechanicsForTesting.Examples.FreeBody PlanarMechanicsForTesting.Examples.FreeBody.exe PlanarMechanicsForTesting.Examples.FreeBody.cpp PlanarMechanicsForTesting.Examples.FreeBody.makefile PlanarMechanicsForTesting.Examples.FreeBody.libs PlanarMechanicsForTesting.Examples.FreeBody.log PlanarMechanicsForTesting.Examples.FreeBody.c PlanarMechanicsForTesting.Examples.FreeBody.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

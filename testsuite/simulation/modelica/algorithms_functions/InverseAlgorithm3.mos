@@ -1,6 +1,7 @@
 // name: InverseAlgorithm3
 // keywords: inverse algorithm
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model InverseAlgorithm

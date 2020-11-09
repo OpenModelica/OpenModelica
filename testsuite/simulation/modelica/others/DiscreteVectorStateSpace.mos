@@ -4,6 +4,7 @@
 // teardown_command: rm -rf DVSSTest_* DVSSTest DVSSTest.exe DVSSTest.cpp DVSSTest.makefile DVSSTest.libs DVSSTest.log output.log
 // 
 // Drmodelica: 13.2  Sampled Systems (p. 429)
+// cflags: -d=-newInst
 // 
 loadFile("DiscreteVectorStateSpace.mo");
 simulate(DVSSTest,startTime=0.0, stopTime=10.0,numberOfIntervals=100, tolerance=1e-5, simflags="-emit_protected"); // 2 intervals == 3 values

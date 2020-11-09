@@ -1,7 +1,7 @@
 // name:     Gear - Complete example with Gear
 // keywords: Gear, Mechanics, Modelica2.2
 // status:   correct
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 //
 // Testing instantiation of the Gear model
 //

@@ -1,6 +1,7 @@
 // name:     Extends12
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing extends clauses
 

@@ -1,6 +1,7 @@
 // name:     BM18 -  Min component
 // keywords: Min
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Min component.
 //

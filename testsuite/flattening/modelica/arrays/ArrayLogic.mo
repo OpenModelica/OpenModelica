@@ -1,6 +1,7 @@
 // name: ArrayLogic
 // keywords: array, operators, logic
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests vectorization of logical operators and, or, and not.
 //

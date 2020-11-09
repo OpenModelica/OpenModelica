@@ -1,6 +1,7 @@
 // name: IntAdd
 // keywords: integer, addition
 // status: correct
+// cflags: -d=-newInst
 //
 // tests Integer addition
 //

@@ -1,5 +1,6 @@
 // name: bug_3334
 // status: correct
+// cflags: -d=-newInst
 
 // setGrammarParModelica();
 setCommandLineOptions("+d=noevalfunc,gen +g=ParModelica -v=1");

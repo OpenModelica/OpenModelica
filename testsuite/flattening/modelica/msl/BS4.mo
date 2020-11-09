@@ -1,6 +1,7 @@
 // name:     BS4 - Exponentials component
 // keywords: Exponentials
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Exponentials component.
 //
@@ -1361,8 +1362,8 @@ end BS4;
 //   assert(exponentials1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = exponentials1.outPort.signal[1];
 // end BS4;
-// [flattening/modelica/msl/BS4.mo:686:41-686:46:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS4.mo:687:46-687:74:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS4.mo:689:46-689:74:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS4.mo:687:41-687:46:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS4.mo:688:46-688:74:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS4.mo:690:46-690:74:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

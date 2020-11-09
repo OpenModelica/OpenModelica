@@ -1,6 +1,7 @@
 // name:     Record Derived 2
 // keywords: record
 // status:   correct
+// cflags: -d=-newInst
 
 record BaseProps_Tpoly "Fluid state record"
   Real T "temperature";

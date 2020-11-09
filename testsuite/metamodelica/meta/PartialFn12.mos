@@ -1,6 +1,7 @@
 // name:     PartialFn12
 // keywords: PartialFn
 // status:   correct
+// cflags: -d=-newInst
 //
 // Partial Function Testing
 //

@@ -6,6 +6,7 @@
 //  <insert description here>
 //
 // Drmodelica: 13.2  Sampled Systems (p. 429)
+// cflags: -d=-newInst
 // 
 loadFile("SimplePeriodicSampler.mo");
 simulate(Sampler,startTime=0.0, stopTime=10.0,numberOfIntervals=345, tolerance=1e-5); // 2 intervals == 3 values

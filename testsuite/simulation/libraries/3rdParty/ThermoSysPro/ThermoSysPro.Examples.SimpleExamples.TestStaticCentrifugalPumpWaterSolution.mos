@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.* ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution_* ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.exe ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.cpp ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.makefile ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.libs ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.log ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.c ThermoSysPro.Examples.SimpleExamples.TestStaticCentrifugalPumpWaterSolution.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

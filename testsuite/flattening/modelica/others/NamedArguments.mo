@@ -1,6 +1,7 @@
 // name:     NamedArguments
 // keywords: function named arguments
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test different ways of calling a function with named and positional arguments.
 //

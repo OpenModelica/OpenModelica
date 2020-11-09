@@ -1,6 +1,7 @@
 // name:     Engine1a_evalOutputOnly
 // keywords: simulation evalOutputOnly
 // status: correct
+// cflags: -d=-newInst
 //
 loadModel(Modelica,{"3.2.1"});
 loadFile("Engine1a_output.mo");getErrorString();

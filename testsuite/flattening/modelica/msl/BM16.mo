@@ -1,6 +1,7 @@
 // name:     BM16 -  MatrixGain component
 // keywords: MatrixGain
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.MatrixGain component.
 //

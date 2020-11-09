@@ -1,7 +1,7 @@
 // name: Modelica.Mechanics.MultiBody.Frames
 // status: correct
 // teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.csv *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h *_diff.csv
-// cflags: 	 +simCodeTarget=Cpp
+// cflags: 	 +simCodeTarget=Cpp -d=-newInst
 //
 
 

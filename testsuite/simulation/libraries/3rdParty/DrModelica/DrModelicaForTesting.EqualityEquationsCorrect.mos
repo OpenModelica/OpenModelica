@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.EqualityEquationsCorrect
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.EqualityEquationsCorrect.* DrModelicaForTesting.EqualityEquationsCorrect_* DrModelicaForTesting.EqualityEquationsCorrect DrModelicaForTesting.EqualityEquationsCorrect.exe DrModelicaForTesting.EqualityEquationsCorrect.cpp DrModelicaForTesting.EqualityEquationsCorrect.makefile DrModelicaForTesting.EqualityEquationsCorrect.libs DrModelicaForTesting.EqualityEquationsCorrect.log DrModelicaForTesting.EqualityEquationsCorrect.c DrModelicaForTesting.EqualityEquationsCorrect.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

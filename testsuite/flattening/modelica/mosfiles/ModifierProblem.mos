@@ -5,6 +5,7 @@
 // This tests deep modifiers problem that appeared (and was fixed): 
 //  Error: Variable s: In modifier (s), class or component s, not found in the built-in class Real
 //  Error: Variable s: In modifier (start = 0.1), class or component start, not found in the built-in class Real
+// cflags: -d=-newInst
 
 loadFile("ModifierProblem.mo");
 getErrorString();

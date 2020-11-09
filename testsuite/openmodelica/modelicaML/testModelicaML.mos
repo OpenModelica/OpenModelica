@@ -4,6 +4,7 @@
 // teardown_command: rm -f ModelicaMLModel.Design.SystemModel1*
 // 
 // ModelicaML: Examples from 22.Jun 2011
+// cflags: -d=-newInst
 
 loadFile("./ModelicaMLModel/package.mo"); getErrorString();
 simulate(ModelicaMLModel.Design.SystemModel1,stopTime=150); getErrorString();

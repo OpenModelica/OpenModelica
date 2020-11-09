@@ -1,6 +1,7 @@
 // name: InStreamTwoInside
 // keywords: stream inStream connector inside
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that inStream is evaluated correctly for a model where the stream just
 // passes through some components.

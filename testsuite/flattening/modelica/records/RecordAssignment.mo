@@ -1,6 +1,7 @@
 // name: RecordAssignment
 // keywords: record
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests assignment of records
 //

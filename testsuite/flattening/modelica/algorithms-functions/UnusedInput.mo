@@ -1,5 +1,6 @@
 // name: UnusedInput
 // status: correct
+// cflags: -d=-newInst
 
 model UnusedInput
 
@@ -40,6 +41,6 @@ end UnusedInput;
 //   Real x = UnusedInput.sinxx(time);
 //   Real y = UnusedInput.sinxy(time);
 // end UnusedInput;
-// [flattening/modelica/algorithms-functions/UnusedInput.mo:7:5-7:17:writable] Warning: Unused input variable x in function .UnusedInput.sinxx.
+// [flattening/modelica/algorithms-functions/UnusedInput.mo:8:5-8:17:writable] Warning: Unused input variable x in function .UnusedInput.sinxx.
 //
 // endResult

@@ -1,6 +1,7 @@
 // name:     Modelica.Electrical.Spice3.Examples.CoupledInductors_HPCOM_List_pThreads
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 // 
 // Simulation Results
 // Modelica Standard Library

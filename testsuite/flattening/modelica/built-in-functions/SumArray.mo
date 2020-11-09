@@ -1,6 +1,7 @@
 // name: SumArray
 // keywords: sum array #4028
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that sum of a multidimensional array is constant evaluated correctly.
 //

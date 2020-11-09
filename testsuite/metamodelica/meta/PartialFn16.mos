@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // bug #2675
 
 setCommandLineOptions({"-g=MetaModelica","-d=noevalfunc,gen"});getErrorString();

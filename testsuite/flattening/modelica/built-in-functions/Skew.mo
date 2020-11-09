@@ -1,6 +1,7 @@
 // name:     Skew
 // keywords: skew
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the builtin skew function.
 //

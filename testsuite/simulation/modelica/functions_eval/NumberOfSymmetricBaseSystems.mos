@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Based on ticket:4550
 
 loadString("function numberOfSymmetricBaseSystems

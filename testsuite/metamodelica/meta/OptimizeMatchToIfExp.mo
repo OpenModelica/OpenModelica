@@ -1,6 +1,6 @@
 // name: OptimizeMatchToIfExp
 // status: correct
-// cflags: +g=MetaModelica +d=noevalfunc,nogen
+// cflags: +g=MetaModelica +d=noevalfunc,nogen -d=-newInst
 // Checks that we are able to convert a match-expression into if
 // and inlining it with a non-boxed function that is in turn also
 // correctly inlined.

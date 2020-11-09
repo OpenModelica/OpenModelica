@@ -1,6 +1,7 @@
 // name:     Checking for Java Implementation
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 // 
 // Test of External Java functions
 //

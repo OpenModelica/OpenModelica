@@ -1,6 +1,7 @@
 // name:     Sequence
 // keywords: testing that array given as modifications for input paramters in function work fine
 // status:   correct
+// cflags: -d=-newInst
 //
 // testing that array given as modifications for input paramters in function work fine
 //

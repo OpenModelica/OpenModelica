@@ -2,6 +2,7 @@
 // keywords: SiemensPower SolidComponents
 // status:   correct
 // teardown_command: rm -rf SiemensPower.Components.SolidComponents.Tests.wall_test* _SiemensPower.Components.SolidComponents.Tests.wall_test* output.log
+// cflags: -d=-newInst
 //
 //  Test SiemensPower component SolidComponents
 //

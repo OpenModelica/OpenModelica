@@ -1,5 +1,6 @@
 // name: Bug2536.mos
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model Bug2536

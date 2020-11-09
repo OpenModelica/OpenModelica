@@ -1,5 +1,6 @@
 // name: StaticAssertSuccess
 // status: correct
+// cflags: -d=-newInst
 class StaticAssertSuccess
 algorithm
   assert(true, "assertion failed :D");

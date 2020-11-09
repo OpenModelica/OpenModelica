@@ -1,6 +1,6 @@
 // name:     Influenza
 // keywords: connect, equation, modification
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 // status:   correct
 
 connector Port = Real;

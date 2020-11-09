@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.PositionalCall
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.PositionalCall.* DrModelicaForTesting.PositionalCall_* DrModelicaForTesting.PositionalCall DrModelicaForTesting.PositionalCall.exe DrModelicaForTesting.PositionalCall.cpp DrModelicaForTesting.PositionalCall.makefile DrModelicaForTesting.PositionalCall.libs DrModelicaForTesting.PositionalCall.log DrModelicaForTesting.PositionalCall.c DrModelicaForTesting.PositionalCall.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

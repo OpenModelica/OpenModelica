@@ -2,6 +2,7 @@
 // keywords: tests that GenerateDoc.mos script works fine!
 // status: correct
 // teardown_command: rm -rf *.html old-html-tmp "./-p" ModelicaDocumentation.* GenerateDoc.mos loadModel.mos tmp FilterTidy.sh FindFiles.sh Tidy.py fix-case-sensitive.py generate_icons.py log.txt style.css tidy.err tidy.filtered
+// cflags: -d=-newInst
 //
 
 system("rm -f *.html log.txt"); getErrorString();

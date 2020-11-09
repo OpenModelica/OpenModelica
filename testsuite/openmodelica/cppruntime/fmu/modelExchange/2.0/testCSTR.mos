@@ -2,6 +2,7 @@
 // keywords: synchronous, algebraic loop, model structure, analytic Jacobian
 // status: correct
 // teardown_command: rm -f *CSTRModel* modelDescription.tmp.xml
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 setCommandLineOptions("--std=3.3");

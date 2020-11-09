@@ -1,6 +1,7 @@
 // name:     ArrayDim3
 // keywords: algorithm, equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Drmodelica:
 //

@@ -1,6 +1,7 @@
 // name:     ScopeModification2
 // keywords: scoping,modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // In class modifications the scope of the outer class is used for
 // looking up variables. There is no 'a' known in the example.
@@ -15,7 +16,7 @@ class ScopeModification2
 end ScopeModification2;
 // Result:
 // Error processing file: ScopeModification2.mo
-// [flattening/modelica/declarations/ScopeModification2.mo:14:11-14:16:writable] Error: Variable a not found in scope ScopeModification2.
+// [flattening/modelica/declarations/ScopeModification2.mo:15:11-15:16:writable] Error: Variable a not found in scope ScopeModification2.
 // Error: Error occurred while flattening model ScopeModification2
 //
 // # Error encountered! Exiting...

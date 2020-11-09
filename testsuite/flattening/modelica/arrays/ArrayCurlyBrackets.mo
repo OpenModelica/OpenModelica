@@ -1,6 +1,7 @@
 // name: ArrayCurlyBrackets
 // keywords: array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests array construction with curly bracket syntax
 //

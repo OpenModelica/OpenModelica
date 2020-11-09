@@ -1,6 +1,7 @@
 // name:     SliceAssignment
 // keywords: slice assignment bug1249
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that correct code is generated for slice assignments.
 //

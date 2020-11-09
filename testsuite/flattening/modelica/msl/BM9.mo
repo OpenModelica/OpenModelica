@@ -1,6 +1,7 @@
 // name:     BM9 -  Cosh component
 // keywords: Cosh
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Cosh component.
 //

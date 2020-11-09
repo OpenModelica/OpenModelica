@@ -1,6 +1,7 @@
 // name:     Show Documentation via getDocumentationAnnotation (bug: 1446)
 // keywords: verifies getDocumentationAnnotation
 // status:   correct
+// cflags: -d=-newInst
 // testing getDocumentationAnnotation
 //
 

@@ -2,6 +2,7 @@
 // keywords: Simulation, Linear eqn systems.
 // status:   correct
 // teardown_command: rm -f TimeVaryingLinSys* output.log
+// cflags: -d=-newInst
 //  Simulate models and read in data.
 //
 loadFile("TimeVaryingLinsys.mo");

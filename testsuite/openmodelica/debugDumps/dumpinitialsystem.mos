@@ -5,6 +5,7 @@
 // omc debug dump: +d=dumpinitialsystem
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=dumpinitialsystem
 loadString("
 model test_dumpinitialsystem

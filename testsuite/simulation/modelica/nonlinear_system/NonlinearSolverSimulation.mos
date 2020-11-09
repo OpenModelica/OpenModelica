@@ -1,6 +1,7 @@
 // name: NonlinearSolverSimulation
 // status: correct
 // teardown_command: rm -f NonlinearSolverSimulation* output.log
+// cflags: -d=-newInst
 
 loadModel(Modelica);
 loadFile("DebugPackage.mo"); getErrorString();

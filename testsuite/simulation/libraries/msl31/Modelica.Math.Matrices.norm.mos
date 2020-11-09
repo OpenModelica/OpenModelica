@@ -1,5 +1,6 @@
 // name: Modelica.Math.Matrices.norm
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica,{"3.1"});
 loadString("

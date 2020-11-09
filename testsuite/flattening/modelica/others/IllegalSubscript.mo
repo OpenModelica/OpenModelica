@@ -1,5 +1,6 @@
 // name: IllegalSubscript
 // status: correct
+// cflags: -d=-newInst
 // Should fail in backend; not frontend
 
 class IllegalSubscript

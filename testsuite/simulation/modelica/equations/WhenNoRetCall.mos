@@ -1,6 +1,7 @@
 // name:     WhenNoRetCall
 // keywords: when noretcall
 // status:   correct
+// cflags: -d=-newInst
 // 
 // 
 // 

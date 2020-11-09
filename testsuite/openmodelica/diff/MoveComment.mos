@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 echo(false);
 a1 := "model M\n  FixedBoundary boundary(use_p = false, //some comment\n                                                use_T = false) annotation();\nequation\n  connect(a, bb);\nend M;";

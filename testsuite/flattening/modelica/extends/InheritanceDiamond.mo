@@ -1,6 +1,7 @@
 // name: InheritanceDiamond.mo
 // keywords: inheritance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests diamond inheritance
 //

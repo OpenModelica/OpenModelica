@@ -1,7 +1,7 @@
 // name:      Tearing12-cel
 // keywords:  tearing
 // status:    correct
-// cflags: 	 +d=backenddaeinfo
+// cflags: 	 +d=backenddaeinfo -d=-newInst
 
 loadFile("Tearing12.mo"); getErrorString();
 

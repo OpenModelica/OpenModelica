@@ -1,6 +1,7 @@
 // name:     Redeclare2
 // keywords: redeclare
 // status:   correct
+// cflags: -d=-newInst
 //
 // Replaceable classes.
 

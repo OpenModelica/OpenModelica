@@ -1,6 +1,7 @@
 // name:     Subscript3
 // keywords: subscript array prefix
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that subscripts are correctly prefixed.
 //

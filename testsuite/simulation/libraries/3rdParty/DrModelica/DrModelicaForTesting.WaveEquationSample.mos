@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.WaveEquationSample
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.WaveEquationSample.* DrModelicaForTesting.WaveEquationSample_* DrModelicaForTesting.WaveEquationSample DrModelicaForTesting.WaveEquationSample.exe DrModelicaForTesting.WaveEquationSample.cpp DrModelicaForTesting.WaveEquationSample.makefile DrModelicaForTesting.WaveEquationSample.libs DrModelicaForTesting.WaveEquationSample.log DrModelicaForTesting.WaveEquationSample.c DrModelicaForTesting.WaveEquationSample.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

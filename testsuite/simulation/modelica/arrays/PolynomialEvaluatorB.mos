@@ -4,6 +4,7 @@
 // teardown_command: rm -rf PolyEvaluate2_* PolyEvaluate2 PolyEvaluate2.exe PolyEvaluate2.cpp PolyEvaluate2.makefile PolyEvaluate2.libs PolyEvaluate2.log output.log
 // 
 // Drmodelica: 8.2 Polynomial Evaluator (p. 242)
+// cflags: -d=-newInst
 //
 loadFile("PolynomialEvaluatorB.mo");
 simulate(PolyEvaluate2,startTime=0.0, stopTime=10.0, numberOfIntervals = 100, tolerance=1e-5); // 2 intervals == 3 values

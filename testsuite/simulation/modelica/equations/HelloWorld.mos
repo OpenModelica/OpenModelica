@@ -5,6 +5,7 @@
 //
 // Equation handling
 // Drmodelica: 2.1 Hello World (p. 19)
+// cflags: -d=-newInst
 // 
 loadFile("HelloWorld.mo");
 simulate(HelloWorld, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);

@@ -1,7 +1,7 @@
 // name:     Implicit Integer to enumeration conversion
 // keywords: type
 // status:   correct
-// cflags:   +intEnumConversion
+// cflags:   +intEnumConversion -d=-newInst
 //
 // This tests that the +intEnumConversion flag works.
 //

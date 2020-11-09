@@ -1,6 +1,6 @@
 // name:     TankPID
 // keywords: <insert keywords here>
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status: correct
 // teardown_command: rm -rf TankPID_* TankPID TankPID.exe TankPID.cpp TankPID.makefile TankPID.libs TankPID.log output.log
 // 

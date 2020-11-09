@@ -1,6 +1,7 @@
 // name:     TopLevelNestedConnectors
 // keywords: connectors
 // status: correct
+// cflags: -d=-newInst
 //
 //  Tests that top level connectors inside top level connector are top level connectors too
 //

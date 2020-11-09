@@ -1,6 +1,7 @@
 // name:     ArrayReduce
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 
 

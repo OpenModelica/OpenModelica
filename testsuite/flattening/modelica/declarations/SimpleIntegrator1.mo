@@ -1,6 +1,7 @@
 // name:     SimpleIntegrator1
 // keywords: declaration,equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // In this example 'x' is defined twice: constant and
 // non-constant. The example is correct, but is not

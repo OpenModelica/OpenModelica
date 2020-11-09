@@ -1,6 +1,7 @@
 // name:     DeclarationOrder1
 // keywords: declaration order
 // status:   correct
+// cflags: -d=-newInst
 //
 // A model or component is available in its entire scope,
 // even before before it is declared.

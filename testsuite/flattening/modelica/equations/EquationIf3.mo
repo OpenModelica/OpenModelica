@@ -1,6 +1,7 @@
 // name:     EquationIf3
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing `if' clauses in equations.
 //

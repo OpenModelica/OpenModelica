@@ -1,6 +1,6 @@
 // name:     Test3PhaseInitParam
 // keywords: initialization, overdetermined, additial equations.
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 // status:   correct
 // teardown_command: rm -f Test3Phase.Test3Phase* output.log
 //  Simulate models and read in data.

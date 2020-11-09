@@ -1,6 +1,7 @@
 // name:     UsertypeModifications
 // keywords: usertypes, modifications, arrays, extend
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that modifications on usertypes are propagated correctly
 //

@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 diffModelicaFileListings("model M \"Linköping\"
 end M;", "model M \"Linköping University\"

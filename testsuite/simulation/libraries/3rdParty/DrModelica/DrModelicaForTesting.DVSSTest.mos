@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.DVSSTest
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.DVSSTest.* DrModelicaForTesting.DVSSTest_* DrModelicaForTesting.DVSSTest DrModelicaForTesting.DVSSTest.exe DrModelicaForTesting.DVSSTest.cpp DrModelicaForTesting.DVSSTest.makefile DrModelicaForTesting.DVSSTest.libs DrModelicaForTesting.DVSSTest.log DrModelicaForTesting.DVSSTest.c DrModelicaForTesting.DVSSTest.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 9.1 while-loop (p.290)
+// cflags: -d=-newInst
 //
 model SumSeries
   parameter Real eps = 1.E-6;

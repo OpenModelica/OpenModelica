@@ -1,5 +1,6 @@
 // name: Test ExpressionSolve fail
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that ExpressionSolve failed
 //

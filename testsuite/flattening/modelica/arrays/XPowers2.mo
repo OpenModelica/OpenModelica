@@ -5,6 +5,7 @@
 // <decription>
 //
 // Drmodelica: 8.2 XPowers (p. 242)
+// cflags: -d=-newInst
 //
 model Xpowers2
   parameter Real x=10;

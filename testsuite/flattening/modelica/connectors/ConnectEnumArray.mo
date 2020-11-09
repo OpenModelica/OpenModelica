@@ -1,6 +1,7 @@
 // name: ConnectEnumArray
 // keywords: connect enum array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that enumeration indices are preserved when connecting arrays with
 // enumerations as dimensions.

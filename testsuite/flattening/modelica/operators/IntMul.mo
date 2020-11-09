@@ -1,6 +1,7 @@
 // name: IntMul
 // keywords: integer, multiplication
 // status: correct
+// cflags: -d=-newInst
 //
 // tests Integer multiplication
 //

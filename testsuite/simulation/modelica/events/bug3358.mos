@@ -1,6 +1,7 @@
 // name: bug3358
 // keywords: events
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 package bug3358
