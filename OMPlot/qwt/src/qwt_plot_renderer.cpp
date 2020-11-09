@@ -32,8 +32,10 @@
 #include <qsvggenerator.h>
 #endif
 #endif
+#include <QPainterPath>
 
-static QPainterPath qwtCanvasClip( 
+
+static QPainterPath qwtCanvasClip(
     const QWidget* canvas, const QRectF &canvasRect )
 {
     // The clip region is calculated in integers
@@ -70,7 +72,7 @@ public:
     QwtPlotRenderer::LayoutFlags layoutFlags;
 };
 
-/*! 
+/*!
    Constructor
    \param parent Parent object
 */
@@ -499,7 +501,7 @@ void QwtPlotRenderer::render( QwtPlot *plot,
         ( d_data->discardFlags & DiscardCanvasFrame ) )
     {
         layoutOptions |= QwtPlotLayout::IgnoreFrames;
-    } 
+    }
 
 
     if ( d_data->discardFlags & DiscardLegend )
@@ -743,7 +745,7 @@ void QwtPlotRenderer::renderScale( const QwtPlot *plot,
   \param canvasRect Canvas rectangle
 */
 void QwtPlotRenderer::renderCanvas( const QwtPlot *plot,
-    QPainter *painter, const QRectF &canvasRect, 
+    QPainter *painter, const QRectF &canvasRect,
     const QwtScaleMap *map ) const
 {
     const QWidget *canvas = plot->canvas();
@@ -813,7 +815,7 @@ void QwtPlotRenderer::renderCanvas( const QwtPlot *plot,
             clipPath = qwtCanvasClip( canvas, canvasRect );
         }
 
-        QRectF innerRect = canvasRect.adjusted( 
+        QRectF innerRect = canvasRect.adjusted(
             frameWidth, frameWidth, -frameWidth, -frameWidth );
 
         painter->save();
@@ -848,7 +850,7 @@ void QwtPlotRenderer::renderCanvas( const QwtPlot *plot,
 
 
             const QVariant borderRadius = canvas->property( "borderRadius" );
-            if ( borderRadius.type() == QVariant::Double 
+            if ( borderRadius.type() == QVariant::Double
                 && borderRadius.toDouble() > 0.0 )
             {
                 const double r = borderRadius.toDouble();
@@ -932,7 +934,7 @@ bool QwtPlotRenderer::updateCanvasMargins( QwtPlot *plot,
 {
     double margins[QwtPlot::axisCnt];
     plot->getCanvasMarginsHint( maps, canvasRect,
-        margins[QwtPlot::yLeft], margins[QwtPlot::xTop], 
+        margins[QwtPlot::yLeft], margins[QwtPlot::xTop],
         margins[QwtPlot::yRight], margins[QwtPlot::xBottom] );
 
     bool marginsChanged = false;
@@ -962,29 +964,29 @@ bool QwtPlotRenderer::updateCanvasMargins( QwtPlot *plot,
 */
 bool QwtPlotRenderer::exportTo( QwtPlot *plot, const QString &documentName,
      const QSizeF &sizeMM, int resolution )
-{       
+{
     if ( plot == NULL )
         return false;
-    
+
     QString fileName = documentName;
 
-    // What about translation 
+    // What about translation
 
 #ifndef QT_NO_FILEDIALOG
     const QList<QByteArray> imageFormats =
         QImageWriter::supportedImageFormats();
-        
+
     QStringList filter;
 #ifndef QT_NO_PRINTER
     filter += QString( "PDF " ) + tr( "Documents" ) + " (*.pdf)";
 #endif
-#ifndef QWT_NO_SVG 
+#ifndef QWT_NO_SVG
     filter += QString( "SVG " ) + tr( "Documents" ) + " (*.svg)";
 #endif
 #ifndef QT_NO_PRINTER
     filter += QString( "Postscript " ) + tr( "Documents" ) + " (*.ps)";
 #endif
-    
+
     if ( imageFormats.size() > 0 )
     {
         QString imageFilter( tr( "Images" ) );
@@ -993,22 +995,22 @@ bool QwtPlotRenderer::exportTo( QwtPlot *plot, const QString &documentName,
         {
             if ( i > 0 )
                 imageFilter += " ";
-            imageFilter += "*."; 
+            imageFilter += "*.";
             imageFilter += imageFormats[i];
-        }   
+        }
         imageFilter += ")";
-        
+
         filter += imageFilter;
-    }   
-    
+    }
+
     fileName = QFileDialog::getSaveFileName(
         NULL, tr( "Export File Name" ), fileName,
         filter.join( ";;" ), NULL, QFileDialog::DontConfirmOverwrite );
-#endif  
+#endif
     if ( fileName.isEmpty() )
         return false;
 
     renderDocument( plot, fileName, sizeMM, resolution );
 
     return true;
-}   
+}
