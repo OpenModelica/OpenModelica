@@ -127,3 +127,62 @@ target_sources(omcgraphstream PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
 
 target_link_libraries(omcgraphstream PUBLIC omc::simrt::runtime)
 target_link_libraries(omcgraphstream PUBLIC omc::3rd::netstream)
+
+
+
+
+set(SHREXT ${CMAKE_SHARED_LIBRARY_SUFFIX})
+string(TOLOWER ${CMAKE_SYSTEM_NAME} OMC_TARGET_SYSTEM_NAME)
+omc_add_to_report(OMC_TARGET_SYSTEM_NAME)
+message(STATUS "******** OMC_TARGET_SYSTEM_NAME ${OMC_TARGET_SYSTEM_NAME}")
+message(STATUS "******** CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}")
+set(OPENMODELICA_SPEC_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
+
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+  set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}64")
+else() 
+  set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
+endif()
+
+set(host_short ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
+
+set(RUNTIMECC ${CMAKE_C_COMPILER})
+set(CC ${CMAKE_C_COMPILER})
+set(CXX ${CMAKE_CXX_COMPILER})
+
+find_package(OpenMP)
+if(OpenMP_FOUND)
+  set(OMPCFLAGS "-fopenmp")
+endif()
+
+set(LPSOLVEINC "lpsolve/lp_lib.h")
+
+if(LAPACK_FOUND)
+  set(NO_LAPACK "#define HAVE_LAPACK_DEPRECATED 1")
+endif()
+
+# set(prefix ${CMAKE_INSTALL_PREFIX})
+set(prefix "")
+
+find_package(Git)
+execute_process(COMMAND
+  ${GIT_EXECUTABLE} describe --match "v*.*" --always
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE SOURCE_REVISION
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(OpenMP_FOUND)
+  set(CONFIG_WITH_OPENMP 1)
+else()
+  set(CONFIG_WITH_OPENMP 0)
+endif()
+
+set(WITH_UMFPACK "#define WITH_UMFPACK")
+set(WITH_HWLOC 0)
+set(WITH_UUID "#define WITH_LIBUUID 1")
+
+
+set(USE_GRAPH 0)
+
+configure_file(config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
