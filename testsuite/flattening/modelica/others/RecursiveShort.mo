@@ -1,6 +1,7 @@
 // name:     RecursiveShort
 // keywords: Recursive Short Class Definition
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Checks that compiler does not enter infinite lookup loop in the case
 // of recursive short class definition (like type Env = Env.Env; here)
@@ -21,7 +22,7 @@ end RecursiveShort;
 
 // Result:
 // Error processing file: RecursiveShort.mo
-// [flattening/modelica/others/RecursiveShort.mo:15:5-15:23:writable] Error: Recursive short class definition of Env in terms of Env.Env.
+// [flattening/modelica/others/RecursiveShort.mo:16:5-16:23:writable] Error: Recursive short class definition of Env in terms of Env.Env.
 // Error: Error occurred while flattening model RecursiveShort
 //
 // # Error encountered! Exiting...

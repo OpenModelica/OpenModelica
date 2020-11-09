@@ -1,6 +1,7 @@
 // name:     DID
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("DID.mo");

@@ -1,6 +1,7 @@
 // name:     AlgorithmForInClass
 // keywords: algorithm, for, class
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests for-loops in algorithm sections in classes.
 //

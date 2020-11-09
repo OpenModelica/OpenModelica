@@ -1,6 +1,7 @@
 // name:     Terminal1
 // keywords: The terminal operator
 // status:   correct
+// cflags: -d=-newInst
 //
 //  The terminal operator.
 //

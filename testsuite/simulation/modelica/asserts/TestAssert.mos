@@ -2,6 +2,7 @@
 // keywords: assert
 // status: correct
 // teardown_command: rm -rf TestAssert.Test* output.log
+// cflags: -d=-newInst
 // 
 
 //print(\"What's up with x = \" + realString(y) + \" at time \" + realString(time) + \"\n\");

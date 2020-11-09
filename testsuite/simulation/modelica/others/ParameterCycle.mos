@@ -2,6 +2,7 @@
 // keywords: parameter cycle, bound expressions
 // status: correct
 // teardown_command: rm -rf ParameterCycle.makefile ParameterCycle.c ParameterCycle.log ParameterCycle ParameterCycle.exe ParameterCycle_* output.log
+// cflags: -d=-newInst
 //
 // Test for Bug [# 1651].
 //

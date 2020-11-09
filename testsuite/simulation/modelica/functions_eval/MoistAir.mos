@@ -1,6 +1,7 @@
 // name:      MoistAir
 // keywords:  evalConstFunc
 // status:    correct
+// cflags: -d=-newInst
 //
 
 

@@ -6,6 +6,7 @@
 // Event handling
 //
 // Drmodelica: 8.2 XPowers (p. 242)
+// cflags: -d=-newInst
 // 
 loadFile("Xpowers2.mo");
 simulate(Xpowers2, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);

@@ -1,6 +1,7 @@
 // name:     HumModOMCTotal [buildModel]
 // keywords:
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 //

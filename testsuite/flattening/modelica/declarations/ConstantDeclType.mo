@@ -1,6 +1,7 @@
 // name: ConstantDeclType
 // keywords: constant
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the constant prefix on a regular type
 //

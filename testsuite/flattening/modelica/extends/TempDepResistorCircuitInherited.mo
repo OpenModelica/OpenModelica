@@ -1,6 +1,7 @@
 // name:     TempDepResistorCircuitInherited
 // keywords: <insert keywords here>
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 // The flattened model should be the same for test TempDepResistorCircuit and

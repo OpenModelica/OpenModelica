@@ -2,6 +2,7 @@
 // keywords: FMI export #3763 import #4027
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml *DrumBoilerModel*
+// cflags: -d=-newInst
 //
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();

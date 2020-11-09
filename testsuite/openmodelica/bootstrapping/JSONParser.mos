@@ -1,6 +1,7 @@
 // name: JSONParser
 // depends: test.json
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -d=gen,rml,noevalfunc");
 echo(false);

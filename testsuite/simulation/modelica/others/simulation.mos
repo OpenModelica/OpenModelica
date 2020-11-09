@@ -2,6 +2,7 @@
 // keywords: Simulate, readSimulationData
 // status: correct
 // teardown_command: rm -rf LinSys LinSys.* LinSys_* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate models and read in data.
 //

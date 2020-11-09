@@ -4,6 +4,7 @@
 // teardown_command: rm -rf Epidemics1 Epidemics1.exe Epidemics1.cpp Epidemics1_functions.cpp Epidemics1_functions.h Epidemics1_init.xml Epidemics1.libs Epidemics1.log Epidemics1.makefile Epidemics1_records.c Epidemics1_res.mat output.log 
 // 
 // Drmodelica: 
+// cflags: -d=-newInst
 // 
 
 loadFile("Epidemics1.mo");

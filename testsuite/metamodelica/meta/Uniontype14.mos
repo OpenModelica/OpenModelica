@@ -1,7 +1,7 @@
 // name:     Uniontype14
 // keywords: Uniontype
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Test matching of list constructor in Uniontype
 //

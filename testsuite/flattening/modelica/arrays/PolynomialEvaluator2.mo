@@ -1,6 +1,7 @@
 // name:     PolynomialEvaluator2
 // keywords: function, algorithm, scoping, array
 // status:   correct
+// cflags: -d=-newInst
 
 
 function polyeval

@@ -1,6 +1,7 @@
 // name: PNlib.Test1a
 // keywords: PNlib, continuous
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("PNlib.mo"); getErrorString();
 simulate(PNlib.Examples.Test1a); getErrorString();

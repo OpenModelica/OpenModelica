@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.KyenesianModel
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.KyenesianModel.* DrModelicaForTesting.KyenesianModel_* DrModelicaForTesting.KyenesianModel DrModelicaForTesting.KyenesianModel.exe DrModelicaForTesting.KyenesianModel.cpp DrModelicaForTesting.KyenesianModel.makefile DrModelicaForTesting.KyenesianModel.libs DrModelicaForTesting.KyenesianModel.log DrModelicaForTesting.KyenesianModel.c DrModelicaForTesting.KyenesianModel.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

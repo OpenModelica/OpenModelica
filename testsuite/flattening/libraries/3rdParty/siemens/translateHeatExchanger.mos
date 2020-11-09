@@ -3,6 +3,7 @@
 // status:   correct
 // env:      LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
 // teardown_command: rm -rf SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia* _SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia* output.log
+// cflags: -d=-newInst
 //
 //  Test SiemensPower component ParallelFlowEvaporator
 //

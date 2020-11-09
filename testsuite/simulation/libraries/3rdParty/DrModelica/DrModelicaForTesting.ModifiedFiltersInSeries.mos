@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ModifiedFiltersInSeries
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ModifiedFiltersInSeries.* DrModelicaForTesting.ModifiedFiltersInSeries_* DrModelicaForTesting.ModifiedFiltersInSeries DrModelicaForTesting.ModifiedFiltersInSeries.exe DrModelicaForTesting.ModifiedFiltersInSeries.cpp DrModelicaForTesting.ModifiedFiltersInSeries.makefile DrModelicaForTesting.ModifiedFiltersInSeries.libs DrModelicaForTesting.ModifiedFiltersInSeries.log DrModelicaForTesting.ModifiedFiltersInSeries.c DrModelicaForTesting.ModifiedFiltersInSeries.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

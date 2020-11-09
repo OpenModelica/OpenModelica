@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 9.1 reinit (p. 296)
+// cflags: -d=-newInst
 //
 
 model BouncingBall2     "The bouncing ball model"

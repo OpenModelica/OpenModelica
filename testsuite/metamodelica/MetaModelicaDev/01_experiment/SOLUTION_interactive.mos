@@ -1,6 +1,7 @@
 // name:     Experiment (Interactive)
 // keywords: MetaModelica
 // status:   correct
+// cflags: -d=-newInst
 //
 // OpenModelica Development Course at PELAB
 // Uses packages, aliases, etc

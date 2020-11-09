@@ -1,6 +1,7 @@
 // name: InOutArray
 // keywords: <insert keywords here>
 // status: correct
+// cflags: -d=-newInst
 
 function sumInt
     input Integer[:] inVal;

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.BouncingBall
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.BouncingBall.* DrModelicaForTesting.BouncingBall_* DrModelicaForTesting.BouncingBall DrModelicaForTesting.BouncingBall.exe DrModelicaForTesting.BouncingBall.cpp DrModelicaForTesting.BouncingBall.makefile DrModelicaForTesting.BouncingBall.libs DrModelicaForTesting.BouncingBall.log DrModelicaForTesting.BouncingBall.c DrModelicaForTesting.BouncingBall.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

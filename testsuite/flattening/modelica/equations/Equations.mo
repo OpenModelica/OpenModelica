@@ -1,6 +1,7 @@
 // name:     Equations
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Drmodelica:
 //

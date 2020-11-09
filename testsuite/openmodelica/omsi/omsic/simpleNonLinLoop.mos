@@ -2,6 +2,7 @@
 // keywords: omsi omsic fmu fmi
 // status: correct
 // teardown_command: rm -rf simpleNonLinLoop.fmutmp simpleNonLinLoop.fmu simpleNonLinLoop_systemCall.log simpleNonLinLoop-tmp simpleNonLinLoop*res.mat simpleNonLinLoop_result_diff.log
+// cflags: -d=-newInst
 //
 // Tests simulating OMSIC OMSU/FMU with OMSimulator and check results
 // Simple model containing non-linear loop.

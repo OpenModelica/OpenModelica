@@ -3,6 +3,7 @@
 // status:   incorrect
 //
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// cflags: -d=-newInst
 //
 
 class AddSub
@@ -21,7 +22,7 @@ end AddSub;
 
 // Result:
 // Error processing file: ArrayAddSub.mo
-// [flattening/modelica/arrays/ArrayAddSub.mo:9:3-9:28:writable] Error: Cannot resolve type of expression {1, 2, 3} + 1. The operands have types Integer[3], Integer in component <NO COMPONENT>.
+// [flattening/modelica/arrays/ArrayAddSub.mo:10:3-10:28:writable] Error: Cannot resolve type of expression {1, 2, 3} + 1. The operands have types Integer[3], Integer in component <NO COMPONENT>.
 // Error: Error occurred while flattening model AddSub
 //
 // # Error encountered! Exiting...

@@ -1,6 +1,7 @@
 // name:     Matrix
 // keywords: array, matrix
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the matrix dimensionality conversion function.
 //

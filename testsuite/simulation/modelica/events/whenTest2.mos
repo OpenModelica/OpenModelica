@@ -2,6 +2,7 @@
 // keywords: event, when
 // status: correct
 // teardown_command: rm -rf eventTests.whenTest2* output.log
+// cflags: -d=-newInst
 //
 // example for when equation without equations, just with statements e.g. reinit, terminate
 //

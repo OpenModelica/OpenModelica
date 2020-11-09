@@ -1,6 +1,7 @@
 // name:     EmptyArrayAlgorithm.mo [BUG: #2300]
 // keywords: Empty arrays used in algorithm
 // status:   correct
+// cflags: -d=-newInst
 //
 // Empty arrays used in algorithm
 //

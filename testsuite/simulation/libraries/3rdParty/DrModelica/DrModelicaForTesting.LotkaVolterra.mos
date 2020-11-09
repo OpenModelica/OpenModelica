@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.LotkaVolterra
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.LotkaVolterra.* DrModelicaForTesting.LotkaVolterra_* DrModelicaForTesting.LotkaVolterra DrModelicaForTesting.LotkaVolterra.exe DrModelicaForTesting.LotkaVolterra.cpp DrModelicaForTesting.LotkaVolterra.makefile DrModelicaForTesting.LotkaVolterra.libs DrModelicaForTesting.LotkaVolterra.log DrModelicaForTesting.LotkaVolterra.c DrModelicaForTesting.LotkaVolterra.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

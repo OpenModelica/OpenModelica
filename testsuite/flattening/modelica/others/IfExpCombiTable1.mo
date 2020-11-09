@@ -1,5 +1,6 @@
 // name: IfExpCombiTable1
 // status: correct
+// cflags: -d=-newInst
 // This should succeed without error messages
 
 class IfExpCombiTable1

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.PolynomialEvaluator2
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.PolynomialEvaluator2.* DrModelicaForTesting.PolynomialEvaluator2_* DrModelicaForTesting.PolynomialEvaluator2 DrModelicaForTesting.PolynomialEvaluator2.exe DrModelicaForTesting.PolynomialEvaluator2.cpp DrModelicaForTesting.PolynomialEvaluator2.makefile DrModelicaForTesting.PolynomialEvaluator2.libs DrModelicaForTesting.PolynomialEvaluator2.log DrModelicaForTesting.PolynomialEvaluator2.c DrModelicaForTesting.PolynomialEvaluator2.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

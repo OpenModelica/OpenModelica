@@ -1,6 +1,7 @@
 // name:      parameterTest17
 // keywords:  parameter evaluation, globalKnownVars, cse
 // status:    correct
+// cflags: -d=-newInst
 
 loadString("
 model parameterTest17

@@ -1,6 +1,7 @@
 // name:     Extends10
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing that imports are handled properly when extending.
 //

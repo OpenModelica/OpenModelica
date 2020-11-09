@@ -1,6 +1,7 @@
 // name:     Lookup6
 // keywords: scoping
 // status:   correct
+// cflags: -d=-newInst
 //
 // The constant 'a' is hidden in class 'B' after the declaration
 // of 'B.a'.

@@ -2,6 +2,7 @@
 // keywords: check that we generate a file for diffSimulationResultsHtml API
 // status:   correct
 // teardown_command: rm -rf ModelTestBug3974*
+// cflags: -d=-newInst
 // 
 
 loadString("

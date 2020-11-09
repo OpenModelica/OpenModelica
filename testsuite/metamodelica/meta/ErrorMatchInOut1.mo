@@ -1,5 +1,5 @@
 // name: ErrorMatchInOut1.mo
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
 package ErrorMatchInOut1
 

@@ -1,6 +1,7 @@
 // name:     ArrayModif
 // keywords: modification
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test that we don't give wrong errors about missing each
 

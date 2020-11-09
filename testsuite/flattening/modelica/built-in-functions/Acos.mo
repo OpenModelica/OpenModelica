@@ -1,6 +1,7 @@
 // name: Acos
 // keywords: acos
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in acos function
 //

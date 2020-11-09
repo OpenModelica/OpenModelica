@@ -1,6 +1,7 @@
 // name:     Connect9
 // keywords: connect
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing of input/output flags
 //

@@ -1,6 +1,7 @@
 // name: And
 // keywords: logic, operator
 // status: correct
+// cflags: -d=-newInst
 //
 // tests the And operator(and)
 //

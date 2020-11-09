@@ -1,6 +1,7 @@
 // name:     RDCL.mo [BUG: #2346]
 // keywords: redeclare check
 // status:   correct
+// cflags: -d=-newInst
 
 package B
   connector Flange_b

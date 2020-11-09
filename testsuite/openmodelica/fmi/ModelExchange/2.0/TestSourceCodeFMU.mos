@@ -1,5 +1,6 @@
 // keywords: fmu export import
 // status: correct
+// cflags: -d=-newInst
 
 setCFlags(getCFlags() + " -g"); getErrorString();
 

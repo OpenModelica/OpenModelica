@@ -1,5 +1,6 @@
 // name: CheckConstraintViolation
 // status: correct
+// cflags: -d=-newInst
 
 
 setCommandLineOptions("+gDynOpt");

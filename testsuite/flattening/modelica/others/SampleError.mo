@@ -1,5 +1,6 @@
 // name: SampleError
 // status: incorrect
+// cflags: -d=-newInst
 
 model SampleError
   Real r = 1.5;
@@ -12,7 +13,7 @@ end SampleError;
 
 // Result:
 // Error processing file: SampleError.mo
-// [flattening/modelica/others/SampleError.mo:8:3-10:11:writable] Error: Function argument start=r in call to sample has variability continuous which is not a parameter expression.
+// [flattening/modelica/others/SampleError.mo:9:3-11:11:writable] Error: Function argument start=r in call to sample has variability continuous which is not a parameter expression.
 // Error: Error occurred while flattening model SampleError
 //
 // # Error encountered! Exiting...

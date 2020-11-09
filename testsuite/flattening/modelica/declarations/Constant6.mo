@@ -1,6 +1,7 @@
 // name:     Constant6
 // keywords: declaration,array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Can you call functions in constant expressions?
 //

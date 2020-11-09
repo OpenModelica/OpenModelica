@@ -2,6 +2,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // depends: Modelica.Electrical.Machines.Examples.SynchronousInductionMachines.SMEE_LoadDump_eqs_prof.json
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

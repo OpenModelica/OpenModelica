@@ -2,6 +2,7 @@
 // keywords: Enumeration FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml EnumerationTest.fmu _EnumerationTest* EnumerationTest_me_FMU.mo EnumerationTest.libs EnumerationTest.lib EnumerationTest.so EnumerationTest.dll EnumerationTest.c EnumerationTest.o EnumerationTest.makefile output.log EnumerationTest_*.c EnumerationTest_*.h EnumerationTest_*.o EnumerationTest_*.json EnumerationTest/*
+// cflags: -d=-newInst
 //
 // String(Enum.e1)
 //

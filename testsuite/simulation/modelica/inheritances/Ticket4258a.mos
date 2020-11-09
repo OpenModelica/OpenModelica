@@ -1,6 +1,6 @@
 // name:     Ticket4258a.mos [BUG: #4258]
 // keywords: proper unique scopes for redeclares
-// cflags: -d=nogen
+// cflags: -d=nogen -d=-newInst
 // status:   correct
 // treardown_command: rm -rf simple_BasicHX_water_gas*
 //

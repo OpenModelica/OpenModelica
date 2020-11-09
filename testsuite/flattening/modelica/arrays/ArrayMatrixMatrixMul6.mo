@@ -1,6 +1,7 @@
 // name:     ArrayMatrixMatrixMul6
 // keywords: expression simplification array multiplication
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks simplification of matrix-matrix multiplication.
 //

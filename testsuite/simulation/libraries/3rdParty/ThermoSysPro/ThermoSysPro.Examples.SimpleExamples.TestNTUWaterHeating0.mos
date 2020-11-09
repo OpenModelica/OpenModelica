@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.* ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0_* ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0 ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.exe ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.cpp ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.makefile ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.libs ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.log ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.c ThermoSysPro.Examples.SimpleExamples.TestNTUWaterHeating0.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

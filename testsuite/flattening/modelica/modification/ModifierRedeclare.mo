@@ -1,6 +1,7 @@
 // name: ModifierRedeclare
 // keywords: modifier, redeclare, replaceable
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests redeclarations
 //

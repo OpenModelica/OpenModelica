@@ -1,6 +1,7 @@
 // name:      MixedTearing2-minimal
 // keywords:  minimal tearing
 // status:    correct
+// cflags: -d=-newInst
 
 loadString("
 model mixedTest2

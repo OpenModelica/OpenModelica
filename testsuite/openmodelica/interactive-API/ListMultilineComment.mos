@@ -2,6 +2,7 @@
 // keywords: list multiline comment dump #2879
 // status:   correct
 // teardown_command: rm -rf ListMultilineComment_tmp.mo
+// cflags: -d=-newInst
 // 
 // Tests that multiline comments are dumped properly with the list command.
 //

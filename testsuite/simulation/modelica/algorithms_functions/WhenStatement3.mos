@@ -5,6 +5,7 @@
 // 
 //  
 // Drmodelica: 9.1 When-Statements (p. 293)
+// cflags: -d=-newInst
 // 
 loadFile("WhenStatement3.mo");
 simulate(WhenStat3, tolerance=1e-10, numberOfIntervals=800,method="rungekutta");

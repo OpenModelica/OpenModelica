@@ -1,6 +1,7 @@
 // name: symjacdump.mos
 // keywords: omc debug dump
 // status: correct
+// cflags: -d=-newInst
 //
 // omc debug dump: +d=symjacdump
 //

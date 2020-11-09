@@ -1,6 +1,7 @@
 // status: correct
 // teardown_command: rm -rf Table2d_* Table2d.exe
 // depends: Table2d.txt
+// cflags: -d=-newInst
 
 loadModel(Modelica,{"3.1"});getErrorString();
 loadFile("Table2d.mo");getErrorString();

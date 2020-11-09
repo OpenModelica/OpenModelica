@@ -2,6 +2,7 @@
 // keywords: Graphical API
 // status:   correct
 // teardown_command: rm -f p1.mo
+// cflags: -d=-newInst
 // 
 // test that handling of protected section is correct
 //

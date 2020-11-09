@@ -1,5 +1,5 @@
 // name:     TestGravityAcceleration
-// cflags: -d=gen
+// cflags: -d=gen -d=-newInst
 // keywords: instance function
 // status:   correct
 //

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.FuncDer
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.FuncDer.* DrModelicaForTesting.FuncDer_* DrModelicaForTesting.FuncDer DrModelicaForTesting.FuncDer.exe DrModelicaForTesting.FuncDer.cpp DrModelicaForTesting.FuncDer.makefile DrModelicaForTesting.FuncDer.libs DrModelicaForTesting.FuncDer.log DrModelicaForTesting.FuncDer.c DrModelicaForTesting.FuncDer.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

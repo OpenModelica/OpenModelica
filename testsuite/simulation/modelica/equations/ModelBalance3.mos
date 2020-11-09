@@ -2,6 +2,7 @@
 // keywords: balance
 // status: correct
 // teardown_command: rm -rf ModelBalance3_* ModelBalance3 ModelBalance3.exe ModelBalance3.cpp ModelBalance3.makefile ModelBalance3.libs ModelBalance3.log output.log
+// cflags: -d=-newInst
 //
 // Tests an unbalanced model with too many equations
 //
@@ -18,7 +19,7 @@ getErrorString();
 //     messages = "Failed to build model: ModelBalance3"
 // end SimulationResult;
 // "Error: Too many equations, over-determined system. The model has 3 equation(s) and 2 variable(s).
-// [simulation/modelica/equations/ModelBalance3.mo:14:3-14:12:writable] Warning: Equation 3 (size: 1) x = 2 + y is not big enough to solve for enough variables.
+// [simulation/modelica/equations/ModelBalance3.mo:15:3-15:12:writable] Warning: Equation 3 (size: 1) x = 2 + y is not big enough to solve for enough variables.
 //   Remaining unsolved variables are: 
 //   Already solved: x, y
 //   Equations used to solve those variables:

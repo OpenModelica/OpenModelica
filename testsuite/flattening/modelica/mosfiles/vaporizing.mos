@@ -1,5 +1,6 @@
 // name: vaporizing
 // status: correct
+// cflags: -d=-newInst
 
  loadFile("vaporizing.mo"); getErrorString();
  instantiateModel(Modelica.Fluid.Valves.ValveVaporizing); getErrorString();

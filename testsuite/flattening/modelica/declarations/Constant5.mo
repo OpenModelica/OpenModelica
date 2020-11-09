@@ -1,6 +1,7 @@
 // name:     Constant5
 // keywords: declaration,array
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 //

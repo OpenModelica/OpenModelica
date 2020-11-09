@@ -1,6 +1,7 @@
 // name:     Modification16 [bug #1238]
 // keywords: modification
 // status:   correct
+// cflags: -d=-newInst
 //
 
 

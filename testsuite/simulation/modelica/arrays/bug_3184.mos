@@ -1,6 +1,7 @@
 // name:     bug_3184
 // keywords: array, function return, qualifed cref subs
 // status: correct
+// cflags: -d=-newInst
 // 
 // Tests bug_3184
 // 

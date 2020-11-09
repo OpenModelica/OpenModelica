@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 9.1 assert (p. 298)
+// cflags: -d=-newInst
 //
 
 class AssertTest

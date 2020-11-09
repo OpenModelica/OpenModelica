@@ -1,7 +1,7 @@
 // name:     Shadowing1
 // keywords: Shadowing
 // status:   incorrect
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Local Declaration Shadowing
 //

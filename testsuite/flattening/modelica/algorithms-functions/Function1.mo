@@ -1,6 +1,7 @@
 // name:     Function1
 // keywords: function
 // status:   correct
+// cflags: -d=-newInst
 //
 // This tests basic function functionality
 

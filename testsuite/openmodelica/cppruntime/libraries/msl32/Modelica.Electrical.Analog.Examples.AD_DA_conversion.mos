@@ -2,7 +2,7 @@
 // teardown_command: rm -f Modelica.Electrical.Analog.Examples.AD_DA_conversion_*.mat
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: 
+// cflags:  -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

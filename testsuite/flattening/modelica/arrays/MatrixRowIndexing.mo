@@ -1,6 +1,7 @@
 // name:     MatrixRowIndexing
 // keywords: Row indexing of matrix
 // status:   correct
+// cflags: -d=-newInst
 //
 // Make sure row indexing of matrix works fine!
 // Also constant evaluation via Cevalfunc.mo module.

@@ -1,6 +1,7 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Elementary.PendulumWithSpringDamper
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

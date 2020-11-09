@@ -1,6 +1,7 @@
 // name: ConstantLogicalRelations
 // keywords: constant evaluation logical relation operator
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests constant evaluation of the logical relation operators.
 //

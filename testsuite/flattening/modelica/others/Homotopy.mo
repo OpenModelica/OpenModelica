@@ -1,6 +1,7 @@
 // name:     Homotopy.mo
 // keywords: ticket #2542
 // status:   correct
+// cflags: -d=-newInst
 //
 // Ticket #2542
 //

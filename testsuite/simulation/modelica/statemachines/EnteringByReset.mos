@@ -1,6 +1,7 @@
 // name:     EnteringByReset
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadString("

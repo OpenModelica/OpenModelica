@@ -1,6 +1,7 @@
 // name: RealMul
 // keywords: real, multiplication
 // status: correct
+// cflags: -d=-newInst
 //
 // tests Real multiplication
 //

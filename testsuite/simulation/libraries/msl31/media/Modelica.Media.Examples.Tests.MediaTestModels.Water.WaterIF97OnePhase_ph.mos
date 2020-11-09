@@ -1,6 +1,7 @@
 //name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97OnePhase_ph)
 //keyword:     simulation
 //status:      correct
+// cflags: -d=-newInst
 // instantiate/check model example
 //
 

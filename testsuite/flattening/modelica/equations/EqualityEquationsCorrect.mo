@@ -1,6 +1,7 @@
 // name:     EqualityEquationsCorrect
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Not yet implemented
 

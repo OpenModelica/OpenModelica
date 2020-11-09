@@ -1,6 +1,7 @@
 // name: bug_2673b
 // keywords: initialization
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 package Test

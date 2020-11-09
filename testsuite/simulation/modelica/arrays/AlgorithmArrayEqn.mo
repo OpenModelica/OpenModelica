@@ -1,6 +1,7 @@
 // name:     AlgorithmArrayEqn
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests array assignments in algorithm sections.
 //

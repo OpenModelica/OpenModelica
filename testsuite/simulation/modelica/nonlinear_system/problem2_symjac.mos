@@ -1,6 +1,7 @@
 // name: problem2 [symjac]
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem2* _nonlinear_system.problem2* output.log
+// cflags: -d=-newInst
 
 alarm(360);
 loadFile("nlsTestPackage.mo"); getErrorString();

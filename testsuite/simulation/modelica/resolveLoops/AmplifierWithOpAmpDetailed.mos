@@ -1,6 +1,7 @@
 // name:      AmplifierWithOpAmpDetailed
 // keywords:  resolveLoops
 // status:    incorrect
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();

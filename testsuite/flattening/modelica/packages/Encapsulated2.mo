@@ -1,6 +1,7 @@
 // name:     Encapsulated2
 // keywords: encapsulated
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // An encapsulate class requires import to access
 // even top-level classes.
@@ -25,7 +26,7 @@ encapsulated model Encapsulated2
 end Encapsulated2;
 // Result:
 // Error processing file: Encapsulated2.mo
-// [flattening/modelica/packages/Encapsulated2.mo:23:3-23:15:writable] Error: Class A.B.C not found in scope Encapsulated2.
+// [flattening/modelica/packages/Encapsulated2.mo:24:3-24:15:writable] Error: Class A.B.C not found in scope Encapsulated2.
 // Error: Error occurred while flattening model Encapsulated2
 //
 // # Error encountered! Exiting...

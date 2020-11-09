@@ -2,6 +2,7 @@
 // keywords: FMI 2.0 export
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml Bug5670.xml
+// cflags: -d=-newInst
 
 loadString("
 model ticket5670

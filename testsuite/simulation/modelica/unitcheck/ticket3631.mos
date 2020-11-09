@@ -1,5 +1,6 @@
 // name: ticket3631
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 package unitCheckTests

@@ -1,6 +1,7 @@
 // name:     If-statement Illegal
 // keywords: if
 // status:   incorrect
+// cflags: -d=-newInst
 // 
 //  Test that the condition must be a boolean
 //
@@ -8,10 +9,10 @@ if "should fail" then a := 5;else a:=10;end if; //test else if (true)
 a;
 // Result:
 // Error processing file: IfStatementIllegal.mos
-// [openmodelica/interactive-API/IfStatementIllegal.mos:7:1-7:47:writable] Error: Type error in conditional '"should fail"'. Expected Boolean, got String.
-// 
+// [openmodelica/interactive-API/IfStatementIllegal.mos:8:1-8:47:writable] Error: Type error in conditional '"should fail"'. Expected Boolean, got String.
+//
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
-// 
+//
 // Execution failed!
 // endResult

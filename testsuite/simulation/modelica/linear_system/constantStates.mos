@@ -1,6 +1,7 @@
 // name: constState
 // status: correct
 // teardown_command: rm -f constStatelinearSys* output.log
+// cflags: -d=-newInst
 
 loadString("
 model constStatelinearSys

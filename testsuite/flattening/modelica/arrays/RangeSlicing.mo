@@ -1,6 +1,7 @@
 // name: RangeSlicing
 // keywords: array range slicing subscript
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests array slicing with range subscripts.
 //

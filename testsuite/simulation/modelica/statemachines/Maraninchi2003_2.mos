@@ -1,6 +1,7 @@
 // name:     Maraninchi2003_2
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("Maraninchi2003_2.mo");

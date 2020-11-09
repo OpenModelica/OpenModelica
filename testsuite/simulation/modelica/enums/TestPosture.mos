@@ -2,6 +2,7 @@
 // keywords: enumeration array subscript bug2177
 // status:   correct
 // teardown_command: rm -rf TestPosture_*  TestPosture TestPosture.exe TestPosture.cpp TestPosture.makefile TestPosture.libs TestPosture.log output.log
+// cflags: -d=-newInst
 //
 // Tests that the code generation for arrays with enumeration subscripts is
 // correct.

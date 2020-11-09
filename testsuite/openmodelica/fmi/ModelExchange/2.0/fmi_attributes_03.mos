@@ -1,6 +1,7 @@
 // name: fmi_attributes_03.mos
 // status: correct
 // teardown_command: rm -rf fmi_attributes_03.fmu fmi_attributes_03.log fmi_attributes_03.xml fmi_attributes_03_tmp.xml fmi_attributes_03.fmutmp/
+// cflags: -d=-newInst
 
 loadString("
 model fmi_attributes_03

@@ -1,6 +1,7 @@
 // name:     InvalidReplaceableExtends4
 // keywords: extends replaceable
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Checks that an error is issued if any part of the base class name is
 // replaceable.

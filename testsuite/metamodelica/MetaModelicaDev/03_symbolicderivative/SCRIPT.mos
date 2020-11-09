@@ -1,6 +1,7 @@
 // name:     03 Symbolic Differentation
 // keywords: MetaModelica
 // status:   correct
+// cflags: -d=-newInst
 //
 // OpenModelica Development Course at PELAB
 //

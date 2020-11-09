@@ -1,6 +1,7 @@
 // name: ShortClassDef
 // keywords: class
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests short class definitions of the form class foo = bar;
 //

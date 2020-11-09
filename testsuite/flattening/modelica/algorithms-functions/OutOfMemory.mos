@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 GC_set_max_heap_size(1024*1024*300 /* 300 MB */);
 loadModel(Modelica);getErrorString();

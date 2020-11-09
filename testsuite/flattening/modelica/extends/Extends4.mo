@@ -1,7 +1,7 @@
 // name:     Extends4
 // keywords: extends basictype cat operator
 // status:   correct
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 //
 // Testing extending basic type and contatenation operators (MC bug #643)
 

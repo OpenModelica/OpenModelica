@@ -5,6 +5,7 @@
 // Tests positional arguments, dynamic array sizes etc.
 //
 // Drmodelica: 9.2 called (p. 300)
+// cflags: -d=-newInst
 //
 function PolynomialEvaluator1
   input Real A[:]; // Array, size defined at function call time

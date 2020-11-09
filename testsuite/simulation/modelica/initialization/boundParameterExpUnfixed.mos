@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.boundParameterExpUnfixed* _initializationTests.boundParameterExpUnfixed* output.log
+// cflags: -d=-newInst
 //
 // case for #1964, #3052
 //

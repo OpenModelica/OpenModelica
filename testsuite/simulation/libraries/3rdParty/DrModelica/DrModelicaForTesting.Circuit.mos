@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.Circuit
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.Circuit.* DrModelicaForTesting.Circuit_* DrModelicaForTesting.Circuit DrModelicaForTesting.Circuit.exe DrModelicaForTesting.Circuit.cpp DrModelicaForTesting.Circuit.makefile DrModelicaForTesting.Circuit.libs DrModelicaForTesting.Circuit.log DrModelicaForTesting.Circuit.c DrModelicaForTesting.Circuit.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

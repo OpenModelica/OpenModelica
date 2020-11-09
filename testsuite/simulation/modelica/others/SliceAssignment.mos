@@ -2,6 +2,7 @@
 // keywords: slice assignment bug1249 
 // status: correct
 // teardown_command: rm -rf SliceAssignment SliceAssignment.exe SliceAssignment.cpp SliceAssignment_functions.cpp SliceAssignment_functions.h SliceAssignment_init.xml SliceAssignment.libs SliceAssignment.log SliceAssignment.makefile SliceAssignment_records.c SliceAssignment_res.mat output.log 
+// cflags: -d=-newInst
 //
 // Checks that correct code is generated for slice assignments.
 // 

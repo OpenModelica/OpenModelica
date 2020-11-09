@@ -5,6 +5,7 @@
 // MORE WORK ON THIS FILE HAS TO BE DONE!
 //
 // Drmodelica: 4.5 Design a Class to be Extended (p. 137)
+// cflags: -d=-newInst
 //
 type Voltage = Real(Unit = "V");
 

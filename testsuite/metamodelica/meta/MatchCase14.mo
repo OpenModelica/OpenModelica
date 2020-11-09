@@ -1,5 +1,5 @@
 // name: MatchCase14
-// cflags: -g=MetaModelica -d=gen
+// cflags: -g=MetaModelica -d=gen -d=-newInst
 // status: correct
 // teardown_command: rm -f MatchCase14_*
 package MatchCase14

@@ -2,6 +2,7 @@
 // keywords: Graphical API, annotations
 // status: correct
 // teardown_command: rm -f *.c *.dll *.log *.makefile *.cpp *.exe *.h *.libs *_init.xml *_init.txt *_res.* mat-files.txt csv-files.txt plt-files.txt
+// cflags: -d=-newInst
 // Subset of the Graphical API for annotations
 //
 

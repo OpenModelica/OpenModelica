@@ -1,6 +1,6 @@
 // name:     Tank
 // keywords: <insert keywords here>
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status: correct
 // teardown_command: rm -rf Tank_* Tank Tank.exe Tank.cpp Tank.makefile Tank.libs Tank.log output.log
 // 

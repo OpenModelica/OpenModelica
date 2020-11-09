@@ -1,6 +1,7 @@
 // name: OperatorIllegal
 // keywords: operator
 // status: incorrect
+// cflags: -d=-newInst
 //
 // extending from a record containing operator overloads should be illegal
 //

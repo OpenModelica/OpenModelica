@@ -2,6 +2,7 @@
 // keywords: asub cref type
 // status: correct
 // teardown_command: rm -rf AsubCrefExpType_* AsubCrefExpType AsubCrefExpType.exe AsubCrefExpType.cpp AsubCrefExpType.makefile AsubCrefExpType.libs AsubCrefExpType.log output.log
+// cflags: -d=-newInst
 // 
 // Tests assignment of one slice to another slice.
 // 

@@ -2,6 +2,7 @@
 // keywords: Simulation, BooleanModel, LargeSteps
 // status:   correct
 // teardown_command: rm -f Booleanmodel* Largesteps* output.log
+// cflags: -d=-newInst
 //
 
 // Model that tests discrete equations that do not contain zero crossings, e.g n = 1;

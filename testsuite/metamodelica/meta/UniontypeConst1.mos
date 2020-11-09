@@ -1,7 +1,7 @@
 // name:     UniontypeConst1
 // keywords: uniontype const
 // status:   correct
-// cflags:   -g=MetaModelica -d=gen
+// cflags:   -g=MetaModelica -d=gen -d=-newInst
 //
 // Tests constants inside of uniontypes.
 //

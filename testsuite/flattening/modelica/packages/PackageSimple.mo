@@ -1,6 +1,7 @@
 // name: PackageSimple
 // keywords: package
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple package declaration
 // This test might need to be improved upon

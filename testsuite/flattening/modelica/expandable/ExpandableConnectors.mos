@@ -1,6 +1,7 @@
 //name:        ExpandableConnectors
 //keyword:     expandable
 //status:      correct
+// cflags: -d=-newInst
 //
 // instantiate/check model example
 // models by Pavol Privitzer

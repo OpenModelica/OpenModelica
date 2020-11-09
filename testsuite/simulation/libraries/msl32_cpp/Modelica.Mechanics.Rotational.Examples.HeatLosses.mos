@@ -1,6 +1,7 @@
 // name:     Modelica.Mechanics.Rotational.Examples.HeatLosses
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

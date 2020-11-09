@@ -2,6 +2,7 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml HelloFMIWorld.fmu HelloFMIWorld_* HelloFMIWorld.libs HelloFMIWorld.lib HelloFMIWorld.so HelloFMIWorld.dll HelloFMIWorld.c HelloFMIWorld.makefile
+// cflags: -d=-newInst
 // Event handling
 //
 

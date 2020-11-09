@@ -1,6 +1,7 @@
 // name: ParameterBug.mos [tests https://trac.openmodelica.org/OpenModelica/ticket/1956]
 // keywords:
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("ParameterBug.mo"); getErrorString();

@@ -1,6 +1,7 @@
 // name: Ticket_5994
 // status: correct
 // teardown_command: rm -f Ticket_5994.Test*
+// cflags: -d=-newInst
 
 loadFile("ticket_5994.mo");
 getErrorString();

@@ -1,6 +1,6 @@
 // name:     TankPI with DOPRI5
 // keywords: DOPRI5
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status: correct
 // teardown_command: rm -rf TankPI_* TankPI TankPI.exe TankPI.cpp TankPI.makefile TankPI.libs TankPI.log output.log
 // 

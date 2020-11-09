@@ -5,6 +5,7 @@
 // omc debug dump: +d=semiLinear
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=semiLinear
 loadString("
 model testSemiLinear

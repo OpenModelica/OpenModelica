@@ -1,5 +1,6 @@
 // name: TrigIdentity
 // status: correct
+// cflags: -d=-newInst
 
 model TrigIdentity
   Real x = sin(time)^2 + cos(time)^2;

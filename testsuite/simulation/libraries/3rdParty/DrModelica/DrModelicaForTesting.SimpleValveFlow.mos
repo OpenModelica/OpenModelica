@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.SimpleValveFlow
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.SimpleValveFlow.* DrModelicaForTesting.SimpleValveFlow_* DrModelicaForTesting.SimpleValveFlow DrModelicaForTesting.SimpleValveFlow.exe DrModelicaForTesting.SimpleValveFlow.cpp DrModelicaForTesting.SimpleValveFlow.makefile DrModelicaForTesting.SimpleValveFlow.libs DrModelicaForTesting.SimpleValveFlow.log DrModelicaForTesting.SimpleValveFlow.c DrModelicaForTesting.SimpleValveFlow.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

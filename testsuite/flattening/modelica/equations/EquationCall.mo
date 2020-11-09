@@ -4,6 +4,7 @@
 //
 // Computes cartesian coordinates of a point
 // Drmodelica: 9.2 Multiple Results (p. 302)
+// cflags: -d=-newInst
 //
 
 function PointOnCircle

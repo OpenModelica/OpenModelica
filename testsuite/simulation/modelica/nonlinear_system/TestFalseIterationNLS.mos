@@ -1,5 +1,6 @@
 // name: TestFalseIterationNLS
 // status: correct
+// cflags: -d=-newInst
 //
 // Ticket 4046
 //

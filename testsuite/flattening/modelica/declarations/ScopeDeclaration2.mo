@@ -1,6 +1,7 @@
 // name:     ScopeDeclaration2
 // keywords: scoping,declaration
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // An element is visible in its entire scope.
 // The following is thus incorrect since the minimum
@@ -16,7 +17,7 @@ end ScopeDeclaration2;
 
 // Result:
 // Error processing file: ScopeDeclaration2.mo
-// [flattening/modelica/declarations/ScopeDeclaration2.mo:12:5-12:20:writable] Error: Variable b.a: Component min of variability PARAM has binding b.a of higher variability VAR.
+// [flattening/modelica/declarations/ScopeDeclaration2.mo:13:5-13:20:writable] Error: Variable b.a: Component min of variability PARAM has binding b.a of higher variability VAR.
 // Error: Error occurred while flattening model ScopeDeclaration2
 //
 // # Error encountered! Exiting...

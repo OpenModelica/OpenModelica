@@ -1,6 +1,7 @@
 // name: GreaterThan
 // keywords: logic, operator
 // status: correct
+// cflags: -d=-newInst
 //
 // tests the GreaterThan operator (<)
 //

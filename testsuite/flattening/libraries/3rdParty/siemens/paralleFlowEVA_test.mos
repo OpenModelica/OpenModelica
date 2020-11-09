@@ -1,6 +1,7 @@
 // name:     paralleFlowEVA_test
 // keywords: fluid media siemens
 // status:   correct
+// cflags: -d=-newInst
 //
 //  Siemens fluid test.
 //

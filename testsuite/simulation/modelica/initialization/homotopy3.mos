@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.homotopy3* _initializationTests.homotopy3* output.log
+// cflags: -d=-newInst
 //
 //  case for homotopy
 //

@@ -1,6 +1,7 @@
 // name:     Enum11
 // keywords: enumeration enum
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests integer conversion of enumeration types.
 //

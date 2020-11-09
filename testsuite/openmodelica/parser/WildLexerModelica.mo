@@ -1,5 +1,6 @@
 // name: WildLexerModelica
 // status: correct
+// cflags: -d=-newInst
 //
 
 class WildLexerModelica

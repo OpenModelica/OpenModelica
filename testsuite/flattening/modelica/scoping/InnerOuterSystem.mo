@@ -1,6 +1,7 @@
 // name:     InnerOuterSystem
 // keywords: inner, outer, innerouter, modifications
 // status:   correct
+// cflags: -d=-newInst
 //
 // Modelica specification example, 5.5 Simultaneous Inner/Outer Declarations
 //

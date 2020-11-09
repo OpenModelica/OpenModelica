@@ -1,6 +1,7 @@
 // name: Connect13
 // keywords:  connector, array components
 // status: correct
+// cflags: -d=-newInst
 //
 // Test that arrays can be used n connectors.
 //

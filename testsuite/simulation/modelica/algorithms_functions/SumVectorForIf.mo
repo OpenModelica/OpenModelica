@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 9.1  if-Statement (p. 292)
+// cflags: -d=-newInst
 //
 class SumVector
   Real sum;

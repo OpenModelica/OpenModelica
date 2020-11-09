@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.MRFcall
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.MRFcall.* DrModelicaForTesting.MRFcall_* DrModelicaForTesting.MRFcall DrModelicaForTesting.MRFcall.exe DrModelicaForTesting.MRFcall.cpp DrModelicaForTesting.MRFcall.makefile DrModelicaForTesting.MRFcall.libs DrModelicaForTesting.MRFcall.log DrModelicaForTesting.MRFcall.c DrModelicaForTesting.MRFcall.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

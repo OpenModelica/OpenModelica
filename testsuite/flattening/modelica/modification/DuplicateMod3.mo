@@ -1,6 +1,7 @@
 // name: DuplicateMod3.mo
 // keywords:
 // status: incorrect
+// cflags: -d=-newInst
 //
 
 model A
@@ -17,8 +18,8 @@ end DuplicateMod3;
 
 // Result:
 // Error processing file: DuplicateMod3.mo
-// [flattening/modelica/modification/DuplicateMod3.mo:15:9-15:14:writable] Notification: From here:
-// [flattening/modelica/modification/DuplicateMod3.mo:15:19-15:24:writable] Error: Duplicate modification of element a.x on component b.
+// [flattening/modelica/modification/DuplicateMod3.mo:16:9-16:14:writable] Notification: From here:
+// [flattening/modelica/modification/DuplicateMod3.mo:16:19-16:24:writable] Error: Duplicate modification of element a.x on component b.
 // Error: Error occurred while flattening model DuplicateMod3
 //
 // # Error encountered! Exiting...

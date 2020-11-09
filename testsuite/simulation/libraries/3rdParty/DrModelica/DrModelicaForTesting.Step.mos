@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.Step
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.Step.* DrModelicaForTesting.Step_* DrModelicaForTesting.Step DrModelicaForTesting.Step.exe DrModelicaForTesting.Step.cpp DrModelicaForTesting.Step.makefile DrModelicaForTesting.Step.libs DrModelicaForTesting.Step.log DrModelicaForTesting.Step.c DrModelicaForTesting.Step.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

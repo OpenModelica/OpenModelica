@@ -1,6 +1,7 @@
 // name:     Redeclare1
 // keywords: redeclare,type
 // status:   correct
+// cflags: -d=-newInst
 //
 // Redeclaration and subtyping.
 //

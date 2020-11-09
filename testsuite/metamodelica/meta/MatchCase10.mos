@@ -1,6 +1,6 @@
 // name:     MatchCase10
 // keywords: Match Cases
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status:   correct
 // teardown_command: rm -rf MatchCase10_*
 //

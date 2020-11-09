@@ -1,6 +1,7 @@
 // name:     if_then_elseif_else
 // keywords: elseif
 // status:   correct
+// cflags: -d=-newInst
 //
 //  Using elseif in if expressions
 //

@@ -1,6 +1,7 @@
 // name:     BM27 -  TwoInputs component
 // keywords: TwoInputs
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.TwoInputs component.
 //

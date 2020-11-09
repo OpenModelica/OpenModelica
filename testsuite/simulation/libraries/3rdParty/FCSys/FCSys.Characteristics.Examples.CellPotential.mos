@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("FCSys.Characteristics.Examples.CellPotential.mo");getErrorString();
 // TODO: Once we handle model parameters inside functions, change to buildModel...

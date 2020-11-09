@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("TestComplexSum.mo");getErrorString();
 loadModel(Complex,{"3.2.2"});getErrorString();

@@ -5,6 +5,7 @@
 //
 // Code generation for assignment of arrays indexed with enumerations.
 // TODO: in resultfile are subscript for UNKNOWN
+// cflags: -d=-newInst
 // 
 loadFile("EnumArray.mo");
 simulate(EnumArray, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);

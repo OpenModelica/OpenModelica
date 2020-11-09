@@ -2,6 +2,7 @@
 // keywords: return tuple record array
 // status: correct
 // teardown_command: rm -f *RecordTupleReturn*
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

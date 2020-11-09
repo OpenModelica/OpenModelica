@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.MultFuncCall
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.MultFuncCall.* DrModelicaForTesting.MultFuncCall_* DrModelicaForTesting.MultFuncCall DrModelicaForTesting.MultFuncCall.exe DrModelicaForTesting.MultFuncCall.cpp DrModelicaForTesting.MultFuncCall.makefile DrModelicaForTesting.MultFuncCall.libs DrModelicaForTesting.MultFuncCall.log DrModelicaForTesting.MultFuncCall.c DrModelicaForTesting.MultFuncCall.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

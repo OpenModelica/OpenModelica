@@ -4,6 +4,7 @@
 // depends:  ParseModel-saved.mo
 //
 // Parsing: check that the parsing/saving/parsing cycle works fine
+// cflags: -d=-newInst
 //
 
 system("cp ./ParseModel-saved.mo ./ParseModel.mo"); /* copy the saved model */

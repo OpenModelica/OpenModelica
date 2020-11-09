@@ -1,6 +1,7 @@
 // name:     Class2
 // keywords:
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is a really simple tests.
 //

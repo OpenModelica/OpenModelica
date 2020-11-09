@@ -2,6 +2,7 @@
 // keywords: nonlinsys, linearization
 // status:   correct
 // teardown_command: rm -rf p.nonlinsys.* p.nonlinsys_* output.log linearized_model.* linearized_model.mo linearized_model_* linearized_model p.nonlinsys
+// cflags: -d=-newInst
 //
 //  Case for linearization of nonlinsys model
 //

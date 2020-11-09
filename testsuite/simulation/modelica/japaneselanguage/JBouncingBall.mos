@@ -1,6 +1,7 @@
 // name: Bouncing Ball (Quoted identifiers using Japanese UTF-8 characters)
 // status: correct
 // teardown_command: rm -f JapaneseBouncingBall* output.log
+// cflags: -d=-newInst
 
 loadFile("JBouncingBall.mo");
 simulate('跳ねるボール',stopTime=2.5,fileNamePrefix="JapaneseBouncingBall");getErrorString();

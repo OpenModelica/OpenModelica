@@ -1,6 +1,7 @@
 // name:     SimplifyBinary
 // keywords: simplify
 // status:   correct
+// cflags: -d=-newInst
 //
 
 

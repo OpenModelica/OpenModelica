@@ -2,6 +2,7 @@
 // keywords: xml, init, parameters, changeable value
 // status: correct
 // teardown_command: rm -f testParameters*
+// cflags: -d=-newInst
 //
 
 loadString("

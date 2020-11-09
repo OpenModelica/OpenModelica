@@ -1,6 +1,7 @@
 // name:     SubscriptsFill1
 // keywords: array subscripts #2977
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that any missing subscripts are filled in with :.
 //

@@ -2,6 +2,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // depends: Modelica.Mechanics.MultiBody.Examples.Elementary.ThreeSprings_eqs_prof.json
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

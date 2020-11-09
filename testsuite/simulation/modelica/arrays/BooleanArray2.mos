@@ -2,6 +2,7 @@
 // keywords: boolean,array
 // status: correct
 // teardown_command: rm -rf Bug2112* output.log
+// cflags: -d=-newInst
 //
 // Boolean array handling, fill
 //

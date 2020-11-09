@@ -1,5 +1,6 @@
 // name: 06_SmoothEvents
 // status: correct
+// cflags: -d=-newInst
 //
 //  Simulation Results
 //  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"

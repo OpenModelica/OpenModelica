@@ -1,6 +1,7 @@
 // name:     Algorithm3
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 //
 // Type checks in algorithms.
 //

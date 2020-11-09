@@ -1,6 +1,7 @@
 // name: ArrayDeclaration3
 // keywords: array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaring arrays and scalars on the same line
 //

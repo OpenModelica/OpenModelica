@@ -1,6 +1,7 @@
 // name:   Modelica.ComplexBlocks.Examples.TestConversionBlock
 // teardown_command: rm -f Modelica.ComplexBlocks.Examples.TestConversionBlock_*.mat
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica,{"3.2"});getErrorString();
 simulate(Modelica.ComplexBlocks.Examples.TestConversionBlock, outputFormat="mat");getErrorString();

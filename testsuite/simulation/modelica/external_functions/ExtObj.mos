@@ -3,6 +3,7 @@
 // status:   correct
 // teardown_command: rm -rf testextobj_functions.h testextobj_records.c testextobj testextobj.cpp testextobj_functions.cpp testextobj.makefile testextobj.exe output.log testextobj.libs testextobj.log testextobj_init.xml testextobj_res.mat ExtObj.lib
 // depends:  testTables.txt
+// cflags: -d=-newInst
 //
 //  Simulate model with external object.
 //

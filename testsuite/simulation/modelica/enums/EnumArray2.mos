@@ -2,6 +2,7 @@
 // keywords: enum array
 // status: correct
 // teardown_command: rm -rf EnumArray2_* EnumArray2 EnumArray2.exe EnumArray2.cpp EnumArray2.makefile EnumArray2.libs EnumArray2.log output.log
+// cflags: -d=-newInst
 //
 // Tests that code generation works for arrays with enumeration dimensions.
 // 

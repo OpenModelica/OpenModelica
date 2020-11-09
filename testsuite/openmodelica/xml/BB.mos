@@ -2,6 +2,7 @@
 // keywords: xml, dump
 // status: correct
 // teardown_command: rm -f BB.BouncingBall.xml
+// cflags: -d=-newInst
 // 
 // Tests that reinit works
 //

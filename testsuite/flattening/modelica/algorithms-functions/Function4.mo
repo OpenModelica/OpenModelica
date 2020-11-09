@@ -1,6 +1,7 @@
 // name:     Function4
 // keywords: function
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // This tests for illegal parts of a function definition.
 //

@@ -1,6 +1,7 @@
 // name:     Parse Absyn.PROGRAM
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 // 
 // Test if getAstAsCorbaString works properly and parses in Java
 //

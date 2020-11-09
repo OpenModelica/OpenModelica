@@ -3,6 +3,7 @@
 // setup_command: gcc -o ./TestLibrary/Resources/Library/ext1.o -c ./TestLibrary/Resources/Library/ext1.c && ar -cr ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/Library/ext1.o && gcc -o ./TestLibrary/Resources/SpecialLib/ext2.o -c ./TestLibrary/Resources/SpecialLib/ext2.c && ar -cr ./TestLibrary/Resources/SpecialLib/libext2.a ./TestLibrary/Resources/SpecialLib/ext2.o
 // teardown_command: rm -f ./TestLibrary/Resources/Library/ext1.o ./TestLibrary/Resources/Library/libext1.a ./TestLibrary/Resources/SpecialLib/ext2.o ./TestLibrary/Resources/SpecialLib/libext2.a Test_ext*
 // depends: TestLibrary
+// cflags: -d=-newInst
 
 setModelicaPath("./TestLibrary/");
 loadModel(Test);getErrorString();

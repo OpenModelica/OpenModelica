@@ -3,6 +3,7 @@
 // status:   incorrect
 //
 // Drmodelica: 7.8  Applied to Arrays  element-wise (p. 229)
+// cflags: -d=-newInst
 //
 
 class SeveralArguments
@@ -15,7 +16,7 @@ end SeveralArguments;
 
 // Result:
 // Error processing file: VectorizeSeveralArguments.mo
-// [flattening/modelica/arrays/VectorizeSeveralArguments.mo:12:3-12:46:writable] Error: Class atan2Add not found in scope SeveralArguments (looking for a function or record).
+// [flattening/modelica/arrays/VectorizeSeveralArguments.mo:13:3-13:46:writable] Error: Class atan2Add not found in scope SeveralArguments (looking for a function or record).
 // Error: Error occurred while flattening model SeveralArguments
 //
 // # Error encountered! Exiting...

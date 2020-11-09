@@ -1,5 +1,6 @@
 // name: diesel_model
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+g=Optimica"); getErrorString();
 loadFile("DM.mo"); getErrorString();

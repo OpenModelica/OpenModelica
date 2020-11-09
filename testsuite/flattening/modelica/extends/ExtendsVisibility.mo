@@ -1,6 +1,7 @@
 // name:     ExtendsVisibility
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing propagation of visibility for extends.
 

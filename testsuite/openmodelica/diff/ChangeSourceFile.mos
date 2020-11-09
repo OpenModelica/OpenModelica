@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Checks that elements that are not classes are part of the listed file
 // even if their source file is different
 

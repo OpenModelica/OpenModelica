@@ -1,6 +1,7 @@
 // name: bug2231-radau1
 // status: correct
 // teardown_command: rm -f testSolver.problem1* output.log
+// cflags: -d=-newInst
 
 loadFile("testSolverPackage.mo"); getErrorString();
 simulate(testSolver.bug2231, method="impeuler");

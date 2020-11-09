@@ -1,6 +1,7 @@
 // name:     FunctionDefaultArgs
 // keywords: functions, default arguments, unknown size
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests default arguments to function, particularly default arguments of
 // unknown size.

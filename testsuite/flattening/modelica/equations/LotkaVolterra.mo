@@ -1,6 +1,7 @@
 // name:     LotkaVolterra
 // keywords: der
 // status:   correct
+// cflags: -d=-newInst
 //
 // <insert description here>
 //

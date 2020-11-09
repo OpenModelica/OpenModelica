@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ElementWiseMultiplication
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ElementWiseMultiplication.* DrModelicaForTesting.ElementWiseMultiplication_* DrModelicaForTesting.ElementWiseMultiplication DrModelicaForTesting.ElementWiseMultiplication.exe DrModelicaForTesting.ElementWiseMultiplication.cpp DrModelicaForTesting.ElementWiseMultiplication.makefile DrModelicaForTesting.ElementWiseMultiplication.libs DrModelicaForTesting.ElementWiseMultiplication.log DrModelicaForTesting.ElementWiseMultiplication.c DrModelicaForTesting.ElementWiseMultiplication.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

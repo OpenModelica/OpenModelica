@@ -1,6 +1,7 @@
 // name:     Modelica.Electrical.Analog.Examples.Rectifier.mos [simulation checking]
 // keywords: simulation Modelica.Electrical.Analog.Examples.Rectifier
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -4,6 +4,7 @@
 // teardown_command: rm -rf ArrayConstruct1_* ArrayConstruct1 ArrayConstruct1.exe ArrayConstruct1.cpp ArrayConstruct1.makefile ArrayConstruct1.libs ArrayConstruct1.log output.log
 // 
 // Drmodelica: 7.2  Array Constructor (p. 210)
+// cflags: -d=-newInst
 //
 loadFile("ArrayConstruct1.mo");
 simulate(ArrayConstruct1,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

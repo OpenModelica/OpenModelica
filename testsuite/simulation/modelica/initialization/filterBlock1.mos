@@ -4,6 +4,7 @@
 // teardown_command: rm -rf initializationTests.filterBlock1* _initializationTests.filterBlock1* output.log
 // First order filter block
 // Drmodelica: 9.1 reinit (p. 296)
+// cflags: -d=-newInst
 //
 
 loadString("

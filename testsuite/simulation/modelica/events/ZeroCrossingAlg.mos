@@ -2,6 +2,7 @@
 // keywords: event, algorithm
 // status: correct
 // teardown_command: rm -rf eventTests.ZeroCrossingAlg* output.log
+// cflags: -d=-newInst
 
 loadString("
 package eventTests

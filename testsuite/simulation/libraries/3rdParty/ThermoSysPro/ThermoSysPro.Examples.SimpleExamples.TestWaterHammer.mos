@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.* ThermoSysPro.Examples.SimpleExamples.TestWaterHammer_* ThermoSysPro.Examples.SimpleExamples.TestWaterHammer ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.exe ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.cpp ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.makefile ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.libs ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.log ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.c ThermoSysPro.Examples.SimpleExamples.TestWaterHammer.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

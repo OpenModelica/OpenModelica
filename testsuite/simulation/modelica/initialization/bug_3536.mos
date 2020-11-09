@@ -1,6 +1,7 @@
 // name: bug_3536
 // keywords: initialization
 // status: correct
+// cflags: -d=-newInst
 
 
 loadString("

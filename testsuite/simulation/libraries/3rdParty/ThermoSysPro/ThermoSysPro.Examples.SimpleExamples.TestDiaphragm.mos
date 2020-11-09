@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.* ThermoSysPro.Examples.SimpleExamples.TestDiaphragm_* ThermoSysPro.Examples.SimpleExamples.TestDiaphragm ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.exe ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.cpp ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.makefile ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.libs ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.log ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.c ThermoSysPro.Examples.SimpleExamples.TestDiaphragm.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

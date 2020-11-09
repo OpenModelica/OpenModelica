@@ -1,6 +1,7 @@
 // name: PackageParameter
 // keywords: package
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests to make sure that a parameter cannot be used as modifier
 //
@@ -42,7 +43,7 @@ end PackageParameterModel;
 // Result:
 // Error processing file: PackageParameter.mo
 // Error: Variable n.i in package PackageParameterModel.n is not constant.
-// [flattening/modelica/packages/PackageParameter.mo:31:3-31:27:writable] Error: Variable n.i not found in scope PackageParameterModel.
+// [flattening/modelica/packages/PackageParameter.mo:32:3-32:27:writable] Error: Variable n.i not found in scope PackageParameterModel.
 // Error: Error occurred while flattening model PackageParameterModel
 //
 // # Error encountered! Exiting...

@@ -1,6 +1,7 @@
 // name: ConnectorIllegal2
 // keywords: connector
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests an illegal connector definition
 //
@@ -18,7 +19,7 @@ end ConnectorIllegal2;
 
 // Result:
 // Error processing file: ConnectorIllegal2.mo
-// [flattening/modelica/connectors/ConnectorIllegal2.mo:12:3-12:9:writable] Error: Algorithm section is not allowed in connector.
+// [flattening/modelica/connectors/ConnectorIllegal2.mo:13:3-13:9:writable] Error: Algorithm section is not allowed in connector.
 // Error: Error occurred while flattening model ConnectorIllegal2
 //
 // # Error encountered! Exiting...

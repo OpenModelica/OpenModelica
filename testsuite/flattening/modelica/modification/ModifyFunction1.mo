@@ -1,6 +1,7 @@
 // name:     ModifyFunction1
 // keywords: modification function
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests modification of functions by introducing a default binding for an input
 // parameter.

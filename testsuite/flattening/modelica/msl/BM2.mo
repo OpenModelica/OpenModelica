@@ -1,6 +1,7 @@
 // name:     BM2 -  Acos component
 // keywords: Acos
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Acos component.
 //

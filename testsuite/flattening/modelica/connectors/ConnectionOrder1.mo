@@ -1,7 +1,7 @@
 // name:     ConnectionOrder1
 // keywords: connect
 // status:   correct
-// cflags: +orderConnections=false
+// cflags: +orderConnections=false -d=-newInst
 //
 // Makes sure that the connection order is preserved when
 // +orderConnections=false is used.

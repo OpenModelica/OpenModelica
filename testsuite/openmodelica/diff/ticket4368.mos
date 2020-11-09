@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Based on https://trac.openmodelica.org/OpenModelica/ticket/4368
 
 diffModelicaFileListings("model test

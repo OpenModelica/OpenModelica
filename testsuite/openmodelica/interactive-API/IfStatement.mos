@@ -1,6 +1,7 @@
 // name:     If-statement
 // keywords: if
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Test the interactive IF-statement
 //

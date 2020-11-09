@@ -2,6 +2,7 @@
 // keywords: CoupledClutches FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml CoupledClutches.fmu CoupledClutches_me_FMU.mo CoupledClutches.lib* CoupledClutches.so CoupledClutches.dll CoupledClutches_*.c CoupledClutches_*.h CoupledClutches_*.o CoupledClutches_*.json
+// cflags: -d=-newInst
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
 loadModel(Modelica); getErrorString();

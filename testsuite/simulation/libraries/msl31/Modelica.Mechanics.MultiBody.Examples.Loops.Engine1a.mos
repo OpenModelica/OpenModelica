@@ -1,6 +1,7 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Loops.Engine1a
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

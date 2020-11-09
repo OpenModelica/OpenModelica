@@ -1,6 +1,7 @@
 // name:     Modelica.Electrical.QuasiStationary.SinglePhase.Examples.SeriesResonance
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

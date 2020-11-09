@@ -1,6 +1,7 @@
 // name:     Modification10
 // keywords: modification
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 

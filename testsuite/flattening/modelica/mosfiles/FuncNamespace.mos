@@ -1,6 +1,7 @@
 // name:     FuncNamespace
 // keywords: function, namespace, dynload
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests so that functions in different namespaces but with the same name
 // get mixed.

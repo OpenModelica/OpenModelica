@@ -1,6 +1,7 @@
 // name:     Summation
 // keywords: algorithm, array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Drmodelica:
 //

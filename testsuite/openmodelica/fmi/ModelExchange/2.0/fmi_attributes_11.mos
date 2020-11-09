@@ -2,6 +2,7 @@
 // keywords: FMI 2.0 export
 // status: correct
 // teardown_command: rm -rf fmi_attributes_11.fmu fmi_attributes_11.log fmi_attributes_11.xml fmi_attributes_11_tmp.xml fmi_attributes_11.fmutmp/
+// cflags: -d=-newInst
 
 loadString("
 model fmi_attributes_11

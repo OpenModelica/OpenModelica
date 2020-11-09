@@ -1,6 +1,7 @@
 // name:     SmallLinsys
 // keywords:
 // status:   correct
+// cflags: -d=-newInst
 //
 
 model LinSys

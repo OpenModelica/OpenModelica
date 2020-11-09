@@ -1,6 +1,7 @@
 // name: ListExpressions
 // keywords: list expression #2607
 // status: correct
+// cflags: -d=-newInst
 // 
 // Tests dumping of various expression with list, to make sure that parentheses
 // are correctly used.

@@ -1,5 +1,6 @@
 // name: RML To MetaModelica Translator
 // status: correct
+// cflags: -d=-newInst
 OpenModelica.Scripting.setCFlags("-g " + getCFlags());
 getErrorString();
 files := {
@@ -68,4 +69,4 @@ getErrorString();
   /* 02b_exp2 Exercise */
   //{Main.main({"./rmltests/exp2/" + file,"Modelica"}) for file in {"exp2.rml"}};
   
-//getErrorString(); 
+//getErrorString();

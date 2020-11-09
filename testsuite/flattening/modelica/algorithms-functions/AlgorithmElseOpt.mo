@@ -1,5 +1,6 @@
 // name: AlgorithmElseOpt
 // status: correct
+// cflags: -d=-newInst
 
 class AlgorithmElseOpt
   function f

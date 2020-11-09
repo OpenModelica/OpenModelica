@@ -1,6 +1,6 @@
 // name:     testExternalObject
 // keywords: external object
-// cflags:   +i=ExtObjectTest.Ex
+// cflags:   +i=ExtObjectTest.Ex -d=-newInst
 // status:   correct
 //
 // description: External object in extended class

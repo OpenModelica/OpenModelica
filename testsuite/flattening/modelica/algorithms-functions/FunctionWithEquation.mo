@@ -1,5 +1,6 @@
 // name: FunctionWithEquation
 // status: incorrect
+// cflags: -d=-newInst
 
 model FunctionWithEquation
 
@@ -17,7 +18,7 @@ end FunctionWithEquation;
 
 // Result:
 // Error processing file: FunctionWithEquation.mo
-// [flattening/modelica/algorithms-functions/FunctionWithEquation.mo:10:3-10:48:writable] Error: Equations are not allowed in function.
+// [flattening/modelica/algorithms-functions/FunctionWithEquation.mo:11:3-11:48:writable] Error: Equations are not allowed in function.
 // Error: Error occurred while flattening model FunctionWithEquation
 //
 // # Error encountered! Exiting...

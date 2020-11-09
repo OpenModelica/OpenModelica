@@ -1,6 +1,7 @@
 // name: Rem
 // keywords: rem
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in rem function
 //

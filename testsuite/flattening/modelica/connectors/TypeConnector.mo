@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // See ticket:4471
 
 model TypeConnector

@@ -5,6 +5,7 @@
 // <insert description here>
 //
 // Drmodelica: 7.2  Array Constructor (p. 210)
+// cflags: -d=-newInst
 //
 class RangeVector
   Real v1[5] = 2.7 : 6.8; // v1 is {2.7, 3.7, 4.7, 5.7, 6.7}

@@ -1,6 +1,7 @@
 // name: problem12
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem12* output.log
+// cflags: -d=-newInst
 
 loadFile("nlsTestPackage.mo"); getErrorString();
 

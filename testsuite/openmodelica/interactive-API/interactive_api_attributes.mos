@@ -1,6 +1,7 @@
 // name: API-attributes
 // keywords: Graphical API, component attributes
 // status: correct
+// cflags: -d=-newInst
 // 
 //  Subset of the Graphical API for setting component attributes
 //

@@ -1,6 +1,7 @@
 // name:     Modelica.Electrical.Spice3.Examples.Graetz
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

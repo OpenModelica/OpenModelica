@@ -1,6 +1,7 @@
 // name: problem6-irksco
 // status: correct
 // teardown_command: rm -f testSolver.problem6* output.log
+// cflags: -d=-newInst
 
 loadFile("./testSolverPackage.mo");
 getErrorString();

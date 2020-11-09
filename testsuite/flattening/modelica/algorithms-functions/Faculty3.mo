@@ -1,6 +1,7 @@
 // name:     Faculty3
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 //
 // Definition of faculty using a while loop. The while loop can not be
 // unrolled.

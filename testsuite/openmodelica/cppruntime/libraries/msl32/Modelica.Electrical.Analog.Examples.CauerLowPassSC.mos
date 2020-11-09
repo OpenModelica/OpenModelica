@@ -2,6 +2,7 @@
 // teardown_command: rm -f Modelica.Electrical.Analog.Examples.CauerLowPassSC_*.mat
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 // cflags:
 //
 // Simulation Results 

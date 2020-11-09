@@ -1,5 +1,6 @@
 // name: testSensWorldScenario1
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("Scenario_1Total.mo");
 getErrorString();

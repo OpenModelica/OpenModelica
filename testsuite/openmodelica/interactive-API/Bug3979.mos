@@ -1,6 +1,7 @@
 // name:     Bug3979.mos [BUG #3979]
 // keywords: check that we don't die on import A.B; in package A!
 // status:   correct
+// cflags: -d=-newInst
 // 
 
 loadFile("Bug3979.mo"); getErrorString();

@@ -1,6 +1,7 @@
 // name:     CatFunc
 // keywords: cat concatenation function #2681
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the use of cat in a function where the dimensions
 // are not known.

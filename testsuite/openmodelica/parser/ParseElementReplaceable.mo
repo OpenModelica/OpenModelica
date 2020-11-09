@@ -1,5 +1,6 @@
 // name: ParseElementReplaceable
 // status: correct
+// cflags: -d=-newInst
 //
 // This syntax is allowed by the grammar; the full MSL3.1 does not test it
 //

@@ -2,6 +2,7 @@
 // keywords: Simulation
 // status:   correct
 // teardown_command: rm -f FuncCrossTest* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate models and read in data.
 //

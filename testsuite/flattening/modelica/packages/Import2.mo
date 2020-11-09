@@ -1,6 +1,7 @@
 // name:     Import2
 // keywords: import
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Import is not inherited through extends.
 //
@@ -43,7 +44,7 @@ class Import2
 end Import2;
 // Result:
 // Error processing file: Import2.mo
-// [flattening/modelica/packages/Import2.mo:39:3-39:6:writable] Error: Class C not found in scope Import2.
+// [flattening/modelica/packages/Import2.mo:40:3-40:6:writable] Error: Class C not found in scope Import2.
 // Error: Error occurred while flattening model Import2
 //
 // # Error encountered! Exiting...

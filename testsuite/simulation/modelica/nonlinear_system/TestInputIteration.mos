@@ -1,5 +1,6 @@
 // name: TestInputIteration
 // status: correct
+// cflags: -d=-newInst
 //
 // Ticket 4046, 4446
 //

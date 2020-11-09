@@ -2,6 +2,7 @@
 // keywords: xml-file
 // status: correct
 // teardown_command: rm -rf testModel* output.log testModel_info.json.filtered
+// cflags: -d=-newInst
 //
 //
 // checks for correct order of equations in *_info.json file,

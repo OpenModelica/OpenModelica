@@ -2,6 +2,7 @@
 // keywords: events, emit, results, dassl
 // status: correct
 // teardown_command: rm -rf testModel* output.log
+// cflags: -d=-newInst
 //
 // Event handling
 //

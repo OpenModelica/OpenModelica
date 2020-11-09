@@ -1,6 +1,7 @@
 // name: BooleanLiterals
 // keywords: boolean
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests Boolean literals, true and false
 //

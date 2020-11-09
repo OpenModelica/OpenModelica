@@ -2,6 +2,7 @@
 // keywords: removeSimpleEquations. PowerSystems
 // status: correct
 // teardown_command: rm -rf Transformer_total_*  Transformer_total.exe Transformer_total.cpp Transformer_total.makefile Transformer_total.libs Transformer_total.log output.log
+// cflags: -d=-newInst
 // 
 //
 loadFile("Transformer.mo"); getErrorString();

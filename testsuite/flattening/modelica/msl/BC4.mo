@@ -1,6 +1,7 @@
 // name:     BC4 - Integrator component
 // keywords: Integrator
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Integrator component.
 //

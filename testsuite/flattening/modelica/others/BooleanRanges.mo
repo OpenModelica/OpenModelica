@@ -1,6 +1,7 @@
 // name:     BooleanRanges
 // keywords: boolean range
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests boolean ranges.
 //

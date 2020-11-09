@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.SampleSignalGenerator
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.SampleSignalGenerator.* DrModelicaForTesting.SampleSignalGenerator_* DrModelicaForTesting.SampleSignalGenerator DrModelicaForTesting.SampleSignalGenerator.exe DrModelicaForTesting.SampleSignalGenerator.cpp DrModelicaForTesting.SampleSignalGenerator.makefile DrModelicaForTesting.SampleSignalGenerator.libs DrModelicaForTesting.SampleSignalGenerator.log DrModelicaForTesting.SampleSignalGenerator.c DrModelicaForTesting.SampleSignalGenerator.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

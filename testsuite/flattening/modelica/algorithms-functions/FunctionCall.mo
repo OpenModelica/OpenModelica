@@ -1,6 +1,7 @@
 // name: FunctionCall
 // keywords: function
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests function calls
 //

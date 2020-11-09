@@ -5,6 +5,7 @@
 // omc debug dump: +d=showEquationSource
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=showEquationSource
 loadString("
 model testShowEquationSource

@@ -1,6 +1,7 @@
 // name: ThermoPower.Test.DistributedParameterComponents.TestFlow1D2phC
 // keywords: over-determined initialization
 // status: correct
+// cflags: -d=-newInst
 
 // Test5
 loadModel(ThermoPower); getErrorString();

@@ -2,6 +2,7 @@
 // keywords: boolean,array
 // status: correct
 // teardown_command: rm -rf BooleanArray_* BooleanArray BooleanArray.exe BooleanArray.cpp BooleanArray.makefile BooleanArray.libs BooleanArray.log output.log
+// cflags: -d=-newInst
 //
 // Boolean array handling, fill
 //

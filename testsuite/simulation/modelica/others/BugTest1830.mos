@@ -2,6 +2,7 @@
 // keywords: algorithms, reinit
 // status:   correct
 // teardown_command: rm -rf try_* try try.exe try.c _try.h try.log try.libs try.makefile output.log
+// cflags: -d=-newInst
 // 
 // tests reported Bug 1830
 // 

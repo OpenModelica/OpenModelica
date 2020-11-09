@@ -1,6 +1,6 @@
 // name: InStreamFlowThreshold
 // keywords: stream instream connector outside
-// cflags: --flowThreshold=2
+// cflags: --flowThreshold=2 -d=-newInst
 // status: correct
 //
 // Checks that the --flowThreshold flag works.

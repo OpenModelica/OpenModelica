@@ -1,6 +1,7 @@
 // name: Bug4248.mos
 // keywords:
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that the simulation works correctly after a call to an API function
 //

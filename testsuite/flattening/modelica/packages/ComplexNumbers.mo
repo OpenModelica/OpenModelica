@@ -1,6 +1,7 @@
 // name:     ComplexNumbers
 // keywords: package, functions
 // status:   correct
+// cflags: -d=-newInst
 //
 // defines and uses a package
 //

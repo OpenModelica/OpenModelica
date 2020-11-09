@@ -1,6 +1,7 @@
 // name:     Cross
 // keywords: equation, vector
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 

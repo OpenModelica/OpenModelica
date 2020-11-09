@@ -9,6 +9,7 @@
 // type Resistor to the temperature dependent type TempResistor.
 //
 // Drmodelica: 4.4 Parameterized Generic Classes (p. 133)
+// cflags: -d=-newInst
 //
 
   type ElectricPotential = Real (final quantity="ElectricPotential", final unit

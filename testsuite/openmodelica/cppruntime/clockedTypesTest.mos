@@ -2,6 +2,7 @@
 // keywords: synchronous clocked equations types
 // status: correct
 // teardown_command: rm -f *ClockedTypes*
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

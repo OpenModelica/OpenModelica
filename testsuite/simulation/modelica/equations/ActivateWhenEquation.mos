@@ -4,6 +4,7 @@
 // teardown_command: rm -rf Activate_* Activate.exe Activate Activate.c _Activate.h Activate.makefile Activate.libs Activate.log output.log
 // 
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 //
 
 loadFile("ActivateWhenEquation.mo"); getErrorString();

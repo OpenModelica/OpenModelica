@@ -1,6 +1,7 @@
 // name:     Redeclare5
 // keywords: redeclare, bug #36
 // status:   correct
+// cflags: -d=-newInst
 //
 model B
   parameter Real b=1.0;

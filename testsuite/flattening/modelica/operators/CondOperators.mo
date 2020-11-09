@@ -1,6 +1,7 @@
 // name: CondOperators
 // keywords: conditional operators, boolean
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests conditional operators
 //

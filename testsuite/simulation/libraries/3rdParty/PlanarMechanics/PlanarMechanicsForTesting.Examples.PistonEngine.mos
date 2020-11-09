@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.PistonEngine.* PlanarMechanicsForTesting.Examples.PistonEngine_i* PlanarMechanicsForTesting.Examples.PistonEngine_d* PlanarMechanicsForTesting.Examples.PistonEngine_r* PlanarMechanicsForTesting.Examples.PistonEngine_f* PlanarMechanicsForTesting.Examples.PistonEngine PlanarMechanicsForTesting.Examples.PistonEngine.exe PlanarMechanicsForTesting.Examples.PistonEngine.cpp PlanarMechanicsForTesting.Examples.PistonEngine.makefile PlanarMechanicsForTesting.Examples.PistonEngine.libs PlanarMechanicsForTesting.Examples.PistonEngine.log PlanarMechanicsForTesting.Examples.PistonEngine.c PlanarMechanicsForTesting.Examples.PistonEngine.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

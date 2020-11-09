@@ -1,6 +1,7 @@
 // name:     Lookup4
 // keywords: scoping
 // status:   correct
+// cflags: -d=-newInst
 //
 // Constants can be referred to using names of previously defined
 // classes.

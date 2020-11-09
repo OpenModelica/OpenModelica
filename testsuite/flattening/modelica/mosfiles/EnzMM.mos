@@ -1,6 +1,7 @@
 // name:     EnzMM
 // keywords: biochem, lookup
 // status:   correct
+// cflags: -d=-newInst
 //
 // BioChem example
 // 

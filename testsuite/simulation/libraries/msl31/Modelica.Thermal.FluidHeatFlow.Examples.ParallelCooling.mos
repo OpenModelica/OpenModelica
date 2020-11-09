@@ -1,6 +1,7 @@
 // name:     Modelica.Thermal.FluidHeatFlow.Examples.ParallelCooling
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

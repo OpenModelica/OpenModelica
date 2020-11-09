@@ -5,6 +5,7 @@
 // 
 //  <insert description here>
 // Drmodelica: 2.2  Declaring Instances of Classes (p. 26)  
+// cflags: -d=-newInst
 // 
 loadFile("MyPointsInst2.mo");
 simulate(MyPointsInst2,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

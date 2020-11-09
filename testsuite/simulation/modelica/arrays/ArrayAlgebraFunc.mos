@@ -4,6 +4,7 @@
 // 
 //  MORE WORK HAS TO BE DONE ON THIS FILE!
 // Drmodelica: 7.7 Built-in Functions (p. 225)
+// cflags: -d=-newInst
 //
 loadModel(Modelica);
 loadFile("ArrayAlgebraFunc.mo");

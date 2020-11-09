@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.* ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter_* ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.exe ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.cpp ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.makefile ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.libs ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.log ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.c ThermoSysPro.Examples.SimpleExamples.TestSteamExtractionSplitter.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

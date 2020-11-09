@@ -4,6 +4,7 @@
 // 
 // 
 // Drmodelica: 9.2 Multiple Results (p. 302)
+// cflags: -d=-newInst
 // 
 
 loadFile("EquationCall.mo");

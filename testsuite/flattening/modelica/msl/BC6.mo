@@ -1,6 +1,7 @@
 // name:     BC6 - LimPID component
 // keywords: LimPID
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the LimPID component.
 //

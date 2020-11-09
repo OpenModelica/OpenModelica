@@ -1,6 +1,7 @@
 // name:     OverrideFinalTest
 // keywords: setting, final, parameter
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests for bug: http://openmodelica.ida.liu.se:8080/cb/issue/1155?navigation=true
 //

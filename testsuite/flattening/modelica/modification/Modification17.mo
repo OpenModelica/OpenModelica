@@ -1,6 +1,7 @@
 // name:     Modification17
 // keywords: modification
 // status:   correct
+// cflags: -d=-newInst
 //
 
 package Modelica

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ArrayReduce
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ArrayReduce.* DrModelicaForTesting.ArrayReduce_* DrModelicaForTesting.ArrayReduce DrModelicaForTesting.ArrayReduce.exe DrModelicaForTesting.ArrayReduce.cpp DrModelicaForTesting.ArrayReduce.makefile DrModelicaForTesting.ArrayReduce.libs DrModelicaForTesting.ArrayReduce.log DrModelicaForTesting.ArrayReduce.c DrModelicaForTesting.ArrayReduce.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

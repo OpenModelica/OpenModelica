@@ -1,5 +1,6 @@
 // name: ticket2336
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model ticket2336

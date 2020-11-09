@@ -1,6 +1,7 @@
 // name:     AccessFromOutside
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("AccessFromOutside.mo");

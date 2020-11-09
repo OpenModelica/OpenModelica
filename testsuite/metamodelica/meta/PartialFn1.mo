@@ -1,7 +1,7 @@
 // name:     PartialFn1
 // keywords: PartialFn
 // status:  correct
-// cflags: -g=MetaModelica -d=gen
+// cflags: -g=MetaModelica -d=gen -d=-newInst
 //
 // Using function pointers.
 //

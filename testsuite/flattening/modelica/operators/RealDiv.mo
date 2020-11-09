@@ -1,6 +1,7 @@
 // name: RealDiv
 // keywords: real, division
 // status: correct
+// cflags: -d=-newInst
 //
 // tests Real division
 //

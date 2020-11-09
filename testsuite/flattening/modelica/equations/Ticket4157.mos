@@ -1,6 +1,7 @@
 // name:     Ticket4157.mos [ticket:4157]
 // keywords: equation, complex
 // status:   correct
+// cflags: -d=-newInst
 //
 // Check some handling of compex equations
 //

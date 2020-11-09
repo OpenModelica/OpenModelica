@@ -2,6 +2,7 @@
 // keywords: array input const slice
 // status: correct
 // teardown_command: rm -f *ExternalArrayInput.Test*
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
 

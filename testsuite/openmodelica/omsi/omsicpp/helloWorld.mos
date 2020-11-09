@@ -2,6 +2,7 @@
 // keywords: omsi omsicpp fmu fmi
 // status: correct
 // teardown_command: rm -rf OMCpphelloWorldOMSI* helloWorldOMSI* helloWorldOMSI_res.mat helloWorldOMSI_result_diff.log modelDescription.xml
+// cflags: -d=-newInst
 //
 // Tests generating and simulating an OMSICPP FMU
 //

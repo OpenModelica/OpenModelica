@@ -2,6 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf BouncingBall_* BouncingBall.log BouncingBall.libs BouncingBall BouncingBall.exe BouncingBall.cpp BouncingBall.makefile output.log
+// cflags: -d=-newInst
 //
 // Event handling
 //

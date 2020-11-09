@@ -1,6 +1,7 @@
 // name:     ConnectorInheritance1.mo
 // keywords: connector, record, inheritance
 // status:   correct
+// cflags: -d=-newInst
 //
 // Connectors may inherit from records.
 //

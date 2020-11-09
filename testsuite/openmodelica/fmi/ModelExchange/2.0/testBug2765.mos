@@ -2,6 +2,7 @@
 // keywords: FMI 2.0 export
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml modelDescription.tmp.xml test_Bug2765* output.log testBug2765_tmp.xml testBug2765_tmp2.xml
+// cflags: -d=-newInst
 
 loadString("
 model test_Bug2765 \"Double Integrator Continuous-time\"

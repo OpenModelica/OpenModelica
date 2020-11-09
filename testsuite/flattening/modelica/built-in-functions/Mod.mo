@@ -1,6 +1,7 @@
 // name: Mod
 // keywords: mod
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in mod function
 //

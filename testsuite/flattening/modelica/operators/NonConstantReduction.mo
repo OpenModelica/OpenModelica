@@ -1,6 +1,7 @@
 // name:     NonConstantReduction
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests elaboration of non-constant reductions.
 //

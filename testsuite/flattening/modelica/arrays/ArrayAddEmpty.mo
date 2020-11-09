@@ -1,6 +1,7 @@
 // name:     ArrayAddEmpty
 // keywords: <insert keywords here>
 // status:   correct
+// cflags: -d=-newInst
 //
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 //

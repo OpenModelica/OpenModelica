@@ -1,6 +1,7 @@
 // name: EnumArray
 // keywords: enum array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests assignment of arrays indexed with enumerations.
 //

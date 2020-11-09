@@ -2,6 +2,7 @@
 // keywords: array equations, for loops
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml *ArrayEquationsTest*
+// cflags: -d=-newInst
 
 setCommandLineOptions("--std=3.3"); getErrorString();
 setCommandLineOptions("-d=newInst,-nfScalarize,disableFMIDependency"); getErrorString();

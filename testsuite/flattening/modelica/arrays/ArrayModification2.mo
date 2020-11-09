@@ -1,6 +1,7 @@
 // name:     ArrayModification2
 // keywords: array, modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Subscripted modifiers are not allowed.
 //
@@ -17,7 +18,7 @@ end ArrayModification2;
 // Error processing file: ArrayModification2.mo
 // Failed to parse file: ArrayModification2.mo!
 //
-// [flattening/modelica/arrays/ArrayModification2.mo:13:13-13:14:writable] Error: Subscripting modifiers is not allowed. Apply the modification on the whole identifier using an array-expression or an each-modifier.
+// [flattening/modelica/arrays/ArrayModification2.mo:14:13-14:14:writable] Error: Subscripting modifiers is not allowed. Apply the modification on the whole identifier using an array-expression or an each-modifier.
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

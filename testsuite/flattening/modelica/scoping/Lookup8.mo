@@ -1,6 +1,7 @@
 // name:     Lookup8
 // keywords: scoping
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // A component is not allowed to have the same name as its type specifier.
 //
@@ -17,7 +18,7 @@ end Test;
 
 // Result:
 // Error processing file: Lookup8.mo
-// [flattening/modelica/scoping/Lookup8.mo:15:3-15:18:writable] Error: Found a component with same name when looking for type Cytosol.
+// [flattening/modelica/scoping/Lookup8.mo:16:3-16:18:writable] Error: Found a component with same name when looking for type Cytosol.
 // Error: Error occurred while flattening model Test
 //
 // # Error encountered! Exiting...

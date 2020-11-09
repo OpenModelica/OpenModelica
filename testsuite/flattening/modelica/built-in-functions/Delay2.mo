@@ -1,6 +1,7 @@
 // name:     Delay2
 // keywords: builtin
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test flattening of the builtin function delay.
 // Expression value is cast into Real.

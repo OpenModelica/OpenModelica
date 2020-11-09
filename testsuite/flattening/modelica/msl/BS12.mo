@@ -1,6 +1,7 @@
 // name:     BS12 - Trapetzoid component
 // keywords: Trapetzoid
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Trapetzoid component.
 //
@@ -1298,9 +1299,9 @@ end BS12;
 //   assert(trapezoid1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = trapezoid1.outPort.signal[1];
 // end BS12;
-// [flattening/modelica/msl/BS12.mo:685:45-685:50:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS12.mo:687:44-687:49:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS12.mo:689:46-689:51:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS12.mo:691:45-691:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS12.mo:686:45-686:50:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS12.mo:688:44-688:49:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS12.mo:690:46-690:51:writable] Warning: Non-array modification '0' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS12.mo:692:45-692:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.* ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions_* ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.exe ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.cpp ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.makefile ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.libs ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.log ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.c ThermoSysPro.Examples.SimpleExamples.TestFlueGasesJunctions.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

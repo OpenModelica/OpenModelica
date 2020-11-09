@@ -1,6 +1,7 @@
 // name: BadVariabilityBug3150 [BUG: https://trac.openmodelica.org/OpenModelica/ticket/3150]
 // keywords: array
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Testing the array reduction constant-ness calculation
 //
@@ -23,7 +24,7 @@ end BadVariabilityBug3150;
 
 // Result:
 // Error processing file: BadVariabilityBug3150.mo
-// [flattening/modelica/arrays/BadVariabilityBug3150.mo:20:29-20:101:writable] Error: Component hexReg[2].initialize_p1 of variability CONST has binding false of higher variability PARAM.
+// [flattening/modelica/arrays/BadVariabilityBug3150.mo:21:29-21:101:writable] Error: Component hexReg[2].initialize_p1 of variability CONST has binding false of higher variability PARAM.
 // Error: Error occurred while flattening model BadVariabilityBug3150
 //
 // # Error encountered! Exiting...

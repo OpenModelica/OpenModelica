@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.WhenEquation
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.WhenEquation.* DrModelicaForTesting.WhenEquation_* DrModelicaForTesting.WhenEquation DrModelicaForTesting.WhenEquation.exe DrModelicaForTesting.WhenEquation.cpp DrModelicaForTesting.WhenEquation.makefile DrModelicaForTesting.WhenEquation.libs DrModelicaForTesting.WhenEquation.log DrModelicaForTesting.WhenEquation.c DrModelicaForTesting.WhenEquation.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

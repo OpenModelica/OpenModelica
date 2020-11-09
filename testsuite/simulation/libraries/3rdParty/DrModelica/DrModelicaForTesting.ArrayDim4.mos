@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ArrayDim4
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ArrayDim4.* DrModelicaForTesting.ArrayDim4_* DrModelicaForTesting.ArrayDim4 DrModelicaForTesting.ArrayDim4.exe DrModelicaForTesting.ArrayDim4.cpp DrModelicaForTesting.ArrayDim4.makefile DrModelicaForTesting.ArrayDim4.libs DrModelicaForTesting.ArrayDim4.log DrModelicaForTesting.ArrayDim4.c DrModelicaForTesting.ArrayDim4.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

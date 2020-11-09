@@ -2,6 +2,7 @@
 // keywords: linear system, iteration variable
 // status: correct
 // teardown_command: rm -rf linearSystemTests.Ticket2404* _linearSystemTests.Ticket2404* output.log
+// cflags: -d=-newInst
 //
 //  case for iteration variables with default zero start-attribute
 //

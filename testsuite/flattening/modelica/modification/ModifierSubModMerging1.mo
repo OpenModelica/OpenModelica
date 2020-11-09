@@ -1,6 +1,7 @@
 // name:     ModifierSubModMerging1
 // keywords: modification #2789
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that submodifiers are merged correctly.
 //

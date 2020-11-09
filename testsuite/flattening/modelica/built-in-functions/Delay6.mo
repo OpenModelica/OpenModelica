@@ -1,6 +1,7 @@
 // name:     Delay6
 // keywords: builtin
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test flattening of the builtin function delay.
 //

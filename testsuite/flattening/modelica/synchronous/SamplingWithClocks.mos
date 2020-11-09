@@ -1,6 +1,7 @@
 // name: SamplingWithClocks
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 //
 //  "Modelica by Example" by Michael M. Tiller
 //

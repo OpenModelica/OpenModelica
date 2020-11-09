@@ -1,6 +1,7 @@
 // name:     Scalar
 // keywords: array, scalar
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the scalar dimensionality conversion function.
 //

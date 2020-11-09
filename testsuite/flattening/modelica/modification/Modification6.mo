@@ -1,6 +1,7 @@
 // name:     Modification6
 // keywords: modification
 // status:   correct
+// cflags: -d=-newInst
 //
 // This file tests modification precedence.
 //

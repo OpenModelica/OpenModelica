@@ -1,6 +1,7 @@
 // name: StringBoolean
 // keywords: string
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests string conversion from boolean
 //

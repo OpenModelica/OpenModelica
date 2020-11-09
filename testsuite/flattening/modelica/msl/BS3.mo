@@ -1,6 +1,7 @@
 // name:     BS3 - ExpSine component
 // keywords: ExpSine
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the ExpSine component.
 //

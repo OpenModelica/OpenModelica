@@ -1,6 +1,7 @@
 // name:     WhenEquation
 // keywords: when
 // status:   correct
+// cflags: -d=-newInst
 //
 
 model WhenEquation

@@ -2,6 +2,7 @@
 // keywords: IntegerNetwork1 FMI-Export FMI-Import
 // status:   correct
 // teardown_command: rm -rf binaries sources modelDescription.xml IntegerNetwork1.fmu IntegerNetwork1_me_FMU.mo IntegerNetwork1.lib* IntegerNetwork1.so IntegerNetwork1.dll IntegerNetwork1_*.c IntegerNetwork1_*.h IntegerNetwork1_*.o IntegerNetwork1_*.json
+// cflags: -d=-newInst
 // Integer variables, Integer input variables, no continuous-time states, time events, state events
 
 loadModel(Modelica); getErrorString();

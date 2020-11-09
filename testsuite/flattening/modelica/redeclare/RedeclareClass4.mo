@@ -1,6 +1,7 @@
 // name:     RedeclareClass4
 // keywords: class, extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests redeclare in local class.
 //

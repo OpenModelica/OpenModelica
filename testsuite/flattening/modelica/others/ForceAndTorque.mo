@@ -4,6 +4,7 @@
 //
 //  Verify component array addressing
 //  adrpo: This tests for bug that generated things like:
+// cflags: -d=-newInst
 //            force.y[1] = forceAndTorque.force[1];
 //         instead of correct:
 //            force[1].y = forceAndTorque.force[1];

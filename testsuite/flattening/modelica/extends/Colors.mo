@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 4.1 Public Respectively Protected Elements (p. 117)
+// cflags: -d=-newInst
 //
 record ColorData "Superclass of Color"
   parameter Real red;

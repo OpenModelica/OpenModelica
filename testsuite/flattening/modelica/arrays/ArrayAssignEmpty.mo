@@ -1,6 +1,7 @@
 // name: ArrayAssignEmpty.mo [BUG: #1907, #2300]
 // keywords: Empty arrays used in algorithm
 // status:   correct
+// cflags: -d=-newInst
 // #1907
 
 model ArrayAssignEmpty

@@ -1,6 +1,7 @@
 // name:     CardinalityArray
 // keywords: cardinality #2585
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the cardinality operator when arrays are involved.
 //

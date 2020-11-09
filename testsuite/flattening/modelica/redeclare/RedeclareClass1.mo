@@ -1,6 +1,7 @@
 // name:     RedeclareClass2
 // keywords: redeclare class
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests simple redeclaration of inherited classes.
 //

@@ -6,6 +6,7 @@
 // by using a function call.
 //
 // david: whereever did you come up with this syntax? It is wrong
+// cflags: -d=-newInst
 //
 
 function fc

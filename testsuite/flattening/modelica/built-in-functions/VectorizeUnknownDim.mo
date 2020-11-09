@@ -1,5 +1,6 @@
 // name: VectorizeUnknownDim
 // status: correct
+// cflags: -d=-newInst
 
 model VectorizeUnknownDim
   function Foo

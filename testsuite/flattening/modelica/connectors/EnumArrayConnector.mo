@@ -1,6 +1,7 @@
 // name: EnumArrayConnector
 // keywords: connect enum array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that connectors containing arrays with enum dimensions work correctly.
 //

@@ -1,6 +1,7 @@
 // name:     DisturbedResistance1
 // keywords: modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // A parameter must not be time-varying.
 //
@@ -17,7 +18,7 @@ model DisturbedResistance1
 end DisturbedResistance1;
 // Result:
 // Error processing file: DisturbedResistance1.mo
-// [flattening/modelica/modification/DisturbedResistance1.mo:16:20-16:43:writable] Error: Component R of variability PARAM has binding 1.0 + 0.1 * sin(time) of higher variability VAR.
+// [flattening/modelica/modification/DisturbedResistance1.mo:17:20-17:43:writable] Error: Component R of variability PARAM has binding 1.0 + 0.1 * sin(time) of higher variability VAR.
 // Error: Error occurred while flattening model DisturbedResistance1
 //
 // # Error encountered! Exiting...

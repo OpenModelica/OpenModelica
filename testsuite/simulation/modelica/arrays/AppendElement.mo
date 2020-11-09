@@ -4,6 +4,7 @@
 //
 // //??Error - cat not yet implemented
 // Drmodelica: 7.5 Array Concatenation and Slice Operations (p. 219)
+// cflags: -d=-newInst
 //
 class AppendElement
   Real[1, 3] PA=[1, 2, 3];

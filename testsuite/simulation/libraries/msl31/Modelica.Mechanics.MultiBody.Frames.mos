@@ -1,5 +1,6 @@
 // name: Modelica.Mechanics.MultiBody.Frames
 // status: correct
+// cflags: -d=-newInst
 
 
 loadModel(Modelica,{"3.1"});

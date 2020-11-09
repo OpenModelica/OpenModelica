@@ -1,5 +1,6 @@
 //name: forceInlineComplexEq3
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("--postOptModules+=forceInlineFunctionInLoops --initOptModules+=forceInlineFunctionInLoops +d=backenddaeinfo,dumpLoops +inlineMethod=append");
 loadString("

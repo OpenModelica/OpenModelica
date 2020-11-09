@@ -1,6 +1,7 @@
 // name:     BS13 - IntegerConstant component
 // keywords: IntegerConstant
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the IntegerConstant component.
 //

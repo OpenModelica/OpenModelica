@@ -1,7 +1,7 @@
 // name:     FunctionEval11
 // keywords: function, ceval, bug1436
 // status:   correct
-// cflags: +d=nogen
+// cflags: +d=nogen -d=-newInst
 //
 // Tests constant evaluation of reductions where the iterator shadows a function
 // variable. See bug #1436: http://openmodelica.ida.liu.se:8080/cb/issue/1436.

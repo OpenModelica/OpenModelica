@@ -1,6 +1,7 @@
 // name: BlockResult
 // keywords: block output
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that block outputs are handled correctly.
 //

@@ -1,6 +1,7 @@
 // name:     Real2Integer3
 // keywords: type
 // status:   correct
+// cflags: -d=-newInst
 //
 // No implicit conversion from Real to Integer. Division via 'div'
 // gives integer output with integer input.

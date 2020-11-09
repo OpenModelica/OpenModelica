@@ -4,6 +4,7 @@
 //
 // Equation handling
 // Drmodelica: 2.1 Hello World (p. 19)
+// cflags: -d=-newInst
 //
 
 model HelloWorld

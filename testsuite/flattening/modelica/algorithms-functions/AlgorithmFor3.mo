@@ -1,6 +1,7 @@
 // name:     AlgorithmFor3
 // keywords: algorithm,array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test for loops in algorithms. The size is a parameter.
 //

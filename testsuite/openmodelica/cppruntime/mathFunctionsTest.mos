@@ -2,6 +2,7 @@
 // keywords: built-in math functions
 // status: correct
 // teardown_command: rm -f *MathFunctions.Test*
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

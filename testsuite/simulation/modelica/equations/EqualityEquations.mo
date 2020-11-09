@@ -4,6 +4,7 @@
 //
 // Illegal equations
 // Drmodelica: 8.2 Simple Equality Equations (p. 240)
+// cflags: -d=-newInst
 //
 function f
   input Real a;

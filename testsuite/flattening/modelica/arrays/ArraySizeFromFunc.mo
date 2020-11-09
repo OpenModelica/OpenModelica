@@ -1,6 +1,7 @@
 // name: ArraySizeFromFunc
 // keywords: array, wholedim, function
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests determination of array size from function call with parameter as
 // argument.

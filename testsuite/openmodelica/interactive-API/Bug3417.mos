@@ -1,5 +1,6 @@
 // name: Bug3417.mos [BUG: #3417]
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();
 getClassNames(Modelica.Electrical); getErrorString();

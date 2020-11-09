@@ -1,6 +1,7 @@
 // name:     Constant10
 // keywords: constant, package
 // status:   correct
+// cflags: -d=-newInst
 //
 // Constants in packages can lead to infinite recursion in lookup.
 // In example below, the package A would be instantiated over and over again unless this is caught by

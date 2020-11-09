@@ -1,6 +1,7 @@
 // name: OperatorSimple
 // keywords: operator
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple operator overloading
 //

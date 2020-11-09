@@ -1,6 +1,7 @@
 // name:     BM5 -  Asin component
 // keywords: Asin
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Asin component.
 //

@@ -1,6 +1,7 @@
 // name: tearingdump.mos
 // keywords: omc debug dump
 // status: correct
+// cflags: -d=-newInst
 // 
 // omc debug dump: +d=tearingdump
 // 

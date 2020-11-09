@@ -1,6 +1,7 @@
 // name:     TupleSingleAssign
 // keywords: tuple single assign statement equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that tuple assignment to a single variable works correctly in both
 // equations and algorithm sections.

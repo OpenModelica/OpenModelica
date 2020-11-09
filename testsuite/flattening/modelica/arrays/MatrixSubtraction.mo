@@ -1,6 +1,7 @@
 // name:     MatrixSubtraction
 // keywords: matrix subtraction simplify
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests simplification of matrix subtraction.
 //

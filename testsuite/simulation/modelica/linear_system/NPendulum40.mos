@@ -1,6 +1,7 @@
 // name:      NPendulum40
 // keywords:  arrays
 // status:    correct
+// cflags: -d=-newInst
 //
 
 loadFile("NPendulum.mo");

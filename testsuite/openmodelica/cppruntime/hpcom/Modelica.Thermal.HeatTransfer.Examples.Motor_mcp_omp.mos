@@ -1,6 +1,7 @@
 // name:     Modelica.Thermal.HeatTransfer.Examples.Motor_mcp_OMP
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

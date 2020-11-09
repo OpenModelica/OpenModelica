@@ -2,6 +2,7 @@
 // keywords: events, DOPRI5
 // status:   correct
 //teardown_command: rm -rf BouncingBall_* BouncingBall.log BouncingBall.libs BouncingBall BouncingBall.exe BouncingBall.cpp BouncingBall.makefile BouncingBallExamples_* BouncingBallExamples.log BouncingBallExamples.libs BouncingBallExamples BouncingBallExamples.exe BouncingBallExamples.cpp BouncingBallExamples.makefile output.log
+// cflags: -d=-newInst
 //
 // Event handling
 //

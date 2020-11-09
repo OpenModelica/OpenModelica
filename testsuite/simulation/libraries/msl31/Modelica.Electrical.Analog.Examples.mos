@@ -1,6 +1,7 @@
 //name:        Simulate Modelica.Electrical.Analog.Examples [version 3.1]
 //keyword:     instantiating/check/simulate MSL 3.1 Modelica.Electrical.Analog.Examples
 //status:      correct
+// cflags: -d=-newInst
 //
 // instantiate/check/simulate model example
 //

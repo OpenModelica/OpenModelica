@@ -1,6 +1,7 @@
 // name: ModifierExtends
 // keywords: modifier
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests modification of extends clauses
 //

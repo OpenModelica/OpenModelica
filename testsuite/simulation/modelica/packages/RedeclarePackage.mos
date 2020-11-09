@@ -2,6 +2,7 @@
 // keywords: correct parameters in the .mat file
 // status:   correct
 // teardown_command: rm -rf Test.exe Test Test_*
+// cflags: -d=-newInst
 // Test correct writing of parameters to the mat file.
 // Fix for bug #1652: https://openmodelica.org:8443/cb/issue/1652
 // 

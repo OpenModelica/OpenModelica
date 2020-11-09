@@ -1,6 +1,7 @@
 // name: bug_3527
 // keywords: nonlinear system solver inline function
 // status: correct
+// cflags: -d=-newInst
 // cflags:
 
 setDebugFlags("backenddaeinfo"); getErrorString();

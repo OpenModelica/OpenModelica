@@ -1,6 +1,7 @@
 // name:     Record Modifications
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 
 package HardMagnetic
 public

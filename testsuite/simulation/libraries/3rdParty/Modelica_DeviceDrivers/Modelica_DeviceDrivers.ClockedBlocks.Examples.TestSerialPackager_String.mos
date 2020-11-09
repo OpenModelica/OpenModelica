@@ -1,6 +1,7 @@
 // name: Modelica_DeviceDrivers.ClockedBlocks.Examples.TestSerialPackager_String
 // keywords: simulation Modelica_DeviceDrivers examples
 // status: omc failure
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica_DeviceDrivers

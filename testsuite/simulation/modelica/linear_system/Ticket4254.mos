@@ -1,6 +1,7 @@
 // name:      Ticket4254
 // keywords:  parameter
 // status:    correct
+// cflags: -d=-newInst
 
 loadString("
 model foo

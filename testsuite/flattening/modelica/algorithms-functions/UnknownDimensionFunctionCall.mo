@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 package Modelica_Noise
 package Math

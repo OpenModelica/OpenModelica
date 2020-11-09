@@ -1,6 +1,7 @@
 // name: FiniteEscapeTime
 // status: correct
 // teardown_command: rm -f SolverFailure.FiniteEscapeTime* output.log
+// cflags: -d=-newInst
 
 loadModel(Modelica);
 loadFile("DebugPackage.mo"); getErrorString();

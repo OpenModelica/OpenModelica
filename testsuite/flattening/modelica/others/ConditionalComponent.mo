@@ -1,6 +1,7 @@
 // name:     ConditionalComponent
 // keywords: conditional component
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is a simple test conditional components.
 //

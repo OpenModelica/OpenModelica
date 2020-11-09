@@ -1,6 +1,7 @@
 // name: StringInteger
 // keywords: string
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests string conversion from Integer
 //

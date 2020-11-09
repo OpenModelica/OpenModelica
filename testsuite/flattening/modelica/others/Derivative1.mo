@@ -1,6 +1,7 @@
 // name:     Derivative1
 // keywords: functions,index reduction
 // status:   correct
+// cflags: -d=-newInst
 //
 // This demonstrates the use of the derivative annotation
 // in order to allow index reduction to work.

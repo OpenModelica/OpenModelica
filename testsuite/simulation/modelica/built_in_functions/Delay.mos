@@ -2,6 +2,7 @@
 // keywords: builtin delay
 // status: correct
 // teardown_command: rm -rf Delay_* Delay Delay.exe Delay.cpp Delay.makefile Delay.libs Delay.log output.log
+// cflags: -d=-newInst
 // 
 // Test builtin function delay
 // Expected values are sin(2.5)-1, cos(5), sin(4.99) and sin(3)

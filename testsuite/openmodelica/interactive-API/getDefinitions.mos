@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Test export to the Java classes
 
 setCommandLineOptions("-g=MetaModelica");

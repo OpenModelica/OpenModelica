@@ -2,6 +2,7 @@
 // keywords: time
 // status: correct
 // teardown_command: rm -rf Time Time.exe Time.cpp Time_functions.cpp Time_functions.h Time_init.xml Time.libs Time.log Time.makefile Time_records.c Time_res.mat output.log
+// cflags: -d=-newInst
 //
 // Testing the built-in variable time
 //

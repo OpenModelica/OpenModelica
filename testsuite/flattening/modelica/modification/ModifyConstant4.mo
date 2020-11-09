@@ -1,6 +1,7 @@
 // name:     ModifyConstant4
 // keywords: scoping,modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Only members may be modified.
 //
@@ -23,7 +24,7 @@ class ModifyConstant4
 end ModifyConstant4;
 // Result:
 // Error processing file: ModifyConstant4.mo
-// [flattening/modelica/modification/ModifyConstant4.mo:13:3-13:17:writable] Error: Variable b.a: In modifier (A(c = 2.0), class or component c), class or component A not found in <A$b$a>.
+// [flattening/modelica/modification/ModifyConstant4.mo:14:3-14:17:writable] Error: Variable b.a: In modifier (A(c = 2.0), class or component c), class or component A not found in <A$b$a>.
 // Error: Error occurred while flattening model ModifyConstant4
 //
 // # Error encountered! Exiting...

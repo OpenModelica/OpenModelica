@@ -1,6 +1,7 @@
 // name: FrameTest
 // status: correct
 // teardown_command: rm -f ModelFrameTest* output.log
+// cflags: -d=-newInst
 
 loadFile("FrameTest.mo");
 setCommandLineOptions("+v=1");

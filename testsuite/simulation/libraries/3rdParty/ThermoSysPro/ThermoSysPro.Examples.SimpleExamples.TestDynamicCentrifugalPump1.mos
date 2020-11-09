@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.* ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1_* ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1 ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.log ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.c ThermoSysPro.Examples.SimpleExamples.TestDynamicCentrifugalPump1.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -4,6 +4,7 @@
 // teardown_command: rm -rf TestMe_* TestMe TestMe.exe TestMe.cpp TestMe.makefile TestMe.libs TestMe.log output.log
 // 
 // Drmodelica: 8.2 Conditional Equations with if-Equations (p. 245)
+// cflags: -d=-newInst
 // 
 loadFile("IfEquation.mo");
 simulate(TestMe,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

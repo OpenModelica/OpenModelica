@@ -1,6 +1,7 @@
 // name:     Lookup11
 // keywords: scoping, fully qualified, cref, #2738
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that the elaboration respects the full qualification on crefs.
 //

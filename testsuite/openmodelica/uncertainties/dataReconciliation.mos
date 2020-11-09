@@ -1,6 +1,7 @@
 // name:     dataReconciliation
 // keywords: uncertainty
 // status:   correct
+// cflags: -d=-newInst
 // A set of simple examples to test the uncertainties algorithm.
 //
 

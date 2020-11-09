@@ -1,6 +1,7 @@
 // name: TicksInStateTest
 // keywords: state machines features
 // status: correct
+// cflags: -d=-newInst
 
 model TicksInStateTest
   output Integer t;

@@ -2,6 +2,7 @@
 // keywords: Simulate, readSimulationData
 // status:   correct
 // teardown_command: rm -f TestModels.BlockModels* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate systems of blocks 
 //

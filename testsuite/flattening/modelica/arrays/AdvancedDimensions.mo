@@ -1,6 +1,7 @@
 // name:     AdvancedDimensions.mo
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // make sure we handle weird dimensions in functions/models/arrays
 //

@@ -1,6 +1,7 @@
 // name: InheritancePublic
 // keywords: inheritance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests public inheritance
 //

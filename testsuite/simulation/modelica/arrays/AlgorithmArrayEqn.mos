@@ -2,6 +2,7 @@
 // keywords: array slice
 // status: correct
 // teardown_command: rm -rf AlgorithmArrayEqn_*  AlgorithmArrayEqn AlgorithmArrayEqn.exe AlgorithmArrayEqn.cpp AlgorithmArrayEqn.makefile AlgorithmArrayEqn.libs AlgorithmArrayEqn.log output.log
+// cflags: -d=-newInst
 // 
 // Tests assignment of one slice to another slice.
 // 

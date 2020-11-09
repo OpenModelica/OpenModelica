@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.AlgorithmSection
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.AlgorithmSection.* DrModelicaForTesting.AlgorithmSection_* DrModelicaForTesting.AlgorithmSection DrModelicaForTesting.AlgorithmSection.exe DrModelicaForTesting.AlgorithmSection.cpp DrModelicaForTesting.AlgorithmSection.makefile DrModelicaForTesting.AlgorithmSection.libs DrModelicaForTesting.AlgorithmSection.log DrModelicaForTesting.AlgorithmSection.c DrModelicaForTesting.AlgorithmSection.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -1,6 +1,7 @@
 // name:     VectorDimension
 // keywords: vector dimension
 // status:   correct
+// cflags: -d=-newInst
 //
 // This tests checks dimension validation in vector.
 //

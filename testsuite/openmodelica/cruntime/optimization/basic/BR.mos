@@ -3,6 +3,7 @@
 
 // optimal control example
 // tast: find temperature profile  0 <= u(t) <= 5, so x2(1) is maximized.
+// cflags: -d=-newInst
 // see: Biegler: Nonlinear Programming Concepts, Algorithms and
 //               Applications to Chemical Processes, MOS-SIAM 2010
 

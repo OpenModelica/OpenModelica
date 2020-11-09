@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Conditional Equations with if-Equations (p. 245)
+// cflags: -d=-newInst
 //
 
 

@@ -1,6 +1,7 @@
 // name: DiscreteDeclRecord
 // keywords: discrete
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the discrete prefix on a record type
 //

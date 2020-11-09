@@ -1,6 +1,7 @@
 // name: OperatorComponents
 // keywords: operator
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests operator overloading, operators can only contain function declarations
 //

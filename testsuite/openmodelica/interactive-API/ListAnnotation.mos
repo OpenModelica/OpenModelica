@@ -1,6 +1,7 @@
 // name: ListAnnotation
 // keywords: list annotation #2570
 // status: correct
+// cflags: -d=-newInst
 // 
 // Tests dumping of annotations with list.
 //

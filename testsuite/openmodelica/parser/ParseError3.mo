@@ -1,5 +1,6 @@
 // name: ParseError3
 // status: incorrect
+// cflags: -d=-newInst
 //
 
 model ParseError3
@@ -13,7 +14,7 @@ end ParseError3;
 // Error processing file: ParseError3.mo
 // Failed to parse file: ParseError3.mo!
 //
-// [openmodelica/parser/ParseError3.mo:8:5-8:10:writable] Error: Parse error: A singleton expression in an equation section is required to be a function call
+// [openmodelica/parser/ParseError3.mo:9:5-9:10:writable] Error: Parse error: A singleton expression in an equation section is required to be a function call
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

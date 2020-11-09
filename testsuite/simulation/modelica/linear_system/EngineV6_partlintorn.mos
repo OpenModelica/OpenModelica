@@ -1,6 +1,7 @@
 // name:     EngineV6_partlintorn
 // keywords: simulation MSL Examples partlintorn
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica,{"3.2.1"});

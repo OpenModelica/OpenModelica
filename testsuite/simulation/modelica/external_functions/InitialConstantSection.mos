@@ -1,6 +1,7 @@
 // name: InitialConstantSection
 // status: correct
 // teardown_command: rm -rf InitialConstantSection.M*
+// cflags: -d=-newInst
 
 loadString("
 package InitialConstantSection

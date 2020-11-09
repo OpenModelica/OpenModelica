@@ -9,6 +9,7 @@
 // by another kind of electrical component than a resistor in the circuit.
 //
 // Drmodelica: 4.4 Parameterized Generic Classes (p. 133)
+// cflags: -d=-newInst
 //
 
   type ElectricPotential = Real (final quantity="ElectricPotential", final unit
@@ -92,7 +93,7 @@
 
 // Result:
 // Error processing file: RefinedSimpleCircuitInvalid.mo
-// [flattening/modelica/types/RefinedSimpleCircuitInvalid.mo:63:5-63:17:writable] Error: Variable i not found in scope Capacitor$comp1.
+// [flattening/modelica/types/RefinedSimpleCircuitInvalid.mo:64:5-64:17:writable] Error: Variable i not found in scope Capacitor$comp1.
 // Error: Error occurred while flattening model RefinedSimpleCircuit
 //
 // # Error encountered! Exiting...

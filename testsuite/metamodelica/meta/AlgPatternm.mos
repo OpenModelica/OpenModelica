@@ -1,5 +1,6 @@
 // name: AlgPatternm
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -d=gen");
 loadFile("AlgPatternm.mo");

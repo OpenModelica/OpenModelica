@@ -2,6 +2,7 @@
 // keywords: fmu export simulation flags
 // status: correct
 // teardown_command: rm -rf BouncingBallFMI20* exampleFlags.json BouncingBallFMI20-tmp/
+// cflags: -d=-newInst
 //
 // Export of 2.0 CS FMU with simulation flags.
 // Also tests example from users guide.

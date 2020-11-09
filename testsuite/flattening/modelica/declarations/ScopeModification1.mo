@@ -1,6 +1,7 @@
 // name:     ScopeModification1
 // keywords: scoping,modification
 // status:   correct
+// cflags: -d=-newInst
 //
 // In class modifications the scope of the outer class is used for
 // looking up variables. Consequently 'a' of the outer class is used

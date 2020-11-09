@@ -1,6 +1,7 @@
 // name:     Ticket4618
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("Ticket4618.mo");

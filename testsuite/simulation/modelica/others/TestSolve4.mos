@@ -3,6 +3,7 @@
 //
 // Checks that the backend knows how to solve certain expressions
 // test: cosh, sinh, tanh
+// cflags: -d=-newInst
 
 loadString("
 model ModelTestSolve4

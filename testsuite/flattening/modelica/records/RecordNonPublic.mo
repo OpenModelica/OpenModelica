@@ -1,6 +1,7 @@
 // name: RecordNonPublic
 // keywords: record
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the declaration and instantiation of a record
 // that has non-public components

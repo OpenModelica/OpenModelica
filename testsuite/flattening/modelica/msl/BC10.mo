@@ -1,6 +1,7 @@
 // name:     BC10 - StateSpace component
 // keywords: StateSpace
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the StateSpace component.
 //

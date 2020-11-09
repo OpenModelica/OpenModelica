@@ -1,6 +1,7 @@
 // name: RealPow
 // keywords: real, power
 // status: correct
+// cflags: -d=-newInst
 //
 // tests Real powers
 //

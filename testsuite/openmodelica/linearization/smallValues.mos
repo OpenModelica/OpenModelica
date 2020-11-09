@@ -2,6 +2,7 @@
 // keywords: VanDerPolSmallValueSmallValue, linearization, small value
 // status:   correct
 // teardown_command: rm -rf VanDerPolSmallValue.* VanDerPolSmallValue_* output.log linearized_model.* linearized_model_* linearized_model VanDerPolSmallValue
+// cflags: -d=-newInst
 //
 //  Case for linearization of VanDerPolSmallValue model
 //

@@ -1,4 +1,5 @@
 // status: incorrect
+// cflags: -d=-newInst
 
 model ArrayRange
   Real x[4, 2];
@@ -10,7 +11,7 @@ end ArrayRange;
 
 // Result:
 // Error processing file: ArrayRange.mo
-// [flattening/modelica/algorithms-functions/ArrayRange.mo:6:3-8:10:writable] Error: Iterator elem, has type Integer[4, 2], but expected a 1D array expression.
+// [flattening/modelica/algorithms-functions/ArrayRange.mo:7:3-9:10:writable] Error: Iterator elem, has type Integer[4, 2], but expected a 1D array expression.
 // Error: Error occurred while flattening model ArrayRange
 //
 // # Error encountered! Exiting...

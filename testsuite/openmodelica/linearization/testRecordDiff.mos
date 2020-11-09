@@ -2,6 +2,7 @@
 // keywords: differentiation linearization records
 // status:   correct
 // teardown_command: rm -rf recordDiffTest* output.log linearized_model*
+// cflags: -d=-newInst
 //
 //
 

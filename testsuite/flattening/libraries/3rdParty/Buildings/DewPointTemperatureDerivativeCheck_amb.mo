@@ -1,6 +1,7 @@
 //name: DewPointTemperatureDerivativeCheck_amb [BUG: #2853]
 //keyword: Buildings and Annex60 library
 //status: correct
+// cflags: -d=-newInst
 //
 // instantiate example
 //

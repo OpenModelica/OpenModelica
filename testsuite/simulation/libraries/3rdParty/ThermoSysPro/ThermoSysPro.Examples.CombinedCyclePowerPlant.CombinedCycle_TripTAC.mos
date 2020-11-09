@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.* ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC_* ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.exe ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.cpp ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.makefile ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.libs ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.log ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.c ThermoSysPro.Examples.CombinedCyclePowerPlant.CombinedCycle_TripTAC.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

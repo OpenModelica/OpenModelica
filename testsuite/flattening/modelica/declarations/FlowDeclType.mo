@@ -1,6 +1,7 @@
 // name: FlowDeclType
 // keywords: flow
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the flow prefix on a regular type
 //

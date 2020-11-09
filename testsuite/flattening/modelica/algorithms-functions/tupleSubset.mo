@@ -1,6 +1,7 @@
 // name:     tupleSubset
 // keywords: function call returning tuples, which are not matched on left side.
 // status:   correct
+// cflags: -d=-newInst
 //
 // test to expand tuple, size 2,  and non tuple into tuples of size 3.
 

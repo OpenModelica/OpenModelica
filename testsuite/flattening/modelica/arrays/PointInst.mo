@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 7.1 Type Checking (p. 209)
+// cflags: -d=-newInst
 //
 type Point = Real[3];
 

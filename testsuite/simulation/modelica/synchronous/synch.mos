@@ -1,6 +1,7 @@
 // name:     Modelica_Synchronous Examples
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica); getErrorString();

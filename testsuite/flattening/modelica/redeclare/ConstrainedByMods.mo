@@ -1,6 +1,7 @@
 // name:     ConstrainedByMods.mo
 // keywords: constrainedby modifier handling
 // status:   correct
+// cflags: -d=-newInst
 //
 // check that modifiers from constrainedby clause are properly propagated on redeclare
 //

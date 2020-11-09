@@ -1,5 +1,6 @@
 // name: TestNormVars
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+d=addScaledVars,dumpindxdae");
 loadString("

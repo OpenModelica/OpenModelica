@@ -1,6 +1,7 @@
 // name:      Algorithm2-celMC3
 // keywords:  tearing, algorithm
 // status:    correct
+// cflags: -d=-newInst
 
 loadFile("Algorithm2.mo"); getErrorString();
 

@@ -1,6 +1,7 @@
 // name:     Modelica.Fluid.Examples.AST_BatchPlant.BatchPlant_StandardWater
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

@@ -1,6 +1,7 @@
 // name:     BN1 -  DeadZone component
 // keywords: DeadZone
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the DeadZone component.
 //

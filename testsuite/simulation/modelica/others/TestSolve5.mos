@@ -3,6 +3,7 @@
 //
 // Checks that the backend knows how to solve certain expressions
 // test: cos, sin, tan
+// cflags: -d=-newInst
 
 loadString("
 model ModelTestSolve5

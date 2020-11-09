@@ -1,5 +1,6 @@
 // status: correct
 // From: https://trac.openmodelica.org/OpenModelica/ticket/4795
+// cflags: -d=-newInst
 
 package ModelicaServices  "ModelicaServices (OpenModelica implementation) - Models and functions used in the Modelica Standard Library requiring a tool specific implementation"
 package Machine

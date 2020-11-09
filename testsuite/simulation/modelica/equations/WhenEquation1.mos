@@ -2,6 +2,7 @@
 // keywords: when
 // status: correct
 // teardown_command: rm -rf WhenEquation1 WhenEquation1.exe WhenEquation1.cpp WhenEquation1.make WhenEquation1.log WhenEquation1.libs WhenEquation1.makefile WhenEquation1_* output.log
+// cflags: -d=-newInst
 // 
 // Conditional Equations with when-Equations and elsewhen-Equations
 // 

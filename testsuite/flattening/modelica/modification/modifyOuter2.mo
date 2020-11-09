@@ -1,6 +1,7 @@
 // name:     modifyOuter2
 // keywords: modification inner outer innerouter
 // status:   correct
+// cflags: -d=-newInst
 //
 //  the most inner modification is the actual
 //

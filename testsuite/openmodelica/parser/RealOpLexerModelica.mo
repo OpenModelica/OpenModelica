@@ -1,6 +1,7 @@
 // name: RealOpLexerModelica
 // keywords: real, lexing
 // status: incorrect
+// cflags: -d=-newInst
 //
 // tests that the lexer/parser handles proper Modelica syntax for real operations
 // also tests that the MetaModelica realAdd operator works
@@ -16,9 +17,9 @@ end A;
 // Error processing file: RealOpLexerModelica.mo
 // Failed to parse file: RealOpLexerModelica.mo!
 //
-// [openmodelica/parser/RealOpLexerModelica.mo:10:21-10:23:writable] Warning: Treating .2 as 0.2. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.
-// [openmodelica/parser/RealOpLexerModelica.mo:12:22-12:24:writable] Warning: Treating .2 as 0.2. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.
-// [openmodelica/parser/RealOpLexerModelica.mo:11:23-11:24:writable] Error: No viable alternative near token: 2
+// [openmodelica/parser/RealOpLexerModelica.mo:11:21-11:23:writable] Warning: Treating .2 as 0.2. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.
+// [openmodelica/parser/RealOpLexerModelica.mo:13:22-13:24:writable] Warning: Treating .2 as 0.2. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.
+// [openmodelica/parser/RealOpLexerModelica.mo:12:23-12:24:writable] Error: No viable alternative near token: 2
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

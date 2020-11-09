@@ -1,6 +1,7 @@
 // name:     BooleanArrayEq
 // keywords: array Boolean equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests array equations with components indexed by Boolean.
 //

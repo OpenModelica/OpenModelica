@@ -1,5 +1,6 @@
 // status: correct
 // depends: BadClassDiagram.mo.xz
+// cflags: -d=-newInst
 // From ticket:5949
 
 // The file has been compressed since it is huge, but very repetitive

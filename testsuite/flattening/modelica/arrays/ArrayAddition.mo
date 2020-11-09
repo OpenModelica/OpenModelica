@@ -1,6 +1,7 @@
 // name: ArrayAddition
 // keywords: array, addition
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests elementwise array addition
 //

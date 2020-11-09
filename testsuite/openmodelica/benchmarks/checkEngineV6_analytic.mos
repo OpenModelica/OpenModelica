@@ -2,6 +2,7 @@
 // keywords: multibody, balancing
 // status:   correct
 // teardown_command: rm -f *.so *.dll *.log *.c* *.makefile *.libs
+// cflags: -d=-newInst
 // 
 //  Modelica MultiBody 3.x: balance checking
 //

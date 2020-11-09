@@ -1,6 +1,7 @@
 // name: SynchronousFeatures.SpeedControl
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
 

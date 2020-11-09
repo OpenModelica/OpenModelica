@@ -3,6 +3,7 @@
 // status:   correct
 // teardown_command: rm -rf DimConvert_* DimConvert.exe DimConvert.cpp DimConvert.makefile DimConvert.libs DimConvert.log output.log 
 
+// cflags: -d=-newInst
 // Drmodelica: 7.7 Built-in Functions (p. 225)
 //
 loadFile("DimConvert.mo");

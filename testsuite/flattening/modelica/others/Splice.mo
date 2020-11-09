@@ -1,5 +1,6 @@
 // name: Splice
 // status: correct
+// cflags: -d=-newInst
 
 model Splice
   parameter Integer dimensions = 5;

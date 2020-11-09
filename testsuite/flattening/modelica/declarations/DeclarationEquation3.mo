@@ -1,6 +1,7 @@
 // name: DeclarationEquation3
 // keywords: equation, array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaration equations with matrices
 //

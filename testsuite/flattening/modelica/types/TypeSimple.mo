@@ -1,6 +1,7 @@
 // name: TypeSimple
 // keywords: type
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple type declaration
 //

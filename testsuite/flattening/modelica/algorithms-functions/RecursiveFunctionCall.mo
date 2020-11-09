@@ -1,6 +1,7 @@
 // name:     RecursiveFunctionCall
 // keywords: function, recursiive calls
 // status:   correct
+// cflags: -d=-newInst
 //
 // Just checks so that function calling itself will work.
 

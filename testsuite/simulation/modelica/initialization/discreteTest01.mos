@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.discreteTest1* _initializationTests.discreteTest1* output.log
+// cflags: -d=-newInst
 //
 //  case for discrete variables during initialization
 //

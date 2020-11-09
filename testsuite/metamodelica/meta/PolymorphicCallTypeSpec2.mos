@@ -1,5 +1,6 @@
 // name: PolymorphicCallTypeSpec2
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -d=gen");
 loadString("
@@ -27,6 +28,6 @@ getErrorString();
 // ""
 //
 // "[<interactive>:13:5-13:59:writable] Error: Too many type variables given in call to ‘.U.new‘.
-// [metamodelica/meta/PolymorphicCallTypeSpec2.mos:21:1-21:7:writable] Error: Class test not found in scope <global scope> (looking for a function or record).
+// [metamodelica/meta/PolymorphicCallTypeSpec2.mos:22:1-22:7:writable] Error: Class test not found in scope <global scope> (looking for a function or record).
 // "
 // endResult

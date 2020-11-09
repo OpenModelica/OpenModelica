@@ -1,6 +1,7 @@
 // name:     Declaration3
 // keywords: declaration
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Misuse of component attributes.
 //
@@ -13,7 +14,7 @@ end Declaration3;
 // Error processing file: Declaration3.mo
 // Failed to parse file: Declaration3.mo!
 //
-// [openmodelica/parser/Declaration3.mo:9:12-9:21:writable] Error: No viable alternative near token: parameter
+// [openmodelica/parser/Declaration3.mo:10:12-10:21:writable] Error: No viable alternative near token: parameter
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

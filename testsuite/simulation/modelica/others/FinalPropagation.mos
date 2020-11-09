@@ -4,6 +4,7 @@
 // teardown_command: rm -rf FinalPropagation_* FinalPropagation.exe FinalPropagation.cpp FinalPropagation.makefile FinalPropagation.libs FinalPropagation.log output.log
 // 
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 //
 
 loadFile("FinalPropagation.mo"); getErrorString();

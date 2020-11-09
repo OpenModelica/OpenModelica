@@ -2,6 +2,7 @@
 // status: correct
 // Test loading of correct version of a library
 // depends: TestLibrary
+// cflags: -d=-newInst
 
 setModelicaPath("TestLibrary/");
 

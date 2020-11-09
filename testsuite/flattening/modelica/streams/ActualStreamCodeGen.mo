@@ -1,6 +1,7 @@
 // name: ActualStreamCodeGen
 // keywords: stream actualStream connector
 // status: correct
+// cflags: -d=-newInst
 //
 // Used by ActualStreamCodeGen.mos to check code generation for the actualStream
 // operator.

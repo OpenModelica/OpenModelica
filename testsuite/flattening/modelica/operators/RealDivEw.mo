@@ -1,6 +1,7 @@
 // name: RealDivEw
 // keywords: real, division, element-wise
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests element-wise array division.
 //

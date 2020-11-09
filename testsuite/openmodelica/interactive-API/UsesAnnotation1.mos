@@ -1,5 +1,6 @@
 // name: UsesAnnotation1
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that only uses-annotations on top-level classes are takes into
 // consideration when loading models.

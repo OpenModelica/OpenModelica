@@ -1,7 +1,7 @@
 // name:     EnumRange
 // keywords: enumeration enum range reduction
 // status:   correct
-// cflags: --condenseArrays=false
+// cflags: --condenseArrays=false -d=-newInst
 //
 // Tests that enum dimensions are used properly when an if-expression containing
 // a function call is expanded.

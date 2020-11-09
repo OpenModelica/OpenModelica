@@ -1,6 +1,7 @@
 // name: ArraySubtraction
 // keywords: array, subtraction
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests elementwise array subtraction
 //

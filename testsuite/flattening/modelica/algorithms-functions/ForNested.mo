@@ -1,6 +1,7 @@
 // name: ForNested
 // keywords: for
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests a nested for loop
 //

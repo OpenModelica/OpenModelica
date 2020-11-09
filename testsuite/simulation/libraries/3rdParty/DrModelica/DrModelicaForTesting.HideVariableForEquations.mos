@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.HideVariableForEquations
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.HideVariableForEquations.* DrModelicaForTesting.HideVariableForEquations_* DrModelicaForTesting.HideVariableForEquations DrModelicaForTesting.HideVariableForEquations.exe DrModelicaForTesting.HideVariableForEquations.cpp DrModelicaForTesting.HideVariableForEquations.makefile DrModelicaForTesting.HideVariableForEquations.libs DrModelicaForTesting.HideVariableForEquations.log DrModelicaForTesting.HideVariableForEquations.c DrModelicaForTesting.HideVariableForEquations.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

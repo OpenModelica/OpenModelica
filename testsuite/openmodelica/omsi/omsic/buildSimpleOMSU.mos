@@ -2,6 +2,7 @@
 // keywords: omsi omsic fmu fmi
 // status: correct
 // teardown_command: rm -rf helloWorldOMSU.fmutmp helloWorldOMSU.fmu
+// cflags: -d=-newInst
 //
 // Tests generating OMSIC OMSU/FMU
 //

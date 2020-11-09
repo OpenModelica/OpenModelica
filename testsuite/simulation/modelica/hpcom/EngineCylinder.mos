@@ -1,6 +1,7 @@
 // name:     EngineCylinder
 // keywords: partlintornsystem
 // status: correct
+// cflags: -d=-newInst
 //
 
 

@@ -1,6 +1,7 @@
 // name:     ArrayMult
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Array multiplication
 class ArrayMult

@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.homotopy4* _initializationTests.homotopy4*
+// cflags: -d=-newInst
 //
 // Test the flag -ils to set the number of lambda steps on initialization with global homotopy.
 //

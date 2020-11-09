@@ -1,6 +1,7 @@
 // name:     ArrayEWOps6
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests various array operators.
 

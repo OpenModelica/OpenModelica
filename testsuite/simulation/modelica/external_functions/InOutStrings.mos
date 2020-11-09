@@ -2,6 +2,7 @@
 // keywords: array, string, external function
 // status:   correct
 // teardown_command: rm -rf c1.makefile c1.log c1.libs c1_init.xml c1_functions.cpp c1.cpp ext1.so ext1.makefile ext1.log ext1.libs ext1.c c2.makefile c2.log c2.libs c2_init.xml c2_functions.cpp c2.cpp c1_res.mat c1 output.log c2_res.plt c2 ext2.so ext2.makefile ext2.log ext2.libs ext2.c libInOutStrings1.o libInOutStrings2.o c1_functions.h c1_records.c c2_functions.h c2_records.c ext1.h ext1_records.c ext2.h ext2_records.c c2_res.mat ext1.conv.c ext2.conv.c c1.conv.cpp c2.conv.cpp
+// cflags: -d=-newInst
 
 // We need -fPIC to build on 64-bit Linux, but this prints warnings
 // in Windows. GCC is supposed to not output warnings since we use

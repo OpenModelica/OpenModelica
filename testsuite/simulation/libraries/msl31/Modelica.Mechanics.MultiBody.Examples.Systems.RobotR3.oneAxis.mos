@@ -1,6 +1,7 @@
 // name:     Modelica.Mechanics.MultiBody.Examples.Systems.RobotR3.oneAxis
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

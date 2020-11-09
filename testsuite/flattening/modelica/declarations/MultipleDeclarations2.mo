@@ -1,6 +1,7 @@
 // name:     MultipleDeclarations2
 // keywords: declaration
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Multiple declarations are not allowed.
 //

@@ -1,6 +1,6 @@
 // name:     ConnectFlowEffort
 // keywords: connect,modification
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status:   incorrect
 //
 // Flow and effort variables may not be connected.

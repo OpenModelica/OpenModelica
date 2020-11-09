@@ -1,6 +1,7 @@
 // name:     BranchingDynamicPipes.mo
 // keywords: chained redeclares
 // status:   correct
+// cflags: -d=-newInst
 //
 
 connector FluidPort

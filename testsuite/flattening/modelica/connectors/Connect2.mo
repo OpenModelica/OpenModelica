@@ -1,6 +1,7 @@
 // name:     Connect2
 // keywords: connect
 // status:   correct
+// cflags: -d=-newInst
 //
 // Basic connections between three connectors.
 //

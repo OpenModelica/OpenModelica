@@ -1,5 +1,5 @@
 // name: ErrorInvalidComplexType
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
 package ErrorInvalidComplexType
 

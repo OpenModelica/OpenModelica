@@ -1,6 +1,7 @@
 // name: TypeClass1
 // keywords: type
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests type declaration from a legal class
 //

@@ -1,6 +1,7 @@
 // name:     PDEModelica general test
 // keywords: PDEModelica field, indomain, pder, extrapolateField, domain
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test main features of PDEModelica
 //

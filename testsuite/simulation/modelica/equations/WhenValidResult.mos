@@ -3,6 +3,7 @@
 // status:   correct
 // 
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 // 
 loadFile("WhenValidResult.mo");
 simulate(WhenValidResult,startTime=0.0, stopTime=3.0, tolerance=1e-5, numberOfIntervals=100); // 2 intervals == 3 values

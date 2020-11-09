@@ -1,6 +1,7 @@
 // name:     ModelicaTest.MultiBody.Forces.FrameTorques
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

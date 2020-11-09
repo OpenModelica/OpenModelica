@@ -1,6 +1,7 @@
 // name: ZeroRange
 // status: correct
 // teardown_command: rm -f ZeroRange_*
+// cflags: -d=-newInst
 
 loadFile("ZeroRange.mo");
 

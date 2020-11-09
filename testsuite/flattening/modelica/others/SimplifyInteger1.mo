@@ -1,6 +1,7 @@
 // name:     SimplifyInteger1
 // keywords: simplify #4847
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 

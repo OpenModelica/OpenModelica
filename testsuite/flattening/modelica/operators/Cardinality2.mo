@@ -1,6 +1,7 @@
 // name:     Cardinality2
 // keywords: cardinality vectorization
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing vectorization of the cardinality operator.
 //

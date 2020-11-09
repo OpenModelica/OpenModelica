@@ -2,6 +2,7 @@
 // keywords: twoflattankmodel, linearization
 // status:   correct
 // teardown_command: rm -rf twoflattankmodel.* twoflattankmodel_* output.log linearized_model.* linearized_model_* linearized_model twoflattankmodel
+// cflags: -d=-newInst
 //
 //  Case for linearization of twoflattankmodel model
 //

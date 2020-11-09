@@ -1,6 +1,7 @@
 // name:     MatrixPow
 // keywords: matrices,power
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test Matrix power
 //

@@ -1,6 +1,7 @@
 // name: ClassExtends4
 // keywords: class, extends
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that repeated class extends are handled correctly.
 //

@@ -1,6 +1,7 @@
 // name: IntegerLiterals (64-bit)
 // keywords: integer
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaration of integers
 //

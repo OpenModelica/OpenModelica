@@ -1,6 +1,7 @@
 // name: ThermoSysPro.Examples.SimpleExamples.TestCentrifugalPump1
 // keywords: simulation commonSubExp
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();

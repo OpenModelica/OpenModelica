@@ -1,5 +1,6 @@
 // name: FourBar.TestPlanarLoops [simulate]
 // status: correct
+// cflags: -d=-newInst
 // provided by Martin Otter
 //
 

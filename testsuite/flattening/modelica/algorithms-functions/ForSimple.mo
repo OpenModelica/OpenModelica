@@ -1,6 +1,7 @@
 // name: ForSimple
 // keywords: for
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests a simple for statement
 //

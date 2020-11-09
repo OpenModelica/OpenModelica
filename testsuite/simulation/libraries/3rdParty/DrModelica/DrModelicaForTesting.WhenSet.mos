@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.WhenSet
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.WhenSet.* DrModelicaForTesting.WhenSet_* DrModelicaForTesting.WhenSet DrModelicaForTesting.WhenSet.exe DrModelicaForTesting.WhenSet.cpp DrModelicaForTesting.WhenSet.makefile DrModelicaForTesting.WhenSet.libs DrModelicaForTesting.WhenSet.log DrModelicaForTesting.WhenSet.c DrModelicaForTesting.WhenSet.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

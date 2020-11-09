@@ -1,6 +1,7 @@
 // name: NestedClasses
 // keywords: class
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests nested classes
 //

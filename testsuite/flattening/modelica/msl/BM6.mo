@@ -1,6 +1,7 @@
 // name:     BM6 -  Atan component
 // keywords: Atan
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Atan component.
 //

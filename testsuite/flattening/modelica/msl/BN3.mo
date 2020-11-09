@@ -1,6 +1,7 @@
 // name:     BN3 -  VariableLimiter component
 // keywords: VariableLimiter
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Nonlinear.VariableLimiter component.
 //

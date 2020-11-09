@@ -1,6 +1,7 @@
 // name:     OverloadingFunc
 // keywords: function, overload, dynload
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test so that overloading (or rather replacing) a function works.
 //

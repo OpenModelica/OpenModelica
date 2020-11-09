@@ -1,6 +1,7 @@
 // name: Rectifier2
 // keyword: simulating msl221
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica,{"2.2.2"});
 simulate(Modelica.Electrical.Analog.Examples.Rectifier,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=0.1);

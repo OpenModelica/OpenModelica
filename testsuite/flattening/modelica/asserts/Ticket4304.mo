@@ -1,6 +1,7 @@
 // name:     Ticket4304.mo
 // keywords: assert
 // status:   correct
+// cflags: -d=-newInst
 //
 // Check that assert in an initial equation works
 //

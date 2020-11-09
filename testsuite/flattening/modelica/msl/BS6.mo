@@ -1,6 +1,7 @@
 // name:     BS6 - Pulse component
 // keywords: Pulse
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Pulse component.
 //
@@ -1254,8 +1255,8 @@ end BS6;
 //   assert(pulse1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = pulse1.outPort.signal[1];
 // end BS6;
-// [flattening/modelica/msl/BS6.mo:685:41-685:69:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS6.mo:685:76-685:83:writable] Warning: Non-array modification '100' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS6.mo:687:45-687:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS6.mo:686:41-686:69:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS6.mo:686:76-686:83:writable] Warning: Non-array modification '100' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS6.mo:688:45-688:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

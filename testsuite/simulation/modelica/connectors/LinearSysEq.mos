@@ -2,6 +2,7 @@
 // keywords: linear system of equations
 // status: correct
 // teardown_command: rm -rf LinearSysEq_* LinearSysEq LinearSysEq.exe LinearSysEq.cpp LinearSysEq.makefile LinearSysEq.libs LinearSysEq.log output.log
+// cflags: -d=-newInst
 //
 // Solving of a linear system of equations
 //

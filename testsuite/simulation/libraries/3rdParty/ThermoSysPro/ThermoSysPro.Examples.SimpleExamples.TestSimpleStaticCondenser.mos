@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.* ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser_* ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.exe ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.cpp ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.makefile ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.libs ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.log ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.c ThermoSysPro.Examples.SimpleExamples.TestSimpleStaticCondenser.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

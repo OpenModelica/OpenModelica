@@ -1,5 +1,6 @@
 // name: complexFun1
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("ComplexFun.mo"); getErrorString();
 

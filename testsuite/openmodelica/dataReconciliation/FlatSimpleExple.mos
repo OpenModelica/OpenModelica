@@ -1,6 +1,7 @@
 // name:     FlatSimpleExple
 // keywords: extraction algorithm
 // status:   correct
+// cflags: -d=-newInst
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");

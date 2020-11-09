@@ -1,6 +1,7 @@
 // name:     Lookup1
 // keywords: scoping
 // status:   correct
+// cflags: -d=-newInst
 //
 // Names are looked up in a partially defined class.
 //

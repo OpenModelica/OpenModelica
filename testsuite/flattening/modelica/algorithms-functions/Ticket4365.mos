@@ -1,6 +1,7 @@
 // name:     Ticket4365.mos
 // keywords: equation,when,inner/outer
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test for handling of inner/outer in algorithms
 //

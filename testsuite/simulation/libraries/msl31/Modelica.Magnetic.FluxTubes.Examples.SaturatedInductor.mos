@@ -1,6 +1,7 @@
 // name:     Modelica.Magnetic.FluxTubes.Examples.SaturatedInductor
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

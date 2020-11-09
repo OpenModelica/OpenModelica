@@ -1,5 +1,6 @@
 // name: ISO-8859-1
 // status: correct
+// cflags: -d=-newInst
 
 runScript("ISO-8859-1.mox");
 getErrorString();

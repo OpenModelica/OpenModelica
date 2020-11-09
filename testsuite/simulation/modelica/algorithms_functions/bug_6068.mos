@@ -2,6 +2,7 @@
 // keywords: Function Constant Logarithm 6068
 // status: correct
 // teardown_command: rm -rf FuncLocalConstantsDer_* FuncLocalConstantsDer FuncLocalConstantsDer.exe FuncLocalConstantsDer.cpp FuncLocalConstantsDer.makefile FuncLocalConstantsDer.libs FuncLocalConstantsDer.log output.log
+// cflags: -d=-newInst
 
 // this is a test for ticket 6068
 loadString("

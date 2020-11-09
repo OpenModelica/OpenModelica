@@ -1,6 +1,7 @@
 // name:     QualifiedSlicing
 // keywords: array slicing #2532
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that slices are expanded properly when using a qualified cref.
 //

@@ -3,6 +3,7 @@
 // status:  correct
 // teardown_command: rm -rf testRandom1* testRandom2* testRandom3* testRandom2_* output.log
 // tests: function calls
+// cflags: -d=-newInst
 //        Modelica.Utilities.Streams.print
 //        String(x, format);
 //        interactive call of functions

@@ -2,6 +2,7 @@
 // keywords: Simulation, Non-linear eqn systems.
 // status:   correct
 // teardown_command: rm -f NonLinSys* NonLinSys2* NonLinSys3* NonLinSys4* dae1* dae2* output.log
+// cflags: -d=-newInst
 //  Simulate models and read in data.
 //
 loadFile("NonLinsys.mo");

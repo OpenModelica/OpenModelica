@@ -1,6 +1,7 @@
 // name:     Connect7
 // keywords: connect
 // status:   correct
+// cflags: -d=-newInst
 //
 // If parameters are involved in connections, the parameters have to
 // be known to generate the equations.  If the parameter N would have

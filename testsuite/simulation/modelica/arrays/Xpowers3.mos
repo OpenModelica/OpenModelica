@@ -6,6 +6,7 @@
 // Event handling
 //
 // Drmodelica: 8.2 XPowers (p. 242)
+// cflags: -d=-newInst
 // 
 
 loadFile("Xpowers3.mo");

@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(ModelicaServices, {"3.2.3+maint.om"});getErrorString();
 loadModel(ModelicaTest, {"3.2.3"});getErrorString();

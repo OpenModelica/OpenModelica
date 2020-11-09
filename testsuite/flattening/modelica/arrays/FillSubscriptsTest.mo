@@ -1,6 +1,7 @@
 // name:     FillSubscriptsTest.mo
 // keywords: tests that filling of subscripts in Static.elabCref2 is properly handled (for component mfr_2)
 // status:   correct
+// cflags: -d=-newInst
 //
 
 package Buildings

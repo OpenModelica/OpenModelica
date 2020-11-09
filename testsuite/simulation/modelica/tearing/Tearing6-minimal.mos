@@ -2,6 +2,7 @@
 // keywords:  minimal tearing
 // status:    correct
 // teardown_command:  rm -f Tearing6
+// cflags: -d=-newInst
 
 
 loadModel(Modelica, {"3.2.2"}); getErrorString();

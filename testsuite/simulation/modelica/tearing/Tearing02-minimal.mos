@@ -1,7 +1,7 @@
 // name:      Tearing02-minimal
 // keywords:  Tearing
 // status:    correct
-// cflags:    +d=backenddaeinfo
+// cflags:    +d=backenddaeinfo -d=-newInst
 
 
 loadFile("Tearing2.mo"); getErrorString();

@@ -1,6 +1,7 @@
 // name: Modelica[v3.2.1].Media/Fluid* component retrieval [BUG: #2089]
 // keywords: Graphical API
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Subset of the Graphical API.
 //

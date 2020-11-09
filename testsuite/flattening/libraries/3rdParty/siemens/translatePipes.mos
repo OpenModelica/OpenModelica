@@ -5,6 +5,7 @@
 //
 //  Test SiemensPower component Pipes
 //  TODO: check small differences in SH.qMetalFluidDelayed[1]
+// cflags: -d=-newInst
 //
 
 loadModel(SiemensPower,{"2.1.0-beta"});

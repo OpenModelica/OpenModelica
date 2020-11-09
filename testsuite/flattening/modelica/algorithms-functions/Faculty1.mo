@@ -1,6 +1,7 @@
 // name:     Faculty1
 // keywords: algorithm,scoping
 // status:   correct
+// cflags: -d=-newInst
 //
 // Example for a recursive function. The function 'Faculty' must be
 // known during its definition in order to be called from itself.

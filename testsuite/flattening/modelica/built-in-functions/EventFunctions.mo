@@ -1,6 +1,7 @@
 // name: EventFunctions
 // keywords: functions, builtin
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing built in event triggering mathematical functions
 //

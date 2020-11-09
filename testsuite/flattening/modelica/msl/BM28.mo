@@ -1,6 +1,7 @@
 // name:     BM28 -  TwoOutputs component
 // keywords: TwoOutputs
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.TwoOutputs component.
 //

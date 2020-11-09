@@ -1,6 +1,7 @@
 // name: Inline4
 // keywords: function, inline
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests inline functions passed to inline functions as arguments
 //

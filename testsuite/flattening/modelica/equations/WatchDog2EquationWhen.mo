@@ -5,6 +5,7 @@
 // <insert description here>
 //
 // Drmodelica: 13.2 WatchDog System. (p. 435)
+// cflags: -d=-newInst
 //
 connector eventPort
   discrete Boolean signal;

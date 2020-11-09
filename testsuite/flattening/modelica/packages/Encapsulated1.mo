@@ -1,6 +1,7 @@
 // name:     Encapsulated1
 // keywords: encapsulated
 // status:   correct
+// cflags: -d=-newInst
 //
 // Demonstrating correct use of import.
 

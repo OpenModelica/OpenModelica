@@ -1,6 +1,7 @@
 // name:     RefinedSimpleCircuitValid
 // keywords: <insert keywords here>
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 // Sometimes it can be useful to allow a more general constraining type of

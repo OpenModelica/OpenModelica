@@ -1,6 +1,7 @@
 // name: problem6 [symjac]
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem6* _nonlinear_system.problem6* output.log
+// cflags: -d=-newInst
 
 loadFile("nlsTestPackage.mo"); getErrorString();
 OpenModelica.Scripting.setCommandLineOptions("+tearingMethod=noTearing"); getErrorString();

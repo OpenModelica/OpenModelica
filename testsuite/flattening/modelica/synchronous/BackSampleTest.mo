@@ -1,6 +1,7 @@
 // name: BackSampleTest
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 model BackSampleTest
   output Real x;

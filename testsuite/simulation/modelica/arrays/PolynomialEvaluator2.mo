@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 9.2 called (p. 300)
+// cflags: -d=-newInst
 //
 
 function polyeval

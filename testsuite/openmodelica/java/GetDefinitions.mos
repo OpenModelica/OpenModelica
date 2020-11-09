@@ -1,6 +1,7 @@
 // name:     GetDefinitions
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 // 
 // Test if getDefinitions works properly
 //

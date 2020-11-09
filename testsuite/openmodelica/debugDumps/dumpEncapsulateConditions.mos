@@ -5,6 +5,7 @@
 // omc debug dump: +d=dumpEncapsulateConditions
 //
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=dumpEncapsulateConditions
 loadString("
 model test_dumpEncapsulateConditions

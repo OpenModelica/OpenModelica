@@ -1,6 +1,7 @@
 // name:     ConnectHierarchical1
 // keywords: connect
 // status:   correct
+// cflags: -d=-newInst
 //
 // All effort variables are equal to 1. The unknown flow 'a.b.c.f'
 // evaluates to -1.

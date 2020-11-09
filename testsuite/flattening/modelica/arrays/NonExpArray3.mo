@@ -1,7 +1,7 @@
 // name:     Non-expanded Array3
 // keywords: array
 // status:   correct
-// cflags:   +a
+// cflags:   +a -d=-newInst
 //
 // A test of non-expanded arrays for the case of array containing arrays with bindings.
 //

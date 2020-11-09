@@ -1,6 +1,7 @@
 // name: Tan
 // keywords: tan
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in tan function
 //

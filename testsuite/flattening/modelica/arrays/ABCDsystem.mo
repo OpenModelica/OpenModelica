@@ -1,6 +1,7 @@
 // name:     ABCDsystem
 // keywords: array
 // status:  correct
+// cflags: -d=-newInst
 //
 // Using empty arrays.
 //

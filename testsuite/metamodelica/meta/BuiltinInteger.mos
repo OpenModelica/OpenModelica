@@ -1,7 +1,7 @@
 // name:     BuiltinInteger
 // keywords: Builtin
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Builtin function testing
 //

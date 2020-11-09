@@ -1,6 +1,7 @@
 // name: SliceAssignemnts
 // keywords: array,codegen,slice
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests assignment to slices in functions
 

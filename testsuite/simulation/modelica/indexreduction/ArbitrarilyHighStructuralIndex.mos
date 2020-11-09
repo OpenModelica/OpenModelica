@@ -2,6 +2,7 @@
 // keywords: index reduction
 // status:   correct
 // teardown_command: rm -rf myTanCall* output.log
+// cflags: -d=-newInst
 // 
 //
 // 

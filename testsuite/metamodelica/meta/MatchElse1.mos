@@ -1,7 +1,7 @@
 // name:     MatchElse1
 // keywords: Match Cases
 // status:   correct
-// cflags: -g=MetaModelica -d=gen
+// cflags: -g=MetaModelica -d=gen -d=-newInst
 // teardown_command: rm -f MatchElse1_*
 //
 // Match Testing

@@ -1,5 +1,5 @@
 // name: ListReductionInterpret
-// cflags: +g=MetaModelica +d=nogen
+// cflags: +g=MetaModelica +d=nogen -d=-newInst
 // status: correct
 // teardown_command: rm -rf ListReduction_*
 

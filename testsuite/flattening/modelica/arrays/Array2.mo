@@ -1,6 +1,7 @@
 // name:     Array2
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Multidimensional arrays
 //

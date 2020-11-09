@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Step (p. 244)
+// cflags: -d=-newInst
 //
 
 

@@ -1,6 +1,7 @@
 // name: AssignmentFunctionMultiple1
 // keywords: assignment, function
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests assignment to a function call with multiple outputs
 //

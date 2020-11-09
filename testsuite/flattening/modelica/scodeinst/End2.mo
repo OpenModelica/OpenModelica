@@ -1,9 +1,7 @@
-
 // name: End2
 // keywords:
 // status: correct
 // cflags: -d=newInst
-//
 //
 
 model End2

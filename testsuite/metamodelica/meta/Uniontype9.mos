@@ -1,7 +1,7 @@
 // name:     Uniontype9
 // keywords: Uniontype
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Uniontype Testing
 //

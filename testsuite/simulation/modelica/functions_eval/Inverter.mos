@@ -1,6 +1,7 @@
 // name:      Inverter
 // keywords:  evalConstFunc
 // status:    correct
+// cflags: -d=-newInst
 //
 
 

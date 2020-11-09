@@ -1,6 +1,7 @@
 // name: solveSymbolicLinearSystem
 // status: correct
 // teardown_command: rm -f foo* output.log
+// cflags: -d=-newInst
 
 loadString("
 model foo

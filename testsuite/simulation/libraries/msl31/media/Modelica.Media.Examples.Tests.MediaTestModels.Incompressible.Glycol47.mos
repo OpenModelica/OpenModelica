@@ -1,6 +1,7 @@
 //name:        buildModel(Modelica.Media.Examples.Tests.MediaTestModels.Incompressible.Glycol47)
 //keyword:     simulation
 //status:      correct
+// cflags: -d=-newInst
 // instantiate/check model example
 //
 

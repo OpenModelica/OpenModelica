@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // This is a test for equationsPerFile compiling as it should
 
 loadFile("Advection_N3200.mo");getErrorString();

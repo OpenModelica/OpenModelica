@@ -2,6 +2,7 @@
 // keywords: Simulation
 // status:   correct
 // teardown_command: rm -f MatrixTest_* MatrixTest.cpp MatrixTest MatrixTest.conv.cpp MatrixTest.exe MatrixTest.makefile MatrixTest.log MatrixTest.libs
+// cflags: -d=-newInst
 // 
 //  Simulate models and read in data.
 //

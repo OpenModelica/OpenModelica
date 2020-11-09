@@ -2,7 +2,7 @@
 // teardown_command: rm -f Modelica.StateGraph.Examples.ControlledTanks_*.mat
 // keywords: simulation MSL Examples
 // status: correct
-// cflags: 	 +simCodeTarget=Cpp
+// cflags: 	 +simCodeTarget=Cpp -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

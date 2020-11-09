@@ -1,6 +1,7 @@
 // name:     Tank
 // keywords: replaceable connector
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 //

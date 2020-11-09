@@ -3,6 +3,7 @@
 // status:   correct
 // setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o External_C_RecordTest.o External_C_RecordTest.c
 // teardown_command: rm -f External_C_RecordTest.o
+// cflags: -d=-newInst
 
 loadFile("RecordTest.mo");
 

@@ -1,6 +1,7 @@
 // name: Or
 // keywords: logic, operator
 // status: correct
+// cflags: -d=-newInst
 //
 // tests the or operator(or)
 //

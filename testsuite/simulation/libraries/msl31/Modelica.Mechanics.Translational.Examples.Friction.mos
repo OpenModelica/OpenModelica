@@ -1,6 +1,7 @@
 // name:     Modelica.Mechanics.Translational.Examples.Friction
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

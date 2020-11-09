@@ -1,6 +1,7 @@
 // name:     ConnectTwoSources
 // keywords: connect
 // status:   correct
+// cflags: -d=-newInst
 //
 // Connecting two sources should not be allowed.
 //
@@ -21,6 +22,6 @@ end ConnectTwoSources;
 // equation
 //   ri1 = ri2;
 // end ConnectTwoSources;
-// [flattening/modelica/connectors/ConnectTwoSources.mo:14:3-14:20:writable] Warning: Connecting two signal sources while connecting ri1 to ri2.
+// [flattening/modelica/connectors/ConnectTwoSources.mo:15:3-15:20:writable] Warning: Connecting two signal sources while connecting ri1 to ri2.
 //
 // endResult

@@ -1,6 +1,6 @@
 // name:    Simulation ModelicaML model twotank
 // keywords:  ModelicaML, solver, dassl, rungekutta
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status: correct
 // teardown_command: rm -f TwoTanksSystemExample.Simulations.TankSystemSimulation *.c *.plt *.makefile *.libs *.log *.h *.cpp *.txt
 //

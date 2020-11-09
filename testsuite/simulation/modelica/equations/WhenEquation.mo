@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 //
 model WhenEquation
   Real x(start = 1);

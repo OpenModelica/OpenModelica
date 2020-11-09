@@ -1,6 +1,7 @@
 // name: ModelAccess
 // keywords: model
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests access operator .
 //

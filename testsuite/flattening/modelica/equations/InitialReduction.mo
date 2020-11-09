@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // bug #2525
 
 model InitialReduction

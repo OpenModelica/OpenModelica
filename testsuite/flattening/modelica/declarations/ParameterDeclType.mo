@@ -1,6 +1,7 @@
 // name: ParameterDeclType
 // keywords: parameter
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the parameter prefix on a regular type
 //

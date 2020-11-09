@@ -1,6 +1,7 @@
 // name:     Modelica.Media.Examples.R134a.R134a2
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

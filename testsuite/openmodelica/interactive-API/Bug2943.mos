@@ -1,6 +1,7 @@
 // name: Bug2943.mos [BUG: #2943]
 // status: correct
 // teardown_command: rm -rf TestMyModel.mo
+// cflags: -d=-newInst
 
 loadString("model TestMyModel
   Modelica.Fluid.Vessels.OpenTank tank annotation(Placement(visible = true, transformation(origin = {20, 40}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));

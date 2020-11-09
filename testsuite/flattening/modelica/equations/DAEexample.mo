@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 2.1 Differential Algebraic Equation System (p. 19)
+// cflags: -d=-newInst
 //
 
 model DAEexample

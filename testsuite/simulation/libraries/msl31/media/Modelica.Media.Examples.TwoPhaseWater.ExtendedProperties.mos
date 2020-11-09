@@ -1,6 +1,7 @@
 //name:        buildModel(Modelica.Media.Examples.TwoPhaseWater.ExtendedProperties)
 //keyword:     simulation
 //status:      correct
+// cflags: -d=-newInst
 // instantiate/check model example
 //
 

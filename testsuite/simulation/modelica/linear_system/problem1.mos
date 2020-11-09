@@ -1,6 +1,7 @@
 // name: problem1
 // status: correct
 // teardown_command: rm -f linear_system.problem1* _linear_system.problem1* output.log
+// cflags: -d=-newInst
 
 loadFile("linearTestPackage.mo"); getErrorString();
 simulate(linear_system.problem1); getErrorString();

@@ -1,5 +1,5 @@
 // name: TailRecursion
-// cflags: -d=noevalfunc,tail,gen -g=MetaModelica
+// cflags: -d=noevalfunc,tail,gen -g=MetaModelica -d=-newInst
 // status: correct
 
 model TailRecursion

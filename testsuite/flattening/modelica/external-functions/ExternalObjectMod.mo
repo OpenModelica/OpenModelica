@@ -1,6 +1,7 @@
 // name:     ExternalObjectMod
 // keywords: external object, modifier
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Checks that invalid modifiers on external objects are caught.
 //
@@ -28,7 +29,7 @@ end ExternalObjectMod;
 
 // Result:
 // Error processing file: ExternalObjectMod.mo
-// [flattening/modelica/external-functions/ExternalObjectMod.mo:26:13-26:27:writable] Error: Modified element param not found in class ExtObj$eo.
+// [flattening/modelica/external-functions/ExternalObjectMod.mo:27:13-27:27:writable] Error: Modified element param not found in class ExtObj$eo.
 // Error: Error occurred while flattening model ExternalObjectMod
 //
 // # Error encountered! Exiting...

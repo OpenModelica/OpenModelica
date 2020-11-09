@@ -1,6 +1,7 @@
 // name:     Splitter0
 // keywords: extraction algorithm
 // status:   correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();

@@ -1,5 +1,6 @@
 // name: ticket3687
 // status: correct
+// cflags: -d=-newInst
 
 // use new inline method
 loadString("

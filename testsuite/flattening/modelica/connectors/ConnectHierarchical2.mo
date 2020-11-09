@@ -1,6 +1,7 @@
 // name:     ConnectHierarchical2
 // keywords: connect
 // status:   correct
+// cflags: -d=-newInst
 //
 // Compared to ConnectHiearchical1 we have established
 // the same connections but at different places.

@@ -1,6 +1,7 @@
 // name:     Integer2Real
 // keywords: type
 // status:   correct
+// cflags: -d=-newInst
 //
 // Automatic conversion from Integer to Real.
 //

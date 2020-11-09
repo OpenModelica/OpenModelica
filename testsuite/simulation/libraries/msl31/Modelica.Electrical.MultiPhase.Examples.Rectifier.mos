@@ -1,6 +1,7 @@
 // name:     Modelica.Electrical.MultiPhase.Examples.Rectifier
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

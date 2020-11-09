@@ -1,6 +1,7 @@
 // name:     For-statement 6
 // keywords: for
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Make sure that the iterator is hidden.
 //

@@ -5,6 +5,7 @@
 // omc debug dump: +d=dumpParamrepl
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=dumpParamrepl
 loadString("
 model testDumpParamrepl

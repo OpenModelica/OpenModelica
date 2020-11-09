@@ -1,6 +1,7 @@
 // name: Integer
 // keywords: integer
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in integer function
 //

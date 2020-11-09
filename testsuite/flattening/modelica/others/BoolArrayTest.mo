@@ -1,6 +1,7 @@
 // name:     BoolArrayTest
 // keywords: Arrays, bug #14
 // status:   correct
+// cflags: -d=-newInst
 //
 
 model BoolArrayTest

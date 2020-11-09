@@ -1,6 +1,7 @@
 // name:     ConnectArrayCond
 // keywords: connect conditional
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests connecting deleted conditional array components.
 //

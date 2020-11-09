@@ -2,6 +2,7 @@
 // keywords:  arrays
 // status:    correct
 // teardown_command: rm -f simcall_*.log NPendulum.pendulum*
+// cflags: -d=-newInst
 //
 // Simulate NPendulum with N=10 with different linear solvers
 //

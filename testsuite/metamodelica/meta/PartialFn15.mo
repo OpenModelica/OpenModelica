@@ -1,7 +1,7 @@
 // name:     PartialFn15
 // keywords: PartialFn
 // status:  correct
-// cflags: -g=MetaModelica -d=noevalfunc,gen
+// cflags: -g=MetaModelica -d=noevalfunc,gen -d=-newInst
 //
 // Using lists of function pointers
 //

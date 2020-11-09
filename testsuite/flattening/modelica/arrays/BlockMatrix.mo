@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 7.5 Array Concatenation and Slice Operations (p. 219)
+// cflags: -d=-newInst
 //
 
 class BlockMatrix

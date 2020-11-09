@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.* ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve_* ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.exe ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.cpp ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.makefile ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.libs ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.log ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.c ThermoSysPro.Examples.SimpleExamples.TestThreeWayValve.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

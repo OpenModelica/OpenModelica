@@ -1,6 +1,7 @@
 // name:     ConstantReductions
 // keywords: declaration
 // status:   correct
+// cflags: -d=-newInst
 //
 // Constant evaluation of reductions.
 //

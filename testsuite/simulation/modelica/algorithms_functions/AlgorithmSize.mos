@@ -2,6 +2,7 @@
 // keywords: algorithm, removeSimpleEquations
 // status: correct
 // teardown_command: rm -rf AlgorithmSize_* _AlgorithmSize_* output.log
+// cflags: -d=-newInst
 //
 //  tests for counting of algorithm section output variables.
 // This model replaces a variable with a array-element in RemoveSimpleEquations. Do not count the expanded array-var, only the one element.

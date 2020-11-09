@@ -1,6 +1,7 @@
 // name:     ArrayDim4
 // keywords: algorithm, equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Drmodelica:
 //

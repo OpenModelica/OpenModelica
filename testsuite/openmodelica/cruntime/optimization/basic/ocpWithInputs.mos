@@ -1,5 +1,6 @@
 // name: ocpOnlyInputs
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+gDynOpt");
 

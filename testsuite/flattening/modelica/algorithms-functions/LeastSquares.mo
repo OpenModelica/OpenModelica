@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 9.2 External Functions (p. 311)
+// cflags: -d=-newInst
 //
 
 

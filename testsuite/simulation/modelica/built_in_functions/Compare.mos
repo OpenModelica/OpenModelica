@@ -2,6 +2,7 @@
 // keywords: Compare Simulation Results
 // status: correct
 // teardown_command: 
+// cflags: -d=-newInst
 //
 // Built-in Mathematical Functions
 //

@@ -1,6 +1,7 @@
 // name:     Simplify2
 // keywords: simplify
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that expressions are not lost in simplify.
 //

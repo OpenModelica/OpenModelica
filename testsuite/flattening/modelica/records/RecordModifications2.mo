@@ -1,6 +1,7 @@
 // name:     RecordModifications2
 // keywords: record modification #3479
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests record modification propagation using very simplified models from
 // Modelica.Electrical.Machines.

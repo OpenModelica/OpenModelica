@@ -1,6 +1,7 @@
 // name:     packages2
 // keywords: package, declaration
 // status:   correct
+// cflags: -d=-newInst
 
 //
 //   Instantiation with packages and extends. Tests special case to avoid infinite recursion.

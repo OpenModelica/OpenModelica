@@ -1,7 +1,7 @@
 // name:     PartialFn6
 // keywords: PartialFn
 // status:   correct
-// cflags:   -g=MetaModelica -d=gen
+// cflags:   -g=MetaModelica -d=gen -d=-newInst
 // depends:  PartialFn6.ext_f.c
 //
 // Passing external functions as arguments to function calls

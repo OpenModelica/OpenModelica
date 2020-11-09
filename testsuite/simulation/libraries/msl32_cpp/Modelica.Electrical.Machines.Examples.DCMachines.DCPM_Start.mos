@@ -1,6 +1,7 @@
 // name:     Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Start
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

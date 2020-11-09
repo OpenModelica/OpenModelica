@@ -1,6 +1,7 @@
 // name:     Bug3783.mos [BUG #3783]
 // keywords: check that we keep the redeclare modifiers!
 // status:   correct
+// cflags: -d=-newInst
 // 
 
 loadFile("Bug3783.mo"); getErrorString();

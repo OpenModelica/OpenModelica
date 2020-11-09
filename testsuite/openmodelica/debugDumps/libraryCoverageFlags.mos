@@ -2,6 +2,7 @@
 // keywords: omc debug dump
 // status: correct
 // teardown_command: rm -rf Modelica.Utilities.Examples.readRealParameterModel*
+// cflags: -d=-newInst
 // 
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();

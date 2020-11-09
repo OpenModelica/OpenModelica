@@ -1,6 +1,7 @@
 // name: Product
 // keywords: product
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing the built-in product function.
 //

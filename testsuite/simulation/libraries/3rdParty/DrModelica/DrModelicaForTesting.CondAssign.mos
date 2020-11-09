@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.CondAssign
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.CondAssign.* DrModelicaForTesting.CondAssign_* DrModelicaForTesting.CondAssign DrModelicaForTesting.CondAssign.exe DrModelicaForTesting.CondAssign.cpp DrModelicaForTesting.CondAssign.makefile DrModelicaForTesting.CondAssign.libs DrModelicaForTesting.CondAssign.log DrModelicaForTesting.CondAssign.c DrModelicaForTesting.CondAssign.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

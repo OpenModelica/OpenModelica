@@ -1,6 +1,7 @@
 // name: DocString.mo
 // keywords: comment, documentation string
 // status: correct
+// cflags: -d=-newInst
 //
 // This file tests ""-documentation strings in various places
 //

@@ -1,6 +1,6 @@
 // name:     TanksConnectedPI with DOPRI5
 // keywords: DOPRI5
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status: correct
 // teardown_command: rm -rf TanksConnectedPI_* TanksConnectedPI TanksConnectedPI.exe TanksConnectedPI.cpp TanksConnectedPI.makefile TanksConnectedPI.libs TanksConnectedPI.log output.log
 // 

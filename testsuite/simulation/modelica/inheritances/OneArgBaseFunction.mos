@@ -6,6 +6,7 @@
 //  Tests when, elsewhen
 //
 // Drmodelica: 9.2 Partial Base Function (p. 308)
+// cflags: -d=-newInst
 // 
 loadFile("OneArgBaseFunction.mo");
 simulate(myTanCall,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

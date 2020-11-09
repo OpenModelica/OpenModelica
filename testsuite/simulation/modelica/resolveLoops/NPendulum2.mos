@@ -1,6 +1,7 @@
 // name:      Pendel2
 // keywords:  reshuffle
 // status:    correct
+// cflags: -d=-newInst
 //
 
 loadFile("Pendulum.mo");

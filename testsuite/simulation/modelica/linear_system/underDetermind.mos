@@ -2,6 +2,7 @@
 // keywords: linear system of equations
 // status: correct
 // teardown_command: rm -rf PointGravityWithPointMasses2* output.log
+// cflags: -d=-newInst
 // 
 // Solving of a linear system of equations
 

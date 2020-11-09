@@ -2,7 +2,7 @@
 // keywords: synchronous
 // status: correct
 // teardown_command: rm -rf  MultipleBaseClocks.log libModelica.dll MultipleBaseClocks.cpp MultipleBaseClocks.libs MultipleBaseClocks.h MultipleBaseClocks.makefile output.log Functions.h Functions.cpp
-// cflags: 	 +simCodeTarget=Cpp
+// cflags: 	 +simCodeTarget=Cpp -d=-newInst
 //
 
 loadModel(Modelica, languageStandard="3.3");getErrorString();

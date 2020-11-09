@@ -1,6 +1,7 @@
 // name:     Type11
 // keywords: types
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that subscripts are handled in a correct manner int the component clause.
 //

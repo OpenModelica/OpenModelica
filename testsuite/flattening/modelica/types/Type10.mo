@@ -1,6 +1,7 @@
 // name:     Type10
 // keywords: types
 // status:   correct
+// cflags: -d=-newInst
 //
 // This checks that types can be written using long class definition too.
 //

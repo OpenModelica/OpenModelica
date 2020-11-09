@@ -1,6 +1,7 @@
 // name:     BM23 -  Sqrt component
 // keywords: Sqrt
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sqrt component.
 //

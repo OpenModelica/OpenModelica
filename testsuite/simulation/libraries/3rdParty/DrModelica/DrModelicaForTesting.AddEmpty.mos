@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.AddEmpty
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.AddEmpty.* DrModelicaForTesting.AddEmpty_* DrModelicaForTesting.AddEmpty DrModelicaForTesting.AddEmpty.exe DrModelicaForTesting.AddEmpty.cpp DrModelicaForTesting.AddEmpty.makefile DrModelicaForTesting.AddEmpty.libs DrModelicaForTesting.AddEmpty.log DrModelicaForTesting.AddEmpty.c DrModelicaForTesting.AddEmpty.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

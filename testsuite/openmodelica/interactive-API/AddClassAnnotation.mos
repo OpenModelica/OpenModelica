@@ -1,6 +1,7 @@
 // name: AddClassAnnotation
 // keywords: 
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the addClassAnnotation API.
 //

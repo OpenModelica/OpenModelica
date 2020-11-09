@@ -1,6 +1,7 @@
 // name: TypeEnumeration
 // keywords: type
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaring a type from an enumeration
 //

@@ -2,6 +2,7 @@
 // keywords: xml, dump
 // status: correct
 // teardown_command: rm -f Modelica.Blocks.Examples.PID_Controller.xml BouncingBall.xml NewtonCoolingDynamic.xml HysteresisEmbeddedControlNoWhen.xml Bug3857.xml
+// cflags: -d=-newInst
 //
 //
 

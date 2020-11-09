@@ -1,6 +1,7 @@
 // name:     ShortClassdefExtends1
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that extending a short class definition works.
 //

@@ -2,6 +2,7 @@
 // keywords: <insert keywords here>
 // status:   correct
 // teardown_command: rm -rf MoonAndEarth_* MoonAndEarth.exe MoonAndEarth.cpp MoonAndEarth.makefile MoonAndEarth.libs MoonAndEarth.log output.log
+// cflags: -d=-newInst
 //
 //
 loadFile("MoonAndEarth.mo");

@@ -1,6 +1,7 @@
 // name:     BS8 - SawTooth component
 // keywords: SawTooth
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the SawTooth component.
 //
@@ -1245,6 +1246,6 @@ end BS8;
 //   assert(sawTooth1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = sawTooth1.outPort.signal[1];
 // end BS8;
-// [flattening/modelica/msl/BS8.mo:685:45-685:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS8.mo:686:45-686:73:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

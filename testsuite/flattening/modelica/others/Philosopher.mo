@@ -1,6 +1,6 @@
 // name:     Philosopher
 // keywords: Example
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status:   correct
 //
 // This is the dining philosopher model from Peter F. book.

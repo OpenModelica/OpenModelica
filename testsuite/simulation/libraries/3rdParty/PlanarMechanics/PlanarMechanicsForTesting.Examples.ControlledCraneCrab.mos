@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.ControlledCraneCrab.* PlanarMechanicsForTesting.Examples.ControlledCraneCrab_* PlanarMechanicsForTesting.Examples.ControlledCraneCrab PlanarMechanicsForTesting.Examples.ControlledCraneCrab.exe PlanarMechanicsForTesting.Examples.ControlledCraneCrab.cpp PlanarMechanicsForTesting.Examples.ControlledCraneCrab.makefile PlanarMechanicsForTesting.Examples.ControlledCraneCrab.libs PlanarMechanicsForTesting.Examples.ControlledCraneCrab.log PlanarMechanicsForTesting.Examples.ControlledCraneCrab.c PlanarMechanicsForTesting.Examples.ControlledCraneCrab.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

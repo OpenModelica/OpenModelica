@@ -1,6 +1,7 @@
 // name:     FunctionDefaultArgsCycle
 // keywords: functions, default arguments, #2640
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Tests default arguments in functions where the values are cyclically
 // dependent.
@@ -21,7 +22,7 @@ end FunctionDefaultArgsCycle;
 
 // Result:
 // Error processing file: FunctionDefaultArgsCycle.mo
-// [flattening/modelica/algorithms-functions/FunctionDefaultArgsCycle.mo:19:3-19:16:writable] Error: The default value of y causes a cyclic dependency.
+// [flattening/modelica/algorithms-functions/FunctionDefaultArgsCycle.mo:20:3-20:16:writable] Error: The default value of y causes a cyclic dependency.
 // Error: Error occurred while flattening model FunctionDefaultArgsCycle
 //
 // # Error encountered! Exiting...

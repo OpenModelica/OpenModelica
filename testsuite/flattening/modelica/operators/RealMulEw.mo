@@ -1,6 +1,7 @@
 // name: RealMulEw
 // keywords: real, multiplication, element-wise
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests element-wise array multiplication.
 //

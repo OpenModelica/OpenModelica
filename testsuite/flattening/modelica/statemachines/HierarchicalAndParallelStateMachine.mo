@@ -1,6 +1,7 @@
 // name: HierarchicalAndParallelStateMachine
 // keywords: state machines features
 // status: correct
+// cflags: -d=-newInst
 
 block HierarchicalAndParallelStateMachine
   "Example from the MLS 3.3, Section 17.3.7"

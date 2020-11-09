@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.WatchDogSystem2
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.WatchDogSystem2.* DrModelicaForTesting.WatchDogSystem2_* DrModelicaForTesting.WatchDogSystem2 DrModelicaForTesting.WatchDogSystem2.exe DrModelicaForTesting.WatchDogSystem2.cpp DrModelicaForTesting.WatchDogSystem2.makefile DrModelicaForTesting.WatchDogSystem2.libs DrModelicaForTesting.WatchDogSystem2.log DrModelicaForTesting.WatchDogSystem2.c DrModelicaForTesting.WatchDogSystem2.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

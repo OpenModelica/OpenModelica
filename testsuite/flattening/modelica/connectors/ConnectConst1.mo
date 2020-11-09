@@ -1,6 +1,7 @@
 // name:     ConnectConst1
 // keywords: connect,constant
 // status:   correct
+// cflags: -d=-newInst
 //
 // The specification does not forbid you to connectors as constant.
 

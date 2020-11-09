@@ -1,6 +1,7 @@
 // name:     Epidemics1
 // keywords: der terminate
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 //

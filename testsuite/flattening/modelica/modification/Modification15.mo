@@ -1,6 +1,7 @@
 // name:     Modification15
 // keywords: modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // This tests if a warning or an error is
 // displayed when the same attribute is
@@ -24,8 +25,8 @@ end C3;
 
 // Result:
 // Error processing file: Modification15.mo
-// [flattening/modelica/modification/Modification15.mo:22:10-22:20:writable] Notification: From here:
-// [flattening/modelica/modification/Modification15.mo:22:59-22:69:writable] Error: Duplicate modification of element x.unit on component c.
+// [flattening/modelica/modification/Modification15.mo:23:10-23:20:writable] Notification: From here:
+// [flattening/modelica/modification/Modification15.mo:23:59-23:69:writable] Error: Duplicate modification of element x.unit on component c.
 // Error: Error occurred while flattening model C3
 //
 // # Error encountered! Exiting...

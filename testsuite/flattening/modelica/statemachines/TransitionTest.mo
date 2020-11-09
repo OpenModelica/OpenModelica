@@ -1,6 +1,7 @@
 // name: TransitionTest
 // keywords: state machines features
 // status: wrong
+// cflags: -d=-newInst
 
 model TransitionTest
   block AState

@@ -1,6 +1,7 @@
 // name:     FaultNonPropagation
 // keywords:
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that faults in an unused model doesn't cause instantiation of another
 // model to fail.

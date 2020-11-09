@@ -1,6 +1,7 @@
 // name:     Transpose
 // keywords: transpose flatening
 // status:   correct
+// cflags: -d=-newInst
 //
 // Fixed bug http://openmodelica.ida.liu.se/bugzilla/show_bug.cgi?id=170
 //

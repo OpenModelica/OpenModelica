@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("ReloadClass.mo");getErrorString();
 echo(false);(r1,s1):=getTimeStamp(ReloadClass);echo(true);

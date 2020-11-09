@@ -1,6 +1,7 @@
 // name: extObj_ticket3446
 // keywords: initialization, external object
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("extObj_ticket3446.mo"); getErrorString();
 simulate(TestMyExternalObj.Test); getErrorString();

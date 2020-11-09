@@ -1,6 +1,7 @@
 // name:     RedeclareLocalClass
 // keywords: redeclare,type
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that the compiler correctly handles redeclarations of local classes.
 //

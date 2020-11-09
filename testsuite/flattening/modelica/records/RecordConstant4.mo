@@ -1,6 +1,7 @@
 // name:     RecordConstant4
 // keywords: record, constant, array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that modifiers are propagated when assigning records to other records,
 // both scalar and arrays.

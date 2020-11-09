@@ -2,6 +2,7 @@
 // keywords: handling of array in -override
 // status: correct
 // teardown_command: rm -rf overrideBug*
+// cflags: -d=-newInst
 //
 // test for #3261
 //

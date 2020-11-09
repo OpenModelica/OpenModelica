@@ -1,6 +1,7 @@
 // name:     Modification4
 // keywords: modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Error since no p inside A.
 
@@ -18,7 +19,7 @@ end Modification4;
 
 // Result:
 // Error processing file: Modification4.mo
-// [flattening/modelica/modification/Modification4.mo:12:3-12:6:writable] Error: Variable b.a: In modifier (p = 2), class or component p not found in <A$b$a>.
+// [flattening/modelica/modification/Modification4.mo:13:3-13:6:writable] Error: Variable b.a: In modifier (p = 2), class or component p not found in <A$b$a>.
 // Error: Error occurred while flattening model Modification4
 //
 // # Error encountered! Exiting...

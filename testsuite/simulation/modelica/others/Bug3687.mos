@@ -1,6 +1,7 @@
 // name: Bug3687.mos
 // keywords: inline
 // status: correct
+// cflags: -d=-newInst
 //
 // test for #3687
 //

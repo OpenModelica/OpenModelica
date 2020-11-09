@@ -1,5 +1,6 @@
 // name: Exercises.* [checkModel]
 // status: correct
+// cflags: -d=-newInst
 // provided by Martin Otter
 //
 

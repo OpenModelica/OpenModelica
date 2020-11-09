@@ -1,6 +1,7 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf initialization.lua initialization.fmu initialization.log initialization_systemCall.log temp-initialization/
+// cflags: -d=-newInst
 
 loadString("
 model initialization

@@ -4,6 +4,7 @@
 // teardown_command: rm -rf EqualityEquationsCorrect_* EqualityEquationsCorrect EqualityEquationsCorrect.exe EqualityEquationsCorrect.cpp EqualityEquationsCorrect.makefile EqualityEquationsCorrect.libs EqualityEquationsCorrect.log output.log
 // 
 // Drmodelica: 8.2 Simple Equality Equations (p. 240)
+// cflags: -d=-newInst
 // 
 loadFile("EqualityEquationsCorrect.mo");
 

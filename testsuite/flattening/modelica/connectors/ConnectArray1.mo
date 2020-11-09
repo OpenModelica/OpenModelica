@@ -1,6 +1,7 @@
 // name:     ConnectArray1
 // keywords: connect
 // status:   correct
+// cflags: -d=-newInst
 //
 // Basic connections
 //

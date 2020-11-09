@@ -1,6 +1,7 @@
 // name: cse2_comSubExp
 // keywords: cse
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model Tearing3 \"Example from Book Continous System Simulation by F. Cellier page 277\"

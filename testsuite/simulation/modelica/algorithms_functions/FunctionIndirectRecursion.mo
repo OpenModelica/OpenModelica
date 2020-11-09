@@ -1,6 +1,7 @@
 // name:     FunctionIndirectRecursion
 // keywords: function
 // status:   correct
+// cflags: -d=-newInst
 //
 // Constant evaluation of indirectly recursive function call.
 

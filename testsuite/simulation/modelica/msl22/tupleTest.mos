@@ -2,6 +2,7 @@
 // keywords: Simulation
 // status:   correct
 // teardown_command: rm -f tplTest* tplTest.cpp tplTest tplTest.exe tplTest.makefile tplTest.log tplTest.libs
+// cflags: -d=-newInst
 // 
 //  Simulate models and read in data.
 //

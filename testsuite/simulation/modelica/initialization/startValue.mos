@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.startValue* _initializationTests.startValue* output.log
+// cflags: -d=-newInst
 //
 //  case for start-values
 //

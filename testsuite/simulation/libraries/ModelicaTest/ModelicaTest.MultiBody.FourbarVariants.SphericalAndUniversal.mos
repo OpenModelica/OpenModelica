@@ -1,7 +1,7 @@
 // name:     ModelicaTest.MultiBody.FourbarVariants.SphericalAndUniversal
 // keywords: simulation ModelicaTest library models
 // status: correct
-// cflags:   +postOptModules=removeFinalParameters,removeevaluateParameters,inlineArrayEqn,constantLinearSystem,simplifysemiLinear,removeSimpleEquations,removeUnusedFunctions,simplifyTimeIndepFuncCalls,optimizeInitialSystem
+// cflags:   +postOptModules=removeFinalParameters,removeevaluateParameters,inlineArrayEqn,constantLinearSystem,simplifysemiLinear,removeSimpleEquations,removeUnusedFunctions,simplifyTimeIndepFuncCalls,optimizeInitialSystem -d=-newInst
 //
 // Simulation Results 
 // ModelicaTest library

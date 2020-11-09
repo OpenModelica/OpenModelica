@@ -5,6 +5,7 @@
 // 
 //  
 // Drmodelica: 15.4.1 Population Dynamics (p. 556) Not in the notebook
+// cflags: -d=-newInst
 // 
 loadFile("LotkaVolterra.mo");
 simulate(LotkaVolterra,startTime=0.0, stopTime=760.0, numberOfIntervals=300, tolerance=1e-5); // 2 intervals == 3 values

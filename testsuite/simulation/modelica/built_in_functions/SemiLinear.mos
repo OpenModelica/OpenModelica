@@ -2,6 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf SemiLinearTest_* SemiLinearTest SemiLinearTest.exe SemiLinearTest.cpp SemiLinearTest.makefile SemiLinearTest.libs SemiLinearTest.log output.log
+// cflags: -d=-newInst
 //
 loadFile("SemiLinear.mo");
 simulate(SemiLinearTest, startTime=0.0, stopTime=1.0, tolerance=1e-5);

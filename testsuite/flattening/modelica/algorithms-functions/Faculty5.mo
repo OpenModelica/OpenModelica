@@ -1,6 +1,7 @@
 // name:     Faculty5
 // keywords: recursive function, Real->Int conversion
 // status:   correct
+// cflags: -d=-newInst
 //
 // Recursive function that results in very large integers.
 //

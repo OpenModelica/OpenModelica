@@ -1,6 +1,7 @@
 // name: DiagonalSimplify1
 // keywords: diagonal, simplify
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simplification of built in operator diagonal.
 //

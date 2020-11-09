@@ -1,6 +1,7 @@
 // name:     Extends11
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing that short-hand extend works for functions.
 //

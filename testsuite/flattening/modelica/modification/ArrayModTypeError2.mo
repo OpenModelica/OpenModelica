@@ -1,6 +1,7 @@
 // name:     ArrayModTypeError2
 // keywords: modification array type
 // status:   incorrect
+// cflags: -d=-newInst
 //
 
 model ArrayModTypeError
@@ -15,8 +16,8 @@ end ArrayModTypeError2;
 
 // Result:
 // Error processing file: ArrayModTypeError2.mo
-// [flattening/modelica/modification/ArrayModTypeError2.mo:13:27-13:57:writable] Notification: From here:
-// [flattening/modelica/modification/ArrayModTypeError2.mo:7:3-7:15:writable] Error: Array dimension mismatch, expression {4, 5, 6} has type Integer[3], expected array dimensions [2].
+// [flattening/modelica/modification/ArrayModTypeError2.mo:14:27-14:57:writable] Notification: From here:
+// [flattening/modelica/modification/ArrayModTypeError2.mo:8:3-8:15:writable] Error: Array dimension mismatch, expression {4, 5, 6} has type Integer[3], expected array dimensions [2].
 // Error: Error occurred while flattening model ArrayModTypeError2
 //
 // # Error encountered! Exiting...

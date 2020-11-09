@@ -2,6 +2,7 @@
 // keywords: Simulate, when-sorting
 // status: correct
 // teardown_command: rm -rf equationsTests.when_sorting* _equationsTests.when_sorting* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate model containing two when equation, that 
 //

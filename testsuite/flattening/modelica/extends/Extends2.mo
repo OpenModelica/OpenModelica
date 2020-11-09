@@ -1,6 +1,7 @@
 // name:     Extends2
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing extends clauses, and encapsulated models. MathCore bug #372
 

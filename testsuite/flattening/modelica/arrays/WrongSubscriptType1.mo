@@ -1,6 +1,7 @@
 // name:     WrongSubscriptType1
 // keywords: array subscript type
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Tests that invalid subscript types are caught.
 //
