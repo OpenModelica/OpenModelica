@@ -2686,10 +2686,6 @@ algorithm
     local
       DAE.Exp e1, e2, e3, actual, simplified;
 
-    // replace initial() with false
-    case (DAE.CALL(path=Absyn.IDENT(name="initial")), _)
-    then (DAE.BCONST(false), inUseHomotopy);
-
     // replace homotopy(actual, simplified) with actual
     case (DAE.CALL(path=Absyn.IDENT(name="homotopy"), expLst=actual::_::_), _)
     then (actual, true);
