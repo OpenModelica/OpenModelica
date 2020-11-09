@@ -53,18 +53,18 @@
 
 extern "C" void handle_aborts(int signal_number)
 {
-    
+
     std::string error = std::string("Abort was called with error code: ") + to_string(signal_number);
     throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
-       
+
 }
 
 extern "C" void handle_segmentaion_faults(int signal_number)
 {
-    
+
     std::string error = std::string("A memory access violation has occurred: ") + to_string(signal_number);
     throw ModelicaSimulationError(MODEL_EQ_SYSTEM, error);
-       
+
 }
 
 
@@ -91,7 +91,7 @@ int _tmain(int argc, const _TCHAR* argv[])
 int main(int argc, const char* argv[])
 #endif
 {
-    
+
     //use handle_aborts for abort() calls
     signal(SIGABRT, &handle_aborts);
     //use handle_segmentaion_faults for segmentatino faults

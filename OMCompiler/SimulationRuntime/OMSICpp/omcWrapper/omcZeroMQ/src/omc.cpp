@@ -45,8 +45,8 @@ int main(int argc, const char* argv[])
 #endif
 {
     
-   
-    
+
+
     int port_pub;
         int port_sub;
         string simulation_id;
@@ -180,12 +180,12 @@ int main(int argc, const char* argv[])
     std::thread t(std::bind(&omcZeromqTask::run, &st));
 
     t.join();
-    
+
      if (globalSimulationExceptionPtr)
      {
         std::rethrow_exception(globalSimulationExceptionPtr);
      }
-         
+
      if (globalZeroMQTaskExceptionPtr)
      {
         std::rethrow_exception(globalZeroMQTaskExceptionPtr);
@@ -198,7 +198,7 @@ int main(int argc, const char* argv[])
     {
 
         std::cout << "Stop omc zeromq application with error: " << ex.what();
-    
+
         return 1;
     }
 

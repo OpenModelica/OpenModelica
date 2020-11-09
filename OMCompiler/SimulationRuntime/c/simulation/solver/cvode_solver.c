@@ -52,6 +52,15 @@
 #ifdef WITH_SUNDIALS
 
 /* Macros for better readability */
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
 #define CVODE_LMM_MAX 2
 const char *CVODE_LMM_NAME[CVODE_LMM_MAX + 1] = {
     "undefined",
@@ -61,19 +70,19 @@ const char *CVODE_LMM_NAME[CVODE_LMM_MAX + 1] = {
 
 const char *CVODE_LMM_DESC[CVODE_LMM_MAX + 1] = {
     "undefined",
-    "Adams-Moulton linear multistep method. Use together with CV_FUNCTIONAL for nonstiff problems.",
-    "BDF linear multistep method. Use together with CV_NEWTON for stiff problems. Default option."};
+    "Adams-Moulton linear multistep method. Use together with CV_ITER_FIXED_POINT for nonstiff problems.",
+    "BDF linear multistep method. Use together with CV_ITER_NEWTON for stiff problems. Default option."};
 
 #define CVODE_ITER_MAX 2
 const char *CVODE_ITER_NAME[CVODE_ITER_MAX + 1] = {
     "undefined",
-    "CV_FUNCTIONAL", /* 1 */
-    "CV_NEWTON"      /* 2 */
+    "CV_ITER_FIXED_POINT", /* 1 */
+    "CV_ITER_NEWTON"       /* 2 */
 };
 
 const char *CVODE_ITER_DESC[CVODE_ITER_MAX + 1] = {
     "undefined",
-    "Nonlinear system solution through functional iterations",
+    "Nonlinear system solution through fixed-point iterations",
     "Nonlinear system solution through Newton iterations"
 };
 
@@ -128,7 +137,7 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
   if (ACTIVE_STREAM(LOG_SOLVER_V))
   {
     infoStreamPrint(LOG_SOLVER_V, 1, "y at time=%f", time);
-    for (i = 0; i < data->modelData->nStates; i++)
+    for (i = 0; i < cvodeData->N; i++)
     {
       infoStreamPrint(LOG_SOLVER_V, 0, "y[%ld] = %e", i, NV_Ith_S(y, i));
     }
@@ -153,16 +162,16 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
     rt_tick(SIM_TIMER_SOLVER);
 
   /* Update ydot */
-  for (i = 0; i < data->modelData->nStates; i++)
+  for (i = 0; i < cvodeData->N; i++)
   {
-    NV_Ith_S(ydot, i) = data->localData[0]->realVars[data->modelData->nStates + i];
+    NV_Ith_S(ydot, i) = data->localData[0]->realVars[cvodeData->N + i];
   }
 
   /* Debug print for derived states (output) */
   if (ACTIVE_STREAM(LOG_SOLVER_V))
   {
     infoStreamPrint(LOG_SOLVER_V, 1, "ydot at time=%f", time);
-    for (i = 0; i < data->modelData->nStates; i++)
+    for (i = 0; i < cvodeData->N; i++)
     {
       infoStreamPrint(LOG_SOLVER_V, 0, "ydot[%ld] = %e", i, NV_Ith_S(ydot, i));
     }
@@ -196,35 +205,44 @@ int cvodeRightHandSideODEFunction(realtype time, N_Vector y, N_Vector ydot, void
   return retVal;
 }
 
-/*
- *  function calculates a jacobian matrix by
- *  numerical method finite differences with coloring
- *  into a dense DlsMat matrix
+
+/**
+ * @brief Calculates jacobian matrix numerical with coloring
+ *
+ * Not implemented!
+ *
+ * @param currentTime
+ * @param y
+ * @param fy
+ * @param Jac
+ * @param userData
+ * @return int
  */
 static int jacColoredNumericalDense(double currentTime, N_Vector y, N_Vector fy,
-                                    DlsMat Jac, void *userData)
+                                    SUNMatrix Jac, void *userData)
 {
   /* TODO: Add stuff for colored dense jacobian */
   return -1;
 }
 
+
 /**
  * @brief Wrapper function to call dense Jacobian
  *
- * @param N
- * @param t
- * @param y
- * @param fy
- * @param Jac
- * @param user_data
- * @param tmp1
- * @param tmp2
- * @param tmp3
- * @return int
+ * Not usable at the moment!
+ *
+ * @param t           Independent variable (time).
+ * @param y           Dependent varaible vector.
+ * @param fy          Current value of f(t,y).
+ * @param Jac         Output Jacobian.
+ * @param user_data   User supplied data.
+ * @param tmp1        Pointer to allocated memory to be used as temp storage or work space.
+ * @param tmp2        "
+ * @param tmp3        "
+ * @return int        Returns 0 on succes, positiv value for recoverable error, negative value for error.
  */
-static int callDenseJacobian(long int N, double t,
-                             N_Vector y, N_Vector fy,
-                             DlsMat Jac, void *user_data,
+static int callDenseJacobian(double t, N_Vector y, N_Vector fy,
+                             SUNMatrix Jac, void *user_data,
                              N_Vector tmp1, N_Vector tmp2, N_Vector tmp3)
 {
   /* Variables */
@@ -250,13 +268,13 @@ static int callDenseJacobian(long int N, double t,
   }
   else
   {
-    throwStreamPrint(threadData, "##CVODE## Something goes wrong while obtain jacobian matrix!");
+    throwStreamPrint(threadData, "##CVODE## Something went wrong while obtain jacobian matrix!");
   }
 
   /* debug */
   if (ACTIVE_STREAM(LOG_JAC))
   {
-    dumpJac = _omc_createMatrix(data->modelData->nStates, data->modelData->nStates, Jac->data);
+    dumpJac = _omc_createMatrix(cvodeData->N, cvodeData->N, SM_DATA_D(Jac));
     _omc_printMatrix(dumpJac, "CVODE-Solver: Matrix A", LOG_JAC);
     _omc_destroyMatrix(dumpJac);
   }
@@ -294,7 +312,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
     setContext(data, &time, CONTEXT_EVENTS);
   }
 
-  /* TODO: re-scale idaData->y to evaluate the equations */
+  /* TODO: re-scale cvodeData->y to evaluate the equations */
 
   saveJumpState = threadData->currentErrorStage;
   threadData->currentErrorStage = ERROR_EVENTSEARCH;
@@ -335,7 +353,7 @@ int rootsFunctionCVODE(double time, N_Vector y, double *gout, void *userData)
  *
  * If the user didn't provide any flags following settings will be chosen:
  *   config->lmm = CV_BDF
- *   config->iter = CV_NEWTON
+ *   config->iter = CV_ITER_NEWTON
  *
  * @param cvodeData       CVODE solver data struckt
  * @param threadData      Thread data for error handling
@@ -380,13 +398,13 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
   /* Set nonlinear solver iteration type */
   if (omc_flag[FLAG_CVODE_ITER])
   {
-    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_FUNCTIONAL]))
+    if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_FIXED_POINT]))
     {
-      config->iter = CV_FUNCTIONAL;
+      config->iter = CV_ITER_FIXED_POINT;
     }
-    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_NEWTON]))
+    else if (strcmp((const char *)omc_flagValue[FLAG_CVODE_ITER], CVODE_ITER_NAME[CV_ITER_NEWTON]))
     {
-      config->iter = CV_NEWTON;
+      config->iter = CV_ITER_NEWTON;
     }
     else
     {
@@ -406,17 +424,17 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
   {
     if (config->lmm == CV_ADAMS)
     {
-      config->iter = CV_FUNCTIONAL;
+      config->iter = CV_ITER_FIXED_POINT;
     }
     else
     {
-      config->iter = CV_NEWTON;
+      config->iter = CV_ITER_NEWTON;
     }
   }
 
   /* Check for compability of lmn and iter */
-  if ((config->lmm == CV_ADAMS && config->iter != CV_FUNCTIONAL) ||
-      (config->lmm == CV_BDF && config->iter != CV_NEWTON))
+  if ((config->lmm == CV_ADAMS && config->iter != CV_ITER_FIXED_POINT) ||
+      (config->lmm == CV_BDF && config->iter != CV_ITER_NEWTON))
   {
     if (ACTIVE_WARNING_STREAM(LOG_SOLVER))
     {
@@ -444,7 +462,7 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
     warningStreamPrint(LOG_SOLVER, 0, "Ignoring user supplied flag \"%s\", using internal dense Jacobian of CVODE.", omc_flagValue[FLAG_JACOBIAN]);
   }
   config->jacobianMethod = INTERNALNUMJAC;
-  //config->jacobianMethod = COLOREDNUMJAC;
+  //config->jacobianMethod = COLOREDNUMJAC; // Not implemented yet!
 
   /* Minimum absolute step size */
   config->minStepSize = 1e-12; /* TODO: This should be depending on the system? Bigger for 32 bit? */
@@ -468,11 +486,11 @@ void cvodeGetConfig(CVODE_CONFIG *config, threadData_t *threadData, booleantype 
   /* TODO: Add a user flag */
   if (config->lmm == CV_ADAMS)
   {
-    config->maxOrderLinearMultistep = ADAMS_Q_MAX;
+    config->maxOrderLinearMultistep = 12 /* From ADAMS_Q_MAX */;
   }
   else if (config->lmm == CV_BDF)
   {
-    config->maxOrderLinearMultistep = BDF_Q_MAX;
+    config->maxOrderLinearMultistep = 5 /* From BDF_Q_MAX */;
   }
   else
   {
@@ -534,11 +552,12 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   cvodeGetConfig(&(cvodeData->config), threadData, isFMI);
 
   /* Initialize states */
-  cvodeData->y = N_VMake_Serial(data->modelData->nStates, (realtype *)data->localData[0]->realVars);
+  cvodeData->N = (long int)data->modelData->nStates;
+  cvodeData->y = N_VMake_Serial(cvodeData->N, (realtype *)data->localData[0]->realVars);
   assertStreamPrint(threadData, NULL != cvodeData->y, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
 
   /* Allocate CVODE memory block */
-  cvodeData->cvode_mem = CVodeCreate(cvodeData->config.lmm, cvodeData->config.iter);
+  cvodeData->cvode_mem = CVodeCreate(cvodeData->config.lmm);
   assertStreamPrint(threadData, NULL != cvodeData->cvode_mem, "CVODE_ERROR: CVodeCreate failed - returned NULL pointer.");
 
   if (measure_time_flag)
@@ -551,64 +570,88 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
                    cvodeRightHandSideODEFunction,
                    data->simulationInfo->startTime,
                    cvodeData->y);
-  assertStreamPrint(threadData, flag != CV_MEM_NULL, "CVODE_ERROR: CVodeInit failed with flag CV_MEM_NULL: \"The cvode memory block was not initialized through a previous call to CVodeCreate\"");
-  assertStreamPrint(threadData, flag != CV_MEM_FAIL, "CVODE_ERROR: CVodeInit failed with flag CV_MEM_FAIL: \"A memory allocation request has failed.\"");
-  assertStreamPrint(threadData, flag != CV_ILL_INPUT, "CVODE_ERROR: CVodeInit failed with flag CV_ILL_INPUT: \"An input argument to CVodeInit has an illegal value.\"");
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeInit failed with unknown flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeInit");
 
   /* Set CVODE relative and absolute error tolerances */
-  abstol_tmp = (double *)calloc(data->modelData->nStates, sizeof(double)); /* Is freed with `free(NV_DATA_S(cvodeData->absoluteTolerance));` */
+  abstol_tmp = (double *)calloc(cvodeData->N, sizeof(double)); /* Is freed with `free(NV_DATA_S(cvodeData->absoluteTolerance));` */
   assertStreamPrint(threadData, abstol_tmp != NULL, "Out of memory.");
-  for (i = 0; i < data->modelData->nStates; ++i)
+  for (i = 0; i < cvodeData->N; ++i)
   {
     abstol_tmp[i] = fmax(fabs(data->modelData->realVarsData[i].attribute.nominal), 1e-32) * data->simulationInfo->tolerance;
   }
-  cvodeData->absoluteTolerance = N_VMake_Serial(data->modelData->nStates, abstol_tmp);
+  cvodeData->absoluteTolerance = N_VMake_Serial(cvodeData->N, abstol_tmp);
   assertStreamPrint(threadData, NULL != cvodeData->absoluteTolerance, "SUNDIALS_ERROR: N_VMake_Serial failed - returned NULL pointer.");
   flag = CVodeSVtolerances(cvodeData->cvode_mem, data->simulationInfo->tolerance, cvodeData->absoluteTolerance);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSVtolerances failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSVtolerances");
   infoStreamPrint(LOG_SOLVER, 0, "CVODE Using relative error tolerance %e", data->simulationInfo->tolerance);
 
   /* Provide cvodeData as user data */
   flag = CVodeSetUserData(cvodeData->cvode_mem, cvodeData);
-  assertStreamPrint(threadData, flag != CV_MEM_NULL, "CVODE_ERROR: CVodeSetUserData failed with flag CV_MEM_NULL: \"The cvode mem pointer is NULL.\"");
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeInit failed with unknown flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetUserData");
 
-  /* Specify the CVDENSE dense linear solver */
+  /* Set linear solver useb by CVODE */
+  cvodeData->y_linSol = N_VNew_Serial(cvodeData->N);
   switch (cvodeData->config.jacobianMethod)
   {
   case INTERNALNUMJAC:
   case COLOREDNUMJAC:
-    flag = CVDense(cvodeData->cvode_mem, (long int)data->modelData->nStates);
-    assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVDense failed with flag %i", flag);
+    cvodeData->J = SUNDenseMatrix(cvodeData->N, cvodeData->N);
+    cvodeData->linSol = SUNLinSol_Dense(cvodeData->y_linSol, cvodeData->J);
+    assertStreamPrint(threadData, NULL != cvodeData->linSol, "##CVODE## SUNLinSol_Dense failed.");
     break;
   default:
-    throwStreamPrint(threadData, "Unknown linear solver method %s for CVODE.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## Unknown linear solver method %s for CVODE.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
   }
+  flag = CVodeSetLinearSolver(cvodeData->cvode_mem, cvodeData->linSol, cvodeData->J);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetLinearSolver");
+  infoStreamPrint(LOG_SOLVER, 0, "CVODE Using dense internal linear solver SUNLinSol_Dense.");
 
   /* Set Jacobian function */
   jacobian = &(data->simulationInfo->analyticJacobians[data->callback->INDEX_JAC_A]);
-  if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian) == 0)
+  if (data->callback->initialAnalyticJacobianA(data, threadData, jacobian) == 0 /* Jac present */)
   {
+    // TODO: Implement Jacobian evaluation with analytic Jacobian
   }
   else
   {
+    // Do Nothing
   }
 
   switch (cvodeData->config.jacobianMethod)
   {
   case INTERNALNUMJAC:
-    flag = CVDlsSetDenseJacFn(cvodeData->cvode_mem, NULL);
-    assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVDlsSetDenseJacFn failed with flag %i", flag);
-    infoStreamPrint(LOG_SOLVER, 0, "CVODE uses internal dense numeric jacobian method");
+    flag = CVodeSetJacFn(cvodeData->cvode_mem, NULL);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
+    infoStreamPrint(LOG_SOLVER, 0, "CVODE Use internal dense numeric jacobian method.");
     break;
   case COLOREDNUMJAC:
-    flag = CVDlsSetDenseJacFn(cvodeData->cvode_mem, callDenseJacobian);
-    assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVDlsSetDenseJacFn failed with flag %i", flag);
-    infoStreamPrint(LOG_SOLVER, 0, "CVODE uses colored dense numeric jacobian method");
+    throwStreamPrint(threadData, "##CVODE## Linear solver method %s not implemented yet!", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    flag = CVodeSetJacFn(cvodeData->cvode_mem, callDenseJacobian);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeSetJacFn");
+    infoStreamPrint(LOG_SOLVER, 0, "CVODE Use colored dense numeric jacobian method.");
     break;
   default:
-    throwStreamPrint(threadData, "Unknown linear solver method %s for CVODE.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+    throwStreamPrint(threadData, "##CVODE## Unknown linear solver method %s.", JACOBIAN_METHOD[cvodeData->config.jacobianMethod]);
+  }
+
+  /* Set optional non-linear solver module */
+  switch (cvodeData->config.iter)
+  {
+    case CV_ITER_FIXED_POINT:
+      cvodeData->y_nonLinSol = N_VNew_Serial(cvodeData->N);
+      cvodeData->nonLinSol = SUNNonlinSol_FixedPoint(cvodeData->y_nonLinSol, cvodeData->N /* Num acceleration vectors for Anderson's method, m <= dimension*/);
+      assertStreamPrint(threadData, NULL != cvodeData->nonLinSol, "##CVODE## SUNNonlinSol_FixedPoint failed.");
+      flag = CVodeSetNonlinearSolver(cvodeData->cvode_mem, cvodeData->nonLinSol);
+      checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetNonlinearSolver");
+    case CV_ITER_NEWTON:
+      /* Default option, no allocation needed */
+      cvodeData->y_nonLinSol = NULL;
+      cvodeData->nonLinSol = NULL;
+      break;
+    case CV_ITER_MAX:
+      throwStreamPrint(threadData, "##CVODE## Non-linear solver method not set.");
+    default:
+      throwStreamPrint(threadData, "##CVODE## Unknown non-linear solver method %s.", CVODE_ITER_NAME[cvodeData->config.iter]);
   }
 
   /* Set root finding function */
@@ -616,23 +659,23 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
   {
     solverInfo->solverRootFinding = 1;
     flag = CVodeRootInit(cvodeData->cvode_mem, data->modelData->nZeroCrossings, rootsFunctionCVODE);
-    assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeRootInit failed with flag %i", flag);
+    checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeRootInit");
   }
   infoStreamPrint(LOG_SOLVER, 0, "CVODE uses internal root finding method %s", solverInfo->solverRootFinding ? "YES" : "NO");
 
   /* ### Set optional settings ### */
   /* Minimum absolute step size */
   flag = CVodeSetMinStep(cvodeData->cvode_mem, cvodeData->config.minStepSize);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetMinStep failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMinStep");
 
   /* Maximum absolute step size */
   flag = CVodeSetMaxStep(cvodeData->cvode_mem, cvodeData->config.maxStepSize);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetMaxStep failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxStep");
   infoStreamPrint(LOG_SOLVER, 0, "CVODE maximum absolut step size %g", cvodeData->config.maxStepSize);
 
   /* Initial step size */
   flag = CVodeSetInitStep(cvodeData->cvode_mem, cvodeData->config.initStepSize);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetInitStep failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetInitStep");
   if (cvodeData->config.initStepSize == 0)
   {
     infoStreamPrint(LOG_SOLVER, 0, "CVODE initial step size is set automatically");
@@ -644,32 +687,34 @@ int cvode_solver_initial(DATA *data, threadData_t *threadData, SOLVER_INFO *solv
 
   /* Maximum integration order */
   flag = CVodeSetMaxOrd(cvodeData->cvode_mem, cvodeData->config.maxOrderLinearMultistep);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetMaxOrd failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxOrd");
   infoStreamPrint(LOG_SOLVER, 0, "CVODE maximum integration order %d", cvodeData->config.maxOrderLinearMultistep);
 
   /* Maximum number of nonlinear convergence failures */
   flag = CVodeSetMaxConvFails(cvodeData->cvode_mem, cvodeData->config.maxConvFailPerStep);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetMaxConvFails failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxConvFails");
   infoStreamPrint(LOG_SOLVER, 0, "CVODE maximum number of nonlinear convergence failures permitted during one step %d", cvodeData->config.maxConvFailPerStep);
 
   /* BDF stability limit detection */
   flag = CVodeSetStabLimDet(cvodeData->cvode_mem, cvodeData->config.BDFStabDetect);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetStabLimDet failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetStabLimDet");
   infoStreamPrint(LOG_SOLVER, 0, "CVODE BDF stability limit detection algorithm %s", cvodeData->config.BDFStabDetect ? "ON" : "OFF");
 
   /* TODO: Add stuff in cvodeGetConfig for this */
   flag = CVodeSetMaxNonlinIters(cvodeData->cvode_mem, 5); /* Maximum number of iterations */
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetMaxNonlinIters failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxNonlinIters");
   flag = CVodeSetMaxErrTestFails(cvodeData->cvode_mem, 100); /* Maximum number of error test failures */
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetMaxErrTestFails failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxErrTestFails");
   flag = CVodeSetMaxNumSteps(cvodeData->cvode_mem, 1000); /* Maximum number of steps */
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetMaxNumSteps failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetMaxNumSteps");
 
   /* Log cvode_initial */
   infoStreamPrint(LOG_SOLVER_V, 0, "### Finished initialize of CVODE solver successfully ###");
 
   if (measure_time_flag)
-    rt_clear(SIM_TIMER_SOLVER); /* Initialization should not add this timer... */
+  {
+    rt_clear(SIM_TIMER_SOLVER); /* Initialization should not add to this timer... */
+  }
 
   return 0;
 }
@@ -698,10 +743,7 @@ int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
   flag = CVodeReInit(cvodeData->cvode_mem,
                      solverInfo->currentTime,
                      cvodeData->y);
-  assertStreamPrint(threadData, flag != CV_MEM_NULL, "CVODE_ERROR: CVodeInit failed with flag CV_MEM_NULL: \"The cvode memory block was not initialized through a previous call to CVodeCreate\"");
-  assertStreamPrint(threadData, flag != CV_NO_MALLOC, "CVODE_ERROR: CVodeInit failed with flag CV_NO_MALLOC: \"Memory space for the cvode memory block was not allocated through a previous call to CVodeInit.\"");
-  assertStreamPrint(threadData, flag != CV_ILL_INPUT, "CVODE_ERROR: CVodeInit failed with flag CV_ILL_INPUT: \"An input argument to CVodeInit has an illegal value.\"");
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeInit failed with unknown flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeReInit");
 
   /* Calculate matrix for residual scaling */
   /* TODO: Add rescaling */
@@ -717,13 +759,23 @@ int cvode_solver_reinit(DATA *data, threadData_t *threadData, SOLVER_INFO *solve
  */
 int cvode_solver_deinitial(CVODE_SOLVER *cvodeData)
 {
-  free(cvodeData->simData);
+  /* Free work arrays */
   N_VDestroy_Serial(cvodeData->y);
-
   free(NV_DATA_S(cvodeData->absoluteTolerance));
   N_VDestroy_Serial(cvodeData->absoluteTolerance);
 
+  /* Free linear solver data */
+  N_VDestroy_Serial(cvodeData->y_linSol);
+  SUNMatDestroy(cvodeData->J);
+  SUNLinSolFree(cvodeData->linSol);
+
+  /* Free non-linear solver data */
+  N_VDestroy_Serial(cvodeData->y_nonLinSol);
+  SUNNonlinSolFree(cvodeData->nonLinSol);
+
+  /* Free CVODE internal data */
   CVodeFree(&cvodeData->cvode_mem);
+  free(cvodeData->simData);
 
   free(cvodeData);
 
@@ -751,33 +803,32 @@ void cvode_save_statistics(void *cvode_mem, unsigned int *solverStatsTmp, thread
   /* Get number of internal steps taken by CVODE */
   tmp1 = 0;
   flag = CVodeGetNumSteps(cvode_mem, &tmp1);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVODEGetNumSteps failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumSteps");
   solverStatsTmp[0] = tmp1;
 
   /* Get number of right hand side evaluations */
   /* TODO: Is it okay to count number of rhs evaluations instead of residual evaluations? */
   tmp1 = 0;
   flag = CVodeGetNumRhsEvals(cvode_mem, &tmp1);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeGetNumRhsEvals failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumRhsEvals");
   solverStatsTmp[1] = tmp1;
 
-  /* Get number of right hand side evaluations for Jacobian */
-  /* TODO: Is it okay to add this to the Jacobian? */
+  /* Get number of Jacobian evaluations */
   tmp1 = 0;
-  flag = CVDlsGetNumRhsEvals(cvode_mem, &tmp1);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVDlsGetNumRhsEvals failed with flag %i", flag);
+  flag = CVodeGetNumJacEvals(cvode_mem, &tmp1);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CVLS_FLAG, "CVodeGetNumJacEvals");
   solverStatsTmp[2] = tmp1;
 
   /* Get number of local error test failures */
   tmp1 = 0;
   flag = CVodeGetNumErrTestFails(cvode_mem, &tmp1);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVODEGetNumErrTestFails failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumErrTestFails");
   solverStatsTmp[3] = tmp1;
 
   /* Get number of nonlinear convergence failures */
   tmp1 = 0;
   flag = CVodeGetNumNonlinSolvConvFails(cvode_mem, &tmp1);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVODEGetNumNonlinSolvConvFails failed with flag %i", flag);
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeGetNumNonlinSolvConvFails");
   solverStatsTmp[4] = tmp1;
 
   /* Get even more statistics */
@@ -875,8 +926,7 @@ int cvode_solver_step(DATA *data, threadData_t *threadData, SOLVER_INFO *solverI
   /* Set stop time */
   tout = solverInfo->currentTime + solverInfo->currentStepSize;
   flag = CVodeSetStopTime(cvodeData->cvode_mem, tout);
-  assertStreamPrint(threadData, flag >= 0, "CVODE_ERROR: CVodeSetStopTime failed with flag %i", flag);
-
+  checkReturnFlag_SUNDIALS(flag, SUNDIALS_CV_FLAG, "CVodeSetStopTime");
   /* Integrator loop */
   do
   {

@@ -36,22 +36,30 @@
 #endif
 #include "../../simulation_data.h"
 #include "../../util/simulation_options.h"
+#include "sundials_error.h"
 #include "solver_main.h"
 
 #ifdef WITH_SUNDIALS
 
-/* adrpo: on mingw link with static sundials */
-#if defined(__MINGW32__)
-#if !defined(LINK_SUNDIALS_STATIC)
-#define LINK_SUNDIALS_STATIC 1
-#endif
-#endif
-
 #include <cvode/cvode.h>             /* prototypes for CVODE fcts., consts. */
-#include <cvode/cvode_impl.h>        /* prototypes for CVODE internal consts.*/
-#include <cvode/cvode_dense.h>       /* prototype for CVODE dense matrix functions and constants */
 #include <nvector/nvector_serial.h>  /* serial N_Vector types, fcts., macros */
-#include <sundials/sundials_types.h> /* definition of type realtype */
+#include <sunlinsol/sunlinsol_dense.h>              /* Default dense linear solver */
+#include <sunnonlinsol/sunnonlinsol_fixedpoint.h>   /* Default dense linear solver */
+
+/**
+ * @brief Non-linear solver method for internal use of CVODE.
+ *
+ * Can be Fixed-Point iteration or Newton iteration.
+ */
+typedef enum CVODE_ITER
+{
+  CV_ITER_UNKNOWN      =0,
+
+  CV_ITER_FIXED_POINT  =1,   /* Fixed point iteration */
+  CV_ITER_NEWTON       =2,   /* Newton iteration (default) */
+
+  CV_ITER_MAX
+}CVODE_ITER;
 
 typedef struct CVODE_USERDATA
 {
@@ -65,9 +73,9 @@ typedef struct CVODE_CONFIG
   int lmm;                     /* Linear multistep method
                                 * CV_ADAMS = 1 for non-stiff problems
                                 * CV_BDF = 2 for stiff problems */
-  int iter;                    /* Nonlinear solver iteration
-                                * CV_FUNCTIONAL = 1 for functional iterations
-                                * CV_NEWTON = 2 for Newton iterations */
+  CVODE_ITER iter;             /* Nonlinear solver iteration
+                                * CV_ITER_FIXED_POINT = 1 for fixed-point-iteration
+                                * CV_ITER_NEWTON = 2 for Newton iterations */
 
   booleantype internalSteps;           /* if TRUE internal step of the integrator are used, default FALSE */
   enum JACOBIAN_METHOD jacobianMethod; /* Method for Jacobian computation */
@@ -95,10 +103,21 @@ typedef struct CVODE_SOLVER
 {
   CVODE_CONFIG config;        /* CVODE configuration */
   booleantype isInitialized;  /* Boolean flag if problem is initilaized with start value for y */
+  long int N;                 /* NUmber of unknowns / states */
 
   /* work arrays */
   N_Vector y;                 /* dependent variable vector of ODE */
   N_Vector absoluteTolerance; /* vector of absolute integrator tolerances for CVODE */
+
+  /* linear solver data */
+  SUNLinearSolver linSol;     /* Linear solver object */
+  N_Vector y_linSol;          /* Template for cloning vectors needed inside linear solver */
+  SUNMatrix J;                /* Sparse matrix template for cloning matrices needed within
+                               linear solver */
+
+  /* Non-linear solver data */
+  SUNNonlinearSolver nonLinSol; /* Non-linear solver object */
+  N_Vector y_nonLinSol;         /* Template for cloning vectors needed inside non-linear solver */
 
   /* CVODE internal data */
   void *cvode_mem;            /* Internal CVODE memory block */

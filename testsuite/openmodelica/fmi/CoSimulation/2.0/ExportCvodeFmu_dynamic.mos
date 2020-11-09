@@ -42,10 +42,11 @@ val(rev.w, 1.0, "Pendulum_dynamic_res.mat"); getErrorString();
 // 0
 // ""
 // "LOG_SOLVER        | info    | CVODE linear multistep method CV_BDF
-// LOG_SOLVER        | info    | CVODE maximum integration order CV_NEWTON
+// LOG_SOLVER        | info    | CVODE maximum integration order CV_ITER_NEWTON
 // LOG_SOLVER        | info    | CVODE use equidistant time grid YES
 // LOG_SOLVER        | info    | CVODE Using relative error tolerance 1.000000e-06
-// LOG_SOLVER        | info    | CVODE uses internal dense numeric jacobian method
+// LOG_SOLVER        | info    | CVODE Using dense internal linear solver SUNLinSol_Dense.
+// LOG_SOLVER        | info    | CVODE Use internal dense numeric jacobian method.
 // LOG_SOLVER        | info    | CVODE uses internal root finding method NO
 // LOG_SOLVER        | info    | CVODE maximum absolut step size 0
 // LOG_SOLVER        | info    | CVODE initial step size is set automatically
@@ -80,6 +81,6 @@ val(rev.w, 1.0, "Pendulum_dynamic_res.mat"); getErrorString();
 // ""
 // -2.697256534092101
 // ""
-// 3.193698935005396
+// 3.193698935005398
 // ""
 // endResult

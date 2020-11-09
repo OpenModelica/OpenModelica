@@ -370,36 +370,42 @@ void printParameters(DATA *data, int stream)
   TRACE_POP
 }
 
-/*! \fn printSparseStructure
+/**
+ * @brief Prints sparse structure.
  *
- *  prints sparse structure of jacobian A
+ * Use to print e.g. sparse Jacobian matrix.
+ * Only prints if stream is active and sparse pattern is non NULL and of size > 0.
  *
- *  \param [in]  [sparsePattern]
- *  \param [in]  [sizeRow]
- *  \param [in]  [sizeCol]
- *  \param [in]  [stream]
- *
+ * @param [in]  sparsePattern   Matrix to print.
+ * @param [in]  sizeRows        Number of rows of matrix.
+ * @param [in]  sizeCols        Number of columns of matrix.
+ * @param [in]  stream          Steam to print to.
+ * @param [in]  name            Name of matrix.
  */
 void printSparseStructure(SPARSE_PATTERN *sparsePattern, int sizeRows, int sizeCols, int stream, const char* name)
 {
+  /* Variables */
   unsigned int row, col, i, j;
-  /* Will crash with a static size array */
-  char *buffer = NULL;
+  char *buffer;
 
-  if (!sparsePattern) {
+  if (!ACTIVE_STREAM(stream))
+  {
     return;
   }
 
-  if (!ACTIVE_STREAM(stream)) {
+  /* Catch empty sparsePattern */
+  if (sparsePattern == NULL || sizeRows <= 0 || sizeCols <= 0)
+  {
+    infoStreamPrint(stream, 0, "No sparse strucutre available for \"%s\".", name);
     return;
   }
 
   buffer = (char*)omc_alloc_interface.malloc(sizeof(char)* 2*sizeCols + 4);
 
-  infoStreamPrint(stream, 1, "sparse structure of %s [size: %ux%u]", name, sizeRows, sizeCols);
+  infoStreamPrint(stream, 1, "Sparse structure of %s [size: %ux%u]", name, sizeRows, sizeCols);
   infoStreamPrint(stream, 0, "%u nonzero elements", sparsePattern->numberOfNoneZeros);
 
-  infoStreamPrint(stream, 1, "transposed sparse structure (rows: states)");
+  infoStreamPrint(stream, 1, "Transposed sparse structure (rows: states)");
   i=0;
   for(row=0; row < sizeRows; row++)
   {

@@ -43,7 +43,7 @@
  *
  * (symbolical only), used in IDA and Dassl.
  */
-// ToDo AHEu: Make this usable without OpenMP and use it as default!
+// ToDo: Make this usable without OpenMP and use it as default!
 void allocateThreadLocalJacobians(DATA* data, ANALYTIC_JACOBIAN** jacColumns)
 {
   int maxTh = omc_get_max_threads();

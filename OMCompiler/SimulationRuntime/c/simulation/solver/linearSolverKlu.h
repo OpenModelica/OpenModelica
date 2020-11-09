@@ -38,8 +38,8 @@
 #define _LINEARSOLVERKLU_H_
 
 #include "../../simulation_data.h"
-#include "suitesparse/Include/amd.h"
-#include "suitesparse/Include/klu.h"
+#include <amd.h>
+#include <klu.h>
 
 typedef struct DATA_KLU
 {

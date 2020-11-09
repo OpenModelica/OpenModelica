@@ -283,16 +283,16 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value specifies csv-files for debug values for optimizer step.",
   /* FLAG_CVODE_ITER */
   "  Nonlinear solver iteration for CVODE solver. Default: Depends on flag cvodeLinearMultistepMethod. Valid values\n\n"
-  "  * CV_NEWTON      - Newton iteration.\n"
-  "                     Advised to use together with flag -cvodeLinearMultistepMethod=CV_BDF.\n"
-  "  * CV_FUNCTIONAL  - Functional iteration.\n"
-  "                     Advised to use together with flag -cvodeLinearMultistepMethod=CV_ADAMS.",
+  "  * CV_ITER_NEWTON       - Newton iteration.\n"
+  "                           Advised to use together with flag -cvodeLinearMultistepMethod=CV_BDF.\n"
+  "  * CV_ITER_FIXED_POINT  - Fixed-Point iteration iteration.\n"
+  "                           Advised to use together with flag -cvodeLinearMultistepMethod=CV_ADAMS.",
   /* FLAG_CVODE_LMM */
   "  Linear multistep method for CVODE solver. Default: CV_BDF. Valid values\n\n"
   "  * CV_BDF    - BDF linear multistep method for stiff problems.\n"
-  "                Use together with flag -cvodeNonlinearSolverIteration=CV_NEWTON or don't set cvodeNonlinearSolverIteration.\n"
+  "                Use together with flag -cvodeNonlinearSolverIteration=CV_ITER_NEWTON or don't set cvodeNonlinearSolverIteration.\n"
   "  * CV_ADAMS  - Adams-Moulton linear multistep method for nonstiff problems.\n"
-  "                Use together with flag -cvodeNonlinearSolverIteration=CV_FUNCTIONAL or don't set cvodeNonlinearSolverIteration.",
+  "                Use together with flag -cvodeNonlinearSolverIteration=CV_ITER_FIXED_POINT or don't set cvodeNonlinearSolverIteration.",
   /* FLAG_DAE_MODE */
   "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and ida method is used.",
   /* FLAG_DELTA_X_LINEARIZE */

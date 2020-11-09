@@ -14,7 +14,7 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL
+CPPFLAGS = -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ -I$(builddir_inc)/c/suitesparse/Include/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 # CXXFLAGS can include everything as before. For FMI we need to use relative paths since
 # automatic builds might not add the -I., etc
@@ -69,33 +69,34 @@ RUNTIMESIMULATION_HEADERS = ./simulation/modelinfo.h \
 
 RUNTIMESIMRESULTS_HEADERS = ./simulation/results/simulation_result.h
 
-RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/delay.h \
+RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/cvode_solver.h \
+./simulation/solver/dae_mode.h \
+./simulation/solver/dassl.h \
+./simulation/solver/delay.h \
+./simulation/solver/embedded_server.h \
 ./simulation/solver/epsilon.h \
+./simulation/solver/events.h \
+./simulation/solver/external_input.h \
 ./simulation/solver/fmi_events.h \
-./simulation/solver/mixedSystem.h \
-./simulation/solver/linearSystem.h \
+./simulation/solver/ida_solver.h \
 ./simulation/solver/linearSolverLapack.h \
 ./simulation/solver/linearSolverTotalPivot.h \
-./simulation/solver/model_help.h \
+./simulation/solver/linearSystem.h \
 ./simulation/solver/mixedSearchSolver.h \
-./simulation/solver/nonlinearSystem.h \
-./simulation/solver/nonlinearValuesList.h \
+./simulation/solver/mixedSystem.h \
+./simulation/solver/model_help.h \
 ./simulation/solver/nonlinearSolverHomotopy.h \
 ./simulation/solver/nonlinearSolverHybrd.h \
-./simulation/solver/stateset.h \
-./simulation/solver/real_time_sync.h \
-./simulation/solver/perform_simulation.c.inc \
-./simulation/solver/perform_qss_simulation.c.inc \
-./simulation/solver/dassl.h \
-./simulation/solver/embedded_server.h \
-./simulation/solver/ida_solver.h \
-./simulation/solver/cvode_solver.h \
+./simulation/solver/nonlinearSystem.h \
+./simulation/solver/nonlinearValuesList.h \
 ./simulation/solver/omc_math.h \
-./simulation/solver/events.h \
-./simulation/solver/synchronous.h \
-./simulation/solver/external_input.h\
+./simulation/solver/perform_qss_simulation.c.inc \
+./simulation/solver/perform_simulation.c.inc \
+./simulation/solver/real_time_sync.h \
 ./simulation/solver/solver_main.h \
-./simulation/solver/dae_mode.h
+./simulation/solver/stateset.h \
+./simulation/solver/sundials_error.h \
+./simulation/solver/synchronous.h
 
 RUNTIMEMETA_HEADERS = ./meta/meta_modelica_builtin_boxptr.h \
 ./meta/meta_modelica_builtin_boxvar.h \
@@ -343,6 +344,7 @@ sourcedist_internal:
 	 "$(builddir_inc)/c/external_solvers"
 	mkdir -p $(builddir_inc)/c/simulation/solver
 	cp -p ./simulation/solver/cvode_solver.c $(builddir_inc)/c/simulation/solver
+	cp -p ./simulation/solver/sundials_error.c $(builddir_inc)/c/simulation/solver
 	@cd $(builddir_inc)/c/ && mkdir -p $(ALL_PATHS)
 	@(D=`pwd` && cd $(builddir_inc)/c/ $(FMI_ME_OBJS:%.o= && (OMCFILE=% && cp -p $$D/$$OMCFILE.c $$OMCFILE.c)))
 	cp Makefile.objs $(builddir_inc)/c/

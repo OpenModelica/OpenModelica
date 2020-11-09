@@ -234,7 +234,7 @@ template createMakefile(SimCode simCode, String target, String makeflieName)
     <%\t%>cp -a $(OMLIB)/omc/omsi/libOMSIC_static.* <%fileNamePrefix%>.fmutmp/sources/libs
     <%\t%>cp -a $(OMLIB)/omc/omsi/libOMSISolver_static.* <%fileNamePrefix%>.fmutmp/sources/libs
     <%\t%># Third party libraries
-    <%\t%>cp -f $(EXPAT_LIBDIR)/lib$(EXPAT_LIB).a <%fileNamePrefix%>.fmutmp/sources/libs
+    <%\t%>cp -f $(EXPAT_LIBDIR)/lib$(EXPAT_LIB).* <%fileNamePrefix%>.fmutmp/sources/libs
     <%\t%>cp -fP $(THIRD_PARTY_DYNAMIC_LIBS) <%fileNamePrefix%>.fmutmp/binaries/<%makefileParams.platform%>
 
     <%\t%>cp -a modelDescription.xml <%fileNamePrefix%>.fmutmp/

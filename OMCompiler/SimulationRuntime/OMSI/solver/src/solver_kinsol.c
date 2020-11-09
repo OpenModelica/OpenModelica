@@ -219,15 +219,19 @@ solver_status solver_kinsol_init_data(solver_data*              general_solver_d
     kinsol_data->strategy = KIN_LINESEARCH;
 
     /* Create Jacobian matrix object */
-
-
+    kinsol_data->y = N_VNew_Serial(general_solver_data->dim_n);
+    kinsol_data->J = SUNDenseMatrix(general_solver_data->dim_n, general_solver_data->dim_n);
 
     /* Create linear solver object */
-
-
+    kinsol_data->linSol = SUNLinSol_Dense(kinsol_data->y, kinsol_data->J);
+    if (kinsol_data->linSol == NULL) {
+        solver_logger(log_solver_error, "In function kinsol_init_data: SUNLinSol_Dense failed.");
+        general_solver_data->state = solver_error_state;
+        return solver_error;
+    }
 
     /* Attach linear solver module */
-    flag = KINDense(kinsol_data->kinsol_solver_object, general_solver_data->dim_n);
+    flag = KINSetLinearSolver(kinsol_data->kinsol_solver_object, kinsol_data->linSol, kinsol_data->J);
     if (flag != KIN_SUCCESS) {
         return solver_kinsol_error_handler(general_solver_data, flag,
                 "kinsol_init_data",
@@ -276,6 +280,11 @@ solver_status solver_kinsol_free_data(solver_data* general_solver_data)
 
     solver_freeMemory(NV_DATA_S(kinsol_data->f_scale));
     N_VDestroy_Serial(kinsol_data->f_scale);
+
+     /* Free linear solver data */
+    SUNMatDestroy(kinsol_data->J);
+    N_VDestroy(kinsol_data->y);
+    SUNLinSolFree(kinsol_data->linSol);
 
     solver_freeMemory(kinsol_data);
 
@@ -438,7 +447,7 @@ void solver_kinsol_set_jacobian_element(void*                  solver_specififc_
     kinsol_data = solver_specififc_data;
 
     /* Set element Jacobian(row,column) to value */
-    DENSE_ELEM(kinsol_data->Jacobian, row, column)=*value;
+    SM_ELEMENT_D(kinsol_data->J, row, column)=*value;
 }
 
 

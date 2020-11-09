@@ -1,13 +1,11 @@
 #pragma once
 
 #include "FactoryExport.h"
-
 #include <Core/Solver/SolverDefaultImplementation.h>
+
 #include <idas/idas.h>
 #include <nvector/nvector_serial.h>
-#include <sundials/sundials_direct.h>
-#include <idas/idas_dense.h>
-
+#include <sunlinsol/sunlinsol_dense.h>       /* Default dense linear solver */
 
 #ifdef RUNTIME_PROFILING
   #include <Core/Utils/extension/measure_time.hpp>
@@ -104,43 +102,43 @@ private:
 
 
     ISolverSettings
-    * _idasettings; ///< Input      - Solver settings
+    * _idasettings;     ///< Input      - Solver settings
 
     void
-        *_idaMem, ///< Temp      - Memory for the solver
-        *_data; ///< Temp      - User data. Contains pointer to ida
+        *_idaMem,       ///< Temp      - Memory for the solver
+        *_data;         ///< Temp      - User data. Contains pointer to ida
 
     long int
-        _dimSys, ///< Input       - (total) Dimension of system (=number of ODE)
+        _dimSys,        ///< Input      - (total) Dimension of system (=number of ODE)
         _dimStates,
         _dimAE,
-        _idid, ///< Input, Output  - Status Flag
-        _locStps, ///< Output      - Number of Steps between two events
-        _cv_rt; ///< Temp    - ida return flag
+        _idid,          ///< Input, Output  - Status Flag
+        _locStps,       ///< Output     - Number of Steps between two events
+        _cv_rt;         ///< Temp       - ida return flag
 
     int
-        _outStps, ///< Output      - Total number of output-steps
+        _outStps,       ///< Output     - Total number of output-steps
         *_zeroSign;
 
 
     double
         /*old state vector
-        *_z,               ///< Output      - (Current) State vector
+        *_z,               ///< Output   - (Current) State vector
         *_zInit,          ///< Temp      - Initial state vector
         *_zWrite,         ///< Temp      - Zustand den das System rausschreibt
         */
-        *_absTol, ///         - Vektor für absolute Toleranzen
+        *_absTol,       ///<            - Vektor für absolute Toleranzen
         *_delta,
         *_deltaInv,
         *_ysave,
-        *_y, ///< Output      - (Current) State vector and dae vars vector
+        *_y,            ///< Output     - (Current) State vector and dae vars vector
         *_yInit,
         *_yWrite,
         *_ypWrite,
-        *_yp, ///< Output      - (Current) Derivatives for State vector and dae vars vector
+        *_yp,           ///< Output     - (Current) Derivatives for State vector and dae vars vector
         *_dae_res;
     double
-    _hOut; ///< Temp      - Ouput step size for dense output
+    _hOut;              ///< Temp       - Ouput step size for dense output
 
     unsigned int
     _event_n;
@@ -148,22 +146,29 @@ private:
     _tLastEvent;
 
     double
-        _tOut, ///< Output      - Time for dense output
-        _tZero, ///< Temp      - Nullstelle
-        _tLastWrite; ///< Temp      - Letzter Ausgabezeitpunkt
+        _tOut,          ///< Output     - Time for dense output
+        _tZero,         ///< Temp       - Nullstelle
+        _tLastWrite;    ///< Temp       - Letzter Ausgabezeitpunkt
 
     bool
-        _bWritten, ///< Temp      - Is output already written
+        _bWritten,      ///< Temp       - Is output already written
         _zeroFound;
 
 
     N_Vector
-        _CV_y0, ///< Temp      - Initial values in the ida Format
-        _CV_y, ///< Temp      - State in ida Format
-        _CV_yp, ///<Temp   - Stateders in ida Format
-        _CV_yWrite, ///< Temp      - Vector for dense out
+        _CV_y0,         ///< Temp       - Initial values in the ida Format
+        _CV_y,          ///< Temp       - State in ida Format
+        _CV_yp,         ///< Temp       - Stateders in ida Format
+        _CV_yWrite,     ///< Temp       - Vector for dense out
         _CV_ypWrite,
-        _CV_absTol;
+        _CV_absTol,
+        _ida_ySolver;   ///< Temp       - Vector templated used by linear solver
+
+    SUNLinearSolver
+        _ida_linSol;     ///< Temp      - Linear solver object used by IDA
+
+    SUNMatrix
+        _ida_J;          ///< Temp      - Matrix template for cloning matrices needed within linear solver
 
     // Variables for Coloured Jacobians
     int* _colorOfColumn;

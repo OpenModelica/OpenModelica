@@ -295,11 +295,11 @@ enum JACOBIAN_METHOD
 {
   JAC_UNKNOWN = 0,
 
-  COLOREDNUMJAC,
-  INTERNALNUMJAC,
-  COLOREDSYMJAC,
-  NUMJAC,
-  SYMJAC,
+  COLOREDNUMJAC,      /* Colored numeric Jacobian */
+  INTERNALNUMJAC,     /* Internal numeric Jacobian */
+  COLOREDSYMJAC,      /* Colored symbolic Jacobian */
+  NUMJAC,             /* Non-colored numeric Jacobian */
+  SYMJAC,             /* Non-colored symbolic Jacobian */
 
   JAC_MAX
 };
@@ -307,22 +307,32 @@ enum JACOBIAN_METHOD
 extern const char *JACOBIAN_METHOD[JAC_MAX];
 extern const char *JACOBIAN_METHOD_DESC[JAC_MAX];
 
+/**
+ * @brief Linear system solver method
+ *
+ * Specify method to solve linear systems inside IDA.
+ */
 enum IDA_LS
 {
-  IDA_LS_UNKNOWN = 0,
+  IDA_LS_UNKNOWN = 0, /* Unknown method */
 
-  IDA_LS_DENSE,
-  IDA_LS_KLU,
-  IDA_LS_SPGMR,
-  IDA_LS_SPBCG,
-  IDA_LS_SPTFQMR,
+  IDA_LS_DENSE,     /* Default dense linear solver method */
+  IDA_LS_KLU,       /* KLU as linear solver method */
+  IDA_LS_SPGMR,     /* Scaled, Preconditioned, Generalized Minimum Residual iterative linear solver method */
+  IDA_LS_SPBCG,     /* Scaled, Preconditioned, Bi-Conjugate Gradient, Stabilized iterative linear solver method */
+  IDA_LS_SPTFQMR,   /* Scaled, Preconditioned, Transpose-Free Quasi-Minimum Residual iterative linear solver method */
 
-  IDA_LS_MAX
+  IDA_LS_MAX        /* Maximum number of methods available. Not a method itself! */
 };
 
 extern const char *IDA_LS_METHOD[IDA_LS_MAX];
 extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX];
 
+/**
+ * @brief Type of non-linear solver method
+ *
+ * Specify method to solve underlying non-linear systems.
+ */
 enum NLS_LS
 {
   NLS_LS_UNKNOWN = 0,
@@ -339,6 +349,11 @@ enum NLS_LS
 extern const char *NLS_LS_METHOD[NLS_LS_MAX];
 extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];
 
+/**
+ * @brief Solver method for linear systems
+ *
+ * Will be used for implicit Runge-Kutta-Integrators.
+ */
 enum IMPRK_LS
 {
   IMPRK_LS_UNKNOWN = 0,

@@ -19,7 +19,10 @@ FC = g77
 #include the sundials, ipopt from OMDev and the top_builddir for revision.h
 CONFIG_CFLAGS = -O2 -falign-functions -mstackrealign -msse2 -mfpmath=sse \
 -I$(OMDEV)/lib/3rdParty/Ipopt/include/ \
--I$(top_builddir)/3rdParty/sundials/build/include \
+-I$(top_builddir)/3rdParty/sundials-5.4.0/build/include \
+-I$(top_builddir)/3rdParty/sundials-5.4.0/build_msvc/include \
+-I$(top_builddir)/3rdParty/SuiteSparse/install_msvc/include/omc/c \
+-I$(top_builddir)/3rdParty/SuiteSparse/install/include/omc/c \
 -I$(OMDEV)/include/lis -I$(top_builddir)/ -I$(builddir_inc)/ -I. \
 -Wall -Wno-unused-variable
 CXXFLAGS = $(CFLAGS)

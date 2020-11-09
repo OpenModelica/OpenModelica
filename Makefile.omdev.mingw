@@ -248,7 +248,9 @@ OMSICPPinstall:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) OMSICPPinstall CC="$(CC)" CXX="$(CXX)"
 
 all-runtimes:
-	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall runtimeCPPmsvcinstall simulationruntimecmsvc
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPinstall
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) runtimeCPPmsvcinstall
+	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) simulationruntimecmsvc
 
 nox:
 	$(MAKE) -C OMCompiler -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) BUILDTYPE=$(BUILDTYPE) nox

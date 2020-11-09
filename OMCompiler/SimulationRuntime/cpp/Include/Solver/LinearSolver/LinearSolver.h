@@ -7,7 +7,7 @@
 #include <Core/Solver/AlgLoopSolverDefaultImplementation.h>
 
 #if defined(klu)
-  #include <../../../../build/include/omc/c/suitesparse/Include/klu.h>
+  #include <klu.h>
 #endif
 
 class LinearSolver : public ILinearAlgLoopSolver,  public AlgLoopSolverDefaultImplementation

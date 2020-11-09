@@ -419,8 +419,8 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
           solverInfo->solverMethod == S_TRAPEZOID ||
           solverInfo->solverMethod == S_IMPRUNGEKUTTA)
   {
-    /* free work arrays */
-    freeKinOde(data, solverInfo);
+    /* free  work arrays */
+    freeKinOde((KINODE*)solverInfo->solverData);
   }
   else if(solverInfo->solverMethod == S_IDA)
   {
@@ -606,11 +606,8 @@ int finishSimulation(DATA* data, threadData_t *threadData, SOLVER_INFO* solverIn
 
       infoStreamPrint(LOG_STATS, 1, "solver: %s", SOLVER_METHOD_NAME[solverInfo->solverMethod]);
       infoStreamPrint(LOG_STATS, 0, "%5d steps taken", solverInfo->solverStats[0]);
-
       infoStreamPrint(LOG_STATS, 0, "%5d calls of functionODE", solverInfo->solverStats[1]);
-
       infoStreamPrint(LOG_STATS, 0, "%5d evaluations of jacobian", solverInfo->solverStats[2]);
-
       infoStreamPrint(LOG_STATS, 0, "%5d error test failures", solverInfo->solverStats[3]);
       infoStreamPrint(LOG_STATS, 0, "%5d convergence test failures", solverInfo->solverStats[4]);
       infoStreamPrint(LOG_STATS, 0, "%gs time of jacobian evaluation", rt_accumulated(SIM_TIMER_JACOBIAN));
