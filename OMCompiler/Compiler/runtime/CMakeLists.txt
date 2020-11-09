@@ -178,11 +178,24 @@ target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
 
 
 
+
+
+
+
+
+
+################################################################################
+# This is a lazy apporach to generating runtime/config.unix.h and Compiler/Util/Autoconf.mo
+# Needs to be refactorted quite a bit. The variable names should be updated to be more
+# unique and descriptive. 
+# However, If I do that I need to update the .in files which means the normal compilation is
+# also affected. As a result I would have to change a few things since many things depend on
+# the generated output files. For now just mimic the old compilation.
+
+
 set(SHREXT ${CMAKE_SHARED_LIBRARY_SUFFIX})
 string(TOLOWER ${CMAKE_SYSTEM_NAME} OMC_TARGET_SYSTEM_NAME)
 omc_add_to_report(OMC_TARGET_SYSTEM_NAME)
-message(STATUS "******** OMC_TARGET_SYSTEM_NAME ${OMC_TARGET_SYSTEM_NAME}")
-message(STATUS "******** CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}")
 set(OPENMODELICA_SPEC_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
 
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
@@ -232,4 +245,23 @@ set(WITH_UUID "#define WITH_LIBUUID 1")
 
 set(USE_GRAPH 0)
 
-configure_file(config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
+
+
+# Generate Autoconf.mo here since we have some of the variables already defined for config.unix.h above. 
+
+if(WIN32)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.omdev.mingw ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo COPY_ONLY)
+else()
+  check_c_compiler_flag("-Wl,-Bstatic  -Wl,-Bdynamic" BSTATIC_INT)
+  if(BSTATIC_INT)
+    set(BSTATIC "true")
+  else()
+    set(BSTATIC "false")
+  endif()
+
+  set(CONFIG_OS ${OMC_TARGET_SYSTEM_NAME})
+  set(MAKE ${CMAKE_MAKE_PROGRAM})
+ 
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+endif()
