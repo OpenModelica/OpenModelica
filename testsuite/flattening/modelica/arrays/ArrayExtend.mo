@@ -1,6 +1,7 @@
 // name: ArrayExtend
 // keywords: array, inheritance
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests extension of types that are declared as arrays
 // Makes sure you can't combine them with simple components

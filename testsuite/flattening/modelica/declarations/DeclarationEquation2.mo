@@ -1,6 +1,7 @@
 // name: DeclarationEquation2
 // keywords: equation, array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaration equations with vectors
 //

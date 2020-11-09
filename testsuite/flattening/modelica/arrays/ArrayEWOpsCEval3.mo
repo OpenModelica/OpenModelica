@@ -1,6 +1,7 @@
 // name:     ArrayEWOpsCEval3
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Array elementwise operators' constant eveluation: multiplication
 

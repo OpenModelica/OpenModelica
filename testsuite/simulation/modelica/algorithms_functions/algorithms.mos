@@ -2,6 +2,7 @@
 // keywords: Simulate, readSimulationData
 // status:   correct
 // teardown_command: rm -rf Alg1 Alg1.* Alg1_* Alg2 Alg2.* Alg2_* Alg3 Alg3.* Alg3_* output.log
+// cflags: -d=-newInst
 //
 //  Simulate model containing algortithms and read in data.
 //

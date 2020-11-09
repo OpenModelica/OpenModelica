@@ -2,6 +2,7 @@
 // keywords: FMU Export Import
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml InOutTest.fmu InOutTest_* testInOut_* InOutTest_me_FMU.mo InOutTest.libs testInOut.libs InOutTest.lib testInOut.lib InOutTest.so testInOut.so InOutTest.dll testInOut.dll InOutTest.c testInOut.c testInOut.makefile
+// cflags: -d=-newInst
 // Simulation Results
 //
 

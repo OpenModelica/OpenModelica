@@ -1,6 +1,7 @@
 // name:     RedeclareComponent3
 // keywords: redeclare component modifier
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that modifiers are merged when redeclaring components.
 //

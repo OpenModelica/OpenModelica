@@ -1,6 +1,7 @@
 // name: RealSubEw
 // keywords: real, subtraction, element-wise
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests element-wise scalar-array subtraction.
 //

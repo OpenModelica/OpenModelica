@@ -1,5 +1,6 @@
 // name: UnusedVariable
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model M

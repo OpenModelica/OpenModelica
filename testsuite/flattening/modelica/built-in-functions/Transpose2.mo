@@ -1,6 +1,7 @@
 // name:     Transpose2
 // keywords: transpose flattening ceval
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests fix for bug #1210: http://openmodelica.ida.liu.se:8080/cb/issue/1210
 //

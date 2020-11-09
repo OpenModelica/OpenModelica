@@ -1,6 +1,7 @@
 // name: NotEquals
 // keywords: logic, operator
 // status: correct
+// cflags: -d=-newInst
 //
 // tests the NotEquals operator(<>)
 //

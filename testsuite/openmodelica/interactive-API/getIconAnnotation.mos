@@ -1,6 +1,7 @@
 // name: getIconAnnotation.mos
 // keywords: DynamicSelect textString visible
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadString("

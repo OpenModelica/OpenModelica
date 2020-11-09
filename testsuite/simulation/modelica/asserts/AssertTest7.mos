@@ -2,6 +2,7 @@
 // keywords: assert
 // status:   correct
 // teardown_command: rm -rf Test7* output.log
+// cflags: -d=-newInst
 // 
 // 
 loadFile("AssertTest7.mo");

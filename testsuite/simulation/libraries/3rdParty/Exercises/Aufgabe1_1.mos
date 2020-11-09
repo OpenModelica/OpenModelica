@@ -1,5 +1,6 @@
 // name: Aufgabe1_1 [simulate]
 // status: correct
+// cflags: -d=-newInst
 // provided by Martin Otter
 //
 

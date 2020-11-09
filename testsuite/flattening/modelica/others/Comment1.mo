@@ -1,6 +1,7 @@
 // name: Comment1
 // keywords: comment
 // status: correct
+// cflags: -d=-newInst
 //
 // This file tests //-style single-line comments
 //

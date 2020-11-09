@@ -2,6 +2,7 @@
 // keywords: instantiation, bound expressions
 // status: correct
 // teardown_command: rm -rf M1.makefile M1.plt M1.libs M1.log M1.cpp M1 M1.exe M1_* output.log
+// cflags: -d=-newInst
 //
 // Test so that overloading (or rather replacing) a function works.
 //

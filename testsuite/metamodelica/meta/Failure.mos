@@ -1,6 +1,7 @@
 // name:     Failure
 // keywords: Failure
 // status:   correct
+// cflags: -d=-newInst
 //
 // Failure Testing
 //

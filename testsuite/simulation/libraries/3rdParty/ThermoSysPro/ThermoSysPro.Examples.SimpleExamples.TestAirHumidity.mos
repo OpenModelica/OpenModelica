@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.* ThermoSysPro.Examples.SimpleExamples.TestAirHumidity_* ThermoSysPro.Examples.SimpleExamples.TestAirHumidity ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.exe ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.cpp ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.makefile ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.libs ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.log ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.c ThermoSysPro.Examples.SimpleExamples.TestAirHumidity.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

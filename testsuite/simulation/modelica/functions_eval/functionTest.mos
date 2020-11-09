@@ -1,6 +1,7 @@
 // name:      functionTest
 // keywords:  evalConstFunc
 // status:    correct
+// cflags: -d=-newInst
 //
 
 

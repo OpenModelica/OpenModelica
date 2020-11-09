@@ -1,6 +1,7 @@
 // name:      Algorithm1-minimal
 // keywords:  minimal tearing, algorithm
 // status:    correct
+// cflags: -d=-newInst
 
 loadFile("Algorithm1.mo"); getErrorString();
 

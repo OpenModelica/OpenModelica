@@ -1,6 +1,7 @@
 // name:     ArrayEWOps2
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Array elementwise operators: multiplication
 

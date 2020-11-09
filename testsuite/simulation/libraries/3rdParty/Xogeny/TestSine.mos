@@ -1,5 +1,6 @@
 // status: correct
 // teardown_command: rm -f TestSine_*.o
+// cflags: -d=-newInst
 
 loadFile("TestSine.mo");getErrorString();
 buildModel(TestSine);getErrorString();

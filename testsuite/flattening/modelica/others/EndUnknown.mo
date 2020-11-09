@@ -1,6 +1,6 @@
 // name: EndUnknown
 // status: correct
-// cflags: -d=noevalfunc,gen
+// cflags: -d=noevalfunc,gen -d=-newInst
 // teardown_command: rm -f EndUnknown_*
 
 model EndUnknown

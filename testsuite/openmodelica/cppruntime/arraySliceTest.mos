@@ -2,6 +2,7 @@
 // keywords: slice array
 // status: correct
 // teardown_command: rm -f *ArraySlice.Test*
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

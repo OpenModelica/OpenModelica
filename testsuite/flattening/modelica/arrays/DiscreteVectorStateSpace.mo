@@ -1,6 +1,7 @@
 // name:     DiscreteVectorStateSpace
 // keywords: <insert keywords here>
 // status:   correct
+// cflags: -d=-newInst
 //
 // <insert description here>
 //

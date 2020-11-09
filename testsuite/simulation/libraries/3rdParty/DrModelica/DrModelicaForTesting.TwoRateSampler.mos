@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.TwoRateSampler
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.TwoRateSampler.* DrModelicaForTesting.TwoRateSampler_* DrModelicaForTesting.TwoRateSampler DrModelicaForTesting.TwoRateSampler.exe DrModelicaForTesting.TwoRateSampler.cpp DrModelicaForTesting.TwoRateSampler.makefile DrModelicaForTesting.TwoRateSampler.libs DrModelicaForTesting.TwoRateSampler.log DrModelicaForTesting.TwoRateSampler.c DrModelicaForTesting.TwoRateSampler.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

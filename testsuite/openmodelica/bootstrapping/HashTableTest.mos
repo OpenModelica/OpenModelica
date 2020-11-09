@@ -1,6 +1,7 @@
 // name: HashTable Unit Testing
 // status: correct
 // teardown_command: rm -f HashTableTest_*
+// cflags: -d=-newInst
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("HashTableTest.mo");getErrorString();

@@ -1,6 +1,7 @@
 // name:     Break
 // keywords: algorithm break
 // status:   correct
+// cflags: -d=-newInst
 //           [While statements in algorithms not supported yet]
 //
 // break statement in algorithms

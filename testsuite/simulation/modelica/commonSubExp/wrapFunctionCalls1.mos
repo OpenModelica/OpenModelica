@@ -1,6 +1,7 @@
 // name: wrapFunctionCalls1
 // keywords: cse, wrapFunctionCalls
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 package CSE

@@ -1,6 +1,7 @@
 // Name:     MoveWithInputs
 // keywords: index reduction
 // status:   correct
+// cflags: -d=-newInst
 // 
 
 loadModel(Modelica,{"3.2.1"});getErrorString();

@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 2.2  Declaring Instances of Classes (p. 26)
+// cflags: -d=-newInst
 //
 
 class Point                "Point in a three-dimensional space"

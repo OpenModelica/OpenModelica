@@ -1,6 +1,7 @@
 // name:      Tearing19-cel-adv
 // keywords:  tearing
 // status:    correct
+// cflags: -d=-newInst
 
 loadFile("Tearing19.mo"); getErrorString();
 

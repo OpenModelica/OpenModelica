@@ -1,6 +1,7 @@
 // name:     ModifyConstant5
 // keywords: scoping,modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Finalized members can not be redeclared.
 //
@@ -24,10 +25,10 @@ end ModifyConstant5;
 
 // Result:
 // Error processing file: ModifyConstant5.mo
-// [flattening/modelica/modification/ModifyConstant5.mo:13:3-13:39:writable] Notification: From here:
-// [flattening/modelica/modification/ModifyConstant5.mo:9:3-9:30:writable] Error: Redeclaration of final component c is not allowed.
-// [flattening/modelica/modification/ModifyConstant5.mo:13:3-13:39:writable] Notification: From here:
-// [flattening/modelica/modification/ModifyConstant5.mo:9:3-9:30:writable] Error: Redeclaration of constant component c is not allowed.
+// [flattening/modelica/modification/ModifyConstant5.mo:14:3-14:39:writable] Notification: From here:
+// [flattening/modelica/modification/ModifyConstant5.mo:10:3-10:30:writable] Error: Redeclaration of final component c is not allowed.
+// [flattening/modelica/modification/ModifyConstant5.mo:14:3-14:39:writable] Notification: From here:
+// [flattening/modelica/modification/ModifyConstant5.mo:10:3-10:30:writable] Error: Redeclaration of constant component c is not allowed.
 // Error: Error occurred while flattening model ModifyConstant5
 //
 // # Error encountered! Exiting...

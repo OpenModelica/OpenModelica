@@ -1,6 +1,7 @@
 // name: cseTestCall4
 // keywords: cse
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 package CSE

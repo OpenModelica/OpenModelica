@@ -1,4 +1,4 @@
-// cflags: +d=nogen
+// cflags: +d=nogen -d=-newInst
 // status: correct
 
 model Identity4

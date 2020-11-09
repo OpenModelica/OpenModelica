@@ -4,6 +4,7 @@
 // teardown_command: rm -rf SumVectorForIf_* SumVectorForIf SumVectorForIf.exe SumVectorForIf.cpp SumVectorForIf.makefile SumVectorForIf.libs SumVectorForIf.log output.log
 // 
 // Drmodelica: 9.1  if-Statement (p. 292)
+// cflags: -d=-newInst
 // 
 loadFile("SumVectorForIf.mo");
 simulate(SumVector, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);

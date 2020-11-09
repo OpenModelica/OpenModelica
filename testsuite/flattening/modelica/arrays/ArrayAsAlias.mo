@@ -1,6 +1,7 @@
 // name:     ArrayAsAlias
 // keywords: testing that array as alias and enumeration functionality works properly
 // status:   correct
+// cflags: -d=-newInst
 //
 // Array as alias checks, enumeration checks, etc.
 

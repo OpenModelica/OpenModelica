@@ -1,6 +1,7 @@
 // name:     EquationFor4
 // keywords: equation,array, connect
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test for loops in connections.  The size is a parameter.
 //

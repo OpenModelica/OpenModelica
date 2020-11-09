@@ -1,6 +1,7 @@
 //name:        simulate(Modelica.Media.Examples.TestOnly.FlueGas)
 //keyword:     simulation
 //status:      correct
+// cflags: -d=-newInst
 // instantiate/check model example
 //
 

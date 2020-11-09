@@ -1,6 +1,7 @@
 // name:     PartialFn13
 // keywords: PartialFn
 // status:  correct
+// cflags: -d=-newInst
 //
 // Using function pointers, partially evaluated functions
 //

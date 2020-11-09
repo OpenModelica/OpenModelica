@@ -1,6 +1,7 @@
 // name: RecordClassModOutput.mo
 // keywords: record, submod
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that output records from functions with classmod modification get bindings
 //

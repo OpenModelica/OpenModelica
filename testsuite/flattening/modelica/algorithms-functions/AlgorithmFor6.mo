@@ -1,6 +1,7 @@
 // name:     AlgorithmFor6
 // keywords: algorithm,array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test for multiple loops in algorithms.
 //

@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 4.2 Hierarchical Modification (p. 124)
+// cflags: -d=-newInst
 //
 
 model LowPassFilter

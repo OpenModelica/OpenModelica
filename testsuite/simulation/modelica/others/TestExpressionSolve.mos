@@ -1,6 +1,7 @@
 // name: noNls
 // keywords: ExpressionSolve
 // status: correct
+// cflags: -d=-newInst
 // 
 // 
 

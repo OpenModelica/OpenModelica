@@ -1,7 +1,7 @@
 // name:     UniontypeConst2
 // keywords: uniontype const recursion
 // status:   correct
-// cflags:   -g=MetaModelica -d=gen
+// cflags:   -g=MetaModelica -d=gen -d=-newInst
 //
 // Tests self recursive constants inside of uniontypes.
 //

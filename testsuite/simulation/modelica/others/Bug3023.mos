@@ -1,6 +1,7 @@
 // name: Bug3023.mos
 // keywords: residual complex_equation
 // status: correct
+// cflags: -d=-newInst
 // 
 // test for #3023
 // 

@@ -1,6 +1,7 @@
 // name:     InvalidInheritedExtends1
 // keywords: extends invalid
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // This test tests that the compiler issues an error if the name of an extends
 // depends on an inherited element.
@@ -23,9 +24,9 @@ end InvalidInheritedExtends1;
 
 // Result:
 // Error processing file: InvalidInheritedExtends1.mo
-// [flattening/modelica/extends/InvalidInheritedExtends1.mo:21:3-21:12:writable] Error: The base class name C was found in one or more base classes:
-// [flattening/modelica/extends/InvalidInheritedExtends1.mo:10:3-12:8:writable] Notification: From here:
-// [flattening/modelica/extends/InvalidInheritedExtends1.mo:20:3-20:12:writable] Error: C was found in base class B.
+// [flattening/modelica/extends/InvalidInheritedExtends1.mo:22:3-22:12:writable] Error: The base class name C was found in one or more base classes:
+// [flattening/modelica/extends/InvalidInheritedExtends1.mo:11:3-13:8:writable] Notification: From here:
+// [flattening/modelica/extends/InvalidInheritedExtends1.mo:21:3-21:12:writable] Error: C was found in base class B.
 // Error: Error occurred while flattening model InvalidInheritedExtends1
 //
 // # Error encountered! Exiting...

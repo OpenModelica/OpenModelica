@@ -1,6 +1,7 @@
 // name:     BM26 -  Tanh component
 // keywords: Tanh
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Tanh component.
 //

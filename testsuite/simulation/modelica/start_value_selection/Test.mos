@@ -2,6 +2,7 @@
 // keywords: start value selection
 // status:   correct
 // teardown_command: rm -rf Package* _Package* output.log
+// cflags: -d=-newInst
 
 setCommandLineOptions({"+d=showStartOrigin"}); getErrorString();
 

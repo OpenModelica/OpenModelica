@@ -2,6 +2,7 @@
 // keywords: SiemensPower Junctions SplitterMixer
 // status:   correct
 // teardown_command: rm -rf SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia* _SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia*
+// cflags: -d=-newInst
 //
 //  Test SiemensPower component Junctions
 //

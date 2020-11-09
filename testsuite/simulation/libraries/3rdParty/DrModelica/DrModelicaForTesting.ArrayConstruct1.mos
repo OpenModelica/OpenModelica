@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ArrayConstruct1
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ArrayConstruct1.* DrModelicaForTesting.ArrayConstruct1_* DrModelicaForTesting.ArrayConstruct1 DrModelicaForTesting.ArrayConstruct1.exe DrModelicaForTesting.ArrayConstruct1.cpp DrModelicaForTesting.ArrayConstruct1.makefile DrModelicaForTesting.ArrayConstruct1.libs DrModelicaForTesting.ArrayConstruct1.log DrModelicaForTesting.ArrayConstruct1.c DrModelicaForTesting.ArrayConstruct1.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

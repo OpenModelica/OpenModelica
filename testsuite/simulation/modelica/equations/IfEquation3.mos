@@ -6,6 +6,7 @@
 // Checks that if-equations which have another if-equation in one of the branches are transformed correctly
 // wbraun:
 // TODO: these "if equation" could rewrited is a better way without algebraic loop.
+// cflags: -d=-newInst
 //       but however the error message "singular system" doesn't affect the solution.
 //       As long as the algebraic loop is produced, we can apply the noEvent() operator
 //

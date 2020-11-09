@@ -1,6 +1,7 @@
 // name:     DataReconciliationTests21jan2013
 // keywords: uncertainty
 // status:   correct
+// cflags: -d=-newInst
 // Second group os test related to uncertainties extraction
 //
 

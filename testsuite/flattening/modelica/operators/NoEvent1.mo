@@ -1,6 +1,7 @@
 // name:     NoEvent1
 // keywords: noEvent
 // status:   correct
+// cflags: -d=-newInst
 //
 //  The noEvent operator
 //

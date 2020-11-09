@@ -1,6 +1,7 @@
 // name:     Ext Java Base Types
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 // 
 // Test of External Java functions
 //

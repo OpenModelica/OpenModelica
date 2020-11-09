@@ -1,7 +1,7 @@
 // name:     BouncingBall FMI msvc
 // keywords: fmu export import
 // status: correct
-// cflags: +target=msvc
+// cflags: +target=msvc -d=-newInst
 // teardown_command: rm -rf binaries sources modelDescription.xml BouncingBallFMI20* output.log BouncingBallFMI20/*
 // Event handling in FMU Import
 //

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.MoonLanding
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.MoonLanding.* DrModelicaForTesting.MoonLanding_* DrModelicaForTesting.MoonLanding DrModelicaForTesting.MoonLanding.exe DrModelicaForTesting.MoonLanding.cpp DrModelicaForTesting.MoonLanding.makefile DrModelicaForTesting.MoonLanding.libs DrModelicaForTesting.MoonLanding.log DrModelicaForTesting.MoonLanding.c DrModelicaForTesting.MoonLanding.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

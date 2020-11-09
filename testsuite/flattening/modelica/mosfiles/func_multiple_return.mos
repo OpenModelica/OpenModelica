@@ -1,6 +1,7 @@
 // name:     Test to return multiple values
 // keywords: multiple return
 // status:   correct
+// cflags: -d=-newInst
 // 
 //
 //  Not working:

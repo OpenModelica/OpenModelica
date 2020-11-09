@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.* ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe_* ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.log ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.c ThermoSysPro.Examples.SimpleExamples.TestDynamicOnePhaseFlowPipe.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

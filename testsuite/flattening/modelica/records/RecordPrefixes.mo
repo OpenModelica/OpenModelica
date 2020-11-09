@@ -1,6 +1,7 @@
 // name: RecordPrefixes.mo
 // keywords: record
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests that prefixed components can't be used in records.
 //

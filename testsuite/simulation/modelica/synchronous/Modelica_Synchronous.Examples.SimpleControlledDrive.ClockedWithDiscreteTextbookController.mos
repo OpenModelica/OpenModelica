@@ -1,6 +1,7 @@
 // name: Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("Modelica_Synchronous.Examples.SimpleControlledDrive.ClockedWithDiscreteTextbookController.mo"); getErrorString();

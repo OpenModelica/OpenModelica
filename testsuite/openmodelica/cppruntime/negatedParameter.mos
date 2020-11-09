@@ -1,6 +1,7 @@
 // name: negatedParameter.mos
 // status: correct
 // teardown_command: rm -f *negatedParamtest*
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

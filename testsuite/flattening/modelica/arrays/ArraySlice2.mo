@@ -1,6 +1,7 @@
 // name:     ArraySlice2
 // keywords: array slice bug1602
 // status:   correct
+// cflags: -d=-newInst
 //
 // Slice subscripting of parameter arrays.
 //

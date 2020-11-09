@@ -1,5 +1,6 @@
 // status: correct
 // teardown_command: rm -f WasteWater*.o
+// cflags: -d=-newInst
 
 loadModel(WasteWater);getErrorString();
 echo(false);

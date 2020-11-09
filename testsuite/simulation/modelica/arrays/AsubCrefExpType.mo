@@ -1,6 +1,7 @@
 // name:     AsubCrefExpType
 // keywords: asub cref type
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests the type of a cref exp inside of a asub exp
 //

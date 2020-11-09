@@ -1,6 +1,7 @@
 // name:     Connect3
 // keywords: connect
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Only connector variables can be connected.
 

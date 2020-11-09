@@ -1,6 +1,6 @@
 // name:     TankHybridPI
 // keywords: <insert keywords here>
-// cflags: +std=2.x
+// cflags: +std=2.x -d=-newInst
 // status: correct
 // teardown_command: rm -rf TankHybridPI_* TankHybridPI TankHybridPI.exe TankHybridPI.cpp TankHybridPI.makefile TankHybridPI.libs TankHybridPI.log output.log
 // 

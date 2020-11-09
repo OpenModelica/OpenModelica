@@ -1,5 +1,6 @@
 // name: ErrorSimPackage
 // status: correct
+// cflags: -d=-newInst
 
 loadString("package P end P;");
 translateModel(P);getErrorString();

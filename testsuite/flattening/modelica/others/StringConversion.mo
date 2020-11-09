@@ -1,6 +1,7 @@
 // name: StringConversion
 // keywords: string
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests conversion of strings from other datatypes
 //

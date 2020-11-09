@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // From ticket:4065
 
 echo(false);

@@ -1,6 +1,7 @@
 // name:      testTearingStrictness
 // keywords:  tearing, linear, strictness
 // status:    correct
+// cflags: -d=-newInst
 
 loadString("
 model testTearingStrictness

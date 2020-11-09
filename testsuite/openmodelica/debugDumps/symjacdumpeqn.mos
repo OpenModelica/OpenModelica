@@ -5,6 +5,7 @@
 // omc debug dump: +d=symjacdumpeqn
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=symjacdumpeqn
 loadString("
 model testSymjacdumpeqn

@@ -1,6 +1,7 @@
 // name:      parameterTest15
 // keywords:  parameter evaluation, override
 // status:    correct
+// cflags: -d=-newInst
 
 loadString("
 model parameterTest15

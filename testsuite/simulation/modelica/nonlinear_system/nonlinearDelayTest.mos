@@ -1,6 +1,7 @@
 // name: nonlinearDelayTest
 // status: correct
 // teardown_command: rm -f nonlinear_system.nonlinearDelayTest* _nonlinear_system.nonlinearDelayTest* output.log
+// cflags: -d=-newInst
 
 loadString("
 package nonlinear_system

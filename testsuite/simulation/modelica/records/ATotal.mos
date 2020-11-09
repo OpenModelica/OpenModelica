@@ -2,6 +2,7 @@
 // keywords: record constants evaluation
 // status:   correct
 // teardown_command: rm -rf A A.exe A_*.* A.*
+// cflags: -d=-newInst
 
 loadFile("ATotal.mo"); getErrorString();
 instantiateModel(A); getErrorString();

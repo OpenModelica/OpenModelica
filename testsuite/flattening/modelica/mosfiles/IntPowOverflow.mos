@@ -1,6 +1,7 @@
 // name:     Integer Power Overflow
 // keywords: 
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Making sure that integer power is correct when using large integers
 //

@@ -1,5 +1,6 @@
 // name: qss_example3
 // status: correct
+// cflags: -d=-newInst
 
 // Quantization-Based New Integration Methods for Stiff ODEs
 // Migoni, Kofman, Cellier

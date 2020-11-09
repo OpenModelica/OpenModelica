@@ -1,6 +1,7 @@
 // name:     BM15 -  Log10 component
 // keywords: Log10
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Log10 component.
 //

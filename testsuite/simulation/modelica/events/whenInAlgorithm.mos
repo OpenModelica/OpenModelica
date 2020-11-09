@@ -2,6 +2,7 @@
 // keywords: when-equations, asserts, algorithm
 // status: correct
 // teardown_command: rm -rf TestModel* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate model with an algorithm that contains asserts and when-statement.
 //

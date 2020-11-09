@@ -1,5 +1,6 @@
 // name: PlanarMechanicsForTesting.Examples.* [checkModel]
 // status: correct
+// cflags: -d=-newInst
 // provided by Dirk Zimmer with changes from Francesco Casella
 //
 

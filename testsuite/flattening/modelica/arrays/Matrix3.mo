@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // ticket #3518
 
 model Matrix3

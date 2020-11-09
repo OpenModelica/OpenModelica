@@ -1,6 +1,7 @@
 // name:     Modification7
 // keywords: modification
 // status:   correct
+// cflags: -d=-newInst
 //
 // This test checks that two modifications of subsubcomponents are both
 // taken care of.

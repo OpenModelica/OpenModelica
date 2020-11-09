@@ -1,5 +1,6 @@
 // name: End
 // status: correct
+// cflags: -d=-newInst
 
 model End
   Integer p2 = 1;

@@ -1,5 +1,6 @@
 // name: EmptyWithin
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that within; gives the top level scope
 

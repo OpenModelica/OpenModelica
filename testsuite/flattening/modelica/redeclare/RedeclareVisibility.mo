@@ -1,6 +1,7 @@
 // name:     RedeclareVisibility
 // keywords: redeclare, modification, constant
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that it's allowed to redeclare a protected element.
 //

@@ -1,5 +1,6 @@
 // name: FunctionProtectedInput
 // status: incorrect
+// cflags: -d=-newInst
 
 model FunctionProtectedInput
 
@@ -18,8 +19,8 @@ end FunctionProtectedInput;
 
 // Result:
 // Error processing file: FunctionProtectedInput.mo
-// [flattening/modelica/algorithms-functions/FunctionProtectedInput.mo:8:3-8:17:writable] Error: Invalid protected variable inR, function variables that are input/output must be public.
-// [flattening/modelica/algorithms-functions/FunctionProtectedInput.mo:16:3-16:13:writable] Error: Class fn not found in scope FunctionProtectedInput (looking for a function or record).
+// [flattening/modelica/algorithms-functions/FunctionProtectedInput.mo:9:3-9:17:writable] Error: Invalid protected variable inR, function variables that are input/output must be public.
+// [flattening/modelica/algorithms-functions/FunctionProtectedInput.mo:17:3-17:13:writable] Error: Class fn not found in scope FunctionProtectedInput (looking for a function or record).
 // Error: Error occurred while flattening model FunctionProtectedInput
 //
 // # Error encountered! Exiting...

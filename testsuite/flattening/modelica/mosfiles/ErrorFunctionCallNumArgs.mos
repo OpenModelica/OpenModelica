@@ -1,5 +1,6 @@
 // name: ErrorFunctionCallNumArgs
 // status: correct
+// cflags: -d=-newInst
 loadFile("ErrorFunctionCallNumArgs.mo");
 ErrorFunctionCallNumArgs.f0();
 getErrorString();

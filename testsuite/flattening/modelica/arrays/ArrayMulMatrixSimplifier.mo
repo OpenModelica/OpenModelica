@@ -1,6 +1,7 @@
 // name:     ArrayMulMatrixSimplifier
 // keywords: Simplifier
 // status:   correct
+// cflags: -d=-newInst
 //
 // Check si that the multiplication with array * matrix, simplify process works.
 // Also tests builtin pre function.

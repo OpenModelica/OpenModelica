@@ -1,6 +1,7 @@
 // name:     ConnectInnerOuter2
 // keywords: connect inner outer
 // status:   correct
+// cflags: -d=-newInst
 //
 // Connect to inner outer references
 

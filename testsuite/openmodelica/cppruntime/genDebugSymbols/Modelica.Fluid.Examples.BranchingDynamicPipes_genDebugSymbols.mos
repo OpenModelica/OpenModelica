@@ -1,6 +1,7 @@
 // name:     Modelica.Fluid.Examples.BranchingDynamicPipes_Debug_Symbols_CPP
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

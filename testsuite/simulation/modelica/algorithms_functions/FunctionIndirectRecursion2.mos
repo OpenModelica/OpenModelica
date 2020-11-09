@@ -2,6 +2,7 @@
 // keywords: function,recursion
 // status: correct
 // teardown_command: rm -rf facIndirect.c facIndirect.libs facIndirect.log facIndirect.makefile facIndirect.so
+// cflags: -d=-newInst
 // 
 // Indirectly recursive function call
 // 

@@ -1,6 +1,7 @@
 // name: InStreamUnconnected
 // keywords: stream inStream connector unconnected
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that inStream of an unconnected stream connector is correctly
 // evaluated.

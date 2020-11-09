@@ -1,6 +1,7 @@
 // name:     ArrayParameterSize
 // keywords: array parameter size checkmodel
 // status:   correct
+// cflags: -d=-newInst
 // 
 // Checks that checkModel can be used when an arrays dimension is defined by a
 // parameter.

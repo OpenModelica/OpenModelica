@@ -1,6 +1,7 @@
 // name:     test03.mos
 // status:   correct
 // teardown_command: rm -rf test03/ test_res.mat
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica");
 loadModel(Modelica);

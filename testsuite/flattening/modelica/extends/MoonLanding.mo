@@ -4,6 +4,7 @@
 //
 // MORE WORK ON THIS FILE HAS TO BE DONE!
 // Drmodelica: 4.1  Moon Landing (p. 115)
+// cflags: -d=-newInst
 //
 
 model Body "Generic body"

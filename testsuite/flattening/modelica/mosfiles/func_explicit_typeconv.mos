@@ -1,6 +1,7 @@
 // name:     Test floor(), integer(), ceil() and integer()
 // keywords: function ceil floor Integer
 // status:   correct, however ut does not work together with the test suite
+// cflags: -d=-newInst
 // 
 //  * testing a simple function and the build in type conversion function
 //    Intege(), integer(), ceil() and floor()

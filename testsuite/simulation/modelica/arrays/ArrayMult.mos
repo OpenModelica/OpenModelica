@@ -4,6 +4,7 @@
 // teardown_command: rm -rf ArrayMult_* ArrayMult ArrayMult.exe ArrayMult.cpp ArrayMult.makefile ArrayMult.libs ArrayMult.log output.log
 //
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// cflags: -d=-newInst
 // 
 loadFile("ArrayMult.mo");
 simulate(ArrayMult,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

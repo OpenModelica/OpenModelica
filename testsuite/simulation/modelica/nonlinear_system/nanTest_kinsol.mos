@@ -2,6 +2,7 @@
 // keywords: non-linear solver, nan, inf
 // status: correct
 // teardown_command: rm -f nonlinear_system.nanTest* _nonlinear_system.nanTest* output.log
+// cflags: -d=-newInst
 //
 
 loadFile("nanTest.mo"); getErrorString();

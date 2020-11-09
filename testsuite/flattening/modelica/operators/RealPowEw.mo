@@ -1,6 +1,7 @@
 // name: RealPowEw
 // keywords: real, power, element-wise
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the element-wise power operator.
 //

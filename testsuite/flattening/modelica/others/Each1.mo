@@ -1,6 +1,7 @@
 // name:     Each1
 // keywords: Each modifier
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testcase from Modelica specification.
 //

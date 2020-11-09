@@ -1,5 +1,6 @@
 // name: LeeRamirezBioreactor_2
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("+gDynOpt");
 getErrorString();

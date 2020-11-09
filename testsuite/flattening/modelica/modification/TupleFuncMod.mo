@@ -1,6 +1,7 @@
 // name:     TupleFuncMod
 // keywords: #4521
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that functions with multiple outputs can be used as modifiers.
 //

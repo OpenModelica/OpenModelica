@@ -1,6 +1,7 @@
 // name:     Modelica.Media.Examples.SolveOneNonlinearEquation.Inverse_sine
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

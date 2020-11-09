@@ -1,7 +1,7 @@
 // name:     UniontypeConst4
 // keywords: uniontype singelton record
 // status:   correct
-// cflags:   -g=MetaModelica -d=gen
+// cflags:   -g=MetaModelica -d=gen -d=-newInst
 //
 // This tests check that asserts that singelton uniontype
 // that contains non singelton subuniontypes are treated as singeltons.

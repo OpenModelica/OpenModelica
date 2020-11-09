@@ -4,6 +4,7 @@
 //
 // ??Error - not yet implemented
 // Drmodelica: 7.7 Built-in Functions (p. 225)
+// cflags: -d=-newInst
 //
 class DimSize
   parameter Real[4, 1, 6] x = fill(1., 4, 1, 6);

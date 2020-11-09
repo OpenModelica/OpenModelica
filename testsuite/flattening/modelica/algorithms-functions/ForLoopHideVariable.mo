@@ -4,6 +4,7 @@
 //
 // for statment handling
 // Drmodelica: 9.1 for-Statement (p.288)
+// cflags: -d=-newInst
 //
 
 model HideVariable

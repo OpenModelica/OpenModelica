@@ -1,5 +1,5 @@
 // name: ErrorLocalElement1
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
 
 class ErrorLocalElement1

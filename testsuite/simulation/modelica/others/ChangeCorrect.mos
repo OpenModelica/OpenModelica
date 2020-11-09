@@ -2,6 +2,7 @@
 // keywords: change, empty array 
 // status: correct
 // teardown_command: rm -rf bug_2262_* _bug_2262_* output.log
+// cflags: -d=-newInst
 // 
 // see #2262
 // 

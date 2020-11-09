@@ -1,6 +1,7 @@
 // name:     BS5 - KinematicPTP component
 // keywords: KinematicPTP
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the KinematicPTP component.
 //
@@ -1350,7 +1351,7 @@ end BS5;
 //   assert(kinematicPTP1.outPort.n == der1.inPort.n, "automatically generated from connect");
 //   der1.inPort.signal[1] = kinematicPTP1.outPort.signal[1];
 // end BS5;
-// [flattening/modelica/msl/BS5.mo:686:42-686:70:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
-// [flattening/modelica/msl/BS5.mo:688:43-688:71:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS5.mo:687:42-687:70:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
+// [flattening/modelica/msl/BS5.mo:689:43-689:71:writable] Warning: Non-array modification '1e-60' for array component, possibly due to missing 'each'.
 //
 // endResult

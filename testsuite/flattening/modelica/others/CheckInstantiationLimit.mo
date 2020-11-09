@@ -1,5 +1,6 @@
 // name: CheckInstantiationLimit
 // status: correct
+// cflags: -d=-newInst
 
 model CheckInstantiationLimit
   extends M(i=1);

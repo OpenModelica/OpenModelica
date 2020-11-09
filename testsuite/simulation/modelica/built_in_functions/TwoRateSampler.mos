@@ -4,6 +4,7 @@
 // teardown_command: rm -rf TwoRateSampler_* TwoRateSampler TwoRateSampler.exe TwoRateSampler.cpp TwoRateSampler.makefile TwoRateSampler.libs TwoRateSampler.log output.log
 // 
 // Drmodelica: 13.2  Sampled Systems (p. 429)
+// cflags: -d=-newInst
 // 
 //
 loadFile("TwoRateSampler.mo");

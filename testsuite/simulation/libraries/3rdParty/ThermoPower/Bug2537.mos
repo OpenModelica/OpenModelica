@@ -2,6 +2,7 @@
 // keywords: homotopy differentiation
 // status: correct
 // teardown_command: rm -rf ThermoPower.Examples.CISE.CISESim120501*
+// cflags: -d=-newInst
 //
 // test for #2537
 //

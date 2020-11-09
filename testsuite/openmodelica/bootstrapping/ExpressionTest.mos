@@ -1,5 +1,6 @@
 // name: SimplifyOperator
 // status: correct
+// cflags: -d=-newInst
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("ExpressionTest.mo");getErrorString();

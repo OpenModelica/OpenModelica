@@ -1,6 +1,7 @@
 // name:     Vectorizable1
 // keywords: vectorized calls
 // status:   correct
+// cflags: -d=-newInst
 //
 // This tests vectorized calls.
 //

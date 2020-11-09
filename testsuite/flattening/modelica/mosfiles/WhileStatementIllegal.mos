@@ -1,6 +1,7 @@
 // name:     While-statement Illegal
 // keywords: while
 // status:   incorrect
+// cflags: -d=-newInst
 // 
 //  Test the interactive While-statement
 //
@@ -8,10 +9,10 @@ while 1234 loop s:="aa"+s;i:=i+1;end while;
 
 // Result:
 // Error processing file: WhileStatementIllegal.mos
-// [flattening/modelica/mosfiles/WhileStatementIllegal.mos:7:1-7:43:writable] Error: Type error in while conditional '1234'. Expected Boolean got Integer.
-// 
+// [flattening/modelica/mosfiles/WhileStatementIllegal.mos:8:1-8:43:writable] Error: Type error in while conditional '1234'. Expected Boolean got Integer.
+//
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
-// 
+//
 // Execution failed!
 // endResult

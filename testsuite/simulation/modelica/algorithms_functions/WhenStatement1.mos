@@ -5,6 +5,7 @@
 // 
 //  
 // Drmodelica: 9.1 When-Statements (p. 293)
+// cflags: -d=-newInst
 //  
 
 loadFile("WhenStatement1.mo");

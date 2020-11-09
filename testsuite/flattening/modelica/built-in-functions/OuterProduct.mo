@@ -1,6 +1,7 @@
 // name: OuterProduct
 // keywords: outerProduct
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing the built-in outerProduct function.
 //

@@ -1,6 +1,7 @@
 // name: problem3-symSolverImpSsc
 // status: correct
 // teardown_command: rm -f testSolver.problem3* output.log
+// cflags: -d=-newInst
 
 loadFile("./testSolverPackage.mo");
 getErrorString();

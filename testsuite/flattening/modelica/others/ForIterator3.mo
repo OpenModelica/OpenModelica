@@ -1,5 +1,6 @@
 // name: ForIterator3
 // status: correct
+// cflags: -d=-newInst
 class ForIterator3
   constant String s1[4,3] = {i+j for i in {"a","b","c"}, j in {"d","e","f","g"}};
   constant String s2 = sum(i+j for i in {"a","b","c"}, j in {"d","e","f","g"});

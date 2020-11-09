@@ -1,6 +1,7 @@
 // name:     ReplaceFunction
 // keywords: modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Function arguments must be identical, including their names,
 // in functions of the same type.

@@ -2,6 +2,7 @@
 // keywords: equation
 // status: correct
 // teardown_command: rm -rf testIfEqn5* _testIfEqn5.h output.log
+// cflags: -d=-newInst
 //
 //
 

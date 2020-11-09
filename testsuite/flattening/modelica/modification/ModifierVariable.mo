@@ -1,6 +1,7 @@
 // name: ModifierVariable
 // keywords: modifier
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests modification of variables
 //

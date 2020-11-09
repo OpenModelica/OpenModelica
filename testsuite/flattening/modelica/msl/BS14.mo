@@ -1,6 +1,7 @@
 // name:     BS14 - IntegerStep component
 // keywords: IntegerStep
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the IntegerStep component.
 //

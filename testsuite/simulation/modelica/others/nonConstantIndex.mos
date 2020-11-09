@@ -1,6 +1,7 @@
 // name: nonConstantIndex
 // status: correct
 // teardown_command: rm -f M M.exe M.makefile M.c M_*
+// cflags: -d=-newInst
 
 loadString("
 model M

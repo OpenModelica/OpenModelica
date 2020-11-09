@@ -1,6 +1,6 @@
 // name:     AddReal1
 // keywords: external function, equation
-// cflags:   +d=nogen
+// cflags:   +d=nogen -d=-newInst
 // status:   correct
 
 

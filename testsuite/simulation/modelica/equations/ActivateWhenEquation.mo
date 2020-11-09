@@ -4,6 +4,7 @@
 //
 // <insert description here>
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 
 
 class Activate

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.SynchCounters
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.SynchCounters.* DrModelicaForTesting.SynchCounters_* DrModelicaForTesting.SynchCounters DrModelicaForTesting.SynchCounters.exe DrModelicaForTesting.SynchCounters.cpp DrModelicaForTesting.SynchCounters.makefile DrModelicaForTesting.SynchCounters.libs DrModelicaForTesting.SynchCounters.log DrModelicaForTesting.SynchCounters.c DrModelicaForTesting.SynchCounters.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

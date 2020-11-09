@@ -2,6 +2,7 @@
 // keywords: initialization, start values, initial equation
 // status:   correct
 // teardown_command: rm -rf initializationTests.initial_equation* _initializationTests.initial_equation* output.log
+// cflags: -d=-newInst
 // 
 //  test start values and initial equations
 //

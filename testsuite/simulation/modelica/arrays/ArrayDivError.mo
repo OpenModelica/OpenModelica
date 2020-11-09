@@ -3,6 +3,7 @@
 // status:   incorrect
 //
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// cflags: -d=-newInst
 //
 class ArrayDivError
   Real Div1[1, 3], Div2, Div3;

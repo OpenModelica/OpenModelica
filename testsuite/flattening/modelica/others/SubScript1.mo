@@ -1,6 +1,7 @@
 // name:     SubScript1
 // keywords: SubScript,unknown
 // status:   correct
+// cflags: -d=-newInst
 //
 // checks if subscripts are correct when containing an expression with a parameter
 //

@@ -1,7 +1,7 @@
 // name:     ComplicatedInteractive
 // keywords: MetaModelica
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Testing nested complex datatypes, like tuple, list, option...
 loadFile("ComplicatedInteractive.mo");

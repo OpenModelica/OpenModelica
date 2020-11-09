@@ -2,6 +2,7 @@
 // keywords: EventHandling, Delay, Euler
 // status: correct
 // teardown_command: rm -rf TestModel* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate model containing EventIterations
 //

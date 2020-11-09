@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.BasicVolume3
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.BasicVolume3.* DrModelicaForTesting.BasicVolume3_* DrModelicaForTesting.BasicVolume3 DrModelicaForTesting.BasicVolume3.exe DrModelicaForTesting.BasicVolume3.cpp DrModelicaForTesting.BasicVolume3.makefile DrModelicaForTesting.BasicVolume3.libs DrModelicaForTesting.BasicVolume3.log DrModelicaForTesting.BasicVolume3.c DrModelicaForTesting.BasicVolume3.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

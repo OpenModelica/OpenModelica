@@ -1,6 +1,7 @@
 // name:     InheritedFullyQualifiedName
 // keywords: #4520
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that fully qualified names in inherited elements aren't corrupted.
 //

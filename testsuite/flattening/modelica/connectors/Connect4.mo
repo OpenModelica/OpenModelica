@@ -1,6 +1,7 @@
 // name:     Connect4
 // keywords: connect,type,unknown
 // status:   correct
+// cflags: -d=-newInst
 //
 // Integers are allowed in connectors
 //

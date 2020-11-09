@@ -1,6 +1,7 @@
 // name:      EngineV12
 // keywords:  arrays
 // status:    correct
+// cflags: -d=-newInst
 //
 loadModel(Modelica); getErrorString();
 loadFile("./EngineVN.mo"); getErrorString();

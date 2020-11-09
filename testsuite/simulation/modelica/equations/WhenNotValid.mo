@@ -6,6 +6,7 @@
 // to a form where the result variable is on the left-hand side
 //
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 //
 model WhenNotValid
   Real x, y;

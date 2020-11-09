@@ -1,6 +1,7 @@
 // name:     InnerEnumeration
 // keywords: inner outer variables
 // status:   correct
+// cflags: -d=-newInst
 //
 // makes sure that outer variables are replaced with the correct inner ones on the top scope
 //
@@ -48,6 +49,6 @@ end InnerEnumeration;
 //   assert(b.T0 == InnerEnumeration.P.E.five, "b.T0 was not set to the correct value");
 //   assert(b.T0 == InnerEnumeration.P.E.five, "b.c.T0 was not set to the correct value");
 // end InnerEnumeration;
-// [flattening/modelica/scoping/InnerEnumeration.mo:23:7-23:25:writable] Warning: Ignoring the modification on outer element: b.c.T0  = InnerEnumeration.P.E.one.
+// [flattening/modelica/scoping/InnerEnumeration.mo:24:7-24:25:writable] Warning: Ignoring the modification on outer element: b.c.T0  = InnerEnumeration.P.E.one.
 //
 // endResult

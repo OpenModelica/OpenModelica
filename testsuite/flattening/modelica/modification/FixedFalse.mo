@@ -1,6 +1,7 @@
 // name:     FixedFalse [BUG: https://trac.openmodelica.org/OpenModelica/ticket/1983]
 // keywords: fixed, parameter, modifications
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests modifications of final parameters.
 // Fix for bug #1983.

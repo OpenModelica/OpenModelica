@@ -1,6 +1,7 @@
 // name:     Bug4124.mos
 // keywords: equations involving external objects
 // status:   correct
+// cflags: -d=-newInst
 //
 // check that equations involved external objects are handled correctly
 //

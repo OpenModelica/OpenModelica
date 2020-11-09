@@ -4,6 +4,7 @@
 //
 // Tests that lookup works as it should and not give this error:
 // Error: Variable Choices.System.Dynamics.DynamicFreeInitial not found in scope ThermoPower.System.
+// cflags: -d=-newInst
 //
 
 loadFile("ThermoPower.Examples.BraytonCycle.ClosedLoopSimulator.mo"); getErrorString();

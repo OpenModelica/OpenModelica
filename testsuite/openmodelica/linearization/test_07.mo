@@ -1,6 +1,7 @@
 // name:     Algorithm stucture test
 // keywords: jacobian, algorithm
 // status:   correct
+// cflags: -d=-newInst
 //
 // <insert description here>
 //

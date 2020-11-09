@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.AddSub1
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.AddSub1.* DrModelicaForTesting.AddSub1_* DrModelicaForTesting.AddSub1 DrModelicaForTesting.AddSub1.exe DrModelicaForTesting.AddSub1.cpp DrModelicaForTesting.AddSub1.makefile DrModelicaForTesting.AddSub1.libs DrModelicaForTesting.AddSub1.log DrModelicaForTesting.AddSub1.c DrModelicaForTesting.AddSub1.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

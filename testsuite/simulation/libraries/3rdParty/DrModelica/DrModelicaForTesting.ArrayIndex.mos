@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ArrayIndex
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ArrayIndex.* DrModelicaForTesting.ArrayIndex_* DrModelicaForTesting.ArrayIndex DrModelicaForTesting.ArrayIndex.exe DrModelicaForTesting.ArrayIndex.cpp DrModelicaForTesting.ArrayIndex.makefile DrModelicaForTesting.ArrayIndex.libs DrModelicaForTesting.ArrayIndex.log DrModelicaForTesting.ArrayIndex.c DrModelicaForTesting.ArrayIndex.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

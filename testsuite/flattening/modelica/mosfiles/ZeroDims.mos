@@ -1,6 +1,7 @@
 //name:        Check model with zero dimension arrays.
 //keyword:     checking models.
 //status:      correct
+// cflags: -d=-newInst
 //
 //
 // check model example

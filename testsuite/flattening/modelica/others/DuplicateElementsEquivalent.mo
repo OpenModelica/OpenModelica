@@ -1,6 +1,7 @@
 // name:     DuplicateElementsEquivalent
 // keywords: check if duplicate elements are the same even with when having named imports!
 // status:   incorrect
+// cflags: -d=-newInst
 
 
 package Crap

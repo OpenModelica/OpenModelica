@@ -1,6 +1,7 @@
 // name:     TwoTanksExample.VerificationModels
 // keywords: requirements, bindings, inference
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing requirements verification scenarios generation
 //

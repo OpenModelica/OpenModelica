@@ -1,5 +1,6 @@
 // name: DocumentationBackslash
 // status: correct
+// cflags: -d=-newInst
 //
 // See bug #1143. Dymola allows this behaviour even though the specification
 // does not. So we need to print the warnings.
@@ -11,8 +12,8 @@ model DocumentationBackslash
 end DocumentationBackslash;
 
 // Result:
-// [openmodelica/parser/DocumentationBackslash.mo:9:158-9:172:writable] Warning: Lexer treating \ as \\, since \L is not a valid Modelica escape sequence.
-// [openmodelica/parser/DocumentationBackslash.mo:9:158-9:182:writable] Warning: Lexer treating \ as \\, since \C is not a valid Modelica escape sequence.
+// [openmodelica/parser/DocumentationBackslash.mo:10:158-10:172:writable] Warning: Lexer treating \ as \\, since \L is not a valid Modelica escape sequence.
+// [openmodelica/parser/DocumentationBackslash.mo:10:158-10:182:writable] Warning: Lexer treating \ as \\, since \C is not a valid Modelica escape sequence.
 //
 // class DocumentationBackslash
 // end DocumentationBackslash;

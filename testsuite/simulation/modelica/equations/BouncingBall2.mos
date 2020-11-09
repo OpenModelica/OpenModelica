@@ -5,6 +5,7 @@
 // 
 //  Tests when, elsewhen
 // Drmodelica: 9.1 reinit (p. 296)
+// cflags: -d=-newInst
 //
 
 loadFile("BouncingBall2.mo");

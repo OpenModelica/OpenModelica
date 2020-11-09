@@ -3,6 +3,7 @@
 // status:   correct
 // env:			 LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
 // teardown_command: rm -rf SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_* _SiemensPower.Components.FlueGasZones.Tests.FlueGasZoneSingleTube_* SiemensPower_Media_TTSE_Utilities_* output.log
+// cflags: -d=-newInst
 //
 //  Test SiemensPower component FlueGasZone
 //

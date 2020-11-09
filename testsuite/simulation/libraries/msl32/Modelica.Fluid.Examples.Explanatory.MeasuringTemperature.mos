@@ -1,6 +1,7 @@
 // name:     Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

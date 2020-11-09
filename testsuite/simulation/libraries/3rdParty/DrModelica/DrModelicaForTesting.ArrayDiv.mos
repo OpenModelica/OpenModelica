@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ArrayDiv
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ArrayDiv.* DrModelicaForTesting.ArrayDiv_* DrModelicaForTesting.ArrayDiv DrModelicaForTesting.ArrayDiv.exe DrModelicaForTesting.ArrayDiv.cpp DrModelicaForTesting.ArrayDiv.makefile DrModelicaForTesting.ArrayDiv.libs DrModelicaForTesting.ArrayDiv.log DrModelicaForTesting.ArrayDiv.c DrModelicaForTesting.ArrayDiv.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

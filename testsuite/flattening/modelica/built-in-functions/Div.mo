@@ -1,6 +1,7 @@
 // name: Div
 // keywords: div
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in div function
 //

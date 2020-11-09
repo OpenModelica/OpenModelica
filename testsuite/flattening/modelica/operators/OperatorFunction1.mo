@@ -1,6 +1,7 @@
 // name: OperatorFunction1
 // keywords: operator
 // status: correct
+// cflags: -d=-newInst
 //
 // tests the shorthand operator function keyword
 //

@@ -1,6 +1,7 @@
 // name: String arrays
 // keywords: array
 // status: correct
+// cflags: -d=-newInst
 
 function strCombine
   input String[:] inVal;

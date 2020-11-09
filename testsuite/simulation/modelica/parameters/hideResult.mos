@@ -1,6 +1,7 @@
 // name:      hideResult
 // keywords:  parameter evaluation, hide result
 // status:    correct
+// cflags: -d=-newInst
 
 loadString("
 model hideResult

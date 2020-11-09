@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.* PlanarMechanicsForTesting.Examples.SingleTrackWithEngine_* PlanarMechanicsForTesting.Examples.SingleTrackWithEngine PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.exe PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.cpp PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.makefile PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.libs PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.log PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.c PlanarMechanicsForTesting.Examples.SingleTrackWithEngine.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

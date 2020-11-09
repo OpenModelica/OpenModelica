@@ -2,6 +2,7 @@
 // keywords: array ranges
 // status: correct
 // teardown_command: rm -rf ConPNlib*
+// cflags: -d=-newInst
 
 loadFile("Bug3916_ConPNlib.Examples.Test1b.mo"); getErrorString();
 buildModel(ConPNlib.Examples.Test1b); getErrorString();

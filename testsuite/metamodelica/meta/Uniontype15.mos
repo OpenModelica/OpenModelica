@@ -1,7 +1,7 @@
 // name:     Uniontype15
 // keywords: Uniontype
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Test type aliasing of uniontypes
 //

@@ -1,6 +1,7 @@
 // name:     Bug3239.mo [BUG: #3239]
 // keywords: redeclare modifier handling
 // status:   correct
+// cflags: -d=-newInst
 //
 // check that modifiers on redeclare are not lost
 //

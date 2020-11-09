@@ -1,6 +1,7 @@
 // name: AlgortihmTupleAssign
 // status: correct
 // teardown_command: rm -rf AlgortihmTupleAssign_*
+// cflags: -d=-newInst
 
 loadString("model AlgortihmTupleAssign
   function f

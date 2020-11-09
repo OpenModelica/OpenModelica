@@ -2,6 +2,7 @@
 // keywords: symbolic jacobian constant parts
 // status: correct
 // teardown_command: rm -f Modelica.Fluid.Examples.DrumBoiler.DrumBoiler* out.log
+// cflags: -d=-newInst
 //
 // Reuse constant parts of Jacobians and simulate with DASSL and IDA with
 // symbolic and colored symbolic Jacobians.

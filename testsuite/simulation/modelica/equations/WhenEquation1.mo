@@ -1,6 +1,7 @@
 // name:     WhenEquation1
 // keywords: when
 // status:   correct
+// cflags: -d=-newInst
 //
 // Conditional Equations with when-Equations and elsewhen-Equations
 //

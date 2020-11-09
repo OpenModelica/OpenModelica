@@ -1,5 +1,6 @@
 // name: testAssertSolve
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model testAssertSolve

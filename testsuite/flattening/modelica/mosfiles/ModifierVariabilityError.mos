@@ -1,6 +1,7 @@
 // name:     ModifierVariabilityError
 // keywords: modifier variability bug1040
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Checks that the compiler gives an error if a modifier has higher variability
 //  than the component.

@@ -1,6 +1,7 @@
 // name:     Modification13
 // keywords: modification, attributes, arrays
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 

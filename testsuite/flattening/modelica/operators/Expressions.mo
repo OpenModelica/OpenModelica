@@ -1,6 +1,7 @@
 // name: Expressions
 // keywords: expression, integer, add, subtract, multiply, divide, power
 // status: correct
+// cflags: -d=-newInst
 //
 // tests the basic math operators
 //

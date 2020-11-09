@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 loadFile("ArrayInitSorting.mo");getErrorString();
 simulate(ArrayInitSorting);getErrorString();

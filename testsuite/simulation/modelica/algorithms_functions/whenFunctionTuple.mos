@@ -2,6 +2,7 @@
 // keywords: when discrete algorithm function tuple
 // status: correct
 // teardown_command: rm -rf  testWhenAlgFuncTuple* output.log
+// cflags: -d=-newInst
 // 
 // 
 

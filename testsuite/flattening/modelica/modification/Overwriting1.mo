@@ -1,6 +1,7 @@
 // name:     Overwriting1
 // keywords: modification,equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // The modification does not overwrite the equation
 

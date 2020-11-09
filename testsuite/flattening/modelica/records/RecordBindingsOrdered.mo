@@ -1,6 +1,7 @@
 // name:     RecordBindingsOrdered
 // keywords: record parameter
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests records elements get bindings properly and in the correct order.
 // Fix for bug #1675: https://openmodelica.org:8443/cb/issue/1675

@@ -1,6 +1,7 @@
 // name:     MLS33_17_3_7NA
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("MLS33_17_3_7NA.mo");

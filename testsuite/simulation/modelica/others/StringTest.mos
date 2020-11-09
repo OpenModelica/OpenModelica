@@ -2,6 +2,7 @@
 // keywords: String, assert 
 // status: correct
 // teardown_command: rm -rf STest1.cpp STest1 STest1.exe STest1.libs STest1.log STest1_functions.cpp STest1.makefile STest1_init.xml STest1_res.mat STest1_functions.h STest1_records.c
+// cflags: -d=-newInst
 // 
 //  Using String() functions to create strings in assert.
 //

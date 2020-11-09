@@ -1,6 +1,7 @@
 // name:     RedeclareComponentInvalid3
 // keywords: redeclare component
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Tests that it's only allowed to redeclare a component marked as replaceable.
 //

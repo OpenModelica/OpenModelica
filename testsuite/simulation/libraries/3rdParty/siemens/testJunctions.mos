@@ -3,6 +3,7 @@
 // status:   correct
 // env:			 LD_LIBRARY_PATH="$OPENMODELICAHOME/../testsuite/3rdParty/siemens/TTSE_libs/"
 // teardown_command: rm -rf SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia* _SiemensPower.Components.Junctions.Tests.splitterMixer_testTubeOwnMedia* SiemensPower_Media_TTSE_Utilities_* output.log
+// cflags: -d=-newInst
 //
 //  Test SiemensPower component Junctions
 //

@@ -1,6 +1,7 @@
 // name: FlowDeclRecord
 // keywords: flow
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the flow prefix on a record type
 //

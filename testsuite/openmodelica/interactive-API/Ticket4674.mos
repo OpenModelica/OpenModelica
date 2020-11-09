@@ -1,6 +1,7 @@
 // name:     Ticket4674.mos
 // keywords: API
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  API to get the instantiated parameters and constants
 //

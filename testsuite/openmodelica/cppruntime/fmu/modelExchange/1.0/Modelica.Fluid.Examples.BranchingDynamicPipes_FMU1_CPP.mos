@@ -1,6 +1,7 @@
 // name:     Modelica.Fluid.Examples.BranchingDynamicPipes_FMI_1_0
 // keywords: simulation MSL Examples FMI-Export FMI-Import
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

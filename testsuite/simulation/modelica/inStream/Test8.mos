@@ -1,5 +1,6 @@
 //name: Test8
 //status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.2"});
 getErrorString();

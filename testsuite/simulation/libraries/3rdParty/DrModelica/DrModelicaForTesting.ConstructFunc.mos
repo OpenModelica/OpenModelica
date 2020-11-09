@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ConstructFunc
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ConstructFunc.* DrModelicaForTesting.ConstructFunc_* DrModelicaForTesting.ConstructFunc DrModelicaForTesting.ConstructFunc.exe DrModelicaForTesting.ConstructFunc.cpp DrModelicaForTesting.ConstructFunc.makefile DrModelicaForTesting.ConstructFunc.libs DrModelicaForTesting.ConstructFunc.log DrModelicaForTesting.ConstructFunc.c DrModelicaForTesting.ConstructFunc.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

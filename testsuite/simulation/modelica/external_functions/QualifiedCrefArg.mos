@@ -3,6 +3,7 @@
 // status: correct
 // setup_command: gcc `if test "x86_64" = \`uname -m\`; then echo -fPIC; fi` -c -o QualifiedCrefArg-f.o QualifiedCrefArg-f.c
 // teardown_command: rm -f QualifiedCrefArg-f.o QualifiedCrefArg_*
+// cflags: -d=-newInst
 //
 //
 //

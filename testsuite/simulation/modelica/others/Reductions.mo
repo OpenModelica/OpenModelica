@@ -1,6 +1,7 @@
 // name:     Reductions
 // keywords: reduction
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test reduction expression.
 // Fix for bug #1136: http://openmodelica.ida.liu.se:8080/cb/issue/1136?navigation=true

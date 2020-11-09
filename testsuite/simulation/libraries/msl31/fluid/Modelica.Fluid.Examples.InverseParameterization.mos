@@ -6,6 +6,7 @@
 //
 // This model has issues due to Modelica bug #627:
 // https://trac.modelica.org/Modelica/ticket/627
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.1"}); getErrorString();

@@ -1,6 +1,6 @@
 // name:     11  Petrol
 // keywords: MetaModelica
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status:   correct
 //
 // OpenModelica Development Course at PELAB

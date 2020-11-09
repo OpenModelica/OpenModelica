@@ -1,5 +1,6 @@
 // name: ArrayCall
 // status: correct
+// cflags: -d=-newInst
 // Tests that there are no ASUB expressions in the function
 
 class ArrayCall

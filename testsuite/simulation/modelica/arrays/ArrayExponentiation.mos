@@ -4,6 +4,7 @@
 // teardown_command: rm -rf Exp_* Exp Exp.exe Exp.cpp Exp.makefile Exp.libs Exp.log output.log
 // 
 // Drmodelica: 7.6 Arithmetic Array Operators (p. 223)
+// cflags: -d=-newInst
 //
 loadFile("ArrayExponentiation.mo");
 simulate(Exp,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

@@ -1,6 +1,7 @@
 // name: problem4 [symjac,tearing]
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem4* _nonlinear_system.problem4* output.log
+// cflags: -d=-newInst
 
 loadFile("nlsTestPackage.mo"); getErrorString();
 OpenModelica.Scripting.setCommandLineOptions("+d=NLSanalyticJacobian"); getErrorString();

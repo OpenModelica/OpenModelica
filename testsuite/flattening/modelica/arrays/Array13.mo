@@ -1,6 +1,7 @@
 // name:     Array13
 // keywords: arrays, empty arrays
 // status:   correct
+// cflags: -d=-newInst
 //
 // Creating empty arrays using fill
 //

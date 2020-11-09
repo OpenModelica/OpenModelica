@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Test that we return the correct, evaluated icon and not just unparsing
 // of the Icon annotation
 

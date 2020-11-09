@@ -1,6 +1,7 @@
 // name: ExternalFunction5
 // status: correct
 // teardown_command: rm -f myFloor.* myFloor_* ExternalFunction5_*
+// cflags: -d=-newInst
 
 function trunc
   input Real r;

@@ -1,5 +1,6 @@
 // name: ErrorUnknownDimension
 // status: incorrect
+// cflags: -d=-newInst
 
 model ErrorUnknownDimension
   Real r[:];

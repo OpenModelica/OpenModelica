@@ -1,6 +1,7 @@
 // name:     SingleState
 // keywords: state machines
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadFile("SingleState.mo");

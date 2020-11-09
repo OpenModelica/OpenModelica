@@ -1,6 +1,7 @@
 // name:      simplifyIf2
 // keywords:  evalConstFunc
 // status:    correct
+// cflags: -d=-newInst
 //
 
 loadFile("PartEvalFunc.mo"); getErrorString();

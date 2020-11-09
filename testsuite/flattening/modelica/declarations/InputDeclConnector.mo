@@ -1,6 +1,7 @@
 // name: InputDeclConnector
 // keywords: input
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the input prefix on a connector type
 //

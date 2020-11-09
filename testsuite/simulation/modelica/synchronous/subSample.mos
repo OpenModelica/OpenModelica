@@ -1,6 +1,7 @@
 // name: test_subSample
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 
 // base-clock partitions #1 (clocked partition): {vd, u, u2, u3}

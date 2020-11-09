@@ -1,6 +1,7 @@
 // name:     <XXX>
 // keywords: <insert keywords here>
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // <insert description here>
 //

@@ -1,6 +1,7 @@
 // name:     RecordFuncParam
 // keywords: record function
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests records as input arguments to functions in a simulation context.
 // Fix for bug #1215: http://openmodelica.ida.liu.se:8080/cb/issue/1215

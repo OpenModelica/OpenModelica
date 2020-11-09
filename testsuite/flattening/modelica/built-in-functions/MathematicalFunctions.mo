@@ -1,6 +1,7 @@
 // name: MathematicalFunctions
 // keywords: builtin, function, math
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing built-in mathematical functions
 //

@@ -5,6 +5,7 @@
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 // ??Error - not yet implemented
 // Drmodelica: 7.9 Empty Arrays (p. 231)
+// cflags: -d=-newInst
 //
 
 class AddEmpty

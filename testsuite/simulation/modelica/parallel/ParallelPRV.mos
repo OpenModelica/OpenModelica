@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 // setCommandLineOptions({"+n=0","+d=openmp"}); // Dynamic schedule
 // setCompiler("clang");

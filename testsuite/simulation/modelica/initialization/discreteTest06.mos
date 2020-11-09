@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.discreteTest6* _initializationTests.discreteTest6* output.log
+// cflags: -d=-newInst
 //
 //  case for an ineffective  initial()-call inside a when-condition
 //

@@ -1,4 +1,4 @@
-// cflags: +d=-gen
+// cflags: +d=-gen -d=-newInst
 // status: correct
 
 model EvalUnknownDim

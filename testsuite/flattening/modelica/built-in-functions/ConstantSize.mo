@@ -1,6 +1,7 @@
 // name:     ConstantSize
 // keywords: size constant
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that a size call with constant arguments is evaluted correctly.
 //

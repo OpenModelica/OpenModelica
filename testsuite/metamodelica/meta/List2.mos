@@ -1,6 +1,7 @@
 // name:     List2
 // keywords: Lists
 // status:   correct
+// cflags: -d=-newInst
 //
 // List Testing
 //

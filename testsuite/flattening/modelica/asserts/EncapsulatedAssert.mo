@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 encapsulated model EncapsulatedAssert
 
 Real x;

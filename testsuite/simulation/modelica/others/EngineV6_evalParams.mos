@@ -1,6 +1,7 @@
 // name:     EngineV6_evalParams
 // keywords: simulation evalAllParams
 // status: correct
+// cflags: -d=-newInst
 //
 loadModel(Modelica,{"3.2.1"});
 loadFile("EngineV6_output.mo");getErrorString();

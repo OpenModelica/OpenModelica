@@ -1,6 +1,7 @@
 // name: Identity1
 // keywords: identity
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built in operator identity.
 //

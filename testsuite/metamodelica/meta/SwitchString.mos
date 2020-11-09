@@ -1,5 +1,6 @@
 // status: correct
 // ticket: #3063
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -d=noevalfunc,gen");getErrorString();
 loadFile("SwitchString.mo");getErrorString();

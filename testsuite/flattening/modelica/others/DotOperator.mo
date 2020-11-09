@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Enhancement #3096
 
 model DotOperator

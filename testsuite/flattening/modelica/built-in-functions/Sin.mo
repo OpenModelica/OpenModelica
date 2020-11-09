@@ -1,6 +1,7 @@
 // name: Sin
 // keywords: sin
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in sin function
 //

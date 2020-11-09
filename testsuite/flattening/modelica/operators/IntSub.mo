@@ -1,6 +1,7 @@
 // name: IntSub
 // keywords: integer, subtraction
 // status: correct
+// cflags: -d=-newInst
 //
 // tests Integer subtraction
 //

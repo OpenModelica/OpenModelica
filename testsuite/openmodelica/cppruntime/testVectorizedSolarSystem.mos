@@ -2,6 +2,7 @@
 // keywords: vectorized components, array equations, for loops
 // status: correct
 // teardown_command: rm -f *VectorizedSolarSystemTest*
+// cflags: -d=-newInst
 
 setCommandLineOptions("-d=newInst,-nfScalarize"); getErrorString();
 setCommandLineOptions("--preOptModules+=dumpDAE"); getErrorString();

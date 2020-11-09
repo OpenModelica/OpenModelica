@@ -2,6 +2,7 @@
 // keywords: array
 // status: correct
 // teardown_command: rm -rf ArrayModel_* ArrayModel ArrayModel.exe ArrayModel.cpp ArrayModel.makefile ArrayModel.libs ArrayModel.log output.log
+// cflags: -d=-newInst
 // 
 // Making sure array equations are handled correctly in RemoveSimpleEquations
 //

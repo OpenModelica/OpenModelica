@@ -5,6 +5,7 @@
 // 
 //
 // Drmodelica: 13.2 WatchDog System. (p. 435)
+// cflags: -d=-newInst
 // 
 loadFile("WatchDog2EquationWhen.mo");
 simulate( WatchDogSystem2, stopTime=4, tolerance=1e-5, numberOfIntervals=100);

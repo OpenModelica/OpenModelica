@@ -1,6 +1,7 @@
 // name:     Function12
 // keywords: function, short class def
 // status:   correct
+// cflags: -d=-newInst
 //
 // This tests function as short class definition.
 

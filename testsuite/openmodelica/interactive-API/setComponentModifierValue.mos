@@ -1,6 +1,7 @@
 // name: setComponentModifierValue
 // keywords: 
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the setComponentModifierValue API functions.
 //

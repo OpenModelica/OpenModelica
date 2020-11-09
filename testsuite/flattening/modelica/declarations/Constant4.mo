@@ -1,6 +1,7 @@
 // name:     Constant4
 // keywords: declaration,array
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 //

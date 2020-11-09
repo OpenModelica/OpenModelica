@@ -2,6 +2,7 @@
 // keywords: array slice
 // status: correct
 // teardown_command: rm -rf ArraySlice2_* ArraySlice2 ArraySlice2.exe ArraySlice2.cpp ArraySlice2.makefile ArraySlice2.libs ArraySlice2.log output.log
+// cflags: -d=-newInst
 // 
 // Tests array slicing where some subscripts are scalar variables.
 // 

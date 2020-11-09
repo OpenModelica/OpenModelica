@@ -1,6 +1,7 @@
 // name:     RedeclareArrayComponent1
 // keywords: redeclare component array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that a redeclared components gets get correct type when using an array
 // type.

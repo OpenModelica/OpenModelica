@@ -1,6 +1,7 @@
 
 // name:     ConnectInner1
 // keywords: connect,dynamic scoping
+// cflags: -d=-newInst
 // status:   correct
 //
 // This demonstrates dynamic scoping for

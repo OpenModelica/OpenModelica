@@ -1,7 +1,7 @@
 // name:     Annotations
 // keywords: declaration annotations comments
 // status:   correct
-// cflags:   +showAnnotations
+// cflags:   +showAnnotations -d=-newInst
 //
 // Checks that annotations are output correctly on the flat code when
 // +showAnnotations is used.

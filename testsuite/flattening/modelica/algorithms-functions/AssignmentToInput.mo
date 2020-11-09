@@ -1,6 +1,7 @@
 // name: AssignmentToInput
 // keywords: assignment input bug1819
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests assignment to input in model scope.
 //

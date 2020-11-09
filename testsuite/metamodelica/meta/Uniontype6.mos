@@ -1,6 +1,7 @@
 // name:     Uniontype6
 // keywords: Uniontype
 // status:   correct
+// cflags: -d=-newInst
 //
 // Uniontype Testing
 //

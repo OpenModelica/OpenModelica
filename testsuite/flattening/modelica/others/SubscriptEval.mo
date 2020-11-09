@@ -1,6 +1,7 @@
 // name:     SubscriptEval
 // keywords: subscripts
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that subscripts are evaluated correctly.
 //

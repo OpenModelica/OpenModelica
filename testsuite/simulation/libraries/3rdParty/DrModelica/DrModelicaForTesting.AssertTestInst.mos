@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.AssertTestInst
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.AssertTestInst.* DrModelicaForTesting.AssertTestInst_* DrModelicaForTesting.AssertTestInst DrModelicaForTesting.AssertTestInst.exe DrModelicaForTesting.AssertTestInst.cpp DrModelicaForTesting.AssertTestInst.makefile DrModelicaForTesting.AssertTestInst.libs DrModelicaForTesting.AssertTestInst.log DrModelicaForTesting.AssertTestInst.c DrModelicaForTesting.AssertTestInst.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

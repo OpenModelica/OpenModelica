@@ -1,5 +1,6 @@
 // name: ExternalFunctionBuiltin
 // status: correct
+// cflags: -d=-newInst
 //
 // MSL 3.2 started defining sin,cos,etc as external "builtin"
 // This tests that such definitions work correctly

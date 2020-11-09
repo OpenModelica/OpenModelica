@@ -1,6 +1,7 @@
 // name:     Redeclare4
 // keywords: redeclare, bug #36
 // status:   correct
+// cflags: -d=-newInst
 //
 
 package A

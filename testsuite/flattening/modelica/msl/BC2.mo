@@ -1,6 +1,7 @@
 // name:     BC2 - Derivative component
 // keywords: Derivative
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Derivative component.
 //

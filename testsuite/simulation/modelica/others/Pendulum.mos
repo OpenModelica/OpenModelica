@@ -2,6 +2,7 @@
 // keywords: Simulate, readSimulationData
 // status: correct
 // teardown_command: rm -rf Pendulum.cpp Pendulum Pendulum.exe Pendulum.libs Pendulum.log Pendulum.makefile Pendulum_*.*
+// cflags: -d=-newInst
 //
 //  Simulate Pendulum example (index reduction, linear and nonlinear equation systems)
 //

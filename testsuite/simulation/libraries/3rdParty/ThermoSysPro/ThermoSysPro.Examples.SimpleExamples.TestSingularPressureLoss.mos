@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.* ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss_* ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.exe ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.cpp ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.makefile ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.libs ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.log ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.c ThermoSysPro.Examples.SimpleExamples.TestSingularPressureLoss.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

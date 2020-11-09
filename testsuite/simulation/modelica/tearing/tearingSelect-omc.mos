@@ -1,6 +1,7 @@
 // name:      tearingSelect-omc
 // keywords:  tearing, linear
 // status:    correct
+// cflags: -d=-newInst
 
 loadFile("tearingSelect.mo"); getErrorString();
 

@@ -1,6 +1,7 @@
 // name: Modelica_Synchronous.Examples.Elementary.IntegerSignals.Sample1
 // keywords: simulation Modelica_Synchronous examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica_Synchronous

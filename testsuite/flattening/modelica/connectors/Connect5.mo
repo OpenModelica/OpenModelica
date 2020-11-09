@@ -1,6 +1,7 @@
 // name:     Connect5
 // keywords: connect,type
 // status:   correct
+// cflags: -d=-newInst
 //
 // Booleans are allowed in connectors
 //

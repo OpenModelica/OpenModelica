@@ -1,6 +1,7 @@
 // name:     Redeclare3
 // keywords: redeclare
 // status:   correct
+// cflags: -d=-newInst
 //
 
 class A

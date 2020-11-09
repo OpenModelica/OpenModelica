@@ -1,6 +1,7 @@
 // name:     RecordConstructorVectorization.mo
 // keywords: tests the vectorization of records
 // status:   correct
+// cflags: -d=-newInst
 //
 // tests the vectorization of records. this is used in Modelica.Media
 //

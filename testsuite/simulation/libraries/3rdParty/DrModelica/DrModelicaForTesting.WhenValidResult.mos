@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.WhenValidResult
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.WhenValidResult.* DrModelicaForTesting.WhenValidResult_* DrModelicaForTesting.WhenValidResult DrModelicaForTesting.WhenValidResult.exe DrModelicaForTesting.WhenValidResult.cpp DrModelicaForTesting.WhenValidResult.makefile DrModelicaForTesting.WhenValidResult.libs DrModelicaForTesting.WhenValidResult.log DrModelicaForTesting.WhenValidResult.c DrModelicaForTesting.WhenValidResult.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

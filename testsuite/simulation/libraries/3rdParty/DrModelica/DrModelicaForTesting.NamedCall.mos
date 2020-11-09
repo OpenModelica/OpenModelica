@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.NamedCall
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.NamedCall.* DrModelicaForTesting.NamedCall_* DrModelicaForTesting.NamedCall DrModelicaForTesting.NamedCall.exe DrModelicaForTesting.NamedCall.cpp DrModelicaForTesting.NamedCall.makefile DrModelicaForTesting.NamedCall.libs DrModelicaForTesting.NamedCall.log DrModelicaForTesting.NamedCall.c DrModelicaForTesting.NamedCall.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

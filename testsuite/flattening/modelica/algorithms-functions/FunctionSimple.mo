@@ -1,6 +1,7 @@
 // name: FunctionSimple
 // keywords: function
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple function declaration and calling
 //

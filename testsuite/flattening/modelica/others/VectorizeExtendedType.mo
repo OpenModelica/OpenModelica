@@ -1,6 +1,7 @@
 // name:     VectorizeExtendedType
 // keywords: vectorization extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Fixed bug #1119: http://openmodelica.ida.liu.se:8080/cb/issue/1119?navigation=true
 // Fixed bug #1138: http://openmodelica.ida.liu.se:8080/cb/issue/1138?navigation=true

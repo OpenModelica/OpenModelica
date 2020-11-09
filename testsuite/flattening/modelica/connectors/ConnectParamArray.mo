@@ -1,6 +1,7 @@
 // name:     ConnectParamArray
 // keywords: connect parameter array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that asserts are generated for parameters arrays in connectors.
 //

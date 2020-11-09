@@ -1,5 +1,6 @@
 // name: powAssert3
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("-d=gendebugsymbols");
 loadString("\n\n\n\n

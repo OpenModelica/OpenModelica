@@ -1,6 +1,7 @@
 // name: ConnectorComponents
 // keywords: connector
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaration and instantiation of a connector with components
 //

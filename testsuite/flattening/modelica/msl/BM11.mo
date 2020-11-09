@@ -1,6 +1,7 @@
 // name:     BM11 -  Exp component
 // keywords: Exp
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Exp component.
 //

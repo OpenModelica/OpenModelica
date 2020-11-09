@@ -1,6 +1,7 @@
 // name:     Extends13
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing extension of local class with the same name as the extending class.
 //

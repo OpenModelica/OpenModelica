@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 model MatrixMulVector
   Real x[4];

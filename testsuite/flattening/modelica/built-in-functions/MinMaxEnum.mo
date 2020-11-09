@@ -1,6 +1,7 @@
 // name:     MinMaxEnum
 // keywords: builtin functions min max
 // status:   correct
+// cflags: -d=-newInst
 //
 // Usage of the min and max functions with enumerations.
 //

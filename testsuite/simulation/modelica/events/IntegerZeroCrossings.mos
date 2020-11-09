@@ -2,6 +2,7 @@
 // keywords: events, zerossings, integer
 // status: correct
 // teardown_command: rm -rf IntZC* output.log
+// cflags: -d=-newInst
 // 
 // Check for interger valued zerocrossings function
 // 

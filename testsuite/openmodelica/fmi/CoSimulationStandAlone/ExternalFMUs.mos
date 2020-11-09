@@ -2,6 +2,7 @@
 // keywords: fmu import co-simulation stand-alone
 // status: correct
 // teardown_command: rm -rf binaries sources documentation modelDescription.xml model.png output.log _bouncingBall* bouncingBall_* bouncingBall bouncingBall.exe _vanDerPol* vanDerPol_* vanDerPol vanDerPol.exe
+// cflags: -d=-newInst
 //
 // 
 

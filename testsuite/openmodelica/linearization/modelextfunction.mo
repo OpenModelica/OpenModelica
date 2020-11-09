@@ -1,6 +1,7 @@
 // name:     differentiate functions
 // keywords: functions, derivative annotation, numerical, analytical
 // status:   correct
+// cflags: -d=-newInst
 //
 
 function f1

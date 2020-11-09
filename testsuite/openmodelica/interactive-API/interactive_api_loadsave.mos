@@ -1,6 +1,7 @@
 // name:     API loading and saving
 // keywords: Graphical API load save
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Subset of the Graphical API, loading and saving.
 //

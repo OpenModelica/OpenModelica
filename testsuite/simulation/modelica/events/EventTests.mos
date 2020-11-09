@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -rf testEvents* output.log
 // depends: EventTests.mat
+// cflags: -d=-newInst
 //
 //  Simulate model containing EventIterations
 //

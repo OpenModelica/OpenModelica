@@ -1,6 +1,7 @@
 // name:     VectorizeOneReturnValue
 // keywords: Array
 // status:   correct
+// cflags: -d=-newInst
 //
 
 class OneReturnValue

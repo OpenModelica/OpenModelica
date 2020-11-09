@@ -1,6 +1,7 @@
 // name: Test Interactive API for Annotations for MSL 3.1
 // keywords: Graphical API, annotations
 // status: correct
+// cflags: -d=-newInst
 // Subset of the Graphical API for annotations
 //
 

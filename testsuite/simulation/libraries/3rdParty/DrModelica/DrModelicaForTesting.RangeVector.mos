@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.RangeVector
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.RangeVector.* DrModelicaForTesting.RangeVector_* DrModelicaForTesting.RangeVector DrModelicaForTesting.RangeVector.exe DrModelicaForTesting.RangeVector.cpp DrModelicaForTesting.RangeVector.makefile DrModelicaForTesting.RangeVector.libs DrModelicaForTesting.RangeVector.log DrModelicaForTesting.RangeVector.c DrModelicaForTesting.RangeVector.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -4,6 +4,7 @@
 //
 // defines and uses a package
 // Drmodelica: 10.1 Abstract Data Type (p. 333)
+// cflags: -d=-newInst
 //
 
 encapsulated package ComplexNumbers

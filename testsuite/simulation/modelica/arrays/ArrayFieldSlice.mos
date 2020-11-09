@@ -4,6 +4,7 @@
 // teardown_command: rm -rf getPerson_* getPerson getPerson.exe getPerson.cpp getPerson.makefile getPerson.libs getPerson.log output.log
 // 
 // Drmodelica: 7.4  Array Indexing operator (p. 216)
+// cflags: -d=-newInst
 //
 loadFile("ArrayFieldSlice.mo");
 simulate(getPerson,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

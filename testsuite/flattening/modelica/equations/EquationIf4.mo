@@ -1,6 +1,7 @@
 // name:     EquationIf4
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing `if' clauses in equations.
 // The condition may be a non-parameter expresion if all

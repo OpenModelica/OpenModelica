@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.PolyEvaluate1
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.PolyEvaluate1.* DrModelicaForTesting.PolyEvaluate1_* DrModelicaForTesting.PolyEvaluate1 DrModelicaForTesting.PolyEvaluate1.exe DrModelicaForTesting.PolyEvaluate1.cpp DrModelicaForTesting.PolyEvaluate1.makefile DrModelicaForTesting.PolyEvaluate1.libs DrModelicaForTesting.PolyEvaluate1.log DrModelicaForTesting.PolyEvaluate1.c DrModelicaForTesting.PolyEvaluate1.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -1,6 +1,7 @@
 // name: BlockSimple
 // keywords: block
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests simple block declaration and instantiation
 //

@@ -1,5 +1,6 @@
 // name: System
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica -d=rml,noevalfunc,gen");
 loadFile("../../../OMCompiler/Compiler/Util/System.mo");

@@ -1,6 +1,7 @@
 // name: SampleTest
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 model SampleTest
   Clock c;

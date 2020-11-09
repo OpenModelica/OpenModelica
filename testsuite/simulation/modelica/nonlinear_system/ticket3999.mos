@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf ticket3999.nls* output.log
+// cflags: -d=-newInst
 
 loadString("
 within ;

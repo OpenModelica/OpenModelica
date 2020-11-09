@@ -1,5 +1,5 @@
 // status: correct
-// cflags: -g=MetaModelica -d=gen
+// cflags: -g=MetaModelica -d=gen -d=-newInst
 
 model TestContinue
   function f

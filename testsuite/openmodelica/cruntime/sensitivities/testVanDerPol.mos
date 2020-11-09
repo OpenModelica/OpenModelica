@@ -1,5 +1,6 @@
 // name: testSens1
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model VanDerPol  \"Van der Pol oscillator model\"

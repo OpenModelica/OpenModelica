@@ -1,6 +1,7 @@
 // name: OperatorsTuples [BUG: https://trac.openmodelica.org/OpenModelica/ticket/1953]
 // keywords: operators working of functions returning tuples
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that tuple returning functions can be used in expressions
 //

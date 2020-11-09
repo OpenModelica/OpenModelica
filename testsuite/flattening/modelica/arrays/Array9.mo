@@ -1,6 +1,7 @@
 // name:      Array9
 // keywords:  array
 // status:    correct
+// cflags: -d=-newInst
 //
 // End keyword in array subscript
 //

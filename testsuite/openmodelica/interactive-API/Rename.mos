@@ -2,6 +2,7 @@
 // keywords:  rename Component
 // status:    correct
 // setup_command: chmod a-w RenameRO.mo
+// cflags: -d=-newInst
 //
 loadFile("Rename.mo"); getErrorString();
 

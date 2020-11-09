@@ -1,6 +1,7 @@
 // name:     ModelicaTest.MultiBody.Parts.Rotor1D.Rotor1D_2
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

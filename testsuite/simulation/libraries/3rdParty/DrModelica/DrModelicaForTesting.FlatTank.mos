@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.FlatTank
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.FlatTank.* DrModelicaForTesting.FlatTank_* DrModelicaForTesting.FlatTank DrModelicaForTesting.FlatTank.exe DrModelicaForTesting.FlatTank.cpp DrModelicaForTesting.FlatTank.makefile DrModelicaForTesting.FlatTank.libs DrModelicaForTesting.FlatTank.log DrModelicaForTesting.FlatTank.c DrModelicaForTesting.FlatTank.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -1,6 +1,7 @@
 // name:     FinalRedeclareModifier2
 // keywords: redeclare, modification, final
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that it's allowed to redeclare a component as final.
 //

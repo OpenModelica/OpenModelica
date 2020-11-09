@@ -1,6 +1,7 @@
 // name: TestFlueGas.mos [instantiate/check/simulate]
 // status: correct
 // teardown_command: rm -rf *TestMedia.TestModels* output.log
+// cflags: -d=-newInst
 // provided by Francesco Casella
 //
 

@@ -1,6 +1,7 @@
 // name: API-Parameters
 // keywords: Graphical API, Parameters
 // status: correct
+// cflags: -d=-newInst
 // 
 //  Subset of the Graphical API for accessing parameters and modifiers
 //

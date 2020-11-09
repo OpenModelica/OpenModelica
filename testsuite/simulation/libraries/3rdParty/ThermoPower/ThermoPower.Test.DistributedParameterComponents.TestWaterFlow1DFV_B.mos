@@ -2,6 +2,7 @@
 // keywords: redeclare component constraining class
 // status: correct
 // teardown_command: rm -rf ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B_* ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.exe ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.cpp ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.makefile ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.libs ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B.log output.log *.o *.c *.h
+// cflags: -d=-newInst
 
 loadModel(ThermoPower); getErrorString();
 checkModel(ThermoPower.Test.DistributedParameterComponents.TestWaterFlow1DFV_B); getErrorString();

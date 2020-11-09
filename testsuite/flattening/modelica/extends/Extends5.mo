@@ -1,6 +1,7 @@
 // name:     Extends5
 // keywords: extends, function
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing of bug that causes infinite loop if you call a function in an extended class.
 

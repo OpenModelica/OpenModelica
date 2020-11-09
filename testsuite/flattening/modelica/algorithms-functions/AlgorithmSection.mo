@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 9.1 Algorithm Sections (p. 285)
+// cflags: -d=-newInst
 //
 
 model AlgorithmSection

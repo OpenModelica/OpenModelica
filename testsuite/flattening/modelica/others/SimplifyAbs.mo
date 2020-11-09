@@ -1,6 +1,7 @@
 // name:     SimplifyAbs
 // keywords: simplify #2517
 // status:   correct
+// cflags: -d=-newInst
 //
 
 

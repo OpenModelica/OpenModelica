@@ -1,6 +1,7 @@
 //name:        Modelica.Fluid.Examples.TraceSubstances.RoomCO2 [version 3.1]
 //keyword:     fluid
 //status:      correct
+// cflags: -d=-newInst
 //
 // simulation
 //

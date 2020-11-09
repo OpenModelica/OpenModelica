@@ -1,6 +1,7 @@
 // name:     Test simple recursive function
 // keywords: recursive
 // status:   correct, however ut does not work together with the test suite
+// cflags: -d=-newInst
 // 
 //
 //  Not working:

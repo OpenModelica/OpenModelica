@@ -1,6 +1,7 @@
 // name:     BM1 -  Abs component
 // keywords: Abs
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Abs component.
 //

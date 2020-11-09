@@ -2,6 +2,7 @@
 // keywords: inner outer classes
 // status: correct
 // teardown_command: rm -rf Bug.B* _Bug.B* output.log
+// cflags: -d=-newInst
 // 
 // tests reported bugs #1987, #1988
 // 

@@ -1,5 +1,5 @@
 // status: correct
-// cflags: -d=noevalfunc,gen
+// cflags: -d=noevalfunc,gen -d=-newInst
 
 loadModel(Modelica,{"3.2"});getErrorString();
 Modelica.Math.Matrices.leastSquares([1,2; 3,4], {1,2});getErrorString();

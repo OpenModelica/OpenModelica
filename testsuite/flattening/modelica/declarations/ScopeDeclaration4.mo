@@ -1,6 +1,7 @@
 // name:     ScopeDeclaration4
 // keywords: scoping,extends
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // The extended class should be instantiated by itself, and the
 // defined componends are copied into the extending class afterwards.

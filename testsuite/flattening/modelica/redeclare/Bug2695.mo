@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Bug #2695
 
 package Modelica

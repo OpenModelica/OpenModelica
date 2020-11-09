@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 /*
 The first one looks a bit odd since it does not have newlines from the

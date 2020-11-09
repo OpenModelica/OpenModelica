@@ -5,6 +5,7 @@
 // Tests inheritance in many steps
 //
 // Drmodelica: 9.2 Partial Base Function (p. 308)
+// cflags: -d=-newInst
 //
 partial function OneArgBaseFunction
   input Real x;

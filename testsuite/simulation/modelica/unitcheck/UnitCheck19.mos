@@ -1,6 +1,7 @@
 // name: UnitCheck19
 // keywords: initialization
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model UnitCheck19

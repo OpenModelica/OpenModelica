@@ -4,6 +4,7 @@
 //
 // Test the public and protected access keywords
 // Drmodelica: 3.4 Access Control (p. 88)
+// cflags: -d=-newInst
 
 class AccessDemo "Illustration of access prefixes"
       parameter Real a = 2;

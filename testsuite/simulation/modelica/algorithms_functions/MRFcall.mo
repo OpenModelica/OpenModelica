@@ -5,6 +5,7 @@
 // Multipe results from a function
 //
 // Drmodelica: 9.2 Multiple Results (p. 302)
+// cflags: -d=-newInst
 //
 
 function MultipleResultsFunction

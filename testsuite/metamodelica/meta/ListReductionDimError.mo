@@ -1,5 +1,5 @@
 // name: ListReductionDimError
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: incorrect
 
 class ListReductionDimError

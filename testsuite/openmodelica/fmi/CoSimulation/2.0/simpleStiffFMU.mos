@@ -2,6 +2,7 @@
 // keywords: fmu export simulation flags
 // status: correct
 // teardown_command: rm -rf
+// cflags: -d=-newInst
 //
 // Export simple stiff model as 2.0 CS FMU with CVODE solver
 // For explicit Euler with step size bigger than 0.5 this will explode

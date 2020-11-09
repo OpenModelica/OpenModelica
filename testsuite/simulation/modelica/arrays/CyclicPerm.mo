@@ -3,6 +3,7 @@
 // status:   incorrect
 //
 // Drmodelica: 7.5 Array Concatenation and Slice Operations (p. 219)
+// cflags: -d=-newInst
 //
 class CyclicPerm
   Real[1, 3] WO = [1, 2, 3];          // Row matrix

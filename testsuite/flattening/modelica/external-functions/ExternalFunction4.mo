@@ -2,6 +2,7 @@
 // keywords: external function,code generation,constant propagation
 // status:   correct
 // teardown_command: rm -f ExternalFunction4_*
+// cflags: -d=-newInst
 //
 // Constant evaluation of function calls using Library annotation.
 // The following example is from MSL and should propagate all constants.

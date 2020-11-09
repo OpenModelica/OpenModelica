@@ -2,6 +2,7 @@
 // keywords:          minimal tearing, discrete variables, loops
 // status:            correct
 // teardown_command:  rm -f Modelica.Electrical.Analog.Examples.Rectifier*
+// cflags: -d=-newInst
 //
 // Solve example with discrete variables inside loops.
 // Will fail with tearingMethod=noTearing

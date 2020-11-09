@@ -4,6 +4,7 @@
 //
 //
 // Drmodelica: 9.1 When-Statements (p. 293)
+// cflags: -d=-newInst
 //
 
 class WhenStat3

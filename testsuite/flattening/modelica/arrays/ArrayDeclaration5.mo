@@ -1,6 +1,7 @@
 // name: ArrayDeclaration5
 // keywords: array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaring arrays with unspecified dimensions
 //

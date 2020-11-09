@@ -2,6 +2,7 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf binaries sources modelDescription.xml ZeroStates20.fmu ZeroStates20* ZeroStates20/* output.log
+// cflags: -d=-newInst
 //
 
 loadString("

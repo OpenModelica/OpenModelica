@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 7.7 Built-in Functions (p. 225)
+// cflags: -d=-newInst
 //
 
 class DimConvert

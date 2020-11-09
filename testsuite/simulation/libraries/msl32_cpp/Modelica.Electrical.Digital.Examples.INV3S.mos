@@ -1,6 +1,7 @@
 // name:     Modelica.Electrical.Digital.Examples.INV3S
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

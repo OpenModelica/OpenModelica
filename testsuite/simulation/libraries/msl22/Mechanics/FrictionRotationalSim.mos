@@ -1,6 +1,7 @@
 //name:         FrictionRotationalSim
 //keyword:      simulating msl221
 //status:       correct
+// cflags: -d=-newInst
 //
 // simulation example
 //

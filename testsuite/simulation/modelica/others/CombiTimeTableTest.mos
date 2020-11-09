@@ -2,6 +2,7 @@
 // keywords: Simulation, CombiTimeTable
 // status:   correct
 // teardown_command: rm -rf CombiTimeTableTest.makefile CombiTimeTableTest.cpp CombiTimeTableTest.exe CombiTimeTableTest.libs CombiTimeTableTest.log CombiTimeTableTest_functions.cpp CombiTimeTableTest_init.xml CombiTimeTableTest_res.mat
+// cflags: -d=-newInst
 // Simulate models and read in data.
 //
 

@@ -1,6 +1,7 @@
 // name: Symmetric3
 // keywords: symmetric
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in symmetric function
 //

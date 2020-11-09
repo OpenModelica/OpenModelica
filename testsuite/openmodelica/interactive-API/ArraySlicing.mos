@@ -1,6 +1,7 @@
 // name:     ArraySlicing
 // keywords: array slicing subscripting API 
 // status:   incorrect
+// cflags: -d=-newInst
 // 
 // Checks that array subscripting and slicing works with the interactive API.
 //

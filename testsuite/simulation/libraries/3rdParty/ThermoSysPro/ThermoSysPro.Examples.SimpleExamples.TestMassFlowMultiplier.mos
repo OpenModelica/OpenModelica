@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.* ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier_* ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.exe ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.cpp ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.makefile ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.libs ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.log ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.c ThermoSysPro.Examples.SimpleExamples.TestMassFlowMultiplier.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

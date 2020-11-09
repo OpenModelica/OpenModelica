@@ -2,6 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf LocalVariableInit_* LocalVariableInit LocalVariableInit.exe LocalVariableInit.cpp LocalVariableInit.makefile LocalVariableInit.libs LocalVariableInit.log output.log
+// cflags: -d=-newInst
 //
 // Checks that local variables are initialized.
 //

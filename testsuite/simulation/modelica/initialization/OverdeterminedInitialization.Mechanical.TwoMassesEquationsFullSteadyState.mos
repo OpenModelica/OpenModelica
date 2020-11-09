@@ -1,6 +1,7 @@
 // name: OverdeterminedInitialization.Mechanical.TwoMassesEquationsFullSteadyState
 // keywords: initialization, over-determined
 // status: correct
+// cflags: -d=-newInst
 
 loadModel(Modelica); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();

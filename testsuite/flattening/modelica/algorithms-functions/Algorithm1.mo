@@ -1,6 +1,7 @@
 // name:     Algorithm1
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 //
 // Simple algorithms
 

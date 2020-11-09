@@ -1,6 +1,7 @@
 // name: WhenElseNested
 // keywords: elsewhen, nested
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Test detection of nested when-statements in the elsewhen branch, which are
 // not allowed.
@@ -22,7 +23,7 @@ end WhenElseNested;
 
 // Result:
 // Error processing file: WhenElseNested.mo
-// [flattening/modelica/algorithms-functions/WhenElseNested.mo:14:3-20:11:writable] Error: Nested when statements are not allowed.
+// [flattening/modelica/algorithms-functions/WhenElseNested.mo:15:3-21:11:writable] Error: Nested when statements are not allowed.
 // Error: Error occurred while flattening model WhenElseNested
 //
 // # Error encountered! Exiting...

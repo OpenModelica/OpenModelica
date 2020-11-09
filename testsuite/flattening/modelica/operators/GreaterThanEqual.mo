@@ -1,6 +1,7 @@
 // name: GreaterThanEqual
 // keywords: logic, operator
 // status: correct
+// cflags: -d=-newInst
 //
 // tests the GreaterThanEqual operator (>=)
 //

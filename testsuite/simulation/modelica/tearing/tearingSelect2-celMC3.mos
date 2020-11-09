@@ -1,6 +1,7 @@
 // name:      tearingSelect2-celMC3
 // keywords:  tearing, linear
 // status:    correct
+// cflags: -d=-newInst
 
 loadFile("tearingSelect2.mo"); getErrorString();
 

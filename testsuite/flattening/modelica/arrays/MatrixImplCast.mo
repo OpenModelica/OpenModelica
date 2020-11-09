@@ -1,6 +1,7 @@
 // name: MatrixImplCast
 // keywords: matrix typecasting #3409
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that expressions in matrix constructor are typecast to Real properly
 // if there's a mix of Real and Integer expressions.

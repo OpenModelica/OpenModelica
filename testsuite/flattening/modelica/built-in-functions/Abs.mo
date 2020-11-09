@@ -1,6 +1,7 @@
 // name: Abs
 // keywords: abs
 // status: correct
+// cflags: -d=-newInst
 //
 // Testing the built-in abs function
 //

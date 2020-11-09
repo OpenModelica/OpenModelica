@@ -2,6 +2,7 @@
 // keywords: linearization, Jacobian
 // status:   correct
 // teardown_command: rm -rf TestKV* linearized_model* output.log
+// cflags: -d=-newInst
 //
 //  Case for generating Jacobian for symstem with more simply equations
 //  test for Bugfixe

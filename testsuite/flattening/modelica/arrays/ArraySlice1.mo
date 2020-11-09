@@ -1,6 +1,7 @@
 // name:     ArraySlice1
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Simple array slicing.
 //

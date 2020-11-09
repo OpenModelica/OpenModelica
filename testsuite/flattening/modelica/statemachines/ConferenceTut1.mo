@@ -1,6 +1,7 @@
 // name: ConferenceTut1
 // keywords: state machines features
 // status: correct
+// cflags: -d=-newInst
 
 model ConferenceTut1
   inner Integer i(start=0);

@@ -2,7 +2,7 @@
 // keywords: when
 // status: correct
 // teardown_command: rm -rf  WhenStat.cpp WhenStat.h WhenStat.makefile WhenStat.libs libModelica.dll WhenStat.log output.log Functions.cpp Functions.h
-// cflags: 	 +simCodeTarget=Cpp
+// cflags: 	 +simCodeTarget=Cpp -d=-newInst
 // 
 //  
 // Drmodelica: 9.1 When-Statements (p. 293)

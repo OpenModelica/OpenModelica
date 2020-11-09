@@ -1,6 +1,7 @@
 // name: InputDeclRecord
 // keywords: input
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the input prefix on a record type
 //

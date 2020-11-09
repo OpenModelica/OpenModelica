@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.* ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe_* ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.exe ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.cpp ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.makefile ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.libs ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.log ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.c ThermoSysPro.Examples.SimpleExamples.TestLumpedStraightPipe.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

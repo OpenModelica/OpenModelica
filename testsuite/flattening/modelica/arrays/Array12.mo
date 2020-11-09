@@ -1,6 +1,7 @@
 // name:     Array12
 // keywords: arrays, type conversion
 // status:   correct
+// cflags: -d=-newInst
 //
 // Type conversion from Integer to Real in arrays.
 //

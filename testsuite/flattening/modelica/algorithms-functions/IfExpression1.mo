@@ -1,6 +1,7 @@
 // name:     IfExpression1
 // keywords: if expression
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that if-expressions with arrays of different size is handled correctly
 // in functions.

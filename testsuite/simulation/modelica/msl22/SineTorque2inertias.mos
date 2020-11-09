@@ -1,7 +1,7 @@
 // name:     SineTorque2inertias
 // keywords: Simulate, readSimulationData
 // status:   correct
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 // teardown_command: rm -f TestModels.RotationalModels.SpringInertia.SineTorque2intertias* output.log
 // 
 //  Simulate Rotational inertias with springs 

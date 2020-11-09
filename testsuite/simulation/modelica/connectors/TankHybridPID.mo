@@ -5,6 +5,7 @@
 // <insert description here>
 //
 // Drmodelica: 13.3 Hybrid Tank Model with a Discrete Controller (p. 460)
+// cflags: -d=-newInst
 //
 function LimitValue
   input Real pMin;

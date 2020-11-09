@@ -2,6 +2,7 @@
 // keywords: balance
 // status: correct
 // teardown_command: rm -rf ModelBalance1_* ModelBalance1 ModelBalance1.exe ModelBalance1.cpp ModelBalance1.makefile ModelBalance1.libs ModelBalance1.log output.log
+// cflags: -d=-newInst
 //
 // Tests a balanced model
 //

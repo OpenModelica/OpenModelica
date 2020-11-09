@@ -1,6 +1,7 @@
 // name:     Integer Division Overflow
 // keywords: 
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Making sure that division is correct
 //

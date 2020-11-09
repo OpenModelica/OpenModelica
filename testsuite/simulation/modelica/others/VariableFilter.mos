@@ -1,6 +1,7 @@
 // name: VariableFilter
 // status: correct
 // teardown_command: rm -f VariableFilter_* VariableFilter VariableFilter.exe VariableFilter.cpp VariableFilter.libs VariableFilter.makefile VariableFilter.conv.cpp VariableFilter.log output.log
+// cflags: -d=-newInst
 
 loadFile("VariableFilter.mo");
 simulate(VariableFilter,numberOfIntervals=1,outputFormat="csv",

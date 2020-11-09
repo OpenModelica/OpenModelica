@@ -4,6 +4,7 @@
 // teardown_command: rm -rf CondAssign_* CondAssign CondAssign.exe CondAssign.cpp CondAssign.makefile CondAssign.libs CondAssign.log output.log
 //
 // Drmodelica: 9.1  if-Statement (p. 292)
+// cflags: -d=-newInst
 //
 
 loadFile("AlgorithmCondAssign1.mo");

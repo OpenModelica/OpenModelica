@@ -1,7 +1,7 @@
 // name:     FunctionEvalFail
 // keywords: function slice assignment
 // status:   correct
-// cflags:   +d=nogen
+// cflags:   +d=nogen -d=-newInst
 //
 // Checks that the compiler fails on a binding it can't evaluate, instead of
 // giving it a default value.

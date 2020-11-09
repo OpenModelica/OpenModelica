@@ -2,6 +2,7 @@
 // keywords: simulation TestMedia.TestModels.ColdWater.Test4
 // status: correct
 // teardown_command: rm -rf _TestMedia.TestModels.ColdWater.Test4.* TestMedia.TestModels.ColdWater.Test4_* TestMedia.TestModels.ColdWater.Test4 TestMedia.TestModels.ColdWater.Test4.exe TestMedia.TestModels.ColdWater.Test4.cpp TestMedia.TestModels.ColdWater.Test4.makefile TestMedia.TestModels.ColdWater.Test4.libs TestMedia.TestModels.ColdWater.Test4.log TestMedia.TestModels.ColdWater.Test4.c TestMedia.TestModels.ColdWater.Test4.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

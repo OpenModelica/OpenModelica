@@ -1,5 +1,5 @@
 // name: List5
-// cflags: +g=MetaModelica
+// cflags: +g=MetaModelica -d=-newInst
 // status: correct
 package P
 uniontype UT

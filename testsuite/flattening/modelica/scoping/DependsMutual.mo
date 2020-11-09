@@ -1,6 +1,7 @@
 // name:     DependsMutual
 // keywords: scoping
 // status:   correct
+// cflags: -d=-newInst
 //
 // Mutual dependence is supported since Modelica does not require
 // declare before use.

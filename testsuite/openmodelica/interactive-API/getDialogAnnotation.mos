@@ -1,6 +1,7 @@
 // name: getDialogAnnotation.mos [BUG: https://trac.openmodelica.org/OpenModelica/ticket/3157]
 // keywords:
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();

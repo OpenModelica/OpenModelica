@@ -1,6 +1,7 @@
 // name:     AssertTest8
 // keywords: assert
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 

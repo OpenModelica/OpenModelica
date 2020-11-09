@@ -1,6 +1,7 @@
 // name:     ReplaceableBaseClass
 // keywords: redeclare, replaceable, extends
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Checks that the compiler gives an error if the base class in an extends
 // clause is replaceable.

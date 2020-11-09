@@ -1,6 +1,7 @@
 // name:     Record1
 // keywords: type
 // status:   correct
+// cflags: -d=-newInst
 //
 
 record A

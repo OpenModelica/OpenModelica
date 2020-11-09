@@ -1,6 +1,7 @@
 // name: ThermoPower.Examples.RankineCycle.Simulators.ClosedLoop
 // keywords: over-determined initialization
 // status: correct
+// cflags: -d=-newInst
 
 // Test3
 loadModel(Modelica, {"3.2.1"}); getErrorString();

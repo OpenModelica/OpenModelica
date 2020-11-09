@@ -1,6 +1,7 @@
 // name: nonlinearFailed [kinsol]
 // status: correct
 // teardown_command: rm -f nonlinear_system.nonlinearFailed* _nonlinear_system.nonlinearFailed* output.log
+// cflags: -d=-newInst
 
 loadFile("nonlinearFailed.mo"); getErrorString();
 simulate(nonlinear_system.nonlinearFailed, simflags="-nls=kinsol"); getErrorString();

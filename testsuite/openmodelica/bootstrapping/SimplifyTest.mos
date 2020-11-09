@@ -1,5 +1,6 @@
 // name: SimplifyTest
 // status: correct
+// cflags: -d=-newInst
 
 runScript("LoadCompilerSources.mos");getErrorString();
 loadFile("SimplifyTest.mo");getErrorString();

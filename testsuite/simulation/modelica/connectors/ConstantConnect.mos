@@ -1,5 +1,6 @@
 // status: correct
 // teardown_command: rm -rf ConstantConnect.Model* output.log
+// cflags: -d=-newInst
 
 loadFile("ConstantConnect.mo");getErrorString();
 simulate(ConstantConnect.Model3);getErrorString();

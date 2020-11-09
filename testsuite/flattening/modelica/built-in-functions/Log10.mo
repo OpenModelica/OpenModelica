@@ -1,6 +1,7 @@
 // name: Log10
 // keywords: log10
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in log10 function
 //

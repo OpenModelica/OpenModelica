@@ -2,6 +2,7 @@
 // keywords: when with tuple and array assigments
 // status: correct
 // teardown_command: rm -rf TestTwoOut_* TestTwoOut TestTwoOut.exe TestTwoOut.cpp TestTwoOut.makefile TestTwoOut.libs TestTwoOut.log output.log
+// cflags: -d=-newInst
 // 
 //
 // Ticket #1971

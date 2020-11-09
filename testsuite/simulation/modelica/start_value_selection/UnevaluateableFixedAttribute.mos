@@ -1,6 +1,7 @@
 // name:     fixed value notevaluateable
 // keywords: fixed
 // status:   correct
+// cflags: -d=-newInst
 
 
 loadFile("UnevaluateableFixedAttribute.mo"); getErrorString();

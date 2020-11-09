@@ -1,6 +1,7 @@
 // name: DeclarationEquation1
 // keywords: equation
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaration equations with scalars
 //

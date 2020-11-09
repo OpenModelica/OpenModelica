@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.DimConvert
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.DimConvert.* DrModelicaForTesting.DimConvert_* DrModelicaForTesting.DimConvert DrModelicaForTesting.DimConvert.exe DrModelicaForTesting.DimConvert.cpp DrModelicaForTesting.DimConvert.makefile DrModelicaForTesting.DimConvert.libs DrModelicaForTesting.DimConvert.log DrModelicaForTesting.DimConvert.c DrModelicaForTesting.DimConvert.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

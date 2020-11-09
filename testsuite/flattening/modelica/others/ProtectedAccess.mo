@@ -1,6 +1,7 @@
 // name: ProtectedAccess
 // keywords: protected, access
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests that we give a warning when accessing protected elements of another class
 //

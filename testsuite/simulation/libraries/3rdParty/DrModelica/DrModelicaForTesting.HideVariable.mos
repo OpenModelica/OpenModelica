@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.HideVariable
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.HideVariable.* DrModelicaForTesting.HideVariable_* DrModelicaForTesting.HideVariable DrModelicaForTesting.HideVariable.exe DrModelicaForTesting.HideVariable.cpp DrModelicaForTesting.HideVariable.makefile DrModelicaForTesting.HideVariable.libs DrModelicaForTesting.HideVariable.log DrModelicaForTesting.HideVariable.c DrModelicaForTesting.HideVariable.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

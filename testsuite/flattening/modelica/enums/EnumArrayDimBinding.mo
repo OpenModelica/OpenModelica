@@ -1,6 +1,7 @@
 // name:     Enumeration1
 // keywords: enumeration enum array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that the enumeration dimension of the component is preserved, and not
 // replaced with the dimension of the binding.

@@ -1,7 +1,7 @@
 // name:     IgnoreReplaceable
 // keywords: 
 // status:   correct
-// cflags: --ignoreReplaceable
+// cflags: --ignoreReplaceable -d=-newInst
 //
 // Tests the --ignoreReplaceable flag.
 //

@@ -1,6 +1,7 @@
 // name:     RedeclareModifierInvalid1
 // keywords: redeclare, modification, replaceable
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Checks that the redeclared component needs to be replaceable if the type is
 // changed.
@@ -17,8 +18,8 @@ end RedeclareModifierInvalid1;
 
 // Result:
 // Error processing file: RedeclareModifierInvalid1.mo
-// [flattening/modelica/redeclare/RedeclareModifierInvalid1.mo:15:3-15:40:writable] Notification: From here:
-// [flattening/modelica/redeclare/RedeclareModifierInvalid1.mo:10:3-10:9:writable] Error: Trying to redeclare component x but component not declared as replaceable.
+// [flattening/modelica/redeclare/RedeclareModifierInvalid1.mo:16:3-16:40:writable] Notification: From here:
+// [flattening/modelica/redeclare/RedeclareModifierInvalid1.mo:11:3-11:9:writable] Error: Trying to redeclare component x but component not declared as replaceable.
 // Error: Error occurred while flattening model RedeclareModifierInvalid1
 //
 // # Error encountered! Exiting...

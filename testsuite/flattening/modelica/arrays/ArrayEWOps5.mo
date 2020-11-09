@@ -1,6 +1,7 @@
 // name:     ArrayEWOps5
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Array elementwise operators: power
 

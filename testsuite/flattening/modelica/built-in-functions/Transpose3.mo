@@ -1,6 +1,7 @@
 // name:     Transpose3
 // keywords: transpose #2743
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that transpose works for 3 dimensions.
 //

@@ -1,6 +1,7 @@
 // name:     ArrayAddSub1
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Addition and substraction ops applied on arrays
 //

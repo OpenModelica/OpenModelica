@@ -1,6 +1,7 @@
 // name: TypeDeclArray
 // keywords: type, array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests defining new types as arrays
 //

@@ -2,6 +2,7 @@
 // keywords: empty array
 // status: correct
 // teardown_command: -rf bug_2300_* _bug_2300_* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate model with array equations
 //

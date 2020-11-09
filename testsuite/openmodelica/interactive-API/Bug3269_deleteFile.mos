@@ -1,6 +1,7 @@
 // name: Bug3269_deleteFile.mos [BUG: #3269]
 // keywords: API for files
 // status: correct
+// cflags: -d=-newInst
 //
 
 "creating file";

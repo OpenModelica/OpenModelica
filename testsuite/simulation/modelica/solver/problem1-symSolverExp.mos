@@ -1,6 +1,7 @@
 // name: problem1-symSolverExp
 // status: correct
 // teardown_command: rm -f testSolver.problem1* output.log
+// cflags: -d=-newInst
 
 loadFile("testSolverPackage.mo"); getErrorString();
 setCommandLineOptions("--symSolver=expEuler"); getErrorString();

@@ -2,6 +2,7 @@
 // keywords: Simulation
 // status:   correct
 // teardown_command: rm -f avgtest_* avgtest.conv.cpp avgtest.cpp avgtest avgtest.exe avgtest.makefile avgtest.log avgtest.libs
+// cflags: -d=-newInst
 // 
 //  Simulate models and read in data.
 //

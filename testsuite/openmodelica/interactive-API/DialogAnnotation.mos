@@ -1,6 +1,7 @@
 // name: DialogAnnotation.mos
 // keywords: Graphical API, component attributes
 // status: correct
+// cflags: -d=-newInst
 // 
 //  Subset of the Graphical API for quering Dialog annotation
 //

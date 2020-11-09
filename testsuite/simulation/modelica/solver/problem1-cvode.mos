@@ -1,6 +1,7 @@
 // name: problem1-cvode
 // status: correct
 // teardown_command: rm -f testSolver.problem1* output.log
+// cflags: -d=-newInst
 //
 // Test CVODE solver
 

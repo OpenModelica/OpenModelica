@@ -1,6 +1,7 @@
 // name: testDAEScaling
 // status: correct
 // teardown_command: rm -f Test1* Test2* Test3 output.log
+// cflags: -d=-newInst
 
 loadString("
 model Test

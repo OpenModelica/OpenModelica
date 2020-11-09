@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // Bug #2761
 
 package ModelicaServices
@@ -10169,8 +10170,8 @@ end System2;
 //   booToReaRad.u = not1.y;
 //   booToReaRad.y = pumRad.m_flow_in;
 // end System2;
-// [flattening/libraries/3rdParty/Buildings/System2.mo:4960:69-4960:82:writable] Warning: Non-array modification 'false' for array component, possibly due to missing 'each'.
-// [flattening/libraries/3rdParty/Buildings/System2.mo:4961:73-4961:86:writable] Warning: Non-array modification 'false' for array component, possibly due to missing 'each'.
+// [flattening/libraries/3rdParty/Buildings/System2.mo:4961:69-4961:82:writable] Warning: Non-array modification 'false' for array component, possibly due to missing 'each'.
+// [flattening/libraries/3rdParty/Buildings/System2.mo:4962:73-4962:86:writable] Warning: Non-array modification 'false' for array component, possibly due to missing 'each'.
 // Error: Variable Buildings.Media.PerfectGases.Common.SingleGasData.Air not found in scope <global scope>.
 // Error: Variable Buildings.Media.PerfectGases.Common.SingleGasData.H2O not found in scope <global scope>.
 //

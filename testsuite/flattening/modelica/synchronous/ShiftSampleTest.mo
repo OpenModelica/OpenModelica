@@ -1,6 +1,7 @@
 // name: ShiftSampleTest
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 model ShiftSampleTest
   output Real x;

@@ -2,6 +2,7 @@
 // keywords: algorithms, reinit, 
 // status: correct
 // teardown_command: rm -rf ActuatorMechanics_* ActuatorMechanics ActuatorMechanics.exe ActuatorMechanics.c _ActuatorMechanics.h ActuatorMechanics.log ActuatorMechanics.libs ActuatorMechanics.makefile output.log
+// cflags: -d=-newInst
 // 
 // tests reported Bug 1687
 // 

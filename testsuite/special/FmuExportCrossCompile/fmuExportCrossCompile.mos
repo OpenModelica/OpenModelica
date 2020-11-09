@@ -1,5 +1,6 @@
 // status: correct
 // Note: Requires PATH to include cross-compilers for darwin, mingw, armhf
+// cflags: -d=-newInst
 
 if not loadModel(Modelica) then
   print(getErrorString());

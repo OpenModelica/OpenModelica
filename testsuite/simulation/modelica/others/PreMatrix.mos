@@ -1,6 +1,7 @@
 // name: PreMatrix
 // status: correct
 // teardown_command: rm -rf PreMatrix_* PreMatrix PreMatrix.exe PreMatrix.cpp PreMatrix.makefile PreMatrix.libs PreMatrix.log output.log
+// cflags: -d=-newInst
 
 loadString("model PreMatrix
   Integer x[2,2] = integer(time*fill(1,2,2));

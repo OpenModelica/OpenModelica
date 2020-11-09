@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 model Linespace2
   Real points[5,2];

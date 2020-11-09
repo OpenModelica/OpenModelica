@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.* ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve_* ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.exe ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.cpp ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.makefile ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.libs ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.log ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.c ThermoSysPro.Examples.SimpleExamples.TestDynamicCheckValve.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

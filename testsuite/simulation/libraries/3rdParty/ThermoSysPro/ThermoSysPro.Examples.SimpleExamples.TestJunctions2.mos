@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestJunctions2.* ThermoSysPro.Examples.SimpleExamples.TestJunctions2_* ThermoSysPro.Examples.SimpleExamples.TestJunctions2 ThermoSysPro.Examples.SimpleExamples.TestJunctions2.exe ThermoSysPro.Examples.SimpleExamples.TestJunctions2.cpp ThermoSysPro.Examples.SimpleExamples.TestJunctions2.makefile ThermoSysPro.Examples.SimpleExamples.TestJunctions2.libs ThermoSysPro.Examples.SimpleExamples.TestJunctions2.log ThermoSysPro.Examples.SimpleExamples.TestJunctions2.c ThermoSysPro.Examples.SimpleExamples.TestJunctions2.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

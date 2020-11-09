@@ -1,6 +1,7 @@
 // name:     Matrices
 // keywords: Matrix operations, cat, transpose, multiplication, etc
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Tests all matrix and vector operations in table in section 3.4.3 and 3.4.4.4
 // 

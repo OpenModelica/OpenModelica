@@ -1,6 +1,7 @@
 // name:     modelica_1_1_Function10
 // keywords: function
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that subscripts are handled in a correct manner int the component clause.
 //

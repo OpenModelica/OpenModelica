@@ -1,6 +1,7 @@
 // name: Operators.mo
 // keywords: operators
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the different operators in the Modelica language
 // Simple mathematical operations are tested in Expressions.mo

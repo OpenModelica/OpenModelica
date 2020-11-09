@@ -1,6 +1,7 @@
 // name:     VariableRangeSubscript
 // keywords: array range subscript bug2192
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests code generation for a range with variable length used as a subscript.
 //

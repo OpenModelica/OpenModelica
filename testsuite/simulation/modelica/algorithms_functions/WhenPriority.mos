@@ -2,6 +2,7 @@
 // keywords: algorithm when elsewhen
 // status:   correct
 // teardown_command: rm -rf algorithms_functions.WhenPriority* _algorithms_functions.WhenPriority* output.log 
+// cflags: -d=-newInst
 // 
 //  Test of priority of else regarding elsewhen.
 

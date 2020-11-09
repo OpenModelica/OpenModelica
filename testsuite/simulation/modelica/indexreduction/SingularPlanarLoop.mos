@@ -2,6 +2,7 @@
 // keywords: index reduction
 // status:   correct
 // teardown_command: rm -f *_init.xml *_records.c *.exe *.log *_res.mat *.c *.libs *.makefile *.o *.dll *.so *_functions.h *.h
+// cflags: -d=-newInst
 //
 //
 //

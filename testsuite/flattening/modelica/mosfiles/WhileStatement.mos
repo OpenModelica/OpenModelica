@@ -1,6 +1,7 @@
 // name:     While-statement
 // keywords: while
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Test the interactive While-statement
 //

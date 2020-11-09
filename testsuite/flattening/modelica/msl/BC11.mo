@@ -1,6 +1,7 @@
 // name:     BC11 - TransferFunction component
 // keywords: TransferFunction
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the TransferFunction component.
 //

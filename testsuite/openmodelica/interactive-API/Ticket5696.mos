@@ -4,6 +4,7 @@
 //
 // Tests if you can use both -override and -overrideFile at the same time
 // teardown_command: rm -rf TestOverride* logOverride.txt override.txt
+// cflags: -d=-newInst
 //
 
 loadString("

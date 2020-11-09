@@ -1,6 +1,7 @@
 // name:     RecordConstant1
 // keywords: record, constant
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that it's possible to look up components through record constants.
 //

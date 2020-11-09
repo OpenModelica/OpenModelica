@@ -1,6 +1,7 @@
 // name:     Assign4
 // keywords: parse error
 // status:   incorrect
+// cflags: -d=-newInst
 //
 
 model Assign4
@@ -12,7 +13,7 @@ end Assign4;
 // Error processing file: Assign4.mo
 // Failed to parse file: Assign4.mo!
 //
-// [openmodelica/parser/Assign4.mo:8:5-8:6:writable] Error: Parse error: Equations can not contain assignments (':='), use equality ('=') instead
+// [openmodelica/parser/Assign4.mo:9:5-9:6:writable] Error: Parse error: Equations can not contain assignments (':='), use equality ('=') instead
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

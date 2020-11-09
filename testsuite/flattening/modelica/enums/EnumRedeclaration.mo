@@ -2,7 +2,7 @@
 // keywords: enumeration enum
 // status:   correct
 //
-// cflags:   -i=Ex
+// cflags:   -i=Ex -d=-newInst
 //
 
 

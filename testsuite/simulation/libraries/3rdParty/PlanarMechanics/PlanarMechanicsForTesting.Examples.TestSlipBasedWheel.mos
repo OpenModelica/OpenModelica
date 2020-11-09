@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_i* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_d* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_r* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel_f* PlanarMechanicsForTesting.Examples.TestSlipBasedWheel PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.exe PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.cpp PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.makefile PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.libs PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.log PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.c PlanarMechanicsForTesting.Examples.TestSlipBasedWheel.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

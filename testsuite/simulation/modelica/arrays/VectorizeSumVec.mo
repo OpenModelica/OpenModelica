@@ -5,6 +5,7 @@
 // MORE WORK HAS TO BE DONE ON THIS FILE!
 //
 // Drmodelica: 7.8  Applied to Arrays  element-wise (p. 229)
+// cflags: -d=-newInst
 //
 class SumVec
   Real[3] v1 = {1, 2, 3};

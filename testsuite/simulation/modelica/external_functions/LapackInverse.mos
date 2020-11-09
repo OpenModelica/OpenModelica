@@ -2,6 +2,7 @@
 // keywords: lapack, external, fortran, bug2056
 // status:   correct
 // teardown_command: rm -f output.log LapackInverse_*.* LapackInverse LapackInverse.o LapackInverse.log LapackInverse.libs LapackInverse.makefile LapackInverse.exe
+// cflags: -d=-newInst
 //
 // Checks that simulation of models using external fortran functions works
 // correctly.

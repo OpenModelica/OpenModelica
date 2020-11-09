@@ -1,5 +1,5 @@
 // status: correct
-// cflags: +t
+// cflags: +t -d=-newInst
 // From bug #2376
 // Note the usage of +t to verify that the expression internally has the correct types set.
 //   It is not supposed to be Real[2] or Real[3] in the scalar expressions.

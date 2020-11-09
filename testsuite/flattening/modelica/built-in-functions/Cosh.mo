@@ -1,6 +1,7 @@
 // name: Cosh
 // keywords: cosh
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in cosh function
 //

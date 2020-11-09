@@ -1,6 +1,7 @@
 // name: ZeroCrossing
 // keywords: ZeroCrossing
 // status: correct
+// cflags: -d=-newInst
 // 
 //  test for #2528
 // 

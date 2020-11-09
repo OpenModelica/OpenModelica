@@ -1,6 +1,7 @@
 // name: Bug3323.mos
 // keywords: alias
 // status: correct
+// cflags: -d=-newInst
 //
 // test for #3323
 //

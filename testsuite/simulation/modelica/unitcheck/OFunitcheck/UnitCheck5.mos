@@ -1,6 +1,7 @@
 // name: UnitCheck5
 // keywords: initialization
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 package unitCheckTests

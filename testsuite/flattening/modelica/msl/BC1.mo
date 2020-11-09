@@ -1,6 +1,7 @@
 // name:     BC1 - Der component
 // keywords: Der
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Der component.
 //

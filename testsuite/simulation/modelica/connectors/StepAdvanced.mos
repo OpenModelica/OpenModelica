@@ -4,6 +4,7 @@
 // teardown_command: rm -rf Step_* Step Step.exe Step.cpp Step.makefile Step.libs Step.log output.log
 // 
 // Drmodelica: 8.2 Step (p. 244)
+// cflags: -d=-newInst
 // 
 loadFile("StepAdvanced.mo");
 simulate(Step,startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

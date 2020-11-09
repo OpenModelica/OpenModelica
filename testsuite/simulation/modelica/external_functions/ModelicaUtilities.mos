@@ -3,6 +3,7 @@
 // status: correct
 // teardown_command: rm -rf ModelicaUtilities_* ModelicaUtilities.exe ModelicaUtilities ModelicaUtilities.cpp ModelicaUtilities.makefile ModelicaUtilities.libs ModelicaUtilities.log output.log
 // depends: ModelicaUtilities.myExtFunction.c
+// cflags: -d=-newInst
 //
 // Checks that ModelicaUtilities.h is implemented
 //

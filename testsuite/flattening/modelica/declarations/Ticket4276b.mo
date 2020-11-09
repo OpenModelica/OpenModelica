@@ -1,6 +1,7 @@
 // name:     Ticket4276b.mo
 // keywords: declaration
 // status:   correct
+// cflags: -d=-newInst
 //
 // Check that you can assign to parameter(fixed=false)
 //

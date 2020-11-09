@@ -5,6 +5,7 @@
 //
 // Using empty arrays
 // Drmodelica: 7.9 Empty Arrays (p. 231)
+// cflags: -d=-newInst
 //
 loadFile("ABCDsystem.mo");
 simulate(ABCDsystem,startTime=0.0, stopTime=1.0, method="euler", numberOfIntervals=2, tolerance=1e-4, outputFormat="empty"); // 2 intervals == 3 values

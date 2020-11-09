@@ -1,5 +1,6 @@
 // name: ticket4808
 // status: correct
+// cflags: -d=-newInst
 
 // test inlining of constructor
 

@@ -2,6 +2,7 @@
 // keywords: der inputs
 // status: correct
 // teardown_command: rm -rf LotkaVolterra_* LotkaVolterra LotkaVolterra.exe LotkaVolterra.cpp LotkaVolterra.makefile LotkaVolterra.libs LotkaVolterra.log output.log
+// cflags: -d=-newInst
 //
 //
 //

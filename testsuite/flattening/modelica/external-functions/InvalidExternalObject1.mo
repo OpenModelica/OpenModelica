@@ -1,6 +1,7 @@
 // name:     InvalidExternalObject1
 // keywords: external object bug2043
 // status:   incorrect
+// cflags: -d=-newInst
 //
 //
 
@@ -34,7 +35,7 @@ end InvalidExternalObject1;
 //
 // Result:
 // Error processing file: InvalidExternalObject1.mo
-// [flattening/modelica/external-functions/InvalidExternalObject1.mo:9:1-26:27:writable] Error: Invalid external object InvalidExternalObject1, contains invalid elements: extends A, otherFunc, x.
+// [flattening/modelica/external-functions/InvalidExternalObject1.mo:10:1-27:27:writable] Error: Invalid external object InvalidExternalObject1, contains invalid elements: extends A, otherFunc, x.
 // Error: Error occurred while flattening model InvalidExternalObject1
 //
 // # Error encountered! Exiting...

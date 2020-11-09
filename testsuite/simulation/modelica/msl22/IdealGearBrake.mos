@@ -1,7 +1,7 @@
 // name:     IdealGearBrake
 // keywords: Simulate, readSimulationData
 // status:   correct
-// cflags:   +std=2.x
+// cflags:   +std=2.x -d=-newInst
 // teardown_command: rm -f TestModels.RotationalModels.* output.log
 // 
 //  Simulate Rotational gear models and simulate. 

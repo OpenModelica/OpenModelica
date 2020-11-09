@@ -2,6 +2,7 @@
 // keywords: array storage order
 // status: correct
 // teardown_command: rm -f *MatrixIOTest*
+// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 

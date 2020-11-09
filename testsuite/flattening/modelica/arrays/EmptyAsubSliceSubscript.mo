@@ -1,6 +1,7 @@
 // name:     EmptyAsubSliceSubscript
 // keywords: asub slice subscript array #3219
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that the compiler can handle asubs of empty array being used as
 // subscripts.

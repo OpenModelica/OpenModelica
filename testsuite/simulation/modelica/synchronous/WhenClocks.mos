@@ -1,6 +1,7 @@
 // name: WhenClocks
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, languageStandard="3.3"); getErrorString();

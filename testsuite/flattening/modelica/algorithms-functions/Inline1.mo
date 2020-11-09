@@ -1,6 +1,7 @@
 // name: Inline1
 // keywords: inline, function
 // status: correct
+// cflags: -d=-newInst
 //
 // Test case for inline annotations
 //

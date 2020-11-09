@@ -2,6 +2,7 @@
 // keywords: when
 // status: correct
 // teardown_command: rm -rf ServerWithQueueT3* output.log
+// cflags: -d=-newInst
 // 
 // Conditional Equations with when-Equations 
 // 

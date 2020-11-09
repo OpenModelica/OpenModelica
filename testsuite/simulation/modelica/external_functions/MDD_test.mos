@@ -2,6 +2,7 @@
 // keywords: MDD_test
 // status:   correct
 // teardown_command: rm -rf MDD_test_*
+// cflags: -d=-newInst
 //
 //  Checks that external object aliases are recognized properly. Otherwise the system has too many equations.
 //

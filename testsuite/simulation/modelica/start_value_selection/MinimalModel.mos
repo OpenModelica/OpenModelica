@@ -2,6 +2,7 @@
 // keywords: remove simple equation bug testing
 // status:   correct
 // teardown_command: rm -rf MinimalModel_* MinimalModel MinimalModel.exe
+// cflags: -d=-newInst
 
 setCommandLineOptions({"+d=dumprepl,dumpindxdae"}); getErrorString();
 loadFile("MinimalModel.mo"); getErrorString();

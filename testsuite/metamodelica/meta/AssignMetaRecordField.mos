@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 setCommandLineOptions("--grammar=MetaModelica -d=gen");
 loadString("

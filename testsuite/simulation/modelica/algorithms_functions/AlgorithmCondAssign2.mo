@@ -4,6 +4,7 @@
 //
 // Assignments within if-Statements
 // Drmodelica: 9.1  if-Statement (p. 292)
+// cflags: -d=-newInst
 //
 
 function CondAssignFunc

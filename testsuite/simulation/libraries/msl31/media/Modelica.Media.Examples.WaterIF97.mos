@@ -1,6 +1,7 @@
 //name:        buildModel(Modelica.Media.Examples.WaterIF97)
 //keyword:     simulation
 //status:      correct
+// cflags: -d=-newInst
 // instantiate/check model example
 //
 

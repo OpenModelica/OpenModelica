@@ -1,6 +1,7 @@
 // name:     DerConstant1
 // keywords: derivative
 // status:   correct
+// cflags: -d=-newInst
 //
 // Modelica Spec 3.2: Section 3.7.2
 // der(expr): For Real parameters and constants the result is a zero scalar or array of the same size as the variable.

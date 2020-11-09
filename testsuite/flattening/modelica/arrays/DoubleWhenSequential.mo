@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 9.1 When-Statements (p. 293)
+// cflags: -d=-newInst
 //
 
 model DoubleWhenSequential

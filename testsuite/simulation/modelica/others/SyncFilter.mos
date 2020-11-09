@@ -3,6 +3,7 @@
 // status:  correct
 // teardown_command: rm -rf SyncFilterTest* output.log
 // tests: bug reported here: https://www.openmodelica.org/index.php/forum/topic?id=74
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica,{"3.1"}); getErrorString();

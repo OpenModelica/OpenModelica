@@ -1,6 +1,7 @@
 // name: dumpSparsePatternLin.mos
 // keywords: omc debug dump
 // status: correct
+// cflags: -d=-newInst
 // 
 // omc debug dump: +d=dumpSparsePattern
 // Dump sparse pattern for a linear problem

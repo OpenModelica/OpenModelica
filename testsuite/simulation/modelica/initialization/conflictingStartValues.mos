@@ -3,6 +3,7 @@
 // status: correct
 //
 // ticket:4329
+// cflags: -d=-newInst
 
 loadString("
 type T = Real(start = 10, nominal=100);

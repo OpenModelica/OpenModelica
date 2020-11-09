@@ -1,6 +1,7 @@
 // name: ArrayDeclaration2
 // keywords: array
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests array declaration of the form Type[dim] identifier;
 //

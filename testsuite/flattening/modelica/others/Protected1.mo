@@ -1,6 +1,7 @@
 // name:     Protected1
 // keywords: protected
 // status:   correct
+// cflags: -d=-newInst
 //
 // This file tests information hiding using the 'protect' keyword
 //

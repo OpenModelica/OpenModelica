@@ -5,6 +5,7 @@
 // simulation example
 //
 // Note: I have not checked if it works correctly, just that it runs --sjoelund
+// cflags: -d=-newInst
 
 loadModel(Modelica,{"2.2.2"});
 simulate(Modelica.Mechanics.Translational.Examples.Friction,numberOfIntervals=500,tolerance=0.0001,startTime=0,stopTime=5);

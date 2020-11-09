@@ -1,6 +1,7 @@
 // name:     strings
 // keywords: strings
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  string manipulations
 //

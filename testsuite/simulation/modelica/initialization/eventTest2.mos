@@ -3,6 +3,7 @@
 // status: correct
 // cflags:
 // teardown_command: rm -rf initializationTests.eventTest2* _initializationTests.eventTest2* output.log
+// cflags: -d=-newInst
 //
 //  case for events during initialization
 //

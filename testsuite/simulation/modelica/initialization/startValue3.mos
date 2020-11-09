@@ -1,6 +1,7 @@
 // name: startValue3
 // keywords: initialization, start-value, parameter
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model startValue3

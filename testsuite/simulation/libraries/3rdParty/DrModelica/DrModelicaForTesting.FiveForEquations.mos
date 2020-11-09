@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.FiveForEquations
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.FiveForEquations.* DrModelicaForTesting.FiveForEquations_* DrModelicaForTesting.FiveForEquations DrModelicaForTesting.FiveForEquations.exe DrModelicaForTesting.FiveForEquations.cpp DrModelicaForTesting.FiveForEquations.makefile DrModelicaForTesting.FiveForEquations.libs DrModelicaForTesting.FiveForEquations.log DrModelicaForTesting.FiveForEquations.c DrModelicaForTesting.FiveForEquations.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

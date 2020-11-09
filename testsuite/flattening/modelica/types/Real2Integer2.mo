@@ -1,6 +1,7 @@
 // name:     Real2Integer2
 // keywords: type
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // No implicit conversion from Real to Integer. Division via '/' always
 // gives a Real.
@@ -14,7 +15,7 @@ algorithm
 end Real2Integer2;
 // Result:
 // Error processing file: Real2Integer2.mo
-// [flattening/modelica/types/Real2Integer2.mo:13:3-13:15:writable] Error: Type mismatch in assignment in n2 := 0.5 * /*Real*/(n1) of Integer := Real
+// [flattening/modelica/types/Real2Integer2.mo:14:3-14:15:writable] Error: Type mismatch in assignment in n2 := 0.5 * /*Real*/(n1) of Integer := Real
 // Error: Error occurred while flattening model Real2Integer2
 //
 // # Error encountered! Exiting...

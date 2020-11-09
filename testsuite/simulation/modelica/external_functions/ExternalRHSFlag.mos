@@ -2,6 +2,7 @@
 // keyword: external functions, libraries
 // status: correct
 // teardown_command: rm -rf ExternalRHSFlag.o ExternalRHSFunc.a ExternalRHSFlagFunc* output.log
+// cflags: -d=-newInst
 //
 // External functions, that uses the RHS final flag.
 //

@@ -1,6 +1,7 @@
 // name:     VectorBuiltin
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test elaboration of the builtin vector function.
 

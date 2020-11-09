@@ -1,6 +1,7 @@
 // name:     ArrayIndex
 // keywords: array, index
 // status:   correct
+// cflags: -d=-newInst
 //
 // This is a simple test of basic array handling. Bug reported by Hannes Edinger
 //

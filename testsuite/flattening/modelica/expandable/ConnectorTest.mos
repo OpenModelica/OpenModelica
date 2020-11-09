@@ -2,6 +2,7 @@
 //keyword:     expandable
 //status:      correct
 //teardown_command: rm -rf ConnectorTest.Test*
+// cflags: -d=-newInst
 
 loadFile("ConnectorTest.mo"); getErrorString();
 instantiateModel(ConnectorTest.Test); getErrorString();

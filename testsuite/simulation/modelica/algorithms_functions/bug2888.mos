@@ -2,6 +2,7 @@
 // keywords: function return, record, array
 // status: correct
 // teardown_command: rm -rf bug_2888*  output.log
+// cflags: -d=-newInst
 //
 //  test for function return of a tuple with array and recods on the lhs
 //

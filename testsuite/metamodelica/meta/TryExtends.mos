@@ -1,5 +1,6 @@
 // name: TryExtends
 // status: correct
+// cflags: -d=-newInst
 //
 // Checks that the compiler handles try in inherited functions correctly.
 //

@@ -1,6 +1,7 @@
 // name:     Circle
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 
 
 model Circle

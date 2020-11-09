@@ -1,5 +1,5 @@
 // status: correct
-// cflags: +d=nogen
+// cflags: +d=nogen -d=-newInst
 
 model MissingCast
 record SomeData

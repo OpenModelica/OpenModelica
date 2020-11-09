@@ -2,6 +2,7 @@
 // keywords: Simulate, function, 
 // status: correct
 // teardown_command: rm -rf tempInterpol2test_* tempInterpol2test.cpp tempInterpol2test.libs tempInterpol2test.log tempInterpol2test tempInterpol2test.exe tempInterpol2test.makefile  output.log
+// cflags: -d=-newInst
 // 
 //  Simulate models and read in data.
 //

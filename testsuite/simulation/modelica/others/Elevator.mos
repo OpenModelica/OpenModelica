@@ -1,6 +1,7 @@
 // name: Elevator.mos
 // keywords: alias
 // status: correct
+// cflags: -d=-newInst
 //
 // test for #3656
 //

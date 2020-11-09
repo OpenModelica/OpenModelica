@@ -1,6 +1,7 @@
 // name:     Type5
 // keywords: type,declaration
 // status:   correct
+// cflags: -d=-newInst
 //
 // Simple variable declarations.
 //

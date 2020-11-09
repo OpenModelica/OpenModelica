@@ -1,6 +1,7 @@
 // name:     NestedSubscriptFor
 // keywords: array subscripts for loop #3155
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that nested subscripts using a for loop iterator is handled correctly.
 //

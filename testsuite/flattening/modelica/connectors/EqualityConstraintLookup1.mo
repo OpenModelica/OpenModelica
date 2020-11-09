@@ -1,7 +1,7 @@
 // name:     EqualityConstraintLookup1
 // keywords: connect equalityConstraint lookup #2163
 // status:   correct
-// cflags:   +i=P.M
+// cflags:   +i=P.M -d=-newInst
 //
 // Checks that the equalityConstraint function of a connector can be found when
 // the instantiated model is inside an encapsulated package.

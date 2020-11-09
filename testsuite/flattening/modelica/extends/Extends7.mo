@@ -1,6 +1,7 @@
 // name:     Extends7
 // keywords: extends
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing that you can extend a partial package in a package that extends the same package.
 // See bug: http://openmodelica.ida.liu.se:8080/cb/issue/1184?navigation=true

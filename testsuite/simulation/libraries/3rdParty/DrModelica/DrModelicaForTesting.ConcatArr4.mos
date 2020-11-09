@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.ConcatArr4
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.ConcatArr4.* DrModelicaForTesting.ConcatArr4_* DrModelicaForTesting.ConcatArr4 DrModelicaForTesting.ConcatArr4.exe DrModelicaForTesting.ConcatArr4.cpp DrModelicaForTesting.ConcatArr4.makefile DrModelicaForTesting.ConcatArr4.libs DrModelicaForTesting.ConcatArr4.log DrModelicaForTesting.ConcatArr4.c DrModelicaForTesting.ConcatArr4.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

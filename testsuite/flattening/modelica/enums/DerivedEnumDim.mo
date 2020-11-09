@@ -1,6 +1,7 @@
 // name:     DerivedEnumDim
 // keywords: enumeration enum extends dimension
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that an enumeration can be used as dimension in a short class
 // definition.

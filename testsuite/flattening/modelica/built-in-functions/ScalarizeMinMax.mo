@@ -1,7 +1,7 @@
 // name:     ScalarizeMinMax
 // keywords: scalarize min max
 // status:   correct
-// cflags:   +scalarizeMinMax
+// cflags:   +scalarizeMinMax -d=-newInst
 //
 // Tests that min/max reductions are scalarized when +scalarizeMinMax is used.
 //

@@ -1,5 +1,5 @@
 // name: ExtendsReduceDrumBoiler
-// cflags: --flowThreshold=1e-15
+// cflags: --flowThreshold=1e-15 -d=-newInst
 // status: correct
 
 loadModel(Modelica,{"3.2"});

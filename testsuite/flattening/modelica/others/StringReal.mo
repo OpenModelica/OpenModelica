@@ -1,6 +1,7 @@
 // name: StringReal
 // keywords: string
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests conversion to string from Real
 //

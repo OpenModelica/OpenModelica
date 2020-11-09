@@ -1,6 +1,7 @@
 // name:     ForIteratorType
 // keywords: for iterator type integer enumeration
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that the iterator in a for loop gets the correct type.
 //

@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.AppendElement
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.AppendElement.* DrModelicaForTesting.AppendElement_* DrModelicaForTesting.AppendElement DrModelicaForTesting.AppendElement.exe DrModelicaForTesting.AppendElement.cpp DrModelicaForTesting.AppendElement.makefile DrModelicaForTesting.AppendElement.libs DrModelicaForTesting.AppendElement.log DrModelicaForTesting.AppendElement.c DrModelicaForTesting.AppendElement.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

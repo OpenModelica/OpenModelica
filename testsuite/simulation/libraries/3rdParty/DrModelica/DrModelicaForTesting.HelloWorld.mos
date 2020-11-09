@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.HelloWorld
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.HelloWorld.* DrModelicaForTesting.HelloWorld_* DrModelicaForTesting.HelloWorld DrModelicaForTesting.HelloWorld.exe DrModelicaForTesting.HelloWorld.cpp DrModelicaForTesting.HelloWorld.makefile DrModelicaForTesting.HelloWorld.libs DrModelicaForTesting.HelloWorld.log DrModelicaForTesting.HelloWorld.c DrModelicaForTesting.HelloWorld.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

@@ -1,6 +1,7 @@
 // name:     EnumArrayMod1
 // keywords: enumeration enum array mod
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests that enumeration arrays with modifiers work correctly.
 //

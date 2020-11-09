@@ -6,6 +6,7 @@
 //  Conditional equations with when-equations
 //
 // Drmodelica: 8.2 Conditional Equations with when-Equations (p. 246)
+// cflags: -d=-newInst
 // 
 loadFile("WhenVectorPredicateEquation.mo");
 simulate(WhenSet,startTime=0.0, stopTime=10.0, tolerance=1e-5, numberOfIntervals=100);

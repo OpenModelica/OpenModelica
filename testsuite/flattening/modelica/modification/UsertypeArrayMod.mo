@@ -1,6 +1,7 @@
 // name:     UsertypeArrayMod
 // keywords: modification array type
 // status:   correct
+// cflags: -d=-newInst
 //
 
 model UsertypeArrayMod

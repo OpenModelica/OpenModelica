@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 
 model Sum
 function s

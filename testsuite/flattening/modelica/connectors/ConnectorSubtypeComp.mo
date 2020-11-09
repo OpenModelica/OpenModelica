@@ -1,6 +1,7 @@
 // name:     ConnectorSubtypeComp
 // keywords: connect, connector, #2741
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that subtype components are counted correctly in connectors.
 //

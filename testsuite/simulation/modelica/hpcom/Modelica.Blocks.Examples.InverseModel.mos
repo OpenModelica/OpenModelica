@@ -2,6 +2,7 @@
 // keywords: simulation MSL Examples
 // status: correct
 // depends: Modelica.Blocks.Examples.InverseModel_eqs_prof.json
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

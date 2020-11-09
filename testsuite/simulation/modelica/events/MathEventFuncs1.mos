@@ -2,6 +2,7 @@
 // keywords: events, math-functions
 // status: correct
 // teardown_command: rm -rf mathEvents1* output.log
+// cflags: -d=-newInst
 // 
 // Check for interger valued zerocrossings function
 // 

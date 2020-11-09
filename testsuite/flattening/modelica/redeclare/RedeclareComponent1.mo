@@ -1,6 +1,7 @@
 // name:     RedeclareComponent1
 // keywords: redeclare component
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests simple redeclaration of an inherited component.
 //

@@ -1,4 +1,4 @@
-// cflags: +d=nogen
+// cflags: +d=nogen -d=-newInst
 // status: correct
 // Tests vectorization and evaluation of calls with 2 arguments each having 2 unknown (expression) dimensions
 

@@ -1,4 +1,5 @@
 // status: incorrect
+// cflags: -d=-newInst
 
 model M
 
@@ -27,7 +28,7 @@ end M;
 
 // Result:
 // Error processing file: Ticket4786.mo
-// [flattening/modelica/algorithms-functions/Ticket4786.mo:25:3-25:29:writable] Error: Type mismatch for positional argument 2 in M.f(func=M.wrongType). The argument has type:
+// [flattening/modelica/algorithms-functions/Ticket4786.mo:26:3-26:29:writable] Error: Type mismatch for positional argument 2 in M.f(func=M.wrongType). The argument has type:
 //   .M.wrongType<function>(#Integer i, #Integer i2 := 1) => #NORETCALL#
 // expected type:
 //   .M.f.FuncT<function>(String s) => #NORETCALL#

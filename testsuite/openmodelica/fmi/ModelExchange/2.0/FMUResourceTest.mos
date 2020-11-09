@@ -2,6 +2,7 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf binaries sources resources modelDescription.xml FMUResourceTest_Test* FMUResourceTest.Test* output.log
+// cflags: -d=-newInst
 //
 
 

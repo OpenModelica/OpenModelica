@@ -5,6 +5,7 @@
 // omc debug dump: +d=transformsbeforedump
 // 
 
+// cflags: -d=-newInst
 // TODO: change this model to test the dump +d=transformsbeforedump
 loadString("
 model testTransformsbeforedump

@@ -1,6 +1,7 @@
 // name:     Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

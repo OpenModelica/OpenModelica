@@ -1,6 +1,7 @@
 // name: TestLapack [#1370]
 // status: correct
 // teardown_command: rm -f TestLapack_* output.log TestLapack.makefile TestLapack.log TestLapack.libs TestLapack.exe TestLapack.c TestLapack.o
+// cflags: -d=-newInst
 //
 // Checks that the BUG https://trac.openmodelica.org/OpenModelica/ticket/1370 is now gone!
 //

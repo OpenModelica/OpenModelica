@@ -1,6 +1,7 @@
 // name: TypeClass2
 // keywords: type
 // status: incorrect
+// cflags: -d=-newInst
 //
 // Tests type declaration from a regular class, should be illegal
 //
@@ -18,7 +19,7 @@ equation
 end TypeClass2;
 // Result:
 // Error processing file: TypeClass2.mo
-// [flattening/modelica/types/TypeClass2.mo:12:1-12:32:writable] Error: Class specialization violation: .IllegalClass is a new def, not a type.
+// [flattening/modelica/types/TypeClass2.mo:13:1-13:32:writable] Error: Class specialization violation: .IllegalClass is a new def, not a type.
 // Error: Error occurred while flattening model TypeClass2
 //
 // # Error encountered! Exiting...

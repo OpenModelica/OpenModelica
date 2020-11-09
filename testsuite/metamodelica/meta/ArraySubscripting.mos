@@ -1,7 +1,7 @@
 // name:     ArraySubscripting
 // keywords: builtin, array, subscript
 // status:   correct
-// cflags:   -g=MetaModelica -d=gen
+// cflags:   -g=MetaModelica -d=gen -d=-newInst
 //
 // Checks that subscripting of arrays works correctly.
 //

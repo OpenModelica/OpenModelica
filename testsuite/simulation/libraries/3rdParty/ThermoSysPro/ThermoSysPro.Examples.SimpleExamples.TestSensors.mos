@@ -2,6 +2,7 @@
 // keywords: simulation ThermoSysPro.Examples.SimpleExamples
 // status: correct
 // teardown_command: rm -rf _ThermoSysPro.Examples.SimpleExamples.TestSensors.* ThermoSysPro.Examples.SimpleExamples.TestSensors_* ThermoSysPro.Examples.SimpleExamples.TestSensors ThermoSysPro.Examples.SimpleExamples.TestSensors.exe ThermoSysPro.Examples.SimpleExamples.TestSensors.cpp ThermoSysPro.Examples.SimpleExamples.TestSensors.makefile ThermoSysPro.Examples.SimpleExamples.TestSensors.libs ThermoSysPro.Examples.SimpleExamples.TestSensors.log ThermoSysPro.Examples.SimpleExamples.TestSensors.c ThermoSysPro.Examples.SimpleExamples.TestSensors.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

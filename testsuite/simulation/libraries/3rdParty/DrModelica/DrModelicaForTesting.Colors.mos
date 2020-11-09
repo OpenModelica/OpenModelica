@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.Colors
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.Colors.* DrModelicaForTesting.Colors_* DrModelicaForTesting.Colors DrModelicaForTesting.Colors.exe DrModelicaForTesting.Colors.cpp DrModelicaForTesting.Colors.makefile DrModelicaForTesting.Colors.libs DrModelicaForTesting.Colors.log DrModelicaForTesting.Colors.c DrModelicaForTesting.Colors.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

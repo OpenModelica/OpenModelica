@@ -1,6 +1,7 @@
 // name:     Test for bug 2588
 // keywords: modelica output flat
 // status:   correct
+// cflags: -d=-newInst
 //
 
 loadString("

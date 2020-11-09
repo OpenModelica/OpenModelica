@@ -1,6 +1,7 @@
 // name: FinalTests
 // keywords: final override
 // status: correct
+// cflags: -d=-newInst
 //
 //
 //

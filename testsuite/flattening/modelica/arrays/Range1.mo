@@ -1,6 +1,7 @@
 // name:     Range1
 // keywords: array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Some tests of range expressions.
 //

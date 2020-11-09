@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.FilterBlock1
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.FilterBlock1.* DrModelicaForTesting.FilterBlock1_* DrModelicaForTesting.FilterBlock1 DrModelicaForTesting.FilterBlock1.exe DrModelicaForTesting.FilterBlock1.cpp DrModelicaForTesting.FilterBlock1.makefile DrModelicaForTesting.FilterBlock1.libs DrModelicaForTesting.FilterBlock1.log DrModelicaForTesting.FilterBlock1.c DrModelicaForTesting.FilterBlock1.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

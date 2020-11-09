@@ -1,6 +1,7 @@
 // name: ticket-5206
 // keywords: if equations, non-linear, residual equations
 // status: correct
+// cflags: -d=-newInst
 
 
 loadString("

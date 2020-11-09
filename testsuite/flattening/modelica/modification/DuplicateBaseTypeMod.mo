@@ -1,6 +1,7 @@
 // name:     DuplicateBaseTypeMod
 // keywords: modification
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // Checks that duplicate modifiers on base types are caught.
 //
@@ -13,8 +14,8 @@ end DuplicateBaseTypeMod;
 
 // Result:
 // Error processing file: DuplicateBaseTypeMod.mo
-// [flattening/modelica/modification/DuplicateBaseTypeMod.mo:9:21-9:32:writable] Notification: From here:
-// [flattening/modelica/modification/DuplicateBaseTypeMod.mo:9:10-9:19:writable] Error: Duplicate modification of element start on component x.
+// [flattening/modelica/modification/DuplicateBaseTypeMod.mo:10:21-10:32:writable] Notification: From here:
+// [flattening/modelica/modification/DuplicateBaseTypeMod.mo:10:10-10:19:writable] Error: Duplicate modification of element start on component x.
 // Error: Error occurred while flattening model DuplicateBaseTypeMod
 //
 // # Error encountered! Exiting...

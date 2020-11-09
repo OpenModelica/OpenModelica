@@ -2,6 +2,7 @@
 // keywords: reduction
 // status: correct
 // teardown_command: rm -rf Reductions Reductions.libs Reductions.log Reductions.makefile Reductions.cpp Reductions_* output.log
+// cflags: -d=-newInst
 // 
 // Test reduction expression.
 // Fix for bug #1136: http://openmodelica.ida.liu.se:8080/cb/issue/1136?navigation=true

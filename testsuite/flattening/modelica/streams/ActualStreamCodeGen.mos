@@ -2,6 +2,7 @@
 // keywords: events
 // status: correct
 // teardown_command: rm -rf ActualStreamCodeGen_* ActualStreamCodeGen ActualStreamCodeGen.exe ActualStreamCodeGen.cpp ActualStreamCodeGen.makefile ActualStreamCodeGen.libs ActualStreamCodeGen.log output.log
+// cflags: -d=-newInst
 //
 // Checks code generation for the actualStream operator.
 // 

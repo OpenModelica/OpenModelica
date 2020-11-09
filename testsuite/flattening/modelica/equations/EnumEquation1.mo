@@ -1,6 +1,7 @@
 // name:     EnumEquation1
 // keywords: equation, enumeration
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that equations involving enumeration work.
 //

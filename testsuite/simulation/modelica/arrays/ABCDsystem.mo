@@ -4,6 +4,7 @@
 //
 // Using empty arrays.
 // Drmodelica: 7.9 Empty Arrays (p. 231)
+// cflags: -d=-newInst
 //
 
 model ABCDsystem

@@ -1,6 +1,7 @@
 // name: BlockComponents
 // keywords: block
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaration and instantiation of a block with components in it
 //

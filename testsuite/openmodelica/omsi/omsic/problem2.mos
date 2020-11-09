@@ -2,6 +2,7 @@
 // keywords: omsi omsic fmu fmi
 // status: correct
 // teardown_command: rm -rf problem2.fmutmp problem2.fmu problem2_systemCall.log problem2_result_diff.log problem2*res.mat problem2-tmp
+// cflags: -d=-newInst
 //
 // Tests simulating OMSIC OMSU/FMU with OMSimulator and check results
 //

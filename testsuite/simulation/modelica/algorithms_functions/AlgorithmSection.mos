@@ -4,6 +4,7 @@
 // teardown_command: rm -rf AlgorithmSection_* AlgorithmSection AlgorithmSection.exe AlgorithmSection.cpp AlgorithmSection.makefile AlgorithmSection.libs AlgorithmSection.log output.log
 // 
 // Drmodelica: 9.1 Algorithm Sections (p. 285)
+// cflags: -d=-newInst
 //
 loadFile("AlgorithmSection.mo");
 simulate(AlgorithmSection,startTime=0.0, stopTime=1.0,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values

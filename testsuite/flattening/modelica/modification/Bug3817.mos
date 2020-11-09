@@ -2,6 +2,7 @@
 // keywords: modification should respect declared inner!
 // status:   correct
 // teardown_command: rm -rf PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv*
+// cflags: -d=-newInst
 
 loadFile("Bug3817.mo"); getErrorString();
 instantiateModel(PowerSystems.Examples.Spot.DrivesAC3ph.SM_ctrlAv); getErrorString();

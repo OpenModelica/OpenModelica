@@ -1,4 +1,5 @@
 // status: correct
+// cflags: -d=-newInst
 // bug #2529
 
 model Vectorizable7

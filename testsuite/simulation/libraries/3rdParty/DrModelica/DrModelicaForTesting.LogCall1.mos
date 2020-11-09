@@ -2,6 +2,7 @@
 // keywords: simulation DrModelicaForTesting.LogCall1
 // status: correct
 // teardown_command: rm -rf _DrModelicaForTesting.LogCall1.* DrModelicaForTesting.LogCall1_* DrModelicaForTesting.LogCall1 DrModelicaForTesting.LogCall1.exe DrModelicaForTesting.LogCall1.cpp DrModelicaForTesting.LogCall1.makefile DrModelicaForTesting.LogCall1.libs DrModelicaForTesting.LogCall1.log DrModelicaForTesting.LogCall1.c DrModelicaForTesting.LogCall1.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

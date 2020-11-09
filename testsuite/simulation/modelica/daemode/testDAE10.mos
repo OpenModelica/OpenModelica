@@ -1,6 +1,7 @@
 // name: testDAE10
 // status: correct
 // teardown_command: rm -f testDAE.p9* output.log
+// cflags: -d=-newInst
 // tests case for no states in the models
 
 loadString("

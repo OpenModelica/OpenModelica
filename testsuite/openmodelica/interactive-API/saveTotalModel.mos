@@ -1,6 +1,7 @@
 // name: SCodeDependency test [BUG: https://trac.openmodelica.org/OpenModelica/ticket/1952]
 // keywords:
 // status: correct
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica, {"3.2.1"}); getErrorString();

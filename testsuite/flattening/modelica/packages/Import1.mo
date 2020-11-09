@@ -1,6 +1,7 @@
 // name:     Import1
 // keywords: import
 // status:   correct
+// cflags: -d=-newInst
 //
 // Demonstrating various form of import.
 //

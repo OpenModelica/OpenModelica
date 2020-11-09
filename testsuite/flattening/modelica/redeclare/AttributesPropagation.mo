@@ -1,6 +1,7 @@
 // name:     AttributesPropagation.mo
 // keywords: tests if attributes are properly propagated from original to redeclared component
 // status:   correct
+// cflags: -d=-newInst
 //
 
 package Buildings
@@ -4895,6 +4896,6 @@ end BoreholeSegment;
 //     seg.TBouCon.iSam := 1 + seg.TBouCon.iSam;
 //   end when;
 // end BoreholeSegment;
-// [flattening/modelica/redeclare/AttributesPropagation.mo:314:13-314:298:writable] Warning: beta was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
+// [flattening/modelica/redeclare/AttributesPropagation.mo:315:13-315:298:writable] Warning: beta was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 //
 // endResult

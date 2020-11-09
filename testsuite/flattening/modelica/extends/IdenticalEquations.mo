@@ -1,6 +1,7 @@
 // name:     IdenticalEquations
 // keywords: identical equations inheritance
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that identical equations from inheritance are not merged.
 //

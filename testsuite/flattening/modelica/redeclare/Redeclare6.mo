@@ -1,6 +1,7 @@
 // name:     Redeclare6
 // keywords: redeclare
 // status:   correct
+// cflags: -d=-newInst
 //
 
 package Lib

@@ -1,6 +1,7 @@
 // name:     Constant3
 // keywords: declaration,array
 // status:   correct
+// cflags: -d=-newInst
 //
 // Basic constant definitions.
 //

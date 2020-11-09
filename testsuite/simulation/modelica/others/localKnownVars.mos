@@ -1,5 +1,6 @@
 // name: localKnownVars
 // status: correct
+// cflags: -d=-newInst
 
 loadString("
 model localKnownVars

@@ -1,6 +1,7 @@
 // name:     DuplicateElementsExtendsEquivalent
 // keywords: check if duplicate elements one from extends are equivalent!
 // status:   correct
+// cflags: -d=-newInst
 
 
 package Crap

@@ -1,6 +1,7 @@
 // name: Tanh
 // keywords: tanh
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in tanh function
 //

@@ -1,6 +1,7 @@
 // name:     WhenVectorPredicateEquation
 // keywords: when
 // status:   correct
+// cflags: -d=-newInst
 //
 // Conditional Equations with when-equations
 //

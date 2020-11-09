@@ -1,6 +1,7 @@
 // name:     FunctionEvalSlice
 // keywords: function slice assignment
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks that slice assignments in functions are constant evaluated correctly.
 //

@@ -1,6 +1,7 @@
 // name: ActiveTest
 // keywords: state machines features
 // status: correct
+// cflags: -d=-newInst
 
 model ActiveStateTest
   block AState

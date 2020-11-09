@@ -1,7 +1,7 @@
 // name:     PartialFn10
 // keywords: PartialFn
 // status:   correct
-// cflags:   +g=MetaModelica
+// cflags:   +g=MetaModelica -d=-newInst
 //
 // Partial Function Testing
 //

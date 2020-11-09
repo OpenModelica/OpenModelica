@@ -5,6 +5,7 @@
 //
 // function handling
 // Drmodelica: 9.1 Function with Multiple Results (p. 287)
+// cflags: -d=-newInst
 // 
 loadFile("FuncMultResults.mo");
 simulate(fCall, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);

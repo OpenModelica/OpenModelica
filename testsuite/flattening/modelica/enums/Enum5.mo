@@ -1,6 +1,7 @@
 // name:     Enumeration5
 // keywords: enumeration enum
 // status:   incorrect
+// cflags: -d=-newInst
 //
 //
 //
@@ -25,8 +26,8 @@ end Enumeration5;
 
 // Result:
 // Error processing file: Enum5.mo
-// [flattening/modelica/enums/Enum5.mo:14:3-14:16:writable] Error: Variable E.j not found in scope P.h$tt.
-// [flattening/modelica/enums/Enum5.mo:14:3-14:16:writable] Error: Variable hh[E.j] not found in scope P.h$tt.
+// [flattening/modelica/enums/Enum5.mo:15:3-15:16:writable] Error: Variable E.j not found in scope P.h$tt.
+// [flattening/modelica/enums/Enum5.mo:15:3-15:16:writable] Error: Variable hh[E.j] not found in scope P.h$tt.
 // Error: Error occurred while flattening model Enumeration5
 //
 // # Error encountered! Exiting...

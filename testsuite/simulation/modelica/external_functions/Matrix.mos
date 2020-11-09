@@ -2,6 +2,7 @@
 // keywords: events
 // status:   correct
 // teardown_command: rm -f libFunc.a output.log tt_*.* tt.log tt.libs tt.makefile tt tt.exe tt.cpp 
+// cflags: -d=-newInst
 //
 // Test for function wrapper code generation involving arrays
 //

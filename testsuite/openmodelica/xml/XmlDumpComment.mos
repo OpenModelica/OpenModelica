@@ -2,6 +2,7 @@
 // keywords: xml, dump
 // status: correct
 // teardown_command: rm -f XmlDumpComment.xml
+// cflags: -d=-newInst
 //
 // Tests that < is escaped in Xml dumps
 //

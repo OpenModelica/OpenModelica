@@ -3,6 +3,7 @@
 // status:   correct
 //
 // Drmodelica: 12.1 Traditional Methodology (p. 385)
+// cflags: -d=-newInst
 //
 
 function limitValue

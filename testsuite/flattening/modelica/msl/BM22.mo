@@ -1,6 +1,7 @@
 // name:     BM22 -  Sinh component
 // keywords: Sinh
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the Math.Sinh component.
 //

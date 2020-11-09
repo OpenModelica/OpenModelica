@@ -2,6 +2,7 @@
 // keywords: simulation PlanarMechanicsForTesting.Examples
 // status: correct
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.* PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection_* PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.exe PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.cpp PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.makefile PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.libs PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.log PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.c PlanarMechanicsForTesting.Examples.KinematicLoop_DynamicStateSelection.o output.log
+// cflags: -d=-newInst
 //
 // Simulation Results 
 // Modelica Standard Library

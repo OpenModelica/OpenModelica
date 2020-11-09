@@ -1,6 +1,7 @@
 // name:     BS11 - TimeTable component
 // keywords: TimeTable
 // status:   correct
+// cflags: -d=-newInst
 //
 // Testing instantiation of the TimeTable component.
 //

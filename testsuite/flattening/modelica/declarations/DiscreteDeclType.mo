@@ -1,6 +1,7 @@
 // name: DiscreteDeclType
 // keywords: discrete
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the discrete prefix on a regular type
 //

@@ -1,6 +1,7 @@
 // name: AssignmentFunction
 // keywords: assignment, function
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests assignment to a simple function call
 //

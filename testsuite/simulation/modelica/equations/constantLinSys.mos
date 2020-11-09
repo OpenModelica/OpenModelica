@@ -2,6 +2,7 @@
 // keywords: Simulate, constant linear System
 // status: correct
 // teardown_command: rm -rf constLinSys constLinSys.* constLinSys_* output.log
+// cflags: -d=-newInst
 // 
 //  Simulate models and read in data.
 //

@@ -1,6 +1,7 @@
 // name:     Discrete1
 // keywords: declaration
 // status:   correct
+// cflags: -d=-newInst
 //
 // Test the `discrete' keyword
 

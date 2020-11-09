@@ -1,6 +1,7 @@
 // name:     AssertTest4
 // keywords: assert
 // status:   correct
+// cflags: -d=-newInst
 //
 //
 

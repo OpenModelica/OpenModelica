@@ -1,6 +1,7 @@
 // name:     modifyOuter
 // keywords: modification inner outer innerouter
 // status:   correct
+// cflags: -d=-newInst
 //
 //  It is illegal to modify on pure "outer" elements.
 //  we only issue a warning now and ignore the modification.
@@ -55,6 +56,6 @@ end inn;
 //   (-ip.i) + (-io.y.i) = 0.0;
 //   io.y.v = ip.v;
 // end inn;
-// [flattening/modelica/modification/modifyOuter.mo:15:2-15:19:writable] Warning: Ignoring the modification on outer element: io.la.ip (i = 3), class or component i.
+// [flattening/modelica/modification/modifyOuter.mo:16:2-16:19:writable] Warning: Ignoring the modification on outer element: io.la.ip (i = 3), class or component i.
 //
 // endResult

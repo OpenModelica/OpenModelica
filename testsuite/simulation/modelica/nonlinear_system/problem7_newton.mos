@@ -1,6 +1,7 @@
 // name: problem7 [newton]
 // status: correct
 // teardown_command: rm -f nonlinear_system.problem7* _nonlinear_system.problem7* output.log
+// cflags: -d=-newInst
 
 loadFile("nlsTestPackage.mo"); getErrorString();
 simulate(nonlinear_system.problem7, stopTime=0, simflags="-nls=newton"); getErrorString();

@@ -1,6 +1,7 @@
 // name:     RecordDefaultArg
 // keywords: record, default argument, #2366
 // status:   correct
+// cflags: -d=-newInst
 //
 // Tests default arguments in record constructors.
 //

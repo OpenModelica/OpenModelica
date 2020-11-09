@@ -1,6 +1,7 @@
 // name:     TopLevelConnectorArray
 // keywords: connectors arrays
 // status: correct
+// cflags: -d=-newInst
 //
 //  Tests that input / output qualifiers are kept for connector arrays (#3794)
 //

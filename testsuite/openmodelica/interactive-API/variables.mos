@@ -1,6 +1,7 @@
 // name:     Variables
 // keywords: variables, interactive
 // status:   correct
+// cflags: -d=-newInst
 // 
 //  Using variables in the interactive environment
 //

@@ -1,5 +1,5 @@
 // name: MatchCaseGuard
-// cflags: -g=MetaModelica -d=tail,gen
+// cflags: -g=MetaModelica -d=tail,gen -d=-newInst
 // status: correct
 
 loadString("function fac

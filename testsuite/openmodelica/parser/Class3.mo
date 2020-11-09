@@ -1,6 +1,7 @@
 // name:     Class3
 // keywords:
 // status:   incorrect
+// cflags: -d=-newInst
 //
 // The end must have the same identifier as the head.
 //
@@ -12,7 +13,7 @@ end WrongEnd;
 // Error processing file: Class3.mo
 // Failed to parse file: Class3.mo!
 //
-// [openmodelica/parser/Class3.mo:8:7-10:12:writable] Error: Parse error: The identifier at start and end are different
+// [openmodelica/parser/Class3.mo:9:7-11:12:writable] Error: Parse error: The identifier at start and end are different
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.

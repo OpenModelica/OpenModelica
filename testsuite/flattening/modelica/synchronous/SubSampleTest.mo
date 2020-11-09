@@ -1,6 +1,7 @@
 // name: SubSampleTest
 // keywords: synchronous features
 // status: correct
+// cflags: -d=-newInst
 
 model SubSampleTest
   output Integer x[2];

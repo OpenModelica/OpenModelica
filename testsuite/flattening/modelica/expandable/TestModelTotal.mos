@@ -1,6 +1,7 @@
 //name:        ExpadableConnectors [BUG: #2899]
 //keyword:     expandable
 //status:      correct
+// cflags: -d=-newInst
 //
 // instantiate/check model example
 // models by MathCore

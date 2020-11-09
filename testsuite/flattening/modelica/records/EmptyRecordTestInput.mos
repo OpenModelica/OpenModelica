@@ -1,6 +1,7 @@
 // name:     Empty Record Input
 // keywords: algorithm
 // status:   correct
+// cflags: -d=-newInst
 
 loadFile("RecordTest.mo");
 

@@ -1,6 +1,7 @@
 // name: IntegerLiterals (32-bit)
 // keywords: integer
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests declaration of integers
 // i5 and i6 are not initialized properly (if they are Integers)

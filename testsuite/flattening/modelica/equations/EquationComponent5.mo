@@ -1,6 +1,7 @@
 // name:     EquationComponent5
 // keywords: equation
 // status:   correct
+// cflags: -d=-newInst
 //
 // When an equation is between to complex types, the equation is split
 // into separate equations for the components.

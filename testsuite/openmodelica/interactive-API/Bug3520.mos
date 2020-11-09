@@ -1,6 +1,7 @@
 // name:     Bug3520
 // keywords: instantiate API
 // status:   correct
+// cflags: -d=-newInst
 //
 // Checks inherited class instantiation
 //

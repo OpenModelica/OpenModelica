@@ -1,6 +1,7 @@
 // name: Ticket5871.mos
 // keywords:
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests if class merging works fine if you have comments (LEXER_COMMENT)
 //

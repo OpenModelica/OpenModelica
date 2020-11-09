@@ -6,6 +6,7 @@
 //
 //  Test SiemensPower component Pipes
 //  TODO: check small differences in SH.qMetalFluidDelayed[1]
+// cflags: -d=-newInst
 //
 
 loadModel(Modelica);

@@ -1,6 +1,7 @@
 // name: CondDeclaration
 // keywords: conditional, declaration
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests conditional declaration of components
 //

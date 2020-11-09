@@ -1,6 +1,7 @@
 // name:     Modelica.Media.Examples.TestOnly.IdealGasN2Mix
 // keywords: simulation MSL Examples
 // status: correct
+// cflags: -d=-newInst
 //
 // Simulation Results
 // Modelica Standard Library

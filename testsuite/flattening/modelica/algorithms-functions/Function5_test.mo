@@ -1,6 +1,7 @@
 // name:     Function5
 // keywords: function,unknown
 // status:   correct
+// cflags: -d=-newInst
 //
 // Declaring a function as `class' seems to be allowed.  I wonder if
 // any implementation will allow this...

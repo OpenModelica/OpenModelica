@@ -1,6 +1,7 @@
 // name: Linspace1
 // keywords: linspace bug2027
 // status: correct
+// cflags: -d=-newInst
 //
 // Tests the built-in linspace function.
 //

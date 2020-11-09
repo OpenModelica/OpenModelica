@@ -4,6 +4,7 @@
 // teardown_command: rm -rf CondAssignFunc_* CondAssignFunc.* CondAssignFuncCall_* CondAssignFuncCall CondAssignFuncCall.exe CondAssignFuncCall.cpp CondAssignFuncCall.makefile CondAssignFuncCall.libs CondAssignFuncCall.log output.log
 //
 // Drmodelica: 9.1  if-Statement (p. 292)
+// cflags: -d=-newInst
 //
 loadFile("AlgorithmCondAssign2.mo");
 simulate(CondAssignFuncCall, startTime=0.0, stopTime=1.0, numberOfIntervals=2);
