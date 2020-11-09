@@ -12,11 +12,10 @@ target_sources(bomc PRIVATE ../.cmake/omc_main.c)
 # There is a lonely omc_file.h in Util/. It belongs in runtime/. Remove this when it is moved.
 target_include_directories(bomc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../Util)
 
-target_link_libraries(bomc PRIVATE omc::parser)
-target_link_libraries(bomc PRIVATE omc::compiler::runtime)
-target_link_libraries(bomc PRIVATE omc::compiler::backendruntime)
-target_link_libraries(bomc PRIVATE omc::compiler::graphstream)
-target_link_libraries(bomc PRIVATE omc::simrt::runtime)
+target_link_libraries(bomc PRIVATE omc::parser-boot)
+target_link_libraries(bomc PRIVATE omc::compiler::runtime-boot)
+target_link_libraries(bomc PRIVATE omc::compiler::graphstream-boot)
+# target_link_libraries(bomc PRIVATE omc::simrt::runtime)
 target_link_libraries(bomc PRIVATE omc::3rd::modelica_external_c)
 target_link_libraries(bomc PRIVATE omc::3rd::modelica_io)
 

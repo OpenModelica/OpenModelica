@@ -93,6 +93,38 @@ else() # No corba support requested. Use the stub file.
 endif(OMC_USE_CORBA)
 
 # ######################################################################################################################
+# Library: omcruntime-boot
+add_library(omcruntime-boot STATIC)
+add_library(omc::compiler::runtime-boot ALIAS omcruntime-boot)
+
+target_sources(omcruntime-boot PRIVATE ${OMC_RUNTIIME_SOURCES})
+# No corba for boot lib
+target_sources(omcruntime-boot PRIVATE corbaimpl_stub_omc.c)
+
+target_compile_features(omcruntime-boot PRIVATE cxx_std_11)
+
+# Define OMC_BOOTSTRAPPING for the boot lib.
+target_compile_definitions(omcruntime-boot PRIVATE OMC_BOOTSTRAPPING)
+
+target_link_libraries(omcruntime-boot PUBLIC CURL::libcurl)
+target_link_libraries(omcruntime-boot PUBLIC ${Intl_LIBRARIES})
+target_link_libraries(omcruntime-boot PUBLIC Iconv::Iconv)
+target_link_libraries(omcruntime-boot PUBLIC ${LAPACK_LIBRARIES})
+target_link_libraries(omcruntime-boot PUBLIC omc::simrt::runtime)
+target_link_libraries(omcruntime-boot PUBLIC omc::3rd::lpsolve55)
+target_link_libraries(omcruntime-boot PUBLIC omc::3rd::libzmq)
+target_link_libraries(omcruntime-boot PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
+
+target_include_directories(omcruntime-boot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(omcruntime-boot PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
+
+# uuid is one of the default libs that cmake adds to any target on Win32. On non-Win systems we look for the library and
+# explicitly use it.
+if(NOT WIN32)
+  target_link_libraries(omcruntime-boot PUBLIC ${UUID_LIB})
+endif()
+
+# ######################################################################################################################
 # Library: omcbackendruntime
 add_library(omcbackendruntime STATIC)
 add_library(omc::compiler::backendruntime ALIAS omcbackendruntime)
@@ -127,6 +159,21 @@ target_sources(omcgraphstream PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
 
 target_link_libraries(omcgraphstream PUBLIC omc::simrt::runtime)
 target_link_libraries(omcgraphstream PUBLIC omc::3rd::netstream)
+
+# Remove the dependency of bootstrapping on graphstream lib and remove this. It is not needed for bootstrapping.
+# ######################################################################################################################
+# Library: omcgraphstream-boot
+add_library(omcgraphstream-boot STATIC)
+add_library(omc::compiler::graphstream-boot ALIAS omcgraphstream-boot)
+
+set(OMC_GRAPH_STREAM_SOURCES GraphStreamExt_omc.cpp)
+target_sources(omcgraphstream-boot PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
+
+# Define OMC_BOOTSTRAPPING for the boot lib.
+target_compile_definitions(omcgraphstream-boot PRIVATE OMC_BOOTSTRAPPING)
+
+target_link_libraries(omcgraphstream-boot PUBLIC omc::simrt::runtime)
+target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
 
 
 
