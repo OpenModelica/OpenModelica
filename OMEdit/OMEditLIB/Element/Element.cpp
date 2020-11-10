@@ -2738,6 +2738,13 @@ void Element::referenceElementChanged()
  */
 void Element::referenceElementDeleted()
 {
+#ifdef QT_NO_DEBUG
+  // sanity check to avoid crashes just in release mode
+  if (!(mpGraphicsView && mpGraphicsView->getModelWidget() && mpGraphicsView->getModelWidget()->getLibraryTreeItem())) {
+    return;
+  }
+#endif // #ifdef QT_NO_DEBUG
+
   if (mElementType == Element::Port) {
     setVisible(false);
     if (mpReferenceComponent && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
