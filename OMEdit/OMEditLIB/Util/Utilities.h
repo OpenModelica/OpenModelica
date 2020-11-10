@@ -83,7 +83,8 @@ public slots:
   void showMessage(const QString &message, int alignment = Qt::AlignLeft, const QColor &color = Qt::black)
   {
     QSplashScreen::showMessage(message, alignment, color);
-    qApp->processEvents();
+    // Call repaint() to get the immediate update. Calling repaint() is better than qApp->processEvents() which processes all pending events.
+    repaint();
   }
 };
 
@@ -96,7 +97,10 @@ public slots:
   void showMessage(const QString &message, int timeout = 0)
   {
     QStatusBar::showMessage(message, timeout);
-    qApp->processEvents();
+    /* QStatusBar::showMessage calls update() which schedules a paint event for processing when Qt returns to the main event loop
+     * so we call repaint() to get the immediate update. Calling repaint() is better than qApp->processEvents() which processes all pending events.
+     */
+    repaint();
   }
 };
 
