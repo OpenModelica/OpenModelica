@@ -210,7 +210,7 @@ algorithm
   node := expand(node);
 
   if instPartial or not InstNode.isPartial(node) or Flags.isSet(Flags.NF_API) then
-    node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent);
+    node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent, false);
   end if;
 end instantiate;
 
@@ -737,6 +737,7 @@ function instClass
   input Boolean useBinding;
   input Integer instLevel;
   input InstNode parent = InstNode.EMPTY_NODE();
+  input Boolean isRedeclared;
 protected
   Class cls;
   Modifier outer_mod;
@@ -752,7 +753,7 @@ algorithm
     fail();
   end if;
 
-  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent, instLevel);
+  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent, instLevel, isRedeclared);
 end instClass;
 
 function instClassDef
@@ -763,6 +764,7 @@ function instClassDef
   input output InstNode node;
   input InstNode parent;
   input Integer instLevel;
+  input Boolean isRedeclared;
 protected
   InstNode par, base_node;
   Class inst_cls;
@@ -800,7 +802,9 @@ algorithm
         applyModifier(mod, cls_tree, InstNode.name(node));
 
         // Apply element redeclares.
-        ClassTree.mapRedeclareChains(cls_tree, function redeclareElements(instLevel = instLevel));
+        ClassTree.mapRedeclareChains(cls_tree,
+          function redeclareElements(instLevel = instLevel, isRedeclared = isRedeclared));
+
         // Redeclare classes with redeclare modifiers. Redeclared components could
         // also be handled here, but since each component is only instantiated once
         // it's more efficient to apply the redeclare when instantiating them instead.
@@ -809,12 +813,14 @@ algorithm
         // Instantiate the extends nodes.
         ClassTree.mapExtends(cls_tree,
           function instExtends(attributes = attributes, useBinding = useBinding,
-                               visibility = ExtendsVisibility.PUBLIC, instLevel = instLevel + 1));
+                               visibility = ExtendsVisibility.PUBLIC,
+                               instLevel = instLevel + 1, isRedeclared = isRedeclared));
 
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-                                 originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel + 1));
+                                 originalAttr = NONE(), useBinding = useBinding,
+                                 instLevel = instLevel + 1, isRedeclared = isRedeclared));
 
         // Remove duplicate elements.
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
@@ -837,7 +843,7 @@ algorithm
         attributes := mergeDerivedAttributes(attrs, attributes, parent);
 
         // Instantiate the base class and update the nodes.
-        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, instLevel, par);
+        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, instLevel, par, isRedeclared);
         cls.baseClass := base_node;
         cls.attributes := attributes;
         cls.dims := arrayCopy(cls.dims);
@@ -881,7 +887,7 @@ algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
         node := InstNode.setNodeType(InstNodeType.NORMAL_CLASS(), node);
         node := expand(node);
-        node := instClass(node, outerMod, attributes, useBinding, instLevel, parent);
+        node := instClass(node, outerMod, attributes, useBinding, instLevel, parent, isRedeclared);
         updateComponentType(parent, node);
       then
         ();
@@ -1034,6 +1040,7 @@ function instExtends
   input Boolean useBinding;
   input ExtendsVisibility visibility;
   input Integer instLevel;
+  input Boolean isRedeclared;
 protected
   Class cls, inst_cls;
   ClassTree cls_tree;
@@ -1063,11 +1070,11 @@ algorithm
 
         ClassTree.mapExtends(cls_tree,
           function instExtends(attributes = attributes, useBinding = useBinding,
-                               visibility = vis, instLevel = instLevel));
+                               visibility = vis, instLevel = instLevel, isRedeclared = isRedeclared));
 
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-            originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel));
+            originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel, isRedeclared = isRedeclared));
       then
         ();
 
@@ -1077,7 +1084,7 @@ algorithm
           vis := ExtendsVisibility.DERIVED_PROTECTED;
         end if;
 
-        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, vis, instLevel);
+        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, vis, instLevel, isRedeclared);
         node := InstNode.updateClass(cls, node);
       then
         ();
@@ -1201,6 +1208,7 @@ end redeclareClasses;
 function redeclareElements
   input list<Mutable<InstNode>> chain;
   input Integer instLevel;
+  input Boolean isRedeclared;
 protected
   InstNode node;
   Mutable<InstNode> node_ptr;
@@ -1215,7 +1223,7 @@ algorithm
     node := Mutable.access(node_ptr);
   else
     for comp_ptr in listRest(chain) loop
-      node_ptr := redeclareComponentElement(comp_ptr, node_ptr, instLevel);
+      node_ptr := redeclareComponentElement(comp_ptr, node_ptr, instLevel, isRedeclared);
     end for;
     node := Mutable.access(node_ptr);
   end if;
@@ -1242,13 +1250,14 @@ function redeclareComponentElement
   input Mutable<InstNode> redeclareComp;
   input Mutable<InstNode> replaceableComp;
   input Integer instLevel;
+  input Boolean isRedeclared;
   output Mutable<InstNode> outComp;
 protected
   InstNode rdcl_node, repl_node;
 algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
-  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel);
+  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, NONE(), isRedeclared);
   redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node, instLevel);
   outComp := Mutable.create(rdcl_node);
 end redeclareComponentElement;
@@ -1393,6 +1402,7 @@ function instComponent
   input Boolean useBinding "Ignore the component's binding if false.";
   input Integer instLevel;
   input Option<Component.Attributes> originalAttr = NONE();
+  input Boolean isRedeclared;
 protected
   Component comp;
   SCode.Element def;
@@ -1433,7 +1443,7 @@ algorithm
     InstNode.setModifier(outer_mod, rdcl_node);
     redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node, instLevel);
   else
-    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, instLevel, originalAttr);
+    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, isRedeclared);
   end if;
 end instComponent;
 
@@ -1502,11 +1512,11 @@ algorithm
 
         // Instantiate the type of the component.
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
-          useBinding and not Binding.isBound(binding), parent, node, info, instLevel);
+          useBinding and not Binding.isBound(binding), parent, node, info, instLevel, isRedeclared);
         ty := InstNode.getClass(ty_node);
         res := Class.restriction(ty);
 
-        if not isRedeclared and not Flags.isSet(Flags.NF_API) then
+        if not isRedeclared then
           checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, info);
         end if;
 
@@ -1596,13 +1606,13 @@ function checkPartialComponent
   input SourceInfo info;
 algorithm
   if Restriction.isFunction(res) then
-    if not isPartial then
+    if not isPartial and not Flags.isSet(Flags.NF_API) then
       // The type of a function pointer must be a partial function.
       Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX,
         {AbsynUtil.pathString(InstNode.scopePath(clsNode))}, info);
       fail();
     end if;
-  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER then
+  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER and not Flags.isSet(Flags.NF_API) then
     // The type of a component may not be a partial class.
     Error.addMultiSourceMessage(Error.PARTIAL_COMPONENT_TYPE,
       {AbsynUtil.pathString(InstNode.scopePath(compNode)), InstNode.name(clsNode)},
@@ -1641,7 +1651,7 @@ algorithm
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(originalNode, rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
-  instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, SOME(Component.getAttributes(orig_comp)));
+  instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, SOME(Component.getAttributes(orig_comp)), false);
   rdcl_comp := InstNode.component(rdcl_node);
 
   new_comp := match (orig_comp, rdcl_comp)
@@ -2046,6 +2056,7 @@ function instTypeSpec
   input InstNode parent;
   input SourceInfo info;
   input Integer instLevel;
+  input Boolean isRedeclared;
   output InstNode node;
   output Component.Attributes outAttributes;
 algorithm
@@ -2059,7 +2070,7 @@ algorithm
         end if;
 
         node := expand(node);
-        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel, parent);
+        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel, parent, isRedeclared);
       then
         node;
 
@@ -3285,7 +3296,7 @@ algorithm
     // not part of the flat class.
     if InstNode.isComponent(n) then
       // The components shouldn't have been instantiated yet, so do it here.
-      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0);
+      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), false);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.
