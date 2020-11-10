@@ -15,7 +15,6 @@ CMAKE_TARGET = "Unix Makefiles"
 install: build OMEditLIB/Resources/nls/qm.stamp
 	cp -p $(resourcedir)/*.qm @OMBUILDDIR@/share/omedit/nls/
 	if [ "$(APP)" = ".app" ]; then mkdir -p @OMBUILDDIR@/Applications/ ; cp -rp bin/OMEdit$(APP) @OMBUILDDIR@/Applications/ ; else cp -p bin/OMEdit @OMBUILDDIR@/bin/; fi
-	cp -p bin/$(LIB)$(LIBEXE) @OMBUILDDIR@/lib/@host_short@/omc/
 
 OMEditLIB/Resources/nls/qm.stamp: OMEditLIB/OMEditLIB.pro OMEditLIB/Resources/nls/*.ts
 	$(LRELEASE) $<
