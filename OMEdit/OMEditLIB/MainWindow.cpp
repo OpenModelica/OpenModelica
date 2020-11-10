@@ -210,8 +210,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpPerspectiveTabbar->setTabToolTip(3, tr("Changes to debugging perspective (%1)").arg(pAlgorithmicDebuggingShortcut->key().toString()));
   // change the perspective when perspective tab bar selection is changed
   connect(mpPerspectiveTabbar, SIGNAL(currentChanged(int)), SLOT(perspectiveTabChanged(int)));
-  // Create an object of QStatusBar
-  mpStatusBar = new QStatusBar();
+  // Create an object of StatusBar
+  mpStatusBar = new StatusBar();
   mpStatusBar->setObjectName("statusBar");
   mpStatusBar->setContentsMargins(0, 0, 0, 0);
   // add items to statusbar
