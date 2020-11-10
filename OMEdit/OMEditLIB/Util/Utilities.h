@@ -34,6 +34,7 @@
 
 #include <QApplication>
 #include <QSplashScreen>
+#include <QStatusBar>
 #include <QMdiArea>
 #include <QLineEdit>
 #include <QThread>
@@ -82,6 +83,19 @@ public slots:
   void showMessage(const QString &message, int alignment = Qt::AlignLeft, const QColor &color = Qt::black)
   {
     QSplashScreen::showMessage(message, alignment, color);
+    qApp->processEvents();
+  }
+};
+
+class StatusBar : public QStatusBar
+{
+  Q_OBJECT
+public:
+  StatusBar() : QStatusBar() {}
+public slots:
+  void showMessage(const QString &message, int timeout = 0)
+  {
+    QStatusBar::showMessage(message, timeout);
     qApp->processEvents();
   }
 };

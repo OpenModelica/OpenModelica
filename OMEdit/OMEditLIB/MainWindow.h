@@ -88,6 +88,7 @@ class LibraryTreeItem;
 class GitCommands;
 class CommitChangesDialog;
 class TraceabilityInformationURI;
+class StatusBar;
 class TraceabilityGraphViewWidget;
 class SearchWidget;
 
@@ -137,7 +138,7 @@ public:
   GitCommands* getGitCommands() {return mpGitCommands;}
   CommitChangesDialog* getCommitChangesDialog() {return mpCommitChangesDialog;}
   TraceabilityInformationURI* getTraceabilityInformationURI() {return mpTraceabilityInformationURI;}
-  QStatusBar* getStatusBar() {return mpStatusBar;}
+  StatusBar* getStatusBar() {return mpStatusBar;}
   QProgressBar* getProgressBar() {return mpProgressBar;}
   void showProgressBar() {mpProgressBar->setVisible(true);}
   void hideProgressBar() {mpProgressBar->setVisible(false);}
@@ -298,7 +299,7 @@ private:
   QProgressBar *mpProgressBar;
   Label *mpPositionLabel;
   QTabBar *mpPerspectiveTabbar;
-  QStatusBar *mpStatusBar;
+  StatusBar *mpStatusBar;
   QTimer *mpAutoSaveTimer;
   QShortcut *mpSearchBrowserShortcut;
   // File Menu
