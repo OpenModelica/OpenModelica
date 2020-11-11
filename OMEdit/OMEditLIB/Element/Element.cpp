@@ -590,8 +590,7 @@ bool ElementInfo::isModiferClassRecord(QString modifierName, Element *pElement)
   return result;
 }
 
-Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ElementInfo *pElementInfo,
-                     GraphicsView *pGraphicsView)
+Element::Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ElementInfo *pElementInfo, GraphicsView *pGraphicsView)
   : QGraphicsItem(0), mpReferenceComponent(0), mpParentComponent(0)
 {
   setZValue(2000);
@@ -1893,11 +1892,7 @@ void Element::reDrawElement(bool coOrdinateSystemUpdated)
    * Basically instead of creating an object of class Element we should store the non scene items in some other class.
    */
   mpGraphicsView->removeItem(this);
-  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-    drawModelicaElement();
-  } else if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-    drawOMSElement();
-  }
+  drawElement();
   mpGraphicsView->addItem(this);
   emitChanged();
   updateConnections();
