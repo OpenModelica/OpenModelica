@@ -342,12 +342,13 @@ match ifequation
       else
         <%elseBranch |> e => dumpEEquation(e, options) ;separator="\n"%>
       >>
+    let cmt_str = dumpComment(comment, options)
     <<
     if <%if_cond_str%> then
       <%if_branch_str%>
     <%elseif_str%>
     <%else_str%>
-    end if;
+    end if<%cmt_str%>;
     >>
 end dumpIfEEquation;
 
@@ -405,10 +406,10 @@ match when_equation
       >> ;separator="\n")
     let cmt_str = dumpComment(comment, options)
     <<
-    when <%cond_str%> then<%cmt_str%>
+    when <%cond_str%> then
       <%body_str%>
     <%else_str%>
-    end when;
+    end when<%cmt_str%>;
     >>
 end dumpWhenEEquation;
 
@@ -493,12 +494,12 @@ match if_statement
     let else_branch_str = dumpStatements(elseBranch, options)
     let cmt_str = dumpComment(comment, options)
     <<
-    if <%cond_str%> then<%cmt_str%>
+    if <%cond_str%> then
       <%true_branch_str%>
     <%else_if_str%>
     else
       <%else_branch_str%>
-    end if;
+    end if<%cmt_str%>;
     >>
 end dumpIfStatement;
 
@@ -545,7 +546,7 @@ match while_statement
     <<
     while <%cond_str%> loop
       <%body_str%>
-    end while;
+    end while<%cmt_str%>;
     >>
 end dumpWhileStatement;
 
@@ -564,10 +565,10 @@ match when_statement
       >> ;separator="\n")
     let cmt_str = dumpComment(comment, options)
     <<
-    when <%when_cond_str%> then<%cmt_str%>
+    when <%when_cond_str%> then
       <%when_body_str%>
     <%elsewhen_str%>
-    end when;
+    end when<%cmt_str%>;
     >>
 end dumpWhenStatement;
 
