@@ -162,7 +162,7 @@ void makeLibsAndCache(libs='core') {
   }
 }
 
-void buildOMC(CC, CXX, extraFlags) {
+void buildOMC(CC, CXX, extraFlags, buildCpp) {
   standardSetup()
 
   if (isWindows()) {
@@ -239,10 +239,13 @@ void buildOMC(CC, CXX, extraFlags) {
   } else {
   sh 'autoconf'
   // Note: Do not use -march=native since we might use an incompatible machine in later stages
-  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os --with-cppruntime --without-omc --without-omlibrary --with-omniORB --enable-modelica3d ${extraFlags}"
+  def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
+  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d ${extraFlags}"
   // OMSimulator requires HOME to be set and writeable
-  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omc omc-diff omsimulator"
+  def outputSync = sh(script: "${makeCommand()} --version | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\\+//'", returnStdout: true).toInteger() >= 4 ? "--output-sync=recurse" : ""
+  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} omc omc-diff omsimulator"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
+  // Run sanity tests
   sh '''
   mv build build.sanity-check
   mkdir .sanity-check
@@ -255,15 +258,20 @@ void buildOMC(CC, CXX, extraFlags) {
   ls linearized_model.m
   ls M.fmu
   rm -rf ./M* ./OMCppM* ./linear_M* ./linearized_model.m
-  # do not do this on Mac as it doesn't work yet
-  test `uname` = Darwin || ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
-  test `uname` = Darwin || ./M
-  test `uname` = Darwin || ls M.fmu
-  test `uname` = Darwin || rm -rf ./M* ./OMCppM*
-  cd ..
-  mv build.sanity-check build
-  rm -rf .sanity-check
   '''
+  if (buildCpp) {
+    sh '''
+    cd .sanity-check
+    # do not do this on Mac as it doesn't work yet
+    test `uname` = Darwin || ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
+    test `uname` = Darwin || ./M
+    test `uname` = Darwin || ls M.fmu
+    test `uname` = Darwin || rm -rf ./M* ./OMCppM*
+    cd ..
+    mv build.sanity-check build
+    rm -rf .sanity-check
+    '''
+  }
   sh "cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo"
   }
 }
@@ -432,6 +440,15 @@ def shouldWeBuildMINGW() {
     }
   }
   return params.BUILD_MINGW
+}
+
+def shouldWeBuildCENTOS6() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Build CentOS")) {
+      return true
+    }
+  }
+  return params.BUILD_CENTOS6
 }
 
 def shouldWeRunTests() {
