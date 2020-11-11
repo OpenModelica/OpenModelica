@@ -5770,9 +5770,12 @@ protected function dumpXMLDAEFrontEnd
   output FCore.Cache outCache;
   output FCore.Graph outEnv;
   output DAE.DAElist outDae;
+protected
+  Boolean nfinst = FlagsUtil.set(Flags.SCODE_INST, false);
 algorithm
   (outCache, outEnv, _, outDae) := Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, SymbolTable.getSCode(), inClassName);
   outDae := DAEUtil.transformationsBeforeBackend(outCache,outEnv,outDae);
+  FlagsUtil.set(Flags.SCODE_INST, nfinst);
 end dumpXMLDAEFrontEnd;
 
 protected function dumpXMLDAE " author: fildo
