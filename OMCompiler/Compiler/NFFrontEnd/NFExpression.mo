@@ -310,6 +310,17 @@ public
     end match;
   end isImpureCall;
 
+  function isCallNamed
+    input Expression exp;
+    input String name;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CALL() then Call.isNamed(exp.call, name);
+      else false;
+    end match;
+  end isCallNamed;
+
   function isTrue
     input Expression exp;
     output Boolean isTrue;

@@ -533,6 +533,21 @@ public
     end match;
   end functionName;
 
+  function isNamed
+    input Call call;
+    input String name;
+    output Boolean res;
+  protected
+    Absyn.Path path;
+  algorithm
+    path := functionName(call);
+
+    res := match path
+      case Absyn.IDENT() then path.name == name;
+      else false;
+    end match;
+  end isNamed;
+
   function arguments
     input NFCall call;
     output list<Expression> arguments;
@@ -1871,6 +1886,11 @@ protected
     InstNode iter;
   algorithm
     for i in inIters loop
+      if isNone(i.range) then
+        Error.assertion(false, getInstanceName() + ": missing support for implicit iteration range", sourceInfo());
+        fail();
+      end if;
+
       range := Inst.instExp(Util.getOption(i.range), outScope, info);
       (outScope, iter) := Inst.addIteratorToScope(i.name, outScope, info);
       outIters := (iter, range) :: outIters;

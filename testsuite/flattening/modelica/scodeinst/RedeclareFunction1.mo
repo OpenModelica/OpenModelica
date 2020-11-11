@@ -13,7 +13,7 @@ function f
   input Real x;
   output Real y;
 algorithm
-  x := y;
+  y := x;
 end f;
 
 model RedeclareFunction1
@@ -22,14 +22,7 @@ model RedeclareFunction1
 end RedeclareFunction1;
 
 // Result:
-// function RedeclareFunction1.P.f
-//   input Real x;
-//   output Real y;
-// algorithm
-//   x := y;
-// end RedeclareFunction1.P.f;
-//
 // class RedeclareFunction1
-//   Real x = RedeclareFunction1.P.f(4);
+//   Real x = 4.0;
 // end RedeclareFunction1;
 // endResult

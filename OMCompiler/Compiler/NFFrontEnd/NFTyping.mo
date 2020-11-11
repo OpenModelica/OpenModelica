@@ -2830,11 +2830,12 @@ algorithm
       MatchKind mk;
       ExpOrigin.Type next_origin, cond_origin;
       SourceInfo info;
+      Variability var;
 
     case Statement.ASSIGNMENT()
       algorithm
         info := ElementSource.getInfo(st.source);
-        (e1, ty1) := typeExp(st.lhs, ExpOrigin.setFlag(origin, ExpOrigin.LHS), info);
+        (e1, ty1, var) := typeExp(st.lhs, ExpOrigin.setFlag(origin, ExpOrigin.LHS), info);
         (e2, ty2) := typeExp(st.rhs, ExpOrigin.setFlag(origin, ExpOrigin.RHS), info);
 
         // TODO: Should probably only be allowUnknown = true if in a function.
@@ -2846,6 +2847,8 @@ algorithm
              Type.toString(ty1), Type.toString(ty2)}, info);
           fail();
         end if;
+
+        checkAssignment(e1, e2, var, origin, info);
       then
         Statement.ASSIGNMENT(e1, e2, ty3, st.source);
 
@@ -2945,6 +2948,59 @@ algorithm
   end match;
 end typeStatement;
 
+function checkAssignment
+  input Expression lhsExp;
+  input Expression rhsExp;
+  input Variability lhsVar;
+  input ExpOrigin.Type origin;
+  input SourceInfo info;
+algorithm
+  () := match lhsExp
+    local
+      Integer i;
+
+    case Expression.TUPLE()
+      algorithm
+        i := 1;
+        for e in lhsExp.elements loop
+          checkAssignment(e, Expression.tupleElement(rhsExp, lhsExp.ty, i),
+                          Expression.variability(e), origin, info);
+          i := i + 1;
+        end for;
+      then
+        ();
+
+    case Expression.CREF() guard ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION)
+      algorithm
+        // Give an error if trying to assign to an input inside a function.
+        if InstNode.isInput(ComponentRef.node(lhsExp.cref)) then
+          Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR,
+            {"input", ComponentRef.toString(lhsExp.cref)}, info);
+          fail();
+        end if;
+      then
+        ();
+
+    else
+      algorithm
+        // Give an error if assigning to a constant, or a parameter that's not
+        // inside an initial algorithm.
+        if lhsVar < Variability.DISCRETE then
+          if lhsVar == Variability.CONSTANT then
+            Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR,
+              {Expression.toString(lhsExp), Expression.toString(rhsExp)}, info);
+            fail();
+          elseif not ExpOrigin.flagSet(origin, ExpOrigin.INITIAL) then
+            Error.addSourceMessage(Error.ASSIGN_PARAM_ERROR,
+              {Expression.toString(lhsExp), Expression.toString(rhsExp)}, info);
+            fail();
+          end if;
+        end if;
+      then
+        ();
+  end match;
+end checkAssignment;
+
 function typeEqualityEquation
   input Expression lhsExp;
   input Expression rhsExp;
@@ -2997,7 +3053,11 @@ algorithm
   info := ElementSource.getInfo(source);
   (condition, ty, variability) := typeExp(condition, origin, info);
 
-  ety := if allowVector then Type.arrayElementType(ty) else ty;
+  if allowVector and Type.isArray(ty) then
+    ety := Type.unliftArray(ty);
+  else
+    ety := ty;
+  end if;
 
   if not (Type.isBoolean(ety) or (allowClock and Type.isClock(ety))) then
     Error.addSourceMessage(errorMsg,
@@ -3076,6 +3136,11 @@ algorithm
     (cond, ty, var) := typeCondition(cond, origin, source,
       Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true, allowClock = true);
 
+    if not checkWhenInitial(cond) then
+      Error.addSourceMessage(Error.INITIAL_CALL_WARNING,
+          {Expression.toString(cond)}, ElementSource.getInfo(source));
+    end if;
+
     if Type.isClock(ty) then
       if listLength(branches) <> 1 then
         if referenceEq(branch, listHead(branches)) then
@@ -3096,6 +3161,30 @@ algorithm
 
   whenEq := Equation.WHEN(listReverseInPlace(accum_branches), source);
 end typeWhenEquation;
+
+function checkWhenInitial
+  "Checks that initial() is only used as either initial() or
+   {..., initial(), ...} in a when-equation condition."
+  input Expression condition;
+  output Boolean invalid;
+algorithm
+  invalid := match condition
+    case Expression.ARRAY()
+      algorithm
+        for e in condition.elements loop
+          if checkWhenInitial(e) then
+            invalid := true;
+            return;
+          end if;
+        end for;
+      then
+        false;
+
+    else not Expression.containsShallow(condition,
+      function Expression.contains(func = function Expression.isCallNamed(name = "initial")));
+
+  end match;
+end checkWhenInitial;
 
 function typeOperatorArg
   input output Expression arg;

@@ -661,7 +661,7 @@ public constant ErrorTypes.Message EACH_ON_NON_ARRAY = ErrorTypes.MESSAGE(292, E
 public constant ErrorTypes.Message BUILTIN_EXTENDS_INVALID_ELEMENTS = ErrorTypes.MESSAGE(293, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("A class extending from builtin type %s may not have other elements."));
 public constant ErrorTypes.Message INITIAL_CALL_WARNING = ErrorTypes.MESSAGE(294, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("The standard says that initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition %s."));
+  Gettext.gettext("initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition ‘%s‘."));
 public constant ErrorTypes.Message RANGE_TYPE_MISMATCH = ErrorTypes.MESSAGE(295, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Type mismatch in range: '%s' of type\n  %s\nis not type compatible with '%s' of type\n  %s"));
 public constant ErrorTypes.Message RANGE_TOO_SMALL_STEP = ErrorTypes.MESSAGE(296, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -826,6 +826,8 @@ public constant ErrorTypes.Message PARTIAL_FUNCTION_CALL = ErrorTypes.MESSAGE(37
   Gettext.gettext("Called function ‘%s‘ is partial."));
 public constant ErrorTypes.Message TOO_MANY_TYPE_VARS_IN_CALL = ErrorTypes.MESSAGE(377, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Too many type variables given in call to ‘%s‘."));
+public constant ErrorTypes.Message BREAK_OUTSIDE_LOOP = ErrorTypes.MESSAGE(378, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("‘break' may only be used in a while- or for-loop."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

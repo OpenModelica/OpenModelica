@@ -26,6 +26,9 @@ Assert3.mo \
 AssertInvalid1.mo \
 AssertInvalid2.mo \
 AssertInvalid3.mo \
+AssignConstant1.mo \
+AssignInput1.mo \
+AssignParameter1.mo \
 Binding1.mo \
 BindingArray1.mo \
 BindingArray2.mo \
@@ -44,6 +47,8 @@ bindings1.mo \
 bindings4.mo \
 bindings7.mo \
 BooleanDim.mo \
+Break1.mo \
+Break2.mo \
 BuiltinAttribute1.mo \
 BuiltinAttribute2.mo \
 BuiltinAttribute3.mo \
@@ -808,6 +813,8 @@ ReinitInvalid3.mo \
 ReinitInvalid4.mo \
 ReinitInvalid5.mo \
 ReinitInvalid6.mo \
+Return1.mo \
+Return2.mo \
 Size1.mo \
 Size2.mo \
 Size3.mo \
@@ -905,6 +912,8 @@ WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
 WhenIllegalContext4.mo \
 WhenInitial1.mo \
+WhenInitial2.mo \
+WhenInitial3.mo \
 WhenInvalidEquation1.mo \
 WhenNested1.mo \
 WhenNested2.mo \
