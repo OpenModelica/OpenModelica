@@ -3199,10 +3199,23 @@ algorithm
         Statement.WHILE(exp1, stmtl, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_RETURN()
-      then Statement.RETURN(makeSource(scodeStmt.comment, scodeStmt.info));
+      algorithm
+        if not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+          Error.addSourceMessage(Error.RETURN_OUTSIDE_FUNCTION, {}, scodeStmt.info);
+          fail();
+        end if;
+      then
+        Statement.RETURN(makeSource(scodeStmt.comment, scodeStmt.info));
 
     case SCode.Statement.ALG_BREAK()
-      then Statement.BREAK(makeSource(scodeStmt.comment, scodeStmt.info));
+      algorithm
+        if not (ExpOrigin.flagSet(origin, ExpOrigin.FOR) or
+                ExpOrigin.flagSet(origin, ExpOrigin.WHILE)) then
+          Error.addSourceMessage(Error.BREAK_OUTSIDE_LOOP, {}, scodeStmt.info);
+          fail();
+        end if;
+      then
+        Statement.BREAK(makeSource(scodeStmt.comment, scodeStmt.info));
 
     case SCode.Statement.ALG_FAILURE()
       algorithm
