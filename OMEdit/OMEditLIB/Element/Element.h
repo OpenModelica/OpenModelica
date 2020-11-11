@@ -195,8 +195,7 @@ public:
     Extend,  /* Inherited Element. */
     Port  /* Port Element. */
   };
-  Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ElementInfo *pElementInfo,
-            GraphicsView *pGraphicsView);
+  Element(QString name, LibraryTreeItem *pLibraryTreeItem, QString annotation, QPointF position, ElementInfo *pElementInfo, GraphicsView *pGraphicsView);
   Element(LibraryTreeItem *pLibraryTreeItem, Element *pParentElement);
   Element(Element *pElement, Element *pParentElement, Element *pRootParentElement);
   Element(Element *pElement, GraphicsView *pGraphicsView);

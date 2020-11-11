@@ -673,10 +673,13 @@ void ShapeAnnotation::applyTransformation()
   QPointF origin = mOrigin;
 
   // Only apply the extends coordinate extents on the shapes and not on connection, transition etc.
+  // Don't apply it also on shapes inside Element
   // if the extends have some new coordinate extents then use it to scale the shape
   LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
   GraphicsView *pGraphicsView = mpGraphicsView ? mpGraphicsView : mpReferenceShapeAnnotation->getGraphicsView();
-  if (pGraphicsView && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType) && mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
+  if (!mpParentComponent && pGraphicsView
+      && !(pLineAnnotation && pLineAnnotation->getLineType() != LineAnnotation::ShapeType)
+      && mpReferenceShapeAnnotation && mpReferenceShapeAnnotation->getGraphicsView()) {
     QList<QPointF> extendsCoOrdinateExtents = getExtentsForInheritedShapeFromIconDiagramMap(pGraphicsView, mpReferenceShapeAnnotation);
 
     qreal left = pGraphicsView->mMergedCoOrdinateSystem.getLeft();
