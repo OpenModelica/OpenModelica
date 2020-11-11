@@ -1159,6 +1159,26 @@ algorithm
       then
         v;
 
+    case ("getImportedNames",{Values.CODE(Absyn.C_TYPENAME(path))})
+      algorithm
+        (vals, cvars) := getImportedNames(Interactive.getPathedClassInProgram(path, SymbolTable.getAbsyn()));
+        v := Values.TUPLE({ValuesUtil.makeArray(vals),ValuesUtil.makeArray(cvars)});
+      then
+        v;
+
+    case ("getImportedNames",_)
+      then (Values.TUPLE({ValuesUtil.makeArray({}),ValuesUtil.makeArray({})}));
+
+    case ("getMMfileTotalDependencies",{Values.STRING(str1), Values.STRING(str2)})
+      algorithm
+        strs := getMMfileTotalDependencies(str1, str2);
+        vals := list(Values.STRING(s) for s in strs);
+      then
+        ValuesUtil.makeArray(vals);
+
+    case ("getMMfileTotalDependencies",_)
+      then ValuesUtil.makeArray({});
+
     case ("loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b),Values.STRING(str),Values.BOOL(requireExactVersion)})
       algorithm
         p := SymbolTable.getAbsyn();
@@ -3227,6 +3247,161 @@ algorithm
 
   end matchcontinue;
 end generateSeparateCode;
+
+
+public function getImportedNames
+  input Absyn.Class inClass;
+  output list<Values.Value> outPublicImports;
+  output list<Values.Value> outProtectedImports;
+protected
+  String ident;
+  list<Absyn.Import> pub_imports_list , pro_imports_list;
+algorithm
+  (pub_imports_list , pro_imports_list) := getImportList(inClass);
+
+  outPublicImports := {};
+  for imp in pub_imports_list loop
+     ident := AbsynUtil.pathFirstIdent(AbsynUtil.importPath(imp));
+     if ident <> "MetaModelica" then
+       outPublicImports := Values.STRING(ident)::outPublicImports;
+     end if;
+  end for;
+
+  outProtectedImports := {};
+  for imp in pro_imports_list loop
+     ident := AbsynUtil.pathFirstIdent(AbsynUtil.importPath(imp));
+     if ident <> "MetaModelica" then
+       outProtectedImports := Values.STRING(ident)::outProtectedImports;
+     end if;
+  end for;
+end getImportedNames;
+
+public function getImportList
+"Counts the number of Import sections in a class."
+  input Absyn.Class inClass;
+  input output list<Absyn.Import> pub_imports_list = {};
+  input output list<Absyn.Import> pro_imports_list = {};
+algorithm
+  () := match (inClass)
+    local
+      list<Absyn.ClassPart> parts;
+
+    case Absyn.CLASS(body = Absyn.PARTS(classParts = parts)) algorithm
+      for part in parts loop
+        (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
+      end for;
+    then ();
+
+    // check also the case model extends X end X;
+    case Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)) algorithm
+      for part in parts loop
+        (pub_imports_list, pro_imports_list) := getImportsInClassPart(part, pub_imports_list, pro_imports_list);
+      end for;
+    then ();
+
+    case Absyn.CLASS(body = Absyn.DERIVED()) then ();
+  end match;
+end getImportList;
+
+protected function getImportsInClassPart
+  input Absyn.ClassPart inAbsynClassPart;
+  input output list<Absyn.Import> pub_imports_list;
+  input output list<Absyn.Import> pro_imports_list;
+algorithm
+  () := matchcontinue (inAbsynClassPart)
+    local
+      list<Absyn.ElementItem> els;
+    case Absyn.PUBLIC(contents = els) algorithm
+      for elem in els loop
+        pub_imports_list := getImportsInElementItem(elem, pub_imports_list);
+      end for;
+    then ();
+
+    case Absyn.PROTECTED(contents = els) algorithm
+      for elem in els loop
+        pro_imports_list := getImportsInElementItem(elem, pro_imports_list);
+      end for;
+    then ();
+
+    else ();
+
+  end matchcontinue;
+end getImportsInClassPart;
+
+protected function getImportsInElementItem
+"Helper function to getImportCount"
+  input Absyn.ElementItem inAbsynElementItem;
+  input output list<Absyn.Import> imports_list;
+algorithm
+  () := matchcontinue inAbsynElementItem
+    local
+      Absyn.Import import_;
+      Absyn.Class class_;
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.IMPORT(import_ = import_)))
+      algorithm
+        imports_list := import_::imports_list;
+      then ();
+
+    case Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = class_)))
+      algorithm
+        // imports_list := getImportList(class_, get_protected, imports_list);
+      then ();
+
+    else ();
+  end matchcontinue;
+end getImportsInElementItem;
+
+protected function getMMfileTotalDependencies
+  input String in_package_name;
+  input String public_imports_dir;
+  output list<String> total_pub_imports = {};
+protected
+  Absyn.Class package_class;
+  list<Absyn.Import> pub_imports_list , pro_imports_list;
+  String imp_ident;
+algorithm
+  package_class := Interactive.getPathedClassInProgram(Absyn.IDENT(in_package_name), SymbolTable.getAbsyn());
+
+  (pub_imports_list , pro_imports_list) := getImportList(package_class);
+
+  for imp in pub_imports_list loop
+   imp_ident := AbsynUtil.pathFirstIdent(AbsynUtil.importPath(imp));
+   if imp_ident <> "MetaModelica" then
+     total_pub_imports := getMMfilePublicDependencies(imp_ident, public_imports_dir, total_pub_imports);
+   end if;
+  end for;
+
+  for imp in pro_imports_list loop
+   imp_ident := AbsynUtil.pathFirstIdent(AbsynUtil.importPath(imp));
+   if imp_ident <> "MetaModelica" then
+     total_pub_imports := getMMfilePublicDependencies(imp_ident, public_imports_dir, total_pub_imports);
+   end if;
+  end for;
+
+end getMMfileTotalDependencies;
+
+protected function getMMfilePublicDependencies
+  input String in_package_name;
+  input String public_imports_dir;
+  input output list<String> packages;
+protected
+  String dep_public_imports_file, pub_imports_total;
+algorithm
+  if listMember(in_package_name, packages) then
+    return;
+  end if;
+
+  packages := in_package_name::packages;
+
+  dep_public_imports_file := public_imports_dir + "/" + in_package_name + ".public.imports";
+  pub_imports_total := System.readFile(dep_public_imports_file);
+
+  for pub_imp in System.strtok(pub_imports_total, ";") loop
+    packages := getMMfilePublicDependencies(pub_imp, public_imports_dir, packages);
+  end for;
+
+end getMMfilePublicDependencies;
 
 annotation(__OpenModelica_Interface="backend");
 end CevalScript;

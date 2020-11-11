@@ -12,13 +12,10 @@ if(NOT WIN32)
   find_library(UUID_LIB NAMES uuid REQUIRED)
 endif()
 
-# ######################################################################################################################
-# Library: omcruntime
-add_library(omcruntime STATIC)
-add_library(omc::compiler::runtime ALIAS omcruntime)
 
 set(OMC_RUNTIIME_SOURCES
     Error_omc.cpp
+    Dynload_omc.cpp
     Print_omc.c
     ErrorMessage.cpp
     System_omc
@@ -37,6 +34,12 @@ set(OMC_RUNTIIME_SOURCES
     ptolemyio_omc.cpp
     SimulationResults_omc.c
     systemimplmisc.cpp)
+
+
+# ######################################################################################################################
+# Library: omcruntime
+add_library(omcruntime STATIC)
+add_library(omc::compiler::runtime ALIAS omcruntime)
 
 target_sources(omcruntime PRIVATE ${OMC_RUNTIIME_SOURCES})
 target_compile_features(omcruntime PRIVATE cxx_std_11)
@@ -90,6 +93,38 @@ else() # No corba support requested. Use the stub file.
 endif(OMC_USE_CORBA)
 
 # ######################################################################################################################
+# Library: omcruntime-boot
+add_library(omcruntime-boot STATIC)
+add_library(omc::compiler::runtime-boot ALIAS omcruntime-boot)
+
+target_sources(omcruntime-boot PRIVATE ${OMC_RUNTIIME_SOURCES})
+# No corba for boot lib
+target_sources(omcruntime-boot PRIVATE corbaimpl_stub_omc.c)
+
+target_compile_features(omcruntime-boot PRIVATE cxx_std_11)
+
+# Define OMC_BOOTSTRAPPING for the boot lib.
+target_compile_definitions(omcruntime-boot PRIVATE OMC_BOOTSTRAPPING)
+
+target_link_libraries(omcruntime-boot PUBLIC CURL::libcurl)
+target_link_libraries(omcruntime-boot PUBLIC ${Intl_LIBRARIES})
+target_link_libraries(omcruntime-boot PUBLIC Iconv::Iconv)
+target_link_libraries(omcruntime-boot PUBLIC ${LAPACK_LIBRARIES})
+target_link_libraries(omcruntime-boot PUBLIC omc::simrt::runtime)
+target_link_libraries(omcruntime-boot PUBLIC omc::3rd::lpsolve55)
+target_link_libraries(omcruntime-boot PUBLIC omc::3rd::libzmq)
+target_link_libraries(omcruntime-boot PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
+
+target_include_directories(omcruntime-boot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(omcruntime-boot PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
+
+# uuid is one of the default libs that cmake adds to any target on Win32. On non-Win systems we look for the library and
+# explicitly use it.
+if(NOT WIN32)
+  target_link_libraries(omcruntime-boot PUBLIC ${UUID_LIB})
+endif()
+
+# ######################################################################################################################
 # Library: omcbackendruntime
 add_library(omcbackendruntime STATIC)
 add_library(omc::compiler::backendruntime ALIAS omcbackendruntime)
@@ -101,7 +136,6 @@ set(OMC_BACKENDRUNTIIME_SOURCES
     BackendDAEEXT_omc.cpp
     matching.c
     matching_cheap.c
-    Dynload_omc.cpp
     FMI_omc.c
     cJSON.c)
 
@@ -125,3 +159,109 @@ target_sources(omcgraphstream PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
 
 target_link_libraries(omcgraphstream PUBLIC omc::simrt::runtime)
 target_link_libraries(omcgraphstream PUBLIC omc::3rd::netstream)
+
+# Remove the dependency of bootstrapping on graphstream lib and remove this. It is not needed for bootstrapping.
+# ######################################################################################################################
+# Library: omcgraphstream-boot
+add_library(omcgraphstream-boot STATIC)
+add_library(omc::compiler::graphstream-boot ALIAS omcgraphstream-boot)
+
+set(OMC_GRAPH_STREAM_SOURCES GraphStreamExt_omc.cpp)
+target_sources(omcgraphstream-boot PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
+
+# Define OMC_BOOTSTRAPPING for the boot lib.
+target_compile_definitions(omcgraphstream-boot PRIVATE OMC_BOOTSTRAPPING)
+
+target_link_libraries(omcgraphstream-boot PUBLIC omc::simrt::runtime)
+target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
+
+
+
+
+
+
+
+
+
+
+################################################################################
+# This is a lazy apporach to generating runtime/config.unix.h and Compiler/Util/Autoconf.mo
+# Needs to be refactorted quite a bit. The variable names should be updated to be more
+# unique and descriptive. 
+# However, If I do that I need to update the .in files which means the normal compilation is
+# also affected. As a result I would have to change a few things since many things depend on
+# the generated output files. For now just mimic the old compilation.
+
+
+set(SHREXT ${CMAKE_SHARED_LIBRARY_SUFFIX})
+string(TOLOWER ${CMAKE_SYSTEM_NAME} OMC_TARGET_SYSTEM_NAME)
+omc_add_to_report(OMC_TARGET_SYSTEM_NAME)
+set(OPENMODELICA_SPEC_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
+
+if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+  set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}64")
+else() 
+  set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
+endif()
+
+set(host_short ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
+
+set(RUNTIMECC ${CMAKE_C_COMPILER})
+set(CC ${CMAKE_C_COMPILER})
+set(CXX ${CMAKE_CXX_COMPILER})
+
+find_package(OpenMP)
+if(OpenMP_FOUND)
+  set(OMPCFLAGS "-fopenmp")
+endif()
+
+set(LPSOLVEINC "lpsolve/lp_lib.h")
+
+if(LAPACK_FOUND)
+  set(NO_LAPACK "#define HAVE_LAPACK_DEPRECATED 1")
+endif()
+
+# set(prefix ${CMAKE_INSTALL_PREFIX})
+set(prefix "")
+
+find_package(Git)
+execute_process(COMMAND
+  ${GIT_EXECUTABLE} describe --match "v*.*" --always
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE SOURCE_REVISION
+  ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(OpenMP_FOUND)
+  set(CONFIG_WITH_OPENMP 1)
+else()
+  set(CONFIG_WITH_OPENMP 0)
+endif()
+
+set(WITH_UMFPACK "#define WITH_UMFPACK")
+set(WITH_HWLOC 0)
+set(WITH_UUID "#define WITH_LIBUUID 1")
+
+
+set(USE_GRAPH 0)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
+
+
+# Generate Autoconf.mo here since we have some of the variables already defined for config.unix.h above. 
+
+if(WIN32)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.omdev.mingw ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo COPY_ONLY)
+else()
+  check_c_compiler_flag("-Wl,-Bstatic  -Wl,-Bdynamic" BSTATIC_INT)
+  if(BSTATIC_INT)
+    set(BSTATIC "true")
+  else()
+    set(BSTATIC "false")
+  endif()
+
+  set(CONFIG_OS ${OMC_TARGET_SYSTEM_NAME})
+  set(MAKE ${CMAKE_MAKE_PROGRAM})
+ 
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+endif()

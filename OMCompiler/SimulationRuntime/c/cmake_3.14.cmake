@@ -38,3 +38,12 @@ target_sources(OpenModelicaFMIRuntimeC PRIVATE ${OMC_SIMRT_FMI_SOURCES})
 
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib::static)
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::simrt::runtime)
+
+
+
+# Quick and INCOMPLETE generation of RuntimeSources.mo
+set(DGESV_FILES \"\")
+set(LS_FILES \"\")
+set(MIXED_FILES \"\")
+set(NLS_FILESCMINPACK_FILES \"\")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo.cmake ${CMAKE_CURRENT_SOURCE_DIR}/RuntimeSources.mo)

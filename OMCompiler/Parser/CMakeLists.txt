@@ -49,16 +49,17 @@ add_library(omc::parser-boot ALIAS omparse-boot)
 
 target_sources(omparse-boot PRIVATE ${OM_PARSE_SOURCES})
 
-target_link_libraries(omparse-boot PUBLIC Intl)
-target_link_libraries(omparse-boot PUBLIC omc::compiler::runtime)
+target_link_libraries(omparse-boot PUBLIC ${Intl_LIBRARIES})
+target_link_libraries(omparse-boot PUBLIC omc::compiler::runtime-boot)
 target_link_libraries(omparse-boot PUBLIC omc::simrt::runtime)
 target_link_libraries(omparse-boot PUBLIC omc::3rd::omantlr3)
 
 # Define OMC_BOOTSTRAPPING for the boot lib.
 target_compile_definitions(omparse-boot PRIVATE OMC_BOOTSTRAPPING)
 
-# To find the generated antlr headers. SYSTEM to disable warnings on the generated code.
+# # to find the generated antlr headers
+# # SYSTEM to disable warnings on the generated code.
 target_include_directories(omparse-boot SYSTEM PRIVATE ${GNERATED_DIRECTORY})
 target_include_directories(omparse-boot PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_include_directories(omparse-boot PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
+target_include_directories(omparse-boot PRIVATE ${OMCompiler_SOURCE_DIR}) #for revision.h

@@ -298,7 +298,6 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCode
 
 
 
-# omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenModelica.tpl
-#                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphvizDump.tpl)
+omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenModelica.tpl)
 
 

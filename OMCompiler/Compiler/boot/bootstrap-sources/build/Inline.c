@@ -1,7 +1,7 @@
 #ifdef OMC_BASE_FILE
 #define OMC_FILE OMC_BASE_FILE
 #else
-#define OMC_FILE "/home/per/workspace/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Inline.c"
+#define OMC_FILE "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/boot/build/tmp/Inline.c"
 #endif
 #include "omc_simulation_settings.h"
 #include "Inline.h"
@@ -78,10 +78,10 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT26,33,_OMC_LIT26_data);
 #define _OMC_LIT27_data "Unknown element: "
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT27,17,_OMC_LIT27_data);
 #define _OMC_LIT27 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT27)
-#define _OMC_LIT28_data "/home/per/workspace/OpenModelica/OMCompiler/Compiler/FrontEnd/Inline.mo"
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT28,71,_OMC_LIT28_data);
+#define _OMC_LIT28_data "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/FrontEnd/Inline.mo"
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT28,67,_OMC_LIT28_data);
 #define _OMC_LIT28 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT28)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT29_6,1600969611.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT29_6,1602842898.0);
 #define _OMC_LIT29_6 MMC_REFREALLIT(_OMC_LIT_STRUCT29_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT29,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT28,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1144)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1144)),MMC_IMMEDIATE(MMC_TAGFIXNUM(99)),_OMC_LIT29_6}};
 #define _OMC_LIT29 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT29)
