@@ -1543,39 +1543,39 @@ void ShapeAnnotation::cornerItemPressed(const int index)
  */
 void ShapeAnnotation::cornerItemReleased(const bool changed)
 {
-  Q_ASSERT(!mOldAnnotation.isEmpty());
+  assert(!mOldAnnotation.isEmpty());
 
   if (changed) {
     ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
     LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
 
-    if (pLineAnnotation) {
-      if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+      if (pLineAnnotation) {
         pLineAnnotation->updateOMSConnection();
         pModelWidget->createOMSimulatorUndoCommand(QString("Update OMS Connection connect(%1, %2)").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName()));
         pModelWidget->updateModelText();
-      } else {
-        if (pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-          manhattanizeShape(false);
-          removeRedundantPointsGeometriesAndCornerItems();
-          // Call getOMCShapeAnnotation() after manhattanizeShape() and removeRedundantPointsGeometriesAndCornerItems() to get a correct new annotation
-          QString newAnnotation = getOMCShapeAnnotation();
-          pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
-        } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
-          manhattanizeShape(false);
-          removeRedundantPointsGeometriesAndCornerItems();
-          QString newAnnotation = getOMCShapeAnnotation();
-          pModelWidget->getUndoStack()->push(new UpdateTransitionCommand(pLineAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
-                                                                         pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
-                                                                         mOldAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
-                                                                         pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(), newAnnotation));
-        } else {
-          QString newAnnotation = getOMCShapeAnnotation();
-          pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, mOldAnnotation, newAnnotation));
-          pModelWidget->updateClassAnnotationIfNeeded();
-        }
-        pModelWidget->updateModelText();
       }
+    } else {
+      if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+        manhattanizeShape(false);
+        removeRedundantPointsGeometriesAndCornerItems();
+        // Call getOMCShapeAnnotation() after manhattanizeShape() and removeRedundantPointsGeometriesAndCornerItems() to get a correct new annotation
+        QString newAnnotation = getOMCShapeAnnotation();
+        pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
+      } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+        manhattanizeShape(false);
+        removeRedundantPointsGeometriesAndCornerItems();
+        QString newAnnotation = getOMCShapeAnnotation();
+        pModelWidget->getUndoStack()->push(new UpdateTransitionCommand(pLineAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
+                                                                       pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
+                                                                       mOldAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
+                                                                       pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(), newAnnotation));
+      } else {
+        QString newAnnotation = getOMCShapeAnnotation();
+        pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, mOldAnnotation, newAnnotation));
+        pModelWidget->updateClassAnnotationIfNeeded();
+      }
+      pModelWidget->updateModelText();
     }
   } else {
     parseShapeAnnotation(mOldAnnotation);
