@@ -1,7 +1,6 @@
 ModelicaCompliance.Algorithms.For.RealRange
 ModelicaCompliance.Algorithms.For.ShadowedIterator
 ModelicaCompliance.Algorithms.For.StringRange
-ModelicaCompliance.Algorithms.For.VarArrayRange
 ModelicaCompliance.Arrays.Functions.Size.ArrayDimSize4
 ModelicaCompliance.Arrays.Indexing.EnumArrayInvalidIndexing
 ModelicaCompliance.Classes.Balancing.CorrectBalance3
