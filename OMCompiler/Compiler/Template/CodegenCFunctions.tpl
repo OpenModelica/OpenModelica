@@ -5293,7 +5293,7 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
                     >>
                   else
                     <<
-                    (*<%arrayType%>_element_addr<%match listLength(crefSubs(cr)) case 1 case 2 then subsLenStr%>(&<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>))
+                    <%arrayType%>_get<%match listLength(crefSubs(cr)) case 1 case 2 then subsLenStr%>(<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>)
                     >>
               case FUNCTION_CONTEXT(__) then
                 <<
