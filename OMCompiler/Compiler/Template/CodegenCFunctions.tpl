@@ -2224,7 +2224,7 @@ case var as VARIABLE(__) then
     let &preExp = buffer ""
     let params = (arr.array |> e hasindex i1 fromindex 1 =>
       let prefix = if arr.scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
-      '(*((<%rec_name%>*)generic_array_element_addr1(&<%varName%>, sizeof(<%rec_name%>), <%i1%>))) = <%prefix%><%daeExp(e, contextFunction, &preExp, &varDecls, &auxFunction)%>;'
+      '<%rec_name%>_array_get(<%varName%>, 1, <%i1%>) = <%prefix%><%daeExp(e, contextFunction, &preExp, &varDecls, &auxFunction)%>;'
     ;separator="\n")
     <<
     <%preExp%>
@@ -4598,7 +4598,7 @@ template contextCrefOld(ComponentRef cr, Context context, Text &auxFunction, Int
       let dimsLenStr = listLength(crefSubs(cr))
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction) ; separator=", ")
       <<
-      ((<%rec_name%>*)(generic_array_element_addr(&_<%ident%>, sizeof(<%rec_name%>), <%dimsLenStr%>, <%dimsValuesStr%>)))-><%contextCrefNoPrevExp(componentRef, context, &auxFunction)%>
+      <%rec_name%>_array_get(_<%ident%>, <%dimsLenStr%>, <%dimsValuesStr%>)-><%contextCrefNoPrevExp(componentRef, context, &auxFunction)%>
       >>
     else "_" + System.unquoteIdentifier(crefStr(cr))
     )
@@ -5287,9 +5287,8 @@ template daeExpCrefRhsFunContext(Exp ecr, Context context, Text &preExp,
                 match ty
                   case (T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))
                   case (T_COMPLEX(complexClassType = record_state)) then
-                    let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
                     <<
-                     (*((<%rec_name%>*)(generic_array_element_addr(&<%arrName%>, sizeof(<%rec_name%>), <%subsLenStr%>, <%subsValuesStr%>))))
+                     <%arrayType%>_get(<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>)
                     >>
                   else
                     <<
@@ -7096,7 +7095,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          '*((<%rec_name%>*)generic_array_element_addr1(&<%res%>, sizeof(<%rec_name%>), <%arrIndex%>++)) = <%reductionBodyExpr%>;'
+          '<%rec_name%>_array_get(<%res%>, 1, <%arrIndex%>++) = <%reductionBodyExpr%>;'
         case T_ARRAY(__) then
           let tmp = tempDecl("index_spec_t", &varDecls)
           let nridx_str = intAdd(1,listLength(dims))
@@ -7222,7 +7221,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           let addr = match iter.ty
             case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
               let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-              '*((<%rec_name%>*)generic_array_element_addr1(&<%loopVar%>, sizeof(<%rec_name%>), <%firstIndex%>++))'
+              '<%rec_name%>_array_get(<%loopVar%>, 1, <%firstIndex%>++)'
             else
               '<%arrayType%>_get1(<%loopVar%>, 1, <%firstIndex%>++)'
           (if stringEq(guardCond,"") then
