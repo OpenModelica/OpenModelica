@@ -1607,7 +1607,7 @@ void OMSimulatorUndoCommand::redoInternal()
   // Get the model LibraryTreeItem
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItemOneLevel(mModelName);
-  Q_ASSERT(pModelLibraryTreeItem);
+  assert(pModelLibraryTreeItem);
   // Save the expanded LibraryTreeItems list
   pLibraryTreeModel->getExpandedLibraryTreeItemsList(pModelLibraryTreeItem, &mExpandedLibraryTreeItemsList);
   // save the selected components
@@ -1622,7 +1622,7 @@ void OMSimulatorUndoCommand::redoInternal()
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mNewSnapshot);
   // Get the new model LibraryTreeItem
   LibraryTreeItem *pNewModelLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItemOneLevel(mModelName);
-  Q_ASSERT(pNewModelLibraryTreeItem);
+  assert(pNewModelLibraryTreeItem);
   // Restore the expanded LibraryTreeItems list
   pLibraryTreeModel->expandLibraryTreeItems(pNewModelLibraryTreeItem, mExpandedLibraryTreeItemsList);
   // Restore the selected components
@@ -1648,7 +1648,7 @@ void OMSimulatorUndoCommand::undo()
   // Get the new model LibraryTreeItem
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pNewModelLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItemOneLevel(mModelName);
-  Q_ASSERT(pNewModelLibraryTreeItem);
+  assert(pNewModelLibraryTreeItem);
   // Restore the expanded LibraryTreeItems list
   pLibraryTreeModel->expandLibraryTreeItems(pNewModelLibraryTreeItem, mExpandedLibraryTreeItemsList);
   // Restore the closed ModelWidgets
@@ -1680,7 +1680,7 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pEditedLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mEditedCref);
-  Q_ASSERT(pEditedLibraryTreeItem);
+  assert(pEditedLibraryTreeItem);
   pLibraryTreeModel->showModelWidget(pEditedLibraryTreeItem);
 }
 
