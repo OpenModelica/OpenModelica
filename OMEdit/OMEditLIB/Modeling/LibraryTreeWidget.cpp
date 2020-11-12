@@ -2101,7 +2101,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
 {
   // Get the top level LibraryTreeItem and its ModelWidget
   LibraryTreeItem *pModelLibraryTreeItem = findLibraryTreeItemOneLevel(modelName);
-  Q_ASSERT(pModelLibraryTreeItem);
+  assert(pModelLibraryTreeItem);
   if (!pModelLibraryTreeItem->getModelWidget()) {
     showModelWidget(pModelLibraryTreeItem, false);
   }
@@ -2110,7 +2110,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   const QString filePath = pModelLibraryTreeItem->getFileName();
   // Get the edited LibraryTreeItem and its ModelWidget
   LibraryTreeItem *pEditedLibraryTreeItem = findLibraryTreeItem(editedCref);
-  Q_ASSERT(pEditedLibraryTreeItem);
+  assert(pEditedLibraryTreeItem);
   if (!pEditedLibraryTreeItem->getModelWidget()) {
     showModelWidget(pEditedLibraryTreeItem, false);
   }
@@ -2134,7 +2134,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   LibraryTreeItem *pNewEditedLibraryTreeItem = 0;
   if (!sameModelAndEditedCref) {
     pNewEditedLibraryTreeItem = findLibraryTreeItem(editedCref);
-    Q_ASSERT(pNewEditedLibraryTreeItem);
+    assert(pNewEditedLibraryTreeItem);
     pNewEditedLibraryTreeItem->setModelWidget(pEditedModelWidget);
     pEditedModelWidget->setLibraryTreeItem(pNewEditedLibraryTreeItem);
     pEditedModelWidget->reDrawModelWidget();

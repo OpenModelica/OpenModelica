@@ -6303,7 +6303,7 @@ void ModelWidget::createUndoStack()
         mpUndoStack = pModelLibraryTreeItem->getModelWidget()->getUndoStack();
       }
     } else {
-      Q_ASSERT(mpUndoStack);
+      assert(mpUndoStack);
     }
   } else {
     mpUndoStack = new UndoStack;
@@ -6323,7 +6323,7 @@ void ModelWidget::handleCanUndoRedoChanged()
 {
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-    Q_ASSERT(pModelWidget);
+    assert(pModelWidget);
     pModelWidget->updateUndoRedoActions();
   } else {
     updateUndoRedoActions();

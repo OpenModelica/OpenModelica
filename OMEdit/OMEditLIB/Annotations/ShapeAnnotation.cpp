@@ -763,11 +763,11 @@ void ShapeAnnotation::updateCornerItems()
 {
   if (dynamic_cast<LineAnnotation*>(this) || dynamic_cast<PolygonAnnotation*>(this)) {
     for (int i = 0 ; i < mCornerItemsList.size() ; i++) {
-      Q_ASSERT(mPoints.size() > i);
+      assert(mPoints.size() > i);
       mCornerItemsList.at(i)->setPos(QPointF(mPoints.at(i).x(), mPoints.at(i).y()));
     }
   } else {
-    Q_ASSERT(mExtents.size() > 1);
+    assert(mExtents.size() > 1);
     QPointF extent1 = QPointF(qMin(mExtents.at(0).x(), mExtents.at(1).x()), qMin(mExtents.at(0).y(), mExtents.at(1).y()));
     QPointF extent2 = QPointF(qMax(mExtents.at(0).x(), mExtents.at(1).x()), qMax(mExtents.at(0).y(), mExtents.at(1).y()));
     if (mCornerItemsList.size() > 1) {
@@ -797,8 +797,8 @@ void ShapeAnnotation::removeCornerItems()
  */
 void ShapeAnnotation::replaceExtent(const int index, const QPointF point)
 {
-  Q_ASSERT(mExtents.size() > 1);
-  Q_ASSERT(index >= 0 && index <= 1);
+  assert(mExtents.size() > 1);
+  assert(index >= 0 && index <= 1);
 
   prepareGeometryChange();
   mExtents.replace(index, point);
@@ -812,8 +812,8 @@ void ShapeAnnotation::replaceExtent(const int index, const QPointF point)
  */
 void ShapeAnnotation::updateExtent(const int index, const QPointF point)
 {
-  Q_ASSERT(mExtents.size() > 1);
-  Q_ASSERT(index >= 0 && index <= 1);
+  assert(mExtents.size() > 1);
+  assert(index >= 0 && index <= 1);
 
   prepareGeometryChange();
   mExtents.replace(index, point);
@@ -1529,8 +1529,8 @@ void ShapeAnnotation::cornerItemPressed(const int index)
   CornerItem *pClickedCornerItem = getCornerItem(index);
   int otherIndex = index == 0 ? 1 : 0;
   CornerItem *pOtherCornerItem = getCornerItem(otherIndex);
-  Q_ASSERT(pClickedCornerItem);
-  Q_ASSERT(pOtherCornerItem);
+  assert(pClickedCornerItem);
+  assert(pOtherCornerItem);
 
   mTransformationStartPosition = pClickedCornerItem->scenePos();
   mPivotPoint = pOtherCornerItem->scenePos();
