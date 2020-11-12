@@ -466,7 +466,7 @@ namespace {
     const QString &commentType = ((definition).*(comment))();
     const int length = commentType.length();
 
-    Q_ASSERT(text.length() - index >= length);
+    assert(text.length() - index >= length);
 
     int i = 0;
     while (i < length) {
