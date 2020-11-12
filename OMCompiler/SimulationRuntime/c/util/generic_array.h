@@ -61,10 +61,10 @@ void simple_array_alloc_copy(const base_array_t src, base_array_t* dst, size_t s
 
 void* generic_array_get(const base_array_t* source, size_t sze,...);
 
-#define real_array_get(src,ndims,...)               (*(modelica_real*)(real_array_element_addr(&src, ndims, __VA_ARGS__)))
-#define integer_array_get(src,ndims,...)            (*(modelica_integer*)(integer_array_element_addr(&src, ndims, __VA_ARGS__)))
-#define string_array_get(src,ndims,...)             (*(modelica_string*)(string_array_element_addr(&src, ndims, __VA_ARGS__)))
-#define boolean_array_get(src,ndims,...)            (*(modelica_boolean*)(boolean_array_element_addr(&src, ndims, __VA_ARGS__)))
+#define real_array_get(src,ndims,...)               (*(modelica_real*)(generic_array_get(&src, sizeof(modelica_real), __VA_ARGS__)))
+#define integer_array_get(src,ndims,...)            (*(modelica_integer*)(generic_array_get(&src, sizeof(modelica_integer), __VA_ARGS__)))
+#define string_array_get(src,ndims,...)             (*(modelica_string*)(generic_array_get(&src, sizeof(modelica_string), __VA_ARGS__)))
+#define boolean_array_get(src,ndims,...)            (*(modelica_boolean*)(generic_array_get(&src, sizeof(modelica_boolean), __VA_ARGS__)))
 
 void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...);
 
