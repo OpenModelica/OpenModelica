@@ -160,6 +160,16 @@ public
     end match;
   end isSimple;
 
+  function isCref
+    input ComponentRef cref;
+    output Boolean isCref;
+  algorithm
+    isCref := match cref
+      case CREF() then true;
+      else false;
+    end match;
+  end isCref;
+
   function isIterator
     input ComponentRef cref;
     output Boolean isIterator;
