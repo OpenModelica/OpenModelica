@@ -7106,7 +7106,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           indexed_assign_<%expTypeArray(ty)%>(<%reductionBodyExpr%>, &<%res%>, &<%tmp%>);
           >>
         else
-          '*(<%arrayTypeResult%>_element_addr1(&<%res%>, 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
+          '<%arrayTypeResult%>_get1(<%res%>, 1, <%arrIndex%>++) = <%reductionBodyExpr%>;'
     else match ri.foldExp case SOME(fExp) then
       let &foldExpPre = buffer ""
       let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, &auxFunction)
@@ -7224,7 +7224,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
               let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
               '*((<%rec_name%>*)generic_array_element_addr1(&<%loopVar%>, sizeof(<%rec_name%>), <%firstIndex%>++))'
             else
-              '*(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++))'
+              '<%arrayType%>_get1(<%loopVar%>, 1, <%firstIndex%>++)'
           (if stringEq(guardCond,"") then
           <<
           if(<%firstIndex%> <= size_of_dimension_base_array(<%loopVar%>, 1)) {
