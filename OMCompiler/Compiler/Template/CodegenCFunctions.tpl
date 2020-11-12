@@ -3469,7 +3469,7 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
       let stmtStuff = if iterIsArray then
           'simple_index_alloc_<%type%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'
         else
-          '<%iterName%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
+          '<%iterName%> = <%arrayType%>_get1(<%evar%>, 1, <%tvar%>);'
       <<
       for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_base_array(<%evar%>, 1); ++<%tvar%>)
       {
@@ -5341,7 +5341,7 @@ template arrayScalarRhs(Type ty, list<Exp> subs, String arrName, Context context
           >>
         else
           <<
-          (*<%arrayType%>_element_addr<%if intLt(listLength(subs), 3) then listLength(subs)%>(&<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>))
+          <%arrayType%>_get<%if intLt(listLength(subs), 3) then listLength(subs)%>(<%arrName%>, <%subsLenStr%>, <%subsValuesStr%>)
           >>
 end arrayScalarRhs;
 
