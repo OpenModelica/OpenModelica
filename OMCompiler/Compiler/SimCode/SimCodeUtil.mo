@@ -2302,7 +2302,7 @@ algorithm
           solveCr := listReverse(solveCr);
           cr := if BackendVariable.isStateVar(v) then ComponentReference.crefPrefixDer(cr) else cr;
           source := ElementSource.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-          (eqs, uniqueEqIndex1) := List.mapFold(solveEqns, makeSolved_SES_SIMPLE_ASSIGN, iuniqueEqIndex);
+          (eqs, uniqueEqIndex1) := List.mapFold(solveEqns, makeSolved, iuniqueEqIndex);
           if listEmpty(cons) then
             (resEqs, uniqueEqIndex) := addAssertEqn(asserts, {SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex1, cr, exp_, source, eqAttr)}, uniqueEqIndex1+1);
           else
@@ -3190,21 +3190,20 @@ algorithm
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSES_SIMPLE_ASSIGN;
 
-protected function makeSolved_SES_SIMPLE_ASSIGN
-  input BackendDAE.Equation inEqn;
-  input Integer iuniqueEqIndex;
+protected function makeSolved
+  input BackendDAE.Equation eq;
   output SimCode.SimEqSystem outSimEqn;
-  output Integer ouniqueEqIndex;
-protected
-  DAE.Exp e;
-  DAE.ComponentRef cr;
-  DAE.ElementSource source;
-  BackendDAE.EquationAttributes eqAttr;
+  input output Integer uniqueEqIndex;
 algorithm
-  BackendDAE.SOLVED_EQUATION(componentRef= cr, exp=e, source=source, attr=eqAttr) := inEqn;
-  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex, cr, e, source, eqAttr);
-  ouniqueEqIndex := iuniqueEqIndex+1;
-end makeSolved_SES_SIMPLE_ASSIGN;
+  outSimEqn := match eq
+    case BackendDAE.SOLVED_EQUATION()
+    then SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, eq.componentRef, eq.exp, eq.source, eq.attr);
+    else algorithm
+      Error.addInternalError(getInstanceName() + " failed!", sourceInfo());
+    then fail();
+  end match;
+  uniqueEqIndex := uniqueEqIndex + 1;
+end makeSolved;
 
 protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";
@@ -4184,7 +4183,7 @@ algorithm
           //solve equation lhs=rhs with respect to varible varExp
           (resolvedExp, asserts, solveEqns, solveCr) := ExpressionSolve.solve2(lhs, rhs, varExp, SOME(funcTree), SOME(uniqueEqIndex), true, true);
 
-          (eqs, uniqueEqIndex) := List.mapFold(listReverse(solveEqns), makeSolved_SES_SIMPLE_ASSIGN, uniqueEqIndex);
+          (eqs, uniqueEqIndex) := List.mapFold(listReverse(solveEqns), makeSolved, uniqueEqIndex);
           innerVars := createTempVarsforCrefs(List.map(listReverse(solveCr), Expression.crefExp), {});
 
           source := ElementSource.addSymbolicTransformationSolve(true, source, cr, lhs, rhs, resolvedExp, asserts);
@@ -6951,7 +6950,7 @@ algorithm
   end matchcontinue;
 end createMaxValueEquations;
 
-protected function makeSolved_SES_SIMPLE_ASSIGN_fromStartValue
+protected function makeSolved_fromStartValue
   input BackendDAE.Var inVar;
   input Integer inUniqueEqIndex;
   output SimCode.SimEqSystem outSimEqn;
@@ -6966,7 +6965,7 @@ algorithm
   source := BackendVariable.getVarSource(inVar);
   outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
   outUniqueEqIndex := inUniqueEqIndex+1;
-end makeSolved_SES_SIMPLE_ASSIGN_fromStartValue;
+end makeSolved_fromStartValue;
 
 public function createParameterEquations
 "Traverses the globalKnownVars and creates simEqns for the variable if necessary."
@@ -7070,7 +7069,7 @@ algorithm
       // 'normal' globalKnownVars
       else
         algorithm
-          (simEq, uniqueEqIndex) := makeSolved_SES_SIMPLE_ASSIGN_fromStartValue(globalKnownVar, uniqueEqIndex);
+          (simEq, uniqueEqIndex) := makeSolved_fromStartValue(globalKnownVar, uniqueEqIndex);
        then ();
       end match;
 
