@@ -2973,7 +2973,7 @@ algorithm
     case Expression.CREF() guard ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION)
       algorithm
         // Give an error if trying to assign to an input inside a function.
-        if InstNode.isInput(ComponentRef.node(lhsExp.cref)) then
+        if ComponentRef.isCref(lhsExp.cref) and InstNode.isInput(ComponentRef.node(lhsExp.cref)) then
           Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR,
             {"input", ComponentRef.toString(lhsExp.cref)}, info);
           fail();
