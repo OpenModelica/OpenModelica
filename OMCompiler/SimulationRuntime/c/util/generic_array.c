@@ -124,7 +124,7 @@ void generic_array_create(threadData_t* td, base_array_t* dst, constructor_func 
     dst->data = generic_alloc(nr_of_elements, sze);
 
     // If we get here then the dst array has known dims
-    // Whcih means it is not flexible.
+    // Which means it is not flexible.
     dst->flexible = 0;
 
     // Initialize each element of the complex array
@@ -145,7 +145,7 @@ void simple_array_create(threadData_t* td, base_array_t* dst, int ndims, size_t 
     dst->data = generic_alloc(nr_of_elements, sze);
 
     // If we get here then the dst array has known dims
-    // Whcih means it is not flexible.
+    // Which means it is not flexible.
     dst->flexible = 0;
 
     // Init to 0. IDK if this is what Modelica expects
@@ -161,7 +161,7 @@ void generic_array_alloc_copy(const base_array_t src_cp, base_array_t* dst, copy
     clone_base_array_spec(src, dst);
 
     // If we get here then it means the dst array had a default value (i.e., binding to src array)
-    // Whcih means even if it was unknown size, it is not flexible anymore and is
+    // Which means even if it was unknown size, it is not flexible anymore and is
     // same shape as the src array.
     dst->flexible = 0;
 
@@ -183,7 +183,7 @@ void simple_array_alloc_copy(const base_array_t src_cp, base_array_t* dst, size_
     clone_base_array_spec(src, dst);
 
     // If we get here then it means the dst array had a default value (i.e., binding to src array)
-    // Whcih means even if it was unknown size, it is not flexible anymore and is
+    // Which means even if it was unknown size, it is not flexible anymore and is
     // same shape as the src array.
     dst->flexible = 0;
 
@@ -225,6 +225,19 @@ void* generic_array_get(const base_array_t* src, size_t sze, ...) {
   void* trgt = generic_ptrget(src, calc_base_index_va(src, src->ndims, ap), sze);
   va_end(ap);
   return trgt;
+}
+
+void* generic_array_get1(const base_array_t* src, size_t sze, int sub1) {
+    omc_assert_macro(sub1 > 0 && sub1 <= src->dim_size[0]);
+
+    return generic_ptrget(src, sub1 - 1, sze);
+}
+
+void* generic_array_get2(const base_array_t* src, size_t sze, int sub1, int sub2) {
+    omc_assert_macro(sub1 > 0 && sub1 <= src->dim_size[0]);
+    omc_assert_macro(sub2 > 0 && sub2 <= src->dim_size[1]);
+
+    return generic_ptrget(src, ((sub1 - 1) * src->dim_size[1]) + (sub2 - 1), sze);
 }
 
 void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...) {
