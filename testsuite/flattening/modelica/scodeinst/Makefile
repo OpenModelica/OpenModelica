@@ -764,6 +764,8 @@ RecursiveInst3.mo \
 RedeclareClass1.mo \
 RedeclareClassComponent.mo \
 RedeclareComponentClass.mo \
+RedeclareDim1.mo \
+RedeclareDim2.mo \
 RedeclareElementClass1.mo \
 RedeclareElementClass2.mo \
 RedeclareElementComp1.mo \
