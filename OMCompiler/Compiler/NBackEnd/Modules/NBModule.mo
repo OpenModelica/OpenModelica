@@ -75,6 +75,9 @@ protected
   import NBVariable.VariablePointers;
   import NBEvents.EventInfo;
 
+  // Util imports
+  import BuiltinSystem = System;
+
 public
   partial function wrapper
     input output BackendDAE bdae;
@@ -88,7 +91,7 @@ public
     Real clck;
   algorithm
     (name, clck) := name_clock;
-    str := "\t" + name + StringUtil.repeat(".", 50 - stringLength(name)) + realString(clck);
+    str := "\t" + name + StringUtil.repeat(".", 50 - stringLength(name)) + BuiltinSystem.sprintff("%.4g", clck);
   end moduleClockString;
 
 // =========================================================================
