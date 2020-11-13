@@ -223,7 +223,7 @@ public
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> RSE -> EVENTS -> DETECTSTATES)
     preOptModules := {
-      (simplify,                    "simplify",               ClockIndexes.RT_NO_CLOCK),
+      (simplify,                    "simplify",               ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
       (RemoveSimpleEquations.main,  "RemoveSimpleEquations",  ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
       (Events.main,                 "Events",                 ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
       (DetectStates.main,           "DetectStates",           ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE)
@@ -241,7 +241,7 @@ public
 
     postOptModules := {
       (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing",        ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
-      (Partitioning.splitSystems,                                     "Split Systems",  ClockIndexes.RT_NO_CLOCK),
+      (Partitioning.splitSystems,                                     "Split Systems",  ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
       (function Jacobian.main(systemType = NBSystem.SystemType.ODE),  "Jacobian",       ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE)
     };
 
