@@ -58,7 +58,7 @@ import Subscript = NFSubscript;
 import Connector = NFConnector;
 import Connection = NFConnection;
 import Algorithm = NFAlgorithm;
-import ExpOrigin = NFTyping.ExpOrigin;
+import InstContext = NFInstContext;
 
 import Absyn.Path;
 import AbsynToSCode;
@@ -181,8 +181,8 @@ algorithm
             (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
-          exp := NFInst.instExp(absynExp, inst_cls, info);
-          (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
+          exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
+          (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
           // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
           str := Expression.toString(exp);
@@ -206,14 +206,14 @@ algorithm
           (stripped_mod, graphics_mod) := AbsynUtil.stripGraphicsAndInteractionModification(mod);
 
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, false);
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, NFInstContext.NO_CONTEXT);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls);
+          NFInst.instExpressions(inst_anncls, context = NFInstContext.RELAXED);
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
@@ -224,8 +224,8 @@ algorithm
           if (stringEq(annName, "Icon") or stringEq(annName, "Diagram")) and not listEmpty(graphics_mod) then
             try
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
-              exp := NFInst.instExp(absynExp, inst_cls, info);
-              (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
+              exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
+              (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
               // exp := NFCeval.evalExp(exp);
               exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
               str := str + ", " + Expression.toString(exp);
@@ -241,14 +241,14 @@ algorithm
           (program, top) := mkTop(absynProgram, annName);
           inst_cls := top;
 
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
 
-          inst_anncls := NFInst.instantiate(anncls, instPartial = true);
+          inst_anncls := NFInst.instantiate(anncls, context = NFInstContext.RELAXED);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls);
+          NFInst.instExpressions(inst_anncls, context = NFInstContext.RELAXED);
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
@@ -360,8 +360,8 @@ algorithm
             (program, name, inst_cls) := frontEndFront(absynProgram, classPath);
           end if;
 
-          exp := NFInst.instExp(absynExp, inst_cls, info);
-          (exp, ty, var) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
+          exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
+          (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
           // exp := NFCeval.evalExp(exp);
           exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
           str := Expression.toString(exp);
@@ -383,14 +383,14 @@ algorithm
           end if;
 
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, false);
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, NFInstContext.NO_CONTEXT);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls);
+          NFInst.instExpressions(inst_anncls, context = NFInstContext.RELAXED);
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
@@ -410,14 +410,14 @@ algorithm
           (program, top) := mkTop(absynProgram, annName);
           inst_cls := top;
 
-          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
+          anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
 
-          inst_anncls := NFInst.instantiate(anncls, instPartial = true);
+          inst_anncls := NFInst.instantiate(anncls, context = NFInstContext.RELAXED);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
           // instantiation to make sure that lookup is able to find the correct nodes.
-          NFInst.instExpressions(inst_anncls);
+          NFInst.instExpressions(inst_anncls, context = NFInstContext.RELAXED);
 
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
@@ -478,9 +478,9 @@ algorithm
 
     // if is derived qualify in the parent
     if InstNode.isDerivedClass(expanded_cls) then
-      cls := Lookup.lookupClassName(pathToQualify, InstNode.classParent(expanded_cls), AbsynUtil.dummyInfo, checkAccessViolations = false);
+      cls := Lookup.lookupClassName(pathToQualify, InstNode.classParent(expanded_cls), NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
     else // qualify in the class
-      cls := Lookup.lookupClassName(pathToQualify, expanded_cls, AbsynUtil.dummyInfo, checkAccessViolations = false);
+      cls := Lookup.lookupClassName(pathToQualify, expanded_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
     end if;
 
     qualPath := InstNode.scopePath(cls, true);
@@ -622,21 +622,21 @@ algorithm
   (program, top) := mkTop(absynProgram, name);
 
   // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
+  cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
   // Initialize the storage for automatically generated inner elements.
   top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
 
   // Instantiate the class.
-  inst_cls := NFInst.instantiate(cls, instPartial = true);
+  inst_cls := NFInst.instantiate(cls, context = NFInstContext.RELAXED);
 
   NFInst.insertGeneratedInners(inst_cls, top);
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
-  NFInst.instExpressions(inst_cls);
+  NFInst.instExpressions(inst_cls, context = NFInstContext.RELAXED);
 
   // Mark structural parameters.
   NFInst.updateImplicitVariability(inst_cls, Flags.isSet(Flags.EVAL_PARAM));
@@ -764,7 +764,7 @@ algorithm
   (program, top) := mkTop(absynProgram, name);
 
   // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
+  cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
   // Initialize the storage for automatically generated inner elements.

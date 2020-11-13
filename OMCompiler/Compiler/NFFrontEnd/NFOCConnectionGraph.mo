@@ -97,12 +97,12 @@ import Type = NFType;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Connector = NFConnector;
 import ElementSource;
-import NFTyping.ExpOrigin;
 import Typing = NFTyping;
 import NFPrefixes.Variability;
 import Error;
 import Connections = NFConnections;
 import Connection = NFConnection;
+import InstContext = NFInstContext;
 
 type Edge  = tuple<ComponentRef,ComponentRef> "an edge is a tuple with two component references";
 type Edges = list<Edge> "A list of edges";
@@ -172,10 +172,10 @@ protected
   Connector c1, c2;
   list<ComponentRef> lhs_crefs, rhs_crefs;
   Boolean print_trace = Flags.isSet(Flags.CGRAPH);
-  ExpOrigin.Type origin;
+  InstContext.Type context;
   String name;
 algorithm
-  origin := intBitOr(ExpOrigin.EQUATION, ExpOrigin.CONNECT);
+  context := intBitOr(NFInstContext.EQUATION, NFInstContext.CONNECT);
 
   // go over all equations, connect, Connection.branch
   for conn in conns.connections loop
@@ -185,7 +185,7 @@ algorithm
     rhs_crefs := getOverconstrainedCrefs(c2);
 
     if not listEmpty(lhs_crefs) then
-      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, origin, c1.source);
+      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, context, c1.source);
       graph := List.threadFold(lhs_crefs, rhs_crefs,
         function addConnection(brokenEquations = eqlBroken, printTrace = print_trace), graph);
     end if;
@@ -252,7 +252,7 @@ function generateEqualityConstraintEquation
   input Type lhs_ty;
   input ComponentRef crhs;
   input Type rhs_ty;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   input DAE.ElementSource source;
   output list<Equation> eqsEqualityConstraint = {};
 protected
@@ -298,17 +298,17 @@ algorithm
             ty1 := ComponentRef.getComponentType(lhsArr);
             ty2 := ComponentRef.getComponentType(rhsArr);
 
-            fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)));
-            (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, ElementSource.getInfo(source));
+            fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)), context);
+            (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, context, ElementSource.getInfo(source));
             expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
 
-            (expRHS, ty, var) := Typing.typeExp(expRHS, origin, ElementSource.getInfo(source));
+            (expRHS, ty, var) := Typing.typeExp(expRHS, context, ElementSource.getInfo(source));
 
-            fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)));
-            (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, ElementSource.getInfo(source));
+            fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)), context);
+            (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, context, ElementSource.getInfo(source));
             expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
 
-            (expLHS, ty, var) := Typing.typeExp(expLHS, origin, ElementSource.getInfo(source));
+            (expLHS, ty, var) := Typing.typeExp(expLHS, context, ElementSource.getInfo(source));
 
             replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
 

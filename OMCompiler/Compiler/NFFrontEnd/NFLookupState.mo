@@ -35,6 +35,7 @@ import Absyn;
 import AbsynUtil;
 import SCode;
 import NFInstNode.InstNode;
+import InstContext = NFInstContext;
 
 protected
 import Dump;
@@ -108,30 +109,33 @@ uniontype LookupState
     input LookupState endState;
     input InstNode node;
     input Absyn.Path name;
+    input InstContext.Type context;
     input SourceInfo info;
   algorithm
     assertState(endState, LookupState.CLASS(), node,
-      LookupStateName.PATH(name), info);
+      LookupStateName.PATH(name), context, info);
   end assertClass;
 
   function assertFunction
     input LookupState endState;
     input InstNode node;
     input Absyn.ComponentRef name;
+    input InstContext.Type context;
     input SourceInfo info;
   algorithm
     assertState(endState, LookupState.FUNC(), node,
-      LookupStateName.CREF(name), info);
+      LookupStateName.CREF(name), context, info);
   end assertFunction;
 
   function assertComponent
     input LookupState endState;
     input InstNode node;
     input Absyn.ComponentRef name;
+    input InstContext.Type context;
     input SourceInfo info;
   algorithm
     assertState(endState, LookupState.COMP(), node,
-      LookupStateName.CREF(name), info);
+      LookupStateName.CREF(name), context, info);
   end assertComponent;
 
   function assertImport
@@ -141,7 +145,7 @@ uniontype LookupState
     input SourceInfo info;
   algorithm
     assertState(endState, LookupState.IMPORT(), node,
-      LookupStateName.PATH(name), info);
+      LookupStateName.PATH(name), NFInstContext.NO_CONTEXT, info);
   end assertImport;
 
   function isCallableType
@@ -192,6 +196,7 @@ uniontype LookupState
     input LookupState expectedState;
     input InstNode node;
     input LookupStateName name;
+    input InstContext.Type context;
     input SourceInfo info;
   algorithm
     () := match (endState, expectedState)
@@ -298,7 +303,7 @@ uniontype LookupState
 
       case (ERROR(errorState = PARTIAL_CLASS()), _)
         algorithm
-          if not Flags.isSet(Flags.NF_API) then
+          if not InstContext.inRelaxed(context) then
             Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS,
               {InstNode.name(node)}, info);
             fail();

@@ -55,7 +55,7 @@ protected
   import NFFunction.TypedArg;
   import NFFunction.TypedNamedArg;
   import NFInstNode.CachedData;
-  import NFTyping.ExpOrigin;
+  import NFTyping.InstContext;
   import Prefixes = NFPrefixes;
   import TypeCheck = NFTypeCheck;
   import Typing = NFTyping;
@@ -91,7 +91,7 @@ public
 
   function typeSpecial
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -102,62 +102,62 @@ public
     Expression first;
     list<Expression> rest;
     String name;
-    ExpOrigin.Type next_origin;
+    InstContext.Type next_context;
   algorithm
     Call.UNTYPED_CALL(ref = cref) := call;
-    next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
+    next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
     (callExp, ty, variability) := match ComponentRef.firstName(cref)
-      //case "activeState" guard Config.synchronousFeaturesAllowed() then typeActiveStateCall(call, next_origin, info);
-      case "actualStream" then typeActualInStreamCall("actualStream", call, next_origin, info);
-      case "backSample" guard Config.synchronousFeaturesAllowed() then typeBackSampleCall(call, next_origin, info);
-      case "branch" then typeBranchCall(call, next_origin, info);
-      case "cardinality" then typeCardinalityCall(call, next_origin, info);
-      case "cat" then typeCatCall(call, next_origin, info);
-      case "change" then typeChangeCall(call, next_origin, info);
-      case "Clock" guard Config.synchronousFeaturesAllowed() then typeClockCall(call, next_origin, info);
-      case "der" then typeDerCall(call, next_origin, info);
-      case "diagonal" then typeDiagonalCall(call, next_origin, info);
-      case "DynamicSelect" then typeDynamicSelectCall("DynamicSelect", call, next_origin, info);
-      case "edge" then typeEdgeCall(call, next_origin, info);
-      case "fill" then typeFillCall(call, next_origin, info);
+      //case "activeState" guard Config.synchronousFeaturesAllowed() then typeActiveStateCall(call, next_context, info);
+      case "actualStream" then typeActualInStreamCall("actualStream", call, next_context, info);
+      case "backSample" guard Config.synchronousFeaturesAllowed() then typeBackSampleCall(call, next_context, info);
+      case "branch" then typeBranchCall(call, next_context, info);
+      case "cardinality" then typeCardinalityCall(call, next_context, info);
+      case "cat" then typeCatCall(call, next_context, info);
+      case "change" then typeChangeCall(call, next_context, info);
+      case "Clock" guard Config.synchronousFeaturesAllowed() then typeClockCall(call, next_context, info);
+      case "der" then typeDerCall(call, next_context, info);
+      case "diagonal" then typeDiagonalCall(call, next_context, info);
+      case "DynamicSelect" then typeDynamicSelectCall("DynamicSelect", call, next_context, info);
+      case "edge" then typeEdgeCall(call, next_context, info);
+      case "fill" then typeFillCall(call, next_context, info);
       case "getInstanceName" then typeGetInstanceName(call);
-      //case "hold" guard Config.synchronousFeaturesAllowed() then typeHoldCall(call, next_origin, info);
-      //case "initialState" guard Config.synchronousFeaturesAllowed() then typeInitialStateCall(call, next_origin, info);
-      case "initial" then typeDiscreteCall(call, next_origin, info);
-      case "inStream" then typeActualInStreamCall("inStream", call, next_origin, info);
-      case "isRoot" then typeIsRootCall(call, next_origin, info);
-      case "matrix" then typeMatrixCall(call, next_origin, info);
-      case "max" then typeMinMaxCall("max", call, next_origin, info);
-      case "min" then typeMinMaxCall("min", call, next_origin, info);
-      case "ndims" then typeNdimsCall(call, next_origin, info);
-      //case "noClock" guard Config.synchronousFeaturesAllowed() then typeNoClockCall(call, next_origin, info);
-      case "noEvent" then typeNoEventCall(call, next_origin, info);
-      case "ones" then typeZerosOnesCall("ones", call, next_origin, info);
-      case "potentialRoot" then typePotentialRootCall(call, next_origin, info);
-      case "pre" then typePreCall(call, next_origin, info);
-      case "product" then typeProductCall(call, next_origin, info);
-      case "promote" then typePromoteCall(call, next_origin, info);
-      case "rooted" then typeRootedCall(call, next_origin, info);
-      case "root" then typeRootCall(call, next_origin, info);
-      case "sample" then typeSampleCall(call, next_origin, info);
-      case "scalar" then typeScalarCall(call, next_origin, info);
-      case "shiftSample" guard Config.synchronousFeaturesAllowed() then typeShiftSampleCall(call, next_origin, info);
-      case "smooth" then typeSmoothCall(call, next_origin, info);
-      case "String" then typeStringCall(call, next_origin, info);
-      case "subSample" guard Config.synchronousFeaturesAllowed() then typeSubSampleCall(call, next_origin, info);
-      case "sum" then typeSumCall(call, next_origin, info);
-      case "superSample" guard Config.synchronousFeaturesAllowed() then typeSuperSampleCall(call, next_origin, info);
-      case "symmetric" then typeSymmetricCall(call, next_origin, info);
-      case "terminal" then typeDiscreteCall(call, next_origin, info);
-      //case "ticksInState" guard Config.synchronousFeaturesAllowed() then typeTicksInStateCall(call, next_origin, info);
-      //case "timeInState" guard Config.synchronousFeaturesAllowed() then typeTimeInStateCall(call, next_origin, info);
-      //case "transition" guard Config.synchronousFeaturesAllowed() then typeTransitionCall(call, next_origin, info);
-      case "transpose" then typeTransposeCall(call, next_origin, info);
-      case "uniqueRootIndices" then typeUniqueRootIndicesCall(call, next_origin, info);
-      case "uniqueRoot" then typeUniqueRootCall(call, next_origin, info);
-      case "vector" then typeVectorCall(call, next_origin, info);
-      case "zeros" then typeZerosOnesCall("zeros", call, next_origin, info);
+      //case "hold" guard Config.synchronousFeaturesAllowed() then typeHoldCall(call, next_context, info);
+      //case "initialState" guard Config.synchronousFeaturesAllowed() then typeInitialStateCall(call, next_context, info);
+      case "initial" then typeDiscreteCall(call, next_context, info);
+      case "inStream" then typeActualInStreamCall("inStream", call, next_context, info);
+      case "isRoot" then typeIsRootCall(call, next_context, info);
+      case "matrix" then typeMatrixCall(call, next_context, info);
+      case "max" then typeMinMaxCall("max", call, next_context, info);
+      case "min" then typeMinMaxCall("min", call, next_context, info);
+      case "ndims" then typeNdimsCall(call, next_context, info);
+      //case "noClock" guard Config.synchronousFeaturesAllowed() then typeNoClockCall(call, next_context, info);
+      case "noEvent" then typeNoEventCall(call, next_context, info);
+      case "ones" then typeZerosOnesCall("ones", call, next_context, info);
+      case "potentialRoot" then typePotentialRootCall(call, next_context, info);
+      case "pre" then typePreCall(call, next_context, info);
+      case "product" then typeProductCall(call, next_context, info);
+      case "promote" then typePromoteCall(call, next_context, info);
+      case "rooted" then typeRootedCall(call, next_context, info);
+      case "root" then typeRootCall(call, next_context, info);
+      case "sample" then typeSampleCall(call, next_context, info);
+      case "scalar" then typeScalarCall(call, next_context, info);
+      case "shiftSample" guard Config.synchronousFeaturesAllowed() then typeShiftSampleCall(call, next_context, info);
+      case "smooth" then typeSmoothCall(call, next_context, info);
+      case "String" then typeStringCall(call, next_context, info);
+      case "subSample" guard Config.synchronousFeaturesAllowed() then typeSubSampleCall(call, next_context, info);
+      case "sum" then typeSumCall(call, next_context, info);
+      case "superSample" guard Config.synchronousFeaturesAllowed() then typeSuperSampleCall(call, next_context, info);
+      case "symmetric" then typeSymmetricCall(call, next_context, info);
+      case "terminal" then typeDiscreteCall(call, next_context, info);
+      //case "ticksInState" guard Config.synchronousFeaturesAllowed() then typeTicksInStateCall(call, next_context, info);
+      //case "timeInState" guard Config.synchronousFeaturesAllowed() then typeTimeInStateCall(call, next_context, info);
+      //case "transition" guard Config.synchronousFeaturesAllowed() then typeTransitionCall(call, next_context, info);
+      case "transpose" then typeTransposeCall(call, next_context, info);
+      case "uniqueRootIndices" then typeUniqueRootIndicesCall(call, next_context, info);
+      case "uniqueRoot" then typeUniqueRootCall(call, next_context, info);
+      case "vector" then typeVectorCall(call, next_context, info);
+      case "zeros" then typeZerosOnesCall("zeros", call, next_context, info);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unhandled builtin function: " + Call.toString(call), sourceInfo());
@@ -345,7 +345,7 @@ protected
 
   function typeStringCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type outType;
@@ -356,20 +356,20 @@ protected
     list<TypedNamedArg> named_args;
     Call ty_call;
   algorithm
-    ty_call as Call.ARG_TYPED_CALL(_, args, named_args) := Call.typeNormalCall(call, origin, info);
+    ty_call as Call.ARG_TYPED_CALL(_, args, named_args) := Call.typeNormalCall(call, context, info);
     (_, arg_ty, _) :: _ := args;
     arg_ty := Type.arrayElementType(arg_ty);
 
     if Type.isComplex(arg_ty) then
-      (callExp, outType, var) := typeOverloadedStringCall(arg_ty, args, named_args, ty_call, origin, info);
+      (callExp, outType, var) := typeOverloadedStringCall(arg_ty, args, named_args, ty_call, context, info);
     else
-      (callExp, outType, var) := typeBuiltinStringCall(ty_call, origin, info);
+      (callExp, outType, var) := typeBuiltinStringCall(ty_call, context, info);
     end if;
   end typeStringCall;
 
   function typeBuiltinStringCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -377,7 +377,7 @@ protected
   protected
     Call ty_call;
   algorithm
-    ty_call := Call.matchTypedNormalCall(call, origin, info);
+    ty_call := Call.matchTypedNormalCall(call, context, info);
     ty := Call.typeOf(ty_call);
     var := Call.variability(ty_call);
     callExp := Expression.CALL(ty_call);
@@ -388,7 +388,7 @@ protected
     input list<TypedArg> args;
     input list<TypedNamedArg> namedArgs;
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type outType;
@@ -403,14 +403,14 @@ protected
     Type.COMPLEX(cls=recopnode) := overloadedType;
 
     try
-      fn_ref := Function.lookupFunctionSimple("'String'", recopnode);
+      fn_ref := Function.lookupFunctionSimple("'String'", recopnode, context);
     else
       // If there's no 'String' overload, let the normal String handler print the error.
-      typeBuiltinStringCall(call, origin, info);
+      typeBuiltinStringCall(call, context, info);
       fail();
     end try;
 
-    fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(recopnode));
+    fn_ref := Function.instFunctionRef(fn_ref, context, InstNode.info(recopnode));
     candidates := Function.typeRefCache(fn_ref);
     //for fn in candidates loop
     //  TypeCheck.checkValidOperatorOverload("'String'", fn, recopnode);
@@ -450,7 +450,7 @@ protected
     "Types a function call that can be typed normally, but which always has
      discrete variability regardless of the variability of the arguments."
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -461,14 +461,14 @@ protected
     list<TypedArg> args;
     TypedArg start,interval;
   algorithm
-    argtycall := Call.typeMatchNormalCall(call, origin, info);
+    argtycall := Call.typeMatchNormalCall(call, context, info);
     ty := Call.typeOf(argtycall);
     callExp := Expression.CALL(Call.unboxArgs(argtycall));
   end typeDiscreteCall;
 
   function typeNdimsCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty = Type.INTEGER();
@@ -490,37 +490,37 @@ protected
 
     // The number of dimensions an expression has is always known,
     // so we might as well evaluate the ndims call here.
-    (_, arg_ty, _) := Typing.typeExp(listHead(args), origin, info);
+    (_, arg_ty, _) := Typing.typeExp(listHead(args), context, info);
     callExp := Expression.INTEGER(Type.dimensionCount(arg_ty));
   end typeNdimsCall;
 
   function typePreCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
     output Variability variability;
   algorithm
-    (callExp, ty, variability) := typePreChangeCall("pre", call, origin, info);
+    (callExp, ty, variability) := typePreChangeCall("pre", call, context, info);
   end typePreCall;
 
   function typeChangeCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
     output Variability variability;
   algorithm
-    (callExp, ty, variability) := typePreChangeCall("change", call, origin, info);
+    (callExp, ty, variability) := typePreChangeCall("change", call, context, info);
     ty := Type.setArrayElementType(ty, Type.BOOLEAN());
   end typeChangeCall;
 
   function typePreChangeCall
     input String name;
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -543,12 +543,12 @@ protected
     end if;
 
     // pre/change may not be used in a function context.
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty, var) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, var) := Typing.typeExp(listHead(args), context, info);
 
     if not Expression.isCref(arg) then
       Error.addSourceMessage(Error.ARGUMENT_MUST_BE_VARIABLE,
@@ -568,7 +568,7 @@ protected
 
   function typeDerCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -582,7 +582,7 @@ protected
     Type ety;
   algorithm
     // der may not be used in a function context.
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"der"}, info);
       fail();
     end if;
@@ -596,7 +596,7 @@ protected
     end if;
 
     {arg} := args;
-    (arg, ty, variability) := Typing.typeExp(arg, origin, info);
+    (arg, ty, variability) := Typing.typeExp(arg, context, info);
 
     // The argument of der must be a Real scalar or array.
     ety := Type.arrayElementType(ty);
@@ -612,7 +612,7 @@ protected
 
     // The argument must be differentiable, i.e. not discrete, unless where in a
     // scope where everything is discrete (like an initial equation).
-    if variability == Variability.DISCRETE and not ExpOrigin.flagSet(origin, ExpOrigin.DISCRETE_SCOPE) then
+    if variability == Variability.DISCRETE and not InstContext.inDiscreteScope(context) then
       Error.addSourceMessageAndFail(Error.DER_OF_NONDIFFERENTIABLE_EXP,
         {Expression.toString(arg)}, info);
     end if;
@@ -623,7 +623,7 @@ protected
 
   function typeDiagonalCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -644,7 +644,7 @@ protected
         {Call.toString(call), "diagonal(Any[n]) => Any[n, n]"}, info);
     end if;
 
-    (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, variability) := Typing.typeExp(listHead(args), context, info);
 
     ty := match ty
       case Type.ARRAY(dimensions = {dim})
@@ -665,7 +665,7 @@ protected
 
   function typeEdgeCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -679,13 +679,13 @@ protected
     NFCallAttributes ca;
   algorithm
     // edge may not be used in a function context.
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"edge"}, info);
       fail();
     end if;
 
-    argtycall as Call.ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := Call.typeNormalCall(call, origin, info);
-    argtycall := Call.matchTypedNormalCall(argtycall, origin, info);
+    argtycall as Call.ARG_TYPED_CALL(ComponentRef.CREF(node = fn_node), args, _) := Call.typeNormalCall(call, context, info);
+    argtycall := Call.matchTypedNormalCall(argtycall, context, info);
     ty := Call.typeOf(argtycall);
     callExp := Expression.CALL(Call.unboxArgs(argtycall));
 
@@ -700,7 +700,7 @@ protected
   function typeMinMaxCall
     input String name;
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -722,7 +722,7 @@ protected
     (args, ty, var) := match args
       case {arg1}
         algorithm
-          (arg1, ty1, var) := Typing.typeExp(arg1, origin, info);
+          (arg1, ty1, var) := Typing.typeExp(arg1, context, info);
           ty := Type.arrayElementType(ty1);
 
           if not (Type.isArray(ty1) and Type.isBasic(ty)) then
@@ -741,8 +741,8 @@ protected
 
       case {arg1, arg2}
         algorithm
-          (arg1, ty1, var1) := Typing.typeExp(arg1, origin, info);
-          (arg2, ty2, var2) := Typing.typeExp(arg2, origin, info);
+          (arg1, ty1, var1) := Typing.typeExp(arg1, context, info);
+          (arg2, ty2, var2) := Typing.typeExp(arg2, context, info);
 
           if not Type.isBasic(ty1) then
             Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
@@ -777,7 +777,7 @@ protected
 
   function typeSumCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -799,7 +799,7 @@ protected
         {Call.toString(call), "sum(Any[:, ...]) => Any"}, info);
     end if;
 
-    (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, variability) := Typing.typeExp(listHead(args), context, info);
     ty := Type.arrayElementType(ty);
 
     {fn} := Function.typeRefCache(fn_ref);
@@ -808,7 +808,7 @@ protected
 
   function typeProductCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -830,7 +830,7 @@ protected
         {Call.toString(call), "product(Any[:, ...]) => Any"}, info);
     end if;
 
-    (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, variability) := Typing.typeExp(listHead(args), context, info);
     ty := Type.arrayElementType(ty);
 
     {fn} := Function.typeRefCache(fn_ref);
@@ -839,7 +839,7 @@ protected
 
   function typePromoteCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -867,8 +867,8 @@ protected
     end if;
 
     {exp_arg, n_arg} := args;
-    (exp_arg, exp_ty, variability) := Typing.typeExp(exp_arg, origin, info);
-    (n_arg, n_ty, n_var) := Typing.typeExp(n_arg, origin, info);
+    (exp_arg, exp_ty, variability) := Typing.typeExp(exp_arg, context, info);
+    (n_arg, n_ty, n_var) := Typing.typeExp(n_arg, context, info);
 
     if not Type.isInteger(n_ty) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
@@ -894,7 +894,7 @@ protected
 
   function typeSmoothCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -918,8 +918,8 @@ protected
     end if;
 
     {arg1, arg2} := args;
-    (arg1, ty1, var) := Typing.typeExp(arg1, origin, info);
-    (arg2, ty2, variability) := Typing.typeExp(arg2, origin, info);
+    (arg1, ty1, var) := Typing.typeExp(arg1, context, info);
+    (arg2, ty2, variability) := Typing.typeExp(arg2, context, info);
 
     // First argument must be Integer.
     if not Type.isInteger(ty1) then
@@ -952,7 +952,7 @@ protected
 
   function typeFillCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -975,8 +975,8 @@ protected
     fill_arg :: args := args;
 
     // Type the first argument, which is the fill value.
-    (fill_arg, ty, _) := Typing.typeExp(fill_arg, origin, info);
-    (callExp, ty, variability) := typeFillCall2(fn_ref, ty, fill_arg, args, origin, info);
+    (fill_arg, ty, _) := Typing.typeExp(fill_arg, context, info);
+    (callExp, ty, variability) := typeFillCall2(fn_ref, ty, fill_arg, args, context, info);
   end typeFillCall;
 
   function typeFillCall2
@@ -984,7 +984,7 @@ protected
     input Type fillType;
     input Expression fillArg;
     input list<Expression> dimensionArgs;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1004,11 +1004,11 @@ protected
 
     // Type the dimension arguments.
     for arg in dimensionArgs loop
-      (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+      (arg, arg_ty, arg_var) := Typing.typeExp(arg, context, info);
 
       if arg_var <= Variability.STRUCTURAL_PARAMETER and
-         not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) and
-         not Expression.containsAnyIterator(arg, origin) then
+         not InstContext.inFunction(context) and
+         not Expression.containsAnyIterator(arg, context) then
         arg := Ceval.evalExpBinding(arg);
         arg := Expression.getScalarBindingExp(arg);
         arg_ty := Expression.typeOf(arg);
@@ -1050,7 +1050,7 @@ protected
   function typeZerosOnesCall
     input String name;
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1071,12 +1071,12 @@ protected
     end if;
 
     fill_arg := Expression.INTEGER(if name == "ones" then 1 else 0);
-    (callExp, ty, variability) := typeFillCall2(fn_ref, Type.INTEGER(), fill_arg, args, origin, info);
+    (callExp, ty, variability) := typeFillCall2(fn_ref, Type.INTEGER(), fill_arg, args, context, info);
   end typeZerosOnesCall;
 
   function typeScalarCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1097,7 +1097,7 @@ protected
         {Call.toString(call), "scalar(Any[1, ...]) => Any"}, info);
     end if;
 
-    (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, variability) := Typing.typeExp(listHead(args), context, info);
 
     // scalar requires all dimensions of the array to be 1.
     for dim in Type.arrayDims(ty) loop
@@ -1127,7 +1127,7 @@ protected
 
   function typeVectorCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1150,7 +1150,7 @@ protected
         {Call.toString(call), "vector(Any) => Any[:]\n  vector(Any[:, ...]) => Any[:]"}, info);
     end if;
 
-    (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, variability) := Typing.typeExp(listHead(args), context, info);
 
     // vector requires that at most one dimension is > 1, and that dimension
     // determines the type of the vector call.
@@ -1173,7 +1173,7 @@ protected
 
   function typeMatrixCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1197,7 +1197,7 @@ protected
         {Call.toString(call), "vector(Any) => Any[:]\n  vector(Any[:, ...]) => Any[:]"}, info);
     end if;
 
-    (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, variability) := Typing.typeExp(listHead(args), context, info);
     dims := Type.arrayDims(ty);
     ndims := listLength(dims);
 
@@ -1229,7 +1229,7 @@ protected
 
   function typeCatCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1255,7 +1255,7 @@ protected
 
     arg::args := args;
 
-    (arg, ty, variability) := Typing.typeExp(arg, origin, info);
+    (arg, ty, variability) := Typing.typeExp(arg, context, info);
     (arg, ty, mk) := TypeCheck.matchTypes(ty, Type.INTEGER(), arg);
 
     if variability > Variability.PARAMETER then
@@ -1267,7 +1267,7 @@ protected
     tys := {};
 
     for a in args loop
-      (arg, ty, var) := Typing.typeExp(a, origin, info);
+      (arg, ty, var) := Typing.typeExp(a, context, info);
       variability := Prefixes.variabilityMax(var, variability);
       res := arg :: res;
       tys := ty :: tys;
@@ -1278,7 +1278,7 @@ protected
 
   function typeSymmetricCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1298,7 +1298,7 @@ protected
         {Call.toString(call), "symmetric(Any[n, n]) => Any[n, n]"}, info);
     end if;
 
-    (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, variability) := Typing.typeExp(listHead(args), context, info);
 
     if not Type.isSquareMatrix(ty) then
       Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
@@ -1312,7 +1312,7 @@ protected
 
   function typeTransposeCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1334,7 +1334,7 @@ protected
         {Call.toString(call), "transpose(Any[n, m, ...]) => Any[m, n, ...]"}, info);
     end if;
 
-    (arg, ty, variability) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, variability) := Typing.typeExp(listHead(args), context, info);
 
     ty := match ty
       case Type.ARRAY(dimensions = dim1 :: dim2 :: rest_dims)
@@ -1355,7 +1355,7 @@ protected
 
   function typeCardinalityCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1371,9 +1371,8 @@ protected
     // cardinality may only be used in a condition of an assert or
     // if-statement/equation (the specification says only if-statement,
     // but e.g. the MSL only uses them in if-equations and asserts).
-    if not (ExpOrigin.flagSet(origin, ExpOrigin.CONDITION) and
-       (ExpOrigin.flagSet(origin, ExpOrigin.IF) or
-        ExpOrigin.flagSet(origin, ExpOrigin.ASSERT))) then
+    if not (InstContext.inCondition(context) and
+       (InstContext.inIf(context) or InstContext.inAssert(context))) then
       Error.addSourceMessageAndFail(Error.INVALID_CARDINALITY_CONTEXT, {}, info);
     end if;
 
@@ -1385,12 +1384,12 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector) => Integer"}, info);
     end if;
 
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty) := Typing.typeExp(listHead(args), context, info);
 
     if not Expression.isCref(arg) then
       Error.addSourceMessageAndFail(Error.ARGUMENT_MUST_BE_VARIABLE,
@@ -1415,7 +1414,7 @@ protected
 
   function typeBranchCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1435,16 +1434,16 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector)"}, info);
     end if;
 
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
     {arg1, arg2} := args;
 
-    (arg1, ty) := Typing.typeExp(arg1, origin, info);
+    (arg1, ty) := Typing.typeExp(arg1, context, info);
     checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
-    (arg2, ty) := Typing.typeExp(arg2, origin, info);
+    (arg2, ty) := Typing.typeExp(arg2, context, info);
     checkConnectionsArgument(arg2, ty, fn_ref, 2, info);
 
     {fn} := Function.typeRefCache(fn_ref);
@@ -1454,7 +1453,7 @@ protected
 
   function typeIsRootCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1474,12 +1473,12 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty) := Typing.typeExp(listHead(args), context, info);
     checkConnectionsArgument(arg, ty, fn_ref, 1, info);
 
     {fn} := Function.typeRefCache(fn_ref);
@@ -1489,7 +1488,7 @@ protected
 
   function typePotentialRootCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1522,19 +1521,19 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Integer = 0)"}, info);
     end if;
 
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
     arg1 :: args := args;
 
-    (arg1, ty) := Typing.typeExp(arg1, origin, info);
+    (arg1, ty) := Typing.typeExp(arg1, context, info);
     checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
 
     if args_len == 2 then
       arg2 := listHead(args);
-      (arg2, ty) := Typing.typeExp(arg2, origin, info);
+      (arg2, ty) := Typing.typeExp(arg2, context, info);
 
       if not Type.isInteger(ty) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
@@ -1552,7 +1551,7 @@ protected
 
   function typeRootCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1572,12 +1571,12 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty) := Typing.typeExp(listHead(args), context, info);
     checkConnectionsArgument(arg, ty, fn_ref, 1, info);
 
     {fn} := Function.typeRefCache(fn_ref);
@@ -1587,7 +1586,7 @@ protected
 
   function typeRootedCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1607,12 +1606,12 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector)"}, info);
     end if;
 
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
-    (arg, ty) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty) := Typing.typeExp(listHead(args), context, info);
     checkConnectionsArgument(arg, ty, fn_ref, 1, info);
 
     if ComponentRef.isSimple(fn_ref) then
@@ -1627,7 +1626,7 @@ protected
   function typeUniqueRootCall
     "see also typeUniqueRootIndicesCall"
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1662,19 +1661,19 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, String = \"\")"}, info);
     end if;
 
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
     arg1 :: args := args;
 
-    (arg1, ty) := Typing.typeExp(arg1, origin, info);
+    (arg1, ty) := Typing.typeExp(arg1, context, info);
     checkConnectionsArgument(arg1, ty, fn_ref, 1, info);
 
     if args_len == 2 then
       arg2 := listHead(args);
-      (arg2, ty) := Typing.typeExp(arg2, origin, info);
+      (arg2, ty) := Typing.typeExp(arg2, context, info);
 
       if not Type.isString(ty) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
@@ -1699,7 +1698,7 @@ protected
     http://www.ep.liu.se/ecp/043/041/ecp09430108.pdf
     for a specification of this operator"
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1735,21 +1734,21 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(Connector, Connector, String = \"\")"}, info);
     end if;
 
-    if ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+    if InstContext.inFunction(context) then
       Error.addSourceMessageAndFail(Error.EXP_INVALID_IN_FUNCTION,
         {ComponentRef.toString(fn_ref)}, info);
     end if;
 
     arg1 :: arg2 :: args := args;
 
-    (arg1, ty1) := Typing.typeExp(arg1, origin, info);
+    (arg1, ty1) := Typing.typeExp(arg1, context, info);
     checkConnectionsArgument(arg1, ty1, fn_ref, 1, info);
-    (arg2, ty2) := Typing.typeExp(arg2, origin, info);
+    (arg2, ty2) := Typing.typeExp(arg2, context, info);
     checkConnectionsArgument(arg2, ty2, fn_ref, 1, info);
 
     if args_len == 3 then
       arg3 := listHead(args);
-      (arg3, ty3) := Typing.typeExp(arg3, origin, info);
+      (arg3, ty3) := Typing.typeExp(arg3, context, info);
 
       if not Type.isString(ty3) then
         Error.addSourceMessageAndFail(Error.ARG_TYPE_MISMATCH,
@@ -1837,7 +1836,7 @@ protected
 
   function typeNoEventCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -1859,7 +1858,7 @@ protected
     end if;
 
     {arg} := args;
-    (arg, ty, variability) := Typing.typeExp(arg, ExpOrigin.setFlag(origin, ExpOrigin.NOEVENT), info);
+    (arg, ty, variability) := Typing.typeExp(arg, InstContext.set(context, NFInstContext.NOEVENT), info);
 
     {fn} := Function.typeRefCache(fn_ref);
     callExp := Expression.CALL(Call.makeTypedCall(fn, {arg}, variability, ty));
@@ -1879,7 +1878,7 @@ protected
 
   function typeClockCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type outType = Type.CLOCK();
@@ -1890,7 +1889,7 @@ protected
     Integer args_count;
     Expression e1, e2;
   algorithm
-    Call.TYPED_CALL(arguments = args) := Call.typeMatchNormalCall(call, origin, info);
+    Call.TYPED_CALL(arguments = args) := Call.typeMatchNormalCall(call, context, info);
     args_count := listLength(args);
 
     callExp := match args
@@ -1927,7 +1926,7 @@ protected
 
   function typeSampleCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type outType;
@@ -1944,11 +1943,11 @@ protected
     Function normalSample, clockedSample;
     InstNode recopnode;
   algorithm
-    Call.ARG_TYPED_CALL(fn_ref, args, namedArgs) := Call.typeNormalCall(call, origin, info);
+    Call.ARG_TYPED_CALL(fn_ref, args, namedArgs) := Call.typeNormalCall(call, context, info);
 
     recopnode := ComponentRef.node(fn_ref);
 
-    fn_ref := Function.instFunctionRef(fn_ref, InstNode.info(recopnode));
+    fn_ref := Function.instFunctionRef(fn_ref, context, InstNode.info(recopnode));
     {normalSample, clockedSample} := Function.typeRefCache(fn_ref);
 
     (callExp, outType, var) := match(args, namedArgs)
@@ -2015,7 +2014,7 @@ protected
   function typeActualInStreamCall
     input String name;
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -2037,7 +2036,7 @@ protected
         {Call.toString(call), ComponentRef.toString(fn_ref) + "(stream variable) => Real"}, info);
     end if;
 
-    (arg, ty, var) := Typing.typeExp(listHead(args), origin, info);
+    (arg, ty, var) := Typing.typeExp(listHead(args), context, info);
     arg := ExpandExp.expand(arg);
 
     {fn} := Function.typeRefCache(fn_ref);
@@ -2096,7 +2095,7 @@ protected
   function typeDynamicSelectCall
     input String name;
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -2121,13 +2120,13 @@ protected
     end if;
 
     {expStatic, expDynamic} := list(Expression.unbox(arg) for arg in args);
-    (arg1, ty1, var1) := Typing.typeExp(expStatic, origin, info);
+    (arg1, ty1, var1) := Typing.typeExp(expStatic, context, info);
     arg1 := ExpandExp.expand(arg1);
 
     // if we cannot typecheck the dynamic part, ignore it!
     // https://trac.openmodelica.org/OpenModelica/ticket/5631
     try
-      (arg2, ty2, var2) := Typing.typeExp(expDynamic, origin, info);
+      (arg2, ty2, var2) := Typing.typeExp(expDynamic, context, info);
     else
       variability := var1;
       callExp := arg1;
@@ -2150,7 +2149,7 @@ protected
 
   function typeBackSampleCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -2160,7 +2159,7 @@ protected
     Expression counter, resolution;
   algorithm
     ty_call as Call.TYPED_CALL(arguments = {_, counter, resolution}, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, origin, info);
+      Call.typeMatchNormalCall(call, context, info);
     Structural.markExp(counter);
     Structural.markExp(resolution);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
@@ -2168,7 +2167,7 @@ protected
 
   function typeShiftSampleCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -2178,7 +2177,7 @@ protected
     Expression counter, resolution;
   algorithm
     ty_call as Call.TYPED_CALL(arguments = {_, counter, resolution}, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, origin, info);
+      Call.typeMatchNormalCall(call, context, info);
     Structural.markExp(counter);
     Structural.markExp(resolution);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
@@ -2186,7 +2185,7 @@ protected
 
   function typeSubSampleCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -2196,14 +2195,14 @@ protected
     Expression factor;
   algorithm
     ty_call as Call.TYPED_CALL(arguments = {_, factor}, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, origin, info);
+      Call.typeMatchNormalCall(call, context, info);
     Structural.markExp(factor);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
   end typeSubSampleCall;
 
   function typeSuperSampleCall
     input Call call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
     output Type ty;
@@ -2213,7 +2212,7 @@ protected
     Expression factor;
   algorithm
     ty_call as Call.TYPED_CALL(arguments = {_, factor}, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, origin, info);
+      Call.typeMatchNormalCall(call, context, info);
     Structural.markExp(factor);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
   end typeSuperSampleCall;

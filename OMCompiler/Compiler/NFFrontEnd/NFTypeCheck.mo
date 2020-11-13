@@ -63,7 +63,6 @@ import Prefixes = NFPrefixes;
 import Restriction = NFRestriction;
 import ComplexType = NFComplexType;
 import NFOperator.Op;
-import NFTyping.ExpOrigin;
 import NFFunction.Function;
 import NFFunction.TypedArg;
 import NFFunction.FunctionMatchKind;
@@ -80,6 +79,7 @@ import ExpandExp = NFExpandExp;
 import NFFunction.Slot;
 import Util;
 import Component = NFComponent;
+import InstContext = NFInstContext;
 
 public
 type MatchKind = enumeration(
@@ -855,7 +855,8 @@ algorithm
   // We only want overloaded constructors when trying to implicitly construct.
   // Default constructors are not considered.
   if mk == MatchKind.EXACT then
-    fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'", {}), scope, paramInfo2);
+    fn_ref := Function.instFunction(Absyn.CREF_IDENT("'constructor'", {}),
+      scope, NFInstContext.NO_CONTEXT, paramInfo2);
     e2 := Expression.CALL(Call.UNTYPED_CALL(fn_ref, {exp2}, {}, scope));
     (e2, ty, var) := Call.typeCall(e2, 0, paramInfo1);
     (_, _, mk) := matchTypes(paramType2, ty, e2, false);
@@ -1485,7 +1486,7 @@ function checkRelationOperation
   input Expression exp2;
   input Type type2;
   input Variability var2;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
   output Type resultType;
@@ -1515,7 +1516,7 @@ algorithm
       algorithm
         // Print a warning for == or <> with Real operands in a model.
         o := operator.op;
-        if ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION) and (o == Op.EQUAL or o == Op.NEQUAL) then
+        if not InstContext.inFunction(context) and (o == Op.EQUAL or o == Op.NEQUAL) then
           Error.addStrictMessage(Error.WARNING_RELATION_ON_REAL,
             {Expression.toString(outExp), Operator.symbol(operator, "")}, info);
         end if;

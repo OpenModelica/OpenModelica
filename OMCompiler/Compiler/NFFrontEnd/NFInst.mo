@@ -61,7 +61,7 @@ import Subscript = NFSubscript;
 import Connector = NFConnector;
 import Connection = NFConnection;
 import Algorithm = NFAlgorithm;
-import ExpOrigin = NFTyping.ExpOrigin;
+import InstContext = NFInstContext;
 
 protected
 import Array;
@@ -117,6 +117,7 @@ function instClassInProgram
 protected
   InstNode top, cls, inst_cls;
   String name;
+  InstContext.Type context;
 algorithm
   // gather here all the flags to disable expansion
   // and scalarization if -d=-nfScalarize is on
@@ -130,20 +131,24 @@ algorithm
   System.setHasOverconstrainedConnectors(false);
   System.setHasStreamConnectors(false);
 
+  context := if Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API) then
+    NFInstContext.RELAXED else NFInstContext.NO_CONTEXT;
+
   // Create a root node from the given top-level classes.
   top := makeTopNode(program);
   name := AbsynUtil.pathString(classPath);
 
   // Look up the class to instantiate and mark it as the root class.
-  cls := Lookup.lookupClassName(classPath, top, AbsynUtil.dummyInfo, checkAccessViolations = false);
+  cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED,
+           AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
   // Initialize the storage for automatically generated inner elements.
   top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
 
   // Instantiate the class.
-  inst_cls := instantiate(cls, instPartial = Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API));
-  checkPartialClass(cls);
+  inst_cls := instantiate(cls, context = context);
+  checkPartialClass(cls, context);
 
   insertGeneratedInners(inst_cls, top);
   execStat("NFInst.instantiate(" + name + ")");
@@ -151,7 +156,7 @@ algorithm
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
   // instantiation to make sure that lookup is able to find the correct nodes.
-  instExpressions(inst_cls);
+  instExpressions(inst_cls, context = context);
   execStat("NFInst.instExpressions");
 
   // Mark structural parameters.
@@ -205,12 +210,12 @@ end instClassInProgram;
 function instantiate
   input output InstNode node;
   input InstNode parent = InstNode.EMPTY_NODE();
-  input Boolean instPartial = false "Whether to instantiate a partial class or not.";
+  input InstContext.Type context;
 algorithm
   node := expand(node);
 
-  if instPartial or not InstNode.isPartial(node) or Flags.isSet(Flags.NF_API) then
-    node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent, false);
+  if not InstNode.isPartial(node) or InstContext.inRelaxed(context) then
+    node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent, context);
   end if;
 end instantiate;
 
@@ -737,7 +742,7 @@ function instClass
   input Boolean useBinding;
   input Integer instLevel;
   input InstNode parent = InstNode.EMPTY_NODE();
-  input Boolean isRedeclared;
+  input InstContext.Type context;
 protected
   Class cls;
   Modifier outer_mod;
@@ -753,7 +758,7 @@ algorithm
     fail();
   end if;
 
-  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent, instLevel, isRedeclared);
+  (attributes, node) := instClassDef(cls, modifier, attributes, useBinding, node, parent, instLevel, context);
 end instClass;
 
 function instClassDef
@@ -764,7 +769,7 @@ function instClassDef
   input output InstNode node;
   input InstNode parent;
   input Integer instLevel;
-  input Boolean isRedeclared;
+  input InstContext.Type context;
 protected
   InstNode par, base_node;
   Class inst_cls;
@@ -803,7 +808,7 @@ algorithm
 
         // Apply element redeclares.
         ClassTree.mapRedeclareChains(cls_tree,
-          function redeclareElements(instLevel = instLevel, isRedeclared = isRedeclared));
+          function redeclareElements(instLevel = instLevel, context = context));
 
         // Redeclare classes with redeclare modifiers. Redeclared components could
         // also be handled here, but since each component is only instantiated once
@@ -814,13 +819,13 @@ algorithm
         ClassTree.mapExtends(cls_tree,
           function instExtends(attributes = attributes, useBinding = useBinding,
                                visibility = ExtendsVisibility.PUBLIC,
-                               instLevel = instLevel + 1, isRedeclared = isRedeclared));
+                               instLevel = instLevel + 1, context = context));
 
         // Instantiate local components.
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
                                  originalAttr = NONE(), useBinding = useBinding,
-                                 instLevel = instLevel + 1, isRedeclared = isRedeclared));
+                                 instLevel = instLevel + 1, context = context));
 
         // Remove duplicate elements.
         cls_tree := ClassTree.replaceDuplicates(cls_tree);
@@ -843,7 +848,7 @@ algorithm
         attributes := mergeDerivedAttributes(attrs, attributes, parent);
 
         // Instantiate the base class and update the nodes.
-        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, instLevel, par, isRedeclared);
+        (base_node, attributes) := instClass(base_node, mod, attributes, useBinding, instLevel, par, context);
         cls.baseClass := base_node;
         cls.attributes := attributes;
         cls.dims := arrayCopy(cls.dims);
@@ -859,7 +864,7 @@ algorithm
         inst_cls := Class.INSTANCED_BUILTIN(cls.ty, cls.elements, cls.restriction);
         node := InstNode.replaceClass(inst_cls, node);
         updateComponentType(parent, node);
-        instExternalObjectStructors(cls.ty, parent);
+        instExternalObjectStructors(cls.ty, parent, context);
       then
         ();
 
@@ -887,7 +892,7 @@ algorithm
         node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
         node := InstNode.setNodeType(InstNodeType.NORMAL_CLASS(), node);
         node := expand(node);
-        node := instClass(node, outerMod, attributes, useBinding, instLevel, parent, isRedeclared);
+        node := instClass(node, outerMod, attributes, useBinding, instLevel, parent, context);
         updateComponentType(parent, node);
       then
         ();
@@ -926,6 +931,7 @@ function instExternalObjectStructors
   "Instantiates the constructor and destructor for an ExternalObject class."
   input Type ty;
   input InstNode parent;
+  input InstContext.Type context;
 protected
   InstNode constructor, destructor, par;
   SourceInfo info;
@@ -939,8 +945,8 @@ algorithm
   if not (InstNode.isClass(par) and Class.isExternalObject(InstNode.getClass(par))) then
     Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT(constructor, destructor)) := ty;
     info := InstNode.info(parent);
-    Function.instFunctionNode(constructor, info);
-    Function.instFunctionNode(destructor, info);
+    Function.instFunctionNode(constructor, context, info);
+    Function.instFunctionNode(destructor, context, info);
   end if;
 end instExternalObjectStructors;
 
@@ -950,6 +956,7 @@ function instPackage
    returned. Otherwise the node is fully instantiated, the instance is added to
    the node's cache, and the instantiated node is returned."
   input output InstNode node;
+  input InstContext.Type context;
 protected
   CachedData cache;
   InstNode inst;
@@ -965,12 +972,12 @@ algorithm
         // the package uses itself somehow.
         InstNode.setPackageCache(node, CachedData.PACKAGE(node));
         // Instantiate the node.
-        inst := instantiate(node);
+        inst := instantiate(node, context = context);
 
         // Cache the instantiated node and instantiate expressions in it too.
-        if not InstNode.isPartial(inst) or Flags.isSet(Flags.NF_API) then
+        if not InstNode.isPartial(inst) or InstContext.inRelaxed(context) then
           InstNode.setPackageCache(node, CachedData.PACKAGE(inst));
-          instExpressions(inst);
+          instExpressions(inst, context = context);
         end if;
       then
         inst;
@@ -1040,7 +1047,7 @@ function instExtends
   input Boolean useBinding;
   input ExtendsVisibility visibility;
   input Integer instLevel;
-  input Boolean isRedeclared;
+  input InstContext.Type context;
 protected
   Class cls, inst_cls;
   ClassTree cls_tree;
@@ -1070,11 +1077,11 @@ algorithm
 
         ClassTree.mapExtends(cls_tree,
           function instExtends(attributes = attributes, useBinding = useBinding,
-                               visibility = vis, instLevel = instLevel, isRedeclared = isRedeclared));
+                               visibility = vis, instLevel = instLevel, context = context));
 
         ClassTree.applyLocalComponents(cls_tree,
           function instComponent(attributes = attributes, innerMod = Modifier.NOMOD(),
-            originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel, isRedeclared = isRedeclared));
+            originalAttr = NONE(), useBinding = useBinding, instLevel = instLevel, context = context));
       then
         ();
 
@@ -1084,7 +1091,7 @@ algorithm
           vis := ExtendsVisibility.DERIVED_PROTECTED;
         end if;
 
-        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, vis, instLevel, isRedeclared);
+        cls.baseClass := instExtends(cls.baseClass, attributes, useBinding, vis, instLevel, context);
         node := InstNode.updateClass(cls, node);
       then
         ();
@@ -1208,7 +1215,7 @@ end redeclareClasses;
 function redeclareElements
   input list<Mutable<InstNode>> chain;
   input Integer instLevel;
-  input Boolean isRedeclared;
+  input InstContext.Type context;
 protected
   InstNode node;
   Mutable<InstNode> node_ptr;
@@ -1223,7 +1230,7 @@ algorithm
     node := Mutable.access(node_ptr);
   else
     for comp_ptr in listRest(chain) loop
-      node_ptr := redeclareComponentElement(comp_ptr, node_ptr, instLevel, isRedeclared);
+      node_ptr := redeclareComponentElement(comp_ptr, node_ptr, instLevel, context);
     end for;
     node := Mutable.access(node_ptr);
   end if;
@@ -1250,15 +1257,15 @@ function redeclareComponentElement
   input Mutable<InstNode> redeclareComp;
   input Mutable<InstNode> replaceableComp;
   input Integer instLevel;
-  input Boolean isRedeclared;
+  input InstContext.Type context;
   output Mutable<InstNode> outComp;
 protected
   InstNode rdcl_node, repl_node;
 algorithm
   rdcl_node := Mutable.access(redeclareComp);
   repl_node := Mutable.access(replaceableComp);
-  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, NONE(), isRedeclared);
-  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node, instLevel);
+  instComponent(repl_node, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, instLevel, NONE(), context);
+  redeclareComponent(rdcl_node, repl_node, Modifier.NOMOD(), Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, rdcl_node, instLevel, context);
   outComp := Mutable.create(rdcl_node);
 end redeclareComponentElement;
 
@@ -1402,7 +1409,7 @@ function instComponent
   input Boolean useBinding "Ignore the component's binding if false.";
   input Integer instLevel;
   input Option<Component.Attributes> originalAttr = NONE();
-  input Boolean isRedeclared;
+  input InstContext.Type context;
 protected
   Component comp;
   SCode.Element def;
@@ -1411,6 +1418,7 @@ protected
   SCode.Mod cc_smod;
   String name;
   InstNode parent;
+  InstContext.Type next_context;
 algorithm
   comp_node := InstNode.resolveOuter(node);
   comp := InstNode.component(comp_node);
@@ -1430,8 +1438,9 @@ algorithm
 
     Modifier.REDECLARE(element = rdcl_node, innerMod = inner_mod, outerMod = outer_mod) := outer_mod;
 
+    next_context := InstContext.set(context, NFInstContext.REDECLARED);
     instComponentDef(def, Modifier.NOMOD(), inner_mod, NFComponent.DEFAULT_ATTR,
-      useBinding, comp_node, parent, instLevel, originalAttr, isRedeclared = true);
+      useBinding, comp_node, parent, instLevel, originalAttr, next_context);
 
     cc_smod := SCodeUtil.getConstrainingMod(def);
     if not SCodeUtil.isEmptyMod(cc_smod) then
@@ -1441,9 +1450,9 @@ algorithm
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
-    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node, instLevel);
+    redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node, instLevel, context);
   else
-    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, isRedeclared);
+    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, context);
   end if;
 end instComponent;
 
@@ -1457,7 +1466,7 @@ function instComponentDef
   input InstNode parent;
   input Integer instLevel;
   input Option<Component.Attributes> originalAttr = NONE();
-  input Boolean isRedeclared = false;
+  input InstContext.Type context;
 algorithm
   () := match component
     local
@@ -1512,18 +1521,18 @@ algorithm
 
         // Instantiate the type of the component.
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
-          useBinding and not Binding.isBound(binding), parent, node, info, instLevel, isRedeclared);
+          useBinding and not Binding.isBound(binding), parent, node, info, instLevel, context);
         ty := InstNode.getClass(ty_node);
         res := Class.restriction(ty);
 
-        if not isRedeclared then
-          checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, info);
+        if not InstContext.inRedeclared(context) then
+          checkPartialComponent(node, attr, ty_node, Class.isPartial(ty), res, context, info);
         end if;
 
         // Update the component's variability based on its type (e.g. Integer is discrete).
         ty_attr := updateComponentVariability(ty_attr, ty, ty_node);
         // Update the component's connector type now that we have its type.
-        ty_attr := updateComponentConnectorType(ty_attr, res, isRedeclared, node);
+        ty_attr := updateComponentConnectorType(ty_attr, res, context, node);
 
         if not referenceEq(attr, ty_attr) then
           InstNode.componentApply(node, Component.setAttributes, ty_attr);
@@ -1557,7 +1566,7 @@ end instConstrainingMod;
 function updateComponentConnectorType
   input output Component.Attributes attributes;
   input Restriction restriction;
-  input Boolean isRedeclared;
+  input InstContext.Type context;
   input InstNode component;
 protected
   ConnectorType.Type cty = attributes.connectorType;
@@ -1585,7 +1594,7 @@ algorithm
     if cty <> attributes.connectorType then
       attributes.connectorType := cty;
     end if;
-  elseif ConnectorType.isFlowOrStream(cty) and not isRedeclared then
+  elseif ConnectorType.isFlowOrStream(cty) and not InstContext.inRedeclared(context) then
     // The Modelica specification forbids using stream outside connector
     // declarations, but has no such restriction for flow. To compromise we
     // print a warning for both flow and stream.
@@ -1603,16 +1612,17 @@ function checkPartialComponent
   input InstNode clsNode;
   input Boolean isPartial;
   input Restriction res;
+  input InstContext.Type context;
   input SourceInfo info;
 algorithm
   if Restriction.isFunction(res) then
-    if not isPartial and not Flags.isSet(Flags.NF_API) then
+    if not isPartial and not InstContext.inRelaxed(context) then
       // The type of a function pointer must be a partial function.
       Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX,
         {AbsynUtil.pathString(InstNode.scopePath(clsNode))}, info);
       fail();
     end if;
-  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER and not Flags.isSet(Flags.NF_API) then
+  elseif isPartial and compAttr.innerOuter <> InnerOuter.OUTER and not InstContext.inRelaxed(context) then
     // The type of a component may not be a partial class.
     Error.addMultiSourceMessage(Error.PARTIAL_COMPONENT_TYPE,
       {AbsynUtil.pathString(InstNode.scopePath(compNode)), InstNode.name(clsNode)},
@@ -1629,6 +1639,7 @@ function redeclareComponent
   input Component.Attributes outerAttr;
   input InstNode redeclaredNode;
   input Integer instLevel;
+  input InstContext.Type context;
 protected
   Component orig_comp, rdcl_comp, new_comp;
   Binding binding, condition;
@@ -1651,7 +1662,7 @@ algorithm
   rdcl_node := InstNode.setNodeType(rdcl_type, redeclareNode);
   rdcl_node := InstNode.copyInstancePtr(originalNode, rdcl_node);
   rdcl_node := InstNode.updateComponent(InstNode.component(redeclareNode), rdcl_node);
-  instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, SOME(Component.getAttributes(orig_comp)), false);
+  instComponent(rdcl_node, outerAttr, constrainingMod, true, instLevel, SOME(Component.getAttributes(orig_comp)), context);
   rdcl_comp := InstNode.component(rdcl_node);
 
   new_comp := match (orig_comp, rdcl_comp)
@@ -2056,21 +2067,21 @@ function instTypeSpec
   input InstNode parent;
   input SourceInfo info;
   input Integer instLevel;
-  input Boolean isRedeclared;
+  input InstContext.Type context;
   output InstNode node;
   output Component.Attributes outAttributes;
 algorithm
   node := match typeSpec
     case Absyn.TPATH()
       algorithm
-        node := Lookup.lookupClassName(typeSpec.path, scope, info);
+        node := Lookup.lookupClassName(typeSpec.path, scope, context, info);
 
         if instLevel >= 100 then
           checkRecursiveDefinition(node, parent, limitReached = true);
         end if;
 
         node := expand(node);
-        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel, parent, isRedeclared);
+        (node, outAttributes) := instClass(node, modifier, attributes, useBinding, instLevel, parent, context);
       then
         node;
 
@@ -2128,6 +2139,7 @@ end checkRecursiveDefinition;
 function instDimension
   input output Dimension dimension;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
 algorithm
   dimension := match dimension
@@ -2141,7 +2153,7 @@ algorithm
           case Absyn.NOSUB() then Dimension.UNKNOWN();
           case Absyn.SUBSCRIPT()
             algorithm
-              exp := instExp(dim.subscript, scope, info);
+              exp := instExp(dim.subscript, scope, context, info);
             then
               Dimension.UNTYPED(exp, false);
         end match;
@@ -2154,6 +2166,7 @@ function instExpressions
   input InstNode node;
   input InstNode scope = node;
   input output Sections sections = Sections.EMPTY();
+  input InstContext.Type context;
 protected
   Class cls = InstNode.getClass(node), inst_cls;
   array<InstNode> local_comps, exts;
@@ -2163,6 +2176,7 @@ protected
   InstNode dim_scope;
   SourceInfo info;
   Type ty;
+  InstContext.Type next_context;
 algorithm
   () := match cls
     // Long class declaration of a type.
@@ -2171,7 +2185,7 @@ algorithm
         // Instantiate expressions in the extends nodes.
         exts := ClassTree.getExtends(cls_tree);
         for ext in exts loop
-          instExpressions(ext, ext, sections);
+          instExpressions(ext, ext, sections, context);
         end for;
 
         // A type must extend a basic type.
@@ -2195,18 +2209,22 @@ algorithm
       algorithm
         // Instantiate expressions in the extends nodes.
         for ext in ClassTree.getExtends(cls_tree) loop
-          sections := instExpressions(ext, ext, sections);
+          sections := instExpressions(ext, ext, sections, context);
         end for;
 
         // Instantiate expressions in the local components.
-        ClassTree.applyLocalComponents(cls_tree, instComponentExpressions);
+        ClassTree.applyLocalComponents(cls_tree,
+          function instComponentExpressions(context = context));
 
         // Flatten the class tree so we don't need to deal with extends anymore.
         cls.elements := ClassTree.flatten(cls_tree);
         InstNode.updateClass(cls, node);
 
         // Instantiate local equation/algorithm sections.
-        sections := instSections(node, scope, sections, Restriction.isFunction(cls.restriction));
+        next_context := if Restriction.isFunction(cls.restriction) then
+          NFInstContext.FUNCTION else NFInstContext.CLASS;
+        next_context := InstContext.set(context, next_context);
+        sections := instSections(node, scope, next_context, sections);
 
         ty := makeComplexType(cls.restriction, node, cls);
         inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.prefixes, cls.restriction);
@@ -2218,13 +2236,13 @@ algorithm
 
     case Class.EXPANDED_DERIVED(dims = dims)
       algorithm
-        sections := instExpressions(cls.baseClass, scope, sections);
+        sections := instExpressions(cls.baseClass, scope, sections, context);
 
         dim_scope := InstNode.parent(node);
         info := InstNode.info(node);
 
         for i in 1:arrayLength(dims) loop
-          dims[i] := instDimension(dims[i], dim_scope, info);
+          dims[i] := instDimension(dims[i], dim_scope, context, info);
         end for;
 
         if Restriction.isRecord(cls.restriction) then
@@ -2236,7 +2254,7 @@ algorithm
     case Class.INSTANCED_BUILTIN(elements = ClassTree.FLAT_TREE(components = local_comps))
       algorithm
         for comp in local_comps loop
-          instComponentExpressions(comp);
+          instComponentExpressions(comp, context);
         end for;
       then
         ();
@@ -2320,7 +2338,7 @@ algorithm
 
         if SCodeUtil.isOperatorRecord(InstNode.definition(node)) then
           OperatorOverloading.instConstructor(
-            InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
+            InstNode.scopePath(node, includeRoot = true), node, NFInstContext.RELAXED, InstNode.info(node));
         else
           Record.instDefaultConstructor(
             InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
@@ -2334,6 +2352,7 @@ end instRecordConstructor;
 function instBuiltinAttribute
   input output Modifier attribute;
   input InstNode node;
+  input InstContext.Type context;
 algorithm
   () := match attribute
     local
@@ -2342,7 +2361,7 @@ algorithm
     case Modifier.MODIFIER(binding = binding)
       algorithm
         binding := Binding.addParent(node, binding);
-        attribute.binding := instBinding(binding);
+        attribute.binding := instBinding(binding, context);
       then
         ();
 
@@ -2360,6 +2379,7 @@ end instBuiltinAttribute;
 
 function instComponentExpressions
   input InstNode component;
+  input InstContext.Type context;
 protected
   InstNode node = InstNode.resolveOuter(component);
   Component c = InstNode.component(node);
@@ -2368,12 +2388,12 @@ algorithm
   () := match c
     case Component.UNTYPED_COMPONENT(dimensions = dims, instantiated = false)
       algorithm
-        c.binding := instBinding(c.binding);
-        c.condition := instBinding(c.condition);
-        instExpressions(c.classInst, node);
+        c.binding := instBinding(c.binding, context);
+        c.condition := instBinding(c.condition, context);
+        instExpressions(c.classInst, node, context = context);
 
         for i in 1:arrayLength(dims) loop
-          dims[i] := instDimension(dims[i], InstNode.parent(node), c.info);
+          dims[i] := instDimension(dims[i], InstNode.parent(node), context, c.info);
         end for;
 
         // This is to avoid instantiating the same component multiple times,
@@ -2390,7 +2410,7 @@ algorithm
 
     case Component.TYPE_ATTRIBUTE()
       algorithm
-        c.modifier := instBuiltinAttribute(c.modifier, component);
+        c.modifier := instBuiltinAttribute(c.modifier, component, context);
         InstNode.updateComponent(c, node);
       then
         ();
@@ -2406,6 +2426,7 @@ end instComponentExpressions;
 
 function instBinding
   input output Binding binding;
+  input InstContext.Type context;
 algorithm
   binding := match binding
     local
@@ -2413,7 +2434,7 @@ algorithm
 
     case Binding.RAW_BINDING()
       algorithm
-        bind_exp := instExp(binding.bindingExp, binding.scope, binding.info);
+        bind_exp := instExp(binding.bindingExp, binding.scope, context, binding.info);
         bind_exp := Expression.BINDING_EXP(bind_exp, Type.UNKNOWN(), Type.UNKNOWN(), binding.parents, binding.isEach);
       then
         Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.isEach, binding.info);
@@ -2425,6 +2446,7 @@ end instBinding;
 function instExpOpt
   input Option<Absyn.Exp> absynExp;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output Option<Expression> exp;
 algorithm
@@ -2433,7 +2455,7 @@ algorithm
       Absyn.Exp aexp;
 
     case NONE() then NONE();
-    case SOME(aexp) then SOME(instExp(aexp, scope, info));
+    case SOME(aexp) then SOME(instExp(aexp, scope, context, info));
 
   end match;
 end instExpOpt;
@@ -2441,6 +2463,7 @@ end instExpOpt;
 function instExp
   input Absyn.Exp absynExp;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression exp;
 algorithm
@@ -2458,92 +2481,92 @@ algorithm
     case Absyn.Exp.BOOL() then Expression.BOOLEAN(absynExp.value);
 
     case Absyn.Exp.CREF()
-      then instCref(absynExp.componentRef, scope, info);
+      then instCref(absynExp.componentRef, scope, context, info);
 
     case Absyn.Exp.ARRAY()
       algorithm
-        expl := list(instExp(e, scope, info) for e in absynExp.arrayExp);
+        expl := list(instExp(e, scope, context, info) for e in absynExp.arrayExp);
       then
         Expression.makeArray(Type.UNKNOWN(), expl);
 
     case Absyn.Exp.MATRIX()
       algorithm
-        expll := list(list(instExp(e, scope, info) for e in el) for el in absynExp.matrix);
+        expll := list(list(instExp(e, scope, context, info) for e in el) for el in absynExp.matrix);
       then
         Expression.MATRIX(expll);
 
     case Absyn.Exp.RANGE()
       algorithm
-        e1 := instExp(absynExp.start, scope, info);
-        oe := instExpOpt(absynExp.step, scope, info);
-        e3 := instExp(absynExp.stop, scope, info);
+        e1 := instExp(absynExp.start, scope, context, info);
+        oe := instExpOpt(absynExp.step, scope, context, info);
+        e3 := instExp(absynExp.stop, scope, context, info);
       then
         Expression.RANGE(Type.UNKNOWN(), e1, oe, e3);
 
     case Absyn.Exp.TUPLE()
       algorithm
-        expl := list(instExp(e, scope, info) for e in absynExp.expressions);
+        expl := list(instExp(e, scope, context, info) for e in absynExp.expressions);
       then
         Expression.TUPLE(Type.UNKNOWN(), expl);
 
     case Absyn.Exp.BINARY()
       algorithm
-        e1 := instExp(absynExp.exp1, scope, info);
-        e2 := instExp(absynExp.exp2, scope, info);
+        e1 := instExp(absynExp.exp1, scope, context, info);
+        e2 := instExp(absynExp.exp2, scope, context, info);
         op := Operator.fromAbsyn(absynExp.op);
       then
         Expression.BINARY(e1, op, e2);
 
     case Absyn.Exp.UNARY()
       algorithm
-        e1 := instExp(absynExp.exp, scope, info);
+        e1 := instExp(absynExp.exp, scope, context, info);
         op := Operator.fromAbsyn(absynExp.op);
       then
         Expression.UNARY(op, e1);
 
     case Absyn.Exp.LBINARY()
       algorithm
-        e1 := instExp(absynExp.exp1, scope, info);
-        e2 := instExp(absynExp.exp2, scope, info);
+        e1 := instExp(absynExp.exp1, scope, context, info);
+        e2 := instExp(absynExp.exp2, scope, context, info);
         op := Operator.fromAbsyn(absynExp.op);
       then
         Expression.LBINARY(e1, op, e2);
 
     case Absyn.Exp.LUNARY()
       algorithm
-        e1 := instExp(absynExp.exp, scope, info);
+        e1 := instExp(absynExp.exp, scope, context, info);
         op := Operator.fromAbsyn(absynExp.op);
       then
         Expression.LUNARY(op, e1);
 
     case Absyn.Exp.RELATION()
       algorithm
-        e1 := instExp(absynExp.exp1, scope, info);
-        e2 := instExp(absynExp.exp2, scope, info);
+        e1 := instExp(absynExp.exp1, scope, context, info);
+        e2 := instExp(absynExp.exp2, scope, context, info);
         op := Operator.fromAbsyn(absynExp.op);
       then
         Expression.RELATION(e1, op, e2);
 
     case Absyn.Exp.IFEXP()
       algorithm
-        e3 := instExp(absynExp.elseBranch, scope, info);
+        e3 := instExp(absynExp.elseBranch, scope, context, info);
 
         for branch in listReverse(absynExp.elseIfBranch) loop
-          e1 := instExp(Util.tuple21(branch), scope, info);
-          e2 := instExp(Util.tuple22(branch), scope, info);
+          e1 := instExp(Util.tuple21(branch), scope, context, info);
+          e2 := instExp(Util.tuple22(branch), scope, context, info);
           e3 := Expression.IF(Type.UNKNOWN(), e1, e2, e3);
         end for;
 
-        e1 := instExp(absynExp.ifExp, scope, info);
-        e2 := instExp(absynExp.trueBranch, scope, info);
+        e1 := instExp(absynExp.ifExp, scope, context, info);
+        e2 := instExp(absynExp.trueBranch, scope, context, info);
       then
         Expression.IF(Type.UNKNOWN(), e1, e2, e3);
 
     case Absyn.Exp.CALL()
-      then Call.instantiate(absynExp.function_, absynExp.functionArgs, scope, info);
+      then Call.instantiate(absynExp.function_, absynExp.functionArgs, scope, context, info);
 
     case Absyn.Exp.PARTEVALFUNCTION()
-      then instPartEvalFunction(absynExp.function_, absynExp.functionArgs, scope, info);
+      then instPartEvalFunction(absynExp.function_, absynExp.functionArgs, scope, context, info);
 
     case Absyn.Exp.END() then Expression.END();
 
@@ -2559,6 +2582,7 @@ end instExp;
 function instCref
   input Absyn.ComponentRef absynCref;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression crefExp;
 protected
@@ -2570,10 +2594,10 @@ algorithm
   (cref, found_scope) := match absynCref
     case Absyn.ComponentRef.WILD() then (ComponentRef.WILD(), scope);
     case Absyn.ComponentRef.ALLWILD() then (ComponentRef.WILD(), scope);
-    else Lookup.lookupComponent(absynCref, scope, info);
+    else Lookup.lookupComponent(absynCref, scope, context, info);
   end match;
 
-  cref := instCrefSubscripts(cref, scope, info);
+  cref := instCrefSubscripts(cref, scope, context, info);
 
   crefExp := match cref
     case ComponentRef.CREF()
@@ -2583,7 +2607,7 @@ algorithm
             then instCrefComponent(cref, cref.node, found_scope, info);
           case InstNode.CLASS_NODE()
             then if Class.isFunction(InstNode.getClass(cref.node)) then
-                   instCrefFunction(cref, found_scope, info)
+                   instCrefFunction(cref, found_scope, context, info)
                  else
                    instCrefTypename(cref, cref.node, info);
           else
@@ -2643,6 +2667,7 @@ end instCrefComponent;
 function instCrefFunction
   input ComponentRef cref;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression crefExp;
 protected
@@ -2650,7 +2675,7 @@ protected
 algorithm
   fn_ref := ComponentRef.fromNodeList(InstNode.scopeList(scope, includeRoot = true));
   fn_ref := ComponentRef.append(cref, fn_ref);
-  fn_ref := Function.instFunctionRef(fn_ref, info);
+  fn_ref := Function.instFunctionRef(fn_ref, context, info);
   crefExp := Expression.CREF(Type.UNKNOWN(), fn_ref);
 end instCrefFunction;
 
@@ -2693,6 +2718,7 @@ end checkUnsubscriptableCref;
 function instCrefSubscripts
   input output ComponentRef cref;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
 algorithm
   () := match cref
@@ -2702,10 +2728,10 @@ algorithm
     case ComponentRef.CREF()
       algorithm
         if not listEmpty(cref.subscripts) then
-          cref.subscripts := list(instSubscript(s, scope, info) for s in cref.subscripts);
+          cref.subscripts := list(instSubscript(s, scope, context, info) for s in cref.subscripts);
         end if;
 
-        rest_cr := instCrefSubscripts(cref.restCref, scope, info);
+        rest_cr := instCrefSubscripts(cref.restCref, scope, context, info);
         if not referenceEq(rest_cr, cref.restCref) then
           cref.restCref := rest_cr;
         end if;
@@ -2719,6 +2745,7 @@ end instCrefSubscripts;
 function instSubscript
   input Subscript subscript;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output Subscript outSubscript;
 protected
@@ -2731,7 +2758,7 @@ algorithm
     case Absyn.Subscript.NOSUB() then Subscript.WHOLE();
     case Absyn.Subscript.SUBSCRIPT()
       algorithm
-        exp := instExp(absynSub.subscript, scope, info);
+        exp := instExp(absynSub.subscript, scope, context, info);
       then
         Subscript.fromExp(exp);
   end match;
@@ -2741,6 +2768,7 @@ function instPartEvalFunction
   input Absyn.ComponentRef func;
   input Absyn.FunctionArgs funcArgs;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
 protected
@@ -2750,11 +2778,11 @@ protected
   list<String> arg_names;
 algorithm
   Absyn.FunctionArgs.FUNCTIONARGS(argNames = nargs) := funcArgs;
-  outExp := instCref(func, scope, info);
+  outExp := instCref(func, scope, context, info);
 
   if not listEmpty(nargs) then
     fn_ref := Expression.toCref(outExp);
-    args := list(instExp(arg.argValue, scope, info) for arg in nargs);
+    args := list(instExp(arg.argValue, scope, context, info) for arg in nargs);
     arg_names := list(arg.argName for arg in nargs);
     outExp := Expression.PARTIAL_FUNCTION_APPLICATION(fn_ref, args, arg_names, Type.UNKNOWN());
   end if;
@@ -2763,18 +2791,18 @@ end instPartEvalFunction;
 function instSections
   input InstNode node;
   input InstNode scope;
+  input InstContext.Type context;
   input output Sections sections;
-  input Boolean isFunction;
 protected
   SCode.Element el = InstNode.definition(node);
   SCode.ClassDef def;
 algorithm
   sections := match el
     case SCode.CLASS(classDef = SCode.PARTS())
-      then instSections2(el.classDef, scope, sections, isFunction);
+      then instSections2(el.classDef, scope, context, sections);
 
     case SCode.CLASS(classDef = SCode.CLASS_EXTENDS(composition = def as SCode.PARTS()))
-      then instSections2(def, scope, sections, isFunction);
+      then instSections2(def, scope, context, sections);
 
     else sections;
   end match;
@@ -2783,15 +2811,15 @@ end instSections;
 function instSections2
   input SCode.ClassDef parts;
   input InstNode scope;
+  input InstContext.Type context;
   input output Sections sections;
-  input Boolean isFunction;
 algorithm
   sections := match (parts, sections)
     local
       list<Equation> eq, ieq;
       list<Algorithm> alg, ialg;
       SCode.ExternalDecl ext_decl;
-      ExpOrigin.Type origin, iorigin;
+      InstContext.Type icontext;
 
     case (_, Sections.EXTERNAL())
       algorithm
@@ -2801,17 +2829,16 @@ algorithm
         fail();
 
     case (SCode.PARTS(externalDecl = SOME(ext_decl)), _)
-      then instExternalDecl(ext_decl, scope);
+      then instExternalDecl(ext_decl, scope, context);
 
     case (SCode.PARTS(), _)
       algorithm
-        origin := if isFunction then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
-        iorigin := ExpOrigin.setFlag(origin, ExpOrigin.INITIAL);
+        icontext := InstContext.set(context, NFInstContext.INITIAL);
 
-        eq := instEquations(parts.normalEquationLst, scope, origin);
-        ieq := instEquations(parts.initialEquationLst, scope, iorigin);
-        alg := instAlgorithmSections(parts.normalAlgorithmLst, scope, origin);
-        ialg := instAlgorithmSections(parts.initialAlgorithmLst, scope, iorigin);
+        eq := instEquations(parts.normalEquationLst, scope, context);
+        ieq := instEquations(parts.initialEquationLst, scope, icontext);
+        alg := instAlgorithmSections(parts.normalAlgorithmLst, scope, context);
+        ialg := instAlgorithmSections(parts.initialAlgorithmLst, scope, icontext);
       then
         Sections.join(Sections.new(eq, ieq, alg, ialg), sections);
 
@@ -2821,6 +2848,7 @@ end instSections2;
 function instExternalDecl
   input SCode.ExternalDecl extDecl;
   input InstNode scope;
+  input InstContext.Type context;
   output Sections sections;
 algorithm
   sections := match extDecl
@@ -2837,10 +2865,10 @@ algorithm
         name := Util.getOptionOrDefault(extDecl.funcName, InstNode.name(scope));
         lang := Util.getOptionOrDefault(extDecl.lang, "C");
         checkExternalDeclLanguage(lang, info);
-        args := list(instExp(arg, scope, info) for arg in extDecl.args);
+        args := list(instExp(arg, scope, context, info) for arg in extDecl.args);
 
         if isSome(extDecl.output_) then
-          ret_cref := Lookup.lookupLocalComponent(Util.getOption(extDecl.output_), scope, info);
+          ret_cref := Lookup.lookupLocalComponent(Util.getOption(extDecl.output_), scope, context, info);
         else
           ret_cref := ComponentRef.EMPTY();
         end if;
@@ -2875,37 +2903,37 @@ end checkExternalDeclLanguage;
 function instEquations
   input list<SCode.Equation> scodeEql;
   input InstNode scope;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   output list<Equation> instEql;
 algorithm
-  instEql := list(instEquation(eq, scope, origin) for eq in scodeEql);
+  instEql := list(instEquation(eq, scope, context) for eq in scodeEql);
 end instEquations;
 
 function instEquation
   input SCode.Equation scodeEq;
   input InstNode scope;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   output Equation instEq;
 protected
   SCode.EEquation eq;
 algorithm
   SCode.EQUATION(eEquation = eq) := scodeEq;
-  instEq := instEEquation(eq, scope, origin);
+  instEq := instEEquation(eq, scope, context);
 end instEquation;
 
 function instEEquations
   input list<SCode.EEquation> scodeEql;
   input InstNode scope;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   output list<Equation> instEql;
 algorithm
-  instEql := list(instEEquation(eq, scope, origin) for eq in scodeEql);
+  instEql := list(instEEquation(eq, scope, context) for eq in scodeEql);
 end instEEquations;
 
 function instEEquation
   input SCode.EEquation scodeEq;
   input InstNode scope;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   output Equation instEq;
 algorithm
   instEq := match scodeEq
@@ -2918,35 +2946,35 @@ algorithm
       SourceInfo info;
       InstNode for_scope, iter;
       ComponentRef lhs_cr, rhs_cr;
-      ExpOrigin.Type next_origin;
+      InstContext.Type next_origin;
 
     case SCode.EEquation.EQ_EQUALS(info = info)
       algorithm
-        exp1 := instExp(scodeEq.expLeft, scope, info);
-        exp2 := instExp(scodeEq.expRight, scope, info);
+        exp1 := instExp(scodeEq.expLeft, scope, context, info);
+        exp2 := instExp(scodeEq.expRight, scope, context, info);
       then
         Equation.EQUALITY(exp1, exp2, Type.UNKNOWN(), makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_CONNECT(info = info)
       algorithm
-        if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) then
+        if InstContext.inWhen(context) then
           Error.addSourceMessage(Error.CONNECT_IN_WHEN,
             {Dump.printComponentRefStr(scodeEq.crefLeft),
              Dump.printComponentRefStr(scodeEq.crefRight)}, info);
           fail();
         end if;
 
-        exp1 := instConnectorCref(scodeEq.crefLeft, scope, info);
-        exp2 := instConnectorCref(scodeEq.crefRight, scope, info);
+        exp1 := instConnectorCref(scodeEq.crefLeft, scope, context, info);
+        exp2 := instConnectorCref(scodeEq.crefRight, scope, context, info);
       then
         Equation.CONNECT(exp1, exp2, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_FOR(info = info)
       algorithm
-        oexp := instExpOpt(scodeEq.range, scope, info);
+        oexp := instExpOpt(scodeEq.range, scope, context, info);
         checkIteratorShadowing(scodeEq.index, scope, scodeEq.info);
         (for_scope, iter) := addIteratorToScope(scodeEq.index, scope, scodeEq.info);
-        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.FOR);
+        next_origin := InstContext.set(context, NFInstContext.FOR);
         eql := instEEquations(scodeEq.eEquationLst, for_scope, next_origin);
       then
         Equation.FOR(iter, oexp, eql, makeSource(scodeEq.comment, info));
@@ -2954,10 +2982,10 @@ algorithm
     case SCode.EEquation.EQ_IF(info = info)
       algorithm
         // Instantiate the conditions.
-        expl := list(instExp(c, scope, info) for c in scodeEq.condition);
+        expl := list(instExp(c, scope, context, info) for c in scodeEq.condition);
 
         // Instantiate each branch and pair it up with a condition.
-        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.IF);
+        next_origin := InstContext.set(context, NFInstContext.IF);
         branches := {};
         for branch in scodeEq.thenBranch loop
           eql := instEEquations(branch, scope, next_origin);
@@ -2976,19 +3004,19 @@ algorithm
 
     case SCode.EEquation.EQ_WHEN(info = info)
       algorithm
-        if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) then
+        if InstContext.inWhen(context) then
           Error.addSourceMessageAndFail(Error.NESTED_WHEN, {}, info);
-        elseif ExpOrigin.flagSet(origin, ExpOrigin.INITIAL) then
+        elseif InstContext.inInitial(context) then
           Error.addSourceMessageAndFail(Error.INITIAL_WHEN, {}, info);
         end if;
 
-        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.WHEN);
-        exp1 := instExp(scodeEq.condition, scope, info);
+        next_origin := InstContext.set(context, NFInstContext.WHEN);
+        exp1 := instExp(scodeEq.condition, scope, context, info);
         eql := instEEquations(scodeEq.eEquationLst, scope, next_origin);
         branches := {Equation.makeBranch(exp1, eql)};
 
         for branch in scodeEq.elseBranches loop
-          exp1 := instExp(Util.tuple21(branch), scope, info);
+          exp1 := instExp(Util.tuple21(branch), scope, context, info);
           eql := instEEquations(Util.tuple22(branch), scope, next_origin);
           branches := Equation.makeBranch(exp1, eql) :: branches;
         end for;
@@ -2997,33 +3025,33 @@ algorithm
 
     case SCode.EEquation.EQ_ASSERT(info = info)
       algorithm
-        exp1 := instExp(scodeEq.condition, scope, info);
-        exp2 := instExp(scodeEq.message, scope, info);
-        exp3 := instExp(scodeEq.level, scope, info);
+        exp1 := instExp(scodeEq.condition, scope, context, info);
+        exp2 := instExp(scodeEq.message, scope, context, info);
+        exp3 := instExp(scodeEq.level, scope, context, info);
       then
         Equation.ASSERT(exp1, exp2, exp3, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_TERMINATE(info = info)
       algorithm
-        exp1 := instExp(scodeEq.message, scope, info);
+        exp1 := instExp(scodeEq.message, scope, context, info);
       then
         Equation.TERMINATE(exp1, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_REINIT(info = info)
       algorithm
-        if ExpOrigin.flagNotSet(origin, ExpOrigin.WHEN) then
+        if not InstContext.inWhen(context) then
           Error.addSourceMessage(Error.REINIT_NOT_IN_WHEN, {}, info);
           fail();
         end if;
 
-        exp1 := instExp(scodeEq.cref, scope, info);
-        exp2 := instExp(scodeEq.expReinit, scope, info);
+        exp1 := instExp(scodeEq.cref, scope, context, info);
+        exp2 := instExp(scodeEq.expReinit, scope, context, info);
       then
         Equation.REINIT(exp1, exp2, makeSource(scodeEq.comment, info));
 
     case SCode.EEquation.EQ_NORETCALL(info = info)
       algorithm
-        exp1 := instExp(scodeEq.exp, scope, info);
+        exp1 := instExp(scodeEq.exp, scope, context, info);
       then
         Equation.NORETCALL(exp1, makeSource(scodeEq.comment, info));
 
@@ -3039,14 +3067,15 @@ end instEEquation;
 function instConnectorCref
   input Absyn.ComponentRef absynCref;
   input InstNode scope;
+  input InstContext.Type context;
   input SourceInfo info;
   output Expression outExp;
 protected
   ComponentRef cref, prefix;
   InstNode found_scope;
 algorithm
-  (cref, found_scope) := Lookup.lookupConnector(absynCref, scope, info);
-  cref := instCrefSubscripts(cref, scope, info);
+  (cref, found_scope) := Lookup.lookupConnector(absynCref, scope, context, info);
+  cref := instCrefSubscripts(cref, scope, context, info);
 
   prefix := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
   if not ComponentRef.isEmpty(prefix) then
@@ -3067,35 +3096,35 @@ end makeSource;
 function instAlgorithmSections
   input list<SCode.AlgorithmSection> algorithmSections;
   input InstNode scope;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   output list<Algorithm> algs;
 algorithm
-  algs := list(instAlgorithmSection(alg, scope, origin) for alg in algorithmSections);
+  algs := list(instAlgorithmSection(alg, scope, context) for alg in algorithmSections);
 end instAlgorithmSections;
 
 function instAlgorithmSection
   input SCode.AlgorithmSection algorithmSection;
   input InstNode scope;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   output Algorithm alg;
 algorithm
-  alg := Algorithm.ALGORITHM(instStatements(algorithmSection.statements, scope, origin),
+  alg := Algorithm.ALGORITHM(instStatements(algorithmSection.statements, scope, context),
                              DAE.emptyElementSource);
 end instAlgorithmSection;
 
 function instStatements
   input list<SCode.Statement> scodeStmtl;
   input InstNode scope;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   output list<Statement> statements;
 algorithm
-  statements := list(instStatement(stmt, scope, origin) for stmt in scodeStmtl);
+  statements := list(instStatement(stmt, scope, context) for stmt in scodeStmtl);
 end instStatements;
 
 function instStatement
   input SCode.Statement scodeStmt;
   input InstNode scope;
-  input ExpOrigin.Type origin;
+  input InstContext.Type context;
   output Statement statement;
 algorithm
   statement := match scodeStmt
@@ -3106,20 +3135,20 @@ algorithm
       list<tuple<Expression, list<Statement>>> branches;
       SourceInfo info;
       InstNode for_scope, iter;
-      ExpOrigin.Type next_origin;
+      InstContext.Type next_origin;
 
     case SCode.Statement.ALG_ASSIGN(info = info)
       algorithm
-        exp1 := instExp(scodeStmt.assignComponent, scope, info);
-        exp2 := instExp(scodeStmt.value, scope, info);
+        exp1 := instExp(scodeStmt.assignComponent, scope, context, info);
+        exp2 := instExp(scodeStmt.value, scope, context, info);
       then
         Statement.ASSIGNMENT(exp1, exp2, Type.UNKNOWN(), makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_FOR(info = info)
       algorithm
-        oexp := instExpOpt(scodeStmt.range, scope, info);
+        oexp := instExpOpt(scodeStmt.range, scope, context, info);
         (for_scope, iter) := addIteratorToScope(scodeStmt.index, scope, info);
-        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.FOR);
+        next_origin := InstContext.set(context, NFInstContext.FOR);
         stmtl := instStatements(scodeStmt.forBody, for_scope, next_origin);
       then
         Statement.FOR(iter, oexp, stmtl, makeSource(scodeStmt.comment, info));
@@ -3127,10 +3156,10 @@ algorithm
     case SCode.Statement.ALG_IF(info = info)
       algorithm
         branches := {};
-        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.FOR);
+        next_origin := InstContext.set(context, NFInstContext.FOR);
 
         for branch in (scodeStmt.boolExpr, scodeStmt.trueBranch) :: scodeStmt.elseIfBranch loop
-          exp1 := instExp(Util.tuple21(branch), scope, info);
+          exp1 := instExp(Util.tuple21(branch), scope, context, info);
           stmtl := instStatements(Util.tuple22(branch), scope, next_origin);
           branches := (exp1, stmtl) :: branches;
         end for;
@@ -3144,10 +3173,10 @@ algorithm
 
     case SCode.Statement.ALG_WHEN_A(info = info)
       algorithm
-        if origin > 0 then
-          if ExpOrigin.flagSet(origin, ExpOrigin.WHEN) then
+        if not InstContext.inValidWhenScope(context) then
+          if InstContext.inWhen(context) then
             Error.addSourceMessageAndFail(Error.NESTED_WHEN, {}, info);
-          elseif ExpOrigin.flagSet(origin, ExpOrigin.INITIAL) then
+          elseif InstContext.inInitial(context) then
             Error.addSourceMessageAndFail(Error.INITIAL_WHEN, {}, info);
           else
             Error.addSourceMessageAndFail(Error.INVALID_WHEN_STATEMENT_CONTEXT, {}, info);
@@ -3156,8 +3185,8 @@ algorithm
 
         branches := {};
         for branch in scodeStmt.branches loop
-          exp1 := instExp(Util.tuple21(branch), scope, info);
-          next_origin := ExpOrigin.setFlag(origin, ExpOrigin.WHEN);
+          exp1 := instExp(Util.tuple21(branch), scope, context, info);
+          next_origin := InstContext.set(context, NFInstContext.WHEN);
           stmtl := instStatements(Util.tuple22(branch), scope, next_origin);
           branches := (exp1, stmtl) :: branches;
         end for;
@@ -3166,15 +3195,15 @@ algorithm
 
     case SCode.Statement.ALG_ASSERT(info = info)
       algorithm
-        exp1 := instExp(scodeStmt.condition, scope, info);
-        exp2 := instExp(scodeStmt.message, scope, info);
-        exp3 := instExp(scodeStmt.level, scope, info);
+        exp1 := instExp(scodeStmt.condition, scope, context, info);
+        exp2 := instExp(scodeStmt.message, scope, context, info);
+        exp3 := instExp(scodeStmt.level, scope, context, info);
       then
         Statement.ASSERT(exp1, exp2, exp3, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_TERMINATE(info = info)
       algorithm
-        exp1 := instExp(scodeStmt.message, scope, info);
+        exp1 := instExp(scodeStmt.message, scope, context, info);
       then
         Statement.TERMINATE(exp1, makeSource(scodeStmt.comment, info));
 
@@ -3186,21 +3215,21 @@ algorithm
 
     case SCode.Statement.ALG_NORETCALL(info = info)
       algorithm
-        exp1 := instExp(scodeStmt.exp, scope, info);
+        exp1 := instExp(scodeStmt.exp, scope, context, info);
       then
         Statement.NORETCALL(exp1, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_WHILE(info = info)
       algorithm
-        exp1 := instExp(scodeStmt.boolExpr, scope, info);
-        next_origin := ExpOrigin.setFlag(origin, ExpOrigin.WHILE);
+        exp1 := instExp(scodeStmt.boolExpr, scope, context, info);
+        next_origin := InstContext.set(context, NFInstContext.WHILE);
         stmtl := instStatements(scodeStmt.whileBody, scope, next_origin);
       then
         Statement.WHILE(exp1, stmtl, makeSource(scodeStmt.comment, info));
 
     case SCode.Statement.ALG_RETURN()
       algorithm
-        if not ExpOrigin.flagSet(origin, ExpOrigin.FUNCTION) then
+        if not InstContext.inFunction(context) then
           Error.addSourceMessage(Error.RETURN_OUTSIDE_FUNCTION, {}, scodeStmt.info);
           fail();
         end if;
@@ -3209,8 +3238,7 @@ algorithm
 
     case SCode.Statement.ALG_BREAK()
       algorithm
-        if not (ExpOrigin.flagSet(origin, ExpOrigin.FOR) or
-                ExpOrigin.flagSet(origin, ExpOrigin.WHILE)) then
+        if not InstContext.inLoop(context) then
           Error.addSourceMessage(Error.BREAK_OUTSIDE_LOOP, {}, scodeStmt.info);
           fail();
         end if;
@@ -3219,7 +3247,7 @@ algorithm
 
     case SCode.Statement.ALG_FAILURE()
       algorithm
-        stmtl := instStatements(scodeStmt.stmts, scope, origin);
+        stmtl := instStatements(scodeStmt.stmts, scope, context);
       then
         Statement.FAILURE(stmtl, makeSource(scodeStmt.comment, scodeStmt.info));
 
@@ -3309,7 +3337,7 @@ algorithm
     // not part of the flat class.
     if InstNode.isComponent(n) then
       // The components shouldn't have been instantiated yet, so do it here.
-      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), false);
+      instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
 
       // If the component's class has a missingInnerMessage annotation, use it
       // to give a diagnostic message.
@@ -3606,8 +3634,9 @@ end markImplicitWhenExp_traverser;
 
 function checkPartialClass
   input InstNode node;
+  input InstContext.Type context;
 algorithm
-  if InstNode.isPartial(node) and not (Flags.getConfigBool(Flags.CHECK_MODEL) or Flags.isSet(Flags.NF_API)) then
+  if InstNode.isPartial(node) and not InstContext.inRelaxed(context) then
     Error.addSourceMessage(Error.INST_PARTIAL_CLASS,
       {InstNode.name(node)}, InstNode.info(node));
     fail();
