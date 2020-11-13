@@ -427,7 +427,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   case IDA_LS_SPGMR:
     idaData->J = NULL;
     idaData->tmpJac = NULL;
-    idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, PREC_NONE, 5 /* default value */);
+    idaData->linSol = SUNLinSol_SPGMR(idaData->y_linSol, PREC_NONE, idaData->N);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPGMR: Input incompatible.");
     }
@@ -436,7 +436,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   case IDA_LS_SPBCG:
     idaData->J = NULL;
     idaData->tmpJac = NULL;
-    idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, PREC_NONE, 5 /* default value */);
+    idaData->linSol = SUNLinSol_SPBCGS(idaData->y_linSol, PREC_NONE, idaData->N);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPBCGS: Input incompatible.");
     }
@@ -445,7 +445,7 @@ int ida_solver_initial(DATA* data, threadData_t *threadData,
   case IDA_LS_SPTFQMR:
     idaData->J = NULL;
     idaData->tmpJac = NULL;
-    idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, PREC_NONE, 5 /* default value */);
+    idaData->linSol = SUNLinSol_SPTFQMR(idaData->y_linSol, PREC_NONE, idaData->N);
     if (idaData->linSol == NULL) {
       throwStreamPrint(threadData, "##IDA## In function SUNLinSol_SPTFQMR: Input incompatible.");
     }

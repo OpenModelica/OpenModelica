@@ -165,7 +165,7 @@ void Kinsol::initialize() {
   _sparse = _algLoop->getUseSparseFormat();
   _dimSys =_algLoop->getDimReal();
 
-  // (Re-)Initialize vector of unknowns
+  // Free data, if it's not NULL allready
   if(_y)               delete []  _y;
   if(_y0)              delete []  _y0;
   if(_yScale)          delete []  _yScale;
@@ -178,6 +178,16 @@ void Kinsol::initialize() {
   if(_currentIterate)  delete []  _currentIterate;
   if(_y_old)           delete [] _y_old;
   if(_y_new)           delete [] _y_new;
+  N_VDestroy_Serial(_Kin_y);
+  N_VDestroy_Serial(_Kin_y0);
+  N_VDestroy_Serial(_Kin_yScale);
+  N_VDestroy_Serial(_Kin_fScale);
+  N_VDestroy(_Kin_ySolver);
+  SUNMatDestroy(_Kin_J);
+  SUNLinSolFree(_Kin_linSol);
+  KINFree(&_kinMem);
+
+  // Initialize vectors
   _y                = new double[_dimSys];
   _y0               = new double[_dimSys];
   _yScale           = new double[_dimSys];
@@ -202,8 +212,8 @@ void Kinsol::initialize() {
   memset(_jac, 0, _dimSys*_dimSys*sizeof(double));
   memset(_currentIterate, 0, _dimSys*sizeof(double));
 
+  // Scale y
   _algLoop->getNominalReal(_yScale);
-
   for (int i=0; i<_dimSys; i++) {
     if(_yScale[i] != 0) {
       _yScale[i] = 1/_yScale[i];
@@ -213,15 +223,7 @@ void Kinsol::initialize() {
   }
 
 
-  N_VDestroy_Serial(_Kin_y);
-  N_VDestroy_Serial(_Kin_y0);
-  N_VDestroy_Serial(_Kin_yScale);
-  N_VDestroy_Serial(_Kin_fScale);
-  N_VDestroy(_Kin_ySolver);
-  SUNMatDestroy(_Kin_J);
-  SUNLinSolFree(_Kin_linSol);
-  KINFree(&_kinMem);
-
+  // Create Kinsol memory
   _Kin_y = N_VMake_Serial(_dimSys, _y);
   _Kin_y0 = N_VMake_Serial(_dimSys, _y0);
   _Kin_yScale = N_VMake_Serial(_dimSys, _yScale);
@@ -229,14 +231,9 @@ void Kinsol::initialize() {
   _Kin_ySolver = N_VNew_Serial(_dimSys);
   _kinMem = KINCreate();
 
-  //Set Options
-  //idid = KINSetNumMaxIters(_kinMem, _kinsolSettings->getNewtMax());
+  // Set internal memory
   idid = KINInit(_kinMem, kin_fCallback, _Kin_y);
   if (check_flag(&idid, (char *)"KINInit", 1)) {
-    throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
-  }
-  idid = KINSetUserData(_kinMem, _data);
-  if (check_flag(&idid, (char *)"KINSetUserData", 1)) {
     throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
   }
 
@@ -250,6 +247,12 @@ void Kinsol::initialize() {
   idid = KINSetLinearSolver(_kinMem, _Kin_linSol, _Kin_J);
   if (check_flag(&idid, (char *)"KINSetLinearSolver", 1)) {
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::initialize()");
+  }
+
+  // Set optional inputs
+  idid = KINSetUserData(_kinMem, _data);
+  if (check_flag(&idid, (char *)"KINSetUserData", 1)) {
+    throw ModelicaSimulationError(ALGLOOP_SOLVER,"Kinsol::initialize()");
   }
 
   idid = KINSetErrFile(_kinMem, NULL);
@@ -385,7 +388,7 @@ void Kinsol::solve() {
   if (check_flag(&idid, (char *)"SUNLinSolFree", 1)) {
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
   }
-  _Kin_linSol = SUNLinSol_SPGMR(_Kin_ySolver, PREC_NONE, 5 /* default value */);
+  _Kin_linSol = SUNLinSol_SPGMR(_Kin_ySolver, PREC_NONE, _dimSys /* Krylov subspaces */);
   if (_Kin_linSol == NULL) {
     fprintf(stderr,"\nSUNDIALS_ERROR: SUNLinSol_SPGMR() failed - returned NULL pointer\n\n");
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
@@ -438,7 +441,7 @@ void Kinsol::solve() {
   if (check_flag(&idid, (char *)"SUNLinSolFree", 1)) {
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
   }
-  _Kin_linSol = SUNLinSol_SPBCGS(_Kin_ySolver, PREC_NONE, 5 /* default value */);
+  _Kin_linSol = SUNLinSol_SPBCGS(_Kin_ySolver, PREC_NONE, _dimSys /* Krylov subspaces */);
   if (_Kin_linSol == NULL) {
     fprintf(stderr,"\nSUNDIALS_ERROR: SUNLinSol_SPGMR() failed - returned NULL pointer\n\n");
     throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");

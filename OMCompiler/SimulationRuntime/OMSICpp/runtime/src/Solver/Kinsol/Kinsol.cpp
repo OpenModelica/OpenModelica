@@ -538,7 +538,7 @@ void Kinsol::solve()
     idid = SUNLinSolFree(_Kin_linSol);
     if (check_flag(&idid, (char *)"SUNLinSolFree", 1))
         throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
-    _Kin_linSol = SUNLinSol_SPGMR(_Kin_ySolver, PREC_NONE, 5 /* default value */);
+    _Kin_linSol = SUNLinSol_SPGMR(_Kin_ySolver, PREC_NONE, _dimSys);
     if (_Kin_linSol == NULL)
     {
         fprintf(stderr,
@@ -593,7 +593,7 @@ void Kinsol::solve()
     idid = SUNLinSolFree(_Kin_linSol);
     if (check_flag(&idid, (char *)"SUNLinSolFree", 1))
         throw ModelicaSimulationError(ALGLOOP_SOLVER, "Kinsol::solve()");
-    _Kin_linSol = SUNLinSol_SPBCGS(_Kin_ySolver, PREC_NONE, 5 /* default value */);
+    _Kin_linSol = SUNLinSol_SPBCGS(_Kin_ySolver, PREC_NONE, _dimSys);
     if (_Kin_linSol == NULL)
     {
         fprintf(stderr,
