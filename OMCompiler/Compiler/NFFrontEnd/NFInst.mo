@@ -700,7 +700,7 @@ algorithm
   end if;
 
   attrs := instDerivedAttributes(sattrs);
-  dims := list(Dimension.RAW_DIM(d) for d in AbsynUtil.typeSpecDimensions(ty));
+  dims := list(Dimension.RAW_DIM(d, InstNode.parent(node)) for d in AbsynUtil.typeSpecDimensions(ty));
   mod := Class.getModifier(cls);
 
   res := Restriction.fromSCode(SCodeUtil.getClassRestriction(element));
@@ -1491,7 +1491,7 @@ algorithm
         mod := Modifier.addParent(node, mod);
         checkOuterComponentMod(mod, component, node);
 
-        dims := list(Dimension.RAW_DIM(d) for d in component.attributes.arrayDims);
+        dims := list(Dimension.RAW_DIM(d, parent) for d in component.attributes.arrayDims);
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
         condition := Binding.fromAbsyn(component.condition, false, {node}, parent, info);
 
@@ -2138,7 +2138,6 @@ end checkRecursiveDefinition;
 
 function instDimension
   input output Dimension dimension;
-  input InstNode scope;
   input InstContext.Type context;
   input SourceInfo info;
 algorithm
@@ -2153,7 +2152,7 @@ algorithm
           case Absyn.NOSUB() then Dimension.UNKNOWN();
           case Absyn.SUBSCRIPT()
             algorithm
-              exp := instExp(dim.subscript, scope, context, info);
+              exp := instExp(dim.subscript, dimension.scope, context, info);
             then
               Dimension.UNTYPED(exp, false);
         end match;
@@ -2173,7 +2172,6 @@ protected
   ClassTree cls_tree;
   Restriction res;
   array<Dimension> dims;
-  InstNode dim_scope;
   SourceInfo info;
   Type ty;
   InstContext.Type next_context;
@@ -2238,11 +2236,10 @@ algorithm
       algorithm
         sections := instExpressions(cls.baseClass, scope, sections, context);
 
-        dim_scope := InstNode.parent(node);
         info := InstNode.info(node);
 
         for i in 1:arrayLength(dims) loop
-          dims[i] := instDimension(dims[i], dim_scope, context, info);
+          dims[i] := instDimension(dims[i], context, info);
         end for;
 
         if Restriction.isRecord(cls.restriction) then
@@ -2393,7 +2390,7 @@ algorithm
         instExpressions(c.classInst, node, context = context);
 
         for i in 1:arrayLength(dims) loop
-          dims[i] := instDimension(dims[i], InstNode.parent(node), context, c.info);
+          dims[i] := instDimension(dims[i], context, c.info);
         end for;
 
         // This is to avoid instantiating the same component multiple times,

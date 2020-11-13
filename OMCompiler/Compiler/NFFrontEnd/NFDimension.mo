@@ -49,6 +49,7 @@ public
 
   record RAW_DIM
     Absyn.Subscript dim;
+    InstNode scope;
   end RAW_DIM;
 
   record UNTYPED
