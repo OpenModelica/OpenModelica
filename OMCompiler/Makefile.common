@@ -622,8 +622,7 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
 	# copy the libs to the build/lib/omc directory
-	if test -d 3rdParty/sundials-5.4.0/build/lib64/ ; then mv 3rdParty/sundials-5.4.0/build/lib64 3rdParty/sundials-5.4.0/build/lib ; fi
-	(cp -pf 3rdParty/sundials-5.4.0/build/lib/* $(builddir_lib_omc))
+	find 3rdParty/sundials-5.4.0/build/ -type f -exec cp -pf {} $(builddir_lib_omc) ";"
 
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.1.0.0.dylib "$(builddir_lib_omc)/libsundials_arkode.1.0.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.1.dylib     "$(builddir_lib_omc)/libsundials_arkode.1.dylib"
