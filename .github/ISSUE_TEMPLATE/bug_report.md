@@ -30,7 +30,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 ### Additional files
-You can add additioanl zip files via drag-and-drop, e.g. for your minimal working example.
+You can add additional zip files via drag-and-drop, e.g. for your minimal working example.
 Please use `File->Save Total` in OMEdit to save a model and all its dependencies to a single file.
 
 ### Version and OS
