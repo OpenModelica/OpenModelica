@@ -37,7 +37,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 //     tt.rate = if tt.u and tt.rising > 0.0 then tt.amplitude / tt.rising else if not tt.u and tt.falling > 0.0 then -tt.amplitude / tt.falling else 0.0;
 //     tt.T = if tt.u and not tt.rising > 0.0 or not tt.u and not tt.falling > 0.0 or not abs(tt.amplitude) > 0.0 or initial() then time else time + (tt.endValue - pre(tt.y)) / tt.rate;
 //   end when;
-//   b = if time > 5.0 then if time < 9.0 then true else false else false;
+//   b = if time > 5.0 then time < 9.0 else false;
 // end SimpleTriggeredTrapezoid;
 // "
 // ""

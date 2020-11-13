@@ -3908,6 +3908,7 @@ public
   end isNegated;
 
   function negate
+    "Returns '-exp'"
     input output Expression exp;
   algorithm
     exp := match exp
@@ -3915,9 +3916,21 @@ public
       case REAL() then REAL(-exp.value);
       case CAST() then CAST(exp.ty, negate(exp.exp));
       case UNARY() then exp.exp;
-      else UNARY(Operator.OPERATOR(typeOf(exp), NFOperator.Op.UMINUS), exp);
+      else UNARY(Operator.makeUMinus(typeOf(exp)), exp);
     end match;
   end negate;
+
+  function logicNegate
+    "Returns 'not exp'"
+    input Expression exp;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      case BOOLEAN() then BOOLEAN(not exp.value);
+      case LUNARY() then exp.exp;
+      else LUNARY(Operator.makeNot(typeOf(exp)), exp);
+    end match;
+  end logicNegate;
 
   function arrayElements
     input Expression array;
