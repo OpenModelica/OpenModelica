@@ -251,7 +251,8 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_FORCE_FMI_ATTRIBUTES,
   Flags.DUMP_DATARECONCILIATION,
   Flags.ARRAY_CONNECT,
-  Flags.COMBINE_SUBSCRIPTS
+  Flags.COMBINE_SUBSCRIPTS,
+  Flags.ZMQ_LISTEN_TO_ALL
 };
 
 protected

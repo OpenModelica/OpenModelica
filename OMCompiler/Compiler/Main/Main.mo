@@ -642,7 +642,7 @@ protected
   String str,replystr,suffix;
 algorithm
   suffix := Flags.getConfigString(Flags.ZEROMQ_FILE_SUFFIX);
-  zmqSocket := ZeroMQ.initialize(if suffix=="" then "" else ("."+suffix));
+  zmqSocket := ZeroMQ.initialize(if suffix=="" then "" else ("."+suffix), Flags.isSet(Flags.ZMQ_LISTEN_TO_ALL));
   false := valueEq(SOME(0), zmqSocket);
   while true loop
     str := ZeroMQ.handleRequest(zmqSocket);

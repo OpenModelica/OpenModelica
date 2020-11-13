@@ -40,10 +40,11 @@ encapsulated package ZeroMQ
   Implemented in ./runtime/zeromqimpl.c"
 
 public function initialize
-  input String fileSuffix="";
+  input String fileSuffix;
+  input Boolean listenToAll;
   output Option<Integer> zmqSocket;
 
-  external "C" zmqSocket = ZeroMQ_initialize(fileSuffix) annotation(Library = "omcruntime");
+  external "C" zmqSocket = ZeroMQ_initialize(fileSuffix, listenToAll) annotation(Library = "omcruntime");
 end initialize;
 
 public function handleRequest
