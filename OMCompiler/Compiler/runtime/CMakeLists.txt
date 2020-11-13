@@ -13,6 +13,20 @@ if(NOT WIN32)
 endif()
 
 
+# Existence checks
+#################################################################################################
+
+# Some example portability checks. Add more just like this if you need more.
+# e.g this will define HAVE_TIME_H 1 if found or HAVE_TIME_H 0 otherwise
+omc_check_header_exists_and_define(time.h)
+# e.g this will define HAVE_CTIME_S 1 if found or HAVE_CTIME_S 0 otherwise
+omc_check_function_exists_and_define(ctime_s)
+omc_check_function_exists_and_define(ctime_r)
+
+
+
+# Libraries
+##################################################################################################
 set(OMC_RUNTIIME_SOURCES
     Error_omc.cpp
     Dynload_omc.cpp
@@ -185,8 +199,8 @@ target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
 
 
 ################################################################################
-# This is a lazy apporach to generating runtime/config.unix.h and Compiler/Util/Autoconf.mo
-# Needs to be refactorted quite a bit. The variable names should be updated to be more
+# This is a lazy approach to generating runtime/config.unix.h and Compiler/Util/Autoconf.mo
+# Needs to be refactored quite a bit. The variable names should be updated to be more
 # unique and descriptive. 
 # However, If I do that I need to update the .in files which means the normal compilation is
 # also affected. As a result I would have to change a few things since many things depend on
