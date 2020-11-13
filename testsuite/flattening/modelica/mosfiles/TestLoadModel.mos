@@ -88,10 +88,9 @@ loadModel(Invalid);getErrorString();
 // {"3.4 beta1"}
 // true
 // "3.4"
-// false
-// "Error: Failed to load package Modelica (3.4) using MODELICAPATH TestLibrary/.
-// "
-// {}
+// true
+// ""
+// {"3.4 beta1"}
 // true
 // "3.5 beta1"
 // true
