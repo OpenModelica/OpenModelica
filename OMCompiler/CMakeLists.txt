@@ -12,13 +12,14 @@ set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/.cmake/")
 include(omc_utils)
+include(omc_check_exists)
 
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_CXX_COMPILER_ID)
 omc_add_to_report(CMAKE_C_COMPILER_ID)
 
 # Export compile commands (compile_commands.json) for each source file. This helps editors (e.g. vscode, emacs) have
-# a more accurate code navigation and intelisens. E.g includes can be pinpointed instead of
+# a more accurate code navigation and intellisense. E.g includes can be pinpointed instead of
 # using glob expressions to parse everything.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
