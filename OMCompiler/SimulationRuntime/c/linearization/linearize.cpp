@@ -486,7 +486,6 @@ int linearize(DATA* data, threadData_t *threadData)
     double* matrixCz = 0;
     double* matrixDz = 0;
     string strA, strB, strC, strD, strCz, strDz, strX, strU, strZ0, filename, ext;
-	std::size_t pos, pos1, pos2;
 
     assertStreamPrint(threadData,0!=matrixA,"calloc failed");
     assertStreamPrint(threadData,0!=matrixB,"calloc failed");
