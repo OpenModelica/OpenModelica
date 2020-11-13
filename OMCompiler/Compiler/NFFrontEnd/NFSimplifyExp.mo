@@ -771,6 +771,7 @@ function simplifyIf
 protected
   Type ty;
   Expression cond, tb, fb;
+  Boolean tb_val;
 algorithm
   Expression.IF(ty, cond, tb, fb) := ifExp;
   cond := simplify(cond);
@@ -783,8 +784,20 @@ algorithm
       algorithm
         tb := simplify(tb);
         fb := simplify(fb);
+
+        if Expression.isEqual(tb, fb) then
+          // if cond then x else x => x
+          ifExp := tb;
+        elseif Expression.isBoolean(tb) and Expression.isBoolean(fb) then
+          // if cond then true else false => cond
+          // if cond then false else true => not cond
+          Expression.BOOLEAN(value = tb_val) := tb;
+          ifExp := if tb_val then cond else Expression.logicNegate(cond);
+        else
+          ifExp := Expression.IF(ty, cond, tb, fb);
+        end if;
       then
-        if Expression.isEqual(tb, fb) then tb else Expression.IF(ty, cond, tb, fb);
+        ifExp;
 
   end match;
 end simplifyIf;
