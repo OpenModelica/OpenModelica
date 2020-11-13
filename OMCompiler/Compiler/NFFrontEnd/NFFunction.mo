@@ -66,7 +66,6 @@ import Record = NFRecord;
 import NFTyping.ClassScope;
 import MatchKind = NFTypeCheck.MatchKind;
 import Restriction = NFRestriction;
-import NFTyping.ExpOrigin;
 import Dimension = NFDimension;
 import Statement = NFStatement;
 import Sections = NFSections;
@@ -78,6 +77,7 @@ import ElementSource;
 import SCodeUtil;
 import IOStream;
 import ComplexType = NFComplexType;
+import InstContext = NFInstContext;
 
 public
 type NamedArg = tuple<String, Expression>;
@@ -278,6 +278,7 @@ uniontype Function
   function lookupFunctionSimple
     input String functionName;
     input InstNode scope;
+    input InstContext.Type context;
     output ComponentRef functionRef;
   protected
     InstNode found_scope;
@@ -286,7 +287,7 @@ uniontype Function
     ComponentRef prefix;
   algorithm
     (functionRef, found_scope) :=
-      Lookup.lookupFunctionNameSilent(Absyn.CREF_IDENT(functionName, {}), scope);
+      Lookup.lookupFunctionNameSilent(Absyn.CREF_IDENT(functionName, {}), scope, context);
     prefix := ComponentRef.fromNodeList(InstNode.scopeList(found_scope));
     functionRef := ComponentRef.append(functionRef, prefix);
   end lookupFunctionSimple;
@@ -294,6 +295,7 @@ uniontype Function
   function lookupFunction
     input Absyn.ComponentRef functionName;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output ComponentRef functionRef;
   protected
@@ -311,7 +313,7 @@ uniontype Function
         {Dump.printComponentRefStr(functionName)}, info);
     end try;
 
-    (functionRef, found_scope) := Lookup.lookupFunctionName(functionName, scope, info);
+    (functionRef, found_scope) := Lookup.lookupFunctionName(functionName, scope, context, info);
     // If we found a function class we include the root in the prefix, but if we
     // instead found a component (i.e. a functional parameter) we don't.
     is_class := InstNode.isClass(ComponentRef.node(functionRef));
@@ -322,6 +324,7 @@ uniontype Function
   function instFunction
     input Absyn.ComponentRef functionName;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output ComponentRef fn_ref;
     output InstNode fn_node;
@@ -329,10 +332,11 @@ uniontype Function
   protected
     CachedData cache;
   algorithm
-    fn_ref := lookupFunction(functionName, scope, info);
-    (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, info);
+    fn_ref := lookupFunction(functionName, scope, context, info);
+    (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, context, info);
 
-    if (InstNode.isClass(ComponentRef.node(fn_ref)) and InstNode.isPartial(fn_node)) and not Flags.isSet(Flags.NF_API) then
+    if (InstNode.isClass(ComponentRef.node(fn_ref)) and InstNode.isPartial(fn_node)) and
+       not InstContext.inRelaxed(context) then
       Error.addSourceMessage(Error.PARTIAL_FUNCTION_CALL,
         {InstNode.name(fn_node)}, info);
       fail();
@@ -341,6 +345,7 @@ uniontype Function
 
   function instFunctionRef
     input output ComponentRef fn_ref;
+    input InstContext.Type context;
     input SourceInfo info;
     output InstNode fn_node;
     output Boolean specialBuiltin;
@@ -363,13 +368,14 @@ uniontype Function
             parent := InstNode.EMPTY_NODE();
           end if;
         then
-          instFunction2(ComponentRef.toPath(fn_ref), fn_node, info, parent);
+          instFunction2(ComponentRef.toPath(fn_ref), fn_node, context, info, parent);
     end match;
   end instFunctionRef;
 
   function instFunctionNode
     "Instantiates the given InstNode as a function."
     input output InstNode node;
+    input InstContext.Type context;
     input SourceInfo info;
   protected
     CachedData cache;
@@ -380,7 +386,7 @@ uniontype Function
       case CachedData.FUNCTION() then ();
       else
         algorithm
-          node := instFunction2(InstNode.scopePath(node, includeRoot = true), node, info);
+          node := instFunction2(InstNode.scopePath(node, includeRoot = true), node, context, info);
         then
           ();
     end match;
@@ -389,6 +395,7 @@ uniontype Function
   function instFunction2
     input Absyn.Path fnPath;
     input output InstNode fnNode;
+    input InstContext.Type context;
     input SourceInfo info;
     input InstNode parent = InstNode.EMPTY_NODE();
           output Boolean specialBuiltin;
@@ -407,7 +414,7 @@ uniontype Function
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
           fnNode := instFunction3(fnNode, info);
-          fnNode := OperatorOverloading.instConstructor(fnPath, fnNode, info);
+          fnNode := OperatorOverloading.instConstructor(fnPath, fnNode, context, info);
         then
           (fnNode, false);
 
@@ -421,7 +428,7 @@ uniontype Function
       case SCode.CLASS(restriction = SCode.R_OPERATOR(), classDef = cdef as SCode.PARTS())
         algorithm
           fnNode := instFunction3(fnNode, info);
-          fnNode := OperatorOverloading.instOperatorFunctions(fnNode, info);
+          fnNode := OperatorOverloading.instOperatorFunctions(fnNode, context, info);
         then
           (fnNode, false);
 
@@ -429,7 +436,7 @@ uniontype Function
         algorithm
           for p in cdef.pathLst loop
             cr := AbsynUtil.pathToCref(p);
-            (_,sub_fnNode,specialBuiltin) := instFunction(cr,fnNode,info);
+            (_,sub_fnNode,specialBuiltin) := instFunction(cr, fnNode, context, info);
             for f in getCachedFuncs(sub_fnNode) loop
               fnNode := InstNode.cacheAddFunc(fnNode, f, specialBuiltin);
             end for;
@@ -459,12 +466,12 @@ uniontype Function
     input output InstNode fnNode;
     input SourceInfo info;
   algorithm
-    fnNode := Inst.instantiate(fnNode, instPartial = true);
+    fnNode := Inst.instantiate(fnNode, context = NFInstContext.RELAXED);
 
     // Set up an empty function cache to signal that this function is
     // currently being instantiated, so recursive functions can be handled.
     InstNode.cacheInitFunc(fnNode);
-    Inst.instExpressions(fnNode);
+    Inst.instExpressions(fnNode, context = NFInstContext.RELAXED);
   end instFunction3;
 
   function getCachedFuncs
@@ -1326,8 +1333,8 @@ uniontype Function
   algorithm
     if not isTyped(fn) then
       // Type all the components in the function.
-      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, ExpOrigin.FUNCTION, node);
-      Typing.typeComponents(node, ExpOrigin.FUNCTION);
+      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, NFInstContext.FUNCTION, node);
+      Typing.typeComponents(node, NFInstContext.FUNCTION);
 
       if InstNode.isPartial(node) then
         ClassTree.applyComponents(Class.classTree(InstNode.getClass(node)), boxFunctionParameter);
@@ -1338,7 +1345,7 @@ uniontype Function
       // for that and can contain recursive calls to the function, so we leave
       // them for later.
       for c in fn.inputs loop
-        Typing.typeComponentBinding(c, ExpOrigin.FUNCTION);
+        Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
       end for;
 
       // Make the slots and return type for the function.
@@ -1358,15 +1365,15 @@ uniontype Function
   algorithm
     // Type the bindings of the outputs and local variables.
     for c in fn.outputs loop
-      Typing.typeComponentBinding(c, ExpOrigin.FUNCTION);
+      Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
     end for;
 
     for c in fn.locals loop
-      Typing.typeComponentBinding(c, ExpOrigin.FUNCTION);
+      Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
     end for;
 
     // Type the algorithm section of the function, if it has one.
-    Typing.typeFunctionSections(fn.node, ExpOrigin.FUNCTION);
+    Typing.typeFunctionSections(fn.node, NFInstContext.FUNCTION);
 
     // Type any derivatives of the function.
     for fn_der in fn.derivatives loop
@@ -1418,7 +1425,7 @@ uniontype Function
 
   function typePartialApplication
     input output Expression exp;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1431,7 +1438,7 @@ uniontype Function
     Type arg_ty;
     Variability arg_var;
     Function fn;
-    ExpOrigin.Type next_origin = ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
+    InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
     list<InstNode> inputs;
     list<Slot> slots;
   algorithm
@@ -1446,7 +1453,7 @@ uniontype Function
       then Variability.PARAMETER else Variability.CONSTANT;
 
     for arg in args loop
-      (arg, arg_ty, arg_var) := Typing.typeExp(arg, origin, info);
+      (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_context, info);
 
       arg_name :: rest_names := rest_names;
       (arg, inputs, slots) :=

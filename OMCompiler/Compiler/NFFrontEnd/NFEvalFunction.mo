@@ -54,7 +54,6 @@ import ElementSource;
 import Flags;
 import ModelicaExternalC;
 import System;
-import NFTyping.ExpOrigin;
 import SCode;
 import SCodeUtil;
 import NFPrefixes.Variability;

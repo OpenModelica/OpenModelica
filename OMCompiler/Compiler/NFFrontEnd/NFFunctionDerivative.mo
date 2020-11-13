@@ -45,11 +45,11 @@ protected
   import Typing = NFTyping;
   import TypeCheck = NFTypeCheck;
   import MatchKind = NFTypeCheck.MatchKind;
-  import ExpOrigin = NFTyping.ExpOrigin;
   import Ceval = NFCeval;
   import EvalTarget = NFCeval.EvalTarget;
   import Prefixes = NFPrefixes;
   import NFPrefixes.Variability;
+  import InstContext = NFInstContext;
 
   import FunctionDerivative = NFFunctionDerivative;
 
@@ -92,7 +92,7 @@ public
     Function.typeNodeCache(fnDer.derivativeFn);
     info := InstNode.info(fnDer.derivedFn);
 
-    (order, order_ty, var) := Typing.typeExp(fnDer.order, ExpOrigin.FUNCTION, info);
+    (order, order_ty, var) := Typing.typeExp(fnDer.order, NFInstContext.FUNCTION, info);
     (order, _, mk) := TypeCheck.matchTypes(order_ty, Type.INTEGER(), order);
 
     if TypeCheck.isIncompatibleMatch(mk) then
@@ -227,7 +227,7 @@ protected
 
       case SCode.Mod.MOD(subModLst = attrs, binding = SOME(Absyn.CREF(acref)))
         algorithm
-          (_, der_node) := Function.instFunction(acref, scope, mod.info);
+          (_, der_node) := Function.instFunction(acref, scope, NFInstContext.NO_CONTEXT, mod.info);
           addLowerOrderDerivative(der_node, fnNode);
           (order, conds) := getDerivativeAttributes(attrs, fn, fnNode, mod.info);
         then
@@ -277,7 +277,7 @@ protected
                 {id, "derivative"}, info);
             end if;
 
-            order := Inst.instExp(aexp, scope, info);
+            order := Inst.instExp(aexp, scope, NFInstContext.NO_CONTEXT, info);
           then
             ();
 

@@ -66,11 +66,11 @@ public
   import NFClassTree.ClassTree;
   import Class = NFClass;
   import NFComponentRef.Origin;
-  import NFTyping.ExpOrigin;
   import Values;
   import Record = NFRecord;
   import ClockKind = NFClockKind;
   import ExpressionIterator = NFExpressionIterator;
+  import InstContext = NFInstContext;
 
   record INTEGER
     Integer value;
@@ -3593,10 +3593,10 @@ public
 
   function containsAnyIterator
     input Expression exp;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     output Boolean iter;
   algorithm
-    if ExpOrigin.flagSet(origin, ExpOrigin.FOR) then
+    if InstContext.inFor(context) then
       iter := contains(exp, isIterator);
     else
       iter := false;
@@ -3807,7 +3807,7 @@ public
     Function.Function fn;
   algorithm
     op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
-    Function.Function.instFunctionNode(op_node, InstNode.info(InstNode.parent(op_node)));
+    Function.Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, InstNode.info(InstNode.parent(op_node)));
     {fn} := Function.Function.typeNodeCache(op_node);
     zeroExp := CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT));
     zeroExp := Ceval.evalExp(zeroExp);

@@ -82,7 +82,6 @@ import NFPrefixes.Variability;
 import Variable = NFVariable;
 import ElementSource;
 import Ceval = NFCeval;
-import NFTyping.ExpOrigin;
 import SimplifyExp = NFSimplifyExp;
 import Restriction = NFRestriction;
 import EvalConstants = NFEvalConstants;

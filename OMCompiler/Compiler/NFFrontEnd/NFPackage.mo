@@ -32,6 +32,7 @@
 encapsulated package NFPackage
   import FlatModel = NFFlatModel;
   import NFFlatten.FunctionTree;
+  import InstContext = NFInstContext;
 
 protected
   import ExecStat.execStat;
@@ -49,7 +50,6 @@ protected
   import Class = NFClass;
   import Sections = NFSections;
   import ClassTree = NFClassTree;
-  import NFTyping.ExpOrigin;
   import Variable = NFVariable;
   import Algorithm = NFAlgorithm;
 
@@ -146,7 +146,7 @@ public
       case Expression.CREF(cref = cref as ComponentRef.CREF())
         algorithm
           if ComponentRef.isPackageConstant(cref) then
-            Typing.typeComponentBinding(cref.node, ExpOrigin.CLASS);
+            Typing.typeComponentBinding(cref.node, NFInstContext.CLASS);
             // Add the constant to the set.
             constants := Constants.add(constants, ComponentRef.stripSubscriptsAll(cref));
             // Collect constants from the constant's binding.

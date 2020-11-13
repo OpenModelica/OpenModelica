@@ -43,7 +43,6 @@ import Typing = NFTyping;
 import Call = NFCall;
 import Dimension = NFDimension;
 import Type = NFType;
-import NFTyping.ExpOrigin;
 import ExpressionSimplify;
 import NFPrefixes.Variability;
 import NFClassTree.ClassTree;
@@ -52,6 +51,7 @@ import Subscript = NFSubscript;
 import NFTyping.TypingError;
 import DAE;
 import Record = NFRecord;
+import InstContext = NFInstContext;
 
 protected
 import NFFunction.Function;
@@ -362,7 +362,7 @@ function evalComponentBinding
   input Boolean evalSubscripts = true;
   output Expression exp;
 protected
-  ExpOrigin.Type exp_origin;
+  InstContext.Type exp_context;
   Component comp;
   Binding binding;
   Boolean evaluated;
@@ -370,10 +370,10 @@ protected
   Variability var;
   Option<Expression> start_exp;
 algorithm
-  exp_origin := if InstNode.isFunction(InstNode.explicitParent(node))
-    then ExpOrigin.FUNCTION else ExpOrigin.CLASS;
+  exp_context := if InstNode.isFunction(InstNode.explicitParent(node))
+    then NFInstContext.FUNCTION else NFInstContext.CLASS;
 
-  Typing.typeComponentBinding(node, exp_origin, typeChildren = false);
+  Typing.typeComponentBinding(node, exp_context, typeChildren = false);
   comp := InstNode.component(node);
   binding := Component.getBinding(comp);
 
@@ -3238,13 +3238,13 @@ algorithm
     index := Expression.toInteger(index_exp);
 
     // Get the index'd dimension of the expression.
-    (dim, _, ty_err) := Typing.typeExpDim(exp, index, ExpOrigin.CLASS, info);
+    (dim, _, ty_err) := Typing.typeExpDim(exp, index, NFInstContext.CLASS, info);
     Typing.checkSizeTypingError(ty_err, exp, index, info);
 
     // Return the size expression for the found dimension.
     outExp := Dimension.sizeExp(dim);
   else
-    (outExp, ty) := Typing.typeExp(exp, ExpOrigin.CLASS, info);
+    (outExp, ty) := Typing.typeExp(exp, NFInstContext.CLASS, info);
     expl := list(Dimension.sizeExp(d) for d in Type.arrayDims(ty));
     dim := Dimension.fromInteger(listLength(expl), Variability.PARAMETER);
     outExp := Expression.makeArray(Type.ARRAY(Type.INTEGER(), {dim}), expl);

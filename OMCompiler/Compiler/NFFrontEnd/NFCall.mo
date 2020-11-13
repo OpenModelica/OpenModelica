@@ -64,7 +64,6 @@ import NFFunction.NamedArg;
 import NFFunction.TypedArg;
 import NFFunction.TypedNamedArg;
 import NFInstNode.CachedData;
-import NFTyping.ExpOrigin;
 import Operator = NFOperator;
 import Prefixes = NFPrefixes;
 import SCodeUtil;
@@ -73,6 +72,7 @@ import Subscript = NFSubscript;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
 import Util;
+import InstContext = NFInstContext;
 
 import Call = NFCall;
 
@@ -134,12 +134,13 @@ public
     input Absyn.ComponentRef functionName;
     input Absyn.FunctionArgs functionArgs;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
   algorithm
     callExp := match functionArgs
-      case Absyn.FUNCTIONARGS() then instNormalCall(functionName, functionArgs, scope, info);
-      case Absyn.FOR_ITER_FARG() then instIteratorCall(functionName, functionArgs, scope, info);
+      case Absyn.FUNCTIONARGS() then instNormalCall(functionName, functionArgs, scope, context, info);
+      case Absyn.FOR_ITER_FARG() then instIteratorCall(functionName, functionArgs, scope, context, info);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown call type", sourceInfo());
@@ -150,7 +151,7 @@ public
 
   function typeCall
     input Expression callExp;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression outExp;
     output Type ty;
@@ -166,9 +167,9 @@ public
       case UNTYPED_CALL(ref = cref)
         algorithm
           if(BuiltinCall.needSpecialHandling(call)) then
-            (outExp, ty, var) := BuiltinCall.typeSpecial(call, origin, info);
+            (outExp, ty, var) := BuiltinCall.typeSpecial(call, context, info);
           else
-            ty_call := typeMatchNormalCall(call, origin, info);
+            ty_call := typeMatchNormalCall(call, context, info);
             ty := typeOf(ty_call);
             var := variability(ty_call);
 
@@ -188,13 +189,13 @@ public
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          (ty_call, ty, var) := typeArrayConstructor(call, origin, info);
+          (ty_call, ty, var) := typeArrayConstructor(call, context, info);
         then
           Expression.CALL(ty_call);
 
       case UNTYPED_REDUCTION()
         algorithm
-          (ty_call, ty, var) := typeReduction(call, origin, info);
+          (ty_call, ty, var) := typeReduction(call, context, info);
         then
           Expression.CALL(ty_call);
 
@@ -228,7 +229,7 @@ public
 
   function typeNormalCall
     input output NFCall call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
   algorithm
     call := match call
@@ -240,7 +241,7 @@ public
         algorithm
           fnl := Function.typeRefCache(call.ref);
         then
-          typeArgs(call, origin, info);
+          typeArgs(call, context, info);
 
       else
         algorithm
@@ -285,18 +286,18 @@ public
 
   function typeMatchNormalCall
     input output NFCall call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
   protected
     NFCall argtycall;
   algorithm
-    argtycall := typeNormalCall(call, origin, info);
-    call := matchTypedNormalCall(argtycall, origin, info);
+    argtycall := typeNormalCall(call, context, info);
+    call := matchTypedNormalCall(argtycall, context, info);
   end typeMatchNormalCall;
 
   function matchTypedNormalCall
     input output NFCall call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
   protected
     Function func;
@@ -1745,6 +1746,7 @@ protected
     input Absyn.ComponentRef functionName;
     input Absyn.FunctionArgs functionArgs;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
   protected
@@ -1758,14 +1760,14 @@ protected
 
     // try to inst the parameters
     try
-      (args, named_args) := instArgs(functionArgs, scope, info);
+      (args, named_args) := instArgs(functionArgs, scope, context, info);
     else
       // didn't work, is this DynamicSelect dynamic part?! #5631
       if Config.getGraphicsExpMode() and stringEq(name, "DynamicSelect") then
         // return just the first part of DynamicSelect
         callExp := match functionArgs
            case Absyn.FUNCTIONARGS() then
-             Inst.instExp(listHead(functionArgs.args), scope, info);
+             Inst.instExp(listHead(functionArgs.args), scope, context, info);
         end match;
         return;
       else
@@ -1782,7 +1784,7 @@ protected
       case "array" then BuiltinCall.makeArrayExp(args, named_args, info);
       else
         algorithm
-          fn_ref := Function.instFunction(functionName,scope,info);
+          fn_ref := Function.instFunction(functionName, scope, context, info);
         then
           Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, scope));
 
@@ -1792,6 +1794,7 @@ protected
   function instArgs
     input Absyn.FunctionArgs args;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output list<Expression> posArgs;
     output list<NamedArg> namedArgs;
@@ -1799,8 +1802,8 @@ protected
     (posArgs, namedArgs) := match args
       case Absyn.FUNCTIONARGS()
         algorithm
-          posArgs := list(Inst.instExp(a, scope, info) for a in args.args);
-          namedArgs := list(instNamedArg(a, scope, info) for a in args.argNames);
+          posArgs := list(Inst.instExp(a, scope, context, info) for a in args.args);
+          namedArgs := list(instNamedArg(a, scope, context, info) for a in args.argNames);
         then
           (posArgs, namedArgs);
 
@@ -1815,6 +1818,7 @@ protected
   function instNamedArg
     input Absyn.NamedArg absynArg;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output NamedArg arg;
   protected
@@ -1822,13 +1826,14 @@ protected
     Absyn.Exp exp;
   algorithm
     Absyn.NAMEDARG(argName = name, argValue = exp) := absynArg;
-    arg := (name, Inst.instExp(exp, scope, info));
+    arg := (name, Inst.instExp(exp, scope, context, info));
   end instNamedArg;
 
   function instIteratorCall
     input Absyn.ComponentRef functionName;
     input Absyn.FunctionArgs functionArgs;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression callExp;
   protected
@@ -1845,12 +1850,12 @@ protected
       else functionName;
     end match;
 
-    (exp, iters) := instIteratorCallArgs(functionArgs, scope, info);
+    (exp, iters) := instIteratorCallArgs(functionArgs, scope, context, info);
 
     if AbsynUtil.crefFirstIdent(fn_name) == "array" then
       callExp := Expression.CALL(UNTYPED_ARRAY_CONSTRUCTOR(exp, iters));
     else
-      fn_ref := Function.instFunction(fn_name, scope, info);
+      fn_ref := Function.instFunction(fn_name, scope, context, info);
       callExp := Expression.CALL(UNTYPED_REDUCTION(fn_ref, exp, iters));
     end if;
   end instIteratorCall;
@@ -1858,6 +1863,7 @@ protected
   function instIteratorCallArgs
     input Absyn.FunctionArgs args;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output Expression exp;
     output list<tuple<InstNode, Expression>> iters;
@@ -1868,8 +1874,8 @@ protected
 
       case Absyn.FOR_ITER_FARG()
         algorithm
-          (for_scope, iters) := instIterators(args.iterators, scope, info);
-          exp := Inst.instExp(args.exp, for_scope, info);
+          (for_scope, iters) := instIterators(args.iterators, scope, context, info);
+          exp := Inst.instExp(args.exp, for_scope, context, info);
         then
           ();
     end match;
@@ -1878,6 +1884,7 @@ protected
   function instIterators
     input list<Absyn.ForIterator> inIters;
     input InstNode scope;
+    input InstContext.Type context;
     input SourceInfo info;
     output InstNode outScope = scope;
     output list<tuple<InstNode, Expression>> outIters = {};
@@ -1891,7 +1898,7 @@ protected
         fail();
       end if;
 
-      range := Inst.instExp(Util.getOption(i.range), outScope, info);
+      range := Inst.instExp(Util.getOption(i.range), outScope, context, info);
       (outScope, iter) := Inst.addIteratorToScope(i.name, outScope, info);
       outIters := (iter, range) :: outIters;
     end for;
@@ -1901,7 +1908,7 @@ protected
 
   function typeArrayConstructor
     input output NFCall call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1912,7 +1919,7 @@ protected
     InstNode iter;
     list<Dimension> dims = {};
     list<tuple<InstNode, Expression>> iters = {};
-    ExpOrigin.Type next_origin;
+    InstContext.Type next_context;
     Boolean is_structural;
   algorithm
     (call, ty, variability) := match call
@@ -1920,12 +1927,12 @@ protected
         algorithm
           variability := Variability.CONSTANT;
           // The size of the expression must be known unless we're in a function.
-          is_structural := ExpOrigin.flagNotSet(origin, ExpOrigin.FUNCTION);
-          next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
+          is_structural := not InstContext.inFunction(context);
+          next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for i in call.iters loop
             (iter, range) := i;
-            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, next_origin, is_structural);
+            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, next_context, is_structural);
 
             if is_structural then
               range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
@@ -1938,9 +1945,9 @@ protected
           end for;
           iters := listReverseInPlace(iters);
 
-          // ExpOrigin.FOR is used here as a marker that this expression may contain iterators.
-          next_origin := intBitOr(next_origin, ExpOrigin.FOR);
-          (arg, ty, exp_var) := Typing.typeExp(call.exp, next_origin, info);
+          // InstContext.FOR is used here as a marker that this expression may contain iterators.
+          next_context := InstContext.set(next_context, NFInstContext.FOR);
+          (arg, ty, exp_var) := Typing.typeExp(call.exp, next_context, info);
           variability := Variability.variabilityMax(variability, exp_var);
           ty := Type.liftArrayLeftList(ty, dims);
           variability := Variability.variabilityMax(variability, exp_var);
@@ -1957,7 +1964,7 @@ protected
 
   function typeReduction
     input output NFCall call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
           output Type ty;
           output Variability variability;
@@ -1967,7 +1974,7 @@ protected
     InstNode iter;
     Variability iter_var, exp_var;
     list<tuple<InstNode, Expression>> iters = {};
-    ExpOrigin.Type next_origin;
+    InstContext.Type next_context;
     Function fn;
     String fold_id, res_id;
     tuple<Option<Expression>, String, String> fold_tuple;
@@ -1976,20 +1983,20 @@ protected
       case UNTYPED_REDUCTION()
         algorithm
           variability := Variability.CONSTANT;
-          next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
+          next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for i in call.iters loop
             (iter, range) := i;
-            (range, _, iter_var) := Typing.typeIterator(iter, range, origin, structural = false);
+            (range, _, iter_var) := Typing.typeIterator(iter, range, context, structural = false);
             variability := Variability.variabilityMax(variability, iter_var);
             iters := (iter, range) :: iters;
           end for;
 
           iters := listReverseInPlace(iters);
 
-          // ExpOrigin.FOR is used here as a marker that this expression may contain iterators.
-          next_origin := intBitOr(next_origin, ExpOrigin.FOR);
-          (arg, ty, exp_var) := Typing.typeExp(call.exp, next_origin, info);
+          // InstContext.FOR is used here as a marker that this expression may contain iterators.
+          next_context := InstContext.set(next_context, NFInstContext.FOR);
+          (arg, ty, exp_var) := Typing.typeExp(call.exp, next_context, info);
           variability := Variability.variabilityMax(variability, exp_var);
           {fn} := Function.typeRefCache(call.ref);
           TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
@@ -2053,7 +2060,7 @@ protected
           algorithm
             Type.COMPLEX(cls = op_node) := reductionType;
             op_node := Class.lookupElement("'+'", InstNode.getClass(op_node));
-            Function.instFunctionNode(op_node, info);
+            Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, info);
             {fn} := Function.typeNodeCache(op_node);
           then
             SOME(Expression.CALL(makeTypedCall(fn,
@@ -2101,7 +2108,7 @@ protected
 
   function typeArgs
     input output NFCall call;
-    input ExpOrigin.Type origin;
+    input InstContext.Type context;
     input SourceInfo info;
   algorithm
     call := match call
@@ -2112,15 +2119,15 @@ protected
         list<TypedArg> typedArgs;
         list<TypedNamedArg> typedNamedArgs;
         String name;
-        ExpOrigin.Type next_origin;
+        InstContext.Type next_context;
 
       case UNTYPED_CALL()
         algorithm
           typedArgs := {};
-          next_origin := ExpOrigin.setFlag(origin, ExpOrigin.SUBEXPRESSION);
+          next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for arg in call.arguments loop
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_origin, info);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_context, info);
             typedArgs := (arg, arg_ty, arg_var) :: typedArgs;
           end for;
 
@@ -2129,7 +2136,7 @@ protected
           typedNamedArgs := {};
           for narg in call.named_args loop
             (name,arg) := narg;
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_origin, info);
+            (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_context, info);
             typedNamedArgs := (name, arg, arg_ty, arg_var) :: typedNamedArgs;
           end for;
 

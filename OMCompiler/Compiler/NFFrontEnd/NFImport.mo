@@ -136,7 +136,7 @@ public
     Absyn.Import.UNQUAL_IMPORT(path = path) := imp;
 
     node := Lookup.lookupImport(path, scope, info);
-    node := Inst.instPackage(node);
+    node := Inst.instPackage(node, NFInstContext.NO_CONTEXT);
     tree := Class.classTree(InstNode.getClass(node));
 
     () := match tree
