@@ -2,7 +2,7 @@
 // keywords: xml, dump
 // status: correct
 // teardown_command: rm -f BB.BouncingBall.xml
-// cflags: -d=-newInst
+// cflags: -d=newInst
 // 
 // Tests that reinit works
 //
@@ -27,7 +27,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 //   b1.ay = -9.800000000000001;
 //   when b1.y <= 0.0 and b1.vy <= 0.0 then
 //     bounce_time = time;
-//     reinit(b1.vy, (-e) * pre(b1.vy));
+//     reinit(b1.vy, -e * pre(b1.vy));
 //   end when;
 // end BB.BouncingBall;
 // "
@@ -210,7 +210,7 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // <simpleEquations dimension=\"1\">
 // <whenEquation id=\"1\">
 // <WhenOperator>
-// reinit(b1.vy, (-e) * pre(b1.vy))
+// reinit(b1.vy, -e * pre(b1.vy))
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
@@ -218,16 +218,16 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // <ci> b1.vy 
 // </ci>
 // <apply>
-// <times/>
-// <apply>
 // <minus/>
+// <apply>
+// <times/>
 // <ci> e 
 // </ci>
-// </apply>
 // <apply>
 // <pre/>
 // <ci> b1.vy 
 // </ci>
+// </apply>
 // </apply>
 // </apply>
 // </apply>
@@ -275,8 +275,6 @@ readFile("BB.BouncingBall.xml"); getErrorString();
 // </involvedEquations>
 // </zeroCrossingElement>
 // </zeroCrossingList>
-// <functions>
-// </functions>
 // </dae>"
 // ""
 // endResult

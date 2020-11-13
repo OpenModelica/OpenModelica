@@ -2,7 +2,7 @@
 // keywords: xml, dump
 // status: correct
 // teardown_command: rm -f SimpleTriggeredTrapezoid.xml
-// cflags: -d=-newInst
+// cflags: -d=newInst
 // 
 // Tests that < is escaped in Xml dumps
 //
@@ -28,16 +28,16 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 //   protected discrete Real tt.endValue \"Value of y at time of recent edge\";
 //   protected discrete Real tt.rate \"Current rising/falling rate\";
 //   protected discrete Real tt.T(quantity = \"Time\", unit = \"s\") \"Predicted time of output reaching endValue\";
-//   Boolean b;
+//   output Boolean b;
 // equation
-//   tt.y = if time < tt.T then tt.endValue + (time - tt.T) * tt.rate else tt.endValue;
+//   b = tt.u;
+//   tt.y = if time < tt.T then tt.endValue - (tt.T - time) * tt.rate else tt.endValue;
 //   when {initial(), tt.u, not tt.u} then
 //     tt.endValue = if tt.u then tt.offset + tt.amplitude else tt.offset;
-//     tt.rate = if tt.u and tt.rising > 0.0 then tt.amplitude / tt.rising else if not tt.u and tt.falling > 0.0 then (-tt.amplitude) / tt.falling else 0.0;
+//     tt.rate = if tt.u and tt.rising > 0.0 then tt.amplitude / tt.rising else if not tt.u and tt.falling > 0.0 then -tt.amplitude / tt.falling else 0.0;
 //     tt.T = if tt.u and not tt.rising > 0.0 or not tt.u and not tt.falling > 0.0 or not abs(tt.amplitude) > 0.0 or initial() then time else time + (tt.endValue - pre(tt.y)) / tt.rate;
 //   end when;
-//   b = if time > 5.0 then time < 9.0 else false;
-//   b = tt.u;
+//   b = if time > 5.0 then if time < 9.0 then true else false else false;
 // end SimpleTriggeredTrapezoid;
 // "
 // ""
@@ -51,7 +51,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <variables dimension=\"12\">
 // <orderedVariables dimension=\"7\">
 // <variablesList>
-// <variable id=\"1\" name=\"b\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\">
+// <variable id=\"1\" name=\"b\" variability=\"discrete\" direction=\"output\" type=\"Boolean\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\">
 // </variable>
 // <variable id=\"2\" name=\"tt.T\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Predicted time of output reaching endValue\">
 // <attributesValues>
@@ -77,7 +77,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </variable>
 // <variable id=\"4\" name=\"tt.endValue\" variability=\"discrete\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Value of y at time of recent edge\">
 // </variable>
-// <variable id=\"5\" name=\"tt.y\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Connector of Real output signal\">
+// <variable id=\"5\" name=\"tt.y\" variability=\"continuous\" direction=\"none\" type=\"Real\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Connector of Real output signal\">
 // </variable>
 // <variable id=\"6\" name=\"$whenCondition1\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"b\">
 // <attributesValues>
@@ -205,7 +205,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </knownVariables>
 // <aliasVariables dimension=\"1\">
 // <variablesList>
-// <variable id=\"1\" name=\"tt.u\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Connector of Boolean input signal\">
+// <variable id=\"1\" name=\"tt.u\" variability=\"discrete\" direction=\"none\" type=\"Boolean\" fixed=\"false\" flow=\"NonFlow\" stream=\"NonStream\" comment=\"Connector of Boolean input signal\">
 // <bindExpression string=\"b\">
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
@@ -523,7 +523,7 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </math>
 // </MathML>
 // </equation>
-// <equation id=\"5\">tt.y = if time &lt; tt.T then tt.endValue + (time - tt.T) * tt.rate else tt.endValue
+// <equation id=\"5\">tt.y = if time &lt; tt.T then tt.endValue - (tt.T - time) * tt.rate else tt.endValue
 // <MathML>
 // <math xmlns=\"http://www.w3.org/1998/Math/MathML\">
 // <apply>
@@ -534,16 +534,16 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // <piecewise>
 // <piece>
 // <apply>
-// <plus/>
+// <minus/>
 // <ci> tt.endValue 
 // </ci>
 // <apply>
 // <times/>
 // <apply>
 // <minus/>
-// <ci> time 
-// </ci>
 // <ci> tt.T 
+// </ci>
+// <ci> time
 // </ci>
 // </apply>
 // <ci> tt.rate 
@@ -654,8 +654,6 @@ readFile("SimpleTriggeredTrapezoid.xml"); getErrorString();
 // </involvedEquations>
 // </zeroCrossingElement>
 // </zeroCrossingList>
-// <functions>
-// </functions>
 // </dae>"
 // ""
 // endResult
