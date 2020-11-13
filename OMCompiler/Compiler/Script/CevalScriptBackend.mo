@@ -1242,9 +1242,7 @@ algorithm
 
     case (cache,env,"jacobian",{Values.CODE(Absyn.C_TYPENAME(path))},_)
       equation
-        scodeP = SymbolTable.getSCode();
-        (cache, env, _, dae) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, scodeP, path);
-        dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, path, true, transform = true);
         filenameprefix = AbsynUtil.pathString(path);
         description = DAEUtil.daeDescription(dae);
         daelow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
@@ -3190,26 +3188,20 @@ algorithm
   match (inCache,inEnv,className,inMsg,filenameprefix)
     local
       String filename,file_dir, str;
-      list<SCode.Element> p_1;
-      DAE.DAElist dae_1,dae;
+      DAE.DAElist dae;
       FCore.Graph env;
       BackendDAE.BackendDAE dlow;
       Absyn.ComponentRef a_cref;
-      Absyn.Program p;
       Absyn.Msg msg;
       FCore.Cache cache;
       String flatModelicaStr,description;
 
     case (cache,env,_,_,_) /* mo file directory */
       equation
-        p = SymbolTable.getAbsyn();
-        p_1 = SymbolTable.getSCode();
-        (cache,env,_,dae_1) =
-        Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
-        dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
+        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, className, true, transform = true);
         description = DAEUtil.daeDescription(dae);
         a_cref = AbsynUtil.pathToCref(className);
-        file_dir = getFileDir(a_cref, p);
+        file_dir = getFileDir(a_cref, SymbolTable.getAbsyn());
         dlow = BackendDAECreate.lower(dae,cache,env,BackendDAE.EXTRA_INFO(description,filenameprefix));
         dlow = FindZeroCrossings.findZeroCrossings(dlow);
         flatModelicaStr = DAEDump.dumpStr(dae,FCore.getFunctionTree(cache));
@@ -3230,6 +3222,7 @@ public function runFrontEnd
   input Absyn.Path className;
   input Boolean relaxedFrontEnd "Do not check for illegal simulation models, so we allow instantation of packages, etc";
   input Boolean dumpFlat = false;
+  input Boolean transform = false;
   output Option<DAE.DAElist> odae = NONE();
   output String flatString = "";
 protected
@@ -3251,6 +3244,11 @@ algorithm
       print(GC.profStatsStr(GC.getProfStats(), head="GC stats after front-end:") + "\n");
     end if;
     ExecStat.execStat("FrontEnd - DAE generated");
+
+    if transform then
+      dae := DAEUtil.transformationsBeforeBackend(cache, env, dae);
+    end if;
+
     odae := SOME(dae);
   else
     // Return odae=NONE(); needed to update cache and symbol table if we fail
@@ -5567,9 +5565,8 @@ algorithm
 
     case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},_)
       equation
-        (cache,env,SOME(dae),_) = runFrontEnd(cache,inEnv,className,false);
+        (cache,env,SOME(dae),_) = runFrontEnd(cache,inEnv,className,false, transform = true);
         //print("instantiated class\n");
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         funcs = FCore.getFunctionTree(cache);
         if showFlatModelica then
           print(DAEDump.dumpStr(dae, funcs));
@@ -5761,23 +5758,6 @@ algorithm
   end matchcontinue;
 end subtractDummy;
 
-protected function dumpXMLDAEFrontEnd
-"@author: adrpo
- this function runs the front-end for the dumpXMLDAE function"
-  input FCore.Cache inCache;
-  input FCore.Graph inEnv;
-  input Absyn.Path inClassName;
-  output FCore.Cache outCache;
-  output FCore.Graph outEnv;
-  output DAE.DAElist outDae;
-protected
-  Boolean nfinst = FlagsUtil.set(Flags.SCODE_INST, false);
-algorithm
-  (outCache, outEnv, _, outDae) := Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, SymbolTable.getSCode(), inClassName);
-  outDae := DAEUtil.transformationsBeforeBackend(outCache,outEnv,outDae);
-  FlagsUtil.set(Flags.SCODE_INST, nfinst);
-end dumpXMLDAEFrontEnd;
-
 protected function dumpXMLDAE " author: fildo
  This function outputs the DAE system corresponding to a specific model."
   input FCore.Cache inCache;
@@ -5813,7 +5793,7 @@ algorithm
         // load the rewrite rules
         RewriteRules.loadRules();
 
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname);
+        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, classname, true, transform = true);
         description = DAEUtil.daeDescription(dae);
 
         compileDir = System.pwd() + Autoconf.pathDelimiter;
@@ -5853,7 +5833,7 @@ algorithm
         // load the rewrite rules
         RewriteRules.loadRules();
 
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname);
+        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, classname, true, transform = true);
         description = DAEUtil.daeDescription(dae);
 
         compileDir = System.pwd() + Autoconf.pathDelimiter;
@@ -5894,7 +5874,7 @@ algorithm
         // load the rewrite rules
         RewriteRules.loadRules();
 
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname);
+        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, classname, true, transform = true);
         description = DAEUtil.daeDescription(dae);
 
         compileDir = System.pwd() + Autoconf.pathDelimiter;
@@ -5933,7 +5913,7 @@ algorithm
         // load the rewrite rules
         RewriteRules.loadRules();
 
-        (cache, env, dae) = dumpXMLDAEFrontEnd(cache, env, classname);
+        (cache, env, SOME(dae), _) = runFrontEnd(cache, env, classname, true, transform = true);
         description = DAEUtil.daeDescription(dae);
 
         compileDir = System.pwd() + Autoconf.pathDelimiter;
