@@ -1,4 +1,5 @@
 set(OMC_MM_ALWAYS_SOURCES
+# Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/File.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Absyn.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/AbsynToSCode.mo
@@ -20,6 +21,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Dump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ElementSource.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionDump.mo
+  # Remember: Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Expression.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionSimplify.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ExpressionSimplifyTypes.mo
@@ -36,12 +38,13 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstExtends.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstSection.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstStateMachineUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstTypes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Lookup.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MetaUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/MMath.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Mod.mo
+  # Remember: Only files needed for compiling MetaModelica
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/OperatorOverloading.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Parser.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ParserExt.mo
@@ -53,29 +56,14 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/SCodeUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Static.mo
     #${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/SCodeSimplify.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFEnvExtends.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstPrefix.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstTypes.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeDependency.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeEnv.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeFlattenImports.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeFlatten.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeFlattenRedeclare.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeLookup.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeCheck.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/StateMachineFlatten.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Types.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitAbsyn.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitParserExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/Values.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/ValuesUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FUnitCheck.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableCrToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableStringToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableUnitToString.mo
 
+  # Only files needed for compiling MetaModelica
   # "FFrontEnd";
     ${CMAKE_CURRENT_SOURCE_DIR}/FFrontEnd/FBuiltin.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FFrontEnd/FCore.mo
@@ -93,55 +81,55 @@ set(OMC_MM_ALWAYS_SOURCES
    # NF files required for bootstrapping are put in the FrontEnd folder
    # NF files not required for bootstrapping are put together with the backend files
 
+  # Only files needed for compiling MetaModelica
   # "BackEnd";
     ${CMAKE_CURRENT_SOURCE_DIR}/BackEnd/BackendDAE.mo
 
+  # Only files needed for compiling MetaModelica
   # "SimCode";
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeFunctionUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SimCodeVar.mo
 
+  # Only files needed for compiling MetaModelica
   # "Script";
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScriptDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/GlobalScriptUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Interactive.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFApi.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/StaticScript.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/SymbolTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/InteractiveUtil.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScriptOMSimulator.mo
 
+# Only files needed for compiling MetaModelica
 # "Template";
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplAbsyn.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplMain.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/Tpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplParser.mo
-
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynJLDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynToJulia.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/DAEDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/ExpressionDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GenerateAPIFunctionsTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/SCodeDumpTpl.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplAbsyn.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplCodegen.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplMain.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/Tpl.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplParser.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/Unparsing.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegen.mo
 
+  # Only files needed for compiling MetaModelica
   # "Global";
     ${CMAKE_CURRENT_SOURCE_DIR}/Global/Global.mo
 
+  # Only files needed for compiling MetaModelica
   # "Main";
     ${CMAKE_CURRENT_SOURCE_DIR}/Main/Main.mo
 
+  # Only files needed for compiling MetaModelica
   # "Util";
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Array.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Autoconf.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlSetCR.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlSetPath.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlSetString.mo
@@ -151,20 +139,17 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/BaseAvlSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/BaseHashTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/BaseHashSet.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/BasePVector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ClockIndexes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Config.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Corba.mo
     #${CMAKE_CURRENT_SOURCE_DIR}/Util/Database.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Debug.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/DisjointSets.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DoubleEnded.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DynLoad.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ErrorExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Error.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ErrorTypes.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExecStat.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExpandableArray.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Flags.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FlagsUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GC.mo
@@ -172,6 +157,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Graph.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphStream.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphStreamExt.mo
+  # Remember: Only files needed for compiling MetaModelica
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSetExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashSetString.mo
@@ -186,7 +172,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableExpToIndex.mo
     #${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTablePathToFunction.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSM1.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableStringToPath.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableStringToProgram.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/IOStreamExt.mo
@@ -207,7 +192,6 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Util.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/VarTransform.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ZeroMQ.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMSimulator.mo
 )
 
 
@@ -273,7 +257,23 @@ set(OMC_MM_BACKEND_SOURCES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/CheckModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/DumpGraphviz.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/InstStateMachineUtil.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FUnit.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FUnitCheck.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableCrToUnit.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableStringToUnit.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/FHashTableUnitToString.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFEnvExtends.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstDump.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstPrefix.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFInstTypes.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeDependency.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeEnv.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeFlattenImports.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeFlatten.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeFlattenRedeclare.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeLookup.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/NFSCodeCheck.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitAbsynBuilder.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/FrontEnd/UnitChecker.mo
 
@@ -287,73 +287,74 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFArrayConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBinding.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBuiltin.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBuiltinCall.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBuiltinFuncs.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCall.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFBuiltin.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCallAttributes.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCall.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCallParameterTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCardinalityTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCeval.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClass.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClockKind.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComplexType.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComponent.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFComponentRef.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConvertDAE.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnectEquations.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnection.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnectionSets.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConnector.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFConvertDAE.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDimension.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDuplicateTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEquation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEvalConstants.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEvalFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEvalFunctionExt.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFEvalFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpandableConnectors.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpandExp.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpression.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpressionIterator.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFExpression.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatten.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionDerivative.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable3.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCG.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInst.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClass.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookupTree.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFDuplicateTree.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassTree.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCrToUnit.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableStringToUnit.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableUnitToString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFImport.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInline.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstContext.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFInstNode.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookup.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookupState.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFLookupTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFModifier.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFOCConnectionGraph.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFOperator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFOperatorOverloading.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFPackage.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFPrefixes.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCallParameterTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRangeIterator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRecord.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFRestriction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFScalarize.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSimplifyExp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSimplifyModel.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSections.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFStatement.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFStructural.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFSubscript.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFPackage.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFType.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFTypeCheck.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFType.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFTyping.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUnitCheck.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableStringToUnit.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableUnitToString.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCrToUnit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFUnit.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVariable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFVerifyModel.mo
@@ -364,6 +365,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Parsers/JSON.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Parsers/SimpleModelicaParser.mo
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/CevalScriptOMSimulator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Refactor.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/RewriteRules.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/Figaro.mo
@@ -374,6 +376,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/PackageManagement.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaKeywords.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFApi.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
@@ -422,13 +425,17 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeDump.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTpl.mo
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/Autoconf.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlTreeString.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AvlSetInt.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/AdjacencyList.mo
+    # ${CMAKE_CURRENT_SOURCE_DIR}/Util/BasePVector.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Curl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DiffAlgorithm.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/DisjointSets.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExpandableArray.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMIExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphML.mo
@@ -441,6 +448,8 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToExpSourceTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableCrToCrEqLst.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSimCodeEqCache.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/HashTableSM1.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/OMSimulator.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/PriorityQueue.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBAtomicSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBFunctions.mo
@@ -451,8 +460,8 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBPWLinearMap.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SimulationResults.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/TaskGraphResults.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Unzip.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Vector.mo
 
