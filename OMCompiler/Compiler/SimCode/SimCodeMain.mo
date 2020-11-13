@@ -982,44 +982,40 @@ algorithm
       FunctionTree funcTree;
       NBackendDAE bdae;
 
-    /* new backend - also activates new frontend by default */
+    // new backend - also activates new frontend by default
     case (graph, filenameprefix) guard(Flags.getConfigBool(Flags.NEW_BACKEND))
       algorithm
+        System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
 
         // set new instantiation flag to true
         FlagsUtil.enableDebug(Flags.SCODE_INST);
 
-
-        // set daeMode to true for now - only allow daeMode!
-        // FlagsUtil.setConfigBool(Flags.DAE_MODE, true);
-
-
-
-        // calculate stuff that we need to create SimCode data structure
-        /* ================================
-                       FRONTEND
-           ================================ */
+        // ================================
+        //             FRONTEND
+        // ================================
         System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);
         ExecStat.execStatReset();
         (flatModel, funcTree, _) := CevalScriptBackend.runFrontEndWorkNF(className);
+        timeFrontend := System.realtimeTock(ClockIndexes.RT_CLOCK_FRONTEND);
         ExecStat.execStat("FrontEnd");
 
-        /* ================================
-                       BACKEND
-           ================================ */
-
-        /*  BackendStuff can now be added here. */
+        // ================================
+        //             BACKEND
+        // ================================
         bdae := NBackendDAE.lower(flatModel, funcTree);
         if Flags.isSet(Flags.OPT_DAE_DUMP) then
           print(NBackendDAE.toString(bdae, "(After Lowering)"));
         end if;
         bdae := NBackendDAE.solve(bdae);
 
+        timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
+        ExecStat.execStat("backend");
+
         (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, className, inSimSettingsOpt);
 
     then (true, libs, file_dir);
 
-    /* old backend */
+    // old backend
     case (graph, filenameprefix) algorithm
       // calculate stuff that we need to create SimCode data structure
       System.realtimeTick(ClockIndexes.RT_CLOCK_FRONTEND);

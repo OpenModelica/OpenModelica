@@ -38,6 +38,8 @@ encapsulated package ClockIndexes
 
 "
 
+public constant Integer RT_NO_CLOCK = -1;
+
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
 public constant Integer RT_CLOCK_BUILD_MODEL = 10;
@@ -57,6 +59,9 @@ public constant Integer RT_CLOCK_USER_RESERVED = 23;
 public constant Integer RT_CLOCK_EXECSTAT_HPCOM_MODULES = 24;
 public constant Integer RT_CLOCK_SHOW_STATEMENT = 25;
 public constant Integer RT_CLOCK_FINST = 26;
+
+public constant Integer RT_CLOCK_NEW_BACKEND_MODULE = 30;
+
 public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
 
 annotation(__OpenModelica_Interface="util");

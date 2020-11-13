@@ -74,7 +74,10 @@ protected
   import NBVariable.VariablePointers;
 
   // Util imports
+  import BuiltinSystem = System;
+  import ClockIndexes;
   import Error;
+  import ExecStat;
   import ExpandableArray;
   import Flags;
   import StringUtil;
@@ -210,54 +213,86 @@ public
   function solve
     input output BackendDAE bdae;
   protected
-    list<tuple<Module.wrapper, String>> preOptModules;
-    list<tuple<Module.wrapper, String>> mainModules;
-    list<tuple<Module.wrapper, String>> postOptModules;
+    list<tuple<Module.wrapper, String, Integer>> preOptModules;
+    list<tuple<Module.wrapper, String, Integer>> mainModules;
+    list<tuple<Module.wrapper, String, Integer>> postOptModules;
+    list<tuple<String, Real>> preOptClocks;
+    list<tuple<String, Real>> mainClocks;
+    list<tuple<String, Real>> postOptClocks;
   algorithm
     // Pre-Partitioning Modules
     // (do not change order SIMPLIFY -> RSE -> EVENTS -> DETECTSTATES)
     preOptModules := {
-      (simplify,                    "simplify"),
-      (RemoveSimpleEquations.main,  "RemoveSimpleEquations"),
-      (Events.main,                 "Events"),
-      (DetectStates.main,           "DetectStates")
+      (simplify,                    "simplify",               ClockIndexes.RT_NO_CLOCK),
+      (RemoveSimpleEquations.main,  "RemoveSimpleEquations",  ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
+      (Events.main,                 "Events",                 ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
+      (DetectStates.main,           "DetectStates",           ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE)
     };
 
     mainModules := {
-      (function Partitioning.main(systemType = NBSystem.SystemType.ODE),  "Partitioning"),
-      (function Causalize.main(systemType = NBSystem.SystemType.ODE),     "Causalize"),
-      (Initialization.main,                                               "Initialization")
+      (function Partitioning.main(systemType = NBSystem.SystemType.ODE),  "Partitioning",   ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
+      (function Causalize.main(systemType = NBSystem.SystemType.ODE),     "Causalize",      ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
+      (Initialization.main,                                               "Initialization", ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE)
     };
 
     if Flags.getConfigBool(Flags.DAE_MODE) then
-      mainModules := (DAEMode.main, "DAE-Mode") :: mainModules;
+      mainModules := (DAEMode.main, "DAE-Mode", ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE) :: mainModules;
     end if;
 
     postOptModules := {
-      (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing"),
-      (Partitioning.splitSystems,                                     "Split Systems (ODE, ALG, ODE_EVT, ALG_EVT)"),
-      (function Jacobian.main(systemType = NBSystem.SystemType.ODE),  "Jacobian")
+      (function Tearing.main(systemType = NBSystem.SystemType.ODE),   "Tearing",        ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE),
+      (Partitioning.splitSystems,                                     "Split Systems",  ClockIndexes.RT_NO_CLOCK),
+      (function Jacobian.main(systemType = NBSystem.SystemType.ODE),  "Jacobian",       ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE)
     };
 
-    bdae := applyModules(bdae, preOptModules);
-    bdae := applyModules(bdae, mainModules);
-    bdae := applyModules(bdae, postOptModules);
+    (bdae, preOptClocks)  := applyModules(bdae, preOptModules);
+    (bdae, mainClocks)    := applyModules(bdae, mainModules);
+    (bdae, postOptClocks) := applyModules(bdae, postOptModules);
+    if Flags.isSet(Flags.DUMP_BACKEND_CLOCKS) then
+      if not listEmpty(preOptClocks) then
+        print(StringUtil.headline_4("Pre-Opt Backend Clocks:"));
+        print(stringDelimitList(list(Module.moduleClockString(clck) for clck in preOptClocks), "\n") + "\n");
+      end if;
+      if not listEmpty(mainClocks) then
+        print(StringUtil.headline_4("Main Backend Clocks:"));
+        print(stringDelimitList(list(Module.moduleClockString(clck) for clck in mainClocks), "\n") + "\n");
+      end if;
+      if not listEmpty(postOptClocks) then
+        print(StringUtil.headline_4("Post-Opt Backend Clocks:"));
+        print(stringDelimitList(list(Module.moduleClockString(clck) for clck in postOptClocks), "\n") + "\n\n");
+      end if;
+    end if;
   end solve;
 
   function applyModules
     input output BackendDAE bdae;
-    input list<tuple<Module.wrapper, String>> modules;
+    input list<tuple<Module.wrapper, String, Integer>> modules;
+    output list<tuple<String, Real>> module_clocks = {};
   protected
     Module.wrapper func;
     String name;
+    Integer clock_idx;
+    Real clock_time;
   algorithm
     for module in modules loop
-      (func, name) := module;
-      bdae := func(bdae);
+      (func, name, clock_idx) := module;
+      if clock_idx <> -1 then
+        BuiltinSystem.realtimeClear(clock_idx);
+        BuiltinSystem.realtimeTick(clock_idx);
+        bdae := func(bdae);
+        clock_time := BuiltinSystem.realtimeTock(clock_idx);
+        ExecStat.execStat(name);
+        module_clocks := (name, clock_time) :: module_clocks;
+      else
+        bdae := func(bdae);
+      end if;
+
       if Flags.isSet(Flags.OPT_DAE_DUMP) or (Flags.isSet(Flags.BLT_DUMP) and name == "Causalize") then
         print(toString(bdae, "(" + name + ")"));
       end if;
     end for;
+
+    module_clocks := listReverse(module_clocks);
   end applyModules;
 
   function simplify

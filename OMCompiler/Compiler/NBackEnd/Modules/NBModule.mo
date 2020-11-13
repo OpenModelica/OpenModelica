@@ -80,6 +80,17 @@ public
     input output BackendDAE bdae;
   end wrapper;
 
+  function moduleClockString
+    input tuple<String, Real> name_clock;
+    output String str;
+  protected
+    String name;
+    Real clck;
+  algorithm
+    (name, clck) := name_clock;
+    str := "\t" + name + StringUtil.repeat(".", 50 - stringLength(name)) + realString(clck);
+  end moduleClockString;
+
 // =========================================================================
 //                                MAIN MODULES
 // =========================================================================

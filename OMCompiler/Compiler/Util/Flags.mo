@@ -566,6 +566,8 @@ constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(195, "zmqDangerousAcceptConnec
   Gettext.gettext("When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1."));
 constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(196, "dumpSimplify", false,
   Gettext.gettext("Dumps expressions before and after simplification."));
+constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(197, "dumpBackendClocks", false,
+  Gettext.gettext("Dumps times for each backend module (only new backend)."));
 
 public
 // CONFIGURATION FLAGS

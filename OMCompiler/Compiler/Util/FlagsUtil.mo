@@ -252,7 +252,9 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.ARRAY_CONNECT,
   Flags.COMBINE_SUBSCRIPTS,
   Flags.ZMQ_LISTEN_TO_ALL,
-  Flags.DUMP_SIMPLIFY
+  Flags.DUMP_SIMPLIFY,
+  Flags.DUMP_BACKEND_CLOCKS
+>>>>>>> [NB] add backend clock timings
 };
 
 protected
