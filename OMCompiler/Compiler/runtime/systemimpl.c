@@ -2031,13 +2031,17 @@ typedef struct {
   int fileIsDir;
 } modelicaPathEntry;
 
-void splitVersion(const char *version, long *versionNum, char **versionExtra)
+int splitVersion(const char *version, long *versionNum, char **versionExtra)
 {
   const char *buf = version;
   char *next;
   long l;
   int cont,i=0,len;
   memset(versionNum,0,sizeof(long)*MODELICAPATH_LEVELS);
+  if (!isdigit(version[0])) {
+    *versionExtra = omc_alloc_interface.malloc_strdup(buf);
+    return 0;
+  }
   do {
     /* fprintf(stderr, "look versionNum %s\n", buf); */
     l = strtol(buf,&next,10);
@@ -2056,6 +2060,7 @@ void splitVersion(const char *version, long *versionNum, char **versionExtra)
   if (len >= 2 && 0==strcmp("mo", *versionExtra+len-2)) {
     (*versionExtra)[len-2] = '\0';
   }
+  return 1;
 }
 
 static int regularFileExistsInDirectory(const char *dir1, const char *dir2, const char *file)
@@ -2171,12 +2176,13 @@ static int modelicaPathEntryVersionGreater(long *ver1, long *ver2, int numToTest
 
 static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPathEntry *entries, int numEntries, int exactVersion, const char **outDir, char **outName, int *isDir)
 {
-  int i, j, foundIndex = -1;
+  int i, j, foundIndex = -1, foundDigitVersion;
   long version[MODELICAPATH_LEVELS] = {0}, foundVersion[MODELICAPATH_LEVELS] = {0};
   char *versionExtra;
-  splitVersion(searchTarget,version,&versionExtra);
+  /* fprintf(stderr, "searchTarget %s\n", searchTarget); */
+  foundDigitVersion = splitVersion(searchTarget,version,&versionExtra);
   /* fprintf(stderr, "expected %ld.%ld.%ld.%ld %s ; exact=%d\n", version[0], version[1], version[2], version[3], versionExtra, exactVersion); */
-  if (version > 0 && !*versionExtra) {
+  if (foundDigitVersion && !*versionExtra) {
     /* Makes us load 3.2.1 if 3.2.0.0 is not available.
      * Note that all 4 levels are present and 3.2 is equivalent to 3.2.0.0
      * Search one additional level for each time we fail.
@@ -2203,17 +2209,15 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
       }
     }
   }
-  if (*versionExtra) {
-    /* fprintf(stderr, "Look for version %lx versionExtra: %s\n", version, versionExtra); */
-    for (i=0; i<numEntries; i++) {
-      /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
-      fprintf(stderr, "is %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
-      if (modelicaPathEntryVersionEqual(entries[i].version,version,MODELICAPATH_LEVELS) && 0==strncmp(entries[i].versionExtra,versionExtra,strlen(versionExtra))) {
-        *outDir = entries[i].dir;
-        *outName = entries[i].file;
-        *isDir = entries[i].fileIsDir;
-        return 0;
-      }
+  /* fprintf(stderr, "Look for version %lx versionExtra: %s\n", version, versionExtra); */
+  for (i=0; i<numEntries; i++) {
+    /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
+    fprintf(stderr, "is %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
+    if (modelicaPathEntryVersionEqual(entries[i].version,version,MODELICAPATH_LEVELS) && 0==strncmp(entries[i].versionExtra,versionExtra,strlen(versionExtra))) {
+      *outDir = entries[i].dir;
+      *outName = entries[i].file;
+      *isDir = entries[i].fileIsDir;
+      return 0;
     }
   }
   return 1;
