@@ -564,6 +564,8 @@ constant DebugFlag ARRAY_CONNECT = DEBUG_FLAG(194, "arrayConnect", false,
   Gettext.gettext("Use experimental array connection handler."));
 constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(195, "combineSubscripts", false,
   Gettext.gettext("Move all subscripts to the end of component references."));
+constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(196, "zmqDangerousAcceptConnectionsFromAnywhere", false,
+  Gettext.gettext("When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1."));
 
 public
 // CONFIGURATION FLAGS
@@ -1232,8 +1234,8 @@ constant ConfigFlag INTERACTIVE = CONFIG_FLAG(114, "interactive",
   NONE(), EXTERNAL(), STRING_FLAG("none"),SOME(
     STRING_DESC_OPTION({
     ("none", Gettext.gettext("do nothing")),
-    ("corba", Gettext.gettext("Starts omc as a server listening on the socket interface.")),
-    ("tcp", Gettext.gettext("Starts omc as a server listening on the Corba interface.")),
+    ("corba", Gettext.gettext("Starts omc as a server listening on the Corba interface.")),
+    ("tcp", Gettext.gettext("Starts omc as a server listening on the socket interface.")),
     ("zmq", Gettext.gettext("Starts omc as a ZeroMQ server listening on the socket interface."))
     })),
   Gettext.gettext("Sets the interactive mode for omc."));
