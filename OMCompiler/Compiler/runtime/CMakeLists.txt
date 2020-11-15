@@ -63,9 +63,14 @@ target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
 target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
-target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
+
+if(OMC_USE_LPSOLVE)
+  target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
+else()
+  target_compile_definitions(omcruntime PRIVATE NO_LPLIB)
+endif()
 
 target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcruntime PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
@@ -125,9 +130,14 @@ target_link_libraries(omcruntime-boot PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime-boot PUBLIC Iconv::Iconv)
 target_link_libraries(omcruntime-boot PUBLIC ${LAPACK_LIBRARIES})
 target_link_libraries(omcruntime-boot PUBLIC omc::simrt::runtime)
-target_link_libraries(omcruntime-boot PUBLIC omc::3rd::lpsolve55)
 target_link_libraries(omcruntime-boot PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime-boot PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
+
+if(OMC_USE_LPSOLVE)
+  target_link_libraries(omcruntime-boot PUBLIC omc::3rd::lpsolve55)
+else()
+  target_compile_definitions(omcruntime-boot PRIVATE NO_LPLIB)
+endif()
 
 target_include_directories(omcruntime-boot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcruntime-boot PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
