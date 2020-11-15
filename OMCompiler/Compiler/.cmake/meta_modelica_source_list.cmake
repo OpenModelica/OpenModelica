@@ -113,7 +113,7 @@ set(OMC_MM_ALWAYS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GenerateAPIFunctionsTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/SCodeDumpTpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplAbsyn.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplCodegen.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegen.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/Tpl.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/TplParser.mo
