@@ -55,7 +55,13 @@ GET_FILENAME_COMPONENT(SUNDIALS_PATH "${SUNDIALS_PATH}" ABSOLUTE)
 MESSAGE(STATUS "Sundials PATH:")
 MESSAGE(STATUS "${SUNDIALS_PATH}")
 
-FIND_PATH(SUNDIALS_LIB_DIR NAMES sundials_nvecserial libsundials_nvecserial sundials_nvecserial.dll libsundials_nvecserial.so sundials_nvecserial.a libsundials_nvecserial.a sundials_nvecserial.lib PATHS ${SUNDIALS_PATH}/lib ${SUNDIALS_PATH}/lib64)
+file(GLOB
+  SUNDIALS_POTENTIAL_LIBS
+  LIST_DIRECTORIES true
+  ${SUNDIALS_PATH}/lib*/* ${SUNDIALS_PATH}/lib*
+)
+
+FIND_PATH(SUNDIALS_LIB_DIR NAMES sundials_nvecserial libsundials_nvecserial sundials_nvecserial.dll libsundials_nvecserial.so sundials_nvecserial.a libsundials_nvecserial.a sundials_nvecserial.lib PATHS ${SUNDIALS_POTENTIAL_LIBS} )
 
 MESSAGE(STATUS "Sundials libs:")
 MESSAGE(STATUS "${SUNDIALS_LIB_DIR}")
