@@ -1334,25 +1334,25 @@ constant ConfigFlag MAX_SIZE_ASSC = CONFIG_FLAG(133, "maxSizeASSC",
   Gettext.gettext("Sets the maximum system size for the analytical to structural conversion algorithm (default 200)."));
 
 constant ConfigFlag USE_ZEROMQ_IN_SIM = CONFIG_FLAG(134, "useZeroMQInSim",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Configures to use zeroMQ in simulation runtime to exchange information via ZeroMQ with other applications"));
 
 constant ConfigFlag ZEROMQ_PUB_PORT = CONFIG_FLAG(135, "zeroMQPubPort",
-  NONE(), EXTERNAL(), INT_FLAG(3203), NONE(),
+  NONE(), INTERNAL(), INT_FLAG(3203), NONE(),
   Gettext.gettext("Configures port number for simulation runtime to send information via ZeroMQ"));
 
 constant ConfigFlag ZEROMQ_SUB_PORT = CONFIG_FLAG(136, "zeroMQSubPort",
-  NONE(), EXTERNAL(), INT_FLAG(3204), NONE(),
+  NONE(), INTERNAL(), INT_FLAG(3204), NONE(),
   Gettext.gettext("Configures port number for simulation runtime to receive information via ZeroMQ"));
 
 constant ConfigFlag ZEROMQ_JOB_ID = CONFIG_FLAG(137, "zeroMQJOBID",
-  NONE(), EXTERNAL(), STRING_FLAG("empty"), NONE(),
+  NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the omc api call is labelled for zeroMQ communication."));
 constant ConfigFlag ZEROMQ_SERVER_ID = CONFIG_FLAG(138, "zeroMQServerID",
-  NONE(), EXTERNAL(), STRING_FLAG("empty"), NONE(),
+  NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which server application is labelled for zeroMQ communication."));
 constant ConfigFlag ZEROMQ_CLIENT_ID = CONFIG_FLAG(139, "zeroMQClientID",
-  NONE(), EXTERNAL(), STRING_FLAG("empty"), NONE(),
+  NONE(), INTERNAL(), STRING_FLAG("empty"), NONE(),
   Gettext.gettext("Configures the ID with which the client application is labelled for zeroMQ communication."));
 
 constant ConfigFlag FMI_VERSION = CONFIG_FLAG(140,
@@ -1388,6 +1388,10 @@ constant ConfigFlag NEW_BACKEND = CONFIG_FLAG(145, "newBackend",
 constant ConfigFlag PARMODAUTO = CONFIG_FLAG(146, "parmodauto",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Experimental: Enable parallelization of independent systems of equations in the translated model."));
+
+constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(147, "interactivePort",
+  NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
+  Gettext.gettext("Sets the port used by the interactive server."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
