@@ -404,7 +404,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMI_FILTER,
   Flags.FMI_SOURCES,
   Flags.FMI_FLAGS,
-  Flags.NEW_BACKEND
+  Flags.NEW_BACKEND,
+  Flags.INTERACTIVE_PORT
 };
 
 public function new
