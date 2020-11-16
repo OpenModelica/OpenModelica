@@ -413,21 +413,21 @@ uniontype Function
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
-          fnNode := instFunction3(fnNode, info);
+          fnNode := instFunction3(fnNode, context, info);
           fnNode := OperatorOverloading.instConstructor(fnPath, fnNode, context, info);
         then
           (fnNode, false);
 
       case SCode.CLASS() guard SCodeUtil.isRecord(def)
         algorithm
-          fnNode := instFunction3(fnNode, info);
-          fnNode := Record.instDefaultConstructor(fnPath, fnNode, info);
+          fnNode := instFunction3(fnNode, context, info);
+          fnNode := Record.instDefaultConstructor(fnPath, fnNode, context, info);
         then
           (fnNode, false);
 
       case SCode.CLASS(restriction = SCode.R_OPERATOR(), classDef = cdef as SCode.PARTS())
         algorithm
-          fnNode := instFunction3(fnNode, info);
+          fnNode := instFunction3(fnNode, context, info);
           fnNode := OperatorOverloading.instOperatorFunctions(fnNode, context, info);
         then
           (fnNode, false);
@@ -451,7 +451,7 @@ uniontype Function
           end if;
 
           fnNode := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(parent), fnNode);
-          fnNode := instFunction3(fnNode, info);
+          fnNode := instFunction3(fnNode, context, info);
           fn := new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fn.derivatives := FunctionDerivative.instDerivatives(fnNode, fn);
@@ -464,14 +464,15 @@ uniontype Function
 
   function instFunction3
     input output InstNode fnNode;
+    input InstContext.Type context;
     input SourceInfo info;
   algorithm
-    fnNode := Inst.instantiate(fnNode, context = NFInstContext.RELAXED);
+    fnNode := Inst.instantiate(fnNode, context = context, instPartial = true);
 
     // Set up an empty function cache to signal that this function is
     // currently being instantiated, so recursive functions can be handled.
     InstNode.cacheInitFunc(fnNode);
-    Inst.instExpressions(fnNode, context = NFInstContext.RELAXED);
+    Inst.instExpressions(fnNode, context = context);
   end instFunction3;
 
   function getCachedFuncs

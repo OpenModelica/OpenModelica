@@ -80,7 +80,7 @@ public
       end for;
     end if;
 
-    recordNode := Record.instDefaultConstructor(path, recordNode, info);
+    recordNode := Record.instDefaultConstructor(path, recordNode, context, info);
   end instConstructor;
 
   function instOperatorFunctions

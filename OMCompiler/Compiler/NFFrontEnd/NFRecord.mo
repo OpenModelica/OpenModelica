@@ -47,6 +47,7 @@ import NFInstNode.InstNode;
 import NFInstNode.InstNodeType;
 import Type = NFType;
 import Subscript = NFSubscript;
+import InstContext = NFInstContext;
 
 protected
 import Inst = NFInst;
@@ -97,6 +98,7 @@ end Field;
 function instDefaultConstructor
   input Absyn.Path path;
   input output InstNode node;
+  input InstContext.Type context;
   input SourceInfo info;
 protected
   list<InstNode> inputs, locals, all_params;
@@ -123,8 +125,8 @@ algorithm
     ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
   end try;
 
-  ctor_node := Inst.instantiate(ctor_node, context = NFInstContext.RELAXED);
-  Inst.instExpressions(ctor_node, context = NFInstContext.RELAXED);
+  ctor_node := Inst.instantiate(ctor_node, context = context, instPartial = true);
+  Inst.instExpressions(ctor_node, context = context);
 
   // Collect the record fields.
   (inputs, locals, all_params) := collectRecordParams(ctor_node);
