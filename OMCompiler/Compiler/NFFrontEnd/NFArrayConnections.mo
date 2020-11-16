@@ -53,6 +53,7 @@ protected
   import MetaModelica.Dangerous.*;
   import NFInstNode.InstNode;
   import NFPrefixes.Variability;
+  import NFPrefixes.Purity;
   import Operator = NFOperator;
   import Op = NFOperator.Op;
   import SBFunctions;
@@ -877,7 +878,7 @@ protected
 
         if is_sum then
           e := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SUM,
-            {e}, Expression.variability(e), Type.arrayElementType(Expression.typeOf(e))));
+            {e}, Expression.variability(e), Purity.PURE, Type.arrayElementType(Expression.typeOf(e))));
         end if;
 
         expl := e :: expl;

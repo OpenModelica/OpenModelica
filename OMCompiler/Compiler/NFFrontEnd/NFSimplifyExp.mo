@@ -37,7 +37,7 @@ import Type = NFType;
 import Call = NFCall;
 import Subscript = NFSubscript;
 import NFOperator.Op;
-import NFPrefixes.Variability;
+import NFPrefixes.{Variability, Purity};
 import NFInstNode.InstNode;
 
 protected
@@ -324,6 +324,7 @@ function simplifyArrayConstructor
 protected
   Type ty;
   Variability var;
+  Purity pur;
   Expression exp, e;
   list<tuple<InstNode, Expression>> iters;
   InstNode iter;
@@ -331,7 +332,7 @@ protected
   Integer dim_size;
   Boolean expanded;
 algorithm
-  Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters) := call;
+  Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters) := call;
   iters := list((Util.tuple21(i), simplify(Util.tuple22(i))) for i in iters);
 
   outExp := matchcontinue (iters)
@@ -360,7 +361,7 @@ algorithm
         exp := simplify(exp);
         ty := Type.simplify(ty);
       then
-        Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters));
+        Expression.CALL(Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters));
   end matchcontinue;
 end simplifyArrayConstructor;
 

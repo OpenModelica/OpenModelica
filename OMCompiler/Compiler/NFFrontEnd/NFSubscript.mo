@@ -47,7 +47,7 @@ public
   import Absyn;
   import AbsynUtil;
   import Dimension = NFDimension;
-  import NFPrefixes.Variability;
+  import NFPrefixes.{Variability, Purity};
   import NFCeval.EvalTarget;
 
   import Subscript = NFSubscript;
@@ -898,6 +898,27 @@ public
       var := Prefixes.variabilityMax(var, variability(s));
     end for;
   end variabilityList;
+
+  function purity
+    input Subscript subscript;
+    output Purity purity;
+  algorithm
+    purity := match subscript
+      case UNTYPED() then Expression.purity(subscript.exp);
+      case INDEX() then Expression.purity(subscript.index);
+      case SLICE() then Expression.purity(subscript.slice);
+      case WHOLE() then Purity.IMPURE;
+    end match;
+  end purity;
+
+  function purityList
+    input list<Subscript> subscripts;
+    output Purity pur = Purity.PURE;
+  algorithm
+    for s in subscripts loop
+      pur := Prefixes.purityMin(pur, purity(s));
+    end for;
+  end purityList;
 
   function mergeList
     "Merges a list of subscripts with a list of 'existing' subscripts.

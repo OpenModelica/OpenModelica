@@ -51,8 +51,7 @@ import ElementSource;
 import Expression = NFExpression;
 import Face = NFConnector.Face;
 import List;
-import NFPrefixes.ConnectorType;
-import NFPrefixes.Variability;
+import NFPrefixes.{Variability, Purity, ConnectorType};
 import Operator = NFOperator;
 import Type = NFType;
 import Call = NFCall;
@@ -282,7 +281,7 @@ algorithm
     // Modelica doesn't allow == for Reals, so to keep the flat Modelica
     // somewhat valid we use 'abs(lhs - rhs) <= 0' instead.
     exp := Expression.BINARY(lhs_exp, Operator.makeSub(ty), rhs_exp);
-    exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp)));
+    exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.ABS_REAL, {exp}, Expression.variability(exp), Purity.PURE));
     exp := Expression.RELATION(exp, Operator.makeLessEq(ty), Expression.REAL(0.0));
   else
     // For any other type, generate assertion for 'lhs == rhs'.
@@ -583,7 +582,7 @@ function makeInStreamCall
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   inStreamCall := Expression.CALL(Call.makeTypedCall(
-    NFBuiltinFuncs.IN_STREAM, {streamExp}, Expression.variability(streamExp)));
+    NFBuiltinFuncs.IN_STREAM, {streamExp}, Expression.variability(streamExp), Purity.PURE));
 end makeInStreamCall;
 
 function makePositiveMaxCall
@@ -609,7 +608,7 @@ algorithm
   end if;
 
   positiveMaxCall := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.POSITIVE_MAX_REAL,
-    {flowExp, flow_threshold}, Connector.variability(element)));
+    {flowExp, flow_threshold}, Connector.variability(element), Purity.PURE));
 
   setGlobalRoot(Global.isInStream, SOME(true));
 end makePositiveMaxCall;
@@ -668,7 +667,7 @@ algorithm
         iters := listReverseInPlace(iters);
         arg := ExpandExp.expandArrayConstructor(call.exp, ty, iters);
       then
-        Expression.CALL(Call.makeTypedCall(call.fn, {arg}, call.var, call.ty));
+        Expression.CALL(Call.makeTypedCall(call.fn, {arg}, call.var, Purity.PURE, call.ty));
 
   end match;
 
@@ -925,7 +924,7 @@ function makeSmoothCall
   output Expression callExp;
 algorithm
   callExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SMOOTH,
-    {Expression.INTEGER(order), arg}, Expression.variability(arg)));
+    {Expression.INTEGER(order), arg}, Expression.variability(arg), Purity.PURE));
 end makeSmoothCall;
 
 protected function removeStreamSetElement

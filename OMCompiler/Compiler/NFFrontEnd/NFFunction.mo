@@ -80,9 +80,18 @@ import ComplexType = NFComplexType;
 import InstContext = NFInstContext;
 
 public
+
 type NamedArg = tuple<String, Expression>;
-type TypedArg = tuple<Expression, Type, Variability>;
-type TypedNamedArg = tuple<String, Expression, Type, Variability>;
+
+uniontype TypedArg
+  record TYPED_ARG
+    Option<String> name;
+    Expression value;
+    Type ty;
+    Variability var;
+    Purity purity;
+  end TYPED_ARG;
+end TypedArg;
 
 public
 type SlotType = enumeration(
@@ -805,7 +814,7 @@ uniontype Function
     "Matches the given arguments to the slots in a function, and returns the
      arguments sorted in the order of the function parameters."
     input list<TypedArg> posArgs;
-    input list<TypedNamedArg> namedArgs;
+    input list<TypedArg> namedArgs;
     input Function fn;
     input SourceInfo info;
     output list<TypedArg> args = posArgs;
@@ -862,17 +871,14 @@ uniontype Function
   function fillNamedArg
     "Looks up a slot with the given name and tries to fill it with the given
      argument expression."
-    input TypedNamedArg inArg;
+    input TypedArg arg;
     input output array<Slot> slots;
     input Function fn "For error reporting";
     input SourceInfo info;
           output Boolean matching = true;
   protected
     Slot s;
-    String argName;
-    Type ty;
-    Expression argExp;
-    Variability var;
+    String arg_name;
   algorithm
     // Try to find a slot and fill it with the argument expression.
     // Positional arguments fill the slots from the start of the array, so
@@ -880,19 +886,19 @@ uniontype Function
     for i in arrayLength(slots):-1:1 loop
       s := slots[i];
 
-      (argName, argExp, ty, var) := inArg;
+      SOME(arg_name) := arg.name;
 
-      if s.name == argName then
+      if s.name == arg_name then
         if not Slot.named(s) then
           // Slot doesn't allow named argument (used for some builtin functions).
           matching := false;
         elseif isNone(s.arg) then
-          s.arg := SOME((argExp,ty,var));
+          s.arg := SOME(arg);
           slots[i] := s;
         else
           // TODO: Improve the error message, should mention function name.
           Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
-            {argName, ""}, info);
+            {arg_name, ""}, info);
           matching := false;
         end if;
 
@@ -907,16 +913,16 @@ uniontype Function
     // exist, or we removed it when handling positional argument. We need to
     // search through all slots to be sure.
     for s in fn.slots loop
-      if argName == s.name then
+      if arg_name == s.name then
         // We found a slot, so it must have already been filled.
         Error.addSourceMessage(Error.FUNCTION_SLOT_ALREADY_FILLED,
-          {argName, ""}, info);
+          {arg_name, ""}, info);
         return;
       end if;
 
       // No slot could be found, so it doesn't exist.
       Error.addSourceMessage(Error.NO_SUCH_PARAMETER,
-        {InstNode.name(instance(fn)), argName}, info);
+        {InstNode.name(instance(fn)), arg_name}, info);
     end for;
 
   end fillNamedArg;
@@ -1007,7 +1013,8 @@ uniontype Function
           arrayUpdate(slots, slot.index, slot);
 
           exp := evaluateSlotExp(Util.getOption(slot.default), slots, info);
-          outArg := (exp, Expression.typeOf(exp), Expression.variability(exp));
+          outArg := TypedArg.TYPED_ARG(NONE(), exp, Expression.typeOf(exp),
+            Expression.variability(exp), Expression.purity(exp));
 
           slot.arg := SOME(outArg);
           slot.evalStatus := SlotEvalStatus.EVALUATED;
@@ -1038,12 +1045,20 @@ uniontype Function
       local
         ComponentRef cref;
         Option<Slot> slot;
+        TypedArg arg;
 
       case Expression.CREF(cref = cref as ComponentRef.CREF(restCref = ComponentRef.EMPTY()))
         algorithm
           slot := lookupSlotInArray(ComponentRef.firstName(cref), slots);
+
+          if isSome(slot) then
+            arg := fillDefaultSlot(Util.getOption(slot), slots, info);
+            outExp := arg.value;
+          else
+            outExp := exp;
+          end if;
         then
-          if isSome(slot) then Util.tuple31(fillDefaultSlot(Util.getOption(slot), slots, info)) else exp;
+          outExp;
 
       else exp;
     end match;
@@ -1086,7 +1101,7 @@ uniontype Function
     list<Integer> vectorized_args = {};
   algorithm
     for arg in args loop
-      (arg_exp, arg_ty, arg_var) := arg;
+      TypedArg.TYPED_ARG(value = arg_exp, ty = arg_ty, var = arg_var) := arg;
 
       input_node :: inputs := inputs;
       comp := InstNode.component(input_node);
@@ -1131,7 +1146,7 @@ uniontype Function
         funcMatchKind := GENERIC_MATCH;
       end if;
 
-      checked_args := (arg_exp, ty, arg_var) :: checked_args;
+      checked_args := TypedArg.TYPED_ARG(arg.name, arg_exp, ty, arg_var, arg.purity) :: checked_args;
       arg_idx := arg_idx + 1;
     end for;
 
@@ -1209,7 +1224,7 @@ uniontype Function
   function matchFunction
     input Function func;
     input list<TypedArg> args;
-    input list<TypedNamedArg> named_args;
+    input list<TypedArg> named_args;
     input SourceInfo info;
     input Boolean vectorize = true;
     output list<TypedArg> out_args;
@@ -1227,7 +1242,7 @@ uniontype Function
   function matchFunctions
     input list<Function> funcs;
     input list<TypedArg> args;
-    input list<TypedNamedArg> named_args;
+    input list<TypedArg> named_args;
     input SourceInfo info;
     input Boolean vectorize = true;
     output list<MatchedFunction> matchedFunctions;
@@ -1249,7 +1264,7 @@ uniontype Function
   function matchFunctionsSilent
     input list<Function> funcs;
     input list<TypedArg> args;
-    input list<TypedNamedArg> named_args;
+    input list<TypedArg> named_args;
     input SourceInfo info;
     input Boolean vectorize = true;
     output list<MatchedFunction> matchedFunctions;
@@ -1430,6 +1445,7 @@ uniontype Function
     input SourceInfo info;
           output Type ty;
           output Variability variability;
+          output Purity purity;
   protected
     ComponentRef fn_ref;
     list<Expression> args, ty_args = {};
@@ -1438,6 +1454,7 @@ uniontype Function
     Expression arg_exp;
     Type arg_ty;
     Variability arg_var;
+    Purity arg_pur;
     Function fn;
     InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
     list<InstNode> inputs;
@@ -1450,11 +1467,11 @@ uniontype Function
     slots := fn.slots;
     rest_names := arg_names;
 
-    variability := if Function.isImpure(fn) or Function.isOMImpure(fn)
-      then Variability.PARAMETER else Variability.CONSTANT;
+    purity := if Function.isImpure(fn) or Function.isOMImpure(fn) then Purity.IMPURE else Purity.PURE;
+    variability := Variability.CONSTANT;
 
     for arg in args loop
-      (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_context, info);
+      (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, next_context, info);
 
       arg_name :: rest_names := rest_names;
       (arg, inputs, slots) :=
@@ -1462,6 +1479,7 @@ uniontype Function
 
       ty_args := Expression.box(arg) :: ty_args;
       variability := Prefixes.variabilityMax(variability, arg_var);
+      purity := Prefixes.purityMin(purity, arg_pur);
     end for;
 
     fn.inputs := inputs;

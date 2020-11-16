@@ -279,6 +279,11 @@ type Variability = enumeration(
   CONTINUOUS
 );
 
+type Purity = enumeration(
+  PURE,
+  IMPURE
+);
+
 type Direction = enumeration(
   NONE,
   INPUT,
@@ -483,6 +488,23 @@ algorithm
     else inVar;
   end match;
 end effectiveVariability;
+
+function purityString
+  input Purity purity;
+  output String str;
+algorithm
+  str := match purity
+    case Purity.PURE then "pure";
+    case Purity.IMPURE then "impure";
+  end match;
+end purityString;
+
+function purityMin
+  "Returns the least pure of the arguments."
+  input Purity p1;
+  input Purity p2;
+  output Purity p = if p1 > p2 then p2 else p1;
+end purityMin;
 
 function directionFromSCode
   input Absyn.Direction scodeDir;
