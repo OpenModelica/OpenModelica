@@ -248,6 +248,27 @@ algorithm
       then
         (cache,v);
 
+    // annotation(Icon(graphics))
+    case (cache,env,DAE.ARRAY(array = es, ty = DAE.T_UNKNOWN()),impl,msg,_)
+      guard Config.getGraphicsExpMode() and Config.getEvaluateParametersInAnnotations()
+      equation
+        (cache, es_1) = cevalList(cache, env, es, impl, msg, numIter);
+        v =
+        matchcontinue()
+          case ()
+            equation
+              dims = {1};
+              v = Values.ARRAY(es_1,dims);
+            then v;
+          else
+            equation
+              v = ValuesUtil.makeArray(es_1);
+            then
+              v;
+        end matchcontinue;
+      then
+        (cache,v);
+
     case (cache,env,DAE.MATRIX(matrix = expll, ty = DAE.T_ARRAY(dims = arrayDims)),impl,msg,_)
       equation
         dims = List.map(arrayDims, Expression.dimensionSize);
