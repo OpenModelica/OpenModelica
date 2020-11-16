@@ -61,7 +61,6 @@ option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
 omc_add_to_report(OMC_USE_CCACHE)
 
 
-
 find_program(CCACHE_PROGRAM ccache)
 if(OMC_USE_CCACHE AND CCACHE_PROGRAM)
     message(STATUS "Found ccache. It will be used for compilation C/C++ sources")
@@ -69,6 +68,11 @@ if(OMC_USE_CCACHE AND CCACHE_PROGRAM)
     set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE_PROGRAM})
     omc_add_to_report(CCACHE_PROGRAM)
 endif()
+
+
+
+omc_option(OMC_USE_LPSOLVE "Should we use lpsolve." OFF)
+omc_option(OMC_BUILD_LPSOLVE "Should we build our own 3rdParty/lpsolve." OFF)
 
 
 

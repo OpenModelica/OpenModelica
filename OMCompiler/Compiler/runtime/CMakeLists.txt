@@ -63,9 +63,14 @@ target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
 target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
-target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
+
+if(OMC_USE_LPSOLVE)
+  target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
+else()
+  target_compile_definitions(omcruntime PRIVATE NO_LPLIB)
+endif()
 
 target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcruntime PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
@@ -125,9 +130,14 @@ target_link_libraries(omcruntime-boot PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime-boot PUBLIC Iconv::Iconv)
 target_link_libraries(omcruntime-boot PUBLIC ${LAPACK_LIBRARIES})
 target_link_libraries(omcruntime-boot PUBLIC omc::simrt::runtime)
-target_link_libraries(omcruntime-boot PUBLIC omc::3rd::lpsolve55)
 target_link_libraries(omcruntime-boot PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime-boot PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
+
+if(OMC_USE_LPSOLVE)
+  target_link_libraries(omcruntime-boot PUBLIC omc::3rd::lpsolve55)
+else()
+  target_compile_definitions(omcruntime-boot PRIVATE NO_LPLIB)
+endif()
 
 target_include_directories(omcruntime-boot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcruntime-boot PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
@@ -213,8 +223,10 @@ omc_add_to_report(OMC_TARGET_SYSTEM_NAME)
 set(OPENMODELICA_SPEC_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
 
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+  set(OMC_TARGET_ARCH_IS_64 TRUE)
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}64")
-else() 
+else()
+  set(OMC_TARGET_ARCH_IS_64 FALSE)
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
 endif()
 
@@ -259,13 +271,28 @@ set(WITH_UUID "#define WITH_LIBUUID 1")
 
 set(USE_GRAPH 0)
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_DIR}/revision.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
 
 
 # Generate Autoconf.mo here since we have some of the variables already defined for config.unix.h above. 
 
 if(WIN32)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.omdev.mingw ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo COPY_ONLY)
+
+  if(OMC_TARGET_ARCH_IS_64)
+    set(ISMINGW64 "true")
+  else()
+    set(ISMINGW64 "false")
+  endif()
+
+  if(${CMAKE_CXX_COMPILER_VERSION} STREQUAL "5.3.0")
+    set(IS_NEW_OMDEV "false")
+  else()
+    set(IS_NEW_OMDEV "true")
+  endif()
+
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.omdev.mingw ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+
 else()
   check_c_compiler_flag("-Wl,-Bstatic  -Wl,-Bdynamic" BSTATIC_INT)
   if(BSTATIC_INT)

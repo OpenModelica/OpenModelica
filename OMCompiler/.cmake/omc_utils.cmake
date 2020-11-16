@@ -12,3 +12,8 @@ macro(omc_add_subdirectory var)
   add_subdirectory(${var})
   list(POP_BACK CMAKE_MESSAGE_CONTEXT)
 endmacro(omc_add_subdirectory)
+
+macro(omc_option var help_text value)
+  option(${var} ${help_text} ${value})
+  omc_add_to_report(${var})
+endmacro(omc_option)
