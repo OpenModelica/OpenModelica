@@ -269,6 +269,7 @@ set(WITH_UUID "#define WITH_LIBUUID 1")
 
 set(USE_GRAPH 0)
 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_DIR}/revision.h)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
 
 
