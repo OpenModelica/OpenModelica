@@ -211,10 +211,11 @@ function instantiate
   input output InstNode node;
   input InstNode parent = InstNode.EMPTY_NODE();
   input InstContext.Type context;
+  input Boolean instPartial = false "Whether to instantiate a partial class or not.";
 algorithm
   node := expand(node);
 
-  if not InstNode.isPartial(node) or InstContext.inRelaxed(context) then
+  if instPartial or not InstNode.isPartial(node) or InstContext.inRelaxed(context) then
     node := instClass(node, Modifier.NOMOD(), NFComponent.DEFAULT_ATTR, true, 0, parent, context);
   end if;
 end instantiate;
@@ -2228,7 +2229,7 @@ algorithm
         inst_cls := Class.INSTANCED_CLASS(ty, cls.elements, sections, cls.prefixes, cls.restriction);
         InstNode.updateClass(inst_cls, node);
 
-        instComplexType(ty);
+        instComplexType(ty, context);
       then
         ();
 
@@ -2243,7 +2244,7 @@ algorithm
         end for;
 
         if Restriction.isRecord(cls.restriction) then
-          instRecordConstructor(node);
+          instRecordConstructor(node, context);
         end if;
       then
         ();
@@ -2300,6 +2301,7 @@ end makeRecordComplexType;
 
 function instComplexType
   input Type ty;
+  input InstContext.Type context;
 algorithm
   () := match ty
     local
@@ -2312,7 +2314,7 @@ algorithm
       //       causes issues with e.g. ComplexInput/ComplexOutput.
       guard not InstNode.isModel(node)
       algorithm
-        instRecordConstructor(node);
+        instRecordConstructor(node, context);
       then
         ();
 
@@ -2322,6 +2324,7 @@ end instComplexType;
 
 function instRecordConstructor
   input InstNode node;
+  input InstContext.Type context;
 protected
   CachedData cache;
 algorithm
@@ -2335,10 +2338,10 @@ algorithm
 
         if SCodeUtil.isOperatorRecord(InstNode.definition(node)) then
           OperatorOverloading.instConstructor(
-            InstNode.scopePath(node, includeRoot = true), node, NFInstContext.RELAXED, InstNode.info(node));
+            InstNode.scopePath(node, includeRoot = true), node, context, InstNode.info(node));
         else
           Record.instDefaultConstructor(
-            InstNode.scopePath(node, includeRoot = true), node, InstNode.info(node));
+            InstNode.scopePath(node, includeRoot = true), node, context, InstNode.info(node));
         end if;
       then
         ();
