@@ -40,14 +40,21 @@
 
 char* zeroMQFilePath = 0;
 
-void* ZeroMQ_initialize(const char *zeroMQFileSuffix, int listenToAll)
+void* ZeroMQ_initialize(const char *zeroMQFileSuffix, int listenToAll, int port)
 {
   // Create a pointer for storing the ZeroMQ socket
   void *mmcZmqSocket = mmc_mk_some(0);
   // Create the ZeroMQ context
   void *context = zmq_ctx_new();
   void *zmqSocket = zmq_socket(context, ZMQ_REP);
-  int rc = zmq_bind(zmqSocket, listenToAll ? "tcp://*:*" : "tcp://127.0.0.1:*");
+  const char *bindstr;
+  int rc;
+  if (port == 0) {
+    bindstr = listenToAll ? "tcp://*:*" : "tcp://127.0.0.1:*";
+  } else {
+    GC_asprintf(&bindstr, "tcp://%s:%d", listenToAll ? "*" : "127.0.0.1", port);
+  }
+  rc = zmq_bind(zmqSocket, bindstr);
   if (rc != 0) {
     printf("Error creating ZeroMQ Server. zmq_bind failed: %s\n", strerror(errno));
     return mmcZmqSocket;
