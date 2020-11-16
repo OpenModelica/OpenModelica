@@ -223,8 +223,10 @@ omc_add_to_report(OMC_TARGET_SYSTEM_NAME)
 set(OPENMODELICA_SPEC_PLATFORM ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
 
 if(${CMAKE_SIZEOF_VOID_P} EQUAL 8)
+  set(OMC_TARGET_ARCH_IS_64 TRUE)
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}64")
-else() 
+else()
+  set(OMC_TARGET_ARCH_IS_64 FALSE)
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
 endif()
 
@@ -276,7 +278,21 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h.in ${CMAKE_CURRENT_SOUR
 # Generate Autoconf.mo here since we have some of the variables already defined for config.unix.h above. 
 
 if(WIN32)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.omdev.mingw ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo COPY_ONLY)
+
+  if(OMC_TARGET_ARCH_IS_64)
+    set(ISMINGW64 "true")
+  else()
+    set(ISMINGW64 "false")
+  endif()
+
+  if(${CMAKE_CXX_COMPILER_VERSION} STREQUAL "5.3.0")
+    set(IS_NEW_OMDEV "false")
+  else()
+    set(IS_NEW_OMDEV "true")
+  endif()
+
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.omdev.mingw ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
+
 else()
   check_c_compiler_flag("-Wl,-Bstatic  -Wl,-Bdynamic" BSTATIC_INT)
   if(BSTATIC_INT)
