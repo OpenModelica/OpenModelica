@@ -46,7 +46,7 @@ protected
   import Ceval = NFCeval;
   import NFInstNode.InstNode;
   import SimplifyExp = NFSimplifyExp;
-  import NFPrefixes.Variability;
+  import NFPrefixes.{Variability, Purity};
   import MetaModelica.Dangerous.*;
   import EvalTarget = NFCeval.EvalTarget;
 
@@ -356,15 +356,16 @@ public
     Function fn;
     Type ty;
     Variability var;
+    Purity pur;
     NFCallAttributes attr;
     Expression arg;
     list<Expression> args, expl;
   algorithm
-    Call.TYPED_CALL(fn, ty, var, {arg}, attr) := call;
+    Call.TYPED_CALL(fn, ty, var, pur, {arg}, attr) := call;
     ty := Type.arrayElementType(ty);
 
     (arg, true) := expand(arg);
-    outExp := expandBuiltinGeneric2(arg, fn, ty, var, attr);
+    outExp := expandBuiltinGeneric2(arg, fn, ty, var, pur, attr);
   end expandBuiltinGeneric;
 
   function expandBuiltinGeneric2
@@ -372,6 +373,7 @@ public
     input Function fn;
     input Type ty;
     input Variability var;
+    input Purity pur;
     input NFCallAttributes attr;
   algorithm
     exp := match exp
@@ -382,11 +384,11 @@ public
 
       case Expression.ARRAY()
         algorithm
-          expl := list(expandBuiltinGeneric2(e, fn, ty, var, attr) for e in exp.elements);
+          expl := list(expandBuiltinGeneric2(e, fn, ty, var, pur, attr) for e in exp.elements);
         then
           Expression.makeArray(Type.setArrayElementType(exp.ty, ty), expl);
 
-      else Expression.CALL(Call.TYPED_CALL(fn, ty, var, {exp}, attr));
+      else Expression.CALL(Call.TYPED_CALL(fn, ty, var, pur, {exp}, attr));
     end match;
   end expandBuiltinGeneric2;
 

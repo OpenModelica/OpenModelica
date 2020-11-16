@@ -90,7 +90,7 @@ import NFFunction.Function;
 import NFInst;
 import NFInstNode.CachedData;
 import NFInstNode.NodeTree;
-import NFPrefixes.*;
+import NFPrefixes.{Variability, Purity};
 import NFSections.Sections;
 import OperatorOverloading = NFOperatorOverloading;
 import Package = NFPackage;

@@ -42,7 +42,7 @@ protected
   import BuiltinCall = NFBuiltinCall;
   import Expression = NFExpression;
   import Function = NFFunction;
-  import NFPrefixes.Variability;
+  import NFPrefixes.{Variability, Purity};
   import Prefixes = NFPrefixes;
   import Ceval = NFCeval;
   import ComplexType = NFComplexType;
@@ -1352,7 +1352,7 @@ public
           arg := applySubscript(subscript, arg, restSubscripts);
           ty := Type.copyDims(typeOf(arg), call.ty);
         then
-          CALL(Call.TYPED_CALL(call.fn, ty, call.var, {arg}, call.attributes));
+          CALL(Call.TYPED_CALL(call.fn, ty, call.var, call.purity, {arg}, call.attributes));
 
       case Call.TYPED_ARRAY_CONSTRUCTOR()
         then applySubscriptArrayConstructor(subscript, call, restSubscripts);
@@ -1382,17 +1382,18 @@ public
   protected
     Type ty;
     Variability var;
+    Purity pur;
     Expression exp, iter_exp;
     list<tuple<InstNode, Expression>> iters;
     InstNode iter;
   algorithm
-    Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, exp, iters) := call;
+    Call.TYPED_ARRAY_CONSTRUCTOR(ty, var, pur, exp, iters) := call;
     ((iter, iter_exp), iters) := List.splitLast(iters);
     iter_exp := applySubscript(index, iter_exp);
     subscriptedExp := replaceIterator(exp, iter, iter_exp);
 
     if not listEmpty(iters) then
-      subscriptedExp := CALL(Call.TYPED_ARRAY_CONSTRUCTOR(Type.unliftArray(ty), var, subscriptedExp, iters));
+      subscriptedExp := CALL(Call.TYPED_ARRAY_CONSTRUCTOR(Type.unliftArray(ty), var, pur, subscriptedExp, iters));
     end if;
   end applyIndexSubscriptArrayConstructor;
 
@@ -3809,7 +3810,7 @@ public
     op_node := Class.lookupElement("'0'", InstNode.getClass(recordNode));
     Function.Function.instFunctionNode(op_node, NFInstContext.NO_CONTEXT, InstNode.info(InstNode.parent(op_node)));
     {fn} := Function.Function.typeNodeCache(op_node);
-    zeroExp := CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT));
+    zeroExp := CALL(Call.makeTypedCall(fn, {}, Variability.CONSTANT, Purity.PURE));
     zeroExp := Ceval.evalExp(zeroExp);
   end makeOperatorRecordZero;
 
@@ -4122,7 +4123,7 @@ public
             outExp := promote2(outExp, true, dims, types);
           else
             outExp := CALL(Call.makeTypedCall(
-              NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, variability(exp), listHead(types)));
+              NFBuiltinFuncs.PROMOTE, {exp, INTEGER(dims)}, variability(exp), purity(exp), listHead(types)));
           end if;
         then
           outExp;
@@ -4223,6 +4224,75 @@ public
     end for;
   end variabilityList;
 
+  function purity
+    input Expression exp;
+    output Purity pur;
+  algorithm
+    pur := match exp
+      case INTEGER() then Purity.PURE;
+      case REAL() then Purity.PURE;
+      case STRING() then Purity.PURE;
+      case BOOLEAN() then Purity.PURE;
+      case ENUM_LITERAL() then Purity.PURE;
+      case CLKCONST() then Purity.PURE;
+      case CREF() then ComponentRef.purity(exp.cref);
+      case TYPENAME() then Purity.PURE;
+      case ARRAY() then purityList(exp.elements);
+      case MATRIX() then List.fold(exp.elements, purityList, Purity.PURE);
+
+      case RANGE()
+        algorithm
+          pur := purity(exp.start);
+          pur := Prefixes.purityMin(pur, purity(exp.stop));
+
+          if isSome(exp.step) then
+            pur := Prefixes.purityMin(pur, purity(Util.getOption(exp.step)));
+          end if;
+        then
+          pur;
+
+      case TUPLE() then purityList(exp.elements);
+      case RECORD() then purityList(exp.elements);
+      case CALL() then Call.purity(exp.call);
+      case SIZE()
+        then if isSome(exp.dimIndex) then purity(Util.getOption(exp.dimIndex)) else Purity.PURE;
+
+      case END() then Purity.PURE;
+      case BINARY() then Prefixes.purityMin(purity(exp.exp1), purity(exp.exp2));
+      case UNARY() then purity(exp.exp);
+      case LBINARY() then Prefixes.purityMin(purity(exp.exp1), purity(exp.exp2));
+      case LUNARY() then purity(exp.exp);
+      case RELATION() then Prefixes.purityMin(purity(exp.exp1), purity(exp.exp2));
+      case IF() then Prefixes.purityMin(purity(exp.condition),
+                       Prefixes.purityMin(purity(exp.trueBranch), purity(exp.falseBranch)));
+      case CAST() then purity(exp.exp);
+      case BOX() then purity(exp.exp);
+      case UNBOX() then purity(exp.exp);
+      case SUBSCRIPTED_EXP()
+        then Prefixes.purityMin(purity(exp.exp), Subscript.purityList(exp.subscripts));
+      case TUPLE_ELEMENT() then purity(exp.tupleExp);
+      case RECORD_ELEMENT() then purity(exp.recordExp);
+      case MUTABLE() then purity(Mutable.access(exp.exp));
+      case EMPTY() then Purity.PURE;
+      case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
+      case BINDING_EXP() then purity(exp.exp);
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
+        then
+          fail();
+    end match;
+  end purity;
+
+  function purityList
+    input list<Expression> expl;
+    input output Purity pur = Purity.PURE;
+  algorithm
+    for e in expl loop
+      pur := Prefixes.purityMin(pur, purity(e));
+    end for;
+  end purityList;
+
   function makeMutable
     input Expression exp;
     output Expression outExp;
@@ -4267,7 +4337,7 @@ public
     indexExp := match enumExp
       case ENUM_LITERAL() then INTEGER(enumExp.index);
       else CALL(Call.makeTypedCall(
-        NFBuiltinFuncs.INTEGER_ENUM, {enumExp}, variability(enumExp)));
+        NFBuiltinFuncs.INTEGER_ENUM, {enumExp}, variability(enumExp), Purity.PURE));
     end match;
   end enumIndexExp;
 

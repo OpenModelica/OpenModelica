@@ -37,7 +37,7 @@ import DAE;
 import Expression = NFExpression;
 import NFCallAttributes;
 import NFInstNode.InstNode;
-import NFPrefixes.Variability;
+import NFPrefixes.{Variability, Purity};
 import Type = NFType;
 import Record = NFRecord;
 
@@ -62,7 +62,6 @@ import NFFunction.FunctionMatchKind;
 import NFFunction.MatchedFunction;
 import NFFunction.NamedArg;
 import NFFunction.TypedArg;
-import NFFunction.TypedNamedArg;
 import NFInstNode.CachedData;
 import Operator = NFOperator;
 import Prefixes = NFPrefixes;
@@ -89,8 +88,8 @@ public
 
   record ARG_TYPED_CALL
     ComponentRef ref;
-    list<TypedArg> arguments;
-    list<TypedNamedArg> named_args;
+    list<TypedArg> positional_args;
+    list<TypedArg> named_args;
     InstNode call_scope;
   end ARG_TYPED_CALL;
 
@@ -98,6 +97,7 @@ public
     Function fn;
     Type ty;
     Variability var;
+    Purity purity;
     list<Expression> arguments;
     NFCallAttributes attributes;
   end TYPED_CALL;
@@ -110,6 +110,7 @@ public
   record TYPED_ARRAY_CONSTRUCTOR
     Type ty;
     Variability var;
+    Purity purity;
     Expression exp;
     list<tuple<InstNode, Expression>> iters;
   end TYPED_ARRAY_CONSTRUCTOR;
@@ -124,6 +125,7 @@ public
     Function fn;
     Type ty;
     Variability var;
+    Purity purity;
     Expression exp;
     list<tuple<InstNode, Expression>> iters;
     Option<Expression> defaultExp;
@@ -156,6 +158,7 @@ public
     output Expression outExp;
     output Type ty;
     output Variability var;
+    output Purity pur;
   protected
     NFCall call, ty_call;
     list<Expression> args;
@@ -167,11 +170,12 @@ public
       case UNTYPED_CALL(ref = cref)
         algorithm
           if(BuiltinCall.needSpecialHandling(call)) then
-            (outExp, ty, var) := BuiltinCall.typeSpecial(call, context, info);
+            (outExp, ty, var, pur) := BuiltinCall.typeSpecial(call, context, info);
           else
             ty_call := typeMatchNormalCall(call, context, info);
             ty := typeOf(ty_call);
             var := variability(ty_call);
+            pur := purity(ty_call);
 
             if isRecordConstructor(ty_call) then
               outExp := toRecordExpression(ty_call, ty);
@@ -189,13 +193,13 @@ public
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
-          (ty_call, ty, var) := typeArrayConstructor(call, context, info);
+          (ty_call, ty, var, pur) := typeArrayConstructor(call, context, info);
         then
           Expression.CALL(ty_call);
 
       case UNTYPED_REDUCTION()
         algorithm
-          (ty_call, ty, var) := typeReduction(call, context, info);
+          (ty_call, ty, var, pur) := typeReduction(call, context, info);
         then
           Expression.CALL(ty_call);
 
@@ -203,6 +207,7 @@ public
         algorithm
           ty := call.ty;
           var := call.var;
+          pur := call.purity;
         then
           callExp;
 
@@ -210,6 +215,7 @@ public
         algorithm
           ty := call.ty;
           var := call.var;
+          pur := call.purity;
         then
           callExp;
 
@@ -217,6 +223,7 @@ public
         algorithm
           ty := call.ty;
           var := call.var;
+          pur := call.purity;
         then
           callExp;
 
@@ -255,6 +262,7 @@ public
     input Function fn;
     input list<Expression> args;
     input Variability variability;
+    input Purity purity;
     input Type returnType = fn.returnType;
     output NFCall call;
   protected
@@ -269,7 +277,7 @@ public
       DAE.NO_TAIL()
     );
 
-    call := TYPED_CALL(fn, returnType, variability, args, ca);
+    call := TYPED_CALL(fn, returnType, variability, purity, args, ca);
   end makeTypedCall;
 
   function unboxArgs
@@ -306,6 +314,7 @@ public
     MatchedFunction matchedFunc;
     InstNode scope;
     Variability var, arg_var;
+    Purity pur, arg_pur;
     Type ty;
     Expression arg_exp;
   algorithm
@@ -317,11 +326,13 @@ public
 
     args := {};
     var := Variability.CONSTANT;
+    pur := Purity.PURE;
 
     for a in typed_args loop
-      (arg_exp, _, arg_var) := a;
+      TypedArg.TYPED_ARG(value = arg_exp, var = arg_var, purity = arg_pur) := a;
       args := arg_exp :: args;
       var := Prefixes.variabilityMax(var, arg_var);
+      pur := Prefixes.purityMin(pur, arg_pur);
     end for;
     args := listReverseInPlace(args);
 
@@ -343,7 +354,7 @@ public
     end if;
 
     ty := evaluateCallType(ty, func, args);
-    call := makeTypedCall(func, args, var, ty);
+    call := makeTypedCall(func, args, var, pur, ty);
 
     // If the matching was a vectorized one then create a map call
     // using the vectorization dim. This means going through each argument
@@ -419,6 +430,18 @@ public
         then fail();
     end match;
   end variability;
+
+  function purity
+    input Call call;
+    output Purity purity;
+  algorithm
+    purity := match call
+      case TYPED_CALL() then call.purity;
+      case TYPED_ARRAY_CONSTRUCTOR() then call.purity;
+      case TYPED_REDUCTION() then call.purity;
+      else Purity.PURE;
+    end match;
+  end purity;
 
   function compare
     input NFCall call1;
@@ -596,10 +619,11 @@ public
       case ARG_TYPED_CALL()
         algorithm
           name := ComponentRef.toString(call.ref);
-          arg_str := stringDelimitList(list(Expression.toString(Util.tuple31(arg)) for arg in call.arguments), ", ");
+          arg_str :=
+          stringDelimitList(list(Expression.toString(arg.value) for arg in call.positional_args), ", ");
           for arg in call.named_args loop
             c := if arg_str == "" then "" else ", ";
-            arg_str := arg_str + c + Util.tuple41(arg) + " = " + Expression.toString(Util.tuple42(arg));
+            arg_str := arg_str + c + Util.getOption(arg.name) + " = " + Expression.toString(arg.value);
           end for;
         then
           name + "(" + arg_str + ")";
@@ -715,13 +739,13 @@ public
       case ARG_TYPED_CALL()
         algorithm
           name := ComponentRef.toString(call.ref);
-          arg_str := stringDelimitList(list("/*" + Type.toString(Util.tuple32(arg)) + "*/ " +
-            Expression.toString(Util.tuple31(arg)) for arg in call.arguments), ", ");
+          arg_str := stringDelimitList(list("/*" + Type.toString(arg.ty) + "*/ " +
+            Expression.toString(arg.value) for arg in call.positional_args), ", ");
 
           for arg in call.named_args loop
             c := if arg_str == "" then "" else ", ";
-            arg_str := arg_str + c + Util.tuple41(arg) + " = /*" +
-              Type.toString(Util.tuple43(arg)) + "*/ " + Expression.toString(Util.tuple42(arg));
+            arg_str := arg_str + c + Util.getOption(arg.name) + " = /*" +
+              Type.toString(arg.ty) + "*/ " + Expression.toString(arg.value);
           end for;
         then
           name + "(" + arg_str + ")";
@@ -911,17 +935,15 @@ public
 
       case ARG_TYPED_CALL()
         algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-            if Expression.contains(e, func) then
+          for arg in call.positional_args loop
+            if Expression.contains(arg.value, func) then
               res := true;
               return;
             end if;
           end for;
 
           for arg in call.named_args loop
-            (_, e, _, _) := arg;
-            if Expression.contains(e, func) then
+            if Expression.contains(arg.value, func) then
               res := true;
               return;
             end if;
@@ -970,19 +992,15 @@ public
 
       case ARG_TYPED_CALL()
         algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-
-            if func(e) then
+          for arg in call.positional_args loop
+            if func(arg.value) then
               res := true;
               return;
             end if;
           end for;
 
           for arg in call.named_args loop
-            (_, e, _, _) := arg;
-
-            if func(e) then
+            if func(arg.value) then
               res := true;
               return;
             end if;
@@ -1023,14 +1041,12 @@ public
 
       case ARG_TYPED_CALL()
         algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-            Expression.apply(e, func);
+          for arg in call.positional_args loop
+            Expression.apply(arg.value, func);
           end for;
 
           for arg in call.named_args loop
-            (_, e, _, _) := arg;
-            Expression.apply(e, func);
+            Expression.apply(arg.value, func);
           end for;
         then
           ();
@@ -1111,14 +1127,12 @@ public
 
       case ARG_TYPED_CALL()
         algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-            func(e);
+          for arg in call.positional_args loop
+            func(arg.value);
           end for;
 
           for arg in call.named_args loop
-            (_, e, _, _) := arg;
-            func(e);
+            func(arg.value);
           end for;
         then
           ();
@@ -1201,14 +1215,12 @@ public
 
       case ARG_TYPED_CALL()
         algorithm
-          for arg in call.arguments loop
-            (e, _, _) := arg;
-            foldArg := Expression.fold(e, func, foldArg);
+          for arg in call.positional_args loop
+            foldArg := Expression.fold(arg.value, func, foldArg);
           end for;
 
           for arg in call.named_args loop
-            (_, e, _, _) := arg;
-            foldArg := Expression.fold(e, func, foldArg);
+            foldArg := Expression.fold(arg.value, func, foldArg);
           end for;
         then
           ();
@@ -1277,12 +1289,9 @@ public
       local
         list<Expression> args;
         list<NamedArg> nargs;
-        list<TypedArg> targs;
-        list<TypedNamedArg> tnargs;
+        list<TypedArg> targs, tnargs;
         String s;
         Expression e;
-        Type t;
-        Variability v;
         list<tuple<InstNode, Expression>> iters;
         Option<Expression> default_exp;
         tuple<Option<Expression>, String, String> fold_exp;
@@ -1305,16 +1314,14 @@ public
           targs := {};
           tnargs := {};
 
-          for arg in call.arguments loop
-            (e, t, v) := arg;
-            e := Expression.map(e, func);
-            targs := (e, t, v) :: targs;
+          for arg in call.positional_args loop
+            arg.value := Expression.map(arg.value, func);
+            targs := arg :: targs;
           end for;
 
           for arg in call.named_args loop
-            (s, e, t, v) := arg;
-            e := Expression.map(e, func);
-            tnargs := (s, e, t, v) :: tnargs;
+            arg.value := Expression.map(arg.value, func);
+            tnargs := arg :: tnargs;
           end for;
         then
           ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
@@ -1323,7 +1330,7 @@ public
         algorithm
           args := list(Expression.map(arg, func) for arg in call.arguments);
         then
-          TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+          TYPED_CALL(call.fn, call.ty, call.var, call.purity, args, call.attributes);
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
@@ -1337,7 +1344,7 @@ public
           e := Expression.map(call.exp, func);
           iters := mapIteratorsExp(call.iters, func);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
 
       case UNTYPED_REDUCTION()
         algorithm
@@ -1353,7 +1360,7 @@ public
           default_exp := Expression.mapOpt(call.defaultExp, func);
           fold_exp := Util.applyTuple31(call.foldExp, function Expression.mapOpt(func = func));
         then
-          TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+          TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
 
     end match;
   end mapExp;
@@ -1392,12 +1399,9 @@ public
       local
         list<Expression> args;
         list<NamedArg> nargs;
-        list<TypedArg> targs;
-        list<TypedNamedArg> tnargs;
+        list<TypedArg> targs, tnargs;
         String s;
         Expression e;
-        Type t;
-        Variability v;
         list<tuple<InstNode, Expression>> iters;
         Option<Expression> default_exp;
         tuple<Option<Expression>, String, String> fold_exp;
@@ -1420,16 +1424,14 @@ public
           targs := {};
           tnargs := {};
 
-          for arg in call.arguments loop
-            (e, t, v) := arg;
-            e := func(e);
-            targs := (e, t, v) :: targs;
+          for arg in call.positional_args loop
+            arg.value := func(arg.value);
+            targs := arg :: targs;
           end for;
 
           for arg in call.named_args loop
-            (s, e, t, v) := arg;
-            e := func(e);
-            tnargs := (s, e, t, v) :: tnargs;
+            arg.value := func(arg.value);
+            tnargs := arg :: tnargs;
           end for;
         then
           ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
@@ -1438,7 +1440,7 @@ public
         algorithm
           args := list(func(arg) for arg in call.arguments);
         then
-          TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+          TYPED_CALL(call.fn, call.ty, call.var, call.purity, args, call.attributes);
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
@@ -1450,7 +1452,7 @@ public
         algorithm
           e := func(call.exp);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, call.iters);
 
       case UNTYPED_REDUCTION()
         algorithm
@@ -1465,7 +1467,7 @@ public
           default_exp := Expression.mapShallowOpt(call.defaultExp, func);
           fold_exp := Util.applyTuple31(call.foldExp, function Expression.mapShallowOpt(func = func));
         then
-          TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+          TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
 
     end match;
   end mapExpShallow;
@@ -1506,12 +1508,9 @@ public
       local
         list<Expression> args;
         list<NamedArg> nargs;
-        list<TypedArg> targs;
-        list<TypedNamedArg> tnargs;
+        list<TypedArg> targs, tnargs;
         String s;
         Expression e;
-        Type t;
-        Variability v;
         list<tuple<InstNode, Expression>> iters;
         Option<Expression> default_exp;
         tuple<Option<Expression>, String, String> fold_exp;
@@ -1535,16 +1534,16 @@ public
           targs := {};
           tnargs := {};
 
-          for arg in call.arguments loop
-            (e, t, v) := arg;
-            (e, foldArg) := Expression.mapFold(e, func, foldArg);
-            targs := (e, t, v) :: targs;
+          for arg in call.positional_args loop
+            (e, foldArg) := Expression.mapFold(arg.value, func, foldArg);
+            arg.value := e;
+            targs := arg :: targs;
           end for;
 
           for arg in call.named_args loop
-            (s, e, t, v) := arg;
-            (e, foldArg) := Expression.mapFold(e, func, foldArg);
-            tnargs := (s, e, t, v) :: tnargs;
+            (e, foldArg) := Expression.mapFold(arg.value, func, foldArg);
+            arg.value := e;
+            targs := arg :: targs;
           end for;
         then
           ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
@@ -1553,7 +1552,7 @@ public
         algorithm
           (args, foldArg) := List.map1Fold(call.arguments, Expression.mapFold, func, foldArg);
         then
-          TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+          TYPED_CALL(call.fn, call.ty, call.var, call.purity, args, call.attributes);
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
@@ -1565,7 +1564,7 @@ public
         algorithm
           (e, foldArg) := Expression.mapFold(call.exp, func, foldArg);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, call.iters);
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, call.iters);
 
       case UNTYPED_REDUCTION()
         algorithm
@@ -1587,7 +1586,7 @@ public
             fold_exp := call.foldExp;
           end if;
         then
-          TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+          TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
     end match;
   end mapFoldExp;
 
@@ -1629,12 +1628,9 @@ public
       local
         list<Expression> args;
         list<NamedArg> nargs;
-        list<TypedArg> targs;
-        list<TypedNamedArg> tnargs;
+        list<TypedArg> targs, tnargs;
         String s;
         Expression e;
-        Type t;
-        Variability v;
         list<tuple<InstNode, Expression>> iters;
         Option<Expression> default_exp;
         tuple<Option<Expression>, String, String> fold_exp;
@@ -1658,16 +1654,16 @@ public
           targs := {};
           tnargs := {};
 
-          for arg in call.arguments loop
-            (e, t, v) := arg;
-            (e, foldArg) := func(e, foldArg);
-            targs := (e, t, v) :: targs;
+          for arg in call.positional_args loop
+            (e, foldArg) := func(arg.value, foldArg);
+            arg.value := e;
+            targs := arg :: targs;
           end for;
 
           for arg in call.named_args loop
-            (s, e, t, v) := arg;
-            (e, foldArg) := func(e, foldArg);
-            tnargs := (s, e, t, v) :: tnargs;
+            (e, foldArg) := func(arg.value, foldArg);
+            arg.value := e;
+            targs := arg :: targs;
           end for;
         then
           ARG_TYPED_CALL(call.ref, listReverse(targs), listReverse(tnargs), call.call_scope);
@@ -1676,7 +1672,7 @@ public
         algorithm
           (args, foldArg) := List.mapFold(call.arguments, func, foldArg);
         then
-          TYPED_CALL(call.fn, call.ty, call.var, args, call.attributes);
+          TYPED_CALL(call.fn, call.ty, call.var, call.purity, args, call.attributes);
 
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
@@ -1690,7 +1686,7 @@ public
           (e, foldArg) := func(call.exp, foldArg);
           iters := mapFoldIteratorsExpShallow(call.iters, func, foldArg);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, e, iters);
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
 
       case UNTYPED_REDUCTION()
         algorithm
@@ -1713,7 +1709,7 @@ public
             fold_exp := call.foldExp;
           end if;
         then
-          TYPED_REDUCTION(call.fn, call.ty, call.var, e, iters, default_exp, fold_exp);
+          TYPED_REDUCTION(call.fn, call.ty, call.var, call.purity, e, iters, default_exp, fold_exp);
 
     end match;
   end mapFoldExpShallow;
@@ -1912,27 +1908,30 @@ protected
     input SourceInfo info;
           output Type ty;
           output Variability variability;
+          output Purity purity;
   protected
     Expression arg, range;
     Type iter_ty;
     Variability iter_var, exp_var;
+    Purity iter_pur, exp_pur;
     InstNode iter;
     list<Dimension> dims = {};
     list<tuple<InstNode, Expression>> iters = {};
     InstContext.Type next_context;
     Boolean is_structural;
   algorithm
-    (call, ty, variability) := match call
+    (call, ty, variability, purity) := match call
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           variability := Variability.CONSTANT;
+          purity := Purity.PURE;
           // The size of the expression must be known unless we're in a function.
           is_structural := not InstContext.inFunction(context);
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for i in call.iters loop
             (iter, range) := i;
-            (range, iter_ty, iter_var) := Typing.typeIterator(iter, range, next_context, is_structural);
+            (range, iter_ty, iter_var, iter_pur) := Typing.typeIterator(iter, range, next_context, is_structural);
 
             if is_structural then
               range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(info));
@@ -1940,19 +1939,20 @@ protected
             end if;
 
             dims := listAppend(Type.arrayDims(iter_ty), dims);
-            variability := Variability.variabilityMax(variability, iter_var);
+            variability := Prefixes.variabilityMax(variability, iter_var);
+            purity := Prefixes.purityMin(purity, iter_pur);
             iters := (iter, range) :: iters;
           end for;
           iters := listReverseInPlace(iters);
 
           // InstContext.FOR is used here as a marker that this expression may contain iterators.
           next_context := InstContext.set(next_context, NFInstContext.FOR);
-          (arg, ty, exp_var) := Typing.typeExp(call.exp, next_context, info);
-          variability := Variability.variabilityMax(variability, exp_var);
+          (arg, ty, exp_var, exp_pur) := Typing.typeExp(call.exp, next_context, info);
+          variability := Prefixes.variabilityMax(variability, exp_var);
+          purity := Prefixes.purityMin(purity, exp_pur);
           ty := Type.liftArrayLeftList(ty, dims);
-          variability := Variability.variabilityMax(variability, exp_var);
         then
-          (TYPED_ARRAY_CONSTRUCTOR(ty, variability, arg, iters), ty, variability);
+          (TYPED_ARRAY_CONSTRUCTOR(ty, variability, purity, arg, iters), ty, variability, purity);
 
       else
         algorithm
@@ -1968,27 +1968,31 @@ protected
     input SourceInfo info;
           output Type ty;
           output Variability variability;
+          output Purity purity;
   protected
     Expression range, arg;
     Option<Expression> default_exp, fold_exp;
     InstNode iter;
     Variability iter_var, exp_var;
+    Purity iter_pur, exp_pur;
     list<tuple<InstNode, Expression>> iters = {};
     InstContext.Type next_context;
     Function fn;
     String fold_id, res_id;
     tuple<Option<Expression>, String, String> fold_tuple;
   algorithm
-    (call, ty, variability) := match call
+    (call, ty, variability, purity) := match call
       case UNTYPED_REDUCTION()
         algorithm
           variability := Variability.CONSTANT;
+          purity := Purity.PURE;
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for i in call.iters loop
             (iter, range) := i;
-            (range, _, iter_var) := Typing.typeIterator(iter, range, context, structural = false);
+            (range, _, iter_var, iter_pur) := Typing.typeIterator(iter, range, context, structural = false);
             variability := Variability.variabilityMax(variability, iter_var);
+            purity := Variability.purityMin(purity, iter_pur);
             iters := (iter, range) :: iters;
           end for;
 
@@ -1996,18 +2000,19 @@ protected
 
           // InstContext.FOR is used here as a marker that this expression may contain iterators.
           next_context := InstContext.set(next_context, NFInstContext.FOR);
-          (arg, ty, exp_var) := Typing.typeExp(call.exp, next_context, info);
+          (arg, ty, exp_var, exp_pur) := Typing.typeExp(call.exp, next_context, info);
           variability := Variability.variabilityMax(variability, exp_var);
+          purity := Variability.purityMin(purity, exp_pur);
           {fn} := Function.typeRefCache(call.ref);
           TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
 
           fold_id := Util.getTempVariableIndex();
           res_id := Util.getTempVariableIndex();
           default_exp := reductionDefaultValue(fn, ty);
-          fold_exp := reductionFoldExpression(fn, ty, variability, fold_id, res_id, info);
+          fold_exp := reductionFoldExpression(fn, ty, variability, purity, fold_id, res_id, info);
           fold_tuple := (fold_exp, fold_id, res_id);
         then
-          (TYPED_REDUCTION(fn, ty, variability, arg, iters, default_exp, fold_tuple), ty, variability);
+          (TYPED_REDUCTION(fn, ty, variability, purity, arg, iters, default_exp, fold_tuple), ty, variability, purity);
 
       else
         algorithm
@@ -2045,6 +2050,7 @@ protected
     input Function reductionFn;
     input Type reductionType;
     input Variability reductionVar;
+    input Purity reductionPurity;
     input String foldId;
     input String resultId;
     input SourceInfo info;
@@ -2065,7 +2071,7 @@ protected
           then
             SOME(Expression.CALL(makeTypedCall(fn,
               {reductionFoldIterator(resultId, reductionType),
-               reductionFoldIterator(foldId, reductionType)}, reductionVar)));
+               reductionFoldIterator(foldId, reductionType)}, reductionVar, reductionPurity)));
 
         else NONE();
       end match;
@@ -2092,7 +2098,7 @@ protected
           SOME(Expression.CALL(makeTypedCall(reductionFn,
             {reductionFoldIterator(foldId, reductionType),
              reductionFoldIterator(resultId, reductionType)},
-            reductionVar, reductionType)));
+            reductionVar, reductionPurity, reductionType)));
 
       end match;
     end if;
@@ -2116,33 +2122,33 @@ protected
         Expression arg;
         Type arg_ty;
         Variability arg_var;
-        list<TypedArg> typedArgs;
-        list<TypedNamedArg> typedNamedArgs;
+        Purity arg_pur;
+        list<TypedArg> typed_args, typed_nargs;
         String name;
         InstContext.Type next_context;
 
       case UNTYPED_CALL()
         algorithm
-          typedArgs := {};
+          typed_args := {};
           next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
           for arg in call.arguments loop
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_context, info);
-            typedArgs := (arg, arg_ty, arg_var) :: typedArgs;
+            (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, next_context, info);
+            typed_args := TypedArg.TYPED_ARG(NONE(), arg, arg_ty, arg_var, arg_pur) :: typed_args;
           end for;
 
-          typedArgs := listReverse(typedArgs);
+          typed_args := listReverse(typed_args);
 
-          typedNamedArgs := {};
+          typed_nargs := {};
           for narg in call.named_args loop
-            (name,arg) := narg;
-            (arg, arg_ty, arg_var) := Typing.typeExp(arg, next_context, info);
-            typedNamedArgs := (name, arg, arg_ty, arg_var) :: typedNamedArgs;
+            (name, arg) := narg;
+            (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, next_context, info);
+            typed_nargs := TypedArg.TYPED_ARG(SOME(name), arg, arg_ty, arg_var, arg_pur) :: typed_nargs;
           end for;
 
-          typedNamedArgs := listReverse(typedNamedArgs);
+          typed_nargs := listReverse(typed_nargs);
         then
-          ARG_TYPED_CALL(call.ref, typedArgs, typedNamedArgs, call.call_scope);
+          ARG_TYPED_CALL(call.ref, typed_args, typed_nargs, call.call_scope);
     end match;
   end typeArgs;
 
@@ -2169,7 +2175,7 @@ protected
             allfuncs := list(fn for fn guard not Function.isDefaultRecordConstructor(fn) in allfuncs);
           end if;
         then
-          Function.matchFunctions(allfuncs, call.arguments, call.named_args, info);
+          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, info);
     end match;
 
     if listEmpty(matchedFunctions) then
@@ -2290,7 +2296,7 @@ protected
           vect_ty := Type.liftArrayLeftList(base_call.ty, mk.vectDims);
           base_call.arguments := call_args;
         then
-          TYPED_ARRAY_CONSTRUCTOR(vect_ty, base_call.var, Expression.CALL(base_call), iters);
+          TYPED_ARRAY_CONSTRUCTOR(vect_ty, base_call.var, base_call.purity, Expression.CALL(base_call), iters);
 
       else
         algorithm

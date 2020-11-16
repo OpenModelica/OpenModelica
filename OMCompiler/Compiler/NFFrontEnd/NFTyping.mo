@@ -49,8 +49,7 @@ import NFModifier.Modifier;
 import Statement = NFStatement;
 import NFType.Type;
 import Operator = NFOperator;
-import NFPrefixes.Variability;
-import NFPrefixes.ConnectorType;
+import NFPrefixes.{Variability, Purity, ConnectorType};
 import Prefixes = NFPrefixes;
 import Connector = NFConnector;
 import Connection = NFConnection;
@@ -438,6 +437,7 @@ function typeIterator
   output Expression outRange;
   output Type ty;
   output Variability var;
+  output Purity purity;
 protected
   Component c = InstNode.component(iterator);
   Expression exp;
@@ -446,7 +446,7 @@ algorithm
   (outRange, ty, var) := match c
     case Component.ITERATOR(info = info)
       algorithm
-        (exp, ty, var) := typeExp(range, InstContext.set(context, NFInstContext.ITERATION_RANGE), info);
+        (exp, ty, var, purity) := typeExp(range, InstContext.set(context, NFInstContext.ITERATION_RANGE), info);
 
         // If the iteration range is structural, it must be a parameter expression.
         if structural and var > Variability.PARAMETER then
@@ -1127,21 +1127,21 @@ function typeExp
   input SourceInfo info;
         output Type ty;
         output Variability variability;
+        output Purity purity;
 algorithm
-  (exp, ty, variability) := match exp
+  (exp, ty, variability, purity) := match exp
     local
-      Expression e1, e2, e3;
-      Variability var1, var2, var3;
-      Type ty1, ty2, ty3;
-      Operator op;
-      ComponentRef cref;
+      Expression e1, e2;
+      Variability var1, var2;
+      Purity pur1, pur2;
+      Type ty1, ty2;
       InstContext.Type next_context;
 
-    case Expression.INTEGER()      then (exp, Type.INTEGER(), Variability.CONSTANT);
-    case Expression.REAL()         then (exp, Type.REAL(),    Variability.CONSTANT);
-    case Expression.STRING()       then (exp, Type.STRING(),  Variability.CONSTANT);
-    case Expression.BOOLEAN()      then (exp, Type.BOOLEAN(), Variability.CONSTANT);
-    case Expression.ENUM_LITERAL() then (exp, exp.ty,         Variability.CONSTANT);
+    case Expression.INTEGER()      then (exp, Type.INTEGER(), Variability.CONSTANT, Purity.PURE);
+    case Expression.REAL()         then (exp, Type.REAL(),    Variability.CONSTANT, Purity.PURE);
+    case Expression.STRING()       then (exp, Type.STRING(),  Variability.CONSTANT, Purity.PURE);
+    case Expression.BOOLEAN()      then (exp, Type.BOOLEAN(), Variability.CONSTANT, Purity.PURE);
+    case Expression.ENUM_LITERAL() then (exp, exp.ty,         Variability.CONSTANT, Purity.PURE);
     case Expression.CREF()         then typeCrefExp(exp.cref, context, info);
 
     case Expression.TYPENAME()
@@ -1153,7 +1153,7 @@ algorithm
           fail();
         end if;
       then
-        (exp, exp.ty, Variability.CONSTANT);
+        (exp, exp.ty, Variability.CONSTANT, Purity.PURE);
 
     case Expression.ARRAY()  then typeArray(exp.elements, context, info);
     case Expression.MATRIX() then typeMatrix(exp.elements, context, info);
@@ -1172,44 +1172,45 @@ algorithm
     case Expression.BINARY()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1) := typeExp(exp.exp1, next_context, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
+        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
         (exp, ty) := TypeCheck.checkBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, info);
       then
-        (exp, ty, Prefixes.variabilityMax(var1, var2));
+        (exp, ty, Prefixes.variabilityMax(var1, var2), Prefixes.purityMin(pur1, pur2));
 
     case Expression.UNARY()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1) := typeExp(exp.exp, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp, next_context, info);
         (exp, ty) := TypeCheck.checkUnaryOperation(e1, ty1, var1, exp.operator, info);
       then
-        (exp, ty, var1);
+        (exp, ty, var1, pur1);
 
     case Expression.LBINARY()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1) := typeExp(exp.exp1, next_context, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
+        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
         (exp, ty) := TypeCheck.checkLogicalBinaryOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, info);
       then
-        (exp, ty, Prefixes.variabilityMax(var1, var2));
+        (exp, ty, Prefixes.variabilityMax(var1, var2), Prefixes.purityMin(pur1, pur2));
 
     case Expression.LUNARY()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1) := typeExp(exp.exp, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp, next_context, info);
         (exp, ty) := TypeCheck.checkLogicalUnaryOperation(e1, ty1, var1, exp.operator, info);
       then
-        (exp, ty, var1);
+        (exp, ty, var1, pur1);
 
     case Expression.RELATION()
       algorithm
         next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
-        (e1, ty1, var1) := typeExp(exp.exp1, next_context, info);
-        (e2, ty2, var2) := typeExp(exp.exp2, next_context, info);
+        (e1, ty1, var1, pur1) := typeExp(exp.exp1, next_context, info);
+        (e2, ty2, var2, pur2) := typeExp(exp.exp2, next_context, info);
         (exp, ty) := TypeCheck.checkRelationOperation(e1, ty1, var1, exp.operator, e2, ty2, var2, context, info);
         variability := Prefixes.variabilityMax(var1, var2);
+        purity := Prefixes.purityMin(pur1, pur2);
 
         // A relation involving continuous expressions which is not inside
         // noEvent is a discrete expression.
@@ -1217,13 +1218,13 @@ algorithm
           variability := Variability.DISCRETE;
         end if;
       then
-        (exp, ty, variability);
+        (exp, ty, variability, purity);
 
     case Expression.IF() then typeIfExpression(exp, context, info);
 
     case Expression.CALL()
       algorithm
-        (e1, ty, var1) := Call.typeCall(exp, context, info);
+        (e1, ty, var1, pur1) := Call.typeCall(exp, context, info);
 
         // If the call has multiple outputs and isn't alone on either side of an
         // equation/algorithm, select the first output.
@@ -1232,7 +1233,7 @@ algorithm
           e1 := Expression.tupleElement(e1, ty, 1);
         end if;
       then
-        (e1, ty, var1);
+        (e1, ty, var1, pur1);
 
     case Expression.CAST()
       algorithm
@@ -1242,15 +1243,15 @@ algorithm
 
     // Subscripted expressions are assumed to already be typed.
     case Expression.SUBSCRIPTED_EXP()
-      then (exp, exp.ty, Expression.variability(exp));
+      then (exp, exp.ty, Expression.variability(exp), Expression.purity(exp));
 
     case Expression.MUTABLE()
       algorithm
         e1 := Mutable.access(exp.exp);
-        (e1, ty, variability) := typeExp(e1, context, info);
+        (e1, ty, variability, purity) := typeExp(e1, context, info);
         exp.exp := Mutable.create(e1);
       then
-        (exp, ty, variability);
+        (exp, ty, variability, purity);
 
     case Expression.PARTIAL_FUNCTION_APPLICATION()
       then Function.typePartialApplication(exp, context, info);
@@ -1299,6 +1300,7 @@ function typeBindingExp
   output Expression outExp;
   output Type ty;
   output Variability variability;
+  output Purity purity;
 protected
   Expression e;
   list<InstNode> parents;
@@ -1307,7 +1309,7 @@ protected
   Integer parent_dims;
 algorithm
   Expression.BINDING_EXP(e, _, _, parents, is_each) := exp;
-  (e, exp_ty, variability) := typeExp(e, context, info);
+  (e, exp_ty, variability, purity) := typeExp(e, context, info);
 
   parent_dims := 0;
 
@@ -1572,6 +1574,7 @@ function typeCrefExp
   output Expression exp;
   output Type ty;
   output Variability variability;
+  output Purity purity;
 protected
   ComponentRef cr;
   Variability node_var, subs_var;
@@ -1580,6 +1583,7 @@ algorithm
   (cr, ty, node_var, subs_var) := typeCref(cref, context, info);
   exp := Expression.CREF(ty, cr);
   variability := Prefixes.variabilityMax(node_var, subs_var);
+  purity := ComponentRef.purity(cref);
 end typeCrefExp;
 
 function typeCref
@@ -1783,10 +1787,12 @@ function typeArray
   output Expression arrayExp;
   output Type arrayType = Type.UNKNOWN();
   output Variability variability = Variability.CONSTANT;
+  output Purity purity = Purity.PURE;
 protected
   Expression exp;
   list<Expression> expl = {}, expl2 = {};
   Variability var;
+  Purity pur;
   Type ty1 = Type.UNKNOWN(), ty2, ty3;
   list<Type> tys = {};
   MatchKind mk;
@@ -1796,8 +1802,10 @@ algorithm
   next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
   for e in elements loop
-    (exp, ty2, var) := typeExp(e, next_context, info);
+    (exp, ty2, var, pur) := typeExp(e, next_context, info);
     variability := Prefixes.variabilityMax(var, variability);
+    purity := Prefixes.purityMin(pur, purity);
+
     (, ty3, mk) := TypeCheck.matchTypes(ty2, ty1, exp, allowUnknown = true);
     if TypeCheck.isIncompatibleMatch(mk) then
       // Try the other way around to get the super-type of the array
@@ -1837,10 +1845,12 @@ function typeMatrix "The array concatenation operator"
   output Expression arrayExp;
   output Type arrayType = Type.UNKNOWN();
   output Variability variability = Variability.CONSTANT;
+  output Purity purity = Purity.PURE;
 protected
   Expression exp;
   list<Expression> expl = {}, res = {};
   Variability var;
+  Purity pur;
   Type ty = Type.UNKNOWN();
   list<Type> tys = {}, resTys = {};
   Integer n = 2;
@@ -1848,8 +1858,9 @@ protected
 algorithm
   if listLength(elements) > 1 then
     for el in elements loop
-      (exp, ty, var) := typeMatrixComma(el, next_context, info);
+      (exp, ty, var, pur) := typeMatrixComma(el, next_context, info);
       variability := Prefixes.variabilityMax(var, variability);
+      purity := Prefixes.purityMin(pur, purity);
       expl := exp :: expl;
       tys := ty :: tys;
       n := max(n, Type.dimensionCount(ty));
@@ -1860,9 +1871,9 @@ algorithm
       resTys := ty::resTys;
       res := e::res;
     end for;
-    (arrayExp, arrayType) := BuiltinCall.makeCatExp(1, res, resTys, variability, info);
+    (arrayExp, arrayType) := BuiltinCall.makeCatExp(1, res, resTys, variability, purity, info);
   else
-    (arrayExp, arrayType, variability) := typeMatrixComma(listHead(elements), next_context, info);
+    (arrayExp, arrayType, variability, purity) := typeMatrixComma(listHead(elements), next_context, info);
     if Type.dimensionCount(arrayType) < 2 then
       (arrayExp, arrayType) := Expression.promote(arrayExp, arrayType, n);
     end if;
@@ -1876,10 +1887,12 @@ function typeMatrixComma
   output Expression arrayExp;
   output Type arrayType;
   output Variability variability = Variability.CONSTANT;
+  output Purity purity = Purity.PURE;
 protected
   Expression exp;
   list<Expression> expl = {}, res = {};
   Variability var;
+  Purity pur;
   Type ty = Type.UNKNOWN(), ty1, ty2, ty3;
   list<Type> tys = {}, tys2;
   Integer n = 2, pos;
@@ -1888,7 +1901,7 @@ algorithm
   Error.assertion(not listEmpty(elements), getInstanceName() + " expected non-empty arguments", sourceInfo());
   if listLength(elements) > 1 then
     for e in elements loop
-      (exp, ty1, var) := typeExp(e, context, info);
+      (exp, ty1, var, pur) := typeExp(e, context, info);
       expl := exp :: expl;
       if Type.isEqual(ty, Type.UNKNOWN()) then
         ty := ty1;
@@ -1900,6 +1913,7 @@ algorithm
       end if;
       tys := ty1 :: tys;
       variability := Prefixes.variabilityMax(variability, var);
+      purity := Prefixes.purityMin(purity, pur);
       n := max(n, Type.dimensionCount(ty));
     end for;
     tys2 := {};
@@ -1919,7 +1933,7 @@ algorithm
       res := e :: res;
       tys2 := ty3 :: tys2;
     end for;
-    (arrayExp, arrayType) := BuiltinCall.makeCatExp(2, res, tys2, variability, info);
+    (arrayExp, arrayType) := BuiltinCall.makeCatExp(2, res, tys2, variability, purity, info);
   else
     (arrayExp, arrayType, variability) := typeExp(listHead(elements), context, info);
   end if;
@@ -1931,21 +1945,24 @@ function typeRange
   input SourceInfo info;
         output Type rangeType;
         output Variability variability;
+        output Purity purity;
 protected
   Expression start_exp, step_exp, stop_exp;
   Type start_ty, step_ty, stop_ty;
   Option<Expression> ostep_exp;
   Option<Type> ostep_ty;
   Variability start_var, step_var, stop_var;
+  Purity start_pur, step_pur, stop_pur;
   TypeCheck.MatchKind ty_match;
   InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
 algorithm
   Expression.RANGE(start = start_exp, step = ostep_exp, stop = stop_exp) := rangeExp;
 
   // Type start and stop.
-  (start_exp, start_ty, start_var) := typeExp(start_exp, next_context, info);
-  (stop_exp, stop_ty, stop_var) := typeExp(stop_exp, next_context, info);
+  (start_exp, start_ty, start_var, start_pur) := typeExp(start_exp, next_context, info);
+  (stop_exp, stop_ty, stop_var, stop_pur) := typeExp(stop_exp, next_context, info);
   variability := Prefixes.variabilityMax(start_var, stop_var);
+  purity := Prefixes.purityMin(start_pur, stop_pur);
 
   // Type check start and stop.
   (start_exp, stop_exp, rangeType, ty_match) :=
@@ -1958,8 +1975,9 @@ algorithm
   if isSome(ostep_exp) then
     // Type step.
     SOME(step_exp) := ostep_exp;
-    (step_exp, step_ty, step_var) := typeExp(step_exp, next_context, info);
+    (step_exp, step_ty, step_var, step_pur) := typeExp(step_exp, next_context, info);
     variability := Prefixes.variabilityMax(step_var, variability);
+    purity := Prefixes.purityMin(step_pur, purity);
 
     // Type check start and step.
     (start_exp, step_exp, rangeType, ty_match) :=
@@ -1983,7 +2001,9 @@ algorithm
   rangeType := TypeCheck.getRangeType(start_exp, ostep_exp, stop_exp, rangeType, info);
   rangeExp := Expression.RANGE(rangeType, start_exp, ostep_exp, stop_exp);
 
-  if variability <= Variability.PARAMETER and not InstContext.inFunction(context) then
+  if variability <= Variability.PARAMETER and
+     purity == Purity.PURE and
+     not InstContext.inFunction(context) then
     Structural.markExp(rangeExp);
   end if;
 end typeRange;
@@ -1995,6 +2015,7 @@ function typeTuple
   output Expression tupleExp;
   output Type tupleType;
   output Variability variability;
+  output Purity purity = Purity.PURE;
 protected
   list<Expression> expl;
   list<Type> tyl;
@@ -2039,6 +2060,7 @@ function typeSize
   input Boolean evaluate = true;
         output Type sizeType;
         output Variability variability;
+        output Purity purity;
 protected
   Expression exp, index;
   Type exp_ty, index_ty;
@@ -2049,10 +2071,10 @@ protected
   Option<Expression> oexp;
   InstContext.Type next_context = InstContext.set(context, NFInstContext.SUBEXPRESSION);
 algorithm
-  (sizeExp, sizeType, variability) := match sizeExp
+  (sizeExp, sizeType, variability, purity) := match sizeExp
     case Expression.SIZE(exp = exp, dimIndex = SOME(index))
       algorithm
-        (index, index_ty, variability) := typeExp(index, next_context, info);
+        (index, index_ty, variability, purity) := typeExp(index, next_context, info);
 
         // The second argument must be an Integer.
         (index, _, ty_match) :=
@@ -2064,8 +2086,7 @@ algorithm
           fail();
         end if;
 
-        if variability <= Variability.STRUCTURAL_PARAMETER and
-           not Expression.containsAnyIterator(index, context) then
+        if variability <= Variability.STRUCTURAL_PARAMETER and purity == Purity.PURE then
           // Evaluate the index if it's a constant.
           index := Ceval.evalExp(index, Ceval.EvalTarget.IGNORE_ERRORS());
 
@@ -2097,10 +2118,11 @@ algorithm
           else
             // size is discrete for : in functions.
             variability := Variability.DISCRETE;
+            purity := Purity.IMPURE;
           end if;
         else
           // If the index is not a constant, type the whole expression.
-          (exp, exp_ty) := typeExp(sizeExp.exp, next_context, info);
+          (exp, exp_ty, _, purity) := typeExp(sizeExp.exp, next_context, info);
 
           // Check that it's an array.
           if not Type.isArray(exp_ty) then
@@ -2112,14 +2134,14 @@ algorithm
           exp := Expression.SIZE(exp, SOME(index));
         end if;
       then
-        (exp, Type.INTEGER(), variability);
+        (exp, Type.INTEGER(), variability, purity);
 
     case Expression.SIZE()
       algorithm
         (exp, exp_ty, _) := typeExp(sizeExp.exp, next_context, info);
         sizeType := Type.sizeType(exp_ty);
       then
-        (Expression.SIZE(exp, NONE()), sizeType, Variability.PARAMETER);
+        (Expression.SIZE(exp, NONE()), sizeType, Variability.PARAMETER, Purity.PURE);
 
   end match;
 end typeSize;
@@ -2182,17 +2204,19 @@ function typeIfExpression
   input SourceInfo info;
         output Type ty;
         output Variability var;
+        output Purity purity;
 protected
   Expression cond, tb, fb, tb2, fb2;
   InstContext.Type next_context;
   Type cond_ty, tb_ty, fb_ty;
   Variability cond_var, tb_var, fb_var;
+  Purity cond_pur, tb_pur, fb_pur;
   MatchKind ty_match;
 algorithm
   Expression.IF(condition = cond, trueBranch = tb, falseBranch = fb) := ifExp;
   next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
 
-  (cond, cond_ty, cond_var) := typeExp(cond, next_context, info);
+  (cond, cond_ty, cond_var, cond_pur) := typeExp(cond, next_context, info);
 
   // The condition must be a scalar boolean.
   (cond, _, ty_match) := TypeCheck.matchTypes(cond_ty, Type.BOOLEAN(), cond);
@@ -2203,8 +2227,8 @@ algorithm
     fail();
   end if;
 
-  (tb, tb_ty, tb_var) := typeExp(tb, next_context, info);
-  (fb, fb_ty, fb_var) := typeExp(fb, next_context, info);
+  (tb, tb_ty, tb_var, tb_pur) := typeExp(tb, next_context, info);
+  (fb, fb_ty, fb_var, fb_pur) := typeExp(fb, next_context, info);
   (tb2, fb2, ty, ty_match) := TypeCheck.matchIfBranches(tb, tb_ty, fb, fb_ty);
 
   if TypeCheck.isIncompatibleMatch(ty_match) then
@@ -2216,6 +2240,7 @@ algorithm
 
   ifExp := Expression.IF(ty, cond, tb2, fb2);
   var := Prefixes.variabilityMax(cond_var, Prefixes.variabilityMax(tb_var, fb_var));
+  purity := Prefixes.purityMin(cond_pur, Prefixes.purityMin(tb_pur, fb_pur));
 end typeIfExpression;
 
 function evaluateCondition

@@ -40,7 +40,7 @@ protected
   import NFInstNode.InstNodeType;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import NFPrefixes.Variability;
+  import NFPrefixes.{Variability, Purity};
   import Class = NFClass;
   import List;
   import Prefixes = NFPrefixes;
@@ -357,6 +357,24 @@ public
     output Variability var = Prefixes.variabilityMax(nodeVariability(cref),
                                                      subscriptsVariability(cref));
   end variability;
+
+  function purity
+    input ComponentRef cref;
+    output Purity pur;
+  protected
+    function sub_purity
+      input Subscript sub;
+      input output Purity pur;
+    algorithm
+      pur := Prefixes.purityMin(pur, Subscript.purity(sub));
+    end sub_purity;
+  algorithm
+    pur := match cref
+      case CREF(origin = Origin.ITERATOR) then Purity.IMPURE;
+      case CREF() then foldSubscripts(cref, sub_purity, Purity.PURE);
+      else Purity.IMPURE;
+    end match;
+  end purity;
 
   function addSubscript
     input Subscript subscript;

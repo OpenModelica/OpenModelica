@@ -43,7 +43,7 @@ import Dimension = NFDimension;
 import Expression = NFExpression;
 import NFInstNode.InstNode;
 import Binding = NFBinding;
-import NFPrefixes.Variability;
+import NFPrefixes.{Variability, Purity};
 
 protected
 import Config;
@@ -237,7 +237,10 @@ protected
   Function fn;
   Operator.Op oop;
 algorithm
-  args := {(exp1, type1, var1), (exp2, type2, var2)};
+  args := {
+    TypedArg.TYPED_ARG(NONE(), exp1, type1, var1, Purity.PURE),
+    TypedArg.TYPED_ARG(NONE(), exp2, type2, var2, Purity.PURE)
+  };
   matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info);
   // We only allow exact matches for operator overloading. e.g. no casting or generic matches.
   exactMatches := MatchedFunction.getExactMatches(matchedFunctions);
@@ -279,8 +282,9 @@ algorithm
     outExp := Expression.CALL(
       Call.makeTypedCall(
         matchedFunc.func,
-        list(Util.tuple31(a) for a in matchedFunc.args),
+        list(a.value for a in matchedFunc.args),
         Prefixes.variabilityMax(var1, var2),
+        Purity.PURE,
         outType));
   else
     if showErrors then
@@ -821,7 +825,7 @@ algorithm
   if listLength(matchedfuncs) == 1 then
     (operfn, {exp1,exp2}, var)::_ := matchedfuncs;
     outType := Function.returnType(operfn);
-    outExp := Expression.CALL(Call.makeTypedCall(operfn, {exp1, exp2}, var, outType));
+    outExp := Expression.CALL(Call.makeTypedCall(operfn, {exp1, exp2}, var, Purity.PURE, outType));
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
       {Expression.toString(Expression.BINARY(exp1, op, exp2)),
@@ -1396,7 +1400,7 @@ algorithm
   //  checkValidOperatorOverload(opstr, fn, node1);
   //end for;
 
-  args := {(inExp1,inType1,var)};
+  args := {TypedArg.TYPED_ARG(NONE(), inExp1, inType1, var, Purity.PURE)};
   matchedFunctions := Function.matchFunctionsSilent(candidates, args, {}, info, vectorize = false);
 
   // We only allow exact matches for operator overloading. e.g. no casting or generic matches.
@@ -1412,8 +1416,9 @@ algorithm
     outExp := Expression.CALL(
       Call.makeTypedCall(
         matchedFunc.func,
-        list(Util.tuple31(a) for a in matchedFunc.args),
+        list(a.value for a in matchedFunc.args),
         var,
+        Purity.PURE,
         outType));
   else
     Error.addSourceMessage(Error.AMBIGUOUS_MATCHING_OPERATOR_FUNCTIONS_NFINST,
@@ -3013,6 +3018,7 @@ algorithm
       Integer step;
       Expression step_exp, dim_exp;
       Variability var;
+      Purity pur;
 
     case (Expression.INTEGER(), NONE(), Expression.INTEGER())
       then Dimension.fromInteger(max(stopExp.value - startExp.value + 1, 0));
@@ -3045,15 +3051,18 @@ algorithm
         dim_exp := Expression.BINARY(stopExp, Operator.makeSub(Type.INTEGER()), startExp);
         var := Prefixes.variabilityMax(Expression.variability(stopExp),
                                        Expression.variability(startExp));
+        pur := Prefixes.purityMin(Expression.purity(stopExp),
+                                  Expression.purity(startExp));
 
         if isSome(stepExp) then
           SOME(step_exp) := stepExp;
           var := Prefixes.variabilityMax(var, Expression.variability(step_exp));
-          dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var));
+          pur := Prefixes.purityMin(pur, Expression.purity(step_exp));
+          dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.DIV_INT, {dim_exp, step_exp}, var, pur));
         end if;
 
         dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
-        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.MAX_INT, {dim_exp, Expression.INTEGER(0)}, var));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.MAX_INT, {dim_exp, Expression.INTEGER(0)}, var, pur));
         dim_exp := SimplifyExp.simplify(dim_exp);
       then
         Dimension.fromExp(dim_exp, var);
@@ -3073,6 +3082,7 @@ algorithm
       Real start, step;
       Expression dim_exp, step_exp;
       Variability var;
+      Purity pur;
 
     case (Expression.REAL(), NONE(), Expression.REAL())
       then Dimension.fromInteger(Util.realRangeSize(startExp.value, 1.0, stopExp.value));
@@ -3096,16 +3106,18 @@ algorithm
         dim_exp := Expression.BINARY(stopExp, Operator.makeSub(Type.REAL()), startExp);
         var := Prefixes.variabilityMax(Expression.variability(stopExp),
                                        Expression.variability(startExp));
+        pur := Prefixes.purityMin(Expression.purity(stopExp), Expression.purity(startExp));
 
         if isSome(stepExp) then
           SOME(step_exp) := stepExp;
           var := Prefixes.variabilityMax(var, Expression.variability(step_exp));
+          pur := Prefixes.purityMin(pur, Expression.purity(step_exp));
           dim_exp := Expression.BINARY(dim_exp, Operator.makeDiv(Type.REAL()), step_exp);
           dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.REAL()), Expression.REAL(5e-15));
         end if;
 
-        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var));
-        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.FLOOR, {dim_exp}, var, pur));
+        dim_exp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.INTEGER_REAL, {dim_exp}, var, pur));
         dim_exp := Expression.BINARY(dim_exp, Operator.makeAdd(Type.INTEGER()), Expression.INTEGER(1));
         dim_exp := SimplifyExp.simplify(dim_exp);
       then

@@ -44,7 +44,7 @@ import Call = NFCall;
 import Dimension = NFDimension;
 import Type = NFType;
 import ExpressionSimplify;
-import NFPrefixes.Variability;
+import NFPrefixes.{Variability, Purity};
 import NFClassTree.ClassTree;
 import ComplexType = NFComplexType;
 import Subscript = NFSubscript;
@@ -2429,7 +2429,7 @@ algorithm
 
         if Expression.isEmpty(result) then
           result := Expression.CALL(Call.makeTypedCall(fn,
-            {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Type.arrayElementType(ty)));
+            {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Purity.PURE, Type.arrayElementType(ty)));
         end if;
       then
         result;
@@ -2475,7 +2475,7 @@ algorithm
 
         if Expression.isEmpty(result) then
           result := Expression.CALL(Call.makeTypedCall(fn,
-            {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Type.arrayElementType(ty)));
+            {Expression.makeEmptyArray(ty)}, Variability.CONSTANT, Purity.PURE, Type.arrayElementType(ty)));
         end if;
       then
         result;
@@ -2928,7 +2928,7 @@ algorithm
         e := Expression.STRING(s);
         if Flags.getConfigBool(Flags.BUILDING_FMU) then
           f := Function.setName(Absyn.IDENT("OpenModelica_fmuLoadResource"), fn);
-          e := Expression.CALL(Call.makeTypedCall(f, {e}, Variability.PARAMETER, Expression.typeOf(e)));
+          e := Expression.CALL(Call.makeTypedCall(f, {e}, Variability.PARAMETER, Purity.IMPURE, Expression.typeOf(e)));
         end if;
       then e;
 
@@ -3089,7 +3089,7 @@ algorithm
   {s, d} := list(Expression.unbox(arg) for arg in args);
   s := evalExp(s, target);
   if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-    result := Expression.CALL(Call.makeTypedCall(fn, {s, d}, Variability.CONTINUOUS, Expression.typeOf(s)));
+    result := Expression.CALL(Call.makeTypedCall(fn, {s, d}, Variability.CONTINUOUS, Purity.IMPURE, Expression.typeOf(s)));
   else
     result := s;
   end if;
