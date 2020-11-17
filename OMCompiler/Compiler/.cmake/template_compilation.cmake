@@ -270,9 +270,6 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenSpars
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo)
 
-omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJava.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo)
-
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo)
 

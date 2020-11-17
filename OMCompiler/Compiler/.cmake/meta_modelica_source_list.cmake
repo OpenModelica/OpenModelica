@@ -410,7 +410,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenOMSICpp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcom.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcomOld.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJava.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidToC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenModelica.mo

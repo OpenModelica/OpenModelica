@@ -5,7 +5,7 @@ GENERATED_FILES=$(GENERATED_FILES_BOOT_STAGE2) CodegenC.mo CodegenUtilSimulation
 CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo \
 CodegenOMSI_common.mo CodegenOMSIC.mo CodegenOMSICpp.mo CodegenOMSIC_Equations.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo \
 CodegenMidToC.mo CodegenModelica.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo CodegenSparseFMI.mo \
-CodegenXML.mo CodegenJava.mo CodegenJS.mo VisualXMLTpl.mo \
+CodegenXML.mo CodegenJS.mo VisualXMLTpl.mo \
 CodegenCppCommonOld.mo CodegenCppHpcomOld.mo CodegenCppOld.mo CodegenFMUCppHpcomOld.mo CodegenFMUCppOld.mo
 UNUSED=../boot/find-unused-import.sh
 
@@ -192,11 +192,6 @@ SCodeDumpTpl.mo : SCodeDumpTpl.tpl SCodeTV.mo AbsynDumpTpl.tpl
 
 CodegenXML.mo : CodegenXML.tpl SimCodeTV.mo
 	@echo " ** CodegenXML template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " " && ($(UNUSED) "$@" || true)
-
-CodegenJava.mo : CodegenJava.tpl SimCodeTV.mo
-	@echo " ** CodegenJava template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
 

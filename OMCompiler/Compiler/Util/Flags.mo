@@ -779,7 +779,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
 
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"),
-  SOME(STRING_OPTION({"None", "C", "Cpp","omsicpp", "ExperimentalEmbeddedC", "Java", "JavaScript", "omsic", "sfmi", "XML", "MidC"})),
+  SOME(STRING_OPTION({"None", "C", "Cpp","omsicpp", "ExperimentalEmbeddedC", "JavaScript", "omsic", "sfmi", "XML", "MidC"})),
   Gettext.gettext("Sets the target language for the code generation."));
 
 

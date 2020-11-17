@@ -444,7 +444,6 @@ if true then /* Suppress output */
     "../Template/CodegenOMSICpp.mo",
     "../Template/CodegenFMUCppHpcom.mo",
     "../Template/CodegenFMUCppHpcomOld.mo",
-    "../Template/CodegenJava.mo",
     "../Template/CodegenJS.mo",
     "../Template/CodegenMidToC.mo",
     "../Template/CodegenModelica.mo",
