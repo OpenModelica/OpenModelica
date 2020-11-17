@@ -1,7 +1,12 @@
 find_package(CURL REQUIRED)
 find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
-find_package(LAPACK REQUIRED)
+
+if(OMC_USE_LAPACK)
+  find_package(LAPACK REQUIRED)
+endif()
+
+
 # find_package(ZLIB REQUIRED) # Not needed. We use the minizip lib from 3rdParty/FMIL instead
 
 # On Win32 we use system UUID lib which is one of the default libs that cmake adds to any target on Win32. On non Win32
@@ -61,7 +66,6 @@ target_compile_features(omcruntime PRIVATE cxx_std_11)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
-target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
@@ -70,6 +74,12 @@ if(OMC_USE_LPSOLVE)
   target_link_libraries(omcruntime PUBLIC omc::3rd::lpsolve55)
 else()
   target_compile_definitions(omcruntime PRIVATE NO_LPLIB)
+endif()
+
+if(OMC_USE_LAPACK)
+  target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
+else()
+  target_compile_definitions(omcruntime PRIVATE NO_LAPACK)
 endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
@@ -112,43 +122,6 @@ else() # No corba support requested. Use the stub file.
   target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
 endif(OMC_USE_CORBA)
 
-# ######################################################################################################################
-# Library: omcruntime-boot
-add_library(omcruntime-boot STATIC)
-add_library(omc::compiler::runtime-boot ALIAS omcruntime-boot)
-
-target_sources(omcruntime-boot PRIVATE ${OMC_RUNTIIME_SOURCES})
-# No corba for boot lib
-target_sources(omcruntime-boot PRIVATE corbaimpl_stub_omc.c)
-
-target_compile_features(omcruntime-boot PRIVATE cxx_std_11)
-
-# Define OMC_BOOTSTRAPPING for the boot lib.
-target_compile_definitions(omcruntime-boot PRIVATE OMC_BOOTSTRAPPING)
-
-target_link_libraries(omcruntime-boot PUBLIC CURL::libcurl)
-target_link_libraries(omcruntime-boot PUBLIC ${Intl_LIBRARIES})
-target_link_libraries(omcruntime-boot PUBLIC Iconv::Iconv)
-target_link_libraries(omcruntime-boot PUBLIC ${LAPACK_LIBRARIES})
-target_link_libraries(omcruntime-boot PUBLIC omc::simrt::runtime)
-target_link_libraries(omcruntime-boot PUBLIC omc::3rd::libzmq)
-target_link_libraries(omcruntime-boot PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
-
-if(OMC_USE_LPSOLVE)
-  target_link_libraries(omcruntime-boot PUBLIC omc::3rd::lpsolve55)
-else()
-  target_compile_definitions(omcruntime-boot PRIVATE NO_LPLIB)
-endif()
-
-target_include_directories(omcruntime-boot PUBLIC ${Intl_INCLUDE_DIRS})
-target_include_directories(omcruntime-boot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(omcruntime-boot PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
-
-# uuid is one of the default libs that cmake adds to any target on Win32. On non-Win systems we look for the library and
-# explicitly use it.
-if(NOT WIN32)
-  target_link_libraries(omcruntime-boot PUBLIC ${UUID_LIB})
-endif()
 
 # ######################################################################################################################
 # Library: omcbackendruntime
