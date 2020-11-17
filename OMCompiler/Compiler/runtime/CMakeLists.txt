@@ -72,6 +72,7 @@ else()
   target_compile_definitions(omcruntime PRIVATE NO_LPLIB)
 endif()
 
+target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcruntime PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
 
@@ -139,6 +140,7 @@ else()
   target_compile_definitions(omcruntime-boot PRIVATE NO_LPLIB)
 endif()
 
+target_include_directories(omcruntime-boot PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcruntime-boot PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcruntime-boot PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
 
@@ -170,6 +172,7 @@ target_link_libraries(omcbackendruntime PUBLIC omc::simrt::runtime)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib::static)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 
+target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(omcbackendruntime PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
 
