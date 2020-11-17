@@ -1256,11 +1256,6 @@ package SimCodeUtil
     output String outIndex;
   end localCref2Index;
 
-  function isModelTooBigForCSharpInOneFile
-    input SimCode.SimCode simCode;
-    output Boolean outIsTooBig;
-  end isModelTooBigForCSharpInOneFile;
-
   function codegenExpSanityCheck
     input DAE.Exp inExp;
     input SimCodeFunction.Context context;

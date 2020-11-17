@@ -69,7 +69,6 @@ import CodegenOMSICpp;
 import CodegenFMUCppHpcomOld;
 import CodegenAdevs;
 import CodegenSparseFMI;
-import CodegenCSharp;
 import CodegenCppOld;
 import CodegenCppHpcomOld;
 import CodegenOMSIC;
@@ -508,10 +507,6 @@ algorithm
       Integer numThreads, n;
       list<tuple<Boolean,list<String>>> res;
       list<String> strs, tmp, matches;
-
-    case "CSharp" equation
-      Tpl.tplNoret(CodegenCSharp.translateModel, simCode);
-    then ();
 
     case "Cpp"
       algorithm

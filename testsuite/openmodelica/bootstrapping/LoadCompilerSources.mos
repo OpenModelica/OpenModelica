@@ -187,7 +187,6 @@ if true then /* Suppress output */
     prefixPath + "Template/CodegenC.mo",
     prefixPath + "Template/CodegenCpp.mo",
     prefixPath + "Template/CodegenCppHpcom.mo",
-    prefixPath + "Template/CodegenCSharp.mo",
     prefixPath + "Template/CodegenFMU.mo",
     prefixPath + "Template/CodegenFMUCpp.mo",
     prefixPath + "Template/CodegenJava.mo",
