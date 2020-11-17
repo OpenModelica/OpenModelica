@@ -2484,7 +2484,7 @@ algorithm
       // 0 = a - tmp
       e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
       e2lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
-      exptl = List.threadTuple(e1lst, e2lst);
+      exptl = List.zip(e1lst, e2lst);
       (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, iuniqueEqIndex);
       // tmp = f(x, y)
       etmp = Expression.crefExp(crtmp);
@@ -2505,7 +2505,7 @@ algorithm
       // 0 = a - tmp
       e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
       e2lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
-      exptl = List.threadTuple(e1lst, e2lst);
+      exptl = List.zip(e1lst, e2lst);
       (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, iuniqueEqIndex);
       // tmp = f(x, y)
       etmp = Expression.crefExp(crtmp);
@@ -2532,7 +2532,7 @@ algorithm
       /* Expand the varLst. Each var might be an array or record. */
       e2lst = List.mapFlat(e2lst, function Expression.expandExpression(expandRecord = true));
       /* pair each of the expanded expressions to coressponding one*/
-      exptl = List.threadTuple(e1lst, e2lst);
+      exptl = List.zip(e1lst, e2lst);
       /* Create residual equations for each pair*/
       (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
       eqSystlst = simeqn_complex::eqSystlst;
@@ -2554,7 +2554,7 @@ algorithm
       uniqueEqIndex = iuniqueEqIndex + 1;
       // Record()-tmp = 0
       e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
-      exptl = List.threadTuple(e1lst, e2lst);
+      exptl = List.zip(e1lst, e2lst);
       (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
       eqSystlst = simeqn_complex::eqSystlst;
       tempvars = createTempVars(varLst, cr, itempvars);
@@ -2588,7 +2588,7 @@ algorithm
       expl = List.map(crlst, Expression.crefExp);
 
       // Tuple() - tmp = 0
-      exptl = List.threadTuple(expl, crexplst);
+      exptl = List.zip(expl, crexplst);
       (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
       eqSystlst = simeqn_complex::eqSystlst;
 
@@ -2652,12 +2652,12 @@ algorithm
 
       // Make simple assignments
       // var := tmp_var
-      exptl = List.threadTuple(lhsExpLstAss, rhsExpLstAss);
+      exptl = List.zip(lhsExpLstAss, rhsExpLstAss);
       (eqSystlst_simpAss, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqAttr, uniqueEqIndex);
 
       // Make residual equations
       // tmp_var - var = 0
-      exptl = List.threadTuple(rhsExpLstRes, lhsExpLstRes);
+      exptl = List.zip(rhsExpLstRes, lhsExpLstRes);
       (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
 
       // Add simEqns to eqSystlst and temporary variables to tempvars
@@ -3042,7 +3042,7 @@ algorithm
           otempvars = createTempVarsforCrefs(explst1, otempvars);
 
           // 0 = a - tmp
-          exptl = List.threadTuple(explst, explst1);
+          exptl = List.zip(explst, explst1);
           (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
 
           eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, algStatements, eqAttr)::eqSystlst;
@@ -4890,8 +4890,7 @@ algorithm
         allCrefs = List.map(alldiffedVars, BackendVariable.varCref);
         columnVars = getSimVars2Crefs(allCrefs, inSimVarHT);
         columnVars = List.sort(columnVars, compareVarIndexGt);
-        (_, (_, alldiffedVars)) = List.mapFoldTuple(columnVars, sortBackVarWithSimVarsOrder, (empty, {}));
-        alldiffedVars = listReverse(alldiffedVars);
+        alldiffedVars = list(sortBackVarWithSimVarsOrder(v, empty) for v in columnVars);
         vars = BackendVariable.listVar1(diffedVars);
 
         columnVars = createAllDiffedSimVars(alldiffedVars, x, vars, 0, listLength(otherColumnVars), name, otherColumnVars);
@@ -5007,19 +5006,14 @@ algorithm
 end replaceSeedVarsName;
 
 protected function sortBackVarWithSimVarsOrder
-  input tuple<SimCodeVar.SimVar, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> inTuple;
-  output tuple<SimCodeVar.SimVar, tuple<BackendDAE.Variables, list<BackendDAE.Var>>> outTuple;
+  input SimCodeVar.SimVar var;
+  input BackendDAE.Variables vars;
+  output BackendDAE.Var outVar;
 protected
-  SimCodeVar.SimVar var;
-  BackendDAE.Variables vars;
-  list<BackendDAE.Var> varLst, resvars;
-  BackendDAE.Var v;
   DAE.ComponentRef cref;
 algorithm
-  ((var, (vars, varLst))) := inTuple;
-  SimCodeVar.SIMVAR(name=cref) := var;
-  (v,_) := BackendVariable.getVarSingle(cref, vars);
-  outTuple := ((var, (vars, v::varLst)));
+  SimCodeVar.SIMVAR(name = cref) := var;
+  outVar := BackendVariable.getVarSingle(cref, vars);
 end sortBackVarWithSimVarsOrder;
 
 protected function createJacSimVarsColumn "author: wbraun"
@@ -6226,7 +6220,7 @@ algorithm
         /* Expand the varLst. Each var might be an array or record. */
         crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
         /* pair each of the expanded expressions to coressponding one*/
-        exptl = List.threadTuple(expLst, crexplst);
+        exptl = List.zip(expLst, crexplst);
         /* Create residual equations for each pair*/
         (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
         eqSystlst = simeqn_complex::eqSystlst;
@@ -6255,7 +6249,7 @@ algorithm
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()=tmp
         crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
-        exptl = List.threadTuple(expLst, crexplst);
+        exptl = List.zip(expLst, crexplst);
         (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
         eqSystlst = simeqn_complex::eqSystlst;
         tempvars = createTempVars(varLst, cr1, itempvars);
@@ -6460,7 +6454,7 @@ algorithm
       expLstTmp = List.map(crefstmp, Expression.crefExp);
       tempvars = createArrayTempVar(left, ds, expLstTmp, itempvars);
       // Create the simple assignments for the lhs vars from the tmp rhs's
-      exptl = List.threadTuple(expLst, expLstTmp);
+      exptl = List.zip(expLst, expLstTmp);
       (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqAttr, iuniqueEqIndex);
       // Create the array equation with the tmp var as lhs
       eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex, lhse, e2, source, eqAttr)::eqSystlst;
@@ -11019,68 +11013,6 @@ algorithm
   (_, i) := traverseExpsEqSystems(eqs, Expression.complexityTraverse, 1 /* Each system has cost 1 even if it's as simple as der(x)=1.0 */, {});
   prio := (i, eqs);
 end calcPriority;
-
-protected function traveseSimVars
-  input SimCodeVar.SimVars inSimVars;
-  input Func func;
-  input tpl iTpl;
-  output SimCodeVar.SimVars outSimVars;
-  output tpl oTpl;
-  replaceable type tpl subtypeof Any;
-  partial function Func
-    input tuple<SimCodeVar.SimVar, tpl> tpl;
-    output tuple<SimCodeVar.SimVar, tpl> otpl;
-  end Func;
-algorithm
-  (outSimVars, oTpl) := match(inSimVars, func, iTpl)
-    local
-     list<SimCodeVar.SimVar> stateVars, derivativeVars, algVars, discreteAlgVars,
-                   intAlgVars, boolAlgVars, stringAlgVars, inputVars, outputVars,
-                   aliasVars, intAliasVars, boolAliasVars, stringAliasVars,
-                   paramVars, intParamVars, boolParamVars, stringParamVars,
-                   constVars, intConstVars, boolConstVars, stringConstVars,
-                   sensitivityVars, extObjVars, jacobianVars, seedVars,
-                   realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars,setcVars,datareconinputvars;
-     tpl intpl;
-
-    case (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars,datareconinputvars), _, intpl)
-         equation
-           (stateVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
-           (derivativeVars, intpl) = List.mapFoldTuple(derivativeVars, func, intpl);
-           (algVars, intpl) = List.mapFoldTuple(algVars, func, intpl);
-           (discreteAlgVars, intpl) = List.mapFoldTuple(discreteAlgVars, func, intpl);
-           (intAlgVars, intpl) = List.mapFoldTuple(intAlgVars, func, intpl);
-           (boolAlgVars, intpl) = List.mapFoldTuple(boolAlgVars, func, intpl);
-           (outputVars, intpl) = List.mapFoldTuple(outputVars, func, intpl);
-           (aliasVars, intpl) = List.mapFoldTuple(aliasVars, func, intpl);
-           (intAliasVars, intpl) = List.mapFoldTuple(intAliasVars, func, intpl);
-           (boolAliasVars, intpl) = List.mapFoldTuple(boolAliasVars, func, intpl);
-           (paramVars, intpl) = List.mapFoldTuple(intParamVars, func, intpl);
-           (intParamVars, intpl) = List.mapFoldTuple(paramVars, func, intpl);
-           (boolParamVars, intpl) = List.mapFoldTuple(boolParamVars, func, intpl);
-           (stringAlgVars, intpl) = List.mapFoldTuple(stateVars, func, intpl);
-           (stateVars, intpl) = List.mapFoldTuple(stringAlgVars, func, intpl);
-           (stringParamVars, intpl) = List.mapFoldTuple(stringParamVars, func, intpl);
-           (stringAliasVars, intpl) = List.mapFoldTuple(stringAliasVars, func, intpl);
-           (extObjVars, intpl) = List.mapFoldTuple(extObjVars, func, intpl);
-           (intConstVars, intpl) = List.mapFoldTuple(intConstVars, func, intpl);
-           (boolConstVars, intpl) = List.mapFoldTuple(boolConstVars, func, intpl);
-           (stringConstVars, intpl) = List.mapFoldTuple(stringConstVars, func, intpl);
-           (jacobianVars, intpl) = List.mapFoldTuple(jacobianVars, func, intpl);
-           (seedVars, intpl) = List.mapFoldTuple(seedVars, func, intpl);
-           (realOptimizeConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeConstraintsVars, func, intpl);
-           (realOptimizeFinalConstraintsVars, intpl) = List.mapFoldTuple(realOptimizeFinalConstraintsVars, func, intpl);
-           (sensitivityVars, intpl) = List.mapFoldTuple(sensitivityVars, func, intpl);
-           (setcVars, intpl) = List.mapFoldTuple(setcVars, func, intpl);
-           (datareconinputvars, intpl) = List.mapFoldTuple(datareconinputvars, func, intpl);
-
-         then (SimCodeVar.SIMVARS(stateVars, derivativeVars, algVars, discreteAlgVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars,
-                  paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars, jacobianVars, seedVars, realOptimizeConstraintsVars, realOptimizeFinalConstraintsVars, sensitivityVars,setcVars,datareconinputvars), intpl);
-    case (_, _, _) then fail();
-  end match;
-end traveseSimVars;
-
 
 public function traverseExpsSimCode
   input SimCode.SimCode simCode;

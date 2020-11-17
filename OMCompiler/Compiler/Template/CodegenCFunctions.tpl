@@ -4254,7 +4254,7 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     let &assignments = buffer ""
     let &additionalOutputs = buffer ""
     let &matchPhase = buffer ""
-    let _ = threadTuple(patterns,tys) |> (pat,ty) => match pat
+    let _ = List.zip(patterns,tys) |> (pat,ty) => match pat
       case PAT_WILD(__) then
         let &additionalOutputs += ", NULL"
         ""
@@ -6091,7 +6091,7 @@ template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, Te
   match rec
   case RECORD(__) then
   let name = tempDecl(underscorePath(path), &varDecls)
-  let ass = threadTuple(exps,comp) |>  (exp,compn) => '<%name%>._<%compn%> = <%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>;<%\n%>'
+  let ass = List.zip(exps,comp) |>  (exp,compn) => '<%name%>._<%compn%> = <%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>;<%\n%>'
   let &preExp += ass
   name
 end daeExpRecord;
@@ -7349,7 +7349,7 @@ case exp as MATCHEXPRESSION(__) then
   let &expInput = buffer ""
   // get the current index of tmpMeta and reserve N=listLength(inputs) values in it!
   let startIndexInputs = '<%System.tmpTickIndexReserve(0, 0)%>'
-  let ignore3 = (List.threadTuple(inputs,aliases) |> (e1,alias) hasindex i1 fromindex 1 =>
+  let ignore3 = (List.zip(inputs,aliases) |> (e1,alias) hasindex i1 fromindex 1 =>
     let typ = '<%expTypeFromExpModelica(e1)%>'
     let decl = tempDeclMatchInput(exp.matchType, typ, startIndexInputs, i1, &varDeclsInput)
     let &expInput += '<%decl%> = <%daeExp(e1, context, &preExpInput, &varDeclsInput, &auxFunction)%>;<%\n%>'

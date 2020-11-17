@@ -1504,7 +1504,7 @@ algorithm
         conditions = List.map(branches, Util.tuple21);
         stmtsList = List.map(branches, Util.tuple22);
         algsLst = List.mapList(stmtsList, statementToAlgorithmItem);
-        abranches = List.threadTuple(conditions,algsLst);
+        abranches = List.zip(conditions,algsLst);
 
         algs2 = List.map(elseBranch,statementToAlgorithmItem);
       then Absyn.ALGORITHMITEM(Absyn.ALG_IF(boolExpr,algs1,abranches,algs2),NONE(),info);
@@ -1529,7 +1529,7 @@ algorithm
         (boolExpr::conditions) = List.map(branches, Util.tuple21);
         stmtsList = List.map(branches, Util.tuple22);
         (algs1::algsLst) = List.mapList(stmtsList, statementToAlgorithmItem);
-        abranches = List.threadTuple(conditions,algsLst);
+        abranches = List.zip(conditions,algsLst);
       then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
 
     case SCode.ALG_ASSERT()

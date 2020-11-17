@@ -73,7 +73,7 @@ uniontype State
 end State;
 
 function listZip<X,Y>
-  "List.threadTuple fails for lists of unequal length
+  "List.zip fails for lists of unequal length
    but truncating is the more common semantics."
   input  list<X>          xs;
   input  list<Y>          ys;
@@ -1139,7 +1139,7 @@ algorithm
 
     assert( listLength(inputsCref) == listLength(aliases), "MatchExpressionToMid: incorrect input: listLength(inputs) != listLength(aliases)" );
     inputsMidVar := {};
-    for daeExp_aliasList in List.threadTuple(inputsCref,aliases) loop
+    for daeExp_aliasList in List.zip(inputsCref,aliases) loop
 
       (daeExp,aliasList) := daeExp_aliasList;
       srcVar := RValueToVar(ExpToMid(daeExp, state), state);
@@ -1187,7 +1187,7 @@ algorithm
       one := GenTmpVar(DAE.T_INTEGER_DEFAULT,state);
       stateAddStmt(MidCode.ASSIGN(one, MidCode.LITERALINTEGER(1)) ,state);
       stateAddStmt(MidCode.ASSIGN(muxState, MidCode.BINARYOP(MidCode.ADD(),muxState,one)),state);
-      stateTerminate(labelFin, MidCode.SWITCH( muxState, List.threadTuple( List.intRange(listLength(cases)+1), listAppend(caseLabels,{labelFin}) )  ), state);
+      stateTerminate(labelFin, MidCode.SWITCH( muxState, List.zip( List.intRange(listLength(cases)+1), listAppend(caseLabels,{labelFin}) )  ), state);
     else
       stateTerminate(labelFin, MidCode.GOTO(if not listEmpty(caseLabels) then listHead(caseLabels) else labelFin), state);
     end if;
@@ -1246,9 +1246,9 @@ algorithm
           // NOTE: If the guard fails we will have made pattern assignments for a failing case. This is how it was done before as far as I can tell.
           if matchContinue
           then
-            patternToMidCode(state=state, matches=List.threadTuple(inputsMidVar,patterns), labelNoMatch=labelMux);
+            patternToMidCode(state=state, matches=List.zip(inputsMidVar,patterns), labelNoMatch=labelMux);
           else
-          patternToMidCode(state=state, matches=List.threadTuple(inputsMidVar,patterns)
+          patternToMidCode(state=state, matches=List.zip(inputsMidVar,patterns)
                           ,labelNoMatch= if not listEmpty(caseLabelIterator) then listHead(caseLabelIterator) else labelFail);
           end if;
           // then guard
@@ -1285,7 +1285,7 @@ algorithm
 
           Also outvars is unexpectedly removed of trailing wildcards and can be shorter than expList,
           including tuples of length 1 (probably 0 too, but who knows).
-          So we define and use listZip instead of threadTuple.
+          So we define and use listZip instead of List.zip.
 
           TODO: Document the unintuitive undocumented interface somewhere.
           */

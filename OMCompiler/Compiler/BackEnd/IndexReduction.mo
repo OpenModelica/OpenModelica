@@ -3549,7 +3549,7 @@ algorithm
       equation
         n = diffcount-level;
         true = intGt(n,0);
-        cr = List.foldcallN(n, ComponentReference.crefPrefixDer, name);
+        cr = Util.foldcallN(n, ComponentReference.crefPrefixDer, name);
         // generate replacement
         e = Expression.crefExp(cr);
         ht = BaseHashTable.add(((name,n),e),iHt);

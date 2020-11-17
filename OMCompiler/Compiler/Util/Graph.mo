@@ -64,7 +64,7 @@ public function buildGraph
     output list<NodeType> outEdges;
   end EdgeFunc;
 algorithm
-  outGraph := List.threadTuple(inNodes, List.map1(inNodes, inEdgeFunc, inEdgeArg));
+  outGraph := List.zip(inNodes, List.map1(inNodes, inEdgeFunc, inEdgeArg));
 end buildGraph;
 
 public function emptyGraph

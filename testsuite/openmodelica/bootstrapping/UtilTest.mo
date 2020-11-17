@@ -105,12 +105,4 @@ algorithm
   outTuple := (i + 1, j + i);
 end incAdd;
 
-function mapFoldListTuple
-  input list<list<Integer>> l1;
-  output list<list<Integer>> l2;
-  output Integer lsum;
-algorithm
-  (l2, lsum) := List.mapFoldListTuple(l1, incAdd, 0);
-end mapFoldListTuple;
-
 end UtilTest;

@@ -269,6 +269,6 @@ package SimplifyTest "Run ExpressionSimplify.simplify on some sample expressions
     simpl    := ExpressionSimplify.simplifyList(base);
     baseStr  := List.map(base, ExpressionDump.printExpStr);
     simplStr := List.map(simpl, ExpressionDump.printExpStr);
-    List.map_0(List.threadTuple(baseStr,simplStr), printResult);
+    List.map_0(List.zip(baseStr,simplStr), printResult);
   end test;
 end SimplifyTest;

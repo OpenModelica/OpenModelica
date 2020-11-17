@@ -827,7 +827,7 @@ algorithm
         if (Config.acceptMetaModelicaGrammar()) then // MetaModelica
           crefs = List.map(fn,getInputCrefs);
           crefs = List.select(crefs,removeWilds);
-          argmap = List.threadTuple(crefs,args);
+          argmap = List.zip(crefs,args);
           false = List.exist(fn,DAEUtil.isProtectedVar);
           newExp = getRhsExp(fn);
           // compare types
@@ -852,7 +852,7 @@ algorithm
             // compare types
             true = checkExpsTypeEquiv(e1, newExp);
             // input map cref again function args
-            argmap = List.threadTuple(crefs,args);
+            argmap = List.zip(crefs,args);
             (checkcr,_) = getInlineHashTableVarTransform();
             (argmap,checkcr) = extendCrefRecords(argmap,checkcr);
             // add noEvent to avoid events as usually for functions
@@ -870,7 +870,7 @@ algorithm
             newExp = Expression.makeTuple(list( getReplacementCheckComplex(repl,cr,ty) for cr in lst_cr));
             // compare types
             true = checkExpsTypeEquiv(e1, newExp);
-            argmap = List.threadTuple(crefs,args);
+            argmap = List.zip(crefs,args);
             (argmap,checkcr) = extendCrefRecords(argmap,checkcr);
             // add noEvent to avoid events as usually for functions
             // MSL 3.2.1 need GenerateEvents to disable this
@@ -977,7 +977,7 @@ algorithm
         newExp = Expression.makeTuple(list( VarTransform.getReplacement(repl,cr) for cr in lst_cr));
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
-        argmap = List.threadTuple(crefs,args);
+        argmap = List.zip(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,checkcr);
         // add noEvent to avoid events as usually for functions
         // MSL 3.2.1 need GenerateEvents to disable this
@@ -1290,7 +1290,7 @@ algorithm
       equation
         (res1,ht1) = extendCrefRecords(res,ht);
         crlst = List.map1(varLst,extendCrefRecords2,c);
-        new = List.threadTuple(crlst,expl);
+        new = List.zip(crlst,expl);
         (new1,ht2) = extendCrefRecords(new,ht1);
         res2 = listAppend(new1,res1);
       then ((c,e)::res2,ht2);
@@ -1298,7 +1298,7 @@ algorithm
       equation
         (res1,ht1) = extendCrefRecords(res,ht);
         crlst = List.map1(varLst,extendCrefRecords2,c);
-        new = List.threadTuple(crlst,expl);
+        new = List.zip(crlst,expl);
         (new1,ht2) = extendCrefRecords(new,ht1);
         res2 = listAppend(new1,res1);
       then ((c,e)::res2,ht2);

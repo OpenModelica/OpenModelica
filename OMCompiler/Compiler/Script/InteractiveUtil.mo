@@ -14731,7 +14731,7 @@ algorithm
       list<Absyn.NamedArg> namedArgs,namedArgs1;
     case( Absyn.FUNCTIONARGS(expl,namedArgs))
       equation
-        (expl1,_) = List.mapFoldTuple(expl, transformFlatExpTrav, 0);
+        expl1 = list(AbsynUtil.traverseExp(e, transformFlatExp, 0) for e in expl);
         namedArgs1 = List.map(namedArgs,transformFlatNamedArg);
       then
         Absyn.FUNCTIONARGS(expl1,namedArgs1);

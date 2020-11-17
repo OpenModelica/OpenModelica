@@ -17029,7 +17029,7 @@ algorithm
       list<Absyn.NamedArg> namedArgs,namedArgs1;
     case( Absyn.FUNCTIONARGS(expl,namedArgs))
       equation
-        (expl1,_) = List.mapFoldTuple(expl, transformFlatExpTrav, 0);
+        expl1 = list(AbsynUtil.traverseExp(e, transformFlatExp, 0) for e in expl);
         namedArgs1 = List.map(namedArgs,transformFlatNamedArg);
       then
         Absyn.FUNCTIONARGS(expl1,namedArgs1);
@@ -17051,22 +17051,6 @@ algorithm
       then Absyn.NAMEDARG(id,e11);
   end match;
 end transformFlatNamedArg;
-
-protected function transformFlatExpTrav
-"Transforms a flat expression by calling traverseExp"
-  input tuple<Absyn.Exp,Integer> inExp;
-  output tuple<Absyn.Exp,Integer> outExp;
-algorithm
-  outExp := match(inExp)
-    local
-      Absyn.Exp e,e1;
-      Integer i;
-    case( (e,i))
-      equation
-        (e1,i) = AbsynUtil.traverseExp(e,transformFlatExp,0);
-      then ((e1,i));
-  end match;
-end transformFlatExpTrav;
 
 protected function transformFlatExp
   input Absyn.Exp inExp;

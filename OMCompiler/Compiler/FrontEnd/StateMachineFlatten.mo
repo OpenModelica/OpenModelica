@@ -305,7 +305,7 @@ algorithm
 
   // We have some redundancy here (t[:].condition == c[:]) and thus need to update both
   i := 0;
-  for tc in List.threadTuple(t,c) loop
+  for tc in List.zip(t,c) loop
     i := i + 1;
     (t2, c2) := tc;
     TRANSITION(from, to, condition, immediate, reset, synchronize, priority) := t2;
@@ -441,7 +441,7 @@ algorithm
   stateVarCrefs := List.map(stateVarLst, DAEUtil.varCref);
   variableAttributesOptions := List.map(stateVarLst, DAEUtil.getVariableAttributes);
   startValuesOpt := List.map(variableAttributesOptions, getStartAttrOption);
-  varCrefStartVal := List.threadTuple(stateVarCrefs, startValuesOpt);
+  varCrefStartVal := List.zip(stateVarCrefs, startValuesOpt);
   crToExpOpt := HashTableCrToExpOption.emptyHashTableSized(listLength(varCrefStartVal) + 1);
   // create table that maps the cref of a variable to its start value
   crToExpOpt := List.fold(varCrefStartVal, BaseHashTable.add, crToExpOpt);
