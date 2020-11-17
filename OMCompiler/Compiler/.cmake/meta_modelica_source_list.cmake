@@ -389,7 +389,6 @@ set(OMC_MM_BACKEND_SOURCES
 
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynToJulia.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/AbsynJLDumpTpl.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenAdevs.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenEmbeddedC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppCommon.mo

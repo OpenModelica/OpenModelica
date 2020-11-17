@@ -895,8 +895,6 @@ template generateEquationGraph(list<SimEqSystem> allEquations, list<ZeroCrossing
   >>
 end generateEquationGraph;
 
-// All of this is imported from CodegenAdevs
-
 template zeroCrossingEqns(list<ZeroCrossing> zeroCrossings)
   "Generates function in simulation file."
 ::=

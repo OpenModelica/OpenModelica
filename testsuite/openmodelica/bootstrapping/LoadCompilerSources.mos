@@ -183,7 +183,6 @@ if true then /* Suppress output */
 
   // "Template";
     prefixPath + "Template/AbsynDumpTpl.mo",
-    prefixPath + "Template/CodegenAdevs.mo",
     prefixPath + "Template/CodegenC.mo",
     prefixPath + "Template/CodegenCpp.mo",
     prefixPath + "Template/CodegenCppHpcom.mo",

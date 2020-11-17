@@ -67,7 +67,6 @@ import CodegenFMU;
 import CodegenFMUCppOld;
 import CodegenOMSICpp;
 import CodegenFMUCppHpcomOld;
-import CodegenAdevs;
 import CodegenSparseFMI;
 import CodegenCppOld;
 import CodegenCppHpcomOld;
@@ -516,11 +515,6 @@ algorithm
         end for;
       then ();
 
-
-
-    case "Adevs" equation
-      Tpl.tplNoret(CodegenAdevs.translateModel, simCode);
-    then ();
 
     case "sfmi" equation
       Tpl.tplNoret(function CodegenSparseFMI.translateModel(in_a_FMUVersion="2.0", in_a_FMUType="me", in_a_sourceFiles={}), simCode);
