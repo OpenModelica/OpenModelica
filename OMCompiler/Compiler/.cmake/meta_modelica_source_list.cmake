@@ -412,7 +412,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCppHpcomOld.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenJS.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenMidToC.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenSparseFMI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtilSimulation.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenXML.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/GraphvizDump.mo

@@ -67,7 +67,6 @@ import CodegenFMU;
 import CodegenFMUCppOld;
 import CodegenOMSICpp;
 import CodegenFMUCppHpcomOld;
-import CodegenSparseFMI;
 import CodegenCppOld;
 import CodegenCppHpcomOld;
 import CodegenOMSIC;
@@ -513,11 +512,6 @@ algorithm
           generatedObjects := AvlSetString.add(generatedObjects, "OMCpp" + simCode.fileNamePrefix + str);
         end for;
       then ();
-
-
-    case "sfmi" equation
-      Tpl.tplNoret(function CodegenSparseFMI.translateModel(in_a_FMUVersion="2.0", in_a_FMUType="me", in_a_sourceFiles={}), simCode);
-    then ();
 
     case "C"
       algorithm
