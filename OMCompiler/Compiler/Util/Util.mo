@@ -1707,5 +1707,23 @@ algorithm
   end while;
 end msb;
 
+public function foldcallN<FT>
+  "Takes a value and a function operating on the value n times.
+     Example: foldcallN(1, intAdd, 4) => 4"
+  input Integer n;
+  input FoldFunc inFoldFunc;
+  input FT inStartValue;
+  output FT outResult = inStartValue;
+
+  partial function FoldFunc
+    input FT inFoldArg;
+    output FT outFoldArg;
+  end FoldFunc;
+algorithm
+  for i in 1:n loop
+    outResult := inFoldFunc(outResult);
+  end for;
+end foldcallN;
+
 annotation(__OpenModelica_Interface="util");
 end Util;

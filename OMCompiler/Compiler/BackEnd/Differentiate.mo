@@ -852,7 +852,7 @@ algorithm
         (dexpLst,functions) = List.map3Fold(expLst, function differentiateExp(maxIter=maxIter), inDiffwrtCref, inInputData, inDiffType, inFunctionTree);
         (derivedRHS as DAE.TUPLE(expLstRHS), functions) = differentiateExp(rhs, inDiffwrtCref, inInputData, inDiffType, functions, maxIter);
         (DAE.TUPLE(expLstRHS),_) = ExpressionSimplify.simplify(derivedRHS);
-        exptl = List.threadTuple(dexpLst, expLstRHS);
+        exptl = List.zip(dexpLst, expLstRHS);
         optDerivedStatements1 = List.map2(exptl, makeAssignmentfromTuple, source, inFunctionTree);
         derivedStatements1 = List.flatten(List.map(optDerivedStatements1, List.fromOption));
         derivedStatements2 = listAppend(derivedStatements1, {currStatement});
@@ -2416,7 +2416,7 @@ algorithm
         end if;
 
         // create differentiated call arguments
-        expBoolLst = List.threadTuple(expl, blst);
+        expBoolLst = List.zip(expl, blst);
         expBoolLst = List.filterOnTrue(expBoolLst, Util.tuple22);
         expl1 = List.map(expBoolLst, Util.tuple21);
         if Flags.isSet(Flags.DEBUG_DIFFERENTIATION_VERBOSE) then

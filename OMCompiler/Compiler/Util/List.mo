@@ -4387,31 +4387,6 @@ algorithm
   outList := listReverseInPlace(outList);
 end map4Fold;
 
-public function mapFoldTuple<TI, TO, FT>
-  "Takes a list, an extra argument and a function. The function will be applied
-  to each element in the list, and the extra argument will be passed to the
-  function and updated. The input and outputs of the function are joined as
-  tuples."
-  input list<TI> inList;
-  input FuncType inFunc;
-  input FT inArg;
-  output list<TO> outList = {};
-  output FT outArg = inArg;
-
-  partial function FuncType
-    input tuple<TI, FT> inTuple;
-    output tuple<TO, FT> outTuple;
-  end FuncType;
-protected
-  TO res;
-algorithm
-  for e in inList loop
-    ((res, outArg)) := inFunc((e, outArg));
-    outList := res :: outList;
-  end for;
-  outList := listReverseInPlace(outList);
-end mapFoldTuple;
-
 public function mapFoldList<TI, TO, FT>
   "Takes a list of lists, an extra argument, and a function.  The function will
   be applied to each element in the list, and the extra argument will be passed
@@ -4469,49 +4444,6 @@ algorithm
   end for;
   outListList := listReverseInPlace(outListList);
 end map3FoldList;
-
-public function mapFoldListTuple<TI, TO, FT>
-  "Takes a list of lists, an extra argument and a function. The function will be
-  applied to each element in the list, and the extra argument will be passed to
-  the function and updated. The input and outputs of the function are joined as
-  tuples."
-  input list<list<TI>> inListList;
-  input FuncType inFunc;
-  input TO inFoldArg;
-  output list<list<TO>> outListList = {};
-  output TO outFoldArg = inFoldArg;
-
-  partial function FuncType
-    input tuple<TI, FT> inTuple;
-    output tuple<TO, FT> outTuple;
-  end FuncType;
-protected
-  list<TO> res;
-algorithm
-  for lst in inListList loop
-    (res, outFoldArg) := mapFoldTuple(lst, inFunc, outFoldArg);
-    outListList := res :: outListList;
-  end for;
-  outListList := listReverseInPlace(outListList);
-end mapFoldListTuple;
-
-public function foldcallN<FT>
-  "Takes a value and a function operating on the value n times.
-     Example: foldcallN(1, intAdd, 4) => 4"
-  input Integer n;
-  input FoldFunc inFoldFunc;
-  input FT inStartValue;
-  output FT outResult = inStartValue;
-
-  partial function FoldFunc
-    input FT inFoldArg;
-    output FT outFoldArg;
-  end FoldFunc;
-algorithm
-  for i in 1:n loop
-    outResult := inFoldFunc(outResult);
-  end for;
-end foldcallN;
 
 public function reduce<T>
   "Takes a list and a function operating on two elements of the list.
@@ -4619,52 +4551,30 @@ algorithm
   outList := listReverseInPlace(outList);
 end thread3;
 
-public function threadTuple<T1, T2>
-  "Takes two lists and threads (interleaves) the arguments into a list of tuples
+public function zip<T1, T2>
+  "Takes two lists and zips the arguments together into a list of tuples
    consisting of the two element types.
-     Example: threadTuple({1, 2, 3}, {true, false, true}) =>
+     Example: zip({1, 2, 3}, {true, false, true}) =>
               {(1, true), (2, false), (3, true)}"
   input list<T1> inList1;
   input list<T2> inList2;
   output list<tuple<T1, T2>> outTuples;
 algorithm
   outTuples := list((e1, e2) threaded for e1 in inList1, e2 in inList2);
-end threadTuple;
-
-public function zip<T1, T2>
-  "Takes two lists and returns a list of two-element tuples contaning the
-  elements in the same order. Fails if the lists are not of the same length.
-  Example: zip({1, 3}, {2, 4}) =>  {(1, 2), (3, 4)}"
-  input list<T1> inList1;
-  input list<T2> inList2;
-  output list<tuple<T1, T2>> outTuples = {};
-protected
-  list<T2> dummyList = inList2;
-  T2 t2;
-algorithm
-  if intEq(listLength(inList1),listLength(inList2)) then
-    for t1 in inList1 loop
-      t2::dummyList := dummyList;
-      outTuples := (t1, t2)::outTuples;
-    end for;
-  else fail();
-  end if;
-  outTuples := listReverse(outTuples);
 end zip;
 
-public function zip2<T1, T2>
-  "Takes a lists and a single elem and returns a list of two-element tuples contaning the
-  elements in the same order. Fails if the lists are not of the same length.
-  Example: zip2(1, {2, 4, -1}) =>  {(1, 2), (1, 4), (1, -1)}"
-  input T1 inElem;
-  input list<T2> inList2;
-  output list<tuple<T1, T2>> outTuples = {};
+public function zip3<T1, T2, T3>
+  "Takes three lists and zips the arguments together into a list of tuples
+   consisting of the three element types.
+     Example: zip3({1, 2, 3}, {true, false, true}, {4.0, 5.0, 6.0}) =>
+              {(1, true, 4.0), (2, false, 5.0), (3, true, 6.0)}"
+  input list<T1> l1;
+  input list<T2> l2;
+  input list<T3> l3;
+  output list<tuple<T1, T2, T3>> res;
 algorithm
-  for t2 in inList2 loop
-    outTuples := (inElem, t2)::outTuples;
-  end for;
-  outTuples := listReverse(outTuples);
-end zip2;
+  res := list((e1, e2, e3) threaded for e1 in l1, e2 in l2, e3 in l3);
+end zip3;
 
 public function unzip<T1, T2>
   "Takes a list of two-element tuples and splits the tuples into two separate
@@ -4684,6 +4594,25 @@ algorithm
   outList1 := listReverseInPlace(outList1);
   outList2 := listReverseInPlace(outList2);
 end unzip;
+
+public function unzip3<T1, T2, T3>
+  "Takes a list of three-element tuples and splits them into separate lists."
+  input list<tuple<T1, T2, T3>> tuples;
+  output list<T1> l1 = {};
+  output list<T2> l2 = {};
+  output list<T3> l3 = {};
+protected
+  T1 e1;
+  T2 e2;
+  T3 e3;
+algorithm
+  for t in listReverse(tuples) loop
+    (e1, e2, e3) := t;
+    l1 := e1 :: l1;
+    l2 := e2 :: l2;
+    l3 := e3 :: l3;
+  end for;
+end unzip3;
 
 public function unzipReverse<T1, T2>
   "Like unzip, but returns the lists in reverse order."
@@ -4730,44 +4659,6 @@ algorithm
   end for;
   outList := listReverseInPlace(outList);
 end unzipSecond;
-
-public function thread3Tuple<T1, T2, T3>
-  "Takes three lists and threads (interleaves) the arguments into a list of tuples
-   consisting of the three element types."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input list<T3> inList3;
-  output list<tuple<T1, T2, T3>> outTuples;
-algorithm
-  outTuples := list((e1, e2, e3) threaded for e1 in inList1, e2 in inList2, e3 in inList3);
-end thread3Tuple;
-
-public function thread4Tuple<T1, T2, T3, T4>
-  "Takes three lists and threads (interleaves) the arguments into a list of tuples
-   consisting of the four element types."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input list<T3> inList3;
-  input list<T4> inList4;
-  output list<tuple<T1, T2, T3, T4>> outTuples;
-algorithm
-  outTuples := list((e1, e2, e3, e4) threaded for e1 in inList1, e2 in inList2,
-      e3 in inList3, e4 in inList4);
-end thread4Tuple;
-
-public function thread5Tuple<T1, T2, T3, T4, T5>
-  "Takes three lists and threads (interleaves) the arguments into a list of tuples
-   consisting of the five element types."
-  input list<T1> inList1;
-  input list<T2> inList2;
-  input list<T3> inList3;
-  input list<T4> inList4;
-  input list<T5> inList5;
-  output list<tuple<T1, T2, T3, T4, T5>> outTuples;
-algorithm
-  outTuples := list((e1, e2, e3, e4, e5) threaded for e1 in inList1, e2 in inList2,
-      e3 in inList3, e4 in inList4, e5 in inList5);
-end thread5Tuple;
 
 public function threadMap<T1, T2, TO>
   "Takes two lists and a function and threads (interleaves) and maps the
@@ -4886,18 +4777,6 @@ algorithm
   outList1 := listReverseInPlace(outList1);
   outList2 := listReverseInPlace(outList2);
 end threadMapList_2;
-
-public function threadTupleList<T1, T2>
-  "Takes two lists of lists as arguments and produces a list of lists of a two
-  tuple of the element types of each list.
-  Example: threadTupleList({{1}, {2, 3}}, {{'a'}, {'b', 'c'}}) =>
-             {{(1, 'a')}, {(2, 'b'), (3, 'c')}}"
-  input list<list<T1>> inList1;
-  input list<list<T2>> inList2;
-  output list<list<tuple<T1, T2>>> outList;
-algorithm
-  outList := list(threadTuple(lst1, lst2) threaded for lst1 in inList1, lst2 in inList2);
-end threadTupleList;
 
 public function threadMapAllValue<T1, T2, TO, VT>
   "Takes two lists and a function and threads (interleaves) and maps the
@@ -6882,16 +6761,6 @@ algorithm
   end for;
   outList := listReverse(outList);
 end accumulateMapFoldAccum;
-
-public function first2FromTuple3<T>
-  input tuple<T, T, T> inTuple;
-  output list<T> outList;
-protected
-  T a, b;
-algorithm
-  (a, b, _) := inTuple;
-  outList := {a, b};
-end first2FromTuple3;
 
 public function findMap<T>
   "Same as map, but stops when it find a certain element as indicated by the

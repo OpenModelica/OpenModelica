@@ -1125,7 +1125,7 @@ algorithm
 
 
   // replace inputs variables
-  argmap := List.threadTuple(listReverse(fnInputs), args);
+  argmap := List.zip(listReverse(fnInputs), args);
   (argmap,checkcr) := Inline.extendCrefRecords(argmap, HashTableCG.emptyHashTable());
   BackendDAEUtil.traverseBackendDAEExpsEqSystemWithUpdate(outEqs, replaceArgs, (argmap,checkcr,true));
 

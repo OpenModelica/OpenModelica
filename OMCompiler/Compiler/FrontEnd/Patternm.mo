@@ -546,7 +546,7 @@ algorithm
         funcArgs2 = listAppend(funcArgs,funcArgsNamedFixed);
         Util.SUCCESS() = checkInvalidPatternNamedArgs(invalidArgs,fieldNameList,Util.SUCCESS(),info);
         (cache,patterns) = elabPatternTuple(cache,env,funcArgs2,fieldTypeList,info,lhs);
-        namedPatterns = List.thread3Tuple(patterns, fieldNameList, List.map(fieldTypeList,Types.simplifyType));
+        namedPatterns = List.zip3(patterns, fieldNameList, List.map(fieldTypeList,Types.simplifyType));
         namedPatterns = List.filterOnTrue(namedPatterns, filterEmptyPattern);
       then (cache,DAE.PAT_CALL_NAMED(fqPath,namedPatterns));
 
@@ -1585,11 +1585,9 @@ algorithm
       then (pat,extra);
     case DAE.PAT_CALL_NAMED(name,namedpats)
       equation
-        pats = List.map(namedpats,Util.tuple31);
-        fields = List.map(namedpats,Util.tuple32);
-        types = List.map(namedpats,Util.tuple33);
+        (pats, fields, types) = List.unzip3(namedpats);
         (pats,extra) = traversePatternList(pats, func, extra);
-        namedpats = List.thread3Tuple(pats, fields, types);
+        namedpats = List.zip3(pats, fields, types);
         pat = DAE.PAT_CALL_NAMED(name,namedpats);
         (pat,extra) = func(pat,extra);
       then (pat,extra);

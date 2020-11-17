@@ -1684,7 +1684,7 @@ template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, Si
   match rec
   case RECORD(__) then
   let name = tempDecl(underscorePath(path) + "Type", &varDecls)
-  let ass = threadTuple(exps,comp) |>  (exp,compn) =>
+  let ass = List.zip(exps,comp) |>  (exp,compn) =>
     let compnStr = crefStr(makeUntypedCrefIdent(compn))
     '<%name%>.<%compnStr%> = <%daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
   let &preExp += ass
@@ -2838,7 +2838,7 @@ case ARRAY(array = {}) then
 case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
   let typeShort = expTypeFromExpShort(exp)
   let fcallsuf = match listLength(dims) case 1 then "" case i then '_<%i%>D'
-  let body = (threadTuple(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) =>
+  let body = (List.zip(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) =>
                  let lhsstr = scalarLhsCref(lhs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                  let indxstr = (indxs |> i => '<%i%>' ;separator=",")
                  '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);/*writeLhsCref2*/'

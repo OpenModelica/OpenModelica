@@ -3393,13 +3393,13 @@ package List
     replaceable type Type_a subtypeof Any;
   end lastN;
 
-  function threadTuple
+  function zip
     replaceable type Type_b subtypeof Any;
     input list<Type_a> inTypeALst;
     input list<Type_b> inTypeBLst;
     output list<tuple<Type_a, Type_b>> outTplTypeATypeBLst;
     replaceable type Type_a subtypeof Any;
-  end threadTuple;
+  end zip;
 
   function position
     replaceable type Type_a subtypeof Any;
