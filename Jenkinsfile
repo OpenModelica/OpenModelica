@@ -94,17 +94,13 @@ pipeline {
           //   beforeAgent true
           //   expression { shouldWeBuildOSX }
           // }
-          environment {
-            CC = "gcc"
-            CXX = "g++"
-          }
           steps {
             script {
               // Qt5 is MacOS 10.12+...
               withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
                 sh "echo PATH: \$PATH QTDIR: \$QTDIR"
                 sh "${env.GMAKE} --version"
-                common.buildOMC_CMake()
+                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_LAPACK=OFF')
                 // common.buildGUI('', false)
                 // sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
                 // sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
@@ -133,7 +129,7 @@ pipeline {
             script {
               withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
-                common.buildOMC_CMake()
+                common.buildOMC_CMake('-G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release')
                 // common.buildOMC('cc', 'c++', '', true)
                 // common.makeLibsAndCache()
                 // common.buildGUI('', true)
@@ -186,7 +182,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC_CMake()
+              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
             }
           }
         }

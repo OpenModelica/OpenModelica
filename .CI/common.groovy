@@ -278,7 +278,7 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
   }
 }
 
-void buildOMC_CMake() {
+void buildOMC_CMake(cmake_args) {
   standardSetup()
 
   if (isWindows()) {
@@ -292,7 +292,7 @@ void buildOMC_CMake() {
      echo export MAKETHREADS=16
      echo set -ex
      echo mkdir OMCompiler/build_cmake
-     echo cmake -S OMCompiler -B OMCompiler/build_cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release -Wno-dev
+     echo cmake -S OMCompiler -B OMCompiler/build_cmake ${cmake_args}
      echo time cmake --build OMCompiler/build_cmake --parallel \${MAKETHREADS}
      ) > buildOMCWindows.sh
 
@@ -303,7 +303,7 @@ void buildOMC_CMake() {
   }
   else {
     sh "mkdir OMCompiler/build_cmake"
-    sh "cmake -S OMCompiler -B OMCompiler/build_cmake -Wno-dev -DCMAKE_BUILD_TYPE=Release"
+    sh "cmake -S OMCompiler -B OMCompiler/build_cmake ${cmake_args}"
     sh "cmake --build OMCompiler/build_cmake --parallel ${numPhysicalCPU()}"
   }
 }
