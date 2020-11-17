@@ -73,7 +73,6 @@ import CodegenCppHpcomOld;
 import CodegenOMSIC;
 import CodegenOMSI_common;
 import CodegenXML;
-import CodegenJava;
 import CodegenJS;
 import Config;
 import DAEMode;
@@ -638,10 +637,6 @@ algorithm
 
     case "XML" equation
       Tpl.tplNoret(CodegenXML.translateModel, simCode);
-    then ();
-
-    case "Java" equation
-      Tpl.tplNoret(CodegenJava.translateModel, simCode);
     then ();
 
     case "None"
