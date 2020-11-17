@@ -141,9 +141,6 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)
 
-omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCSharp.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo)
-
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppCommon.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo)
 

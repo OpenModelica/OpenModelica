@@ -14489,25 +14489,6 @@ algorithm
   end match;
 end codegenExpSanityCheck;
 
-public function isModelTooBigForCSharpInOneFile
-"Used by C# template to determine if the generated code should be split into several files
- to make Visual Studio responsive when the file is opened (C# compiler is OK,
- but VS does not scale well for big C# files)."
-  input SimCode.SimCode simCode;
-  output Boolean outIsTooBig;
-algorithm
-  outIsTooBig := match(simCode)
-    local
-      Integer numAlgVars;
-
-    case (SimCode.SIMCODE(modelInfo = SimCode.MODELINFO(varInfo = SimCode.VARINFO(numAlgVars = numAlgVars))))
-      equation
-        outIsTooBig = numAlgVars > 1000;
-      then outIsTooBig;
-
-  end match;
-end isModelTooBigForCSharpInOneFile;
-
 public function absoluteClockIdxForBaseClock
   input Integer baseClockIdx; // one-based
   input list<SimCode.ClockedPartition> allBaseClockPartitions;

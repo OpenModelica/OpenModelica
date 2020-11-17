@@ -2,7 +2,7 @@
 
 GENERATED_FILES_BOOT_STAGE2=AbsynDumpTpl.mo CodegenUtil.mo DAEDumpTpl.mo ExpressionDumpTpl.mo Unparsing.mo SCodeDumpTpl.mo GenerateAPIFunctionsTpl.mo CodegenCFunctions.mo AbsynToJulia.mo AbsynJLDumpTpl.mo
 GENERATED_FILES=$(GENERATED_FILES_BOOT_STAGE2) CodegenC.mo CodegenUtilSimulation.mo CodegenEmbeddedC.mo CodegenFMUCommon.mo \
-CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCSharp.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo \
+CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo \
 CodegenOMSI_common.mo CodegenOMSIC.mo CodegenOMSICpp.mo CodegenOMSIC_Equations.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo \
 CodegenMidToC.mo CodegenModelica.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo CodegenAdevs.mo CodegenSparseFMI.mo \
 CodegenXML.mo CodegenJava.mo CodegenJS.mo VisualXMLTpl.mo \
@@ -61,10 +61,6 @@ CodegenMidToC.mo : CodegenMidToC.tpl SimCodeTV.mo MidCodeTV.mo
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
 
-CodegenCSharp.mo : CodegenCSharp.tpl SimCodeTV.mo
-	@echo " ** CodegenCSharp template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " " && ($(UNUSED) "$@" || true)
 
 # FMU
 CodegenFMUCommon.mo : CodegenFMUCommon.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl
