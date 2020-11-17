@@ -45,6 +45,7 @@ public import AbsynUtil;
 
 protected import List;
 protected import Interactive;
+protected import InteractiveUtil;
 protected import Inst;
 protected import FCore;
 protected import System; // stringReal
@@ -98,7 +99,7 @@ algorithm
       equation
         //debug_print("Refactoring Class1:", n);
         cPath = Absyn.IDENT(n);
-        env = Interactive.getClassEnv(p,cPath);
+        env = InteractiveUtil.getClassEnv(p,cPath);
         resultClassDef = refactorGraphAnnInClassDef(d,p,cPath,env);
       then
         Absyn.CLASS(n,part,f,e,r,resultClassDef,file_info);
@@ -114,7 +115,7 @@ algorithm
       equation
        //  debug_print("Refactoring Class:", n);
         cPath = AbsynUtil.joinPaths(cPath,Absyn.IDENT(n));
-        env = Interactive.getClassEnv(p,cPath);
+        env = InteractiveUtil.getClassEnv(p,cPath);
         resultClassDef = refactorGraphAnnInClassDef(d,p,cPath,env);
       then
         Absyn.CLASS(n,part,f,e,r,resultClassDef,file_info);
@@ -629,16 +630,16 @@ algorithm
       equation
         fullPath = fixPaths(cPath, path);
        // debug_print("getRestrictionFromPath: TryingLookingUp:", AbsynUtil.pathString(fullPath));
-        cdef = Interactive.getPathedClassInProgram(fullPath,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
       then
         restriction;
 
     case(_,path,p, env) // if it fails try the hard way
       equation
-        (_,fullPath) = Interactive.mkFullyQual(env,path);
+        (_,fullPath) = InteractiveUtil.mkFullyQual(env,path);
     //    debug_print("getRestrictionFromPath: LookingUp:", AbsynUtil.pathString(fullPath));
-        cdef = Interactive.getPathedClassInProgram(fullPath,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(fullPath,p);
         restriction = getRestrictionInClass(cdef);
       then
         restriction;
@@ -991,7 +992,7 @@ algorithm
       equation
         fullPath = fixPaths(cPath, path);
 //        debug_print("getCoordsInPath: TryingLookingUp:", AbsynUtil.pathString(fullPath));
-        cdef = Interactive.getPathedClassInProgram(fullPath,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) = getCoordsInClass(cdef,context);
       then
        (x1,y1,x2,y2);
@@ -1000,13 +1001,13 @@ algorithm
       equation
         //  p_1 = AbsynToSCode.translateAbsyn2SCode(p);
         //  (_,env) = Inst.makeEnvFromProgram(FCore.emptyCache,p_1, Absyn.IDENT(""));
-        (_, fullPath) = Interactive.mkFullyQual(env, path);
+        (_, fullPath) = InteractiveUtil.mkFullyQual(env, path);
         //  print("env:\n");print(FGraph.printGraphStr(env));
         //str = AbsynUtil.pathString(cPath);
         //print("\npath = ");
         //print(str);
     //    debug_print("getCoordsInPath: LookingUp:", AbsynUtil.pathString(fullPath));
-        cdef = Interactive.getPathedClassInProgram(fullPath,p);
+        cdef = InteractiveUtil.getPathedClassInProgram(fullPath,p);
         (x1,y1,x2,y2) = getCoordsInClass(cdef,context);
       then
         (x1,y1,x2,y2);//(Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0));

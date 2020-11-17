@@ -78,7 +78,7 @@ import FlatModel = NFFlatModel;
 import Flatten = NFFlatten;
 import Global;
 import InstUtil = NFInstUtil;
-import Interactive;
+import InteractiveUtil;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous;
@@ -577,7 +577,7 @@ algorithm
     (_, scode_builtin) := FBuiltin.getInitialFunctions();
     program := AbsynToSCode.translateAbsyn2SCode(absynProgram);
     program := listAppend(scode_builtin, program);
-    placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
+    placementProgram := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
     program := listAppend(graphicProgramSCode, program);
 
