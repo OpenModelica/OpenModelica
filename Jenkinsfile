@@ -171,6 +171,26 @@ pipeline {
             //stash name: 'omc-centos6', includes: 'build/**, **/config.status'
           }
         }
+        stage('cmake_focal_gcc') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:focal.nightly.amd64'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          environment {
+            CC = "gcc"
+            CXX = "g++"
+          }
+          steps {
+            script {
+              common.buildOMC_CMake()
+            }
+          }
+        }
         stage('checks') {
           agent {
             docker {

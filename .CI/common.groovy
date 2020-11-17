@@ -278,6 +278,18 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
   }
 }
 
+void buildOMC_CMake() {
+  standardSetup()
+
+  sh """
+    cd OMCompiler
+    mkdir build_cmake
+    cd build_cmake
+    cmake .. -Wno-dev -DCMAKE_BUILD_TYPE=Release
+    make -j${numPhysicalCPU()}
+  """
+}
+
 void buildGUI(stash, isQt5) {
   if (isWindows()) {
   bat ("""
