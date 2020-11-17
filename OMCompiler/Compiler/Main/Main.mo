@@ -71,6 +71,7 @@ import GC;
 import Global;
 import GlobalScript;
 import Interactive;
+import InteractiveUtil;
 import List;
 import Parser;
 import Print;
@@ -191,8 +192,8 @@ algorithm
         table = SymbolTable.get();
         ast = table.ast;
         vars = table.vars;
-        prog2 = Interactive.addScope(prog, vars);
-        prog2 = Interactive.updateProgram(prog2, ast);
+        prog2 = InteractiveUtil.addScope(prog, vars);
+        prog2 = InteractiveUtil.updateProgram(prog2, ast);
         if Flags.isSet(Flags.DUMP) then
           Debug.trace("\n--------------- Parsed program ---------------\n");
           Dump.dump(prog2);
@@ -355,7 +356,7 @@ algorithm
       equation
         pnew = Parser.parse(inLib, "UTF-8");
         p = SymbolTable.getAbsyn();
-        pnew = Interactive.mergeProgram(pnew, p);
+        pnew = InteractiveUtil.mergeProgram(pnew, p);
         SymbolTable.setAbsyn(pnew);
       then ();
 

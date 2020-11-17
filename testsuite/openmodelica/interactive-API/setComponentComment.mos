@@ -27,7 +27,7 @@ updateComponent(wrong, Modelica.Electrical.Analog.Basic.EMF, model1, comment="Ne
 //   Modelica.Electrical.Analog.Basic.EMF emf1;
 // end model1;"
 // ""
-// {{Modelica.Electrical.Analog.Basic.EMF,emf1,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Modelica.Electrical.Analog.Basic.EMF, emf1, "", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
 // Ok
 // ""
@@ -35,7 +35,7 @@ updateComponent(wrong, Modelica.Electrical.Analog.Basic.EMF, model1, comment="Ne
 //   Modelica.Electrical.Analog.Basic.EMF emf1 \"An EMF Component\";
 // end model1;"
 // ""
-// {{Modelica.Electrical.Analog.Basic.EMF,emf1,"An EMF Component", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Modelica.Electrical.Analog.Basic.EMF, emf1, "An EMF Component", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
 // true
 // ""
@@ -44,7 +44,7 @@ updateComponent(wrong, Modelica.Electrical.Analog.Basic.EMF, model1, comment="Ne
 //     Placement(visible = true, transformation(origin = {-25, -6.5}, extent = {{-15, -15}, {15, 15}}, rotation = 0)));
 // end model1;"
 // ""
-// {{Modelica.Electrical.Analog.Basic.EMF,emf1,"An EMF Component", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Modelica.Electrical.Analog.Basic.EMF, emf1, "An EMF Component", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
 // true
 // ""
@@ -53,7 +53,7 @@ updateComponent(wrong, Modelica.Electrical.Analog.Basic.EMF, model1, comment="Ne
 //     Placement(visible = true, transformation(origin = {-25, -6.5}, extent = {{-15, -15}, {15, 15}}, rotation = 0)));
 // end model1;"
 // ""
-// {{Modelica.Electrical.Analog.Basic.EMF,emf1,"New Comment", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// {{Modelica.Electrical.Analog.Basic.EMF, emf1, "New Comment", "public", false, false, false, false, "unspecified", "none", "unspecified", {}}}
 // ""
 // false
 // ""
