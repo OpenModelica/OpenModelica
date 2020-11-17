@@ -59,7 +59,6 @@ import BackendDAEUtil;
 import BackendEquation;
 import BackendVariable;
 import BaseHashSet;
-import CodegenModelica;
 import ComponentReference;
 import DAEDump;
 import DAEUtil;
@@ -619,7 +618,6 @@ end setAdjacencyMatrix1;
 // These are functions, that print directly to the standard-stream and separates
 // there output (e.g. with some kind of headings).
 //   - dumpBackendDAE
-//   - dumpBackendDAEToModelica
 //   - dumpBackendDAEEqnList
 //   - dumpBackendDAEVarList
 //   - dumpComponent
@@ -655,16 +653,6 @@ algorithm
   printBackendDAE(inBackendDAE);
   print("\n");
 end dumpBackendDAE;
-
-public function dumpBackendDAEToModelica "This function dumps the BackendDAE.BackendDAE representation to a Modelica file."
-  input BackendDAE.BackendDAE inBackendDAE;
-  input String suffix;
-protected
-  String str;
-algorithm
-  str := Tpl.tplString(CodegenModelica.dumpBackendDAE, inBackendDAE);
-  Error.addMessage(Error.BACKEND_DAE_TO_MODELICA, {suffix, str});
-end dumpBackendDAEToModelica;
 
 public function dumpEqSystem
   input BackendDAE.EqSystem inEqSystem;

@@ -7640,9 +7640,6 @@ algorithm
       BackendDump.graphvizBackendDAE(outSimDAE, "dumpindxdae");
     end if;
   end if;
-  if Flags.isSet(Flags.DUMP_TRANSFORMED_MODELICA_MODEL) then
-    BackendDump.dumpBackendDAEToModelica(outSimDAE, "dumpindxdae");
-  end if;
   if Flags.isSet(Flags.DUMP_BACKENDDAE_INFO) or Flags.isSet(Flags.DUMP_STATESELECTION_INFO) or Flags.isSet(Flags.DUMP_DISCRETEVARS_INFO) then
     BackendDump.dumpCompShort(outSimDAE);
   end if;

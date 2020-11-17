@@ -4,7 +4,7 @@ GENERATED_FILES_BOOT_STAGE2=AbsynDumpTpl.mo CodegenUtil.mo DAEDumpTpl.mo Express
 GENERATED_FILES=$(GENERATED_FILES_BOOT_STAGE2) CodegenC.mo CodegenUtilSimulation.mo CodegenEmbeddedC.mo CodegenFMUCommon.mo \
 CodegenFMU.mo CodegenFMU1.mo CodegenFMU2.mo CodegenCppCommon.mo CodegenCpp.mo CodegenCppHpcom.mo CodegenFMUCpp.mo \
 CodegenOMSI_common.mo CodegenOMSIC.mo CodegenOMSICpp.mo CodegenOMSIC_Equations.mo CodegenFMUCppHpcom.mo CodegenCppInit.mo \
-CodegenMidToC.mo CodegenModelica.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo CodegenSparseFMI.mo \
+CodegenMidToC.mo GraphvizDump.mo GraphMLDumpTpl.mo NFInstDumpTpl.mo SimCodeDump.mo CodegenSparseFMI.mo \
 CodegenXML.mo CodegenJS.mo VisualXMLTpl.mo \
 CodegenCppCommonOld.mo CodegenCppHpcomOld.mo CodegenCppOld.mo CodegenFMUCppHpcomOld.mo CodegenFMUCppOld.mo
 UNUSED=../boot/find-unused-import.sh
@@ -107,11 +107,6 @@ CodegenOMSIC.mo : CodegenOMSIC.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenOMSI_
 	@echo " " && ($(UNUSED) "$@" || true)
 CodegenOMSIC_Equations.mo : CodegenOMSIC_Equations.tpl SimCodeTV.mo SimCodeBackendTV.mo CodegenC.tpl CodegenCFunctions.tpl CodegenUtil.tpl CodegenUtilSimulation.tpl
 	@echo " ** CodegenOMSIC_Equations template compilation ** "
-	$(OMC) $< > $@.log || (cat $@.log && false)
-	@echo " " && ($(UNUSED) "$@" || true)
-
-CodegenModelica.mo : CodegenModelica.tpl
-	@echo " ** CodegenModelica template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " " && ($(UNUSED) "$@" || true)
 

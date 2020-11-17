@@ -288,7 +288,3 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCode
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegenTV.mo)
 
 
-
-omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenModelica.tpl)
-
-
