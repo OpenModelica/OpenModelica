@@ -84,21 +84,19 @@ pipeline {
         //     stash name: 'omc-clang', includes: 'build/**, **/config.status'
         //   }
         // }
-        stage('MacOS') {
+        stage('cmake-MacOS') {
           agent {
             node {
               label 'osx'
             }
           }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildOSX }
-          }
+          // when {
+          //   beforeAgent true
+          //   expression { shouldWeBuildOSX }
+          // }
           environment {
-            RUNTESTDB = '/Users/hudson/jenkins-cache/runtest/'
-            LIBRARIES = '/Users/hudson/jenkins-cache/omlibrary'
-            GMAKE = 'gmake'
-            LC_ALL = 'C'
+            CC = "gcc"
+            CXX = "g++"
           }
           steps {
             script {
@@ -106,18 +104,18 @@ pipeline {
               withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
                 sh "echo PATH: \$PATH QTDIR: \$QTDIR"
                 sh "${env.GMAKE} --version"
-                common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary", true)
-                common.buildGUI('', false)
-                sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
-                sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
-                // TODO: OMCppOSUSimulation throws error for help display
-                //sh label: "Sanity check for Cpp runtime", script: "./build/bin/OMCppOSUSimulation --help"
-                sh label: "Sanity check for OMEdit", script: "./build/Applications/OMEdit.app/Contents/MacOS/OMEdit --help"
+                common.buildOMC_CMake()
+                // common.buildGUI('', false)
+                // sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
+                // sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
+                // // TODO: OMCppOSUSimulation throws error for help display
+                // //sh label: "Sanity check for Cpp runtime", script: "./build/bin/OMCppOSUSimulation --help"
+                // sh label: "Sanity check for OMEdit", script: "./build/Applications/OMEdit.app/Contents/MacOS/OMEdit --help"
               }
             }
           }
         }
-        stage('cmake-MSYS/MinGW-gcc') {
+        stage('cmake-OMDev-gcc') {
           agent {
             node {
               label 'windows'
