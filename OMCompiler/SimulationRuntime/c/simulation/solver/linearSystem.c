@@ -379,10 +379,6 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
     /* free system and solver data */
-    for (j=0; j<omc_get_max_threads(); ++j)
-    {
-      free(linsys[i].parDynamicData[j].b);
-    }
     free(linsys[i].nominal);
     free(linsys[i].min);
     free(linsys[i].max);
@@ -392,6 +388,18 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
       ANALYTIC_JACOBIAN* jacobian = &(data->simulationInfo->analyticJacobians[linsys[i].jacobianIndex]);
       freeAnalyticJacobian(jacobian);
       /* Note: The Jacobian of data->simulationInfo itself will be free later. */
+
+    if (linsys[i].parDynamicData == NULL)
+    {
+      break;
+    }
+    else
+    {
+      for (j=0; j<omc_get_max_threads(); ++j)
+      {
+        free(linsys[i].parDynamicData[j].b);
+      }
+    }
 
 #ifdef USE_PARJAC
       for (j=0; j<omc_get_max_threads(); ++j) {

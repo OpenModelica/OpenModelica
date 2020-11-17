@@ -42,7 +42,9 @@ void freeAnalyticJacobian(ANALYTIC_JACOBIAN *jac) {
 }
 
 void freeSparsePattern(SPARSE_PATTERN *spp) {
-  free(spp->index); spp->index = NULL;
-  free(spp->colorCols); spp->colorCols = NULL;
-  free(spp->leadindex); spp->leadindex = NULL;
+  if (spp != NULL) {
+    free(spp->index); spp->index = NULL;
+    free(spp->colorCols); spp->colorCols = NULL;
+    free(spp->leadindex); spp->leadindex = NULL;
+  }
 }
