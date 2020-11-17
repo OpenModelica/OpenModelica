@@ -281,13 +281,31 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
 void buildOMC_CMake() {
   standardSetup()
 
-  sh """
-    cd OMCompiler
-    mkdir build_cmake
-    cd build_cmake
-    cmake .. -Wno-dev -DCMAKE_BUILD_TYPE=Release
-    make -j${numPhysicalCPU()}
-  """
+  if (isWindows()) {
+  bat ("""
+     set OMDEV=C:\\OMDev
+     echo on
+     (
+     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+     echo cd \${MSYS_WORKSPACE}
+     echo export MAKETHREADS=16
+     echo set -ex
+     echo mkdir OMCompiler/build_cmake
+     echo cmake -S OMCompiler -B OMCompiler/build_cmake -G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release -Wno-dev
+     echo time cmake --build OMCompiler/build_cmake --parallel \${MAKETHREADS}
+     ) > buildOMCWindows.sh
+
+     set MSYSTEM=MINGW64
+     set MSYS2_PATH_TYPE=inherit
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+  """)
+  }
+  else {
+    sh "mkdir OMCompiler/build_cmake"
+    sh "cmake -S OMCompiler -B OMCompiler/build_cmake -Wno-dev -DCMAKE_BUILD_TYPE=Release"
+    sh "cmake --build OMCompiler/build_cmake --parallel ${numPhysicalCPU()}"
+  }
 }
 
 void buildGUI(stash, isQt5) {

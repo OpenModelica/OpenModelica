@@ -117,16 +117,16 @@ pipeline {
             }
           }
         }
-        stage('Win/MinGW') {
+        stage('cmake-MSYS/MinGW-gcc') {
           agent {
             node {
               label 'windows'
             }
           }
-          when {
-            beforeAgent true
-            expression { shouldWeBuildMINGW }
-          }
+          // when {
+          //   beforeAgent true
+          //   expression { shouldWeBuildMINGW }
+          // }
           environment {
             RUNTESTDB = '/c/dev/'
             LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
@@ -135,10 +135,11 @@ pipeline {
             script {
               withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
-                common.buildOMC('cc', 'c++', '', true)
-                common.makeLibsAndCache()
-                common.buildGUI('', true)
-                common.buildAndRunOMEditTestsuite('')
+                common.buildOMC_CMake()
+                // common.buildOMC('cc', 'c++', '', true)
+                // common.makeLibsAndCache()
+                // common.buildGUI('', true)
+                // common.buildAndRunOMEditTestsuite('')
               }
             }
           }
@@ -171,7 +172,7 @@ pipeline {
             //stash name: 'omc-centos6', includes: 'build/**, **/config.status'
           }
         }
-        stage('cmake_focal_gcc') {
+        stage('cmake-focal-gcc') {
           agent {
             docker {
               image 'docker.openmodelica.org/build-deps:focal.nightly.amd64'
