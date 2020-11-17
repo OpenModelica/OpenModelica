@@ -15,8 +15,6 @@ macro(omc_add_antlr_grammar_target input_file output_dir)
     OUTPUT ${output_file_path_no_ext}.c
     OUTPUT ${output_file_path_no_ext}.h
   )
-  set_source_files_properties(${output_file_path_no_ext}.c GENERATED)
-  set_source_files_properties(${output_file_path_no_ext}.h GENERATED)
 
   set(ANTLR_GRAMMAR_${file_name_no_ext}_OUTPUT_SOURCES ${output_file_path_no_ext}.c)
   set(ANTLR_GRAMMAR_${file_name_no_ext}_OUTPUT_HEADERS ${output_file_path_no_ext}.h)
@@ -49,11 +47,6 @@ macro(omc_add_antlr_base_lexer_target input_file output_dir)
     OUTPUT ${output_file_base_path_no_ext}.c
     OUTPUT ${output_file_base_path_no_ext}.h
   )
-  set_source_files_properties(${output_file_path_no_ext}.c GENERATED)
-  set_source_files_properties(${output_file_path_no_ext}.h GENERATED)
-  set_source_files_properties(${output_file_base_path_no_ext}.c GENERATED)
-  set_source_files_properties(${output_file_base_path_no_ext}.h GENERATED)
-
 
   set(ANTLR_BASE_LEXER_${file_name_no_ext}_OUTPUT_SOURCES ${output_file_path_no_ext}.c ${output_file_base_path_no_ext}.c)
   set(ANTLR_BASE_LEXER_${file_name_no_ext}_OUTPUT_HEADERS ${output_file_path_no_ext}.h ${output_file_base_path_no_ext}.h)
