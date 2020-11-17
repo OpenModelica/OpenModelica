@@ -446,7 +446,6 @@ if true then /* Suppress output */
     "../Template/CodegenFMUCppHpcomOld.mo",
     "../Template/CodegenJS.mo",
     "../Template/CodegenMidToC.mo",
-    "../Template/CodegenModelica.mo",
     "../Template/CodegenSparseFMI.mo",
     "../Template/CodegenUtilSimulation.mo",
     "../Template/CodegenXML.mo",
