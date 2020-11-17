@@ -53,10 +53,6 @@ write_compiler_detection_header(
 SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 
 
-# options
-option(OMC_USE_CORBA "Should use corba." OFF)
-omc_add_to_report(OMC_USE_CORBA)
-
 option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
 omc_add_to_report(OMC_USE_CCACHE)
 
@@ -71,9 +67,13 @@ endif()
 
 
 
+# options
+omc_option(OMC_USE_CORBA "Should use corba." OFF)
+
 omc_option(OMC_USE_LPSOLVE "Should we use lpsolve." OFF)
 omc_option(OMC_BUILD_LPSOLVE "Should we build our own 3rdParty/lpsolve." OFF)
 
+omc_option(OMC_USE_LAPACK "Should we use lapack." ON)
 
 
 
