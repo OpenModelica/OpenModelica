@@ -8463,8 +8463,6 @@ algorithm
     end if;
 
     // handle special flags, which disable modules
-    disabledModules := deprecatedDebugFlag(Flags.NO_PARTITIONING, disabledModules, "clockPartitioning", "preOptModules-");
-
     if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "causal" or
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" then
       disabledModules := "removeSimpleEquations"::disabledModules;
