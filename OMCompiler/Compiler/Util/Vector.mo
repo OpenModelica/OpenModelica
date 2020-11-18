@@ -226,16 +226,32 @@ public
   end appendArray;
 
   function pop
-    "Removes the last element in the Vector. Fails if the Vector is empty."
+    "Removes the last element in the Vector. Fails if the Vector is empty.
+     Does not change the capacity of the Vector."
     input Vector<T> v;
   protected
     T null = null;
     array<T> data = Mutable.access(v.data);
     Integer sz = Mutable.access(v.size);
   algorithm
-    arrayUpdate(data, sz, null);
+    arrayUpdateNoBoundsChecking(data, sz, null);
     Mutable.update(v.size, sz - 1);
   end pop;
+
+  function clear
+    "Removes all elements from the Vector.
+     Does not change the capacity of the Vector."
+    input Vector<T> v;
+  protected
+    T null = null;
+    array<T> data = Mutable.access(v.data);
+  algorithm
+    for i in 1:Mutable.access(v.size) loop
+      arrayUpdateNoBoundsChecking(data, i, null);
+    end for;
+
+    Mutable.update(v.size, 0);
+  end clear;
 
   function shrink
     "Removes elements from the Vector until it contains newSize elements, or
@@ -333,6 +349,17 @@ public
     arrayUpdateNoBoundsChecking(data, index, value);
   end update;
 
+  function updateNoBounds
+    "Updates the element at the given one-based index to the given value without
+     checking if the one-based index is in bounds. This is DANGEROUS and should
+     only be used when the index is already known to be in bounds."
+    input Vector<T> v;
+    input Integer index;
+    input T value;
+  algorithm
+    arrayUpdateNoBoundsChecking(Mutable.access(v.data), index, value);
+  end updateNoBounds;
+
   function get
     "Returns the value of the element at the given one-based index.
      Fails if the index is out of bounds."
@@ -349,6 +376,17 @@ public
 
     value := arrayGetNoBoundsChecking(data, index);
   end get;
+
+  function getNoBounds
+    "Returns the value of the element at the given one-based index without
+     checking if the index is out of bounds. This is DANGEROUS and should only
+     be used when the index is already known to be in bounds."
+    input Vector<T> v;
+    input Integer index;
+    output T value;
+  algorithm
+    value := arrayGetNoBoundsChecking(Mutable.access(v.data), index);
+  end getNoBounds;
 
   function last
     "Returns the last element in the array, or fails if the array is empty."
@@ -530,6 +568,78 @@ public
     oe := NONE();
     index := -1;
   end find;
+
+  function all
+    "Returns true if the given function returns true for all elements in the
+     Vector, otherwise false."
+    input Vector<T> v;
+    input PredFn fn;
+    output Boolean res;
+
+    partial function PredFn
+      input T e;
+      output Boolean res;
+    end PredFn;
+  protected
+    array<T> data = Mutable.access(v.data);
+  algorithm
+    for i in 1:Mutable.access(v.size) loop
+      if not fn(arrayGetNoBoundsChecking(data, i)) then
+        res := false;
+        return;
+      end if;
+    end for;
+
+    res := true;
+  end all;
+
+  function any
+    "Returns true if the given function returns true for any element in the
+     Vector, otherwise false."
+    input Vector<T> v;
+    input PredFn fn;
+    output Boolean res;
+
+    partial function PredFn
+      input T e;
+      output Boolean res;
+    end PredFn;
+  protected
+    array<T> data = Mutable.access(v.data);
+  algorithm
+    for i in 1:Mutable.access(v.size) loop
+      if fn(arrayGetNoBoundsChecking(data, i)) then
+        res := true;
+        return;
+      end if;
+    end for;
+
+    res := false;
+  end any;
+
+  function none
+    "Returns true if the given function returns true for none of the elements in
+     the Vector, otherwise false."
+    input Vector<T> v;
+    input PredFn fn;
+    output Boolean res;
+
+    partial function PredFn
+      input T e;
+      output Boolean res;
+    end PredFn;
+  protected
+    array<T> data = Mutable.access(v.data);
+  algorithm
+    for i in 1:Mutable.access(v.size) loop
+      if fn(arrayGetNoBoundsChecking(data, i)) then
+        res := false;
+        return;
+      end if;
+    end for;
+
+    res := true;
+  end none;
 
   function copy
     "Creates a copy of the given Vector."
