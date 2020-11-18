@@ -422,8 +422,8 @@ void OriginItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if ((mpShapeAnnotation && mpShapeAnnotation->getGraphicsView()->isRenderingLibraryPixmap())
-      || (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap())) {
+  if ((mpShapeAnnotation && mpShapeAnnotation->getGraphicsView() && mpShapeAnnotation->getGraphicsView()->isRenderingLibraryPixmap())
+      || (mpComponent && mpComponent->getGraphicsView() && mpComponent->getGraphicsView()->isRenderingLibraryPixmap())) {
     return;
   }
   painter->setRenderHint(QPainter::Antialiasing);
