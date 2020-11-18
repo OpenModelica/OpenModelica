@@ -912,12 +912,7 @@ public function removeEqualRHS "author: Frenkel TUD 2011-04
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
 algorithm
-  if Flags.getConfigBool(Flags.CSE_CALL) or Flags.getConfigBool(Flags.CSE_EACHCALL) then
-    // skip this module if cse module is activated
-    odae := dae;
-  else
-    odae := BackendDAEUtil.mapEqSystem(dae,removeEqualFunctionCallsWork);
-  end if;
+  odae := BackendDAEUtil.mapEqSystem(dae,removeEqualFunctionCallsWork);
 end removeEqualRHS;
 
 protected function removeEqualFunctionCallsWork "author: Frenkel TUD 2011-04
