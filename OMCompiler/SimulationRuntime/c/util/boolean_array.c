@@ -529,30 +529,6 @@ void array_alloc_scalar_boolean_array(boolean_array_t* dest, int n, ...)
     va_end(ap);
 }
 
-m_boolean* boolean_array_element_addr1(const boolean_array_t* source,int ndims,
-                                       int dim1)
-{
-    return boolean_ptrget(source, dim1 - 1);
-}
-
-m_boolean* boolean_array_element_addr2(const boolean_array_t* source,int ndims,
-                                       int dim1,int dim2)
-{
-    return boolean_ptrget(source, ((dim1 - 1) * source->dim_size[1]) + (dim2 - 1));
-}
-
-m_boolean* boolean_array_element_addr(const boolean_array_t* source,int ndims,...)
-{
-    va_list ap;
-    m_boolean* tmp;
-
-    va_start(ap,ndims);
-    tmp = boolean_ptrget(source, calc_base_index_va(source, ndims, ap));
-    va_end(ap);
-
-    return tmp;
-}
-
 
 /* function: cat_boolean_array
  *
