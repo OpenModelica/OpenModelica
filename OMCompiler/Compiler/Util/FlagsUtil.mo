@@ -177,7 +177,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.USEMPI,
   Flags.DUMP_CSE,
   Flags.DUMP_CSE_VERBOSE,
-  Flags.DISABLE_COMSUBEXP,
   Flags.NO_START_CALC,
   Flags.NO_PARTITIONING,
   Flags.CONSTJAC,
