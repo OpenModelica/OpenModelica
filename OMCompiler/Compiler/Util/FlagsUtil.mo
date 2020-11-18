@@ -115,7 +115,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.EXEC_HASH,
   Flags.PARAM_DLOW_DUMP,
   Flags.DUMP_ENCAPSULATECONDITIONS,
-  Flags.ON_RELAXATION,
   Flags.SHORT_OUTPUT,
   Flags.COUNT_OPERATIONS,
   Flags.CGRAPH,
