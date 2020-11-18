@@ -9,7 +9,6 @@ AC_DEFUN([OMC_AC_LAPACK], [
   if test "$LD_LAPACK" = "no"; then
     FINAL_MESSAGES="$FINAL_MESSAGES\nLAPACK IS NOT AVAILABLE! ONLY USED FOR CROSS-COMPILING/BOOTSTRAPPING"
     LD_LAPACK=""
-    NO_LAPACK="#define NO_LAPACK"
   else
 
     AC_LANG_PUSH([C])
@@ -104,9 +103,11 @@ AC_DEFUN([OMC_AC_LAPACK], [
     fi
 
     if test ! -z "$LD_LAPACK"; then
+      HAVE_LAPACK="#define HAVE_LAPACK"
+
       # lapack 3.6.0 deprecated dgegv, dgelsx, dgeqpf
       AC_MSG_CHECKING([for deprecated LAPACK routines])
-      AC_LINK_IFELSE([AC_LANG_CALL([], [dgegv_])],[AC_MSG_RESULT([yes]); NO_LAPACK="#define HAVE_LAPACK_DEPRECATED 1"],[
+      AC_LINK_IFELSE([AC_LANG_CALL([], [dgegv_])],[AC_MSG_RESULT([yes]); HAVE_LAPACK_DEPRECATED="#define HAVE_LAPACK_DEPRECATED"],[
         AC_MSG_RESULT([no])
       ])
     fi
