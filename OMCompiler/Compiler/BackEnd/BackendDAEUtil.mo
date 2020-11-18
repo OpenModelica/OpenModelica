@@ -8472,11 +8472,6 @@ algorithm
       disabledModules := "removeSimpleEquations"::disabledModules;
     end if;
 
-    if not Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS) then
-      disabledModules := "evalFunc"::disabledModules;
-      Error.addCompilerWarning("Deprecated debug flag --d=evalConstFuncs=false detected. Use --preOptModules-=evalFunc instead.");
-    end if;
-
     if not Flags.isSet(Flags.NF_SCALARIZE) then
       disabledModules := "inlineArrayEqn"::disabledModules;
     end if;
