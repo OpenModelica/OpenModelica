@@ -304,7 +304,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.DELAY_BREAK_LOOP,
   Flags.TEARING_METHOD,
   Flags.TEARING_HEURISTIC,
-  Flags.DISABLE_LINEAR_TEARING,
   Flags.SCALARIZE_MINMAX,
   Flags.STRICT,
   Flags.SCALARIZE_BINDINGS,
