@@ -159,7 +159,7 @@ public
     Integer index, hash;
   algorithm
     (index, hash) := find(key, map);
-    true := index > 0;
+    false := index > 0;
     addEntry(key, value, hash, map);
   end addUnique;
 
