@@ -161,13 +161,6 @@ extern void array_scalar_integer_array(integer_array_t* dest,int n,
 extern void array_alloc_scalar_integer_array(integer_array_t* dest,int n,
                                              modelica_integer first,...);
 
-extern modelica_integer* integer_array_element_addr(const integer_array_t * source,
-                                                    int ndims,...);
-extern modelica_integer* integer_array_element_addr1(const integer_array_t * source,
-                                                     int ndims,int dim1);
-extern modelica_integer* integer_array_element_addr2(const integer_array_t * source,int ndims,
-                                                     int dim1,int dim2);
-
 extern void cat_integer_array(int k,integer_array_t* dest, int n,
                               const integer_array_t* first,...);
 extern void cat_alloc_integer_array(int k,integer_array_t* dest, int n,
