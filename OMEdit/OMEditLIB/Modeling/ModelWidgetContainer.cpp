@@ -5148,6 +5148,7 @@ void ModelWidget::reDrawModelWidget()
       mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
     }
     // remove saved inherited classes
+    mpLibraryTreeItem->removeInheritedClasses();
     clearInheritedClasses();
     // get inherited classes
     getModelInheritedClasses();
