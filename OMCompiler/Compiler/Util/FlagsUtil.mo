@@ -180,7 +180,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.NO_START_CALC,
   Flags.CONSTJAC,
   Flags.VISUAL_XML,
-  Flags.ADD_SCALED_VARS,
   Flags.ADD_SCALED_VARS_INPUT,
   Flags.VECTORIZE,
   Flags.CHECK_EXT_LIBS,

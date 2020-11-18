@@ -8521,7 +8521,6 @@ algorithm
       enabledModules := "generateSymbolicLinearization"::enabledModules;
     end if;
 
-    enabledModules := deprecatedDebugFlag(Flags.ADD_SCALED_VARS, enabledModules, "addScaledVars_states", "postOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.ADD_SCALED_VARS_INPUT, enabledModules, "addScaledVars_inputs", "postOptModules+");
 
     if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
