@@ -17,7 +17,7 @@ extern "C" {
 
 void ModelicaMessage(const char* string)
 {
-    fprintf(stdout, string);
+    fprintf(stdout, "%s", string);
     fflush(stdout);
 }
 
@@ -32,6 +32,24 @@ void ModelicaFormatMessage(const char* string, ...)
     va_list args;
     va_start(args, string);
     ModelicaVFormatMessage(string, args);
+    va_end(args);
+}
+
+void ModelicaWarning(const char* string)
+{
+    fprintf(stderr, "%s", string);
+}
+
+void ModelicaVFormatWarning(const char* string, va_list args)
+{
+    vfprintf(stderr, string, args);
+}
+
+void ModelicaFormatWarning(const char* string, ...)
+{
+    va_list args;
+    va_start(args, string);
+    ModelicaVFormatWarning(string, args);
     va_end(args);
 }
 
