@@ -137,11 +137,15 @@ public
   end addUnique;
 
   function remove
-    "Removes a key from the set. Will not trigger a rehash, so rehash must to be
-     called manually if shrinking the set is desirable (probably not a good idea
-     unless the load factor is very low, i.e. less than 0.25 or so)."
+    "Removes a key from the set. Returns true if the key existed in the set and
+     was removed, or false if the key did not exist in the set.
+
+     Will not trigger a rehash, so rehash must be called manually if shrinking
+     the set is desirable (probably not a good idea unless the load factor is
+     very low, i.e. less than 0.25 or so)."
     input T key;
     input UnorderedSet<T> set;
+    output Boolean removed;
   protected
     array<list<T>> buckets = Mutable.access(set.buckets);
     Hash hashfn = set.hashFn;
@@ -154,8 +158,9 @@ public
     bucket := arrayGet(buckets, hash + 1);
 
     (bucket, okey) := List.deleteMemberOnTrue(key, bucket, eqfn);
+    removed := isSome(okey);
 
-    if isSome(okey) then
+    if removed then
       arrayUpdateNoBoundsChecking(buckets, hash + 1, bucket);
       Mutable.update(set.size, Mutable.access(set.size) - 1);
     end if;
@@ -436,15 +441,12 @@ public
 protected
   function find
     "Tries to find a key in the set, returning the key as an option, and the
-     key's hash. If the key isn't in the set it returns NONE() and -1 as index,
-     but the correct hash is always returned."
+     key's hash."
     input T key;
     input UnorderedSet<T> set;
     output Option<T> outKey = NONE();
     output Integer hash;
   protected
-    T k;
-    Integer hash_id, i;
     Hash hashfn = set.hashFn;
     KeyEq eqfn = set.eqFn;
     array<list<T>> buckets = Mutable.access(set.buckets);

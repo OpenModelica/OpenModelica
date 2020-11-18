@@ -494,6 +494,7 @@ if true then /* Suppress output */
     "../Util/SBSet.mo",
     "../Util/SimulationResults.mo",
     "../Util/TaskGraphResults.mo",
+    "../Util/UnorderedMap.mo",
     "../Util/UnorderedSet.mo",
     "../Util/Unzip.mo",
     "../Util/Vector.mo",
