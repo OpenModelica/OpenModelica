@@ -44,6 +44,33 @@ BOOST_EXTENSION_EXPORT_DECL
 void ModelicaVFormatMessage(const char* string, va_list arg_ptr);
 
 /**
+ * \brief Output the message string (no format control).
+ *
+ * @param string The message.
+ */
+BOOST_EXTENSION_EXPORT_DECL
+void ModelicaWarning(const char* string);
+
+/**
+ * \brief Output the message under the same format control as the C-function
+ * printf.
+ *
+ * @param string The formatted message.
+ */
+BOOST_EXTENSION_EXPORT_DECL
+void ModelicaFormatWarning(const char* string,...);
+
+/**
+ * \brief Output the message under the same format control as the C-function
+ * vprintf.
+ *
+ * @param string The formatted message.
+ * @param arg_ptr Pointer to list of arguments.
+ */
+BOOST_EXTENSION_EXPORT_DECL
+void ModelicaVFormatWarning(const char* string, va_list arg_ptr);
+
+/**
  * \brief Output the error message string (no format control). This function
  * never returns to the calling function, but handles the error similarly to an
  * assert in the Modelica code.
