@@ -50,6 +50,21 @@ void ModelicaFormatMessage(const char* string,...) {
   va_end(args);
 }
 
+void ModelicaWarning(const char* string) {
+  ModelicaFormatWarning("%s", string);
+}
+
+extern void ModelicaVFormatWarning(const char*string, va_list args) {
+  va_warningStreamPrint(LOG_STDOUT, 0, string, args);
+}
+
+void ModelicaFormatWarning(const char* string,...) {
+  va_list args;
+  va_start(args, string);
+  ModelicaVFormatWarning(string, args);
+  va_end(args);
+}
+
 MODELICA_NORETURN void OpenModelica_Simulation_ModelicaError(const char* string) MODELICA_NORETURNATTR;
 void OpenModelica_Simulation_ModelicaError(const char* string) {
   throwStreamPrint(NULL, "%s", string);
