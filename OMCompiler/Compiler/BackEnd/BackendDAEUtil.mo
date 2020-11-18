@@ -8529,11 +8529,6 @@ algorithm
     enabledModules := deprecatedConfigFlag(Flags.CSE_EACHCALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
     enabledModules := deprecatedDebugFlag(Flags.ON_RELAXATION, enabledModules, "relaxSystem", "postOptModules+");
 
-    if Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING) then
-      FlagsUtil.setConfigInt(Flags.MAX_SIZE_LINEAR_TEARING, 0);
-      Error.addCompilerWarning("Deprecated flag --disableLinearTearing detected. Use --maxSizeLinearTearing=0 instead.");
-    end if;
-
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION)  or  Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "generateSymbolicLinearization"::enabledModules;
     end if;
