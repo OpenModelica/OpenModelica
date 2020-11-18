@@ -83,11 +83,4 @@ void* generic_array_get2(const base_array_t* source, size_t sze, int dim1, int d
 
 void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...);
 
-
-
-
-void* generic_array_element_addr(const base_array_t* source, size_t sze, int ndims,...);
-void* generic_array_element_addr1(const base_array_t* source, size_t sze, int dim1);
-
-
 #endif
