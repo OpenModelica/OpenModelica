@@ -6,7 +6,7 @@
 
 
 loadFile("PartEvalFunc.mo"); getErrorString();
-setDebugFlags("dumpeqninorder,evalConstFuncs");getErrorString();
+setCompilerFlags("-d=dumpeqninorder --preOptModules+=evalFunc"); getErrorString();
 simulate(PartEvalFunc.functionTest3_elseif, stopTime=1.0, numberOfIntervals=500);getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("PartEvalFunc.functionTest3_elseif_res.mat",
   "ReferenceFiles/functionTest3_elseif.mat",
