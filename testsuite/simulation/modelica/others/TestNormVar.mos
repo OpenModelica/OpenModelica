@@ -2,7 +2,7 @@
 // status: correct
 // cflags: -d=-newInst
 
-setCommandLineOptions("+d=addScaledVars,dumpindxdae");
+setCommandLineOptions("+d=dumpindxdae --postOptModules+=addScaledVars_states");
 loadString("
 model foo
   Real x(start=100, fixed=true, nominal = 100);
@@ -16,7 +16,7 @@ end foo;
 ");
 simulate(foo,stopTime=0);
 
-setCommandLineOptions("+d=addScaledVarsInput,noaddScaledVars,dumpindxdae");
+setCommandLineOptions("+d=addScaledVarsInput,dumpindxdae --postOptModules-=addScaledVars_states");
 loadString("
 model foo
   Real x(start=100, fixed=true, nominal = 100);
@@ -30,7 +30,7 @@ end foo;
 ");
 simulate(foo,stopTime=0);
 
-setCommandLineOptions("+d=addScaledVars,addScaledVarsInput,dumpindxdae");
+setCommandLineOptions("+d=addScaledVarsInput,dumpindxdae --postOptModules+=addScaledVars_states");
 loadString("
 model foo
   Real x(start=100, fixed=true, nominal = 100);
