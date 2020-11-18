@@ -186,7 +186,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.SORT_EQNS_AND_VARS,
   Flags.DUMP_SIMPLIFY_LOOPS,
   Flags.DUMP_RTEARING,
-  Flags.DIS_SIMP_FUN,
   Flags.DIS_SYMJAC_FMI20,
   Flags.EVAL_OUTPUT_ONLY,
   Flags.HARDCODED_START_VALUES,

@@ -8552,9 +8552,6 @@ algorithm
       enabledModules := "partlintornsystem"::enabledModules;
     end if;
 
-    // handle special flags, which disable modules
-    disabledModules := deprecatedDebugFlag(Flags.DIS_SIMP_FUN, disabledModules, "simplifyComplexFunction", "postOptModules-");
-
     if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" or
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "fastAcausal" or
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "allAcausal" then
@@ -8607,8 +8604,6 @@ algorithm
     end if;
 
     // handle special flags, which disable modules
-    disabledModules := deprecatedDebugFlag(Flags.DIS_SIMP_FUN, disabledModules, "simplifyComplexFunction", "initOptModules-");
-
     if Config.getTearingMethod() == "noTearing" then
       disabledModules := "tearingSystem"::disabledModules;
     end if;
