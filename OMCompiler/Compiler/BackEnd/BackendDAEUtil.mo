@@ -8509,8 +8509,6 @@ algorithm
       enabledModules := "simplifyConstraints"::enabledModules;
     end if;
 
-    enabledModules := deprecatedDebugFlag(Flags.REDUCE_DYN_OPT, enabledModules, "reduceDynamicOptimization", "postOptModules+");
-
     if not Flags.getConfigString(Flags.LOOP2CON) == "none" then
       enabledModules := "extendDynamicOptimization"::enabledModules;
     end if;

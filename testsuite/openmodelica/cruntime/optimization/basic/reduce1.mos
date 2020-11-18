@@ -32,7 +32,7 @@ getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("reduceEx1_res.mat","ReferenceFiles/reduceEx1_ref.mat","reduceEx1_diff.csv",0.01,0.0001,{"y","der(y)","u"});
 getErrorString();
 
-setCommandLineOptions("+gDynOpt +d=reduceDynOpt");
+setCommandLineOptions("+gDynOpt --postOptModules+=reduceDynamicOptimization");
 getErrorString();
 
 optimize(reduceEx1, numberOfIntervals=50, tolerance = 1e-08, simflags="-lv LOG_IPOPT_ERROR -optimizerNP 3");
@@ -129,8 +129,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Deprecated debug flag -d=reduceDynOpt detected. Use --postOptModules+=reduceDynamicOptimization instead.
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

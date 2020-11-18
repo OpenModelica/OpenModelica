@@ -5,7 +5,7 @@
 loadModel(Modelica,{"3.2"});
 getErrorString();
 
-setCommandLineOptions("+d=reduceDynOpt");
+setCommandLineOptions("--postOptModules+=reduceDynamicOptimization");
 getErrorString();
 
 
@@ -74,8 +74,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Deprecated debug flag -d=reduceDynOpt detected. Use --postOptModules+=reduceDynamicOptimization instead.
-// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

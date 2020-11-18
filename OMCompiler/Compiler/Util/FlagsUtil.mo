@@ -179,7 +179,6 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.DUMP_CSE_VERBOSE,
   Flags.NO_START_CALC,
   Flags.CONSTJAC,
-  Flags.REDUCE_DYN_OPT,
   Flags.VISUAL_XML,
   Flags.ADD_SCALED_VARS,
   Flags.ADD_SCALED_VARS_INPUT,
