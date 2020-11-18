@@ -5148,6 +5148,7 @@ void ModelWidget::reDrawModelWidget()
       mpDiagramGraphicsView->setCoOrdinateSystem(CoOrdinateSystem());
     }
     // remove saved inherited classes
+    mpLibraryTreeItem->removeInheritedClasses();
     clearInheritedClasses();
     // get inherited classes
     getModelInheritedClasses();
@@ -5269,6 +5270,10 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pParentLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
     }
+    /* before calling the updateChildClasses() which calls reDrawModelWidget()
+     * we need to remove the inherited classes connect signal/slot of all classes.
+     */
+    ModelWidget::removeInheritedClasses(mpLibraryTreeItem);
     // update child classes
     updateChildClasses(mpLibraryTreeItem);
   } else {
@@ -7301,6 +7306,22 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
           pConnectorComponent->setBusComponent(pBusComponent);
         }
       }
+    }
+  }
+}
+
+/*!
+ * \brief ModelWidget::removeInheritedClasses
+ * \param pLibraryTreeItem
+ * Removes the connect signal/slot of all LibraryTreeItem's recursivly.
+ */
+void ModelWidget::removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
+{
+  pLibraryTreeItem->removeInheritedClasses();
+  pLibraryTreeItem->getModelWidget()->clearInheritedClasses();
+  foreach (LibraryTreeItem *pChildLibraryTreeItem, pLibraryTreeItem->childrenItems()) {
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->isInPackageOneFile()) {
+      ModelWidget::removeInheritedClasses(pChildLibraryTreeItem);
     }
   }
 }

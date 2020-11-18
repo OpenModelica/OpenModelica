@@ -628,6 +628,7 @@ private:
   void associateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
   void dissociateBusWithConnector(QString busName, QString connectorName, GraphicsView *pGraphicsView);
   void associateBusWithConnectors(Element *pBusComponent, GraphicsView *pGraphicsView);
+  static void removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem);
 private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
