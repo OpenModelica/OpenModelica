@@ -329,6 +329,8 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int langStd, int runningTes
     res = psr->name_path_end(psr);
   } else if (ModelicaParser_flags & PARSE_CREF) {
     res = psr->component_reference_end(psr);
+  } else if (ModelicaParser_flags & PARSE_MODIFIER) {
+    res = psr->element_modification_or_replaceable(psr);
   } else {
     res = psr->stored_definition(psr);
   }

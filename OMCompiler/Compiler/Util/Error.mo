@@ -840,6 +840,15 @@ public constant ErrorTypes.Message CYCLIC_FUNCTION_COMPONENTS = ErrorTypes.MESSA
   Gettext.gettext("Cyclically dependent function components found: %s"));
 public constant ErrorTypes.Message EXTERNAL_FUNCTION_NOT_FOUND = ErrorTypes.MESSAGE(384, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("External function ‘%s‘ could not be found in any of the given shared libraries:\n%s"));
+public constant ErrorTypes.Message INVALID_CONVERSION_RULE = ErrorTypes.MESSAGE(385, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid conversion rule ‘%s‘."));
+public constant ErrorTypes.Message CONVERSION_MESSAGE = ErrorTypes.MESSAGE(386, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("%s"));
+public constant ErrorTypes.Message CONVERSION_MISMATCHED_PLACEHOLDER = ErrorTypes.MESSAGE(387, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Mismatched % in conversion modifier ‘%s‘."));
+public constant ErrorTypes.Message CONVERSION_MISSING_PLACEHOLDER_VALUE = ErrorTypes.MESSAGE(388, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("No replacement value for placeholder ‘%s‘ could be found."));
+
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
 public constant ErrorTypes.Message INITIALIZATION_OVER_SPECIFIED = ErrorTypes.MESSAGE(497, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),

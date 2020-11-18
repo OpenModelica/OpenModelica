@@ -263,6 +263,18 @@ public
     value := Vector.get(map.values, find(key, map));
   end getOrFail;
 
+  function getOrDefault
+    input K key;
+    input UnorderedMap<K, V> map;
+    input V default;
+    output V value;
+  protected
+    Integer index;
+  algorithm
+    index := find(key, map);
+    value := if index > 0 then Vector.getNoBounds(map.values, index) else default;
+  end getOrDefault;
+
   function getKey
     "Returns SOME(key) if the key exists in the map, otherwise NONE()."
     input K key;

@@ -1,0 +1,2 @@
+convertClass("Modelica.SIunits", "Modelica.Units.SI");
+convertClass("Modelica.SIunits.Icons", "Modelica.Units.Icons");

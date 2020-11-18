@@ -1,0 +1,75 @@
+// name:   ConvertClass4
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertClass4
+    model A
+      extends Modelica.SIunits.Icons.Conversion;
+      Modelica.SIunits.Length x;
+
+      model B
+        Modelica.SIunits.Temperature x;
+      equation
+        x = Modelica.SIunits.Conversions.from_degC(25);
+      end B;
+    end A;
+
+    package C
+      model D
+        Modelica.SIunits.Temperature t = Modelica.SIunits.Conversions.from_degC(25);
+        Modelica.SIunits.Conversions.NonSIunits.Temperature_degC c;
+      algorithm
+        c := Modelica.SIunits.Conversion.to_degC(77);
+      end D;
+
+      model E
+        import SI = Modelica.SIunits;
+        SI.Temperature x;
+        function from_degC = Modelica.SIunits.Conversions.from_degC;
+      equation
+        x = from_degC(25);
+      end E;
+    end C;
+  end ConvertClass4;
+");
+
+convertPackage(ConvertClass4, "scripts/ConvertClass4.mos");
+getErrorString();
+list(ConvertClass4);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertClass4
+//   model A
+//     extends Modelica.Units.Icons.Conversion;
+//     Modelica.Units.SI.Length x;
+//
+//     model B
+//       Modelica.Units.SI.Temperature x;
+//     equation
+//       x = Modelica.Units.Conversions.from_degC(25);
+//     end B;
+//   end A;
+//
+//   package C
+//     model D
+//       Modelica.Units.SI.Temperature t = Modelica.Units.Conversions.from_degC(25);
+//       Modelica.Units.NonSI.Temperature_degC c;
+//     algorithm
+//       c := Modelica.Units.SI.Conversion.to_degC(77);
+//     end D;
+//
+//     model E
+//       import SI = Modelica.Units.SI;
+//       SI.Temperature x;
+//       function from_degC = Modelica.Units.Conversions.from_degC;
+//     equation
+//       x = from_degC(25);
+//     end E;
+//   end C;
+// end ConvertClass4;"
+// endResult

@@ -411,6 +411,7 @@ if true then /* Suppress output */
     "../Script/MMToJuliaUtil.mo",
     "../Script/MMToJuliaKeywords.mo",
     "../Script/NFApi.mo",
+    "../Script/Conversion.mo",
 
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",

@@ -1,0 +1,27 @@
+// name:   ConvertClass4
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertModifiers1
+    model M
+      Modelica.Thermal.FluidHeatFlow.Components.IsolatedPipe pipe;
+    end M;
+  end ConvertModifiers1;
+");
+
+convertPackage(ConvertModifiers1, "scripts/ConvertModifiers1.mos");
+getErrorString();
+list(ConvertModifiers1);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertModifiers1
+//   model M
+//     Modelica.Thermal.FluidHeatFlow.Components.IsolatedPipe pipe(useHeatPort = false);
+//   end M;
+// end ConvertModifiers1;"
+// endResult

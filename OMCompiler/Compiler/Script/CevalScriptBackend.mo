@@ -71,6 +71,7 @@ import ClockIndexes;
 import CodegenFMU;
 import ComponentReference;
 import Config;
+import Conversion;
 import DAEDump;
 import DAEQuery;
 import DAEUtil;
@@ -3135,6 +3136,9 @@ algorithm
 
     case (cache,_,"relocateFunctions",_,_)
       then (cache,Values.BOOL(false));
+
+    case (_, _, "convertPackage", {Values.CODE(Absyn.C_TYPENAME(path)), Values.STRING(str)}, _)
+      then (inCache, convertPackage(path, str));
 
  end matchcontinue;
 end cevalInteractiveFunctions4;
@@ -8436,6 +8440,31 @@ algorithm
 
   result := Values.STRING(str);
 end instantiateModel;
+
+protected function convertPackage
+  input Absyn.Path clsPath;
+  input String scriptFile;
+  output Values.Value res;
+protected
+  Absyn.Program p;
+  Absyn.Class cls;
+  Absyn.Within wi;
+algorithm
+  try
+    p := SymbolTable.getAbsyn();
+    cls := InteractiveUtil.getPathedClassInProgram(clsPath, p);
+    //System.startTimer();
+    cls := Conversion.convertPackage(cls, scriptFile);
+    //System.stopTimer();
+    //print("Conversion took " + String(System.getTimerIntervalTime()) + " seconds.\n");
+    wi := InteractiveUtil.buildWithin(clsPath);
+    p := InteractiveUtil.updateProgram(Absyn.PROGRAM({cls}, wi), p);
+    SymbolTable.setAbsyn(p);
+    res := Values.BOOL(true);
+  else
+    res := Values.BOOL(false);
+  end try;
+end convertPackage;
 
 annotation(__OpenModelica_Interface="backend");
 

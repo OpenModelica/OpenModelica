@@ -1,0 +1,29 @@
+// name:   ConvertModifiersMissingValue1
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertModifiersMissingValue1
+    model M
+      Modelica.Mechanics.MultiBody.Forces.Force force(forceDiameter);
+    end M;
+  end ConvertModifiersMissingValue1;
+");
+
+convertPackage(ConvertModifiersMissingValue1, "scripts/ConvertModifiers3.mos");
+getErrorString();
+list(ConvertModifiersMissingValue1);
+
+// Result:
+// true
+// false
+// "[<internal>:1:1-1:0:writable] Notification: From here:
+// [scripts/ConvertModifiers3.mos:1:1-2:72:writable] Warning: No replacement value for placeholder ‘%forceDiameter%‘ could be found.
+// "
+// "package ConvertModifiersMissingValue1
+//   model M
+//     Modelica.Mechanics.MultiBody.Forces.Force force(forceDiameter);
+//   end M;
+// end ConvertModifiersMissingValue1;"
+// endResult
