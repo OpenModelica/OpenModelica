@@ -630,6 +630,7 @@ InnerOuterMissing4.mo \
 InnerOuterMissing5.mo \
 InnerOuterMissing6.mo \
 InnerOuterNotInner1.mo \
+InStreamArray.mo \
 InStreamFlowThreshold.mo \
 InStreamInsideOutside.mo \
 InStreamNominalThreshold.mo \

@@ -92,6 +92,7 @@ import SCodeUtil;
 import DAE;
 import Structural = NFStructural;
 import ArrayConnections = NFArrayConnections;
+import UnorderedMap;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -1447,7 +1448,15 @@ protected
   array<list<Connector>> csets_array;
   CardinalityTable.Table ctable;
   Connections.BrokenEdges broken = {};
+  UnorderedMap<ComponentRef, Variable> vars;
 algorithm
+  vars := UnorderedMap.new<Variable>(ComponentRef.hash, ComponentRef.isEqual,
+    listLength(flatModel.variables));
+
+  for v in flatModel.variables loop
+    UnorderedMap.addNew(v.name, v, vars);
+  end for;
+
   // get the connections from the model
   (flatModel, conns) := Connections.collect(flatModel);
   // Elaborate expandable connectors.
@@ -1466,7 +1475,7 @@ algorithm
   csets := ConnectionSets.fromConnections(conns);
   csets_array := ConnectionSets.extractSets(csets);
   // generate the equations
-  conn_eql := ConnectEquations.generateEquations(csets_array);
+  conn_eql := ConnectEquations.generateEquations(csets_array, vars);
 
   // append the equalityConstraint call equations for the broken connects
   if System.getHasOverconstrainedConnectors() then
@@ -1482,7 +1491,7 @@ algorithm
 
   // Evaluate any connection operators if they're used.
   if  System.getHasStreamConnectors() or System.getUsesCardinality() then
-    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, ctable);
+    flatModel := evaluateConnectionOperators(flatModel, csets, csets_array, vars, ctable);
   end if;
 
   execStat(getInstanceName());
@@ -1492,11 +1501,12 @@ function evaluateConnectionOperators
   input output FlatModel flatModel;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
 algorithm
-  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, ctable) for c in flatModel.variables);
-  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, ctable);
-  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, ctable);
+  flatModel.variables := list(evaluateBindingConnOp(c, sets, setsArray, variables, ctable) for c in flatModel.variables);
+  flatModel.equations := evaluateEquationsConnOp(flatModel.equations, sets, setsArray, variables, ctable);
+  flatModel.initialEquations := evaluateEquationsConnOp(flatModel.initialEquations, sets, setsArray, variables, ctable);
   // TODO: Implement evaluation for algorithm sections.
 end evaluateConnectionOperators;
 
@@ -1504,6 +1514,7 @@ function evaluateBindingConnOp
   input output Variable var;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
 protected
   Binding binding;
@@ -1512,7 +1523,7 @@ algorithm
   () := match var
     case Variable.VARIABLE(binding = binding as Binding.TYPED_BINDING(bindingExp = exp))
       algorithm
-        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, ctable);
+        eval_exp := ConnectEquations.evaluateOperators(exp, sets, setsArray, variables, ctable);
 
         if not referenceEq(exp, eval_exp) then
           binding.bindingExp := eval_exp;
@@ -1529,19 +1540,22 @@ function evaluateEquationsConnOp
   input output list<Equation> equations;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
 algorithm
-  equations := list(evaluateEquationConnOp(eq, sets, setsArray, ctable) for eq in equations);
+  equations := list(evaluateEquationConnOp(eq, sets, setsArray, variables, ctable) for eq in equations);
 end evaluateEquationsConnOp;
 
 function evaluateEquationConnOp
   input output Equation eq;
   input ConnectionSets.Sets sets;
   input array<list<Connector>> setsArray;
+  input UnorderedMap<ComponentRef, Variable> variables;
   input CardinalityTable.Table ctable;
 algorithm
   eq := Equation.mapExp(eq,
-    function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray, ctable = ctable));
+    function ConnectEquations.evaluateOperators(sets = sets, setsArray = setsArray,
+      variables = variables, ctable = ctable));
 
   () := match eq
     case Equation.IF()
