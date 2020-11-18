@@ -16,7 +16,7 @@ end foo;
 ");
 simulate(foo,stopTime=0);
 
-setCommandLineOptions("+d=addScaledVarsInput,dumpindxdae --postOptModules-=addScaledVars_states");
+setCommandLineOptions("+d=dumpindxdae --postOptModules+=addScaledVars_inputs --postOptModules-=addScaledVars_states");
 loadString("
 model foo
   Real x(start=100, fixed=true, nominal = 100);
@@ -30,7 +30,7 @@ end foo;
 ");
 simulate(foo,stopTime=0);
 
-setCommandLineOptions("+d=addScaledVarsInput,dumpindxdae --postOptModules+=addScaledVars_states");
+setCommandLineOptions("+d=dumpindxdae --postOptModules+=addScaledVars_inputs,addScaledVars_states");
 loadString("
 model foo
   Real x(start=100, fixed=true, nominal = 100);
