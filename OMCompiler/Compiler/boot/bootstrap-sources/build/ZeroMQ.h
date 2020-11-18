@@ -27,11 +27,12 @@ static const MMC_DEFSTRUCTLIT(boxvar_lit_ZeroMQ_handleRequest,2,0) {(void*) boxp
 #define boxvar_ZeroMQ_handleRequest MMC_REFSTRUCTLIT(boxvar_lit_ZeroMQ_handleRequest)
 extern const char* ZeroMQ_handleRequest(modelica_metatype /*_zmqSocket*/);
 DLLExport
-modelica_metatype omc_ZeroMQ_initialize(threadData_t *threadData, modelica_string _fileSuffix);
-#define boxptr_ZeroMQ_initialize omc_ZeroMQ_initialize
+modelica_metatype omc_ZeroMQ_initialize(threadData_t *threadData, modelica_string _fileSuffix, modelica_boolean _listenToAll, modelica_integer _port);
+DLLExport
+modelica_metatype boxptr_ZeroMQ_initialize(threadData_t *threadData, modelica_metatype _fileSuffix, modelica_metatype _listenToAll, modelica_metatype _port);
 static const MMC_DEFSTRUCTLIT(boxvar_lit_ZeroMQ_initialize,2,0) {(void*) boxptr_ZeroMQ_initialize,0}};
 #define boxvar_ZeroMQ_initialize MMC_REFSTRUCTLIT(boxvar_lit_ZeroMQ_initialize)
-extern modelica_metatype ZeroMQ_initialize(const char* /*_fileSuffix*/);
+extern modelica_metatype ZeroMQ_initialize(const char* /*_fileSuffix*/, int /*_listenToAll*/, int /*_port*/);
 #ifdef __cplusplus
 }
 #endif

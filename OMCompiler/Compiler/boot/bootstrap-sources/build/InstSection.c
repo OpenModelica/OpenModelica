@@ -372,8 +372,8 @@ static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT155,2,3) {&Gettext_TranslatableCont
 #define _OMC_LIT155 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT155)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT156,5,3) {&ErrorTypes_Message_MESSAGE__desc,MMC_IMMEDIATE(MMC_TAGFIXNUM(10)),_OMC_LIT0,_OMC_LIT1,_OMC_LIT155}};
 #define _OMC_LIT156 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT156)
-#define _OMC_LIT157_data "The standard says that initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition %s."
-static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT157,139,_OMC_LIT157_data);
+#define _OMC_LIT157_data "initial() may only be used as a when condition (when initial() or when {..., initial(), ...}), but got condition ‘%s‘."
+static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT157,122,_OMC_LIT157_data);
 #define _OMC_LIT157 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT157)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT158,2,3) {&Gettext_TranslatableContent_gettext__desc,_OMC_LIT157}};
 #define _OMC_LIT158 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT158)
