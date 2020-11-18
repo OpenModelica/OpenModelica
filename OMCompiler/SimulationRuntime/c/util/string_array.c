@@ -471,31 +471,6 @@ void array_alloc_scalar_string_array(string_array_t* dest, int n,
     va_end(ap);
 }
 
-modelica_string* string_array_element_addr1(const string_array_t * source,int ndims,
-                                              int dim1)
-{
-    return string_ptrget(source, dim1 - 1);
-}
-
-modelica_string* string_array_element_addr2(const string_array_t * source,int ndims,
-                                              int dim1,int dim2)
-{
-    return string_ptrget(source, ((dim1 - 1) * source->dim_size[1]) + (dim2 - 1));
-}
-
-modelica_string* string_array_element_addr(const string_array_t * source,
-                                             int ndims,...)
-{
-    va_list ap;
-    modelica_string* tmp;
-
-    va_start(ap,ndims);
-    tmp = string_ptrget(source, calc_base_index_va(source, ndims, ap));
-    va_end(ap);
-
-    return tmp;
-}
-
 
 /* function: cat_string_array
  *

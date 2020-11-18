@@ -152,13 +152,6 @@ extern void array_scalar_string_array(string_array_t* dest,int n,
 extern void array_alloc_scalar_string_array(string_array_t* dest,int n,
                                             modelica_string first,...);
 
-extern modelica_string* string_array_element_addr(const string_array_t * source,int ndims,
-                                                    ...);
-extern modelica_string* string_array_element_addr1(const string_array_t * source,int ndims,
-                                                     int dim1);
-extern modelica_string* string_array_element_addr2(const string_array_t * source,int ndims,
-                                                     int dim1,int dim2);
-
 extern void cat_string_array(int k,string_array_t* dest, int n,
                              const string_array_t* first,...);
 extern void cat_alloc_string_array(int k,string_array_t* dest, int n,
