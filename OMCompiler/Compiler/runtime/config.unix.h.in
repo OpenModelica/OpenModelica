@@ -23,8 +23,13 @@
 #define DEFAULT_CFLAGS "@RUNTIMECFLAGS@ ${MODELICAUSERCFLAGS}"
 
 #define CONFIG_LPSOLVEINC "@LPSOLVEINC@"
+
+/* Define as HAVE_LAPACK if we have lapack support*/
+@HAVE_LAPACK@
+/* Define as HAVE_LAPACK_DEPRECATED if we have deprecated lapack functions (v < 3.6)*/
+@HAVE_LAPACK_DEPRECATED@
+
 @NO_LPLIB@
-@NO_LAPACK@
 @NO_FMIL@
 
 #define CONFIG_DEFAULT_OPENMODELICAHOME "@prefix@"

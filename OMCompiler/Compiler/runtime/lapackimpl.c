@@ -79,6 +79,8 @@ extern "C" {
 #define strncasecmp strnicmp
 #endif
 
+#ifdef HAVE_LAPACK
+
 #ifdef HAVE_LAPACK_DEPRECATED
 
 extern int dgeqpf_(integer *m, integer *n, doublereal *a, integer *lda,
@@ -95,8 +97,6 @@ extern int dgelsx_(integer *m, integer *n, integer *nrhs, doublereal *a,
   integer *rank, doublereal *work, integer *info);
 
 #endif
-
-#ifndef NO_LAPACK
 
 extern int dgeev_(const char *jobvl, const char *jobvr, integer *n,
   doublereal *a, integer *lda, doublereal *wr, doublereal *wi, doublereal *vl,
@@ -315,7 +315,7 @@ void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, i
     int LDVL, int LDVR, void *inWORK, int LWORK, void **outA, void **WR,
     void **WI, void **VL, void **VR, void **outWORK, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer n, lda, ldvl, ldvr, lwork, info = 0;
   double *a, *wr, *wi, *vl, *vr, *work;
 
@@ -407,7 +407,7 @@ void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
     int LDA, void *inB, int LDB, void *inWORK, int LWORK, void **outA,
     void **outB, void **outWORK, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer m, n, nrhs, lda, ldb, lwork, info = 0;
   double *a, *b, *work;
 
@@ -479,7 +479,7 @@ void LapackImpl__dgelsy(int M, int N, int NRHS, void *inA, int LDA,
     void *inB, int LDB, void *inJPVT, double rcond, void *inWORK, int LWORK,
     void **outA, void **outB, void **outJPVT, int *RANK, void **outWORK, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer m, n, nrhs, lda, ldb, rank = 0, info = 0, lwork;
   double *a, *b, *work;
   integer *jpvt;
@@ -517,7 +517,7 @@ void LapackImpl__dgelsy(int M, int N, int NRHS, void *inA, int LDA,
 void LapackImpl__dgesv(int N, int NRHS, void *inA, int LDA, void *inB,
     int LDB, void **outA, void **IPIV, void **outB, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer n, nrhs, lda, ldb, info = 0;
   integer *ipiv;
   double *a, *b;
@@ -551,7 +551,7 @@ void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA,
     void **outA, void **outB, void **outC, void **outD, void **outX,
     void **outWORK, int *outINFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer m, n, p, lda, ldb, lwork, info = 0;
   double *a, *b, *c, *d, *x, *work;
 
@@ -594,7 +594,7 @@ void LapackImpl__dgtsv(int N, int NRHS, void *inDL, void *inD, void *inDU,
     void *inB, int LDB, void **outDL, void **outD, void **outDU, void **outB,
     int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer n, nrhs, ldb, info = 0;
   double *dl, *d, *du, *b;
 
@@ -628,7 +628,7 @@ void LapackImpl__dgbsv(int N, int KL, int KU, int NRHS, void *inAB,
     int LDAB, void *inB, int LDB, void **outAB, void **IPIV, void **outB,
     int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer n, kl, ku, nrhs, ldab, ldb, info = 0;
   double *ab, *b;
   integer *ipiv;
@@ -663,7 +663,7 @@ void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void 
     int LDA, int LDU, int LDVT, void *inWORK, int LWORK, void **outA,
     void **S, void **U, void **VT, void **outWORK, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer m, n, lda, ldu, ldvt, lwork, lds, ucol = 0, info = 0;
   double *a, *s, *u = NULL, *vt, *work;
 
@@ -707,7 +707,7 @@ void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void 
 void LapackImpl__dgetrf(int M, int N, void *inA, int LDA, void **outA,
     void **IPIV, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer m, n, lda, ldipiv, info = 0;
   double *a;
   integer *ipiv;
@@ -736,7 +736,7 @@ void LapackImpl__dgetrf(int M, int N, void *inA, int LDA, void **outA,
 void LapackImpl__dgetrs(const char *trans, int N, int NRHS, void *inA, int LDA,
     void *IPIV, void *inB, int LDB, void **outB, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer n, nrhs, lda, ldb, info = 0;
   double *a, *b;
   integer *ipiv;
@@ -766,7 +766,7 @@ void LapackImpl__dgetrs(const char *trans, int N, int NRHS, void *inA, int LDA,
 void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
     int LWORK, void **outA, void **outWORK, int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer n, lda, lwork, info = 0;
   double *a, *work;
   integer *ipiv;
@@ -832,7 +832,7 @@ void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA,
     void *TAU, void *inWORK, int LWORK, void **outA, void **outWORK,
     int *INFO)
 {
-#ifndef NO_LAPACK
+#ifdef HAVE_LAPACK
   integer m, n, k, lda, lwork, info = 0;
   double *a, *tau, *work;
 

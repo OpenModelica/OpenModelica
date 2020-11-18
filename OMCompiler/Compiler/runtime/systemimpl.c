@@ -1913,18 +1913,14 @@ static int SystemImpl__uriToClassAndPath(const char *uri, const char **scheme, c
   return 1;
 }
 
-#ifdef NO_LAPACK
-int SystemImpl__dgesv(void *lA, void *lB, void **res)
-{
-  MMC_THROW();
-}
-#else
 /* adrpo 2011-06-23
  * extern definition to dgesv_ from -llapack
  * as we do not link with -lsim and the one
  * in matrix.h got renamed to _omc_dgesv_ to
  * avoid name clashes!
  */
+#ifdef HAVE_LAPACK
+
 extern int dgesv_(integer *n, integer *nrhs, doublereal *a, integer *lda, integer *ipiv, doublereal *b, integer *ldb, integer *info);
 
 int SystemImpl__dgesv(void *lA, void *lB, void **res)
@@ -1965,6 +1961,12 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
   }
   *res = tmp;
   return info;
+}
+
+#else
+int SystemImpl__dgesv(void *lA, void *lB, void **res)
+{
+  MMC_THROW();
 }
 #endif
 

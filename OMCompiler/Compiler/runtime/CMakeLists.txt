@@ -4,9 +4,12 @@ find_package(Iconv REQUIRED)
 
 if(OMC_USE_LAPACK)
   find_package(LAPACK REQUIRED)
+
+  # Check if our lapack version have the deprecated functions.
+  set(CMAKE_REQUIRED_LIBRARIES_OLD ${CMAKE_REQUIRED_LIBRARIES})
   set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES})
-  check_function_exists(dgeqpf_ HAVE_LAPACK_DEPRECATED)
-  message(STATUS ${HAVE_LAPACK_DEPRECATED})
+  check_function_exists(dgeqpf_ OMC_HAVE_LAPACK_DEPRECATED)
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_OLD})
 endif()
 
 
@@ -81,8 +84,6 @@ endif()
 
 if(OMC_USE_LAPACK)
   target_link_libraries(omcruntime PUBLIC ${LAPACK_LIBRARIES})
-else()
-  target_compile_definitions(omcruntime PRIVATE NO_LAPACK)
 endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
@@ -223,7 +224,10 @@ endif()
 set(LPSOLVEINC "lpsolve/lp_lib.h")
 
 if(LAPACK_FOUND)
-  set(NO_LAPACK "#define HAVE_LAPACK_DEPRECATED 1")
+  set(HAVE_LAPACK "#define HAVE_LAPACK")
+  if(OMC_HAVE_LAPACK_DEPRECATED)
+    set(HAVE_LAPACK_DEPRECATED "#define HAVE_LAPACK_DEPRECATED")
+  endif()
 endif()
 
 # set(prefix ${CMAKE_INSTALL_PREFIX})
