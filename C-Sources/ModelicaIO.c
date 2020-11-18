@@ -37,6 +37,10 @@
       Modelica.Utilities.Streams.writeRealMatrix
 
    Changelog:
+      July 08, 2020: by Thomas Beutlich
+                     Improved error message if reading text file with zero bytes
+                     (ticket #3603)
+
       Jan. 15, 2018: by Thomas Beutlich, ESI ITI GmbH
                      Added support to ignore UTF-8 BOM if reading text file
                      (ticket #2404)
@@ -670,7 +674,7 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
     unsigned long nCol = 0;
     unsigned long lineNo = 1;
     const unsigned char txtHeader[2] = { 0x23,0x31 };
-    const unsigned char bomHeader[3] = { 0xef,0xbb,0xbf };
+    const unsigned char utf8BOM[3] = { 0xef,0xbb,0xbf };
 #if defined(NO_LOCALE)
     const char * const dec = ".";
 #elif defined(_MSC_VER) && _MSC_VER >= 1400
@@ -696,7 +700,7 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
     }
 
     /* Read file header */
-    if ((readError = readLine(&buf, &bufLen, fp)) != 0) {
+    if ((readError = readLine(&buf, &bufLen, fp)) == EOF) {
         free(buf);
         fclose(fp);
         if (readError < 0) {
@@ -709,9 +713,9 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
 
     header = buf;
     /* Ignore optional UTF-8 BOM */
-    if (0 == memcmp(buf, bomHeader, sizeof(bomHeader)))
+    if (0 == memcmp(buf, utf8BOM, sizeof(utf8BOM)))
     {
-        header += sizeof(bomHeader);
+        header += sizeof(utf8BOM);
     }
 
     /* Expected file header format: "#1" */
@@ -729,8 +733,8 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
             free(buf);
             ModelicaFormatError(
                 "Error reading format and version information in first "
-                "line of file \"%s\": \"#1\" expected, but \"%c\" found.\n",
-                fileName, c0);
+                "line of file \"%s\": \"#1\" expected, but \"0x%02x\" found.\n",
+                fileName, (int)(c0 & 0xff));
         }
         else {
             char c0 = header[0];
@@ -738,8 +742,8 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
             free(buf);
             ModelicaFormatError(
                 "Error reading format and version information in first "
-                "line of file \"%s\": \"#1\" expected, but \"%c%c\" "
-                "found.\n", fileName, c0, c1);
+                "line of file \"%s\": \"#1\" expected, but \"0x%02x0x%02x\" "
+                "found.\n", fileName, (int)(c0 & 0xff), (int)(c1 & 0xff));
         }
         return NULL;
     }
@@ -953,7 +957,7 @@ static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tabl
                         break;
                     }
                     if (1 == tableReadPartial) {
-                        ModelicaFormatMessage(
+                        ModelicaFormatWarning(
                             "The table dimensions of matrix \"%s(%lu,%lu)\" from file "
                             "\"%s\" do not match the actual table size (line %lu).\n",
                             tableName, nRow, nCol, fileName, lineNoPartial);
@@ -1028,6 +1032,9 @@ static int readLine(_In_ char** buf, _In_ int* bufLen, _In_ FILE* fp) {
         if ((p = strchr(*buf, '\n')) != NULL) {
             *p = '\0';
             return 0;
+        }
+        if ((p = memchr(*buf, 0, (size_t)(*bufLen - 1))) != NULL) {
+            return 1;
         }
 
         oldBufLen = *bufLen;

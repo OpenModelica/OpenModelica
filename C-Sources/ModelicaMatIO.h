@@ -54,13 +54,13 @@
 #define MATIO_MINOR_VERSION 5
 
 /* Matio release level number */
-#define MATIO_RELEASE_LEVEL 17
+#define MATIO_RELEASE_LEVEL 19
 
 /* Matio version number */
-#define MATIO_VERSION 1517
+#define MATIO_VERSION 1519
 
 /* Matio version string */
-#define MATIO_VERSION_STR "1.5.17"
+#define MATIO_VERSION_STR "1.5.19"
 
 /* Default file format */
 #define MAT_FT_DEFAULT MAT_FT_MAT5
@@ -335,26 +335,49 @@ typedef struct matvar_t {
  * @ingroup MAT
  */
 typedef struct mat_sparse_t {
-    int nzmax;               /**< Maximum number of non-zero elements */
-    mat_int32_t *ir;         /**< Array of size nzmax where ir[k] is the row of
+    mat_uint32_t  nzmax;     /**< Maximum number of non-zero elements */
+    mat_uint32_t *ir;        /**< Array of size nzmax where ir[k] is the row of
                                *  data[k].  0 <= k <= nzmax
                                */
-    int nir;                 /**< number of elements in ir */
-    mat_int32_t *jc;         /**< Array size N+1 (N is number of columns) with
+    mat_uint32_t  nir;       /**< number of elements in ir */
+    mat_uint32_t *jc;        /**< Array size N+1 (N is number of columns) with
                                *  jc[k] being the index into ir/data of the
                                *  first non-zero element for row k.
                                */
-    int   njc;               /**< Number of elements in jc */
-    int   ndata;             /**< Number of complex/real data values */
+    mat_uint32_t  njc;       /**< Number of elements in jc */
+    mat_uint32_t  ndata;     /**< Number of complex/real data values */
     void *data;              /**< Array of data elements */
 } mat_sparse_t;
+
+
+/** @cond 0 */
+#define MATIO_E_NO_ERROR 0
+#define MATIO_E_UNKNOWN_ERROR 1
+#define MATIO_E_GENERIC_READ_ERROR 2
+#define MATIO_E_GENERIC_WRITE_ERROR 3
+#define MATIO_E_INDEX_TOO_BIG 4
+#define MATIO_E_FILE_FORMAT_VIOLATION 5
+#define MATIO_E_FAIL_TO_IDENTIFY 6
+#define MATIO_E_BAD_ARGUMENT 7
+#define MATIO_E_OUTPUT_BAD_DATA 8
+#define MATIO_E_OPERATION_NOT_SUPPORTED 13
+#define MATIO_E_OUT_OF_MEMORY 14
+#define MATIO_E_BAD_VARIABLE_NAME 15
+#define MATIO_E_OPERATION_PROHIBITED_IN_WRITE_MODE 16
+#define MATIO_E_OPERATION_PROHIBITED_IN_READ_MODE 17
+#define MATIO_E_WRITE_VARIABLE_DOES_NOT_EXIST 18
+#define MATIO_E_READ_VARIABLE_DOES_NOT_EXIST 19
+#define MATIO_E_FILESYSTEM_COULD_NOT_OPEN 20
+#define MATIO_E_FILESYSTEM_COULD_NOT_OPEN_TEMPORARY 21
+#define MATIO_E_FILESYSTEM_COULD_NOT_REOPEN 22
+#define MATIO_E_BAD_OPEN_MODE 23
+#define MATIO_E_FILESYSTEM_ERROR_ON_CLOSE 24
+/** @endcond */
 
 /* Library function */
 MATIO_EXTERN void Mat_GetLibraryVersion(int *major,int *minor,int *release);
 
 /* io.c */
-MATIO_EXTERN char  *strdup_vprintf(const char *format, va_list ap) MATIO_FORMATATTR_VPRINTF;
-MATIO_EXTERN char  *strdup_printf(const char *format, ...) MATIO_FORMATATTR_PRINTF1;
 MATIO_EXTERN void   Mat_Critical(const char *format, ...) MATIO_FORMATATTR_PRINTF1;
 MATIO_EXTERN void   Mat_Warning(const char *format, ...) MATIO_FORMATATTR_PRINTF1;
 MATIO_EXTERN size_t Mat_SizeOf(enum matio_types data_type);

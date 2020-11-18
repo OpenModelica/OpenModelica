@@ -30,6 +30,10 @@
 */
 
 /* Changelog:
+      Nov. 11, 2020: by Thomas Beutlich
+                     Added getcwd fallback in ModelicaInternal_fullPathName if
+                     realpath fails for non-existing path (ticket #3660)
+
       Nov. 13, 2019: by Thomas Beutlich
                      Utilized blockwise I/O in ModelicaInternal_copyFile
                      (ticket #3229)
@@ -592,57 +596,70 @@ Modelica_ERROR:
 _Ret_z_ const char* ModelicaInternal_fullPathName(_In_z_ const char* name) {
     /* Get full path name of file or directory */
 
-#if defined(_WIN32) || (_BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || (_POSIX_VERSION >= 200112L))
+#if defined(_WIN32)
     char* fullName;
     char localbuf[BUFFER_LENGTH];
-#if (_BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || _POSIX_VERSION >= 200112L)
-    /* realpath availability: 4.4BSD, POSIX.1-2001. Using the behaviour of NULL: POSIX.1-2008 */
-    char* tempName = realpath(name, localbuf);
-#else
     char* tempName = _fullpath(localbuf, name, sizeof(localbuf));
-#endif
     if (tempName == NULL) {
         ModelicaFormatError("Not possible to construct full path name of \"%s\"\n%s",
             name, strerror(errno));
         return "";
     }
+    fullName = ModelicaAllocateString(strlen(tempName));
+    strcpy(fullName, tempName);
+    ModelicaConvertToUnixDirectorySeparator(fullName);
+    return fullName;
+#elif (_BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || _POSIX_VERSION >= 200112L)
+    char* fullName;
+    char localbuf[BUFFER_LENGTH];
+    size_t len;
+    /* realpath availability: 4.4BSD, POSIX.1-2001. Using the behaviour of NULL: POSIX.1-2008 */
+    char* tempName = realpath(name, localbuf);
+    if (tempName == NULL) {
+        goto FALLBACK_getcwd;
+    }
     fullName = ModelicaAllocateString(strlen(tempName) + 1);
     strcpy(fullName, tempName);
     ModelicaConvertToUnixDirectorySeparator(fullName);
-#if (_BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || _POSIX_VERSION >= 200112L)
-    {
-        /* In case of realpath: Retain trailing slash to match _fullpath behaviour */
-        size_t len = strlen(name);
-        if (len > 0 && '/' == name[len - 1]) {
-            strcat(fullName, "/");
-        }
+    /* Retain trailing slash to match _fullpath behaviour */
+    len = strlen(name);
+    if (len > 0 && '/' == name[len - 1]) {
+        strcat(fullName, "/");
     }
-#endif
+    return fullName;
 #elif defined(_POSIX_)
     char* fullName;
     char localbuf[BUFFER_LENGTH];
-    /* No such system call in _POSIX_ available (except realpath above) */
-    char* cwd = getcwd(localbuf, sizeof(localbuf));
-    if (cwd == NULL) {
-        ModelicaFormatError("Not possible to get current working directory:\n%s",
-            strerror(errno));
-    }
-    fullName = ModelicaAllocateString(strlen(cwd) + strlen(name) + 1);
-    if (name[0] != '/') {
-        /* Any name beginning with "/" is regarded as already being a full path. */
-        strcpy(fullName, cwd);
-        strcat(fullName, "/");
-    }
-    else {
-        fullName[0] = '\0';
-    }
-    strcat(fullName, name);
 #else
     char* fullName = "";
     ModelicaNotExistError("ModelicaInternal_fullPathName");
+    return fullName;
 #endif
 
+#if (_BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || _POSIX_VERSION >= 200112L)
+FALLBACK_getcwd:
+#endif
+#if (_BSD_SOURCE || _XOPEN_SOURCE >= 500 || _XOPEN_SOURCE && _XOPEN_SOURCE_EXTENDED || _POSIX_VERSION >= 200112L || _POSIX_)
+    {
+        /* No such system call in _POSIX_ available (except realpath for existing paths) */
+        char* cwd = getcwd(localbuf, sizeof(localbuf));
+        if (cwd == NULL) {
+            ModelicaFormatError("Not possible to get current working directory:\n%s",
+                strerror(errno));
+        }
+        fullName = ModelicaAllocateString(strlen(cwd) + strlen(name) + 1);
+        if (name[0] != '/') {
+            /* Any name beginning with "/" is regarded as already being a full path. */
+            strcpy(fullName, cwd);
+            strcat(fullName, "/");
+        }
+        else {
+            fullName[0] = '\0';
+        }
+        strcat(fullName, name);
+    }
     return fullName;
+#endif
 }
 
 _Ret_z_ const char* ModelicaInternal_temporaryFileName(void) {

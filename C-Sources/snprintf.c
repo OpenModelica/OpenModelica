@@ -222,6 +222,59 @@
 #undef HAVE_VASPRINTF
 #endif
 
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1600
+#define HAVE_STDINT_H 1
+#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#define HAVE_STDINT_H 1
+#else
+#undef HAVE_STDINT_H
+#endif
+#elif defined(__GNUC__) && !defined(__VXWORKS__)
+#define HAVE_STDINT_H 1
+#else
+#undef HAVE_STDINT_H
+#endif
+
+/* Define to 1 if the system has the type `intmax_t'. */
+#if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1600
+#define HAVE_INTMAX_T 1
+#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#define HAVE_INTMAX_T 1
+#else
+#undef HAVE_INTMAX_T
+#endif
+#elif defined(__GNUC__) && !defined(__VXWORKS__)
+#define HAVE_INTMAX_T 1
+#else
+#undef HAVE_INTMAX_T
+#endif
+
+/* Define to 1 if the system has the type `uintmax_t'. */
+#if defined(_WIN32)
+#if defined(_MSC_VER) && _MSC_VER >= 1600
+#define HAVE_UINTMAX_T 1
+#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
+#define HAVE_UINTMAX_T 1
+#else
+#undef HAVE_UINTMAX_T
+#endif
+#elif defined(__GNUC__) && !defined(__VXWORKS__)
+#define HAVE_UINTMAX_T 1
+#else
+#undef HAVE_UINTMAX_T
+#endif
+
+/* Define to 1 if the system has the type `uintptr_t'. */
+#if defined(__LCC__) || (defined(_MSC_VER) && _MSC_VER <= 1200)
+#undef HAVE_UINTPTR_T
+#else
+#define HAVE_UINTPTR_T 1
+#endif
+
 #if !HAVE_SNPRINTF || !HAVE_VSNPRINTF || !HAVE_ASPRINTF || !HAVE_VASPRINTF
 #include <stdio.h>  /* For NULL, size_t, vsnprintf(3), and vasprintf(3). */
 #ifdef VA_START

@@ -30,6 +30,10 @@
 */
 
 /* Changelog:
+      Mar. 15, 2020: by Thomas Beutlich
+                     Improved fault-tolerance of ModelicaStrings_substring w.r.t.
+                     index arguments (ticket #3503)
+
       Jun. 16, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Utilized hash macros of uthash.h for ModelicaStrings_hashString
                      (ticket #2250)
@@ -100,40 +104,39 @@
 
 _Ret_z_ const char* ModelicaStrings_substring(_In_z_ const char* string,
                                       int startIndex, int endIndex) {
-    /* Return string1(startIndex:endIndex) if endIndex >= startIndex,
-       or return string1(startIndex:startIndex), if endIndex = 0.
-       An assert is triggered, if startIndex/endIndex are not valid.
+    /* Return string(startIndex:endIndex) if endIndex >= startIndex,
+       or return string(startIndex:startIndex), if endIndex < 0.
+       Warnings are triggered, if startIndex/endIndex are not valid.
      */
     char* substring;
-    int len1 = (int) strlen(string);
-    int len2;
+    int len = ModelicaStrings_length(string);
 
     /* Check arguments */
-    if ( startIndex < 1 ) {
-        ModelicaFormatError("Wrong call of Utilities.Strings.substring:\n"
-                            "  startIndex = %d (has to be > 0).\n"
-                            "  string     = \"%s\"\n", startIndex, string);
+    if (startIndex < 1) {
+        ModelicaFormatWarning("Non-positive startIndex (= %d) of Utilities.Strings.substring "
+                              "was set to 1.\n", startIndex);
+        startIndex = 1;
     }
-    else if ( endIndex == -999 ) {
+    else if (startIndex > len) {
+        return "";
+    }
+    if (endIndex < 0) {
+        ModelicaFormatWarning("Negative endIndex (= %d) of Utilities.Strings.substring "
+                              "was set to %d.\n", endIndex, startIndex);
         endIndex = startIndex;
     }
-    else if ( endIndex < startIndex ) {
-        ModelicaFormatError("Wrong call of  Utilities.Strings.substring:\n"
-                            "  startIndex = %d\n"
-                            "  endIndex   = %d (>= startIndex required)\n"
-                            "  string     = \"%s\"\n", startIndex, endIndex, string);
+    else if (endIndex < startIndex) {
+        return "";
     }
-    else if ( endIndex > len1 ) {
-        ModelicaFormatError("Wrong call of Utilities.Strings.substring:\n"
-                            "  endIndex = %d (<= %d required (=length(string)).\n"
-                            "  string   = \"%s\"\n", endIndex, len1, string);
+    else if (endIndex > len) {
+        endIndex = len;
     }
 
     /* Allocate memory and copy string */
-    len2 = endIndex - startIndex + 1;
-    substring = ModelicaAllocateString((size_t)len2);
-    strncpy(substring, &string[startIndex-1], (size_t)len2);
-    substring[len2] = '\0';
+    len = endIndex - startIndex + 1;
+    substring = ModelicaAllocateString((size_t)len);
+    strncpy(substring, &string[startIndex-1], (size_t)len);
+    substring[len] = '\0';
     return substring;
 }
 
@@ -160,10 +163,10 @@ int ModelicaStrings_compare(_In_z_ const char* string1, _In_z_ const char* strin
         result = (int)(tolower((unsigned char)*string1)) - (int)(tolower((unsigned char)*string2));
     }
 
-    if ( result < 0 ) {
+    if (result < 0) {
         result = 1;
     }
-    else if ( result == 0 ) {
+    else if (result == 0) {
         result = 2;
     }
     else {
