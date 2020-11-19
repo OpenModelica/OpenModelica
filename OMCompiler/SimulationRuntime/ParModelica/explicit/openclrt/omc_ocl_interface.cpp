@@ -33,7 +33,7 @@
 /*
 
  This file contains interfacing functions. Theses are the
- actuall functions that are available for calling by the
+ actual functions that are available for calling by the
  code generated from Modelica source.
  If a function is not called from the generated code please
  don not add it here.
@@ -49,7 +49,7 @@
 
 
 
-#include <omc_ocl_interface.h>
+#include "omc_ocl_interface.h"
 
 
 size_t modelica_array_nr_of_elements(base_array_t *a){
@@ -141,7 +141,7 @@ size_t ocl_calc_base_index_va(base_array_t *source, int ndims, va_list ap){
 
 //functions for allocating device arrays. these should be the entry points to allocate
 //device arrays. the first one is a base array which only initializes the info of the array.
-//the rest allocate the space for the actuall data
+//the rest allocate the space for the actual data
 size_t alloc_device_base_array(device_array *dest, int ndims, va_list ap){
 
     int i;
@@ -217,46 +217,27 @@ void free_device_array(base_array_t* dest){
 
 
 
-void copy_real_array_data(device_real_array dev_array, real_array_t* host_array_ptr){
+void simple_array_copy_data(device_array dev_array, base_array_t* host_array_ptr, size_t elem_sze){
     assert(array_shape_eq(host_array_ptr, &dev_array));
     int nr_of_elm = device_array_nr_of_elements(&dev_array);
-    ocl_copy_back_to_host_real(dev_array.data, (modelica_real* )host_array_ptr->data, nr_of_elm);
+    ocl_copy_back_to_host(dev_array.data, host_array_ptr->data, elem_sze, nr_of_elm);
 }
 
-void copy_real_array_data(real_array_t host_array, device_real_array* dev_array_ptr){
+void simple_array_copy_data(base_array_t host_array, device_array* dev_array_ptr, size_t elem_sze){
     assert(array_shape_eq(&host_array, dev_array_ptr));
     int nr_of_elm = modelica_array_nr_of_elements(&host_array);
-    ocl_copy_to_device_real(dev_array_ptr->data, (modelica_real* )host_array.data, nr_of_elm);
+    ocl_copy_to_device(dev_array_ptr->data, host_array.data, elem_sze, nr_of_elm);
 }
 
-void copy_real_array_data(device_real_array dev_array1, device_real_array* dev_array_ptr2){
+void simple_array_copy_data(device_array dev_array1, device_array* dev_array_ptr2, size_t elem_sze){
     assert(array_shape_eq(&dev_array1, dev_array_ptr2));
     int nr_of_elm = device_array_nr_of_elements(&dev_array1);
-    ocl_copy_device_to_device_real(dev_array1.data, dev_array_ptr2->data, nr_of_elm);
-}
-
-void copy_integer_array_data(device_integer_array dev_array, integer_array_t* host_array_ptr){
-    assert(array_shape_eq(host_array_ptr, &dev_array));
-    int nr_of_elm = device_array_nr_of_elements(&dev_array);
-    ocl_copy_back_to_host_integer(dev_array.data, (modelica_integer* )host_array_ptr->data, nr_of_elm);
-}
-
-void copy_integer_array_data(integer_array_t host_array, device_integer_array* dev_array_ptr){
-    assert(array_shape_eq(&host_array, dev_array_ptr));
-    int nr_of_elm = modelica_array_nr_of_elements(&host_array);
-    ocl_copy_to_device_integer(dev_array_ptr->data, (modelica_integer* )host_array.data, nr_of_elm);
-}
-
-
-void copy_integer_array_data(device_integer_array dev_array1, device_integer_array* dev_array_ptr2){
-    assert(array_shape_eq(&dev_array1, dev_array_ptr2));
-    int nr_of_elm = device_array_nr_of_elements(&dev_array1);
-    ocl_copy_device_to_device_integer(dev_array1.data, dev_array_ptr2->data, nr_of_elm);
+    ocl_copy_device_to_device(dev_array1.data, dev_array_ptr2->data, elem_sze, nr_of_elm);
 }
 
 
 
-// //functions used for copying scalars. Scalars in the normal(serial C) code genertation
+// //functions used for copying scalars. Scalars in the normal(serial C) code generation
 // //of modelica are copied by assignment (a = b). However to be able to copy them b'n
 // //GPU and host CPU we need to change the assignments to copy functions.
 // void copy_assignment_helper_integer(modelica_integer* v1, modelica_integer* v2){
@@ -308,7 +289,7 @@ void swap_and_release(device_array* lhs, device_array* rhs){
     lhs->info = rhs->info;
 }
 
-//simple assignemnt works fine for srial arrays.
+//simple assignment works fine for serial arrays.
 void swap_and_release(base_array_t* lhs, base_array_t* rhs){
     *lhs = *rhs;
 }

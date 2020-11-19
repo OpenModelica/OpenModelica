@@ -33,7 +33,7 @@
 /*
 
  This file contains interfacing functions. Theses are the
- actuall functions that are available for calling by the
+ actual functions that are available for calling by the
  code generated from Modelica source.
  If a function is not called from the generated code please
  don not add it here.
@@ -66,7 +66,7 @@
 
 
 // sets the number of threads for subsequent parallel operations
-// arguments are arrays of work_dim size specifiying each workgroup dimension
+// arguments are arrays of work_dim size specifying each workgroup dimension
 void ocl_set_num_threads(integer_array_t global_threads_in, integer_array_t local_threads_in);
 
 
@@ -101,20 +101,14 @@ void alloc_real_array(device_integer_array *dest, int ndims, ...);
 
 void alloc_device_local_real_array(device_local_real_array *dest, int ndims, ...);
 
-void copy_real_array_data(device_real_array dev_array_ptr, real_array_t* host_array_ptr);
+void simple_array_copy_data(device_array dev_array_ptr, base_array_t* host_array_ptr, size_t elem_size);
 
-void copy_real_array_data(real_array_t host_array_ptr, device_real_array* dev_array_ptr);
+void simple_array_copy_data(base_array_t host_array_ptr, device_array* dev_array_ptr, size_t elem_size);
 
-void copy_real_array_data(device_real_array dev_array_ptr1, device_real_array* dev_array_ptr2);
-
-void copy_integer_array_data(device_integer_array dev_array_ptr, integer_array_t* host_array_ptr);
-
-void copy_integer_array_data(integer_array_t host_array_ptr, device_integer_array* dev_array_ptr);
-
-void copy_integer_array_data(device_integer_array dev_array_ptr1, device_integer_array* dev_array_ptr2);
+void simple_array_copy_data(device_array dev_array_ptr1, device_array* dev_array_ptr2, size_t elem_size);
 
 
-// //functions used for copying scalars. Scalars in the normal(serial C) code genertation
+// //functions used for copying scalars. Scalars in the normal(serial C) code generation
 // //of modelica are copied by assignment (a = b). However to be able to copy them b'n
 // //GPU and host CPU we need to change the assignments to copy functions.
 // void copy_assignment_helper_integer(modelica_integer* i1, modelica_integer* i2);
@@ -180,7 +174,7 @@ void print_array_info(device_real_array* arr);
 //prints array. useful for debugging.
 void print_array(real_array_t* arr);
 
-//ATTENTION: printing a device array means copying back and then printing. Exprensive Operation.
+//ATTENTION: printing a device array means copying back and then printing. Expensive Operation.
 //void print_array(device_real_array* dev_arr);
 
 

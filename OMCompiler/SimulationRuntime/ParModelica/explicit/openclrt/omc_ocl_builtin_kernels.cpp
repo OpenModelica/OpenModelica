@@ -91,7 +91,7 @@ void ocl_real_arr_arr_arr(const char* kernel_name, modelica_real* src_1, modelic
     c1 = clock();
     printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
 
-    ocl_copy_back_to_host_real(device_array_output, dest, size_);
+    ocl_copy_back_to_host(device_array_output, dest, sizeof(modelica_real), size_);
 
     clReleaseMemObject(device_array_1);
     clReleaseMemObject(device_array_2);
@@ -148,7 +148,7 @@ void ocl_real_arr_arr_sca(const char* kernel_name, modelica_real* src_1, modelic
     c1 = clock();
     printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
 
-    ocl_copy_back_to_host_real(result, dest, 1);
+    ocl_copy_back_to_host(result, dest, sizeof(modelica_real), 1);
 
 
     clReleaseMemObject(device_array_1);
@@ -198,7 +198,7 @@ void ocl_real_arr_sca_arr(const char* kernel_name, modelica_real* src_1, modelic
     c1 = clock();
     printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
 
-    ocl_copy_back_to_host_real(device_array_output, dest, size_);
+    ocl_copy_back_to_host(device_array_output, dest, sizeof(modelica_real), size_);
 
 
     clReleaseMemObject(device_array_1);
@@ -247,7 +247,7 @@ void ocl_real_arr_arr(const char* kernel_name, modelica_real* src_1, modelica_re
     c1 = clock();
     printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
 
-    ocl_copy_back_to_host_real(device_array_output, dest, size_);
+    ocl_copy_back_to_host(device_array_output, dest, sizeof(modelica_real), size_);
 
 
     clReleaseMemObject(device_array_1);
@@ -296,7 +296,7 @@ void ocl_real_arr_sca(const char* kernel_name, modelica_real* src_1, modelica_re
     c1 = clock();
     printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
 
-    ocl_copy_back_to_host_real(result, dest, 1);
+    ocl_copy_back_to_host(result, dest, sizeof(modelica_real), 1);
 
 
     clReleaseMemObject(device_array_1);
@@ -348,7 +348,7 @@ void ocl_real_matrix_matrix_matrix(const char* kernel_name, modelica_real* src_1
     c1 = clock();
     printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
 
-    ocl_copy_back_to_host_real(result, dest, M*N);
+    ocl_copy_back_to_host(result, dest, sizeof(modelica_real), M*N);
 
 
     clReleaseMemObject(device_array_1);
@@ -400,7 +400,7 @@ void ocl_real_matrix_matrix_matrix2(const char* kernel_name, modelica_real* src_
     c1 = clock();
     printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
 
-    ocl_copy_back_to_host_real(result, dest, M*N);
+    ocl_copy_back_to_host(result, dest, sizeof(modelica_real), M*N);
 
 
     clReleaseMemObject(device_array_1);
@@ -453,7 +453,7 @@ void ocl_real_matrix_matrix(const char* kernel_name, modelica_real* src_1, int M
     c1 = clock();
     printf ("\telapsed CPU CLOCKS:        %f sec\n", (float) (c1-c0)/1000);
 
-    ocl_copy_back_to_host_real(result, dest, M*N);
+    ocl_copy_back_to_host(result, dest, sizeof(modelica_real), M*N);
 
 
     clReleaseMemObject(device_array_1);
