@@ -314,7 +314,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.REMOVE_SIMPLE_EQUATIONS,
   Flags.DYNAMIC_TEARING,
   Flags.SYM_SOLVER,
-  Flags.ADD_TIME_AS_STATE,
   Flags.LOOP2CON,
   Flags.FORCE_TEARING,
   Flags.SIMPLIFY_LOOPS,

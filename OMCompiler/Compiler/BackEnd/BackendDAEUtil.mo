@@ -8530,8 +8530,6 @@ algorithm
       enabledModules := "countOperations"::enabledModules;
     end if;
 
-    enabledModules := deprecatedConfigFlag(Flags.ADD_TIME_AS_STATE, enabledModules, "addTimeAsState", "postOptModules+");
-
     if 1 < Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) then
       enabledModules := "solveLinearSystem"::enabledModules;
     end if;

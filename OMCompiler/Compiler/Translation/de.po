@@ -4193,13 +4193,6 @@ msgstr ""
 msgid "Activates symbolic implicit solver (original system is not changed)."
 msgstr ""
 
-#: ../Util/Flags.mo:1165
-msgid ""
-"Experimental feature: this replaces each occurrence of variable time with a "
-"new introduced state $time with equation der($time) = 1.0\n"
-"Deprecated flag: Use --postOptModules+=addTimeAsState instead."
-msgstr ""
-
 #: ../Util/Flags.mo:1171
 msgid "linear loops --> constraints"
 msgstr ""
