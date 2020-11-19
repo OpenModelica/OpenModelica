@@ -63,10 +63,9 @@ public
     input EdgeEq edgeEq;
     output AdjacencyList<VertexT, EdgeT> al;
   protected
-    VertexT vdummy = vdummy;
-    EdgeT edummy = edummy;
+    type Indices = list<Integer>;
   algorithm
-    al := ADJACENCY_LIST(Vector.new(vdummy), Vector.new(edummy), Vector.new({}), vertexEq, edgeEq);
+    al := ADJACENCY_LIST(Vector.new<VertexT>(), Vector.new<EdgeT>(), Vector.new<Indices>(), vertexEq, edgeEq);
   end new;
 
   function addVertex
