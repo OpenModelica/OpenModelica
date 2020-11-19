@@ -33,6 +33,7 @@
 
 #include "../openmodelica.h"
 #include "base_array.h"
+#include "generic_array.h"
 #include "../gc/omc_gc.h"
 #include "omc_msvc.h"
 #include "index_spec.h"
@@ -85,9 +86,6 @@ extern void free_integer_array_data(integer_array_t* a);
 static inline void clone_integer_array_spec(const integer_array_t * source,
                                             integer_array_t* dest)
 { clone_base_array_spec(source, dest); }
-
-/* Copy integer data*/
-extern void copy_integer_array_data(const integer_array_t source, integer_array_t* dest);
 
 /* Copy integer data given memory ptr*/
 extern void copy_integer_array_data_mem(const integer_array_t source,

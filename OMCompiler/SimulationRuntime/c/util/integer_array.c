@@ -92,11 +92,6 @@ void alloc_integer_array_data(integer_array_t* a)
     a->data = integer_alloc(base_array_nr_of_elements(*a));
 }
 
-void copy_integer_array_data(const integer_array_t source, integer_array_t* dest)
-{
-    integer_array_copy_data(source,*dest);
-}
-
 void copy_integer_array_data_mem(const integer_array_t source,
                                  modelica_integer *dest)
 {
@@ -1062,7 +1057,7 @@ void exp_integer_array(const integer_array_t * a, modelica_integer n, integer_ar
     } else {
         if(n==1) {
             clone_integer_array_spec(a,dest);
-            copy_integer_array_data(*a,dest);
+            integer_array_copy_data(*a, *dest);
         } else if (n==2) {
             clone_integer_array_spec(a,dest);
             mul_integer_matrix_product(a,a,dest);
@@ -1263,7 +1258,7 @@ void transpose_integer_array(const integer_array_t * a, integer_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-        copy_integer_array_data(*a,dest);
+        integer_array_copy_data(*a, *dest);
         return;
     }
 

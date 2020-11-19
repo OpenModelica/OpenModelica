@@ -490,7 +490,7 @@ void write_integer_array(type_description *desc, const integer_array_t *arr)
            sizeof(modelica_integer) * nr_elements);
   } else {
     clone_integer_array_spec(arr, &(desc->data.int_array));
-    copy_integer_array_data(*arr, &(desc->data.int_array));
+    integer_array_copy_data(*arr, desc->data.int_array);
   }
 }
 

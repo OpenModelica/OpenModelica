@@ -34,6 +34,7 @@
 
 #include "../openmodelica.h"
 #include "base_array.h"
+#include "generic_array.h"
 #include "../gc/omc_gc.h"
 #include "index_spec.h"
 #include "omc_msvc.h"
@@ -84,9 +85,6 @@ extern void free_real_array_data(real_array_t* a);
 /* Clones data*/
 static inline void clone_real_array_spec(const real_array_t *src, real_array_t* dst)
 { clone_base_array_spec(src, dst); }
-
-/* Copy real data*/
-extern void copy_real_array_data(const real_array_t source, real_array_t* dest);
 
 /* Copy real data given memory ptr*/
 extern void copy_real_array_data_mem(const real_array_t source, modelica_real* dest);

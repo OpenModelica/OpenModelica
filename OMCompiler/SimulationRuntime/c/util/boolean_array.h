@@ -33,6 +33,7 @@
 
 #include "../openmodelica.h"
 #include "base_array.h"
+#include "generic_array.h"
 #include "index_spec.h"
 #include "omc_msvc.h"
 #include <stdarg.h>
@@ -83,9 +84,6 @@ extern void free_boolean_array_data(boolean_array_t* a);
 static inline void clone_boolean_array_spec(const boolean_array_t* src,
                                             boolean_array_t* dst)
 { clone_base_array_spec(src, dst); }
-
-/* Copy boolean data*/
-extern void copy_boolean_array_data(const boolean_array_t source, boolean_array_t* dest);
 
 /* Copy boolean data given memory ptr*/
 extern void copy_boolean_array_data_mem(const boolean_array_t source, modelica_boolean* dest);
