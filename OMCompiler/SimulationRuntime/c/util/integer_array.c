@@ -528,32 +528,6 @@ void array_alloc_scalar_integer_array(integer_array_t* dest, int n,
     va_end(ap);
 }
 
-modelica_integer* integer_array_element_addr1(const integer_array_t * source,
-                                              int ndims,int dim1)
-{
-    return integer_ptrget(source, dim1 - 1);
-}
-
-modelica_integer* integer_array_element_addr2(const integer_array_t * source,int ndims,int dim1,int dim2)
-{
-    if (dim1 < 1 || dim1 > source->dim_size[0] || dim2 < 1 || dim2 > source->dim_size[1]) {
-      throwStreamPrint(NULL, "integer_array_element_addr2: array has dimensions [%ld,%ld], got subscripts [%d,%d]", source->dim_size[1], source->dim_size[2], dim1, dim2);
-    }
-    return integer_ptrget(source, ((dim1 - 1) * source->dim_size[1]) + (dim2 - 1));
-}
-
-modelica_integer* integer_array_element_addr(const integer_array_t * source,int ndims,...)
-{
-    va_list ap;
-    m_integer* tmp;
-
-    va_start(ap,ndims);
-    tmp = integer_ptrget(source, calc_base_index_va(source, ndims, ap));
-    va_end(ap);
-
-    return tmp;
-}
-
 /* function: cat_integer_array
  *
  * Concatenates n integer arrays along the k:th dimension.

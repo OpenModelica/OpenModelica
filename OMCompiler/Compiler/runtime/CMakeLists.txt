@@ -4,6 +4,9 @@ find_package(Iconv REQUIRED)
 
 if(OMC_USE_LAPACK)
   find_package(LAPACK REQUIRED)
+  set(CMAKE_REQUIRED_LIBRARIES ${LAPACK_LIBRARIES})
+  check_function_exists(dgeqpf_ HAVE_LAPACK_DEPRECATED)
+  message(STATUS ${HAVE_LAPACK_DEPRECATED})
 endif()
 
 

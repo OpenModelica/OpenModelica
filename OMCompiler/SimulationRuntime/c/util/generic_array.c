@@ -250,21 +250,3 @@ void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t s
 }
 
 
-
-// TODO remove me. not needed anymore. superseded by generic_array_get
-// TODO: ndims is not needed to be passed here.
-void* generic_array_element_addr(const base_array_t* source, size_t sze, int ndims,...) {
-  va_list ap;
-  void* tmp;
-  va_start(ap,ndims);
-  tmp = generic_ptrget(source, calc_base_index_va(source, ndims, ap), sze);
-  va_end(ap);
-  return tmp;
-}
-
-void* generic_array_element_addr1(const base_array_t* source, size_t sze, int dim1) {
-  return generic_ptrget(source, dim1-1, sze);
-}
-
-
-

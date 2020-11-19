@@ -1062,7 +1062,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          '*((<%rec_name%>*)generic_array_element_addr(&<%res%>, sizeof(<%rec_name%>), 1, <%arrIndex%>++)) = <%reductionBodyExpr%>;'
+          '<%rec_name%>_array_get(<%res%>, 1, <%arrIndex%>++) = <%reductionBodyExpr%>;'
         case T_ARRAY(__) then
           let tmp_shape = tempDecl("vector<size_t>", &varDecls /*BUFD*/)
           let tmp_indeces = tempDecl("idx_type", &varDecls /*BUFD*/)
@@ -1135,7 +1135,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       let addr = match iter.ty
         case T_ARRAY(ty=T_COMPLEX(complexClassType = record_state)) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          '*((<%rec_name%>*)generic_array_element_addr(&<%loopVar%>, sizeof(<%rec_name%>), 1, <%firstIndex%>++))'
+          '<%rec_name%>_array_get(<%loopVar%>, 1, <%firstIndex%>++)'
         else
           '<%loopVar%>( <%firstIndex%>++)'
       <<

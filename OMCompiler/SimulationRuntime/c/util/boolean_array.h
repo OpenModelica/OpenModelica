@@ -158,10 +158,6 @@ extern void array_alloc_boolean_array(boolean_array_t* dest,int n,
 extern void array_scalar_boolean_array(boolean_array_t* dest,int n,...);
 extern void array_alloc_scalar_boolean_array(boolean_array_t* dest,int n,...);
 
-extern m_boolean* boolean_array_element_addr(const boolean_array_t* source,int ndims,...);
-extern m_boolean* boolean_array_element_addr1(const boolean_array_t* source,int ndims,int dim1);
-extern m_boolean* boolean_array_element_addr2(const boolean_array_t* source,int ndims,int dim1,int dim2);
-
 extern void cat_boolean_array(int k,boolean_array_t* dest, int n,
                        const boolean_array_t* first,...);
 extern void cat_alloc_boolean_array(int k,boolean_array_t* dest, int n,
