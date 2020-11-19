@@ -30,38 +30,7 @@
  */
 
 encapsulated uniontype Vector<T>
-"
-  This is a base class for a mutable dynamic array, which automatically
-  allocates more memory when needed. To use it, extend the package, redeclare T,
-  and give defaultValue a value. T is the type of the elements stored in the
-  array, while defaultValue is a constant of that type. The main purpose of
-  defaultValue is to allow the use of arrayCreateNoInit, which requires a dummy
-  argument to fix the type of the array. The actual value of defaultValue is not
-  used for this. defaultValue is also optionally used by resize to fill up
-  empty space when making the Vector bigger, and for overwriting deleted
-  elements if the ON_DELETION free policy is used. defaultValue should therefore
-  preferably be as small as possible (in terms of memory usage).
-
-  An example of how to declare a String Vector type:
-
-    encapsulated package StringVector
-      import Vector;
-      extends Vector(redeclare type T = String, defaultValue = \"\");
-      annotation(__OpenModelica_Interface=\"util\");
-    end StringVector;
-
-  Vector also has a growthFactor constant which can be overridden, which
-  decides how fast the Vector grows when the available space runs out. The
-  default is 2, i.e. the Vector doubles in size when it runs out of space.
-
-  There is also a freePolicy constant, which controls how the Vector frees
-  deleted elements. If set to ON_DELETION it immediately overwrites deleted
-  elements with defaultValue, which would be appropriate for complex types that
-  can take up a lot of memory. The other option is LAZY, which keeps the deleted
-  elements until they're overwritten or the internal array is reallocated. This
-  option would be appropriate for small types like Integer, where all values
-  take up an equal amount of memory.
-"
+  "An implementation of a generic dynamic array."
 
   import Mutable;
 
@@ -74,11 +43,12 @@ public
     Mutable<Integer> size "The number of stored elements.";
   end VECTOR;
 
-  function new
+  function new<T>
     "Creates a new empty Vector."
-    input T dummy "Dummy argument used to determine the type of the Vector.";
     input Integer size = 0 "Initial capacity";
     output Vector<T> v;
+  protected
+    T dummy = dummy;
   algorithm
     v := VECTOR(Mutable.create(arrayCreateNoInit(size, dummy)),
                 Mutable.create(0));

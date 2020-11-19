@@ -30,6 +30,10 @@
  */
 
 encapsulated uniontype UnorderedMap<K, V>
+  "An implementation of a generic unordered map, a.k.a. hash map.
+
+   This implementation uses separate chaining and automatically rehashes the map
+   when the load factor becomes too large to keep the performance up."
 
   import Vector;
 
@@ -69,14 +73,11 @@ public
     input KeyEq keyEq;
     input Integer bucketCount = 1;
     output UnorderedMap<K, V> map;
-  protected
-    K kdummy = kdummy;
-    V vdummy = vdummy;
   algorithm
     map := UNORDERED_MAP(
       Vector.newFill(bucketCount, {}),
-      Vector.new(kdummy),
-      Vector.new(vdummy),
+      Vector.new<K>(),
+      Vector.new<V>(),
       hash,
       keyEq
     );

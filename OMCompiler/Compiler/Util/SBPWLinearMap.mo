@@ -218,8 +218,8 @@ public
       return;
     end if;
 
-    ress := Vector.new(dom1[1]);
-    reslm := Vector.new(lmap1[1]);
+    ress := Vector.new<SBSet>();
+    reslm := Vector.new<SBLinearMap>();
 
     for i in 1:arrayLength(dom1) loop
       d1 := arrayGetNoBoundsChecking(dom1, i);

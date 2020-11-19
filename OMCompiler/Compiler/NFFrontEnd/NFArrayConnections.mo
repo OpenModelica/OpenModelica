@@ -620,7 +620,7 @@ protected
     o1 := arrayCreateNoInit(sz, 0.0);
     o2 := arrayCreateNoInit(sz, 0.0);
     mi := arrayCreateNoInit(sz, ints1[1]);
-    new_ec := Vector.new(0);
+    new_ec := Vector.new<Integer>();
 
     for i in 1:sz loop
       sz1 := SBInterval.size(ints1[i]);
