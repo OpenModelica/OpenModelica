@@ -40,8 +40,14 @@ public
 protected
   // NF imports
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
+  import Expression = NFExpression;
   import NFFlatten.FunctionTree;
+  import InstNode = NFInstNode.InstNode;
+  import SBGraphUtil = NFSBGraphUtil;
+  import Type = NFType;
   import Variable = NFVariable;
+  import NFArrayConnections.NameVertexTable;
 
   // Backend imports
   import BackendDAE = NBackendDAE;
@@ -64,10 +70,20 @@ protected
   import List;
   import BackendUtil = NBBackendUtil;
   import StringUtil;
+  import UnorderedSet;
+
+  // SetBased Graph imports
+  import AdjacencyList;
+  import SBInterval;
+  import SBMultiInterval;
+  import SBPWLinearMap;
+  import SBSet;
 
 public
   function main extends Module.wrapper;
     input System.SystemType systemType;
+  protected
+    Module.causalizeInterface func = getModule();
   algorithm
     bdae := match (systemType, bdae)
       local
@@ -80,7 +96,7 @@ public
       case (System.SystemType.ODE, BackendDAE.MAIN(ode = systems, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
           for system in systems loop
-            (new_system, varData, eqData, funcTree) := causalizeScalar(system, varData, eqData, funcTree);
+            (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
             new_systems := new_system :: new_systems;
           end for;
           bdae.ode := listReverse(new_systems);
@@ -91,7 +107,7 @@ public
       case (System.SystemType.INI, BackendDAE.MAIN(init = systems, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
           for system in systems loop
-            (new_system, varData, eqData, funcTree) := causalizeScalar(system, varData, eqData, funcTree);
+            (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
             new_systems := new_system :: new_systems;
           end for;
           bdae.init := listReverse(new_systems);
@@ -130,6 +146,22 @@ public
     comps := Sorting.tarjan(adj, matching, vars, eqs);
   end simple;
 
+  function getModule
+    "Returns the module function that was chosen by the user."
+    output Module.causalizeInterface func;
+  protected
+    String flag = Flags.getConfigString(Flags.MATCHING_ALGORITHM);
+  algorithm
+    (func) := match flag
+      case "PFPlusExt"  then causalizeScalar;
+      case "SBGraph"    then causalizeArray;
+      /* ... New causalize modules have to be added here */
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for unknown option: " + flag});
+      then fail();
+    end match;
+  end getModule;
+
 protected
   function causalizeScalar extends Module.causalizeInterface;
   protected
@@ -143,7 +175,7 @@ protected
     variables := VariablePointers.compress(system.unknowns);
     equations := EquationPointers.compress(system.equations);
 
-    // create scalar adjacency matrix for now
+    // create scalar adjacency matri for now
     adj := AdjacencyMatrix.create(variables, equations, AdjacencyMatrixType.SCALAR);
     (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(adj, variables, equations, funcTree, varData, eqData, false, true);
     comps := Sorting.tarjan(adj, matching, variables, equations);
@@ -154,6 +186,20 @@ protected
     system.matching := SOME(matching);
     system.strongComponents := SOME(listArray(comps));
   end causalizeScalar;
+
+  function causalizeArray extends Module.causalizeInterface;
+  protected
+    VariablePointers variables;
+    EquationPointers equations;
+    AdjacencyMatrix adj;
+  algorithm
+    // compress the arrays to remove gaps
+    variables := VariablePointers.compress(system.unknowns);
+    equations := EquationPointers.compress(system.equations);
+
+    // create scalar adjacency matrix for now
+    adj := AdjacencyMatrix.create(variables, equations, AdjacencyMatrixType.ARRAY);
+  end causalizeArray;
 
   function causalizeDAEMode extends Module.causalizeInterface;
   protected
@@ -168,11 +214,12 @@ protected
 public
   type AdjacencyMatrixType        = enumeration(SCALAR, ARRAY);
   type AdjacencyMatrixStrictness  = enumeration(FULL, LINEAR, STATE_SELECT);
+  type SBGraph                    = AdjacencyList<SetVertex, SetEdge>;
 
   uniontype AdjacencyMatrix
     record ARRAY_ADJACENCY_MATRIX
-      AdjacencyMatrixQuarter m;
-      AdjacencyMatrixQuarterT mT;
+      "no transposed set matrix needed since the graph represents all vertices equally"
+      SBGraph graph;
       AdjacencyMatrixStrictness st;
       /* Maybe add optional markings here */
     end ARRAY_ADJACENCY_MATRIX;
@@ -195,9 +242,7 @@ public
     algorithm
       adj := match ty
         case AdjacencyMatrixType.SCALAR then createScalar(vars, eqs, st);
-        case AdjacencyMatrixType.ARRAY algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array adjacency matrices are not supported yet."});
-        then fail();
+        case AdjacencyMatrixType.ARRAY  then createArray(vars, eqs, st);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
         then fail();
@@ -338,6 +383,52 @@ public
       end for;
     end absoluteMatrix;
 
+    function createArray
+      input VariablePointers vars;
+      input EquationPointers eqs;
+      input AdjacencyMatrixStrictness st = AdjacencyMatrixStrictness.FULL;
+      output AdjacencyMatrix adj;
+    protected
+      AdjacencyList<SetVertex, SetEdge> graph;
+      Pointer<Integer> max_dim = Pointer.create(1);
+      Vector<Integer> vCount, eCount;
+      Pointer<NameVertexTable.Table> nmvTable;
+    algorithm
+      // create empty set based graph
+      graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
+      adj := ARRAY_ADJACENCY_MATRIX(graph, st);
+
+      // find maximum number of dimensions
+      VariablePointers.mapPtr(vars, function maxDimTraverse(max_dim = max_dim));
+      EquationPointers.mapRes(eqs, function maxDimTraverse(max_dim = max_dim));
+      vCount := Vector.newFill(Pointer.access(max_dim), 1);
+      eCount := Vector.newFill(Pointer.access(max_dim), 1);
+
+      // create empty hash table
+      nmvTable := Pointer.create(NameVertexTable.new());
+
+      // create vertices for variables and equations
+      VariablePointers.mapPtr(vars, function SetVertex.create(graph = graph, vCount = vCount, nmvTable = nmvTable));
+      EquationPointers.mapRes(eqs, function SetVertex.create(graph = graph, vCount = vCount, nmvTable = nmvTable));
+
+      if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
+        print(AdjacencyList.toString(graph));
+        BaseHashTable.dumpHashTable(Pointer.access(nmvTable));
+      end if;
+    end createArray;
+
+    function maxDimTraverse
+      input Pointer<Variable> var_ptr;
+      input Pointer<Integer> max_dim;
+    protected
+      Integer dim_size;
+    algorithm
+      dim_size := listLength(BVariable.getDimensions(var_ptr));
+      if Pointer.access(max_dim) < dim_size then
+        Pointer.update(max_dim, dim_size);
+      end if;
+    end maxDimTraverse;
+
     function getDependentCref
       input output ComponentRef cref          "the cref to check";
       input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
@@ -368,92 +459,152 @@ public
     end getDependentCrefIndices;
   end AdjacencyMatrix;
 
-  /*
-    Regular slice. Always has three elements.
-    E.g. Start=1, Stop=91, Step=3
-    =>  {1,4,7,...,88,91}
-    The order matters for eq <=> var matchings!
-    [1,91,3] <> [91,1,-3]
-  */
-  type RegularSlice = array<Integer>;
+  uniontype SetVertex
+    record SET_VERTEX
+      Pointer<Variable> name  "can represent variables as well as equations (residual var)";
+      SBSet vs                "corresponding set of vertices";
+    end SET_VERTEX;
 
-  /*
-    Vector slice type (one dimension). Contains a list
-    of static singleton indices and a list of regular
-    slices. Each regular slice needs to represent the
-    same number of (scalarized) element for it to be
-    consistent. The singletons are assumed to be static
-    and occur for every scalarized instance of the
-    regular slices. E.g.
-    for i in 1:3 loop
-      x[i] = x[4];
-    end for;
-    => ({4}, {[1,3,1]})
-  */
-  uniontype VectorSlice
-    record VECTOR_SLICE
-      "Full dimension slice."
-      list<Integer> singletons       "List of single unordered indices.";
-      list<RegularSlice> regSlices   "List of regular slicings.";
-    end VECTOR_SLICE;
-  end VectorSlice;
+    function isEqual
+      input SetVertex v1;
+      input SetVertex v2;
+      output Boolean equal = ComponentRef.isEqual(BVariable.getVarName(v1.name), BVariable.getVarName(v2.name));
+    end isEqual;
 
-  /*
-    Tensors slice (multi dimensional). Contains an array
-    of all dimension sizes and an array of vector slices
-    for each dimension. Each vector slice cannot contain
-    elements exceeding the corresponding dimension size.
-  */
-  uniontype TensorSlice
-    record TENSOR_SLICE
-      "Slice through all dimensions."
-      array<RegularSlice> itSlice     "Iterator slice.";
-      array<VectorSlice> vecSlices    "Single dimension slicings.";
-    end TENSOR_SLICE;
-  end TensorSlice;
+    function isNamed
+      input SetVertex v;
+      input Pointer<Variable> name;
+      output Boolean equal = ComponentRef.isEqual(BVariable.getVarName(v.name), BVariable.getVarName(name));
+    end isNamed;
 
-  /*
-    General indexed slice. The index refers to the
-    variable or equation the slice belongs to.
-  */
-  uniontype IndexSlice
-    record INDEX_SLICE
-      Integer index                   "Index of variable or equation";
-      TensorSlice tenSlice            "Multi dimensional slicing";
-    end INDEX_SLICE;
-  end IndexSlice;
+    function create
+      input Pointer<Variable> var_ptr;
+      input SBGraph graph;
+      input Vector<Integer> vCount;
+      input Pointer<NameVertexTable.Table> nmvTable;
+    protected
+      list<Dimension> dims;
+      SBMultiInterval mi;
+      SBSet set;
+      SetVertex vertex;
+      String name;
+    algorithm
+      dims := BVariable.getDimensions(var_ptr);
+      mi := SBGraphUtil.multiIntervalFromDimensions(dims, vCount);
 
-  /* Adjacency matrix structure. */
-  uniontype AdjacencyRow
-    record ADJACENCY_ROW
-      array<RegularSlice> itSlice     "Iterator slice.";
-      list<IndexSlice> indSlice       "Indexed slice for each appearing variable or equation.";
-    end ADJACENCY_ROW;
-  end AdjacencyRow;
+      set := SBSet.newEmpty();
+      set := SBSet.addAtomicSet(SBAtomicSet.new(mi), set);
 
-  type AdjacencyMatrixQuarter = array<AdjacencyRow> "Normal or Transposed.";
-  type AdjacencyMatrixQuarterT = AdjacencyMatrixQuarter;
+      vertex := SET_VERTEX(var_ptr, set);
+      _ := AdjacencyList.addVertex(graph, vertex);
 
+      name := ComponentRef.toString(BVariable.getVarName(var_ptr));
+      Pointer.update(nmvTable, BaseHashTable.addUnique((name, mi), Pointer.access(nmvTable)));
+    end create;
 
-  /* add scalar Adjacency Matrix for simple stuff */
+    function toString
+      input SetVertex v;
+      output String str = Variable.toString(Pointer.access(v.name)) + "\n" + SBSet.toString(v.vs);
+    end toString;
+  end SetVertex;
 
+  uniontype SetEdge
+    record SET_EDGE
+      String name         "is always E_ + String(System.tmpTick())";
+      SBPWLinearMap es1;
+      SBPWLinearMap es2;
+    end SET_EDGE;
 
-  /* =======================================
-                    MATCHING
-     ======================================= */
+    function isEqual
+      input SetEdge e1;
+      input SetEdge e2;
+      output Boolean equal = e1.name == e2.name;
+    end isEqual;
 
-  /* New matching structure for slice matching */
-  uniontype SliceAssignment
-    record SLICE_ASSIGNMENT
-      TensorSlice tenSlice         "Assigned tensor slice of current row";
-      IndexSlice indSlice          "Assigned tensor slice of indexed column";
-    end SLICE_ASSIGNMENT;
-  end SliceAssignment;
+    function fromEquation
+      input Equation eqn;
+      input SBGraph graph;
+      input list<String> iterator_lst;
+      input list<SBInterval> interval_lst;
+    protected
+      Pointer<Variable> residual;
+      Integer eqn_index;
+      SetVertex eqn_vertex;
+    algorithm
+      _ := match eqn
+        local
+          SBInterval interval;
+          array<SBSet> domain;
+          array<SBLinearMap> eq_map;
+          SBPWLinearMap eq_dom_map;
+
+        case Equation.SCALAR_EQUATION() algorithm
+          //domain := SBGraphUtil.setsFromList(interval_lst);
+        then ();
+
+        case Equation.FOR_EQUATION() algorithm
+          //interval := SBGraphUtil.intervalFromRange(eqn.range);
+          //range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(eq)));
+
+          fromEquation(eqn.body, graph, InstNode.name(eqn.iter)::iterator_lst, interval_lst);
+        then ();
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for " + Equation.toString(eqn)});
+        then fail();
+      end match;
+
+      /*
+      try
+        residual := Equation.getResidualVar(eqn);
+        SOME(eqn_index) := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = residual));
+      else
+        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for " + Equation.toString(Pointer.access(eqn))});
+      end try;
+      eqn_vertex := AdjacencyList.getVertex(graph, eqn_index);
+      // ToDo: this might be wrong, multiple sets possible? not only take first? copied from connection handling
+      // mi := SBAtomicSet.aset(UnorderedSet.first(SBSet.asets(eqn_vertex.vs)));
+      */
+    end fromEquation;
+
+    function createTraverse
+      input Expression exp;
+      input Option<SBMultiInterval> eqn_interval;
+      input Pointer<tuple<SetVertex, Integer>> vertex_tpl;
+      input SBGraph graph;
+    algorithm
+      _ := match exp
+        local
+          SetVertex eqn_vertex, var_vertex;
+          Integer eqn_index, var_index;
+        case Expression.CREF() algorithm // create second multiInterval from subscripts
+          SOME(var_index) := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = BVariable.getVarPointer(exp.cref)));
+          var_vertex := AdjacencyList.getVertex(graph, var_index);
+
+          (eqn_vertex, eqn_index) := Pointer.access(vertex_tpl);
+        then ();
+        else ();
+      end match;
+    end createTraverse;
+
+    function create
+      input SBGraph graph;
+      input Vector<Integer> eCount;
+    algorithm
+    end create;
+
+    function toString
+      input SetEdge e;
+      output String str = e.name + "\n" + "map:\t" + SBPWLinearMap.toString(e.es1) + "\ninv map:\t" + SBPWLinearMap.toString(e.es2) + "\n";
+    end toString;
+  end SetEdge;
+
+  // =======================================
+  //                MATCHING
+  // =======================================
 
   uniontype Matching
     record ARRAY_MATCHING
-       array<list<SliceAssignment>> varToEq;
-       array<list<SliceAssignment>> eqToVar;
     end ARRAY_MATCHING;
 
     record SCALAR_MATCHING

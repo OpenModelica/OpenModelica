@@ -57,6 +57,7 @@ protected
   import Operator = NFOperator;
   import Op = NFOperator.Op;
   import SBFunctions;
+  import SBGraphUtil = NFSBGraphUtil;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
   import System;
@@ -80,6 +81,11 @@ protected
       input Connector name;
       output Boolean equal = Connector.isEqual(v.name, name);
     end isNamed;
+
+    function toString
+      input SetVertex v;
+      output String str = Connector.toString(v.name) + "\n" + SBSet.toString(v.vs) + "\n";
+    end toString;
   end SetVertex;
 
   uniontype SetEdge
@@ -94,8 +100,14 @@ protected
       input SetEdge e2;
       output Boolean equal = e1.name == e2.name;
     end isEqual;
+
+    function toString
+      input SetEdge e;
+      output String str = e.name + "\n" + "SetVertex 1:\t" + SBPWLinearMap.toString(e.es1) + "\nSetVertex 2:\t" + SBPWLinearMap.toString(e.es2) + "\n";
+    end toString;
   end SetEdge;
 
+public
   // TODO: Implement better hash table and get rid of this.
   encapsulated package NameVertexTable
     import BaseHashTable;
@@ -140,7 +152,7 @@ protected
         (stringHashDjb2Mod, stringEq, Util.id, SBMultiInterval.toString));
     end new;
   end NameVertexTable;
-public
+
   type SBGraph = AdjacencyList<SetVertex, SetEdge>;
 
   function resolve
@@ -163,12 +175,20 @@ public
 
     (flatModel, conns) := collect(flatModel);
 
-    graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual);
+    graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
     nmv_table := NameVertexTable.new();
     nmv_table := createGraph(flatModel.variables, conns, graph, v_count, e_count, nmv_table);
 
+    if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
+      print(AdjacencyList.toString(graph));
+    end if;
+
     (vss, emap1, emap2) := createMaps(graph);
     res := SBFunctions.connectedComponents(vss, emap1, emap2);
+
+    if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
+      print(AdjacencyList.toString(graph));
+    end if;
 
     conns := generateEquations(res, flatModel, graph, v_count, nmv_table);
     eql := listAppend(flatModel.equations, conns);
@@ -388,11 +408,7 @@ protected
     Option<AdjacencyList.VertexDescriptor> od;
     SetVertex v;
     list<Dimension> dims;
-    Integer vc, dim_size, index;
     SBSet s;
-    array<SBInterval> ints;
-    Vector<Integer> new_vc;
-    SBInterval int;
     String name;
   algorithm
     od := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = conn));
@@ -405,49 +421,7 @@ protected
     end if;
 
     dims := crefDims(Connector.name(conn));
-
-    if listEmpty(dims) then
-      vc := Vector.get(vCount, 1);
-      Vector.update(vCount, 1, vc + 1);
-
-      mi := SBMultiInterval.fromArray(arrayCreate(Vector.size(vCount), SBInterval.new(vc, 1, vc)));
-    else
-      ints := arrayCreate(Vector.size(vCount), SBInterval.newEmpty());
-      new_vc := Vector.copy(vCount);
-      index := 1;
-
-      for dim in dims loop
-        if not Dimension.isKnown(dim) then
-          Error.assertion(false, getInstanceName() + ": unknown dimension " + Dimension.toString(dim),
-                                 sourceInfo());
-        end if;
-
-        dim_size := Dimension.size(dim);
-        vc := Vector.get(vCount, index);
-        int := SBInterval.new(vc, 1, vc + dim_size - 1);
-
-        if SBInterval.isEmpty(int) then
-          ints := listArray({});
-          break;
-        else
-          ints[index] := int;
-          Vector.update(new_vc, index, vc + dim_size);
-        end if;
-
-        index := index + 1;
-      end for;
-
-      for i in listLength(dims)+1:Vector.size(vCount) loop
-        vc := Vector.get(vCount, 1);
-        ints[i] := SBInterval.new(vc, 1, vc);
-      end for;
-
-      mi := SBMultiInterval.fromArray(ints);
-
-      if not SBMultiInterval.isEmpty(mi) then
-        Vector.swap(new_vc, vCount);
-      end if;
-    end if;
+    mi := SBGraphUtil.multiIntervalFromDimensions(dims, vCount);
 
     s := SBSet.newEmpty();
     s := SBSet.addAtomicSet(SBAtomicSet.new(mi), s);

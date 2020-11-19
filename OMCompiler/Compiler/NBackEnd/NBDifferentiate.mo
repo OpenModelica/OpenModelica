@@ -689,10 +689,20 @@ public
         then exp1;
       // cos -> -sin
       case("cos") algorithm
-        then Expression.negate(Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.SIN_REAL, {innerExp}, Expression.variability(innerExp))));
+        then Expression.negate(Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.SIN_REAL,
+          args        = {innerExp},
+          variability = Expression.variability(innerExp),
+          purity      = NFPrefixes.Purity.PURE
+        )));
       // sin -> cos
       case ("sin") algorithm
-        then Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.COS_REAL, {innerExp}, Expression.variability(innerExp)));
+        then Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.COS_REAL,
+          args        = {innerExp},
+          variability = Expression.variability(innerExp),
+          purity      = NFPrefixes.Purity.PURE
+         ));
       // TODO Add all builtin functions with one argument here
     else algorithm
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for: " + name});
@@ -837,7 +847,12 @@ public
           addOp := Operator.fromClassification((NFOperator.MathClassification.ADDITION, sizeClass), operator.ty);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
           // create the ln(x) call
-          call := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.LOG_REAL, {exp1}, Expression.variability(exp1)));
+          call := Expression.CALL(Call.makeTypedCall(
+            fn          = NFBuiltinFuncs.LOG_REAL,
+            args        = {exp1},
+            variability = Expression.variability(exp1),
+            purity      = NFPrefixes.Purity.PURE
+          ));
       then (Expression.MULTARY(
               {Expression.BINARY(
                 exp1,                                                   // x
@@ -1033,7 +1048,12 @@ public
           Integer i;
         case Expression.REAL(value = r)     then Expression.REAL(log(r));
         case Expression.INTEGER(value = i)  then Expression.REAL(log(i));
-        else Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.LOG_REAL, {exp}, Expression.variability(exp)));
+        else Expression.CALL(Call.makeTypedCall(
+          fn          = NFBuiltinFuncs.LOG_REAL,
+          args        = {exp},
+          variability = Expression.variability(exp),
+          purity      = NFPrefixes.Purity.PURE
+        ));
       end match;
     end expLog;
 

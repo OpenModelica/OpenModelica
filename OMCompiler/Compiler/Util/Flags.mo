@@ -568,6 +568,8 @@ constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(196, "dumpSimplify", false,
   Gettext.gettext("Dumps expressions before and after simplification."));
 constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(197, "dumpBackendClocks", false,
   Gettext.gettext("Dumps times for each backend module (only new backend)."));
+constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(198, "dumpSetBasedGraphs", false,
+  Gettext.gettext("Dumps information about set based graphs for efficient array handling (only new frontend and new backend)."));
 
 public
 // CONFIGURATION FLAGS
@@ -700,7 +702,8 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("HKDWExt", Gettext.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("ABMPExt", Gettext.gettext("Combined BFS and DFS algorithm external c implementation.")),
     ("PRExt", Gettext.gettext("Matching algorithm using push relabel mechanism external c implementation.")),
-    ("BB", Gettext.gettext("BBs try."))})),
+    ("BB", Gettext.gettext("BBs try.")),
+    ("SBGraph", Gettext.gettext("Set-Based Graph matching algorithm for efficient array handling."))})),
     Gettext.gettext("Sets the matching algorithm to use. See --help=optmodules for more info."));
 
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",

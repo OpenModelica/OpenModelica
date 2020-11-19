@@ -49,6 +49,7 @@ public
   import Binding = NFBinding.Binding;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
+  import Dimension = NFDimension;
   import Expression = NFExpression;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
@@ -151,6 +152,16 @@ public
     var := Pointer.access(var_ptr);
     name := BackendDAE.lowerComponentReferenceInstNode(var.name, var_ptr);
   end getVarName;
+
+  function getDimensions
+    input Pointer<Variable> var_ptr;
+    output List<Dimension> dims;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(var_ptr);
+    dims := Type.arrayDims(var.ty);
+  end getDimensions;
 
   function isState
     input Pointer<Variable> var;

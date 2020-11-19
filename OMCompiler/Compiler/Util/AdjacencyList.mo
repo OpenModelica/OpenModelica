@@ -34,6 +34,7 @@ encapsulated uniontype AdjacencyList<VertexT, EdgeT>
 
 protected
   import List;
+  import StringUtil;
 
 public
   partial function VertexEq
@@ -48,6 +49,16 @@ public
     output Boolean equal;
   end EdgeEq;
 
+  partial function VertexStr
+    input VertexT v;
+    output String str;
+  end VertexStr;
+
+  partial function EdgeStr
+    input EdgeT e;
+    output String str;
+  end EdgeStr;
+
   type VertexDescriptor = Integer;
 
   record ADJACENCY_LIST
@@ -56,16 +67,20 @@ public
     Vector<list<Integer>> graph;
     VertexEq vertEqFn;
     EdgeEq edgeEqFn;
+    VertexStr vertToString;
+    EdgeStr edgeToString;
   end ADJACENCY_LIST;
 
   function new
     input VertexEq vertexEq;
     input EdgeEq edgeEq;
+    input VertexStr vertexStr;
+    input EdgeStr edgeStr;
     output AdjacencyList<VertexT, EdgeT> al;
   protected
     type Indices = list<Integer>;
   algorithm
-    al := ADJACENCY_LIST(Vector.new<VertexT>(), Vector.new<EdgeT>(), Vector.new<Indices>(), vertexEq, edgeEq);
+    al := ADJACENCY_LIST(Vector.new<VertexT>(), Vector.new<EdgeT>(), Vector.new<Indices>(), vertexEq, edgeEq, vertexStr, edgeStr);
   end new;
 
   function addVertex
@@ -158,6 +173,19 @@ public
     input AdjacencyList<VertexT, EdgeT> al;
     output list<EdgeT> el = Vector.toList(al.edges);
   end edges;
+
+  function toString
+    input AdjacencyList<VertexT, EdgeT> al;
+    output String str;
+  protected
+    // somehow this is needed and can't be applied directly
+    VertexStr vertToString = al.vertToString;
+    EdgeStr edgeToString = al.edgeToString;
+  algorithm
+    str := StringUtil.headline_2("Set-Based Graph") + "\n";
+    str := str + stringDelimitList(list(vertToString(v) for v in Vector.toList(al.vertices)), "\n") + "\n";
+    str := str + stringDelimitList(list(edgeToString(e) for e in Vector.toList(al.edges)), "\n") + "\n";
+  end toString;
 
 annotation(__OpenModelica_Interface="util");
 end AdjacencyList;

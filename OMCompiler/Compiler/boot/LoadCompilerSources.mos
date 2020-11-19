@@ -422,6 +422,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFRangeIterator.mo",
     "../NFFrontEnd/NFRecord.mo",
     "../NFFrontEnd/NFRestriction.mo",
+    "../NFFrontEnd/NFSBGraphUtil.mo",
     "../NFFrontEnd/NFScalarize.mo",
     "../NFFrontEnd/NFSections.mo",
     "../NFFrontEnd/NFSimplifyExp.mo",

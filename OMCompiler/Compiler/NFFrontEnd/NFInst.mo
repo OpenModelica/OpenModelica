@@ -3118,7 +3118,7 @@ protected
   list<ComponentRef> inputs_lst;
   list<ComponentRef> outputs_lst;
 algorithm
-  statements := instStatements(algorithmSection.statements, scope, origin);
+  statements := instStatements(algorithmSection.statements, scope, context);
   (inputs_lst, outputs_lst) := Algorithm.getInputsOutputs(statements);
   alg := Algorithm.ALGORITHM(statements, inputs_lst, outputs_lst, DAE.emptyElementSource);
 end instAlgorithmSection;

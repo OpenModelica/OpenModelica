@@ -1491,6 +1491,21 @@ public
       equations := compress(equations);
     end mapRemovePtr;
 
+    function mapRes
+      "maps the residual variable"
+      input EquationPointers equations;
+      input mapFunc func;
+      partial function mapFunc
+        input Pointer<Variable> var;
+      end mapFunc;
+    algorithm
+      for i in 1:ExpandableArray.getLastUsedIndex(equations.eqArr) loop
+        if ExpandableArray.occupied(i, equations.eqArr) then
+          func(Equation.getResidualVar(ExpandableArray.get(i, equations.eqArr)));
+        end if;
+      end for;
+    end mapRes;
+
     function fold<T>
       "Traverses all equations and applies a function to them to accumulate data.
       Cannot change equations."
