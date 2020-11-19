@@ -4044,10 +4044,6 @@ msgstr ""
 msgid "Deprecated flag: Use --postOptModules+=wrapFunctionCalls instead."
 msgstr ""
 
-#: ../Util/Flags.mo:1123
-msgid "Deprecated flag: Use --postOptModules+=cseBinary instead."
-msgstr ""
-
 #: ../Util/Flags.mo:1131
 msgid "Max size for solveLinearSystem."
 msgstr ""

@@ -309,7 +309,6 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.PROFILING_LEVEL,
   Flags.RESHUFFLE,
   Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM,
-  Flags.CSE_BINARY,
   Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM,
   Flags.CPP_FLAGS,
   Flags.REMOVE_SIMPLE_EQUATIONS,
