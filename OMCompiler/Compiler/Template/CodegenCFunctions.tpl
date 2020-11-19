@@ -554,10 +554,8 @@ template recordDeclarationFullHeader(RecordDeclaration recDecl)
       typedef base_array_t <%rec_name%>_array;
       #define alloc_<%rec_name%>_array(dst,ndims,...) generic_array_create(NULL, dst, <%ctor_func_name%>, ndims, sizeof(<%rec_name%>), __VA_ARGS__)
       #define <%rec_name%>_array_copy_data(src,dst)   generic_array_copy_data(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
-      // This is here unitl we remove all places where this function call is written out instead of the one above.
-      #define copy_<%rec_name%>_array_data(src,dst)   generic_array_copy_data(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
-      #define <%rec_name%>_array_alloc_copy(src,dst)   generic_array_alloc_copy(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
-      #define <%rec_name%>_array_get(src,ndims,...)         (*(<%rec_name%>*)(generic_array_get(&src, sizeof(<%rec_name%>), __VA_ARGS__)))
+      #define <%rec_name%>_array_alloc_copy(src,dst)  generic_array_alloc_copy(src, &dst, <%cpy_func_name%>, sizeof(<%rec_name%>))
+      #define <%rec_name%>_array_get(src,ndims,...)   (*(<%rec_name%>*)(generic_array_get(&src, sizeof(<%rec_name%>), __VA_ARGS__)))
       #define <%rec_name%>_set(dst,val,...)           generic_array_set(&dst, &val, <%cpy_func_name%>, sizeof(<%rec_name%>), __VA_ARGS__)
       >>
 end recordDeclarationFullHeader;
@@ -2252,10 +2250,10 @@ template varOutput(Variable var)
     'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = (modelica_fnptr)<%funArgName(var)%>; }<%\n%>'
   case VARIABLE(ty=T_ARRAY(__), parallelism = PARGLOBAL(__)) then
     // If the info (for parallel arrays) is NULL, the output is an array with unknown dimensions. Copy the array.
-    'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->info == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);} }<%\n%>'
+    'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->info == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {<%expTypeShort(var.ty)%>_array_copy_data(<%funArgName(var)%>, *out<%funArgName(var)%>);} }<%\n%>'
   case VARIABLE(ty=T_ARRAY(__)) then
     // If the dim_size is NULL, the output is an array with unknown dimensions. Copy the array.
-    'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->dim_size == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);} }<%\n%>'
+    'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->dim_size == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {<%expTypeShort(var.ty)%>_array_copy_data(<%funArgName(var)%>, *out<%funArgName(var)%>);} }<%\n%>'
   case VARIABLE(parallelism = PARGLOBAL(__)) then
     /*Seems like we still get an array var with the wrong type here. It have instdims though >_<. TODO I guess*/
     if instDims then
@@ -2266,7 +2264,7 @@ template varOutput(Variable var)
           omc_assert(threadData, info, "Unknown size parallel array.");
         }
         else {
-          copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);
+          <%expTypeShort(var.ty)%>_array_copy_data(<%funArgName(var)%>, *out<%funArgName(var)%>);
         }
       }<%\n%>
       >>
@@ -2275,62 +2273,11 @@ template varOutput(Variable var)
   case VARIABLE(__) then
     /*Seems like we still get an array var with the wrong type here. It have instdims though >_<. TODO I guess*/
     if instDims then
-      'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->dim_size == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {copy_<%expTypeShort(var.ty)%>_array_data(<%funArgName(var)%>, out<%funArgName(var)%>);} }<%\n%>'
+      'if (out<%funArgName(var)%>) { if (out<%funArgName(var)%>->dim_size == NULL) {copy_<%expTypeShort(var.ty)%>_array(<%funArgName(var)%>, out<%funArgName(var)%>);} else {<%expTypeShort(var.ty)%>_array_copy_data(<%funArgName(var)%>, *out<%funArgName(var)%>);} }<%\n%>'
     else
     'if (out<%funArgName(var)%>) { *out<%funArgName(var)%> = <%funArgName(var)%>; }<%\n%>'
   else error(sourceInfo(), 'varOutput:error Unknown variable type as output')
 end varOutput;
-
-template varOutputParallel(Variable var, String dest, Integer ix, Text &varDecls,
-          Text &varInits, Text &varCopy, Text &varAssign, Text &auxFunction)
- "Generates code to copy result value from a function to dest in a Parallel function."
-::=
-match var
-/* The storage size of arrays is known at call time, so they can be allocated
- * before set_memory_state. Strings are not known, so we copy them, etc...
- */
-case var as VARIABLE(ty = T_STRING(__)) then
-  error(sourceInfo(), "String Variables not Allowed in ParModelica.")
-
-case var as VARIABLE(parallelism = PARGLOBAL(__)) then
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)
-    ;separator=", ")
-  if instDims then
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array_c99_<%listLength(instDims)%>(&<%dest%>.c<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>, memory_state);<%\n%>'
-    let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(<%contextCrefNoPrevExp(var.name,contextFunction, &auxFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
-    ""
-  else
-    let &varInits += '<%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-    let &varAssign += 'copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCrefNoPrevExp(var.name,contextFunction,&auxFunction)%>);<%\n%>'
-    ""
-
-case var as VARIABLE(parallelism = PARLOCAL(__)) then
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
-  if instDims then
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array_c99_<%listLength(instDims)%>(&<%dest%>.c<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>, memory_state);<%\n%>'
-    let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(<%contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
-    ""
-  else
-    let &varInits += 'LOCAL HERE!! <%dest%>.c<%ix%> = ocl_device_alloc(sizeof(modelica_<%expTypeShort(var.ty)%>));<%\n%>'
-    let &varAssign += 'LOCAL HERE!! copy_assignment_helper_<%expTypeShort(var.ty)%>(&<%dest%>.c<%ix%>, &<%contextCrefNoPrevExp(var.name,contextFunction,&auxFunction)%>);<%\n%>'
-    ""
-
-case var as VARIABLE(__) then
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
-  if instDims then
-    let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array_c99_<%listLength(instDims)%>(&<%dest%>.c<%ix%>, <%listLength(instDims)%>, <%instDimsInit%>, memory_state);<%\n%>'
-    let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(<%contextCrefNoPrevExp(var.name,contextFunction,&auxFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
-    ""
-  else
-    let initRecords = initRecordMembers(var, &varDecls, &varInits, &auxFunction)
-    let &varInits += initRecords
-    let &varAssign += '<%dest%>.c<%ix%> = <%contextCrefNoPrevExp(var.name,contextFunction,&auxFunction)%>;<%\n%>'
-    ""
-
-case var as FUNCTION_PTR(__) then
-    let &varAssign += '<%dest%>.c<%ix%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
-    ""
-end varOutputParallel;
 
 template varOutputKernelInterface(Variable var, String dest, Integer ix, Text &varDecls,
           Text &varInits, Text &varCopy, Text &varAssign, Text &auxFunction)
@@ -3056,7 +3003,7 @@ match lhsexp
     let type = expTypeArray(ty)
     if crefSubIsScalar(cr) then
       let lhsStr = daeExpCrefLhs(lhsexp, context, &preExp, &varDecls, &auxFunction, false)
-      'copy_<%type%>_data(<%rhsExpStr%>, &<%lhsStr%>);'
+      '<%type%>_copy_data(<%rhsExpStr%>, <%lhsStr%>);'
     else
       indexedAssign(lhsexp, rhsExpStr, context, &preExp, &varDecls, &auxFunction)
 end algStmtAssignArrWithRhsExpStr;
