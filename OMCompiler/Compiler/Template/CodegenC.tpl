@@ -5497,22 +5497,22 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
   case "boolean" then
     <<
     <%preExp%>
-    copy_boolean_array_data(<%expPart%>, &<%lhsstr%>);
+    boolean_array_copy_data(<%expPart%>, <%lhsstr%>);
     >>
   case "integer" then
     <<
     <%preExp%>
-    copy_integer_array_data(<%expPart%>, &<%lhsstr%>);
+    integer_array_copy_data(<%expPart%>, <%lhsstr%>);
     >>
   case "real" then
     <<
     <%preExp%>
-    copy_real_array_data(<%expPart%>, &<%lhsstr%>);
+    real_array_copy_data(<%expPart%>, <%lhsstr%>);
     >>
   case "string" then
     <<
     <%preExp%>
-    copy_string_array_data(<%expPart%>, &<%lhsstr%>);
+    string_array_copy_data(<%expPart%>, <%lhsstr%>);
     >>
   else error(sourceInfo(), 'No runtime support for this sort of array call: <%dumpExp(eqn.exp,"\"")%>')
 %>

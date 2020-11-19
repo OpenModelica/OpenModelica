@@ -83,24 +83,14 @@ cl_mem ocl_alloc_init_integer_arr(modelica_integer* host_array, int a_size);
 
 
 
-//copies a double array to ALREADY allocated device buffer
-//Size is the number of elements in the src array
-void ocl_copy_to_device_real(cl_mem dev_dest_array, modelica_real* src_host_array, int a_size);
+//copies data of an array (or any memory elem_sze*nr_of_elem) to ALREADY allocated device buffer
+void ocl_copy_to_device(cl_mem dev_dest_array, void* src_host_array, size_t elem_sze, int nr_of_elem);
 
 //copies one buffer to another on the device
-//Size is the number of elements in the src array
-void ocl_copy_device_to_device_real(cl_mem dev_src_array, cl_mem device_dest_array, int a_size);
+void ocl_copy_device_to_device(cl_mem dev_src_array, cl_mem device_dest_array, size_t elem_sze, int nr_of_elem);
 
 //copies a double array back to host
-void ocl_copy_back_to_host_real(cl_mem dev_output_array, modelica_real* dest_host_array, int a_size);
+void ocl_copy_back_to_host(cl_mem dev_output_array, void* dest_host_array, size_t elem_sze, int nr_of_elem);
 
-//copies an integer array to ALREADY allocated device buffer
-void ocl_copy_to_device_integer(cl_mem dev_dest_array, modelica_integer* src_host_array, int a_size);
-
-//Size is the number of elements in the src array
-void ocl_copy_device_to_device_integer(cl_mem dev_src_array, cl_mem device_dest_array, int a_size);
-
-//copies an int array back to host
-void ocl_copy_back_to_host_integer(cl_mem dev_output_array, modelica_integer* dest_host_array, int a_size);
 
 #endif

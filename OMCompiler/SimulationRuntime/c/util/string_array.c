@@ -90,11 +90,6 @@ void alloc_string_array_data(string_array_t* a)
     a->data = string_alloc(base_array_nr_of_elements(*a));
 }
 
-void copy_string_array_data(const string_array_t source, string_array_t *dest)
-{
-    string_array_copy_data(source,*dest);
-}
-
 void copy_string_array_data_mem(const string_array_t source, modelica_string *dest)
 {
     size_t i, nr_of_elements;
@@ -760,7 +755,7 @@ void transpose_string_array(const string_array_t * a, string_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-        copy_string_array_data(*a,dest);
+        string_array_copy_data(*a, *dest);
         return;
     }
 

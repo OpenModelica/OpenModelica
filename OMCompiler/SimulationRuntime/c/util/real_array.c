@@ -91,11 +91,6 @@ void alloc_real_array_data(real_array_t *a)
     a->data = real_alloc(base_array_nr_of_elements(*a));
 }
 
-void copy_real_array_data(const real_array_t source, real_array_t *dest)
-{
-    real_array_copy_data(source,*dest);
-}
-
 void copy_real_array_data_mem(const real_array_t source, modelica_real *dest)
 {
     size_t i, nr_of_elements;
@@ -1061,7 +1056,7 @@ void exp_real_array(const real_array_t * a, modelica_integer n, real_array_t* de
     } else {
         if(n==1) {
             clone_real_array_spec(a,dest);
-            copy_real_array_data(*a,dest);
+            real_array_copy_data(*a, *dest);
         } else if (n==2) {
             clone_real_array_spec(a,dest);
             mul_real_matrix_product(a,a,dest);
@@ -1265,7 +1260,7 @@ void transpose_real_array(const real_array_t * a, real_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-        copy_real_array_data(*a,dest);
+        real_array_copy_data(*a, *dest);
         return;
     }
 

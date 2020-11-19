@@ -34,6 +34,7 @@
 #include <stdarg.h>
 #include "../openmodelica.h"
 #include "base_array.h"
+#include "generic_array.h"
 
 /* Indexing */
 static OMC_INLINE modelica_string string_get(const string_array_t a, size_t i)
@@ -83,9 +84,6 @@ extern void free_string_array_data(string_array_t* a);
 static inline void clone_string_array_spec(const string_array_t * src,
                                            string_array_t* dst)
 { clone_base_array_spec(src, dst); }
-
-/* Copy string data*/
-extern void copy_string_array_data(const string_array_t source, string_array_t* dest);
 
 /* Copy string data given memory ptr*/
 extern void copy_string_array_data_mem(const string_array_t source,modelica_string* dest);

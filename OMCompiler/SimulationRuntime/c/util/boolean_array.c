@@ -89,11 +89,6 @@ void alloc_boolean_array_data(boolean_array_t* a)
     a->data = boolean_alloc(base_array_nr_of_elements(*a));
 }
 
-void copy_boolean_array_data(const boolean_array_t source, boolean_array_t *dest)
-{
-    boolean_array_copy_data(source,*dest);
-}
-
 void and_boolean_array(const boolean_array_t *source1, const boolean_array_t *source2, boolean_array_t *dest)
 {
     size_t i, nr_of_elements;
@@ -818,7 +813,7 @@ void transpose_boolean_array(const boolean_array_t* a, boolean_array_t* dest)
     size_t n,m;
 
     if(a->ndims == 1) {
-        copy_boolean_array_data(*a,dest);
+        boolean_array_copy_data(*a, *dest);
         return;
     }
 
