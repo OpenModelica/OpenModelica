@@ -81,7 +81,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT27,17,_OMC_LIT27_data);
 #define _OMC_LIT28_data "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/FrontEnd/Inline.mo"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT28,67,_OMC_LIT28_data);
 #define _OMC_LIT28 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT28)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT29_6,1602842898.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT29_6,1605787387.0);
 #define _OMC_LIT29_6 MMC_REFREALLIT(_OMC_LIT_STRUCT29_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT29,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT28,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1144)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(1144)),MMC_IMMEDIATE(MMC_TAGFIXNUM(99)),_OMC_LIT29_6}};
 #define _OMC_LIT29 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT29)
@@ -1642,7 +1642,7 @@ tmp4 += 1;
 if (!omc_AbsynUtil_pathEqual(threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_e), 2))), _rpath)) goto tmp3_end;
 _res1 = omc_Inline_extendCrefRecords(threadData, _res, _ht ,&_ht1);
 _crlst = omc_List_map1(threadData, _varLst, boxvar_Inline_extendCrefRecords2, _c);
-_new = omc_List_threadTuple(threadData, _crlst, _expl);
+_new = omc_List_zip(threadData, _crlst, _expl);
 _new1 = omc_Inline_extendCrefRecords(threadData, _new, _ht1 ,&_ht2);
 _res2 = listAppend(_new1, _res1);
 tmpMeta[3] = mmc_mk_box2(0, _c, _e);
@@ -1670,7 +1670,7 @@ _res = tmpMeta[3];
 _ht = tmp4_2;
 _res1 = omc_Inline_extendCrefRecords(threadData, _res, _ht ,&_ht1);
 _crlst = omc_List_map1(threadData, _varLst, boxvar_Inline_extendCrefRecords2, _c);
-_new = omc_List_threadTuple(threadData, _crlst, _expl);
+_new = omc_List_zip(threadData, _crlst, _expl);
 _new1 = omc_Inline_extendCrefRecords(threadData, _new, _ht1 ,&_ht2);
 _res2 = listAppend(_new1, _res1);
 tmpMeta[3] = mmc_mk_box2(0, _c, _e);
@@ -2482,7 +2482,7 @@ tmpMeta[2] = __omcQ_24tmpVar1;
 _newExp = omc_Expression_makeTuple(threadData, tmpMeta[2]);
 tmp10 = omc_Inline_checkExpsTypeEquiv(threadData, _e1, _newExp);
 if (1 != tmp10) goto goto_2;
-_argmap = omc_List_threadTuple(threadData, _crefs, _args);
+_argmap = omc_List_zip(threadData, _crefs, _args);
 _argmap = omc_Inline_extendCrefRecords(threadData, _argmap, _checkcr ,&_checkcr);
 _generateEvents = omc_Inline_hasGenerateEventsAnnotation(threadData, _comment);
 _newExp = ((!_generateEvents)?omc_Expression_addNoEventToRelationsAndConds(threadData, _newExp):_newExp);
@@ -2735,7 +2735,7 @@ if(omc_Config_acceptMetaModelicaGrammar(threadData))
 {
 _crefs = omc_List_map(threadData, _fn, boxvar_Inline_getInputCrefs);
 _crefs = omc_List_select(threadData, _crefs, boxvar_Inline_removeWilds);
-_argmap = omc_List_threadTuple(threadData, _crefs, _args);
+_argmap = omc_List_zip(threadData, _crefs, _args);
 tmp9 = omc_List_exist(threadData, _fn, boxvar_DAEUtil_isProtectedVar);
 if (0 != tmp9) goto goto_2;
 _newExp = omc_Inline_getRhsExp(threadData, _fn);
@@ -2793,7 +2793,7 @@ tmpMeta[2] = __omcQ_24tmpVar3;
 _newExp = omc_Expression_makeTuple(threadData, tmpMeta[2]);
 tmp15 = omc_Inline_checkExpsTypeEquiv(threadData, _e1, _newExp);
 if (1 != tmp15) goto goto_2;
-_argmap = omc_List_threadTuple(threadData, _crefs, _args);
+_argmap = omc_List_zip(threadData, _crefs, _args);
 _checkcr = omc_Inline_getInlineHashTableVarTransform(threadData, NULL);
 _argmap = omc_Inline_extendCrefRecords(threadData, _argmap, _checkcr ,&_checkcr);
 _generateEvents = omc_Inline_hasGenerateEventsAnnotation(threadData, _comment);
@@ -2848,7 +2848,7 @@ tmpMeta[2] = __omcQ_24tmpVar5;
 _newExp = omc_Expression_makeTuple(threadData, tmpMeta[2]);
 tmp21 = omc_Inline_checkExpsTypeEquiv(threadData, _e1, _newExp);
 if (1 != tmp21) goto goto_2;
-_argmap = omc_List_threadTuple(threadData, _crefs, _args);
+_argmap = omc_List_zip(threadData, _crefs, _args);
 _argmap = omc_Inline_extendCrefRecords(threadData, _argmap, _checkcr ,&_checkcr);
 _generateEvents = omc_Inline_hasGenerateEventsAnnotation(threadData, _comment);
 _newExp = ((!_generateEvents)?omc_Expression_addNoEventToRelationsAndConds(threadData, _newExp):_newExp);

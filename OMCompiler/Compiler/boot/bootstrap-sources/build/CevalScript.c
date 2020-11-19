@@ -507,7 +507,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT189,4,_OMC_LIT189_data);
 #define _OMC_LIT190_data "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/Script/CevalScript.mo"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT190,70,_OMC_LIT190_data);
 #define _OMC_LIT190 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT190)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT191_6,1605529654.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT191_6,1605787387.0);
 #define _OMC_LIT191_6 MMC_REFREALLIT(_OMC_LIT_STRUCT191_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT191,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT190,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2091)),MMC_IMMEDIATE(MMC_TAGFIXNUM(257)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2091)),MMC_IMMEDIATE(MMC_TAGFIXNUM(276)),_OMC_LIT191_6}};
 #define _OMC_LIT191 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT191)
@@ -1654,7 +1654,7 @@ _tailrecursive: OMC_LABEL_UNUSED
 tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
 _total_pub_imports = tmpMeta[0];
 tmpMeta[1] = mmc_mk_box2(4, &Absyn_Path_IDENT__desc, _in_package_name);
-_package_class = omc_Interactive_getPathedClassInProgram(threadData, tmpMeta[1], omc_SymbolTable_getAbsyn(threadData), 0);
+_package_class = omc_InteractiveUtil_getPathedClassInProgram(threadData, tmpMeta[1], omc_SymbolTable_getAbsyn(threadData), 0);
 tmpMeta[1] = MMC_REFSTRUCTLIT(mmc_nil);
 tmpMeta[2] = MMC_REFSTRUCTLIT(mmc_nil);
 _pub_imports_list = omc_CevalScript_getImportList(threadData, _package_class, tmpMeta[1], tmpMeta[2] ,&_pro_imports_list);
@@ -2367,19 +2367,19 @@ _constants = tmp6;
 _p = omc_SymbolTable_getAbsyn(threadData);
 if(_builtin)
 {
-_p = omc_Interactive_updateProgram(threadData, _p, omc_FBuiltin_getInitialFunctions(threadData, NULL), 0);
+_p = omc_InteractiveUtil_updateProgram(threadData, _p, omc_FBuiltin_getInitialFunctions(threadData, NULL), 0);
 }
 if(omc_AbsynUtil_pathEqual(threadData, _path, _OMC_LIT65))
 {
 if(_recursive)
 {
 tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-omc_Interactive_getClassNamesRecursive(threadData, mmc_mk_none(), _p, _protects, _constants, tmpMeta[0] ,&_paths);
+omc_InteractiveUtil_getClassNamesRecursive(threadData, mmc_mk_none(), _p, _protects, _constants, tmpMeta[0] ,&_paths);
 _paths = listReverseInPlace(_paths);
 }
 else
 {
-_paths = omc_Interactive_getTopClassnames(threadData, _p);
+_paths = omc_InteractiveUtil_getTopClassnames(threadData, _p);
 }
 }
 else
@@ -2387,12 +2387,12 @@ else
 if(_recursive)
 {
 tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
-omc_Interactive_getClassNamesRecursive(threadData, mmc_mk_some(_path), _p, _protects, _constants, tmpMeta[0] ,&_paths);
+omc_InteractiveUtil_getClassNamesRecursive(threadData, mmc_mk_some(_path), _p, _protects, _constants, tmpMeta[0] ,&_paths);
 _paths = listReverseInPlace(_paths);
 }
 else
 {
-_paths = omc_Interactive_getClassnamesInPath(threadData, _path, _p, _protects, _constants);
+_paths = omc_InteractiveUtil_getClassnamesInPath(threadData, _path, _p, _protects, _constants);
 if(_qualified)
 {
 {
@@ -2544,12 +2544,12 @@ tmp8_done:;
 }
 }
 _path = tmpMeta[0];
-tmpMeta[0] = omc_Interactive_checkAccessAnnotationAndEncryption(threadData, _path, omc_SymbolTable_getAbsyn(threadData));
+tmpMeta[0] = omc_InteractiveUtil_checkAccessAnnotationAndEncryption(threadData, _path, omc_SymbolTable_getAbsyn(threadData));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],4,2) == 0) goto goto_2;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 3));
 tmp11 = mmc_unbox_integer(tmpMeta[1]);
 _access = tmp11;
-tmpMeta[0] = omc_Interactive_getPathedClassInProgram(threadData, _className, omc_SymbolTable_getAbsyn(threadData), 0);
+tmpMeta[0] = omc_InteractiveUtil_getPathedClassInProgram(threadData, _className, omc_SymbolTable_getAbsyn(threadData), 0);
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 6));
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 8));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
@@ -2664,7 +2664,7 @@ switch (MMC_SWITCH_CAST(tmp4)) {
 case 0: {
 modelica_boolean tmp6;
 _p = omc_SymbolTable_getAbsyn(threadData);
-tmp6 = omc_Interactive_astContainsEncryptedClass(threadData, _p);
+tmp6 = omc_InteractiveUtil_astContainsEncryptedClass(threadData, _p);
 if (1 != tmp6) goto goto_2;
 tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
 omc_Error_addMessage(threadData, _OMC_LIT69, tmpMeta[0]);
@@ -2790,7 +2790,7 @@ tmp16 = valueEq(_OMC_LIT65, _className);
 if (0 != tmp16) goto goto_2;
 _p = omc_SymbolTable_getAbsyn(threadData);
 _scodeP = omc_SymbolTable_getSCode(threadData);
-_absynClass = omc_Interactive_getPathedClassInProgram(threadData, _className, _p, 0);
+_absynClass = omc_InteractiveUtil_getPathedClassInProgram(threadData, _className, _p, 0);
 _absynClass = (_interface_only?omc_AbsynUtil_getFunctionInterface(threadData, _absynClass):_absynClass);
 _absynClass = (_short_only?omc_AbsynUtil_getShortClass(threadData, _absynClass):_absynClass);
 tmpMeta[0] = mmc_mk_cons(_absynClass, MMC_REFSTRUCTLIT(mmc_nil));
@@ -3262,7 +3262,7 @@ tmpMeta[2] = MMC_CDR(tmpMeta[0]);
 _name = tmpMeta[1];
 _names = tmpMeta[2];
 tmpMeta[0] = mmc_mk_box2(4, &Absyn_Path_IDENT__desc, _name);
-tmpMeta[1] = omc_Interactive_getPathedClassInProgram(threadData, tmpMeta[0], _program, 0);
+tmpMeta[1] = omc_InteractiveUtil_getPathedClassInProgram(threadData, tmpMeta[0], _program, 0);
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 8));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
 _fileName = tmpMeta[3];
@@ -3287,7 +3287,7 @@ _names = tmpMeta[2];
 tmp6 = 0;
 MMC_TRY_INTERNAL(mmc_jumper)
 tmpMeta[0] = mmc_mk_box2(4, &Absyn_Path_IDENT__desc, _name);
-omc_Interactive_getPathedClassInProgram(threadData, tmpMeta[0], _program, 0);
+omc_InteractiveUtil_getPathedClassInProgram(threadData, tmpMeta[0], _program, 0);
 tmp6 = 1;
 goto goto_7;
 goto_7:;
@@ -3396,7 +3396,7 @@ modelica_metatype _newp = NULL;
 MMC_SO();
 _tailrecursive: OMC_LABEL_UNUSED
 _newp = omc_Parser_parse(threadData, _filename, _encoding, _OMC_LIT52, mmc_mk_none());
-_newp = omc_Interactive_updateProgram(threadData, _newp, omc_SymbolTable_getAbsyn(threadData), 0);
+_newp = omc_InteractiveUtil_updateProgram(threadData, _newp, omc_SymbolTable_getAbsyn(threadData), 0);
 omc_SymbolTable_setAbsyn(threadData, _newp);
 _return: OMC_LABEL_UNUSED
 return;
@@ -5106,12 +5106,12 @@ tmpMeta[2] = stringAppend(_OMC_LIT172,omc_AbsynUtil_pathString(threadData, _func
 tmpMeta[3] = stringAppend(tmpMeta[2],_OMC_LIT173);
 omc_ExecStat_execStat(threadData, tmpMeta[3]);
 omc_System_freeLibrary(threadData, _libHandle, _print_debug);
-tmpMeta[2] = omc_Interactive_getPathedClassInProgram(threadData, _funcpath, _p, 0);
+tmpMeta[2] = omc_InteractiveUtil_getPathedClassInProgram(threadData, _funcpath, _p, 0);
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 6));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],9,1) == 0) goto goto_2;
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 8));
 _info = tmpMeta[4];
-_w = omc_Interactive_buildWithin(threadData, _funcpath);
+_w = omc_InteractiveUtil_buildWithin(threadData, _funcpath);
 if(omc_Flags_isSet(threadData, _OMC_LIT170))
 {
 tmpMeta[2] = stringAppend(_OMC_LIT174,omc_AbsynUtil_pathString(threadData, _funcpath, _OMC_LIT99, 1, 0));
@@ -6726,7 +6726,7 @@ threadData->mmc_jumper = &new_mmc_jumper;
 for (; tmp3 < 2; tmp3++) {
 switch (MMC_SWITCH_CAST(tmp3)) {
 case 0: {
-tmpMeta[0] = omc_Interactive_getNamedAnnotation(threadData, _path, _p, _OMC_LIT271, _OMC_LIT273, boxvar_Interactive_getAnnotationExp);
+tmpMeta[0] = omc_InteractiveUtil_getNamedAnnotation(threadData, _path, _p, _OMC_LIT271, _OMC_LIT273, boxvar_InteractiveUtil_getAnnotationExp);
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[0],3,1) == 0) goto goto_1;
 tmpMeta[1] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[0]), 2));
 _version = tmpMeta[1];
@@ -7022,7 +7022,7 @@ _encoding = tmpMeta[6];
 tmp3 += 147;
 omc_Error_clearMessages(threadData);
 omc_Print_clearErrorBuf(threadData);
-_paths = omc_Interactive_parseFile(threadData, _str1, _encoding, 0);
+_paths = omc_InteractiveUtil_parseFile(threadData, _str1, _encoding, 0);
 _vals = omc_List_map(threadData, _paths, boxvar_ValuesUtil_makeCodeTypeName);
 tmpMeta[0] = omc_ValuesUtil_makeArray(threadData, _vals);
 goto tmp2_done;
@@ -7045,7 +7045,7 @@ _encoding = tmpMeta[6];
 tmp3 += 146;
 omc_Error_clearMessages(threadData);
 omc_Print_clearErrorBuf(threadData);
-_paths = omc_Interactive_parseFile(threadData, _str1, _encoding, 1);
+_paths = omc_InteractiveUtil_parseFile(threadData, _str1, _encoding, 1);
 _vals = omc_List_map(threadData, _paths, boxvar_ValuesUtil_makeCodeTypeName);
 tmpMeta[0] = omc_ValuesUtil_makeArray(threadData, _vals);
 goto tmp2_done;
@@ -7091,7 +7091,7 @@ _b1 = tmp6;
 _requireExactVersion = tmp7;
 tmp3 += 145;
 _newp = omc_CevalScript_loadFile(threadData, _str1, _encoding, omc_SymbolTable_getAbsyn(threadData), _b, _b1, _requireExactVersion);
-_vals = omc_List_map(threadData, omc_Interactive_getTopClassnames(threadData, _newp), boxvar_ValuesUtil_makeCodeTypeName);
+_vals = omc_List_map(threadData, omc_InteractiveUtil_getTopClassnames(threadData, _newp), boxvar_ValuesUtil_makeCodeTypeName);
 omc_SymbolTable_setAbsyn(threadData, _newp);
 tmpMeta[0] = omc_ValuesUtil_makeArray(threadData, _vals);
 goto tmp2_done;
@@ -7108,7 +7108,7 @@ tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
 if (!listEmpty(tmpMeta[2])) goto tmp2_end;
 _path = tmpMeta[4];
 tmp3 += 144;
-_str = omc_Interactive_getSourceFile(threadData, _path, omc_SymbolTable_getAbsyn(threadData));
+_str = omc_InteractiveUtil_getSourceFile(threadData, _path, omc_SymbolTable_getAbsyn(threadData));
 tmpMeta[1] = mmc_mk_box2(5, &Values_Value_STRING__desc, _str);
 tmpMeta[0] = tmpMeta[1];
 goto tmp2_done;
@@ -7132,14 +7132,14 @@ if (!listEmpty(tmpMeta[6])) goto tmp2_end;
 _path = tmpMeta[4];
 _str = tmpMeta[7];
 tmp3 += 143;
-tmpMeta[1] = omc_Interactive_checkAccessAnnotationAndEncryption(threadData, _path, omc_SymbolTable_getAbsyn(threadData));
+tmpMeta[1] = omc_InteractiveUtil_checkAccessAnnotationAndEncryption(threadData, _path, omc_SymbolTable_getAbsyn(threadData));
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],4,2) == 0) goto goto_1;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 3));
 tmp8 = mmc_unbox_integer(tmpMeta[2]);
 _access = tmp8;
 if((_access >= ((modelica_integer) 9)))
 {
-_b = omc_Interactive_setSourceFile(threadData, _path, _str, omc_SymbolTable_getAbsyn(threadData) ,&_p);
+_b = omc_InteractiveUtil_setSourceFile(threadData, _path, _str, omc_SymbolTable_getAbsyn(threadData) ,&_p);
 omc_SymbolTable_setAbsyn(threadData, _p);
 }
 else
@@ -7208,7 +7208,7 @@ tmpMeta[5] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[4]), 2));
 if (!listEmpty(tmpMeta[2])) goto tmp2_end;
 _name = tmpMeta[5];
 tmp3 += 139;
-_ty = omc_Interactive_getTypeOfVariable(threadData, _name, omc_SymbolTable_getVars(threadData));
+_ty = omc_InteractiveUtil_getTypeOfVariable(threadData, _name, omc_SymbolTable_getVars(threadData));
 tmpMeta[1] = mmc_mk_box2(5, &Values_Value_STRING__desc, omc_Types_unparseType(threadData, _ty));
 tmpMeta[0] = tmpMeta[1];
 goto tmp2_done;
@@ -8583,7 +8583,7 @@ if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],0,1) == 0) goto tmp2_e
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
 if (!listEmpty(tmpMeta[2])) goto tmp2_end;
 _path = tmpMeta[4];
-_vals = omc_CevalScript_getImportedNames(threadData, omc_Interactive_getPathedClassInProgram(threadData, _path, omc_SymbolTable_getAbsyn(threadData), 0) ,&_cvars);
+_vals = omc_CevalScript_getImportedNames(threadData, omc_InteractiveUtil_getPathedClassInProgram(threadData, _path, omc_SymbolTable_getAbsyn(threadData), 0) ,&_cvars);
 tmpMeta[1] = mmc_mk_cons(omc_ValuesUtil_makeArray(threadData, _vals), mmc_mk_cons(omc_ValuesUtil_makeArray(threadData, _cvars), MMC_REFSTRUCTLIT(mmc_nil)));
 tmpMeta[2] = mmc_mk_box2(11, &Values_Value_TUPLE__desc, tmpMeta[1]);
 tmpMeta[0] = tmpMeta[2];
@@ -8880,7 +8880,7 @@ if(_b)
 omc_Error_clearMessages(threadData);
 omc_Print_clearErrorBuf(threadData);
 _filename = omc_Testsuite_friendlyPath(threadData, _filename);
-_paths = omc_Interactive_parseFile(threadData, _filename, _OMC_LIT324, 0);
+_paths = omc_InteractiveUtil_parseFile(threadData, _filename, _OMC_LIT324, 0);
 _vals = omc_List_map(threadData, _paths, boxvar_ValuesUtil_makeCodeTypeName);
 }
 tmpMeta[0] = omc_ValuesUtil_makeArray(threadData, _vals);
@@ -8997,7 +8997,7 @@ tmpMeta[7] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[5]), 2));
 if (!listEmpty(tmpMeta[6])) goto tmp2_end;
 _classpath = tmpMeta[4];
 _encoding = tmpMeta[7];
-tmpMeta[1] = omc_Interactive_getPathedClassInProgram(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), 0);
+tmpMeta[1] = omc_InteractiveUtil_getPathedClassInProgram(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), 0);
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 8));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 2));
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 8));
@@ -9031,7 +9031,7 @@ if (!listEmpty(tmpMeta[6])) goto tmp2_end;
 _classpath = tmpMeta[4];
 tmp53 = 0;
 MMC_TRY_INTERNAL(mmc_jumper)
-omc_Interactive_getPathedClassInProgram(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), 0);
+omc_InteractiveUtil_getPathedClassInProgram(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), 0);
 tmp53 = 1;
 goto goto_54;
 goto_54:;
@@ -9078,7 +9078,7 @@ _encoding = tmpMeta[9];
 _mergeAST = tmp55;
 _str = ((!(stringEqual(_encoding, _OMC_LIT324)))?omc_System_iconv(threadData, _str, _encoding, _OMC_LIT324):_str);
 _newp = omc_Parser_parsestring(threadData, _str, _name);
-_newp = omc_Interactive_updateProgram(threadData, _newp, omc_SymbolTable_getAbsyn(threadData), _mergeAST);
+_newp = omc_InteractiveUtil_updateProgram(threadData, _newp, omc_SymbolTable_getAbsyn(threadData), _mergeAST);
 omc_SymbolTable_setAbsyn(threadData, _newp);
 _outCache = omc_FCore_emptyCache(threadData);
 tmpMeta[0] = _OMC_LIT5;
@@ -9130,7 +9130,7 @@ if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[3],0,1) == 0) goto tmp2_e
 tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
 if (!listEmpty(tmpMeta[2])) goto tmp2_end;
 _classpath = tmpMeta[4];
-tmpMeta[1] = omc_Interactive_getPathedClassInProgram(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), 0);
+tmpMeta[1] = omc_InteractiveUtil_getPathedClassInProgram(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), 0);
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 8));
 tmpMeta[3] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[2]), 8));
 tmp56 = mmc_unbox_real(tmpMeta[3]);
@@ -9161,7 +9161,7 @@ tmpMeta[4] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[3]), 2));
 if (!listEmpty(tmpMeta[2])) goto tmp2_end;
 _classpath = tmpMeta[4];
 tmp3 += 14;
-_str = omc_Interactive_getClassRestriction(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData));
+_str = omc_InteractiveUtil_getClassRestriction(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData));
 tmpMeta[1] = mmc_mk_box2(5, &Values_Value_STRING__desc, _str);
 tmpMeta[0] = tmpMeta[1];
 goto tmp2_done;
@@ -9186,7 +9186,7 @@ if (!listEmpty(tmpMeta[6])) goto tmp2_end;
 _classpath = tmpMeta[4];
 _path = tmpMeta[8];
 tmp3 += 13;
-_b = mmc_unbox_boolean(omc_Interactive_getNamedAnnotation(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), _path, _OMC_LIT328, boxvar_isSome));
+_b = mmc_unbox_boolean(omc_InteractiveUtil_getNamedAnnotation(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), _path, _OMC_LIT328, boxvar_isSome));
 tmpMeta[1] = mmc_mk_box2(6, &Values_Value_BOOL__desc, mmc_mk_boolean(_b));
 tmpMeta[0] = tmpMeta[1];
 goto tmp2_done;
@@ -9211,7 +9211,7 @@ tmpMeta[8] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[7]), 2));
 if (!listEmpty(tmpMeta[6])) goto tmp2_end;
 _classpath = tmpMeta[4];
 _path = tmpMeta[8];
-tmpMeta[1] = omc_Interactive_getNamedAnnotation(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), _path, mmc_mk_none(), boxvar_Interactive_getAnnotationExp);
+tmpMeta[1] = omc_InteractiveUtil_getNamedAnnotation(threadData, _classpath, omc_SymbolTable_getAbsyn(threadData), _path, mmc_mk_none(), boxvar_InteractiveUtil_getAnnotationExp);
 if (mmc__uniontype__metarecord__typedef__equal(tmpMeta[1],4,1) == 0) goto goto_1;
 tmpMeta[2] = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(tmpMeta[1]), 2));
 tmp57 = mmc_unbox_integer(tmpMeta[2]);
@@ -9716,9 +9716,9 @@ tmpMeta[4] = MMC_CDR(tmpMeta[2]);
 _path = tmpMeta[0];
 _requestOrigin = tmpMeta[1];
 _str1 = tmpMeta[3];
-_cdef = omc_Interactive_getPathedClassInProgram(threadData, _path, _p, 0);
-_ostr2 = omc_AbsynUtil_getNamedAnnotationInClass(threadData, _cdef, _OMC_LIT271, boxvar_Interactive_getAnnotationStringValueOrFail);
-_withoutConversion = omc_Interactive_getConversionAnnotation(threadData, _cdef ,&_withConversion);
+_cdef = omc_InteractiveUtil_getPathedClassInProgram(threadData, _path, _p, 0);
+_ostr2 = omc_AbsynUtil_getNamedAnnotationInClass(threadData, _cdef, _OMC_LIT271, boxvar_InteractiveUtil_getAnnotationStringValueOrFail);
+_withoutConversion = omc_InteractiveUtil_getConversionAnnotation(threadData, _cdef ,&_withConversion);
 omc_CevalScript_checkValidVersion(threadData, _path, _str1, _ostr2, _requestOrigin, _withConversion, _withoutConversion);
 tmp1 = 1;
 goto tmp3_done;
@@ -9876,11 +9876,11 @@ tmpMeta[0] = mmc_mk_cons(omc_AbsynUtil_pathString(threadData, _path, _OMC_LIT99,
 _msgTokens = tmpMeta[0];
 omc_Error_assertionOrAddSourceMessage(threadData, _b, _OMC_LIT468, _msgTokens, _OMC_LIT158);
 }
-_p = omc_Interactive_updateProgram(threadData, _pnew, _p, 0);
+_p = omc_InteractiveUtil_updateProgram(threadData, _pnew, _p, 0);
 _b = 1;
 if(_checkUses)
 {
-_modelsToLoad = omc_Interactive_getUsesAnnotationOrDefault(threadData, _pnew, _requireExactVersion);
+_modelsToLoad = omc_InteractiveUtil_getUsesAnnotationOrDefault(threadData, _pnew, _requireExactVersion);
 _p = omc_CevalScript_loadModel(threadData, _modelsToLoad, _modelicaPath, _p, 0, _notifyLoad, _checkUses, _requireExactVersion, 0 ,&_b);
 }
 tmpMeta[0] = mmc_mk_box2(0, _p, mmc_mk_boolean((_success && _b)));
@@ -9983,7 +9983,7 @@ _p = __omcQ_24in_5Fp;
 tmp1 = (modelica_boolean)_checkUses;
 if(tmp1)
 {
-tmpMeta[1] = omc_Interactive_getUsesAnnotationOrDefault(threadData, _newp, _requireExactVersion);
+tmpMeta[1] = omc_InteractiveUtil_getUsesAnnotationOrDefault(threadData, _newp, _requireExactVersion);
 }
 else
 {
@@ -9991,7 +9991,7 @@ tmpMeta[0] = MMC_REFSTRUCTLIT(mmc_nil);
 tmpMeta[1] = tmpMeta[0];
 }
 _modelsToLoad = tmpMeta[1];
-_p = omc_Interactive_updateProgram(threadData, _newp, _p, 0);
+_p = omc_InteractiveUtil_updateProgram(threadData, _newp, _p, 0);
 _p = omc_CevalScript_loadModel(threadData, _modelsToLoad, _modelicaPath, _p, 0, _notifyLoad, _checkUses, _requireExactVersion, 0, NULL);
 _return: OMC_LABEL_UNUSED
 return _p;

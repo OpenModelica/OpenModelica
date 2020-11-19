@@ -141,6 +141,36 @@ PROTECTED_FUNCTION_STATIC void boxptr_Util_stringDelimitListAndSeparate2(threadD
 static const MMC_DEFSTRUCTLIT(boxvar_lit_Util_stringDelimitListAndSeparate2,2,0) {(void*) boxptr_Util_stringDelimitListAndSeparate2,0}};
 #define boxvar_Util_stringDelimitListAndSeparate2 MMC_REFSTRUCTLIT(boxvar_lit_Util_stringDelimitListAndSeparate2)
 DLLExport
+modelica_metatype omc_Util_foldcallN(threadData_t *threadData, modelica_integer _n, modelica_fnptr _inFoldFunc, modelica_metatype _inStartValue)
+{
+modelica_metatype _outResult = NULL;
+modelica_integer tmp1;
+modelica_integer tmp2;
+modelica_integer tmp3;
+MMC_SO();
+_tailrecursive: OMC_LABEL_UNUSED
+_outResult = _inStartValue;
+tmp1 = ((modelica_integer) 1); tmp2 = 1; tmp3 = _n;
+if(!(((tmp2 > 0) && (tmp1 > tmp3)) || ((tmp2 < 0) && (tmp1 < tmp3))))
+{
+modelica_integer _i;
+for(_i = ((modelica_integer) 1); in_range_integer(_i, tmp1, tmp3); _i += tmp2)
+{
+_outResult = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))) ? ((modelica_metatype(*)(threadData_t*, modelica_metatype, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 2))), _outResult) : ((modelica_metatype(*)(threadData_t*, modelica_metatype)) (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_inFoldFunc), 1)))) (threadData, _outResult);
+}
+}
+_return: OMC_LABEL_UNUSED
+return _outResult;
+}
+modelica_metatype boxptr_Util_foldcallN(threadData_t *threadData, modelica_metatype _n, modelica_fnptr _inFoldFunc, modelica_metatype _inStartValue)
+{
+modelica_integer tmp1;
+modelica_metatype _outResult = NULL;
+tmp1 = mmc_unbox_integer(_n);
+_outResult = omc_Util_foldcallN(threadData, tmp1, _inFoldFunc, _inStartValue);
+return _outResult;
+}
+DLLExport
 modelica_integer omc_Util_msb(threadData_t *threadData, modelica_integer _n)
 {
 modelica_integer _res;

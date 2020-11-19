@@ -155,11 +155,6 @@ modelica_metatype boxptr_List_findMap(threadData_t *threadData, modelica_metatyp
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_findMap,2,0) {(void*) boxptr_List_findMap,0}};
 #define boxvar_List_findMap MMC_REFSTRUCTLIT(boxvar_lit_List_findMap)
 DLLExport
-modelica_metatype omc_List_first2FromTuple3(threadData_t *threadData, modelica_metatype _inTuple);
-#define boxptr_List_first2FromTuple3 omc_List_first2FromTuple3
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_first2FromTuple3,2,0) {(void*) boxptr_List_first2FromTuple3,0}};
-#define boxvar_List_first2FromTuple3 MMC_REFSTRUCTLIT(boxvar_lit_List_first2FromTuple3)
-DLLExport
 modelica_metatype omc_List_accumulateMapFoldAccum(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc, modelica_metatype _inFoldArg, modelica_metatype *out_outFoldArg);
 #define boxptr_List_accumulateMapFoldAccum omc_List_accumulateMapFoldAccum
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_accumulateMapFoldAccum,2,0) {(void*) boxptr_List_accumulateMapFoldAccum,0}};
@@ -589,11 +584,6 @@ void omc_List_threadMapAllValue(threadData_t *threadData, modelica_metatype _inL
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_threadMapAllValue,2,0) {(void*) boxptr_List_threadMapAllValue,0}};
 #define boxvar_List_threadMapAllValue MMC_REFSTRUCTLIT(boxvar_lit_List_threadMapAllValue)
 DLLExport
-modelica_metatype omc_List_threadTupleList(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2);
-#define boxptr_List_threadTupleList omc_List_threadTupleList
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_threadTupleList,2,0) {(void*) boxptr_List_threadTupleList,0}};
-#define boxvar_List_threadTupleList MMC_REFSTRUCTLIT(boxvar_lit_List_threadTupleList)
-DLLExport
 modelica_metatype omc_List_threadMapList__2(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2, modelica_fnptr _inMapFunc, modelica_metatype *out_outList2);
 #define boxptr_List_threadMapList__2 omc_List_threadMapList__2
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_threadMapList__2,2,0) {(void*) boxptr_List_threadMapList__2,0}};
@@ -619,21 +609,6 @@ modelica_metatype omc_List_threadMap(threadData_t *threadData, modelica_metatype
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_threadMap,2,0) {(void*) boxptr_List_threadMap,0}};
 #define boxvar_List_threadMap MMC_REFSTRUCTLIT(boxvar_lit_List_threadMap)
 DLLExport
-modelica_metatype omc_List_thread5Tuple(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2, modelica_metatype _inList3, modelica_metatype _inList4, modelica_metatype _inList5);
-#define boxptr_List_thread5Tuple omc_List_thread5Tuple
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_thread5Tuple,2,0) {(void*) boxptr_List_thread5Tuple,0}};
-#define boxvar_List_thread5Tuple MMC_REFSTRUCTLIT(boxvar_lit_List_thread5Tuple)
-DLLExport
-modelica_metatype omc_List_thread4Tuple(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2, modelica_metatype _inList3, modelica_metatype _inList4);
-#define boxptr_List_thread4Tuple omc_List_thread4Tuple
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_thread4Tuple,2,0) {(void*) boxptr_List_thread4Tuple,0}};
-#define boxvar_List_thread4Tuple MMC_REFSTRUCTLIT(boxvar_lit_List_thread4Tuple)
-DLLExport
-modelica_metatype omc_List_thread3Tuple(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2, modelica_metatype _inList3);
-#define boxptr_List_thread3Tuple omc_List_thread3Tuple
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_thread3Tuple,2,0) {(void*) boxptr_List_thread3Tuple,0}};
-#define boxvar_List_thread3Tuple MMC_REFSTRUCTLIT(boxvar_lit_List_thread3Tuple)
-DLLExport
 modelica_metatype omc_List_unzipSecond(threadData_t *threadData, modelica_metatype _inTuples);
 #define boxptr_List_unzipSecond omc_List_unzipSecond
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_unzipSecond,2,0) {(void*) boxptr_List_unzipSecond,0}};
@@ -649,25 +624,25 @@ modelica_metatype omc_List_unzipReverse(threadData_t *threadData, modelica_metat
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_unzipReverse,2,0) {(void*) boxptr_List_unzipReverse,0}};
 #define boxvar_List_unzipReverse MMC_REFSTRUCTLIT(boxvar_lit_List_unzipReverse)
 DLLExport
+modelica_metatype omc_List_unzip3(threadData_t *threadData, modelica_metatype _tuples, modelica_metatype *out_l2, modelica_metatype *out_l3);
+#define boxptr_List_unzip3 omc_List_unzip3
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_unzip3,2,0) {(void*) boxptr_List_unzip3,0}};
+#define boxvar_List_unzip3 MMC_REFSTRUCTLIT(boxvar_lit_List_unzip3)
+DLLExport
 modelica_metatype omc_List_unzip(threadData_t *threadData, modelica_metatype _inTuples, modelica_metatype *out_outList2);
 #define boxptr_List_unzip omc_List_unzip
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_unzip,2,0) {(void*) boxptr_List_unzip,0}};
 #define boxvar_List_unzip MMC_REFSTRUCTLIT(boxvar_lit_List_unzip)
 DLLExport
-modelica_metatype omc_List_zip2(threadData_t *threadData, modelica_metatype _inElem, modelica_metatype _inList2);
-#define boxptr_List_zip2 omc_List_zip2
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_zip2,2,0) {(void*) boxptr_List_zip2,0}};
-#define boxvar_List_zip2 MMC_REFSTRUCTLIT(boxvar_lit_List_zip2)
+modelica_metatype omc_List_zip3(threadData_t *threadData, modelica_metatype _l1, modelica_metatype _l2, modelica_metatype _l3);
+#define boxptr_List_zip3 omc_List_zip3
+static const MMC_DEFSTRUCTLIT(boxvar_lit_List_zip3,2,0) {(void*) boxptr_List_zip3,0}};
+#define boxvar_List_zip3 MMC_REFSTRUCTLIT(boxvar_lit_List_zip3)
 DLLExport
 modelica_metatype omc_List_zip(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2);
 #define boxptr_List_zip omc_List_zip
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_zip,2,0) {(void*) boxptr_List_zip,0}};
 #define boxvar_List_zip MMC_REFSTRUCTLIT(boxvar_lit_List_zip)
-DLLExport
-modelica_metatype omc_List_threadTuple(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2);
-#define boxptr_List_threadTuple omc_List_threadTuple
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_threadTuple,2,0) {(void*) boxptr_List_threadTuple,0}};
-#define boxvar_List_threadTuple MMC_REFSTRUCTLIT(boxvar_lit_List_threadTuple)
 DLLExport
 modelica_metatype omc_List_thread3(threadData_t *threadData, modelica_metatype _inList1, modelica_metatype _inList2, modelica_metatype _inList3);
 #define boxptr_List_thread3 omc_List_thread3
@@ -699,17 +674,6 @@ modelica_metatype omc_List_reduce(threadData_t *threadData, modelica_metatype _i
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_reduce,2,0) {(void*) boxptr_List_reduce,0}};
 #define boxvar_List_reduce MMC_REFSTRUCTLIT(boxvar_lit_List_reduce)
 DLLExport
-modelica_metatype omc_List_foldcallN(threadData_t *threadData, modelica_integer _n, modelica_fnptr _inFoldFunc, modelica_metatype _inStartValue);
-DLLExport
-modelica_metatype boxptr_List_foldcallN(threadData_t *threadData, modelica_metatype _n, modelica_fnptr _inFoldFunc, modelica_metatype _inStartValue);
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_foldcallN,2,0) {(void*) boxptr_List_foldcallN,0}};
-#define boxvar_List_foldcallN MMC_REFSTRUCTLIT(boxvar_lit_List_foldcallN)
-DLLExport
-modelica_metatype omc_List_mapFoldListTuple(threadData_t *threadData, modelica_metatype _inListList, modelica_fnptr _inFunc, modelica_metatype _inFoldArg, modelica_metatype *out_outFoldArg);
-#define boxptr_List_mapFoldListTuple omc_List_mapFoldListTuple
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_mapFoldListTuple,2,0) {(void*) boxptr_List_mapFoldListTuple,0}};
-#define boxvar_List_mapFoldListTuple MMC_REFSTRUCTLIT(boxvar_lit_List_mapFoldListTuple)
-DLLExport
 modelica_metatype omc_List_map3FoldList(threadData_t *threadData, modelica_metatype _inListList, modelica_fnptr _inFunc, modelica_metatype _inConstArg1, modelica_metatype _inConstArg2, modelica_metatype _inConstArg3, modelica_metatype _inArg, modelica_metatype *out_outArg);
 #define boxptr_List_map3FoldList omc_List_map3FoldList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_map3FoldList,2,0) {(void*) boxptr_List_map3FoldList,0}};
@@ -719,11 +683,6 @@ modelica_metatype omc_List_mapFoldList(threadData_t *threadData, modelica_metaty
 #define boxptr_List_mapFoldList omc_List_mapFoldList
 static const MMC_DEFSTRUCTLIT(boxvar_lit_List_mapFoldList,2,0) {(void*) boxptr_List_mapFoldList,0}};
 #define boxvar_List_mapFoldList MMC_REFSTRUCTLIT(boxvar_lit_List_mapFoldList)
-DLLExport
-modelica_metatype omc_List_mapFoldTuple(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc, modelica_metatype _inArg, modelica_metatype *out_outArg);
-#define boxptr_List_mapFoldTuple omc_List_mapFoldTuple
-static const MMC_DEFSTRUCTLIT(boxvar_lit_List_mapFoldTuple,2,0) {(void*) boxptr_List_mapFoldTuple,0}};
-#define boxvar_List_mapFoldTuple MMC_REFSTRUCTLIT(boxvar_lit_List_mapFoldTuple)
 DLLExport
 modelica_metatype omc_List_map4Fold(threadData_t *threadData, modelica_metatype _inList, modelica_fnptr _inFunc, modelica_metatype _inConstArg, modelica_metatype _inConstArg2, modelica_metatype _inConstArg3, modelica_metatype _inConstArg4, modelica_metatype _inArg, modelica_metatype *out_outArg);
 #define boxptr_List_map4Fold omc_List_map4Fold

@@ -25,6 +25,7 @@ extern "C" {
 #include "GC.h"
 #include "Global.h"
 #include "Interactive.h"
+#include "InteractiveUtil.h"
 #include "List.h"
 #include "Main.h"
 #include "Parser.h"

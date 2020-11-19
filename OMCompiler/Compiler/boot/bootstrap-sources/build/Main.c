@@ -1390,7 +1390,7 @@ if (1 != tmp3_1) goto tmp2_end;
 tmp3 += 2;
 _pnew = omc_Parser_parse(threadData, _inLib, _OMC_LIT150, _OMC_LIT34, mmc_mk_none());
 _p = omc_SymbolTable_getAbsyn(threadData);
-_pnew = omc_Interactive_mergeProgram(threadData, _pnew, _p);
+_pnew = omc_InteractiveUtil_mergeProgram(threadData, _pnew, _p);
 omc_SymbolTable_setAbsyn(threadData, _pnew);
 goto tmp2_done;
 }
@@ -1762,8 +1762,8 @@ tmp4 += 1;
 _table = omc_SymbolTable_get(threadData);
 _ast = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_table), 2)));
 _vars = (MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(_table), 4)));
-_prog2 = omc_Interactive_addScope(threadData, _prog, _vars);
-_prog2 = omc_Interactive_updateProgram(threadData, _prog2, _ast, 0);
+_prog2 = omc_InteractiveUtil_addScope(threadData, _prog, _vars);
+_prog2 = omc_InteractiveUtil_updateProgram(threadData, _prog2, _ast, 0);
 if(omc_Flags_isSet(threadData, _OMC_LIT125))
 {
 omc_Debug_trace(threadData, _OMC_LIT121);

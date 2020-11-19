@@ -3855,7 +3855,7 @@ _stateVarLst = omc_List_filterOnTrue(threadData, _varLst1, (modelica_fnptr) mmc_
 _stateVarCrefs = omc_List_map(threadData, _stateVarLst, boxvar_DAEUtil_varCref);
 _variableAttributesOptions = omc_List_map(threadData, _stateVarLst, boxvar_DAEUtil_getVariableAttributes);
 _startValuesOpt = omc_List_map(threadData, _variableAttributesOptions, boxvar_StateMachineFlatten_getStartAttrOption);
-_varCrefStartVal = omc_List_threadTuple(threadData, _stateVarCrefs, _startValuesOpt);
+_varCrefStartVal = omc_List_zip(threadData, _stateVarCrefs, _startValuesOpt);
 _crToExpOpt = omc_HashTableCrToExpOption_emptyHashTableSized(threadData, ((modelica_integer) 1) + listLength(_varCrefStartVal));
 _crToExpOpt = omc_List_fold(threadData, _varCrefStartVal, boxvar_BaseHashTable_add, _crToExpOpt);
 tmpMeta[0] = omc_List_fold3(threadData, _equationLst1, boxvar_StateMachineFlatten_addStateActivationAndReset, _inSMComp, _inEnclosingFlatSmSemantics, _crToExpOpt, _OMC_LIT127);
@@ -4084,7 +4084,7 @@ _enclosingStateOption = tmpMeta[15];
 _i = ((modelica_integer) 0);
 {
 modelica_metatype _tc;
-for (tmpMeta[5] = omc_List_threadTuple(threadData, _t, _c); !listEmpty(tmpMeta[5]); tmpMeta[5]=MMC_CDR(tmpMeta[5]))
+for (tmpMeta[5] = omc_List_zip(threadData, _t, _c); !listEmpty(tmpMeta[5]); tmpMeta[5]=MMC_CDR(tmpMeta[5]))
 {
 _tc = MMC_CAR(tmpMeta[5]);
 _i = ((modelica_integer) 1) + _i;

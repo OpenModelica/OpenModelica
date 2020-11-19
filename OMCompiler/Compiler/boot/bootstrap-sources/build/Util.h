@@ -10,6 +10,12 @@ extern "C" {
 #endif
 extern struct record_description Util_DateTime_DATETIME__desc;
 DLLExport
+modelica_metatype omc_Util_foldcallN(threadData_t *threadData, modelica_integer _n, modelica_fnptr _inFoldFunc, modelica_metatype _inStartValue);
+DLLExport
+modelica_metatype boxptr_Util_foldcallN(threadData_t *threadData, modelica_metatype _n, modelica_fnptr _inFoldFunc, modelica_metatype _inStartValue);
+static const MMC_DEFSTRUCTLIT(boxvar_lit_Util_foldcallN,2,0) {(void*) boxptr_Util_foldcallN,0}};
+#define boxvar_Util_foldcallN MMC_REFSTRUCTLIT(boxvar_lit_Util_foldcallN)
+DLLExport
 modelica_integer omc_Util_msb(threadData_t *threadData, modelica_integer _n);
 DLLExport
 modelica_metatype boxptr_Util_msb(threadData_t *threadData, modelica_metatype _n);

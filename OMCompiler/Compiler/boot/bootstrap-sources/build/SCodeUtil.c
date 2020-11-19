@@ -123,7 +123,7 @@ static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT47,33,_OMC_LIT47_data);
 #define _OMC_LIT48_data "/home/mahge/dev/OpenModelica/OMCompiler/Compiler/FrontEnd/SCodeUtil.mo"
 static const MMC_DEFSTRINGLIT(_OMC_LIT_STRUCT48,70,_OMC_LIT48_data);
 #define _OMC_LIT48 MMC_REFSTRINGLIT(_OMC_LIT_STRUCT48)
-static const MMC_DEFREALLIT(_OMC_LIT_STRUCT49_6,1605529654.0);
+static const MMC_DEFREALLIT(_OMC_LIT_STRUCT49_6,1605787387.0);
 #define _OMC_LIT49_6 MMC_REFREALLIT(_OMC_LIT_STRUCT49_6)
 static const MMC_DEFSTRUCTLIT(_OMC_LIT_STRUCT49,8,3) {&SourceInfo_SOURCEINFO__desc,_OMC_LIT48,MMC_IMMEDIATE(MMC_TAGFIXNUM(0)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2717)),MMC_IMMEDIATE(MMC_TAGFIXNUM(9)),MMC_IMMEDIATE(MMC_TAGFIXNUM(2717)),MMC_IMMEDIATE(MMC_TAGFIXNUM(82)),_OMC_LIT49_6}};
 #define _OMC_LIT49 MMC_REFSTRUCTLIT(_OMC_LIT_STRUCT49)
@@ -12457,7 +12457,7 @@ _algs1 = omc_List_map(threadData, _trueBranch, boxvar_SCodeUtil_statementToAlgor
 _conditions = omc_List_map(threadData, _branches, boxvar_Util_tuple21);
 _stmtsList = omc_List_map(threadData, _branches, boxvar_Util_tuple22);
 _algsLst = omc_List_mapList(threadData, _stmtsList, boxvar_SCodeUtil_statementToAlgorithmItem);
-_abranches = omc_List_threadTuple(threadData, _conditions, _algsLst);
+_abranches = omc_List_zip(threadData, _conditions, _algsLst);
 _algs2 = omc_List_map(threadData, _elseBranch, boxvar_SCodeUtil_statementToAlgorithmItem);
 tmpMeta[1] = mmc_mk_box5(4, &Absyn_Algorithm_ALG__IF__desc, _boolExpr, _algs1, _abranches, _algs2);
 tmpMeta[2] = mmc_mk_box4(3, &Absyn_AlgorithmItem_ALGORITHMITEM__desc, tmpMeta[1], mmc_mk_none(), _info);
@@ -12533,7 +12533,7 @@ tmpMeta[2] = MMC_CAR(tmpMeta[1]);
 tmpMeta[3] = MMC_CDR(tmpMeta[1]);
 _algs1 = tmpMeta[2];
 _algsLst = tmpMeta[3];
-_abranches = omc_List_threadTuple(threadData, _conditions, _algsLst);
+_abranches = omc_List_zip(threadData, _conditions, _algsLst);
 tmpMeta[1] = mmc_mk_box4(8, &Absyn_Algorithm_ALG__WHEN__A__desc, _boolExpr, _algs1, _abranches);
 tmpMeta[2] = mmc_mk_box4(3, &Absyn_AlgorithmItem_ALGORITHMITEM__desc, tmpMeta[1], mmc_mk_none(), _info);
 tmpMeta[0] = tmpMeta[2];
