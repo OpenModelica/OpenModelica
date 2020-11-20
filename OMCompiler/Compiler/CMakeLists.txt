@@ -187,7 +187,18 @@ add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
 
 
 add_library(OpenModelicaCompiler STATIC ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
+
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
+
+# This flag is interesting. OMC will segfault (at least on Windows old OMDev) on very deep
+# recursive calls if this flag is enabled. E.g., try translating the CodegenCpp* tpl files to mo files with
+# an omc not compiled without this flag. The tpl parser is quite recursive and will
+# segfault on parsing comments with very long lines ~300. *CPP tpl files have lines longer
+# than that.
+# GCC manual says it is enabled on levels -O and higher. Explicitly disable it.
+if(MINGW)
+#   target_compile_options(OpenModelicaCompiler PRIVATE -fno-ipa-pure-const)
+endif()
 
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 
@@ -208,8 +219,9 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_io)
 
 # OMC Executable.
 add_executable(omc .cmake/omc_main.c)
-target_link_libraries(omc OpenModelicaCompiler)
+target_link_libraries(omc PRIVATE OpenModelicaCompiler)
 
+# target_link_options(omc PRIVATE -Wl,--stack,33554432)
 
 
 
