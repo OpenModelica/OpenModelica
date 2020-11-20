@@ -456,6 +456,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SBSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/SimulationResults.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/TaskGraphResults.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedMap.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/UnorderedSet.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Unzip.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/Vector.mo
