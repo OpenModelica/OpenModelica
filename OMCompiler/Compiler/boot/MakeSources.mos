@@ -1,3 +1,7 @@
+if OpenModelica.Scripting.getEnvironmentVar("OPENMODELICA_BACKEND_STUBS") == "1" then
+  // We need to load the stubs sources, but we need the full paths to remain for the rest of this script to work...
+  OpenModelica.Scripting.setEnvironmentVar("OPENMODELICA_BACKEND_STUBS", "2");
+end if;
 runScript("LoadCompilerSources.mos");
 mkdir("build");
 workingDir := cd();

@@ -82,6 +82,7 @@ compilerruntime:
 bootstrap-from-compiled: make-separate
 
 make-bootstrap-tarball: clean
+	test `uname` = "Linux" # Linux produces more compact sources since Windows disables some features of the MetaModelica compilation stages
 	test ! -f Makefile.sources || rm Makefile.sources
 	test ! -f Makefile.depends || rm Makefile.depends
 	OPENMODELICA_BACKEND_STUBS=1 $(MAKE) -f $(defaultMakefileTarget) generate-files-in-steps

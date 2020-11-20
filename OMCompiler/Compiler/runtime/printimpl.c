@@ -455,6 +455,9 @@ static int PrintImpl__writeBufConvertLines(threadData_t *threadData,const char *
   /* on Windows change the backslashes to forward slashes */
   strtmp = _replace(filename, "\\", "/");
 #endif
+  if (getenv("OPENMODELICA_BACKEND_STUBS")) {
+    filename = SystemImpl__basename(filename);
+  }
   fprintf(file,"#ifdef OMC_BASE_FILE\n"
                "  #define OMC_FILE OMC_BASE_FILE\n"
                "#else\n"
