@@ -398,17 +398,22 @@ static void* parseString(const char* data, const char* interactiveFilename, int 
 static void* parseFile(const char* fileName, const char* infoName, int flags, const char *encoding, int langStd, int runningTestsuite, const char* libraryPath, void* lveInstance)
 {
   bool debug         = false; //check_debug_flag("parsedebug");
+  bool genBootstrappingSources = false;
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
   int len = 0;
+  const char *OPENMODELICA_BACKEND_STUBS;
   parser_members members;
   pthread_once(&parser_once_create_key,make_key);
   pthread_setspecific(modelicaParserKey,&members);
 
+  OPENMODELICA_BACKEND_STUBS = getenv("OPENMODELICA_BACKEND_STUBS");
+  genBootstrappingSources = OPENMODELICA_BACKEND_STUBS && 0 == strcmp(OPENMODELICA_BACKEND_STUBS, "1");
+
   members.encoding = encoding;
   members.filename_C = fileName;
-  members.filename_C_testsuiteFriendly = infoName;
+  members.filename_C_testsuiteFriendly = genBootstrappingSources ? SystemImpl__basename(infoName) : infoName;
   members.flags = flags;
   members.readonly = !SystemImpl__regularFileWritable(fileName);
   omc_first_comment = 0;
@@ -440,7 +445,8 @@ static void* parseFile(const char* fileName, const char* infoName, int flags, co
   struct stat st;
 #endif
   omc_stat(members.filename_C, &st);
-  members.timestamp = mmc_mk_rcon((double)st.st_mtime);
+  members.timestamp = genBootstrappingSources ? mmc_mk_rcon((double)0.0) : mmc_mk_rcon((double)st.st_mtime);
+  members.filename_C = genBootstrappingSources ? members.filename_C_testsuiteFriendly : members.filename_C;
   if (0 == st.st_size) return parseString("",members.filename_C,ModelicaParser_flags, langStd, runningTestsuite);
 
   fName  = (pANTLR3_UINT8)fileName;
