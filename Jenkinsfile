@@ -100,7 +100,7 @@ pipeline {
               withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
                 sh "echo PATH: \$PATH QTDIR: \$QTDIR"
                 sh "${env.GMAKE} --version"
-                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_LAPACK=OFF')
+                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
                 // common.buildGUI('', false)
                 // sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
                 // sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
