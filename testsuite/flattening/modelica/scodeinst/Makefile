@@ -382,6 +382,7 @@ ExtendConnector1.mo \
 ExtendImport1.mo \
 ExtendImport2.mo \
 ExtendInherited1.mo \
+ExtendsLoop1.mo \
 ExtendReplaceable1.mo \
 ExtendReplaceable2.mo \
 ExtendReplaceable3.mo \

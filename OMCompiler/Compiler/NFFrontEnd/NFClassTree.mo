@@ -604,6 +604,15 @@ public
 
         case Class.PARTIAL_BUILTIN() then ();
 
+        case Class.INSTANCED_CLASS()
+          guard InstNode.isBaseClass(clsNode)
+          algorithm
+            InstNodeType.BASE_CLASS(definition = ext_def) := InstNode.nodeType(clsNode);
+            Error.addSourceMessage(Error.EXTENDS_LOOP,
+              {SCodeUtil.getElementName(ext_def)}, InstNode.info(clsNode));
+          then
+            fail();
+
         else
           algorithm
             Error.assertion(false, getInstanceName() + " got invalid class", sourceInfo());
