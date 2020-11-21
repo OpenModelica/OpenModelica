@@ -278,7 +278,7 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
   }
 }
 
-void buildOMC_CMake(cmake_args) {
+void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
   standardSetup()
 
   if (isWindows()) {
@@ -305,8 +305,8 @@ void buildOMC_CMake(cmake_args) {
   }
   else {
     sh "mkdir OMCompiler/build_cmake"
-    sh "cmake -S OMCompiler -B OMCompiler/build_cmake ${cmake_args}"
-    sh "cmake --build OMCompiler/build_cmake --parallel ${numPhysicalCPU()} --target install"
+    sh "${cmake_exe} -S OMCompiler -B OMCompiler/build_cmake ${cmake_args}"
+    sh "${cmake_exe} --build OMCompiler/build_cmake --parallel ${numPhysicalCPU()} --target install"
     sh "OMCompiler/build_cmake/install_cmake/bin/omc --help"
     sh "OMCompiler/build_cmake/install_cmake/bin/omc --version"
   }

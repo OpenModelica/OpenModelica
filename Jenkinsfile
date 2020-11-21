@@ -192,12 +192,9 @@ pipeline {
                 wget "cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.sh"
                 mkdir -p /tmp/cmake
                 sh cmake-3.17.2-Linux-x86_64.sh --prefix=/tmp/cmake --skip-license
-                ln -s /tmp/cmake/bin/cmake /usr/local/bin/cmake
-                ln -s /tmp/cmake/bin/ctest /usr/local/bin/ctest
-                cmake --version
-                which cmake
+                /tmp/cmake/bin/cmake --version
               '''
-              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
+              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release', '/tmp/cmake/bin/cmake')
             }
             stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
           }
