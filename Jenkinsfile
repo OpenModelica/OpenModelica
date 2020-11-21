@@ -172,7 +172,8 @@ pipeline {
         stage('cmake-focal-gcc') {
           agent {
             docker {
-              image 'docker.openmodelica.org/build-deps:focal.nightly.amd64'
+              // image 'docker.openmodelica.org/build-deps:focal.nightly.amd64'
+              image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
               label 'linux'
               alwaysPull true
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
@@ -185,35 +186,46 @@ pipeline {
           }
           steps {
             script {
+              sh '''
+                cmake --version
+                which cmake
+                wget "cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.sh"
+                mkdir -p /tmp/cmake
+                sh cmake-3.17.2-Linux-x86_64.sh --prefix=/tmp/cmake --skip-license
+                ln -s /tmp/cmake/bin/cmake /usr/local/bin/cmake
+                ln -s /tmp/cmake/bin/ctest /usr/local/bin/ctest
+                cmake --version
+                which cmake
+              '''
               common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
             }
             stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
           }
         }
 
-        stage('checks') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:v1.16'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          steps {
-            script { common.standardSetup() }
-            // It's really bad if we mess up the repo and can no longer build properly
-            sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
-            // TODO: trailing-whitespace-error tab-error
-            sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
-            sh '''
-            cd doc/bibliography
-            mkdir -p /tmp/openmodelica.org-bibgen
-            sh generate.sh /tmp/openmodelica.org-bibgen
-            '''
-          }
-        }
+        // stage('checks') {
+        //   agent {
+        //     docker {
+        //       image 'docker.openmodelica.org/build-deps:v1.16'
+        //       label 'linux'
+        //       alwaysPull true
+        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+        //     }
+        //   }
+        //   steps {
+        //     script { common.standardSetup() }
+        //     // It's really bad if we mess up the repo and can no longer build properly
+        //     sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
+        //     // TODO: trailing-whitespace-error tab-error
+        //     sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
+        //     sh '''
+        //     cd doc/bibliography
+        //     mkdir -p /tmp/openmodelica.org-bibgen
+        //     sh generate.sh /tmp/openmodelica.org-bibgen
+        //     '''
+        //   }
+        // }
       }
     }
     stage('tests') {
