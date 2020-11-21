@@ -187,7 +187,7 @@ pipeline {
             script {
               common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
             }
-            stash name: 'omc-cmake-gcc', includes: 'OMcompiler/build_cmake/install_cmake/bin/**'
+            stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
           }
         }
 
@@ -280,7 +280,7 @@ pipeline {
 
               sh '''
                 ls
-                cp OMcompiler/build_cmake/install_cmake/bin/omc build/bin/
+                cp OMCompiler/build_cmake/install_cmake/bin/omc build/bin/
               '''
 
               common.makeLibsAndCache()
