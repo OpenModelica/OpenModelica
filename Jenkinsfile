@@ -47,25 +47,25 @@ pipeline {
     }
     stage('setup') {
       parallel {
-        // stage('gcc') {
-        //   agent {
-        //     docker {
-        //       image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
-        //       label 'linux'
-        //       alwaysPull true
-        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-        //     }
-        //   }
-        //   environment {
-        //     QTDIR = "/usr/lib/qt4"
-        //   }
-        //   steps {
-        //     // Xenial is GCC 5
-        //     script { common.buildOMC('gcc-5', 'g++-5', '', true) }
-        //     stash name: 'omc-gcc', includes: 'build/**, **/config.status'
-        //   }
-        // }
+        stage('gcc') {
+          agent {
+            docker {
+              image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          environment {
+            QTDIR = "/usr/lib/qt4"
+          }
+          steps {
+            // Xenial is GCC 5
+            script { common.buildOMC('gcc-5', 'g++-5', '', true) }
+            stash name: 'omc-gcc', includes: 'build/**, **/config.status'
+          }
+        }
         // stage('clang') {
         //   agent {
         //     docker {
@@ -84,60 +84,63 @@ pipeline {
         //     stash name: 'omc-clang', includes: 'build/**, **/config.status'
         //   }
         // }
-        stage('cmake-MacOS') {
-          agent {
-            node {
-              label 'osx'
-            }
-          }
-          // when {
-          //   beforeAgent true
-          //   expression { shouldWeBuildOSX }
-          // }
-          steps {
-            script {
-              // Qt5 is MacOS 10.12+...
-              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
-                sh "echo PATH: \$PATH QTDIR: \$QTDIR"
-                sh "${env.GMAKE} --version"
-                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
-                // common.buildGUI('', false)
-                // sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
-                // sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
-                // // TODO: OMCppOSUSimulation throws error for help display
-                // //sh label: "Sanity check for Cpp runtime", script: "./build/bin/OMCppOSUSimulation --help"
-                // sh label: "Sanity check for OMEdit", script: "./build/Applications/OMEdit.app/Contents/MacOS/OMEdit --help"
-              }
-            }
-          }
-        }
-        stage('cmake-OMDev-gcc') {
-          agent {
-            node {
-              label 'windows'
-            }
-          }
-          // when {
-          //   beforeAgent true
-          //   expression { shouldWeBuildMINGW }
-          // }
-          environment {
-            RUNTESTDB = '/c/dev/'
-            LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
-          }
-          steps {
-            script {
-              withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
-                bat "echo PATH: %PATH%"
-                common.buildOMC_CMake('-G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release')
-                // common.buildOMC('cc', 'c++', '', true)
-                // common.makeLibsAndCache()
-                // common.buildGUI('', true)
-                // common.buildAndRunOMEditTestsuite('')
-              }
-            }
-          }
-        }
+
+        // stage('cmake-MacOS') {
+        //   agent {
+        //     node {
+        //       label 'osx'
+        //     }
+        //   }
+        //   // when {
+        //   //   beforeAgent true
+        //   //   expression { shouldWeBuildOSX }
+        //   // }
+        //   steps {
+        //     script {
+        //       // Qt5 is MacOS 10.12+...
+        //       withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
+        //         sh "echo PATH: \$PATH QTDIR: \$QTDIR"
+        //         sh "${env.GMAKE} --version"
+        //         common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
+        //         // common.buildGUI('', false)
+        //         // sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
+        //         // sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
+        //         // // TODO: OMCppOSUSimulation throws error for help display
+        //         // //sh label: "Sanity check for Cpp runtime", script: "./build/bin/OMCppOSUSimulation --help"
+        //         // sh label: "Sanity check for OMEdit", script: "./build/Applications/OMEdit.app/Contents/MacOS/OMEdit --help"
+        //       }
+        //     }
+        //   }
+        // }
+
+        // stage('cmake-OMDev-gcc') {
+        //   agent {
+        //     node {
+        //       label 'windows'
+        //     }
+        //   }
+        //   // when {
+        //   //   beforeAgent true
+        //   //   expression { shouldWeBuildMINGW }
+        //   // }
+        //   environment {
+        //     RUNTESTDB = '/c/dev/'
+        //     LIBRARIES = '/c/dev/jenkins-cache/omlibrary/'
+        //   }
+        //   steps {
+        //     script {
+        //       withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
+        //         bat "echo PATH: %PATH%"
+        //         common.buildOMC_CMake('-G "MSYS Makefiles" -DCMAKE_BUILD_TYPE=Release')
+        //         // common.buildOMC('cc', 'c++', '', true)
+        //         // common.makeLibsAndCache()
+        //         // common.buildGUI('', true)
+        //         // common.buildAndRunOMEditTestsuite('')
+        //       }
+        //     }
+        //   }
+        // }
+
         stage('CentOS6') {
           agent {
             dockerfile {
@@ -184,8 +187,10 @@ pipeline {
             script {
               common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
             }
+            stash name: 'omc-cmake-gcc', includes: 'OMcompiler/build_cmake/install_cmake/bin/**'
           }
         }
+
         stage('checks') {
           agent {
             docker {
@@ -211,8 +216,8 @@ pipeline {
         }
       }
     }
-    // stage('tests') {
-    //   parallel {
+    stage('tests') {
+      parallel {
     //     stage('testsuite-clang') {
     //       agent {
     //         dockerfile {
@@ -248,34 +253,41 @@ pipeline {
     //       }
     //     }
 
-    //     stage('testsuite-gcc') {
-    //       agent {
-    //         dockerfile {
-    //           additionalBuildArgs '--pull'
-    //           dir '.CI/cache-xenial'
-    //           label 'linux'
-    //           args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
-    //                "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-    //                "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-    //         }
-    //       }
-    //       environment {
-    //         RUNTESTDB = "/cache/runtest/"
-    //         LIBRARIES = "/cache/omlibrary"
-    //       }
-    //       when {
-    //         beforeAgent true
-    //         expression { shouldWeRunTests }
-    //       }
-    //       steps {
-    //         script {
-    //           common.standardSetup()
-    //           unstash 'omc-gcc'
-    //           common.makeLibsAndCache()
-    //           common.partest()
-    //         }
-    //       }
-    //     }
+        stage('testsuite-gcc') {
+          agent {
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache-xenial'
+              label 'linux'
+              args "--mount type=volume,source=runtest-gcc-cache,target=/cache/runtest " +
+                   "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          environment {
+            RUNTESTDB = "/cache/runtest/"
+            LIBRARIES = "/cache/omlibrary"
+          }
+          when {
+            beforeAgent true
+            expression { shouldWeRunTests }
+          }
+          steps {
+            script {
+              common.standardSetup()
+              unstash 'omc-gcc'
+              unstash 'omc-cmake-gcc'
+
+              sh '''
+                ls
+                cp OMcompiler/build_cmake/install_cmake/bin/omc build/bin/
+              '''
+
+              common.makeLibsAndCache()
+              common.partest()
+            }
+          }
+        }
 
     //     stage('testsuite-fmu-crosscompile') {
     //       stages {
@@ -713,8 +725,8 @@ pipeline {
     //       sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
     //       sh 'git push git@github.com:OpenModelica/OpenModelica.git omlib-staging:master || (echo "Trying to update the repository if that is the problem" ; git pull --rebase && git push --force  git@github.com:OpenModelica/OpenModelica.git omlib-staging:omlib-staging & false)'
     //     }
-    //   }
-    // }
+      }
+    }
   }
   post {
     failure {
