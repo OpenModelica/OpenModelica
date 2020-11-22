@@ -62,7 +62,11 @@ pipeline {
           }
           steps {
             // Xenial is GCC 5
-            script { common.buildOMC('gcc-5', 'g++-5', '', true) }
+            script {
+              common.buildOMC('gcc-5', 'g++-5', '', true)
+              sh "cat OMCompiler/Compiler/Util/Autoconf.mo"
+              sh "cat OMCompiler/SimulationRuntime/c/RuntimeSources.mo"
+            }
             stash name: 'omc-gcc', includes: 'build/**, **/config.status'
           }
         }
