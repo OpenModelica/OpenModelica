@@ -39,12 +39,14 @@ public
 
 protected
   // NF imports
+  import Ceval = NFCeval;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
   import NFFlatten.FunctionTree;
   import InstNode = NFInstNode.InstNode;
   import SBGraphUtil = NFSBGraphUtil;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
   import NFArrayConnections.NameVertexTable;
@@ -407,9 +409,18 @@ public
       // create empty hash table
       nmvTable := Pointer.create(NameVertexTable.new());
 
-      // create vertices for variables and equations
-      VariablePointers.mapPtr(vars, function SetVertex.create(graph = graph, vCount = vCount, nmvTable = nmvTable));
-      EquationPointers.mapRes(eqs, function SetVertex.create(graph = graph, vCount = vCount, nmvTable = nmvTable));
+      // create vertices for variables
+      VariablePointers.mapPtr(vars, function SetVertex.createTraverse(graph = graph, vCount = vCount, nmvTable = nmvTable));
+
+      // create vertices for equations and create edges
+      EquationPointers.map(eqs, function SetEdge.fromEquation(
+        graph         = graph,
+        vCount        = vCount,
+        eCount        = eCount,
+        nmvTable      = nmvTable,
+        ht            = vars.ht,
+        eqn_tpl_opt   = NONE()
+      ));
 
       if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
         print(AdjacencyList.toString(graph));
@@ -482,9 +493,10 @@ public
       input SBGraph graph;
       input Vector<Integer> vCount;
       input Pointer<NameVertexTable.Table> nmvTable;
+      output SBMultiInterval mi;
+      output Integer d;
     protected
       list<Dimension> dims;
-      SBMultiInterval mi;
       SBSet set;
       SetVertex vertex;
       String name;
@@ -496,11 +508,20 @@ public
       set := SBSet.addAtomicSet(SBAtomicSet.new(mi), set);
 
       vertex := SET_VERTEX(var_ptr, set);
-      _ := AdjacencyList.addVertex(graph, vertex);
+      d := AdjacencyList.addVertex(graph, vertex);
 
       name := ComponentRef.toString(BVariable.getVarName(var_ptr));
       Pointer.update(nmvTable, BaseHashTable.addUnique((name, mi), Pointer.access(nmvTable)));
     end create;
+
+    function createTraverse
+      input Pointer<Variable> var_ptr;
+      input SBGraph graph;
+      input Vector<Integer> vCount;
+      input Pointer<NameVertexTable.Table> nmvTable;
+    algorithm
+      (_, _) := create(var_ptr, graph, vCount, nmvTable);
+    end createTraverse;
 
     function toString
       input SetVertex v;
@@ -522,76 +543,120 @@ public
     end isEqual;
 
     function fromEquation
-      input Equation eqn;
+      input output Equation eqn;
       input SBGraph graph;
-      input list<String> iterator_lst;
-      input list<SBInterval> interval_lst;
+      input Vector<Integer> vCount;
+      input Vector<Integer> eCount;
+      input Pointer<NameVertexTable.Table> nmvTable;
+      input HashTableCrToInt.HashTable ht               "hash table to check for relevance";
+      input Option<tuple<SBMultiInterval, Integer>> eqn_tpl_opt;
     protected
-      Pointer<Variable> residual;
-      Integer eqn_index;
-      SetVertex eqn_vertex;
+      SBMultiInterval eqn_mi;
+      Integer eqn_d;
     algorithm
+      // only get top level residual var
+      if not Util.isSome(eqn_tpl_opt) then
+        (eqn_mi, eqn_d) := SetVertex.create(Equation.getResidualVar(Pointer.create(eqn)), graph, vCount, nmvTable);
+      else
+        SOME((eqn_mi, eqn_d)) := eqn_tpl_opt;
+      end if;
+
       _ := match eqn
         local
-          SBInterval interval;
-          array<SBSet> domain;
-          array<SBLinearMap> eq_map;
-          SBPWLinearMap eq_dom_map;
+          Expression range;
+          Equation body;
 
         case Equation.SCALAR_EQUATION() algorithm
-          //domain := SBGraphUtil.setsFromList(interval_lst);
+          _ := Equation.map(eqn, function fromExpression(
+            eqn_tpl   = (eqn_mi, eqn_d),
+            graph     = graph,
+            vCount    = vCount,
+            eCount    = eCount,
+            nmvTable  = nmvTable,
+            ht        = ht)
+          );
         then ();
 
         case Equation.FOR_EQUATION() algorithm
-          //interval := SBGraphUtil.intervalFromRange(eqn.range);
-          //range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(eq)));
-
-          fromEquation(eqn.body, graph, InstNode.name(eqn.iter)::iterator_lst, interval_lst);
+          range := Ceval.evalExp(eqn.range, Ceval.EvalTarget.RANGE(Equation.info(eqn)));
+          body := applyIterator(eqn.iter, range, eqn.body);
+          fromEquation(eqn.body, graph, vCount, eCount, nmvTable, ht, SOME((eqn_mi, eqn_d)));
         then ();
 
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for " + Equation.toString(eqn)});
         then fail();
       end match;
-
-      /*
-      try
-        residual := Equation.getResidualVar(eqn);
-        SOME(eqn_index) := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = residual));
-      else
-        Error.addMessage(Error.INTERNAL_ERROR, {getInstanceName() + " failed for " + Equation.toString(Pointer.access(eqn))});
-      end try;
-      eqn_vertex := AdjacencyList.getVertex(graph, eqn_index);
-      // ToDo: this might be wrong, multiple sets possible? not only take first? copied from connection handling
-      // mi := SBAtomicSet.aset(UnorderedSet.first(SBSet.asets(eqn_vertex.vs)));
-      */
     end fromEquation;
 
-    function createTraverse
-      input Expression exp;
-      input Option<SBMultiInterval> eqn_interval;
-      input Pointer<tuple<SetVertex, Integer>> vertex_tpl;
+    function applyIterator
+      input InstNode iterator;
+      input Expression range;
+      input output Equation body;
+    algorithm
+      body := Equation.map(body, function Expression.replaceIterator(iterator = iterator, iteratorValue = range));
+    end applyIterator;
+
+    function fromExpression
+      input output Expression exp;
+      input tuple<SBMultiInterval, Integer> eqn_tpl;
       input SBGraph graph;
+      input Vector<Integer> vCount;
+      input Vector<Integer> eCount;
+      input Pointer<NameVertexTable.Table> nmvTable;
+      input HashTableCrToInt.HashTable ht               "hash table to check for relevance";
     algorithm
       _ := match exp
         local
-          SetVertex eqn_vertex, var_vertex;
-          Integer eqn_index, var_index;
-        case Expression.CREF() algorithm // create second multiInterval from subscripts
-          SOME(var_index) := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = BVariable.getVarPointer(exp.cref)));
-          var_vertex := AdjacencyList.getVertex(graph, var_index);
+          ComponentRef cref;
+          SBMultiInterval eqn_mi, var_mi;
+          AdjacencyList.VertexDescriptor eqn_d, var_d;
 
-          (eqn_vertex, eqn_index) := Pointer.access(vertex_tpl);
+        case Expression.CREF(cref = cref) guard(BaseHashTable.hasKey(cref, ht)) algorithm
+          (eqn_mi, eqn_d) := eqn_tpl;
+          (var_mi, var_d) := getVariableIntervals(
+            var_ptr   = BVariable.getVarPointer(cref),
+            subs      = ComponentRef.getSubscripts(cref),
+            graph     = graph,
+            vCount    = vCount,
+            nmvTable  = nmvTable
+          );
+          updateGraph(eqn_d, var_d, eqn_mi, var_mi, graph, eCount);
         then ();
+
         else ();
       end match;
-    end createTraverse;
+    end fromExpression;
 
-    function create
+    function getVariableIntervals
+      input Pointer<Variable> var_ptr;
+      input list<Subscript> subs;
+      input SBGraph graph;
+      input Vector<Integer> vCount;
+      input Pointer<NameVertexTable.Table> nmvTable;
+      output SBMultiInterval outMI;
+      output AdjacencyList.VertexDescriptor d;
+    algorithm
+      (outMI, d) := SetVertex.create(var_ptr, graph, vCount, nmvTable);
+      outMI := SBGraphUtil.multiIntervalFromSubscripts(subs, vCount, outMI);
+    end getVariableIntervals;
+
+    function updateGraph
+      input AdjacencyList.VertexDescriptor d1;
+      input AdjacencyList.VertexDescriptor d2;
+      input SBMultiInterval mi1;
+      input SBMultiInterval mi2;
       input SBGraph graph;
       input Vector<Integer> eCount;
+    protected
+      SBPWLinearMap pw1, pw2;
+      String name;
+      SetEdge se;
     algorithm
-    end create;
+      (name, pw1, pw2) := SBGraphUtil.linearMapFromIntervals(d1, d2, mi1, mi2, eCount);
+      se := SET_EDGE(name, pw1, pw2);
+      AdjacencyList.addEdge(graph, d1, d2, se);
+    end updateGraph;
 
     function toString
       input SetEdge e;

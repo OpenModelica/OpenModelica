@@ -38,6 +38,7 @@ encapsulated package NBEquation
 public
   // Old Frontend imports
   import DAE;
+  import ElementSource;
 
   // New Frontend imports
   import Algorithm = NFAlgorithm;
@@ -156,6 +157,31 @@ public
         else                        str + "[FAIL] " + getInstanceName() + " failed!";
       end match;
     end toString;
+
+
+    function source
+      input Equation eq;
+      output DAE.ElementSource src;
+    algorithm
+      src := match eq
+        case SCALAR_EQUATION() then eq.source;
+        case ARRAY_EQUATION()  then eq.source;
+        case SIMPLE_EQUATION() then eq.source;
+        case RECORD_EQUATION() then eq.source;
+        case ALGORITHM()       then eq.source;
+        case IF_EQUATION()     then eq.source;
+        case FOR_EQUATION()    then eq.source;
+        case WHEN_EQUATION()   then eq.source;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for:\n" + toString(eq)});
+        then fail();
+     end match;
+    end source;
+
+    function info
+      input Equation eq;
+      output SourceInfo info = ElementSource.getInfo(source(eq));
+    end info;
 
     function getEqnName
       input Pointer<Equation> eqn;
