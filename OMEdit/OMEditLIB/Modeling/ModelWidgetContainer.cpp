@@ -7318,7 +7318,9 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
 void ModelWidget::removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
 {
   pLibraryTreeItem->removeInheritedClasses();
-  pLibraryTreeItem->getModelWidget()->clearInheritedClasses();
+  if (pLibraryTreeItem->getModelWidget()) {
+    pLibraryTreeItem->getModelWidget()->clearInheritedClasses();
+  }
   foreach (LibraryTreeItem *pChildLibraryTreeItem, pLibraryTreeItem->childrenItems()) {
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->isInPackageOneFile()) {
       ModelWidget::removeInheritedClasses(pChildLibraryTreeItem);
