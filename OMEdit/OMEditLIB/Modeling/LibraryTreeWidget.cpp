@@ -2919,6 +2919,14 @@ void LibraryTreeModel::unloadClassHelper(LibraryTreeItem *pLibraryTreeItem, Libr
       pMdiSubWindow->deleteLater();
     }
     pLibraryTreeItem->getModelWidget()->clearGraphicsViews();
+    if (pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()) {
+      pLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->deleteLater();
+      pLibraryTreeItem->getModelWidget()->setDiagramGraphicsView(0);
+    }
+    if (pLibraryTreeItem->getModelWidget()->getIconGraphicsView()) {
+      pLibraryTreeItem->getModelWidget()->getIconGraphicsView()->deleteLater();
+      pLibraryTreeItem->getModelWidget()->setIconGraphicsView(0);
+    }
     // if ModelWidget is used by DiagramWindow
     if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
       MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->removeDiagram(pLibraryTreeItem->getModelWidget());
