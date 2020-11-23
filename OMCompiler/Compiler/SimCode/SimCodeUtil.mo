@@ -11535,6 +11535,8 @@ algorithm
         if(BaseHashTable.hasKey(varName, iVarToIndexMapping)) then
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
           varIdx = intMul(varIdx,-1);
+        elseif ComponentReference.isTime(varName) then
+          varIdx = 0;
         else
           Error.addMessage(Error.INTERNAL_ERROR, {"Negated alias to unknown variable given."});
           fail();
@@ -11545,6 +11547,8 @@ algorithm
         //print("getArrayIdxByVar: Handling alias variable pointing to " + ComponentReference.printComponentRefStr(varName) + "\n");
         if(BaseHashTable.hasKey(varName, iVarToIndexMapping)) then
           varIdx::_ = BaseHashTable.get(varName, iVarToIndexMapping);
+        elseif ComponentReference.isTime(varName) then
+          varIdx = 0;
         else
           Error.addMessage(Error.INTERNAL_ERROR, {"Alias to unknown variable given."});
           fail();
@@ -13951,7 +13955,7 @@ algorithm
   elseif reference > numReal then
     // Integer variable
     reference := reference - numReal;
-  elseif reference < 1 then
+  elseif reference < 0 then
     Error.addInternalError("invalid return value from getVariableIndex", sourceInfo());
   end if;
   outDefaultValueReference := String(reference - 1);
