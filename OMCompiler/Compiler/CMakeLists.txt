@@ -223,6 +223,8 @@ target_link_libraries(omc PRIVATE OpenModelicaCompiler)
 
 # target_link_options(omc PRIVATE -Wl,--stack,33554432)
 
+target_link_options(omc PRIVATE -rdynamic)
+
 
 
 ### INSTALLATION
