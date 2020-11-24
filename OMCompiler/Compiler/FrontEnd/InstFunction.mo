@@ -838,7 +838,7 @@ algorithm
           cache = InstUtil.addFunctionsToDAE(cache, {func}, SCode.NOT_PARTIAL());
 
           // add the instance record constructor too!
-          path = AbsynUtil.pathSetLastIdent(path, AbsynUtil.makeIdentPathFromString(name));
+          path = AbsynUtil.pathSetLastIdent(path, name);
           fixedTy = DAE.T_COMPLEX(ClassInf.RECORD(path), vars, eqCo);
           fargs = Types.makeFargsList(inputs);
           funcTy = DAE.T_FUNCTION(fargs, fixedTy, DAE.FUNCTION_ATTRIBUTES_DEFAULT, path);

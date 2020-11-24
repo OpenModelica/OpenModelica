@@ -171,7 +171,7 @@ algorithm
     // handle extends Modelica.Icons.*
     case (SCode.EXTENDS(baseClassPath = bcp)::rest)
       equation
-        true = AbsynUtil.pathContains(bcp, Absyn.IDENT("Icons"));
+        true = AbsynUtil.pathContains(bcp, "Icons");
         els = simplifyElements(rest);
       then
         els;

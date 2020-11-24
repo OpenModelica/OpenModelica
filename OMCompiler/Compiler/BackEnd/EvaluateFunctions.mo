@@ -1557,7 +1557,7 @@ algorithm
         // Update the path.
         s := AbsynUtil.pathLastIdent(funcOut.path);
         s := s + "_eval" + intString(idx);
-        funcOut.path := AbsynUtil.pathReplaceIdent(AbsynUtil.makeNotFullyQualified(funcOut.path), s);
+        funcOut.path := AbsynUtil.pathSetLastIdent(AbsynUtil.makeNotFullyQualified(funcOut.path), s);
 
         // Update the type.
         funcOut.type_ := updateFunctionType(funcOut.type_, outputs, origOutputs);

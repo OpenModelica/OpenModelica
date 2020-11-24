@@ -1829,20 +1829,6 @@ algorithm
   end match;
 end stringListPathReversed2;
 
-public function pathTwoLastIdents "Returns the two last idents of a path"
-  input Absyn.Path inPath;
-  output Absyn.Path outTwoLast;
-algorithm
-  outTwoLast := match(inPath)
-    local
-      Absyn.Path p;
-
-    case Absyn.QUALIFIED(path = Absyn.IDENT()) then inPath;
-    case Absyn.QUALIFIED(path = p) then pathTwoLastIdents(p);
-    case Absyn.FULLYQUALIFIED(path = p) then pathTwoLastIdents(p);
-  end match;
-end pathTwoLastIdents;
-
 public function pathLastIdent
   "Returns the last ident (after last dot) in a path"
   input Absyn.Path inPath;
@@ -1858,6 +1844,21 @@ algorithm
     case Absyn.FULLYQUALIFIED(path = p) then pathLastIdent(p);
   end match;
 end pathLastIdent;
+
+public function pathSetLastIdent
+  "Replaces the last identifier in the path."
+  input Absyn.Path path;
+  input String ident;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match path
+    case Absyn.IDENT() then Absyn.IDENT(ident);
+    case Absyn.QUALIFIED()
+      then Absyn.QUALIFIED(path.name, pathSetLastIdent(path.path, ident));
+    case Absyn.FULLYQUALIFIED()
+      then Absyn.FULLYQUALIFIED(pathSetLastIdent(path.path, ident));
+  end match;
+end pathSetLastIdent;
 
 public function pathLast
   "Returns the last ident (after last dot) in a path"
@@ -1886,6 +1887,20 @@ algorithm
     case (Absyn.IDENT(name = n)) then n;
   end match;
 end pathFirstIdent;
+
+public function pathSetFirstIdent
+  "Replaces the first identifier in a path."
+  input Absyn.Path path;
+  input String ident;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match path
+    case Absyn.IDENT() then Absyn.IDENT(ident);
+    case Absyn.QUALIFIED() then Absyn.QUALIFIED(ident, path.path);
+    case Absyn.FULLYQUALIFIED()
+      then Absyn.FULLYQUALIFIED(pathSetFirstIdent(path.path, ident));
+  end match;
+end pathSetFirstIdent;
 
 public function pathFirstPath
   input Absyn.Path inPath;
@@ -1981,21 +1996,6 @@ algorithm
   outPath := Absyn.QUALIFIED(prefix, path);
 end prefixPath;
 
-public function prefixOptPath
-  "Prefixes an optional path with an identifier."
-  input Absyn.Ident prefix;
-  input Option<Absyn.Path> optPath;
-  output Option<Absyn.Path> outPath;
-algorithm
-  outPath := match(prefix, optPath)
-    local
-      Absyn.Path path;
-
-    case (_, NONE()) then SOME(Absyn.IDENT(prefix));
-    case (_, SOME(path)) then SOME(Absyn.QUALIFIED(prefix, path));
-  end match;
-end prefixOptPath;
-
 public function suffixPath
   "Adds a suffix to a path. Ex:
      suffixPath(a.b.c, 'd') => a.b.c.d"
@@ -2077,24 +2077,6 @@ algorithm
       then pathToStringListWork(p,n::acc);
   end match;
 end pathToStringListWork;
-
-public function pathReplaceFirstIdent "
-  Replaces the first part of a path with a replacement path:
-  (a.b.c, d.e) => d.e.b.c
-  (a, b.c.d) => b.c.d
-"
-  input Absyn.Path path;
-  input Absyn.Path replPath;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match(path,replPath)
-    local
-      Absyn.Path p;
-    // Should not be possible to replace FQ paths
-    case (Absyn.QUALIFIED(path = p), _) then joinPaths(replPath,p);
-    case (Absyn.IDENT(), _) then replPath;
-  end match;
-end pathReplaceFirstIdent;
 
 public function addSubscriptsLast
   "Function for appending subscripts at end of last ident"
@@ -2298,32 +2280,19 @@ algorithm
   end match;
 end crefRemovePrefix;
 
-public function pathContains
-  "Author BZ,
-   checks if one Absyn.IDENT(..) is contained in path."
-  input Absyn.Path fullPath;
-  input Absyn.Path pathId;
-  output Boolean b;
+public function pathContainsIdent
+  "Returns whether any identifier in the path is equal to the given identifier."
+  input Absyn.Path path;
+  input String ident;
+  output Boolean res;
 algorithm
-  b := match (fullPath,pathId)
-    local
-      String str1,str2;
-      Absyn.Path qp;
-      Boolean b1,b2;
-
-    case(Absyn.IDENT(str1),Absyn.IDENT(str2)) then stringEq(str1,str2);
-
-    case(Absyn.QUALIFIED(str1,qp),Absyn.IDENT(str2))
-      equation
-        b1 = stringEq(str1,str2);
-        b2 = pathContains(qp,pathId);
-        b1 = boolOr(b1,b2);
-      then
-        b1;
-
-    case(Absyn.FULLYQUALIFIED(qp),_) then pathContains(qp,pathId);
+  res := match path
+    case Absyn.IDENT() then path.name == ident;
+    case Absyn.QUALIFIED()
+      then path.name == ident or pathContainsIdent(path.path, ident);
+    case Absyn.FULLYQUALIFIED() then pathContainsIdent(path.path, ident);
   end match;
-end pathContains;
+end pathContainsIdent;
 
 public function pathContainsString
   "Author OT,
@@ -3702,19 +3671,6 @@ algorithm
   end match;
 end getIteratorIndexedCrefs;
 
-public function pathReplaceIdent
-  input Absyn.Path path;
-  input String last;
-  output Absyn.Path out;
-algorithm
-  out := match (path,last)
-    local Absyn.Path p; String n,s;
-    case (Absyn.FULLYQUALIFIED(p),s) equation p = pathReplaceIdent(p,s); then Absyn.FULLYQUALIFIED(p);
-    case (Absyn.QUALIFIED(n,p),s) equation p = pathReplaceIdent(p,s); then Absyn.QUALIFIED(n,p);
-    case (Absyn.IDENT(),s) then Absyn.IDENT(s);
-  end match;
-end pathReplaceIdent;
-
 public function getFileNameFromInfo
   input SourceInfo inInfo;
   output String inFileName;
@@ -4606,33 +4562,6 @@ public function componentName
 algorithm
   Absyn.COMPONENTITEM(component=Absyn.COMPONENT(name=name)) := c;
 end componentName;
-
-public function pathSetLastIdent
-  input Absyn.Path inPath;
-  input Absyn.Path inLastIdent;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match(inPath, inLastIdent)
-    local
-      Absyn.Path p;
-      String n;
-
-    case (Absyn.IDENT(), _) then inLastIdent;
-
-    case (Absyn.QUALIFIED(n, p), _)
-      equation
-        p = pathSetLastIdent(p, inLastIdent);
-      then
-        Absyn.QUALIFIED(n, p);
-
-    case (Absyn.FULLYQUALIFIED(p), _)
-      equation
-        p = pathSetLastIdent(p, inLastIdent);
-      then
-        Absyn.FULLYQUALIFIED(p);
-
-  end match;
-end pathSetLastIdent;
 
 public function expContainsInitial
 "@author:
