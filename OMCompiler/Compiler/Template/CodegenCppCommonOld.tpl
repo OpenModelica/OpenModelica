@@ -1034,7 +1034,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let &rangeExpPre = buffer ""
   let arrayTypeResult = expTypeFromExpArray(r)
   let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
-  let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
+  let foundFirst = match ri.path case IDENT(name="array") then "" else (if not ri.defaultValue then tempDecl("int",&tmpVarDecls))
   let resType = expTypeArrayIf(typeof(exp))
   let res = contextCref(makeUntypedCrefIdent(ri.resultName), context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
@@ -1095,7 +1095,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     else match ri.foldExp case SOME(fExp) then
       let &foldExpPre = buffer ""
       let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      if not ri.defaultValue then
+      if foundFirst then
       <<
       if(<%foundFirst%>)
       {
@@ -1179,15 +1179,17 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           '<%res%>.setDims(<%length%>);'%>
 
        >>
-     else if ri.defaultValue then
-     <<
-     <%&preDefault%>
-     <%res%> = <%defaultValue%>; /* defaultValue */
-     >>
      else
-     <<
-     <%foundFirst%> = 0; /* <%dotPath(ri.path)%> lacks default-value */
-     >>)
+        (if foundFirst then
+        <<
+        <%foundFirst%> = 0; /* <%dotPath(ri.path)%> lacks default-value */
+        >>
+        else
+        <<
+        <%&preDefault%>
+        <%res%> = <%defaultValue%>; /* defaultValue */
+        >>)
+      )
   let loop =
     <<
     while(1) {
@@ -1213,7 +1215,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     <%firstValue%>
     <% if resTail then '<%resTail%> = &<%res%>;' %>
     <%loop%>
-    <% if not ri.defaultValue then 'if (!<%foundFirst%>) throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Internal error");' %>
+    <% if foundFirst then 'if (!<%foundFirst%>) throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Internal error");' %>
     <% if resTail then '*<%resTail%> = NULL;' %>
     <% resTmp %> = <% res %>;
   }<%\n%>
