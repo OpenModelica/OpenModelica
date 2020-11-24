@@ -240,7 +240,7 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
   sh 'autoconf'
   // Note: Do not use -march=native since we might use an incompatible machine in later stages
   def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
-  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
+  sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
   // OMSimulator requires HOME to be set and writeable
   def outputSync = sh(script: "${makeCommand()} --version | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\\+//'", returnStdout: true).toInteger() >= 4 ? "--output-sync=recurse" : ""
   sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} omc omc-diff omsimulator"
