@@ -1,6 +1,7 @@
 // name:     TSP_Pipe11
 // keywords: extraction algorithm
 // status:   correct
+// cflags:   -d=-newInst
 // depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_Pipe11_Inputs.csv
 
 
