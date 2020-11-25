@@ -2000,7 +2000,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // Optional Features Box
   mpOptionalFeaturesGroupBox = new QGroupBox(tr("Optional Features"));
   // handle replaceable support
-  mpReplaceableSupport = new QCheckBox(tr("Enable Replaceable Support"));
+  mpReplaceableSupport = new QCheckBox(tr("Enable Replaceable Support *"));
   // Optional Features Layout
   QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
   pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);

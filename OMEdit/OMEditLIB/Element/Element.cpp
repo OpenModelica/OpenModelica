@@ -58,6 +58,7 @@
 ElementInfo::ElementInfo(QObject *pParent)
   : QObject(pParent)
 {
+  mParentClassName = "";
   mClassName = "";
   mName = "";
   mComment = "";
@@ -69,6 +70,7 @@ ElementInfo::ElementInfo(QObject *pParent)
   mIsReplaceable = false;
   mIsRedeclare = false;
   mIsElement = false;
+  mRestriction = "";
   mVariabilityMap.insert("constant", "constant");
   mVariabilityMap.insert("discrete", "discrete");
   mVariabilityMap.insert("parameter", "parameter");
@@ -80,6 +82,7 @@ ElementInfo::ElementInfo(QObject *pParent)
   mCasualityMap.insert("output", "output");
   mCasualityMap.insert("unspecified", "");
   mCasuality = "";
+  mConstrainedByClassName = "";
   mArrayIndex = "";
   mIsArray = false;
   mModifiersLoaded = false;
@@ -110,14 +113,19 @@ ElementInfo::ElementInfo(ElementInfo *pElementInfo, QObject *pParent)
 
 void ElementInfo::updateElementInfo(const ElementInfo *pElementInfo)
 {
+  mParentClassName = pElementInfo->getParentClassName();
   mClassName = pElementInfo->getClassName();
   mName = pElementInfo->getName();
   mComment = pElementInfo->getComment();
   mIsProtected = pElementInfo->getProtected();
   mIsFinal = pElementInfo->getFinal();
+  mIsEach = pElementInfo->getEach();
   mIsFlow = pElementInfo->getFlow();
   mIsStream = pElementInfo->getStream();
   mIsReplaceable = pElementInfo->getReplaceable();
+  mIsRedeclare = pElementInfo->getRedeclare();
+  mIsElement = pElementInfo->getIsElement();
+  mRestriction = pElementInfo->getRestriction();
   mVariabilityMap.insert("constant", "constant");
   mVariabilityMap.insert("discrete", "discrete");
   mVariabilityMap.insert("parameter", "parameter");
@@ -129,6 +137,7 @@ void ElementInfo::updateElementInfo(const ElementInfo *pElementInfo)
   mCasualityMap.insert("output", "output");
   mCasualityMap.insert("unspecified", "");
   mCasuality = pElementInfo->getCausality();
+  mConstrainedByClassName = pElementInfo->getConstrainedByClassName();
   mArrayIndex = pElementInfo->getArrayIndex();
   mIsArray = pElementInfo->isArray();
   mModifiersMap.clear();
@@ -482,13 +491,14 @@ QString ElementInfo::getParameterValue(OMCProxy *pOMCProxy, const QString &class
  */
 bool ElementInfo::operator==(const ElementInfo &componentInfo) const
 {
-  return (componentInfo.getClassName() == this->getClassName()) && (componentInfo.getName() == this->getName()) &&
+  return (componentInfo.getParentClassName() == this->getParentClassName()) && (componentInfo.getClassName() == this->getClassName()) && (componentInfo.getName() == this->getName()) &&
       (componentInfo.getComment() == this->getComment()) && (componentInfo.getProtected() == this->getProtected()) &&
-      (componentInfo.getFinal() == this->getFinal()) && (componentInfo.getFlow() == this->getFlow()) &&
+      (componentInfo.getFinal() == this->getFinal()) && (componentInfo.getEach() == this->getEach()) && (componentInfo.getFlow() == this->getFlow()) &&
       (componentInfo.getStream() == this->getStream()) && (componentInfo.getReplaceable() == this->getReplaceable()) &&
-      (componentInfo.getVariablity() == this->getVariablity()) && (componentInfo.getInner() == this->getInner()) &&
+      (componentInfo.getRedeclare() == this->getRedeclare()) && (componentInfo.getIsElement() == this->getIsElement()) &&
+      (componentInfo.getRestriction() == this->getRestriction()) && (componentInfo.getVariablity() == this->getVariablity()) && (componentInfo.getInner() == this->getInner()) &&
       (componentInfo.getOuter() == this->getOuter()) && (componentInfo.getCausality() == this->getCausality()) &&
-      (componentInfo.getArrayIndex() == this->getArrayIndex()) &&
+      (componentInfo.getConstrainedByClassName() == this->getConstrainedByClassName()) && (componentInfo.getArrayIndex() == this->getArrayIndex()) &&
       (componentInfo.getModifiersMapWithoutFetching() == this->getModifiersMapWithoutFetching()) &&
       (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching()) &&
       (componentInfo.getStartCommand() == this->getStartCommand()) && (componentInfo.getExactStep() == this->getExactStep()) &&
