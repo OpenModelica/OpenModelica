@@ -1,5 +1,5 @@
 localedir = $(OMBUILDDIR)/share/locale/
-locales = de sv es
+locales =
 
 ALL_DIRS=../FrontEnd ../BackEnd ../Main ../Script ../Util ../Global ../SimCode
 TEMPLATE_DIR=../Template
