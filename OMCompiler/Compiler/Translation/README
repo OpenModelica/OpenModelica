@@ -6,7 +6,7 @@ translations. The kernel uses gettext (libintl).
 # Setup a new translation target
 make update
 msginit --locale=sv_SE.utf8 -i openmodelica.pot
-svn add sv.po
+git add sv.po
 
 # Edit the .po-file using your favorite gettext po-file editor
 # Maybe linguist (same as for OMEdit), gtranslate, or poedit.
