@@ -4866,7 +4866,7 @@ algorithm
         (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, globalKnownVars, trytosolve,shared);
         lst = List.map(row,Util.tuple31);
 
-        (lst, row, size) = List.fold6(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, globalKnownVars, trytosolve, shared, (lst, row, size));
+        (lst, row, _) = List.fold6(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, globalKnownVars, trytosolve, shared, (lst, row, size));
 
         lstall = List.map(row, Util.tuple31);
         (_, lst, _) = List.intersection1OnTrue(lstall, lst, intEq);
