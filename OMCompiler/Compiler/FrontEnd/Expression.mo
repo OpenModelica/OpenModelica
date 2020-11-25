@@ -6480,6 +6480,10 @@ algorithm
       Boolean b;
       ComponentRef cr,cr1;
 
+    // pre(cr) does not count because it should be its own variable instead!
+    case (DAE.CALL(path = Absyn.IDENT("pre")), (_,_))
+    then (inExp, false, inTpl);
+
     case (DAE.CREF(componentRef = cr1), (cr,false))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
