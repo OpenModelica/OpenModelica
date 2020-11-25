@@ -5333,6 +5333,16 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
   )
 end equation_impl2;
 
+template equation_call_context(SimEqSystem eq, String modelNamePrefix, Context context)
+  "Generates either a normal or jacobian equation depending on context.
+   ToDo: add other cases?"
+::=
+  match context
+  case JACOBIAN_CONTEXT() then equation_callJacobian(eq, modelNamePrefix)
+  else equation_call(eq, modelNamePrefix)
+  end match
+end equation_call_context;
+
 template equation_call(SimEqSystem eq, String modelNamePrefix)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
@@ -5940,13 +5950,13 @@ match eq
 case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let &preExp = buffer ""
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
-    let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
-    let &eqnsDecls += ( eqns |> eqn => equation_impl(-1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
-   let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
+  let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
+  let &eqnsDecls += ( eqns |> eqn => equation_impl(-1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
+  let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
     <<
     <%conditionline%>
     {
-      <%( eqns |> eqn => equation_call(eqn, modelNamePrefixStr) ; separator="\n" )%>
+      <%( eqns |> eqn => equation_call_context(eqn, modelNamePrefixStr, context) ; separator="\n" )%>
     }
     >>
     ;separator="\n")
@@ -5955,7 +5965,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   <%preExp%>
   <%IfEquation%>else
   {
-    <%elsebranch |> eqn => equation_call(eqn, modelNamePrefixStr)%>
+    <%elsebranch |> eqn => equation_call_context(eqn, modelNamePrefixStr, context)%>
   }
   >>
 end equationIfEquationAssign;
