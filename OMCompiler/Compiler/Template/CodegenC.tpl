@@ -2893,20 +2893,20 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
         /* sparsity pattern available */
         inSysData->isPatternAvailable = 'T';
         inSysData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-        inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
-        inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
+        inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
+        inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
         inSysData->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
-        inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
+        inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(unsigned int));
         inSysData->sparsePattern->maxColors = <%maxColor%>;
 
         /* write lead index of compressed sparse column */
-        memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
+        memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
 
         for(i=2;i<<%sizeleadindex%>+1;++i)
           inSysData->sparsePattern->leadindex[i] += inSysData->sparsePattern->leadindex[i-1];
 
         /* call sparse index */
-        memcpy(inSysData->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(int));
+        memcpy(inSysData->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(unsigned int));
 
         /* write color array */
         <%colorString%>
@@ -4927,21 +4927,21 @@ match sparsepattern
         jacobian->resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
         jacobian->tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
         jacobian->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-        jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
-        jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
+        jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
+        jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
         jacobian->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
-        jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(int));
+        jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(unsigned int));
         jacobian->sparsePattern->maxColors = <%maxColor%>;
         jacobian->constantEqns = <%constantEqns%>;
 
         /* write lead index of compressed sparse column */
-        memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
+        memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
 
         for(i=2;i<<%sizeleadindex%>+1;++i)
           jacobian->sparsePattern->leadindex[i] += jacobian->sparsePattern->leadindex[i-1];
 
         /* call sparse index */
-        memcpy(jacobian->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(int));
+        memcpy(jacobian->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(unsigned int));
 
         /* write color array */
         <%colorString%>
