@@ -1202,247 +1202,245 @@ e.g. for solve abs
   output list<DAE.ComponentRef> newVarsCrefs;
   output Integer odepth;
 algorithm
-  (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := matchcontinue(inExp1, inExp2)
-  local
-    DAE.Exp e1, e_1, e, e2, exP, lhs, e3, e4, e5, e6, rhs, a1,x1, a2,x2, ee1, ee2, acosy, k1, k2, cond;
-    tuple<DAE.Exp, DAE.Exp> a, c;
-    list<DAE.Exp> z1, z2, z3, z4;
-    DAE.ComponentRef cr;
-    DAE.Type tp;
-    BackendDAE.Equation eqn;
-    list<BackendDAE.Equation> eqnForNewVars_;
-    list<DAE.ComponentRef> newVarsCrefs_;
-    Boolean b, b1, b2, b3;
-    DAE.Operator op1, op2;
+  (x, y, new_x, eqnForNewVars, newVarsCrefs, odepth) := matchcontinue inExp1
+    local
+      DAE.Exp arg, e1, e_1, e, e2, exP, lhs, e3, e4, e5, e6, rhs, a1,x1, a2,x2, ee1, ee2;
+      tuple<DAE.Exp, DAE.Exp> a, c;
+      list<DAE.Exp> z1, z2, z3, z4;
+      DAE.ComponentRef cr;
+      DAE.Type tp;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqnForNewVars_;
+      list<DAE.ComponentRef> newVarsCrefs_;
+      Boolean b, b1, b2, b3;
+      DAE.Operator op1, op2;
+      String name;
 
-  //tanh(x) =y -> x = 1/2 * ln((1+y)/(1-y))
-  case (DAE.CALL(path = Absyn.IDENT(name = "tanh"),expLst = {e1}),_)
-    equation
-      true = expHasCref(e1, inExp3);
-      false = expHasCref(inExp2, inExp3);
-      tp = Expression.typeof(inExp2);
-      (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$TANH", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
-      e2 = Expression.expAdd(DAE.RCONST(1.0), e);
-      e3 = Expression.expSub(DAE.RCONST(1.0), e);
-      e2 = Expression.makeDiv(e2, e3);
-      e2 = Expression.makePureBuiltinCall("log",{e2},DAE.T_REAL_DEFAULT);
-      e2 = Expression.expMul(DAE.RCONST(0.5), e2);
-    then (e1, e2, true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
+    // invert a function call
+    case DAE.CALL(path = Absyn.IDENT(name = name),expLst = {arg})
+      guard expHasCref(arg, inExp3) and not expHasCref(inExp2, inExp3)
+      algorithm
+        (y, new_x, eqnForNewVars_, newVarsCrefs_, odepth) := preprocessingSolveFunctionCall(name, arg, inExp2, inExp3, optCond, uniqueEqIndex, idepth);
 
-  // sinh(x) -> ln(y+(sqrt(1+y^2))
-  case (DAE.CALL(path = Absyn.IDENT(name = "sinh"),expLst = {e1}),_)
-    equation
-      true = expHasCref(e1, inExp3);
-      false = expHasCref(inExp2, inExp3);
-      tp = Expression.typeof(inExp2);
-      (e, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$SINH", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
-      e2 = Expression.expPow(e, DAE.RCONST(2.0));
-      e3 = Expression.expAdd(e2,DAE.RCONST(1.0));
-      e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
-      e3 = Expression.expAdd(e, e2);
-      e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
-    then (e1,e2,true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
+        if listEmpty(eqnForNewVars_) then
+          eqnForNewVars_ := ieqnForNewVars;
+        else
+          eqnForNewVars_ := match optCond
+            local
+              DAE.Exp cond;
+            case SOME(cond)
+            then BackendDAE.IF_EQUATION({cond}, {eqnForNewVars_}, {}, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN) :: ieqnForNewVars;
+            else listAppend(eqnForNewVars_, ieqnForNewVars);
+          end match;
+        end if;
+      then (arg, y, new_x, eqnForNewVars_, listAppend(newVarsCrefs_, inewVarsCrefs), odepth);
 
-  // cosh(x) -> ln(y +- (sqrt(y^2 - 1))
-  case (DAE.CALL(path = Absyn.IDENT(name = "cosh"),expLst = {e1}),_)
-    equation
-      true = expHasCref(e1, inExp3);
-      false = expHasCref(inExp2, inExp3);
+    // x^n = y -> x = y^(1/n)
+    case DAE.BINARY(e1, DAE.POW(tp), e2)
+      guard expHasCref(e1, inExp3) and not expHasCref(e2, inExp3)
+      algorithm
+        tp := Expression.typeof(e1);
+        exP := makeInitialGuess(tp, inExp3, e1);
+        // exP := makeInitialGuess(tp,inExp3,inExp2);
+        (exP, eqnForNewVars_, newVarsCrefs_) := makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
+        e_1 := Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
+        lhs := Expression.expPow(inExp2,Expression.inverseFactors(e2));
+        lhs := Expression.makePureBuiltinCall("abs", {lhs}, tp);
+        // lhs := Expression.makePureBuiltinCall("abs", {inExp2}, tp);
+        // lhs := Expression.expPow(lhs,Expression.inverseFactors(e2));
+        lhs := Expression.expMul(e_1,lhs);
+      then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
-      tp = Expression.typeof(inExp2);
-      (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$SINH", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
+    //QE
+    // a*x^n + b*x^m = c
+    // a*x^n - b*x^m = c
+    case DAE.BINARY(ee1, op1, ee2)
+      guard(Expression.isAddOrSub(op1))
+      algorithm
+        (z1, z2) := List.split1OnTrue(Expression.factors(ee1), expHasCref, inExp3);
+        (z3, z4) := List.split1OnTrue(Expression.factors(ee2), expHasCref, inExp3);
 
-      tp = Expression.typeof(e1);
-      exP = makeInitialGuess(tp,inExp3,e1);
-      (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "SIGN$SINH", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
+        x1 := makeProductLstSort(z1);
+        a1 := makeProductLstSort(z2);
 
+        x2 := makeProductLstSort(z3);
+        a2 := if Expression.isAdd(op1) then makeProductLstSort(z4) else Expression.negate(makeProductLstSort(z4));
+        a := simplifyBinaryMulCoeff(x1);
+        c := simplifyBinaryMulCoeff(x2);
+        (e2, e3) := a;
+        (e5, e6) := c;
+        (lhs, rhs, eqnForNewVars_, newVarsCrefs_) := solveQE(a1,e2,e3,a2,e5,e6,inExp2,inExp3,ieqnForNewVars,inewVarsCrefs,uniqueEqIndex,idepth);
+      then(lhs, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
-      e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
-
-      e2 = Expression.expPow(rhs, DAE.RCONST(2.0));
-      e3 = Expression.expSub(e2, DAE.RCONST(1.0));
-      e2 = Expression.makePureBuiltinCall("sqrt",{e3},DAE.T_REAL_DEFAULT);
-
-      e3 = Expression.expAdd(rhs, Expression.expMul(e_1,e2));
-      e2 = Expression.makePureBuiltinCall("log",{e3},DAE.T_REAL_DEFAULT);
-
-    then (e1,e2,true,eqnForNewVars_,newVarsCrefs_,idepth + 1);
-
-  // cos(y) = x -> y = acos(x) + 2*pi*k
-  case (DAE.CALL(path = Absyn.IDENT(name = "cos"),expLst = {e1}),_)
-  equation
-    true = expHasCref(e1, inExp3);
-    false = expHasCref(inExp2, inExp3);
-
-    eqnForNewVars_ = {};
-    newVarsCrefs_ = inewVarsCrefs;
-
-    tp = Expression.typeof(inExp2);
-    (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-
-    acosy = Expression.makePureBuiltinCall("acos", {rhs}, tp);
-    (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ACOS$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-
-    exP = makeInitialGuess(tp,inExp3,e1);
-    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-
-    k1 = helpInvCos(acosy, exP, tp, true);
-    k2 = helpInvCos(acosy, exP, tp, false);
-    (k1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k1, tp, "k1$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-    (k2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k2, tp, "k2$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-
-    x1 = helpInvCos2(k1, acosy, tp, true);
-    x2 = helpInvCos2(k2, acosy, tp, false);
-    (x1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x1, tp, "x1$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-    (x2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x2, tp, "x2$COS", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-
-    rhs = helpInvCos3(x1,x2,exP,tp);
-
-    eqnForNewVars_ = match optCond
-      local
-        DAE.Exp theCond;
-        BackendDAE.Equation new_eqn;
-      case SOME(theCond)
-        algorithm
-          new_eqn := BackendDAE.IF_EQUATION({theCond}, {eqnForNewVars_}, {}, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-        then new_eqn :: ieqnForNewVars;
-      else listAppend(eqnForNewVars_, ieqnForNewVars);
-    end match;
-
-  then (e1, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
-
-
-  // sin(y) = x -> y = asin(x) + 2*pi*k
-  //                 = -asin(x) + pi*(2*k+1)
-  case (DAE.CALL(path = Absyn.IDENT(name = "sin"),expLst = {e1}),_)
-  equation
-    true = expHasCref(e1, inExp3);
-    false = expHasCref(inExp2, inExp3);
-
-    tp = Expression.typeof(inExp2);
-    (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$SIN", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
-
-    acosy = Expression.makePureBuiltinCall("asin", {rhs}, tp);
-    (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ASIN$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
-
-    exP = makeInitialGuess(tp,inExp3,e1);
-    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-
-    k1 = helpInvSin(acosy, e1, tp, true);
-    k2 = helpInvSin(acosy, e1, tp, false);
-    (k1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k1, tp, "k1$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-    (k2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(k2, tp, "k2$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-
-    x1 = helpInvSin2(k1, acosy, tp ,true);
-    x2 = helpInvSin2(k2, acosy, tp ,false);
-    (x1, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x1, tp, "x1$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-    (x2, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(x2, tp, "x2$SIN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-
-    rhs = helpInvCos3(x1,x2,exP,tp);
-
-  then(e1, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
-
-  // tan(x) = y -> x = atan(y) + k*pi
-  case (DAE.CALL(path = Absyn.IDENT(name = "tan"),expLst = {e1}),_)
-  equation
-    true = expHasCref(e1, inExp3);
-    false = expHasCref(inExp2, inExp3);
-
-    tp = Expression.typeof(inExp2);
-    (rhs, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(inExp2, tp, "Y$TAN", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs,false);
-
-    acosy = Expression.makePureBuiltinCall("atan", {rhs}, tp);
-    (acosy, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(acosy, tp, "ATAN$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_,false);
-
-    exP = makeInitialGuess(tp,inExp3,e1);
-    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "PREX$TAN", uniqueEqIndex, idepth, eqnForNewVars_, newVarsCrefs_, false);
-    e = DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
-
-    k1 = Expression.expSub(exP, acosy);
-    k1 = Expression.makeDiv(k1,e);
-    k1 = Expression.makePureBuiltinCall("$_round",{k1},tp);
-
-    rhs = Expression.expMul(k1,e);
-    rhs = Expression.expAdd(acosy, rhs);
-
-  then(e1, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
-
-  // abs(f(x)) = g(y) -> f(x) = sign(f(x))*g(y)
-  case(DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {e1}), _)
-  equation
-    true = expHasCref(e1, inExp3);
-    false = expHasCref(inExp2, inExp3);
-
-    tp = Expression.typeof(e1);
-    exP = makeInitialGuess(tp,inExp3,e1);
-    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
-    e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
-    lhs = Expression.expMul(e_1, inExp2);
-
-  then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
-
-  // x^n = y -> x = y^(1/n)
-  case(DAE.BINARY(e1, DAE.POW(tp), e2),_)
-  equation
-    true = expHasCref(e1, inExp3);
-    false = expHasCref(e2, inExp3);
-    tp = Expression.typeof(e1);
-    exP = makeInitialGuess(tp,inExp3,e1);
-    // exP = makeInitialGuess(tp,inExp3,inExp2);
-    (exP, eqnForNewVars_, newVarsCrefs_) = makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
-    e_1 = Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
-    lhs = Expression.expPow(inExp2,Expression.inverseFactors(e2));
-    lhs = Expression.makePureBuiltinCall("abs", {lhs}, tp);
-    // lhs = Expression.makePureBuiltinCall("abs", {inExp2}, tp);
-    // lhs = Expression.expPow(lhs,Expression.inverseFactors(e2));
-    lhs = Expression.expMul(e_1,lhs);
-
-  then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
-
-  // $_DF$DER(x) =y -> (x-old(x))/dt = y -> x = y*dt + old(x)
-  case(DAE.CALL(path = Absyn.IDENT(name = "$_DF$DER"),expLst = {e1}), _)
-  equation
-    true = expHasCref(e1, inExp3);
-    false = expHasCref(inExp2, inExp3);
-    tp = Expression.typeof(e1);
-    e2 = Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {}));
-    lhs = Expression.makePureBuiltinCall("pre", {e1}, tp);
-    lhs = Expression.expAdd(Expression.expMul(inExp2,e2), lhs);
-  then(e1, lhs, true, ieqnForNewVars, inewVarsCrefs, idepth + 1);
-
-
-  //QE
-  // a*x^n + b*x^m = c
-  // a*x^n - b*x^m = c
-  case(DAE.BINARY(ee1, op1, ee2),_)
-  guard(Expression.isAddOrSub(op1))
-  equation
-    (z1, z2) = List.split1OnTrue(Expression.factors(ee1), expHasCref, inExp3);
-    (z3, z4) = List.split1OnTrue(Expression.factors(ee2), expHasCref, inExp3);
-
-    x1 = makeProductLstSort(z1);
-    a1 = makeProductLstSort(z2);
-
-    x2 = makeProductLstSort(z3);
-    a2 = if Expression.isAdd(op1) then makeProductLstSort(z4) else  Expression.negate(makeProductLstSort(z4));
-/*
-    print("\nx1 = ");print(ExpressionDump.printExpStr(x1));
-    print("\nx2 = ");print(ExpressionDump.printExpStr(x2));
-    print("\na1 = ");print(ExpressionDump.printExpStr(a1));
-    print("\na2 = ");print(ExpressionDump.printExpStr(a2));
-*/
-    a = simplifyBinaryMulCoeff(x1);
-    c = simplifyBinaryMulCoeff(x2);
-    (e2 ,e3) = a;
-    (e5, e6) = c;
-    (lhs, rhs, eqnForNewVars_, newVarsCrefs_) = solveQE(a1,e2,e3,a2,e5,e6,inExp2,inExp3,ieqnForNewVars,inewVarsCrefs,uniqueEqIndex,idepth);
-  then(lhs, rhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
-
-  else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
-
+    else (inExp1, inExp2, false, ieqnForNewVars, inewVarsCrefs, idepth);
   end matchcontinue;
-
 end preprocessingSolveTmpVars;
+
+protected function preprocessingSolveFunctionCall
+  input String name "of the function";
+  input DAE.Exp arg "ument of the function";
+  input DAE.Exp rhs;
+  input DAE.Exp inExp3 "solve for this";
+  input Option<DAE.Exp> optCond "condition from an if expression";
+  input Integer uniqueEqIndex "offset for tmp vars";
+  input Integer idepth "depth of tmp var";
+  output DAE.Exp result;
+  output Boolean new_x;
+  output list<BackendDAE.Equation> newEqns "eqns for tmp vars";
+  output list<DAE.ComponentRef> newVars "tmp vars";
+  output Integer odepth;
+algorithm
+  (result, new_x, newEqns, newVars, odepth) := match name
+    local
+      DAE.Exp y, exP, sgn, inv, pi, e1, e2, k1, k2, x1, x2;
+      DAE.Type tp;
+      list<BackendDAE.Equation> eqns;
+      list<DAE.ComponentRef> vars;
+
+    // tanh(x) -> 0.5 * ln((1 + y)/(1 - y))
+    // exists for y in (-1, 1)
+    // unique
+    case "tanh" algorithm
+      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, Expression.typeof(rhs), "Y$TANH", uniqueEqIndex, idepth, {}, {}, false);
+      e1 := Expression.expAdd(DAE.RCONST(1.0), y); // 1 + y
+      e2 := Expression.expSub(DAE.RCONST(1.0), y); // 1 - y
+      e1 := Expression.makeDiv(e1, e2); // (1 + y)/(1 - y)
+      e1 := Expression.makePureBuiltinCall("log", {e1}, DAE.T_REAL_DEFAULT); // ln((1 + y)/(1 - y))
+      e1 := Expression.expMul(DAE.RCONST(0.5), e1); // 0.5 * ln((1 + y)/(1 - y))
+    then (e1, true, eqns, vars, idepth + 1);
+
+    // sinh(x) -> ln(y + sqrt(1 + y^2))
+    // exixts always
+    // unique
+    case "sinh" algorithm
+      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, Expression.typeof(rhs), "Y$SINH", uniqueEqIndex, idepth, {}, {}, false);
+      e1 := Expression.expPow(y, DAE.RCONST(2.0)); // y^2
+      e1 := Expression.expAdd(e1, DAE.RCONST(1.0)); // 1 + y^2
+      e1 := Expression.makePureBuiltinCall("sqrt", {e1}, DAE.T_REAL_DEFAULT); // sqrt(1 + y^2)
+      e1 := Expression.expAdd(y, e1); // y + sqrt(1 + y^2)
+      e1 := Expression.makePureBuiltinCall("log", {e1}, DAE.T_REAL_DEFAULT); // ln(y + sqrt(1 + y^2))
+    then (e1, true, eqns, vars, idepth + 1);
+
+    // cosh(x) -> ln(y + sign*(sqrt(y^2 - 1))
+    // exists for y in [1, inf)
+    // two values, sign is -1 or 1
+    case "cosh" algorithm
+      tp := Expression.typeof(rhs);
+      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, tp, "Y$COSH", uniqueEqIndex, idepth, {}, {}, false);
+
+      exP := makeInitialGuess(tp, inExp3, arg);
+      (exP, eqns, vars) := makeTmpEqnAndCrefFromExp(exP, tp, "SIGN$COSH", uniqueEqIndex, idepth, eqns, vars, false);
+      sgn := Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp); // sign
+
+      e1 := Expression.expPow(y, DAE.RCONST(2.0)); // y^2
+      e1 := Expression.expSub(e1, DAE.RCONST(1.0)); // y^2 - 1
+      e1 := Expression.makePureBuiltinCall("sqrt", {e1}, DAE.T_REAL_DEFAULT); // sqrt(y^2 - 1)
+      e1 := Expression.expAdd(y, Expression.expMul(sgn, e1)); // y + sign*sqrt(y^2 - 1)
+      e1 := Expression.makePureBuiltinCall("log", {e1}, DAE.T_REAL_DEFAULT); // ln(y + sign*(sqrt(y^2 - 1))
+    then (e1, true, eqns, vars, idepth + 1);
+
+    // cos(x) -> sign*acos(y) + 2*pi*k
+    // exists for y in [-1, 1]
+    // infinitely many values, k is integer, sign is -1 or 1
+    case "cos" algorithm
+      tp := Expression.typeof(rhs);
+      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, tp, "Y$COS", uniqueEqIndex, idepth, {}, {}, false);
+
+      inv := Expression.makePureBuiltinCall("acos", {y}, tp);
+      (inv, eqns, vars) := makeTmpEqnAndCrefFromExp(inv, tp, "INV$COS", uniqueEqIndex, idepth, eqns, vars, false);
+
+      exP := makeInitialGuess(tp, inExp3, arg);
+      (exP, eqns, vars) := makeTmpEqnAndCrefFromExp(exP, tp, "PREX$COS", uniqueEqIndex, idepth, eqns, vars, false);
+
+      k1 := helpInvCos(inv, exP, tp, true);
+      k2 := helpInvCos(inv, exP, tp, false);
+      (k1, eqns, vars) := makeTmpEqnAndCrefFromExp(k1, tp, "k1$COS", uniqueEqIndex, idepth, eqns, vars, false);
+      (k2, eqns, vars) := makeTmpEqnAndCrefFromExp(k2, tp, "k2$COS", uniqueEqIndex, idepth, eqns, vars, false);
+
+      x1 := helpInvCos2(k1, inv, tp, true);
+      x2 := helpInvCos2(k2, inv, tp, false);
+      (x1, eqns, vars) := makeTmpEqnAndCrefFromExp(x1, tp, "x1$COS", uniqueEqIndex, idepth, eqns, vars, false);
+      (x2, eqns, vars) := makeTmpEqnAndCrefFromExp(x2, tp, "x2$COS", uniqueEqIndex, idepth, eqns, vars, false);
+
+      e1 := helpInvCos3(x1, x2, exP, tp);
+    then (e1, true, eqns, vars, idepth + 1);
+
+    // sin(x) -> (-1)^k * asin(y) + k*pi
+    // exists for y in [-1, 1]
+    // infinitely many values, k is integer
+    case "sin" algorithm
+      tp := Expression.typeof(rhs);
+      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, tp, "Y$SIN", uniqueEqIndex, idepth, {}, {}, false);
+
+      inv := Expression.makePureBuiltinCall("asin", {y}, tp);
+      (inv, eqns, vars) := makeTmpEqnAndCrefFromExp(inv, tp, "INV$SIN", uniqueEqIndex, idepth, eqns, vars, false);
+
+      exP := makeInitialGuess(tp,inExp3,arg);
+      (exP, eqns, vars) := makeTmpEqnAndCrefFromExp(exP, tp, "PREX$SIN", uniqueEqIndex, idepth, eqns, vars, false);
+
+      k1 := helpInvSin(inv, arg, tp, true);
+      k2 := helpInvSin(inv, arg, tp, false);
+      (k1, eqns, vars) := makeTmpEqnAndCrefFromExp(k1, tp, "k1$SIN", uniqueEqIndex, idepth, eqns, vars, false);
+      (k2, eqns, vars) := makeTmpEqnAndCrefFromExp(k2, tp, "k2$SIN", uniqueEqIndex, idepth, eqns, vars, false);
+
+      x1 := helpInvSin2(k1, inv, tp, true);
+      x2 := helpInvSin2(k2, inv, tp, false);
+      (x1, eqns, vars) := makeTmpEqnAndCrefFromExp(x1, tp, "x1$SIN", uniqueEqIndex, idepth, eqns, vars, false);
+      (x2, eqns, vars) := makeTmpEqnAndCrefFromExp(x2, tp, "x2$SIN", uniqueEqIndex, idepth, eqns, vars, false);
+
+      e1 := helpInvCos3(x1, x2, exP, tp);
+    then (e1, true, eqns, vars, idepth + 1);
+
+    // tan(x) -> atan(y) + k*pi
+    // exists always
+    // infinitely many values, k is integer
+    case "tan" algorithm
+      tp := Expression.typeof(rhs);
+      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, tp, "Y$TAN", uniqueEqIndex, idepth, {}, {}, false);
+
+      inv := Expression.makePureBuiltinCall("atan", {y}, tp);
+      (inv, eqns, vars) := makeTmpEqnAndCrefFromExp(inv, tp, "INV$TAN", uniqueEqIndex, idepth, eqns, vars, false);
+
+      exP := makeInitialGuess(tp, inExp3, arg);
+      (exP, eqns, vars) := makeTmpEqnAndCrefFromExp(exP, tp, "PREX$TAN", uniqueEqIndex, idepth, eqns, vars, false);
+
+      pi := DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
+
+      k1 := Expression.expSub(exP, inv); // pre(x) - atan(y)
+      k1 := Expression.makeDiv(k1, pi); // (pre(x) - atan(y))/pi
+      k1 := Expression.makePureBuiltinCall("$_round", {k1}, tp); // k = round((pre(x) - atan(y))/pi)
+      e1 := Expression.expMul(k1, pi); // k*pi
+      e1 := Expression.expAdd(inv, e1); // atan(y) + pi*k
+    then (e1, true, eqns, vars, idepth + 1);
+
+    // abs(x) -> sign*y
+    // exists for y in [0, inf)
+    // two values, sign is -1 or 1
+    case "abs" algorithm
+      tp := Expression.typeof(arg);
+      exP := makeInitialGuess(tp, inExp3, arg);
+      (exP, eqns, vars) := makeTmpEqnAndCrefFromExp(exP, tp, "SIGN$ABS", uniqueEqIndex, idepth, {}, {}, false);
+      sgn := Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp); // sign
+      e1 := Expression.expMul(sgn, rhs); // sign*y
+    then (e1, true, eqns, vars, idepth + 1);
+
+    // $_DF$DER(x) = y  ->  (x - pre(x))/dt = y  ->  x = y*dt + pre(x)
+    case "$_DF$DER" algorithm
+      e1 := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.symSolverDT, DAE.T_REAL_DEFAULT, {})); // dt
+      exP := Expression.makePureBuiltinCall("pre", {arg}, Expression.typeof(arg)); // pre(x)
+      e1 := Expression.expAdd(Expression.expMul(rhs, e1), exP); // y*dt + pre(x)
+    then(e1, true, {}, {}, idepth + 1);
+
+    // sqrt(x) -> y^2
+    case "sqrt"
+      algorithm
+        e1 := Expression.expPow(rhs, DAE.RCONST(2.0));
+      then (e1, true, {}, {}, idepth + 1);
+
+    // don't know inverse of this function
+    else (rhs, false, {}, {}, idepth);
+  end match;
+end preprocessingSolveFunctionCall;
 
 protected function simplifyBinaryMulCoeff
 "generalization of ExpressionSimplify.simplifyBinaryMulCoeff2"
