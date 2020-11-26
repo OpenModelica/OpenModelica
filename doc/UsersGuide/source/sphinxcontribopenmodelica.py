@@ -65,7 +65,7 @@ def getErrorString(state):
   else:
     return [nodes.note(None, node)]
 
-class ExecMosDirective(directives.CodeBlock):
+class ExecMosDirective(directives.code.CodeBlock):
   """Execute the specified Modelica code and insert the output into the document using syntax highlighting"""
   has_content = True
   required_arguments = 0

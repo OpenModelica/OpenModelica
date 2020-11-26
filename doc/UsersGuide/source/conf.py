@@ -34,7 +34,7 @@ os.environ['PATH'] = "%s/bin:%s" % (os.environ['OPENMODELICAHOME'],os.environ['P
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
-#needs_sphinx = '1.0'
+# needs_sphinx = '3.0'
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -70,9 +70,9 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'OpenModelica User\'s Guide'
-copyright = u' %d, Open Source Modelica Consortium' % (date.today().year)
-author = u'Open Source Modelica Consortium'
+project = 'OpenModelica User\'s Guide'
+copyright = ' %d, Open Source Modelica Consortium' % (date.today().year)
+author = 'Open Source Modelica Consortium'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -283,8 +283,9 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': """
-\usepackage{bookmark}
+'preamble':
+"""
+\\usepackage{bookmark}
 """,
 'fontenc': r'\usepackage[LGR,T1]{fontenc}'
 
@@ -296,7 +297,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  (master_doc, 'OpenModelicaUsersGuide.tex', u'OpenModelica User\'s Guide', author, 'manual'),
+  (master_doc, 'OpenModelicaUsersGuide.tex', 'OpenModelica User\'s Guide', author, 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -325,7 +326,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'openmodelicausersguide', u'OpenModelica User\'s Guide Documentation',
+    (master_doc, 'openmodelicausersguide', 'OpenModelica User\'s Guide Documentation',
      [author], 1)
 ]
 
@@ -339,7 +340,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  (master_doc, 'OpenModelicaUsersGuide', u'OpenModelica User\'s Guide Documentation',
+  (master_doc, 'OpenModelicaUsersGuide', 'OpenModelica User\'s Guide Documentation',
    author, 'OpenModelicaUsersGuide', 'One line description of project.',
    'Miscellaneous'),
 ]
