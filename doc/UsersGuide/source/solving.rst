@@ -40,8 +40,8 @@ in the eighties an initial description may be found in :cite:`PetzoldDASSL:1982`
 
 This solver is based on backward differentiation formula (BDF), which is
 a family of implicit methods for numerical integration. The used implementation
-is called DASPK2.0 (see [#f3]_) and it is translated automatically to C
-by f2c (see [#f4]_).
+is called DASPK2.0 (see [#f1]_) and it is translated automatically to C
+by f2c (see [#f2]_).
 
 The following simulation flags can be used to adjust the behavior of the
 solver for specific simulation problems:
@@ -169,7 +169,7 @@ Equations from an initial equation or initial algorithm block define a desired
 initial system.
 
 Choosing start values
-~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 Only non-linear iteration variables in non-linear strong components require
 start values. All other start values will have no influence on convergence of
@@ -185,52 +185,53 @@ setCommandLineOptions("-d=initialization")
 
 .. omc-loadstring ::
 
-model piston
-  Modelica.Mechanics.MultiBody.Parts.Fixed fixed1 annotation(
-    Placement(visible = true, transformation(origin = {-80, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Mechanics.MultiBody.Parts.Body body1(m = 1)  annotation(
-    Placement(visible = true, transformation(origin = {30, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Mechanics.MultiBody.Parts.FixedTranslation fixedTranslation1(r = {0.3, 0, 0})  annotation(
-    Placement(visible = true, transformation(origin = {-10, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Mechanics.MultiBody.Parts.FixedTranslation fixedTranslation2(r = {0.8, 0, 0})  annotation(
-    Placement(visible = true, transformation(origin = {10, 20}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-  Modelica.Mechanics.MultiBody.Parts.Fixed fixed2(animation = false, r = {1.1, 0, 0})  annotation(
-    Placement(visible = true, transformation(origin = {70, -60}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
-  Modelica.Mechanics.MultiBody.Parts.Body body2(m = 1)  annotation(
-    Placement(visible = true, transformation(origin = {30, -30}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  inner Modelica.Mechanics.MultiBody.World world annotation(
-    Placement(visible = true, transformation(origin = {-70, -50}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Mechanics.MultiBody.Joints.Prismatic prismatic(animation = true)  annotation(
-    Placement(visible = true, transformation(origin = {30, -60}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Mechanics.MultiBody.Joints.RevolutePlanarLoopConstraint revolutePlanar annotation(
-    Placement(visible = true, transformation(origin = {-50, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
-  Modelica.Mechanics.MultiBody.Joints.Revolute revolute1(a(fixed = false),phi(fixed = false), w(fixed = false))  annotation(
-    Placement(visible = true, transformation(origin = {10, 48}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-  Modelica.Mechanics.MultiBody.Joints.Revolute revolute2 annotation(
-    Placement(visible = true, transformation(origin = {10, -10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
-equation
-  connect(prismatic.frame_b, fixed2.frame_b) annotation(
-    Line(points = {{40, -60}, {60, -60}, {60, -60}, {60, -60}}, color = {95, 95, 95}));
-  connect(fixed1.frame_b, revolutePlanar.frame_a) annotation(
-    Line(points = {{-70, 70}, {-60, 70}, {-60, 70}, {-60, 70}}));
-  connect(revolutePlanar.frame_b, fixedTranslation1.frame_a) annotation(
-    Line(points = {{-40, 70}, {-20, 70}, {-20, 70}, {-20, 70}}, color = {95, 95, 95}));
-  connect(fixedTranslation1.frame_b, revolute1.frame_a) annotation(
-    Line(points = {{0, 70}, {10, 70}, {10, 58}, {10, 58}}, color = {95, 95, 95}));
-  connect(revolute1.frame_b, fixedTranslation2.frame_a) annotation(
-    Line(points = {{10, 38}, {10, 38}, {10, 30}, {10, 30}}, color = {95, 95, 95}));
-  connect(revolute2.frame_b, prismatic.frame_a) annotation(
-    Line(points = {{10, -20}, {10, -20}, {10, -60}, {20, -60}, {20, -60}}));
-  connect(revolute2.frame_b, body2.frame_a) annotation(
-    Line(points = {{10, -20}, {10, -20}, {10, -30}, {20, -30}, {20, -30}}, color = {95, 95, 95}));
-  connect(revolute2.frame_a, fixedTranslation2.frame_b) annotation(
-    Line(points = {{10, 0}, {10, 0}, {10, 10}, {10, 10}}, color = {95, 95, 95}));
-  connect(fixedTranslation1.frame_b, body1.frame_a) annotation(
-    Line(points = {{0, 70}, {18, 70}, {18, 70}, {20, 70}}));
-end piston;
+  model piston
+    Modelica.Mechanics.MultiBody.Parts.Fixed fixed1 annotation(
+      Placement(visible = true, transformation(origin = {-80, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Modelica.Mechanics.MultiBody.Parts.Body body1(m = 1)  annotation(
+      Placement(visible = true, transformation(origin = {30, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Modelica.Mechanics.MultiBody.Parts.FixedTranslation fixedTranslation1(r = {0.3, 0, 0})  annotation(
+      Placement(visible = true, transformation(origin = {-10, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Modelica.Mechanics.MultiBody.Parts.FixedTranslation fixedTranslation2(r = {0.8, 0, 0})  annotation(
+      Placement(visible = true, transformation(origin = {10, 20}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+    Modelica.Mechanics.MultiBody.Parts.Fixed fixed2(animation = false, r = {1.1, 0, 0})  annotation(
+      Placement(visible = true, transformation(origin = {70, -60}, extent = {{-10, -10}, {10, 10}}, rotation = 180)));
+    Modelica.Mechanics.MultiBody.Parts.Body body2(m = 1)  annotation(
+      Placement(visible = true, transformation(origin = {30, -30}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    inner Modelica.Mechanics.MultiBody.World world annotation(
+      Placement(visible = true, transformation(origin = {-70, -50}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Modelica.Mechanics.MultiBody.Joints.Prismatic prismatic(animation = true)  annotation(
+      Placement(visible = true, transformation(origin = {30, -60}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Modelica.Mechanics.MultiBody.Joints.RevolutePlanarLoopConstraint revolutePlanar annotation(
+      Placement(visible = true, transformation(origin = {-50, 70}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
+    Modelica.Mechanics.MultiBody.Joints.Revolute revolute1(a(fixed = false),phi(fixed = false), w(fixed = false))  annotation(
+      Placement(visible = true, transformation(origin = {10, 48}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+    Modelica.Mechanics.MultiBody.Joints.Revolute revolute2 annotation(
+      Placement(visible = true, transformation(origin = {10, -10}, extent = {{-10, -10}, {10, 10}}, rotation = -90)));
+  equation
+    connect(prismatic.frame_b, fixed2.frame_b) annotation(
+      Line(points = {{40, -60}, {60, -60}, {60, -60}, {60, -60}}, color = {95, 95, 95}));
+    connect(fixed1.frame_b, revolutePlanar.frame_a) annotation(
+      Line(points = {{-70, 70}, {-60, 70}, {-60, 70}, {-60, 70}}));
+    connect(revolutePlanar.frame_b, fixedTranslation1.frame_a) annotation(
+      Line(points = {{-40, 70}, {-20, 70}, {-20, 70}, {-20, 70}}, color = {95, 95, 95}));
+    connect(fixedTranslation1.frame_b, revolute1.frame_a) annotation(
+      Line(points = {{0, 70}, {10, 70}, {10, 58}, {10, 58}}, color = {95, 95, 95}));
+    connect(revolute1.frame_b, fixedTranslation2.frame_a) annotation(
+      Line(points = {{10, 38}, {10, 38}, {10, 30}, {10, 30}}, color = {95, 95, 95}));
+    connect(revolute2.frame_b, prismatic.frame_a) annotation(
+      Line(points = {{10, -20}, {10, -20}, {10, -60}, {20, -60}, {20, -60}}));
+    connect(revolute2.frame_b, body2.frame_a) annotation(
+      Line(points = {{10, -20}, {10, -20}, {10, -30}, {20, -30}, {20, -30}}, color = {95, 95, 95}));
+    connect(revolute2.frame_a, fixedTranslation2.frame_b) annotation(
+      Line(points = {{10, 0}, {10, 0}, {10, 10}, {10, 10}}, color = {95, 95, 95}));
+    connect(fixedTranslation1.frame_b, body1.frame_a) annotation(
+      Line(points = {{0, 70}, {18, 70}, {18, 70}, {20, 70}}));
+  end piston;
 
 .. omc-mos ::
 
+  loadModel(Modelica);
   setCommandLineOptions("-d=initialization");
   buildModel(piston);
 
@@ -268,7 +269,7 @@ Homotopy Method
 For complex start conditions OpenModelica can have trouble finding a solution
 for the initialization problem with the default newton method.
 
-Modelica offers the homotopy operator [#f5]_ to formulate actual and
+Modelica offers the homotopy operator [#f3]_ to formulate actual and
 simplified expression for equations. OpenModelica has different solvers
 available for non-linear systems. Initializing with homotopy on the first try
 is default if a homotopy operator is used. It can be switched off with
@@ -301,8 +302,6 @@ References
   :filter: docname in docnames
 
 .. rubric:: Footnotes
-.. [#f2] `Sundials Webpage <http://computation.llnl.gov/projects/sundials-suite-nonlinear-differential-algebraic-equation-solvers>`__
-.. [#f3] `DASPK Webpage <https://cse.cs.ucsb.edu/software>`__
-.. [#f4] `Cdaskr source <https://github.com/wibraun/Cdaskr>`__
-.. [#f5] `Modelica Association, Modelica® - A Unified Object-Oriented Language for Systems Modeling Language Specification - Version 3.4, 2017`
-.. [#f6] `Lennart A. Ochel, Bernhard Bachmann, Initialization of Equation-based Hybrid Models within OpenModelica , Proceedings of the 5th International Workshop on Equation-Based Object-Oriented Modeling Languages and Tools, 2013`
+.. [#f1] `DASPK Webpage <https://cse.cs.ucsb.edu/software>`__
+.. [#f2] `Cdaskr source <https://github.com/wibraun/Cdaskr>`__
+.. [#f3] `Modelica Association, Modelica® - A Unified Object-Oriented Language for Systems Modeling Language Specification - Version 3.4, 2017`
