@@ -320,7 +320,7 @@ algorithm
     else strongComponentIndexOut;
   end match;
 
-  (oComp, outRunMatching) := match (inComp, isyst, ishared, inMethod)
+  (oComp, outRunMatching) := match (inComp, isyst, ishared, method)
     local
       list<Integer> eindex, vindx;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
@@ -338,10 +338,10 @@ algorithm
         maxSize := Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       end if;
 
-        // Use minimal tearing for linear components if linear tearing is disabled
-        if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) == 0 and isLinear) then
-          method := MINIMAL_TEARING();
-        end if;
+      // Use minimal tearing for linear components if linear tearing is disabled
+      if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) == 0 and isLinear) then
+        method := MINIMAL_TEARING();
+      end if;
 
       useTearing := checkTearingSettings(method, maxSize, isLinear, strongComponentIndexOut, listLength(vindx));
       if useTearing then
@@ -369,7 +369,7 @@ algorithm
     then(oComp, outRunMatching);
 
     // no component for tearing
-    else then(inComp, false);
+    else(inComp, false);
   end match;
 end traverseComponents1;
 
@@ -385,18 +385,18 @@ protected function checkTearingSettings
   output Boolean activateTearing=false;
 protected
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
+  Boolean isMinimalTearing;
   Boolean forcedTearing;
   Boolean isCpp;
   Boolean isDense;
 algorithm
 
   // Always tear if minimalTearing is enabled
-  _ := match(inMethod)
-    case MINIMAL_TEARING() algorithm
-      activateTearing := true;
-      return;
-    then();
-  end match;
+  isMinimalTearing := match(inMethod) case MINIMAL_TEARING() then(true); else(false); end match;
+  if isMinimalTearing then
+    activateTearing := true;
+    return;
+  end if;
 
   // Check if tearing is disabled (maxSize=0)
   if maxSize == 0 then
