@@ -9,8 +9,12 @@ model A
   annotation(missingInnerMessage = "Missing outer A");
 end A;
 
-model InnerOuterMissing2
+model B
   outer A a;
+end B;
+
+model InnerOuterMissing2
+  B b;
 end InnerOuterMissing2;
 
 // Result:

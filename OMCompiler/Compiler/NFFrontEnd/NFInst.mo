@@ -150,7 +150,7 @@ algorithm
   inst_cls := instantiate(cls, context = context);
   checkPartialClass(cls, context);
 
-  insertGeneratedInners(inst_cls, top);
+  insertGeneratedInners(inst_cls, top, context);
   execStat("NFInst.instantiate(" + name + ")");
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
@@ -3306,15 +3306,17 @@ function insertGeneratedInners
    the class we're instantiating, so that they are typed and flattened properly."
   input InstNode node;
   input InstNode topScope;
+  input InstContext.Type context;
 protected
   NodeTree.Tree inner_tree;
   list<tuple<String, InstNode>> inner_nodes;
   list<Mutable<InstNode>> inner_comps;
-  InstNode n;
+  InstNode n, on;
   String name, str;
   Class cls;
   ClassTree cls_tree;
   InstNode base_node;
+  Boolean name_defined;
 algorithm
   CachedData.TOP_SCOPE(addedInner = inner_tree) := InstNode.getInnerOuterCache(topScope);
 
@@ -3328,6 +3330,8 @@ algorithm
 
   for e in inner_nodes loop
     (name, n) := e;
+
+    checkTopLevelOuter(name, n, node, context);
 
     // Always print a warning that an inner element was automatically generated.
     Error.addSourceMessage(Error.MISSING_INNER_ADDED,
@@ -3361,6 +3365,35 @@ algorithm
     InstNode.updateClass(Class.setClassTree(cls_tree, cls), base_node);
   end if;
 end insertGeneratedInners;
+
+function checkTopLevelOuter
+  input String name;
+  input InstNode outerNode;
+  input InstNode scope;
+  input InstContext.Type context;
+protected
+  InstNode node;
+  Boolean is_error;
+algorithm
+  try
+    node := Lookup.lookupSimpleName(name, scope);
+
+    if InstNode.isInner(node) then
+      Error.addSourceMessage(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
+      is_error := not InstContext.inRelaxed(context);
+    else
+      Error.addMultiSourceMessage(Error.MISSING_INNER_NAME_CONFLICT,
+        {name}, {InstNode.info(node), InstNode.info(outerNode)});
+      is_error := true;
+    end if;
+  else
+    is_error := false;
+  end try;
+
+  if is_error then
+    fail();
+  end if;
+end checkTopLevelOuter;
 
 function updateImplicitVariability
   input InstNode node;
