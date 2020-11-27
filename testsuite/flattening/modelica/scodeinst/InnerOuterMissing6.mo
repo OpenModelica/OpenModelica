@@ -8,7 +8,11 @@ model A
   outer Real x;
 end A;
 
-model InnerOuterMissing6 = A;
+model B = A;
+
+model InnerOuterMissing6
+  B b;
+end InnerOuterMissing6;
 
 // Result:
 // class InnerOuterMissing6
