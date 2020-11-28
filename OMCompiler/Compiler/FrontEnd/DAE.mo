@@ -1542,6 +1542,10 @@ uniontype Exp "Expressions
 
 end Exp;
 
+/* mathematica constants */
+public constant Exp PI = RCONST(3.1415926535897932384626433832795028841971693993751058);
+
+
 public uniontype TailCall
   record NO_TAIL "Not tail-recursive"
   end NO_TAIL;
