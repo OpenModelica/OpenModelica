@@ -3199,6 +3199,7 @@ algorithm
     local
       list<tuple<DAE.Exp, list<SimCode.SimEqSystem>>> ifbranches;
       list<SimCode.SimEqSystem> elsebranch;
+      list<DAE.Statement> stmts;
 
     case BackendDAE.SOLVED_EQUATION()
     then SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, eq.componentRef, eq.exp, eq.source, eq.attr);
@@ -3207,6 +3208,9 @@ algorithm
       (ifbranches, uniqueEqIndex) := List.threadMapFold(eq.conditions, eq.eqnstrue, makeSolvedIfBranch, uniqueEqIndex);
       (elsebranch, uniqueEqIndex) := List.mapFold(eq.eqnsfalse, makeSolved, uniqueEqIndex);
     then SimCode.SES_IFEQUATION(uniqueEqIndex, ifbranches, elsebranch, eq.source, eq.attr);
+
+    case BackendDAE.ALGORITHM(alg = DAE.ALGORITHM_STMTS(stmts)) algorithm
+    then SimCode.SES_ALGORITHM(uniqueEqIndex, stmts, eq.attr);
 
     else algorithm
       Error.addInternalError(getInstanceName() + " failed!", sourceInfo());
