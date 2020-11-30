@@ -210,7 +210,7 @@ else()
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
 endif()
 
-set(host_short ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
+set(host_short ${CMAKE_LIBRARY_ARCHITECTURE})
 
 set(RUNTIMECC ${CMAKE_C_COMPILER})
 set(CC ${CMAKE_C_COMPILER})
@@ -230,8 +230,6 @@ if(LAPACK_FOUND)
   endif()
 endif()
 
-# set(prefix ${CMAKE_INSTALL_PREFIX})
-set(prefix "")
 
 find_package(Git)
 execute_process(COMMAND

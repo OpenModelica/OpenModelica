@@ -20,6 +20,8 @@ include(omc_check_exists)
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_CXX_COMPILER_ID)
 omc_add_to_report(CMAKE_C_COMPILER_ID)
+omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
+
 
 # Export compile commands (compile_commands.json) for each source file. This helps editors (e.g. vscode, emacs) have
 # a more accurate code navigation and intellisense. E.g includes can be pinpointed instead of
@@ -33,6 +35,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
+
+include(GNUInstallDirs)
 # Precaution so that users do not install in system folders (e.g. /user/, /usr/local/)
 # unintentionally. If the user has not specified anything default to an install_cmake dir in the root folder.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -40,6 +44,12 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     message(WARNING "No installation directory specified. Defaulting to: ${CMAKE_INSTALL_PREFIX}")
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
+
+
+# We prefer to install libs to "library architecture" dir inside lib directory (e.g lib/x86_64-linux-gnu/omc/).
+set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
+
+
 
 include(WriteCompilerDetectionHeader)
 write_compiler_detection_header(
