@@ -23,7 +23,7 @@ endif
 LDFLAGS=-L.  -L$(GEN_DIR) -L"$(OMHOME)/$(LIB_OMC)" $(LOMPARSE) $(LCOMPILERRUNTIME) -lOpenModelicaRuntimeC -lModelicaExternalC -lModelicaIO -lModelicaMatIO -lzlib -lomantlr3 $(CORBALIBS) $(FMILIB_OR_BOOT) @RT_LDFLAGS@ @LIBSOCKET@ @LIBLPSOLVE55@ @OMC_LIBS@ @GRAPHLIB@ @LD_LAPACK@ -lzmq $(OMENCRYPTIONLIBS)
 LDFLAGS_SHARED_MAIN=-L"$(OMHOME)/$(LIB_OMC)" @RT_LDFLAGS_SHARED@
 ifeq (@WITH_FMIL@,yes)
-FMILIB = $(TOP_DIR)/3rdParty/FMIL/install/lib/libfmilib.a
+FMILIB = $(TOP_DIR)/3rdParty/FMIL/install/"$(LIB_OMC)"/libfmilib.a
 endif
 CPPFLAGS=-I"$(OMHOME)/include/omc/c" -I../Util/ @CPPFLAGS@ -DADD_METARECORD_DEFINITIONS=
 CORBALIBS=@CORBALIBS@
