@@ -239,13 +239,13 @@ install(TARGETS omc OpenModelicaCompiler
 # Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
 # They are also part of "compiler" installation component.
 install(FILES NFFrontEnd/NFModelicaBuiltin.mo
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            DESTINATION lib/omc
             COMPONENT compiler)
 install(FILES FrontEnd/ModelicaBuiltin.mo
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            DESTINATION lib/omc
             COMPONENT compiler)
 install(FILES FrontEnd/MetaModelicaBuiltin.mo
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            DESTINATION lib/omc
             COMPONENT compiler)
 
 
