@@ -67,7 +67,11 @@ equation
     Modelica.Blocks.Interfaces.RealInput level annotation(Placement(visible = true, transformation(origin = {-100, 44}, extent = {{-20, -20}, {20, 20}}, rotation = 0), iconTransformation(origin = {-90, 48}, extent = {{-20, -20}, {20, 20}}, rotation = 0)));
     Modelica.Blocks.Interfaces.RealOutput valve(start = 0) annotation(Placement(visible = true, transformation(origin = {106, 42}, extent = {{-10, -10}, {10, 10}}, rotation = 0), iconTransformation(origin = {96, 42}, extent = {{-10, -10}, {10, 10}}, rotation = 0)));
   equation
-    valve = if level >= maxlevel then 1.0 elseif level < minlevel then 0.0 else pre(valve);
+    when level >= maxlevel then
+      valve = 1.0;
+    elsewhen level <= minlevel then
+      valve = 0.0;
+    end when;
     annotation(uses(Modelica(version = "3.2.2")));
   end Control;
 
