@@ -278,14 +278,11 @@ public:
   void removeInterfacePoint(QString interfaceName);
   void adjustInterfacePoints();
   void updateElementTransformations(const Transformation &oldTransformation, const bool positionChanged);
-  void updateComponentTransformations(const Transformation &oldTransformation, const bool positionChanged) {updateElementTransformations(oldTransformation, positionChanged);}
   void handleOMSElementDoubleClick();
-  void handleOMSComponentDoubleClick() {return handleOMSElementDoubleClick();}
   bool isInBus() {return mpBusComponent != 0;}
   void setBusComponent(Element *pBusComponent);
   Element* getBusComponent() {return mpBusComponent;}
-  Element* getComponentByName(const QString &componentName);
-  Element* getElementByName(const QString &componentName) {return getComponentByName(componentName);}
+  Element* getElementByName(const QString &componentName);
 
   Transformation mTransformation;
   Transformation mOldTransformation;
