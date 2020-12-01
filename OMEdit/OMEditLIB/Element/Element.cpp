@@ -1315,7 +1315,7 @@ void Element::applyRotation(qreal angle)
     angle = 0;
   }
   mTransformation.setRotateAngle(angle);
-  updateComponentTransformations(oldTransformation, false);
+  updateElementTransformations(oldTransformation, false);
 }
 
 void Element::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
@@ -1745,7 +1745,7 @@ void Element::updateElementTransformations(const Transformation &oldTransformati
 
 /*!
  * \brief Element::handleOMSElementDoubleClick
- * Handles the mouse double click for OMS component.
+ * Handles the mouse double click for OMS element.
  */
 void Element::handleOMSElementDoubleClick()
 {
@@ -1772,23 +1772,23 @@ void Element::setBusComponent(Element *pBusElement)
 }
 
 /*!
- * \brief Element::getComponentByName
- * Finds the component by name.
- * \param componentName
+ * \brief Element::getElementByName
+ * Finds the element by name.
+ * \param elementName
  * \return
  */
-Element *Element::getComponentByName(const QString &componentName)
+Element *Element::getElementByName(const QString &elementName)
 {
   Element *pElementFound = 0;
   foreach (Element *pElement, getElementsList()) {
-    if (pElement->getElementInfo() && pElement->getName().compare(componentName) == 0) {
+    if (pElement->getElementInfo() && pElement->getName().compare(elementName) == 0) {
       pElementFound = pElement;
       return pElementFound;
     }
   }
   /* if is not found in components list then look into the inherited components list. */
   foreach (Element *pInheritedElement, getInheritedElementsList()) {
-    pElementFound = pInheritedElement->getElementByName(componentName);
+    pElementFound = pInheritedElement->getElementByName(elementName);
     if (pElementFound) {
       return pElementFound;
     }
