@@ -671,6 +671,11 @@ algorithm
       algorithm
         globalKnownVarHT := BaseHashSet.add(cr, globalKnownVarHT);
      then ();
+
+     else algorithm
+        Error.addInternalError("addConstantCseVarsToGlobalKnownVarHT failed. Reached else case that should not be reachable while handling CSE expression:\n" + ExpressionDump.dumpExpStr(cse_crExp, 0), sourceInfo());
+        fail();
+      then();
   end match;
 end addConstantCseVarsToGlobalKnownVarHT;
 
