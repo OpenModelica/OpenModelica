@@ -4836,8 +4836,7 @@ bool LibraryWidget::multipleTopLevelClasses(const QStringList &classesList, cons
     pMessageBox->setIcon(QMessageBox::Critical);
     pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
     pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
-    pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
-                                    .arg(classesList.join(",")));
+    pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName).arg(classesList.join(",")));
     pMessageBox->setStandardButtons(QMessageBox::Ok);
     pMessageBox->exec();
     return true;
@@ -4863,13 +4862,6 @@ bool LibraryWidget::saveModelicaLibraryTreeItem(LibraryTreeItem *pLibraryTreeIte
     LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryTreeModel->findLibraryTreeItem(topLevelClassName);
     result = saveModelicaLibraryTreeItemHelper(pTopLevelLibraryTreeItem);
   }
-  //  if (result) {
-  //    /* We need to load the file again so that the line number information for model_info.json is correct.
-  //     * Update to AST (makes source info WRONG), saving it (source info STILL WRONG), reload it (and omc knows the new lines)
-  //     * In order to get rid of it save API should update omc with new line information.
-  //     */
-  //    mpMainWindow->getOMCProxy()->loadFile(pLibraryTreeItem->getFileName());
-  //  }
   return result;
 }
 
