@@ -3441,7 +3441,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         Transformation oldTransformation = pElement->mTransformation;
         QPointF positionDifference = pElement->scenePos() - pElement->getOldScenePosition();
         pElement->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
-        pElement->updateComponentTransformations(oldTransformation, true);
+        pElement->updateElementTransformations(oldTransformation, true);
         hasComponentMoved = true;
       }
     }
@@ -3491,7 +3491,7 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
       if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
         pRootComponent->showSubModelAttributes();
       } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-        pRootComponent->handleOMSComponentDoubleClick();
+        pRootComponent->handleOMSElementDoubleClick();
       } else {
         removeCurrentTransition();
         /* ticket:4401 Open component class with shift + double click */
