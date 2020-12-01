@@ -78,10 +78,14 @@ static void* threadWork(void *data)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) data;
   UA_StatusCode status = UA_Server_run(state->server, &state->server_running);
-  return status == UA_STATUSCODE_GOOD ? (void*)0 : (void*)1;
+  if (UA_STATUSCODE_GOOD != status) {
+    UA_LOG_INFO(state->logger, UA_LOGCATEGORY_SERVER, "UA_Server_run returned code: 0x%08x", status);
+    return (void*)1;
+  }
+  return (void*)0;
 }
 
-static void waitForStep(omc_opc_ua_state *state)
+static void waitForStep(volatile omc_opc_ua_state *state)
 {
   int run;
   state->step = 0;
