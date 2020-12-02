@@ -532,24 +532,23 @@ void LocalsTreeModel::removeLocalItem(LocalsTreeItem *pLocalsTreeItem)
 {
   QModelIndex index = localsTreeItemIndex(pLocalsTreeItem);
   int row = index.row();
-  beginRemoveRows(index, row, row);
+  beginRemoveRows(localsTreeItemIndex(pLocalsTreeItem->parent()), row, row);
   pLocalsTreeItem->removeChildren();
-  endRemoveRows();
   LocalsTreeItem *pParentLocalsTreeItem = pLocalsTreeItem->parent();
   pParentLocalsTreeItem->removeChild(pLocalsTreeItem);
   pLocalsTreeItem->deleteLater();
+  endRemoveRows();
 }
 
 void LocalsTreeModel::removeLocalItems()
 {
-  int n = mpRootLocalsTreeItem->getChildren().size();
-  if (n == 0) {
-    return;
+  const int n = mpRootLocalsTreeItem->getChildren().size();
+  if (n > 0) {
+    QModelIndex index = localsTreeItemIndex(mpRootLocalsTreeItem);
+    beginRemoveRows(index, 0, n - 1);
+    mpRootLocalsTreeItem->removeChildren();
+    endRemoveRows();
   }
-  QModelIndex index = localsTreeItemIndex(mpRootLocalsTreeItem);
-  beginRemoveRows(index, 0, n - 1);
-  mpRootLocalsTreeItem->removeChildren();
-  endRemoveRows();
 }
 
 /*!

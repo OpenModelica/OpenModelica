@@ -897,7 +897,7 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
       mpVariablesTreeView->getVariablesWidget()->enableVisualizationControls(false);
       mpVariablesTreeView->getVariablesWidget()->rewindVisualization();
     }
-    beginRemoveRows(variablesTreeItemIndex(pVariablesTreeItem), 0, pVariablesTreeItem->getChildren().size());
+    beginRemoveRows(variablesTreeItemIndex(pVariablesTreeItem->parent()), 0, pVariablesTreeItem->getChildren().size());
     pVariablesTreeItem->removeChildren();
     VariablesTreeItem *pParentVariablesTreeItem = pVariablesTreeItem->parent();
     pParentVariablesTreeItem->removeChild(pVariablesTreeItem);

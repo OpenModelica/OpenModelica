@@ -369,9 +369,13 @@ void TVariablesTreeModel::insertTVariablesItems(QHashIterator<QString, OMVariabl
 
 void TVariablesTreeModel::clearTVariablesTreeItems()
 {
-  beginRemoveRows(tVariablesTreeItemIndex(mpRootTVariablesTreeItem), 0, mpRootTVariablesTreeItem->getChildren().size());
-  mpRootTVariablesTreeItem->removeChildren();
-  endRemoveRows();
+  const int n = mpRootTVariablesTreeItem->getChildren().size();
+  if (n > 0) {
+    QModelIndex index = tVariablesTreeItemIndex(mpRootTVariablesTreeItem);
+    beginRemoveRows(index, 0, n - 1);
+    mpRootTVariablesTreeItem->removeChildren();
+    endRemoveRows();
+  }
 }
 
 TVariableTreeProxyModel::TVariableTreeProxyModel(QObject *parent)
