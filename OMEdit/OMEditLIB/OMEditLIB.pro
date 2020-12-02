@@ -80,7 +80,7 @@ CONFIG(release, debug|release) { # release
   include(OMEditLIB.unix.config.pri)
 }
 
-INCLUDEPATH += ../ \
+INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/include \
   $$OPENMODELICAHOME/include/omplot \
   $$OPENMODELICAHOME/include/omplot/qwt \
