@@ -526,7 +526,7 @@ void BreakpointsTreeModel::removeBreakpoint(BreakpointTreeItem *pBreakpointTreeI
     }
     // remove the breakpoint from the tree.
     int row = pBreakpointTreeItem->row();
-    beginRemoveRows(breakpointTreeItemIndex(pBreakpointTreeItem), row, row);
+    beginRemoveRows(breakpointTreeItemIndex(pBreakpointTreeItem->parent()), row, row);
     pBreakpointTreeItem->removeChildren();
     BreakpointTreeItem *pParentBreakpointTreeItem = pBreakpointTreeItem->parent();
     pParentBreakpointTreeItem->removeChild(pBreakpointTreeItem);
