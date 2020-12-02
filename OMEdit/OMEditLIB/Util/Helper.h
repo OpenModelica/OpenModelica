@@ -426,6 +426,7 @@ public:
   static QString archivedSimulations;
   static QString systemSimulationInformation;
   static QString translationFlags;
+  static QString send;
 };
 
 class GUIMessages : public QObject

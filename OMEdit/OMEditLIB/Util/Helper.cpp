@@ -419,6 +419,7 @@ QString Helper::terminateInstantiationTip;
 QString Helper::archivedSimulations;
 QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
+QString Helper::send;
 
 void Helper::initHelperVariables()
 {
@@ -716,6 +717,7 @@ void Helper::initHelperVariables()
   Helper::archivedSimulations = tr("Archived Simulations");
   Helper::systemSimulationInformation = tr("System Simulation Information");
   Helper::translationFlags = tr("Translation Flags");
+  Helper::send = tr("Send");
 }
 
 QString GUIMessages::getMessage(int type)
