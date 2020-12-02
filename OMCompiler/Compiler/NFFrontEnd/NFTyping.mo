@@ -3091,6 +3091,12 @@ algorithm
     (cond, ty, var) := typeCondition(cond, context, source,
       Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true, allowClock = true);
 
+    if var > Variability.IMPLICITLY_DISCRETE and not Type.isClock(ty) then
+      Error.addSourceMessage(Error.NON_DISCRETE_WHEN_CONDITION,
+        {Expression.toString(cond)}, ElementSource.getInfo(source));
+      fail();
+    end if;
+
     if not checkWhenInitial(cond) then
       Error.addSourceMessage(Error.INITIAL_CALL_WARNING,
           {Expression.toString(cond)}, ElementSource.getInfo(source));
