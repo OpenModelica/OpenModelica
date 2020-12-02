@@ -5324,7 +5324,7 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
   while(i != pLibraryTreeItem->childrenSize()) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!classNames.contains(pChildLibraryTreeItem->getName())) {
-      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem, LibraryTreeItem::Modelica);
+      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem);
       i = 0;  //Restart iteration if list has changed
     } else {
       i++;
