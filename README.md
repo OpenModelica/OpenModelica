@@ -67,6 +67,22 @@ In order to push to the repository, you will push to your own fork of OpenModeli
 
 If you do not checkout the repositories for GUI clients (such as OMOptim.git), these directories will be ignored by autoconf and skipped during compilation.
 
+To checkout a specific version of OpenModelica, say tag v1.16.2 do:
+```bash
+> git clone https://github.com/OpenModelica/OpenModelica.git --recursive
+> cd OpenModelica
+> git checkout v1.16.2
+> git submodule update --force --init --recursive
+```
+If you have issues building you can try to clean and reset the repository using:
+```bash
+> git clean -fdx
+> git submodule foreach --recursive git clean -fdx
+> git reset --hard
+> git submodule foreach --recursive git reset --hard
+> git submodule update --init --recursive
+```
+
 ### How to contribute to the OpenModelica Compiler
 
 See [CONTRIBUTING.md](https://github.com/OpenModelica/OpenModelica/blob/master/CONTRIBUTING.md).
