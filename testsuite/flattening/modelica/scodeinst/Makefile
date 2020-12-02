@@ -913,6 +913,10 @@ WhenClockedElse1.mo \
 WhenClockedElse2.mo \
 WhenClockedStatement1.mo \
 WhenClockedTupleCall1.mo \
+WhenCondition1.mo \
+WhenCondition2.mo \
+WhenCondition3.mo \
+WhenCondition4.mo \
 WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \

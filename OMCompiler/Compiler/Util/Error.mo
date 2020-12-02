@@ -834,6 +834,8 @@ public constant ErrorTypes.Message MISSING_INNER_NAME_CONFLICT = ErrorTypes.MESS
   Gettext.gettext("An inner declaration for outer component ‘%s‘ could not be found, and could not be automatically generated due to a existing declaration of that name."));
 public constant ErrorTypes.Message TOP_LEVEL_INPUT_WITH_BINDING = ErrorTypes.MESSAGE(381, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Top-level input ‘%s‘ has a binding equation and will not be accessible as an input of the model."));
+public constant ErrorTypes.Message NON_DISCRETE_WHEN_CONDITION = ErrorTypes.MESSAGE(382, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("When-condition ‘%s‘ is not a discrete-time expression."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
