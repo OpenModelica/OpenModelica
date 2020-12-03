@@ -70,6 +70,7 @@ void OptionsDialog::create()
 void OptionsDialog::destroy()
 {
   mpInstance->deleteLater();
+  mpInstance = 0;
 }
 
 /*!
