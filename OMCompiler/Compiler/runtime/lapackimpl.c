@@ -79,6 +79,13 @@ extern "C" {
 #define strncasecmp strnicmp
 #endif
 
+static void OMC_NO_LAPACK_ERROR() {
+  c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error,
+                "A LAPACK routine is called but OMC is not compiled with LAPACK support", NULL, 0);
+  MMC_THROW();
+}
+
+
 #ifdef HAVE_LAPACK
 
 #ifdef HAVE_LAPACK_DEPRECATED
@@ -350,7 +357,7 @@ void LapackImpl__dgeev(const char *jobvl, const char *jobvr, int N, void *inA, i
   free(vl);
   free(vr);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -399,7 +406,7 @@ void LapackImpl__dgegv(const char *jobvl, const char *jobvr, int N, void *A, int
   free(vr);
   free(work);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -433,7 +440,7 @@ void LapackImpl__dgels(const char *trans, int M, int N, int NRHS, void *inA,
   free(b);
   free(work);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -471,7 +478,7 @@ void LapackImpl__dgelsx(int M, int N, int NRHS, void *inA, int LDA,
   free(work);
   free(jpvt);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -510,7 +517,7 @@ void LapackImpl__dgelsy(int M, int N, int NRHS, void *inA, int LDA,
   free(work);
   free(jpvt);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -542,7 +549,7 @@ void LapackImpl__dgesv(int N, int NRHS, void *inA, int LDA, void *inB,
   free(b);
   free(ipiv);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -586,7 +593,7 @@ void LapackImpl__dgglse(int M, int N, int P, void *inA, int LDA,
   free(x);
   free(work);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -620,7 +627,7 @@ void LapackImpl__dgtsv(int N, int NRHS, void *inDL, void *inD, void *inDU,
   free(du);
   free(b);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -655,7 +662,7 @@ void LapackImpl__dgbsv(int N, int KL, int KU, int NRHS, void *inAB,
   free(b);
   free(ipiv);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -700,7 +707,7 @@ void LapackImpl__dgesvd(const char *jobu, const char *jobvt, int M, int N, void 
   free(vt);
   free(work);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -729,7 +736,7 @@ void LapackImpl__dgetrf(int M, int N, void *inA, int LDA, void **outA,
   free(a);
   free(ipiv);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -759,7 +766,7 @@ void LapackImpl__dgetrs(const char *trans, int N, int NRHS, void *inA, int LDA,
   free(b);
   free(ipiv);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -789,7 +796,7 @@ void LapackImpl__dgetri(int N, void *inA, int LDA, void *IPIV, void *inWORK,
   free(work);
   free(ipiv);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -824,7 +831,7 @@ void LapackImpl__dgeqpf(int M, int N, void *inA, int LDA, void *inJPVT,
   free(tau);
   free(work);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
@@ -856,7 +863,7 @@ void LapackImpl__dorgqr(int M, int N, int K, void *inA, int LDA,
   free(tau);
   free(work);
 #else
-  MMC_THROW();
+  OMC_NO_LAPACK_ERROR();
 #endif
 }
 
