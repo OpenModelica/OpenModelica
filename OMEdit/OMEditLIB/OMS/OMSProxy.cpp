@@ -110,6 +110,7 @@ void OMSProxy::destroy()
 {
   oms_setLoggingCallback(0);
   mpInstance->deleteLater();
+  mpInstance = 0;
 }
 
 /*!
