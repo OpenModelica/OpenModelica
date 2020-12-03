@@ -1268,7 +1268,7 @@ protected
   list<Integer> ds;
   list<list<DAE.Subscript>> subslst;
   list<DAE.Exp> elst1, elst2;
-  Boolean hasInlineAfterIndexReduction, expandLhs, expandRhs;
+  Boolean hasInlineAfterIndexReduction;
   DAE.ElementSource source;
   BackendDAE.EquationAttributes attr;
   BackendDAE.Equation eq;
@@ -1298,18 +1298,8 @@ algorithm
   end if;
   (,hasInlineAfterIndexReduction) := Expression.traverseExpTopDown(lhs, Expression.findCallIsInlineAfterIndexReduction, false);
   (,hasInlineAfterIndexReduction) := Expression.traverseExpTopDown(rhs, Expression.findCallIsInlineAfterIndexReduction, hasInlineAfterIndexReduction);
-  (elst1,expandLhs) := List.mapFold(subslst, function Expression.applyExpSubscriptsFoldCheckSimplify(exp=lhs), false);
-  (elst2,expandRhs) := List.mapFold(subslst, function Expression.applyExpSubscriptsFoldCheckSimplify(exp=rhs), false);
-  if not hasInlineAfterIndexReduction then
-    // If inlining after index reduction or i, we need to expand equations to pass sorting+matching
-    // Note: We *should* be looking for the derivative annotation here, but it's not available directly
-    //       and better would be if sorting+matching could expand/split equations when necessary
-    if false and not (expandLhs and expandRhs) then
-      print(getInstanceName() + " not expanding " + ExpressionDump.printExpStr(lhs) + " = " + ExpressionDump.printExpStr(rhs) + "\n");
-    end if;
-    true := expandLhs and expandRhs "Do not expand equation if it doesn't help with anything... Like x=f(...); => x[1]=f()[1], ..., x[n]=f()[n]";
-  else
-  end if;
+  elst1 := List.map1r(subslst, Expression.subscriptExp, lhs);
+  elst2 := List.map1r(subslst, Expression.subscriptExp, rhs);
   outTpl := List.threadFold2(elst1, elst2, simpleEquationAcausal, eqnAttributes, true, inTpl);
 end simpleArrayEquationAcausal;
 
