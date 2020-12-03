@@ -543,11 +543,11 @@ constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(185, "combineSubscripts", fal
   Gettext.gettext("Move all subscripts to the end of component references."));
 constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(186, "zmqDangerousAcceptConnectionsFromAnywhere", false,
   Gettext.gettext("When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1."));
-constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(196, "dumpSimplify", false,
+constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(187, "dumpSimplify", false,
   Gettext.gettext("Dumps expressions before and after simplification."));
-constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(197, "dumpBackendClocks", false,
+constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(188, "dumpBackendClocks", false,
   Gettext.gettext("Dumps times for each backend module (only new backend)."));
-constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(198, "dumpSetBasedGraphs", false,
+constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(189, "dumpSetBasedGraphs", false,
   Gettext.gettext("Dumps information about set based graphs for efficient array handling (only new frontend and new backend)."));
 
 public
