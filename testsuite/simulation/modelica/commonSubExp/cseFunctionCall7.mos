@@ -57,7 +57,7 @@ package CSE
 end CSE;
 "); getErrorString();
 
-//setCommandLineOptions("--preOptModules=unitChecking,evaluateReplaceProtectedFinalEvaluateParameters,stateMachineElab,simplifyIfEquations,expandDerOperator,clockPartitioning,CSE_EachCall,findStateOrder,introduceDerAlias,inputDerivativesForDynOpt,replaceEdgeChange,inlineArrayEqn,removeSimpleEquations,comSubExp,sortEqnsVars"); getErrorString();
+//setCommandLineOptions("--preOptModules=unitChecking,evaluateReplaceProtectedFinalEvaluateParameters,stateMachineElab,simplifyIfEquations,expandDerOperator,clockPartitioning,findStateOrder,introduceDerAlias,inputDerivativesForDynOpt,replaceEdgeChange,inlineArrayEqn,removeSimpleEquations,comSubExp,sortEqnsVars"); getErrorString();
 setDebugFlags("dumpCSE"); getErrorString();
 setCommandLineOptions("--postOptModules+=wrapFunctionCalls"); getErrorString();
 simulate(CSE.FunctionCallTest7); getErrorString();

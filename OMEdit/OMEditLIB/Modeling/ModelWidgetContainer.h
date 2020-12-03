@@ -509,7 +509,9 @@ public:
   QToolButton* getDiagramViewToolButton() {return mpDiagramViewToolButton;}
   QToolButton* getTextViewToolButton() {return mpTextViewToolButton;}
   QToolButton* getDocumentationViewToolButton() {return mpDocumentationViewToolButton;}
+  void setDiagramGraphicsView(GraphicsView *pDiagramGraphicsView) {mpDiagramGraphicsView = pDiagramGraphicsView;}
   GraphicsView* getDiagramGraphicsView() {return mpDiagramGraphicsView;}
+  void setIconGraphicsView(GraphicsView *pIconGraphicsView) {mpIconGraphicsView = pIconGraphicsView;}
   GraphicsView* getIconGraphicsView() {return mpIconGraphicsView;}
   UndoStack* getUndoStack() {return mpUndoStack;}
   BaseEditor* getEditor() {return mpEditor;}

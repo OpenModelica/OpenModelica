@@ -2892,20 +2892,20 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
         /* sparsity pattern available */
         inSysData->isPatternAvailable = 'T';
         inSysData->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-        inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
-        inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
+        inSysData->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
+        inSysData->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
         inSysData->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
-        inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(int));
+        inSysData->sparsePattern->colorCols = (unsigned int*) malloc(<%sizeleadindex%>*sizeof(unsigned int));
         inSysData->sparsePattern->maxColors = <%maxColor%>;
 
         /* write lead index of compressed sparse column */
-        memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
+        memcpy(inSysData->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
 
         for(i=2;i<<%sizeleadindex%>+1;++i)
           inSysData->sparsePattern->leadindex[i] += inSysData->sparsePattern->leadindex[i-1];
 
         /* call sparse index */
-        memcpy(inSysData->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(int));
+        memcpy(inSysData->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(unsigned int));
 
         /* write color array */
         <%colorString%>
@@ -4926,21 +4926,21 @@ match sparsepattern
         jacobian->resultVars = (modelica_real*) calloc(<%indexColumn%>,sizeof(modelica_real));
         jacobian->tmpVars = (modelica_real*) calloc(<%tmpvarsSize%>,sizeof(modelica_real));
         jacobian->sparsePattern = (SPARSE_PATTERN*) malloc(sizeof(SPARSE_PATTERN));
-        jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(int));
-        jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(int));
+        jacobian->sparsePattern->leadindex = (unsigned int*) malloc((<%sizeleadindex%>+1)*sizeof(unsigned int));
+        jacobian->sparsePattern->index = (unsigned int*) malloc(<%sp_size_index%>*sizeof(unsigned int));
         jacobian->sparsePattern->numberOfNoneZeros = <%sp_size_index%>;
-        jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(int));
+        jacobian->sparsePattern->colorCols = (unsigned int*) malloc(<%index_%>*sizeof(unsigned int));
         jacobian->sparsePattern->maxColors = <%maxColor%>;
         jacobian->constantEqns = <%constantEqns%>;
 
         /* write lead index of compressed sparse column */
-        memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(int));
+        memcpy(jacobian->sparsePattern->leadindex, colPtrIndex, (<%sizeleadindex%>+1)*sizeof(unsigned int));
 
         for(i=2;i<<%sizeleadindex%>+1;++i)
           jacobian->sparsePattern->leadindex[i] += jacobian->sparsePattern->leadindex[i-1];
 
         /* call sparse index */
-        memcpy(jacobian->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(int));
+        memcpy(jacobian->sparsePattern->index, rowIndex, <%sp_size_index%>*sizeof(unsigned int));
 
         /* write color array */
         <%colorString%>
@@ -5331,6 +5331,16 @@ template equation_impl2(Integer clockIndex, SimEqSystem eq, Context context, Str
         >>
   )
 end equation_impl2;
+
+template equation_call_context(SimEqSystem eq, String modelNamePrefix, Context context)
+  "Generates either a normal or jacobian equation depending on context.
+   ToDo: add other cases?"
+::=
+  match context
+  case JACOBIAN_CONTEXT() then equation_callJacobian(eq, modelNamePrefix)
+  else equation_call(eq, modelNamePrefix)
+  end match
+end equation_call_context;
 
 template equation_call(SimEqSystem eq, String modelNamePrefix)
  "Generates an equation.
@@ -5939,13 +5949,13 @@ match eq
 case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   let &preExp = buffer ""
   let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
-    let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
-    let &eqnsDecls += ( eqns |> eqn => equation_impl(-1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
-   let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
+  let condition = daeExp(e, context, &preExp, &varDecls, &eqnsDecls)
+  let &eqnsDecls += ( eqns |> eqn => equation_impl(-1, eqn, context, modelNamePrefixStr, init) ; separator="\n" )
+  let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
     <<
     <%conditionline%>
     {
-      <%( eqns |> eqn => equation_call(eqn, modelNamePrefixStr) ; separator="\n" )%>
+      <%( eqns |> eqn => equation_call_context(eqn, modelNamePrefixStr, context) ; separator="\n" )%>
     }
     >>
     ;separator="\n")
@@ -5954,7 +5964,7 @@ case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
   <%preExp%>
   <%IfEquation%>else
   {
-    <%elsebranch |> eqn => equation_call(eqn, modelNamePrefixStr)%>
+    <%elsebranch |> eqn => equation_call_context(eqn, modelNamePrefixStr, context)%>
   }
   >>
 end equationIfEquationAssign;

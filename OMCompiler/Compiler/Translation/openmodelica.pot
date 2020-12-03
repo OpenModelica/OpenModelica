@@ -4044,10 +4044,6 @@ msgstr ""
 msgid "Deprecated flag: Use --postOptModules+=wrapFunctionCalls instead."
 msgstr ""
 
-#: ../Util/Flags.mo:1123
-msgid "Deprecated flag: Use --postOptModules+=cseBinary instead."
-msgstr ""
-
 #: ../Util/Flags.mo:1131
 msgid "Max size for solveLinearSystem."
 msgstr ""
@@ -4119,13 +4115,6 @@ msgstr ""
 
 #: ../Util/Flags.mo:1161
 msgid "Activates symbolic implicit solver (original system is not changed)."
-msgstr ""
-
-#: ../Util/Flags.mo:1165
-msgid ""
-"Experimental feature: this replaces each occurrence of variable time with a "
-"new introduced state $time with equation der($time) = 1.0\n"
-"Deprecated flag: Use --postOptModules+=addTimeAsState instead."
 msgstr ""
 
 #: ../Util/Flags.mo:1171

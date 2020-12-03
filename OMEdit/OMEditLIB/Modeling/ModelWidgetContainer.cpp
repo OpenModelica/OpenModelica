@@ -3441,7 +3441,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *event)
         Transformation oldTransformation = pElement->mTransformation;
         QPointF positionDifference = pElement->scenePos() - pElement->getOldScenePosition();
         pElement->mTransformation.adjustPosition(positionDifference.x(), positionDifference.y());
-        pElement->updateComponentTransformations(oldTransformation, true);
+        pElement->updateElementTransformations(oldTransformation, true);
         hasComponentMoved = true;
       }
     }
@@ -3491,7 +3491,7 @@ bool GraphicsView::handleDoubleClickOnComponent(QMouseEvent *event)
       if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::CompositeModel) {
         pRootComponent->showSubModelAttributes();
       } else if (mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-        pRootComponent->handleOMSComponentDoubleClick();
+        pRootComponent->handleOMSElementDoubleClick();
       } else {
         removeCurrentTransition();
         /* ticket:4401 Open component class with shift + double click */
@@ -5324,7 +5324,7 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
   while(i != pLibraryTreeItem->childrenSize()) {
     LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
     if (!classNames.contains(pChildLibraryTreeItem->getName())) {
-      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem, LibraryTreeItem::Modelica);
+      pLibraryTreeModel->removeLibraryTreeItem(pChildLibraryTreeItem);
       i = 0;  //Restart iteration if list has changed
     } else {
       i++;
@@ -7318,7 +7318,9 @@ void ModelWidget::associateBusWithConnectors(Element *pBusComponent, GraphicsVie
 void ModelWidget::removeInheritedClasses(LibraryTreeItem *pLibraryTreeItem)
 {
   pLibraryTreeItem->removeInheritedClasses();
-  pLibraryTreeItem->getModelWidget()->clearInheritedClasses();
+  if (pLibraryTreeItem->getModelWidget()) {
+    pLibraryTreeItem->getModelWidget()->clearInheritedClasses();
+  }
   foreach (LibraryTreeItem *pChildLibraryTreeItem, pLibraryTreeItem->childrenItems()) {
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->isInPackageOneFile()) {
       ModelWidget::removeInheritedClasses(pChildLibraryTreeItem);
@@ -7733,16 +7735,30 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
   if (!object || isHidden() || qApp->activeWindow() != MainWindow::instance()) {
     return QMdiArea::eventFilter(object, event);
   }
-  /* If focus is set to LibraryTreeView, DocumentationViewer, QMenuBar etc. then try to validate the text because user might have
-   * updated the text manually.
+  /* See ticket #6162 and #6248
+   * We can have syntactically incorrect code in the current model so following actions should validate the text,
+   * If MainWindow shortcut for menu actions are used then we should try to validate text since we can create a new model from there.
+   * If context menu is used on LibraryTreeView to save a model other than the current model.
+   * If QMenuBar is used with mouse or keyboard/shortcut
+   * If users switches between model using the tab bar.
+   * If focus in called for DocumentationViewer
    */
   /* Don't check LibraryTreeView focus since now OMEdit supports drag and drop of classnames on text view See ticket:5128
    * The user is expected to click on LibraryTreeView and drag items on the working text view which might be invalid.
    * So we don't want to validate text in that case. For OMSimualtor models we allow LibraryTreeView focus in.
    */
   bool shouldValidateText = false;
-  if ((event->type() == QEvent::MouseButtonPress && qobject_cast<QMenuBar*>(object)) ||
-      (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))) {
+  if (event->type() == QEvent::Shortcut && qobject_cast<QAction*>(object) && object->parent() && qobject_cast<MainWindow*>(object->parent())) {
+    QAction *pAction = qobject_cast<QAction*>(object);
+    if (pAction->shortcut() != QKeySequence("Ctrl+q")) {
+      shouldValidateText = true;
+    }
+  } else if (event->type() == QEvent::ContextMenu && object->parent() && qobject_cast<LibraryTreeView*>(object->parent())) {
+    shouldValidateText = true;
+  } else if ((event->type() == QEvent::MouseButtonPress && qobject_cast<QMenuBar*>(object)) ||
+             (event->type() == QEvent::Shortcut && qobject_cast<QMenuBar*>(object)) ||
+             (event->type() == QEvent::MouseButtonPress && qobject_cast<QTabBar*>(object)) ||
+             (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))) {
     shouldValidateText = true;
   } else if (event->type() == QEvent::FocusIn && qobject_cast<LibraryTreeView*>(object)) {
     ModelWidget *pCurrentModelWidget = getCurrentModelWidget();

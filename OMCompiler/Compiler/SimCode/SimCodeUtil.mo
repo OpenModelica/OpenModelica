@@ -3196,14 +3196,36 @@ protected function makeSolved
   input output Integer uniqueEqIndex;
 algorithm
   outSimEqn := match eq
+    local
+      list<tuple<DAE.Exp, list<SimCode.SimEqSystem>>> ifbranches;
+      list<SimCode.SimEqSystem> elsebranch;
+
     case BackendDAE.SOLVED_EQUATION()
     then SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex, eq.componentRef, eq.exp, eq.source, eq.attr);
+
+    case BackendDAE.IF_EQUATION() algorithm
+      (ifbranches, uniqueEqIndex) := List.threadMapFold(eq.conditions, eq.eqnstrue, makeSolvedIfBranch, uniqueEqIndex);
+      (elsebranch, uniqueEqIndex) := List.mapFold(eq.eqnsfalse, makeSolved, uniqueEqIndex);
+    then SimCode.SES_IFEQUATION(uniqueEqIndex, ifbranches, elsebranch, eq.source, eq.attr);
+
     else algorithm
       Error.addInternalError(getInstanceName() + " failed!", sourceInfo());
     then fail();
   end match;
   uniqueEqIndex := uniqueEqIndex + 1;
 end makeSolved;
+
+protected function makeSolvedIfBranch
+  input DAE.Exp cond;
+  input list<BackendDAE.Equation> ifbranch;
+  output tuple<DAE.Exp, list<SimCode.SimEqSystem>> result;
+  input output Integer uniqueEqIndex;
+protected
+  list<SimCode.SimEqSystem> lst;
+algorithm
+  (lst, uniqueEqIndex) := List.mapFold(ifbranch, makeSolved, uniqueEqIndex);
+  result := (cond, lst);
+end makeSolvedIfBranch;
 
 protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";

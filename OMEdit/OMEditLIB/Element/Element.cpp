@@ -58,6 +58,7 @@
 ElementInfo::ElementInfo(QObject *pParent)
   : QObject(pParent)
 {
+  mParentClassName = "";
   mClassName = "";
   mName = "";
   mComment = "";
@@ -69,6 +70,7 @@ ElementInfo::ElementInfo(QObject *pParent)
   mIsReplaceable = false;
   mIsRedeclare = false;
   mIsElement = false;
+  mRestriction = "";
   mVariabilityMap.insert("constant", "constant");
   mVariabilityMap.insert("discrete", "discrete");
   mVariabilityMap.insert("parameter", "parameter");
@@ -80,6 +82,7 @@ ElementInfo::ElementInfo(QObject *pParent)
   mCasualityMap.insert("output", "output");
   mCasualityMap.insert("unspecified", "");
   mCasuality = "";
+  mConstrainedByClassName = "";
   mArrayIndex = "";
   mIsArray = false;
   mModifiersLoaded = false;
@@ -110,14 +113,19 @@ ElementInfo::ElementInfo(ElementInfo *pElementInfo, QObject *pParent)
 
 void ElementInfo::updateElementInfo(const ElementInfo *pElementInfo)
 {
+  mParentClassName = pElementInfo->getParentClassName();
   mClassName = pElementInfo->getClassName();
   mName = pElementInfo->getName();
   mComment = pElementInfo->getComment();
   mIsProtected = pElementInfo->getProtected();
   mIsFinal = pElementInfo->getFinal();
+  mIsEach = pElementInfo->getEach();
   mIsFlow = pElementInfo->getFlow();
   mIsStream = pElementInfo->getStream();
   mIsReplaceable = pElementInfo->getReplaceable();
+  mIsRedeclare = pElementInfo->getRedeclare();
+  mIsElement = pElementInfo->getIsElement();
+  mRestriction = pElementInfo->getRestriction();
   mVariabilityMap.insert("constant", "constant");
   mVariabilityMap.insert("discrete", "discrete");
   mVariabilityMap.insert("parameter", "parameter");
@@ -129,6 +137,7 @@ void ElementInfo::updateElementInfo(const ElementInfo *pElementInfo)
   mCasualityMap.insert("output", "output");
   mCasualityMap.insert("unspecified", "");
   mCasuality = pElementInfo->getCausality();
+  mConstrainedByClassName = pElementInfo->getConstrainedByClassName();
   mArrayIndex = pElementInfo->getArrayIndex();
   mIsArray = pElementInfo->isArray();
   mModifiersMap.clear();
@@ -482,13 +491,14 @@ QString ElementInfo::getParameterValue(OMCProxy *pOMCProxy, const QString &class
  */
 bool ElementInfo::operator==(const ElementInfo &componentInfo) const
 {
-  return (componentInfo.getClassName() == this->getClassName()) && (componentInfo.getName() == this->getName()) &&
+  return (componentInfo.getParentClassName() == this->getParentClassName()) && (componentInfo.getClassName() == this->getClassName()) && (componentInfo.getName() == this->getName()) &&
       (componentInfo.getComment() == this->getComment()) && (componentInfo.getProtected() == this->getProtected()) &&
-      (componentInfo.getFinal() == this->getFinal()) && (componentInfo.getFlow() == this->getFlow()) &&
+      (componentInfo.getFinal() == this->getFinal()) && (componentInfo.getEach() == this->getEach()) && (componentInfo.getFlow() == this->getFlow()) &&
       (componentInfo.getStream() == this->getStream()) && (componentInfo.getReplaceable() == this->getReplaceable()) &&
-      (componentInfo.getVariablity() == this->getVariablity()) && (componentInfo.getInner() == this->getInner()) &&
+      (componentInfo.getRedeclare() == this->getRedeclare()) && (componentInfo.getIsElement() == this->getIsElement()) &&
+      (componentInfo.getRestriction() == this->getRestriction()) && (componentInfo.getVariablity() == this->getVariablity()) && (componentInfo.getInner() == this->getInner()) &&
       (componentInfo.getOuter() == this->getOuter()) && (componentInfo.getCausality() == this->getCausality()) &&
-      (componentInfo.getArrayIndex() == this->getArrayIndex()) &&
+      (componentInfo.getConstrainedByClassName() == this->getConstrainedByClassName()) && (componentInfo.getArrayIndex() == this->getArrayIndex()) &&
       (componentInfo.getModifiersMapWithoutFetching() == this->getModifiersMapWithoutFetching()) &&
       (componentInfo.getParameterValueWithoutFetching() == this->getParameterValueWithoutFetching()) &&
       (componentInfo.getStartCommand() == this->getStartCommand()) && (componentInfo.getExactStep() == this->getExactStep()) &&
@@ -1305,7 +1315,7 @@ void Element::applyRotation(qreal angle)
     angle = 0;
   }
   mTransformation.setRotateAngle(angle);
-  updateComponentTransformations(oldTransformation, false);
+  updateElementTransformations(oldTransformation, false);
 }
 
 void Element::addConnectionDetails(LineAnnotation *pConnectorLineAnnotation)
@@ -1735,7 +1745,7 @@ void Element::updateElementTransformations(const Transformation &oldTransformati
 
 /*!
  * \brief Element::handleOMSElementDoubleClick
- * Handles the mouse double click for OMS component.
+ * Handles the mouse double click for OMS element.
  */
 void Element::handleOMSElementDoubleClick()
 {
@@ -1762,23 +1772,23 @@ void Element::setBusComponent(Element *pBusElement)
 }
 
 /*!
- * \brief Element::getComponentByName
- * Finds the component by name.
- * \param componentName
+ * \brief Element::getElementByName
+ * Finds the element by name.
+ * \param elementName
  * \return
  */
-Element *Element::getComponentByName(const QString &componentName)
+Element *Element::getElementByName(const QString &elementName)
 {
   Element *pElementFound = 0;
   foreach (Element *pElement, getElementsList()) {
-    if (pElement->getElementInfo() && pElement->getName().compare(componentName) == 0) {
+    if (pElement->getElementInfo() && pElement->getName().compare(elementName) == 0) {
       pElementFound = pElement;
       return pElementFound;
     }
   }
   /* if is not found in components list then look into the inherited components list. */
   foreach (Element *pInheritedElement, getInheritedElementsList()) {
-    pElementFound = pInheritedElement->getElementByName(componentName);
+    pElementFound = pInheritedElement->getElementByName(elementName);
     if (pElementFound) {
       return pElementFound;
     }
@@ -2733,13 +2743,6 @@ void Element::referenceElementChanged()
  */
 void Element::referenceElementDeleted()
 {
-#ifdef QT_NO_DEBUG
-  // sanity check to avoid crashes just in release mode
-  if (!(mpGraphicsView && mpGraphicsView->getModelWidget() && mpGraphicsView->getModelWidget()->getLibraryTreeItem())) {
-    return;
-  }
-#endif // #ifdef QT_NO_DEBUG
-
   if (mElementType == Element::Port) {
     setVisible(false);
     if (mpReferenceComponent && mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {

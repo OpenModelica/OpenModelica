@@ -76,9 +76,5 @@ buildModel(problem3); getErrorString();
 // The following (1) independents belong to one color
 // 1: {x[2]}
 // {"problem3","problem3_init.xml"}
-// "Notification: Tearing is skipped for strong component 1 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
-// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
-// Notification: Tearing is skipped for strong component 2 because system size of 2 exceeds maximum system size for tearing of linear systems (0).
-// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
-// "
+// ""
 // endResult

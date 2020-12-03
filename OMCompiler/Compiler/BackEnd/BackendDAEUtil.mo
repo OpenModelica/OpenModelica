@@ -4866,7 +4866,7 @@ algorithm
         (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, globalKnownVars, trytosolve,shared);
         lst = List.map(row,Util.tuple31);
 
-        (lst, row, size) = List.fold6(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, globalKnownVars, trytosolve, shared, (lst, row, size));
+        (lst, row, _) = List.fold6(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, globalKnownVars, trytosolve, shared, (lst, row, size));
 
         lstall = List.map(row, Util.tuple31);
         (_, lst, _) = List.intersection1OnTrue(lstall, lst, intEq);
@@ -8456,7 +8456,6 @@ algorithm
   if Flags.getConfigBool(Flags.DEFAULT_OPT_MODULES_ORDERING) then
     // handle special flags, which enable modules
     enabledModules := deprecatedDebugFlag(Flags.SORT_EQNS_AND_VARS, enabledModules, "sortEqnsVars", "preOptModules+");
-    enabledModules := deprecatedDebugFlag(Flags.ADD_DER_ALIASES, enabledModules, "introduceDerAlias", "preOptModules+");
 
     if Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "inputDerivativesForDynOpt"::enabledModules;
@@ -8464,17 +8463,9 @@ algorithm
     end if;
 
     // handle special flags, which disable modules
-    disabledModules := deprecatedDebugFlag(Flags.NO_PARTITIONING, disabledModules, "clockPartitioning", "preOptModules-");
-    disabledModules := deprecatedDebugFlag(Flags.DISABLE_COMSUBEXP, disabledModules, "comSubExp", "preOptModules-");
-
     if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "causal" or
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" then
       disabledModules := "removeSimpleEquations"::disabledModules;
-    end if;
-
-    if not Flags.isSet(Flags.EVALUATE_CONST_FUNCTIONS) then
-      disabledModules := "evalFunc"::disabledModules;
-      Error.addCompilerWarning("Deprecated debug flag --d=evalConstFuncs=false detected. Use --preOptModules-=evalFunc instead.");
     end if;
 
     if not Flags.isSet(Flags.NF_SCALARIZE) then
@@ -8518,28 +8509,13 @@ algorithm
       enabledModules := "simplifyConstraints"::enabledModules;
     end if;
 
-    enabledModules := deprecatedDebugFlag(Flags.REDUCE_DYN_OPT, enabledModules, "reduceDynamicOptimization", "postOptModules+");
-
     if not Flags.getConfigString(Flags.LOOP2CON) == "none" then
       enabledModules := "extendDynamicOptimization"::enabledModules;
-    end if;
-
-    enabledModules := deprecatedConfigFlag(Flags.CSE_BINARY, enabledModules, "cseBinary", "postOptModules+");
-    enabledModules := deprecatedConfigFlag(Flags.CSE_CALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
-    enabledModules := deprecatedConfigFlag(Flags.CSE_EACHCALL, enabledModules, "wrapFunctionCalls", "postOptModules+");
-    enabledModules := deprecatedDebugFlag(Flags.ON_RELAXATION, enabledModules, "relaxSystem", "postOptModules+");
-
-    if Flags.getConfigBool(Flags.DISABLE_LINEAR_TEARING) then
-      FlagsUtil.setConfigInt(Flags.MAX_SIZE_LINEAR_TEARING, 0);
-      Error.addCompilerWarning("Deprecated flag --disableLinearTearing detected. Use --maxSizeLinearTearing=0 instead.");
     end if;
 
     if Flags.getConfigBool(Flags.GENERATE_SYMBOLIC_LINEARIZATION)  or  Config.acceptOptimicaGrammar() or Flags.getConfigBool(Flags.GENERATE_DYN_OPTIMIZATION_PROBLEM) then
       enabledModules := "generateSymbolicLinearization"::enabledModules;
     end if;
-
-    enabledModules := deprecatedDebugFlag(Flags.ADD_SCALED_VARS, enabledModules, "addScaledVars_states", "postOptModules+");
-    enabledModules := deprecatedDebugFlag(Flags.ADD_SCALED_VARS_INPUT, enabledModules, "addScaledVars_inputs", "postOptModules+");
 
     if Flags.getConfigInt(Flags.SIMPLIFY_LOOPS) > 0 then
       enabledModules := "simplifyLoops"::enabledModules;
@@ -8553,8 +8529,6 @@ algorithm
     if Flags.isSet(Flags.COUNT_OPERATIONS) then
       enabledModules := "countOperations"::enabledModules;
     end if;
-
-    enabledModules := deprecatedConfigFlag(Flags.ADD_TIME_AS_STATE, enabledModules, "addTimeAsState", "postOptModules+");
 
     if 1 < Flags.getConfigInt(Flags.MAX_SIZE_FOR_SOLVE_LINIEAR_SYSTEM) then
       enabledModules := "solveLinearSystem"::enabledModules;
@@ -8571,9 +8545,6 @@ algorithm
     if Flags.getConfigInt(Flags.PARTLINTORN) > 0 then
       enabledModules := "partlintornsystem"::enabledModules;
     end if;
-
-    // handle special flags, which disable modules
-    disabledModules := deprecatedDebugFlag(Flags.DIS_SIMP_FUN, disabledModules, "simplifyComplexFunction", "postOptModules-");
 
     if Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "none" or
        Flags.getConfigString(Flags.REMOVE_SIMPLE_EQUATIONS) == "fastAcausal" or
@@ -8627,8 +8598,6 @@ algorithm
     end if;
 
     // handle special flags, which disable modules
-    disabledModules := deprecatedDebugFlag(Flags.DIS_SIMP_FUN, disabledModules, "simplifyComplexFunction", "initOptModules-");
-
     if Config.getTearingMethod() == "noTearing" then
       disabledModules := "tearingSystem"::disabledModules;
     end if;

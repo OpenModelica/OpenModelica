@@ -547,11 +547,11 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
         if (!textValue.isEmpty()) {
           QString unit = "";
           QString displaytUnit = "";
-          Element *pComponent = mpComponent->getRootParentComponent()->getComponentByName(variable);
-          if (pComponent) {
-            displaytUnit = pComponent->getDerivedClassModifierValue("displaytUnit");
+          Element *pElement = mpComponent->getRootParentComponent()->getElementByName(variable);
+          if (pElement) {
+            displaytUnit = pElement->getDerivedClassModifierValue("displaytUnit");
             if (displaytUnit.isEmpty()) {
-              unit = pComponent->getDerivedClassModifierValue("unit");
+              unit = pElement->getDerivedClassModifierValue("unit");
               displaytUnit = unit;
             }
           }

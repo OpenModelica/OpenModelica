@@ -631,7 +631,7 @@ algorithm
   // Instantiate the class.
   inst_cls := NFInst.instantiate(cls, context = NFInstContext.RELAXED);
 
-  NFInst.insertGeneratedInners(inst_cls, top);
+  NFInst.insertGeneratedInners(inst_cls, top, NFInstContext.RELAXED);
 
   // Instantiate expressions (i.e. anything that can contains crefs, like
   // bindings, dimensions, etc). This is done as a separate step after
@@ -772,7 +772,7 @@ algorithm
 
   // Expand the class.
   expanded_cls := NFInst.expand(cls);
-  NFInst.insertGeneratedInners(expanded_cls, top);
+  NFInst.insertGeneratedInners(expanded_cls, top, NFInstContext.RELAXED);
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.frontEndLookup_dispatch("+ name +")");

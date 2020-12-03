@@ -6,7 +6,7 @@
 // Simulation Results
 // Modelica Standard Library
 //
-// This test tests and demontrates the debug flag +d=addDerAliases
+// This test tests and demontrates the preOptModules introduceDerAlias
 // which fail in some other cases. This test can removed as far as
 // Modelica.Fluid.Examples.HeatExchanger.HeatExchangerSimulation 
 // works out of the box.

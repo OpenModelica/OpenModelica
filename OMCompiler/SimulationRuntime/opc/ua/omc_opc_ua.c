@@ -54,7 +54,7 @@ typedef struct {
   double *inputVarsBackup;
   int gotNewInput;
   pthread_mutex_t write_values;
-  pthread_mutex_t mutex_values[2];
+  pthread_mutex_t mutex_values;
   int latestValues;
   UA_Double *realVals[2];
   int *realValsInputIndex;
@@ -78,10 +78,14 @@ static void* threadWork(void *data)
 {
   omc_opc_ua_state *state = (omc_opc_ua_state*) data;
   UA_StatusCode status = UA_Server_run(state->server, &state->server_running);
-  return status == UA_STATUSCODE_GOOD ? (void*)0 : (void*)1;
+  if (UA_STATUSCODE_GOOD != status) {
+    UA_LOG_INFO(state->logger, UA_LOGCATEGORY_SERVER, "UA_Server_run returned code: 0x%08x", status);
+    return (void*)1;
+  }
+  return (void*)0;
 }
 
-static void waitForStep(omc_opc_ua_state *state)
+static void waitForStep(volatile omc_opc_ua_state *state)
 {
   int run;
   state->step = 0;
@@ -127,10 +131,10 @@ readBoolean(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, co
     int index = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].nameID : index1;
     int negate = index1 >= ALIAS_START_ID ? modelData->booleanAlias[index1-ALIAS_START_ID].negate : 0;
     int latestValues = state->latestValues;
-    pthread_mutex_lock(&state->mutex_values[latestValues]);
+    pthread_mutex_lock(&state->mutex_values);
     val = state->boolVals[latestValues][index];
+    pthread_mutex_unlock(&state->mutex_values);
     val = negate ? !val : val;
-    pthread_mutex_unlock(&state->mutex_values[latestValues]);
   } else {
     dataValue->hasValue = UA_FALSE;
     BAD_RESULT()
@@ -202,31 +206,31 @@ readReal(void *handle, const UA_NodeId nodeid, UA_Boolean sourceTimeStamp, const
   omc_opc_ua_state *state = (omc_opc_ua_state*) handle;
   MODEL_DATA *modelData = state->data->modelData;
   UA_Double val;
-  int latestValues = state->latestValues;
 
   if (nodeid.identifierType != UA_NODEIDTYPE_NUMERIC) {
     BAD_RESULT()
     return UA_STATUSCODE_BADNODEIDUNKNOWN;
   }
 
-  pthread_mutex_lock(&state->mutex_values[latestValues]);
 
   if (nodeid.identifier.numeric==OMC_OPC_NODEID_TIME) {
-    val = state->time[latestValues];
+    pthread_mutex_lock(&state->mutex_values);
+    val = state->time[state->latestValues];
+    pthread_mutex_unlock(&state->mutex_values);
   } else if (nodeid.identifier.numeric==OMC_OPC_NODEID_REAL_TIME_SCALING_FACTOR) {
     val = state->real_time_sync_scaling;
   } else if (nodeid.identifier.numeric >= VARKIND_REAL*MAX_VARS_KIND && nodeid.identifier.numeric < (1+VARKIND_REAL)*MAX_VARS_KIND) {
     int index1 = nodeid.identifier.numeric-VARKIND_REAL*MAX_VARS_KIND;
     int index = index1 >= ALIAS_START_ID ? modelData->realAlias[index1-ALIAS_START_ID].nameID : index1;
     int negate = index1 >= ALIAS_START_ID ? modelData->realAlias[index1-ALIAS_START_ID].negate : 0;
-    val = state->realVals[latestValues][index];
+    pthread_mutex_lock(&state->mutex_values);
+    val = state->realVals[state->latestValues][index];
+    pthread_mutex_unlock(&state->mutex_values);
     val = negate ? -val : val;
   } else {
-    pthread_mutex_unlock(&state->mutex_values[latestValues]);
     BAD_RESULT()
     return UA_STATUSCODE_BADNODEIDUNKNOWN;
   }
-  pthread_mutex_unlock(&state->mutex_values[latestValues]);
 
   dataValue->hasValue = UA_TRUE;
   UA_Variant_setScalarCopy(&dataValue->value, &val, &UA_TYPES[UA_TYPES_DOUBLE]);
@@ -494,8 +498,7 @@ void* omc_embedded_server_init(DATA *data, double t, double step, const char *ar
   pthread_cond_init(&state->cond_pause, NULL);
   pthread_mutex_init(&state->mutex_pause, NULL);
   pthread_mutex_init(&state->write_values, NULL);
-  pthread_mutex_init(&state->mutex_values[0], NULL);
-  pthread_mutex_init(&state->mutex_values[1], NULL);
+  pthread_mutex_init(&state->mutex_values, NULL);
 
   state->latestValues = 0;
 
@@ -625,8 +628,7 @@ void omc_embedded_server_deinit(void *state_vp)
   state->nl.deleteMembers(&state->nl);
   pthread_mutex_destroy(&state->mutex_pause);
   pthread_mutex_destroy(&state->write_values);
-  pthread_mutex_destroy(&state->mutex_values[0]);
-  pthread_mutex_destroy(&state->mutex_values[1]);
+  pthread_mutex_destroy(&state->mutex_values);
   pthread_cond_destroy(&state->cond_pause);
   free(state->inputVarsBackup);
   free(state->realVals[0]);
@@ -648,12 +650,9 @@ int omc_embedded_server_update(void *state_vp, double t)
 
   waitForStep(state);
 
-  pthread_mutex_lock(&state->mutex_values[state->latestValues ? 0 : 1]);
-  latestValues = state->latestValues;
-  state->latestValues = state->latestValues ? 0 : 1;
+  latestValues = state->latestValues ? 0 : 1;
 
   state->time[latestValues] = t;
-
   for (i = 0; i < modelData->nVariablesReal; i++, realIndex++) {
     state->realVals[latestValues][realIndex] = (data->localData[0])->realVars[i];
   }
@@ -661,7 +660,10 @@ int omc_embedded_server_update(void *state_vp, double t)
     state->boolVals[latestValues][boolIndex] = (data->localData[0])->booleanVars[i];
   }
 
-  pthread_mutex_unlock(&state->mutex_values[latestValues]);
+  pthread_mutex_lock(&state->mutex_values);
+  state->latestValues = latestValues;
+  pthread_mutex_unlock(&state->mutex_values);
+
   pthread_mutex_lock(&state->write_values);
 
   if (state->gotNewInput) {

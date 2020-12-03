@@ -1373,7 +1373,7 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
   match simCode
-  case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+  case SIMCODE(modelInfo=modelInfo as MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let includedir = '<%fileNamePrefix%>.fmutmp/sources/'
   let mkdir = match makefileParams.platform case "win32" case "win64" then '"mkdir.exe"' else 'mkdir'
   <<
@@ -1389,7 +1389,7 @@ template fmuSourceMakefile(SimCode simCode, String FMUVersion)
      match  Config.simCodeTarget()
      case "omsicpp" then
      <<
-     <%\t%>chmod +x <%fileNamePrefix%>.sh
+     <%\t%>chmod +x <%dotPath(modelInfo.name)%>.sh
      >>
      end match
   %>

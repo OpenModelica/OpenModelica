@@ -90,21 +90,21 @@ package nonlinear_system
   end problem7;
 
   model problem8
-  function s
-    input Real a;
-    output Real y;
-  algorithm
-    y := if a < -1 then (a-3)/4
-       else if a > 1 then (a+3)/4
-       else a;
-  end s;
+    function s
+      input Real a;
+      output Real y;
+    algorithm
+      y := if a < -1 then (a-3)/4
+         else if a > 1 then (a+3)/4
+         else a;
+    end s;
     Real x(start=1, fixed=true);
     Real y;
     Real a;
   equation
-    der(x)  = y;
+    der(x) = y;
     der(y) = -0.1*a - 0.4 *y;
-    0 = 10*x-s(a);
+    0 = 10*x - s(a);
   end problem8;
 
   model problem9

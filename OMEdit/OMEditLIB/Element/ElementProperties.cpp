@@ -36,6 +36,7 @@
 #include "MainWindow.h"
 #include "Modeling/MessagesWidget.h"
 #include "Modeling/Commands.h"
+#include "Options/OptionsDialog.h"
 
 #include <QApplication>
 #include <QMenu>
@@ -81,9 +82,9 @@ Parameter::Parameter(Element *pComponent, bool showStartAttribute, QString tab, 
     mValueType = Parameter::Normal;
   } else if (pOMCProxy->isWhat(StringHandler::Enumeration, mpComponent->getComponentInfo()->getClassName())) {
     mValueType = Parameter::Enumeration;
-  } else if (mpComponent->getComponentInfo()->getReplaceable()) { // replaceable component or short element definition
+  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpComponent->getComponentInfo()->getReplaceable()) { // replaceable component or short element definition
     mValueType = mpComponent->getComponentInfo()->getIsElement() ? Parameter::ReplaceableClass : Parameter::ReplaceableComponent;
-  } else if (mpComponent->getComponentInfo()->getIsElement()) { // non replaceable short element definition
+  } else if (OptionsDialog::instance()->getGeneralSettingsPage()->getReplaceableSupport() && mpComponent->getComponentInfo()->getIsElement()) { // non replaceable short element definition
     mValueType = Parameter::ReplaceableClass;
   } else {
     mValueType = Parameter::Normal;

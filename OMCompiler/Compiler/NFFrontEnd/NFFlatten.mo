@@ -63,7 +63,6 @@ import NFModifier.Modifier;
 import Sections = NFSections;
 import NFOCConnectionGraph;
 import Prefixes = NFPrefixes;
-import NFPrefixes.Visibility;
 import RangeIterator = NFRangeIterator;
 import Subscript = NFSubscript;
 import Type = NFType;
@@ -78,7 +77,7 @@ import Face = NFConnector.Face;
 import System;
 import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
-import NFPrefixes.Variability;
+import NFPrefixes.{Direction, Variability, Visibility};
 import Variable = NFVariable;
 import ElementSource;
 import Ceval = NFCeval;
@@ -450,6 +449,16 @@ algorithm
         ElementSource.createElementSource(info));
       sections := Sections.prependEquation(eq, sections);
       binding := NFBinding.EMPTY_BINDING;
+
+      // Moving the binding of an input variable to an equation can change how
+      // the variable is counted when counting variables and equations, but
+      // since there's no way to override such a binding from outside the model
+      // we can remove the input prefix to keep the balance.
+      if comp_attr.direction == Direction.INPUT and ComponentRef.isEmpty(prefix) then
+        comp_attr.direction := Direction.NONE;
+        Error.addSourceMessage(Error.TOP_LEVEL_INPUT_WITH_BINDING,
+          {ComponentRef.toString(name)}, info);
+      end if;
     end if;
   end if;
 

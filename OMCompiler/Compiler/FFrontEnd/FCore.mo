@@ -733,7 +733,7 @@ algorithm
   else
     lastId := AbsynUtil.pathLastIdent(inPath);
     lastId := getRecordConstructorName(lastId);
-    outPath := AbsynUtil.pathSetLastIdent(inPath, AbsynUtil.makeIdentPathFromString(lastId));
+    outPath := AbsynUtil.pathSetLastIdent(inPath, lastId);
   end if;
 end getRecordConstructorPath;
 

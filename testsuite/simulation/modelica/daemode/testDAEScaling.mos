@@ -57,7 +57,5 @@ simulate(Test3, stopTime = 2, simflags="-noEquidistantTimeGrid");getErrorString(
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Notification: Tearing is skipped for strong component 1 because system size of 199 exceeds maximum system size for tearing of nonlinear systems (0).
-// To adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.
-// "
+// ""
 // endResult

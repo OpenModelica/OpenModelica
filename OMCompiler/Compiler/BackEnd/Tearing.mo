@@ -257,6 +257,16 @@ algorithm
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of traverseComponents\n\n");
   end if;
+
+  // Check if maxSizeLinearTearing maxSizeNonlinearTearing flag is illegal
+  if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) < 0) then
+    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeLinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING))});
+    fail();
+  elseif (Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING) < 0) then
+    Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeNonlinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING))});
+    fail();
+  end if;
+
   (comps, b, strongComponentIndex) := traverseComponents(comps, isyst, inShared, inTearingMethod, strongComponentIndex);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of traverseComponents\n" + BORDER + "\n\n");
@@ -309,79 +319,95 @@ algorithm
     else strongComponentIndexOut;
   end match;
 
-  (oComp, outRunMatching) := matchcontinue (inComp, isyst, ishared, inMethod)
+  (oComp, outRunMatching) := match (inComp, isyst, ishared, inMethod)
     local
-      Integer maxSize;
       list<Integer> eindex, vindx;
-      Boolean b, b1;
-      BackendDAE.StrongComponents comps, acc;
-      BackendDAE.StrongComponent comp, comp1;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
       Boolean mixedSystem;
+      Integer maxSize;
+      Boolean isLinear, useTearing;
 
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
-      true = BackendDAEUtil.getLinearfromJacType(jacType);
-      maxSize = Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
-      if intGt(listLength(vindx), maxSize) and not
-         // always apply tearing if maxSize > 0 and dense matrices are used
-         (intGt(maxSize, 0) and stringEqual(Config.simCodeTarget(), "Cpp") and
-          stringEqual(Flags.getConfigString(Flags.MATRIX_FORMAT), "dense"))
-      then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"linear",intString(maxSize)});
-        fail();
+    // Tearing
+    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) algorithm
+      isLinear := BackendDAEUtil.getLinearfromJacType(jacType);
+      if isLinear then
+        maxSize := Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
+      else
+        maxSize := Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       end if;
-      if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
-        if debugFlag then
-          print("\nTearing deactivated by user.\n");
-        end if;
-        Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndexOut)});
-        fail();
-      end if;
-      if debugFlag then
-        print("\nTearing of LINEAR component\nUse Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
-      end if;
-      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
-      end if;
-      if debug then execStat("Tearing.traverseComponents1 linear start"); end if;
-      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
-    then (comp1, true);
 
-    // tearing of non-linear systems
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) equation
-      false = BackendDAEUtil.getLinearfromJacType(jacType);
-      maxSize = Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
-      if intGt(listLength(vindx), maxSize) and not
-         // always apply tearing if maxSize > 0 and dense matrices are used
-         (intGt(maxSize, 0) and stringEqual(Config.simCodeTarget(), "Cpp") and
-          stringEqual(Flags.getConfigString(Flags.MATRIX_FORMAT), "dense"))
-      then
-        Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndexOut), intString(listLength(vindx)),"nonlinear",intString(maxSize)});
-        fail();
-      end if;
-      if listMember(strongComponentIndexOut,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+      useTearing := checkTearingSettings(maxSize, isLinear, strongComponentIndexOut, listLength(vindx));
+      if useTearing then
         if debugFlag then
-          print("\nTearing deactivated by user.\n");
+          print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n" +
+                "Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
         end if;
-        Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndexOut)});
-        fail();
+        if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
+        end if;
+        if debug then
+          execStat("Tearing.traverseComponents1 " + (if isLinear then "LS" else "NLS") + " start");
+        end if;
+        try
+          oComp := callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
+          outRunMatching := true;
+        else
+          oComp := inComp;
+          outRunMatching := false;
+        end try;
+      else
+        oComp := inComp;
+        outRunMatching := false;
       end if;
-      if debugFlag then
-        print("\nTearing of NONLINEAR component\nUse Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
-      end if;
-      if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
-      end if;
-      if debug then execStat("Tearing.traverseComponents1 NLS start"); end if;
-      (comp1, true) = callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
-    then (comp1, true);
+    then(oComp, outRunMatching);
 
     // no component for tearing
-    else (inComp, false);
-  end matchcontinue;
+    else then(inComp, false);
+  end match;
 end traverseComponents1;
 
+
+protected function checkTearingSettings
+"Checks if we want to do tearing for the current component.
+ It will also issue optional maesages if not."
+  input Integer maxSize;
+  input Boolean isLinear;
+  input Integer strongComponentIndex;
+  input Integer numVars;
+  output Boolean activateTearing=false;
+protected
+  Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
+  Boolean forcedTearing;
+  Boolean isCpp;
+  Boolean isDense;
+algorithm
+
+  // Check if tearing is disabled (maxSize=0)
+  if maxSize == 0 then
+    return;
+  end if;
+
+  // Check if (numVars < maxSize) or (isCpp and isDense)
+  isCpp := stringEqual(Config.simCodeTarget(), "Cpp");
+  isDense := stringEqual(Flags.getConfigString(Flags.MATRIX_FORMAT), "dense");
+  forcedTearing := isCpp and isDense;
+  if numVars > maxSize and not forcedTearing then
+    Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndex), intString(numVars), (if isLinear then "linear" else "nonlinear"),intString(maxSize)});
+    return;
+  end if;
+
+  // Check if tearing is disabled for this component
+  if listMember(strongComponentIndex,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+    if debugFlag then
+      print("\nTearing deactivated by user.\n");
+    end if;
+    Error.addMessage(Error.NO_TEARING_FOR_COMPONENT, {intString(strongComponentIndex)});
+    return;
+  end if;
+
+  activateTearing := true;
+end checkTearingSettings;
 
 protected function getUserTearingSet
   input list<Integer> userTVars;

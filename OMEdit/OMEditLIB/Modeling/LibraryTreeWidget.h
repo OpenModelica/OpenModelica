@@ -322,7 +322,7 @@ public:
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
   void reLoadOMSimulatorModel(const QString &modelName, const QString &editedCref, const QString &snapShot);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
-  bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, LibraryTreeItem::LibraryType type);
+  bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
   void moveClassUpDown(LibraryTreeItem *pLibraryTreeItem, bool up);
   void moveClassTopBottom(LibraryTreeItem *pLibraryTreeItem, bool top);

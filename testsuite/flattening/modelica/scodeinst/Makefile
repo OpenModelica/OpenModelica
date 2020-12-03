@@ -630,6 +630,7 @@ InnerOuterMissing3.mo \
 InnerOuterMissing4.mo \
 InnerOuterMissing5.mo \
 InnerOuterMissing6.mo \
+InnerOuterMissing7.mo \
 InnerOuterNotInner1.mo \
 InStreamArray.mo \
 InStreamFlowThreshold.mo \
@@ -867,6 +868,7 @@ Time1.mo \
 Time2.mo \
 Time3.mo \
 TopLevelInputs1.mo \
+TopLevelInputs2.mo \
 TupleInvalid1.mo \
 TupleInvalid2.mo \
 TupleInvalid3.mo \
@@ -911,6 +913,10 @@ WhenClockedElse1.mo \
 WhenClockedElse2.mo \
 WhenClockedStatement1.mo \
 WhenClockedTupleCall1.mo \
+WhenCondition1.mo \
+WhenCondition2.mo \
+WhenCondition3.mo \
+WhenCondition4.mo \
 WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \

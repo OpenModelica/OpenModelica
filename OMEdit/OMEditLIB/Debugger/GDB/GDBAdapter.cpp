@@ -70,7 +70,7 @@ GDBLoggerWidget::GDBLoggerWidget(QWidget *pParent)
   mpCommandTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   connect(mpCommandTextBox, SIGNAL(returnPressed()), SLOT(postCommand()));
   /* send command button */
-  mpSendCommandButton = new QPushButton(tr("Send"));
+  mpSendCommandButton = new QPushButton(Helper::send);
   mpSendCommandButton->setEnabled(false);
   connect(mpSendCommandButton, SIGNAL(clicked()), SLOT(postCommand()));
   /* Log Windows Splitter */

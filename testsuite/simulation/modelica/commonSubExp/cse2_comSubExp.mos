@@ -37,7 +37,7 @@ end Tearing3;
 
 setDebugFlags("dumpCSE"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC1 +cseCall +cseBinary"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC1 --preOptModules-=removeEqualRHS --postOptModules+=cseBinary"); getErrorString();
 simulate(Tearing3); getErrorString();
 
 // Result:
@@ -135,7 +135,5 @@ simulate(Tearing3); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: Deprecated flag --cseBinary detected. Use --postOptModules+=cseBinary instead.
-// Warning: Deprecated flag --cseCall detected. Use --postOptModules+=wrapFunctionCalls instead.
-// "
+// ""
 // endResult

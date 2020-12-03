@@ -175,7 +175,7 @@ ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
 
 $(UMFPACK_LIB_TARGET): 3rdParty/SuiteSparse/CMakeLists.txt
 	mkdir -p 3rdParty/SuiteSparse/build
-	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DLIB_OMC="$(LIB_OMC)" -DBUILD_SHARED_LIBS:Bool=$(UMFPACK_SHARED)
+	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DBUILD_SHARED_LIBS:Bool=$(UMFPACK_SHARED)
 	$(MAKE) -C 3rdParty/SuiteSparse/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libumfpack.dylib "$@"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libamd$(SHREXT)"
@@ -355,10 +355,10 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 	@# Pass CC/CFLAGS/CPPFLAGS because FMIL does not configure subprojects with the selected CC. Shocking; a cmake project not working the way it should.
 	test -f 3rdParty/FMIL/build/$(LIBFMILIB) || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(MAKE) -C 3rdParty/FMIL/build
 	test -d 3rdParty/FMIL/install || $(MAKE) -C 3rdParty/FMIL/build install
-	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/install/lib/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/install/lib/libfmilib_shared$(SHREXT)
-	cp -pPR 3rdParty/FMIL/install/lib/$(LIBFMILIB) $(builddir_lib_omc)
+	test "(" ! `uname` = Darwin ")" -o "(" ! -f 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT) ")" || install_name_tool -id @rpath/libfmilib_shared$(SHREXT) 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT)
+	cp -pPR 3rdParty/FMIL/install/$(LIB_OMC)/$(LIBFMILIB) $(builddir_lib_omc)
 	@if [ "$(FMILIB_SHARED)" = "ON" ]; then\
-	    cp -v -pPR 3rdParty/FMIL/install/lib/libfmilib_shared$(SHREXT) $(builddir_lib_omc);\
+	    cp -v -pPR 3rdParty/FMIL/install/$(LIB_OMC)/libfmilib_shared$(SHREXT) $(builddir_lib_omc);\
 	fi
 	test ! -f $(OMBUILDDIR)/$(LIB_OMC)/libfmilib_shared$(SHREXT) || ln -sf libfmilib_shared$(SHREXT) $(OMBUILDDIR)/$(LIB_OMC)/libfmilib$(SHREXT)
 	#TODO: Only copy required headers, add them in omc/fmi subfolder, and do not copy c/txt-files
@@ -368,7 +368,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/$(LIBFMILIB): 3rdParty/FMIL/build/Makefile
 3rdParty/FMIL/build/Makefile: 3rdParty/FMIL/CMakeLists.txt
 	test -d 3rdParty/FMIL
 	mkdir -p 3rdParty/FMIL/build
-	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/FMIL/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -D CMAKE_AR:String="$(AR)" $(MINGW_FMIL_FLAGS) -D FMILIB_BUILD_SHARED_LIB:Bool=$(FMILIB_SHARED) -D FMILIB_BUILD_TESTS:Bool=OFF -D FMILIB_GENERATE_DOXYGEN_DOC:Bool=OFF -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" .. -G $(CMAKE_TARGET))
 
 # Install expat
 expat: fmil
@@ -395,7 +395,7 @@ $(builddir_lib_omc)/$(LIBCMINPACKLIB): 3rdParty/CMinpack/build/Makefile
 3rdParty/CMinpack/build/Makefile: 3rdParty/CMinpack/CMakeLists.txt
 	test -d 3rdParty/CMinpack
 	mkdir -p 3rdParty/CMinpack/build
-	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMINPACK_BUILD_SHARED_LIBS:Bool=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install -DCMINPACK_LIB_INSTALL_DIR:String=../install .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/CMinpack/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -D CMAKE_AR:String="$(AR)" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DCMINPACK_BUILD_SHARED_LIBS:Bool=$(CMINPACKLIB_SHARED) -DCMAKE_INSTALL_PREFIX:String=../install -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" .. -G $(CMAKE_TARGET))
 CMinpack-clean:
 	rm -rf 3rdParty/CMinpack/install
 	#This is a bad idea, because the cache contains the absolute path to cmake that was used for build -> if the cmake location has changed, the clean command will fail
@@ -430,8 +430,9 @@ cppzmq-clean:
 	rm -rf 3rdParty/cppzmq/build
 metis: $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
 $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT): 3rdParty/metis-5.1.0/CMakeLists.txt
-	(cd 3rdParty/metis-5.1.0 && $(CMAKE) ./ -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE))
-	cp 3rdParty/metis-5.1.0/libmetis/libmetis$(STAEXT) $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
+	mkdir -p 3rdParty/metis-5.1.0/build
+	(cd 3rdParty/metis-5.1.0/build && $(CMAKE) ../ -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -G $(CMAKE_TARGET) && CC="$(CC)" CFLAGS="$(CFLAGS)" $(MAKE))
+	cp 3rdParty/metis-5.1.0/build/libmetis/libmetis$(STAEXT) $(OMBUILDDIR)/$(LIB_OMC)/libmetis$(STAEXT)
 metis-clean:
 	test ! -f 3rdParty/metis-5.1.0/Makefile || $(MAKE) -C 3rdParty/metis-5.1.0 clean
 	rm -rf 3rdParty/metis-5.1.0/CMakeCache.txt 3rdParty/metis-5.1.0/libmetis/libmetis.a 3rdParty/metis-5.1.0/CMakeFiles 3rdParty/metis-5.1.0/Makefile 3rdParty/metis-5.1.0/cmake_install.cmake 3rdParty/metis-5.1.0/include/CMakeFiles 3rdParty/metis-5.1.0/include/Makefile 3rdParty/metis-5.1.0/include/cmake_install.cmake 3rdParty/metis-5.1.0/libmetis/CMakeFiles 3rdParty/metis-5.1.0/libmetis/Makefile 3rdParty/metis-5.1.0/libmetis/cmake_install.cmake 3rdParty/metis-5.1.0/programs/CMakeFiles 3rdParty/metis-5.1.0/programs/Makefile 3rdParty/metis-5.1.0/programs/cmake_install.cmake
