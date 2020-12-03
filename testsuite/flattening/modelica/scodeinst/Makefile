@@ -917,6 +917,7 @@ WhenCondition1.mo \
 WhenCondition2.mo \
 WhenCondition3.mo \
 WhenCondition4.mo \
+WhenCondition5.mo \
 WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \
