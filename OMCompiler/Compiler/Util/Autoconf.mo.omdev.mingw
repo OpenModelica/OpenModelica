@@ -26,7 +26,7 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = " -Wl,-Bstatic -lSimulationRuntimeC -Wl,-Bdynamic" + ldflags_basic + " -lwsock32 -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic";
+  constant String ldflags_runtime_sim = " -Wl,-Bstatic -lSimulationRuntimeC -Wl,-Bdynamic" + ldflags_basic + " -lwsock32 -lstdc++";
   constant String ldflags_runtime_fmu = " -Wl,-Bstatic -lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
                                         libFortran +
                                         "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
