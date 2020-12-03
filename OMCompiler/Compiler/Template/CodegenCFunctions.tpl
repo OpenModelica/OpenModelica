@@ -5425,10 +5425,10 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
       match sub
       case INDEX(__) then
         let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-        let str = <<(0), make_index_array(1, (int) <%expPart%>), 'S'>>
+        let str = <<(modelica_integer)(0), make_index_array(1, (modelica_integer) <%expPart%>), 'S'>>
         str
       case WHOLEDIM(__) then
-        let str = <<(1), (int*)0, 'W'>>
+        let str = <<(modelica_integer)(1), (int*)0, 'W'>>
         str
       case SLICE(__) then
         let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
@@ -6361,9 +6361,9 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
 
   case call as CALL(path=IDENT(name="vector"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
     let ndim = listLength(getDimensionSizes(Expression.typeof(exp)))
-    let tvarc = tempDecl("int", &varDecls)
+    let tvarc = tempDecl("modelica_integer", &varDecls)
     let tvardata = tempDecl("void *", &varDecls)
-    let nElts = tempDecl("int", &varDecls)
+    let nElts = tempDecl("modelica_integer", &varDecls)
     let val = daeExpAsLValue(exp, context, &preExp, &varDecls, &auxFunction)
     let szElt = 'sizeof(<%expTypeModelica(ty)%>)'
     let dims =
@@ -7013,8 +7013,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let &bodyExpPre = buffer ""
   let &rangeExpPre = buffer ""
   let arrayTypeResult = expTypeFromExpArray(r)
-  let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
-  let foundFirst = match ri.path case IDENT(name="array") then "" else (if not ri.defaultValue then tempDecl("int",&tmpVarDecls))
+  let arrIndex = match ri.path case IDENT(name="array") then tempDecl("modelica_integer",&tmpVarDecls)
+  let foundFirst = match ri.path case IDENT(name="array") then "" else (if not ri.defaultValue then tempDecl("modelica_integer",&tmpVarDecls))
   let resType = expTypeArrayIf(typeof(exp))
   let res = contextCref(makeUntypedCrefIdent(ri.resultName), context, &preExp, &varDecls, &auxFunction)
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
@@ -7046,9 +7046,9 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         case T_ARRAY(__) then
           let tmp = tempDecl("index_spec_t", &varDecls)
           let nridx_str = intAdd(1,listLength(dims))
-          let idx_str = (dims |> dim => ", (1), (int*)0, 'W'")
+          let idx_str = (dims |> dim => ", (modelica_integer)(1), (int*)0, 'W'")
           <<
-          create_index_spec(&<%tmp%>, <%nridx_str%>, (0), make_index_array(1, (int) <%arrIndex%>++), 'S'<%idx_str%>);
+          create_index_spec(&<%tmp%>, <%nridx_str%>, (modelica_integer)(0), make_index_array(1, (modelica_integer) <%arrIndex%>++), 'S'<%idx_str%>);
           indexed_assign_<%expTypeArray(ty)%>(<%reductionBodyExpr%>, &<%res%>, &<%tmp%>);
           >>
         else
@@ -7069,7 +7069,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       }
       >>
       else '<%res%> = <%fExpStr%>;')
-  let endLoop = tempDecl("int",&tmpVarDecls)
+  let endLoop = tempDecl("modelica_integer",&tmpVarDecls)
   let loopHeadIter = (iterators |> iter as REDUCTIONITER(__) =>
     let identType = expTypeFromExpModelica(iter.exp)
     let arrayType = expTypeFromExpArray(iter.exp)
@@ -7081,7 +7081,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
     let &tmpVarDecls += (match identType
       case "modelica_metatype" then 'modelica_metatype <%loopVar%> = 0;<%\n%>'
       else (match iter.exp case RANGE(__) then "" else '<%arrayType%> <%loopVar%>;<%\n%>'))
-    let firstIndex = match iter.exp case RANGE(__) then "" else (match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("int",&tmpVarDecls) else "") else tempDecl("int",&tmpVarDecls))
+    let firstIndex = match iter.exp case RANGE(__) then "" else (match identType case "modelica_metatype" then (if isMetaArray(iter.exp) then tempDecl("modelica_integer",&tmpVarDecls) else "") else tempDecl("modelica_integer",&tmpVarDecls))
     let rangeExpStep = (match iter.exp case RANGE(step=NONE()) then "1 /* Range step-value */" case RANGE(step=SOME(step)) then '<%daeExp(step,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range step-value */' else "")
     let rangeExpStop = (match iter.exp case RANGE(__) then '<%daeExp(stop,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range stop-value */' else "")
     let rangeExp = (match iter.exp case RANGE(__) then '<%daeExp(start,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%> /* Range start-value */' else daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls, &auxFunction))
@@ -7189,7 +7189,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       )
   let firstValue = (match ri.path
      case IDENT(name="array") then
-       let length = tempDecl("int",&tmpVarDecls)
+       let length = tempDecl("modelica_integer",&tmpVarDecls)
        let &rangeExpPre += '<%length%> = 0;<%\n%>'
        let _ = (iterators |> iter as REDUCTIONITER(__) =>
          let iteratorName = contextIteratorName(iter.id, context)
