@@ -2034,6 +2034,14 @@ algorithm
   (expl, tyl, valr) := typeExpl(elements, next_context, info);
   tupleType := Type.TUPLE(tyl, NONE());
   tupleExp := Expression.TUPLE(tupleType, expl);
+
+  // Tuples may only contain component references.
+  if not List.all(expl, Expression.isCref) then
+    Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY,
+      {Expression.toString(tupleExp)}, info);
+    fail();
+  end if;
+
   variability := if listEmpty(valr) then Variability.CONSTANT else listHead(valr);
 end typeTuple;
 
