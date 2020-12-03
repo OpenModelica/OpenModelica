@@ -1966,6 +1966,8 @@ int SystemImpl__dgesv(void *lA, void *lB, void **res)
 #else
 int SystemImpl__dgesv(void *lA, void *lB, void **res)
 {
+  c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error,
+                "A LAPACK routine is called but OMC is not compiled with LAPACK support", NULL, 0);
   MMC_THROW();
 }
 #endif
