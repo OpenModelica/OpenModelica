@@ -270,6 +270,7 @@ void GDBAdapter::create()
 void GDBAdapter::destroy()
 {
   mpInstance->deleteLater();
+  mpInstance = 0;
 }
 
 /*!
