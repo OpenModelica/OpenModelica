@@ -2848,7 +2848,7 @@ algorithm
         tybrs := list(
           match br case(cond, body)
             algorithm
-              e1 := typeCondition(cond, context, st.source, Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true);
+              e1 := typeWhenCondition(cond, context, st.source, allowClock = false);
               sts1 := list(typeStatement(bst, next_context) for bst in body);
             then (e1, sts1);
           end match
@@ -3088,19 +3088,7 @@ protected
 algorithm
   for branch in branches loop
     Equation.Branch.BRANCH(cond, _, body) := branch;
-    (cond, ty, var) := typeCondition(cond, context, source,
-      Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true, allowClock = true);
-
-    if var > Variability.IMPLICITLY_DISCRETE and not Type.isClock(ty) then
-      Error.addSourceMessage(Error.NON_DISCRETE_WHEN_CONDITION,
-        {Expression.toString(cond)}, ElementSource.getInfo(source));
-      fail();
-    end if;
-
-    if not checkWhenInitial(cond) then
-      Error.addSourceMessage(Error.INITIAL_CALL_WARNING,
-          {Expression.toString(cond)}, ElementSource.getInfo(source));
-    end if;
+    (cond, ty, var) := typeWhenCondition(cond, context, source, allowClock = true);
 
     if Type.isClock(ty) then
       if listLength(branches) <> 1 then
@@ -3122,6 +3110,30 @@ algorithm
 
   whenEq := Equation.WHEN(listReverseInPlace(accum_branches), source);
 end typeWhenEquation;
+
+function typeWhenCondition
+  input Expression condition;
+  input InstContext.Type context;
+  input DAE.ElementSource source;
+  input Boolean allowClock;
+  output Expression outCondition;
+  output Type ty;
+  output Variability variability;
+algorithm
+  (outCondition, ty, variability) := typeCondition(condition, context, source,
+    Error.WHEN_CONDITION_TYPE_ERROR, allowVector = true, allowClock = allowClock);
+
+  if variability > Variability.IMPLICITLY_DISCRETE and not Type.isClock(ty) then
+    Error.addSourceMessage(Error.NON_DISCRETE_WHEN_CONDITION,
+      {Expression.toString(condition)}, ElementSource.getInfo(source));
+    fail();
+  end if;
+
+  if not checkWhenInitial(outCondition) then
+    Error.addSourceMessage(Error.INITIAL_CALL_WARNING,
+      {Expression.toString(condition)}, ElementSource.getInfo(source));
+  end if;
+end typeWhenCondition;
 
 function checkWhenInitial
   "Checks that initial() is only used as either initial() or
