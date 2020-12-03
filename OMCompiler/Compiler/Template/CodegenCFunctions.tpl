@@ -5425,10 +5425,10 @@ template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
       match sub
       case INDEX(__) then
         let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
-        let str = <<(0), make_index_array(1, (int) <%expPart%>), 'S'>>
+        let str = <<(modelica_integer)(0), make_index_array(1, (int) <%expPart%>), 'S'>>
         str
       case WHOLEDIM(__) then
-        let str = <<(1), (int*)0, 'W'>>
+        let str = <<(modelica_integer)(1), (int*)0, 'W'>>
         str
       case SLICE(__) then
         let expPart = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
@@ -7046,9 +7046,9 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         case T_ARRAY(__) then
           let tmp = tempDecl("index_spec_t", &varDecls)
           let nridx_str = intAdd(1,listLength(dims))
-          let idx_str = (dims |> dim => ", (1), (int*)0, 'W'")
+          let idx_str = (dims |> dim => ", (modelica_integer)(1), (int*)0, 'W'")
           <<
-          create_index_spec(&<%tmp%>, <%nridx_str%>, (0), make_index_array(1, (int) <%arrIndex%>++), 'S'<%idx_str%>);
+          create_index_spec(&<%tmp%>, <%nridx_str%>, (modelica_integer)(0), make_index_array(1, (int) <%arrIndex%>++), 'S'<%idx_str%>);
           indexed_assign_<%expTypeArray(ty)%>(<%reductionBodyExpr%>, &<%res%>, &<%tmp%>);
           >>
         else
