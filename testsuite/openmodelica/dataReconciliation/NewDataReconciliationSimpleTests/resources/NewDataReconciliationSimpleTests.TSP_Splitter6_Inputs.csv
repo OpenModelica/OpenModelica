@@ -1,0 +1,12 @@
+Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik
+singularPressureLoss1.Q,2.1,1.96,,,
+singularPressureLoss1.T,290,1.96,,,
+singularPressureLoss1.Pm,3000000,1.96,,,
+singularPressureLoss2.Q,1.05,1.91,,,
+singularPressureLoss2.T,305,1.91,,,
+singularPressureLoss2.Pm,3050000,1.91,,,
+singularPressureLoss3.Q,0.97,1.91,,,
+singularPressureLoss3.T,296,1.91,,,
+singularPressureLoss3.Pm,3100000,1.91,,,
+staticDrum1.T,298,1.91,,,
+staticDrum1.P,2950000,1.91,,,

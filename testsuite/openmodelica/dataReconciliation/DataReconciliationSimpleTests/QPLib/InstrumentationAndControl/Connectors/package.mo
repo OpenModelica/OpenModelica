@@ -1,3 +1,0 @@
-within DataReconciliationSimpleTests.QPLib.InstrumentationAndControl;
-package Connectors
-end Connectors;

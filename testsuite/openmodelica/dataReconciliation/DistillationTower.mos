@@ -1,23 +1,17 @@
 // name:     DistillationTower
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv
+// depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv
 // cflags: -d=-newInst
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
 
-loadFile("DataReconciliationSimpleTests/package.mo");
+loadFile("NewDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-//translateModel(DataReconciliationSimpleTests.DistillationTower);
-//getErrorString();
-
-//system("DataReconciliationSimpleTests.DistillationTower.exe -reconcile -sx=DataReconciliationSimpleTests.DistillationTower_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
-//getErrorString()
-
-simulate(DataReconciliationSimpleTests.DistillationTower, simflags="-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
+simulate(NewDataReconciliationSimpleTests.DistillationTower, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
 
@@ -31,7 +25,7 @@ getErrorString();
 // Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation.
 // "
 //
-// ModelInfo: DataReconciliationSimpleTests.DistillationTower
+// ModelInfo: NewDataReconciliationSimpleTests.DistillationTower
 // ==========================================================================
 //
 //
@@ -238,11 +232,11 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.DistillationTower', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.DistillationTower', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.DistillationTower_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | DataReconciliationSimpleTests.DistillationTower
+// stdout            | info    | NewDataReconciliationSimpleTests.DistillationTower
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;

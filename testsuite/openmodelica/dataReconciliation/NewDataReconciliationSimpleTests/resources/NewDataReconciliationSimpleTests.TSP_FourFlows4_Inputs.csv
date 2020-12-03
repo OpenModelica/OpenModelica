@@ -1,0 +1,7 @@
+Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik
+singularPressureLoss1.Pm, 350000, 30000,,,
+singularPressureLoss2.Pm, 290000, 30000,,,
+singularPressureLoss3.Pm, 300000, 30000,,,
+singularPressureLoss4.Pm, 280000, 30000,,,
+staticDrum1.P, 300000, 30000,,,
+staticDrum2.P, 290000, 30000,,,

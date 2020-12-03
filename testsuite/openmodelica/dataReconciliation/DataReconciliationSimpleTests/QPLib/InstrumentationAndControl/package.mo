@@ -1,3 +1,0 @@
-within DataReconciliationSimpleTests.QPLib;
-package InstrumentationAndControl
-end InstrumentationAndControl;
