@@ -36,11 +36,6 @@ encapsulated package NBModule
 
   This file contains following module wrappers:
 
-  *** MAIN
-   - causalizeInterface
-   - partitioningInterface
-   - daeModeInterface
-
   *** PRE (Mandatory)
    - eventsInterface
    - detectStatesInterface
@@ -49,6 +44,11 @@ encapsulated package NBModule
 
   *** PRE (Optional)
    - removeSimpleEquationsInterface
+
+  *** MAIN
+   - causalizeInterface
+   - partitioningInterface
+   - daeModeInterface
 
   *** POST (Mandatory)
    - jacobianInterface

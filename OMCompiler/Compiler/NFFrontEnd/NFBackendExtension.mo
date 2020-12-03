@@ -201,7 +201,7 @@ public
       Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_REAL;
 
     record VAR_ATTR_INT
@@ -215,7 +215,7 @@ public
       Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_INT;
 
     record VAR_ATTR_BOOL
@@ -225,7 +225,7 @@ public
       Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_BOOL;
 
     record VAR_ATTR_CLOCK
@@ -241,7 +241,7 @@ public
       Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_STRING;
 
     record VAR_ATTR_ENUMERATION
@@ -253,8 +253,11 @@ public
       Option<Expression> binding              "A binding expression for certain types. E.G. parameters";
       Option<Boolean> isProtected             "Defined in protected scope";
       Option<Boolean> finalPrefix             "Defined as final";
-      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
+      Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_ENUMERATION;
+
+    // TODO: das hier schön machen
+    type VarType = enumeration(ENUMERATION, CLOCK, STRING);
 
     function toString
       input VariableAttributes attributes;
