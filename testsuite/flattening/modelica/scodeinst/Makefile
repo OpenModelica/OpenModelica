@@ -872,6 +872,7 @@ TopLevelInputs2.mo \
 TupleInvalid1.mo \
 TupleInvalid2.mo \
 TupleInvalid3.mo \
+TupleInvalid4.mo \
 TupleOperation1.mo \
 TupleOperation2.mo \
 TupleOperation3.mo \
