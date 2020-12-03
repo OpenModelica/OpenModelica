@@ -7,9 +7,9 @@
 
 model WhenCondition5
   Real x;
-equation
+algorithm
   when noEvent(time > 0) then
-    x = 1.0;
+    x := 1.0;
   end when;
 end WhenCondition5;
 
