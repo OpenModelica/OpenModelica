@@ -284,6 +284,11 @@ else()
 
   set(CONFIG_OS ${OMC_TARGET_SYSTEM_NAME})
   set(MAKE ${CMAKE_MAKE_PROGRAM})
+
+  string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
+  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC  -llapack -lblas   -lm -lomcgc -lpthread -rdynamic")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC  -llapack -lblas   -lm -lomcgc -lpthread -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas   -lm -lpthread -rdynamic -Wl,--no-undefined")
  
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
 endif()
