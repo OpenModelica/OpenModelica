@@ -4924,35 +4924,30 @@ protected function cevalReductionIterators
   input Boolean impl;
   input Absyn.Msg msg;
   input Integer numIter;
-  output FCore.Cache outCache;
-  output list<list<Values.Value>> vals;
-  output list<String> names;
-  output list<Integer> dims;
-  output list<DAE.Type> tys;
+  output FCore.Cache outCache = inCache;
+  output list<list<Values.Value>> vals = {};
+  output list<String> names = {};
+  output list<Integer> dims = {};
+  output list<DAE.Type> tys = {};
+protected
+  Values.Value val;
+  list<Values.Value> iterVals;
+  DAE.Type ty;
+  String id;
+  DAE.Exp exp;
+  Option<DAE.Exp> guardExp;
 algorithm
-  (outCache,vals,names,dims,tys) := match (inCache,inEnv,inIterators,impl,msg,numIter)
-    local
-      Values.Value val;
-      list<Values.Value> iterVals;
-      Integer dim;
-      DAE.Type ty;
-      String id;
-      DAE.Exp exp;
-      Option<DAE.Exp> guardExp;
-      FCore.Cache cache;
-      FCore.Graph env;
-      list<DAE.ReductionIterator> iterators;
+  for iter in inIterators loop
+    DAE.REDUCTIONITER(id, exp, guardExp, ty) := iter;
+    (outCache, val) := ceval(outCache, inEnv, exp, impl, msg, numIter+1);
+    iterVals := ValuesUtil.arrayOrListVals(val, true);
+    (outCache, iterVals) := filterReductionIterator(outCache, inEnv, id, ty, iterVals, guardExp, impl, msg, numIter);
 
-    case (cache,_,{},_,_,_) then (cache,{},{},{},{});
-    case (cache,env,DAE.REDUCTIONITER(id,exp,guardExp,ty)::iterators,_,_,_)
-      equation
-        (cache,val) = ceval(cache,env,exp,impl,msg,numIter+1);
-        iterVals = ValuesUtil.arrayOrListVals(val,true);
-        (cache,iterVals) = filterReductionIterator(cache,env,id,ty,iterVals,guardExp,impl,msg,numIter);
-        dim = listLength(iterVals);
-        (cache,vals,names,dims,tys) = cevalReductionIterators(cache,env,iterators,impl,msg,numIter);
-      then (cache,iterVals::vals,id::names,dim::dims,ty::tys);
-  end match;
+    vals := iterVals :: vals;
+    names := id :: names;
+    dims := listLength(iterVals) :: dims;
+    tys := ty :: tys;
+  end for;
 end cevalReductionIterators;
 
 protected function filterReductionIterator

@@ -1325,9 +1325,9 @@ algorithm
 
     // Elaborate the iterators.
     (outCache, env, reduction_iters, dims, iter_const, has_guard_exp) :=
-      elabCallReductionIterators(inCache, env, listReverse(inIterators),
+      elabCallReductionIterators(inCache, env, inIterators,
         inReductionExp, inImplicit, inDoVect, inPrefix, inInfo);
-    dims := fixDimsIterType(inIterType, listReverse(dims));
+    dims := fixDimsIterType(inIterType, dims);
 
     // Elaborate the expression.
     (outCache, exp, DAE.PROP(exp_ty, exp_const)) :=
