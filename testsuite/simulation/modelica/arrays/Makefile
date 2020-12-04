@@ -41,6 +41,7 @@ PolynomialEvaluator3.mos \
 ticket2336.mos \
 ticket5114.mos \
 ticket_5994.mos \
+ticket_6099.mos \
 VariableRangeSubscript.mos \
 VectorizeOneReturnValue.mos \
 Xpowers1.mos \
