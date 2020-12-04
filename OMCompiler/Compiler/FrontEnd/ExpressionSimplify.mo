@@ -5498,8 +5498,8 @@ algorithm
         foldName2 = Util.getTempVariableIndex();
         resultName2 = Util.getTempVariableIndex();
         ty1 = Expression.unliftArray(ty);
-        expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty1,NONE(),foldName,resultName,NONE()),expr,iterators);
-        expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty,NONE(),foldName2,resultName2,NONE()),expr,{iter});
+        expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty1,NONE(),foldName2,resultName2,NONE()),expr,{iter});
+        expr = DAE.REDUCTION(DAE.REDUCTIONINFO(path,Absyn.COMBINE(),ty,NONE(),foldName,resultName,NONE()),expr,iterators);
       then expr;
     // rest can also handle multiple iterators
     case DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = path, iterType = Absyn.COMBINE(), foldName=foldName, resultName=resultName, exprType = ty, foldExp=NONE(), defaultValue = defaultValue), expr = expr, iterators = iter::(iterators as _::_))
