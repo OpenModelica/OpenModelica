@@ -2296,7 +2296,7 @@ protected
           vect_ty := Type.liftArrayLeftList(base_call.ty, mk.vectDims);
           base_call.arguments := call_args;
         then
-          TYPED_ARRAY_CONSTRUCTOR(vect_ty, base_call.var, base_call.purity, Expression.CALL(base_call), iters);
+          TYPED_ARRAY_CONSTRUCTOR(vect_ty, base_call.var, base_call.purity, Expression.CALL(base_call), listReverse(iters));
 
       else
         algorithm
