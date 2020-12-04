@@ -128,6 +128,7 @@ uniontype FlattenSettings
     Boolean scalarize;
     Boolean arrayConnect;
     Boolean nfAPI;
+    Boolean newBackend;
   end SETTINGS;
 end FlattenSettings;
 
@@ -147,7 +148,8 @@ algorithm
   settings := FlattenSettings.SETTINGS(
     Flags.isSet(Flags.NF_SCALARIZE),
     Flags.isSet(Flags.ARRAY_CONNECT),
-    Flags.isSet(Flags.NF_API)
+    Flags.isSet(Flags.NF_API),
+    Flags.getConfigBool(Flags.NEW_BACKEND)
   );
 
   sections := Sections.EMPTY();
@@ -289,7 +291,7 @@ algorithm
         cls := InstNode.getClass(c.classInst);
         vis := if InstNode.isProtected(component) then Visibility.PROTECTED else visibility;
 
-        if isComplexComponent(ty) then
+        if isComplexComponent(ty, settings) then
           (vars, sections) := flattenComplexComponent(comp_node, c, cls, ty,
             vis, outerBinding, prefix, vars, sections, settings);
         else
@@ -394,12 +396,14 @@ end deleteClassComponents;
 
 function isComplexComponent
   input Type ty;
+  input FlattenSettings settings;
   output Boolean isComplex;
 algorithm
   isComplex := match ty
     case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then false;
+    case Type.COMPLEX(complexTy = ComplexType.RECORD()) then not settings.newBackend;
     case Type.COMPLEX() then true;
-    case Type.ARRAY() then isComplexComponent(ty.elementType);
+    case Type.ARRAY() then isComplexComponent(ty.elementType, settings);
     else false;
   end match;
 end isComplexComponent;
