@@ -133,6 +133,11 @@
 
 #define WITH_UMFPACK
 
+/* On Windows (with OMDev) assume we have lapack*/
+#define HAVE_LAPACK
+/* On Windows (with OMDev) assume we have deprecated lapack functions*/
+#define HAVE_LAPACK_DEPRECATED
+
 #else /* Unix */ /* #if !defined(MSYS2_AUTOCONF) && (defined(__MINGW32__) || defined(_MSC_VER)) */
 
 #define CONFIG_GCC_DUMPMACHINE ""

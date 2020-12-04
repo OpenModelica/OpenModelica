@@ -647,6 +647,15 @@ algorithm
         end for;
      then ();
 
+    case(DAE.CALL(expLst = expLst))
+      algorithm
+        for exp in expLst loop
+          if Expression.isNotWild(exp) then
+            globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(exp, globalKnownVarHT);
+          end if;
+        end for;
+    then();
+
     case DAE.CREF(componentRef=cr, ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))
       algorithm
         globalKnownVarHT := BaseHashSet.add(cr, globalKnownVarHT);
@@ -671,6 +680,11 @@ algorithm
       algorithm
         globalKnownVarHT := BaseHashSet.add(cr, globalKnownVarHT);
      then ();
+
+     else algorithm
+        Error.addInternalError("addConstantCseVarsToGlobalKnownVarHT failed. Reached else case that should not be reachable while handling CSE expression:\n" + ExpressionDump.dumpExpStr(cse_crExp, 0), sourceInfo());
+        fail();
+      then();
   end match;
 end addConstantCseVarsToGlobalKnownVarHT;
 
@@ -988,7 +1002,7 @@ end isEquationRedundant2;
 
 protected function isEquationRedundant_flatten
   "Same as isEquationRedundant but flattens equations of form 'tuple = tuple'
-  (e.g. (a,_,b) = (_,c,d) => b=d), if left tuple elements are in globalKnownVarHT and adds them to globalKnownVars"
+  (e.g. (a,_,b) = (_,c,d) => b=d), if right tuple elements are in globalKnownVarHT add left tuple elements to globalKnownVars"
   input BackendDAE.Equation inEq;
   input output HashSet.HashSet globalKnownVarHT;
   input output BackendDAE.Variables globalKnownVars;
@@ -1000,8 +1014,10 @@ algorithm
     local
       DAE.Exp exp1, exp2;
       list<DAE.Exp> lhs, rhs;
+      list<BackendDAE.Var> varList;
       Boolean isRedundant;
 
+    // a = b
     case BackendDAE.EQUATION(exp=exp1, scalar=exp2)
       algorithm
         isRedundant := Expression.expEqual(exp1, exp2);
@@ -1013,10 +1029,33 @@ algorithm
         end if;
      then isRedundant;
 
+    // (a,b) = (c,d)
     case BackendDAE.COMPLEX_EQUATION(left=DAE.TUPLE(lhs), right=DAE.TUPLE(rhs)) guard (listLength(lhs) == listLength(rhs))
       algorithm
         (globalKnownVarHT, globalKnownVars, orderedVars, isRedundant) := isEquationRedundant_flatten2(lhs, rhs, globalKnownVarHT, globalKnownVars, orderedVars);
      then isRedundant;
+
+  // (a,b) = c
+  case BackendDAE.COMPLEX_EQUATION(_, exp1 as DAE.TUPLE(lhs), exp2, _, _)
+    algorithm
+      isRedundant := Expression.expEqual(exp1, exp2);
+      if not isRedundant then
+        isGlobalKnown := allArgsInGlobalKnownVars({exp2}, globalKnownVarHT);
+        if isGlobalKnown then
+          for expMem in lhs loop
+            // create variable with bind exp
+            varList := createVarsForExp(expMem, {});
+            for var in varList loop
+              // Add var to globalKnownVars
+              var := BackendVariable.setBindExp(var, SOME(exp2));
+              globalKnownVars := BackendVariable.addVar(var, globalKnownVars);
+              // Add cref(s) to globalKnownVarHT
+              globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(expMem, globalKnownVarHT);
+            end for;
+          end for;
+        end if;
+      end if;
+   then isRedundant;
 
     case BackendDAE.COMPLEX_EQUATION(left=exp1, right=exp2)
       algorithm
@@ -1578,6 +1617,10 @@ algorithm
 
     case DAE.RECORD(exps=expLst) equation
       print("This should never appear\n");
+      outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
+    then outVarLst;
+
+    case DAE.CALL(expLst=expLst) equation
       outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
 

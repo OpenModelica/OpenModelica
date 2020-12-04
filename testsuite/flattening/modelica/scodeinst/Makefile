@@ -872,6 +872,7 @@ TopLevelInputs2.mo \
 TupleInvalid1.mo \
 TupleInvalid2.mo \
 TupleInvalid3.mo \
+TupleInvalid4.mo \
 TupleOperation1.mo \
 TupleOperation2.mo \
 TupleOperation3.mo \
@@ -917,6 +918,7 @@ WhenCondition1.mo \
 WhenCondition2.mo \
 WhenCondition3.mo \
 WhenCondition4.mo \
+WhenCondition5.mo \
 WhenIllegalContext1.mo \
 WhenIllegalContext2.mo \
 WhenIllegalContext3.mo \

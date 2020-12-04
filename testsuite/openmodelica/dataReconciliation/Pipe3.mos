@@ -1,23 +1,17 @@
 // name:     Pipe3
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe3_Inputs.csv
+// depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe3_Inputs.csv
 // cflags: -d=-newInst
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
 
-loadFile("DataReconciliationSimpleTests/package.mo");
+loadFile("NewDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-//translateModel(DataReconciliationSimpleTests.Pipe3);
-//getErrorString();
-
-//system("DataReconciliationSimpleTests.Pipe3.exe -reconcile -sx=DataReconciliationSimpleTests.Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
-//getErrorString()
-
-simulate(DataReconciliationSimpleTests.Pipe3, simflags="-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
+simulate(NewDataReconciliationSimpleTests.Pipe3, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
 
@@ -31,7 +25,7 @@ getErrorString();
 // Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation.
 // "
 //
-// ModelInfo: DataReconciliationSimpleTests.Pipe3
+// ModelInfo: NewDataReconciliationSimpleTests.Pipe3
 // ==========================================================================
 //
 //
@@ -217,11 +211,11 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Pipe3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.Pipe3_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | DataReconciliationSimpleTests.Pipe3
+// stdout            | info    | NewDataReconciliationSimpleTests.Pipe3
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;

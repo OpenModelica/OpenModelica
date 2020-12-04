@@ -334,6 +334,11 @@ int (*function_equationsSynchronous)(DATA *data, threadData_t *threadData, long 
 int (*inputNames)(DATA* modelData, char ** names);
 
 /*
+ * return variables of interest related with dataReconciliation
+ */
+int (*dataReconciliationInputNames)(DATA* modelData, char ** names);
+
+/*
  * FMU's do not need the XML-file; they use this callback instead.
  */
 void (*read_input_fmu)(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);

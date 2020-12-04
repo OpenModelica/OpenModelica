@@ -32,6 +32,7 @@ void GitCommands::create()
 void GitCommands::destroy()
 {
   mpInstance->deleteLater();
+  mpInstance = 0;
 }
 
 /*!

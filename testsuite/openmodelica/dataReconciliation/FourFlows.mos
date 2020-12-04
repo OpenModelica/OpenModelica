@@ -1,21 +1,18 @@
 // name:     FourFlows
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.FourFlows_Inputs.csv
+// depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.FourFlows_Inputs.csv
 // cflags: -d=-newInst
 
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
 
-loadFile("DataReconciliationSimpleTests/package.mo");
+loadFile("NewDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-simulate(DataReconciliationSimpleTests.FourFlows, simflags="-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.FourFlows_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
+simulate(NewDataReconciliationSimpleTests.FourFlows, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.FourFlows_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
-
-//system("DataReconciliationSimpleTests.FourFlows.exe -reconcile -sx=DataReconciliationSimpleTests.FourFlows_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
-//getErrorString()
 
 
 // Result:
@@ -28,7 +25,7 @@ getErrorString();
 // Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation.
 // "
 //
-// ModelInfo: DataReconciliationSimpleTests.FourFlows
+// ModelInfo: NewDataReconciliationSimpleTests.FourFlows
 // ==========================================================================
 //
 //
@@ -43,74 +40,69 @@ getErrorString();
 // OrderedEquation (4, 4)
 // ========================================
 // 1/1 (1): Q1 = q0   [dynamic |0|0|0|0|]
-// 2/2 (1): Q2 = a * q0   [dynamic |0|0|0|0|]
+// 2/2 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
 // 3/3 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
 // 4/4 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
 //
 //
-// OverDetermined-System-Equations (10, 10)
+// OverDetermined-System-Equations (9, 9)
 // ========================================
 // 1/1 (1): Q1 = 0.0   [initial |0|0|0|0|]
 // 2/2 (1): Q2 = 0.0   [initial |0|0|0|0|]
 // 3/3 (1): Q3 = 0.0   [initial |0|0|0|0|]
 // 4/4 (1): Q4 = 0.0   [initial |0|0|0|0|]
 // 5/5 (1): q0 = 100.0   [binding |0|0|0|0|]
-// 6/6 (1): a = 0.5   [binding |0|0|0|0|]
-// 7/7 (1): Q1 = q0   [dynamic |0|0|0|0|]
-// 8/8 (1): Q2 = a * q0   [dynamic |0|0|0|0|]
-// 9/9 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
-// 10/10 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 6/6 (1): Q1 = q0   [dynamic |0|0|0|0|]
+// 7/7 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
+// 8/8 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 9/9 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
 //
 // Matching
 // ========================================
-// 6 variables and equations
+// 5 variables and equations
 // var 1 is solved in eqn 4
 // var 2 is solved in eqn 3
 // var 3 is solved in eqn 2
 // var 4 is solved in eqn 1
 // var 5 is solved in eqn 5
-// var 6 is solved in eqn 6
 //
-// E-BLT-Equations {7, 8, 9, 10} (4)
+// E-BLT-Equations {6, 7, 8, 9} (4)
 // ========================================
 // 1/1 (1): Q1 = q0   [dynamic |0|0|0|0|]
-// 2/2 (1): Q2 = a * q0   [dynamic |0|0|0|0|]
+// 2/2 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
 // 3/3 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
 // 4/4 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
 //
 //
-// reOrdered-Equations-after-removal (6, 6)
+// reOrdered-Equations-after-removal (5, 5)
 // ========================================
 // 1/1 (1): Q1 = 0.0   [initial |0|0|0|0|]
 // 2/2 (1): Q2 = 0.0   [initial |0|0|0|0|]
 // 3/3 (1): Q3 = 0.0   [initial |0|0|0|0|]
 // 4/4 (1): Q4 = 0.0   [initial |0|0|0|0|]
 // 5/5 (1): q0 = 100.0   [binding |0|0|0|0|]
-// 6/6 (1): a = 0.5   [binding |0|0|0|0|]
 //
 //
-// reOrderedVariables (6)
+// reOrderedVariables (5)
 // ========================================
 // 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
 // 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
 // 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
 // 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
 // 5: q0:VARIABLE()  type: Real
-// 6: a:VARIABLE()  type: Real
 //
 // Matching
 // ========================================
-// 6 variables and equations
+// 5 variables and equations
 // var 1 is solved in eqn 4
 // var 2 is solved in eqn 3
 // var 3 is solved in eqn 2
 // var 4 is solved in eqn 1
 // var 5 is solved in eqn 5
-// var 6 is solved in eqn 6
 //
 // BLT_BLOCKS:
 // ==========================================================================
-// {{4},{3},{2},{1},{5},{6},{-1},{-2},{-3},{-4}}
+// {{4},{3},{2},{1},{5},{-1},{-2},{-3},{-4}}
 //
 //
 // Targets of blocks without predecessors:
@@ -125,11 +117,10 @@ getErrorString();
 // Block :{1} || blockTargetsInfo :{({1}, 4), ({-1}, -1)} || KnownBlocks :{1} || constantBlocks :{}
 //
 //
-// Targets of Red blocks (2)
+// Targets of Red blocks (1)
 // ==============================
 //
 // Block :{5} || blockTargetsInfo :{({5}, 5), ({-1}, -1)} || KnownBlocks :{} || constantBlocks :{}
-// Block :{6} || blockTargetsInfo :{({6}, 6), ({-2}, -2)} || KnownBlocks :{} || constantBlocks :{}
 //
 //
 // Targets of Brown blocks (0)
@@ -139,14 +130,15 @@ getErrorString();
 //
 // FINAL SET OF EQUATIONS After Reconciliation
 // ==========================================================================
-// SET_C: {-4, -3}
+// SET_C: {-4, -3, -2}
 // SET_S: {}
 //
 //
-// SET_C (2, 2)
+// SET_C (3, 3)
 // ========================================
 // 1/1 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
 // 2/2 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 3/3 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
 //
 //
 // Unknown variables in SET_S  (0)
@@ -165,7 +157,7 @@ getErrorString();
 // 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
 // 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
 //
-// -SET_C:{-4, -3}
+// -SET_C:{-4, -3, -2}
 // -SET_S:{}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
@@ -176,17 +168,17 @@ getErrorString();
 // ==========================================================================
 // -Passed
 //
-// -SET_C has all known variables:{2, 3, 4, 1} (4)
+// -SET_C has all known variables:{3, 4, 2, 1} (4)
 // ========================================
-// 1: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
-// 2: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
-// 3: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 1: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 2: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 3: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
 // 4: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
 //
 // Condition-3 "SET_C equations must be strictly less than Variable of Interest"
 // ==========================================================================
 // -Passed
-// -SET_C contains:2 equations < 4 known variables
+// -SET_C contains:3 equations < 4 known variables
 //
 // Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
 // ==========================================================================
@@ -195,11 +187,11 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'DataReconciliationSimpleTests.FourFlows', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./DataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.FourFlows_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.FourFlows', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.FourFlows_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // stdout            | info    | DataReconciliation Starting!
-// stdout            | info    | DataReconciliationSimpleTests.FourFlows
+// stdout            | info    | NewDataReconciliationSimpleTests.FourFlows
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
