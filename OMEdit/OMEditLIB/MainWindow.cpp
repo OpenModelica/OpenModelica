@@ -2697,7 +2697,7 @@ void MainWindow::runOMSensPlugin()
 #elif defined(Q_OS_MAC)
     QPluginLoader loader(QString("%1/bin/omsensplugin.dylib").arg(Helper::OpenModelicaHome));
 #else
-    QPluginLoader loader(QString("%1/bin/libomsensplugin.so").arg(Helper::OpenModelicaHome));
+    QPluginLoader loader(QString("%1/lib/%2/omc/libomsensplugin.so").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #endif
     mpOMSensPlugin = loader.instance();
     if (!mpOMSensPlugin) {
