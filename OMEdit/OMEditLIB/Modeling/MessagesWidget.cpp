@@ -474,6 +474,7 @@ void MessagesWidget::addGUIMessage(MessageItem messageItem)
     case StringHandler::Internal:
       mpErrorMessageWidget->addGUIMessage(messageItem);
       mpAllMessageWidget->addGUIMessage(messageItem);
+      break;
     case StringHandler::Notification:
       mpNotificationMessageWidget->addGUIMessage(messageItem);
       mpAllMessageWidget->addGUIMessage(messageItem);
