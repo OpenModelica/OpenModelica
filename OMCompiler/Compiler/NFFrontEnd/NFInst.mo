@@ -102,6 +102,7 @@ import OperatorOverloading = NFOperatorOverloading;
 import EvalConstants = NFEvalConstants;
 import VerifyModel = NFVerifyModel;
 import Structural = NFStructural;
+import UnorderedMap;
 
 public
 
@@ -167,7 +168,7 @@ algorithm
   Typing.typeClass(inst_cls);
 
   // Flatten the model and evaluate constants in it.
-  flatModel := Flatten.flatten(inst_cls, name);
+  flatModel := Flatten.flatten(inst_cls, InstNode.getClassTree(cls), name);
   flatModel := EvalConstants.evaluate(flatModel);
 
   // Do unit checking
@@ -2298,11 +2299,12 @@ function makeRecordComplexType
   output ComplexType ty;
 protected
   InstNode cls_node;
-  list<Record.Field> fields;
+  UnorderedMap<String, Integer> indexMap;
 algorithm
   cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
-  ty := ComplexType.RECORD(cls_node, {});
+  indexMap := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq);
+  ty := ComplexType.RECORD(cls_node, listArray({}), indexMap);
 end makeRecordComplexType;
 
 function instComplexType

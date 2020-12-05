@@ -45,6 +45,8 @@ protected
 
   //NF imports
   import NFBinding.Binding;
+  import NFClassTree.ClassTree;
+  import ComplexType = NFComplexType;
   import NFComponent.Component;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -56,6 +58,7 @@ protected
 
   // Util imports
   import Pointer;
+  import UnorderedMap;
 
 public
   uniontype BackendInfo
@@ -256,8 +259,10 @@ public
       Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_ENUMERATION;
 
-    // TODO: das hier schön machen
-    type VarType = enumeration(ENUMERATION, CLOCK, STRING);
+    record VAR_ATTR_RECORD
+      array<VariableAttributes> elementAttr;
+      UnorderedMap<String, Integer> indexMap;
+    end VAR_ATTR_RECORD;
 
     function toString
       input VariableAttributes attributes;
@@ -295,21 +300,28 @@ public
       input Type ty;
       input Component.Attributes compAttrs;
       input Option<SCode.Comment> comment;
+      input String name;
+      input ClassTree classTree;
       output VariableAttributes attributes;
     protected
       Boolean is_final;
-      Type elTy;
       Boolean is_array = false;
     algorithm
       is_final := compAttrs.isFinal or
                   compAttrs.variability == Variability.STRUCTURAL_PARAMETER;
 
       attributes := match Type.arrayElementType(ty)
-        case Type.REAL()        then createReal(attrs, is_final, comment);
-        case Type.INTEGER()     then createInt(attrs, is_final);
-        case Type.BOOLEAN()     then createBool(attrs, is_final);
-        case Type.STRING()      then createString(attrs, is_final);
-        case Type.ENUMERATION() then createEnum(attrs, is_final);
+        local
+          ComplexType complexTy;
+        case Type.REAL()                          then createReal(attrs, is_final, comment);
+        case Type.INTEGER()                       then createInt(attrs, is_final);
+        case Type.BOOLEAN()                       then createBool(attrs, is_final);
+        case Type.STRING()                        then createString(attrs, is_final);
+        case Type.ENUMERATION()                   then createEnum(attrs, is_final);
+
+        case Type.COMPLEX(complexTy = complexTy as ComplexType.RECORD())
+        then createRecord(name, classTree, complexTy.indexMap, is_final);
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Type.toString(ty) + "."});
         then fail();
@@ -687,6 +699,22 @@ public
           quantity, min, max, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
       end if;
     end createEnum;
+
+    function createRecord
+      input String name;
+      input ClassTree classTree;
+      input UnorderedMap<String, Integer> indexMap;
+      input Boolean isFinal;
+      output VariableAttributes attributes;
+    protected
+      InstNode element;
+      array<VariableAttributes> elementAttr = arrayCreate(UnorderedMap.size(indexMap), EMPTY_VAR_ATTR_REAL);
+    algorithm
+      (element, _) := ClassTree.lookupElement(name, classTree);
+      attributes := VariableAttributes.VAR_ATTR_RECORD(
+        listArray({}), indexMap
+      );
+    end createRecord;
 
     function createAttribute
       input Binding binding;

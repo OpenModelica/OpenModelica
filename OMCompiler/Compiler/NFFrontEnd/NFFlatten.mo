@@ -134,6 +134,7 @@ end FlattenSettings;
 
 function flatten
   input InstNode classInst;
+  input ClassTree classTree;
   input String name;
   output FlatModel flatModel;
 protected
@@ -169,9 +170,9 @@ algorithm
         alg := listReverseInPlace(sections.algorithms);
         ialg := listReverseInPlace(sections.initialAlgorithms);
       then
-        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, src);
+        FlatModel.FLAT_MODEL(name, vars, eql, ieql, alg, ialg, src, classTree);
 
-      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src);
+      else FlatModel.FLAT_MODEL(name, vars, {}, {}, {}, {}, src, classTree);
   end match;
 
   execStat(getInstanceName());

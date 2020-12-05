@@ -1659,6 +1659,7 @@ public
       output InstNode element;
     algorithm
       element := match tree
+        case EXPANDED_TREE() then arrayGet(tree.components, index);
         case INSTANTIATED_TREE() then Mutable.access(arrayGet(tree.components, index));
         case FLAT_TREE() then arrayGet(tree.components, index);
       end match;
