@@ -71,7 +71,8 @@ public
       input BackendInfo backendInfo;
       output String str;
     algorithm
-      str := VariableKind.toString(backendInfo.varKind) + " " + VariableAttributes.toString(backendInfo.attributes);
+      str := VariableAttributes.toString(backendInfo.attributes);
+      str := VariableKind.toString(backendInfo.varKind) + (if str == "" then "" else " " + str);
     end toString;
 
     function getVarKind
@@ -171,7 +172,7 @@ public
         case JAC_DIFF_VAR() then        "[JACD]";
         case SEED_VAR() then            "[SEED]";
         case OPT_CONSTR() then          "[OPT][CONS]";
-        case OPT_FCONSTR() then         "[OPT][FCON]]";
+        case OPT_FCONSTR() then         "[OPT][FCON]";
         case OPT_INPUT_WITH_DER() then  "[OPT][INWD]";
         case OPT_INPUT_DER() then       "[OPT][INPD]";
         case OPT_TGRID() then           "[OPT][TGRD]";
@@ -265,34 +266,35 @@ public
     end VAR_ATTR_RECORD;
 
     function toString
-      input VariableAttributes attributes;
+      input VariableAttributes attr;
       output String str;
     algorithm
-      str := match attributes
-        local
-          VariableAttributes qual;
-        case qual as VAR_ATTR_REAL()
-          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max), ("nominal", qual.nominal)}, qual.stateSelect, qual.tearingSelect) + ")";
+      str := match attr
+        case VAR_ATTR_REAL()
+        then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max), ("nominal", attr.nominal)}, attr.stateSelect, attr.tearingSelect);
 
-        case qual as VAR_ATTR_INT()
-          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max)}, NONE(), NONE()) + ")";
+        case VAR_ATTR_INT()
+        then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max)}, NONE(), NONE());
 
-        case qual as VAR_ATTR_BOOL()
-          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start)}, NONE(), NONE()) + ")";
+        case VAR_ATTR_BOOL()
+        then attributesToString({("fixed", attr.fixed), ("start", attr.start)}, NONE(), NONE());
 
         case VAR_ATTR_CLOCK()
-          then "";
+        then "";
 
-        case qual as VAR_ATTR_STRING()
-          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start)}, NONE(), NONE()) + ")";
+        case VAR_ATTR_STRING()
+        then attributesToString({("fixed", attr.fixed), ("start", attr.start)}, NONE(), NONE());
 
-        case qual as VAR_ATTR_ENUMERATION()
-          then "(" + attributesToString({("fixed", qual.fixed), ("start", qual.start), ("min", qual.min), ("max", qual.max)}, NONE(), NONE()) + ")";
+        case VAR_ATTR_ENUMERATION()
+        then attributesToString({("fixed", attr.fixed), ("start", attr.start), ("min", attr.min), ("max", attr.max)}, NONE(), NONE());
 
-        else "(" + getInstanceName() + " failed. Attribute string could not be created.)";
+        case VAR_ATTR_RECORD()
+        then "Attribute string for RECORD not supported yet";
+
+        else getInstanceName() + " failed. Attribute string could not be created.";
       end match;
-    // remove the string if it is only brackets
-    str := if stringCompare(str,"()") then "" else str;
+      // put the string in parentheses only if it is not empty
+      str := if "" == str then "" else "(" + str + ")";
     end toString;
 
     function create

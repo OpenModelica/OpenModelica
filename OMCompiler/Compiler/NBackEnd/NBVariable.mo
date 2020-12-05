@@ -101,7 +101,8 @@ public
     input Variable var;
     output String str;
   algorithm
-    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + " " + BackendExtension.VariableAttributes.toString(var.backendinfo.attributes);
+    str := BackendExtension.VariableAttributes.toString(var.backendinfo.attributes);
+    str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + (if str == "" then "" else " " + str);
   end toString;
 
   function fromCref
