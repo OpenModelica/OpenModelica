@@ -1310,7 +1310,7 @@ algorithm
       e1 := Expression.makeDiv(e1, e2); // (1 + y)/(1 - y)
       e1 := Expression.makePureBuiltinCall("log", {e1}, tp); // ln((1 + y)/(1 - y))
       inv := Expression.expMul(DAE.RCONST(0.5), e1); // 0.5 * ln((1 + y)/(1 - y))
-      ass := makeDomianAssert(name, rhs, SOME((-1.0, false)), SOME((1.0, false))); // y in (-1, 1)
+      ass := makeDomainAssert(name, rhs, SOME((-1.0, false)), SOME((1.0, false))); // y in (-1, 1)
     then (inv, true, ass :: eqns, vars, idepth + 1);
 
     // sinh(x) -> ln(y + sqrt(y^2 + 1))
@@ -1344,7 +1344,7 @@ algorithm
       e1 := Expression.expAdd(y, e1); // y + sign*sqrt(y^2 - 1)
       e1 := Expression.makePureBuiltinCall("log", {e1}, tp); // ln(y + sign*sqrt(y^2 - 1))
 
-      ass := makeDomianAssert(name, rhs, SOME((1.0, true)), NONE()); // y in [1, inf)
+      ass := makeDomainAssert(name, rhs, SOME((1.0, true)), NONE()); // y in [1, inf)
     then (e1, true, ass :: eqns, vars, idepth + 1);
 
     // cos(x) -> sign*acos(y) + 2*pi*k
@@ -1371,7 +1371,7 @@ algorithm
       (x2, eqns, vars) := makeTmpEqnAndCrefFromExp(x2, tp, "x2$COS", uniqueEqIndex, idepth, eqns, vars, false);
       e1 := helpInvCos3(x1, x2, exP, tp);
 
-      ass := makeDomianAssert(name, rhs, SOME((-1.0, true)), SOME((1.0, true))); // y in [-1, 1]
+      ass := makeDomainAssert(name, rhs, SOME((-1.0, true)), SOME((1.0, true))); // y in [-1, 1]
     then (e1, true, ass :: eqns, vars, idepth + 1);
 
     // sin(x) -> (-1)^k * asin(y) + k*pi
@@ -1399,7 +1399,7 @@ algorithm
 
       e1 := helpInvCos3(x1, x2, exP, tp);
 
-      ass := makeDomianAssert(name, rhs, SOME((-1.0, true)), SOME((1.0, true))); // y in [-1, 1]
+      ass := makeDomainAssert(name, rhs, SOME((-1.0, true)), SOME((1.0, true))); // y in [-1, 1]
     then (e1, true, ass :: eqns, vars, idepth + 1);
 
     // tan(x) -> atan(y) + k*pi
@@ -1431,7 +1431,7 @@ algorithm
       (exP, eqns, vars) := makeTmpEqnAndCrefFromExp(exP, tp, "SIGN$ABS", uniqueEqIndex, idepth, {}, {}, false);
       sgn := Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp); // sign
       e1 := Expression.expMul(sgn, rhs); // sign*y
-      ass := makeDomianAssert(name, rhs, SOME((0.0, true)), NONE()); // y in [0, inf)
+      ass := makeDomainAssert(name, rhs, SOME((0.0, true)), NONE()); // y in [0, inf)
     then (e1, true, ass ::eqns, vars, idepth + 1);
 
     // sqrt(x) -> y^2
@@ -1439,7 +1439,7 @@ algorithm
     // unique
     case "sqrt" algorithm
       inv := Expression.expPow(rhs, DAE.RCONST(2.0)); // y^2
-      ass := makeDomianAssert(name, rhs, SOME((0.0, true)), NONE()); // y in [0, inf)
+      ass := makeDomainAssert(name, rhs, SOME((0.0, true)), NONE()); // y in [0, inf)
     then (inv, true, {ass}, {}, idepth + 1);
 
     // asin(x) -> sin(y)
@@ -1448,7 +1448,7 @@ algorithm
     case "asin" algorithm
       tp := Expression.typeof(rhs);
       inv := Expression.makePureBuiltinCall("sin", {rhs}, tp); // sin(y)
-      ass := makeDomianAssert(name, rhs, SOME((-0.5*Expression.toReal(DAE.PI), true)), SOME((0.5*Expression.toReal(DAE.PI), true))); // y in [-pi/2, pi/2]
+      ass := makeDomainAssert(name, rhs, SOME((-0.5*Expression.toReal(DAE.PI), true)), SOME((0.5*Expression.toReal(DAE.PI), true))); // y in [-pi/2, pi/2]
     then (inv, true, {ass}, {}, idepth + 1);
 
     // acos(x) -> cos(y)
@@ -1457,7 +1457,7 @@ algorithm
     case "acos" algorithm
       tp := Expression.typeof(rhs);
       inv := Expression.makePureBuiltinCall("cos", {rhs}, tp); // cos(y)
-      ass := makeDomianAssert(name, rhs, SOME((0.0, true)), SOME((Expression.toReal(DAE.PI), true))); // y in [0, pi]
+      ass := makeDomainAssert(name, rhs, SOME((0.0, true)), SOME((Expression.toReal(DAE.PI), true))); // y in [0, pi]
     then (inv, true, {ass}, {}, idepth + 1);
 
     // atan(x) -> tan(y)
@@ -1466,7 +1466,7 @@ algorithm
     case "atan" algorithm
       tp := Expression.typeof(rhs);
       inv := Expression.makePureBuiltinCall("tan", {rhs}, tp); // tan(y)
-      ass := makeDomianAssert(name, rhs, SOME((-0.5*Expression.toReal(DAE.PI), true)), SOME((0.5*Expression.toReal(DAE.PI), true))); // y in [-pi/2, pi/2]
+      ass := makeDomainAssert(name, rhs, SOME((-0.5*Expression.toReal(DAE.PI), true)), SOME((0.5*Expression.toReal(DAE.PI), true))); // y in [-pi/2, pi/2]
     then (inv, true, {ass}, {}, idepth + 1);
 
     // exp(x) -> log(y)
@@ -1475,7 +1475,7 @@ algorithm
     case "exp" algorithm
       tp := Expression.typeof(rhs);
       inv := Expression.makePureBuiltinCall("log", {rhs}, tp); // log(y)
-      ass := makeDomianAssert(name, rhs, SOME((0.0, false)), NONE()); // y in (0, inf)
+      ass := makeDomainAssert(name, rhs, SOME((0.0, false)), NONE()); // y in (0, inf)
     then (inv, true, {ass}, {}, idepth + 1);
 
     // log(x) -> exp(y)
@@ -1929,7 +1929,7 @@ algorithm
   end if;
 end makeTmpEqnAndCrefFromExp;
 
-protected function makeDomianAssert
+protected function makeDomainAssert
   input String name "of the function";
   input DAE.Exp rhs "solution of the function";
   input Option<tuple<Real, Boolean>> lowerBound "(value, including?)";
@@ -2018,7 +2018,7 @@ algorithm
 
   algo := DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, DAE.SCONST(msg), DAE.ASSERTIONLEVEL_ERROR, DAE.emptyElementSource)});
   assEq := BackendDAE.ALGORITHM(0, algo, DAE.emptyElementSource, DAE.EXPAND(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
-end makeDomianAssert;
+end makeDomainAssert;
 
 protected function makeInitialGuess
   input DAE.Type tp;
