@@ -1,6 +1,6 @@
 // name:     DualMassOscillator.mos
 // status:   correct
-// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat
+// teardown_command: rm -rf temp_dualmassoscillator/ DualMassOscillator.mat DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu
 // cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica");

@@ -334,6 +334,11 @@ int updateStaticDataOfLinearSystems(DATA *data, threadData_t *threadData)
 
   for(i=0; i<data->modelData->nLinearSystems; ++i)
   {
+    // check if LS is initialized
+    if (linsys[i].nominal == NULL || linsys[i].min == NULL || linsys[i].max==NULL)
+    {
+      throwStreamPrint(threadData, "Static data of Linear system not initialized for linear system %i",i);
+    }
     linsys[i].initializeStaticLSData(data, threadData, &linsys[i]);
   }
 
