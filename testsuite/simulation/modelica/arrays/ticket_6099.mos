@@ -4,7 +4,7 @@
 // teardown_command: rm -rf TestVectors.M1.* TestVectors.M2.* output.log
 //
 // https://trac.openmodelica.org/OpenModelica/ticket/6099
-// cflags: -d=-newInst
+// cflags: -d=newInst
 //
 
 loadFile("ticket_6099.mo");
