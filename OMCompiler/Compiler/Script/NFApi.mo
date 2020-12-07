@@ -676,8 +676,7 @@ algorithm
   Typing.typeClass(inst_cls);
 
   // Flatten and simplify the model.
-  // ToDo: kabdelhak: we might need the class tree from not instantiated class here
-  flat_model := Flatten.flatten(inst_cls, InstNode.getClassTree(inst_cls), name);
+  flat_model := Flatten.flatten(inst_cls, name);
   flat_model := EvalConstants.evaluate(flat_model);
   flat_model := UnitCheck.checkUnits(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);

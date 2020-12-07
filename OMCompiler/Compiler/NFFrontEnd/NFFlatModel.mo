@@ -92,7 +92,6 @@ public
     list<Algorithm> algorithms;
     list<Algorithm> initialAlgorithms;
     ElementSource source;
-    ClassTree classTree;
   end FLAT_MODEL;
 
   function mapExp

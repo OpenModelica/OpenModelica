@@ -1735,19 +1735,6 @@ uniontype InstNode
     end match;
   end getSections;
 
-  function getClassTree
-    "only works for CLASS_NODE()"
-    input InstNode node;
-    output ClassTree classTree;
-  algorithm
-    classTree := match node
-      case CLASS_NODE() then Class.classTree(Pointer.access(node.cls));
-      else algorithm
-        Error.assertion(false, getInstanceName() + " cannot get class tree from non-CLASS_NODE(): " + toString(node), sourceInfo());
-      then fail();
-    end match;
-  end getClassTree;
-
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

@@ -47,7 +47,6 @@ protected
   import Algorithm = NFAlgorithm;
   import BackendExtension = NFBackendExtension;
   import Binding = NFBinding;
-  import NFClassTree.ClassTree;
   import ComponentRef = NFComponentRef;
   import ConvertDAE = NFConvertDAE;
   import Dimension = NFDimension;
@@ -206,7 +205,7 @@ public
     BEquation.EqData equationData;
     Events.EventInfo eventInfo = Events.EventInfo.empty();
   algorithm
-    variableData := lowerVariableData(flatModel.variables, flatModel.classTree);
+    variableData := lowerVariableData(flatModel.variables);
     equationData := lowerEquationData(flatModel.equations, flatModel.algorithms, flatModel.initialEquations, flatModel.initialAlgorithms, BVariable.VarData.getVariables(variableData));
     bdae := MAIN({}, {}, {}, {}, {}, NONE(), NONE(), variableData, equationData, eventInfo, funcTree);
   end lower;
@@ -318,7 +317,6 @@ protected
     pointer arrays in two steps is slightly less effective, but way more readable
     and maintainable."
     input list<Variable> varList;
-    input ClassTree classTree;
     output BVariable.VarData variableData;
   protected
     Variable lowVar;
@@ -342,7 +340,7 @@ protected
 
     // routine to prepare the lists for pointer arrays
     for var in listReverse(varList) loop
-      lowVar := lowerVariable(var, classTree);
+      lowVar := lowerVariable(var);
       lowVar_ptr := Pointer.create(lowVar);
       variables := VariablePointers.add(lowVar_ptr, variables);
       _ := match lowVar.backendinfo.varKind
@@ -421,14 +419,13 @@ protected
 
   function lowerVariable
     input output Variable var;
-    input ClassTree classTree;
   protected
     BackendExtension.VariableAttributes attributes;
     BackendExtension.VariableKind varKind;
   algorithm
     // ToDo! extract tearing select option
     try
-      attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.comment, ComponentRef.toString(var.name), classTree);
+      attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.comment);
       (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
       var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes);
 

@@ -46,7 +46,6 @@ public
   import ComponentRef = NFComponentRef;
   import NFFunction.Function;
   import Record = NFRecord;
-  import UnorderedMap;
 
   type FunctionType = enumeration(
     FUNCTIONAL_PARAMETER "Function parameter of function type.",
@@ -1161,43 +1160,28 @@ public
 
   function recordFields
     input Type recordType;
-    output list<Record.Field> field_lst;
+    output list<Record.Field> fields;
   algorithm
-    field_lst := match recordType
-      local
-        array<Record.Field> fields;
-      case COMPLEX(complexTy = ComplexType.RECORD(fields = fields)) then arrayList(fields);
+    fields := match recordType
+      case COMPLEX(complexTy = ComplexType.RECORD(fields = fields)) then fields;
       else {};
     end match;
   end recordFields;
 
   function setRecordFields
-    input list<Record.Field> field_lst;
+    input list<Record.Field> fields;
     input output Type recordType;
   algorithm
     recordType := match recordType
       local
         InstNode rec_node;
-        UnorderedMap<String, Integer> indexMap;
-        array<Record.Field> fields = listArray(field_lst);
 
-      case COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_node)) algorithm
-        indexMap := UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq, arrayLength(fields));
-        updateRecordFieldsIndexMap(fields, indexMap);
-      then COMPLEX(recordType.cls, ComplexType.RECORD(rec_node, fields, indexMap));
+      case COMPLEX(complexTy = ComplexType.RECORD(constructor = rec_node))
+        then COMPLEX(recordType.cls, ComplexType.RECORD(rec_node, fields));
 
       else recordType;
     end match;
   end setRecordFields;
-
-  function updateRecordFieldsIndexMap
-    input array<Record.Field> fields;
-    input UnorderedMap<String, Integer> indexMap;
-  algorithm
-    for i in 1:arrayLength(fields) loop
-      UnorderedMap.add(Record.Field.name(fields[i]), i, indexMap);
-    end for;
-  end updateRecordFieldsIndexMap;
 
   function enumName
     input Type ty;
