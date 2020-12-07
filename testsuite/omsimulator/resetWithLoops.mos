@@ -1,0 +1,74 @@
+// keywords: fmu export import reset
+// status: correct
+// teardown_command: rm -rf resetWithLoops-fmu/ model_res.mat resetWithLoops.lua resetWithLoops.fmu resetWithLoops.log resetWithLoops_systemCall.log temp-resetWithLoops
+// cflags: -d=-newInst
+
+loadModel(Modelica); getErrorString();
+
+system("mkdir -p resetWithLoops-fmu");
+echo(false); cd("resetWithLoops-fmu"); echo(true);
+buildModelFMU(Modelica.Electrical.Analog.Examples.Rectifier); getErrorString();
+echo(false); cd(".."); echo(true);
+
+writeFile("resetWithLoops.lua","
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-resetWithLoops/\")
+
+oms_newModel(\"model\")
+oms_addSystem(\"model.root\", oms_system_sc)
+-- instantiate FMUs
+oms_addSubModel(\"model.root.system1\", \"resetWithLoops-fmu/Modelica.Electrical.Analog.Examples.Rectifier.fmu\")
+print(\"Instantiate\")
+oms_instantiate(\"model\")
+-- initialize FMU
+print(\"Initialize\")
+oms_initialize(\"model\")
+
+-- reset FMU
+print(\"Reset\")
+oms_reset(\"model\")
+
+-- Simualte FMU
+print(\"Initialize\")
+oms_initialize(\"model\")
+print(\"Simulate\")
+oms_simulate(\"model\")
+print(\"Terminate and Delete\")
+oms_terminate(\"model\")
+oms_delete(\"model\")
+print(\"Success\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator resetWithLoops.lua", "resetWithLoops_systemCall.log");
+readFile("resetWithLoops_systemCall.log");
+
+// Result:
+// true
+// ""
+// 0
+// true
+// "Modelica.Electrical.Analog.Examples.Rectifier.fmu"
+// ""
+// true
+// true
+// ""
+// 0
+// "Instantiate
+// Initialize
+// info:    maximum step size for 'model.root': 0.100000
+// info:    Result file: model_res.mat (bufferSize=10)
+// Reset
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
+//          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+// Initialize
+// info:    maximum step size for 'model.root': 0.100000
+// info:    Result file: model_res.mat (bufferSize=10)
+// Simulate
+// Terminate and Delete
+// info:    Final Statistics for 'model.root':
+//          NumSteps = 1 NumRhsEvals  = 5 NumLinSolvSetups = 2
+//          NumNonlinSolvIters = 4 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+// Success
+// "
+// endResult

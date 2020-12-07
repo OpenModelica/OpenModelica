@@ -14,6 +14,7 @@ outputState_omc.mos \
 outputState.mos \
 reset_omc.mos \
 reset.mos \
+resetWithLoops.mos \
 test03.mos \
 testDirectionalDerivatives.mos \
 
