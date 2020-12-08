@@ -456,6 +456,7 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
 {
   TRACE_PUSH
   int retValue = 0;
+  int usedLocal = 0;
 
   SIMULATION_INFO *simInfo = data->simulationInfo;
 
@@ -490,10 +491,13 @@ int initializeModel(DATA* data, threadData_t *threadData, const char* init_initM
     }
     if (!retValue)
     {
-      if (data->simulationInfo->homotopySteps == 0)
+      if (data->simulationInfo->homotopySteps == 0) {
         infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully without homotopy method.");
-      else
-        infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully with %d homotopy steps.", data->simulationInfo->homotopySteps);
+      }
+      else {
+        usedLocal = data->callback->useHomotopy == 0 || data->callback->useHomotopy == 3;
+        infoStreamPrint(LOG_SUCCESS, 0, "The initialization finished successfully with %d %shomotopy steps.", data->simulationInfo->homotopySteps, usedLocal? "local ":"");
+      }
     }
 
     success = 1;

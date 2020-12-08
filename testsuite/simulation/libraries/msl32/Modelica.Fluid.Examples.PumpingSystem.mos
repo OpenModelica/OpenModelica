@@ -36,7 +36,7 @@ runScript(modelTesting);getErrorString();
 // Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | pipe.flowModel.m_flows[1] >= -0.0 and pipe.flowModel.m_flows[1] <= 100000.0
 // assert            | warning | Variable violating min/max constraint: -0.0 <= pipe.flowModel.m_flows[1] <= 100000.0, has value: -141.424
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // assert            | warning | The following assertion has been violated at time 200.000000
 // |                 | |       | userValve.opening >= 0.0 and userValve.opening <= 1.0
 // assert            | warning | Variable violating min/max constraint: 0.0 <= userValve.opening <= 1.0, has value: 1

@@ -41,7 +41,7 @@ runScript(modelTesting);getErrorString();
 // Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | pump.delta_head_init >= 0.0
 // assert | warning | Variable violating min constraint: 0.0 <= pump.delta_head_init, has value: -2.45172
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!

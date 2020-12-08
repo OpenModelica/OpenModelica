@@ -47,7 +47,7 @@ val(x, 0.0);
 // |                 | |       | lambda is smaller than -1: lambda=-1.06603
 // |                 | |       | You can use -lv=LOG_INIT_HOMOTOPY,LOG_NLS_HOMOTOPY to get more information.
 // assert            | info    | The homotopy algorithm is started again with opposing start direction.
-// LOG_SUCCESS       | info    | The initialization finished successfully with 71 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 69 local homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

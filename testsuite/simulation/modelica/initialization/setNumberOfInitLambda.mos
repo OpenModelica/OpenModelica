@@ -51,7 +51,7 @@ end initializationTests;
 
 simulate(initializationTests.homotopy4, simflags="-ils=0 -lv=LOG_INIT_HOMOTOPY"); getErrorString();
 
-simulate(initializationTests.homotopy4, simflags="-ils=3 -lv=LOG_INIT_HOMOTOPY"); getErrorString();
+simulate(initializationTests.homotopy4, simflags="-ils=2 -lv=LOG_INIT_HOMOTOPY"); getErrorString();
 
 // Result:
 // true
@@ -70,8 +70,8 @@ simulate(initializationTests.homotopy4, simflags="-ils=3 -lv=LOG_INIT_HOMOTOPY")
 // "
 // record SimulationResult
 //     resultFile = "initializationTests.homotopy4_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ils=3 -lv=LOG_INIT_HOMOTOPY'",
-//     messages = "stdout            | info    | Number of lambda steps for homotopy approach changed to 3
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'initializationTests.homotopy4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-ils=2 -lv=LOG_INIT_HOMOTOPY'",
+//     messages = "stdout            | info    | Number of lambda steps for homotopy approach changed to 2
 // LOG_INIT_HOMOTOPY | info    | Model contains homotopy operator: Use adaptive homotopy method to solve initialization problem. To disable initialization with homotopy operator use \"-noHomotopyOnFirstTry\".
 // LOG_INIT_HOMOTOPY | info    | Global homotopy with equidistant step size started.
 // LOG_INIT_HOMOTOPY | info    | The homotopy path will be exported to initializationTests.homotopy4_equidistant_global_homotopy.csv.
@@ -86,7 +86,7 @@ simulate(initializationTests.homotopy4, simflags="-ils=3 -lv=LOG_INIT_HOMOTOPY")
 // LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1
 // LOG_INIT_HOMOTOPY | info    | homotopy parameter lambda = 1 done
 // |                 | |       | ---------------------------
-// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 2 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

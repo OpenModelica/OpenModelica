@@ -33,7 +33,7 @@ runScript(modelTesting);getErrorString();
 // Messages: assert            | warning | The following assertion has been violated at time 0.000000
 // |                 | |       | overflow.flowModel.states[1].p >= 0.0 and overflow.flowModel.states[1].p <= 100000000.0
 // assert            | warning | Variable violating min/max constraint: 0.0 <= overflow.flowModel.states[1].p <= 100000000.0, has value: -93465.5
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // "true
