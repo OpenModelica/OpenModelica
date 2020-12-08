@@ -741,6 +741,11 @@ fmi2Status fmi2Reset(fmi2Component c)
     deInitializeDataStruc(comp->fmuData);
   }
 
+  /* Free CS simulator */
+  if (comp->solverInfo) {
+    FMI2CS_deInitializeSolverData(comp);
+  }
+
   /* Initialize modelData */
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
@@ -772,6 +777,13 @@ fmi2Status fmi2Reset(fmi2Component c)
   /* allocate memory for state selection */
   initializeStateSetJacobians(comp->fmuData, comp->threadData);
 #endif
+
+  /* Initialize solverInfo */
+  if (fmi2CoSimulation == comp->type) {
+    FMI2CS_initializeSolverData(comp);
+  } else {
+    comp->solverInfo = NULL;
+  }
 
   comp->_need_update = 1;
   comp->state = modelInstantiated;
