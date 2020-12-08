@@ -45,6 +45,7 @@ protected
 
   //NF imports
   import NFBinding.Binding;
+  import ComplexType = NFComplexType;
   import NFComponent.Component;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
@@ -56,6 +57,7 @@ protected
 
   // Util imports
   import Pointer;
+  import UnorderedMap;
 
 public
   uniontype BackendInfo
@@ -257,6 +259,11 @@ public
       Option<Expression> startOrigin          "where did start=X came from? NONE()|SOME(Expression.STRING binding|type|undefined)";
     end VAR_ATTR_ENUMERATION;
 
+    record VAR_ATTR_RECORD
+      UnorderedMap<String, Integer> indexMap;
+      array<VariableAttributes> childrenAttr;
+    end VAR_ATTR_RECORD;
+
     // TODO: das hier schön machen
     type VarType = enumeration(ENUMERATION, CLOCK, STRING);
 
@@ -296,12 +303,14 @@ public
       input list<tuple<String, Binding>> attrs;
       input Type ty;
       input Component.Attributes compAttrs;
+      input list<Variable> children;
       input Option<SCode.Comment> comment;
       output VariableAttributes attributes;
     protected
       Boolean is_final;
       Type elTy;
       Boolean is_array = false;
+      ComplexType complexTy;
     algorithm
       is_final := compAttrs.isFinal or
                   compAttrs.variability == Variability.STRUCTURAL_PARAMETER;
@@ -312,6 +321,9 @@ public
         case Type.BOOLEAN()     then createBool(attrs, is_final);
         case Type.STRING()      then createString(attrs, is_final);
         case Type.ENUMERATION() then createEnum(attrs, is_final);
+        case Type.COMPLEX(complexTy = complexTy as ComplexType.RECORD())
+        then createRecord(attrs, complexTy.indexMap, children, is_final);
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Type.toString(ty) + "."});
         then fail();
@@ -689,6 +701,28 @@ public
           quantity, min, max, start, fixed, NONE(), NONE(), SOME(isFinal), NONE());
       end if;
     end createEnum;
+
+    function createRecord
+      input list<tuple<String, Binding>> attrs;
+      input UnorderedMap<String, Integer> indexMap;
+      input list<Variable> children;
+      input Boolean isFinal;
+      output VariableAttributes attributes;
+    protected
+      array<VariableAttributes> childrenAttr = arrayCreate(listLength(children), EMPTY_VAR_ATTR_REAL);
+      Integer index;
+    algorithm
+      for var in children loop
+        try
+          SOME(index) := UnorderedMap.get(ComponentRef.firstName(var.name), indexMap);
+          childrenAttr[index] := create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
+        else
+          Error.assertion(false, getInstanceName() + " got unknown record child: " + ComponentRef.firstName(var.name), sourceInfo());
+        end try;
+      end for;
+      attributes := VAR_ATTR_RECORD(indexMap, childrenAttr);
+
+    end createRecord;
 
     function createAttribute
       input Binding binding;

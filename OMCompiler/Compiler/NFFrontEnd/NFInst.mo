@@ -102,6 +102,7 @@ import OperatorOverloading = NFOperatorOverloading;
 import EvalConstants = NFEvalConstants;
 import VerifyModel = NFVerifyModel;
 import Structural = NFStructural;
+import UnorderedMap;
 
 public
 
@@ -2298,11 +2299,11 @@ function makeRecordComplexType
   output ComplexType ty;
 protected
   InstNode cls_node;
-  list<Record.Field> fields;
+  UnorderedMap<String, Integer> indexMap = UnorderedMap.new<Integer>(stringHashDjb2Mod, stringEq);
 algorithm
   cls_node := if SCodeUtil.isOperatorRecord(InstNode.definition(node))
     then InstNode.classScope(node) else InstNode.classScope(InstNode.getDerivedNode(node));
-  ty := ComplexType.RECORD(cls_node, {});
+  ty := ComplexType.RECORD(cls_node, listArray({}), indexMap);
 end makeRecordComplexType;
 
 function instComplexType

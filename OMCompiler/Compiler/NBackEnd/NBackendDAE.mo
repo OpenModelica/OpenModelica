@@ -425,7 +425,7 @@ protected
   algorithm
     // ToDo! extract tearing select option
     try
-      attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.comment);
+      attributes := BackendExtension.VariableAttributes.create(var.typeAttributes, var.ty, var.attributes, var.children, var.comment);
       (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
       var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes);
 
