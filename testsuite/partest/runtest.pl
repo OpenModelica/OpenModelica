@@ -159,7 +159,6 @@ sub enter_sandbox {
     elsif (/loadFile.*\(\"(.*)\"\)/)   { make_link($1); }
     elsif (/runScript.*\(\"(.*)\"\)/)  { make_link($1); }
     elsif (/importFMU.*\(\"(.*)\"\)/)  { make_link($1); }
-    elsif (/partest-link: *([A-Za-z0-9.]*)/) { make_link($1); }
     elsif (/system\(\"(gcc|g\+\+).*\s(\w*\.\w*)\s(\w*\.\w*)/) {
       my $header = lib_to_header($2);
       make_link($header);
