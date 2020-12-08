@@ -2070,8 +2070,8 @@ static int homotopyAlgorithm(DATA_HOMOTOPY* solverData, double *x)
 
   debugString(LOG_NLS_HOMOTOPY, "HOMOTOPY ALGORITHM SUCCEEDED");
   if (solverData->initHomotopy) {
-    solverData->data->simulationInfo->homotopySteps += numSteps+1;
-    debugInt(LOG_INIT_HOMOTOPY, "Total number of lambda steps for this homotopy loop:", numSteps+1);
+    solverData->data->simulationInfo->homotopySteps += numSteps;
+    debugInt(LOG_INIT_HOMOTOPY, "Total number of lambda steps for this homotopy loop:", numSteps);
   }
   debugString(LOG_NLS_HOMOTOPY, "======================================================");
   solverData->info = 1;

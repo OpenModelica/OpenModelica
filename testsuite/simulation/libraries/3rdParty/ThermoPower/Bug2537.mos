@@ -24,7 +24,7 @@ simulate(ThermoPower.Examples.CISE.CISESim120501); getErrorString();
 // |                 | |       | | The non-linear solver tries to solve the problem that could take some time.
 // |                 | |       | | It could help to provide better start-values for the iteration variables.
 // |                 | |       | | For more information simulate with -lv LOG_NLS_V
-// LOG_SUCCESS       | info    | The initialization finished successfully with 4 homotopy steps.
+// LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

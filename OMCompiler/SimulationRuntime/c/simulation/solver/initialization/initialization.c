@@ -74,7 +74,7 @@
 #include <math.h>
 #include <string.h>
 
-extern int init_lambda_steps = 4;
+extern int init_lambda_steps = 3;
 
 /*! \fn void dumpInitializationStatus(DATA *data)
  *
@@ -212,7 +212,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 
   adaptiveGlobal = data->callback->useHomotopy == 2;  /* new global homotopy approach (adaptive lambda) */
   solveWithGlobalHomotopy = homotopySupport
-                            && ((data->callback->useHomotopy == 1 && init_lambda_steps > 1) || adaptiveGlobal);
+                            && ((data->callback->useHomotopy == 1 && init_lambda_steps >= 1) || adaptiveGlobal);
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -309,9 +309,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #ifndef OMC_EMCC
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    for(step=0; step<init_lambda_steps; ++step)
+    for(step=0; step<=init_lambda_steps; ++step)
     {
-      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
+      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps);
       lambda = data->simulationInfo->lambda;
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", lambda);
 
