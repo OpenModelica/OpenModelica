@@ -270,6 +270,7 @@ protected
   Binding condition;
   Class cls;
   Visibility vis;
+  list<Variable> children;
 algorithm
   // Remove components that are only outer.
   if InstNode.isOnlyOuter(component) then
@@ -291,13 +292,25 @@ algorithm
         cls := InstNode.getClass(c.classInst);
         vis := if InstNode.isProtected(component) then Visibility.PROTECTED else visibility;
 
-        if isComplexComponent(ty, settings) then
-          (vars, sections) := flattenComplexComponent(comp_node, c, cls, ty,
+        (vars, sections) := match getComponentType(ty, settings)
+          case ComponentType.COMPLEX
+          then flattenComplexComponent(comp_node, c, cls, ty,
             vis, outerBinding, prefix, vars, sections, settings);
-        else
-          (vars, sections) := flattenSimpleComponent(comp_node, c, vis, outerBinding,
-            Class.getTypeAttributes(cls), prefix, vars, sections, settings);
-        end if;
+
+          case ComponentType.NORMAL
+          then flattenSimpleComponent(comp_node, c, vis, outerBinding,
+            Class.getTypeAttributes(cls), prefix, vars, sections, settings, {});
+
+          case ComponentType.RECORD algorithm
+            (children, sections) := flattenComplexComponent(comp_node, c, cls, ty,
+              vis, outerBinding, prefix, {}, sections, settings);
+          then flattenSimpleComponent(comp_node, c, vis, outerBinding,
+            Class.getTypeAttributes(cls), prefix, vars, sections, settings, children);
+
+          else algorithm
+            Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
+          then fail();
+        end match;
       then
         ();
 
@@ -394,19 +407,23 @@ algorithm
   end match;
 end deleteClassComponents;
 
-function isComplexComponent
+function getComponentType
   input Type ty;
   input FlattenSettings settings;
-  output Boolean isComplex;
+  output ComponentType compTy;
 algorithm
-  isComplex := match ty
-    case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT()) then false;
-    case Type.COMPLEX(complexTy = ComplexType.RECORD()) then not settings.newBackend;
-    case Type.COMPLEX() then true;
-    case Type.ARRAY() then isComplexComponent(ty.elementType, settings);
-    else false;
+  compTy := match ty
+    case Type.COMPLEX(complexTy = ComplexType.EXTERNAL_OBJECT())
+      then ComponentType.NORMAL;
+    case Type.COMPLEX(complexTy = ComplexType.RECORD()) guard(settings.newBackend)
+      then ComponentType.RECORD;
+    case Type.COMPLEX() then ComponentType.COMPLEX;
+    case Type.ARRAY()   then getComponentType(ty.elementType, settings);
+                        else ComponentType.NORMAL;
   end match;
-end isComplexComponent;
+end getComponentType;
+
+type ComponentType = enumeration(NORMAL, COMPLEX, RECORD);
 
 function flattenSimpleComponent
   input InstNode node;
@@ -418,6 +435,7 @@ function flattenSimpleComponent
   input output list<Variable> vars;
   input output Sections sections;
   input FlattenSettings settings;
+  input list<Variable> children;
 protected
   InstNode comp_node = node;
   ComponentRef name;
@@ -479,7 +497,7 @@ algorithm
 
   // kabdelhak: add dummy backend info, will be changed to actual value in
   // conversion to backend process. NBackendDAE.lower
-  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
+  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
 end flattenSimpleComponent;
 
 function flattenTypeAttribute

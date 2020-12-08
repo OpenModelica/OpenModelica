@@ -54,6 +54,7 @@ public
     Visibility visibility;
     Component.Attributes attributes;
     list<tuple<String, Binding>> typeAttributes "Will be empty for Backend and moved to BackendInfo.";
+    list<Variable> children;
     Option<SCode.Comment> comment;
     SourceInfo info;
     BackendInfo backendinfo "NFBackendExtension.DUMMY_BACKEND_INFO for all of frontend. Only used in Backend.";
@@ -82,7 +83,7 @@ public
     info := InstNode.info(node);
     // kabdelhak: add dummy backend info, will be changed to actual value in
     // conversion to backend process. NBackendDAE.lower
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
+    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
   function isStructural
