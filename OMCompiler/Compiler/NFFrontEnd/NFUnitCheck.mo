@@ -239,6 +239,10 @@ protected
 algorithm
   for v in variables loop
     (htCr2U, htS2U, htU2S, fnCache) := foldBindingExp(v, htCr2U, htS2U, htU2S, fnCache, dump_eq_unit);
+
+    for c in v.children loop
+      (htCr2U, htS2U, htU2S, fnCache) := foldBindingExp(c, htCr2U, htS2U, htU2S, fnCache, dump_eq_unit);
+    end for;
   end for;
 
   for eq in equations loop

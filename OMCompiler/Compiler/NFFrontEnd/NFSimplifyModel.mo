@@ -73,6 +73,7 @@ function simplifyVariable
 algorithm
   var.binding := simplifyBinding(var.binding);
   var.typeAttributes := list(simplifyTypeAttribute(a) for a in var.typeAttributes);
+  var.children := list(simplifyVariable(v) for v in var.children);
 end simplifyVariable;
 
 function simplifyBinding

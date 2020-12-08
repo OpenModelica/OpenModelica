@@ -472,8 +472,6 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
 #endif
 
-  /* read input vars */
-  /* input_function(comp->fmuData); */
 #if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
   /* allocate memory for non-linear system solvers */
   initializeNonlinearSystems(comp->fmuData, comp->threadData);
@@ -548,16 +546,16 @@ void fmi2FreeInstance(fmi2Component c)
   if (comp->_has_jacobian == 1) {
     /* TODO: Use comp->functions->freeMemory insted of free,
      * but generated code uses malloc / calloc instead of comp->functions->allocateMemory */
-    free(comp->fmiDerJac->seedVars);
-    free(comp->fmiDerJac->resultVars);
-    free(comp->fmiDerJac->tmpVars);
+    free(comp->fmiDerJac->seedVars); comp->fmiDerJac->seedVars = NULL;
+    free(comp->fmiDerJac->resultVars); comp->fmiDerJac->resultVars = NULL;
+    free(comp->fmiDerJac->tmpVars); comp->fmiDerJac->tmpVars = NULL;
 
-    free(comp->fmiDerJac->sparsePattern->leadindex);
-    free(comp->fmiDerJac->sparsePattern->index);
-    free(comp->fmiDerJac->sparsePattern->colorCols);
-    free(comp->fmiDerJac->sparsePattern);
+    free(comp->fmiDerJac->sparsePattern->leadindex); comp->fmiDerJac->sparsePattern->leadindex = NULL;
+    free(comp->fmiDerJac->sparsePattern->index); comp->fmiDerJac->sparsePattern->index = NULL;
+    free(comp->fmiDerJac->sparsePattern->colorCols); comp->fmiDerJac->sparsePattern->colorCols = NULL;
+    free(comp->fmiDerJac->sparsePattern); comp->fmiDerJac->sparsePattern = NULL;
 
-    comp->functions->freeMemory(comp->fmiDerJac);
+    comp->functions->freeMemory(comp->fmiDerJac); comp->fmiDerJac=NULL;
   }
 
   comp->functions->freeMemory(comp->fmuData->modelData->resourcesDir);
@@ -723,22 +721,56 @@ fmi2Status fmi2Reset(fmi2Component c)
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2Reset")
 
   setThreadData(comp);
-
+  /* Free modelData */
   if (!(comp->state & modelTerminated)) {
+    /* call external objects destructors */
+    comp->fmuData->callback->callExternalObjectDestructors(comp->fmuData, comp->threadData);
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+    /* free nonlinear system data */
+    freeNonlinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
+    /* free mixed system data */
+    freeMixedSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
+    /* free linear system data */
+    freeLinearSystems(comp->fmuData, comp->threadData);
+#endif
+    /* free data struct */
     deInitializeDataStruc(comp->fmuData);
   }
-  /* intialize modelData */
-  fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
+
+  /* Initialize modelData */
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
+  fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);
   initializeDataStruc(comp->fmuData, comp->threadData);
-  /* reset the values to start */
+
+  /* reset model data with default start data */
   setDefaultStartValues(comp);
   setAllParamsToStart(comp->fmuData);
   setAllVarsToStart(comp->fmuData);
   comp->fmuData->callback->read_input_fmu(comp->fmuData->modelData, comp->fmuData->simulationInfo);
 #if !defined(OMC_MINIMAL_METADATA)
   modelInfoInit(&(comp->fmuData->modelData->modelDataXml));
+#endif
+
+#if !defined(OMC_NUM_NONLINEAR_SYSTEMS) || OMC_NUM_NONLINEAR_SYSTEMS>0
+  /* allocate memory for non-linear system solvers */
+  initializeNonlinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_LINEAR_SYSTEMS) || OMC_NUM_LINEAR_SYSTEMS>0
+  /* allocate memory for non-linear system solvers */
+  initializeLinearSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NUM_MIXED_SYSTEMS) || OMC_NUM_MIXED_SYSTEMS>0
+  /* allocate memory for mixed system solvers */
+  initializeMixedSystems(comp->fmuData, comp->threadData);
+#endif
+#if !defined(OMC_NO_STATESELECTION)
+  /* allocate memory for state selection */
+  initializeStateSetJacobians(comp->fmuData, comp->threadData);
 #endif
 
   comp->_need_update = 1;

@@ -269,7 +269,7 @@ int FMI2CS_deInitializeSolverData(ModelInstance* comp)
       retValue = -1;
   }
 
-  comp->functions->freeMemory(comp->solverInfo);
+  comp->functions->freeMemory(comp->solverInfo); comp->solverInfo = NULL;
 
   return retValue;
 }

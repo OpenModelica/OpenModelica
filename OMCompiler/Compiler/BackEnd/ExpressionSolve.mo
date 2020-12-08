@@ -1212,11 +1212,11 @@ algorithm
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqnForNewVars_;
       list<DAE.ComponentRef> newVarsCrefs_;
-      Boolean b, b1, b2, b3;
       DAE.Operator op1, op2;
       String name;
 
-    // invert a function call
+    // try to invert a function call
+    // f(x) = y -> x = f^(-1)(y)
     case DAE.CALL(path = Absyn.IDENT(name = name),expLst = {arg})
       guard expHasCref(arg, inExp3) and not expHasCref(inExp2, inExp3)
       algorithm
@@ -1233,7 +1233,7 @@ algorithm
             else listAppend(eqnForNewVars_, ieqnForNewVars);
           end match;
         end if;
-      then (arg, y, new_x, eqnForNewVars_, listAppend(newVarsCrefs_, inewVarsCrefs), odepth);
+      then (if new_x then arg else inExp1, y, new_x, eqnForNewVars_, listAppend(newVarsCrefs_, inewVarsCrefs), odepth);
 
     // x^n = y -> x = y^(1/n)
     case DAE.BINARY(e1, DAE.POW(tp), e2)
@@ -1241,14 +1241,15 @@ algorithm
       algorithm
         tp := Expression.typeof(e1);
         exP := makeInitialGuess(tp, inExp3, e1);
-        // exP := makeInitialGuess(tp,inExp3,inExp2);
+        // exP := makeInitialGuess(tp, inExp3, inExp2);
         (exP, eqnForNewVars_, newVarsCrefs_) := makeTmpEqnAndCrefFromExp(exP, tp, "X$ABS", uniqueEqIndex, idepth, ieqnForNewVars, inewVarsCrefs, false);
-        e_1 := Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp);
-        lhs := Expression.expPow(inExp2,Expression.inverseFactors(e2));
-        lhs := Expression.makePureBuiltinCall("abs", {lhs}, tp);
-        // lhs := Expression.makePureBuiltinCall("abs", {inExp2}, tp);
-        // lhs := Expression.expPow(lhs,Expression.inverseFactors(e2));
-        lhs := Expression.expMul(e_1,lhs);
+        e_1 := Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp); // sign
+
+        lhs := Expression.expPow(inExp2, Expression.inverseFactors(e2)); // y^(1/n)
+        lhs := Expression.makePureBuiltinCall("abs", {lhs}, tp); // abs(y^(1/n))
+        //lhs := Expression.makePureBuiltinCall("abs", {inExp2}, tp); // abs(y)
+        //lhs := Expression.expPow(lhs, Expression.inverseFactors(e2)); // abs(y)^(1/n)
+        lhs := Expression.expMul(e_1, lhs); // sign*abs(y^(1/n))
       then(e1, lhs, true, eqnForNewVars_, newVarsCrefs_, idepth + 1);
 
     //QE
@@ -1296,32 +1297,36 @@ algorithm
       DAE.Type tp;
       list<BackendDAE.Equation> eqns;
       list<DAE.ComponentRef> vars;
+      BackendDAE.Equation ass "assertion for finding domain violations";
 
     // tanh(x) -> 0.5 * ln((1 + y)/(1 - y))
     // exists for y in (-1, 1)
     // unique
     case "tanh" algorithm
-      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, Expression.typeof(rhs), "Y$TANH", uniqueEqIndex, idepth, {}, {}, false);
+      tp := Expression.typeof(rhs);
+      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, tp, "Y$TANH", uniqueEqIndex, idepth, {}, {}, false);
       e1 := Expression.expAdd(DAE.RCONST(1.0), y); // 1 + y
       e2 := Expression.expSub(DAE.RCONST(1.0), y); // 1 - y
       e1 := Expression.makeDiv(e1, e2); // (1 + y)/(1 - y)
-      e1 := Expression.makePureBuiltinCall("log", {e1}, DAE.T_REAL_DEFAULT); // ln((1 + y)/(1 - y))
-      e1 := Expression.expMul(DAE.RCONST(0.5), e1); // 0.5 * ln((1 + y)/(1 - y))
-    then (e1, true, eqns, vars, idepth + 1);
+      e1 := Expression.makePureBuiltinCall("log", {e1}, tp); // ln((1 + y)/(1 - y))
+      inv := Expression.expMul(DAE.RCONST(0.5), e1); // 0.5 * ln((1 + y)/(1 - y))
+      ass := makeDomainAssert(name, rhs, SOME((-1.0, false)), SOME((1.0, false))); // y in (-1, 1)
+    then (inv, true, ass :: eqns, vars, idepth + 1);
 
-    // sinh(x) -> ln(y + sqrt(1 + y^2))
+    // sinh(x) -> ln(y + sqrt(y^2 + 1))
     // exixts always
     // unique
     case "sinh" algorithm
-      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, Expression.typeof(rhs), "Y$SINH", uniqueEqIndex, idepth, {}, {}, false);
+      tp := Expression.typeof(rhs);
+      (y, eqns, vars) := makeTmpEqnAndCrefFromExp(rhs, tp, "Y$SINH", uniqueEqIndex, idepth, {}, {}, false);
       e1 := Expression.expPow(y, DAE.RCONST(2.0)); // y^2
-      e1 := Expression.expAdd(e1, DAE.RCONST(1.0)); // 1 + y^2
-      e1 := Expression.makePureBuiltinCall("sqrt", {e1}, DAE.T_REAL_DEFAULT); // sqrt(1 + y^2)
-      e1 := Expression.expAdd(y, e1); // y + sqrt(1 + y^2)
-      e1 := Expression.makePureBuiltinCall("log", {e1}, DAE.T_REAL_DEFAULT); // ln(y + sqrt(1 + y^2))
+      e1 := Expression.expAdd(e1, DAE.RCONST(1.0)); // y^2 + 1
+      e1 := Expression.makePureBuiltinCall("sqrt", {e1}, tp); // sqrt(y^2 + 1)
+      e1 := Expression.expAdd(y, e1); // y + sqrt(y^2 + 1)
+      e1 := Expression.makePureBuiltinCall("log", {e1}, tp); // ln(y + sqrt(y^2 + 1))
     then (e1, true, eqns, vars, idepth + 1);
 
-    // cosh(x) -> ln(y + sign*(sqrt(y^2 - 1))
+    // cosh(x) -> ln(y + sign*sqrt(y^2 - 1))
     // exists for y in [1, inf)
     // two values, sign is -1 or 1
     case "cosh" algorithm
@@ -1334,10 +1339,13 @@ algorithm
 
       e1 := Expression.expPow(y, DAE.RCONST(2.0)); // y^2
       e1 := Expression.expSub(e1, DAE.RCONST(1.0)); // y^2 - 1
-      e1 := Expression.makePureBuiltinCall("sqrt", {e1}, DAE.T_REAL_DEFAULT); // sqrt(y^2 - 1)
-      e1 := Expression.expAdd(y, Expression.expMul(sgn, e1)); // y + sign*sqrt(y^2 - 1)
-      e1 := Expression.makePureBuiltinCall("log", {e1}, DAE.T_REAL_DEFAULT); // ln(y + sign*(sqrt(y^2 - 1))
-    then (e1, true, eqns, vars, idepth + 1);
+      e1 := Expression.makePureBuiltinCall("sqrt", {e1}, tp); // sqrt(y^2 - 1)
+      e1 := Expression.expMul(sgn, e1); // sign*sqrt(y^2 - 1)
+      e1 := Expression.expAdd(y, e1); // y + sign*sqrt(y^2 - 1)
+      e1 := Expression.makePureBuiltinCall("log", {e1}, tp); // ln(y + sign*sqrt(y^2 - 1))
+
+      ass := makeDomainAssert(name, rhs, SOME((1.0, true)), NONE()); // y in [1, inf)
+    then (e1, true, ass :: eqns, vars, idepth + 1);
 
     // cos(x) -> sign*acos(y) + 2*pi*k
     // exists for y in [-1, 1]
@@ -1361,9 +1369,10 @@ algorithm
       x2 := helpInvCos2(k2, inv, tp, false);
       (x1, eqns, vars) := makeTmpEqnAndCrefFromExp(x1, tp, "x1$COS", uniqueEqIndex, idepth, eqns, vars, false);
       (x2, eqns, vars) := makeTmpEqnAndCrefFromExp(x2, tp, "x2$COS", uniqueEqIndex, idepth, eqns, vars, false);
-
       e1 := helpInvCos3(x1, x2, exP, tp);
-    then (e1, true, eqns, vars, idepth + 1);
+
+      ass := makeDomainAssert(name, rhs, SOME((-1.0, true)), SOME((1.0, true))); // y in [-1, 1]
+    then (e1, true, ass :: eqns, vars, idepth + 1);
 
     // sin(x) -> (-1)^k * asin(y) + k*pi
     // exists for y in [-1, 1]
@@ -1389,7 +1398,9 @@ algorithm
       (x2, eqns, vars) := makeTmpEqnAndCrefFromExp(x2, tp, "x2$SIN", uniqueEqIndex, idepth, eqns, vars, false);
 
       e1 := helpInvCos3(x1, x2, exP, tp);
-    then (e1, true, eqns, vars, idepth + 1);
+
+      ass := makeDomainAssert(name, rhs, SOME((-1.0, true)), SOME((1.0, true))); // y in [-1, 1]
+    then (e1, true, ass :: eqns, vars, idepth + 1);
 
     // tan(x) -> atan(y) + k*pi
     // exists always
@@ -1404,12 +1415,10 @@ algorithm
       exP := makeInitialGuess(tp, inExp3, arg);
       (exP, eqns, vars) := makeTmpEqnAndCrefFromExp(exP, tp, "PREX$TAN", uniqueEqIndex, idepth, eqns, vars, false);
 
-      pi := DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
-
       k1 := Expression.expSub(exP, inv); // pre(x) - atan(y)
-      k1 := Expression.makeDiv(k1, pi); // (pre(x) - atan(y))/pi
+      k1 := Expression.makeDiv(k1, DAE.PI); // (pre(x) - atan(y))/pi
       k1 := Expression.makePureBuiltinCall("$_round", {k1}, tp); // k = round((pre(x) - atan(y))/pi)
-      e1 := Expression.expMul(k1, pi); // k*pi
+      e1 := Expression.expMul(k1, DAE.PI); // k*pi
       e1 := Expression.expAdd(inv, e1); // atan(y) + pi*k
     then (e1, true, eqns, vars, idepth + 1);
 
@@ -1422,7 +1431,70 @@ algorithm
       (exP, eqns, vars) := makeTmpEqnAndCrefFromExp(exP, tp, "SIGN$ABS", uniqueEqIndex, idepth, {}, {}, false);
       sgn := Expression.makePureBuiltinCall("$_signNoNull", {exP}, tp); // sign
       e1 := Expression.expMul(sgn, rhs); // sign*y
-    then (e1, true, eqns, vars, idepth + 1);
+      ass := makeDomainAssert(name, rhs, SOME((0.0, true)), NONE()); // y in [0, inf)
+    then (e1, true, ass ::eqns, vars, idepth + 1);
+
+    // sqrt(x) -> y^2
+    // exists for y in [0, inf)
+    // unique
+    case "sqrt" algorithm
+      inv := Expression.expPow(rhs, DAE.RCONST(2.0)); // y^2
+      ass := makeDomainAssert(name, rhs, SOME((0.0, true)), NONE()); // y in [0, inf)
+    then (inv, true, {ass}, {}, idepth + 1);
+
+    // asin(x) -> sin(y)
+    // exists for y in [-pi/2, pi/2]
+    // unique
+    case "asin" algorithm
+      tp := Expression.typeof(rhs);
+      inv := Expression.makePureBuiltinCall("sin", {rhs}, tp); // sin(y)
+      ass := makeDomainAssert(name, rhs, SOME((-0.5*Expression.toReal(DAE.PI), true)), SOME((0.5*Expression.toReal(DAE.PI), true))); // y in [-pi/2, pi/2]
+    then (inv, true, {ass}, {}, idepth + 1);
+
+    // acos(x) -> cos(y)
+    // exists for y in [0, pi]
+    // unique
+    case "acos" algorithm
+      tp := Expression.typeof(rhs);
+      inv := Expression.makePureBuiltinCall("cos", {rhs}, tp); // cos(y)
+      ass := makeDomainAssert(name, rhs, SOME((0.0, true)), SOME((Expression.toReal(DAE.PI), true))); // y in [0, pi]
+    then (inv, true, {ass}, {}, idepth + 1);
+
+    // atan(x) -> tan(y)
+    // exists for y in [-pi/2, pi/2]
+    // unique
+    case "atan" algorithm
+      tp := Expression.typeof(rhs);
+      inv := Expression.makePureBuiltinCall("tan", {rhs}, tp); // tan(y)
+      ass := makeDomainAssert(name, rhs, SOME((-0.5*Expression.toReal(DAE.PI), true)), SOME((0.5*Expression.toReal(DAE.PI), true))); // y in [-pi/2, pi/2]
+    then (inv, true, {ass}, {}, idepth + 1);
+
+    // exp(x) -> log(y)
+    // exists for y in (0, inf)
+    // unique
+    case "exp" algorithm
+      tp := Expression.typeof(rhs);
+      inv := Expression.makePureBuiltinCall("log", {rhs}, tp); // log(y)
+      ass := makeDomainAssert(name, rhs, SOME((0.0, false)), NONE()); // y in (0, inf)
+    then (inv, true, {ass}, {}, idepth + 1);
+
+    // log(x) -> exp(y)
+    // exists always
+    // unique
+    case "log" algorithm
+      tp := Expression.typeof(rhs);
+      inv := Expression.makePureBuiltinCall("exp", {rhs}, tp); // exp(y)
+    then (inv, true, {}, {}, idepth + 1);
+
+    // log10(x) -> 10^y
+    // exists always
+    // unique
+    case "log10" algorithm
+      inv := Expression.expPow(DAE.RCONST(10.0), rhs); // 10^y
+    then (inv, true, {}, {}, idepth + 1);
+
+    // sign(x) is not invertible
+    case "sign" then (rhs, false, {}, {}, idepth);
 
     // $_DF$DER(x) = y  ->  (x - pre(x))/dt = y  ->  x = y*dt + pre(x)
     case "$_DF$DER" algorithm
@@ -1430,12 +1502,6 @@ algorithm
       exP := Expression.makePureBuiltinCall("pre", {arg}, Expression.typeof(arg)); // pre(x)
       e1 := Expression.expAdd(Expression.expMul(rhs, e1), exP); // y*dt + pre(x)
     then(e1, true, {}, {}, idepth + 1);
-
-    // sqrt(x) -> y^2
-    case "sqrt"
-      algorithm
-        e1 := Expression.expPow(rhs, DAE.RCONST(2.0));
-      then (e1, true, {}, {}, idepth + 1);
 
     // don't know inverse of this function
     else (rhs, false, {}, {}, idepth);
@@ -1863,6 +1929,97 @@ algorithm
   end if;
 end makeTmpEqnAndCrefFromExp;
 
+protected function makeDomainAssert
+  input String name "of the function";
+  input DAE.Exp rhs "solution of the function";
+  input Option<tuple<Real, Boolean>> lowerBound "(value, including?)";
+  input Option<tuple<Real, Boolean>> upperBound "(value, including?)";
+  output BackendDAE.Equation assEq;
+protected
+  String msg;
+  DAE.Exp cond;
+  DAE.Algorithm algo;
+  DAE.Type tp = Expression.typeof(rhs);
+algorithm
+  (msg, cond) := match (lowerBound, upperBound)
+    local
+      Real lower, upper;
+      String str;
+      DAE.Exp l, u;
+
+    // range [l, u]
+    case (SOME((lower, true)), SOME((upper, true))) algorithm
+      str := "Model error: Result of " + name + " outside the range "
+        + realString(lower) + " <= " + ExpressionDump.printExpStr(rhs)
+        + " <= " + realString(upper) + ". Unable to invert.";
+      l := DAE.RELATION(DAE.RCONST(lower), DAE.LESSEQ(tp), rhs, -1, NONE());
+      u:= DAE.RELATION(rhs, DAE.LESSEQ(tp), DAE.RCONST(upper), -1, NONE());
+    then (str, DAE.LBINARY(l, DAE.AND(tp), u));
+
+    // range [l, u)
+    case (SOME((lower, true)), SOME((upper, false))) algorithm
+      str := "Model error: Result of " + name + " outside the range "
+        + realString(lower) + " <= " + ExpressionDump.printExpStr(rhs)
+        + " < " + realString(upper) + ". Unable to invert.";
+      l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESSEQ(tp), rhs, -1, NONE());
+      u:= DAE.RELATION(rhs, DAE.LESS(tp), DAE.RCONST(upper), -1, NONE());
+    then (str, DAE.LBINARY(l, DAE.AND(tp), u));
+
+    // range (l, u]
+    case (SOME((lower, false)), SOME((upper, true))) algorithm
+      str := "Model error: Result of " + name + " outside the range "
+        + realString(lower) + " < " + ExpressionDump.printExpStr(rhs)
+        + " <= " + realString(upper) + ". Unable to invert.";
+      l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESS(tp), rhs, -1, NONE());
+      u:= DAE.RELATION(rhs, DAE.LESSEQ(tp), DAE.RCONST(upper), -1, NONE());
+    then (str, DAE.LBINARY(l, DAE.AND(tp), u));
+
+    // range (l, u)
+    case (SOME((lower, false)), SOME((upper, false))) algorithm
+      str := "Model error: Result of " + name + " outside the range "
+        + realString(lower) + " < " + ExpressionDump.printExpStr(rhs)
+        + " < " + realString(upper) + ". Unable to invert.";
+      l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESS(tp), rhs, -1, NONE());
+      u:= DAE.RELATION(rhs, DAE.LESS(tp), DAE.RCONST(upper), -1, NONE());
+    then (str, DAE.LBINARY(l, DAE.AND(tp), u));
+
+    // range [l, inf)
+    case (SOME((lower, true)), NONE()) algorithm
+      str := "Model error: Result of " + name + " should be "
+        + ExpressionDump.printExpStr(rhs) + " >= " + realString(lower)
+        + ". Unable to invert.";
+      l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESSEQ(tp), rhs, -1, NONE());
+    then (str, l);
+
+    // range (l, inf)
+    case (SOME((lower, true)), NONE()) algorithm
+      str := "Model error: Result of " + name + " should be "
+        + ExpressionDump.printExpStr(rhs) + " > " + realString(lower)
+        + ". Unable to invert.";
+      l:= DAE.RELATION(DAE.RCONST(lower), DAE.LESS(tp), rhs, -1, NONE());
+    then (str, l);
+
+    // range (-inf, u]
+    case (NONE(), SOME((upper, true))) algorithm
+      str := "Model error: Result of " + name + " should be "
+        + ExpressionDump.printExpStr(rhs) + " <= " + realString(upper)
+        + ". Unable to invert.";
+      u:= DAE.RELATION(rhs, DAE.LESSEQ(tp), DAE.RCONST(upper), -1, NONE());
+    then (str, u);
+
+    // range (-inf, u)
+    case (NONE(), SOME((upper, false))) algorithm
+      str := "Model error: Result of " + name + " should be "
+        + ExpressionDump.printExpStr(rhs) + " < " + realString(upper)
+        + ". Unable to invert.";
+      u:= DAE.RELATION(rhs, DAE.LESS(tp), DAE.RCONST(upper), -1, NONE());
+    then (str, u);
+  end match;
+
+  algo := DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond, DAE.SCONST(msg), DAE.ASSERTIONLEVEL_ERROR, DAE.emptyElementSource)});
+  assEq := BackendDAE.ALGORITHM(0, algo, DAE.emptyElementSource, DAE.EXPAND(), BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+end makeDomainAssert;
+
 protected function makeInitialGuess
   input DAE.Type tp;
   input DAE.Exp iExp1;
@@ -1951,14 +2108,12 @@ protected function helpInvCos
   input DAE.Type tp;
   input Boolean neg;
   output DAE.Exp k;
-protected
-  DAE.Exp pi2 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
 algorithm
   k := if neg then
          Expression.expAdd(x,acosy)
        else
          Expression.expSub(x,acosy);
-  k := Expression.makeDiv(k, pi2);
+  k := Expression.makeDiv(k, Expression.expMul(DAE.RCONST(2.0), DAE.PI));
   k := Expression.makePureBuiltinCall("$_round",{k},tp);
 
 end helpInvCos;
@@ -1969,14 +2124,12 @@ protected function helpInvSin
   input DAE.Type tp;
   input Boolean neg;
   output DAE.Exp k;
-protected
-  DAE.Exp pi2 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
 algorithm
   k := if neg then
          Expression.expAdd(x,asiny)
        else
          Expression.expSub(x,asiny);
-  k := Expression.makeDiv(k, pi2);
+  k := Expression.makeDiv(k, Expression.expMul(DAE.RCONST(2.0), DAE.PI));
   if neg then
     k := Expression.expSub(k, DAE.RCONST(0.5));
   end if;
@@ -1989,12 +2142,10 @@ protected function helpInvCos2
   input DAE.Type tp;
   input Boolean neg;
   output DAE.Exp x;
-protected
-  DAE.Exp pi2 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
 algorithm
 
   x := if neg then Expression.negate(acosy) else acosy;
-  x := Expression.expAdd(x, Expression.expMul(k,pi2));
+  x := Expression.expAdd(x, Expression.expMul(k, Expression.expMul(DAE.RCONST(2.0), DAE.PI)));
 
 end helpInvCos2;
 
@@ -2005,13 +2156,12 @@ protected function helpInvSin2
   input Boolean neg;
   output DAE.Exp x;
 protected
-  DAE.Exp pi2 = DAE.RCONST(6.283185307179586476925286766559005768394338798750211641949889);
-  DAE.Exp p = DAE.RCONST(3.1415926535897932384626433832795028841971693993751058);
   DAE.Exp e;
 algorithm
 
   x := if neg then Expression.negate(asiny) else asiny;
-  e := if neg then Expression.expAdd(Expression.expMul(k,pi2), p) else Expression.expMul(k,pi2);
+  e := Expression.expMul(k, Expression.expMul(DAE.RCONST(2.0), DAE.PI));
+  e := if neg then Expression.expAdd(e, DAE.PI) else e;
   x := Expression.expAdd(x, e);
 
 end helpInvSin2;
