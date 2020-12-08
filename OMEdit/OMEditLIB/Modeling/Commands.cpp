@@ -256,16 +256,20 @@ void AddComponentCommand::redoInternal()
   // if component is of connector type && containing class is Modelica type.
   if (mpLibraryTreeItem && mpLibraryTreeItem->isConnector() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
     // Connector type components exists on icon view as well
-    mpIconGraphicsView->addItem(mpIconComponent);
-    mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
+    if (mpIconComponent->mTransformation.isValid() && mpIconComponent->mTransformation.getVisible()) {
+      mpIconGraphicsView->addItem(mpIconComponent);
+      mpIconGraphicsView->addItem(mpIconComponent->getOriginItem());
+    }
     mpIconGraphicsView->addElementToList(mpIconComponent);
     mpIconGraphicsView->deleteElementFromOutOfSceneList(mpIconComponent);
     mpIconComponent->emitAdded();
     // hide the component if it is connector and is protected
     mpIconComponent->setVisible(!mpComponentInfo->getProtected());
   }
-  mpDiagramGraphicsView->addItem(mpDiagramComponent);
-  mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
+  if (mpDiagramComponent->mTransformation.isValid() && mpDiagramComponent->mTransformation.getVisible()) {
+    mpDiagramGraphicsView->addItem(mpDiagramComponent);
+    mpDiagramGraphicsView->addItem(mpDiagramComponent->getOriginItem());
+  }
   mpDiagramGraphicsView->addElementToList(mpDiagramComponent);
   mpDiagramGraphicsView->deleteElementFromOutOfSceneList(mpDiagramComponent);
   mpDiagramComponent->emitAdded();
