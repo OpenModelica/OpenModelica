@@ -4615,9 +4615,10 @@ void ModelWidget::addConnection(QStringList connectionList, QString connectionAn
   MainWindow *pMainWindow = MainWindow::instance();
   LibraryTreeModel *pLibraryTreeModel = pMainWindow->getLibraryWidget()->getLibraryTreeModel();
   QString connectionString = QString("{%1}").arg(connectionList.join(","));
-  // if the connectionString only contains two items then continue the loop,
+  connectionAnnotationString = StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString);
+  // if the connectionString only contains two items or if there is no connection annotation then continue the loop,
   // because connection is not valid then
-  if (connectionList.size() < 3) {
+  if (connectionList.size() < 3 || connectionAnnotationString.isEmpty()) {
     return;
   }
   // get start and end components
@@ -4694,7 +4695,7 @@ void ModelWidget::addConnection(QStringList connectionList, QString connectionAn
     return;
   }
   // connection annotation
-  QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(connectionAnnotationString), '(', ')');
+  QStringList shapesList = StringHandler::getStrings(connectionAnnotationString, '(', ')');
   // Now parse the shapes available in list
   QString lineShape = "";
   foreach (QString shape, shapesList) {
