@@ -1634,6 +1634,10 @@ algorithm
         for attr in var.typeAttributes loop
           funcs := collectBindingFuncs(Util.tuple22(attr), funcs);
         end for;
+
+        for c in var.children loop
+          funcs := collectComponentFuncs(c, funcs);
+        end for;
       then
         ();
 

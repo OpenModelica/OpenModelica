@@ -83,6 +83,7 @@ algorithm
   end if;
 
   var.typeAttributes := list(evaluateTypeAttribute(a) for a in var.typeAttributes);
+  var.children := list(evaluateVariable(v) for v in var.children);
 end evaluateVariable;
 
 function evaluateBinding

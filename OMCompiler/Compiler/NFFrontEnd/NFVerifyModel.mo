@@ -96,6 +96,10 @@ protected
     for attr in var.typeAttributes loop
       verifyBinding(Util.tuple22(attr));
     end for;
+
+    for v in var.children loop
+      verifyVariable(v);
+    end for;
   end verifyVariable;
 
   function verifyBinding

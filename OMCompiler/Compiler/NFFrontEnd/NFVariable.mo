@@ -154,6 +154,7 @@ public
     var.binding := Binding.mapExp(var.binding, fn);
     var.typeAttributes := list(
       (Util.tuple21(a), Binding.mapExp(Util.tuple22(a), fn)) for a in var.typeAttributes);
+    var.children := list(mapExp(v, fn) for v in var.children);
   end mapExp;
 
   function toString
