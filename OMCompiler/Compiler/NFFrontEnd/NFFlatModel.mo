@@ -613,7 +613,7 @@ public
     end if;
 
     recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),
-      Component.getAttributes(record_comp), {}, Component.comment(record_comp), InstNode.info(record_node));
+      Component.getAttributes(record_comp), {}, {}, Component.comment(record_comp), InstNode.info(record_node));
   end reconstructRecordInstance;
 
   annotation(__OpenModelica_Interface="frontend");

@@ -102,7 +102,7 @@ protected
 algorithm
   if Type.isArray(var.ty) then
     try
-      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, cmt, info) := var;
+      Variable.VARIABLE(name, ty, binding, vis, attr, ty_attr, _, cmt, info) := var;
       crefs := ComponentRef.scalarize(name);
 
       if listEmpty(crefs) then
@@ -120,12 +120,12 @@ algorithm
           (binding_iter, exp) := ExpressionIterator.next(binding_iter);
           binding := Binding.FLAT_BINDING(exp, bind_var);
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
+          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
         end for;
       else
         for cr in crefs loop
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, cmt, info) :: vars;
+          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
         end for;
       end if;
     else

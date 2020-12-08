@@ -388,7 +388,7 @@ algorithm
       elem_name := ComponentRef.prefixCref(node, ty, {}, exp_name);
       // TODO: This needs more work, the new connector might be a complex connector.
       var := Variable.VARIABLE(elem_name, ty, NFBinding.EMPTY_BINDING,
-        Visibility.PUBLIC, NFComponent.DEFAULT_ATTR, {},
+        Visibility.PUBLIC, NFComponent.DEFAULT_ATTR, {}, {},
         SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))),
         ElementSource.getInfo(c.source));
       vars := var :: vars;

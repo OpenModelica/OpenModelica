@@ -53,6 +53,7 @@ public
     Visibility visibility;
     Component.Attributes attributes;
     list<tuple<String, Binding>> typeAttributes;
+    list<Variable> children;
     Option<SCode.Comment> comment;
     SourceInfo info;
   end VARIABLE;
@@ -78,7 +79,7 @@ public
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
     info := InstNode.info(node);
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, cmt, info);
+    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info);
   end fromCref;
 
   function isStructural
