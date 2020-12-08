@@ -77,11 +77,11 @@ public
   // ==========================================================================
   constant Variable DUMMY_VARIABLE = Variable.VARIABLE(ComponentRef.EMPTY(), Type.ANY(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFComponent.DEFAULT_ATTR,
-    {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
+    {}, {}, NONE(), SCodeUtil.dummyInfo, NFBackendExtension.DUMMY_BACKEND_INFO);
 
   constant Variable TIME_VARIABLE = Variable.VARIABLE(NFBuiltin.TIME_CREF, Type.REAL(),
     NFBinding.EMPTY_BINDING, NFPrefixes.Visibility.PUBLIC, NFComponent.DEFAULT_ATTR,
-    {}, NONE(), SCodeUtil.dummyInfo, BackendExtension.BACKEND_INFO(
+    {}, {}, NONE(), SCodeUtil.dummyInfo, BackendExtension.BACKEND_INFO(
     BackendExtension.VariableKind.TIME(), NFBackendExtension.EMPTY_VAR_ATTR_REAL));
 
   constant String DERIVATIVE_STR          = "$DER";
@@ -119,7 +119,7 @@ public
     ty := ComponentRef.getSubscriptedType(cref);
     vis := InstNode.visibility(node);
     info := InstNode.info(node);
-    variable := Variable.VARIABLE(cref, ty, NFBinding.EMPTY_BINDING, vis, NFComponent.DEFAULT_ATTR, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
+    variable := Variable.VARIABLE(cref, ty, NFBinding.EMPTY_BINDING, vis, NFComponent.DEFAULT_ATTR, {}, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
   function getVar
