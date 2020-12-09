@@ -2225,6 +2225,8 @@ void GraphicsView::addConnection(Element *pComponent)
         }
       }
     }
+    // Once we are done creating the connection then we should set mpConnectionLineAnnotation to 0.
+    mpConnectionLineAnnotation = 0;
   }
 }
 
@@ -2234,11 +2236,11 @@ void GraphicsView::addConnection(Element *pComponent)
  */
 void GraphicsView::removeCurrentConnection()
 {
-  if (isCreatingConnection()) {
-    setIsCreatingConnection(false);
-    deleteConnectionFromList(mpConnectionLineAnnotation);
-    removeItem(mpConnectionLineAnnotation);
-    delete mpConnectionLineAnnotation;
+  setIsCreatingConnection(false);
+  deleteConnectionFromList(mpConnectionLineAnnotation);
+  removeItem(mpConnectionLineAnnotation);
+  if (mpConnectionLineAnnotation) {
+    mpConnectionLineAnnotation->deleteLater();
     mpConnectionLineAnnotation = 0;
   }
 }
