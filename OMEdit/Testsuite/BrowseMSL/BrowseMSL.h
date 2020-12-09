@@ -37,6 +37,10 @@
 
 #include <QObject>
 
+/*!
+ * \brief The BrowseMSL class
+ * Browses the items in the Libraries tree.
+ */
 class BrowseMSL: public QObject
 {
   Q_OBJECT

@@ -37,6 +37,10 @@
 
 #include <QObject>
 
+/*!
+ * \brief The TransformationTest class
+ * Checks the placement annotation string.
+ */
 class TransformationTest: public QObject
 {
   Q_OBJECT

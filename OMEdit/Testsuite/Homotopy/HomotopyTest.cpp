@@ -55,72 +55,12 @@ void HomotopyTest::initTestCase()
 
 void HomotopyTest::simulateHomotopyTestM1()
 {
-  mCompilationFinished = false;
-  mSimulationLogFileName = "";
-  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(QStringLiteral("HomotopyTest.M1"));
-  if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
-    QFAIL("Expanding to HomotopyTest.M1 failed.");
-  }
-
-  MainWindow::instance()->simulate(pLibraryTreeItem);
-  if (MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().size() > 0) {
-    SimulationOutputWidget *pSimulationOutputWidget = MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().last();
-    if (pSimulationOutputWidget->getSimulationOptions().getClassName().compare(QStringLiteral("HomotopyTest.M1")) == 0) {
-      mSimulationLogFileName = QString("%1/%2.log").arg(pSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
-                               .arg(pSimulationOutputWidget->getSimulationOptions().getClassName());
-      connect(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)), SLOT(compilationFinished(int,QProcess::ExitStatus)));
-      connect(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)), SLOT(simulationFinished(int,QProcess::ExitStatus)));
-      // wait for compilation
-      QEventLoop compilationEventLoop;
-      connect(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)), &compilationEventLoop, SLOT(quit()));
-      compilationEventLoop.exec();
-      if (mCompilationFinished) {
-        // wait for simulation
-        QEventLoop simulationEventLoop;
-        connect(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)), &simulationEventLoop, SLOT(quit()));
-        simulationEventLoop.exec();
-      }
-    } else {
-      QFAIL(QString("Wrong class name. Expected HomotopyTest.M1 got %1.").arg(pSimulationOutputWidget->getSimulationOptions().getClassName()).toStdString().c_str());
-    }
-  } else {
-    QFAIL("Translation of HomotopyTest.M1 failed.");
-  }
+  simulate(QStringLiteral("HomotopyTest.M1"), 0);
 }
 
 void HomotopyTest::simulateHomotopyTestM2()
 {
-  mCompilationFinished = false;
-  mSimulationLogFileName = "";
-  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(QStringLiteral("HomotopyTest.M2"));
-  if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
-    QFAIL("Expanding to HomotopyTest.M2 failed.");
-  }
-
-  MainWindow::instance()->simulate(pLibraryTreeItem);
-  if (MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().size() > 1) {
-    SimulationOutputWidget *pSimulationOutputWidget = MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().last();
-    if (pSimulationOutputWidget->getSimulationOptions().getClassName().compare(QStringLiteral("HomotopyTest.M2")) == 0) {
-      mSimulationLogFileName = QString("%1/%2.log").arg(pSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
-                               .arg(pSimulationOutputWidget->getSimulationOptions().getClassName());
-      connect(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)), SLOT(compilationFinished(int,QProcess::ExitStatus)));
-      connect(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)), SLOT(simulationFinished(int,QProcess::ExitStatus)));
-      // wait for compilation
-      QEventLoop compilationEventLoop;
-      connect(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)), &compilationEventLoop, SLOT(quit()));
-      compilationEventLoop.exec();
-      if (mCompilationFinished) {
-        // wait for simulation
-        QEventLoop simulationEventLoop;
-        connect(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)), &simulationEventLoop, SLOT(quit()));
-        simulationEventLoop.exec();
-      }
-    } else {
-      QFAIL(QString("Wrong class name. Expected HomotopyTest.M2 got %1.").arg(pSimulationOutputWidget->getSimulationOptions().getClassName()).toStdString().c_str());
-    }
-  } else {
-    QFAIL("Translation of HomotopyTest.M2 failed.");
-  }
+  simulate(QStringLiteral("HomotopyTest.M2"), 1);
 }
 
 void HomotopyTest::cleanupTestCase()
@@ -128,26 +68,43 @@ void HomotopyTest::cleanupTestCase()
   MainWindow::instance()->close();
 }
 
-void HomotopyTest::compilationFinished(int exitCode, QProcess::ExitStatus exitStatus)
+void HomotopyTest::simulate(const QString &className, const int simulationNumber)
 {
-  if (!(exitStatus == QProcess::NormalExit && exitCode == 0)) {
-    QString exitCodeStr = tr("Compilation process failed. Exited with code %1.").arg(QString::number(exitCode));
-    QFAIL(exitCodeStr.toStdString().c_str());
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
+  if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
+    QFAIL(QString("Expanding to %1 failed.").arg(className).toStdString().c_str());
   }
-  mCompilationFinished = true;
+
+  MainWindow::instance()->simulate(pLibraryTreeItem);
+  if (MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().size() > simulationNumber) {
+    SimulationOutputWidget *pSimulationOutputWidget = MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().last();
+    if (pSimulationOutputWidget->getSimulationOptions().getClassName().compare(className) == 0) {
+      QString simulationLogFileName = QString("%1/%2.log").arg(pSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
+                                      .arg(pSimulationOutputWidget->getSimulationOptions().getClassName());
+      /* Use QSignalSpy to check if simulation is finished or not.
+       * if its finished then we read the simulation file.
+       * otherwise the timeout of 2 mins has occurred.
+       */
+      QSignalSpy simulationSignalSpy(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)));
+      if (simulationSignalSpy.wait(120000)) {
+        readSimulationLogFile(simulationLogFileName);
+      } else {
+        QFAIL("Simulation not finished in time.");
+      }
+    } else {
+      QFAIL(QString("Wrong class name. Expected %1 got %2.").arg(className, pSimulationOutputWidget->getSimulationOptions().getClassName()).toStdString().c_str());
+    }
+  } else {
+    QFAIL(QString("Translation of %1 failed.").arg(className).toStdString().c_str());
+  }
 }
 
-void HomotopyTest::simulationFinished(int exitCode, QProcess::ExitStatus exitStatus)
+void HomotopyTest::readSimulationLogFile(const QString &simulationLogFilePath)
 {
-  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    QString exitCodeStr = tr("Simulation process finished successfully. It should fail instead. Exited with code %1.").arg(QString::number(exitCode));
-    QFAIL(exitCodeStr.toStdString().c_str());
-  }
-
   // read the simulation log file for error message.
-  QFile simulationLogFile(mSimulationLogFileName);
+  QFile simulationLogFile(simulationLogFilePath);
   if (!simulationLogFile.open(QIODevice::ReadOnly)) {
-    QFAIL(QString("Unable to open the simulation log file %1.").arg(mSimulationLogFileName).toStdString().c_str());
+    QFAIL(QString("Unable to open the simulation log file %1.").arg(simulationLogFilePath).toStdString().c_str());
   } else {
     QString contents = QString(simulationLogFile.readAll());
     simulationLogFile.close();

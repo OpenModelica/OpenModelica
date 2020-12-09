@@ -58,7 +58,7 @@ void SimulationProcessThread::run()
   } else {
     runSimulationExecutable();
   }
-  exec();
+  QThread::run();
 }
 
 /*!
@@ -186,7 +186,7 @@ void SimulationProcessThread::readCompilationStandardError()
 /*!
  * \brief SimulationProcessThread::compilationProcessError
  * Slot activated when mpCompilationProcess errorOccurred signal is raised.\n
- * Notifies the SimulationOutputWidget about the erro by emitting the sendCompilationOutput signal.
+ * Notifies the SimulationOutputWidget about the error by emitting the sendCompilationOutput signal.
  * \param error
  */
 void SimulationProcessThread::compilationProcessError(QProcess::ProcessError error)
@@ -195,9 +195,11 @@ void SimulationProcessThread::compilationProcessError(QProcess::ProcessError err
   mIsCompilationProcessRunning = false;
   /* this signal is raised when we kill the compilation process forcefully. */
   if (isCompilationProcessKilled()) {
+    exit();
     return;
   }
   emit sendCompilationOutput(mpCompilationProcess->errorString(), Qt::red);
+  exit();
 }
 
 /*!
@@ -223,9 +225,11 @@ void SimulationProcessThread::compilationProcessFinished(int exitCode, QProcess:
   } else if (mpCompilationProcess->error() == QProcess::UnknownError) {
     emit sendCompilationOutput(exitCodeStr, Qt::red);
     emit sendCompilationFinished(exitCode, exitStatus);
+    exit();
   } else {
     emit sendCompilationOutput(mpCompilationProcess->errorString() + "\n" + exitCodeStr, Qt::red);
     emit sendCompilationFinished(exitCode, exitStatus);
+    exit();
   }
 }
 
@@ -270,7 +274,7 @@ void SimulationProcessThread::readSimulationStandardError()
 /*!
  * \brief SimulationProcessThread::simulationProcessError
  * Slot activated when mpSimulationProcess errorOccurred signal is raised.\n
- * Notifies the SimulationOutputWidget about the erro by emitting the sendSimulationOutput signal.
+ * Notifies the SimulationOutputWidget about the error by emitting the sendSimulationOutput signal.
  * \param error
  */
 void SimulationProcessThread::simulationProcessError(QProcess::ProcessError error)
@@ -279,9 +283,11 @@ void SimulationProcessThread::simulationProcessError(QProcess::ProcessError erro
   mIsSimulationProcessRunning = false;
   /* this signal is raised when we kill the simulation process forcefully. */
   if (isSimulationProcessKilled()) {
+    exit();
     return;
   }
   emit sendSimulationOutput(mpSimulationProcess->errorString(), StringHandler::Error, true);
+  exit();
 }
 
 /*!
@@ -309,4 +315,5 @@ void SimulationProcessThread::simulationProcessFinished(int exitCode, QProcess::
     emit sendSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error, true);
   }
   emit sendSimulationFinished(exitCode, exitStatus);
+  exit();
 }

@@ -38,12 +38,15 @@
 #include <QObject>
 #include <QProcess>
 
+/*!
+ * \brief The HomotopyTest class
+ * This test check the simulation of model containing the logging annotation.
+ * `HomotopyTest.M1` contains `annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V"));`
+ * `HomotopyTest.M2` contains `annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V,LOG_INIT_HOMOTOPY"));`
+ */
 class HomotopyTest: public QObject
 {
   Q_OBJECT
-private:
-  bool mCompilationFinished;
-  QString mSimulationLogFileName;
 private slots:
   /*!
    * \brief initTestCase
@@ -61,9 +64,15 @@ private slots:
    */
   void simulateHomotopyTestM2();
   void cleanupTestCase();
-public slots:
-  void compilationFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void simulationFinished(int exitCode, QProcess::ExitStatus exitStatus);
+public:
+  /*!
+   * \brief simulate
+   * Simulates the class. The simulationNumber argument tells which simulation it is i.e., first, second and so on.
+   * \param className
+   * \param simulationNumber
+   */
+  void simulate(const QString &className, const int simulationNumber);
+  void readSimulationLogFile(const QString &simulationLogFilePath);
 };
 
 #endif // HOMOTOPYTEST_H
