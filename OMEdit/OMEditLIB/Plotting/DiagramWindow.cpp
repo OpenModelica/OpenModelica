@@ -71,10 +71,10 @@ void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
     setWindowTitle(pModelWidget->getLibraryTreeItem()->getName());
     if (mpGraphicsView) {
-      delete mpGraphicsScene;
+      mpGraphicsScene->deleteLater();
       mpGraphicsScene = 0;
       mpMainLayout->removeWidget(mpGraphicsView);
-      delete mpGraphicsView;
+      mpGraphicsView->deleteLater();
       mpGraphicsView = 0;
     }
     mpGraphicsScene = new GraphicsScene(StringHandler::Diagram, pModelWidget);
@@ -150,10 +150,10 @@ void DiagramWindow::removeDiagram(ModelWidget *pModelWidget)
     setWindowTitle("Diagram");
     // clear the GraphicsView and delete it
     mpGraphicsView->clearGraphicsView();
-    delete mpGraphicsScene;
+    mpGraphicsScene->deleteLater();
     mpGraphicsScene = 0;
     mpMainLayout->removeWidget(mpGraphicsView);
-    delete mpGraphicsView;
+    mpGraphicsView->deleteLater();
     mpGraphicsView = 0;
   }
 }
