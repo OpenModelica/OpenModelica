@@ -488,7 +488,7 @@ algorithm
   name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
   ty_attrs := list(flattenTypeAttribute(m, name) for m in typeAttrs);
 
-  // Set fixed = true for parameters that are part of a record instance whose
+  // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
   if unfix then
     ty_attrs := List.removeOnTrue("fixed", isTypeAttributeNamed, ty_attrs);
