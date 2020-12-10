@@ -53,6 +53,7 @@ public
   import Expression = NFExpression;
   import InstNode = NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
   import VariableKind = NFBackendExtension.VariableKind;
@@ -729,16 +730,19 @@ public
     e.g. (\"DAE\", 4) --> $RES_DAE_4"
     input String name                 "context name e.g. DAE";
     input Integer uniqueIndex         "unique identifier index";
+    input Type ty                     "equation type containing dims";
     output Pointer<Variable> var_ptr  "pointer to new variable";
     output ComponentRef cref          "new component reference";
   protected
     InstNode node;
     Variable var;
+    list<Dimension> dims = Type.arrayDims(ty);
+    list<Subscript> subs = list(Subscript.fromDimension(dim) for dim in dims);
   algorithm
     // create inst node with dummy variable pointer and create cref from it
     node := InstNode.VAR_NODE(RESIDUAL_STR + "_" + name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
     // Type for residuals is always REAL() !
-    cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    cref := ComponentRef.CREF(node, subs, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
     var := BVariable.fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
@@ -1283,13 +1287,10 @@ public
           VariablePointers lambdaVars;
 
         case VAR_DATA_SIM() algorithm
-          tmp := StringUtil.headline_2("Variable Data Simulation") + "\n" +
-            VariablePointers.toString(varData.unknowns, "Unknown", false) +
-            VariablePointers.toString(varData.states, "Local Known", false) +
-            VariablePointers.toString(varData.knowns, "Global Known", false) +
-            VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
-            VariablePointers.toString(varData.aliasVars, "Alias", false);
-          if full then
+          tmp := StringUtil.headline_2("Variable Data Simulation") + "\n";
+          if not full then
+            tmp := tmp + VariablePointers.toString(varData.unknowns, "Unknown", false);
+          else
             tmp := tmp + VariablePointers.toString(varData.states, "State", false) +
               VariablePointers.toString(varData.derivatives, "Derivative", false) +
               VariablePointers.toString(varData.algebraics, "Algebraic", false) +
@@ -1298,6 +1299,11 @@ public
               VariablePointers.toString(varData.parameters, "Parameter", false) +
               VariablePointers.toString(varData.constants, "Constant", false);
           end if;
+          tmp := tmp +
+            VariablePointers.toString(varData.states, "Local Known", false) +
+            VariablePointers.toString(varData.knowns, "Global Known", false) +
+            VariablePointers.toString(varData.auxiliaries, "Auxiliary", false) +
+            VariablePointers.toString(varData.aliasVars, "Alias", false);
         then tmp;
 
         case VAR_DATA_JAC() algorithm

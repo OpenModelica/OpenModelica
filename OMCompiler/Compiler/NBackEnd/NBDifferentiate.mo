@@ -161,24 +161,27 @@ public
         (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.SCALAR_EQUATION(lhs, rhs, eq.source, attr), diffArguments);
+      then (Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
 
       case Equation.ARRAY_EQUATION() algorithm
         (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.ARRAY_EQUATION(eq.dimSize, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
+      then (Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, eq.recordSize), diffArguments);
 
       case Equation.SIMPLE_EQUATION() algorithm
         (lhs, diffArguments) := differentiateComponentRef(Expression.fromCref(eq.lhs), diffArguments);
         (rhs, diffArguments) := differentiateComponentRef(Expression.fromCref(eq.rhs), diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-        res := match (lhs, rhs)
+        res := match (lhs, rhs, eq.ty)
+
           // If both are still a componentRef, create simple equation.
-          case (Expression.CREF(cref = lhs_cref), Expression.CREF(cref = rhs_cref))
-          then Equation.SIMPLE_EQUATION(lhs_cref, rhs_cref, eq.source, attr);
-          // else create regular equation: ToDo check array?
-          else Equation.SCALAR_EQUATION(lhs, rhs, eq.source, attr);
+          case (Expression.CREF(cref = lhs_cref), Expression.CREF(cref = rhs_cref), _)
+          then Equation.SIMPLE_EQUATION(eq.ty, lhs_cref, rhs_cref, eq.source, attr);
+
+          // check for array type
+          case (_, _ , Type.ARRAY()) then Equation.ARRAY_EQUATION(eq.ty, lhs, rhs, eq.source, attr, NONE());
+          else Equation.SCALAR_EQUATION(eq.ty, lhs, rhs, eq.source, attr);
         end match;
       then (res, diffArguments);
 
@@ -186,7 +189,7 @@ public
         (lhs, diffArguments) := differentiateExpression(eq.lhs, diffArguments);
         (rhs, diffArguments) := differentiateExpression(eq.rhs, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.RECORD_EQUATION(eq.size, lhs, rhs, eq.source, attr), diffArguments);
+      then (Equation.RECORD_EQUATION(eq.ty, lhs, rhs, eq.source, attr), diffArguments);
 
       case Equation.IF_EQUATION() algorithm
         (ifBody, diffArguments_ptr) := differentiateIfEquationBody(eq.body, Pointer.create(diffArguments));
@@ -196,7 +199,7 @@ public
       case Equation.FOR_EQUATION() algorithm
         (res, diffArguments) := differentiateEquation(eq.body, diffArguments);
         attr := differentiateEquationAttributes(eq.attr, diffArguments);
-      then (Equation.FOR_EQUATION(eq.iter, eq.range, res, eq.source, attr), diffArguments);
+      then (Equation.FOR_EQUATION(eq.ty, eq.iter, eq.range, res, eq.source, attr), diffArguments);
 
       case Equation.WHEN_EQUATION() algorithm
         (whenBody, diffArguments) := differentiateWhenEquationBody(eq.body, diffArguments);

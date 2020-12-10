@@ -399,5 +399,14 @@ public
     str := "[" + stringDelimitList(strl, ",") + "]";
   end toString;
 
+  function domainString
+    input SBPWLinearMap map;
+    output String str = "";
+  algorithm
+    for i in 1:arrayLength(map.dom) loop
+      str := str + SBSet.toString(map.dom[i]) + " ";
+    end for;
+  end domainString;
+
 annotation(__OpenModelica_Interface="util");
 end SBPWLinearMap;

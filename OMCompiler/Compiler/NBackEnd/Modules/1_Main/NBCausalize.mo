@@ -394,20 +394,19 @@ public
       AdjacencyList<SetVertex, SetEdge> graph;
       Pointer<Integer> max_dim = Pointer.create(1);
       Vector<Integer> vCount, eCount;
-      Pointer<NameVertexTable.Table> nmvTable;
+      NameVertexTable.Table nmvTable;
     algorithm
       // create empty set based graph
       graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
-      adj := ARRAY_ADJACENCY_MATRIX(graph, st);
 
       // find maximum number of dimensions
       VariablePointers.mapPtr(vars, function maxDimTraverse(max_dim = max_dim));
-      EquationPointers.mapRes(eqs, function maxDimTraverse(max_dim = max_dim));
+      EquationPointers.mapRes(eqs, function maxDimTraverse(max_dim = max_dim)); // maybe unnecessary?
       vCount := Vector.newFill(Pointer.access(max_dim), 1);
       eCount := Vector.newFill(Pointer.access(max_dim), 1);
 
       // create empty hash table
-      nmvTable := Pointer.create(NameVertexTable.new());
+      nmvTable := NameVertexTable.new();
 
       // create vertices for variables
       VariablePointers.mapPtr(vars, function SetVertex.createTraverse(graph = graph, vCount = vCount, nmvTable = nmvTable));
@@ -424,8 +423,10 @@ public
 
       if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
         print(AdjacencyList.toString(graph));
-        BaseHashTable.dumpHashTable(Pointer.access(nmvTable));
+        BaseHashTable.dumpHashTable(nmvTable);
       end if;
+
+      adj := ARRAY_ADJACENCY_MATRIX(graph, st);
     end createArray;
 
     function maxDimTraverse
@@ -492,40 +493,51 @@ public
       input Pointer<Variable> var_ptr;
       input SBGraph graph;
       input Vector<Integer> vCount;
-      input Pointer<NameVertexTable.Table> nmvTable;
+      input NameVertexTable.Table nmvTable;
       output SBMultiInterval mi;
       output Integer d;
     protected
+      Option<Integer> od;
       list<Dimension> dims;
       SBSet set;
       SetVertex vertex;
       String name;
     algorithm
-      dims := BVariable.getDimensions(var_ptr);
-      mi := SBGraphUtil.multiIntervalFromDimensions(dims, vCount);
+      od := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = var_ptr));
 
-      set := SBSet.newEmpty();
-      set := SBSet.addAtomicSet(SBAtomicSet.new(mi), set);
+      if isSome(od) then
+        // vertex already exists
+        SOME(d) := od;
+        vertex := AdjacencyList.getVertex(graph, d);
+        mi := SBAtomicSet.aset(UnorderedSet.first(SBSet.asets(vertex.vs)));
+      else
+        // create new vertex
+        dims := BVariable.getDimensions(var_ptr);
+        mi := SBGraphUtil.multiIntervalFromDimensions(dims, vCount);
 
-      vertex := SET_VERTEX(var_ptr, set);
-      d := AdjacencyList.addVertex(graph, vertex);
+        set := SBSet.newEmpty();
+        set := SBSet.addAtomicSet(SBAtomicSet.new(mi), set);
 
-      name := ComponentRef.toString(BVariable.getVarName(var_ptr));
-      Pointer.update(nmvTable, BaseHashTable.addUnique((name, mi), Pointer.access(nmvTable)));
+        vertex := SET_VERTEX(var_ptr, set);
+        d := AdjacencyList.addVertex(graph, vertex);
+
+        name := ComponentRef.toString(BVariable.getVarName(var_ptr));
+        BaseHashTable.addUnique((name, mi), nmvTable);
+      end if;
     end create;
 
     function createTraverse
       input Pointer<Variable> var_ptr;
       input SBGraph graph;
       input Vector<Integer> vCount;
-      input Pointer<NameVertexTable.Table> nmvTable;
+      input NameVertexTable.Table nmvTable;
     algorithm
       (_, _) := create(var_ptr, graph, vCount, nmvTable);
     end createTraverse;
 
     function toString
       input SetVertex v;
-      output String str = Variable.toString(Pointer.access(v.name)) + "\n" + SBSet.toString(v.vs);
+      output String str = Variable.toString(Pointer.access(v.name)) + "\n\t" + SBSet.toString(v.vs);
     end toString;
   end SetVertex;
 
@@ -547,7 +559,7 @@ public
       input SBGraph graph;
       input Vector<Integer> vCount;
       input Vector<Integer> eCount;
-      input Pointer<NameVertexTable.Table> nmvTable;
+      input NameVertexTable.Table nmvTable;
       input HashTableCrToInt.HashTable ht               "hash table to check for relevance";
       input Option<tuple<SBMultiInterval, Integer>> eqn_tpl_opt;
     protected
@@ -567,6 +579,17 @@ public
           Equation body;
 
         case Equation.SCALAR_EQUATION() algorithm
+          _ := Equation.map(eqn, function fromExpression(
+            eqn_tpl   = (eqn_mi, eqn_d),
+            graph     = graph,
+            vCount    = vCount,
+            eCount    = eCount,
+            nmvTable  = nmvTable,
+            ht        = ht)
+          );
+        then ();
+
+        case Equation.ARRAY_EQUATION() algorithm
           _ := Equation.map(eqn, function fromExpression(
             eqn_tpl   = (eqn_mi, eqn_d),
             graph     = graph,
@@ -603,7 +626,7 @@ public
       input SBGraph graph;
       input Vector<Integer> vCount;
       input Vector<Integer> eCount;
-      input Pointer<NameVertexTable.Table> nmvTable;
+      input NameVertexTable.Table nmvTable;
       input HashTableCrToInt.HashTable ht               "hash table to check for relevance";
     algorithm
       _ := match exp
@@ -633,7 +656,7 @@ public
       input list<Subscript> subs;
       input SBGraph graph;
       input Vector<Integer> vCount;
-      input Pointer<NameVertexTable.Table> nmvTable;
+      input NameVertexTable.Table nmvTable;
       output SBMultiInterval outMI;
       output AdjacencyList.VertexDescriptor d;
     algorithm
@@ -660,7 +683,10 @@ public
 
     function toString
       input SetEdge e;
-      output String str = e.name + "\n" + "map:\t" + SBPWLinearMap.toString(e.es1) + "\ninv map:\t" + SBPWLinearMap.toString(e.es2) + "\n";
+      output String str = e.name
+        + "\ndomain:\t" + SBPWLinearMap.domainString(e.es1)
+        + "\nmap v1:\t" + SBPWLinearMap.toString(e.es1)
+        + "\nmap v2:\t" + SBPWLinearMap.toString(e.es2) + "\n";
     end toString;
   end SetEdge;
 

@@ -618,11 +618,14 @@ protected
   function lowerEquation
     input FEquation frontend_equation         "Original Frontend equation.";
     input Boolean init                        "True if an initial equation should be created.";
+    input list<Dimension> for_dims = {}       "accumulated list of surrounding for-loop dimensions";
     output list<Pointer<Equation>> backend_equations   "Resulting Backend equations.";
   algorithm
     backend_equations := match frontend_equation
       local
         list<Pointer<Equation>> result = {}, new_body;
+        Equation body_elem;
+        list<Dimension> new_for_dims;
         Expression lhs, rhs, range;
         ComponentRef lhs_cref, rhs_cref;
         list<FEquation> body;
@@ -632,33 +635,42 @@ protected
         list<FEquation.Branch> branches;
         BEquation.EquationAttributes attr;
 
+      case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty as Type.ARRAY(), source = source)
+        algorithm
+          attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
+          //ToDo! How to get Record size and replace NONE()?
+      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
+
+      // sometimes regular equalities are array equations aswell. Need to update frontend?
+      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty as Type.ARRAY(), source = source)
+        algorithm
+          attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
+          //ToDo! How to get Record size and replace NONE()?
+      then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
+
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         algorithm
           attr := lowerEquationAttributes(ty, init);
-          result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(Type.dimensionCount(ty), lhs, rhs, source, attr))}
-                                          else {Pointer.create(BEquation.SCALAR_EQUATION(lhs, rhs, source, attr))};
+          result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr))}
+                                          else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
       then result;
 
       case FEquation.CREF_EQUALITY(lhs = lhs_cref as NFComponentRef.CREF(ty = ty), rhs = rhs_cref, source = source)
         algorithm
           attr := lowerEquationAttributes(ty, init);
           // No check for complex. Simple equation is more important than complex. -> alias removal!
-      then {Pointer.create(BEquation.SIMPLE_EQUATION(lhs_cref, rhs_cref, source, attr))};
-
-      case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty as Type.ARRAY(), source = source)
-        algorithm
-          attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
-          //ToDo! How to get Record size and replace NONE()?
-      then {Pointer.create(BEquation.ARRAY_EQUATION(List.map(ty.dimensions, Dimension.size), lhs, rhs, source, attr, NONE()))};
+      then {Pointer.create(BEquation.SIMPLE_EQUATION(ty, lhs_cref, rhs_cref, source, attr))};
 
       case FEquation.FOR(iterator = iterator, range = SOME(range), body = body, source = source)
         algorithm
         // Treat each body equation individually because they can have different equation attributes
         // E.g.: DISCRETE, EvalStages
+        new_for_dims := Dimension.fromRange(range)::for_dims;
         for eq in body loop
-          new_body := lowerEquation(eq, init);
-          for body_elem in new_body loop
-            result := Pointer.create(BEquation.FOR_EQUATION(iterator, range, Pointer.access(body_elem), source, Equation.getAttributes(Pointer.access(body_elem)))) :: result;
+          new_body := lowerEquation(eq, init, new_for_dims);
+          for body_elem_ptr in new_body loop
+            body_elem := Pointer.access(body_elem_ptr);
+            result := Pointer.create(BEquation.FOR_EQUATION(Type.addDimensions(Equation.getType(body_elem), new_for_dims), iterator, range, body_elem, source, Equation.getAttributes(body_elem))) :: result;
           end for;
         end for;
       then result;

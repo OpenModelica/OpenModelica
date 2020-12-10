@@ -1280,6 +1280,14 @@ public
     str := stringAppendList(strl);
   end subscriptedTypeName;
 
+  function addDimensions
+    input output Type ty;
+    input list<Dimension> dims;
+  algorithm
+    // flatten arrays here if ty already is ARRAY?
+    ty := ARRAY(ty, dims);
+  end addDimensions;
+
   function simplify
     input output Type ty;
   algorithm

@@ -67,6 +67,7 @@ public
 
   uniontype Equation
     record SCALAR_EQUATION
+      Type ty                         "equality type";
       Expression lhs                  "left hand side expression";
       Expression rhs                  "right hand side expression";
       DAE.ElementSource source        "origin of equation";
@@ -74,7 +75,7 @@ public
     end SCALAR_EQUATION;
 
     record ARRAY_EQUATION
-      list<Integer> dimSize           "dimension sizes";
+      Type ty                         "equality type containing dimensions";
       Expression lhs                  "left hand side expression";
       Expression rhs                  "right hand side expression";
       DAE.ElementSource source        "origin of equation";
@@ -83,6 +84,7 @@ public
     end ARRAY_EQUATION;
 
     record SIMPLE_EQUATION
+      Type ty                         "equality type";
       ComponentRef lhs                "left hand side component reference";
       ComponentRef rhs                "right hand side component reference";
       DAE.ElementSource source        "origin of equation";
@@ -90,7 +92,7 @@ public
     end SIMPLE_EQUATION;
 
     record RECORD_EQUATION
-      Integer size                    "size of equation";
+      Type ty                         "equality type";
       Expression lhs                  "left hand side expression";
       Expression rhs                  "right hand side expression";
       DAE.ElementSource source        "origin of equation";
@@ -113,6 +115,7 @@ public
     end IF_EQUATION;
 
     record FOR_EQUATION
+      Type ty                         "equality type containing dimensions";
       InstNode iter                   "the iterator variable"; // Should this be a cref?
       Expression range                "Start - (Step) - Stop";
       Equation body                   "iterated equation";
@@ -212,7 +215,7 @@ public
       input Pointer<Integer> idx;
       output Pointer<Equation> eq;
     algorithm
-      eq := Pointer.create(SIMPLE_EQUATION(lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
+      eq := Pointer.create(SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
       Equation.createName(eq, idx, "SRT");
     end makeStartEq;
 
@@ -223,7 +226,7 @@ public
       input Pointer<Integer> idx;
       output Pointer<Equation> eq;
     algorithm
-      eq := Pointer.create(SIMPLE_EQUATION(lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
+      eq := Pointer.create(SIMPLE_EQUATION(ComponentRef.getSubscriptedType(lhs), lhs, rhs, DAE.emptyElementSource, EQ_ATTR_DEFAULT_INITIAL));
       Equation.createName(eq, idx, "PRE");
     end makePreEq;
 
@@ -530,8 +533,8 @@ public
                 eq.lhs := cr;
               then eq;
               case _ guard(Type.isScalar(Expression.typeOf(lhs)))
-              then SCALAR_EQUATION(lhs, Expression.fromCref(eq.rhs), eq.source, eq.attr);
-              else ARRAY_EQUATION({}, lhs, Expression.fromCref(eq.rhs), eq.source, eq.attr, NONE());
+              then SCALAR_EQUATION(Expression.typeOf(lhs), lhs, Expression.fromCref(eq.rhs), eq.source, eq.attr);
+              else ARRAY_EQUATION(Expression.typeOf(lhs), lhs, Expression.fromCref(eq.rhs), eq.source, eq.attr, NONE());
             end match;
         then new_eq;
         else fail();
@@ -567,8 +570,8 @@ public
                 eq.rhs := cr;
               then eq;
               case _ guard(Type.isScalar(Expression.typeOf(rhs)))
-              then SCALAR_EQUATION(Expression.fromCref(eq.lhs), rhs, eq.source, eq.attr);
-              else ARRAY_EQUATION({}, Expression.fromCref(eq.lhs), rhs, eq.source, eq.attr, NONE());
+              then SCALAR_EQUATION(eq.ty, Expression.fromCref(eq.lhs), rhs, eq.source, eq.attr);
+              else ARRAY_EQUATION(eq.ty, Expression.fromCref(eq.lhs), rhs, eq.source, eq.attr, NONE());
             end match;
         then new_eq;
       end match;
@@ -588,8 +591,8 @@ public
     algorithm
       ty := Expression.typeOf(lhs);
       eqn := match ty
-        case Type.ARRAY() then ARRAY_EQUATION(List.map(ty.dimensions, Dimension.size), lhs, rhs, source, attr, NONE());
-        else SCALAR_EQUATION(lhs, rhs, source, attr);
+        case Type.ARRAY() then ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE());
+        else SCALAR_EQUATION(ty, lhs, rhs, source, attr);
       end match;
       eqn_ptr := Pointer.create(eqn);
       Equation.createName(eqn_ptr, idx, context);
@@ -672,15 +675,14 @@ public
       input Pointer<Integer> idx;
       input String context;
     protected
-      Equation eqn;
+      Equation eqn = Pointer.access(eqn_ptr);
       Pointer<Variable> residualVar;
     algorithm
       // create residual var as name
-      (residualVar, _) := BVariable.makeResidualVar(context, Pointer.access(idx));
+      (residualVar, _) := BVariable.makeResidualVar(context, Pointer.access(idx), getType(eqn));
       Pointer.update(idx, Pointer.access(idx) + 1);
 
       // update equation attributes
-      eqn := Pointer.access(eqn_ptr);
       eqn := match eqn
         case SCALAR_EQUATION() algorithm
           eqn.attr := EquationAttributes.setResidualVar(eqn.attr, residualVar);
@@ -734,7 +736,7 @@ public
       Pointer<Variable> residualVar;
     algorithm
       // create residual var and update pointers
-      (residualVar, _) := BVariable.makeResidualVar(context, Pointer.access(idx));
+      (residualVar, _) := BVariable.makeResidualVar(context, Pointer.access(idx), getType(eqn));
       Pointer.update(residual_vars, residualVar :: Pointer.access(residual_vars));
       Pointer.update(idx, Pointer.access(idx) + 1);
 
@@ -809,6 +811,20 @@ public
       end match;
       exp := SimplifyExp.simplify(exp);
     end getResidualExp;
+
+    function getType
+      input Equation eq;
+      output Type ty;
+    algorithm
+      ty := match eq
+        case SCALAR_EQUATION()  then eq.ty;
+        case SIMPLE_EQUATION()  then eq.ty;
+        case ARRAY_EQUATION()   then eq.ty;
+        case RECORD_EQUATION()  then eq.ty;
+        case FOR_EQUATION()     then eq.ty;
+                                else Type.REAL(); // TODO: WRONG there should not be an else case
+      end match;
+    end getType;
 
     function isDiscrete
       input Pointer<Equation> eqn;
