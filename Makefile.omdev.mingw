@@ -113,7 +113,10 @@ omoptim: omc omplot qtclientsDLLs
 	$(MAKE) -f $(defaultMakefileTarget) -C OMOptim OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 omsens:
-	cp -rfp OMSens $(OMBUILDDIR)
+	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=$(OMBUILDDIR)
+
+omsens-clean:
+	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=$(OMBUILDDIR) clean
 
 omsens_qt:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
