@@ -635,22 +635,27 @@ protected
         list<FEquation.Branch> branches;
         BEquation.EquationAttributes attr;
 
-      case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty as Type.ARRAY(), source = source)
+      case FEquation.ARRAY_EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
+        guard(Type.isArray(ty))
         algorithm
           attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
+          ty := Type.addDimensions(ty, for_dims);
           //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
       // sometimes regular equalities are array equations aswell. Need to update frontend?
-      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty as Type.ARRAY(), source = source)
+      case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
+        guard(Type.isArray(ty))
         algorithm
           attr := lowerEquationAttributes(Type.arrayElementType(ty), init);
+          ty := Type.addDimensions(ty, for_dims);
           //ToDo! How to get Record size and replace NONE()?
       then {Pointer.create(BEquation.ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE()))};
 
       case FEquation.EQUALITY(lhs = lhs, rhs = rhs, ty = ty, source = source)
         algorithm
           attr := lowerEquationAttributes(ty, init);
+          ty := Type.addDimensions(ty, for_dims);
           result := if Type.isComplex(ty) then {Pointer.create(BEquation.RECORD_EQUATION(ty, lhs, rhs, source, attr))}
                                           else {Pointer.create(BEquation.SCALAR_EQUATION(ty, lhs, rhs, source, attr))};
       then result;
@@ -658,6 +663,7 @@ protected
       case FEquation.CREF_EQUALITY(lhs = lhs_cref as NFComponentRef.CREF(ty = ty), rhs = rhs_cref, source = source)
         algorithm
           attr := lowerEquationAttributes(ty, init);
+          ty := Type.addDimensions(ty, for_dims);
           // No check for complex. Simple equation is more important than complex. -> alias removal!
       then {Pointer.create(BEquation.SIMPLE_EQUATION(ty, lhs_cref, rhs_cref, source, attr))};
 
@@ -670,7 +676,7 @@ protected
           new_body := lowerEquation(eq, init, new_for_dims);
           for body_elem_ptr in new_body loop
             body_elem := Pointer.access(body_elem_ptr);
-            result := Pointer.create(BEquation.FOR_EQUATION(Type.addDimensions(Equation.getType(body_elem), new_for_dims), iterator, range, body_elem, source, Equation.getAttributes(body_elem))) :: result;
+            result := Pointer.create(BEquation.FOR_EQUATION(Equation.getType(body_elem), iterator, range, body_elem, source, Equation.getAttributes(body_elem))) :: result;
           end for;
         end for;
       then result;
@@ -1017,7 +1023,7 @@ protected
     Pointer<Variable> var;
   algorithm
     try
-      var := VariablePointers.getVarSafe(cref, variables);
+      var := VariablePointers.getVarSafe(ComponentRef.stripSubscriptsAll(cref), variables);
       cref := lowerComponentReferenceInstNode(cref, var);
     else
       if Flags.isSet(Flags.FAILTRACE) then

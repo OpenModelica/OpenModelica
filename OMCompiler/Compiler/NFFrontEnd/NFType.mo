@@ -1285,7 +1285,9 @@ public
     input list<Dimension> dims;
   algorithm
     // flatten arrays here if ty already is ARRAY?
-    ty := ARRAY(ty, dims);
+    if not listEmpty(dims) then
+      ty := ARRAY(ty, dims);
+    end if;
   end addDimensions;
 
   function simplify

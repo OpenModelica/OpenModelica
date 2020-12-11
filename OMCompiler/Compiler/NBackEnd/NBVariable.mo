@@ -140,7 +140,7 @@ public
       case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) +
-        ", because of wrong InstNode (not VAR_NODE). Please use NBVariable.getVarSafe only to debug here."});
+        ", because of wrong InstNode (not VAR_NODE). Show lowering errors with -d=failtrace."});
       then fail();
     end match;
   end getVarPointer;

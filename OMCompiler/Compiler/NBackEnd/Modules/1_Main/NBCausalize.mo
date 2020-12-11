@@ -39,7 +39,6 @@ public
 
 protected
   // NF imports
-  import Ceval = NFCeval;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -66,6 +65,7 @@ protected
   import NBVariable.VariablePointers;
 
   // util imports
+  import BuiltinSystem = System;
   import Error;
   import GC;
   import HashTableCrToInt = NBHashTableCrToInt;
@@ -396,6 +396,9 @@ public
       Vector<Integer> vCount, eCount;
       NameVertexTable.Table nmvTable;
     algorithm
+      // reset unique tick index to 0
+      BuiltinSystem.tmpTickReset(0);
+
       // create empty set based graph
       graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
 
@@ -601,9 +604,8 @@ public
         then ();
 
         case Equation.FOR_EQUATION() algorithm
-          range := Ceval.evalExp(eqn.range, Ceval.EvalTarget.RANGE(Equation.info(eqn)));
-          body := applyIterator(eqn.iter, range, eqn.body);
-          fromEquation(eqn.body, graph, vCount, eCount, nmvTable, ht, SOME((eqn_mi, eqn_d)));
+          body := applyIterator(eqn.iter, eqn.range, eqn.body);
+          fromEquation(body, graph, vCount, eCount, nmvTable, ht, SOME((eqn_mi, eqn_d)));
         then ();
 
         else algorithm
@@ -635,16 +637,18 @@ public
           SBMultiInterval eqn_mi, var_mi;
           AdjacencyList.VertexDescriptor eqn_d, var_d;
 
-        case Expression.CREF(cref = cref) guard(BaseHashTable.hasKey(cref, ht)) algorithm
-          (eqn_mi, eqn_d) := eqn_tpl;
-          (var_mi, var_d) := getVariableIntervals(
-            var_ptr   = BVariable.getVarPointer(cref),
-            subs      = ComponentRef.getSubscripts(cref),
-            graph     = graph,
-            vCount    = vCount,
-            nmvTable  = nmvTable
-          );
-          updateGraph(eqn_d, var_d, eqn_mi, var_mi, graph, eCount);
+        case Expression.CREF(cref = cref)
+          guard(BaseHashTable.hasKey(ComponentRef.stripSubscriptsAll(cref), ht))
+          algorithm
+            (eqn_mi, eqn_d) := eqn_tpl;
+            (var_mi, var_d) := getVariableIntervals(
+              var_ptr   = BVariable.getVarPointer(cref),
+              subs      = ComponentRef.getSubscripts(cref),
+              graph     = graph,
+              vCount    = vCount,
+              nmvTable  = nmvTable
+            );
+            updateGraph(eqn_d, var_d, eqn_mi, var_mi, graph, eCount);
         then ();
 
         else ();
@@ -661,7 +665,10 @@ public
       output AdjacencyList.VertexDescriptor d;
     algorithm
       (outMI, d) := SetVertex.create(var_ptr, graph, vCount, nmvTable);
-      outMI := SBGraphUtil.multiIntervalFromSubscripts(subs, vCount, outMI);
+      // if there are no subscripts just use full multi interval
+      if not listEmpty(subs) then
+        outMI := SBGraphUtil.multiIntervalFromSubscripts(subs, vCount, outMI);
+      end if;
     end getVariableIntervals;
 
     function updateGraph
