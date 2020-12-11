@@ -27,7 +27,7 @@ omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
 
 # Export compile commands (compile_commands.json) for each source file. This helps editors (e.g. vscode, emacs) have
-# a more accurate code navigation and intellisense. E.g includes can be pinpointed instead of
+# a more accurate code navigation and intellisense. E.g. includes can be pinpointed instead of
 # using glob expressions to parse everything.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -69,16 +69,19 @@ write_compiler_detection_header(
 SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
 
 
-option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
-omc_add_to_report(OMC_USE_CCACHE)
+omc_option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
 
-
-find_program(CCACHE_PROGRAM ccache)
-if(OMC_USE_CCACHE AND CCACHE_PROGRAM)
+if(OMC_USE_CCACHE)
+  find_program(CCACHE_PROGRAM ccache)
+  if(CCACHE_PROGRAM)
     message(STATUS "Found ccache. It will be used for compilation C/C++ sources")
     set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
     set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE_PROGRAM})
     omc_add_to_report(CCACHE_PROGRAM)
+  else()
+    message(FATAL_ERROR "ccache program not found. It is highly recommended to use ccache for compilation of OpenModelica. Please install ccache and rerun configuration.
+            You can disable this check by specifying -DOMC_USE_CCACHE=OFF to CMake configuration command.")
+  endif()
 endif()
 
 
