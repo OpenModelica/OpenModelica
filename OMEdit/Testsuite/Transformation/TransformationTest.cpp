@@ -35,6 +35,7 @@
 #include "TransformationTest.h"
 #include "Util.h"
 #include "OMEditApplication.h"
+#include "MainWindow.h"
 #include "Element/Transformation.h"
 
 #define GC_THREADS
@@ -58,4 +59,9 @@ void TransformationTest::correctPlacementAnnotation()
 
   Transformation transformation;
   transformation.parseTransformationString(placementAnnotationString, 200, 200);
+}
+
+void TransformationTest::cleanupTestCase()
+{
+  MainWindow::instance()->close();
 }

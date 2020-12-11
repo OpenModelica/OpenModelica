@@ -338,8 +338,7 @@ bool SimulationOutputHandler::isMaximumDisplayLimitReached() const
  * \param atts
  * \return
  */
-bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QString &localName, const QString &qName,
-                                           const QXmlAttributes &atts)
+bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QString &localName, const QString &qName, const QXmlAttributes &atts)
 {
   Q_UNUSED(namespaceURI);
   Q_UNUSED(localName);
@@ -353,23 +352,29 @@ bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QS
   /* if display limit is reached then close and display the so far text
    * and display a message showing that the limit is reached.
    */
+  static int init = 0;
   if (isMaximumDisplayLimitReached()) {
-    while (mLevel > 0) {
+    // Only generate the reached display limit message once.
+    if (!init) {
+      init = 1;
+
+      while (mLevel > 0) {
+        endElement("", "", "message");
+      }
+
+      if (mpSimulationOutputWidget->isOutputStructured()) {
+        mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+      } else {
+        mpSimulationMessage = new SimulationMessage;
+      }
+      mpSimulationMessage->mStream = "stdout";
+      mpSimulationMessage->mType = StringHandler::OMEditInfo;
+      mpSimulationMessage->mText = QString("Reached display limit");
+      mpSimulationMessage->mLevel = mLevel;
+      mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
+      mLevel++;
       endElement("", "", "message");
     }
-
-    if (mpSimulationOutputWidget->isOutputStructured()) {
-      mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
-    } else {
-      mpSimulationMessage = new SimulationMessage;
-    }
-    mpSimulationMessage->mStream = "stdout";
-    mpSimulationMessage->mType = StringHandler::OMEditInfo;
-    mpSimulationMessage->mText = QString("Reached display limit");
-    mpSimulationMessage->mLevel = mLevel;
-    mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
-    mLevel++;
-    endElement("", "", "message");
     return true;
   }
 

@@ -32,31 +32,47 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#ifndef BROWSEMSL_H
-#define BROWSEMSL_H
+#ifndef HOMOTOPYTEST_H
+#define HOMOTOPYTEST_H
 
 #include <QObject>
+#include <QProcess>
 
 /*!
- * \brief The BrowseMSL class
- * Browses the items in the Libraries tree.
+ * \brief The HomotopyTest class
+ * This test check the simulation of model containing the logging annotation.
+ * `HomotopyTest.M1` contains `annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V"));`
+ * `HomotopyTest.M2` contains `annotation(__OpenModelica_simulationFlags(lv="LOG_NLS_V,LOG_INIT_HOMOTOPY"));`
  */
-class BrowseMSL: public QObject
+class HomotopyTest: public QObject
 {
   Q_OBJECT
-
 private slots:
   /*!
-   * \brief electricalAnalogBasic
-   * Browses the Modelica.Electrical.Analog.Basic
+   * \brief initTestCase
+   * Loads the HomotopyTest.mo file.
    */
-  void electricalAnalogBasic();
+  void initTestCase();
   /*!
-   * \brief mediaAir
-   * Browses the Modelica.Media.Air
+   * \brief simulateHomotopyTestM1
+   * Simulates the HomotopyTest.M1 model.
    */
-  void mediaAir();
+  void simulateHomotopyTestM1();
+  /*!
+   * \brief simulateHomotopyTestM2
+   * Simulates the HomotopyTest.M2 model.
+   */
+  void simulateHomotopyTestM2();
   void cleanupTestCase();
+public:
+  /*!
+   * \brief simulate
+   * Simulates the class. The simulationNumber argument tells which simulation it is i.e., first, second and so on.
+   * \param className
+   * \param simulationNumber
+   */
+  void simulate(const QString &className, const int simulationNumber);
+  void readSimulationLogFile(const QString &simulationLogFilePath);
 };
 
-#endif // BROWSEMSL_H
+#endif // HOMOTOPYTEST_H

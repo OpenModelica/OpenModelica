@@ -28,40 +28,12 @@
  #
  #/
 
-QT += network core gui webkit xml xmlpatterns svg opengl
-greaterThan(QT_MAJOR_VERSION, 4) {
-  QT += printsupport widgets webkitwidgets concurrent testlib
-} else {
-  CONFIG += qtestlib
-}
+include(../Common/Testsuite.pri)
 
-LIBS += -L../../bin -lOMEdit
+TARGET = Homotopy
 
-OMEDIT_ROOT = ../../
+SOURCES += ../Common/Util.cpp \
+  HomotopyTest.cpp
 
-# Windows libraries and includes
-win32 {
-  include(../../OMEditGUI/OMEditGUI.win.config.pri)
-} else { # Unix libraries and includes
-  include(../../OMEditGUI/OMEditGUI.unix.config.pri)
-}
-
-INCLUDEPATH += ../../ \
-  ../../OMEditLIB \
-  ../Common \
-  $$OPENMODELICAHOME/include \
-  $$OPENMODELICAHOME/include/omplot \
-  $$OPENMODELICAHOME/include/omplot/qwt \
-  $$OPENMODELICAHOME/include/omc/c \
-  $$OPENMODELICAHOME/include/omc/scripting-API
-
-# Don't show the warnings from included headers.
-# Don't add a space between for and open parenthesis below. Qt4 complains about it.
-for(path, INCLUDEPATH) {
-  QMAKE_CXXFLAGS += -isystem $${path}
-}
-
-DESTDIR = ../../bin/tests
-
-MOC_DIR = generatedfiles/moc
-
+HEADERS += ../Common/Util.h \
+  HomotopyTest.h

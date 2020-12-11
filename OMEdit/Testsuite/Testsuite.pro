@@ -32,5 +32,6 @@ TEMPLATE = subdirs
 
 SUBDIRS = BrowseMSL \
   Diagram \
-  Transformation
+  Transformation \
+  Homotopy
 
