@@ -966,6 +966,13 @@ public
       output VariablePointers new = fromList(toList(variables));
     end clone;
 
+    function size
+      "returns the number of elements, not the actual scalarized number of variables!
+      Use compress before this, returns last used index for safety reasons."
+      input VariablePointers variables;
+      output Integer sz = ExpandableArray.getLastUsedIndex(variables.varArr);
+    end size;
+
     function toList
       "Creates a VariablePointer list from VariablePointers."
       input VariablePointers variables;
@@ -1084,13 +1091,6 @@ public
       mapPtr(variables, function getVarNameTraverse(acc = acc));
       names := listReverse(Pointer.access(acc));
     end getVarNames;
-
-    function size
-      input VariablePointers variables;
-      output Integer i;
-    algorithm
-      i := ExpandableArray.getNumberOfElements(variables.varArr);
-    end size;
 
     function compress"O(n)
       Reorders the elements in order to remove all the gaps.

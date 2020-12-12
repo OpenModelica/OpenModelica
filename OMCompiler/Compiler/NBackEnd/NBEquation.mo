@@ -1375,6 +1375,13 @@ public
       output EquationPointers new = fromList(toList(equations));
     end clone;
 
+    function size
+      "returns the number of elements, not the actual scalarized number of equations!
+      Use compress before this, returns last used index for safety reasons."
+      input EquationPointers equations;
+      output Integer sz = ExpandableArray.getLastUsedIndex(equations.eqArr);
+    end size;
+
     function toList
       "Creates a EquationPointer list from EquationPointers."
       input EquationPointers equations;

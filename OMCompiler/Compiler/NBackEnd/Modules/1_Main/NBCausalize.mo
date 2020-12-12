@@ -177,7 +177,6 @@ protected
     variables := VariablePointers.compress(system.unknowns);
     equations := EquationPointers.compress(system.equations);
 
-    // create scalar adjacency matri for now
     adj := AdjacencyMatrix.create(variables, equations, AdjacencyMatrixType.SCALAR);
     (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(adj, variables, equations, funcTree, varData, eqData, false, true);
     comps := Sorting.tarjan(adj, matching, variables, equations);
@@ -194,6 +193,8 @@ protected
     VariablePointers variables;
     EquationPointers equations;
     AdjacencyMatrix adj;
+    Matching matching;
+    list<StrongComponent> comps;
   algorithm
     // compress the arrays to remove gaps
     variables := VariablePointers.compress(system.unknowns);
@@ -201,6 +202,7 @@ protected
 
     // create scalar adjacency matrix for now
     adj := AdjacencyMatrix.create(variables, equations, AdjacencyMatrixType.ARRAY);
+    matching := Matching.regular(adj);
   end causalizeArray;
 
   function causalizeDAEMode extends Module.causalizeInterface;
@@ -394,13 +396,14 @@ public
       AdjacencyList<SetVertex, SetEdge> graph;
       Pointer<Integer> max_dim = Pointer.create(1);
       Vector<Integer> vCount, eCount;
-      NameVertexTable.Table nmvTable;
+      UnorderedMap<String, SBMultiInterval> map;
     algorithm
       // reset unique tick index to 0
       BuiltinSystem.tmpTickReset(0);
 
-      // create empty set based graph
+      // create empty set based graph and map
       graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
+      map := UnorderedMap.new<SBMultiInterval>(stringHashDjb2Mod, stringEq, VariablePointers.size(vars) + EquationPointers.size(eqs));
 
       // find maximum number of dimensions
       VariablePointers.mapPtr(vars, function maxDimTraverse(max_dim = max_dim));
@@ -408,25 +411,20 @@ public
       vCount := Vector.newFill(Pointer.access(max_dim), 1);
       eCount := Vector.newFill(Pointer.access(max_dim), 1);
 
-      // create empty hash table
-      nmvTable := NameVertexTable.new();
-
       // create vertices for variables
-      VariablePointers.mapPtr(vars, function SetVertex.createTraverse(graph = graph, vCount = vCount, nmvTable = nmvTable));
+      VariablePointers.mapPtr(vars, function SetVertex.createTraverse(graph = graph, vCount = vCount));
 
       // create vertices for equations and create edges
       EquationPointers.map(eqs, function SetEdge.fromEquation(
         graph         = graph,
         vCount        = vCount,
         eCount        = eCount,
-        nmvTable      = nmvTable,
         ht            = vars.ht,
         eqn_tpl_opt   = NONE()
       ));
 
       if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
         print(AdjacencyList.toString(graph));
-        BaseHashTable.dumpHashTable(nmvTable);
       end if;
 
       adj := ARRAY_ADJACENCY_MATRIX(graph, st);
@@ -496,7 +494,6 @@ public
       input Pointer<Variable> var_ptr;
       input SBGraph graph;
       input Vector<Integer> vCount;
-      input NameVertexTable.Table nmvTable;
       output SBMultiInterval mi;
       output Integer d;
     protected
@@ -525,7 +522,7 @@ public
         d := AdjacencyList.addVertex(graph, vertex);
 
         name := ComponentRef.toString(BVariable.getVarName(var_ptr));
-        BaseHashTable.addUnique((name, mi), nmvTable);
+        //KAB BaseHashTable.addUnique((name, mi), nmvTable);
       end if;
     end create;
 
@@ -533,9 +530,8 @@ public
       input Pointer<Variable> var_ptr;
       input SBGraph graph;
       input Vector<Integer> vCount;
-      input NameVertexTable.Table nmvTable;
     algorithm
-      (_, _) := create(var_ptr, graph, vCount, nmvTable);
+      (_, _) := create(var_ptr, graph, vCount);
     end createTraverse;
 
     function toString
@@ -547,8 +543,8 @@ public
   uniontype SetEdge
     record SET_EDGE
       String name         "is always E_ + String(System.tmpTick())";
-      SBPWLinearMap es1;
-      SBPWLinearMap es2;
+      SBPWLinearMap F;
+      SBPWLinearMap U;
     end SET_EDGE;
 
     function isEqual
@@ -562,7 +558,6 @@ public
       input SBGraph graph;
       input Vector<Integer> vCount;
       input Vector<Integer> eCount;
-      input NameVertexTable.Table nmvTable;
       input HashTableCrToInt.HashTable ht               "hash table to check for relevance";
       input Option<tuple<SBMultiInterval, Integer>> eqn_tpl_opt;
     protected
@@ -571,7 +566,7 @@ public
     algorithm
       // only get top level residual var
       if not Util.isSome(eqn_tpl_opt) then
-        (eqn_mi, eqn_d) := SetVertex.create(Equation.getResidualVar(Pointer.create(eqn)), graph, vCount, nmvTable);
+        (eqn_mi, eqn_d) := SetVertex.create(Equation.getResidualVar(Pointer.create(eqn)), graph, vCount);
       else
         SOME((eqn_mi, eqn_d)) := eqn_tpl_opt;
       end if;
@@ -587,7 +582,6 @@ public
             graph     = graph,
             vCount    = vCount,
             eCount    = eCount,
-            nmvTable  = nmvTable,
             ht        = ht)
           );
         then ();
@@ -598,14 +592,13 @@ public
             graph     = graph,
             vCount    = vCount,
             eCount    = eCount,
-            nmvTable  = nmvTable,
             ht        = ht)
           );
         then ();
 
         case Equation.FOR_EQUATION() algorithm
           body := applyIterator(eqn.iter, eqn.range, eqn.body);
-          fromEquation(body, graph, vCount, eCount, nmvTable, ht, SOME((eqn_mi, eqn_d)));
+          fromEquation(body, graph, vCount, eCount, ht, SOME((eqn_mi, eqn_d)));
         then ();
 
         else algorithm
@@ -628,7 +621,6 @@ public
       input SBGraph graph;
       input Vector<Integer> vCount;
       input Vector<Integer> eCount;
-      input NameVertexTable.Table nmvTable;
       input HashTableCrToInt.HashTable ht               "hash table to check for relevance";
     algorithm
       _ := match exp
@@ -645,8 +637,7 @@ public
               var_ptr   = BVariable.getVarPointer(cref),
               subs      = ComponentRef.getSubscripts(cref),
               graph     = graph,
-              vCount    = vCount,
-              nmvTable  = nmvTable
+              vCount    = vCount
             );
             updateGraph(eqn_d, var_d, eqn_mi, var_mi, graph, eCount);
         then ();
@@ -660,11 +651,10 @@ public
       input list<Subscript> subs;
       input SBGraph graph;
       input Vector<Integer> vCount;
-      input NameVertexTable.Table nmvTable;
       output SBMultiInterval outMI;
       output AdjacencyList.VertexDescriptor d;
     algorithm
-      (outMI, d) := SetVertex.create(var_ptr, graph, vCount, nmvTable);
+      (outMI, d) := SetVertex.create(var_ptr, graph, vCount);
       // if there are no subscripts just use full multi interval
       if not listEmpty(subs) then
         outMI := SBGraphUtil.multiIntervalFromSubscripts(subs, vCount, outMI);
@@ -691,9 +681,8 @@ public
     function toString
       input SetEdge e;
       output String str = e.name
-        + "\ndomain:\t" + SBPWLinearMap.domainString(e.es1)
-        + "\nmap v1:\t" + SBPWLinearMap.toString(e.es1)
-        + "\nmap v2:\t" + SBPWLinearMap.toString(e.es2) + "\n";
+        + "\nmap F:\t" + SBPWLinearMap.toString(e.F)
+        + "\nmap U:\t" + SBPWLinearMap.toString(e.U) + "\n";
     end toString;
   end SetEdge;
 
@@ -751,10 +740,14 @@ public
             (matching, _) := scalarMatching(adj.m, adj.mT, transposed, partially);
           end if;
         then matching;
+
         case ARRAY_ADJACENCY_MATRIX() algorithm
-          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
-        then fail();
+          //Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
+          matching := arrayMatching(adj.graph);
+        then matching;
+
         case EMPTY_ADJACENCY_MATRIX() then EMPTY_MATCHING();
+
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
         then fail();
@@ -868,6 +861,9 @@ public
       end for;
     end toStringSingle;
 
+    // ######################################
+    //            SCALAR MATCHING
+    // ######################################
     function scalarMatching
       input array<list<Integer>> m;
       input array<list<Integer>> mT;
@@ -955,6 +951,35 @@ public
         end if;
       end for;
     end augmentPath;
+
+
+    // ######################################
+    //            ARRAY MATCHING
+    // ######################################
+    function arrayMatching
+      input SBGraph graph;
+      output Matching matching;
+    algorithm
+      matching := ARRAY_MATCHING();
+    end arrayMatching;
+
+    type EdgeSet = UnorderedSet<SBSet>;
+    type VertexSet = UnorderedSet<SBSet>;
+
+    function augmentPathF
+      "augmenting a path starting on a set vertex representing an equation F (function)"
+    end augmentPathF;
+
+    function augmentPathU
+      "augmenting a path starting on a set vertex representing a variable U (unknown)"
+      input SBGraph graph "full bipartite graph";
+      input SBSet U       "start vertex";
+      input EdgeSet E_M   "matched edges";
+    protected
+      list<SBSet> P_max = {};
+    algorithm
+    end augmentPathU;
+
   end Matching;
 
   encapsulated package IndexReduction

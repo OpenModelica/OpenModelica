@@ -985,10 +985,10 @@ algorithm
     // new backend - also activates new frontend by default
     case (graph, filenameprefix) guard(Flags.getConfigBool(Flags.NEW_BACKEND))
       algorithm
-        System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
-
-        // set new instantiation flag to true
+        // set implied flags to true
         FlagsUtil.enableDebug(Flags.SCODE_INST);
+        FlagsUtil.enableDebug(Flags.NF_SCALARIZE);
+        // ToDo: set permanently matching -> SBGraphs
 
         // ================================
         //             FRONTEND
@@ -1002,17 +1002,19 @@ algorithm
         // ================================
         //             BACKEND
         // ================================
+        System.realtimeTick(ClockIndexes.RT_CLOCK_BACKEND);
         bdae := NBackendDAE.lower(flatModel, funcTree);
         if Flags.isSet(Flags.OPT_DAE_DUMP) then
           print(NBackendDAE.toString(bdae, "(After Lowering)"));
         end if;
         bdae := NBackendDAE.solve(bdae);
-
         timeBackend := System.realtimeTock(ClockIndexes.RT_CLOCK_BACKEND);
         ExecStat.execStat("backend");
 
+        // ================================
+        //             SIMCODE
+        // ================================
         (libs, file_dir, timeSimCode, timeTemplates) := generateModelCodeNewBackend(bdae, className, inSimSettingsOpt);
-
     then (true, libs, file_dir);
 
     // old backend
