@@ -803,7 +803,7 @@ int ida_solver_step(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInf
   int saveJumpState;
   long int tmp;
   static unsigned int stepsOutputCounter = 1;
-  int stepsMode;
+  int stepsMode;    /* Has to be IDA_NORMAL (1) or IDA_ONE_STEP (2) */
   int restartAfterLSFail = 0;
 
   if (measure_time_flag) rt_tick(SIM_TIMER_SOLVER);
