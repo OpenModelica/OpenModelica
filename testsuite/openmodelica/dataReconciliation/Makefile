@@ -37,6 +37,9 @@ TSP_Splitter7.mos\
 TSP_FourFlows.mos\
 TSP_FourFlows1.mos\
 TSP_FourFlows3.mos\
+TSP_FourFlows8.mos\
+TSP_FourFlows9.mos\
+TSP_FourFlows10.mos\
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
@@ -45,6 +48,8 @@ TSP_FourFlows2.mos\
 TSP_FourFlows4.mos\
 TSP_FourFlows5.mos\
 TSP_FourFlows6.mos\
+TSP_FourFlows7.mos\
+TSP_FourFlows11.mos\
 TSP_Pipe6.mos\
 
 
