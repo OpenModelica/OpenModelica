@@ -987,7 +987,7 @@ algorithm
       algorithm
         // set implied flags to true
         FlagsUtil.enableDebug(Flags.SCODE_INST);
-        FlagsUtil.enableDebug(Flags.NF_SCALARIZE);
+        FlagsUtil.disableDebug(Flags.NF_SCALARIZE);
         // ToDo: set permanently matching -> SBGraphs
 
         // ================================

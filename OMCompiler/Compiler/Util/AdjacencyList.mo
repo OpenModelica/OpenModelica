@@ -34,6 +34,7 @@ encapsulated uniontype AdjacencyList<VertexT, EdgeT>
 
 protected
   import List;
+  import SBSet;
   import StringUtil;
 
 public
@@ -83,6 +84,14 @@ public
     al := ADJACENCY_LIST(Vector.new<VertexT>(), Vector.new<EdgeT>(), Vector.new<Indices>(), vertexEq, edgeEq, vertexStr, edgeStr);
   end new;
 
+  function getRow
+    input AdjacencyList<VertexT, EdgeT> al;
+    input VertexDescriptor d;
+    output list<Integer> row;
+  algorithm
+    row := Vector.get(al.graph, d);
+  end getRow;
+
   function addVertex
     input AdjacencyList<VertexT, EdgeT> al;
     input VertexT v;
@@ -117,11 +126,30 @@ public
     v := Vector.get(al.vertices, d);
   end getVertex;
 
+  function getVerticesFromSet
+    "kabdelhak: seems inefficient. There has to be a better solution"
+    input AdjacencyList<VertexT, EdgeT> al;
+    input SBSet set;
+    input getSetFn getSet;
+    output list<VertexT> set_vertices = {};
+    partial function getSetFn
+      input VertexT v;
+      output SBSet s;
+    end getSetFn;
+  algorithm
+    for v in vertices(al) loop
+      if not SBSet.isEmpty(SBSet.intersection(getSet(v), set)) then
+        set_vertices := v :: set_vertices;
+      end if;
+    end for;
+  end getVerticesFromSet;
+
   function addEdge
     input AdjacencyList<VertexT, EdgeT> al;
     input VertexDescriptor d1;
     input VertexDescriptor d2;
     input EdgeT e;
+    output Integer ei;
   protected
     function edge_finder
       input Integer index;
@@ -132,7 +160,6 @@ public
     end edge_finder;
   protected
     list<Integer> eil;
-    Integer ei;
   algorithm
     eil := Vector.get(al.graph, d1);
 
@@ -148,6 +175,14 @@ public
       Vector.update(al.edges, ei, e);
     end if;
   end addEdge;
+
+  function getEdge
+    input AdjacencyList<VertexT, EdgeT> al;
+    input Integer d;
+    output EdgeT e;
+  algorithm
+    e := Vector.get(al.edges, d);
+  end getEdge;
 
   function isEmpty
     input AdjacencyList<VertexT, EdgeT> al;

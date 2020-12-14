@@ -86,6 +86,18 @@ public
     variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
+  function hash
+    input Variable var;
+    input Integer mod;
+    output Integer i = ComponentRef.hash(var.name, mod);
+  end hash;
+
+  function equalName
+    input Variable var1;
+    input Variable var2;
+    output Boolean b = ComponentRef.isEqual(var1.name, var2.name);
+  end equalName;
+
   function isStructural
     input Variable variable;
     output Boolean structural =

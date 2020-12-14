@@ -411,7 +411,7 @@ protected
   algorithm
     (name, pw1, pw2) := SBGraphUtil.linearMapFromIntervals(d1, d2, mi1, mi2, eCount);
     se := SET_EDGE(name, pw1, pw2);
-    AdjacencyList.addEdge(graph, d1, d2, se);
+    _ := AdjacencyList.addEdge(graph, d1, d2, se);
   end updateGraph;
 
   function createMaps

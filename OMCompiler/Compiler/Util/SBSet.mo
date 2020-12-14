@@ -217,6 +217,11 @@ public
     end if;
   end union;
 
+  function cardinality
+    input SBSet set;
+    output Integer card = UnorderedSet.fold(set.asets, SBAtomicSet.cardinality, 0);
+  end cardinality;
+
   function minElem
     input SBSet set;
     output array<Integer> res;
