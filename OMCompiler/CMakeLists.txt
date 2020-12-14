@@ -11,6 +11,9 @@ set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
+string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/.cmake/")
@@ -20,9 +23,11 @@ include(omc_check_exists)
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_CXX_COMPILER_ID)
 omc_add_to_report(CMAKE_C_COMPILER_ID)
+omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
+
 
 # Export compile commands (compile_commands.json) for each source file. This helps editors (e.g. vscode, emacs) have
-# a more accurate code navigation and intellisense. E.g includes can be pinpointed instead of
+# a more accurate code navigation and intellisense. E.g. includes can be pinpointed instead of
 # using glob expressions to parse everything.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -33,6 +38,8 @@ if(NOT CMAKE_BUILD_TYPE)
 endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
+
+include(GNUInstallDirs)
 # Precaution so that users do not install in system folders (e.g. /user/, /usr/local/)
 # unintentionally. If the user has not specified anything default to an install_cmake dir in the root folder.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
@@ -40,6 +47,12 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     message(WARNING "No installation directory specified. Defaulting to: ${CMAKE_INSTALL_PREFIX}")
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
+
+
+# We prefer to install libs to "library architecture" dir inside lib directory (e.g lib/x86_64-linux-gnu/omc/).
+set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
+
+
 
 include(WriteCompilerDetectionHeader)
 write_compiler_detection_header(
@@ -53,19 +66,22 @@ write_compiler_detection_header(
 # Set the installation lib directory as an rpath for all installed
 # libs and executables.
 # Maybe there is a better way to do this but it should suffice for now.
-SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
+SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_LIBDIR})
 
 
-option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
-omc_add_to_report(OMC_USE_CCACHE)
+omc_option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
 
-
-find_program(CCACHE_PROGRAM ccache)
-if(OMC_USE_CCACHE AND CCACHE_PROGRAM)
+if(OMC_USE_CCACHE)
+  find_program(CCACHE_PROGRAM ccache)
+  if(CCACHE_PROGRAM)
     message(STATUS "Found ccache. It will be used for compilation C/C++ sources")
     set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
     set(CMAKE_C_COMPILER_LAUNCHER   ${CCACHE_PROGRAM})
     omc_add_to_report(CCACHE_PROGRAM)
+  else()
+    message(FATAL_ERROR "ccache program not found. It is highly recommended to use ccache for compilation of OpenModelica. Please install ccache and rerun configuration.
+            You can disable this check by specifying -DOMC_USE_CCACHE=OFF to CMake configuration command.")
+  endif()
 endif()
 
 
