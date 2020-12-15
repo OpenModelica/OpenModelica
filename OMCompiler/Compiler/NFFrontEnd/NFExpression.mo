@@ -818,6 +818,7 @@ public
     Type t, t2, ety;
     list<Expression> el;
     Expression e1, e2;
+    Integer dim_diff;
   algorithm
     ety := Type.arrayElementType(ty);
 
@@ -863,8 +864,8 @@ public
         algorithm
           e1 := typeCast(exp.trueBranch, ety);
           e2 := typeCast(exp.falseBranch, ety);
-          t := if Type.isConditionalArray(exp.ty) then
-            Type.setConditionalArrayTypes(exp.ty, typeOf(e1), typeOf(e2)) else typeOf(e1);
+          t := if Type.isConditionalArray(ty) then
+            Type.setConditionalArrayTypes(ty, typeOf(e1), typeOf(e2)) else typeOf(e1);
         then
           IF(t, exp.condition, e1, e2);
 
@@ -877,10 +878,12 @@ public
 
       case BINDING_EXP()
         algorithm
-          t := Type.setArrayElementType(exp.expType, ety);
-          t2 := Type.setArrayElementType(exp.bindingType, ety);
+          e1 := typeCast(exp.exp, ty);
+          t := typeOf(e1);
+          dim_diff := Type.dimensionDiff(exp.expType, exp.bindingType);
+          t2 := if dim_diff > 0 then Type.unliftArrayN(dim_diff, t) else t;
         then
-          BINDING_EXP(typeCast(exp.exp, ety), t, t2, exp.parents, exp.isEach);
+          BINDING_EXP(e1, t, t2, exp.parents, exp.isEach);
 
       // Other expressions are handled by making a CAST expression.
       else typeCastGeneric(exp, ety);
