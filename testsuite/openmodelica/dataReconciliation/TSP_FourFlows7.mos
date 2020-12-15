@@ -1,9 +1,8 @@
-// name:     TSP_FourFlows6
+// name:     TSP_FourFlows7
 // keywords: extraction algorithm
 // status:   correct
-// depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv
+// depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv
 // cflags: -d=-newInst
-
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
 getErrorString();
@@ -14,6 +13,8 @@ getErrorString();
 simulate(NewDataReconciliationSimpleTests.TSP_FourFlows7, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.TSP_FourFlows7_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
+//readFile("NewDataReconciliationSimpleTests.TSP_FourFlows7_debug.txt");
+//getErrorString();
 
 // Result:
 // true

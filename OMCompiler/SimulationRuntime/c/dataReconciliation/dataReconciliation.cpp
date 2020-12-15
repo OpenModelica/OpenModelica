@@ -552,8 +552,8 @@ void solveSystemFstar(int n, int nhrs, double *tmpMatrixD, double *tmpMatrixC, o
   if (info > 0)
   {
     //cout << "The solution could not be computed, The info satus is : " << info;
-    //errorStreamPrint(LOG_STDOUT, 0, "solveSystemFstar() Failed !, The solution could not be computed, The info satus is %i.", info);
-    logfile << "|  error   |   " << "solveSystemFstar() Failed !, The solution could not be computed, The info satus is" << info << "\n";
+    errorStreamPrint(LOG_STDOUT, 0, "solveSystemFstar() Failed !, The solution could not be computed, The info satus is %i ", info);
+    logfile << "|  error   |   " << "solveSystemFstar() Failed !, The solution could not be computed, The info satus is " << info << "\n";
     logfile.close();
     createErrorHtmlReport(data);
     exit(1);
