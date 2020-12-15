@@ -791,40 +791,42 @@ void sundialsPrintSparseMatrix(SUNMatrix A, const char* name, const int logLevel
     /* Print data array */
     lengthData = indexptrs[SUNSparseMatrix_NP(A)];
 
-    const int buffSize = 20;
-    char *buffer = (char*)malloc(sizeof(char)*lengthData*columns*buffSize);
-    char tmpBuffer[buffSize];
+    const int tmpBuffSize = 20;
+    const int bufferSize = fmax(1,lengthData)*fmax(1,columns);
+    char *buffer = (char*)malloc(sizeof(char)*bufferSize*tmpBuffSize);
+    char *tmpBuffer = (char*)malloc(sizeof(char)*tmpBuffSize);
     buffer[0] = 0;
     for (i=0; i<lengthData-1; i++) {
-      snprintf(tmpBuffer, buffSize, "%10g, ", data[i]);
-      strncat(buffer, tmpBuffer, buffSize);
+      snprintf(tmpBuffer, tmpBuffSize, "%10g, ", data[i]);
+      strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, buffSize, "%10g", data[lengthData-1]);
-    strncat(buffer, tmpBuffer, buffSize);
+    snprintf(tmpBuffer, tmpBuffSize, "%10g", data[lengthData-1]);
+    strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "data = {%s}", buffer);
 
     /* Print indexvals array */
     buffer[0] = 0;
     for (i=0; i<lengthData-1; i++) {
-      snprintf(tmpBuffer, buffSize, "%li, ", indexvals[i]);
-      strncat(buffer, tmpBuffer, buffSize);
+      snprintf(tmpBuffer, tmpBuffSize, "%li, ", indexvals[i]);
+      strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, buffSize, "%li", indexvals[lengthData-1]);
-    strncat(buffer, tmpBuffer, buffSize);
+    snprintf(tmpBuffer, tmpBuffSize, "%li", indexvals[lengthData-1]);
+    strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
 
     /* Print indexptrs array */
     buffer[0] = 0;
     for (i=0; i<SUNSparseMatrix_NP(A); i++) {
-      snprintf(tmpBuffer, buffSize, "%li, ", indexptrs[i]);
-      strncat(buffer, tmpBuffer, buffSize);
+      snprintf(tmpBuffer, tmpBuffSize, "%li, ", indexptrs[i]);
+      strncat(buffer, tmpBuffer, tmpBuffSize);
     }
-    snprintf(tmpBuffer, buffSize, "%li", indexptrs[SUNSparseMatrix_NP(A)]);
-    strncat(buffer, tmpBuffer, buffSize);
+    snprintf(tmpBuffer, tmpBuffSize, "%li", indexptrs[SUNSparseMatrix_NP(A)]);
+    strncat(buffer, tmpBuffer, tmpBuffSize);
     infoStreamPrint(logLevel, 0, "indexvals = {%s}", buffer);
 
     messageClose(logLevel);
     free(buffer);
+    free(tmpBuffer);
   }
 }
 
