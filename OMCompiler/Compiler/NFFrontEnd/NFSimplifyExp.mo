@@ -235,10 +235,13 @@ algorithm
       then
         exp;
 
+    case "fill"      then simplifyFill(listHead(args), listRest(args), call);
+    case "ones"      then simplifyFill(Expression.INTEGER(1), args, call);
     case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
     case "product"   then simplifySumProduct(listHead(args), call, isSum = false);
     case "transpose" then simplifyTranspose(listHead(args), call);
     case "vector"    then simplifyVector(listHead(args), call);
+    case "zeros"     then simplifyFill(Expression.INTEGER(0), args, call);
 
     else Expression.CALL(call);
   end match;
@@ -317,6 +320,19 @@ algorithm
     exp := Expression.CALL(call);
   end if;
 end simplifyVector;
+
+function simplifyFill
+  input Expression fillArg;
+  input list<Expression> dimArgs;
+  input Call call;
+  output Expression exp;
+algorithm
+  if List.all(dimArgs, Expression.isLiteral) then
+    exp := Ceval.evalBuiltinFill2(fillArg, dimArgs);
+  else
+    exp := Expression.CALL(call);
+  end if;
+end simplifyFill;
 
 function simplifyArrayConstructor
   input Call call;
