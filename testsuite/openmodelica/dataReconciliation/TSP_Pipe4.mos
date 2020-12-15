@@ -1101,6 +1101,10 @@ getErrorString();
 // 54/54 (1): singularPressureLoss1.pro_ph.T = 0.0   [dynamic |0|0|0|0|]
 //
 //
+// SET_S_After_Minimal_Extraction (0, 0)
+// ==========================================================================
+//
+//
 // Unknown variables in SET_S  (0)
 // ========================================
 //
@@ -1144,7 +1148,7 @@ getErrorString();
 // Condition-3 "SET_C equations must be strictly less than Variable of Interest"
 // ==========================================================================
 // -Failed
-// -SET_C contains:0 equations  > 3 known variables
+// -SET_C contains:0 equations  and 3 known variables
 //
 // record SimulationResult
 //     resultFile = "",
@@ -1190,8 +1194,8 @@ getErrorString();
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Error: Internal error : Condition 2- Failed : The system is ill-posed.
-// Error: Internal error : Condition 3-Failed : The system is ill-posed.
+// Error: Internal error : Condition 2-Failed: All variables of interest must be involved in SET_C or SET_S: The system is ill-posed.
+// Error: Internal error : Condition 3-Failed: SET_C equations must be strictly less than Variable of Interest: The system is ill-posed
 // Error: pre-optimization module dataReconciliation (simulation) failed.
 // "
 // endResult

@@ -1195,7 +1195,7 @@ getErrorString();
 //
 // -Passed
 //
-// Condition-5 "SET_S should be square "
+// Condition-5 "SET_S should be square"
 // ==========================================================================
 // -Passed
 //  Set_S has 8 equations and 8 variables
@@ -1221,6 +1221,6 @@ getErrorString();
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Error: Internal error : Condition 2- Failed : The system is ill-posed.
+// Error: Internal error : Condition 2-Failed: All variables of interest must be involved in SET_C or SET_S: The system is ill-posed.
 // "
 // endResult

@@ -209,7 +209,7 @@ getErrorString();
 //
 // -Passed
 //
-// Condition-5 "SET_S should be square "
+// Condition-5 "SET_S should be square"
 // ==========================================================================
 // -Passed
 //  Set_S has 2 equations and 2 variables

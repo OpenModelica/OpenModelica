@@ -2599,7 +2599,7 @@ getErrorString();
 //
 // -Passed
 //
-// Condition-5 "SET_S should be square "
+// Condition-5 "SET_S should be square"
 // ==========================================================================
 // -Passed
 //  Set_S has 117 equations and 117 variables
