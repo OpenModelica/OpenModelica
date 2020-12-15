@@ -459,6 +459,7 @@ FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
 FuncBuiltinFill.mo \
+FuncBuiltinFill2.mo \
 FuncBuiltinFloor.mo \
 FuncBuiltinGetInstanceName.mo \
 FuncBuiltinHomotopy.mo \

@@ -1025,6 +1025,7 @@ protected
     Function fn;
     list<Dimension> dims;
     Boolean evaluated;
+    Integer index = 1;
   algorithm
     ty_args := {fillArg};
     dims := {};
@@ -1034,14 +1035,15 @@ protected
     for arg in dimensionArgs loop
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, context, info);
 
-      if arg_var <= Variability.STRUCTURAL_PARAMETER and
-         arg_pur == Purity.PURE and
-         not InstContext.inFunction(context) then
-        arg := Ceval.evalExpBinding(arg);
-        arg := Expression.getScalarBindingExp(arg);
-        arg_ty := Expression.typeOf(arg);
-      else
-        evaluated := false;
+      if not InstContext.inFunction(context) then
+        if arg_var > Variability.PARAMETER or Structural.isExpressionNotFixed(arg) then
+          Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
+            {Expression.toString(arg), String(index),
+             List.toString(fillArg :: dimensionArgs, Expression.toString,
+                 ComponentRef.toString(fnRef), "(", ", ", ")", true)}, info);
+        end if;
+
+        Structural.markExp(arg);
       end if;
 
       // Each dimension argument must be an Integer expression.

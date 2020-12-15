@@ -676,8 +676,8 @@ public constant ErrorTypes.Message CYCLIC_DIMENSIONS = ErrorTypes.MESSAGE(300, E
   Gettext.gettext("Dimension %s of %s, '%s', could not be evaluated due to a cyclic dependency."));
 public constant ErrorTypes.Message INVALID_DIMENSION_TYPE = ErrorTypes.MESSAGE(301, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Dimension '%s' of type %s is not an integer expression or an enumeration or Boolean type name."));
-public constant ErrorTypes.Message RAGGED_DIMENSION = ErrorTypes.MESSAGE(302, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Ragged dimensions are not yet supported (from dimension '%s')"));
+public constant ErrorTypes.Message NON_PARAMETER_EXPRESSION_DIMENSION = ErrorTypes.MESSAGE(302, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Expression ‘%s‘ that determines the size of dimension ‘%s‘ of ‘%s‘ is not an evaluable parameter expression."));
 public constant ErrorTypes.Message INVALID_TYPENAME_USE = ErrorTypes.MESSAGE(303, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Type name '%s' is not allowed in this context."));
 public constant ErrorTypes.Message FOUND_WRONG_INNER_ELEMENT = ErrorTypes.MESSAGE(305, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
