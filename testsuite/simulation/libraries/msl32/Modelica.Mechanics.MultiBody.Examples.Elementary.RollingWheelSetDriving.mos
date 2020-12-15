@@ -37,6 +37,11 @@ runScript(modelTesting);getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 //
 // Files Equal!
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Parts.mo:2805:5-2808:55:writable] Warning: Variable $DER.wheelSet.der_theta1 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Parts.mo:2809:5-2812:55:writable] Warning: Variable $DER.wheelSet.der_theta2 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Parts.mo:2805:5-2808:55:writable] Warning: Variable $DER.wheelSet.der_theta1 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Parts.mo:2809:5-2812:55:writable] Warning: Variable $DER.wheelSet.der_theta2 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+//
 // "true
 // "
 // ""
