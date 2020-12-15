@@ -37,6 +37,12 @@ type StateSelect = enumeration(
   always "Do use it as a state."
 ) annotation(__OpenModelica_builtin = true);
 
+type Uncertainty = enumeration(
+  given,
+  sought,
+  refine
+) annotation(__OpenModelica_builtin = true);
+
 partial class ExternalObject
   annotation(__OpenModelica_builtin=true);
 end ExternalObject;
