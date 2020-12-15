@@ -9,6 +9,7 @@ loadFile("Tearing4.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("omcTearing"); getErrorString();
+setCommandLineOptions("--maxSizeLinearTearing=200"); getErrorString();
 simulate(Tearing4); getErrorString();
 
 val(x,0.0); getErrorString();
@@ -19,6 +20,8 @@ val(F,0.0); getErrorString();
 val(k,0.0); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

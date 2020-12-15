@@ -5,7 +5,7 @@
 
 loadFile("Tearing1.mo"); getErrorString();
 
-setCommandLineOptions("+d=backenddaeinfo, --totalTearing=2"); getErrorString();
+setCommandLineOptions("+d=backenddaeinfo, --totalTearing=2 --maxSizeLinearTearing=200"); getErrorString();
 simulate(Tearing1); getErrorString();
 
 

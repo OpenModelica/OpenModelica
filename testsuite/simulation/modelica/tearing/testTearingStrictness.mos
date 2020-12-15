@@ -16,10 +16,10 @@ equation
 end testTearingStrictness;
 "); getErrorString();
 
-setCommandLineOptions("--tearingStrictness=strict"); getErrorString();
+setCommandLineOptions("--tearingStrictness=strict --maxSizeLinearTearing=200"); getErrorString();
 simulate(testTearingStrictness, simflags="-ls=lapack -override b=0"); getErrorString();
 
-setCommandLineOptions("--tearingStrictness=veryStrict"); getErrorString();
+setCommandLineOptions("--tearingStrictness=veryStrict --maxSizeLinearTearing=200"); getErrorString();
 simulate(testTearingStrictness, simflags="-ls=lapack -override b=0"); getErrorString();
 
 // Result:

@@ -6,7 +6,7 @@
 
 loadFile("Tearing11.mo"); getErrorString();
 
-setCommandLineOptions("+d=backenddaeinfo --setTearingVars=2,1,1"); getErrorString();
+setCommandLineOptions("+d=backenddaeinfo --setTearingVars=2,1,1 --maxSizeLinearTearing=200"); getErrorString();
 simulate(Tearing11); getErrorString();
 
 // Result:

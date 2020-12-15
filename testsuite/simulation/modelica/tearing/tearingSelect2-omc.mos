@@ -6,7 +6,7 @@
 loadFile("tearingSelect2.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
-setCommandLineOptions("--preOptModules-=comSubExp");getErrorString();
+setCommandLineOptions("--preOptModules-=comSubExp  --maxSizeLinearTearing=200");getErrorString();
 setTearingMethod("omcTearing"); getErrorString();
 simulate(tearingSelect2); getErrorString();
 

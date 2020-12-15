@@ -21,7 +21,7 @@ end dynamicTearing2;
 
 setTearingMethod("cellier"); getErrorString();
 setCommandLineOptions("+forceTearing"); getErrorString();
-setCommandLineOptions("+dynamicTearing=linear"); getErrorString();
+setCommandLineOptions("+dynamicTearing=linear  --maxSizeLinearTearing=200"); getErrorString();
 setDebugFlags("dumpSimCode"); getErrorString();
 simulate(dynamicTearing2, simflags="-lv=LOG_DT_CONS"); getErrorString();
 
