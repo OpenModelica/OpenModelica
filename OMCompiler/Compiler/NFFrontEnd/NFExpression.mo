@@ -893,8 +893,12 @@ public
   function typeCastGeneric
     input output Expression exp;
     input Type ty;
+  protected
+    Type exp_ty = typeOf(exp);
   algorithm
-    exp := CAST(Type.setArrayElementType(typeOf(exp), ty), exp);
+    if not Type.isEqual(ty, Type.arrayElementType(exp_ty)) then
+      exp := CAST(Type.setArrayElementType(typeOf(exp), ty), exp);
+    end if;
   end typeCastGeneric;
 
   function realValue
