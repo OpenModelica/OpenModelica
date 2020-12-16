@@ -378,8 +378,8 @@ fi
 dnl Checks for header files.
 AC_HEADER_STDC
 
-AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
-# AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
+AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header file sys/time.h)])
+# AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header file sqlite3.h)])
 
 AC_MSG_CHECKING([for antlr.Tool support])
 mkdir -p "$OMBUILDDIR/share/omc/java"
@@ -616,7 +616,7 @@ SUNDIALS_LDFLAGS="$SUNDIALS_NVECTOR_LDFLAGS $SUNDIALS_SUNMATRIX_LDFLAGS $SUNDIAL
 FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
 SUNDIALS_TARGET="sundials"
 
-AC_CHECK_HEADERS(curl/curl.h, [], [AC_MSG_ERROR(Missing header files)])
+AC_CHECK_HEADERS(curl/curl.h, [], [AC_MSG_ERROR(Missing header file curl/curl.h)])
 
 LIBS=""
 AC_CHECK_LIB(curl,curl_global_init, [RT_LDFLAGS="$RT_LDFLAGS -lcurl"], [AC_MSG_ERROR([Missing libcurl])])
