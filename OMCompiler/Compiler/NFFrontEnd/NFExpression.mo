@@ -897,7 +897,7 @@ public
     Type exp_ty = typeOf(exp);
   algorithm
     if not Type.isEqual(ty, Type.arrayElementType(exp_ty)) then
-      exp := CAST(Type.setArrayElementType(typeOf(exp), ty), exp);
+      exp := CAST(Type.setArrayElementType(exp_ty, ty), exp);
     end if;
   end typeCastGeneric;
 
