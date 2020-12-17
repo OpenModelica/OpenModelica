@@ -1329,5 +1329,23 @@ public
     end match;
   end mapFoldExpShallow;
 
+  function removeOuterCrefPrefix
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case ComponentRef.CREF()
+        algorithm
+          if InstNode.isGeneratedInner(cref.node) then
+            cref.restCref := EMPTY();
+          else
+            cref.restCref := removeOuterCrefPrefix(cref.restCref);
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end removeOuterCrefPrefix;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;
