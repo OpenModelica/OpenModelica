@@ -1036,7 +1036,8 @@ protected
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, context, info);
 
       if not InstContext.inFunction(context) then
-        if arg_var > Variability.PARAMETER or Structural.isExpressionNotFixed(arg) then
+        if arg_var > Variability.PARAMETER or arg_pur == Purity.IMPURE or
+           Structural.isExpressionNotFixed(arg) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
             {Expression.toString(arg), String(index),
              List.toString(fillArg :: dimensionArgs, Expression.toString,
@@ -1044,6 +1045,11 @@ protected
         end if;
 
         Structural.markExp(arg);
+        arg := Ceval.evalExpBinding(arg);
+        arg := Expression.getScalarBindingExp(arg);
+        arg_ty := Expression.typeOf(arg);
+      else
+        evaluated := false;
       end if;
 
       // Each dimension argument must be an Integer expression.
