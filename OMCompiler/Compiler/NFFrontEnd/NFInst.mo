@@ -102,6 +102,7 @@ import OperatorOverloading = NFOperatorOverloading;
 import EvalConstants = NFEvalConstants;
 import VerifyModel = NFVerifyModel;
 import Structural = NFStructural;
+import UnorderedMap;
 
 public
 
@@ -142,9 +143,6 @@ algorithm
   cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED,
            AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
-
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
 
   // Instantiate the class.
   inst_cls := instantiate(cls, context = context);
@@ -235,6 +233,7 @@ protected
   SCode.Element cls_elem;
   Class cls;
   ClassTree elems;
+  InstNodeType node_ty;
 algorithm
   // Create a fake SCode.Element for the top scope, so we don't have to make the
   // definition in InstNode an Option only because of this node.
@@ -244,7 +243,8 @@ algorithm
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
-  topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), InstNodeType.TOP_SCOPE());
+  node_ty := InstNodeType.TOP_SCOPE(UnorderedMap.new<InstNode>(System.stringHashDjb2Mod, stringEq));
+  topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), node_ty);
 
   // Create a new class from the elements, and update the inst node with it.
   cls := Class.fromSCode(topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
@@ -2658,6 +2658,7 @@ algorithm
         prefixed_cref := ComponentRef.fromNodeList(InstNode.scopeList(scope));
         prefixed_cref := if ComponentRef.isEmpty(prefixed_cref) then
           cref else ComponentRef.append(cref, prefixed_cref);
+        prefixed_cref := ComponentRef.removeOuterCrefPrefix(prefixed_cref);
       then
         Expression.CREF(Type.UNKNOWN(), prefixed_cref);
 
@@ -3308,8 +3309,7 @@ function insertGeneratedInners
   input InstNode topScope;
   input InstContext.Type context;
 protected
-  NodeTree.Tree inner_tree;
-  list<tuple<String, InstNode>> inner_nodes;
+  UnorderedMap<String, InstNode> generated_inners;
   list<Mutable<InstNode>> inner_comps;
   InstNode n, on;
   String name, str;
@@ -3318,19 +3318,17 @@ protected
   InstNode base_node;
   Boolean name_defined;
 algorithm
-  CachedData.TOP_SCOPE(addedInner = inner_tree) := InstNode.getInnerOuterCache(topScope);
+  InstNodeType.TOP_SCOPE(generatedInners = generated_inners) := InstNode.nodeType(topScope);
 
-  // Empty tree => nothing more to do.
-  if NodeTree.isEmpty(inner_tree) then
+  // No inners => nothing more to do.
+  if UnorderedMap.isEmpty(generated_inners) then
     return;
   end if;
 
-  inner_nodes := NodeTree.toList(inner_tree);
   inner_comps := {};
 
-  for e in inner_nodes loop
-    (name, n) := e;
-
+  for n in UnorderedMap.valueArray(generated_inners) loop
+    name := InstNode.name(n);
     checkTopLevelOuter(name, n, node, context);
 
     // Always print a warning that an inner element was automatically generated.

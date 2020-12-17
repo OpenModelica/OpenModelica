@@ -49,6 +49,7 @@ import NFLookupState.LookupState;
 import Type = NFType;
 import ComponentRef = NFComponentRef;
 import InstContext = NFInstContext;
+import InstNodeType = NFInstNode.InstNodeType;
 
 protected
 import NFInstNode.NodeTree;
@@ -58,6 +59,7 @@ import Subscript = NFSubscript;
 import ComplexType = NFComplexType;
 import Config;
 import Error;
+import UnorderedMap;
 
 public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
@@ -926,18 +928,18 @@ function generateInner
   input InstNode topScope;
   output InstNode innerNode;
 protected
-  CachedData cache;
+  InstNodeType node_ty;
   String name;
   Option<InstNode> inner_node_opt;
-  InstNode inner_node;
+  InstNode inner_node, parent_node;
 algorithm
-  cache := InstNode.getInnerOuterCache(topScope);
+  node_ty := InstNode.nodeType(topScope);
 
-  () := match cache
-    case CachedData.TOP_SCOPE()
+  () := match node_ty
+    case InstNodeType.TOP_SCOPE()
       algorithm
         name := InstNode.name(outerNode);
-        inner_node_opt := NodeTree.getOpt(cache.addedInner, name);
+        inner_node_opt := UnorderedMap.get(name, node_ty.generatedInners);
 
         if isSome(inner_node_opt) then
           // Found an already generated node, return it.
@@ -945,16 +947,15 @@ algorithm
         else
           // Otherwise, generate a new inner node and add it to the cache.
           innerNode := makeInnerNode(outerNode);
-          innerNode := InstNode.setParent(cache.rootClass, innerNode);
-          cache.addedInner := NodeTree.add(cache.addedInner, name, innerNode);
-          InstNode.setInnerOuterCache(topScope, cache);
+          innerNode := InstNode.setNodeType(InstNodeType.GENERATED_INNER(), innerNode);
+          UnorderedMap.add(name, innerNode, node_ty.generatedInners);
         end if;
       then
         ();
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got top node with missing cache", sourceInfo());
+        Error.assertion(false, getInstanceName() + " got invalid top node", sourceInfo());
       then
         fail();
 

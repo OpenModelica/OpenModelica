@@ -625,9 +625,6 @@ algorithm
   cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
-
   // Instantiate the class.
   inst_cls := NFInst.instantiate(cls, context = NFInstContext.RELAXED);
 
@@ -767,12 +764,8 @@ algorithm
   cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
-
   // Expand the class.
   expanded_cls := NFInst.expand(cls);
-  NFInst.insertGeneratedInners(expanded_cls, top, NFInstContext.RELAXED);
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.frontEndLookup_dispatch("+ name +")");
