@@ -1035,7 +1035,7 @@ protected
     for arg in dimensionArgs loop
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, context, info);
 
-      if not InstContext.inFunction(context) then
+      if not InstContext.inAlgorithm(context) then
         if arg_var > Variability.PARAMETER or arg_pur == Purity.IMPURE or
            Structural.isExpressionNotFixed(arg) then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
