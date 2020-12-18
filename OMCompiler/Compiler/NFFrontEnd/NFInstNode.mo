@@ -903,7 +903,6 @@ uniontype InstNode
       case COMPONENT_NODE(parent = EMPTY_NODE()) then accumScopes;
       case COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
         then scopeList(parent, includeRoot, node :: accumScopes);
-      case COMPONENT_NODE(nodeType = InstNodeType.GENERATED_INNER()) then accumScopes;
       case COMPONENT_NODE() then scopeList(node.parent, includeRoot, node :: accumScopes);
       case IMPLICIT_SCOPE() then scopeList(node.parentScope, includeRoot, accumScopes);
       else accumScopes;
