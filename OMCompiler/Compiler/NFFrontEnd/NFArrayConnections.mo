@@ -43,7 +43,8 @@ encapsulated package NFArrayConnections
 
 protected
   import AbsynUtil;
-  import AdjacencyList;
+  import SBGraph.IncidenceList;
+  import SBGraph.VertexDescriptor;
   import Array;
   import Call = NFCall;
   import Ceval = NFCeval;
@@ -153,7 +154,7 @@ public
     end new;
   end NameVertexTable;
 
-  type SBGraph = AdjacencyList<SetVertex, SetEdge>;
+  type SBGraph = IncidenceList<SetVertex, SetEdge>;
 
   function resolve
     input output FlatModel flatModel;
@@ -175,19 +176,19 @@ public
 
     (flatModel, conns) := collect(flatModel);
 
-    graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
+    graph := IncidenceList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
     nmv_table := NameVertexTable.new();
     nmv_table := createGraph(flatModel.variables, conns, graph, v_count, e_count, nmv_table);
 
     if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
-      print(AdjacencyList.toString(graph));
+      print(IncidenceList.toString(graph));
     end if;
 
     (vss, emap1, emap2) := createMaps(graph);
     res := SBFunctions.connectedComponents(vss, emap1, emap2);
 
     if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
-      print(AdjacencyList.toString(graph));
+      print(IncidenceList.toString(graph));
     end if;
 
     conns := generateEquations(res, flatModel, graph, v_count, nmv_table);
@@ -308,7 +309,7 @@ protected
     ComponentRef lhs_cr, rhs_cr;
     list<Subscript> lhs_subs, rhs_subs;
     SBMultiInterval mi1, mi2;
-    AdjacencyList.VertexDescriptor d1, d2;
+    VertexDescriptor d1, d2;
     list<Connector> lhs_conns, rhs_conns;
     Connector lhs_conn, rhs_conn;
   algorithm
@@ -341,7 +342,7 @@ protected
     input Vector<Integer> vCount;
     input NameVertexTable.Table nmvTable;
     output SBMultiInterval outMI;
-    output AdjacencyList.VertexDescriptor d;
+    output VertexDescriptor d;
     output NameVertexTable.Table outNmvTable = nmvTable;
   algorithm
     (outMI, d, outNmvTable) := createVertex(conn, graph, vCount, nmvTable);
@@ -354,20 +355,20 @@ protected
     input Vector<Integer> vCount;
     input NameVertexTable.Table nmvTable;
     output SBMultiInterval mi;
-    output AdjacencyList.VertexDescriptor d;
+    output VertexDescriptor d;
     output NameVertexTable.Table outNmvTable = nmvTable;
   protected
-    Option<AdjacencyList.VertexDescriptor> od;
+    Option<VertexDescriptor> od;
     SetVertex v;
     list<Dimension> dims;
     SBSet s;
     String name;
   algorithm
-    od := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = conn));
+    od := IncidenceList.findVertex(graph, function SetVertex.isNamed(name = conn));
 
     if isSome(od) then
       SOME(d) := od;
-      v := AdjacencyList.getVertex(graph, d);
+      v := IncidenceList.getVertex(graph, d);
       mi := SBAtomicSet.aset(UnorderedSet.first(SBSet.asets(v.vs)));
       return;
     end if;
@@ -379,7 +380,7 @@ protected
     s := SBSet.addAtomicSet(SBAtomicSet.new(mi), s);
 
     v := SET_VERTEX(conn, s);
-    d := AdjacencyList.addVertex(graph, v);
+    d := IncidenceList.addVertex(graph, v);
 
     name := Connector.toString(conn) + "$" + Connector.faceString(conn);
     outNmvTable := BaseHashTable.addUnique((name, mi), nmvTable);
@@ -398,8 +399,8 @@ protected
   end crefDims;
 
   function updateGraph
-    input AdjacencyList.VertexDescriptor d1;
-    input AdjacencyList.VertexDescriptor d2;
+    input VertexDescriptor d1;
+    input VertexDescriptor d2;
     input SBMultiInterval mi1;
     input SBMultiInterval mi2;
     input SBGraph graph;
@@ -411,7 +412,7 @@ protected
   algorithm
     (name, pw1, pw2) := SBGraphUtil.linearMapFromIntervals(d1, d2, mi1, mi2, eCount);
     se := SET_EDGE(name, pw1, pw2);
-    _ := AdjacencyList.addEdge(graph, d1, d2, se);
+    _ := IncidenceList.addEdge(graph, d1, d2, se);
   end updateGraph;
 
   function createMaps
@@ -425,17 +426,17 @@ protected
     SetEdge e;
   algorithm
     vss := SBSet.newEmpty();
-    for v in AdjacencyList.vertices(graph) loop
+    for v in IncidenceList.vertices(graph) loop
       vss := SBSet.union(vss, v.vs);
     end for;
 
-    es := AdjacencyList.edges(graph);
+    es := IncidenceList.edges(graph);
 
     if listEmpty(es) then
       emap1 := SBPWLinearMap.newEmpty();
       emap2 := SBPWLinearMap.newEmpty();
     else
-      e :: es := AdjacencyList.edges(graph);
+      e :: es := IncidenceList.edges(graph);
       emap1 := e.es1;
       emap2 := e.es2;
 
@@ -747,7 +748,7 @@ protected
   protected
     list<SetVertex> vl;
   algorithm
-    vl := AdjacencyList.vertices(graph);
+    vl := IncidenceList.vertices(graph);
     for v in vl loop
       if not SBSet.isEmpty(SBSet.intersection(v.vs, sauxi)) then
         for var in vars loop

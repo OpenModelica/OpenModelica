@@ -32,7 +32,8 @@
 encapsulated package NFSBGraphUtil
 
 protected
-  import AdjacencyList;
+  import SBGraph.VertexDescriptor;
+  import SBGraph.IncidenceList;
   import Array;
   import Ceval = NFCeval;
   import Dimension = NFDimension;
@@ -271,8 +272,8 @@ public
   end intervalFromRange;
 
   function linearMapFromIntervals
-    input AdjacencyList.VertexDescriptor d1;
-    input AdjacencyList.VertexDescriptor d2;
+    input VertexDescriptor d1;
+    input VertexDescriptor d2;
     input SBMultiInterval mi1;
     input SBMultiInterval mi2;
     input Vector<Integer> eCount;

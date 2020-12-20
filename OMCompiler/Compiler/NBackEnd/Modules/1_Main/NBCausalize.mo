@@ -75,7 +75,9 @@ protected
   import UnorderedSet;
 
   // SetBased Graph imports
-  import AdjacencyList;
+  import SBGraph.BipartiteIncidenceList;
+  import SBGraph.VertexDescriptor;
+  import SBGraph.SetType;
   import SBInterval;
   import SBMultiInterval;
   import SBPWLinearMap;
@@ -218,7 +220,7 @@ protected
 public
   type AdjacencyMatrixType        = enumeration(SCALAR, ARRAY);
   type AdjacencyMatrixStrictness  = enumeration(FULL, LINEAR, STATE_SELECT);
-  type SBGraph                    = AdjacencyList<SetVertex, SetEdge>;
+  type SBGraph                    = BipartiteIncidenceList<SetVertex, SetEdge>;
 
   uniontype AdjacencyMatrix
     record ARRAY_ADJACENCY_MATRIX
@@ -395,7 +397,7 @@ public
       input AdjacencyMatrixStrictness st = AdjacencyMatrixStrictness.FULL;
       output AdjacencyMatrix adj;
     protected
-      AdjacencyList<SetVertex, SetEdge> graph;
+      BipartiteIncidenceList<SetVertex, SetEdge> graph;
       Pointer<Integer> max_dim = Pointer.create(1);
       Vector<Integer> vCount, eCount;
       UnorderedMap<SetVertex, Integer> vertexMap;
@@ -405,7 +407,7 @@ public
       BuiltinSystem.tmpTickReset(0);
 
       // create empty set based graph and map
-      graph := AdjacencyList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
+      graph := BipartiteIncidenceList.new(SetVertex.isEqual, SetEdge.isEqual, SetVertex.toString, SetEdge.toString);
       vertexMap := UnorderedMap.new<Integer>(SetVertex.hash, SetVertex.isEqual, VariablePointers.size(vars) + EquationPointers.size(eqs));
       edgeMap := UnorderedMap.new<Integer>(SetEdge.hash, SetEdge.isEqual, VariablePointers.size(vars) + EquationPointers.size(eqs)); // make better size approx here
 
@@ -416,7 +418,7 @@ public
       eCount := Vector.newFill(Pointer.access(max_dim), 1);
 
       // create vertices for variables
-      VariablePointers.mapPtr(vars, function SetVertex.createTraverse(graph = graph, vCount = vCount, vertexMap = vertexMap));
+      VariablePointers.mapPtr(vars, function SetVertex.createTraverse(graph = graph, vCount = vCount, ST = SetType.U, vertexMap = vertexMap));
 
       // create vertices for equations and create edges
       EquationPointers.map(eqs, function SetEdge.fromEquation(
@@ -430,7 +432,7 @@ public
       ));
 
       if Flags.isSet(Flags.DUMP_SET_BASED_GRAPHS) then
-        print(AdjacencyList.toString(graph));
+        print(BipartiteIncidenceList.toString(graph));
       end if;
 
       adj := ARRAY_ADJACENCY_MATRIX(graph, vertexMap, edgeMap, st);
@@ -511,6 +513,7 @@ public
       input Pointer<Variable> var_ptr;
       input SBGraph graph;
       input Vector<Integer> vCount;
+      input SetType ST;
       input UnorderedMap<SetVertex, Integer> vertexMap;
       output SBMultiInterval mi;
       output Integer d;
@@ -520,12 +523,12 @@ public
       SBSet set;
       SetVertex vertex;
     algorithm
-      od := AdjacencyList.findVertex(graph, function SetVertex.isNamed(name = var_ptr));
+      od := BipartiteIncidenceList.findVertex(graph, ST, function SetVertex.isNamed(name = var_ptr));
 
       if isSome(od) then
         // vertex already exists
         SOME(d) := od;
-        vertex := AdjacencyList.getVertex(graph, d);
+        vertex := BipartiteIncidenceList.getVertex(graph, d, ST);
         mi := SBAtomicSet.aset(UnorderedSet.first(SBSet.asets(vertex.vs)));
       else
         // create new vertex
@@ -536,7 +539,7 @@ public
         set := SBSet.addAtomicSet(SBAtomicSet.new(mi), set);
 
         vertex := SET_VERTEX(var_ptr, set);
-        d := AdjacencyList.addVertex(graph, vertex);
+        d := BipartiteIncidenceList.addVertex(graph, vertex, ST);
         UnorderedMap.add(vertex, d, vertexMap);
       end if;
     end create;
@@ -545,9 +548,10 @@ public
       input Pointer<Variable> var_ptr;
       input SBGraph graph;
       input Vector<Integer> vCount;
+      input SetType ST;
       input UnorderedMap<SetVertex, Integer> vertexMap;
     algorithm
-      (_, _) := create(var_ptr, graph, vCount, vertexMap);
+      (_, _) := create(var_ptr, graph, vCount, ST, vertexMap);
     end createTraverse;
 
     function toString
@@ -595,7 +599,7 @@ public
     algorithm
       // only get top level residual var
       if not Util.isSome(eqn_tpl_opt) then
-        (eqn_mi, eqn_d) := SetVertex.create(Equation.getResidualVar(Pointer.create(eqn)), graph, vCount, vertexMap);
+        (eqn_mi, eqn_d) := SetVertex.create(Equation.getResidualVar(Pointer.create(eqn)), graph, vCount, SetType.F, vertexMap);
       else
         SOME((eqn_mi, eqn_d)) := eqn_tpl_opt;
       end if;
@@ -662,7 +666,7 @@ public
         local
           ComponentRef cref;
           SBMultiInterval eqn_mi, var_mi;
-          AdjacencyList.VertexDescriptor eqn_d, var_d;
+          VertexDescriptor eqn_d, var_d;
 
         case Expression.CREF(cref = cref)
           guard(BaseHashTable.hasKey(ComponentRef.stripSubscriptsAll(cref), ht))
@@ -673,6 +677,7 @@ public
               subs        = ComponentRef.getSubscripts(cref),
               graph       = graph,
               vCount      = vCount,
+              ST          = SetType.U,
               vertexMap   = vertexMap
             );
             updateGraph(eqn_d, var_d, eqn_mi, var_mi, graph, eCount, edgeMap);
@@ -687,11 +692,12 @@ public
       input list<Subscript> subs;
       input SBGraph graph;
       input Vector<Integer> vCount;
+      input SetType ST;
       input UnorderedMap<SetVertex, Integer> vertexMap;
       output SBMultiInterval outMI;
-      output AdjacencyList.VertexDescriptor d;
+      output VertexDescriptor d;
     algorithm
-      (outMI, d) := SetVertex.create(var_ptr, graph, vCount, vertexMap);
+      (outMI, d) := SetVertex.create(var_ptr, graph, vCount, ST, vertexMap);
       // if there are no subscripts just use full multi interval
       if not listEmpty(subs) then
         outMI := SBGraphUtil.multiIntervalFromSubscripts(subs, vCount, outMI);
@@ -699,8 +705,8 @@ public
     end getVariableIntervals;
 
     function updateGraph
-      input AdjacencyList.VertexDescriptor d1;
-      input AdjacencyList.VertexDescriptor d2;
+      input VertexDescriptor d1;
+      input VertexDescriptor d2;
       input SBMultiInterval mi1;
       input SBMultiInterval mi2;
       input SBGraph graph;
@@ -714,7 +720,7 @@ public
     algorithm
       (name, pw1, pw2) := SBGraphUtil.linearMapFromIntervals(d1, d2, mi1, mi2, eCount);
       se := SET_EDGE(name, pw1, pw2);
-      edge_i := AdjacencyList.addEdge(graph, d1, d2, se);
+      edge_i := BipartiteIncidenceList.addEdge(graph, d1, d2, se);
       UnorderedMap.add(se, edge_i, edgeMap);
     end updateGraph;
 
@@ -728,25 +734,100 @@ public
       SBSet unmatched_edge;
     algorithm
       for i in 1:U.ndim loop
+        // find all edges from the i_th domain that are not matched
         unmatched_edge := SBSet.complement(U.dom[i], E_M);
+        // apply map and add to unmatched U vertices
         unmatched_U := SBSet.union(unmatched_U, SBLinearMap.apply(unmatched_edge,U.lmap[i]));
       end for;
     end unmatchedU;
 
+    function minInvU
+      input SetEdge E                         "edge for which to return vertices";
+      input SBSet U                           "Path vertex set to maximize";
+      output SBSet P_max = SBSet.newEmpty()   "Maximized path vertex set";
+    protected
+      SBPWLinearMap invU = SBPWLinearMap.minInvCompact(E.U);
+      SBSet U_tmp;
+    algorithm
+      for i in 1:invU.ndim loop
+        // only consider indices from the current inverse domain
+        U_tmp := SBSet.intersection(invU.dom[i], U);
+        P_max := SBSet.union(P_max, SBLinearMap.apply(U_tmp, invU.lmap[i]));
+      end for;
+    end minInvU;
+
     function matchedF
       "returns matched equation vertices F"
-      input SetEdge edge                          "edge for which to return vertices";
+      input SetEdge E                             "edge for which to return vertices";
       input SBSet E_M                             "global matched edges";
       output SBSet matched_F = SBSet.newEmpty()   "all matched F vertices of this edge";
     protected
-      SBPWLinearMap F = edge.F;
-      SBSet matched_edge;
+      SBPWLinearMap F = E.F;
+      SBSet matched_E;
     algorithm
       for i in 1:F.ndim loop
-        matched_edge := SBSet.intersection(F.dom[i], E_M);
-        matched_F := SBSet.union(matched_F, SBLinearMap.apply(matched_edge, F.lmap[i]));
+        // find all matched indices that are part of i_th domain
+        matched_E := SBSet.intersection(F.dom[i], E_M);
+        // apply map and add to matched F vertices
+        matched_F := SBSet.union(matched_F, SBLinearMap.apply(matched_E, F.lmap[i]));
       end for;
     end matchedF;
+
+    function maxPath
+      input SetEdge E                         "edge for which to return vertices";
+      input SBSet P1                          "Path index set to maximize";
+      input SetType ST          "set type tow know which maps to use";
+      output SBSet P1_max = SBSet.newEmpty()  "Maximized path index set";
+    algorithm
+      P1_max := match ST
+        case SetType.U then maxPathU(E, P1);
+        case SetType.F then maxPathF(E, P1);
+        else algorithm
+          Error.assertion(false, getInstanceName() + " failed for unknown SetType: "
+             + BipartiteIncidenceList.setTypeString(ST) + ". Allowed: U, F", sourceInfo());
+        then fail();
+      end match;
+    end maxPath;
+
+    function maxPathU
+      input SetEdge E                         "edge for which to return vertices";
+      input SBSet P1                          "Path index set to maximize";
+      output SBSet P1_max = SBSet.newEmpty()  "Maximized path index set";
+    protected
+      SBPWLinearMap U = E.U;
+      SBPWLinearMap invU = SBPWLinearMap.minInvCompact(U);
+      SBSet P1_tmp;
+    algorithm
+      for i in 1:U.ndim loop
+        // find all indices that are part of i_th domain
+        P1_tmp := SBSet.intersection(U.dom[i], P1);
+        // apply map and minimal inverse map
+        P1_tmp := SBLinearMap.apply(P1_tmp, U.lmap[i]);
+        P1_tmp := SBLinearMap.apply(P1_tmp, invU.lmap[i]);
+        // add to maximum path
+        P1_max := SBSet.union(P1_max, P1_tmp);
+      end for;
+    end maxPathU;
+
+    function maxPathF
+      input SetEdge E                         "edge for which to return vertices";
+      input SBSet P1                          "Path index set to maximize";
+      output SBSet P1_max = SBSet.newEmpty()  "Maximized path index set";
+    protected
+      SBPWLinearMap F = E.F;
+      SBPWLinearMap invF = SBPWLinearMap.minInvCompact(F);
+      SBSet P1_tmp;
+    algorithm
+      for i in 1:F.ndim loop
+        // find all indices that are part of i_th domain
+        P1_tmp := SBSet.intersection(F.dom[i], P1);
+        // apply map and minimal inverse map
+        P1_tmp := SBLinearMap.apply(P1_tmp, F.lmap[i]);
+        P1_tmp := SBLinearMap.apply(P1_tmp, invF.lmap[i]);
+        // add to maximum path
+        P1_max := SBSet.union(P1_max, P1_tmp);
+      end for;
+    end maxPathF;
 
     function toString
       input SetEdge e;
@@ -1022,7 +1103,6 @@ public
       end for;
     end augmentPath;
 
-
     // ######################################
     //            ARRAY MATCHING
     // ######################################
@@ -1033,19 +1113,34 @@ public
       matching := ARRAY_MATCHING();
     end arrayMatching;
 
-    type VertexSet = UnorderedSet<SBSet>;
+    function SBGMatching
+      input SBGraph graph                               "full bipartite graph";
+      input UnorderedMap<SetVertex, Integer> vertexMap  "maps a vertex to its index";
+    protected
+      SBSet E_M = SBSet.newEmpty()                      "matched edges";
+      SBSet F_M = SBSet.newEmpty()                      "matched equation vertices";
+      SBSet U_M = SBSet.newEmpty()                      "matched variable vertices";
+    algorithm
+
+    end SBGMatching;
 
     function augmentPathF
-      "augmenting a path starting on a set vertex representing an equation F (function)"
+      "WSAPF
+      augmenting a path starting on a set vertex representing an equation F (function)"
       input SBGraph graph                               "full bipartite graph";
       input UnorderedMap<SetVertex, Integer> vertexMap  "maps a vertex to its index";
       input SetVertex F                                 "start vertex";
       input SBSet E_M                                   "matched edges";
+      input SBSet U_M                                   "matched variable vertices";
       output list<SBSet> P_max = {};
+      input output SBSet F_path;
+      input output SBSet U_V                            "visited variable vertices";
       input output Integer w_max;
     protected
-      Integer F_index;
+      Integer F_index, U_card;
       SetEdge E;
+      SBSet U_set, U_set_N, U_set_M;
+      SetVertex U;
     algorithm
       try
         SOME(F_index) := UnorderedMap.get(F, vertexMap);
@@ -1055,26 +1150,59 @@ public
       end try;
 
       // get unmatched edges for U
-      for E_index in AdjacencyList.getRow(graph, F_index) loop
-        E := AdjacencyList.getEdge(graph, E_index);
+      for E_index in BipartiteIncidenceList.getRow(graph, F_index) loop
+        E := BipartiteIncidenceList.getEdge(graph, E_index);
+        // get U from unmatched edges
+        U_set := SetEdge.unmatchedU(E, E_M);
+        // get unmatched U (skip the unmatched edges part?)
+        U_set_N := SBSet.complement(U_set, U_M);
+        U_card := SBSet.cardinality(U_set_N);
+        if U_card > w_max then
+          w_max := U_card;
+          // kabdelhak: what is this nonsenese? why do we overwrite this in every step?
+          // is this supposed to append? but how does make any sense.
+          // thread this with next for loop?
+          P_max := {SetEdge.minInvU(E, U_set)};
+        end if;
+        // kabdelhak: threading for loops otherwise it does not make any sense to me
+        U_set_M := SBSet.intersection(U_set, U_M);
+        // check if vertex is fully matched already
+        if SBSet.isEmpty(SBSet.complement(U_set, U_set_M)) then
+          // check if augmenting path is wider
+          if SBSet.cardinality(U_set_M) > w_max then
+            U_V := SBSet.union(U_V, U_set_M);
+            try
+              // get SetVertex for our SBSet
+              {U} := BipartiteIncidenceList.getVerticesFromSet(graph, U_set_M, SetType.U, SetVertex.getSet);
+            else
+              Error.assertion(false, getInstanceName() + " failed. Multiple SetVertices got returned for SBSet: "
+                + SBSet.toString(U_set_M), sourceInfo());
+            end try;
+            (P_max, F_path, U_V, w_max) := augmentPathU(graph, vertexMap, U, E_M, U_M, F_path, U_V, w_max);
+            (P_max, w_max) := fixPathHead(P_max, w_max, E, SetType.U);
+          end if;
+        end if;
       end for;
     end augmentPathF;
 
     function augmentPathU
-      "augmenting a path starting on a set vertex representing a variable U (unknown)"
+      "WASPU
+      augmenting a path starting on a set vertex representing a variable U (unknown)"
       input SBGraph graph                               "full bipartite graph";
       input UnorderedMap<SetVertex, Integer> vertexMap  "maps a vertex to its index";
       //input UnorderedMap<SetEdge, Integer> edgeMap      "maps an edge to its index";
       input SetVertex U                                 "start vertex";
       input SBSet E_M                                   "globally matched edges";
-      output list<SBSet> P_max = {};
+      input SBSet U_M                                   "matched variable vertices";
+      output list<SBSet> P_max;
       input output SBSet F_path;
+      input output SBSet U_V                            "visited variable vertices";
       input output Integer w_max;
     protected
-      Integer U_index;
+      Integer U_index, P1_card;
       SetEdge E;
-      list<SBSet> F_M = {};
       SetVertex F;
+      SBSet F_set;
     algorithm
       try
         SOME(U_index) := UnorderedMap.get(U, vertexMap);
@@ -1084,34 +1212,49 @@ public
       end try;
 
       // get matched F vertices from matched edges
-      for E_index in AdjacencyList.getRow(graph, U_index) loop
-        E := AdjacencyList.getEdge(graph, E_index);
-        F_M := SetEdge.matchedF(E, E_M) :: F_M;
-      end for;
-
-      // check all matched F vertices for higher cardinality
-      for F_Set in F_M loop
-        if SBSet.cardinality(F_Set) > w_max then
+      for E_index in BipartiteIncidenceList.getRow(graph, U_index) loop
+        E := BipartiteIncidenceList.getEdge(graph, E_index);
+        F_set := SetEdge.matchedF(E, E_M);
+        // check matched F vertices for higher cardinality
+        if SBSet.cardinality(F_set) > w_max then
           // ToDo: we check only for matched subset not for full F connected by edge. Problem?
           // we could get full set using the mapF on our edge without removing unmatched edge parts
-          if SBSet.isEmpty(SBSet.intersection(F_Set, F_path)) then
-            F_path := SBSet.union(F_path, F_Set);
+          if SBSet.isEmpty(SBSet.intersection(F_set, F_path)) then
+            F_path := SBSet.union(F_path, F_set);
             try
               // get SetVertex for our SBSet
-              {F} := AdjacencyList.getVerticesFromSet(graph, F_Set, SetVertex.getSet);
+              {F} := BipartiteIncidenceList.getVerticesFromSet(graph, F_set, SetType.F, SetVertex.getSet);
             else
               Error.assertion(false, getInstanceName() + " failed. Multiple SetVertices got returned for SBSet: "
-                + SBSet.toString(F_Set), sourceInfo());
+                + SBSet.toString(F_set), sourceInfo());
             end try;
-            (P_max, w_max) := augmentPathF(graph, vertexMap, F, E_M, w_max);
-            F_path := SBSet.complement(F_path, F_Set);
+            (P_max, F_path, U_V, w_max) := augmentPathF(graph, vertexMap, F, E_M, U_M, F_path, U_V, w_max);
+            F_path := SBSet.complement(F_path, F_set);
             // cardinality of P_1 ? first element? how to map/inverse map that thing? combine both for loops and use edge?
+            (P_max, w_max) := fixPathHead(P_max, w_max, E, SetType.F);
           else
             // solve recursion
           end if;
         end if;
       end for;
     end augmentPathU;
+
+    function fixPathHead
+      input output list<SBSet> P_max;
+      input output Integer w_max;
+      input SetEdge E;
+      input SetType ST;
+    protected
+      SBSet P1;
+      Integer P1_card;
+    algorithm
+      P1 :: P_max := P_max;
+      P1_card := SBSet.cardinality(P1);
+      if P1_card > w_max then
+        w_max := P1_card;
+        P_max := SetEdge.maxPath(E, P1, ST) :: P_max;
+      end if;
+    end fixPathHead;
 
   end Matching;
 

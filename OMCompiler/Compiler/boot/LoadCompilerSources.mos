@@ -504,7 +504,6 @@ if true then /* Suppress output */
     "../Util/AvlTreeString.mo",
     "../Util/AvlSetInt.mo",
 
-    "../Util/AdjacencyList.mo",
     // "../Util/BasePVector.mo",
     "../Util/Curl.mo",
     "../Util/DiffAlgorithm.mo",
@@ -527,6 +526,7 @@ if true then /* Suppress output */
     "../Util/PriorityQueue.mo",
     "../Util/SBAtomicSet.mo",
     "../Util/SBFunctions.mo",
+    "../Util/SBGraph.mo",
     "../Util/SBInterval.mo",
     "../Util/SBLinearMap.mo",
     "../Util/SBMultiInterval.mo",
