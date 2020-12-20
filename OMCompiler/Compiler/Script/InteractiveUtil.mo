@@ -4554,12 +4554,26 @@ algorithm
         compelts_1 = List.flatten(compelts);
         {Absyn.COMPONENTITEM(component=Absyn.COMPONENT(modification=SOME(Absyn.CLASSMOD(elementArgLst=elementArgLst))))} = List.select1(compelts_1, componentitemNamed, name);
         mod = getModificationValues(elementArgLst, AbsynUtil.crefToPath(subident));
-        res = Dump.unparseModificationStr(mod);
+        res = unparseMods(mod);
       then
         res;
     else "Error";
   end matchcontinue;
 end getElementModifierValues;
+
+public function unparseMods
+  input Absyn.Modification mod;
+  output String s;
+protected
+  Absyn.ElementArg arg;
+algorithm
+  s := match(mod)
+    case Absyn.CLASSMOD(elementArgLst = (arg as Absyn.REDECLARATION())::_)
+     then System.escapedString(Dump.unparseElementArgStr(arg), false);
+    else
+     then Dump.unparseModificationStr(mod);
+  end match;
+end unparseMods;
 
 protected function getModificationValues
   "Helper function to getComponentModifierValues
@@ -4578,6 +4592,8 @@ algorithm
       Option<String> cmt;
       list<Absyn.ElementArg> rest,args;
       String name1,name2;
+      Absyn.ElementSpec elSpec;
+      Absyn.ElementArg elArg;
     case ((Absyn.MODIFICATION(path = p1,modification = SOME(mod)) :: _),p2) guard AbsynUtil.pathEqual(p1, p2)
       then
         mod;
@@ -4587,6 +4603,9 @@ algorithm
         res = getModificationValues(args, p2);
       then
         res;
+    case ((elArg as Absyn.REDECLARATION(elementSpec = elSpec)) :: _, p1) guard AbsynUtil.pathFirstIdent(p1) == AbsynUtil.elementSpecName(elSpec)
+        then
+          Absyn.CLASSMOD({elArg}, Absyn.NOMOD());
     case ((_ :: rest),_)
       equation
         mod = getModificationValues(rest, inPath);
