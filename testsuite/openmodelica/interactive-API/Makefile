@@ -86,6 +86,7 @@ Ticket5680.mos \
 Ticket5696.mos \
 Ticket5871.mos \
 Ticket6167.mos \
+Ticket6287and6288.mos \
 Ticket6300.mos \
 ReadOnlyPkg.mos
 

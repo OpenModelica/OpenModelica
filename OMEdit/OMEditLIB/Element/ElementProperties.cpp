@@ -1034,7 +1034,7 @@ void ElementParameters::createTabsGroupBoxesAndParametersHelper(LibraryTreeItem 
       }
       pParameter->setValueWidget(comment.isEmpty() ? className : QString("%1 - %2").arg(className, comment), true, pParameter->getUnit());
     } else if (pParameter->getValueType() == Parameter::ReplaceableComponent) {
-      pParameter->setValueWidget(QString("redeclare %1 %2").arg(pComponent->getComponentInfo()->getClassName(), pComponent->getName()), true, pParameter->getUnit());
+      pParameter->setValueWidget(QString("replaceable %1 %2").arg(pComponent->getComponentInfo()->getClassName(), pComponent->getName()), true, pParameter->getUnit());
     } else {
       QString componentDefinedInClass = pComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
       QString value = pComponent->getComponentInfo()->getParameterValue(pOMCProxy, componentDefinedInClass);
