@@ -80,6 +80,7 @@ import List;
 import Lookup;
 import MetaUtil;
 import Mod;
+import NFApi;
 import Parser;
 import Print;
 import SCodeUtil;
@@ -8012,19 +8013,19 @@ public function getElementAnnotations " This function takes a `ComponentRef\', a
 protected
   Absyn.Path model_path;
   Absyn.Class cdef;
-  list<Absyn.Element> comps1, comps2, comps;
+  list<Absyn.Element> els1, els2, els;
 algorithm
   try
     model_path := AbsynUtil.crefToPath(inClassPath);
     cdef := getPathedClassInProgram(model_path, inProgram);
-    comps1 := getPublicElementsInClass(cdef);
+    els1 := getPublicElementsInClass(cdef);
     if (inAccess >= 4) then // i.e., Access.diagram
-      comps2 := getProtectedElementsInClass(cdef);
+      els2 := getProtectedElementsInClass(cdef);
     else
-      comps2 := {};
+      els2 := {};
     end if;
-    comps := listAppend(comps1, comps2);
-    outString := getElementAnnotationsFromElts(comps, cdef, inProgram, model_path);
+    els := listAppend(els1, els2);
+    outString := getElementAnnotationsFromElts(els, cdef, inProgram, model_path);
     outString := stringAppendList({"{", outString, "}"});
   else
     outString := "Error";
@@ -11079,7 +11080,7 @@ end getConnectionsInEquations;
 
 protected function getElementAnnotationsFromElts
 "Helper function to getElementAnnotations."
-  input list<Absyn.Element> comps;
+  input list<Absyn.Element> els;
   input Absyn.Class inClass;
   input Absyn.Program inFullProgram;
   input Absyn.Path inModelPath;
@@ -11091,11 +11092,15 @@ protected
   Absyn.Program placementProgram;
   GraphicEnvCache cache;
 algorithm
-  placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
-  graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
-  (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
+  if not Flags.isSet(Flags.NF_API) then
+    placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
+    graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
+    (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
+  else
+    env := FGraph.emptyGraph;
+  end if;
   cache := Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath);
-  res := getElementitemsAnnotations(comps, env, inClass, cache);
+  res := getElementitemsAnnotations(els, env, inClass, cache);
   resStr := stringDelimitList(res, ",");
 end getElementAnnotationsFromElts;
 
@@ -11113,7 +11118,16 @@ protected
   Option<Absyn.ConstrainClass> cc;
   list<Absyn.ElementArg> annotations;
   Option<Absyn.Comment> cmt;
+  Absyn.Program fullProgram;
+  Absyn.Path modelPath;
 algorithm
+
+  if Flags.isSet(Flags.NF_API) then
+    (fullProgram, modelPath) := Interactive.cacheProgramAndPath(inCache);
+    outStringLst := NFApi.evaluateAnnotations(fullProgram, modelPath, inElements);
+    return;
+  end if;
+
   for e in listReverse(inElements) loop
     outStringLst := matchcontinue e
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = items), constrainClass = cc)
@@ -11511,7 +11525,7 @@ algorithm
         (outCache, outEnv, outGraphicProgram, outGraphicEnvCache);
 
     // No cache, make partial or full cache as needed.
-    case Interactive.GRAPHIC_ENV_NO_CACHE()
+    case Interactive.Interactive.GRAPHIC_ENV_NO_CACHE()
       algorithm
         if AbsynUtil.onlyLiteralsInAnnotationMod(inAnnotationMod) then
           outGraphicProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
@@ -11606,12 +11620,12 @@ algorithm
         ErrorExt.setCheckpoint("buildEnvForGraphicProgram");
         try
         (cache, env, graphic_prog) :=
-          buildEnvForGraphicProgram(Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
+          buildEnvForGraphicProgram(Interactive.Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
           ErrorExt.rollBack("buildEnvForGraphicProgram");
         else
           ErrorExt.delCheckpoint("buildEnvForGraphicProgram");
           // Fallback to only the graphical primitives left in the program
-          (cache, env, graphic_prog) := buildEnvForGraphicProgram(Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
+          (cache, env, graphic_prog) := buildEnvForGraphicProgram(Interactive.Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
         end try;
 
         smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
