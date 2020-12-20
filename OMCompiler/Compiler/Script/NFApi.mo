@@ -317,12 +317,13 @@ protected
   list<Absyn.ComponentItem> items;
   Option<Absyn.ConstrainClass> cc;
   SourceInfo info;
-  list<Absyn.ElementArg> mod;
+  list<Absyn.ElementArg> mod, anns;
   Absyn.EqMod eqmod;
   SCode.Mod smod;
   DAE.DAElist dae;
   Type ty;
   Variability var;
+  Option<Absyn.Comment> cmt;
 algorithm
   // handle the annotations
   for i in inElements loop
@@ -335,6 +336,25 @@ algorithm
 
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
         then {}::elArgs;
+
+      case Absyn.ELEMENT(specification = Absyn.CLASSDEF(
+           class_ = Absyn.CLASS(body = Absyn.DERIVED(comment = cmt))),
+           constrainClass = cc)
+        algorithm
+          anns := match cmt
+            case SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(anns))))
+              then anns;
+            else {};
+          end match;
+        then
+          listAppend(anns, AbsynUtil.getAnnotationsFromConstraintClass(cc))::elArgs;
+
+      case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
+        then {} :: elArgs;
+
+      case Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(body = Absyn.DERIVED())))
+        then {} :: elArgs;
+
 
       else elArgs;
     end matchcontinue;

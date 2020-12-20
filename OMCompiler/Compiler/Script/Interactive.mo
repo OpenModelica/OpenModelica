@@ -13536,7 +13536,7 @@ algorithm
 end getComponentitemsModification;
 
 
-protected function cacheProgramAndPath
+public function cacheProgramAndPath
   input GraphicEnvCache inCache;
   output Absyn.Program outProgram;
   output Absyn.Path outPath;
