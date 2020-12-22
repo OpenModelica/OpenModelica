@@ -1704,7 +1704,14 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Measurement input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << "no file provided" << "</td> </tr>\n";
+  if (omc_flagValue[FLAG_DATA_RECONCILE_Cx])
+  {
+    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "</td> </tr>\n";
+  }
+  else
+  {
+    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << "no file provided" << "</td> </tr>\n";
+  }
   myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
   myfile << "</table>\n";
 
