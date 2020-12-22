@@ -2,6 +2,7 @@
 // keywords: extraction algorithm
 // status:   correct
 // depends: ./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv
+// depends: ./NewDataReconciliationSimpleTests/resources/VDI2048Exple_Corelation_inputs.csv
 // cflags: -d=-newInst
 
 setCommandLineOptions("--preOptModules+=dataReconciliation");
@@ -10,7 +11,7 @@ getErrorString();
 loadFile("NewDataReconciliationSimpleTests/package.mo");
 getErrorString();
 
-simulate(NewDataReconciliationSimpleTests.VDI2048Example_Corrected, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv -eps=0.0023 -lv=LOG_JAC");
+simulate(NewDataReconciliationSimpleTests.VDI2048Example_Corrected, simflags="-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv -cx=./NewDataReconciliationSimpleTests/resources/VDI2048Exple_Corelation_inputs.csv -eps=0.0023 -lv=LOG_JAC");
 getErrorString();
 
 // Result:
@@ -179,6 +180,10 @@ getErrorString();
 // 3/3 (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0   [dynamic |0|0|0|0|]
 //
 //
+// SET_S_After_Minimal_Extraction (0, 0)
+// ==========================================================================
+//
+//
 // Unknown variables in SET_S  (0)
 // ========================================
 //
@@ -237,7 +242,7 @@ getErrorString();
 //
 // record SimulationResult
 //     resultFile = "econcile",
-//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.VDI2048Example_Corrected', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.VDI2048Example_Corrected', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.VDI2048Exple_Inputs.csv -cx=./NewDataReconciliationSimpleTests/resources/VDI2048Exple_Corelation_inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // stdout            | info    | DataReconciliation Starting!

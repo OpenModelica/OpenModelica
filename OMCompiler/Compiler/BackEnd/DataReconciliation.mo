@@ -55,6 +55,7 @@ import List;
 import Matching;
 import Util;
 import System;
+import Settings;
 
 protected type ExtAdjacencyMatrixRow = tuple<Integer,list<Integer>>;
 protected type ExtAdjacencyMatrix = list<ExtAdjacencyMatrixRow>;
@@ -375,7 +376,11 @@ algorithm
   setS_Eq := getEquationsFromSBLTAndEBLT(setS, currentSystem.orderedEqs, e_BLT_EquationsWithIndex);
 
   // dump minimal SET-S equations
-  BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S_After_Minimal_Extraction");
+  if not listEmpty(tempSetS) then
+    BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S_After_Minimal_Extraction");
+  else
+    print("\nSET_S_After_Minimal_Extraction (0, 0)\n" + UNDERLINE +"\n\n");
+  end if;
 
   // prepare outdiff vars (i.e) variables of interest
   outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
@@ -1811,7 +1816,7 @@ protected
   list<Integer> tmplistvar1, tmplistvar2, tmplistvar3, sets_eqs, sets_vars, extractedeqs;
   Integer eqnumber, varnumber;
   list<tuple<Integer,list<Integer>>> var_dependencytree, eq_dependencytree;
-  String str, resstr;
+  String str, resstr, condition1, condition2, condition3, condition4, condition5;
   list<BackendDAE.Var> var, convar;
   Boolean rule2 = true;
 algorithm
@@ -1823,14 +1828,17 @@ algorithm
   print("-SET_C:"+ dumplistInteger(setc)+ "\n" + "-SET_S:" + dumplistInteger(sets) +"\n\n");
 
   //Condition-1
+  condition1 := "Condition-1 \"SET_C and SET_S must not have no equations in common\" ";
+  print(condition1 + "\n" + UNDERLINE + "\n");
   matchedeq := List.intersectionOnTrue(setc, sets, intEq);
-  print("Condition-1 " + "\"SET_C and SET_S must not have no equations in common\"" + "\n" + UNDERLINE + "\n");
+
   if listEmpty(matchedeq) then
     print("-Passed\n\n");
   else
     print("-Failed\n");
     BackendDump.dumpEquationList(List.map1r(matchedeq, BackendEquation.get, allEqs),"-Equations Found in SET_C and SET_S:" + dumplistInteger(matchedeq));
-    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 1- Failed : The system is ill-posed."});
+    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 1-Failed: SET_C and SET_S must not have no equations in common: The system is ill-posed"});
+    generateCompileTimeHtmlReport(shared, "Condition 1-Failed: SET_C and SET_S must not have no equations in common: The system is ill-posed");
     fail();
   end if;
 
@@ -1838,7 +1846,8 @@ algorithm
   (matchedknownssets, matchedunknownssets) := getVariableOccurence(sets, mExt, knowns);
 
   // Condition -2
-  print("Condition-2 " + "\"All variables of interest must be involved in SET_C or SET_S\"" + "\n" +UNDERLINE  +"\n");
+  condition2 := "Condition-2 \"All variables of interest must be involved in SET_C or SET_S\" ";
+  print(condition2 +  "\n" + UNDERLINE + "\n");
   (tmplist1, tmplist2, tmplist3) := List.intersection1OnTrue(matchedknownssetc, knowns, intEq);
 
   if listEmpty(tmplist3) then
@@ -1851,7 +1860,7 @@ algorithm
       str := dumplistInteger(tmplist2);
       print("-Failed\n");
       BackendDump.dumpVarList(List.map1r(tmplist2, BackendVariable.getVarAt, allVars), "knownVariables not Found:" + dumplistInteger(tmplist2));
-      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 2- Failed : The system is ill-posed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 2-Failed: All variables of interest must be involved in SET_C or SET_S: The system is ill-posed."});
       rule2 := false;
       str := dumpToCsv("", List.map1r(tmplist2, BackendVariable.getVarAt, allVars));
       System.writeFile(shared.info.fileNamePrefix + "_NonReconcilcedVars.txt", str);
@@ -1865,18 +1874,22 @@ algorithm
   end if;
 
   //Condition-3
-  print("Condition-3 " +"\"SET_C equations must be strictly less than Variable of Interest\"" + "\n" + UNDERLINE +"\n");
+  condition3 := "Condition-3 \"SET_C equations must be strictly less than Variable of Interest\" ";
+  print(condition3 + "\n" + UNDERLINE + "\n");
+
   if (listLength(setc) < listLength(knowns) and not listEmpty(setc)) then
     print("-Passed"+ "\n" + "-SET_C contains:" + intString(listLength(setc)) + " equations < " + intString(listLength(knowns))+" known variables \n\n");
   else
-    resstr:="-Failed"+ "\n" + "-SET_C contains:" + intString(listLength(setc)) + " equations  > " + intString(listLength(knowns)) +" known variables \n\n";
+    resstr:="-Failed"+ "\n" + "-SET_C contains:" + intString(listLength(setc)) + " equations  and " + intString(listLength(knowns)) +" known variables \n\n";
     print(resstr);
-    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 3-Failed : The system is ill-posed."});
+    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 3-Failed: SET_C equations must be strictly less than Variable of Interest: The system is ill-posed"});
+    generateCompileTimeHtmlReport(shared, "Condition 3-Failed: \"SET_C equations must be strictly less than Variable of Interest\": The system is ill-posed");
     fail();
   end if;
 
   //Condition-4
-  print("Condition-4 " +"\"SET_S should contain all intermediate variables involved in SET_C\"" + "\n" + UNDERLINE +"\n");
+  condition4 := "Condition-4 \"SET_S should contain all intermediate variables involved in SET_C\" ";
+  print(condition4 + "\n" + UNDERLINE + "\n");
   (tmplistvar1, tmplistvar2, tmplistvar3) := List.intersection1OnTrue(matchedunknownssetc, matchedunknownssets, intEq);
 
   if listEmpty(matchedunknownssetc) then
@@ -1890,13 +1903,16 @@ algorithm
       print("-Passed\n\n");
     else
       BackendDump.dumpVarList(List.map1r(tmplistvar2, BackendVariable.getVarAt, allVars), "-SET_S does not have intermediate variables involved in SET_C:" + dumplistInteger(tmplistvar2));
-      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 4-Failed : The system is ill-posed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 4-Failed: SET_S should contain all intermediate variables involved in SET_C: The system is ill-posed"});
+      generateCompileTimeHtmlReport(shared, "Condition 4-Failed: SET_S should contain all intermediate variables involved in SET_C: The system is ill-posed");
       fail();
     end if;
   end if;
 
   //Condition-5
-  print("Condition-5 " +"\"SET_S should be square \"" + "\n" + UNDERLINE +"\n");
+  condition5 := "Condition-5 \"SET_S should be square\" ";
+  print(condition5 + "\n" + UNDERLINE + "\n");
+
   if(listEmpty(sets)) then
     print("-Passed"+"\n"+"-SET_S contains 0 intermediate variables and 0 equations \n\n");
     return;
@@ -1905,11 +1921,30 @@ algorithm
       print("-Passed" + "\n "+ "Set_S has " + intString(listLength(sets)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables\n\n");
     else
       print("-Failed" + "\n "+ "Set_S has " + intString(listLength(sets)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables\n\n");
-      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed Set_S is not square: The system is ill-posed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed: Set_S should be square: The system is ill-posed."});
+      generateCompileTimeHtmlReport(shared, "Condition 5-Failed: \"Set_S should be square\": The system is ill-posed.");
       fail();
     end if;
   end if;
 end VerifyDataReconciliation;
+
+protected function generateCompileTimeHtmlReport
+  "generate html report for internal errors reported during verification of extraction algorithm"
+  input BackendDAE.Shared shared;
+  input String conditions;
+protected
+  String data;
+algorithm
+    data := "<html> \n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n <h2> Overview: </h2> \n";
+    data := data + "<table> \n <tr> \n <th align=right> Model file: </th> \n";
+    data := data + "<td>"+ shared.info.fileNamePrefix + ".mo" + "</td>\n</tr>\n";
+    data := data + " <tr> \n <th align=right> Model name: </th>\n";
+    data := data + "<td>" + shared.info.fileNamePrefix + "</td>\n</tr>\n";
+    data := data + "<tr> \n <th align=right> Generated: </th>\n";
+    data := data + "<td>" + System.getCurrentTimeStr() + "<b> by OpenModelica " + Settings.getVersionNr() + "</b>" + "</td>\n</tr>\n <table>\n";
+    data := data + "<h3> Errors: </h3> " + "\n <p> <b> Internal error: </b>" + conditions + "</p>" + "\n<html>";
+    System.writeFile(shared.info.fileNamePrefix + ".html", data);
+end generateCompileTimeHtmlReport;
 
 public function getVariableOccurence
   "return list of knowns and unknowns variables from set-C or Set-S"
