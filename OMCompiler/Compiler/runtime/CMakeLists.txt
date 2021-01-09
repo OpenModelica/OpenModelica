@@ -249,6 +249,10 @@ set(WITH_UMFPACK "#define WITH_UMFPACK")
 set(WITH_HWLOC 0)
 set(WITH_UUID "#define WITH_LIBUUID 1")
 
+set(RUNTIMECFLAGS "-fPIC -falign-functions -mfpmath=sse -fno-dollars-in-identifiers")
+
+# set(prefix1 "${CMAKE_CURRENT_SOURCE_DIR}/../../build/")
+get_filename_component(prefix "${CMAKE_CURRENT_SOURCE_DIR}/../../build/" ABSOLUTE)
 
 set(USE_GRAPH 0)
 
