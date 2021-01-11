@@ -749,7 +749,7 @@ algorithm
     args := arg :: args;
   end for;
 
-  exp := Expression.makeRecord(InstNode.scopePath(recordNode), recordType, args);
+  exp := Expression.makeRecord(InstNode.scopePath(recordNode, includeRoot = true), recordType, args);
 end makeRecordBindingExp;
 
 function splitRecordArrayExp
