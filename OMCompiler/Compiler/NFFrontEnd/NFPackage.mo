@@ -31,27 +31,28 @@
 
 encapsulated package NFPackage
   import FlatModel = NFFlatModel;
-  import NFFlatten.FunctionTree;
   import InstContext = NFInstContext;
+  import NFFlatten.FunctionTree;
 
 protected
-  import ExecStat.execStat;
-  import ComponentRef = NFComponentRef;
-  import Expression = NFExpression;
-  import Binding = NFBinding;
-  import Equation = NFEquation;
-  import Statement = NFStatement;
-  import List;
-  import Component = NFComponent;
-  import NFInstNode.InstNode;
-  import Typing = NFTyping;
-  import Ceval = NFCeval;
-  import NFFunction.Function;
-  import Class = NFClass;
-  import Sections = NFSections;
-  import ClassTree = NFClassTree;
-  import Variable = NFVariable;
   import Algorithm = NFAlgorithm;
+  import Binding = NFBinding;
+  import Ceval = NFCeval;
+  import Class = NFClass;
+  import ClassTree = NFClassTree;
+  import Component = NFComponent;
+  import ComponentRef = NFComponentRef;
+  import Equation = NFEquation;
+  import ExecStat.execStat;
+  import Expression = NFExpression;
+  import Flatten = NFFlatten;
+  import List;
+  import NFFunction.Function;
+  import NFInstNode.InstNode;
+  import Sections = NFSections;
+  import Statement = NFStatement;
+  import Typing = NFTyping;
+  import Variable = NFVariable;
 
 public
   type Constants = ConstantsSetImpl.Tree;
@@ -79,8 +80,7 @@ public
     input output FlatModel flatModel;
     input FunctionTree functions;
   protected
-    list<Variable> vars = {};
-    Binding binding;
+    list<Variable> vars;
     Constants constants;
   algorithm
     constants := Constants.new();
@@ -92,6 +92,7 @@ public
     constants := FunctionTree.fold(functions, collectFuncConstants, constants);
 
     vars := listReverse(Variable.fromCref(c) for c in Constants.listKeys(constants));
+    vars := listAppend(Variable.expand(v) for v in vars);
     flatModel.variables := listAppend(vars, flatModel.variables);
 
     execStat(getInstanceName());
