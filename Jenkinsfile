@@ -137,6 +137,7 @@ pipeline {
                 bat "echo PATH: %PATH%"
                 common.buildOMC('cc', 'c++', '', true)
                 common.makeLibsAndCache()
+                common.buildOMSens()
                 common.buildGUI('', true)
                 common.buildAndRunOMEditTestsuite('')
               }

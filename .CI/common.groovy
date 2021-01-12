@@ -278,6 +278,27 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
   }
 }
 
+void buildOMSens() {
+  if (isWindows()) {
+  bat ("""
+     set OMDEV=C:\\OMDev
+     echo on
+     (
+     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+     echo cd \${MSYS_WORKSPACE}
+     echo export MAKETHREADS=-j16
+     echo set -e
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omsens
+     ) > buildOMSensWindows.sh
+
+     set MSYSTEM=MINGW64
+     set MSYS2_PATH_TYPE=inherit
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMSensWindows.sh && ./buildOMSensWindows.sh && rm -f ./buildOMSensWindows.sh"
+  """)
+  }
+}
+
 void buildGUI(stash, isQt5) {
   if (isWindows()) {
   bat ("""
