@@ -9,6 +9,7 @@ testModelDescription.mos \
 testClockDescription.mos \
 testCSTR.mos \
 testDrumBoiler.mos \
+ticket6296.mos \
 testCombiTable2D.mos
 
 FAILINGTESTFILES = \
