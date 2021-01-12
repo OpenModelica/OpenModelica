@@ -13814,6 +13814,9 @@ protected
 algorithm
   // create list of elements
   elts := match var
+  // check for exportVar = NONE() in type_ = T_ARRAY() which is filtered by default and should not be exported to modeldescription.xml in fmus
+  case SimCodeVar.SIMVAR(type_=DAE.T_ARRAY(), exportVar = NONE()) then {};
+
   case SimCodeVar.SIMVAR(type_=DAE.T_ARRAY(), variable_index=SOME(index), fmi_index=SOME(fmi_index)) algorithm
     dims := List.map(List.lastN(var.numArrayElement, listLength(var.numArrayElement)), stringInt);
     elt := var;
