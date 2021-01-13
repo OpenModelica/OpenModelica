@@ -78,6 +78,8 @@ import SCodeUtil;
 import IOStream;
 import ComplexType = NFComplexType;
 import InstContext = NFInstContext;
+import UnorderedSet;
+import Graph;
 
 public
 
@@ -1407,6 +1409,9 @@ uniontype Function
         fn.attributes := attr;
       end if;
     end if;
+
+    // Sort the local variables based on their dependencies.
+    fn.locals := sortLocals(fn.locals, InstNode.info(fn.node));
   end typeFunctionBody;
 
   function checkPureCall
@@ -2383,6 +2388,82 @@ protected
       else ();
     end match;
   end analyseUnusedParametersExp2;
+
+  function sortLocals
+    "Sorts local components in a function such that they can be initialized in
+     order, or gives an error if there are mutually dependent components."
+    input output list<InstNode> locals;
+    input SourceInfo info;
+  protected
+    UnorderedSet<InstNode> locals_set;
+    list<tuple<InstNode, list<InstNode>>> dep_graph, cycles;
+    String cycles_str;
+  algorithm
+    locals_set := UnorderedSet.fromList(locals, InstNode.hash, InstNode.refEqual);
+    dep_graph := Graph.buildGraph(locals, getLocalDependencies, locals_set);
+    (locals, cycles) := Graph.topologicalSort(dep_graph, InstNode.refEqual);
+
+    if not listEmpty(cycles) then
+      cycles_str := stringDelimitList(
+        list(List.toString(cycle, InstNode.name, "", "{", ", ", "}", true)
+          for cycle in Graph.findCycles(cycles, InstNode.refEqual)), ", ");
+
+      Error.addSourceMessage(Error.CYCLIC_FUNCTION_COMPONENTS, {cycles_str}, info);
+      fail();
+    end if;
+  end sortLocals;
+
+  function getLocalDependencies
+    input InstNode node;
+    input UnorderedSet<InstNode> locals;
+    output list<InstNode> dependencies = {};
+  protected
+    Binding binding;
+    UnorderedSet<InstNode> deps;
+  algorithm
+    binding := Component.getBinding(InstNode.component(node));
+
+    if Binding.hasExp(binding) then
+      // Use a set to store the dependencies to avoid duplicates.
+      deps := UnorderedSet.new(InstNode.hash, InstNode.refEqual, 1);
+      deps := Expression.fold(Binding.getExp(binding),
+        function getLocalDependencies2(locals = locals), deps);
+      dependencies := UnorderedSet.toList(deps);
+    end if;
+  end getLocalDependencies;
+
+  function getLocalDependencies2
+    input Expression exp;
+    input UnorderedSet<InstNode> locals;
+    input output UnorderedSet<InstNode> deps;
+  algorithm
+    () := match exp
+      local
+        ComponentRef cr;
+        InstNode cr_node;
+
+      case Expression.CREF()
+        algorithm
+          // Get the 'last' part of the cref, i.e. a in a.b.c, in case there are
+          // e.g. local record instances.
+          cr := ComponentRef.last(exp.cref);
+
+          // Make sure it's something that actually has a node.
+          if ComponentRef.isCref(cr) then
+            cr_node := ComponentRef.node(cr);
+
+            // Check if the cref refers to a local variable, in that case add it
+            // to the set of dependencies.
+            if UnorderedSet.contains(cr_node, locals) then
+              UnorderedSet.add(cr_node, deps);
+            end if;
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end getLocalDependencies2;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

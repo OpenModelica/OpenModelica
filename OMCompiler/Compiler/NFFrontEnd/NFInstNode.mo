@@ -1677,6 +1677,12 @@ uniontype InstNode
     end match;
   end getSections;
 
+  function hash
+    "Returns the hash of an InstNode's name."
+    input InstNode node;
+    input Integer mod;
+    output Integer hash = stringHashDjb2Mod(name(node), mod);
+  end hash;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

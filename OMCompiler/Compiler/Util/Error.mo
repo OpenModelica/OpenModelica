@@ -836,7 +836,8 @@ public constant ErrorTypes.Message TOP_LEVEL_INPUT_WITH_BINDING = ErrorTypes.MES
   Gettext.gettext("Top-level input ‘%s‘ has a binding equation and will not be accessible as an input of the model."));
 public constant ErrorTypes.Message NON_DISCRETE_WHEN_CONDITION = ErrorTypes.MESSAGE(382, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("When-condition ‘%s‘ is not a discrete-time expression."));
-
+public constant ErrorTypes.Message CYCLIC_FUNCTION_COMPONENTS = ErrorTypes.MESSAGE(383, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Cyclically dependent function components found: %s"));
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
 public constant ErrorTypes.Message INITIALIZATION_OVER_SPECIFIED = ErrorTypes.MESSAGE(497, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),

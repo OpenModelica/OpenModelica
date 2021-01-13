@@ -252,6 +252,16 @@ public
     CREF(restCref = restCref) := cref;
   end rest;
 
+  function last
+    input ComponentRef cref;
+    output ComponentRef lastCref;
+  algorithm
+    lastCref := match cref
+      case CREF(restCref = CREF()) then last(cref.restCref);
+      else cref;
+    end match;
+  end last;
+
   function firstNonScope
     input ComponentRef cref;
     output ComponentRef first;
