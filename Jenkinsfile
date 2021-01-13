@@ -1,7 +1,7 @@
 def common
 def shouldWeBuildOSX
 def shouldWeBuildMINGW
-def shouldWeBuildCENTOS6
+def shouldWeBuildCENTOS7
 def shouldWeRunTests
 def isPR
 pipeline {
@@ -15,7 +15,7 @@ pipeline {
   parameters {
     booleanParam(name: 'BUILD_OSX', defaultValue: false, description: 'Build with OSX')
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
-    booleanParam(name: 'BUILD_CENTOS6', defaultValue: false, description: 'Build on CentOS6 with CMake2.8')
+    booleanParam(name: 'BUILD_CENTOS7', defaultValue: false, description: 'Build on CentOS7 with CMake 2.8')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -38,8 +38,8 @@ pipeline {
           print "shouldWeBuildOSX: ${shouldWeBuildOSX}"
           shouldWeBuildMINGW = common.shouldWeBuildMINGW()
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
-          shouldWeBuildCENTOS6 = common.shouldWeBuildCENTOS6()
-          print "shouldWeBuildCENTOS6: ${shouldWeBuildCENTOS6}"
+          shouldWeBuildCENTOS7 = common.shouldWeBuildCENTOS7()
+          print "shouldWeBuildCENTOS7: ${shouldWeBuildCENTOS7}"
           shouldWeRunTests = common.shouldWeRunTests()
           print "shouldWeRunTests: ${shouldWeRunTests}"
         }
@@ -144,18 +144,18 @@ pipeline {
             }
           }
         }
-        stage('CentOS6') {
+        stage('CentOS7') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-centos6'
+              dir '.CI/cache-centos7'
               label 'linux'
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           when {
             beforeAgent true
-            expression { shouldWeBuildCENTOS6 }
+            expression { shouldWeBuildCENTOS7 }
           }
           environment {
             QTDIR = "/usr/lib64/qt5/"
@@ -169,7 +169,7 @@ pipeline {
                 'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran',
                 false)  // Building C++ runtime doesn't work at the moment
             }
-            //stash name: 'omc-centos6', includes: 'build/**, **/config.status'
+            //stash name: 'omc-centos7', includes: 'build/**, **/config.status'
           }
         }
         stage('checks') {

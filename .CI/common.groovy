@@ -465,13 +465,13 @@ def shouldWeBuildMINGW() {
   return params.BUILD_MINGW
 }
 
-def shouldWeBuildCENTOS6() {
+def shouldWeBuildCENTOS7() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build CentOS")) {
       return true
     }
   }
-  return params.BUILD_CENTOS6
+  return params.BUILD_CENTOS7
 }
 
 def shouldWeRunTests() {
