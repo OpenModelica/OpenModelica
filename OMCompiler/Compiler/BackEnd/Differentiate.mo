@@ -576,7 +576,7 @@ algorithm
       Absyn.Path p, p1, p2;
       Boolean b;
       DAE.CallAttributes attr;
-      DAE.Exp e1, e2, e3, actual, simplified;
+      DAE.Exp e1, e2, e3, actual, simplified, lambda;
       DAE.Exp res, res1, res2;
       DAE.FunctionTree functionTree;
       DAE.Operator op;
@@ -622,8 +622,15 @@ algorithm
 
     // differentiate homotopy
     case DAE.CALL(path=p as Absyn.IDENT(name="homotopy"), expLst={actual, simplified}, attr=attr) algorithm
+      lambda := Expression.crefExp(ComponentReference.makeCrefIdent(BackendDAE.homotopyLambda, DAE.T_REAL_DEFAULT, {}));
       (e1, functionTree) := differentiateExp(actual, inDiffwrtCref, inInputData, inDiffType, inFunctionTree, maxIter);
-    then (e1, functionTree);
+      (e2, functionTree) := differentiateExp(simplified, inDiffwrtCref, inInputData, inDiffType, functionTree, maxIter);
+      e3 := DAE.BINARY(
+        DAE.BINARY(lambda, DAE.MUL(DAE.T_REAL_DEFAULT), e1),                                                          /* lambda*e1 */
+        DAE.ADD(DAE.T_REAL_DEFAULT),                                                                                  /* + */
+        DAE.BINARY(DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),lambda), DAE.MUL(DAE.T_REAL_DEFAULT), e2)   /* (lambda-1)*e2*/
+      );
+    then (e3, functionTree);
 
     /*
       do not differentiate semiLinear, if the second or third expression contains the diff cref
