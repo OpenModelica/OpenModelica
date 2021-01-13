@@ -2982,7 +2982,6 @@ algorithm
     Boolean b, insideCall;
     DAE.Type ty;
     case (DAE.CALL(path=Absyn.IDENT("delay")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
-    case (DAE.CALL(path=Absyn.IDENT("homotopy")), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
 
 // For now exclude all not built in calls
     case (DAE.CALL(attr=DAE.CALL_ATTR(builtin=false)), (expLst, _, insideCall)) then (inExp, false, (inExp::expLst, false, insideCall));
