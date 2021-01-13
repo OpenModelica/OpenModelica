@@ -952,25 +952,22 @@ QRectF Element::boundingRect() const
 QRectF Element::itemsBoundingRect()
 {
   QRectF rect;
-  /* ticket:4431 use Element's sceneBoundingRect()
-   * instead of calling sceneBoundingRect() on its items.
-   */
-  foreach (Element *pElement, mInheritedElementsList) {
-    rect |= pElement->sceneBoundingRect();
+  foreach (Element *pInheritedElement, mInheritedElementsList) {
+    rect |= pInheritedElement->itemsBoundingRect();
   }
   foreach (Element *pElement, mElementsList) {
-    rect |= pElement->sceneBoundingRect();
+    rect |= pElement->itemsBoundingRect();
   }
   foreach (QGraphicsItem *item, mShapesList) {
     rect |= item->sceneBoundingRect();
   }
-  if (mpNonExistingElementLine->isVisible()) {
+  if (mpNonExistingElementLine && mpNonExistingElementLine->isVisible()) {
     rect |= mpNonExistingElementLine->sceneBoundingRect();
   }
-  if (mpDefaultElementRectangle->isVisible()) {
+  if (mpDefaultElementRectangle && mpDefaultElementRectangle->isVisible()) {
     rect |= mpDefaultElementRectangle->sceneBoundingRect();
   }
-  if (mpDefaultElementText->isVisible()) {
+  if (mpDefaultElementText && mpDefaultElementText->isVisible()) {
     rect |= mpDefaultElementText->sceneBoundingRect();
   }
   return rect;
