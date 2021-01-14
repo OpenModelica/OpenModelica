@@ -1585,7 +1585,6 @@ uniontype Function
           // can have variable number of arguments
           case "fill" then true;
           case "getInstanceName" then true;
-          case "homotopy" then true;
           // Always discrete.
           case "initial" then true;
           case "inStream" then true;

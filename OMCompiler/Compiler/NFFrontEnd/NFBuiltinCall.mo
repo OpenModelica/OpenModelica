@@ -122,7 +122,6 @@ public
       case "edge" then typeEdgeCall(call, next_context, info);
       case "fill" then typeFillCall(call, next_context, info);
       case "getInstanceName" then typeGetInstanceName(call);
-      case "homotopy" then typeHomotopyCall(call, next_context, info);
       //case "hold" guard Config.synchronousFeaturesAllowed() then typeHoldCall(call, next_context, info);
       //case "initialState" guard Config.synchronousFeaturesAllowed() then typeInitialStateCall(call, next_context, info);
       case "initial" then typeDiscreteCall(call, next_context, info);
@@ -2293,28 +2292,6 @@ protected
     Structural.markExp(factor);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
   end typeSuperSampleCall;
-
-  function typeHomotopyCall
-    input Call call;
-    input InstContext.Type context;
-    input SourceInfo info;
-    output Expression callExp;
-    output Type ty;
-    output Variability var;
-    output Purity purity = Purity.IMPURE;
-  protected
-    Call ty_call;
-    list<Expression> args;
-  algorithm
-    ty_call as Call.TYPED_CALL(arguments = args, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, context, info);
-
-    callExp := match Flags.getConfigString(Flags.REPLACE_HOMOTOPY)
-      case "actual" then listHead(args);
-      case "simplified" then listHead(listRest(args));
-      else Expression.CALL(Call.unboxArgs(ty_call));
-    end match;
-  end typeHomotopyCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBuiltinCall;
