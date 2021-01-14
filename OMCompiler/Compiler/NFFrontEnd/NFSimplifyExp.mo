@@ -236,6 +236,7 @@ algorithm
         exp;
 
     case "fill"      then simplifyFill(listHead(args), listRest(args), call);
+    case "homotopy"  then simplifyHomotopy(args, call);
     case "ones"      then simplifyFill(Expression.INTEGER(1), args, call);
     case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
     case "product"   then simplifySumProduct(listHead(args), call, isSum = false);
@@ -333,6 +334,18 @@ algorithm
     exp := Expression.CALL(call);
   end if;
 end simplifyFill;
+
+function simplifyHomotopy
+  input list<Expression> args;
+  input Call call;
+  output Expression exp;
+algorithm
+  exp := match Flags.getConfigString(Flags.REPLACE_HOMOTOPY)
+    case "actual" then listHead(args);
+    case "simplified" then listHead(listRest(args));
+    else Expression.CALL(call);
+  end match;
+end simplifyHomotopy;
 
 function simplifyArrayConstructor
   input Call call;
