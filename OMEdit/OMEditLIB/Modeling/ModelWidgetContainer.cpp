@@ -8276,7 +8276,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
    * Provided that the Documentation Browser is already visible.
    */
-  if (mpLastActiveSubWindow == pSubWindow) {
+  if (!pSubWindow || mpLastActiveSubWindow == pSubWindow) {
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
