@@ -967,6 +967,10 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
   }
   mpOMCProxy->setCommandLineOptions(QString("--fmiFilter=%1").arg(OptionsDialog::instance()->getFMIPage()->getModelDescriptionFiltersComboBox()->currentText()));
   mpOMCProxy->setCommandLineOptions(QString("--fmiSources=%1").arg(OptionsDialog::instance()->getFMIPage()->getIncludeSourceCodeCheckBox()->isChecked() ? "true" : "false"));
+  // set the generate debug symbols flag
+  if (OptionsDialog::instance()->getFMIPage()->getGenerateDebugSymbolsCheckBox()->isChecked()) {
+    mpOMCProxy->setCommandLineOptions(QString("-d=gendebugsymbols"));
+  }
   QString fmuFileName = mpOMCProxy->buildModelFMU(pLibraryTreeItem->getNameStructure(), version, type, FMUName, platforms);
   if (!fmuFileName.isEmpty()) { // FMU was generated
     if (!newFmuName.isEmpty()) { // FMU should be moved
@@ -995,6 +999,10 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
     //Push traceability information automaticaly to Daemon
     MainWindow::instance()->getCommitChangesDialog()->generateTraceabilityURI("fmuExport", pLibraryTreeItem->getFileName(),
                                                                               pLibraryTreeItem->getNameStructure(), fmuFileName);
+  }
+  // unset the generate debug symbols flag
+  if (OptionsDialog::instance()->getFMIPage()->getGenerateDebugSymbolsCheckBox()->isChecked()) {
+    mpOMCProxy->setCommandLineOptions(QString("-d=-gendebugsymbols"));
   }
   MainWindow::instance()->getOMCProxy()->changeDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   // hide progress bar

@@ -921,6 +921,7 @@ public:
   QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
   QComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
   QCheckBox *getIncludeSourceCodeCheckBox() const {return mpIncludeSourceCodeCheckBox;}
+  QCheckBox *getGenerateDebugSymbolsCheckBox() const {return mpGenerateDebugSymbolsCheckBox;}
   QCheckBox* getDeleteFMUDirectoryAndModelCheckBox() {return mpDeleteFMUDirectoryAndModelCheckBox;}
 
   static const QString FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER;
@@ -945,6 +946,7 @@ private:
   QComboBox *mpLinkingComboBox;
   QComboBox *mpModelDescriptionFiltersComboBox;
   QCheckBox *mpIncludeSourceCodeCheckBox;
+  QCheckBox *mpGenerateDebugSymbolsCheckBox;
   QGroupBox *mpImportGroupBox;
   QCheckBox *mpDeleteFMUDirectoryAndModelCheckBox;
 public slots:
