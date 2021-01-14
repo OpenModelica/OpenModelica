@@ -296,17 +296,19 @@ public
     input output NFCall call;
     input InstContext.Type context;
     input SourceInfo info;
+    input Boolean vectorize = true;
   protected
     NFCall argtycall;
   algorithm
     argtycall := typeNormalCall(call, context, info);
-    call := matchTypedNormalCall(argtycall, context, info);
+    call := matchTypedNormalCall(argtycall, context, info, vectorize);
   end typeMatchNormalCall;
 
   function matchTypedNormalCall
     input output NFCall call;
     input InstContext.Type context;
     input SourceInfo info;
+    input Boolean vectorize = true;
   protected
     Function func;
     list<Expression> args;
@@ -319,7 +321,7 @@ public
     Expression arg_exp;
   algorithm
     ARG_TYPED_CALL(call_scope = scope) := call;
-    matchedFunc := checkMatchingFunctions(call,info);
+    matchedFunc := checkMatchingFunctions(call, info, vectorize);
 
     func := matchedFunc.func;
     typed_args := matchedFunc.args;
@@ -2155,6 +2157,7 @@ protected
   function checkMatchingFunctions
     input NFCall call;
     input SourceInfo info;
+    input Boolean vectorize = true;
     output MatchedFunction matchedFunc;
   protected
     list<MatchedFunction> matchedFunctions, exactMatches;
@@ -2175,7 +2178,7 @@ protected
             allfuncs := list(fn for fn guard not Function.isDefaultRecordConstructor(fn) in allfuncs);
           end if;
         then
-          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, info);
+          Function.matchFunctions(allfuncs, call.positional_args, call.named_args, info, vectorize);
     end match;
 
     if listEmpty(matchedFunctions) then
