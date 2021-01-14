@@ -51,6 +51,7 @@ protected
   import NFInstNode.InstNode;
   import Sections = NFSections;
   import Statement = NFStatement;
+  import Type = NFType;
   import Typing = NFTyping;
   import Variable = NFVariable;
 
@@ -78,7 +79,6 @@ public
 public
   function collectConstants
     input output FlatModel flatModel;
-    input FunctionTree functions;
   protected
     list<Variable> vars;
     Constants constants;
@@ -89,7 +89,7 @@ public
     constants := Equation.foldExpList(flatModel.initialEquations, collectExpConstants, constants);
     constants := Algorithm.foldExpList(flatModel.algorithms, collectExpConstants, constants);
     constants := Algorithm.foldExpList(flatModel.initialAlgorithms, collectExpConstants, constants);
-    constants := FunctionTree.fold(functions, collectFuncConstants, constants);
+    //constants := FunctionTree.fold(functions, collectFuncConstants, constants);
 
     vars := listReverse(Variable.fromCref(c) for c in Constants.listKeys(constants));
     vars := listAppend(Variable.expand(v) for v in vars);
@@ -142,18 +142,17 @@ public
     input output Constants constants;
   protected
     ComponentRef cref;
+    Binding binding;
   algorithm
     () := match exp
       case Expression.CREF(cref = cref as ComponentRef.CREF())
         algorithm
           if ComponentRef.isPackageConstant(cref) then
-            Typing.typeComponentBinding(cref.node, NFInstContext.CLASS);
+            binding := getPackageConstantBinding(cref);
             // Add the constant to the set.
             constants := Constants.add(constants, ComponentRef.stripSubscriptsAll(cref));
             // Collect constants from the constant's binding.
-            constants := collectBindingConstants(
-              Component.getBinding(InstNode.component(ComponentRef.node(cref))),
-              constants);
+            constants := collectBindingConstants(binding, constants);
           end if;
         then
           ();
@@ -161,6 +160,54 @@ public
       else ();
     end match;
   end collectExpConstants_traverser;
+
+  function getPackageConstantBinding
+    input ComponentRef cref;
+    output Binding binding;
+  protected
+    InstNode cr_node = ComponentRef.node(cref);
+  algorithm
+    Typing.typeComponentBinding(cr_node, NFInstContext.CLASS);
+    binding := Component.getImplicitBinding(InstNode.component(cr_node));
+
+    if Binding.isUnbound(binding) then
+      binding := getPackageConstantBinding2(cr_node, ComponentRef.rest(cref));
+      InstNode.componentApply(cr_node, Component.setBinding, binding);
+    end if;
+  end getPackageConstantBinding;
+
+  function getPackageConstantBinding2
+    input InstNode fieldNode;
+    input ComponentRef cref;
+    output Binding binding;
+  protected
+    InstNode cr_node;
+    Boolean is_record;
+  algorithm
+    if not ComponentRef.isCref(cref) then
+      binding := NFBinding.EMPTY_BINDING;
+      return;
+    end if;
+
+    is_record := Type.isRecord(Type.arrayElementType(ComponentRef.nodeType(cref)));
+    cr_node := ComponentRef.node(cref);
+
+    if not (InstNode.isComponent(cr_node) and is_record) then
+      binding := NFBinding.EMPTY_BINDING;
+      return;
+    end if;
+
+    Typing.typeComponentBinding(cr_node, NFInstContext.CLASS);
+    binding := Component.getBinding(InstNode.component(cr_node));
+
+    if Binding.isUnbound(binding) then
+      binding := getPackageConstantBinding2(cr_node, ComponentRef.rest(cref));
+    end if;
+
+    if Binding.isBound(binding) then
+      binding := Binding.recordFieldBinding(fieldNode, binding);
+    end if;
+  end getPackageConstantBinding2;
 
   function collectFuncConstants
     input Absyn.Path name;

@@ -4478,6 +4478,13 @@ public
 
       case RECORD() then listGet(recordExp.elements, index);
 
+      case CREF()
+        algorithm
+          Type.COMPLEX(cls = node) := Type.arrayElementType(typeOf(recordExp));
+          node := Class.nthComponent(index, InstNode.getClass(node));
+        then
+          fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
+
       case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         then makeEmptyArray(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))));
 
