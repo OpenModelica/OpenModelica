@@ -18,15 +18,21 @@ package P
   end ext_func;
 end P;
 
-model M
+model PackageConstant3
   Real x = P.r[1].x;
-end M;
+end PackageConstant3;
 
 // Result:
-// class M
+// function P.ext_func
+//   output Real x;
+//
+//   external "C" x = ext_func();
+// end P.ext_func;
+//
+// class PackageConstant3
 //   parameter Real P.r[1].x = P.ext_func();
 //   parameter Real P.r[2].x = P.ext_func();
 //   parameter Real P.r[3].x = P.ext_func();
 //   Real x = P.r[1].x;
-// end M;
+// end PackageConstant3;
 // endResult

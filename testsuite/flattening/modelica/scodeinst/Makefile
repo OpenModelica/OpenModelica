@@ -728,6 +728,7 @@ OperatorOverloadError1.mo \
 OperatorOverloadSum1.mo \
 PackageConstant1.mo \
 PackageConstant3.mo \
+PackageConstant4.mo \
 ParameterBug.mos \
 PartialApplication1.mo \
 PartialApplicationInvalidArg1.mo \

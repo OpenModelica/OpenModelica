@@ -77,7 +77,7 @@ public
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
     ty := ComponentRef.getSubscriptedType(cref);
-    binding := Component.getBinding(comp);
+    binding := Component.getImplicitBinding(comp);
     vis := InstNode.visibility(node);
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
@@ -104,6 +104,7 @@ public
         Expression.arrayScalarElements(ExpandExp.expandCref(Expression.fromCref(var.name))));
 
       v := var;
+      v.ty := Type.arrayElementType(v.ty);
       vars := {};
       binding := var.binding;
 

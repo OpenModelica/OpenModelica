@@ -174,13 +174,13 @@ algorithm
   // Apply simplifications to the model.
   flatModel := SimplifyModel.simplify(flatModel);
 
-  // Collect a tree of all functions that are still used in the flat model.
-  functions := Flatten.collectFunctions(flatModel);
-
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them
   // to the model.
-  flatModel := Package.collectConstants(flatModel, functions);
+  flatModel := Package.collectConstants(flatModel);
+
+  // Collect a tree of all functions that are still used in the flat model.
+  functions := Flatten.collectFunctions(flatModel);
 
   // Dump the flat model to a stream if dumpFlat = true.
   flatString := if dumpFlat then
