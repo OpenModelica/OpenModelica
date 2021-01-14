@@ -738,7 +738,7 @@ protected function selectInitializationVariablesDAE "author: lochel
   output list<BackendDAE.Var> outAllPrimaryParameters = {};
   output BackendDAE.Variables outGlobalKnownVars = dae.shared.globalKnownVars;
 protected
-  BackendDAE.Variables otherVariables, globalKnownVars=dae.shared.globalKnownVars;
+  BackendDAE.Variables otherVariables, globalKnownVars;
   BackendDAE.EquationArray globalKnownVarsEqns;
   BackendDAE.EqSystem globalKnownVarsSystem;
   BackendDAE.AdjacencyMatrix m, mT;
@@ -752,9 +752,27 @@ protected
   DAE.Exp bindExp;
   HashSet.HashSet hs;
   list<DAE.ComponentRef> crefs;
+  list<BackendDAE.Var> globalKnownVarList = {};
 algorithm
+
+  /* #6262, fix start values for input, when start exp has non constant bindings associated with a parameter (e.g)
+     input Real x(start = x_start);
+     parameter Real x_start = 6.0;
+  */
+  for var in BackendVariable.varList(dae.shared.globalKnownVars) loop
+    if BackendVariable.isInput(var) and not Expression.isConstValue(BackendVariable.varStartValue(var)) then
+      bindExp := BackendVariable.varStartValue(var);
+      (v, _) := BackendVariable.getVarSingle(Expression.expCref(bindExp), dae.shared.globalKnownVars);
+      var := BackendVariable.setVarStartValueOption(var, v.bindExp);
+      globalKnownVarList := var :: globalKnownVarList;
+    else
+      globalKnownVarList := var :: globalKnownVarList;
+    end if;
+  end for;
+  dae := BackendDAEUtil.setDAEGlobalKnownVars(dae, BackendVariable.listVar(globalKnownVarList));
+
   // lochel: workaround to align all elements
-  globalKnownVars := BackendVariable.listVar(BackendVariable.varList(globalKnownVars));
+  globalKnownVars := BackendVariable.listVar(BackendVariable.varList(dae.shared.globalKnownVars));
 
   outInitVars := selectInitializationVariables(dae.eqs);
   outInitVars := BackendVariable.traverseBackendDAEVars(dae.shared.globalKnownVars, selectInitializationVariables2, outInitVars);
