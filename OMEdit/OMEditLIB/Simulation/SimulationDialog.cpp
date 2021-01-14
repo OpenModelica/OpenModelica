@@ -71,8 +71,8 @@ SimulationDialog::~SimulationDialog()
   foreach (SimulationOutputWidget *pSimulationOutputWidget, mSimulationOutputWidgetsList) {
     SimulationProcessThread *pSimulationProcessThread = pSimulationOutputWidget->getSimulationProcessThread();
     /* If the SimulationProcessThread is running then we need to stop it i.e exit its event loop.
-       Kill the compilation and simulation processes if they are running before exiting the SimulationProcessThread.
-      */
+     * Kill the compilation and simulation processes if they are running before exiting the SimulationProcessThread.
+     */
     if (pSimulationProcessThread->isRunning()) {
       if (pSimulationProcessThread->isCompilationProcessRunning() && pSimulationProcessThread->getCompilationProcess()) {
         pSimulationProcessThread->getCompilationProcess()->kill();
@@ -82,8 +82,8 @@ SimulationDialog::~SimulationDialog()
       }
       pSimulationProcessThread->exit();
       pSimulationProcessThread->wait();
-      delete pSimulationOutputWidget;
     }
+    delete pSimulationOutputWidget;
   }
   // kill the clients
   foreach (OpcUaClient *pOpcUaClient, mOpcUaClientsMap) {
