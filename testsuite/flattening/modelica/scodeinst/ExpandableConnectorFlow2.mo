@@ -25,9 +25,13 @@ end ExpandableConnectorFlow2;
 
 // Result:
 // class ExpandableConnectorFlow2
+//   Real bus.c.f;
+//   Real bus.c.e;
 //   Real c.f;
 //   Real c.e;
 // equation
+//   bus.c.e = c.e;
+//   (-bus.c.f) - c.f = 0.0;
 //   bus.c.f = 0.0;
 //   c.f = 0.0;
 // end ExpandableConnectorFlow2;
