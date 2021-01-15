@@ -32,6 +32,8 @@
 encapsulated uniontype NFConnection
   import Connector = NFConnector;
 protected
+  import Error;
+  import MetaModelica.Dangerous.listReverseInPlace;
   import Connection = NFConnection;
 
 public
@@ -40,6 +42,36 @@ public
     NFConnector lhs;
     NFConnector rhs;
   end CONNECTION;
+
+  function split
+    input Connection conn;
+    output list<Connection> conns = {};
+  protected
+    list<Connector> cls, crs;
+    Connector cr;
+  algorithm
+    cls := Connector.split(conn.lhs);
+    crs := Connector.split(conn.rhs);
+
+    if listLength(cls) <> listLength(crs) then
+      Error.assertion(false, getInstanceName() + " got unbalanced connection " + toString(conn) + " (lhs: " +
+        String(listLength(cls)) + ", rhs: " + String(listLength(crs)) + ")", sourceInfo());
+      fail();
+    end if;
+
+    for cl in cls loop
+      cr :: crs := crs;
+
+      // Connections involving deleted conditional connectors are filtered out
+      // when collecting the connections, but if the connectors themselves
+      // contain connectors that have been deleted we need to remove them here.
+      if not (Connector.isDeleted(cl) or Connector.isDeleted(cr)) then
+        conns := CONNECTION(cl, cr) :: conns;
+      end if;
+    end for;
+
+    conns := listReverseInPlace(conns);
+  end split;
 
   function toString
     input Connection conn;

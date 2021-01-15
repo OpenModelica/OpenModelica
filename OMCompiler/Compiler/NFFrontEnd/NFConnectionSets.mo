@@ -117,32 +117,18 @@ package ConnectionSets
     input BrokenEdges broken;
     input output ConnectionSets.Sets sets;
   protected
-    Connector lhs, rhs, c2;
-    list<Connector> lhsl, rhsl;
+    list<Connection> conns;
   algorithm
-    Connection.CONNECTION(lhs = lhs, rhs = rhs) := connection;
-    lhsl := Connector.split(lhs);
-    rhsl := Connector.split(rhs);
+    conns := Connection.split(connection);
 
-    for c1 in lhsl loop
-      c2 :: rhsl := rhsl;
+    if not listEmpty(broken) then
+      conns := list(c for c guard not isBroken(c.lhs, c.rhs, broken) in conns);
+    end if;
 
-      // Connections involving deleted conditional connectors are filtered out
-      // when collecting the connections, but if the connectors themselves
-      // contain connectors that have been deleted we need to remove them here.
-      if not (Connector.isDeleted(c1) or Connector.isDeleted(c2)) then
-        // TODO: Check variability of connectors. It's an error if either
-        //       connector is constant/parameter while the other isn't.
-
-        if listEmpty(broken) then
-          sets := merge(c1, c2, sets);
-        elseif isBroken(c1, c2, broken) then
-          // do nothing
-          // print("Ignore broken: connect(" + Connector.toString(c1) + ", " + Connector.toString(c2) + ")\n");
-        else
-          sets := merge(c1, c2, sets);
-        end if;
-      end if;
+    // TODO: Check variability of connectors. It's an error if either
+    //       connector is constant/parameter while the other isn't.
+    for conn in conns loop
+      sets := merge(conn.lhs, conn.rhs, sets);
     end for;
   end addConnection;
 
@@ -163,6 +149,7 @@ package ConnectionSets
       if ComponentRef.isPrefix(lhs, cr1) and ComponentRef.isPrefix(rhs, cr2) or
          ComponentRef.isPrefix(lhs, cr2) and ComponentRef.isPrefix(rhs, cr1)
       then
+        // print("Ignore broken: connect(" + Connector.toString(c1) + ", " + Connector.toString(c2) + ")\n");
         b := true;
         break;
       end if;
