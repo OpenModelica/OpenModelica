@@ -406,6 +406,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationFinished(int,QProcess::ExitStatus)),
           SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationStarted()), SLOT(simulationProcessStarted()));
+  connect(mpSimulationProcessThread, SIGNAL(enableSimulationOutputTab()), SLOT(enableSimulationOutputTab()));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationOutput(QString,StringHandler::SimulationMessageType,bool)),
           SLOT(writeSimulationOutput(QString,StringHandler::SimulationMessageType,bool)));
   connect(mpSimulationProcessThread, SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)),
@@ -666,6 +667,18 @@ void SimulationOutputWidget::simulationProcessStarted()
 }
 
 /*!
+ * \brief SimulationOutputWidget::enableSimulationOutputTab
+ * Slot activated when SimulationProcessThread enableSimulationOutputTab SIGNAL is raised.
+ * Enables and makes the simulation output tab active.
+ */
+void SimulationOutputWidget::enableSimulationOutputTab()
+{
+  // make the output tab enabled and current only once.
+  mpGeneratedFilesTabWidget->setTabEnabled(0, true);
+  mpGeneratedFilesTabWidget->setCurrentIndex(0);
+}
+
+/*!
  * \brief SimulationOutputWidget::writeSimulationOutput
  * Slot activated when SimulationProcessThread sendSimulationOutput signal is raised.\n
  * Writes the simulation standard output to the simulation output text box.
@@ -707,9 +720,6 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
 {
   Q_UNUSED(exitCode);
   Q_UNUSED(exitStatus);
-  mpGeneratedFilesTabWidget->setTabEnabled(0, true);
-  /* make the output tab the current one */
-  mpGeneratedFilesTabWidget->setCurrentIndex(0);
   mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mSimulationOptions.getClassName()));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelButton->setEnabled(false);

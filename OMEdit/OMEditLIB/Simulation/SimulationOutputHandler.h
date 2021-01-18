@@ -97,6 +97,7 @@ private:
   SimulationOutputWidget *mpSimulationOutputWidget;
   int mLevel;
   int mNumberOfBytes;
+  bool mShownDisplayLimitReachedMessage;
   SimulationMessage* mpSimulationMessage;
   QMap<int, SimulationMessage*> mSimulationMessagesLevelMap;
   SimulationMessageModel *mpSimulationMessageModel;

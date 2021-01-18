@@ -148,6 +148,7 @@ void SimulationProcessThread::runSimulationExecutable()
   processEnvironment.insert("PATH", fileInfo.absoluteDir().absolutePath() + ";" + processEnvironment.value("PATH"));
   mpSimulationProcess->setProcessEnvironment(processEnvironment);
 #endif
+  emit enableSimulationOutputTab();
   emit sendSimulationOutput(QString("%1 %2").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo, true);
   mpSimulationProcess->start(fileName, args);
 }

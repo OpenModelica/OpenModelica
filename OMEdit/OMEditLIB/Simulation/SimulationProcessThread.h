@@ -83,6 +83,7 @@ signals:
   void sendCompilationFinished(int, QProcess::ExitStatus);
   void sendSimulationStarted();
   void sendEstablishConnectionRunning();
+  void enableSimulationOutputTab();
   void sendSimulationOutput(QString, StringHandler::SimulationMessageType type, bool);
   void sendSimulationFinished(int, QProcess::ExitStatus);
 };
