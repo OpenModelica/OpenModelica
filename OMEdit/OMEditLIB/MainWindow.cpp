@@ -339,7 +339,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpModelWidgetContainer = new ModelWidgetContainer(this);
   // Create an object of WelcomePageWidget
   mpWelcomePageWidget = new WelcomePageWidget(this);
-  updateRecentFileActions();
+  updateRecentFileActionsAndList();
   // OMSens plugin
   mpOMSensPlugin = 0;
   // create the Git commands instance
@@ -472,47 +472,66 @@ void MainWindow::addRecentFile(const QString &fileName, const QString &encoding)
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
   // remove the already present RecentFile instance from the list.
-  foreach (QVariant file, files)
-  {
+  foreach (QVariant file, files) {
     RecentFile recentFile = qvariant_cast<RecentFile>(file);
     QFileInfo file1(recentFile.fileName);
     QFileInfo file2(fileName);
-    if (file1.absoluteFilePath().compare(file2.absoluteFilePath()) == 0)
+    if (file1.absoluteFilePath().compare(file2.absoluteFilePath()) == 0) {
       files.removeOne(file);
+    }
   }
   RecentFile recentFile;
   recentFile.fileName = fileName;
   recentFile.encoding = encoding;
   files.prepend(QVariant::fromValue(recentFile));
-  while (files.size() > MaxRecentFiles)
-    files.removeLast();
   pSettings->setValue("recentFilesList/files", files);
-  updateRecentFileActions();
+  updateRecentFileActionsAndList();
 }
 
 /*!
- * \brief MainWindow::updateRecentFileActions
- * Updates the actions of the recent files menu items.
+ * \brief MainWindow::updateRecentFileActionsAndList
+ * Updates the actions of the recent files menu and recent files list on the welcome page.
  */
-void MainWindow::updateRecentFileActions()
+void MainWindow::updateRecentFileActionsAndList()
 {
-  /* first set all recent files actions visibility to false. */
-  for (int i = 0; i < MaxRecentFiles; ++i)
-    mpRecentFileActions[i]->setVisible(false);
   /* read the new recent files list */
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
-  int numRecentFiles = qMin(files.size(), (int)MaxRecentFiles);
-  for (int i = 0; i < numRecentFiles; ++i)
-  {
+  int recentFilesSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  while (files.size() > recentFilesSize) {
+    files.removeLast();
+  }
+  pSettings->setValue("recentFilesList/files", files);
+  /* Clear the recent files menu. This will also delete the actions.
+   * void QMenu::clear()
+   * Removes all the menu's actions. Actions owned by the menu and not shown in any other widget are deleted.
+   */
+  mpRecentFilesMenu->clear();
+  createRecentFileActions();
+  mpWelcomePageWidget->addRecentFilesListItems();
+}
+
+/*!
+ * \brief MainWindow::createRecentFileActions
+ * Creates the recent file actions.
+ */
+void MainWindow::createRecentFileActions()
+{
+  /* read the new recent files list */
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
+  int recentFilesSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  int numRecentFiles = qMin(files.size(), recentFilesSize);
+  for (int i = 0; i < numRecentFiles; ++i) {
     RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
-    mpRecentFileActions[i]->setText(recentFile.fileName);
+    QAction *pRecentFileAction = new QAction(this);
+    pRecentFileAction->setText(recentFile.fileName);
     QStringList dataList;
     dataList << recentFile.fileName << recentFile.encoding;
-    mpRecentFileActions[i]->setData(dataList);
-    mpRecentFileActions[i]->setVisible(true);
+    pRecentFileAction->setData(dataList);
+    connect(pRecentFileAction, SIGNAL(triggered()), this, SLOT(openRecentFile()));
+    mpRecentFilesMenu->addAction(pRecentFileAction);
   }
-  mpWelcomePageWidget->addRecentFilesListItems();
 }
 
 /*!
@@ -1922,7 +1941,10 @@ void MainWindow::writeErrorFileData(QString data)
   MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, data, Helper::scriptingKind, Helper::errorLevel));
 }
 
-//! Opens the recent file.
+/*!
+ * \brief MainWindow::openRecentFile
+ * Opens the recent file.
+ */
 void MainWindow::openRecentFile()
 {
   QAction *pAction = qobject_cast<QAction*>(sender());
@@ -1936,8 +1958,7 @@ void MainWindow::clearRecentFilesList()
 {
   QSettings *pSettings = Utilities::getApplicationSettings();
   pSettings->remove("recentFilesList/files");
-  updateRecentFileActions();
-  mpWelcomePageWidget->addRecentFilesListItems();
+  updateRecentFileActionsAndList();
 }
 
 /*!
@@ -2894,7 +2915,7 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
   }
   int j = 0;
   for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
-    if (j >= MaxRecentFiles) {
+    if (j >= MaxRecentModels) {
       break;
     }
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
@@ -2906,8 +2927,8 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
     j++;
   }
   // if subwindowlist size is less than MaxRecentFiles then hide the remaining actions
-  int numRecentModels = qMin(subWindowsList.size(), (int)MaxRecentFiles);
-  for (j = numRecentModels ; j < MaxRecentFiles ; j++) {
+  int numRecentModels = qMin(subWindowsList.size(), (int)MaxRecentModels);
+  for (j = numRecentModels ; j < MaxRecentModels ; j++) {
     mpModelSwitcherActions[j]->setVisible(false);
   }
 }
@@ -3371,12 +3392,6 @@ void MainWindow::createActions()
   mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
   mpExportToOMNotebookAction->setEnabled(false);
   connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
-  // recent files action
-  for (int i = 0; i < MaxRecentFiles; ++i) {
-    mpRecentFileActions[i] = new QAction(this);
-    mpRecentFileActions[i]->setVisible(false);
-    connect(mpRecentFileActions[i], SIGNAL(triggered()), this, SLOT(openRecentFile()));
-  }
   // clear recent files action
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
@@ -3675,7 +3690,7 @@ void MainWindow::createActions()
   mpTransitionModeAction->setCheckable(true);
   mpTransitionModeAction->setChecked(true);
   // model switcher actions
-  for (int i = 0; i < MaxRecentFiles; ++i) {
+  for (int i = 0; i < MaxRecentModels; ++i) {
     mpModelSwitcherActions[i] = new QAction(this);
     mpModelSwitcherActions[i]->setVisible(false);
     connect(mpModelSwitcherActions[i], SIGNAL(triggered()), this, SLOT(openRecentModelWidget()));
@@ -3834,8 +3849,7 @@ void MainWindow::createMenus()
   mpRecentFilesMenu = new QMenu(menuBar());
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");
   mpRecentFilesMenu->setTitle(tr("Recent &Files"));
-  for (int i = 0; i < MaxRecentFiles; ++i)
-    mpRecentFilesMenu->addAction(mpRecentFileActions[i]);
+  // we don't create the recent files actions here. It will be done when WelcomePageWidget is created and updateRecentFileActionsAndList() is called.
   pFileMenu->addMenu(mpRecentFilesMenu);
   pFileMenu->addAction(mpClearRecentFilesAction);
   pFileMenu->addSeparator();
@@ -4327,7 +4341,7 @@ void MainWindow::createToolbars()
   mpModelSwitcherToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // Model Switcher Menu
   mpModelSwitcherMenu = new QMenu;
-  for (int i = 0; i < MaxRecentFiles; ++i) {
+  for (int i = 0; i < MaxRecentModels; ++i) {
     mpModelSwitcherMenu->addAction(mpModelSwitcherActions[i]);
   }
   // Model Switcher ToolButton

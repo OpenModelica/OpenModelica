@@ -245,6 +245,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("welcomePage/showLatestNews")) {
     mpGeneralSettingsPage->getShowLatestNewsCheckBox()->setChecked(mpSettings->value("welcomePage/showLatestNews").toBool());
   }
+  // recent files size
+  if (mpSettings->contains("welcomePage/recentFilesSize")) {
+    mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->setValue(mpSettings->value("welcomePage/recentFilesSize").toInt());
+  }
   // replaceable support
   if (mpSettings->contains("replaceableSupport")) {
     mpGeneralSettingsPage->setReplaceableSupport(mpSettings->value("replaceableSupport").toBool());
@@ -1057,13 +1061,17 @@ void OptionsDialog::saveGeneralSettings()
   }
   mpSettings->setValue("welcomePage/view", mpGeneralSettingsPage->getWelcomePageView());
   bool showLatestNews = mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked();
-  if (MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) {
+  int recentFilesSize = mpSettings->value("welcomePage/recentFilesSize").toInt();
+  if ((MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) || recentFilesSize != mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->value()) {
     MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->show();
     MainWindow::instance()->getWelcomePageWidget()->addLatestNewsListItems();
   } else if (!showLatestNews) {
     MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->hide();
   }
   mpSettings->setValue("welcomePage/showLatestNews", showLatestNews);
+  // recent files size
+  mpSettings->setValue("welcomePage/recentFilesSize", mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->value());
+  MainWindow::instance()->updateRecentFileActionsAndList();
   // save replaceable support
   mpSettings->setValue("replaceableSupport", mpGeneralSettingsPage->getReplaceableSupport());
 }
@@ -1996,11 +2004,18 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // Show/hide latest news checkbox
   mpShowLatestNewsCheckBox = new QCheckBox(tr("Show Latest News"));
   mpShowLatestNewsCheckBox->setChecked(true);
+  // Recent files and latest news size
+  Label *pRecentFilesAndLatestNewsSizeLabel = new Label(tr("Recent Files and Latest News Size:"));
+  mpRecentFilesAndLatestNewsSizeSpinBox = new QSpinBox;
+  mpRecentFilesAndLatestNewsSizeSpinBox->setValue(15);
   // Welcome Page layout
   QGridLayout *pWelcomePageGridLayout = new QGridLayout;
   pWelcomePageGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pWelcomePageGridLayout->addLayout(pWelcomePageViewButtonsLayout, 0, 0);
-  pWelcomePageGridLayout->addWidget(mpShowLatestNewsCheckBox, 1, 0);
+  pWelcomePageGridLayout->setColumnStretch(1, 1);
+  pWelcomePageGridLayout->addLayout(pWelcomePageViewButtonsLayout, 0, 0, 1, 2, Qt::AlignLeft);
+  pWelcomePageGridLayout->addWidget(mpShowLatestNewsCheckBox, 1, 0, 1, 2);
+  pWelcomePageGridLayout->addWidget(pRecentFilesAndLatestNewsSizeLabel, 2, 0);
+  pWelcomePageGridLayout->addWidget(mpRecentFilesAndLatestNewsSizeSpinBox, 2, 1);
   mpWelcomePageGroupBox->setLayout(pWelcomePageGridLayout);
 
   // Optional Features Box

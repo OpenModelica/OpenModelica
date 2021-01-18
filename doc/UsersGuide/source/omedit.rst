@@ -1060,6 +1060,8 @@ General
 
   -  *Show Latest News* - If enabled then the latest news from https://openmodelica.org are shown.
 
+  -  *Recent Files and Latest News Size* - Sets the display size for recent files and latest news items.
+
 -  Optional Features
 
   -  *Enable replaceable support* - Enables/disables the replaceable support.
