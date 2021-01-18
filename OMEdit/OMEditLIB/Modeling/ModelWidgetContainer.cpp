@@ -4070,25 +4070,30 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   setLayout(layout);
 }
 
+/*!
+ * \brief WelcomePageWidget::addRecentFilesListItems
+ * Adds the recent file list items to list view.
+ */
 void WelcomePageWidget::addRecentFilesListItems()
 {
   // remove list items first
   mpRecentItemsList->clear();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
-  int numRecentFiles = qMin(files.size(), (int)MainWindow::instance()->MaxRecentFiles);
-  for (int i = 0; i < numRecentFiles; ++i)
-  {
+  int recentFilesSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  int numRecentFiles = qMin(files.size(), recentFilesSize);
+  for (int i = 0; i < numRecentFiles; ++i) {
     RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
     QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsList);
     listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
     listItem->setText(recentFile.fileName);
     listItem->setData(Qt::UserRole, recentFile.encoding);
   }
-  if (files.size() > 0)
+  if (numRecentFiles > 0) {
     mpNoRecentFileLabel->setVisible(false);
-  else
+  } else {
     mpNoRecentFileLabel->setVisible(true);
+  }
 }
 
 QFrame* WelcomePageWidget::getLatestNewsFrame()
@@ -4113,6 +4118,7 @@ void WelcomePageWidget::addLatestNewsListItems()
 
 void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 {
+  int maxNewsSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
   if (pNetworkReply->error() == QNetworkReply::HostNotFoundError) {
     mpNoLatestNewsLabel->setVisible(true);
     mpNoLatestNewsLabel->setText(tr("Sorry, no internet no news items."));
@@ -4134,7 +4140,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
               }
               if (xml.name() == "link") {
                 link = xml.readElementText();
-                if (count >= (int)MainWindow::instance()->MaxRecentFiles) {
+                if (count >= maxNewsSize) {
                   break;
                 }
                 count++;
@@ -4148,7 +4154,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
           }
         }
       }
-      if (count >= (int)MainWindow::instance()->MaxRecentFiles) {
+      if (count >= maxNewsSize) {
         break;
       }
     }

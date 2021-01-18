@@ -4094,7 +4094,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
         }
       }
       pSettings->setValue("recentFilesList/files", files);
-      MainWindow::instance()->updateRecentFileActions();
+      MainWindow::instance()->updateRecentFileActionsAndList();
       return;
     }
   }

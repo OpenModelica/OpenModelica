@@ -96,7 +96,7 @@ class MainWindow : public QMainWindow
 {
   Q_OBJECT
 public:
-  enum { MaxRecentFiles = 8 };
+  enum { MaxRecentModels = 8 };
 private:
   MainWindow(QWidget *parent = 0);
   static MainWindow *mpInstance;
@@ -214,7 +214,8 @@ public:
   QToolBar* getTLMSimulationToolbar() const {return mpTLMSimulationToolbar;}
   QToolBar* getOMSimulatorToobar() const {return mpOMSimulatorToobar;}
   void addRecentFile(const QString &fileName, const QString &encoding);
-  void updateRecentFileActions();
+  void updateRecentFileActionsAndList();
+  void createRecentFileActions();
   void closeEvent(QCloseEvent *event) override;
   int askForExit();
   void beforeClosingMainWindow();
@@ -335,7 +336,6 @@ private:
   QAction *mpExportXMLAction;
   QAction *mpExportFigaroAction;
   QAction *mpExportToOMNotebookAction;
-  QAction *mpRecentFileActions[MaxRecentFiles];
   QAction *mpClearRecentFilesAction;
   QAction *mpPrintModelAction;
   QAction *mpQuitAction;
@@ -410,7 +410,7 @@ private:
   QAction *mpConnectModeAction;
   QAction *mpTransitionModeAction;
   // Model Switcher Toolbar Actions
-  QAction *mpModelSwitcherActions[MaxRecentFiles];
+  QAction *mpModelSwitcherActions[MaxRecentModels];
   // Plot Toolbar Actions
   QAction *mpReSimulateModelAction;
   QAction *mpReSimulateSetupAction;
