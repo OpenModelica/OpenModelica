@@ -258,6 +258,7 @@ SimulationOutputHandler::SimulationOutputHandler(SimulationOutputWidget *pSimula
   mpSimulationOutputWidget = pSimulationOutputWidget;
   mLevel = 0;
   mNumberOfBytes = 0;
+  mShownDisplayLimitReachedMessage = false;
   mpSimulationMessage = 0;
   QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
                                   .arg(mpSimulationOutputWidget->getSimulationOptions().getClassName());
@@ -352,11 +353,10 @@ bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QS
   /* if display limit is reached then close and display the so far text
    * and display a message showing that the limit is reached.
    */
-  static int init = 0;
   if (isMaximumDisplayLimitReached()) {
     // Only generate the reached display limit message once.
-    if (!init) {
-      init = 1;
+    if (!mShownDisplayLimitReachedMessage) {
+      mShownDisplayLimitReachedMessage = true;
 
       while (mLevel > 0) {
         endElement("", "", "message");
