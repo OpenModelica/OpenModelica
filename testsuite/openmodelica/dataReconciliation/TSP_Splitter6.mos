@@ -1938,8 +1938,8 @@ getErrorString();
 // [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.pt was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:646:3-701:20:writable] Warning: sat.cv was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
-// Error: Internal error : Condition 2-Failed: All variables of interest must be involved in SET_C or SET_S: The system is ill-posed.
-// Error: Internal error : Condition 4-Failed: SET_S should contain all intermediate variables involved in SET_C: The system is ill-posed
+// Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
+// Error: Internal error : Condition 4-Failed: SET_S should contain all intermediate variables involved in SET_C: The data reconciliation problem is ill-posed
 // Error: pre-optimization module dataReconciliation (simulation) failed.
 // "
 // endResult

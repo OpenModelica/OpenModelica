@@ -83,6 +83,12 @@ struct correlationData
   vector<string> columnHeaders;
 };
 
+struct correlationDataWarning
+{
+  vector<string> diagonalEntry;
+  vector<string> aboveDiagonalEntry;
+};
+
 struct matrixData
 {
   int rows;
@@ -196,6 +202,14 @@ bool isStringValidDouble(std::string &cref)
 }
 
 /*
+ * check string is a empty, (i.e) contains only "," in csv input
+ */
+bool isLineEmptyData(std::string &cref)
+{
+  return std::regex_match(cref, std::regex("^[,]*$"));
+}
+
+/*
  * Function which reads the csv file
  * and stores the initial measured value X and HalfWidth confidence
  * interval Wx and also the input variable names
@@ -225,6 +239,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data)
   int Sxcolscount = 0;
   bool flag = false;
   vector<errorData> errorInfo;
+  vector<int> errorInfoHeaders;
 
   if (!ip.good())
   {
@@ -238,7 +253,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data)
   {
     getline(ip, line);
     vector<string> t1;
-    if (linecount > 1 && !line.empty())
+    if (linecount > 1 && !line.empty() && !isLineEmptyData(line))
     {
       //std::cout << "\nline info:" << line;
       std::replace(line.begin(), line.end(), ';', ',');
@@ -251,8 +266,13 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data)
       bool col0 = false, col1 = false, col2 = false;
       while (getline(ss, temp, ','))
       {
-        if (columnCount == 0 && !temp.empty())
+        if (columnCount == 0)
         {
+          // // error : no variable of interest is provided by user at column #1
+          if (temp.empty())
+          {
+            errorInfoHeaders.push_back(linecount);
+          }
           col0 = true;
           names.push_back(temp.c_str());
           Sxrowcount++;
@@ -312,6 +332,19 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data)
       }
     }
     linecount++;
+  }
+
+// user error : variable of interest is missing in column #1
+  if (!errorInfoHeaders.empty())
+  {
+    for (const auto &line : errorInfoHeaders)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in measurement input file  %s is missing in line #%d ", filename, line);
+      logfile << "|  error   |   " << "the name of the variable of interest in measurement input file " << filename << " is missing in line #" << line << "\n";
+    }
+    logfile.close();
+    createErrorHtmlReport(data);
+    exit(1);
   }
 
   // user error #6: Entry for variable of interest <variable name> in measurement input file <input file name> is incorrect: <reason (no value or incorrect value type)>
@@ -428,7 +461,7 @@ void printVectorMatrixWithHeaders(vector<double> matrix, int rows, int cols, vec
 /*
  Function to Print the corelation matrix in row based format with headers
  */
-void printCorelationMatrix(vector<double> cx_data, vector<string> rowHeaders, vector<string> columnHeaders, string name, ofstream & logfile)
+void printCorelationMatrix(vector<double> cx_data, vector<string> rowHeaders, vector<string> columnHeaders, string name, ofstream & logfile, correlationDataWarning & warningCorrelationData)
 {
   if (cx_data.empty())
   {
@@ -436,7 +469,6 @@ void printCorelationMatrix(vector<double> cx_data, vector<string> rowHeaders, ve
   }
 
   logfile << "\n" << "************ " << name << " **********" << "\n";
-  vector<string> diagonalentry, abovediagonalentry;
   for (int i = 0; i < rowHeaders.size(); i++)
   {
     logfile << std::right << setw(10) << rowHeaders[i];
@@ -444,28 +476,15 @@ void printCorelationMatrix(vector<double> cx_data, vector<string> rowHeaders, ve
     {
       if (i == j && cx_data[columnHeaders.size() * i + j] != 0)
       {
-        diagonalentry.push_back(rowHeaders[i]);
+        warningCorrelationData.diagonalEntry.push_back(rowHeaders[i]);
       }
       else if (j > i && cx_data[columnHeaders.size() * i + j] != 0)
       {
-        abovediagonalentry.push_back(rowHeaders[i]);
+        warningCorrelationData.aboveDiagonalEntry.push_back(rowHeaders[i]);
       }
       logfile << std::right << setw(15) << cx_data[columnHeaders.size() * i + j];
     }
     logfile << "\n";
-  }
-  logfile << "\n";
-
-  // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
-  for (const auto & index : diagonalentry)
-  {
-    logfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
-  }
-
-  // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
-  for (const auto & index : abovediagonalentry)
-  {
-    logfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
   }
   logfile << "\n";
 }
@@ -906,6 +925,7 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
   vector<double> cx_data;
   vector<errorData> errorInfo;
   correlationData Cx;
+  vector<int> errorInfoHeaders;
 
   if (filename == NULL)
   {
@@ -948,7 +968,7 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
         columnCount++;
       }
     }
-    else if (linecount > 1 && !line.empty())
+    else if (linecount > 1 && !line.empty() && !isLineEmptyData(line))
     {
       //std::cout << "\nreading covariance matrix : " << line << " size : " << columnHeaders.size();
       int columnCount = 1;
@@ -956,7 +976,11 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
       {
         if (columnCount == 1)
         {
-          //std::cout << "\nrow header values : " << temp << " : " << columnCount;
+          // error : no variable of interest is provided by user at column #1
+          if (temp.empty())
+          {
+            errorInfoHeaders.push_back(linecount);
+          }
           rowHeaders.push_back(temp);
         }
         else
@@ -994,6 +1018,19 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
       }
     }
     linecount++;
+  }
+
+  // user error : variable of interest is missing in column #1
+  if (!errorInfoHeaders.empty())
+  {
+    for (const auto &line : errorInfoHeaders)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in correlation input file  %s is missing in line #%d ", filename, line);
+      logfile << "|  error   |   " << "the name of the variable of interest in correlation input file " << filename << " is missing in line #" << line << "\n";
+    }
+    logfile.close();
+    createErrorHtmlReport(data);
+    exit(1);
   }
 
   // user error #9: Entry for variable of interest <variable name> and variable of interest <variable name> in correlation input file <input file name> is incorrect: incorrect value type.
@@ -1407,7 +1444,7 @@ void checkInExpensiveMatrixInverse(ofstream & logfile, DATA * data)
   //printMatrix(checksx,3,1,"InExpensive_Matrix_Inverse");
 }
 
-int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixData Sx, matrixData tmpjacF, matrixData tmpjacFt, double eps, int iterationcount, csvData csvinputs, matrixData xdiag, matrixData sxdiag, ofstream &logfile)
+int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixData Sx, matrixData tmpjacF, matrixData tmpjacFt, double eps, int iterationcount, csvData csvinputs, matrixData xdiag, matrixData sxdiag, ofstream &logfile, correlationDataWarning & warningCorrelationData)
 {
   // set the inputs from csv file to simulationInfo datainputVars
   for (int i = 0; i < x.rows * x.column; i++)
@@ -1551,7 +1588,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     x.data = reconciled_X.data;
     //Sx.data=reconciled_Sx.data;
     iterationcount++;
-    return RunReconciliation(data, threadData, x, Sx, jacF, jacFt, eps, iterationcount, csvinputs, xdiag, sxdiag, logfile);
+    return RunReconciliation(data, threadData, x, Sx, jacF, jacFt, eps, iterationcount, csvinputs, xdiag, sxdiag, logfile, warningCorrelationData);
   }
 
   if (value < eps && iterationcount == 1)
@@ -1750,6 +1787,36 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
   }
 
+  // create a warning log for correlation input file
+  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
+  {
+    myfile << "<h3> <a href=" << data->modelData->modelName << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
+    /* create a warning log file */
+    ofstream warningfile;
+    std::stringstream warning_file;
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_warning.txt";
+    }
+    else
+    {
+      warning_file << data->modelData->modelName << "_warning.txt";
+    }
+
+    warningfile.open(warning_file.str().c_str());
+    // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.diagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    warningfile.close();
+  }
+
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
   myfile << "<table border=2>\n";
@@ -1936,16 +2003,16 @@ int dataReconciliation(DATA * data, threadData_t * threadData)
   matrixData tmp_x = {x.rows, x.column, x.data};
   matrixData x_diag = copyMatrix(tmp_x);
 
+  correlationDataWarning warningCorrelationData;
   // Print the initial information
   logfile << "\n\nInitial Data \n" << "=============\n";
   printMatrixWithHeaders(x.data, x.rows, x.column, Sx_data.headers, "X", logfile);
   printVectorMatrixWithHeaders(Sx_data.sxdata, Sx_data.rowcount, 1, Sx_data.headers, "Half-WidthConfidenceInterval", logfile);
-  printCorelationMatrix(Cx_data.data, Cx_data.rowHeaders, Cx_data.columnHeaders, "Co-Relation_Coefficient", logfile);
+  printCorelationMatrix(Cx_data.data, Cx_data.rowHeaders, Cx_data.columnHeaders, "Co-Relation_Coefficient", logfile, warningCorrelationData);
   printMatrixWithHeaders(Sx.data, Sx.rows, Sx.column, Sx_data.headers, "Sx", logfile);
 
   // Start the Algorithm
-  RunReconciliation(data, threadData, x, Sx, jacF, jacFt, atof(epselon), 1, Sx_data, x_diag, tmpSx_diag, logfile);
-
+  RunReconciliation(data, threadData, x, Sx, jacF, jacFt, atof(epselon), 1, Sx_data, x_diag, tmpSx_diag, logfile, warningCorrelationData);
   logfile << "|  info    |   " << "DataReconciliation Completed! \n";
   logfile.flush();
   logfile.close();
