@@ -1132,11 +1132,11 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   if (!result) {
     //! @todo Remove this once new frontend is used as default and old frontend is removed.
-    bool newFrontendEnabled = false;
+    bool newFrontendEnabled = true;
     QList<QString> options = MainWindow::instance()->getOMCProxy()->getCommandLineOptions();
     foreach (QString option, options) {
-      if (option.contains("newInst")) {
-        newFrontendEnabled = true;
+      if (option.contains("nonewInst")) {
+        newFrontendEnabled = false;
         break;
       }
     }

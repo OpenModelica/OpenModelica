@@ -193,8 +193,8 @@ QString TranslationFlagsWidget::commandLineOptions()
     debugFlags.append("parmodauto");
   }
   // enable new instantiation
-  if (!mpOldInstantiationCheckBox->isChecked()) {
-    debugFlags.append("newInst");
+  if (mpOldInstantiationCheckBox->isChecked()) {
+    debugFlags.append("nonewInst");
   }
 
   QStringList preOptModules;
