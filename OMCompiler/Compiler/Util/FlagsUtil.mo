@@ -1861,6 +1861,7 @@ protected
   array<Flags.FlagData> config_flags;
   String name;
   list<String> strl = {};
+  Boolean fvalue;
 algorithm
   try
     Flags.FLAGS(debugFlags = debug_flags, configFlags = config_flags) := loadFlags(false);
@@ -1880,8 +1881,10 @@ algorithm
   end for;
 
   for f in allDebugFlags loop
-    if f.default <> debug_flags[f.index] then
-      strl := f.name :: strl;
+    fvalue := debug_flags[f.index];
+    if f.default <> fvalue then
+      name := if fvalue then f.name else "no" + f.name;
+      strl := name :: strl;
     end if;
   end for;
 
