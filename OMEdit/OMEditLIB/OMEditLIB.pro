@@ -57,9 +57,10 @@ win32 {
 
   _cxx = $$(CXX)
   contains(_cxx, clang++) {
-    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport")
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
     QMAKE_CFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
   }
 
 
@@ -336,7 +337,10 @@ OTHER_FILES += Resources/css/stylesheet.qss \
 CONFIG += warn_on
 # Only disable the unused variable/function/parameter warning
 win32 {
-  QMAKE_CXXFLAGS += -Wno-clobbered
+  # -Wno-clobbered is not recognized by clang
+  !contains(_cxx, clang++) {
+    QMAKE_CXXFLAGS += -Wno-clobbered
+  }
 }
 
 RESOURCES += resource_omedit.qrc

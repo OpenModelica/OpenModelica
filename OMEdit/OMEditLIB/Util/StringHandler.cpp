@@ -1480,7 +1480,7 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
 {
   /* get the available MIBS and sort them. */
   QList<int> mibs = QTextCodec::availableMibs();
-  qSort(mibs);
+  std::sort(mibs.begin(), mibs.end());
   QList<int> sortedMibs;
   foreach (int mib, mibs) {
     if (mib >= 0) {
@@ -1512,7 +1512,11 @@ void StringHandler::fillEncodingComboBox(QComboBox *pEncodingComboBox)
 
 QStringList StringHandler::makeVariableParts(QString variable)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
   return variable.split(QRegExp("\\.(?![^\\[\\]]*\\])"), QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
 }
 
 #include <iostream>

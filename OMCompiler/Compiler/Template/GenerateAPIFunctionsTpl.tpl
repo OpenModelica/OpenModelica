@@ -149,8 +149,9 @@ template getQtInterfaceHeaders(list<DAE.Type> tys, String className)
     <%className%>(threadData_t *td);
     <%heads%>
   signals:
-    void logCommand(QString command, QTime *commandTime);
-    void logResponse(QString command, QString response, QTime *responseTime);
+    void logCommand(QString command);
+    // elapsed time in seconds
+    void logResponse(QString command, QString response, double elapsed);
     void throwException(QString exception);
   };
   >>
@@ -399,16 +400,16 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
   <<
   <%getQtInterfaceHeader(name, '<%className%>', args, res, className, false)%>
   {
-    QTime commandTime;
+    QElapsedTimer commandTime;
     commandTime.start();
     <%if intGt(listLength(args), 0) then
     <<
     QString commandLog;
     <%commandLog%>
-    emit logCommand("<%replaceDotAndUnderscore(name)%>("+commandLog+")", &commandTime);
+    emit logCommand("<%replaceDotAndUnderscore(name)%>("+commandLog+")");
     >> else
     <<
-    emit logCommand("<%replaceDotAndUnderscore(name)%>()", &commandTime);
+    emit logCommand("<%replaceDotAndUnderscore(name)%>()");
     >>%>
 
     <%varDecl%>
@@ -426,12 +427,13 @@ template getQtInterfaceFunc(String name, list<DAE.FuncArg> args, DAE.Type res, S
 
     QString responseLog;
     <%responseLog%>
+    double elapsed = (double)commandTime.elapsed() / 1000.0;
     <%if intGt(listLength(args), 0) then
     <<
-    emit logResponse("<%replaceDotAndUnderscore(name)%>("+commandLog+")", responseLog, &commandTime);
+    emit logResponse("<%replaceDotAndUnderscore(name)%>("+commandLog+")", responseLog, elapsed);
     >> else
     <<
-    emit logResponse("<%replaceDotAndUnderscore(name)%>()", responseLog, &commandTime);
+    emit logResponse("<%replaceDotAndUnderscore(name)%>()", responseLog, elapsed);
     >>%>
 
     <%if outArg then "return result;"%>

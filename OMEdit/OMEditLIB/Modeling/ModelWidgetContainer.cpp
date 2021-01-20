@@ -5551,7 +5551,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         // get the submodel position
         double values[] = {0.0, 0.0, 0.0};
         QGenericMatrix<3, 1, double> cX_R_cG_cG(values);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (subModelPositionList.size() > 2) {
           cX_R_cG_cG(0, 0) = subModelPositionList.at(0).toDouble();
           cX_R_cG_cG(0, 1) = subModelPositionList.at(1).toDouble();
@@ -5559,7 +5563,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         }
         // get the submodel angle
         double subModelPhi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (subModelAngleList.size() > 2) {
           subModelPhi[0] = subModelAngleList.at(0).toDouble();
           subModelPhi[1] = subModelAngleList.at(1).toDouble();
@@ -5568,7 +5576,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         QGenericMatrix<3, 3, double> cX_A_cG = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(subModelPhi));
         // get the interface position
         QGenericMatrix<3, 1, double> ci_R_cX_cX(values);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (interfacePositionList.size() > 2) {
           ci_R_cX_cX(0, 0) = interfacePositionList.at(0).toDouble();
           ci_R_cX_cX(0, 1) = interfacePositionList.at(1).toDouble();
@@ -5576,7 +5588,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         }
         // get the interface angle
         double interfacePhi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (interfaceAngleList.size() > 2) {
           interfacePhi[0] = interfaceAngleList.at(0).toDouble();
           interfacePhi[1] = interfaceAngleList.at(1).toDouble();
@@ -6000,7 +6016,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         //              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
         // get the angle
         double phi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (angleList.size() > 2) {
           phi[0] = -angleList.at(0).toDouble();
           phi[1] = -angleList.at(1).toDouble();
@@ -6009,7 +6029,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         QGenericMatrix<3, 3, double> T = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
         // get the position
         double position[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (positionList.size() > 2) {
           position[0] = positionList.at(0).toDouble();
           position[1] = positionList.at(1).toDouble();

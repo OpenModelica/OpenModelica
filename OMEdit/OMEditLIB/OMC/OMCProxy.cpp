@@ -244,8 +244,8 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   threadData->plotCB = MainWindow::PlotCallbackFunction;
   MMC_CATCH_TOP(return false;)
   mpOMCInterface = new OMCInterface(threadData);
-  connect(mpOMCInterface, SIGNAL(logCommand(QString,QTime*)), this, SLOT(logCommand(QString,QTime*)));
-  connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,QTime*)), this, SLOT(logResponse(QString,QString,QTime*)));
+  connect(mpOMCInterface, SIGNAL(logCommand(QString)), this, SLOT(logCommand(QString)));
+  connect(mpOMCInterface, SIGNAL(logResponse(QString,QString,double)), this, SLOT(logResponse(QString,QString,double)));
   connect(mpOMCInterface, SIGNAL(throwException(QString)), SLOT(showException(QString)));
   mHasInitialized = true;
   // get OpenModelica version
@@ -289,9 +289,9 @@ void OMCProxy::quitOMC()
 void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
 {
   // write command to the commands log.
-  QTime commandTime;
+  QElapsedTimer commandTime;
   commandTime.start();
-  logCommand(expression, &commandTime, saveToHistory);
+  logCommand(expression, saveToHistory);
   // TODO: Call this in a thread that loops over received messages? Avoid MMC_TRY_TOP all the time, etc
   void *reply_str = NULL;
   threadData_t *threadData = mpOMCInterface->threadData;
@@ -307,7 +307,8 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
     exitApplication();
   }
   mResult = MMC_STRINGDATA(reply_str);
-  logResponse(expression, mResult.trimmed(), &commandTime);
+  double elapsed = (double)commandTime.elapsed() / 1000.0;
+  logResponse(expression, mResult.trimmed(), elapsed);
 
   MMC_ELSE()
     mResult = "";
@@ -343,9 +344,9 @@ QString OMCProxy::getResult()
  * Writes the command to the omeditcommunication.log file.
  * Writes the command to the omeditcommands.mos file.
  * \param command - the command to write
- * \param commandTime - the command start time
+ * \param saveToHistory
  */
-void OMCProxy::logCommand(QString command, QTime *commandTime, bool saveToHistory)
+void OMCProxy::logCommand(QString command, bool saveToHistory)
 {
   if (isLoggingEnabled()) {
     // insert the command to the logger window.
@@ -362,7 +363,7 @@ void OMCProxy::logCommand(QString command, QTime *commandTime, bool saveToHistor
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
-      fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
+      fputs(QString("%1 %2\n").arg(command, QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
     }
     // write commands mos file
     if (mpCommandsLogFile) {
@@ -384,12 +385,11 @@ void OMCProxy::logCommand(QString command, QTime *commandTime, bool saveToHistor
  * Writes OMC response in OMC Logger window.
  * Writes the response to the omeditcommunication.log file.
  * \param response - the response to write
- * \param responseTime - the response end time
+ * \param elapsed - the elapsed time in seconds.
  */
-void OMCProxy::logResponse(QString command, QString response, QTime *responseTime)
+void OMCProxy::logResponse(QString command, QString response, double elapsed)
 {
   if (isLoggingEnabled()) {
-    double elapsed = (double)responseTime->elapsed() / 1000.0;
     QString firstLine("");
     for (int i = 0; i < command.length(); i++) {
       if (command[i] != '\n') {
@@ -406,8 +406,8 @@ void OMCProxy::logResponse(QString command, QString response, QTime *responseTim
     // write the log to communication log file
     if (mpCommunicationLogFile) {
       mTotalOMCCallsTime += elapsed;
-      fputs(QString("%1 %2\n").arg(response).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
-      fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMCCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
+      fputs(QString("%1 %2\n").arg(response).arg(QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
+      fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMCCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(), mpCommunicationLogFile);
     }
     // flush the logs if --Debug=true
     if (MainWindow::instance()->isDebug()) {
@@ -2365,7 +2365,7 @@ int OMCProxy::readSimulationResultSize(QString fileName)
 QStringList OMCProxy::readSimulationResultVars(QString fileName)
 {
   QStringList variablesList = mpOMCInterface->readSimulationResultVars(fileName, true, false);
-  qSort(variablesList.begin(), variablesList.end());
+  std::sort(variablesList.begin(), variablesList.end());
   printMessagesStringInternal();
   // close the simulation result file.
   closeSimulationResultFile();

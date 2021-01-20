@@ -1308,7 +1308,11 @@ void ElementParameters::updateComponentParameters()
   if (!mpModifiersTextBox->text().isEmpty()) {
     QString regexp ("\\s*([A-Za-z0-9._]+\\s*)\\(\\s*([A-Za-z0-9._]+)\\s*=\\s*([A-Za-z0-9._]+)\\s*\\)$");
     QRegExp modifierRegExp (regexp);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QStringList modifiers = mpModifiersTextBox->text().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
     QStringList modifiers = mpModifiersTextBox->text().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
     foreach (QString modifier, modifiers) {
       modifier = modifier.trimmed();
       if (modifierRegExp.exactMatch(modifier)) {

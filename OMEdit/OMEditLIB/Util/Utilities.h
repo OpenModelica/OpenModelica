@@ -169,8 +169,8 @@ signals:
 class Label : public QLabel
 {
 public:
-  Label(QWidget *parent = 0, Qt::WindowFlags flags = 0);
-  Label(const QString &text, QWidget *parent = 0, Qt::WindowFlags flags = 0);
+  Label(QWidget *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
+  Label(const QString &text, QWidget *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
   Qt::TextElideMode elideMode() const {return mElideMode;}
   void setElideMode(Qt::TextElideMode elideMode) {mElideMode = elideMode;}
   virtual QSize minimumSizeHint() const override;

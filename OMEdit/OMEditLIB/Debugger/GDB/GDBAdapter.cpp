@@ -1143,7 +1143,7 @@ void GDBAdapter::handleGDBMIStreamRecord(GDBMIStreamRecord *pGDBMIStreamRecord)
 void GDBAdapter::handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
   QString consoleData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
-  mPendingConsoleStreamOutput += consoleData;
+  mPendingConsoleStreamOutput += consoleData.toUtf8();
   /* Only display some selected console messages */
   if (consoleData.startsWith("Reading symbols from ") || consoleData.startsWith("[New ") || consoleData.startsWith("[Thread ")) {
     MainWindow::instance()->getStackFramesWidget()->setStatusMessage(consoleData.simplified());
@@ -1160,7 +1160,7 @@ void GDBAdapter::handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 void GDBAdapter::handleGDBMILogStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
   QString logData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
-  mPendingLogStreamOutput += logData;
+  mPendingLogStreamOutput += logData.toUtf8();
   /*! \note Skip the log messages we get as a result of pending breakpoint.
    * e.g., No source file named Catch.omc.
    */
@@ -1431,7 +1431,7 @@ void GDBAdapter::readGDBStandardOutput()
   int newstart = 0;
   int scan = mStandardOutputBuffer.size();
   QString standardOutput = mpGDBProcess->readAllStandardOutput();
-  mStandardOutputBuffer.append(standardOutput);
+  mStandardOutputBuffer.append(standardOutput.toUtf8());
   // This can trigger when a blocking command starts an event loop.
   if (isParsingStandardOutput()) {
     GDBMICommand cmd = mGDBMICommandsHash.value(currentToken());
@@ -1539,7 +1539,7 @@ void GDBAdapter::handleGDBProcessFinishedForSimulation(int exitCode)
 void GDBAdapter::GDBcommandTimeout()
 {
   QList<int> keys = mGDBMICommandsHash.keys();
-  qSort(keys);
+  std::sort(keys.begin(), keys.end());
   bool killIt = false;
   foreach (int key, keys) {
     const GDBMICommand &cmd = mGDBMICommandsHash.value(key);
