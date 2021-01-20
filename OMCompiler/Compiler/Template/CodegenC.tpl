@@ -1103,18 +1103,18 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #include "<%simCode.fileNamePrefix%>_13opt.h"
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
-       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,
-       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,
-       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,
-       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
-       <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,
-       <%if intEq(varInfo.numLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialLinearSystem")%>,
-       <%if intEq(varInfo.numMixedSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialMixedSystem")%>,
+       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
+       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
+       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,    /* updateContinuousSystem */
+       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,    /* callExternalObjectDestructors */
+       <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,    /* initialNonLinearSystem */
+       <%if intEq(varInfo.numLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialLinearSystem")%>,    /* initialLinearSystem */
+       <%if intEq(varInfo.numMixedSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialMixedSystem")%>,    /* initialMixedSystem */
        #if !defined(OMC_NO_STATESELECTION)
        <%symbolName(modelNamePrefixStr,"initializeStateSets")%>,
        #else
        NULL,
-       #endif
+       #endif    /* initializeStateSets */
        <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
        <%symbolName(modelNamePrefixStr,"functionODE")%>,
        <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
@@ -1130,7 +1130,7 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%if Config.adaptiveHomotopy() then (if Config.globalHomotopy() then '2' else '3') else (if Config.globalHomotopy() then '1' else '0')%>, /* useHomotopy - 0: local homotopy (equidistant lambda), 1: global homotopy (equidistant lambda), 2: new global homotopy approach (adaptive lambda), 3: new local homotopy approach (adaptive lambda)*/
-       <%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>,
+       <%if intEq(listLength(initialEquations_lambda0), 0) then "NULL" else '<%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>'%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
        <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
@@ -3203,28 +3203,37 @@ end functionInitialEquations;
 template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lambda0, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
-  let () = System.tmpTickReset(0)
-  let nrfuncs = listLength(initalEquations_lambda0)
-  let &eqfuncs = buffer ""
-  let fncalls =
-              let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 => equation_impl(-1, eq, contextSimulationDiscrete,
-                  modelNamePrefix, true) ;separator="\n")
-              (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
-  <<
-  <%eqfuncs%>
+  match initalEquations_lambda0
+  case {} then
+    <<
 
-  int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
-  {
-    TRACE_PUSH
+    /* No <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%> function */
 
-    data->simulationInfo->discreteCall = 1;
-    <%fncalls %>
-    data->simulationInfo->discreteCall = 0;
+    >>
+  else
+    let () = System.tmpTickReset(0)
+    let nrfuncs = listLength(initalEquations_lambda0)
+    let &eqfuncs = buffer ""
+    let fncalls =
+                let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 => equation_impl(-1, eq, contextSimulationDiscrete,
+                    modelNamePrefix, true) ;separator="\n")
+                (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
+    <<
+    <%eqfuncs%>
 
-    TRACE_POP
-    return 0;
-  }
-  >>
+    int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
+    {
+      TRACE_PUSH
+
+      data->simulationInfo->discreteCall = 1;
+      <%fncalls %>
+      data->simulationInfo->discreteCall = 0;
+
+      TRACE_POP
+      return 0;
+    }
+    >>
+  end match
 end functionInitialEquations_lambda0;
 
 template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Text &eqs, String modelNamePrefix)
