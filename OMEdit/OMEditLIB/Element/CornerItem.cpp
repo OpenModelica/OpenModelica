@@ -429,7 +429,7 @@ void OriginItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option
   painter->setRenderHint(QPainter::Antialiasing);
   painter->setPen(mPen);
   // draw horizontal Line
-  painter->drawLine(-1.5, 0, 1.5, 0);
-//  // draw vertical Line
-  painter->drawLine(0, -1.5, 0, 1.5);
+  painter->drawLine(-1, 0, 1, 0);
+  // draw vertical Line
+  painter->drawLine(0, -1, 0, 1);
 }

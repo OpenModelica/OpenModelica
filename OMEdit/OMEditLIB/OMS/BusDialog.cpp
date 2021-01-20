@@ -303,7 +303,7 @@ QVariant ConnectorsModel::data(const QModelIndex &index, int role) const
 Qt::ItemFlags ConnectorsModel::flags(const QModelIndex &index) const
 {
   if (!index.isValid()) {
-    return 0;
+    return Qt::ItemFlags();
   } else {
     Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     ConnectorItem *pConnectorItem = static_cast<ConnectorItem*>(index.internalPointer());

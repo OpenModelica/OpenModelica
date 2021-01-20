@@ -221,8 +221,8 @@ void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure());
   mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
-  int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
+  int xPos = QApplication::primaryScreen()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
+  int yPos = QApplication::primaryScreen()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
   pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
   pOMSSimulationOutputWidget->show();
 }

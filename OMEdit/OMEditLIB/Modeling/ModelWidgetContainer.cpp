@@ -1146,7 +1146,11 @@ void GraphicsView::bringForward(ShapeAnnotation *pShape)
     return;
   }
   // swap the shapes in the list
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+  mShapesList.swapItemsAt(shapeIndex, shapeIndex + 1);
+#else // QT_VERSION_CHECK
   mShapesList.swap(shapeIndex, shapeIndex + 1);
+#endif // QT_VERSION_CHECK
   // update the shapes z index
   for (int i = 0 ; i < mShapesList.size() ; i++) {
     mShapesList.at(i)->setZValue(i + 1);
@@ -1186,7 +1190,11 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
     return;
   }
   // swap the shapes in the list
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+  mShapesList.swapItemsAt(shapeIndex - 1, shapeIndex);
+#else // QT_VERSION_CHECK
   mShapesList.swap(shapeIndex - 1, shapeIndex);
+#endif // QT_VERSION_CHECK
   // update the shapes z index
   for (int i = 0 ; i < mShapesList.size() ; i++) {
     mShapesList.at(i)->setZValue(i + 1);
@@ -2399,7 +2407,7 @@ void GraphicsView::deleteInitialState(LineAnnotation *pInitialLineAnnotation)
 //! @see zoomOut()
 void GraphicsView::resetZoom()
 {
-  resetMatrix();
+  resetTransform();
   scale(1.0, -1.0);
   setIsCustomScale(false);
   resizeEvent(new QResizeEvent(QSize(0,0), QSize(0,0)));
@@ -2411,7 +2419,7 @@ void GraphicsView::resetZoom()
 void GraphicsView::zoomIn()
 {
   // zoom in limitation max: 1000%
-  if (matrix().m11() < 34 && matrix().m22() > -34) {
+  if (transform().m11() < 34 && transform().m22() > -34) {
     setIsCustomScale(true);
     scale(1.12, 1.12);
   }
@@ -2423,7 +2431,7 @@ void GraphicsView::zoomIn()
 void GraphicsView::zoomOut()
 {
   // zoom out limitation min: 10%
-  if (matrix().m11() > 0.2 && matrix().m22() < -0.2) {
+  if (transform().m11() > 0.2 && transform().m22() < -0.2) {
     setIsCustomScale(true);
     scale(1/1.12, 1/1.12);
   }

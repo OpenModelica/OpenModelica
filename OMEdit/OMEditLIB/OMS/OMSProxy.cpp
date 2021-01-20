@@ -39,10 +39,10 @@
 #include "Util/Utilities.h"
 
 #define LOG_COMMAND(command,args) \
-  QTime commandTime; \
+  QElapsedTimer commandTime; \
   commandTime.start(); \
   command = QString("%1(%2)").arg(command, args.join(",")); \
-  logCommand(&commandTime, command);
+  logCommand(command);
 
 /*!
  * \brief loggingCallback
@@ -146,13 +146,12 @@ OMSProxy::~OMSProxy()
  * \brief OMSProxy::logCommand
  * Writes the command to the omscommunication.log file.
  * \param command - the command to write
- * \param commandTime - the command start time
  */
-void OMSProxy::logCommand(QTime *commandTime, QString command)
+void OMSProxy::logCommand(QString command)
 {
   // write the log to communication log file
   if (mpCommunicationLogFile) {
-    fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
+    fputs(QString("%1 %2\n").arg(command, QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
   }
 }
 
@@ -163,7 +162,7 @@ void OMSProxy::logCommand(QTime *commandTime, QString command)
  * \param status - execution status of the command
  * \param responseTime - the response end time
  */
-void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *responseTime)
+void OMSProxy::logResponse(QString command, oms_status_enu_t status, QElapsedTimer *responseTime)
 {
   double elapsed = (double)responseTime->elapsed() / 1000.0;
   QString firstLine("");
@@ -178,7 +177,7 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *resp
   // write the log to communication log file
   if (mpCommunicationLogFile) {
     mTotalOMSCallsTime += elapsed;
-    fputs(QString("%1 %2\n").arg(status).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
+    fputs(QString("%1 %2\n").arg(status).arg(QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
     fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMSCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
   }
 

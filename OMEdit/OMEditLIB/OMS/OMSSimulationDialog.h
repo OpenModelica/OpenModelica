@@ -78,6 +78,7 @@ class OMSSimulationDialog : public QDialog
 public:
   OMSSimulationDialog(QWidget *pParent = 0);
   ~OMSSimulationDialog();
+  using QDialog::exec;
   int exec(const QString &modelCref, LibraryTreeItem *pLibraryTreeItem);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime);
