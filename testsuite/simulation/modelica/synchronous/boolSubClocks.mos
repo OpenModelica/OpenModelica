@@ -1,9 +1,9 @@
 // name:     boolSubClocks
 // keywords: synchronous features, cpp
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst --std=3.3
 //
-loadModel(Modelica, languageStandard="3.3");getErrorString();
+loadModel(Modelica);getErrorString();
 
 loadFile("boolSubClocks.mo");
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
