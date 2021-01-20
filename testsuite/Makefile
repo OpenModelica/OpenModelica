@@ -20,7 +20,6 @@ flatteningPlanarMechanics.log \
 TestMedia.log \
 cppruntime.log \
 cppruntimeHpcom.log \
-cppruntimeFMU1.log \
 cppruntimeFMU2.log \
 cppruntimeStaticLinking.log \
 cppruntimeGenDebugSymbols.log \
@@ -413,9 +412,6 @@ cppruntimeHpcom.log: omc-diff
 cppruntimeOMEdit.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/omedit -f Makefile test  > $@
 	@echo $@ done
-cppruntimeFMU1.log: omc-diff
-	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile test  > $@
-	@echo $@ done
 cppruntimeFMU2.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile test  > $@
 	@echo $@ done
@@ -655,7 +651,6 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cppruntime -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/hpcom -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/omedit -f Makefile clean
-	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/staticLinking -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/genDebugSymbols -f Makefile clean
