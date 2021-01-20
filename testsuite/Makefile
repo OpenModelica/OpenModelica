@@ -156,7 +156,6 @@ linearization.log \
 modelicaML.log \
 streams.log \
 redeclare.log \
-fmi_me_10.log \
 fmi_me_20.log \
 omsimulator.log \
 fmi_cs_st.log \
@@ -483,9 +482,6 @@ MathematicalAspects_simulation.log: omc-diff
 PNlib_simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/PNlib -f Makefile test > $@
 	@echo $@ done
-fmi_me_10.log: omc-diff
-	$(MAKE) -C openmodelica/fmi/ModelExchange/1.0/ -f Makefile test > $@
-	@echo $@ done
 fmi_me_20.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0/ -f Makefile test > $@
 	@echo $@ done
@@ -728,7 +724,6 @@ clean_g_4:
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile clean
-	$(MAKE) -C openmodelica/fmi/ModelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0 -f Makefile clean
 	$(MAKE) -C omsimulator -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile clean
