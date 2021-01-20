@@ -322,9 +322,21 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       }
 
       if(0 == step)
-        data->callback->functionInitialEquations_lambda0(data, threadData);
+      {
+        if(data->callback->functionInitialEquations_lambda0 != NULL)
+        {
+          data->callback->functionInitialEquations_lambda0(data, threadData);
+        }
+        else
+        {
+          warningStreamPrint(LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initla equation system with lambda=0 instead.");
+          data->callback->functionInitialEquations(data, threadData);
+        }
+      }
       else
+      {
         data->callback->functionInitialEquations(data, threadData);
+      }
 
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g done\n---------------------------", lambda);
 
@@ -377,7 +389,15 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     // Solve lambda0-DAE
     data->simulationInfo->lambda = 0;
     infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solve simplified lambda0-DAE");
-    data->callback->functionInitialEquations_lambda0(data, threadData);
+    if(data->callback->functionInitialEquations_lambda0 != NULL)
+    {
+      data->callback->functionInitialEquations_lambda0(data, threadData);
+    }
+    else
+    {
+      warningStreamPrint(LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initla equation system with lambda=0 instead.");
+      data->callback->functionInitialEquations(data, threadData);
+    }
     infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solving simplified lambda0-DAE done\n---------------------------");
 
     // Run along the homotopy path and solve the actual system
