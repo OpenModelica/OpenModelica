@@ -1,10 +1,10 @@
 // name: WhenClocks
 // keywords: synchronous features
 // status: correct
-// cflags: -d=-newInst
+// cflags: -d=-newInst --std=3.3
 //
 
-loadModel(Modelica, languageStandard="3.3"); getErrorString();
+loadModel(Modelica); getErrorString();
 
 setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
 

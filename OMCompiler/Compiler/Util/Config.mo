@@ -47,7 +47,7 @@ import System;
 
 public
 
-type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', '3.4', latest, '3.5', experimental)
+type LanguageStandard = enumeration('1.x', '2.x', '3.0', '3.1', '3.2', '3.3', '3.4', '3.5', latest, experimental)
   "Defines the various modelica language versions that OMC can use.";
 
 public function typeinfo "+t"
@@ -467,8 +467,8 @@ algorithm
     case 32 then LanguageStandard.'3.2';
     case 33 then LanguageStandard.'3.3';
     case 34 then LanguageStandard.'3.4';
+    case 35 then LanguageStandard.'3.5';
     case 1000 then LanguageStandard.latest;
-    case 1035 then LanguageStandard.'3.5';
     case 9999 then LanguageStandard.experimental;
   end match;
 end intLanguageStandard;
@@ -477,7 +477,7 @@ public function languageStandardString
   input LanguageStandard inStandard;
   output String outString;
 protected
-  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.4","3.5","experimental" /*Change this to latest version if you add more versions!*/);
+  constant String lookup[LanguageStandard] = array("1.x","2.x","3.0","3.1","3.2","3.3","3.4","3.5","3.5","experimental" /*Change this to latest version if you add more versions!*/);
 algorithm
   outString := lookup[inStandard];
 end languageStandardString;
@@ -546,10 +546,9 @@ algorithm
     case "2" :: _ then LanguageStandard.'2.x';
     case "3" :: "0" :: _ then LanguageStandard.'3.0';
     case "3" :: "1" :: _ then LanguageStandard.'3.1';
-    //case "3" :: "2" :: "3" :: _ then LanguageStandard.'3.3';
-    case "3" :: "2" :: _ then LanguageStandard.'3.2';
-    case "3" :: "3" :: _ then LanguageStandard.'3.3';
-    case "3" :: _ then LanguageStandard.latest;
+    case "3" :: _ then LanguageStandard.'3.2';
+    case "4" :: "0" :: _ then LanguageStandard.'3.4';
+    case _ then LanguageStandard.latest;
   end match;
 end versionStringToStd2;
 
