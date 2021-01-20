@@ -260,7 +260,7 @@ SIM_HFILES = ../dataReconciliation/dataReconciliation.h \
              options.h
 
 FMIPATH = ./fmi/
-FMI_OBJS = FMICommon$(OBJ_EXT) FMI1Common$(OBJ_EXT) FMI1ModelExchange$(OBJ_EXT) FMI1CoSimulation$(OBJ_EXT) FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
+FMI_OBJS = FMI2Common$(OBJ_EXT) FMI2ModelExchange$(OBJ_EXT)
 FMIOBJSPATH = $(FMI_OBJS:%=$(BUILDPATH)/$(FMIPATH)%)
 
 GCPATH = ./gc/

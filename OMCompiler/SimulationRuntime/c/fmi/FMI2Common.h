@@ -31,7 +31,17 @@
 #ifndef FMI2COMMON__H_
 #define FMI2COMMON__H_
 
-#include "FMICommon.h"
+#include <stdio.h>
+#include <stdlib.h>
+
+#if defined(__MINGW32__)
+#define FMILIB_STATIC_LIB_ONLY 1
+#endif
+
+#include "fmilib.h"
+#include "../ModelicaUtilities.h"
+
+void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message);
 
 /*
  * type to separate the different solving stages.
