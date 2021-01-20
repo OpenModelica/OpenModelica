@@ -502,8 +502,17 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent *event)
 void ViewerWidget::wheelEvent(QWheelEvent *event)
 {
   event->accept();
-  int delta = event->delta();
-  osgGA::GUIEventAdapter::ScrollingMotion motion = delta > 0 ? osgGA::GUIEventAdapter::SCROLL_UP : osgGA::GUIEventAdapter::SCROLL_DOWN;
+
+  QPoint numPixels = event->pixelDelta();
+  QPoint delta;
+
+  if (!numPixels.isNull()) {
+    delta = numPixels;
+  } else {
+    delta = event->angleDelta();
+  }
+
+  osgGA::GUIEventAdapter::ScrollingMotion motion = (delta.x() > 0 || delta.y() > 0) ? osgGA::GUIEventAdapter::SCROLL_UP : osgGA::GUIEventAdapter::SCROLL_DOWN;
   getEventQueue()->mouseScroll(motion);
 }
 
