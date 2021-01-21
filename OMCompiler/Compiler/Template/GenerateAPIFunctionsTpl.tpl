@@ -221,7 +221,7 @@ template getQtInterfaceHeader(String name, String prefix, list<DAE.FuncArg> args
     case T_TUPLE(__) then
       if addStructs then
       <<
-      typedef struct {
+      typedef struct <%name%>_res {
         <%types |> ty hasindex i fromindex 1 => '<%getQtType(ty)%> <%getQtTupleTypeOutputName(res, i)%>;' ; separator="\n" %>
         QString toString() {
           QString resultBuffer = "(";

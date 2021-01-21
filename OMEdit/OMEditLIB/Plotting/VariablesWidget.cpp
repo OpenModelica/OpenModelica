@@ -467,7 +467,7 @@ QVariant VariablesTreeModel::data(const QModelIndex &index, int role) const
 Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
 {
   if (!index.isValid()) {
-    return 0;
+    return Qt::ItemFlags();
   }
 
   Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
@@ -815,14 +815,14 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       QString findVariableNoFileName = findVariable.right(findVariable.size()-fileName.size()-1);
 
       if (usedVars.find(findVariableNoFileName) != usedVars.end()) {
-        QStringList lst = QStringList(usedVars[findVariableNoFileName].toList());
+        QStringList lst = QStringList(usedVars[findVariableNoFileName].values());
         lst << findVariableNoFileName;
         variableData << lst;
       } else {
         variableData << QStringList(findVariableNoFileName);
       }
       if (usedInitialVars.find(findVariableNoFileName) != usedInitialVars.end()) {
-        QStringList lst = QStringList(usedInitialVars[findVariableNoFileName].toList());
+        QStringList lst = QStringList(usedInitialVars[findVariableNoFileName].values());
         lst << findVariableNoFileName;
         variableData << lst;
       } else {

@@ -197,7 +197,11 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
          * If the items width is greater than the value text than use it.
          */
         fm = QFontMetrics(mpValueComboBox->lineEdit()->font());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+        mpValueComboBox->setMinimumWidth(qMax(fm.horizontalAdvance(value), mpValueComboBox->minimumSizeHint().width()) + 50);
+#else // QT_VERSION_CHECK
         mpValueComboBox->setMinimumWidth(qMax(fm.width(value), mpValueComboBox->minimumSizeHint().width()) + 50);
+#endif // QT_VERSION_CHECK
       }
       break;
     case Parameter::CheckBox:
@@ -214,7 +218,11 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
       if (adjustSize) {
         /* Set the minimum width so that the value text will be readable */
         fm = QFontMetrics(mpValueTextBox->font());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+        mpValueTextBox->setMinimumWidth(fm.horizontalAdvance(value) + 50);
+#else // QT_VERSION_CHECK
         mpValueTextBox->setMinimumWidth(fm.width(value) + 50);
+#endif // QT_VERSION_CHECK
       }
       mpValueTextBox->setCursorPosition(0); /* move the cursor to start so that parameter value will show up from start instead of end. */
       break;
@@ -632,12 +640,16 @@ ParametersScrollArea::ParametersScrollArea()
 QSize ParametersScrollArea::minimumSizeHint() const
 {
   QSize size = QWidget::sizeHint();
-  // find optimal width
+  // find optimal width and height
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+  int screenWidth = QApplication::primaryScreen()->availableGeometry().width() - 100;
+  int screenHeight = QApplication::primaryScreen()->availableGeometry().height() - 300;
+#else // QT_VERSION_CHECK
   int screenWidth = QApplication::desktop()->availableGeometry().width() - 100;
+  int screenHeight = QApplication::desktop()->availableGeometry().height() - 300;
+#endif // QT_VERSION_CHECK
   int widgetWidth = mpWidget->minimumSizeHint().width() + (verticalScrollBar()->isVisible() ? verticalScrollBar()->width() : 0);
   size.rwidth() = qMin(screenWidth, widgetWidth);
-  // find optimal height
-  int screenHeight = QApplication::desktop()->availableGeometry().height() - 300;
   int widgetHeight = mpWidget->minimumSizeHint().height() + (horizontalScrollBar()->isVisible() ? horizontalScrollBar()->height() : 0);
   size.rheight() = qMin(screenHeight, widgetHeight);
   return size;

@@ -1514,8 +1514,13 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
 
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    int xPos = QApplication::primaryScreen()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
+    int yPos = QApplication::primaryScreen()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
+#else // QT_VERSION_CHECK
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
     int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
+#endif // QT_VERSION_CHECK
     pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
     /* restore the window geometry. */
     if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()

@@ -501,19 +501,18 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent *event)
  */
 void ViewerWidget::wheelEvent(QWheelEvent *event)
 {
-  event->accept();
-
-  QPoint numPixels = event->pixelDelta();
-  QPoint delta;
-
-  if (!numPixels.isNull()) {
-    delta = numPixels;
+  static QPoint angleDelta = QPoint(0, 0);
+  angleDelta += event->angleDelta();
+  QPoint numDegrees = angleDelta / 8;
+  QPoint numSteps = numDegrees / 15; // see QWheelEvent documentation
+  if (numSteps.x() != 0 || numSteps.y() != 0) {
+    angleDelta = QPoint(0, 0);
+    osgGA::GUIEventAdapter::ScrollingMotion motion = (numSteps.x() > 0 || numSteps.y() > 0) ? osgGA::GUIEventAdapter::SCROLL_UP : osgGA::GUIEventAdapter::SCROLL_DOWN;
+    getEventQueue()->mouseScroll(motion);
+    event->accept();
   } else {
-    delta = event->angleDelta();
+    event->ignore();
   }
-
-  osgGA::GUIEventAdapter::ScrollingMotion motion = (delta.x() > 0 || delta.y() > 0) ? osgGA::GUIEventAdapter::SCROLL_UP : osgGA::GUIEventAdapter::SCROLL_DOWN;
-  getEventQueue()->mouseScroll(motion);
 }
 
 /*!

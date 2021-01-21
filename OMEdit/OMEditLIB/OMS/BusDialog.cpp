@@ -554,12 +554,14 @@ void AddBusDialog::addBus()
       }
     }
     // add connectors to the bus
-    QSet<QString> addConnectors = connectors.toSet().subtract(existingConnectors.toSet());
+    QSet<QString> connectorsSet(connectors.begin(), connectors.end());
+    QSet<QString> existingConnectorsSet(existingConnectors.begin(), existingConnectors.end());
+    QSet<QString> addConnectors = connectorsSet.subtract(existingConnectorsSet);
     foreach (QString connector, addConnectors) {
       OMSProxy::instance()->addConnectorToBus(bus, connector);
     }
     // delete connectors from the bus
-    QSet<QString> deleteConnectors = existingConnectors.toSet().subtract(connectors.toSet());
+    QSet<QString> deleteConnectors = existingConnectorsSet.subtract(connectorsSet);
     foreach (QString connector, deleteConnectors) {
       OMSProxy::instance()->deleteConnectorFromBus(bus, connector);
     }

@@ -1209,8 +1209,11 @@ void DocumentationViewer::createActions()
  */
 void DocumentationViewer::resetZoom()
 {
-  QWidget *pScreenWidget = QApplication::desktop()->screen();
-  qreal zoomFactor = pScreenWidget->logicalDpiX() / 96;
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+  qreal zoomFactor = QApplication::primaryScreen()->logicalDotsPerInchX() / 96;
+#else // QT_VERSION_CHECK
+  qreal zoomFactor = QApplication::desktop()->screen()->logicalDpiX() / 96;
+#endif // QT_VERSION_CHECK
   setZoomFactor(zoomFactor < 1 ? 1 : zoomFactor);
 }
 
@@ -1374,12 +1377,12 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
  */
 void DocumentationViewer::wheelEvent(QWheelEvent *event)
 {
-  if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier)) {
+  if (event->angleDelta().y() != 0 && event->modifiers().testFlag(Qt::ControlModifier)) {
     qreal zf = zoomFactor();
     /* ticket:4349 Take smaller steps for zooming.
      * Also set the minimum zoom to readable size.
      */
-    if (event->delta() > 0) {
+    if (event->angleDelta().y() > 0) {
       zf += 0.1;
       zf = zf > 5 ? 5 : zf;
     } else {
