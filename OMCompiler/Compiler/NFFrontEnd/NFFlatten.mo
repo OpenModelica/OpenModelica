@@ -573,7 +573,7 @@ protected
   ComponentRef name;
   Binding binding;
   Option<Binding> opt_binding;
-  Expression binding_exp;
+  Expression binding_exp, binding_exp_eval;
   Equation eq;
   list<Expression> bindings;
   Variability comp_var, binding_var;
@@ -592,7 +592,13 @@ algorithm
       binding_exp := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       try
-        binding_exp := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
+        binding_exp_eval := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
+        // Throw away the evaluated binding if the number of dimensions no
+        // longer match after evaluation, in case Ceval fails to apply the
+        // subscripts correctly.
+        // TODO: Fix this, it shouldn't be needed.
+        0 := Type.dimensionDiff(ty, Expression.typeOf(binding_exp_eval));
+        binding_exp := binding_exp_eval;
       else
       end try;
     else
