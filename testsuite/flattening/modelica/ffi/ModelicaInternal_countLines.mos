@@ -1,0 +1,19 @@
+// name:     ModelicaInternal_countLines
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.ExternalC.ModelicaInternal_countLines); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.ExternalC.ModelicaInternal_countLines
+//   constant Integer lines = 19;
+// end FFITest.ExternalC.ModelicaInternal_countLines;
+// "
+// ""
+// endResult

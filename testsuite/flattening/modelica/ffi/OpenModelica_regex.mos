@@ -1,0 +1,22 @@
+// name:     OpenModelica_regex
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.ExternalC.OpenModelica_regex); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.ExternalC.OpenModelica_regex
+//   constant Integer res.numMatches = 3;
+//   constant String res.matches[1] = \"hello world\";
+//   constant String res.matches[2] = \"hello\";
+//   constant String res.matches[3] = \"world\";
+// end FFITest.ExternalC.OpenModelica_regex;
+// "
+// ""
+// endResult

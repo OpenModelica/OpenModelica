@@ -1,0 +1,19 @@
+// name:     String2
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Scalars.String2); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.Scalars.String2
+//   constant String s = \"// name:     String2\";
+// end FFITest.Scalars.String2;
+// "
+// ""
+// endResult

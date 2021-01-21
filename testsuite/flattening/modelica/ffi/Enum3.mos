@@ -1,0 +1,17 @@
+// name:     Enum3
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Scalars.Enum3); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "[flattening/modelica/ffi/FFITest/package.mo:116:7-116:38:writable] Error: Failed to evaluate function: FFITest.Scalars.enum1.
+// "
+// endResult

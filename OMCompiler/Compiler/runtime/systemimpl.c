@@ -973,7 +973,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
     return 0;
   }
 
-  while ( n = fread(buf, 1, 8192, source) ) {
+  while (( n = fread(buf, 1, 8192, source) )) {
     if (n != fwrite(buf, 1, n, target)) {
       rv = 0;
       break;
@@ -1343,7 +1343,7 @@ static const char* SystemImpl__getUUIDStr(void)
 typedef void (*mmc_GC_function_set_gc_state)(mmc_GC_state_type*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-int SystemImpl__loadLibrary(const char *str, int printDebug)
+int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
 {
   char libname[MAXPATHLEN];
   char currentDirectory[MAXPATHLEN];
@@ -1353,15 +1353,29 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   HMODULE h;
   const char* ctokens[2];
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
-  /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
-  GetCurrentDirectory(bufLen,currentDirectory);
-#if defined(_MSC_VER)
-  _snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
-#else
-  snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
-#endif
 
-  h = LoadLibrary(libname);
+  if (str[0] != '\0') {
+    /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
+    if (relativePath) {
+      GetCurrentDirectory(bufLen,currentDirectory);
+#if defined(_MSC_VER)
+      _snprintf(libname, MAXPATHLEN, "%s\\%s", currentDirectory, str);
+#else
+      snprintf(libname, MAXPATHLEN, "%s\\%s", currentDirectory, str);
+#endif
+    } else {
+#if defined(_MSC_VER)
+      _snprintf(libname, MAXPATHLEN, "%s", str);
+#else
+      snprintf(libname, MAXPATHLEN, "%s", str);
+#endif
+    }
+
+    h = LoadLibrary(libname);
+  } else {
+    h = GetModuleHandle(0);
+  }
+
   if (h == NULL) {
     LPVOID lpMsgBuf;
     FormatMessage(
@@ -1404,7 +1418,7 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
 }
 
 #else
-int SystemImpl__loadLibrary(const char *str, int printDebug)
+int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
 {
   char libname[MAXPATHLEN];
   modelica_ptr_t lib = NULL;
@@ -1412,12 +1426,23 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   void *h = NULL;
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   const char* ctokens[2];
-  snprintf(libname, MAXPATHLEN, "./%s" CONFIG_DLL_EXT, str);
 #if defined(RTLD_DEEPBIND)
-  h = dlopen(libname, RTLD_LOCAL | RTLD_NOW | RTLD_DEEPBIND);
+  int flags = RTLD_LOCAL | RTLD_NOW | RTLD_DEEPBIND;
 #else
-  h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
+  int flags = RTLD_LOCAL | RTLD_NOW;
 #endif
+
+  if (str[0] != '\0') {
+    if (relativePath) {
+      snprintf(libname, MAXPATHLEN, "./%s", str);
+    } else {
+      snprintf(libname, MAXPATHLEN, "%s", str);
+    }
+    h = dlopen(libname, flags);
+  } else {
+    h = dlopen(NULL, flags);
+  }
+
   if (h == NULL) {
     ctokens[0] = dlerror();
     ctokens[1] = libname;
@@ -1519,7 +1544,12 @@ int SystemImpl__lookupFunction(int libIndex, const char *str)
   funcptr =  (int (*)(threadData_t*, type_description*, type_description*)) getFunctionPointerFromDLL(lib->data.lib, str);
 
   if (funcptr == NULL) {
-    fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());
+    const char* err_toks[2];
+    char id_buf[11];
+    snprintf(id_buf, 11, "%lu", GetLastError());
+    err_toks[0] = id_buf;
+    err_toks[1] = str;
+    c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, gettext("Unable to find `%s': %s.\n"), err_toks, 2);
     return -1;
   }
 

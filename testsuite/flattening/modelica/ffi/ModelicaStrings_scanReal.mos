@@ -1,0 +1,19 @@
+// name:     ModelicaStrings_scanReal
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.ExternalC.ModelicaStrings_scanReal); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.ExternalC.ModelicaStrings_scanReal
+//   constant Real x = 4.234;
+// end FFITest.ExternalC.ModelicaStrings_scanReal;
+// "
+// ""
+// endResult

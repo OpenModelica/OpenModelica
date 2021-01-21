@@ -31,34 +31,39 @@
 
 encapsulated package NFEvalFunction
 
-import Expression = NFExpression;
+import Binding = NFBinding;
 import Class = NFClass;
+import Component = NFComponent;
+import ComponentRef = NFComponentRef;
+import Dimension = NFDimension;
+import Expression = NFExpression;
+import NFCeval.EvalTarget;
+import NFClassTree.ClassTree;
 import NFFunction.Function;
 import NFInstNode.InstNode;
+import Record = NFRecord;
 import Sections = NFSections;
 import Statement = NFStatement;
-import ComponentRef = NFComponentRef;
-import Binding = NFBinding;
-import Component = NFComponent;
-import Type = NFType;
-import Dimension = NFDimension;
-import NFClassTree.ClassTree;
 import Subscript = NFSubscript;
-import Record = NFRecord;
+import Type = NFType;
 
 protected
+import Array;
+import Autoconf;
 import Ceval = NFCeval;
-import MetaModelica.Dangerous.*;
-import RangeIterator = NFRangeIterator;
+import DAE;
 import ElementSource;
+import ErrorExt;
+import EvalFunctionExt = NFEvalFunctionExt;
+import FFI;
 import Flags;
-import ModelicaExternalC;
-import System;
+import MetaModelica.Dangerous.*;
+import NFPrefixes.Variability;
+import RangeIterator = NFRangeIterator;
 import SCode;
 import SCodeUtil;
-import NFPrefixes.Variability;
-import EvalFunctionExt = NFEvalFunctionExt;
-import NFCeval.EvalTarget;
+import System;
+import Testsuite;
 import UnorderedMap;
 
 type FlowControl = enumeration(NEXT, CONTINUE, BREAK, RETURN, ASSERTION);
@@ -68,10 +73,11 @@ public
 function evaluate
   input Function fn;
   input list<Expression> args;
+  input EvalTarget target;
   output Expression result;
 algorithm
   if Function.isExternal(fn) then
-    result := evaluateExternal(fn, args);
+    result := evaluateExternal(fn, args, target);
   else
     result := evaluateNormal(fn, args);
   end if;
@@ -131,6 +137,7 @@ end evaluateNormal;
 function evaluateExternal
   input Function fn;
   input list<Expression> args;
+  input EvalTarget target;
   output Expression result;
 protected
   String name, lang;
@@ -141,25 +148,28 @@ algorithm
   Sections.EXTERNAL(name = name, args = ext_args, outputRef = output_ref, language = lang, ann = ann) :=
     Class.getSections(InstNode.getClass(fn.node));
 
-  if lang == "builtin" then
-    // Functions defined as 'external "builtin"', delegate to Ceval.
-    result := Ceval.evalBuiltinCall(fn, args, EvalTarget.IGNORE_ERRORS());
-  elseif isKnownExternalFunc(name, ann) then
-    // External functions that we know how to evaluate without generating code.
-    // TODO: Move this to EvalFunctionExt and unify evaluateKnownExternal and
-    //       evaluateExternal2. This requires handling of outputRef though.
-    result := evaluateKnownExternal(name, args);
-  else
-    try
-      result := evaluateExternal2(name, fn, args, ext_args);
+  result := matchcontinue lang
+    case "builtin"
+      // Functions defined as 'external "builtin"', delegate to Ceval.
+      then Ceval.evalBuiltinCall(fn, args, EvalTarget.IGNORE_ERRORS());
+
+    case "FORTRAN 77"
+      // This had better be a Lapack function.
+      then evaluateExternal2(name, fn, args, ext_args);
+
+    case _
+      // For anything else, try to call the function via FFI.
+      then callExternalFunction(name, fn, args, ext_args, output_ref, ann);
+
     else
-      // External functions that we would need to generate code for and execute.
-      Error.assertion(false, getInstanceName() +
-        " failed on " + AbsynUtil.pathString(fn.path) +
-        ", evaluation of userdefined external functions not yet implemented", sourceInfo());
-      fail();
-    end try;
-  end if;
+      algorithm
+        if EvalTarget.hasInfo(target) then
+          Error.addSourceMessage(Error.FAILED_TO_EVALUATE_FUNCTION,
+            {AbsynUtil.pathString(fn.path)}, EvalTarget.getInfo(target));
+        end if;
+      then
+        fail();
+  end matchcontinue;
 end evaluateExternal;
 
 function evaluateRecordConstructor
@@ -220,6 +230,7 @@ function createArgumentMap
   input list<InstNode> locals;
   input list<Expression> args;
   input Boolean mutableParams;
+  input Boolean buildArrayBinding = true;
   output ArgumentMap map;
 protected
   Expression arg;
@@ -235,8 +246,13 @@ algorithm
 
   // Add outputs and local variables to the argument map.
   // They sometimes need to be mutable and sometimes not.
-  List.fold(outputs, if mutableParams then addMutableArgument else addImmutableArgument, map);
-  List.fold(locals,  if mutableParams then addMutableArgument else addImmutableArgument, map);
+  if mutableParams then
+    List.fold(outputs, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
+    List.fold(locals, function addMutableArgument(buildArrayBinding = buildArrayBinding), map);
+  else
+    List.fold(outputs, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
+    List.fold(locals, function addImmutableArgument(buildArrayBinding = buildArrayBinding), map);
+  end if;
 
   // Apply the arguments to the arguments themselves. This is done after
   // building the map to make sure all the arguments are available.
@@ -246,10 +262,11 @@ end createArgumentMap;
 function addMutableArgument
   input InstNode node;
   input output ArgumentMap map;
+  input Boolean buildArrayBinding;
 protected
   Expression exp;
 algorithm
-  exp := getBindingExp(node, map, mutableParams = true);
+  exp := getBindingExp(node, map, mutableParams = true, buildArrayBinding = buildArrayBinding);
   exp := Expression.makeMutable(exp);
   UnorderedMap.add(node, exp, map);
 end addMutableArgument;
@@ -257,10 +274,11 @@ end addMutableArgument;
 function addImmutableArgument
   input InstNode node;
   input output ArgumentMap map;
+  input Boolean buildArrayBinding;
 protected
   Expression exp;
 algorithm
-  exp := getBindingExp(node, map, mutableParams = false);
+  exp := getBindingExp(node, map, mutableParams = false, buildArrayBinding = buildArrayBinding);
   UnorderedMap.add(node, exp, map);
 end addImmutableArgument;
 
@@ -268,16 +286,20 @@ function getBindingExp
   input InstNode node;
   input ArgumentMap map;
   input Boolean mutableParams;
+  input Boolean buildArrayBinding;
   output Expression bindingExp;
 protected
+  Component comp;
   Binding binding;
+  Type ty;
 algorithm
-  binding := Component.getBinding(InstNode.component(node));
+  comp := InstNode.component(node);
+  binding := Component.getBinding(comp);
 
   if Binding.isBound(binding) then
     bindingExp := Expression.getBindingExp(Binding.getExp(binding));
   else
-    bindingExp := buildBinding(node, map, mutableParams);
+    bindingExp := buildBinding(node, map, mutableParams, buildArrayBinding);
   end if;
 end getBindingExp;
 
@@ -285,6 +307,7 @@ function buildBinding
   input InstNode node;
   input ArgumentMap map;
   input Boolean mutableParams;
+  input Boolean buildArrayBinding;
   output Expression result;
 protected
   Type ty;
@@ -293,7 +316,7 @@ algorithm
   ty := Type.mapDims(ty, function applyReplacementsDim(map = map));
 
   result := match ty
-    case Type.ARRAY() guard Type.hasKnownSize(ty)
+    case Type.ARRAY() guard buildArrayBinding and Type.hasKnownSize(ty)
       then Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)));
     case Type.COMPLEX() then buildRecordBinding(node, map, mutableParams);
     else Expression.EMPTY(ty);
@@ -350,7 +373,7 @@ algorithm
         local_map := UnorderedMap.new<Expression>(InstNode.hash, InstNode.refEqual);
 
         for comp in comps loop
-          exp := getBindingExp(comp, map, mutableParams);
+          exp := getBindingExp(comp, map, mutableParams, buildArrayBinding = true);
 
           if mutableParams then
             exp := Expression.makeMutable(exp);
@@ -907,244 +930,6 @@ algorithm
   end while;
 end evaluateWhile;
 
-function isKnownExternalFunc
-  input String name;
-  input Option<SCode.Annotation> ann;
-  output Boolean isKnown;
-algorithm
-  if isKnownLibrary(ann) then
-    isKnown := true;
-  else
-    isKnown := match name
-      case "OpenModelica_regex" then true;
-      else false;
-    end match;
-  end if;
-end isKnownExternalFunc;
-
-function isKnownLibrary
-  input Option<SCode.Annotation> extAnnotation;
-  output Boolean isKnown = false;
-protected
-  SCode.Annotation ann;
-  Option<Absyn.Exp> oexp;
-algorithm
-  if isSome(extAnnotation) then
-    SOME(ann) := extAnnotation;
-    oexp := SCodeUtil.getModifierBinding(SCodeUtil.lookupNamedAnnotation(ann, "Library"));
-
-    if isSome(oexp) then
-      isKnown := isKnownLibraryExp(Util.getOption(oexp));
-    end if;
-  end if;
-end isKnownLibrary;
-
-function isKnownLibraryExp
-  input Absyn.Exp exp;
-  output Boolean isKnown;
-algorithm
-  isKnown := match exp
-    case Absyn.STRING("ModelicaExternalC") then true;
-    case Absyn.STRING("ModelicaIO") then true;
-    case Absyn.ARRAY() then List.exist(exp.arrayExp, isKnownLibraryExp);
-    else false;
-  end match;
-end isKnownLibraryExp;
-
-constant list<String> FILE_TYPE_NAMES = {"NoFile", "RegularFile", "Directory", "SpecialFile"};
-constant Absyn.Path FILE_TYPE_PATH = Absyn.Path.QUALIFIED("Modelica",
-  Absyn.Path.QUALIFIED("Utilities", Absyn.Path.QUALIFIED("Types", Absyn.Path.IDENT("FileType"))));
-constant Type FILE_TYPE_TYPE = Type.ENUMERATION(FILE_TYPE_PATH, FILE_TYPE_NAMES);
-
-constant list<Expression> FILE_TYPE_LITERALS = {
-  Expression.ENUM_LITERAL(FILE_TYPE_TYPE, "NoFile", 1),
-  Expression.ENUM_LITERAL(FILE_TYPE_TYPE, "RegularFile", 2),
-  Expression.ENUM_LITERAL(FILE_TYPE_TYPE, "Directory", 3),
-  Expression.ENUM_LITERAL(FILE_TYPE_TYPE, "SpecialFile", 4)
-};
-
-constant list<String> COMPARE_NAMES = {"Less", "Equal", "Greater"};
-constant Absyn.Path COMPARE_PATH = Absyn.Path.QUALIFIED("Modelica",
-  Absyn.Path.QUALIFIED("Utilities", Absyn.Path.QUALIFIED("Types", Absyn.Path.IDENT("Compare"))));
-constant Type COMPARE_TYPE = Type.ENUMERATION(COMPARE_PATH, COMPARE_NAMES);
-
-constant list<Expression> COMPARE_LITERALS = {
-  Expression.ENUM_LITERAL(COMPARE_TYPE, "Less", 1),
-  Expression.ENUM_LITERAL(COMPARE_TYPE, "Equal", 2),
-  Expression.ENUM_LITERAL(COMPARE_TYPE, "Greater", 3)
-};
-
-function evaluateKnownExternal
-  input String name;
-  input list<Expression> args;
-  output Expression result;
-algorithm
-  result := match (name, args)
-    local
-      String s1, s2;
-      Integer i, i2;
-      Boolean b;
-      Real r;
-      Integer dims[2];
-
-    case ("ModelicaInternal_countLines", {Expression.STRING(s1)})
-      then Expression.INTEGER(ModelicaExternalC.Streams_countLines(s1));
-
-    case ("ModelicaInternal_fullPathName", {Expression.STRING(s1)})
-      then Expression.STRING(ModelicaExternalC.File_fullPathName(s1));
-
-    case ("ModelicaInternal_print", {Expression.STRING(s1), Expression.STRING(s2)})
-      algorithm
-        ModelicaExternalC.Streams_print(s1, s2);
-      then
-        Expression.INTEGER(0);
-
-    case ("ModelicaInternal_readLine", {Expression.STRING(s1), Expression.INTEGER(i)})
-      algorithm
-        (s1, b) := ModelicaExternalC.Streams_readLine(s1, i);
-      then
-        Expression.TUPLE(Type.TUPLE({Type.STRING(), Type.BOOLEAN()}, NONE()),
-                        {Expression.STRING(s1), Expression.BOOLEAN(b)});
-
-    case ("ModelicaInternal_stat", {Expression.STRING(s1)})
-      algorithm
-        i := ModelicaExternalC.File_stat(s1);
-      then
-        listGet(FILE_TYPE_LITERALS, i);
-
-    case ("ModelicaStreams_closeFile", {Expression.STRING(s1)})
-      algorithm
-        ModelicaExternalC.Streams_close(s1);
-      then
-        Expression.INTEGER(0);
-
-    case ("ModelicaStrings_compare", {Expression.STRING(s1), Expression.STRING(s2), Expression.BOOLEAN(b)})
-      algorithm
-        i := ModelicaExternalC.Strings_compare(s1, s2, b);
-      then
-        listGet(COMPARE_LITERALS, i);
-
-    case ("ModelicaStrings_length", {Expression.STRING(s1)})
-      then Expression.INTEGER(stringLength(s1));
-
-    case ("ModelicaStrings_scanReal", {Expression.STRING(s1), Expression.INTEGER(i), Expression.BOOLEAN(b)})
-      algorithm
-        (i, r) := ModelicaExternalC.Strings_scanReal(s1, i, b);
-      then
-        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.REAL()}, NONE()),
-                         {Expression.INTEGER(i), Expression.REAL(r)});
-
-    case ("ModelicaStrings_scanInteger", {Expression.STRING(s1), Expression.INTEGER(i), Expression.BOOLEAN(b)})
-      algorithm
-        (i, i2) := ModelicaExternalC.Strings_scanInteger(s1, i, b);
-      then
-        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.INTEGER()}, NONE()),
-                         {Expression.INTEGER(i), Expression.INTEGER(i2)});
-
-    case ("ModelicaStrings_scanString", {Expression.STRING(s1), Expression.INTEGER(i)})
-      algorithm
-        (i, s2) := ModelicaExternalC.Strings_scanString(s1, i);
-      then
-        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.STRING()}, NONE()),
-                         {Expression.INTEGER(i), Expression.STRING(s2)});
-
-    case ("ModelicaStrings_scanIdentifier", {Expression.STRING(s1), Expression.INTEGER(i)})
-      algorithm
-        (i, s2) := ModelicaExternalC.Strings_scanIdentifier(s1, i);
-      then
-        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), Type.STRING()}, NONE()),
-                         {Expression.INTEGER(i), Expression.STRING(s2)});
-
-    case ("ModelicaStrings_skipWhiteSpace", {Expression.STRING(s1), Expression.INTEGER(i)})
-      then Expression.INTEGER(ModelicaExternalC.Strings_skipWhiteSpace(s1, i));
-
-    case ("ModelicaStrings_substring", {Expression.STRING(s1), Expression.INTEGER(i), Expression.INTEGER(i2)})
-      then Expression.STRING(System.substring(s1, i, i2));
-
-    case ("ModelicaStrings_hashString", {Expression.STRING(s1)})
-      then Expression.INTEGER(ModelicaExternalC.Strings_hashString(s1));
-
-    case ("OpenModelica_regex", _) then evaluateOpenModelicaRegex(args);
-
-    case ("ModelicaIO_readMatrixSizes", {Expression.STRING(s1), Expression.STRING(s2)})
-      algorithm
-        dims := ModelicaExternalC.ModelicaIO_readMatrixSizes(s1, s2);
-      then
-        Expression.makeArray(Type.ARRAY(Type.INTEGER(), {Dimension.fromInteger(2)}),
-                         {Expression.INTEGER(dims[1]), Expression.INTEGER(dims[2])}, true);
-
-    case ("ModelicaIO_readRealMatrix",
-        {Expression.STRING(s1), Expression.STRING(s2), Expression.INTEGER(i), Expression.INTEGER(i2), Expression.BOOLEAN(b)})
-      then evaluateModelicaIO_readRealMatrix(s1, s2, i, i2, b);
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + ": failed to evaluate " + name, sourceInfo());
-      then
-        fail();
-  end match;
-end evaluateKnownExternal;
-
-function evaluateOpenModelicaRegex
-  input list<Expression> args;
-  output Expression result;
-protected
-  Integer n, i;
-  String str, re;
-  Boolean extended, insensitive;
-  list<String> strs;
-  list<Expression> expl;
-  Type strs_ty;
-  Expression strs_exp;
-algorithm
-  result := match args
-    case {Expression.STRING(str), Expression.STRING(re), Expression.INTEGER(i),
-          Expression.BOOLEAN(extended), Expression.BOOLEAN(insensitive)}
-      algorithm
-        (n, strs) := System.regex(str, re, i, extended, insensitive);
-        expl := list(Expression.STRING(s) for s in strs);
-        strs_ty := Type.ARRAY(Type.STRING(), {Dimension.fromInteger(i)});
-        strs_exp := Expression.makeArray(strs_ty, expl, true);
-      then
-        Expression.TUPLE(Type.TUPLE({Type.INTEGER(), strs_ty}, NONE()),
-                         {Expression.INTEGER(n), strs_exp});
-
-    else
-      algorithm
-        Error.assertion(false, getInstanceName() + " failed on OpenModelica_regex" +
-          List.toString(args, Expression.toString, "", "(", ", ", ")", true), sourceInfo());
-      then
-        fail();
-  end match;
-end evaluateOpenModelicaRegex;
-
-function evaluateModelicaIO_readRealMatrix
-  input String fileName;
-  input String matrixName;
-  input Integer nrow;
-  input Integer ncol;
-  input Boolean verboseRead;
-  output Expression result;
-protected
-  Real[nrow, ncol] matrix;
-  list<Expression> row, rows = {};
-  Type ty;
-algorithm
-  matrix := ModelicaExternalC.ModelicaIO_readRealMatrix(fileName, matrixName, nrow, ncol, verboseRead);
-  ty := Type.ARRAY(Type.REAL(), {Dimension.fromInteger(ncol)});
-
-  for r in 1:nrow loop
-    row := {};
-    for c in 1:ncol loop
-      row := Expression.REAL(matrix[r, c]) :: row;
-    end for;
-    rows := Expression.makeArray(ty, row, literal = true) :: rows;
-  end for;
-
-  ty := Type.liftArrayLeft(ty, Dimension.fromInteger(nrow));
-  result := Expression.makeArray(ty, rows, literal = true);
-end evaluateModelicaIO_readRealMatrix;
-
 function evaluateExternal2
   input String name;
   input Function fn;
@@ -1181,8 +966,326 @@ algorithm
     case "dgetri" algorithm EvalFunctionExt.Lapack_dgetri(args); then ();
     case "dgeqpf" algorithm EvalFunctionExt.Lapack_dgeqpf(args); then ();
     case "dorgqr" algorithm EvalFunctionExt.Lapack_dorgqr(args); then ();
+    else fail();
   end match;
 end evaluateExternal3;
+
+function callExternalFunction
+  "Calls an external function using the FFI interface."
+  input String extName;
+  input Function fn;
+  input list<Expression> args;
+  input list<Expression> extArgs;
+  input ComponentRef outputRef;
+  input Option<SCode.Annotation> extAnnotation;
+  input Boolean debug = false;
+  output Expression result;
+protected
+  SourceInfo info;
+  String pkg_name;
+  Integer lib_handle, fn_handle;
+  array<Expression> mapped_args;
+  array<FFI.ArgSpec> specs;
+  Type ret_ty;
+  Expression res;
+  list<Expression> output_vals;
+algorithm
+  info := InstNode.info(fn.node);
+  checkExtReturnValue(outputRef, info);
+
+  pkg_name := InstNode.name(InstNode.libraryScope(fn.node));
+  (lib_handle, fn_handle) := loadLibraryFunction(extName, pkg_name, extAnnotation, debug, info);
+
+  (mapped_args, specs) := mapExternalArgs(fn, args, extArgs);
+  ret_ty := if ComponentRef.isCref(outputRef) then ComponentRef.nodeType(outputRef) else Type.NORETCALL();
+  (res, output_vals) := FFI.callFunction(fn_handle, mapped_args, specs, ret_ty);
+
+  freeLibraryFunction(lib_handle, fn_handle, debug);
+
+  if listEmpty(output_vals) then
+    // No output parameters, just return the return value.
+    result := res;
+  else
+    // Some output parameters, might require constructing a tuple.
+    result := makeExternalResult(res :: output_vals, outputRef, extArgs, fn.outputs);
+  end if;
+end callExternalFunction;
+
+function loadLibraryFunction
+  "Tries to load the function with the given function that's either linked into
+   the compiler itself or in a shared library provided by the user. Returns
+   handles to the shared library and function that should to be freed by
+   freeLibraryFunction when no longer needed."
+  input String fnName;
+  input String libName;
+  input Option<SCode.Annotation> extAnnotation;
+  input Boolean debug;
+  input SourceInfo info;
+  output Integer libHandle;
+  output Integer fnHandle;
+protected
+  SCode.Annotation ann;
+  list<String> libs = {}, dirs = {}, paths = {};
+  Boolean found = false;
+algorithm
+  // Read libraries and library directories from the annotation if it exists.
+  if isSome(extAnnotation) then
+    SOME(ann) := extAnnotation;
+    libs := parseExternalAnnotation("Library", ann);
+    dirs := parseExternalAnnotation("LibraryDirectory", ann);
+  end if;
+
+  // Append the default path and remove any duplicates.
+  dirs := ("modelica://" + libName + "/Resources/Library") :: dirs;
+  libs := List.unique(libs);
+  dirs := List.unique(dirs);
+
+  // Create paths for any combination of library and library directory.
+  for lib in libs loop
+    // For functions that are linked into the compiler itself we pass an empty
+    // string to loadLibrary.
+    if stringEmpty(lib) or lib == "ModelicaExternalC" or lib == "ModelicaIO" then
+      paths := "" :: paths;
+      continue;
+    end if;
+
+    if Autoconf.os == "linux" then
+      lib := "lib" + lib;
+    end if;
+
+    lib := lib + Autoconf.dllExt;
+
+    for dir in dirs loop
+      // Search for both dir/lib and e.g. dir/linux64/lib.
+      paths := (dir + "/" + lib) :: paths;
+      paths := (dir + "/" + System.modelicaPlatform() + "/" + lib) :: paths;
+    end for;
+  end for;
+
+  // If no Library annotation was given, append an empty string to search for
+  // functions linked into the compiler itself.
+  if listEmpty(libs) then
+    paths := "" :: paths;
+  end if;
+
+  // Disable error messages, we don't care if some paths can't be found.
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  // Go through each path and try to find the function.
+  for path in paths loop
+    try
+      if not stringEmpty(path) then
+        path := uriToFilename(path);
+      end if;
+
+      libHandle := System.loadLibrary(path, relativePath = false, printDebug = debug);
+      fnHandle := System.lookupFunction(libHandle, fnName);
+      found := true;
+    else
+    end try;
+
+    if found then
+      break;
+    end if;
+  end for;
+
+  ErrorExt.rollBack(getInstanceName());
+
+  if not found then
+    paths := list("  " + Testsuite.friendly(uriToFilename(p)) for p in paths);
+    Error.addSourceMessage(Error.EXTERNAL_FUNCTION_NOT_FOUND,
+      {fnName, stringDelimitList(paths, "\n")}, info);
+    fail();
+  end if;
+end loadLibraryFunction;
+
+function parseExternalAnnotation
+  input String name;
+  input SCode.Annotation ann;
+  output list<String> strl = {};
+protected
+  list<SCode.Mod> mods;
+  Absyn.Exp exp;
+algorithm
+  mods := SCodeUtil.lookupNamedAnnotations(ann, name);
+
+  for m in mods loop
+    strl := match m
+      case SCode.Mod.MOD(binding = SOME(exp))
+        then parseExternalAnnotationExp(exp, strl);
+      else strl;
+    end match;
+  end for;
+end parseExternalAnnotation;
+
+function parseExternalAnnotationExp
+  input Absyn.Exp exp;
+  input output list<String> strl;
+algorithm
+  strl := match exp
+    case Absyn.Exp.STRING() then exp.value :: strl;
+    case Absyn.Exp.ARRAY()
+      then List.fold(exp.arrayExp, parseExternalAnnotationExp, strl);
+    else strl;
+  end match;
+end parseExternalAnnotationExp;
+
+function freeLibraryFunction
+  "Frees the function and shared library loaded by loadLibraryFunction."
+  input Integer libHandle;
+  input Integer fnHandle;
+  input Boolean debug;
+algorithm
+  System.freeFunction(fnHandle, debug);
+  System.freeLibrary(libHandle, debug);
+end freeLibraryFunction;
+
+function mapExternalArgs
+  "Maps the given input arguments to the arguments in the external function
+   call specifier, returning an array of mapped arguments and a corresponding
+   array of FFI.ArgSpec:s for use with the FFI interface."
+  input Function fn;
+  input list<Expression> inputArgs;
+  input list<Expression> extArgs;
+  output array<Expression> mappedArgs;
+  output array<FFI.ArgSpec> argSpecs;
+protected
+  ArgumentMap arg_map;
+  Expression marg;
+  FFI.ArgSpec arg_spec;
+  Integer args_len, i = 1;
+algorithm
+  arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, inputArgs,
+    mutableParams = false, buildArrayBinding = false);
+
+  args_len := listLength(extArgs);
+  mappedArgs := arrayCreateNoInit(args_len, Expression.INTEGER(0));
+  argSpecs := arrayCreateNoInit(args_len, FFI.ArgSpec.INPUT);
+
+  for ext_arg in extArgs loop
+    (marg, arg_spec) := mapExternalArg(ext_arg, arg_map, fn);
+    mappedArgs[i] := marg;
+    argSpecs[i] := arg_spec;
+    i := i + 1;
+  end for;
+end mapExternalArgs;
+
+function mapExternalArg
+  input Expression extArg;
+  input ArgumentMap argMap;
+  input Function fn;
+  output Expression arg;
+  output FFI.ArgSpec spec;
+protected
+  InstNode cr_node;
+algorithm
+  arg := applyBindingReplacement(extArg, argMap);
+  arg := Ceval.evalExp(arg);
+
+  spec := match extArg
+    case Expression.CREF()
+      algorithm
+        cr_node := ComponentRef.node(ComponentRef.last(extArg.cref));
+
+        if InstNode.isProtected(cr_node) then
+          spec := FFI.ArgSpec.LOCAL;
+        elseif InstNode.isOutput(cr_node) then
+          spec := FFI.ArgSpec.OUTPUT;
+        else
+          spec := FFI.ArgSpec.INPUT;
+        end if;
+      then
+        spec;
+
+    else FFI.ArgSpec.INPUT;
+  end match;
+end mapExternalArg;
+
+function makeExternalResult
+  "Constructs a tuple with the output values of an external function returning
+   multiple values via output parameters. The first value in the list is assumed
+   to be the value returned by the function, or Expression.EMPTY if the function
+   doesn't return any value."
+  input list<Expression> values;
+  input ComponentRef outputRef;
+  input list<Expression> extArgs;
+  input list<InstNode> outputs;
+  output Expression outExp;
+protected
+  ArgumentMap arg_map;
+  Expression val;
+  list<Expression> vals, ret_vals;
+  Option<Expression> ret_val;
+  ComponentRef cref;
+algorithm
+  arg_map := UnorderedMap.new<Expression>(InstNode.hash, InstNode.refEqual);
+  val :: vals := values;
+
+  if ComponentRef.isCref(outputRef) then
+    UnorderedMap.addUnique(ComponentRef.node(outputRef), val, arg_map);
+  end if;
+
+  for ext_arg in extArgs loop
+    () := match ext_arg
+      case Expression.CREF()
+        guard InstNode.isOutput(ComponentRef.node(ComponentRef.last(ext_arg.cref)))
+        algorithm
+          val :: vals := vals;
+          UnorderedMap.addUnique(ComponentRef.node(ext_arg.cref), val, arg_map);
+        then
+          ();
+
+      else ();
+    end match;
+  end for;
+
+  ret_vals := list(getExternalOutputResult(o, arg_map) for o in outputs);
+  outExp := Expression.makeTuple(ret_vals);
+end makeExternalResult;
+
+function getExternalOutputResult
+  input InstNode outputNode;
+  input ArgumentMap map;
+  output Expression exp;
+protected
+  Option<Expression> oexp;
+  array<InstNode> comps;
+  list<Expression> expl;
+  InstNode cls_node;
+algorithm
+  oexp := UnorderedMap.get(outputNode, map);
+
+  if isSome(oexp) then
+    SOME(exp) := oexp;
+  elseif InstNode.isRecord(outputNode) then
+    cls_node := InstNode.classScope(outputNode);
+    comps := ClassTree.getComponents(Class.classTree(InstNode.getClass(cls_node)));
+
+    expl := {};
+    for c in comps loop
+      expl := getExternalOutputResult(c, map) :: expl;
+    end for;
+
+    exp := Expression.makeRecord(InstNode.scopePath(cls_node, includeRoot = true),
+      InstNode.getType(cls_node), listReverseInPlace(expl));
+  else
+    Error.assertion(false, getInstanceName() +
+      " failed to find return value for output " + InstNode.name(outputNode), sourceInfo());
+  end if;
+end getExternalOutputResult;
+
+function checkExtReturnValue
+  "Checks that an external function doesn't return something we don't yet
+   support."
+  input ComponentRef cref;
+  input SourceInfo info;
+algorithm
+  if ComponentRef.isCref(cref) and Type.isRecord(ComponentRef.nodeType(cref)) then
+    Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
+      {"\"record return value in external function\"", "Pass the record as an output parameter"}, info);
+    fail();
+  end if;
+end checkExtReturnValue;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFEvalFunction;

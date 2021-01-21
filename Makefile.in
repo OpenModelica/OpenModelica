@@ -51,7 +51,10 @@ ReferenceFiles.skip:
 libs-for-testing: libs-for-testing.skip
 libs-for-testing.skip: omc
 	$(MAKE) -C testsuite/libraries-for-testing/
-testsuite-depends: omc-diff ReferenceFiles libs-for-testing omsimulator
+ffi-test-lib: ffi-test-lib.skip
+ffi-test-lib.skip:
+	$(MAKE) -C testsuite/flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc
+testsuite-depends: omc-diff ReferenceFiles libs-for-testing omsimulator ffi-test-lib
 test: testsuite-depends
 	$(MAKE) omc-diff
 	cd testsuite/partest && echo "Running all $(./runtests.pl -counttests) tests"

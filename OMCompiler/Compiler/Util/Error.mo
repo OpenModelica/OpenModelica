@@ -838,6 +838,8 @@ public constant ErrorTypes.Message NON_DISCRETE_WHEN_CONDITION = ErrorTypes.MESS
   Gettext.gettext("When-condition ‘%s‘ is not a discrete-time expression."));
 public constant ErrorTypes.Message CYCLIC_FUNCTION_COMPONENTS = ErrorTypes.MESSAGE(383, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Cyclically dependent function components found: %s"));
+public constant ErrorTypes.Message EXTERNAL_FUNCTION_NOT_FOUND = ErrorTypes.MESSAGE(384, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("External function ‘%s‘ could not be found in any of the given shared libraries:\n%s"));
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
 public constant ErrorTypes.Message INITIALIZATION_OVER_SPECIFIED = ErrorTypes.MESSAGE(497, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),

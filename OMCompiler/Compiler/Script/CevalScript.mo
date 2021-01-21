@@ -1582,27 +1582,17 @@ protected function generateFunctionFileName
  generate the function name from a path."
   input Absyn.Path functionPath;
   output String functionName;
+protected
+  String n1, n2;
 algorithm
-  functionName := matchcontinue(functionPath)
-    local String name, n1, n2; Integer len;
-    case (_)
-      equation
-        name = AbsynUtil.pathStringUnquoteReplaceDot(functionPath, "_");
-        len = stringLength(name);
-        // not bigger than
-        true = len > Global.maxFunctionFileLength;
-        n1 = AbsynUtil.pathFirstIdent(functionPath);
-        n2 = AbsynUtil.pathLastIdent(functionPath);
-        name = System.unquoteIdentifier(n1 + "_" + n2);
-        name = name + "_" + intString(tick());
-      then
-        name;
-    else
-      equation
-        name = AbsynUtil.pathStringUnquoteReplaceDot(functionPath, "_");
-      then
-        name;
-  end matchcontinue;
+  functionName := AbsynUtil.pathStringUnquoteReplaceDot(functionPath, "_");
+
+  if stringLength(functionName) > Global.maxFunctionFileLength then
+    n1 := AbsynUtil.pathFirstIdent(functionPath);
+    n2 := AbsynUtil.pathLastIdent(functionPath);
+    functionName := System.unquoteIdentifier(n1 + "_" + n2);
+    functionName := functionName + "_" + intString(tick());
+  end if;
 end generateFunctionFileName;
 
 public function getFunctionDependencies
@@ -2184,7 +2174,7 @@ algorithm
         // now is safe to generate code
         (cache, funcstr, fileName) := cevalGenerateFunction(cache, env, p, funcpath);
         print_debug := Flags.isSet(Flags.DYN_LOAD);
-        libHandle := System.loadLibrary(fileName, print_debug);
+        libHandle := System.loadLibrary(fileName + Autoconf.dllExt, relativePath = true, printDebug = print_debug);
         funcHandle := System.lookupFunction(libHandle, stringAppend("in_", funcstr));
         execStatReset();
         newval := DynLoad.executeFunction(funcHandle, vallst, print_debug);
