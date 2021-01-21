@@ -471,6 +471,12 @@ algorithm
     (dlow, stateSets, uniqueEqIndex, tempvars, numStateSets) := createStateSets(dlow, {}, uniqueEqIndex, tempvars);
     if debug then execStat("simCode: createStateSets"); end if;
 
+    // Generate jacobian code for DataReconciliation
+    if Util.isSome(shared.dataReconciliationData) then //KAB1
+      BackendDAE.DATA_RECON(dataReconJac,setcVars,datareconinputvars) := Util.getOption(shared.dataReconciliationData);
+      (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
+    end if;
+
     // create model info
     modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
@@ -509,6 +515,7 @@ algorithm
     // collect all LinearSystem and NonlinearSystem algebraic system in modelInfo and update
     // the corresponding index (indexNonLinear, indexLinear) in SES_NONLINEAR and SES_LINEAR
     // Also collect all jacobians
+
     SymbolicJacsNLS := {};
     (initialEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(initialEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
@@ -523,13 +530,9 @@ algorithm
     (inlineEquations, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfo(inlineEquations, modelInfo);
     SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
 
-    // Generate jacobian code for DataReconciliation
     if Util.isSome(shared.dataReconciliationData) then
-      BackendDAE.DATA_RECON(dataReconJac,setcVars,datareconinputvars) := Util.getOption(shared.dataReconciliationData);
-      (SOME(dataReconSimJac), uniqueEqIndex, tempvars) := createSymbolicSimulationJacobian(dataReconJac, uniqueEqIndex, tempvars);
       (SymbolicJacsdatarecon, modelInfo, SymbolicJacsTemp) := addAlgebraicLoopsModelInfoSymJacs({dataReconSimJac}, modelInfo);
       SymbolicJacsNLS := listAppend(SymbolicJacsTemp, SymbolicJacsNLS);
-      //SymbolicJacsNLS := dataReconSimJac::SymbolicJacsNLS;
     end if;
 
     // collect symbolic jacobians from state selection
@@ -2444,121 +2447,49 @@ protected function createNonlinearResidualEquationsComplex
 algorithm
   (equations_, ouniqueEqIndex, otempvars) := matchcontinue (inExp, inExp1)
     local
-      DAE.ComponentRef cr, crtmp;
+      DAE.ComponentRef cr, cr1, crtmp;
       list<DAE.ComponentRef> crlst;
       list<list<DAE.ComponentRef>> crlstlst;
       DAE.Exp e1, e2, e1_1, e2_1, etmp;
-      DAE.Statement stms;
-      DAE.Type tp;
-      list<DAE.Exp> expl, crexplst, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss;
+      DAE.Statement stms, stms1;
+      DAE.Type tp, tp1;
+      list<DAE.Exp> expl, crexplst, crexplst1, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss;
       list<DAE.Var> varLst;
       list<DAE.Exp> e1lst, e2lst;
-      SimCode.SimEqSystem simeqn_complex;
+      SimCode.SimEqSystem simeqn_complex, simeqn_complex1;
       list<SimCode.SimEqSystem> eqSystlst, eqSystlst_simpAss;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
       Integer uniqueEqIndex;
-      Absyn.Path path, rpath;
-      String ident, s, s1, s2;
+      Absyn.Path path, path1, rpath;
+      String ident, ident1, s, s1, s2;
       list<SimCodeVar.SimVar> tempvars;
+      DAE.CallAttributes ca, ca1;
 
     /* casts */
-    case (DAE.CAST(_, e1), _) equation
-      (equations_, ouniqueEqIndex, otempvars) = createNonlinearResidualEquationsComplex(e1, inExp1, source, eqAttr, iuniqueEqIndex, itempvars);
-    then (equations_, ouniqueEqIndex, otempvars);
+    case (DAE.CAST(_, e1), _)
+    then createNonlinearResidualEquationsComplex(e1, inExp1, source, eqAttr, iuniqueEqIndex, itempvars);
 
     /* casts */
-    case (_, DAE.CAST(_, e2)) equation
-      (equations_, ouniqueEqIndex, otempvars) = createNonlinearResidualEquationsComplex(inExp, e2, source, eqAttr, iuniqueEqIndex, itempvars);
-    then (equations_, ouniqueEqIndex, otempvars);
+    case (_, DAE.CAST(_, e2))
+    then createNonlinearResidualEquationsComplex(inExp, e2, source, eqAttr, iuniqueEqIndex, itempvars);
 
     /* a = f() */
-    case (DAE.CREF(componentRef=cr), _) equation
-      // ((e1_1, _)) = Expression.extendArrExp((inExp, false));
-      (e2_1, _) = Expression.extendArrExp(inExp1, false);
-      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(inExp);
-      // tmp
-      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-      crtmp = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
-      tempvars = createTempVars(varLst, crtmp, itempvars);
-      // 0 = a - tmp
-      e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
-      e2lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
-      exptl = List.zip(e1lst, e2lst);
-      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, iuniqueEqIndex);
-      // tmp = f(x, y)
-      etmp = Expression.crefExp(crtmp);
-      stms = DAE.STMT_ASSIGN(tp, etmp, e2_1, source);
-      eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms}, eqAttr)::eqSystlst;
-    then (eqSystlst, uniqueEqIndex+1, tempvars);
+    case (DAE.CREF(componentRef=cr), _)
+    then createNonlinearResidualEquationsComplexCref(inExp, inExp1, cr, source, eqAttr, iuniqueEqIndex, itempvars);
 
     /* f() = a */
-    case (_, DAE.CREF(componentRef=cr)) equation
-      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      (e1_1, _) = Expression.extendArrExp(inExp, false);
-      // ((e2_1, _)) = Expression.extendArrExp((inExp1, false));
-      (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(inExp1);
-      // tmp
-      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-      crtmp = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
-      tempvars = createTempVars(varLst, crtmp, itempvars);
-      // 0 = a - tmp
-      e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
-      e2lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
-      exptl = List.zip(e1lst, e2lst);
-      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, iuniqueEqIndex);
-      // tmp = f(x, y)
-      etmp = Expression.crefExp(crtmp);
-      stms = DAE.STMT_ASSIGN(tp, etmp, e1_1, source);
-      eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms}, eqAttr)::eqSystlst;
-    then (eqSystlst, uniqueEqIndex+1, tempvars);
+    case (_, DAE.CREF(componentRef=cr))
+    then createNonlinearResidualEquationsComplexCref(inExp1, inExp, cr, source, eqAttr, iuniqueEqIndex, itempvars);
 
     /* Record() = f() */
-    case (DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), _) equation
-      true = AbsynUtil.pathEqual(path, rpath);
-      (e2_1, _) = Expression.extendArrExp(inExp1, false);
-      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      // tmp = f()
-      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
-      e1_1 = Expression.crefToExp(cr);
-      stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
-      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqAttr);
-      uniqueEqIndex = iuniqueEqIndex + 1;
-
-      // Record()-tmp = 0
-      /* Expand the tmp record and any arrays */
-      e1lst = Expression.expandExpression(e1_1, expandRecord = true);
-      /* Expand the varLst. Each var might be an array or record. */
-      e2lst = List.mapFlat(e2lst, function Expression.expandExpression(expandRecord = true));
-      /* pair each of the expanded expressions to coressponding one*/
-      exptl = List.zip(e1lst, e2lst);
-      /* Create residual equations for each pair*/
-      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
-      eqSystlst = simeqn_complex::eqSystlst;
-
-      tempvars = createTempVars(varLst, cr, itempvars);
-    then (eqSystlst, uniqueEqIndex, tempvars);
+    case (DAE.CALL(expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), DAE.CALL(path=path))
+      guard(AbsynUtil.pathEqual(path, rpath))
+    then createNonlinearResidualEquationsComplexRecord(inExp, inExp1, source, eqAttr, path, tp, e2lst, varLst, iuniqueEqIndex, itempvars);
 
     /* f() = Record() */
-    case (_, DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty=tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath))))) equation
-      true = AbsynUtil.pathEqual(path, rpath);
-      (e1_1, _) = Expression.extendArrExp(inExp1, false);
-      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-      // tmp = f()
-      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
-      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
-      e2_1 = Expression.crefExp(cr);
-      stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
-      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqAttr);
-      uniqueEqIndex = iuniqueEqIndex + 1;
-      // Record()-tmp = 0
-      e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
-      exptl = List.zip(e1lst, e2lst);
-      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
-      eqSystlst = simeqn_complex::eqSystlst;
-      tempvars = createTempVars(varLst, cr, itempvars);
-    then (eqSystlst, uniqueEqIndex, tempvars);
+    case (DAE.CALL(path=path), DAE.CALL(expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))))
+      guard(AbsynUtil.pathEqual(path, rpath))
+    then createNonlinearResidualEquationsComplexRecord(inExp1, inExp, source, eqAttr, path, tp, e2lst, varLst, iuniqueEqIndex, itempvars);
 
     /* Tuple() = f()  */
     case (DAE.TUPLE(PR=expl), DAE.CALL(path=path)) equation
@@ -2595,6 +2526,41 @@ algorithm
       tempvars = createTempVarsforCrefs(listReverse(crexplst), itempvars);
     then (eqSystlst, uniqueEqIndex, tempvars);
 
+    /* f1() = f2() RETURN TYPE RECORD */
+    case (DAE.CALL(path=path, attr=ca), DAE.CALL(path=path1, attr=ca1))
+      guard(Types.isRecord(ca.ty) and Types.isRecord(ca1.ty))
+    equation
+      // tmp1 = f1()
+      uniqueEqIndex = iuniqueEqIndex;
+      tp = Expression.typeof(inExp);
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(uniqueEqIndex), tp, {});
+      e1 = Expression.makeCrefExp(cr, tp);
+      stms = DAE.STMT_ASSIGN(tp, e1, inExp, source);
+      simeqn_complex = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms}, eqAttr);
+      uniqueEqIndex = uniqueEqIndex + 1;
+
+      // tmp2 = f2()
+      tp1 = Expression.typeof(inExp1);
+      ident1 =  AbsynUtil.pathStringUnquoteReplaceDot(path1, "_");
+      cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(uniqueEqIndex), tp1, {});
+      e2 = Expression.makeCrefExp(cr1, tp1);
+      stms1 = DAE.STMT_ASSIGN(tp1, e2, inExp1, source);
+      simeqn_complex1 = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms1}, eqAttr);
+      uniqueEqIndex = uniqueEqIndex + 1;
+
+      // tmp1 - tmp2 = 0
+      crexplst = Expression.splitRecord(e1, tp);
+      crexplst1 = Expression.splitRecord(e2, tp1);
+      exptl = List.zip(crexplst, crexplst1);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
+
+      eqSystlst = simeqn_complex :: simeqn_complex1 :: eqSystlst;
+
+      tempvars = createTempVarsforCrefs(listReverse(crexplst), itempvars);
+      tempvars = createTempVarsforCrefs(listReverse(crexplst1), tempvars);
+    then (eqSystlst, uniqueEqIndex, tempvars);
+
     // failure
     else equation
       s1 = ExpressionDump.printExpStr(inExp);
@@ -2619,18 +2585,47 @@ protected function createNonlinearResidualEquationsSingleComplex
 algorithm
   (equations_, ouniqueEqIndex, otempvars) := match (inExp, inExp1)
     local
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr, cr1;
+      DAE.Exp e1, e2, e1_1, e2_1;
       list<DAE.ComponentRef> callCrefs;
-      DAE.Statement stms;
-      DAE.Type tp;
-      list<DAE.Exp> expl, callExps, crexplst, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss;
-      SimCode.SimEqSystem simeqn_complex;
+      DAE.Statement stms, stms1;
+      DAE.Type tp, tp1;
+      list<DAE.Exp> expl, e1lst, e2lst, callExps, crexplst, crexplst1, lhsExpLstRes, rhsExpLstRes, lhsExpLstAss, rhsExpLstAss;
+      SimCode.SimEqSystem simeqn_complex, simeqn_complex1;
       list<SimCode.SimEqSystem> eqSystlst, eqSystlst_simpAss;
       list<tuple<DAE.Exp, DAE.Exp>> exptl;
       Integer uniqueEqIndex;
-      Absyn.Path path;
-      String ident;
+      Absyn.Path path, path1, rpath;
+      String ident, ident1;
+      list<DAE.Var> varLst;
       list<SimCodeVar.SimVar> tempvars;
+      DAE.CallAttributes ca, ca1;
+
+    /* casts */
+    case (DAE.CAST(_, e1), _)
+    then createNonlinearResidualEquationsComplex(e1, inExp1, source, eqAttr, iuniqueEqIndex, itempvars);
+
+    /* casts */
+    case (_, DAE.CAST(_, e2))
+    then createNonlinearResidualEquationsComplex(inExp, e2, source, eqAttr, iuniqueEqIndex, itempvars);
+
+    /* a = f() */
+    case (DAE.CREF(componentRef=cr), _)
+    then createNonlinearResidualEquationsComplexCref(inExp, inExp1, cr, source, eqAttr, iuniqueEqIndex, itempvars);
+
+    /* f() = a */
+    case (_, DAE.CREF(componentRef=cr))
+    then createNonlinearResidualEquationsComplexCref(inExp1, inExp, cr, source, eqAttr, iuniqueEqIndex, itempvars);
+
+    /* Record() = f() */
+    case (DAE.CALL(expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))), DAE.CALL(path=path))
+      guard(AbsynUtil.pathEqual(path, rpath))
+    then createNonlinearResidualEquationsComplexRecord(inExp, inExp1, source, eqAttr, path, tp, e2lst, varLst, iuniqueEqIndex, itempvars);
+    /* f() = Record() */
+
+    case (DAE.CALL(path=path), DAE.CALL(expLst=e2lst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath)))))
+      guard(AbsynUtil.pathEqual(path, rpath))
+    then createNonlinearResidualEquationsComplexRecord(inExp1, inExp, source, eqAttr, path, tp, e2lst, varLst, iuniqueEqIndex, itempvars);
 
     /* Tuple() = f()  */
     case (DAE.TUPLE(PR=expl), DAE.CALL(path=path, expLst=callExps)) equation
@@ -2666,14 +2661,125 @@ algorithm
       tempvars = createTempVarsforCrefs(listReverse(lhsExpLstRes), tempvars);
     then (eqSystlst, uniqueEqIndex, tempvars);
 
-    /* To-Do: Add other cases
-       - a = f()
-       - f() = a
-       - Record() = f()
-       - f() = Record()
-    */
+    /* f1() = f2() RETURN TYPE RECORD*/
+    case (DAE.CALL(path=path, attr=ca), DAE.CALL(path=path1, attr=ca1))
+      guard(Types.isRecord(ca.ty) and Types.isRecord(ca1.ty))
+    equation
+      uniqueEqIndex = iuniqueEqIndex;
+      tp = Expression.typeof(inExp);
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(uniqueEqIndex), tp, {});
+      e1 = Expression.makeCrefExp(cr, tp);
+      stms = DAE.STMT_ASSIGN(tp, e1, inExp, source);
+      simeqn_complex = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms}, eqAttr);
+      uniqueEqIndex = uniqueEqIndex + 1;
+
+      // tmp2 = f2()
+      tp1 = Expression.typeof(inExp1);
+      ident1 =  AbsynUtil.pathStringUnquoteReplaceDot(path1, "_");
+      cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(uniqueEqIndex), tp1, {});
+      e2 = Expression.makeCrefExp(cr1, tp1);
+      stms1 = DAE.STMT_ASSIGN(tp1, e2, inExp1, source);
+      simeqn_complex1 = SimCode.SES_ALGORITHM(uniqueEqIndex, {stms1}, eqAttr);
+      uniqueEqIndex = uniqueEqIndex + 1;
+
+      // tmp1 - tmp2 = 0
+      crexplst = Expression.splitRecord(e1, tp);
+      crexplst1 = Expression.splitRecord(e2, tp1);
+      exptl = List.zip(crexplst, crexplst1);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
+
+      eqSystlst = simeqn_complex :: simeqn_complex1 :: eqSystlst;
+
+      tempvars = createTempVarsforCrefs(listReverse(crexplst), itempvars);
+      tempvars = createTempVarsforCrefs(listReverse(crexplst1), tempvars);
+    then (eqSystlst, uniqueEqIndex, tempvars);
+
+    else fail();
+
   end match;
 end createNonlinearResidualEquationsSingleComplex;
+
+protected function createNonlinearResidualEquationsComplexCref
+  input DAE.Exp inExp;
+  input DAE.Exp inExp1;
+  input DAE.ComponentRef cr;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
+  output list<SimCode.SimEqSystem> eqSystlst;
+  input output Integer uniqueEqIndex;
+  input output list<SimCodeVar.SimVar> tempvars;
+protected
+  DAE.Exp exp, etmp;
+  DAE.Type tp;
+  Absyn.Path path;
+  list<DAE.Var> varLst;
+  String ident;
+  DAE.ComponentRef crtmp;
+  list<DAE.Exp> e1lst, e2lst;
+  list<tuple<DAE.Exp, DAE.Exp>> exptl;
+  DAE.Statement stms;
+algorithm
+  // ((e1_1, _)) = Expression.extendArrExp((inExp, false));
+  (exp, _) := Expression.extendArrExp(inExp1, false);
+  // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+  (tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(path))) := Expression.typeof(inExp);
+  // tmp
+  ident := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+  crtmp := ComponentReference.makeCrefIdent("$TMP_" + ident + intString(uniqueEqIndex), tp, {});
+  tempvars := createTempVars(varLst, crtmp, tempvars);
+  // 0 = a - tmp
+  e1lst := List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
+  e2lst := List.map1(varLst, Expression.generateCrefsExpFromExpVar, crtmp);
+  exptl := List.zip(e1lst, e2lst);
+  (eqSystlst, uniqueEqIndex) := List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
+  // tmp = f(x, y)
+  etmp := Expression.crefExp(crtmp);
+  stms := DAE.STMT_ASSIGN(tp, etmp, exp, source);
+  eqSystlst := SimCode.SES_ALGORITHM(uniqueEqIndex, {stms}, eqAttr)::eqSystlst;
+  uniqueEqIndex := uniqueEqIndex + 1;
+end createNonlinearResidualEquationsComplexCref;
+
+protected function createNonlinearResidualEquationsComplexRecord
+  input DAE.Exp inExp;
+  input DAE.Exp inExp1;
+  input DAE.ElementSource source;
+  input BackendDAE.EquationAttributes eqAttr;
+  input Absyn.Path path;
+  input DAE.Type tp;
+  input list<DAE.Exp> e2lst;
+  input list<DAE.Var> varLst;
+  output list<SimCode.SimEqSystem> eqSystlst;
+  input output Integer uniqueEqIndex;
+  input output list<SimCodeVar.SimVar> tempvars;
+protected
+  DAE.ComponentRef cr;
+  DAE.Exp e1_1, e2_1;
+  list<DAE.Exp> e1lst;
+  list<tuple<DAE.Exp, DAE.Exp>> exptl;
+  String ident;
+  DAE.Statement stms;
+  SimCode.SimEqSystem simeqn_complex;
+algorithm
+  (e2_1, _) := Expression.extendArrExp(inExp1, false);
+  // tmp = f()
+  ident := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+  cr := ComponentReference.makeCrefIdent("$TMP_" + ident + intString(uniqueEqIndex), tp, {});
+  e1_1 := Expression.crefToExp(cr);
+  stms := DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
+  simeqn_complex := SimCode.SES_ALGORITHM(uniqueEqIndex, {stms}, eqAttr);
+  uniqueEqIndex := uniqueEqIndex + 1;
+  // Record()-tmp = 0
+  /* Expand the tmp record and any arrays */
+  e1lst := Expression.expandExpression(e1_1, expandRecord = true);
+  /* Expand the varLst. Each var might be an array or record. */
+  /* pair each of the expanded expressions to coressponding one*/
+  exptl := List.zip(e1lst, List.mapFlat(e2lst, function Expression.expandExpression(expandRecord = true)));
+  /* Create residual equations for each pair*/
+  (eqSystlst, uniqueEqIndex) := List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
+  eqSystlst := simeqn_complex::eqSystlst;
+  tempvars := createTempVars(varLst, cr, tempvars);
+end createNonlinearResidualEquationsComplexRecord;
 
 protected function createTmpCrefExpsForComplexEqnSys
   "This function creates tmp cref expressions for crefs that are not solved in the current complex equation or occur on rhs and lhs.
@@ -2721,6 +2827,7 @@ algorithm
       DAE.Exp e, exp, tmp_exp;
       list<DAE.Exp> tmp_lhsExpLstRes = {}, tmp_rhsExpLstRes = {}, tmp_lhsExpLstAss = {}, tmp_rhsExpLstAss = {};
       Boolean isEqCref, createTmpVar = false;
+      Absyn.Path path;
 
     // Wild cref
     case DAE.CREF(componentRef=DAE.WILD()) then inExp;
@@ -2799,6 +2906,17 @@ algorithm
           eqCrefs := List.deleteMemberOnTrue(cr, eqCrefs, ComponentReference.crefEqual);
         end if;
       then e;
+
+    case DAE.CALL(path = path, attr = DAE.CALL_ATTR(ty = ty))
+      algorithm
+        // if there is a call, create a temporary variable for it
+        // kabdelhak: fix for dataReconciliation, maybe needs rework!
+        name := AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+        cr := ComponentReference.makeCrefIdent("$TMP_" + name + intString(System.tmpTick()), ty, {});
+        e := Expression.makeCrefExp(cr, ty);
+        lhsExpLstAss := e :: lhsExpLstAss;
+        rhsExpLstAss := inExp :: rhsExpLstAss;
+    then e;
 
     else
       equation
@@ -4985,7 +5103,8 @@ algorithm
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> creating SimCode equations for Matrix " + name + " time: " + realString(clock()) + "\n");
         end if;
-        (allEquations, constantEqns, uniqueEqIndex, _) = getSimEqSystemForJacobians(systs, shared, uniqueEqIndex, {});
+        (allEquations, constantEqns, uniqueEqIndex, tempvars) = getSimEqSystemForJacobians(systs, shared, uniqueEqIndex, {});
+        crefToSimVarHTJacobian = List.fold(tempvars, HashTableCrefSimVar.addSimVarToHashTable, crefToSimVarHTJacobian);
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> created all SimCode equations for Matrix " + name +  " time: " + realString(clock()) + "\n");
         end if;
