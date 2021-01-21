@@ -80,6 +80,7 @@ public function getEqSystemDAEmode "Run the equation system pipeline."
   input Option<list<String>> strPostOptModules = NONE();
   output BackendDAE.BackendDAE outDAEmode;
   output BackendDAE.BackendDAE outInitDAE;
+  output Option<BackendDAE.BackendDAE> outInitDAE_lambda0_option;
   output list<BackendDAE.Equation> outRemovedInitialEquationLst;
  protected
   BackendDAE.BackendDAE dae, simDAE;
@@ -124,7 +125,7 @@ algorithm
     end if;
 
     // generate system for initialization
-    (outInitDAE, _, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
+    (outInitDAE, outInitDAE_lambda0_option, outRemovedInitialEquationLst, globalKnownVars, dae) := Initialization.solveInitialSystem(dae);
 
     // use function tree from initDAE further for simDAE
     simDAE := BackendDAEUtil.setFunctionTree(dae, BackendDAEUtil.getFunctions(outInitDAE.shared));
