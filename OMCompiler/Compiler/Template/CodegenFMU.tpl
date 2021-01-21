@@ -52,7 +52,6 @@ import CodegenUtilSimulation.*;
 import CodegenC.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
 import CodegenCFunctions.*;
 import CodegenFMUCommon.*;
-import CodegenFMU1;
 import CodegenFMU2;
 
 
@@ -193,10 +192,7 @@ match simCode
 case SIMCODE(__) then
   <<
   <?xml version="1.0" encoding="UTF-8"?>
-  <%
-  if isFMIVersion20(FMUVersion) then CodegenFMU2.fmiModelDescription(simCode, guid, FMUType, sourceFiles)
-  else CodegenFMU1.fmiModelDescription(simCode,guid,FMUType)
-  %>
+  <%CodegenFMU2.fmiModelDescription(simCode, guid, FMUType, sourceFiles)%>
   >>
 end fmuModelDescriptionFile;
 

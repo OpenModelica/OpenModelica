@@ -6,7 +6,6 @@ import CodegenUtil.*;
 import CodegenCppCommon;
 import CodegenFMUCommon;
 import CodegenFMU2;
-import CodegenFMU1;
 
 template modelInitXMLFile(SimCode simCode, String numRealVars, String numIntVars, String numBoolVars, String numStringVars, String FMUVersion, String FMUType, String FMUGuid, Boolean generateFMUModelDescription, String generatorComments, Text& complexStartExpressions, Text stateDerVectorName)
  "Generate a xml file that contains informations for initialization or for the FMU-structure"
