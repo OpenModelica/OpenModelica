@@ -329,7 +329,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
         }
         else
         {
-          warningStreamPrint(LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initla equation system with lambda=0 instead.");
+          warningStreamPrint(LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
           data->callback->functionInitialEquations(data, threadData);
         }
       }
@@ -395,7 +395,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     }
     else
     {
-      warningStreamPrint(LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initla equation system with lambda=0 instead.");
+      warningStreamPrint(LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
       data->callback->functionInitialEquations(data, threadData);
     }
     infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solving simplified lambda0-DAE done\n---------------------------");
