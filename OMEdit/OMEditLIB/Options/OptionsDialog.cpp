@@ -4813,13 +4813,11 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpExportGroupBox = new QGroupBox(Helper::exportt);
   // FMI export version
   mpVersionGroupBox = new QGroupBox(Helper::version);
-  mpVersion1RadioButton = new QRadioButton("1.0");
   mpVersion2RadioButton = new QRadioButton("2.0");
   mpVersion2RadioButton->setChecked(true);
   // set the version groupbox layout
   QVBoxLayout *pVersionLayout = new QVBoxLayout;
   pVersionLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pVersionLayout->addWidget(mpVersion1RadioButton);
   pVersionLayout->addWidget(mpVersion2RadioButton);
   mpVersionGroupBox->setLayout(pVersionLayout);
   // FMI export type
@@ -4945,11 +4943,7 @@ const QString FMIPage::FMU_SHORT_CLASS_NAME_PLACEHOLDER = "{shortName}";
  */
 void FMIPage::setFMIExportVersion(QString version)
 {
-  if (version == "1.0" || version == "1") {
-    mpVersion1RadioButton->setChecked(true);
-  } else {
-    mpVersion2RadioButton->setChecked(true);
-  }
+  mpVersion2RadioButton->setChecked(true);
 }
 
 /*!
@@ -4959,11 +4953,7 @@ void FMIPage::setFMIExportVersion(QString version)
  */
 QString FMIPage::getFMIExportVersion()
 {
-  if (mpVersion1RadioButton->isChecked()) {
-    return "1.0";
-  } else {
-    return "2.0";
-  }
+  return "2.0";
 }
 
 /*!

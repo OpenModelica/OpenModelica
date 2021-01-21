@@ -933,7 +933,6 @@ private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpExportGroupBox;
   QGroupBox *mpVersionGroupBox;
-  QRadioButton *mpVersion1RadioButton;
   QRadioButton *mpVersion2RadioButton;
   QGroupBox *mpTypeGroupBox;
   QRadioButton *mpModelExchangeRadioButton;
