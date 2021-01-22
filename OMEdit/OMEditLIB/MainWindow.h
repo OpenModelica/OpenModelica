@@ -161,7 +161,6 @@ public:
   QAction* getCloseAllWindowsAction() {return mpCloseAllWindowsAction;}
   QAction* getCloseAllWindowsButThisAction() {return mpCloseAllWindowsButThisAction;}
   QAction* getSimulationSetupAction() {return mpSimulationSetupAction;}
-  QAction* getOMSInstantiateModelAction() {return mpOMSInstantiateModelAction;}
   QAction* getSimulateModelAction() {return mpSimulateModelAction;}
   QAction* getSimulateWithTransformationalDebuggerAction() {return mpSimulateWithTransformationalDebuggerAction;}
   QAction* getSimulateWithAlgorithmicDebuggerAction() {return mpSimulateWithAlgorithmicDebuggerAction;}
@@ -228,7 +227,6 @@ public:
   void simulateWithAnimation(LibraryTreeItem *pLibraryTreeItem);
 #endif
   void simulationSetup(LibraryTreeItem *pLibraryTreeItem);
-  void instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool checked);
   void instantiateModel(LibraryTreeItem *pLibraryTreeItem);
   void checkModel(LibraryTreeItem *pLibraryTreeItem);
   void checkAllModels(LibraryTreeItem *pLibraryTreeItem);
@@ -360,7 +358,6 @@ private:
   QAction *mpCheckAllModelsAction;
   QAction *mpInstantiateModelAction;
   QAction *mpSimulationSetupAction;
-  QAction *mpOMSInstantiateModelAction;
   QAction *mpSimulateModelAction;
   QAction *mpSimulateWithTransformationalDebuggerAction;
   QAction *mpSimulateWithAlgorithmicDebuggerAction;
@@ -501,7 +498,6 @@ public slots:
   void checkAllModels();
   void instantiateModel();
   void openSimulationDialog();
-  void instantiateOMSModel(bool checked);
   void simulateModel();
   void simulateModelWithTransformationalDebugger();
   void simulateModelWithAlgorithmicDebugger();

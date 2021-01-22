@@ -420,7 +420,6 @@ public:
   static QString stopTime;
   static QString status;
   static QString speed;
-  static QString instantiateOMSModelTip;
   static QString terminateInstantiation;
   static QString terminateInstantiationTip;
   static QString archivedSimulations;

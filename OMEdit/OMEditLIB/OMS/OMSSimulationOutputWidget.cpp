@@ -91,28 +91,33 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, QWidge
     mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   }
   mIsSimulationRunning = false;
-  // initialize the model
-  if (OMSProxy::instance()->initialize(mCref)) {
-    // start the asynchronous simulation
-    qRegisterMetaType<oms_status_enu_t>("oms_status_enu_t");
-    connect(this, SIGNAL(sendSimulationProgress(QString,double,oms_status_enu_t)), SLOT(simulationProgress(QString,double,oms_status_enu_t)));
-    if (OMSProxy::instance()->simulate_asynchronous(mCref)) {
-      mIsSimulationRunning = true;
-      mpCancelSimulationButton->setEnabled(true);
+  // instantiate the model
+  if (OMSProxy::instance()->instantiate(mCref)) {
+    // initialize the model
+    if (OMSProxy::instance()->initialize(mCref)) {
+      // start the asynchronous simulation
+      qRegisterMetaType<oms_status_enu_t>("oms_status_enu_t");
+      connect(this, SIGNAL(sendSimulationProgress(QString,double,oms_status_enu_t)), SLOT(simulationProgress(QString,double,oms_status_enu_t)));
+      if (OMSProxy::instance()->simulate_asynchronous(mCref)) {
+        mIsSimulationRunning = true;
+        mpCancelSimulationButton->setEnabled(true);
+      } else {
+        mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
+        mpProgressBar->setValue(mpProgressBar->maximum());
+        mpArchivedOMSSimulationItem->setStatus(tr("Simulation failed!"));
+        OMSProxy::instance()->terminate(mCref);
+      }
     } else {
-      mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
+      mpProgressLabel->setText(tr("Initialization using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
       mpProgressBar->setValue(mpProgressBar->maximum());
-      mpArchivedOMSSimulationItem->setStatus(tr("Simulation failed!"));
+      mpArchivedOMSSimulationItem->setStatus(tr("Initialization failed!"));
+      OMSProxy::instance()->terminate(mCref);
     }
   } else {
-    LibraryTreeItem *pLibraryTreeItem;
-    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(mCref);
-    if (pLibraryTreeItem) {
-      MainWindow::instance()->instantiateOMSModel(pLibraryTreeItem, false);
-    }
-    mpProgressLabel->setText(tr("Initialization using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
+    mpProgressLabel->setText(tr("Instantiation using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
     mpProgressBar->setValue(mpProgressBar->maximum());
-    mpArchivedOMSSimulationItem->setStatus(tr("Initialization failed!"));
+    mpArchivedOMSSimulationItem->setStatus(tr("Instantiation failed!"));
+    OMSProxy::instance()->terminate(mCref);
   }
 }
 
@@ -138,15 +143,11 @@ void OMSSimulationOutputWidget::cancelSimulation()
 {
   // cancel the simulation
   if (OMSProxy::instance()->cancelSimulation_asynchronous(mCref)) {
-    LibraryTreeItem *pLibraryTreeItem;
-    pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItemOneLevel(mCref);
-    if (pLibraryTreeItem) {
-      MainWindow::instance()->instantiateOMSModel(pLibraryTreeItem, false);
-    }
     mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is cancelled.").arg(mCref));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mIsSimulationRunning = false;
     mpCancelSimulationButton->setEnabled(false);
+    OMSProxy::instance()->terminate(mCref);
   }
 }
 
@@ -170,11 +171,7 @@ void OMSSimulationOutputWidget::simulationProgress(QString ident, double time, o
       mpCancelSimulationButton->setEnabled(false);
       mpArchivedOMSSimulationItem->setStatus(Helper::finished);
       // terminate the model after the simulation is finished successfully.
-      LibraryTreeItem *pLibraryTreeItem;
-      pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(ident);
-      if (pLibraryTreeItem) {
-        MainWindow::instance()->instantiateOMSModel(pLibraryTreeItem, false);
-      }
+      OMSProxy::instance()->terminate(ident);
       // simulation finished show the results
       MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
     }

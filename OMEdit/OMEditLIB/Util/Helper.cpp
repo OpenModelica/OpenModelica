@@ -413,7 +413,6 @@ QString Helper::startTime;
 QString Helper::stopTime;
 QString Helper::status;
 QString Helper::speed;
-QString Helper::instantiateOMSModelTip;
 QString Helper::terminateInstantiation;
 QString Helper::terminateInstantiationTip;
 QString Helper::archivedSimulations;
@@ -711,7 +710,6 @@ void Helper::initHelperVariables()
   Helper::stopTime = tr("Stop Time");
   Helper::status = tr("Status");
   Helper::speed = tr("Speed:");
-  Helper::instantiateOMSModelTip = tr("Instantiates the current SSP model");
   Helper::terminateInstantiation = tr("Terminate Instantiation");
   Helper::terminateInstantiationTip = tr("Terminates the model instantiation");
   Helper::archivedSimulations = tr("Archived Simulations");
