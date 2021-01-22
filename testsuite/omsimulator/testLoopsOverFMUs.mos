@@ -95,7 +95,8 @@ oms_terminate(\"loopsOverFMUs\")
 oms_delete(\"loopsOverFMUs\")
 "); getErrorString();
 
-system("OMSimulator loopsOverFMUs.lua --algLoopSolver=kinsol --stripRoot=true --suppressPath=true --deleteTempFiles=true"); getErrorString();
+system(getInstallationDirectoryPath() + "/bin/OMSimulator loopsOverFMUs.lua --algLoopSolver=kinsol --stripRoot=true --suppressPath=true --deleteTempFiles=true", "testLoopsOverFMUs_systemCall.log"); getErrorString();
+readFile("testLoopsOverFMUs_systemCall.log");
 
 // Possible solutions:
 // a≈0.635425, b=-1.8, c≈1.16458 or a≈1.16458, b=-1.8, c≈0.635425
@@ -120,7 +121,9 @@ val(D.x_out, 0.1, "loopsOverFMUs.mat");
 // "loopsOverFMUs.D.fmu"
 // true
 // ""
-// warning: Alg. loop (size 3)
+// 0
+// ""
+// "warning: Alg. loop (size 3)
 // warning: Alg. loop (size 2)
 // info:    maximum step size for 'loopsOverFMUs.root': 0.100000
 // info:    Result file: loopsOverFMUs.mat (bufferSize=1)
@@ -133,8 +136,7 @@ val(D.x_out, 0.1, "loopsOverFMUs.mat");
 //          NumNonlinSolvIters = 14 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
 // info:    6 warnings
 // info:    0 errors
-// 0
-// ""
+// "
 // 0.6354248688886293
 // -1.8
 // 1.164575131109139
