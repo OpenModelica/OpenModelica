@@ -803,7 +803,7 @@ function evaluateFor
   input Option<Expression> range;
   input list<Statement> forBody;
   input DAE.ElementSource source;
-  output FlowControl ctrl;
+  output FlowControl ctrl = FlowControl.NEXT;
 protected
   RangeIterator range_iter;
   Mutable<Expression> iter_exp;
