@@ -331,7 +331,7 @@ void buildGUI(stash, isQt5) {
   if (stash) {
     patchConfigStatus()
   }
-  sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
+  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   // compile OMSens_Qt for Qt5
   if (isQt5) {
     sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator" // Pretend we already built omc since we already did so
@@ -374,7 +374,7 @@ void buildAndRunOMEditTestsuite(stash) {
   if (stash) {
     patchConfigStatus()
   }
-  sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
+  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip omparser.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
