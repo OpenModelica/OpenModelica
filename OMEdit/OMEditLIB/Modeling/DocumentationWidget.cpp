@@ -1377,12 +1377,20 @@ void DocumentationViewer::keyPressEvent(QKeyEvent *event)
  */
 void DocumentationViewer::wheelEvent(QWheelEvent *event)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
   if (event->angleDelta().y() != 0 && event->modifiers().testFlag(Qt::ControlModifier)) {
+#else // QT_VERSION_CHECK
+  if (event->orientation() == Qt::Vertical && event->modifiers().testFlag(Qt::ControlModifier)) {
+#endif // QT_VERSION_CHECK
     qreal zf = zoomFactor();
     /* ticket:4349 Take smaller steps for zooming.
      * Also set the minimum zoom to readable size.
      */
-    if (event->angleDelta().y() > 0) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  if (event->angleDelta().y() > 0) {
+#else // QT_VERSION_CHECK
+  if (event->delta() > 0) {
+#endif // QT_VERSION_CHECK
       zf += 0.1;
       zf = zf > 5 ? 5 : zf;
     } else {

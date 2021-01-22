@@ -2026,7 +2026,11 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
 void PlainTextEdit::wheelEvent(QWheelEvent *event)
 {
   if (event->modifiers() & Qt::ControlModifier) {
-    if (event->angleDelta().x() > 0 || event->angleDelta().y() > 0) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  if (event->angleDelta().x() > 0 || event->angleDelta().y() > 0) {
+#else // QT_VERSION_CHECK
+  if (event->delta() > 0) {
+#endif // QT_VERSION_CHECK
       zoomIn();
     } else {
       zoomOut();

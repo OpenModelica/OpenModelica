@@ -3893,6 +3893,7 @@ void GraphicsView::resizeEvent(QResizeEvent *event)
  */
 void GraphicsView::wheelEvent(QWheelEvent *event)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
   static QPoint angleDelta = QPoint(0, 0);
   angleDelta += event->angleDelta();
   QPoint numDegrees = angleDelta / 8;
@@ -3919,6 +3920,29 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
       QGraphicsView::wheelEvent(event);
     }
   }
+#else // QT_VERSION_CHECK
+  int numDegrees = event->delta() / 8;
+  int numSteps = numDegrees * 3;
+  bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+  bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
+  // If Ctrl key is pressed and user has scrolled vertically then Zoom In/Out based on the scroll distance.
+  if (event->orientation() == Qt::Vertical && controlModifier) {
+    if (event->delta() > 0) {
+      zoomIn();
+    } else {
+      zoomOut();
+    }
+  } else if ((event->orientation() == Qt::Horizontal) || (event->orientation() == Qt::Vertical && shiftModifier)) {
+    // If Shift key is pressed and user has scrolled vertically then scroll the horizontal scrollbars.
+    // If user has scrolled horizontally then scroll the horizontal scrollbars.
+    horizontalScrollBar()->setValue(horizontalScrollBar()->value() - numSteps);
+  } else if (event->orientation() == Qt::Vertical) {
+    // If user has scrolled vertically then scroll the vertical scrollbars.
+    verticalScrollBar()->setValue(verticalScrollBar()->value() - numSteps);
+  } else {
+    QGraphicsView::wheelEvent(event);
+  }
+#endif // QT_VERSION_CHECK
 }
 
 /*!
