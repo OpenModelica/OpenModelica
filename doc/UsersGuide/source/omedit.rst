@@ -313,7 +313,6 @@ Simulation Menu
 -  *Check All Models* - Checks all the models of a library.
 -  *Instantiate Model* - Instantiates the current model.
 -  *Simulation Setup* - Opens the simulation setup window.
--  *Instantiate SSP Model* - Instantiates the current SSP model.
 -  *Simulate* - Simulates the current model.
 -  *Simulate with Transformational Debugger* - Simulates the current model and
    opens the transformational debugger.

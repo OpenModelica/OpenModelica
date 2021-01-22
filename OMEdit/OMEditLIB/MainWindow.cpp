@@ -2247,7 +2247,7 @@ void MainWindow::openSimulationDialog()
 
 /*!
  * \brief MainWindow::simulateModel
- * Simualtes the model directly.
+ * Simulates the model directly.
  */
 void MainWindow::simulateModel()
 {
@@ -2259,7 +2259,7 @@ void MainWindow::simulateModel()
 
 /*!
  * \brief MainWindow::simulateModelWithAnimation
- * Simualtes the model directly with animation flag.
+ * Simulates the model directly with animation flag.
  */
 void MainWindow::simulateModelWithAnimation()
 {
@@ -2275,7 +2275,7 @@ void MainWindow::simulateModelWithAnimation()
 
 /*!
  * \brief MainWindow::simulateModelWithTransformationalDebugger
- * Simualtes the model with transformational debugger
+ * Simulates the model with transformational debugger
  */
 void MainWindow::simulateModelWithTransformationalDebugger()
 {
@@ -2287,7 +2287,7 @@ void MainWindow::simulateModelWithTransformationalDebugger()
 
 /*!
  * \brief MainWindow::simulateModelWithAlgorithmicDebugger
- * Simualtes the model with algorithmic debugger
+ * Simulates the model with algorithmic debugger
  */
 void MainWindow::simulateModelWithAlgorithmicDebugger()
 {
@@ -2297,7 +2297,10 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
   }
 }
 
-//! Exports the current model to FMU
+/*!
+ * \brief MainWindow::exportModelFMU
+ * Exports the current model to FMU
+ */
 void MainWindow::exportModelFMU()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();

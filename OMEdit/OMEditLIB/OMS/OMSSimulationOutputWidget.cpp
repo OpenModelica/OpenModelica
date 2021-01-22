@@ -102,19 +102,19 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, QWidge
         mIsSimulationRunning = true;
         mpCancelSimulationButton->setEnabled(true);
       } else {
-        mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
+        mpProgressLabel->setText(tr("Simulation of the model <b>%1</b> is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
         mpProgressBar->setValue(mpProgressBar->maximum());
         mpArchivedOMSSimulationItem->setStatus(tr("Simulation failed!"));
         OMSProxy::instance()->terminate(mCref);
       }
     } else {
-      mpProgressLabel->setText(tr("Initialization using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
+      mpProgressLabel->setText(tr("Initialization of the model <b>%1</b> is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
       mpProgressBar->setValue(mpProgressBar->maximum());
       mpArchivedOMSSimulationItem->setStatus(tr("Initialization failed!"));
       OMSProxy::instance()->terminate(mCref);
     }
   } else {
-    mpProgressLabel->setText(tr("Instantiation using the <b>%1</b> model is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
+    mpProgressLabel->setText(tr("Instantiation of the model <b>%1</b> is failed. %2").arg(mCref).arg(GUIMessages::getMessage(GUIMessages::CHECK_MESSAGES_BROWSER)));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpArchivedOMSSimulationItem->setStatus(tr("Instantiation failed!"));
     OMSProxy::instance()->terminate(mCref);
@@ -143,7 +143,7 @@ void OMSSimulationOutputWidget::cancelSimulation()
 {
   // cancel the simulation
   if (OMSProxy::instance()->cancelSimulation_asynchronous(mCref)) {
-    mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is cancelled.").arg(mCref));
+    mpProgressLabel->setText(tr("Simulation of the model <b>%1</b> is cancelled.").arg(mCref));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mIsSimulationRunning = false;
     mpCancelSimulationButton->setEnabled(false);
@@ -165,7 +165,7 @@ void OMSSimulationOutputWidget::simulationProgress(QString ident, double time, o
     int progress = (time * 100) / mStopTime;
     mpProgressBar->setValue(progress);
     if (time >= mStopTime) {
-      mpProgressLabel->setText(tr("Simulation using the <b>%1</b> model is finished.").arg(mCref));
+      mpProgressLabel->setText(tr("Simulation of the model <b>%1</b> is finished.").arg(mCref));
       mpProgressBar->setValue(mpProgressBar->maximum());
       mIsSimulationRunning = false;
       mpCancelSimulationButton->setEnabled(false);
