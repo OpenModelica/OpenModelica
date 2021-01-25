@@ -32,6 +32,7 @@
  */
 
 #include "ItemDelegate.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
@@ -215,6 +216,22 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     if ((index.column() == 1) && (index.flags() & Qt::ItemIsEditable)) {
       /* The display rect is slightly larger than the area because it include the outer line. */
       painter->drawRect(displayRect.adjusted(0, 0, -1, -1));
+    }
+  } else if (parent() && (qobject_cast<LibraryTreeView*>(parent()))) {
+    // Draw a blue rectangle around the active LibraryTreeItem
+    LibraryTreeView *pLibraryTreeView = qobject_cast<LibraryTreeView*>(parent());
+    if (pLibraryTreeView) {
+      LibraryTreeProxyModel *pLibraryTreeProxyModel = qobject_cast<LibraryTreeProxyModel*>(pLibraryTreeView->model());
+      if (pLibraryTreeProxyModel) {
+        QModelIndex sourceIndex = pLibraryTreeProxyModel->mapToSource(index);
+        LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
+        if (pLibraryTreeItem && pLibraryTreeItem->getModelWidget() == MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()) {
+          painter->save();
+          painter->setPen(Qt::blue);
+          painter->drawRect(option.rect.adjusted(0, 0, -1, -1));
+          painter->restore();
+        }
+      }
     }
   }
   painter->restore();
