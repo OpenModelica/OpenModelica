@@ -17,6 +17,7 @@ reset.mos \
 resetWithLoops.mos \
 test03.mos \
 testDirectionalDerivatives.mos \
+testLoopsOverFMUs.mos \
 
 FAILINGTESTFILES = \
 
