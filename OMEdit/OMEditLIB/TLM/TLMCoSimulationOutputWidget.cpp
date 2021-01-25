@@ -216,7 +216,7 @@ void TLMCoSimulationOutputWidget::openMonitorLogFile()
  */
 void TLMCoSimulationOutputWidget::managerProcessStarted()
 {
-  mpProgressLabel->setText(tr("Running co-simulation using the <b>%1</b> composite model. Please wait for a while.").arg(mTLMCoSimulationOptions.getClassName()));
+  mpProgressLabel->setText(tr("Running co-simulation of the composite model <b>%1</b>. Please wait for a while.").arg(mTLMCoSimulationOptions.getClassName()));
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setTextVisible(true);
   mpProgressBar->setValue(0);
@@ -255,7 +255,7 @@ void TLMCoSimulationOutputWidget::managerProcessFinished(int exitCode, QProcess:
 {
   Q_UNUSED(exitCode);
   Q_UNUSED(exitStatus);
-  mpProgressLabel->setText(tr("Co-simulation using the <b>%1</b> composite model is finished.").arg(mTLMCoSimulationOptions.getClassName()));
+  mpProgressLabel->setText(tr("Co-simulation of the composite model <b>%1</b> is finished.").arg(mTLMCoSimulationOptions.getClassName()));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpStopManagerButton->setEnabled(false);
   MainWindow::instance()->getTLMCoSimulationDialog()->simulationProcessFinished(mTLMCoSimulationOptions, mResultFileLastModifiedDateTime);

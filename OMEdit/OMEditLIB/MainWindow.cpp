@@ -729,10 +729,6 @@ void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
       if (!mpOMSSimulationDialog) {
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
       }
-      const QString modelName = pTopLevelLibraryTreeItem->getNameStructure();
-      instantiateOMSModel(pTopLevelLibraryTreeItem, !pTopLevelLibraryTreeItem->isOMSModelInstantiated());
-      // get the top level LibraryTreeItem again since instantiateOMSModel redraws them
-      LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->findLibraryTreeItemOneLevel(modelName);
       if (pTopLevelLibraryTreeItem) {
         mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem);
       }
@@ -805,43 +801,6 @@ void MainWindow::simulationSetup(LibraryTreeItem *pLibraryTreeItem)
         mpOMSSimulationDialog = new OMSSimulationDialog(this);
       }
       mpOMSSimulationDialog->exec(pTopLevelLibraryTreeItem->getNameStructure(), pLibraryTreeItem);
-    }
-  }
-}
-
-/*!
- * \brief MainWindow::instantiateOMSModel
- * Instantiates the OMSimulator model.
- * \param pLibraryTreeItem
- * \param checked
- */
-void MainWindow::instantiateOMSModel(LibraryTreeItem *pLibraryTreeItem, bool checked)
-{
-  // get the top level LibraryTreeItem
-  LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
-  if (pTopLevelLibraryTreeItem) {
-    if (!pLibraryTreeItem->getModelWidget()) {
-      mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem, false);
-    }
-    ModelWidget *pModelWidget = pLibraryTreeItem->getModelWidget();
-    if (checked) {
-      if (OMSProxy::instance()->instantiate(pTopLevelLibraryTreeItem->getNameStructure())) {
-        pModelWidget->getUndoStack()->setEnabled(false);
-        pModelWidget->createOMSimulatorUndoCommand("Instantiate Model", false);
-        pModelWidget->getUndoStack()->setEnabled(true);
-        mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-      } else {
-        mpOMSInstantiateModelAction->setChecked(false);
-      }
-    } else {
-      if (OMSProxy::instance()->terminate(pTopLevelLibraryTreeItem->getNameStructure())) {
-        pModelWidget->getUndoStack()->setEnabled(false);
-        pModelWidget->createOMSimulatorUndoCommand("Terminate Model", false);
-        pModelWidget->getUndoStack()->setEnabled(true);
-        mpModelWidgetContainer->currentModelWidgetChanged(mpModelWidgetContainer->getCurrentMdiSubWindow());
-      } else {
-        mpOMSInstantiateModelAction->setChecked(true);
-      }
     }
   }
 }
@@ -2287,23 +2246,9 @@ void MainWindow::openSimulationDialog()
 }
 
 /*!
- * \brief MainWindow::instantiateOMSModel
- * Slot activated when mpOMSInstantiateModelAction triggered signal is raised.
- * Calls MainWindow::instantiateOMSModel(LibraryTreeItem*)
- * \param checked
+ * \brief MainWindow::simulateModel
+ * Simulates the model directly.
  */
-void MainWindow::instantiateOMSModel(bool checked)
-{
-  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-  if (pModelWidget) {
-    instantiateOMSModel(pModelWidget->getLibraryTreeItem(), checked);
-  }
-}
-
-/*!
-  Simualtes the model directly.
-  */
-//!
 void MainWindow::simulateModel()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -2313,9 +2258,9 @@ void MainWindow::simulateModel()
 }
 
 /*!
-  Simualtes the model directly with animation flag.
-  */
-//!
+ * \brief MainWindow::simulateModelWithAnimation
+ * Simulates the model directly with animation flag.
+ */
 void MainWindow::simulateModelWithAnimation()
 {
 #if !defined(WITHOUT_OSG)
@@ -2329,8 +2274,9 @@ void MainWindow::simulateModelWithAnimation()
 }
 
 /*!
-  Simualtes the model with transformational debugger
-  */
+ * \brief MainWindow::simulateModelWithTransformationalDebugger
+ * Simulates the model with transformational debugger
+ */
 void MainWindow::simulateModelWithTransformationalDebugger()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -2340,8 +2286,9 @@ void MainWindow::simulateModelWithTransformationalDebugger()
 }
 
 /*!
-  Simualtes the model with algorithmic debugger
-  */
+ * \brief MainWindow::simulateModelWithAlgorithmicDebugger
+ * Simulates the model with algorithmic debugger
+ */
 void MainWindow::simulateModelWithAlgorithmicDebugger()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -2350,7 +2297,10 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
   }
 }
 
-//! Exports the current model to FMU
+/*!
+ * \brief MainWindow::exportModelFMU
+ * Exports the current model to FMU
+ */
 void MainWindow::exportModelFMU()
 {
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
@@ -3495,11 +3445,6 @@ void MainWindow::createActions()
   mpSimulationSetupAction->setStatusTip(Helper::simulationSetupTip);
   mpSimulationSetupAction->setEnabled(false);
   connect(mpSimulationSetupAction, SIGNAL(triggered()), SLOT(openSimulationDialog()));
-  // OMSimulator instantiation action
-  mpOMSInstantiateModelAction = new QAction(QIcon(":/Resources/icons/instantiate.svg"), Helper::instantiateModel, this);
-  mpOMSInstantiateModelAction->setStatusTip(Helper::instantiateOMSModelTip);
-  mpOMSInstantiateModelAction->setCheckable(true);
-  connect(mpOMSInstantiateModelAction, SIGNAL(triggered(bool)), SLOT(instantiateOMSModel(bool)));
   // simulate action
   mpSimulateModelAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
   mpSimulateModelAction->setStatusTip(Helper::simulateTip);
@@ -3934,7 +3879,6 @@ void MainWindow::createMenus()
   pSimulationMenu->addAction(mpCheckAllModelsAction);
   pSimulationMenu->addAction(mpInstantiateModelAction);
   pSimulationMenu->addAction(mpSimulationSetupAction);
-  pSimulationMenu->addAction(mpOMSInstantiateModelAction);
   pSimulationMenu->addAction(mpSimulateModelAction);
   pSimulationMenu->addAction(mpSimulateWithTransformationalDebuggerAction);
   pSimulationMenu->addAction(mpSimulateWithAlgorithmicDebuggerAction);
@@ -4366,7 +4310,6 @@ void MainWindow::createToolbars()
   mpSimulationToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to Simulation Toolbar
   mpSimulationToolBar->addAction(mpSimulationSetupAction);
-  mpSimulationToolBar->addAction(mpOMSInstantiateModelAction);
   mpSimulationToolBar->addAction(mpSimulateModelAction);
   mpSimulationToolBar->addAction(mpSimulateWithTransformationalDebuggerAction);
   mpSimulationToolBar->addAction(mpSimulateWithAlgorithmicDebuggerAction);

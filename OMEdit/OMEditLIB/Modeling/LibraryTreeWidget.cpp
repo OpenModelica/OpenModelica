@@ -90,7 +90,6 @@ LibraryTreeItem::LibraryTreeItem()
   setFMUInfo(0);
   setExternalTLMModelInfo(0);
   setSubModelPath("");
-  setModelState(oms_modelState_virgin);
 }
 
 /*!
@@ -137,7 +136,6 @@ LibraryTreeItem::LibraryTreeItem(LibraryType type, QString text, QString nameStr
   setFMUInfo(0);
   setExternalTLMModelInfo(0);
   setSubModelPath("");
-  setModelState(oms_modelState_virgin);
 }
 
 /*!
@@ -2683,17 +2681,6 @@ LibraryTreeItem* LibraryTreeModel::createOMSLibraryTreeItemImpl(QString name, QS
   OMCInterface::getClassInformation_res classInformation;
   LibraryTreeItem *pLibraryTreeItem = new LibraryTreeItem(LibraryTreeItem::OMS, name, nameStructure, classInformation, path, isSaved, pParentLibraryTreeItem);
   pLibraryTreeItem->setOMSElement(pOMSElement);
-  if (pLibraryTreeItem->isTopLevel()) {
-    oms_modelState_enu_t modelState;
-    if (OMSProxy::instance()->getModelState(pLibraryTreeItem->getNameStructure(), &modelState)) {
-      pLibraryTreeItem->setModelState(modelState);
-    }
-    if (modelState == oms_modelState_instantiated) {
-      pLibraryTreeItem->setSystemLibrary(true);
-    }
-  } else {
-    pLibraryTreeItem->setSystemLibrary(pParentLibraryTreeItem->isSystemLibrary());
-  }
   if (pLibraryTreeItem->isSystemElement()) {
     oms_system_enu_t systemType;
     if (OMSProxy::instance()->getSystemType(pLibraryTreeItem->getNameStructure(), &systemType)) {

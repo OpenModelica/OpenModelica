@@ -8143,11 +8143,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     zoomEnabled = true;
     plottingDiagram = true;
   }
-  bool isOMSModelInstantiated = false;
-  if (pLibraryTreeItem) {
-    LibraryTreeItem *pTopLevelLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
-    isOMSModelInstantiated = pTopLevelLibraryTreeItem && pTopLevelLibraryTreeItem->isOMSModelInstantiated();
-  }
   // update the actions of the menu and toolbars
   MainWindow::instance()->getSaveAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled);
@@ -8171,16 +8166,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 #if !defined(WITHOUT_OSG)
   MainWindow::instance()->getSimulateWithAnimationAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
 #endif
-  MainWindow::instance()->getSimulationSetupAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms && !isOMSModelInstantiated)));
-  MainWindow::instance()->getOMSInstantiateModelAction()->setEnabled(enabled && (omsModel || omsSystem || omsSubmodel));
-  MainWindow::instance()->getOMSInstantiateModelAction()->setChecked(isOMSModelInstantiated);
-  if (isOMSModelInstantiated) {
-    MainWindow::instance()->getOMSInstantiateModelAction()->setText(Helper::terminateInstantiation);
-    MainWindow::instance()->getOMSInstantiateModelAction()->setText(Helper::terminateInstantiationTip);
-  } else {
-    MainWindow::instance()->getOMSInstantiateModelAction()->setText(Helper::instantiateModel);
-    MainWindow::instance()->getOMSInstantiateModelAction()->setText(Helper::instantiateOMSModelTip);
-  }
+  MainWindow::instance()->getSimulationSetupAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms)));
   bool accessAnnotation = false;
   if (pLibraryTreeItem && (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
                            || ((pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageText
@@ -8206,13 +8192,13 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
-  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel) && !isOMSModelInstantiated);
-  MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem && (!pLibraryTreeItem->isTLMSystem())) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem && !isOMSModelInstantiated);
+  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))));
+  MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -8239,7 +8225,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
      * Show the relevant toolbars if we are in a Modeling perspective
      */
     if (MainWindow::instance()->isModelingPerspectiveActive()) {
-      MainWindow::instance()->getOMSInstantiateModelAction()->setVisible(false);
       if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
         MainWindow::instance()->getShapesToolBar()->setVisible(true);
         MainWindow::instance()->getCheckToolBar()->setVisible(true);
@@ -8259,7 +8244,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
           MainWindow::instance()->getOMSimulatorToobar()->setVisible(false);
         } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
           MainWindow::instance()->getSimulationToolBar()->setVisible(true);
-          MainWindow::instance()->getOMSInstantiateModelAction()->setVisible(true);
           MainWindow::instance()->getTLMSimulationToolbar()->setVisible(false);
           MainWindow::instance()->getOMSimulatorToobar()->setVisible(true);
         } else {

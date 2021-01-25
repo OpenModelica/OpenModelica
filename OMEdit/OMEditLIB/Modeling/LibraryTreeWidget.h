@@ -154,13 +154,6 @@ public:
   const oms_external_tlm_model_info_t* getExternalTLMModelInfo() const {return mpExternalTLMModelInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
   QString getSubModelPath() const {return mSubModelPath;}
-  void setModelState(const oms_modelState_enu_t &modelState) {mModelState = modelState;}
-  /*!
-   * \brief isOMSModelInstantiated
-   * Returns true if OMSimulator model in oms_modelState_instantiated state.
-   * \return
-   */
-  bool isOMSModelInstantiated() const {return mModelState == oms_modelState_instantiated;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -231,7 +224,6 @@ private:
   const oms_fmu_info_t *mpFMUInfo;
   const oms_external_tlm_model_info_t *mpExternalTLMModelInfo;
   QString mSubModelPath;
-  oms_modelState_enu_t mModelState;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();
