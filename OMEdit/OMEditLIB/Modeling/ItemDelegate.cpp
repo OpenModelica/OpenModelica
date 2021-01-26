@@ -227,7 +227,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
         LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
         if (pLibraryTreeItem && pLibraryTreeItem->getModelWidget() == MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()) {
           painter->save();
-          painter->setPen(Qt::blue);
+          painter->setPen(Qt::darkGreen);
           painter->drawRect(option.rect.adjusted(0, 0, -1, -1));
           painter->restore();
         }

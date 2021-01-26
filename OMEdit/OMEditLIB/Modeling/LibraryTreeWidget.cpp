@@ -4034,9 +4034,9 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
   mpTreeSearchFilters->getExpandAllButton()->hide();
   mpTreeSearchFilters->getCollapseAllButton()->hide();
-  QPushButton *pScrollToActiveButton = new QPushButton(tr("Scroll to active"));
-  pScrollToActiveButton->setToolTip(tr("Makes the libraries browser active item visible"));
-  connect(pScrollToActiveButton, SIGNAL(clicked()), SLOT(scrollToActiveLibraryTreeItem()));
+  mpTreeSearchFilters->getScrollToActiveButton()->show();
+  mpTreeSearchFilters->getScrollToActiveButton()->setEnabled(!OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked());
+  connect(mpTreeSearchFilters->getScrollToActiveButton(), SIGNAL(clicked()), SLOT(scrollToActiveLibraryTreeItem()));
   // create tree view
   mpLibraryTreeModel = new LibraryTreeModel(this);
   mpLibraryTreeProxyModel = new LibraryTreeProxyModel(this, false);
@@ -4053,7 +4053,6 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpTreeSearchFilters, 0, 0);
-  pMainLayout->addWidget(pScrollToActiveButton, 1, 0);
   pMainLayout->addWidget(mpLibraryTreeView, 2, 0);
   setLayout(pMainLayout);
 }

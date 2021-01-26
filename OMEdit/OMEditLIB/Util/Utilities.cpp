@@ -69,12 +69,19 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   // filter timer
   mpFilterTimer = new QTimer;
   mpFilterTimer->setSingleShot(true);
+  mpScrollToActiveButton = new QToolButton;
+  QString scrollToActiveButtonText = tr("Scroll to Active");
+  mpScrollToActiveButton->setText(scrollToActiveButtonText);
+  mpScrollToActiveButton->setIcon(QIcon(":/Resources/icons/step-into.svg"));
+  mpScrollToActiveButton->setToolTip(scrollToActiveButtonText);
+  mpScrollToActiveButton->setAutoRaise(true);
+  mpScrollToActiveButton->hide();
   // show hide button
   mpShowHideButton = new QToolButton;
-  QString text = tr("Show/hide filters");
-  mpShowHideButton->setText(text);
+  QString showHideButtonText = tr("Show/hide filters");
+  mpShowHideButton->setText(showHideButtonText);
   mpShowHideButton->setIcon(QIcon(":/Resources/icons/down.svg"));
-  mpShowHideButton->setToolTip(text);
+  mpShowHideButton->setToolTip(showHideButtonText);
   mpShowHideButton->setAutoRaise(true);
   mpShowHideButton->setCheckable(true);
   connect(mpShowHideButton, SIGNAL(toggled(bool)), SLOT(showHideFilters(bool)));
@@ -111,8 +118,9 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->addWidget(mpFilterTextBox, 0, 0);
-  pMainLayout->addWidget(mpShowHideButton, 0, 1);
-  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpScrollToActiveButton, 0, 1);
+  pMainLayout->addWidget(mpShowHideButton, 0, 2);
+  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 3);
   setLayout(pMainLayout);
 }
 

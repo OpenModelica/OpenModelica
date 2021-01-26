@@ -8275,6 +8275,9 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   }
   // Update the LibraryTreeView to mark the active model
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->viewport()->update();
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked()) {
+    MainWindow::instance()->getLibraryWidget()->scrollToActiveLibraryTreeItem();
+  }
 }
 
 /*!
