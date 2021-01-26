@@ -477,18 +477,19 @@ public function copyBackendDAE "author: Frenkel TUD, wbraun
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := mapEqSystem(inDAE, copyEqSystemAndShared);
+  outDAE := mapEqSystem(inDAE, copyEqSystemTraverser);
+  outDAE.shared := copyBackendDAEShared(outDAE.shared);
 end copyBackendDAE;
 
-public function copyEqSystemAndShared
+public function copyEqSystemTraverser
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.Shared inShared;
   output BackendDAE.EqSystem outSystem;
   output BackendDAE.Shared outShared;
 algorithm
   outSystem := copyEqSystem(inSystem);
-  outShared := copyBackendDAEShared(inShared);
-end copyEqSystemAndShared;
+  outShared := inShared;
+end copyEqSystemTraverser;
 
 public function copyEqSystem
   input BackendDAE.EqSystem inSystem;

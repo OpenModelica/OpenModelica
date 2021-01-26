@@ -5730,29 +5730,11 @@ algorithm
   end matchcontinue;
 end listAllIterationVariables2;
 
-protected function warnAboutVars "author: lochel"
-  input list<BackendDAE.Var> inVars;
-  output String outString;
+protected function warnAboutVars
+  input list<BackendDAE.Var> vars;
+  output String str;
 algorithm
-  outString := match(inVars)
-    local
-      BackendDAE.Var v;
-      list<BackendDAE.Var> vars;
-      String crStr;
-      String str;
-
-    case ({})
-    then "";
-
-    case (v::{}) equation
-      crStr = "  " + BackendDump.varString(v);
-    then crStr;
-
-    case (v::vars) equation
-      crStr = BackendDump.varString(v);
-      str = "  " + crStr + "\n" + warnAboutVars(vars);
-    then str;
-  end match;
+  str := stringDelimitList(list("  " + BackendDump.varString(v) for v in vars), "\n");
 end warnAboutVars;
 
 public function addTimeAsState
