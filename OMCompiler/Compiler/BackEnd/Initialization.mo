@@ -228,7 +228,7 @@ algorithm
     // add initial assignmnents to all algorithms
     initdae := BackendDAEOptimize.addInitialStmtsToAlgorithms(initdae, true);
 
-    if useHomotopy then
+    if useHomotopy and Config.globalHomotopy() then
       initdae0 := BackendDAEUtil.copyBackendDAE(initdae);
     end if;
 
