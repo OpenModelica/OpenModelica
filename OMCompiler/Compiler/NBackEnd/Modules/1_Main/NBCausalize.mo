@@ -1120,8 +1120,24 @@ public
       SBSet E_M = SBSet.newEmpty()                      "matched edges";
       SBSet F_M = SBSet.newEmpty()                      "matched equation vertices";
       SBSet U_M = SBSet.newEmpty()                      "matched variable vertices";
+      SBSet U_V                                         "visited variable vertices";
+      Vector<SBSet> F                                   "auxiliary vecor of equation vertices. will be manipulated";
+      SBSet F_set                                       "current set of start vertex";
+      Integer F_set_index                               "index of current start vertex";
+      SetVertex F_vertex                                "current start vertex";
+      SBSet F_path                                      "set of vertices on current path";
+      Integer w_max                                     "current maximum path width";
+      list<SBSet> P                                     "augmenting path";
     algorithm
-
+      // get all sets from equation set vertices
+      F := Vector.fromList(list(SetVertex.getSet(v) for v in BipartiteIncidenceList.vertices(graph, SetType.F)));
+      // repeat
+        (F_set, F_set_index) := SBSet.maxCardinality(F);
+        U_V := SBSet.newEmpty();
+        w_max := 0;
+        F_path := F_set;
+        F_vertex := BipartiteIncidenceList.getVertex(graph, F_set_index, SetType.F);
+        (P, F_path, U_V, w_max) := augmentPathF(graph, vertexMap, F_vertex, E_M, U_M, F_path, U_V, w_max);
     end SBGMatching;
 
     function augmentPathF
@@ -1132,13 +1148,14 @@ public
       input SetVertex F                                 "start vertex";
       input SBSet E_M                                   "matched edges";
       input SBSet U_M                                   "matched variable vertices";
-      output list<SBSet> P_max = {};
-      input output SBSet F_path;
+      output list<SBSet> P_max = {}                     "current maximum path";
+      input output SBSet F_path                         "set of vertices on current path";
       input output SBSet U_V                            "visited variable vertices";
-      input output Integer w_max;
+      input output Integer w_max                        "current maximum path width";
     protected
       Integer F_index, U_card;
       SetEdge E;
+      SBSet P_1;
       SBSet U_set, U_set_N, U_set_M;
       SetVertex U;
     algorithm
@@ -1156,20 +1173,17 @@ public
         U_set := SetEdge.unmatchedU(E, E_M);
         // get unmatched U (skip the unmatched edges part?)
         U_set_N := SBSet.complement(U_set, U_M);
-        U_card := SBSet.cardinality(U_set_N);
+        U_card := SBSet.card(U_set_N);
         if U_card > w_max then
           w_max := U_card;
-          // kabdelhak: what is this nonsenese? why do we overwrite this in every step?
-          // is this supposed to append? but how does make any sense.
-          // thread this with next for loop?
-          P_max := {SetEdge.minInvU(E, U_set)};
+          P_1 := SetEdge.minInvU(E, U_set);
         end if;
         // kabdelhak: threading for loops otherwise it does not make any sense to me
         U_set_M := SBSet.intersection(U_set, U_M);
         // check if vertex is fully matched already
         if SBSet.isEmpty(SBSet.complement(U_set, U_set_M)) then
           // check if augmenting path is wider
-          if SBSet.cardinality(U_set_M) > w_max then
+          if SBSet.card(U_set_M) > w_max then
             U_V := SBSet.union(U_V, U_set_M);
             try
               // get SetVertex for our SBSet
@@ -1179,7 +1193,7 @@ public
                 + SBSet.toString(U_set_M), sourceInfo());
             end try;
             (P_max, F_path, U_V, w_max) := augmentPathU(graph, vertexMap, U, E_M, U_M, F_path, U_V, w_max);
-            (P_max, w_max) := fixPathHead(P_max, w_max, E, SetType.U);
+            (P_max, w_max) := fixPathHead(P_1, P_max, w_max, E, SetType.U);
           end if;
         end if;
       end for;
@@ -1190,19 +1204,19 @@ public
       augmenting a path starting on a set vertex representing a variable U (unknown)"
       input SBGraph graph                               "full bipartite graph";
       input UnorderedMap<SetVertex, Integer> vertexMap  "maps a vertex to its index";
-      //input UnorderedMap<SetEdge, Integer> edgeMap      "maps an edge to its index";
       input SetVertex U                                 "start vertex";
       input SBSet E_M                                   "globally matched edges";
       input SBSet U_M                                   "matched variable vertices";
-      output list<SBSet> P_max;
-      input output SBSet F_path;
+      output list<SBSet> P_max                          "current maximum path";
+      input output SBSet F_path                         "set of vertices on current path";
       input output SBSet U_V                            "visited variable vertices";
-      input output Integer w_max;
+      input output Integer w_max                        "current maximum path width";
     protected
       Integer U_index, P1_card;
       SetEdge E;
       SetVertex F;
       SBSet F_set;
+      SBSet P_1;
     algorithm
       try
         SOME(U_index) := UnorderedMap.get(U, vertexMap);
@@ -1216,7 +1230,7 @@ public
         E := BipartiteIncidenceList.getEdge(graph, E_index);
         F_set := SetEdge.matchedF(E, E_M);
         // check matched F vertices for higher cardinality
-        if SBSet.cardinality(F_set) > w_max then
+        if SBSet.card(F_set) > w_max then
           // ToDo: we check only for matched subset not for full F connected by edge. Problem?
           // we could get full set using the mapF on our edge without removing unmatched edge parts
           if SBSet.isEmpty(SBSet.intersection(F_set, F_path)) then
@@ -1228,10 +1242,10 @@ public
               Error.assertion(false, getInstanceName() + " failed. Multiple SetVertices got returned for SBSet: "
                 + SBSet.toString(F_set), sourceInfo());
             end try;
-            (P_max, F_path, U_V, w_max) := augmentPathF(graph, vertexMap, F, E_M, U_M, F_path, U_V, w_max);
+            (P_1 :: P_max, F_path, U_V, w_max) := augmentPathF(graph, vertexMap, F, E_M, U_M, F_path, U_V, w_max);
             F_path := SBSet.complement(F_path, F_set);
-            // cardinality of P_1 ? first element? how to map/inverse map that thing? combine both for loops and use edge?
-            (P_max, w_max) := fixPathHead(P_max, w_max, E, SetType.F);
+            // card of P_1 ? first element? how to map/inverse map that thing? combine both for loops and use edge?
+            (P_max, w_max) := fixPathHead(P_1, P_max, w_max, E, SetType.F);
           else
             // solve recursion
           end if;
@@ -1240,22 +1254,35 @@ public
     end augmentPathU;
 
     function fixPathHead
+      input SBSet P_1;
       input output list<SBSet> P_max;
       input output Integer w_max;
       input SetEdge E;
       input SetType ST;
     protected
-      SBSet P1;
       Integer P1_card;
     algorithm
-      P1 :: P_max := P_max;
-      P1_card := SBSet.cardinality(P1);
+      P1_card := SBSet.card(P_1);
       if P1_card > w_max then
         w_max := P1_card;
-        P_max := SetEdge.maxPath(E, P1, ST) :: P_max;
+        P_max := SetEdge.maxPath(E, P_1, ST) :: P_max;
       end if;
     end fixPathHead;
 
+    function addMatchedF
+      input output SBSet F_M;
+      input SBSet path_edge;
+      input SBGraph graph;
+    protected
+      SetEdge edge;
+    algorithm
+      try
+        //{edge} := BipartiteIncidenceList.getEdgesFromSet(graph, path_edge, SetEdge.getDomain);
+      else
+        Error.assertion(false, getInstanceName() + " failed. Multiple SetEdges got returned for SBSet: "
+          + SBSet.toString(path_edge), sourceInfo());
+      end try;
+    end addMatchedF;
   end Matching;
 
   encapsulated package IndexReduction

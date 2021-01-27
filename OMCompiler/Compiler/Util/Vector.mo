@@ -539,6 +539,38 @@ public
     index := -1;
   end find;
 
+  function findFold<FT>
+    "Returns the first element and the index of that element for which the given
+     function returns true, but proceeds to check all other for better
+     solutions regarding an extra argument, or NONE() and -1 if no such element exists."
+    input Vector<T> v;
+    input PredFn fn;
+    output Option<T> oe = NONE();
+    output Integer index = -1;
+    input output FT arg;
+
+    partial function PredFn
+      input T e;
+      output Boolean res;
+      input output FT arg;
+    end PredFn;
+  protected
+    array<T> data = Mutable.access(v.data);
+    Integer sz = Mutable.access(v.size);
+    T e;
+    Boolean res;
+  algorithm
+    for i in 1:sz loop
+      e := arrayGetNoBoundsChecking(data, i);
+
+      (res, arg) := fn(e, arg);
+      if res then
+        oe := SOME(e);
+        index := i;
+      end if;
+    end for;
+  end findFold;
+
   function all
     "Returns true if the given function returns true for all elements in the
      Vector, otherwise false."

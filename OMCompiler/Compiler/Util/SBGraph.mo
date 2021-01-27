@@ -370,6 +370,24 @@ public
       end if;
     end addEdge;
 
+    function getEdgesFromSet
+      "kabdelhak: seems inefficient. There has to be a better solution"
+      input BipartiteIncidenceList<VertexT, EdgeT> il;
+      input SBSet set;
+      input getSetFn getSet;
+      output list<EdgeT> set_edges = {};
+      partial function getSetFn
+        input EdgeT e;
+        output SBSet s;
+      end getSetFn;
+    algorithm
+      for e in edges(il) loop
+        if not SBSet.isEmpty(SBSet.intersection(getSet(e), set)) then
+          set_edges := e :: set_edges;
+        end if;
+      end for;
+    end getEdgesFromSet;
+
     function getEdge
       input BipartiteIncidenceList<VertexT, EdgeT> il;
       input Integer d;
