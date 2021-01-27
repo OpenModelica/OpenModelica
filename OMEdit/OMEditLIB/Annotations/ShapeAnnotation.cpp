@@ -1554,6 +1554,7 @@ void ShapeAnnotation::cornerItemReleased(const bool changed)
         pLineAnnotation->updateOMSConnection();
         pModelWidget->createOMSimulatorUndoCommand(QString("Update OMS Connection connect(%1, %2)").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName()));
         pModelWidget->updateModelText();
+        return;
       }
     } else {
       if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
