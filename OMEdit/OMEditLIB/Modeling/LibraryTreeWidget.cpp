@@ -4034,8 +4034,7 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
   mpTreeSearchFilters->getExpandAllButton()->hide();
   mpTreeSearchFilters->getCollapseAllButton()->hide();
-  mpTreeSearchFilters->getScrollToActiveButton()->show();
-  mpTreeSearchFilters->getScrollToActiveButton()->setEnabled(!OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked());
+  mpTreeSearchFilters->getScrollToActiveButton()->setVisible(!OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked());
   connect(mpTreeSearchFilters->getScrollToActiveButton(), SIGNAL(clicked()), SLOT(scrollToActiveLibraryTreeItem()));
   // create tree view
   mpLibraryTreeModel = new LibraryTreeModel(this);

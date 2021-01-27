@@ -1050,7 +1050,7 @@ void OptionsDialog::saveGeneralSettings()
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
   // save synchronize with ModelWidget
   mpSettings->setValue("synchronizeWithModelWidget", mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->isChecked());
-  MainWindow::instance()->getLibraryWidget()->getTreeSearchFilters()->getScrollToActiveButton()->setEnabled(!mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->isChecked());
+  MainWindow::instance()->getLibraryWidget()->getTreeSearchFilters()->getScrollToActiveButton()->setVisible(!mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->isChecked());
   // save auto save
   mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
   mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
