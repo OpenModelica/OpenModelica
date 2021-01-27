@@ -385,6 +385,10 @@ public
             case Equation.SCALAR_EQUATION(lhs = Expression.CREF(cref = cref))
             then createEquation(NBVariable.getVar(cref), eqn, simCodeIndices, funcTree, systemType);
 
+
+            case Equation.WHEN_EQUATION()
+            then createEquation(NBVariable.DUMMY_VARIABLE, eqn, simCodeIndices, funcTree, systemType);
+
             /* ToDo: ARRAY_EQUATION ... */
 
             else algorithm
@@ -547,7 +551,13 @@ public
       BEquation.Equation solvedEq;
       Solve.Status status;
     algorithm
-      (solvedEq, funcTree, status, _) := Solve.solve(eqn, var.name, funcTree);
+      // empty input implies equation without return value
+      if ComponentRef.isEmpty(var.name) then
+        (solvedEq, status) := (eqn, NBSolve.Status.EXPLICIT);
+      else
+        (solvedEq, funcTree, status, _) := Solve.solve(eqn, var.name, funcTree);
+      end if;
+
       blck := match (solvedEq, status)
         local
           Type ty;

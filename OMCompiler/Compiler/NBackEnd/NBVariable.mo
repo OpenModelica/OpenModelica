@@ -165,6 +165,11 @@ public
     dims := Type.arrayDims(var.ty);
   end getDimensions;
 
+  function isEmpty
+    input Pointer<Variable> var_ptr;
+    output Boolean b = ComponentRef.isEmpty(getVarName(var_ptr));
+  end isEmpty;
+
   function isState
     input Pointer<Variable> var;
     output Boolean b;

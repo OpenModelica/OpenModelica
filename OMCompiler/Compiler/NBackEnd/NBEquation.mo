@@ -1267,6 +1267,7 @@ public
   constant EquationAttributes EQ_ATTR_DEFAULT_INITIAL = EQUATION_ATTRIBUTES(NONE(), INITIAL_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
   constant EquationAttributes EQ_ATTR_DEFAULT_DISCRETE = EQUATION_ATTRIBUTES(NONE(), DISCRETE_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
   constant EquationAttributes EQ_ATTR_DEFAULT_AUX = EQUATION_ATTRIBUTES(NONE(), AUX_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
+  constant EquationAttributes EQ_ATTR_EMPTY_DISCRETE = EQUATION_ATTRIBUTES(NONE(), EMPTY_EQUATION(), DEFAULT_EVALUATION_STAGES, NONE());
   constant EquationAttributes EQ_ATTR_DEFAULT_UNKNOWN = EQUATION_ATTRIBUTES(NONE(), UNKNOWN_EQUATION_KIND(), DEFAULT_EVALUATION_STAGES, NONE());
 
   uniontype EquationKind
@@ -1276,6 +1277,7 @@ public
     record CLOCKED_EQUATION Integer clk; end CLOCKED_EQUATION;
     record DISCRETE_EQUATION end DISCRETE_EQUATION;
     record AUX_EQUATION "ToDo! Do we still need this?" end AUX_EQUATION;
+    record EMPTY_EQUATION end EMPTY_EQUATION;
     record UNKNOWN_EQUATION_KIND end UNKNOWN_EQUATION_KIND;
 
     function convert
@@ -1291,6 +1293,7 @@ public
         case CLOCKED_EQUATION(clk = clk)  then OldBackendDAE.CLOCKED_EQUATION(clk);
         case DISCRETE_EQUATION()          then OldBackendDAE.DISCRETE_EQUATION();
         case AUX_EQUATION()               then OldBackendDAE.AUX_EQUATION();
+        case EMPTY_EQUATION()             then OldBackendDAE.AUX_EQUATION();
         case UNKNOWN_EQUATION_KIND()      then OldBackendDAE.UNKNOWN_EQUATION_KIND();
         else fail();
       end match;
@@ -1741,7 +1744,8 @@ public
               tmp :=  EquationPointers.toString(eqData.continuous, "Continuous", false) +
                       EquationPointers.toString(eqData.discretes, "Discrete", false) +
                       EquationPointers.toString(eqData.initials, "(Exclusively) Initial", false) +
-                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false);
+                      EquationPointers.toString(eqData.auxiliaries, "Auxiliary", false) +
+                      EquationPointers.toString(eqData.removed, "Removed", false);
             end if;
         then tmp;
 

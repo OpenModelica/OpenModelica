@@ -10,13 +10,15 @@ model eventSystem
   Real z;
   parameter Real t = 0.2;
 equation
+  assert(z <= 1, \"z is wrong\");
+
   when t < time then
     x1 = pre(x1) + 1;
   end when;
 
-    when sample(0.1, t) then
-      x2 = pre(x2) + 0.5;
-    end when;
+  when sample(0.1, t) then
+    x2 = pre(x2) + 0.5;
+  end when;
 
   z = sin(time);
   when z > 0.5 then
@@ -55,7 +57,7 @@ val(x3, 0.53);
 // BLOCK 1: Single Equation
 // ----------------------------------------
 // ### Variable:	Boolean $TEV_1
-// ### Equation:	[SCAL] ($RES_EVT_5) $TEV_1 = sample(2, t, 4.611686018427388e+18)
+// ### Equation:	[SCAL] ($RES_EVT_6) $TEV_1 = sample(2, t, 4.611686018427388e+18)
 //
 // BLOCK 2: Single Equation
 // ----------------------------------------
@@ -67,7 +69,7 @@ val(x3, 0.53);
 // BLOCK 3: Single Equation
 // ----------------------------------------
 // ### Variable:	Boolean $TEV_0
-// ### Equation:	[SCAL] ($RES_EVT_4) $TEV_0 = sample(1, 0.1, t)
+// ### Equation:	[SCAL] ($RES_EVT_5) $TEV_0 = sample(1, 0.1, t)
 //
 // BLOCK 4: Single Equation
 // ----------------------------------------
@@ -84,7 +86,7 @@ val(x3, 0.53);
 // BLOCK 6: Single Equation
 // ----------------------------------------
 // ### Variable:	Boolean $SEV_0
-// ### Equation:	[SCAL] ($RES_EVT_6) $SEV_0 = z > 0.5
+// ### Equation:	[SCAL] ($RES_EVT_8) $SEV_0 = z > 0.5
 //
 // BLOCK 7: Single Equation
 // ----------------------------------------
@@ -93,29 +95,36 @@ val(x3, 0.53);
 // 	[----]   x3 := $PRE.x3 + 2.0
 // 	[----] end when;
 //
+// BLOCK 8: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $SEV_1
+// ### Equation:	[SCAL] ($RES_EVT_7) $SEV_1 = z <= 1.0
+//
 // ========================================
 // AdjacencyMatrix
 // ========================================
 //
 // Normal Adjacency Matrix (row = equation)
 // ****************************************
-// 	(1)	{6, 1}
-// 	(2)	{7, 2}
+// 	(1)	{7, 1}
+// 	(2)	{8, 2}
 // 	(3)	{4}
 // 	(4)	{5, 3}
 // 	(5)	{5, 4}
-// 	(6)	{6}
+// 	(6)	{6, 4}
 // 	(7)	{7}
+// 	(8)	{8}
 //
 // Transposed Adjacency Matrix (row = variable)
 // ****************************************
 // 	(1)	{1}
 // 	(2)	{2}
 // 	(3)	{4}
-// 	(4)	{5, 3}
+// 	(4)	{6, 5, 3}
 // 	(5)	{5, 4}
-// 	(6)	{6, 1}
-// 	(7)	{7, 2}
+// 	(6)	{6}
+// 	(7)	{7, 1}
+// 	(8)	{8, 2}
 //
 //
 // ========================================
@@ -131,6 +140,7 @@ val(x3, 0.53);
 // 	var 5 --> eqn 5
 // 	var 6 --> eqn 6
 // 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
 //
 // equation to variable
 // ****************************************
@@ -141,6 +151,7 @@ val(x3, 0.53);
 // 	eqn 5 --> var 5
 // 	eqn 6 --> var 6
 // 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
 //
 //
 // ========================================
@@ -153,6 +164,7 @@ val(x3, 0.53);
 // 	(1) sample(0.1, t)
 // State Events
 // ****************************************
+// 	[DISC] Boolean $SEV_1 = z <= 1.0
 // 	[DISC] Boolean $SEV_0 = z > 0.5
 //
 // record SimulationResult

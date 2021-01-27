@@ -516,7 +516,7 @@ protected
     input VariablePointers variables;
     output BEquation.EqData eqData;
   protected
-    list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {};
+    list<Pointer<Equation>> equation_lst, continuous_lst = {}, discretes_lst = {}, initials_lst = {}, auxiliaries_lst = {}, simulation_lst = {}, removed_lst = {};
     EquationPointers equations;
     Pointer<Equation> eq;
     Pointer<Integer> idx = Pointer.create(0);
@@ -555,6 +555,11 @@ protected
               simulation_lst := eq :: simulation_lst;
           then ();
 
+          case BEquation.EQUATION_ATTRIBUTES(kind = BEquation.EMPTY_EQUATION())
+            algorithm
+              removed_lst := eq :: removed_lst;
+          then ();
+
           else
             algorithm
               Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for\n" + Equation.toString(Pointer.access(eq))});
@@ -571,7 +576,7 @@ protected
       discretes   = EquationPointers.fromList(discretes_lst),
       initials    = EquationPointers.fromList(initials_lst),
       auxiliaries = EquationPointers.fromList(auxiliaries_lst),
-      removed     = EquationPointers.empty()
+      removed     = EquationPointers.fromList(removed_lst)
     );
   end lowerEquationData;
 
@@ -842,8 +847,7 @@ protected
 
       case FEquation.ASSERT(condition = condition, message = message, level = level, source = source)
         algorithm
-          // Assert in initial section is allowed!
-          attr := if init then NBEquation.EQ_ATTR_DEFAULT_INITIAL else NBEquation.EQ_ATTR_DEFAULT_DISCRETE;
+          attr := NBEquation.EQ_ATTR_EMPTY_DISCRETE;
           whenEqBody := BEquation.WHEN_EQUATION_BODY(condition, {BEquation.ASSERT(condition, message, level, source)}, NONE());
       then BEquation.WHEN_EQUATION(0, whenEqBody, source, attr);
 
