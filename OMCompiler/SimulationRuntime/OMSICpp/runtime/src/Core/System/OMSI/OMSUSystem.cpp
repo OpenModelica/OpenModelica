@@ -525,7 +525,7 @@ void OMSUSystem::initializeResultOutputVars()
         const double& realVar = _simVars->getRealVar(get < 1 > (*iter));
         const double* realVarPtr = &realVar;
         _real_vars.addOutputVar(name, descripton, realVarPtr, false);
-        std::cout << "real var: "  << name << realVar << "index: " <<  get < 1 > (*iter) << std::endl;
+        
     }
     //add real parameter to write output structure
     for (out_vars_t::iterator iter = _real_param_vars.begin();
@@ -540,7 +540,7 @@ void OMSUSystem::initializeResultOutputVars()
         const double& realVar = _simVars->getRealVar(get < 1 > (*iter));
         const double* realVarPtr = &realVar;
         _real_vars.addParameter(name, descripton, realVarPtr, false);
-        std::cout << "real param: "  << name << " " << realVar << "index: " <<  get < 1 > (*iter) << std::endl;
+       
     }
 
     //add boolean output variables to write output structure
@@ -1184,6 +1184,31 @@ void OMSUSystem::writeOutput(const IWriteOutput::OUTPUT command)
     else
     {
         write_data_t& container = _writeOutput->getFreeContainer();
+        
+        /*debug output*/
+       /* var_names_t::iterator name_iter =  _real_vars.ourputVarNames.begin();
+        boost::container::vector<const double*>::iterator values_iter =  _real_vars.outputVars.begin();
+        for(;name_iter!=_real_vars.ourputVarNames.end();++name_iter)
+        {
+                
+                cout << "vars name: " << *name_iter << " value: " << *(*values_iter) << std::endl;
+                values_iter++;
+                
+        }
+        
+        
+        var_names_t::iterator name_iter2 =  _real_vars.parameterNames.begin();
+        boost::container::vector<const double*>::iterator values_iter2 =  _real_vars.outputParams.begin();
+        for(;name_iter2!=_real_vars.parameterNames.end();++name_iter2)
+        {
+                
+                cout << "param name: " << *name_iter2 << " value: " << *(*values_iter2) << std::endl;
+                values_iter2++;
+                
+        }
+        */
+        
+        /*debug output*/
         all_vars_time_t all_vars = make_tuple(_real_vars.outputVars,
                                               _int_vars.outputVars, _bool_vars.outputVars, _simTime,
                                               _der_vars.outputVars, _res_vars.outputVars);
