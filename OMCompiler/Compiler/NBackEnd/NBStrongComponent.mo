@@ -50,6 +50,7 @@ protected
   import NBEquation.Equation;
   import NBEquation.EquationAttributes;
   import HashTableCrToCrLst = NBHashTableCrToCrLst;
+  import Matching = NBMatching;
   import Tearing = NBTearing;
 
   // Util imports
@@ -202,7 +203,7 @@ public
 
   function create
     input list<Integer> comp_indices;
-    input Causalize.Matching matching;
+    input Matching matching;
     input BVariable.VariablePointers vars;
     input BEquation.EquationPointers eqns;
     output StrongComponent comp;

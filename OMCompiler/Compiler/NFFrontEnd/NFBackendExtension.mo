@@ -185,6 +185,19 @@ public
         else "[FAIL] " + getInstanceName() + " failed.";
       end match;
     end toString;
+
+    function isTimeDependent
+      input VariableKind varKind;
+      output Boolean b;
+    algorithm
+      // ToDo: check other types!
+      b := match varKind
+        case PARAMETER()  then false;
+        case CONSTANT()   then false;
+        case START()      then false;
+        else true;
+      end match;
+    end isTimeDependent;
   end VariableKind;
 
   uniontype VariableAttributes

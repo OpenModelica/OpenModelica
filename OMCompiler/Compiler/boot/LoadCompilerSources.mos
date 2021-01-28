@@ -296,10 +296,14 @@ if true then /* Suppress output */
     "../NBackEnd/NBReplacements.mo",
     "../NBackEnd/Modules/NBModule.mo",
   // "NBackend Modules"
+    "../NBackEnd/Modules/1_Main/NBAdjacency.mo",
     "../NBackEnd/Modules/1_Main/NBCausalize.mo",
     "../NBackEnd/Modules/1_Main/NBDAEMode.mo",
+    "../NBackEnd/Modules/1_Main/NBIndexReduction.mo",
     "../NBackEnd/Modules/1_Main/NBInitialization.mo",
+    "../NBackEnd/Modules/1_Main/NBMatching.mo",
     "../NBackEnd/Modules/1_Main/NBPartitioning.mo",
+    "../NBackEnd/Modules/1_Main/NBSorting.mo",
     "../NBackEnd/Modules/2_Pre/NBDetectStates.mo",
     "../NBackEnd/Modules/2_Pre/NBEvents.mo",
     "../NBackEnd/Modules/2_Pre/NBRemoveSimpleEquations.mo",
@@ -307,6 +311,7 @@ if true then /* Suppress output */
     "../NBackEnd/Modules/3_Post/NBTearing.mo",
   // "NBackend Util"
     "../NBackEnd/Util/NBBackendUtil.mo",
+    "../NBackEnd/Util/NBGraphUtil.mo",
     "../NBackEnd/Util/NBHashTableCrToCr.mo",
     "../NBackEnd/Util/NBHashTableCrToCrEqLst.mo",
     "../NBackEnd/Util/NBHashTableCrToCrLst.mo",

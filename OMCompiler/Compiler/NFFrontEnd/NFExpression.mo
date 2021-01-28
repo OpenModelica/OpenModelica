@@ -2525,6 +2525,13 @@ public
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
 
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          exp.arguments := list(func(arg) for arg in exp.arguments);
+          exp.inv_arguments := list(func(arg) for arg in exp.inv_arguments);
+        then exp;
+
       case UNARY()
         algorithm
           e1 := func(exp.exp);
@@ -2880,6 +2887,16 @@ public
         then
           ();
 
+      case MULTARY()
+        algorithm
+          for arg in exp.arguments loop
+            apply(arg, func);
+          end for;
+          for arg in exp.inv_arguments loop
+            apply(arg, func);
+          end for;
+        then ();
+
       case UNARY() algorithm apply(exp.exp, func); then ();
 
       case LBINARY()
@@ -2993,6 +3010,16 @@ public
           func(exp.exp2);
         then
           ();
+
+      case MULTARY()
+        algorithm
+          for arg in exp.arguments loop
+            func(arg);
+          end for;
+          for arg in exp.inv_arguments loop
+            func(arg);
+          end for;
+        then ();
 
       case UNARY() algorithm func(exp.exp); then ();
 
@@ -3159,6 +3186,23 @@ public
         then
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
+
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          expl := {};
+          for argument in exp.arguments loop
+            (e1, arg) := mapFold(argument, func, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.arguments := listReverse(expl);
+          expl := {};
+          for argument in exp.inv_arguments loop
+            (e1, arg) := mapFold(argument, func, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.inv_arguments := listReverse(expl);
+        then exp;
 
       case UNARY()
         algorithm
@@ -3374,6 +3418,23 @@ public
           if referenceEq(exp.exp1, e1) and referenceEq(exp.exp2, e2)
             then exp else BINARY(e1, exp.operator, e2);
 
+      case MULTARY()
+        algorithm
+          // ToDo: referenceEq ?
+          expl := {};
+          for argument in exp.arguments loop
+            (e1, arg) := func(argument, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.arguments := listReverse(expl);
+          expl := {};
+          for argument in exp.inv_arguments loop
+            (e1, arg) := func(argument, arg);
+            expl := e1 :: expl;
+          end for;
+          exp.inv_arguments := listReverse(expl);
+        then exp;
+
       case UNARY()
         algorithm
           (e1, arg) := func(exp.exp, arg);
@@ -3564,6 +3625,18 @@ public
              contains(exp.exp, func);
 
       case BINARY() then contains(exp.exp1, func) or contains(exp.exp2, func);
+      case MULTARY()
+        algorithm
+          res := false;
+          for arg in exp.arguments loop
+            if res then break; end if;
+            res := contains(arg, func);
+          end for;
+          for arg in exp.inv_arguments loop
+            if res then break; end if;
+            res := contains(arg, func);
+          end for;
+        then res;
       case UNARY() then contains(exp.exp, func);
       case LBINARY() then contains(exp.exp1, func) or contains(exp.exp2, func);
       case LUNARY() then contains(exp.exp, func);
@@ -3652,6 +3725,18 @@ public
              func(exp.exp);
 
       case BINARY() then func(exp.exp1) or func(exp.exp2);
+      case MULTARY()
+        algorithm
+          res := false;
+          for arg in exp.arguments loop
+            if res then break; end if;
+            res := func(arg);
+          end for;
+          for arg in exp.inv_arguments loop
+            if res then break; end if;
+            res := func(arg);
+          end for;
+        then res;
       case UNARY() then func(exp.exp);
       case LBINARY() then func(exp.exp1) or func(exp.exp2);
       case LUNARY() then func(exp.exp);

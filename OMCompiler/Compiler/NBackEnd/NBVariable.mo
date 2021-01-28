@@ -180,6 +180,12 @@ public
     end match;
   end isState;
 
+  function isNonState
+    "Seems trivial but is necessary for traversal functions"
+    input Pointer<Variable> var;
+    output Boolean b = not isState(var);
+  end isNonState;
+
   function isStateDerivative
     input Pointer<Variable> var;
     output Boolean b;
@@ -846,22 +852,41 @@ public
   algorithm
     var := Pointer.access(var_ptr);
     binding := Expression.getBindingExp(Binding.getExp(var.binding));
-    b := not (Expression.isCref(binding) or Expression.isCref(Expression.negate(binding)) or Expression.isConstNumber(binding));
+    b := checkExpMap(binding, isTimeDependent);
+    b := b and (not (Expression.isCref(binding) or Expression.isCref(Expression.negate(binding))));
   end hasNonTrivialAliasBinding;
+
+  function isTimeDependent
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var_ptr)
+      local
+        Variable var;
+
+      case var as Variable.VARIABLE()
+      then BackendExtension.VariableKind.isTimeDependent(BackendExtension.BackendInfo.getVarKind(var.backendinfo));
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end isTimeDependent;
 
   // ==========================================================================
   //                        Other type wrappers
   //
   // ==========================================================================
 
+  partial function checkFunc
+    input Pointer<Variable> var;
+    output Boolean b;
+  end checkFunc;
+
   function checkExp
     input Expression exp;
     input checkFunc func;
     output Boolean b;
-    partial function checkFunc
-      input Pointer<Variable> var;
-      output Boolean b;
-    end checkFunc;
   algorithm
     b := match exp
       local
@@ -872,14 +897,27 @@ public
     end match;
   end checkExp;
 
+  function checkExpMap
+    input Expression exp;
+    input checkFunc func;
+    output Boolean b;
+    function checkExpTraverse
+      input output Expression exp;
+      input checkFunc func;
+      input output Boolean b;
+    algorithm
+      if not b then
+        b := checkExp(exp, func);
+      end if;
+    end checkExpTraverse;
+  algorithm
+    (_, b) := Expression.mapFold(exp, function checkExpTraverse(func=func), false);
+  end checkExpMap;
+
   function checkCref
     input ComponentRef cref;
     input checkFunc func;
     output Boolean b = func(getVarPointer(cref));
-    partial function checkFunc
-      input Pointer<Variable> var;
-      output Boolean b;
-    end checkFunc;
   end checkCref;
 
   // ==========================================================================

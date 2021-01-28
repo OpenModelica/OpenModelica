@@ -36,8 +36,8 @@ encapsulated package NBSystem
 "
 
 public
-  import NBCausalize.AdjacencyMatrix;
-  import NBCausalize.Matching;
+  import Adjacency = NBAdjacency;
+  import Matching = NBMatching;
   import StrongComponent = NBStrongComponent;
 
 protected
@@ -60,7 +60,7 @@ public
       VariablePointers unknowns                       "Variable array of unknowns, subset of full variable array";
       Option<VariablePointers> daeUnknowns            "Variable array of unknowns in the case of dae mode";
       EquationPointers equations                      "Equations array, subset of the full equation array";
-      Option<AdjacencyMatrix> adjacencyMatrix         "Adjacency matrix with all additional information";
+      Option<Adjacency.Matrix> adjacencyMatrix         "Adjacency matrix with all additional information";
       Option<Matching> matching                       "Matching (see 2.5)";
       Option<array<StrongComponent>> strongComponents "Strong Components";
       PartitionKind partitionKind                     "Clocked/Continuous partition kind";
@@ -92,7 +92,7 @@ public
       end match;
 
       if isSome(system.adjacencyMatrix) then
-        str := str + AdjacencyMatrix.toString(Util.getOption(system.adjacencyMatrix)) + "\n";
+        str := str + Adjacency.Matrix.toString(Util.getOption(system.adjacencyMatrix)) + "\n";
       end if;
 
       if isSome(system.matching) then

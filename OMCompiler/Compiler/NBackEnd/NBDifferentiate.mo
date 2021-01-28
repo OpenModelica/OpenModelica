@@ -546,7 +546,7 @@ public
           diffArguments.new_vars := der_ptr :: diffArguments.new_vars;
           // update algebraic variable to be a state
           var_ptr := BVariable.makeStateVar(var_ptr, der_ptr);
-      then (Expression.fromCref(BVariable.getDerCref(derCref)), diffArguments);
+      then (Expression.fromCref(derCref), diffArguments);
 
       // -------------------------------------
       //    Special rules for Type: FUNCTION
