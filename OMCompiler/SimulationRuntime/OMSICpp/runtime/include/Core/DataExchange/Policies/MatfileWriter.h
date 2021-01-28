@@ -307,35 +307,27 @@ public:
         *(doubleHelpMatrix + uiParCount) = end_time;
         doubleHelpMatrix++;
 
-
-
-        std::transform(get<0>(v_list).begin(), get<0>(v_list).end(), get<0>(neg_v_list).begin(),
-            doubleHelpMatrix, WriteOutputVar<double>());
-
-
-        // ...followed by int variable values.
-        /*for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
-
+        // ...then the other real variables
+        for (real_vars_t::const_iterator it = get<0>(v_list).begin(); it != get<0>(v_list).end(); ++it)
         {
             *doubleHelpMatrix = *(*it);
-            doubleHelpMatrix++;
-
-        }*/
-        size_t nReal = get<0>(v_list).size();
-        std::transform(get<1>(v_list).begin(), get<1>(v_list).end(), get<1>(neg_v_list).begin(),
-            doubleHelpMatrix + nReal, WriteOutputVar<int>());
-        // ...followed by bool variable values.
-        /*for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
-
-        {
-            *doubleHelpMatrix = *(*it);
+            *(doubleHelpMatrix + uiParCount) = *(*it);
             doubleHelpMatrix++;
         }
-        */
-        size_t nInt = get<1>(v_list).size();
-        std::transform(get<2>(v_list).begin(), get<2>(v_list).end(), get<2>(neg_v_list).begin(),
-            doubleHelpMatrix + nReal + nInt, WriteOutputVar<bool>());
-
+        // ...then the other int variables
+        for (int_vars_t::const_iterator it = get<1>(v_list).begin(); it != get<1>(v_list).end(); ++it)
+        {
+            *doubleHelpMatrix = *(*it);
+            *(doubleHelpMatrix + uiParCount) = *(*it);
+            doubleHelpMatrix++;
+        }
+        // ...then the other bool variables
+        for (bool_vars_t::const_iterator it = get<2>(v_list).begin(); it != get<2>(v_list).end(); ++it)
+        {
+            *doubleHelpMatrix = *(*it);
+            *(doubleHelpMatrix + uiParCount) = *(*it);
+            doubleHelpMatrix++;
+        }
 
         // if matrix is complete, write to file!
         writeMatVer4Matrix("data_1", uiParCount, 2, _doubleMatrixData1, sizeof(double));
@@ -426,7 +418,7 @@ public:
              end(); ++it)
         {
             if (it->size() > uilongestName)
-                uilongestName = it->size() + 1; // +1 because of string end
+                uilongestName = it->size() + 1;  // +1 because of string end
         }
 
         // get longest string of the variable descriptions
@@ -448,7 +440,7 @@ public:
         )
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1; // +1 because of string end
+                uilongestDesc = it->size() + 1;  // +1 because of string end
         }
 
         // get longest string of the parameter descriptions
@@ -456,13 +448,13 @@ public:
                  s_desc_parameter_list).end(); ++it)
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1; // +1 because of string end
+                uilongestDesc = it->size() + 1;  // +1 because of string end
         }
         for (var_names_t::const_iterator it = get < 1 > (s_desc_parameter_list).begin(); it != get < 1 > (
                  s_desc_parameter_list).end(); ++it)
         {
             if (it->size() > uilongestDesc)
-                uilongestDesc = it->size() + 1; // +1 because of string end
+                uilongestDesc = it->size() + 1;  // +1 because of string end
         }
         for (var_names_t::const_iterator it = get < 2 > (s_desc_parameter_list).begin(); it != get < 2 > (
                  s_desc_parameter_list).end(); ++it)
