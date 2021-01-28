@@ -2167,8 +2167,14 @@ void RenameItemDialog::renameItem()
     if (!mpLibraryTreeItem->getModelWidget()) {
       MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showModelWidget(mpLibraryTreeItem, false);
     }
-    OMSRenameCommand *pOMSRenameCommand = new OMSRenameCommand(mpLibraryTreeItem, mpNameTextBox->text());
-    mpLibraryTreeItem->getModelWidget()->getUndoStack()->push(pOMSRenameCommand);
+    if (mpLibraryTreeItem->isTopLevel()) {
+      mpLibraryTreeItem->getModelWidget()->createOMSimulatorRenameModelUndoCommand(QString("Rename %1").arg(mpLibraryTreeItem->getNameStructure()),
+                                                                                   mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text());
+    } else {
+      if (OMSProxy::instance()->rename(mpLibraryTreeItem->getNameStructure(), mpNameTextBox->text())) {
+        mpLibraryTreeItem->getModelWidget()->createOMSimulatorUndoCommand(QString("Rename %1").arg(mpLibraryTreeItem->getNameStructure()));
+      }
+    }
     mpLibraryTreeItem->getModelWidget()->updateModelText();
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica) {
     qDebug() << "Rename feature not implemented for Modelica library type.";

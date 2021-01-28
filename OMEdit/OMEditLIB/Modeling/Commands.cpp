@@ -1687,30 +1687,3 @@ void OMSimulatorUndoCommand::switchToEditedModelWidget()
   assert(pEditedLibraryTreeItem);
   pLibraryTreeModel->showModelWidget(pEditedLibraryTreeItem);
 }
-
-OMSRenameCommand::OMSRenameCommand(LibraryTreeItem *pLibraryTreeItem, QString name, UndoCommand *pParent)
-  : UndoCommand(pParent)
-{
-  mpLibraryTreeItem = pLibraryTreeItem;
-  mOldName = mpLibraryTreeItem->getName();
-  mNewName = name;
-  setText("OMS rename");
-}
-
-/*!
- * \brief OMSRenameCommand::redoInternal
- * redoInternal the OMSRenameCommand
- */
-void OMSRenameCommand::redoInternal()
-{
-  qDebug() << "OMSRenameCommand::redoInternal() not implemented.";
-}
-
-/*
- * \brief OMSRenameCommand::undo
- * Undo the OMSRenameCommand
- */
-void OMSRenameCommand::undo()
-{
-  qDebug() << "OMSRenameCommand::undo() not implemented.";
-}

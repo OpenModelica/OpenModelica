@@ -565,6 +565,7 @@ public:
   void associateBusWithConnectors(QString busName);
   QList<QVariant> toOMSensData();
   void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true);
+  void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;

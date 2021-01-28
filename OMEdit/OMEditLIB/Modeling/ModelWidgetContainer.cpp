@@ -6297,6 +6297,31 @@ void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const
 }
 
 /*!
+ * \brief ModelWidget::createOMSimulatorRenameModelUndoCommand
+ * Creates OMSimulatorUndoCommand and pushes it to the undo stack.
+ * Used only for renaming of models.
+ * \param commandText
+ * \param cref
+ * \param newCref
+ */
+void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref)
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  if (!pModelLibraryTreeItem->getModelWidget()) {
+    pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
+  }
+  QString oldSnapshot = pModelLibraryTreeItem->getClassText(pLibraryTreeModel);
+  if (OMSProxy::instance()->rename(cref, newCref)) {
+    pModelLibraryTreeItem->setName(newCref);
+    pModelLibraryTreeItem->setNameStructure(newCref);
+    QString newSnapshot;
+    OMSProxy::instance()->list(newCref, &newSnapshot);
+    mpUndoStack->push(new OMSimulatorUndoCommand(newCref, oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(), true, "OMSimulator " + commandText));
+  }
+}
+
+/*!
  * \brief ModelWidget::createUndoStack
  * Creates the undo stack.
  */

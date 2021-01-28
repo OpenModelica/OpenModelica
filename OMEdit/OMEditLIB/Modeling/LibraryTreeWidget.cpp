@@ -3125,7 +3125,6 @@ void LibraryTreeView::createActions()
   // OMSimulator rename Action
   mpOMSRenameAction = new QAction(Helper::rename, this);
   mpOMSRenameAction->setStatusTip(Helper::OMSRenameTip);
-  mpOMSRenameAction->setEnabled(false);
   connect(mpOMSRenameAction, SIGNAL(triggered()), SLOT(OMSRename()));
   // unload OMSimulator model Action
   mpUnloadOMSModelAction = new QAction(QIcon(":/Resources/icons/delete.svg"), Helper::unloadClass, this);

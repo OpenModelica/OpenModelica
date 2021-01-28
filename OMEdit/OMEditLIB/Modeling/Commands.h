@@ -423,16 +423,4 @@ private:
   void switchToEditedModelWidget();
 };
 
-class OMSRenameCommand : public UndoCommand
-{
-public:
-  OMSRenameCommand(LibraryTreeItem *pLibraryTreeItem, QString name, UndoCommand *pParent = 0);
-  void redoInternal();
-  void undo();
-private:
-  LibraryTreeItem *mpLibraryTreeItem;
-  QString mOldName;
-  QString mNewName;
-};
-
 #endif // COMMANDS_H
