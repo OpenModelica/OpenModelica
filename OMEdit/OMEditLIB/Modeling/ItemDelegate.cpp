@@ -86,11 +86,6 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   const QStyleOptionViewItemV2 *v2 = qstyleoption_cast<const QStyleOptionViewItemV2 *>(&option);
   opt.features = v2 ? v2->features : QStyleOptionViewItemV2::ViewItemFeatures(QStyleOptionViewItemV2::None);
 #endif
-  // set default highlight color to light blue
-  if ((opt.state & QStyle::State_Selected) && (opt.state & QStyle::State_Active)) {
-    opt.palette.setColor(QPalette::Highlight, QColor(205, 232, 255));
-    opt.palette.setColor(QPalette::HighlightedText, Qt::black);
-  }
   // prepare
   painter->save();
   // get the data and the rectangles
@@ -130,21 +125,6 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   }
   // do the layout
   doLayout(opt, &checkRect, &decorationRect, &displayRect, false);
-  /* We check if item belongs to QTreeView and QTreeView model is LibraryTreeProxyModel.
-   * If LibraryTreeItem is unsaved then draw its background as Qt::darkRed.
-   */
-  if (parent() && qobject_cast<QTreeView*>(parent())) {
-    QTreeView *pTreeView = qobject_cast<QTreeView*>(parent());
-    LibraryTreeProxyModel *pLibraryTreeProxyModel = qobject_cast<LibraryTreeProxyModel*>(pTreeView->model());
-    if (pLibraryTreeProxyModel) {
-      QModelIndex sourceIndex = pLibraryTreeProxyModel->mapToSource(index);
-      LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
-      if (pLibraryTreeItem && !pLibraryTreeItem->isSaved()) {
-        opt.palette.setBrush(QPalette::Highlight, Qt::darkRed);
-        opt.palette.setBrush(QPalette::HighlightedText, Qt::white);
-      }
-    }
-  }
   // draw background
   drawBackground(painter, opt, index);
   // hover
@@ -222,22 +202,6 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     if ((index.column() == 1) && (index.flags() & Qt::ItemIsEditable)) {
       /* The display rect is slightly larger than the area because it include the outer line. */
       painter->drawRect(displayRect.adjusted(0, 0, -1, -1));
-    }
-  } else if (parent() && (qobject_cast<LibraryTreeView*>(parent()))) {
-    // Draw a blue rectangle around the active LibraryTreeItem
-    LibraryTreeView *pLibraryTreeView = qobject_cast<LibraryTreeView*>(parent());
-    if (pLibraryTreeView) {
-      LibraryTreeProxyModel *pLibraryTreeProxyModel = qobject_cast<LibraryTreeProxyModel*>(pLibraryTreeView->model());
-      if (pLibraryTreeProxyModel) {
-        QModelIndex sourceIndex = pLibraryTreeProxyModel->mapToSource(index);
-        LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
-        if (pLibraryTreeItem && pLibraryTreeItem->getModelWidget() && pLibraryTreeItem->getModelWidget() == MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()) {
-          painter->save();
-          painter->setPen(Qt::blue);
-          painter->drawRect(opt.rect.adjusted(0, 0, -1, -1));
-          painter->restore();
-        }
-      }
     }
   }
   painter->restore();

@@ -763,8 +763,19 @@ QVariant LibraryTreeItem::data(int column, int role) const
         }
         case Qt::ToolTipRole:
           return getTooltip();
-        case Qt::ForegroundRole:
-          return mIsSaved ? QVariant() : QColor(Qt::darkRed);
+        case Qt::FontRole:
+          if (!mIsSaved || (mpModelWidget && mpModelWidget == MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget())) {
+            QFont font;
+            if (mpModelWidget && mpModelWidget == MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()) {
+              font.setBold(true);
+            }
+            if (!mIsSaved) {
+              font.setItalic(true);
+            }
+            return font;
+          } else {
+            return QVariant();
+          }
         default:
           return QVariant();
       }
