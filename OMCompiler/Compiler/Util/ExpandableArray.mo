@@ -220,18 +220,24 @@ end update;
 
 function toList
   input ExpandableArray<T> exarray;
-  output list<T> listT;
+  output list<T> listT = {};
 protected
   Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
+  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
   array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  T dummy;
 algorithm
   if numberOfElements == 0 then
     listT := {};
-  elseif capacity == 1 then
+  elseif lastUsedIndex == 1 then
     listT := {Util.getOption(data[1])};
   else
-    listT :=  list(Util.getOption(data[i]) for i guard isSome(data[i]) in 1:capacity);
+    for i in lastUsedIndex:-1:1 loop
+      if Util.isSome(data[i]) then
+        listT := Util.getOption(data[i]) :: listT;
+      end if;
+    end for;
+    //listT :=  list(for i guard Util.isSome(data[i]) in 1:capacity);
   end if;
 end toList;
 

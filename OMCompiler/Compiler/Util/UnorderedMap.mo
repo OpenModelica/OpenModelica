@@ -38,6 +38,7 @@ encapsulated uniontype UnorderedMap<K, V>
   import Vector;
 
 protected
+  import Error;
   import List;
   import MetaModelica.Dangerous.*;
   import Util;
@@ -243,7 +244,23 @@ public
     value := if index > 0 then SOME(Vector.getNoBounds(map.values, index)) else NONE();
   end get;
 
+  function getSafe
+    "Returns value if the given key has an associated value in the map,
+     otherwise fails."
+    input K key;
+    input UnorderedMap<K, V> map;
+    output V value;
+  algorithm
+    if contains(key, map) then
+      SOME(value) := get(key, map);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the key did not exist."});
+      fail();
+    end if;
+  end getSafe;
+
   function getKey
+
     "Returns SOME(key) if the key exists in the map, otherwise NONE()."
     input K key;
     input UnorderedMap<K, V> map;

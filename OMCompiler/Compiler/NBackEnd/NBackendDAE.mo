@@ -245,9 +245,9 @@ public
       (function Jacobian.main(systemType = NBSystem.SystemType.ODE),  "Jacobian")
     };
 
-    (bdae, preOptClocks)  := applyModules(bdae, preOptModules);
-    (bdae, mainClocks)    := applyModules(bdae, mainModules);
-    (bdae, postOptClocks) := applyModules(bdae, postOptModules);
+    (bdae, preOptClocks)  := applyModules(bdae, preOptModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
+    (bdae, mainClocks)    := applyModules(bdae, mainModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
+    (bdae, postOptClocks) := applyModules(bdae, postOptModules, ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE);
     if Flags.isSet(Flags.DUMP_BACKEND_CLOCKS) then
       if not listEmpty(preOptClocks) then
         print(StringUtil.headline_4("Pre-Opt Backend Clocks:"));
@@ -267,12 +267,13 @@ public
   function applyModules
     input output BackendDAE bdae;
     input list<tuple<Module.wrapper, String>> modules;
+    input Integer clock_idx;
     output list<tuple<String, Real>> module_clocks = {};
   protected
     Module.wrapper func;
-    String name;
-    Integer clock_idx = ClockIndexes.RT_CLOCK_NEW_BACKEND_MODULE;
+    String name, debugStr;
     Real clock_time;
+    Integer length;
   algorithm
     for module in modules loop
       (func, name) := module;
@@ -283,6 +284,11 @@ public
         clock_time := BuiltinSystem.realtimeTock(clock_idx);
         ExecStat.execStat(name);
         module_clocks := (name, clock_time) :: module_clocks;
+        if Flags.isSet(Flags.FAILTRACE) then
+          debugStr := "[failtrace] ........ [" + ClockIndexes.toString(clock_idx) + "] " + name;
+          debugStr := debugStr + StringUtil.repeat(".", 60 - stringLength(debugStr)) + " " + realString(clock_time) + "s\n";
+          print(debugStr);
+        end if;
       else
         bdae := func(bdae);
       end if;

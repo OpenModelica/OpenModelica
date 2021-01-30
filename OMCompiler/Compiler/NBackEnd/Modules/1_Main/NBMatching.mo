@@ -35,22 +35,6 @@ encapsulated uniontype NBMatching
 "
   // self import
   import Matching = NBMatching;
-
-  // NF import
-  import NFFlatten.FunctionTree;
-  import Variable = NFVariable;
-
-  // NB import
-  import Adjacency = NBAdjacency;
-  import NBEquation.Equation;
-  import NBEquation.EqData;
-  import NBEquation.EquationPointers;
-  import NBVariable.VarData;
-  import NBVariable.VariablePointers;
-  import IndexReduction = NBIndexReduction;
-
-  // Util import
-  import BackendUtil = NBBackendUtil;
   import GC;
 
   // SetBased Graph imports
@@ -64,6 +48,26 @@ encapsulated uniontype NBMatching
   import SBSet;
   import NBGraphUtil.{SetVertex, SetEdge};
 
+protected
+  // NF import
+  import NFFlatten.FunctionTree;
+  import Variable = NFVariable;
+
+  // NB import
+  import Adjacency = NBAdjacency;
+  import NBEquation.Equation;
+  import NBEquation.EqData;
+  import NBEquation.EquationPointers;
+  import Module = NBModule;
+  import BVariable = NBVariable;
+  import NBVariable.VarData;
+  import NBVariable.VariablePointers;
+  import ResolveSingularities = NBResolveSingularities;
+
+  // Util import
+  import BackendUtil = NBBackendUtil;
+
+public
   // =======================================
   //                MATCHING
   // =======================================
@@ -154,10 +158,14 @@ encapsulated uniontype NBMatching
     input output EqData eqData;
     input Boolean transposed = false        "transpose matching if true";
     input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
+  protected
+    Module.resolveSingularitiesInterface resolveFunc;
   algorithm
     matching := match adj
       local
         list<list<Integer>> marked_eqns;
+        list<Pointer<Variable>> unmatched_vars;
+        list<Pointer<Equation>> unmatched_eqns;
 
       case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX()  algorithm
         if transposed then
@@ -166,14 +174,37 @@ encapsulated uniontype NBMatching
           (matching, marked_eqns) := scalarMatching(adj.m, adj.mT, transposed, partially);
         end if;
 
-        // some equations could not be matched --> apply index reduction
-        if not listEmpty(marked_eqns) then
-          (vars, eqns, varData, eqData, funcTree) := IndexReduction.main(vars, eqns, varData, eqData, funcTree, List.unique(List.flatten(marked_eqns)));
-          // compute new adjacency matrix (ToDo: keep more of old information)
-          new_adj := Adjacency.Matrix.create(vars, eqns, NBAdjacency.MatrixType.SCALAR);
-          // restart matching with new information
-          (matching, new_adj, vars, eqns, funcTree, varData, eqData) := Matching.singular(new_adj, vars, eqns, funcTree, varData, eqData, false, true);
-        end if;
+        _ := match adj.st
+          case NBAdjacency.MatrixStrictness.INIT algorithm
+            (_, unmatched_vars, _, unmatched_eqns) := getMatches(matching, vars, eqns);
+            if Flags.isSet(Flags.INITIALIZATION) then
+              print(StringUtil.headline_1("Balance Initialization") + "\n");
+              print(if listEmpty(unmatched_eqns) then "Not overdetermined.\n" else "Stage " + intString(listLength(unmatched_eqns)) + " overdetermined. ");
+              print(if listEmpty(unmatched_vars) then "Not underdetermined.\n" else "Stage " + intString(listLength(unmatched_vars)) + " underdetermined.\n");
+              print("\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched equations:")
+                + List.toString(unmatched_eqns, Equation.pointerToString, "", "\t", ";\n\t", ";\n", false) + "\n");
+              print(StringUtil.headline_4("(" + intString(listLength(unmatched_vars)) + ") Unmatched variables:")
+                + List.toString(unmatched_vars, BVariable.pointerToString, "", "\t", ";\n\t", ";\n", false) + "\n");
+            end if;
+            // some equations or variables could not be matched --> balance initial system
+            if not (listEmpty(unmatched_vars) and listEmpty(unmatched_eqns)) then
+              (vars, eqns, varData, eqData, funcTree) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, unmatched_vars, unmatched_eqns);
+              // compute new adjacency matrix (ToDo: keep more of old information)
+              new_adj := Adjacency.Matrix.create(vars, eqns, NBAdjacency.MatrixType.SCALAR, adj.st);
+              (matching, new_adj, vars, eqns, funcTree, varData, eqData) := Matching.singular(new_adj, vars, eqns, funcTree, varData, eqData, false, true);
+            end if;
+          then ();
+
+          else algorithm
+            // some equations could not be matched --> resolve singular systems
+            if not listEmpty(marked_eqns) then
+              (vars, eqns, varData, eqData, funcTree) := ResolveSingularities.indexReduction(vars, eqns, varData, eqData, funcTree, List.unique(List.flatten(marked_eqns)));
+              // compute new adjacency matrix (ToDo: keep more of old information)
+              new_adj := Adjacency.Matrix.create(vars, eqns, NBAdjacency.MatrixType.SCALAR, adj.st);
+              (matching, new_adj, vars, eqns, funcTree, varData, eqData) := Matching.singular(new_adj, vars, eqns, funcTree, varData, eqData, false, true);
+            end if;
+          then ();
+        end match;
       then matching;
 
       case Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX() algorithm
@@ -188,7 +219,7 @@ encapsulated uniontype NBMatching
     end match;
   end singular;
 
-  function getUnmatched
+  function getMatches
     input Matching matching;
     input VariablePointers variables;
     input EquationPointers equations;
@@ -220,7 +251,7 @@ encapsulated uniontype NBMatching
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because arrays are not yet supported."});
       then fail();
     end match;
-  end getUnmatched;
+  end getMatches;
 
 protected
   function toStringSingle

@@ -103,7 +103,7 @@ public
       case (System.SystemType.ODE, BackendDAE.MAIN(ode = systems, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
           for system in systems loop
-            (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
+            (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree, NBAdjacency.MatrixStrictness.FULL);
             new_systems := new_system :: new_systems;
           end for;
           bdae.ode := listReverse(new_systems);
@@ -114,7 +114,7 @@ public
       case (System.SystemType.INI, BackendDAE.MAIN(init = systems, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
           for system in systems loop
-            (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree);
+            (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree, NBAdjacency.MatrixStrictness.INIT);
             new_systems := new_system :: new_systems;
           end for;
           bdae.init := listReverse(new_systems);
@@ -125,7 +125,7 @@ public
       case (System.SystemType.DAE, BackendDAE.MAIN(dae = SOME(systems), varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
           for system in systems loop
-            (new_system, varData, eqData, funcTree) := causalizeDAEMode(system, varData, eqData, funcTree);
+            (new_system, varData, eqData, funcTree) := causalizeDAEMode(system, varData, eqData, funcTree, NBAdjacency.MatrixStrictness.FULL);
             new_systems := new_system :: new_systems;
           end for;
           bdae.dae := SOME(listReverse(new_systems));
@@ -182,7 +182,7 @@ protected
     variables := VariablePointers.compress(system.unknowns);
     equations := EquationPointers.compress(system.equations);
 
-    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.SCALAR);
+    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.SCALAR, matrixStrictness);
     (matching, adj, variables, equations, funcTree, varData, eqData) := Matching.singular(adj, variables, equations, funcTree, varData, eqData, false, true);
     comps := Sorting.tarjan(adj, matching, variables, equations);
 
@@ -206,7 +206,7 @@ protected
     equations := EquationPointers.compress(system.equations);
 
     // create scalar adjacency matrix for now
-    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.ARRAY);
+    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.ARRAY, matrixStrictness);
     matching := Matching.regular(adj);
   end causalizeArray;
 

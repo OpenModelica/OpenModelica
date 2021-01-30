@@ -56,6 +56,7 @@ protected
   // Util imports
   import Pointer;
   import StringUtil;
+  import UnorderedMap;
 
 public
   record SINGLE_EQUATION
@@ -255,10 +256,10 @@ public
     "Collects dependent crefs in current comp and saves them in the
     HashTable. Saves both directions."
     input StrongComponent comp                    "strong component to be analyzed";
-    input output HashTableCrToCrLst.HashTable ht  "hash table to save the dependencies";
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map "unordered map to save the dependencies";
     input Boolean jacobian = true                 "true if the analysis is for jacobian sparsity pattern";
   algorithm
-    ht := match comp
+    _ := match comp
       local
         list<ComponentRef> dependencies = {}, loop_vars = {}, tmp;
         BEquation.EquationAttributes attr;
@@ -266,23 +267,24 @@ public
         Tearing strict;
 
       case SINGLE_EQUATION() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(ht = ht));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
         attr := BEquation.Equation.getAttributes(Pointer.access(comp.eqn));
         dependentVar := if jacobian then BEquation.EquationAttributes.getResidualVar(attr) else comp.var;
-      then updateDependencyHashTable(BVariable.getVarName(dependentVar), dependencies, ht);
+        updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
+      then ();
 
       case SINGLE_ARRAY() algorithm
-        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(ht = ht));
+        dependencies := Equation.collectCrefs(Pointer.access(comp.eqn), function getDependentCref(map = map));
         if jacobian then
           attr := BEquation.Equation.getAttributes(Pointer.access(comp.eqn));
           dependentVar := BEquation.EquationAttributes.getResidualVar(attr);
-          ht := updateDependencyHashTable(BVariable.getVarName(dependentVar), dependencies, ht);
+          updateDependencyMap(BVariable.getVarName(dependentVar), dependencies, map);
         else
           for var in comp.vars loop
-            ht := updateDependencyHashTable(BVariable.getVarName(var), dependencies, ht);
+            updateDependencyMap(BVariable.getVarName(var), dependencies, map);
           end for;
         end if;
-      then ht;
+      then ();
 
       case TORN_LOOP(strict = strict) algorithm
         // collect iteration loop vars
@@ -292,14 +294,14 @@ public
 
         // traverse residual equations and collect dependencies
         for eqn in strict.residual_eqns loop
-          tmp := Equation.collectCrefs(Pointer.access(eqn), function getDependentCref(ht = ht));
+          tmp := Equation.collectCrefs(Pointer.access(eqn), function getDependentCref(map = map));
           dependencies := listAppend(tmp, dependencies);
         end for;
 
         // traverse inner equations and collect loop vars and dependencies
         for i in 1:arrayLength(strict.innerEquations) loop
           // collect inner equation dependencies
-          tmp := Equation.collectCrefs(Pointer.access(strict.innerEquations[i].eqn), function getDependentCref(ht = ht));
+          tmp := Equation.collectCrefs(Pointer.access(strict.innerEquations[i].eqn), function getDependentCref(map = map));
           dependencies := listAppend(tmp, dependencies);
 
           // collect inner loop variables
@@ -310,13 +312,13 @@ public
 
         // add all dependencies
         for cref in loop_vars loop
-          ht := updateDependencyHashTable(cref, dependencies, ht);
+          updateDependencyMap(cref, dependencies, map);
         end for;
-      then ht;
+      then ();
 
       /* ToDo add the others and let else case fail! */
 
-      else ht;
+      else ();
     end match;
   end getDependentCrefs;
 
@@ -396,12 +398,12 @@ protected
   function getDependentCref
     input output ComponentRef cref          "the cref to check";
     input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
-    input HashTableCrToCrLst.HashTable ht   "hash table to check for relevance";
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map   "unordered map to check for relevance";
   protected
     list<ComponentRef> dependencies;
   algorithm
-    if BaseHashTable.hasKey(cref, ht) then
-      dependencies := BaseHashTable.get(cref, ht);
+    if UnorderedMap.contains(cref, map) then
+      dependencies := UnorderedMap.getSafe(cref, map);
       if listEmpty(dependencies) then
         // if no previous dependencies are found, it is an independent variable
         Pointer.update(acc, cref :: Pointer.access(acc));
@@ -413,18 +415,18 @@ protected
     end if;
   end getDependentCref;
 
-  function updateDependencyHashTable
+  function updateDependencyMap
     input ComponentRef cref                       "cref representing current equation";
     input list<ComponentRef> dependencies         "the dependency crefs";
-    input output HashTableCrToCrLst.HashTable ht  "hash table to save the dependencies";
+    input UnorderedMap<ComponentRef, list<ComponentRef>> map  "unordered map to save the dependencies";
   algorithm
     try
       // update the current value (res/tmp) --> {independent vars}
-      BaseHashTable.update((cref, dependencies), ht);
+      UnorderedMap.add(cref, dependencies, map);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;
-  end updateDependencyHashTable;
+  end updateDependencyMap;
 
     annotation(__OpenModelica_Interface="backend");
 end NBStrongComponent;

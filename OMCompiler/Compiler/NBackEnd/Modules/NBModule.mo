@@ -64,6 +64,7 @@ protected
   import NFFlatten.FunctionTree;
 
   // Backend imports
+  import Adjacency = NBAdjacency;
   import BEquation = NBEquation;
   import NBEquation.EqData;
   import NBEquation.EquationPointers;
@@ -120,7 +121,16 @@ public
     input output VarData varData;
     input output EqData eqData;
     input output FunctionTree funcTree;
+    input Adjacency.MatrixStrictness matrixStrictness;
   end causalizeInterface;
+
+  partial function resolveSingularitiesInterface
+    input output VariablePointers variables;
+    input output EquationPointers equations;
+    input output VarData varData;
+    input output EqData eqData;
+    input output FunctionTree funcTree;
+  end resolveSingularitiesInterface;
 
 //                               DAEMODE
 // *************************************************************************
@@ -218,10 +228,10 @@ public
       [!] This function can not only be used as an optimization module but also for
       nonlinear systems, state sets, linearization and dynamic optimization."
       input String name                                     "Name of jacobian";
-      input VariablePointers unknowns             "Variable array of unknowns";
-      input Option<VariablePointers> daeUnknowns  "Variable array of unknowns in the case of dae mode";
-      input EquationPointers equations            "Equations array";
-      input VariablePointers knowns               "Variable array of knowns";
+      input VariablePointers unknowns                       "Variable array of unknowns";
+      input Option<VariablePointers> daeUnknowns            "Variable array of unknowns in the case of dae mode";
+      input EquationPointers equations                      "Equations array";
+      input VariablePointers knowns                         "Variable array of knowns";
       input Option<array<StrongComponent>> strongComponents "Strong Components";
       output Option<Jacobian> jacobian                      "Resulting jacobian";
       input output FunctionTree funcTree                    "Function call bodies";

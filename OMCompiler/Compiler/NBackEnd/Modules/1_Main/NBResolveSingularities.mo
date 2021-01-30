@@ -28,33 +28,40 @@
 * See the full OSMC Public License conditions for more details.
 *
 */
-encapsulated package NBIndexReduction
-"file:        NBIndexReduction.mo
- package:     NBIndexReduction
+encapsulated package NBResolveSingularities
+"file:        NBResolveSingularities.mo
+ package:     NBResolveSingularities
  description: This file contains the functions to resolve structurally singular systems.
 "
+public
+  import Module = NBModule;
 
-  public
-    import BackendExtension = NFBackendExtension;
-    import ComponentRef = NFComponentRef;
-    import NFFlatten.FunctionTree;
+protected
+  // NF imports
+  import BackendExtension = NFBackendExtension;
+  import ComponentRef = NFComponentRef;
+  import NFFlatten.FunctionTree;
 
-    import Adjacency = NBAdjacency;
-    import Differentiate = NBDifferentiate;
-    import BEquation = NBEquation;
-    import NBEquation.EqData;
-    import NBEquation.Equation;
-    import NBEquation.EquationPointers;
-    import NBCausalize.Matching;
-    import NBCausalize.Sorting;
-    import BVariable = NBVariable;
-    import NBVariable.VarData;
-    import NBVariable.Variable;
-    import NBVariable.VariablePointers;
+  // NB imports
+  import Adjacency = NBAdjacency;
+  import Differentiate = NBDifferentiate;
+  import BEquation = NBEquation;
+  import NBEquation.EqData;
+  import NBEquation.Equation;
+  import NBEquation.EquationPointers;
+  import Initialization = NBInitialization;
+  import Matching = NBMatching;
+  import BVariable = NBVariable;
+  import NBVariable.VarData;
+  import NBVariable.Variable;
+  import NBVariable.VariablePointers;
 
-    import BackendUtil = NBBackendUtil;
+  // util imports
+  import BackendUtil = NBBackendUtil;
+  import UnorderedSet;
 
-  function main
+public
+  function indexReduction
     "algorithm
         1. IR
         - get unkowns and eqs from markings and arrays
@@ -92,15 +99,11 @@ encapsulated package NBIndexReduction
         - add adjacency matrix entries
         - add new variables in correct arrays
       "
-    input output VariablePointers variables;
-    input output EquationPointers equations;
-    input output VarData varData;
-    input output EqData eqData;
-    input output FunctionTree funcTree;
+  extends Module.resolveSingularitiesInterface;
     input list<Integer> marked_eqns;
   protected
     Pointer<Equation> constraint, diffed_eqn;
-    list<ComponentRef> candidates = {};
+    UnorderedSet<ComponentRef> candidates = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(marked_eqns)));
     list<Pointer<Variable>> state_candidates = {}, states, state_derivatives, dummy_states, dummy_derivatives = {};
     list<Pointer<Equation>> constraint_eqns = {}, matched_eqns, unmatched_eqns, new_eqns = {};
     Differentiate.DifferentiationArguments diffArguments;
@@ -120,12 +123,14 @@ encapsulated package NBIndexReduction
     for idx in marked_eqns loop
       constraint := ExpandableArray.get(idx, equations.eqArr);
       constraint_eqns := constraint :: constraint_eqns;
-      candidates := listAppend(BEquation.Equation.collectCrefs(Pointer.access(constraint), getStateCandidate), candidates);
+      for candidate in BEquation.Equation.collectCrefs(Pointer.access(constraint), getStateCandidate) loop
+        UnorderedSet.add(candidate, candidates);
+      end for;
     end for;
-    for cref in candidates loop
+    for cref in UnorderedSet.toList(candidates) loop
       state_candidates := BVariable.getVarPointer(cref) :: state_candidates;
     end for;
-    state_candidates := sortCandidates(List.unique(state_candidates));
+    state_candidates := sortCandidates(state_candidates);
 
     // ToDo: differ between user dumping and developer dumping
     if Flags.isSet(Flags.DUMMY_SELECT) then
@@ -178,7 +183,7 @@ encapsulated package NBIndexReduction
     end if;
 
     // parse the result of the matching
-    (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getUnmatched(set_matching, candidate_ptrs, constraint_ptrs);
+    (dummy_states, states, matched_eqns, unmatched_eqns) := Matching.getMatches(set_matching, candidate_ptrs, constraint_ptrs);
 
     if Flags.isSet(Flags.DUMMY_SELECT) then
       print(StringUtil.headline_4("(" + intString(listLength(states)) + ") Selected States"));
@@ -239,7 +244,64 @@ encapsulated package NBIndexReduction
     variables := VariablePointers.addList(dummy_states, variables);
     // add new equations (after cleanup because equation names are added there)
     equations := EquationPointers.addList(new_eqns, equations);
-  end main;
+  end indexReduction;
+
+  function balanceInitialization
+    extends Module.resolveSingularitiesInterface;
+    input list<Pointer<Variable>> unmatched_vars;
+    input list<Pointer<Equation>> unmatched_eqns;
+  protected
+    list<Pointer<Variable>> start_vars, failed_vars = {};
+    list<Pointer<Equation>> start_eqns;
+    Pointer<list<Pointer<Variable>>> ptr_start_vars = Pointer.create({});
+    Pointer<list<Pointer<BEquation.Equation>>> ptr_start_eqns = Pointer.create({});
+    Pointer<Integer> idx;
+  algorithm
+    // --------------------------------------------------------
+    //            1. Resolve Overdetermination
+    // --------------------------------------------------------
+    // ToDo: unmatched eq -> dependencies -> matched eqns -> ... until no further dependencies
+    // dependency found twice on one branch --> loop --> fail
+    // recursively replace cref with solved equations
+    // simplify equation and check for 0 = 0
+    if not listEmpty(unmatched_eqns) then
+      Error.addMessage(Error.COMPILER_WARNING, {getInstanceName()
+      + " reports an overdetermined initialization!\nChecking for consistency is not yet supported, following equations had to be removed:\n"
+      + List.toString(unmatched_eqns, Equation.pointerToString, "", "\t", ";\n\t", ";", true)});
+      eqData := EqData.removeList(unmatched_eqns, eqData);
+      equations := EquationPointers.removeList(unmatched_eqns, equations);
+    end if;
+
+    // --------------------------------------------------------
+    //            2. Resolve Underdetermination
+    // --------------------------------------------------------
+    idx := EqData.getUniqueIndex(eqData);
+    for var in unmatched_vars loop
+      if BVariable.isState(var) then
+        var := BVariable.setFixed(var);
+        Initialization.createStartEquation(var, ptr_start_vars, ptr_start_eqns, idx);
+      else
+        failed_vars := var :: failed_vars;
+      end if;
+    end for;
+
+    if listEmpty(failed_vars) then
+      start_vars := Pointer.access(ptr_start_vars);
+      start_eqns := Pointer.access(ptr_start_eqns);
+
+      // add new vars and equations to overall data
+      varData := VarData.addTypedList(varData, start_vars, NBVariable.VarData.VarType.START);
+      eqData := EqData.addTypedList(eqData, start_eqns, NBEquation.EqData.EqType.INITIAL);
+
+      // add new equations to system pointer arrays
+      equations := EquationPointers.addList(start_eqns, equations);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName()
+      + " failed because following non-state variables could not be solved:\n"
+      + List.toString(failed_vars, BVariable.pointerToString, "", "\t", ", ", "\n", true)});
+      fail();
+    end if;
+  end balanceInitialization;
 
 protected
   function getStateCandidate
@@ -291,5 +353,5 @@ protected
   end sortCandidates;
 
   annotation(__OpenModelica_Interface="backend");
-end NBIndexReduction;
+end NBResolveSingularities;
 

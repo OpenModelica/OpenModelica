@@ -50,7 +50,7 @@ public
   import NBEquation.Equation;
   import Replacements = NBReplacements;
 
-  type Status = enumeration(UNPROCESSED, EXPLICIT, IMPLICIT);
+  type Status = enumeration(UNPROCESSED, EXPLICIT, IMPLICIT, UNSOLVABLE);
 
   function solve
     input output Equation eqn;
@@ -79,7 +79,10 @@ public
       (derivative, diffArgs) := Differentiate.differentiateExpressionDump(residual, diffArgs, getInstanceName());
       derivative := SimplifyExp.simplify(derivative);
 
-      if not Expression.containsCref(derivative, cref) then
+      if Expression.isZero(derivative) then
+        invertRelation := false;
+        status := Status.UNSOLVABLE;
+      elseif not Expression.containsCref(derivative, cref) then
         // If eqn is linear in cref:
         (eqn, funcTree) := solveLinear(eqn, residual, derivative, diffArgs, cref, funcTree);
         // If the derivative is negative, invert possible inequality sign

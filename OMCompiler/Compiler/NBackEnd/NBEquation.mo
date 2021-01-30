@@ -161,6 +161,10 @@ public
       end match;
     end toString;
 
+    function pointerToString
+      input Pointer<Equation> eqn_ptr;
+      output String str = toString(Pointer.access(eqn_ptr));
+    end pointerToString;
 
     function source
       input Equation eq;
@@ -836,6 +840,16 @@ public
       b := EquationKind.isDiscrete(attr.kind);
     end isDiscrete;
 
+    function isInitial
+      input Pointer<Equation> eqn;
+      output Boolean b;
+    protected
+      EquationAttributes attr;
+    algorithm
+      attr := getAttributes(Pointer.access(eqn));
+      b := EquationKind.isInitial(attr.kind);
+    end isInitial;
+
     function isWhenEquation
       input Pointer<Equation> eqn;
       output Boolean b;
@@ -1308,6 +1322,16 @@ public
         else false;
       end match;
     end isDiscrete;
+
+    function isInitial
+      input EquationKind eqKind;
+      output Boolean b;
+    algorithm
+      b := match eqKind
+        case INITIAL_EQUATION() then true;
+        else false;
+      end match;
+    end isInitial;
   end EquationKind;
 
   uniontype EvaluationStages
@@ -1778,6 +1802,20 @@ public
       end match;
     end toString;
 
+    function getUniqueIndex
+      input EqData eqData;
+      output Pointer<Integer> uniqueIndex;
+    algorithm
+      uniqueIndex := match eqData
+        case EqData.EQ_DATA_SIM() then eqData.uniqueIndex;
+        case EqData.EQ_DATA_JAC() then eqData.uniqueIndex;
+        case EqData.EQ_DATA_HES() then eqData.uniqueIndex;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end getUniqueIndex;
+
     function setEquations
       input output EqData eqData;
       input EquationPointers equations;
@@ -1789,49 +1827,84 @@ public
       end match;
     end setEquations;
 
-  type EqType = enumeration(CONTINUOUS, DISCRETE, INITIAL);
+    type EqType = enumeration(CONTINUOUS, DISCRETE, INITIAL);
 
-  function addTypedList
-    input output EqData eqData;
-    input list<Pointer<Equation>> eq_lst;
-    input EqType eqType;
-  algorithm
-    eqData := match (eqData, eqType)
+    function addTypedList
+      input output EqData eqData;
+      input list<Pointer<Equation>> eq_lst;
+      input EqType eqType;
+    algorithm
+      eqData := match (eqData, eqType)
 
-      case (EQ_DATA_SIM(), EqType.CONTINUOUS) algorithm
-        for eqn_ptr in eq_lst loop
-          Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
-        end for;
-        eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
-        eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
-        eqData.continuous := EquationPointers.addList(eq_lst, eqData.continuous);
-      then eqData;
+        case (EQ_DATA_SIM(), EqType.CONTINUOUS) algorithm
+          for eqn_ptr in eq_lst loop
+            Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+          end for;
+          eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
+          eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
+          eqData.continuous := EquationPointers.addList(eq_lst, eqData.continuous);
+        then eqData;
 
-      case (EQ_DATA_SIM(), EqType.DISCRETE) algorithm
-        for eqn_ptr in eq_lst loop
-          Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
-        end for;
-        eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
-        eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
-        eqData.discretes := EquationPointers.addList(eq_lst, eqData.discretes);
-      then eqData;
+        case (EQ_DATA_SIM(), EqType.DISCRETE) algorithm
+          for eqn_ptr in eq_lst loop
+            Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+          end for;
+          eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
+          eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
+          eqData.discretes := EquationPointers.addList(eq_lst, eqData.discretes);
+        then eqData;
 
-      case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
-        for eqn_ptr in eq_lst loop
-          Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
-        end for;
-        eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
-        eqData.initials := EquationPointers.addList(eq_lst, eqData.initials);
-      then eqData;
+        case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
+          for eqn_ptr in eq_lst loop
+            Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+          end for;
+          eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
+          eqData.initials := EquationPointers.addList(eq_lst, eqData.initials);
+        then eqData;
 
-      // ToDo: other cases
+        // ToDo: other cases
 
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
-      then fail();
-    end match;
-  end addTypedList;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end addTypedList;
 
+    function removeList
+      input list<Pointer<Equation>> eq_lst;
+      input output EqData eqData;
+    algorithm
+      eqData := match eqData
+        case EQ_DATA_SIM() algorithm
+          eqData.equations := EquationPointers.removeList(eq_lst, eqData.equations);
+          eqData.simulation := EquationPointers.removeList(eq_lst, eqData.simulation);
+          eqData.continuous := EquationPointers.removeList(eq_lst, eqData.continuous);
+          eqData.discretes := EquationPointers.removeList(eq_lst, eqData.discretes);
+          eqData.initials := EquationPointers.removeList(eq_lst, eqData.initials);
+          eqData.auxiliaries := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
+          eqData.removed := EquationPointers.removeList(eq_lst, eqData.removed);
+        then eqData;
+
+        case EQ_DATA_JAC() algorithm
+          eqData.equations := EquationPointers.removeList(eq_lst, eqData.equations);
+          eqData.results := EquationPointers.removeList(eq_lst, eqData.results);
+          eqData.temporary := EquationPointers.removeList(eq_lst, eqData.temporary);
+          eqData.auxiliaries := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
+          eqData.removed := EquationPointers.removeList(eq_lst, eqData.removed);
+        then eqData;
+
+        case EQ_DATA_HES() algorithm
+          eqData.equations := EquationPointers.removeList(eq_lst, eqData.equations);
+          eqData.temporary := EquationPointers.removeList(eq_lst, eqData.temporary);
+          eqData.auxiliaries := EquationPointers.removeList(eq_lst, eqData.auxiliaries);
+          eqData.removed := EquationPointers.removeList(eq_lst, eqData.removed);
+        then eqData;
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+        then fail();
+      end match;
+    end removeList;
   end EqData;
 
   uniontype InnerEquation

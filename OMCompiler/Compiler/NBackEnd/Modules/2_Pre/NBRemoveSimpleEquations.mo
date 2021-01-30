@@ -217,7 +217,7 @@ protected
           // split off constant alias
           // update constant start values and add to parameters
           // otherwise they would not show in the result file
-          (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstBinding);
+          (const_vars, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasConstOrParamAliasBinding);
           const_vars := list(BVariable.setVarKind(var, BackendExtension.VariableKind.PARAMETER()) for var in const_vars);
           const_vars := list(BVariable.setBindingAsStartAndFix(var) for var in const_vars);
           varData.parameters := VariablePointers.addList(const_vars, varData.parameters);
@@ -747,7 +747,7 @@ protected
     output Integer rating;
   algorithm
     // ToDo: put acutal rating algorithm here
-    rating := 0;
+    rating := if BVariable.isFixed(var_ptr) then 1 else 0;
   end rateVar;
 
   annotation(__OpenModelica_Interface="backend");

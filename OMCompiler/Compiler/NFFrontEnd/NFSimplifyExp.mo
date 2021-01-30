@@ -804,10 +804,18 @@ protected
   Expression e, se;
   Operator op;
 algorithm
-  Expression.UNARY(op, e) := unaryExp;
-  se := simplify(e);
+  unaryExp := match unaryExp
+    case Expression.UNARY(_, Expression.UNARY(_, e))
+    then simplify(e);
 
-  unaryExp := simplifyUnaryOp(se, op);
+    case Expression.UNARY(op, e) algorithm
+      se := simplify(e);
+    then simplifyUnaryOp(se, op);
+
+    else algorithm
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+    then fail();
+  end match;
 
   if Flags.isSet(Flags.NF_EXPAND_OPERATIONS) and not Expression.hasArrayCall(unaryExp) then
     unaryExp := ExpandExp.expand(unaryExp);

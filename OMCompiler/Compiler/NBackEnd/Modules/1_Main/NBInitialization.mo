@@ -45,6 +45,8 @@ protected
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
+  import NBEquation.Equation;
+  import NBEquation.EquationPointers;
   import BVariable = NBVariable;
   import Causalize = NBCausalize;
   import Jacobian = NBJacobian;
@@ -53,11 +55,17 @@ protected
   import System = NBSystem;
   import Tearing = NBTearing;
 
+  // Util imports
+  import ClockIndexes;
+  import DoubleEnded;
+
 public
   function main extends Module.wrapper;
   protected
     BVariable.VariablePointers variables, initialVars;
     BEquation.EquationPointers equations, initialEqs;
+    list<tuple<Module.wrapper, String>> modules;
+    list<tuple<String, Real>> clocks;
   algorithm
     try
       bdae := match bdae
@@ -74,7 +82,7 @@ public
 
             varData.variables := variables;
             varData.initials := initialVars;
-            eqData.equations := equations;
+            eqData.equations := sortInit(equations);
             eqData.initials := initialEqs;
 
             bdae.varData := varData;
@@ -87,15 +95,23 @@ public
       end match;
 
       // Modules
-      bdae := Partitioning.main(bdae, NBSystem.SystemType.INI);
-      bdae := Causalize.main(bdae, NBSystem.SystemType.INI);
-      bdae := Tearing.main(bdae, NBSystem.SystemType.INI);
+      modules := {
+        (function Partitioning.main(systemType = NBSystem.SystemType.INI),  "Partitioning"),
+        (function Causalize.main(systemType = NBSystem.SystemType.INI),     "Causalize"),
+        (function Tearing.main(systemType = NBSystem.SystemType.INI),       "Tearing")
+      };
+      (bdae, clocks) := BackendDAE.applyModules(bdae, modules, ClockIndexes.RT_CLOCK_NEW_BACKEND_INITIALIZATION);
+      if Flags.isSet(Flags.DUMP_BACKEND_CLOCKS) then
+        if not listEmpty(clocks) then
+          print(StringUtil.headline_4("Initialization Backend Clocks:"));
+          print(stringDelimitList(list(Module.moduleClockString(clck) for clck in clocks), "\n") + "\n");
+        end if;
+      end if;
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed!"});
     end try;
   end main;
 
-protected
   function createStartEquations
     "Creates start equations from fixed start values.
      kabdelhak: currently does not check for consistency!"
@@ -205,6 +221,22 @@ protected
     initialEqs := BEquation.EquationPointers.addList(parameter_eqs, initialEqs);
     initialVars := BVariable.VariablePointers.addList(initial_param_vars, initialVars);
   end createParameterEquations;
+
+  function sortInit
+    "sorts initial equations to be at the start of the array"
+    input output EquationPointers equations;
+  protected
+    DoubleEnded.MutableList<Pointer<Equation>> eqns = DoubleEnded.empty(Pointer.create(Equation.DUMMY_EQUATION()));
+  algorithm
+    for eqn in EquationPointers.toList(equations) loop
+      if Equation.isInitial(eqn) then
+        DoubleEnded.push_front(eqns, eqn);
+      else
+        DoubleEnded.push_back(eqns, eqn);
+      end if;
+    end for;
+    equations := EquationPointers.fromList(DoubleEnded.toListAndClear(eqns));
+  end sortInit;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;

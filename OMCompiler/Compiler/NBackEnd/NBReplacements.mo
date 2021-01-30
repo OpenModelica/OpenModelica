@@ -52,6 +52,7 @@ protected
   import HashSet = NFHashSet;
   import HashTableCrToExp = NFHashTableCrToExp;
   import HashTableCrToLst = NFHashTable3;
+  import SimplifyExp = NFSimplifyExp;
   import Variable = NFVariable;
 
   // Backend imports
@@ -121,7 +122,7 @@ public
           replace_exp := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           // add the new replacement rule
-          replacements := BaseHashTable.add((varName, replace_exp), replacements);
+          replacements := BaseHashTable.add((varName, SimplifyExp.simplify(replace_exp)), replacements);
         else
           fail();
         end if;

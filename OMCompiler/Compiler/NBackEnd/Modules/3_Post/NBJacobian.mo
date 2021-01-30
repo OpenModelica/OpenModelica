@@ -64,6 +64,7 @@ protected
   // Util imports
   import AvlSetPath;
   import StringUtil;
+  import UnorderedMap;
   import Util;
 
 public
@@ -333,6 +334,9 @@ public
       end if;
     end toString;
 
+    // necessary as wrapping value type for UnorderedMap
+    type CrefLst = list<ComponentRef>;
+
     function create
       input VariablePointers independentVars;
       input VariablePointers residualVars;
@@ -345,7 +349,7 @@ public
         local
           array<StrongComponent> comps;
           list<ComponentRef> independent_vars, residual_vars, tmp;
-          HashTableCrToCrLst.HashTable ht;
+          UnorderedMap<ComponentRef, list<ComponentRef>> map;
           list<SparsityPatternCol> cols = {};
           list<SparsityPatternRow> rows = {};
           Integer nnz = 0;
@@ -358,35 +362,36 @@ public
           residual_vars := VariablePointers.getVarNames(residualVars);
           independent_vars := VariablePointers.getVarNames(independentVars);
 
-          // create a sufficiant big hash table
-          ht := HashTableCrToCrLst.empty(listLength(independent_vars) + listLength(residual_vars));
+          // create a sufficiant big unordered map
+          map := UnorderedMap.new<CrefLst>(ComponentRef.hash, ComponentRef.isEqual, Util.nextPrime(listLength(independent_vars) + listLength(residual_vars)));
 
           // save all relevant crefs to know later on if a cref should be added
-          for var in independent_vars loop
-            ht := BaseHashTable.add((var, {}), ht);
+          for cref in independent_vars loop
+            UnorderedMap.add(cref, {}, map);
           end for;
-          for var in residual_vars loop
-            ht := BaseHashTable.add((var, {}), ht);
+          for cref in residual_vars loop
+            UnorderedMap.add(cref, {}, map);
           end for;
 
           // traverse all components and save cref dependencies (only column-wise)
           for i in 1:arrayLength(comps) loop
-            ht := StrongComponent.getDependentCrefs(comps[i], ht);
+            StrongComponent.getDependentCrefs(comps[i], map);
           end for;
 
           // create row-wise sparsity pattern
           for cref in residual_vars loop
-            tmp := List.unique(BaseHashTable.get(cref, ht));
+            tmp := List.uniqueOnTrue(UnorderedMap.getSafe(cref, map), ComponentRef.isEqual);
             rows := (cref, tmp) :: rows;
             for dep in tmp loop
               // also add inverse dependency (indep var) --> (res/tmp) :: rest
-              BaseHashTable.update((dep, cref :: BaseHashTable.get(dep, ht)), ht);
+              UnorderedMap.add(dep, cref :: UnorderedMap.getSafe(dep, map), map);
             end for;
           end for;
 
           // create column-wise sparsity pattern
           for cref in independent_vars loop
-            cols := (cref, List.unique(BaseHashTable.get(cref, ht))) :: cols;
+            tmp := List.uniqueOnTrue(UnorderedMap.getSafe(cref, map), ComponentRef.isEqual);
+            cols := (cref, tmp) :: cols;
           end for;
 
           // find number of nonzero elements
@@ -436,6 +441,7 @@ protected
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
     Pointer<HashTableCrToCr.HashTable> jacobianHT = Pointer.create(HashTableCrToCr.empty());
+    Option<HashTableCrToCr.HashTable> optHT;
     Differentiate.DifferentiationArguments diffArguments;
 
     list<Pointer<Equation>> eqn_lst, diffed_eqn_lst;
@@ -448,6 +454,7 @@ protected
     BVariable.VarData varDataJac;
     SparsityPattern sparsityPattern;
     SparsityColoring sparsityColoring;
+
   algorithm
     // ToDo: apply tearing to split residual/inner variables and equations
     // add inner / tmp cref tuples to HT
@@ -457,11 +464,13 @@ protected
     VariablePointers.mapPtr(seedCandidates, function makeVarTraverse(name = name, vars_ptr = seed_vars_ptr, ht = jacobianHT, makeVar = BVariable.makeSeedVar));
     VariablePointers.mapPtr(partialCandidates, function makeVarTraverse(name = name, vars_ptr = pDer_vars_ptr, ht = jacobianHT, makeVar = BVariable.makePDerVar));
 
+    optHT := SOME(Pointer.access(jacobianHT));
+
     // Build differentiation argument structure
     diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
       diffCref        = ComponentRef.EMPTY(),             // no explicit cref necessary, rules are set by HT
       new_vars        = {},
-      jacobianHT      = SOME(Pointer.access(jacobianHT)), // seed and temporary cref hashtable
+      jacobianHT      = optHT, // seed and temporary cref hashtable
       diffType        = NBDifferentiate.DifferentiationType.JACOBIAN,
       funcTree        = funcTree,
       diffedFunctions = AvlSetPath.new()
@@ -512,7 +521,8 @@ protected
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(Util.getOption(daeUnknowns), unknowns, equations, strongComponents);
     else
       //EquationPointers.map(equations, function BEquation.Equation.createResidual(context = "SIM", residual_vars = residual_vars_ptr, idx = idx));
-      residual_vars := list(Equation.getResidualVar(eqn) for eqn in EquationPointers.toList(equations));
+      eqn_lst := EquationPointers.toList(equations);
+      residual_vars := list(Equation.getResidualVar(eqn) for eqn in eqn_lst);
       residuals := VariablePointers.fromList(listReverse(residual_vars));
       (sparsityPattern, sparsityColoring) := SparsityPattern.create(unknowns, residuals, equations, strongComponents);
       // safe residuals somewhere?

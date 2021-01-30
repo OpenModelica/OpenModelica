@@ -106,6 +106,11 @@ public
     str := VariableKind.toString(var.backendinfo.varKind) + " " + Variable.toString(var) + (if str == "" then "" else " " + str);
   end toString;
 
+  function pointerToString
+    input Pointer<Variable> var_ptr;
+    output String str = toString(Pointer.access(var_ptr));
+  end pointerToString;
+
   function fromCref
     input ComponentRef cref;
     output Variable variable;
@@ -814,6 +819,30 @@ public
     b := Expression.isConstNumber(Expression.getBindingExp(Binding.getExp(var.binding)));
   end hasConstBinding;
 
+  function setFixed
+    input output Pointer<Variable> var_ptr;
+    input Boolean b = true;
+  protected
+    Variable var;
+  algorithm
+    var := Pointer.access(var_ptr);
+    var:= match var
+      local
+        BackendExtension.BackendInfo binfo;
+        Expression start;
+
+      case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
+        binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes, b);
+        var.backendinfo := binfo;
+      then var;
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of wrong binding."});
+      then fail();
+    end match;
+    Pointer.update(var_ptr, var);
+  end setFixed;
+
   function setBindingAsStartAndFix
     "use this if a binding is found out to be constant, remove variable to known vars (param/const)
     NOTE: this overwrites the old start value. throw error/warning if different?"
@@ -855,6 +884,18 @@ public
     b := checkExpMap(binding, isTimeDependent);
     b := b and (not (Expression.isCref(binding) or Expression.isCref(Expression.negate(binding))));
   end hasNonTrivialAliasBinding;
+
+  function hasConstOrParamAliasBinding
+    input Pointer<Variable> var_ptr;
+    output Boolean b;
+  protected
+    Variable var;
+    Expression binding;
+  algorithm
+    var := Pointer.access(var_ptr);
+    binding := Expression.getBindingExp(Binding.getExp(var.binding));
+    b := not checkExpMap(binding, isTimeDependent);
+  end hasConstOrParamAliasBinding;
 
   function isTimeDependent
     input Pointer<Variable> var_ptr;
@@ -1415,7 +1456,7 @@ public
     end setVariables;
 
     // used to add specific types. Fill up with Jacobian/Hessian types
-    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS);
+    type VarType = enumeration(STATE, STATE_DER, ALGEBRAIC, DISCRETE, DISC_STATE, PREVIOUS, START);
 
     function addTypedList
       input output VarData varData;
@@ -1444,6 +1485,11 @@ public
           varData.variables := VariablePointers.addList(var_lst, varData.variables);
           varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
           varData.algebraics := VariablePointers.addList(var_lst, varData.algebraics);
+        then varData;
+
+        // algebraic variables, dummy states and dummy derivatives are mathematically equal
+        case (VAR_DATA_SIM(), VarType.START) algorithm
+          varData.variables := VariablePointers.addList(var_lst, varData.variables);
         then varData;
 
         // ToDo: other cases
