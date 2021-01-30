@@ -177,9 +177,9 @@ public
         _ := match adj.st
           case NBAdjacency.MatrixStrictness.INIT algorithm
             (_, unmatched_vars, _, unmatched_eqns) := getMatches(matching, vars, eqns);
-            if Flags.isSet(Flags.INITIALIZATION) then
+            if Flags.isSet(Flags.INITIALIZATION) and partially then
               print(StringUtil.headline_1("Balance Initialization") + "\n");
-              print(if listEmpty(unmatched_eqns) then "Not overdetermined.\n" else "Stage " + intString(listLength(unmatched_eqns)) + " overdetermined. ");
+              print(if listEmpty(unmatched_eqns) then "Not overdetermined.\n" else "Stage " + intString(listLength(unmatched_eqns)) + " overdetermined.\n");
               print(if listEmpty(unmatched_vars) then "Not underdetermined.\n" else "Stage " + intString(listLength(unmatched_vars)) + " underdetermined.\n");
               print("\n" + StringUtil.headline_4("(" + intString(listLength(unmatched_eqns)) + ") Unmatched equations:")
                 + List.toString(unmatched_eqns, Equation.pointerToString, "", "\t", ";\n\t", ";\n", false) + "\n");
@@ -191,7 +191,7 @@ public
               (vars, eqns, varData, eqData, funcTree) := ResolveSingularities.balanceInitialization(vars, eqns, varData, eqData, funcTree, unmatched_vars, unmatched_eqns);
               // compute new adjacency matrix (ToDo: keep more of old information)
               new_adj := Adjacency.Matrix.create(vars, eqns, NBAdjacency.MatrixType.SCALAR, adj.st);
-              (matching, new_adj, vars, eqns, funcTree, varData, eqData) := Matching.singular(new_adj, vars, eqns, funcTree, varData, eqData, false, true);
+              (matching, new_adj, vars, eqns, funcTree, varData, eqData) := Matching.singular(new_adj, vars, eqns, funcTree, varData, eqData, false);
             end if;
           then ();
 

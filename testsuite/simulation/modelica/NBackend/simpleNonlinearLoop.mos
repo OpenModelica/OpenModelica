@@ -68,6 +68,106 @@ simulate(simpleNonlinearLoop); getErrorString();
 // 	eqn 2 --> var 1
 //
 //
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// UNKNOWN ODE System
+// ========================================
+//
+// BLOCK 1: Algebraic Loop (Mixed = false)
+// ----------------------------------------
+// ### Variables:
+// 	Real x
+// 	Real y
+//
+// ### Equations:
+// 	[SCAL] ($RES_SIM_0) y = sin(x)
+// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 1
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 2
+// 	eqn 2 --> var 1
+//
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// UNKNOWN INI System
+// ========================================
+//
+// BLOCK 1: Algebraic Loop (Mixed = false)
+// ----------------------------------------
+// ### Variables:
+// 	Real x
+// 	Real y
+//
+// ### Equations:
+// 	[SCAL] ($RES_SIM_0) y = sin(x)
+// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{1, 2}
+// 	(2)	{1, 2}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1, 2}
+// 	(2)	{1, 2}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+//
+//
 // record SimulationResult
 //     resultFile = "simpleNonlinearLoop_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simpleNonlinearLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",

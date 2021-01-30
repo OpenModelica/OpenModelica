@@ -167,6 +167,260 @@ val(x3, 0.53);
 // 	[DISC] Boolean $SEV_1 = z <= 1.0
 // 	[DISC] Boolean $SEV_0 = z > 0.5
 //
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// UNKNOWN ODE System
+// ========================================
+//
+// BLOCK 1: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $TEV_1
+// ### Equation:	[SCAL] ($RES_EVT_6) $TEV_1 = sample(2, t, 4.611686018427388e+18)
+//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x1
+// ### Equation:	[WHEN] when $TEV_1 then
+// 	[----]   x1 := $PRE.x1 + 1.0
+// 	[----] end when;
+//
+// BLOCK 3: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $TEV_0
+// ### Equation:	[SCAL] ($RES_EVT_5) $TEV_0 = sample(1, 0.1, t)
+//
+// BLOCK 4: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x2
+// ### Equation:	[WHEN] when $TEV_0 then
+// 	[----]   x2 := $PRE.x2 + 0.5
+// 	[----] end when;
+//
+// BLOCK 5: Single Equation
+// ----------------------------------------
+// ### Variable:	Real z
+// ### Equation:	[SCAL] ($RES_SIM_1) z = sin(time)
+//
+// BLOCK 6: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $SEV_0
+// ### Equation:	[SCAL] ($RES_EVT_8) $SEV_0 = z > 0.5
+//
+// BLOCK 7: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x3
+// ### Equation:	[WHEN] when $SEV_0 then
+// 	[----]   x3 := $PRE.x3 + 2.0
+// 	[----] end when;
+//
+// BLOCK 8: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $SEV_1
+// ### Equation:	[SCAL] ($RES_EVT_7) $SEV_1 = z <= 1.0
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{7, 1}
+// 	(2)	{8, 2}
+// 	(3)	{4}
+// 	(4)	{5, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6, 4}
+// 	(7)	{7}
+// 	(8)	{8}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{1}
+// 	(2)	{2}
+// 	(3)	{4}
+// 	(4)	{6, 5, 3}
+// 	(5)	{5, 4}
+// 	(6)	{6}
+// 	(7)	{7, 1}
+// 	(8)	{8, 2}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 1
+// 	var 2 --> eqn 2
+// 	var 3 --> eqn 4
+// 	var 4 --> eqn 3
+// 	var 5 --> eqn 5
+// 	var 6 --> eqn 6
+// 	var 7 --> eqn 7
+// 	var 8 --> eqn 8
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 1
+// 	eqn 2 --> var 2
+// 	eqn 3 --> var 4
+// 	eqn 4 --> var 3
+// 	eqn 5 --> var 5
+// 	eqn 6 --> var 6
+// 	eqn 7 --> var 7
+// 	eqn 8 --> var 8
+//
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// UNKNOWN INI System
+// ========================================
+//
+// BLOCK 1: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x1
+// ### Equation:	[SIMP] ($RES_SRT_9) x1 = $START.x1
+//
+// BLOCK 2: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x2
+// ### Equation:	[SIMP] ($RES_SRT_10) x2 = $START.x2
+//
+// BLOCK 3: Single Equation
+// ----------------------------------------
+// ### Variable:	Real x3
+// ### Equation:	[SIMP] ($RES_SRT_11) x3 = $START.x3
+//
+// BLOCK 4: Single Equation
+// ----------------------------------------
+// ### Variable:	Real z
+// ### Equation:	[SCAL] ($RES_SIM_1) z = sin(time)
+//
+// BLOCK 5: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $SEV_0
+// ### Equation:	[SCAL] ($RES_EVT_8) $SEV_0 = z > 0.5
+//
+// BLOCK 6: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $SEV_1
+// ### Equation:	[SCAL] ($RES_EVT_7) $SEV_1 = z <= 1.0
+//
+// BLOCK 7: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $TEV_1
+// ### Equation:	[SCAL] ($RES_EVT_6) $TEV_1 = sample(2, t, 4.611686018427388e+18)
+//
+// BLOCK 8: Single Equation
+// ----------------------------------------
+// ### Variable:	Boolean $TEV_0
+// ### Equation:	[SCAL] ($RES_EVT_5) $TEV_0 = sample(1, 0.1, t)
+//
+// BLOCK 9: Single Equation
+// ----------------------------------------
+// ### Variable:	Real $PRE.x3
+// ### Equation:	[SIMP] ($RES_PRE_12) $PRE.x3 = x3
+//
+// BLOCK 10: Single Equation
+// ----------------------------------------
+// ### Variable:	Real $PRE.x2
+// ### Equation:	[SIMP] ($RES_PRE_13) $PRE.x2 = x2
+//
+// BLOCK 11: Single Equation
+// ----------------------------------------
+// ### Variable:	Real $PRE.x1
+// ### Equation:	[SIMP] ($RES_PRE_14) $PRE.x1 = x1
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{3, 9}
+// 	(2)	{2, 10}
+// 	(3)	{1, 11}
+// 	(4)	{1}
+// 	(5)	{2}
+// 	(6)	{3}
+// 	(7)	{8}
+// 	(8)	{4}
+// 	(9)	{7}
+// 	(10)	{4, 6}
+// 	(11)	{4, 5}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{3, 4}
+// 	(2)	{2, 5}
+// 	(3)	{1, 6}
+// 	(4)	{8, 10, 11}
+// 	(5)	{11}
+// 	(6)	{10}
+// 	(7)	{9}
+// 	(8)	{7}
+// 	(9)	{1}
+// 	(10)	{2}
+// 	(11)	{3}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 4
+// 	var 2 --> eqn 5
+// 	var 3 --> eqn 6
+// 	var 4 --> eqn 8
+// 	var 5 --> eqn 11
+// 	var 6 --> eqn 10
+// 	var 7 --> eqn 9
+// 	var 8 --> eqn 7
+// 	var 9 --> eqn 1
+// 	var 10 --> eqn 2
+// 	var 11 --> eqn 3
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 9
+// 	eqn 2 --> var 10
+// 	eqn 3 --> var 11
+// 	eqn 4 --> var 1
+// 	eqn 5 --> var 2
+// 	eqn 6 --> var 3
+// 	eqn 7 --> var 8
+// 	eqn 8 --> var 4
+// 	eqn 9 --> var 7
+// 	eqn 10 --> var 6
+// 	eqn 11 --> var 5
+//
+//
+// ========================================
+// Event Info
+// ========================================
+//
+// Time Events
+// ****************************************
+// 	(2) time > t
+// 	(1) sample(0.1, t)
+// State Events
+// ****************************************
+// 	[DISC] Boolean $SEV_1 = z <= 1.0
+// 	[DISC] Boolean $SEV_0 = z > 0.5
+//
 // record SimulationResult
 //     resultFile = "eventSystem_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'eventSystem', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
