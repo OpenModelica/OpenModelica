@@ -232,12 +232,7 @@ algorithm
   elseif lastUsedIndex == 1 then
     listT := {Util.getOption(data[1])};
   else
-    for i in lastUsedIndex:-1:1 loop
-      if Util.isSome(data[i]) then
-        listT := Util.getOption(data[i]) :: listT;
-      end if;
-    end for;
-    //listT :=  list(for i guard Util.isSome(data[i]) in 1:capacity);
+    listT :=  list(Util.getOption(data[i]) for i guard Util.isSome(data[i]) in 1:lastUsedIndex);
   end if;
 end toList;
 
