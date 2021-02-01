@@ -156,7 +156,10 @@ Individual Sensitivity Analysis
 """""""""""""""""""""""""""""""
 
 -  Select *Sensitivity Optimization > Run Sensitivity Analysis and Optimization* from the menu.
-   A window like the one below should appear.
+   A window like the one below should appear. Windows users should use the default python executable
+   that comes with OpenModelica installation i.e., they don't need to change the proposed python
+   executable path. If you want to use some other python installation then make sure that all the
+   python dependencies are installed for that python installation.
 
 .. figure :: media/omsens-window.png
 
