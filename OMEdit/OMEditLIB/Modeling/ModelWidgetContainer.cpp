@@ -8263,15 +8263,20 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     MainWindow::instance()->getUndoAction()->setEnabled(false);
     MainWindow::instance()->getRedoAction()->setEnabled(false);
   }
-  /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
-   * Provided that the Documentation Browser is already visible.
-   */
   if (!pSubWindow || mpLastActiveSubWindow == pSubWindow) {
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
+   * Provided that the Documentation Browser is already visible.
+   */
   if (pModelWidget && pModelWidget->getLibraryTreeItem() && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(pModelWidget->getLibraryTreeItem());
+  }
+  // Update the LibraryTreeView to mark the active model
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->viewport()->update();
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked()) {
+    MainWindow::instance()->getLibraryWidget()->scrollToActiveLibraryTreeItem();
   }
 }
 

@@ -231,6 +231,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("showHiddenClasses")) {
     mpGeneralSettingsPage->setShowHiddenClasses(mpSettings->value("showHiddenClasses").toBool());
   }
+  // read synchronize with ModelWidget
+  if (mpSettings->contains("synchronizeWithModelWidget")) {
+    mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->setChecked(mpSettings->value("synchronizeWithModelWidget").toBool());
+  }
   // read auto save
   if (mpSettings->contains("autoSave/enable")) {
     mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->setChecked(mpSettings->value("autoSave/enable").toBool());
@@ -1044,6 +1048,9 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("showHiddenClasses", mpGeneralSettingsPage->getShowHiddenClasses());
   // show/hide the protected classes
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
+  // save synchronize with ModelWidget
+  mpSettings->setValue("synchronizeWithModelWidget", mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->isChecked());
+  MainWindow::instance()->getLibraryWidget()->getTreeSearchFilters()->getScrollToActiveButton()->setVisible(!mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->isChecked());
   // save auto save
   mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
   mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
@@ -1956,6 +1963,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
   // show hidden classes
   mpShowHiddenClasses = new QCheckBox(tr("Show Hidden Classes (Ignores the annotation(Protection(access = Access.hide)))"));
+  // synchronize Libraries Browser with ModelWidget
+  mpSynchronizeWithModelWidgetCheckBox = new QCheckBox(tr("Synchronize with Model Widget"));
+  mpSynchronizeWithModelWidgetCheckBox->setChecked(true);
   // Libraries Browser group box layout
   QGridLayout *pLibrariesBrowserLayout = new QGridLayout;
   pLibrariesBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1966,6 +1976,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pLibrariesBrowserLayout->addWidget(mpLibraryIconTextLengthSpinBox, 1, 1);
   pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 2, 0, 1, 2);
   pLibrariesBrowserLayout->addWidget(mpShowHiddenClasses, 3, 0, 1, 2);
+  pLibrariesBrowserLayout->addWidget(mpSynchronizeWithModelWidgetCheckBox, 4, 0, 1, 2);
   mpLibrariesBrowserGroupBox->setLayout(pLibrariesBrowserLayout);
   // Auto Save
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));

@@ -1048,6 +1048,9 @@ General
   -  *Show Hidden Classes* – If enabled then Libraries Browser will also list the hidden classes.
      Ignores the annotation(Protection(access = Access.hide))
 
+  -  *Synchronize with Model Widget* – If enabled then Libraries Browser will scroll automatically
+     to the active Model Widget i.e., the current model.
+
 -  Enable Auto Save - Enables/disables the auto save feature.
 
 -  *Auto Save interval* – Sets the auto save interval value. The minimum

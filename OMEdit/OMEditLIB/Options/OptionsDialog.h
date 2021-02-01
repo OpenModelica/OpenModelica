@@ -241,6 +241,7 @@ public:
   bool getShowProtectedClasses() {return mpShowProtectedClasses->isChecked();}
   void setShowHiddenClasses(bool value) {mpShowHiddenClasses->setChecked(value);}
   bool getShowHiddenClasses() {return mpShowHiddenClasses->isChecked();}
+  QCheckBox* getSynchronizeWithModelWidgetCheckBox() {return mpSynchronizeWithModelWidgetCheckBox;}
   QGroupBox* getEnableAutoSaveGroupBox() {return mpEnableAutoSaveGroupBox;}
   QSpinBox* getAutoSaveIntervalSpinBox() {return mpAutoSaveIntervalSpinBox;}
   int getWelcomePageView();
@@ -276,6 +277,7 @@ private:
   QSpinBox *mpLibraryIconTextLengthSpinBox;
   QCheckBox *mpShowProtectedClasses;
   QCheckBox *mpShowHiddenClasses;
+  QCheckBox *mpSynchronizeWithModelWidgetCheckBox;
   QGroupBox *mpEnableAutoSaveGroupBox;
   Label *mpAutoSaveIntervalLabel;
   QSpinBox *mpAutoSaveIntervalSpinBox;

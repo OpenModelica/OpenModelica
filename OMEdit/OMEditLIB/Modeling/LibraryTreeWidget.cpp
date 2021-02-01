@@ -763,8 +763,19 @@ QVariant LibraryTreeItem::data(int column, int role) const
         }
         case Qt::ToolTipRole:
           return getTooltip();
-        case Qt::ForegroundRole:
-          return mIsSaved ? QVariant() : QColor(Qt::darkRed);
+        case Qt::FontRole:
+          if (!mIsSaved || (mpModelWidget && mpModelWidget == MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget())) {
+            QFont font;
+            if (mpModelWidget && mpModelWidget == MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget()) {
+              font.setBold(true);
+            }
+            if (!mIsSaved) {
+              font.setItalic(true);
+            }
+            return font;
+          } else {
+            return QVariant();
+          }
         default:
           return QVariant();
       }
@@ -4034,6 +4045,8 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
   mpTreeSearchFilters->getExpandAllButton()->hide();
   mpTreeSearchFilters->getCollapseAllButton()->hide();
+  mpTreeSearchFilters->getScrollToActiveButton()->setVisible(!OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked());
+  connect(mpTreeSearchFilters->getScrollToActiveButton(), SIGNAL(clicked()), SLOT(scrollToActiveLibraryTreeItem()));
   // create tree view
   mpLibraryTreeModel = new LibraryTreeModel(this);
   mpLibraryTreeProxyModel = new LibraryTreeProxyModel(this, false);
@@ -4050,7 +4063,7 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   pMainLayout->setContentsMargins(0, 0, 0, 0);
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpTreeSearchFilters, 0, 0);
-  pMainLayout->addWidget(mpLibraryTreeView, 1, 0);
+  pMainLayout->addWidget(mpLibraryTreeView, 2, 0);
   setLayout(pMainLayout);
 }
 
@@ -5194,6 +5207,20 @@ bool LibraryWidget::saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTree
   // save the model through OMC
   result = MainWindow::instance()->getOMCProxy()->saveTotalModel(fileName, pLibraryTreeItem->getNameStructure());
   return result;
+}
+
+/*!
+ * \brief LibraryWidget::scrollToActiveLibraryTreeItem
+ * Makes sure that active LibraryTreeItem is visible. Scrolls to active LibraryTreeItem.
+ */
+void LibraryWidget::scrollToActiveLibraryTreeItem()
+{
+  ModelWidget *pModelWidget = MainWindow::instance()->getModelWidgetContainer()->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+    QModelIndex modelIndex = mpLibraryTreeModel->libraryTreeItemIndex(pModelWidget->getLibraryTreeItem());
+    QModelIndex proxyIndex = mpLibraryTreeProxyModel->mapFromSource(modelIndex);
+    mpLibraryTreeView->scrollTo(proxyIndex);
+  }
 }
 
 /*!

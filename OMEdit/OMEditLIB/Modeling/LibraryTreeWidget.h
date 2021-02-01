@@ -509,6 +509,7 @@ private:
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
+  void scrollToActiveLibraryTreeItem();
   void searchClasses();
 };
 
