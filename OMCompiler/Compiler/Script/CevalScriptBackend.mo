@@ -3297,34 +3297,32 @@ protected function runFrontEndWork
   output String flatString = "";
 protected
   Integer numError = Error.getNumErrorMessages();
+  Absyn.Restriction restriction;
+  Absyn.Program p = SymbolTable.getAbsyn();
 algorithm
+  try
+    Absyn.CLASS(restriction = restriction) := Interactive.getPathedClassInProgram(className, p, true);
+  else
+    Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className),"<TOP>"});
+    fail();
+  end try;
+
+  if not relaxedFrontEnd and (AbsynUtil.isFunctionRestriction(restriction) or
+                              AbsynUtil.isPackageRestriction(restriction)) then
+    Error.addSourceMessage(Error.INST_INVALID_RESTRICTION,
+      {AbsynUtil.pathString(className), AbsynUtil.restrString(restriction)},
+      AbsynUtil.dummyInfo);
+    fail();
+  end if;
+
   (cache,env,dae) := matchcontinue (inCache,inEnv,className)
     local
-      Absyn.Restriction restriction;
       Absyn.Class absynClass;
       String str,re;
       SCode.Program scodeP;
-      Absyn.Program p;
       DAE.FunctionTree funcs;
       NFFlatModel flat_model;
       NFFlatten.FunctionTree nf_funcs;
-
-   case (cache,env,_)
-      equation
-        true = Flags.isSet(Flags.GRAPH_INST);
-        false = Flags.isSet(Flags.SCODE_INST);
-
-        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-        str = AbsynUtil.pathString(className);
-        (Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn(), true);
-        re = AbsynUtil.restrString(restriction);
-        Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (AbsynUtil.isFunctionRestriction(restriction) or AbsynUtil.isPackageRestriction(restriction)),
-          Error.INST_INVALID_RESTRICTION,{str,re},AbsynUtil.dummyInfo);
-
-        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
-
-        dae = FInst.instPath(className, SymbolTable.getSCode());
-      then (cache,env,dae);
 
     case (_, _, _)
       algorithm
@@ -3337,19 +3335,21 @@ algorithm
         cache := FCore.emptyCache();
         FCore.setCachedFunctionTree(cache, funcs);
         env := FGraph.empty();
-
       then (cache, env, dae);
+
+   case (cache,env,_)
+      equation
+        true = Flags.isSet(Flags.GRAPH_INST);
+        false = Flags.isSet(Flags.SCODE_INST);
+
+        System.realtimeTick(ClockIndexes.RT_CLOCK_FINST);
+        dae = FInst.instPath(className, SymbolTable.getSCode());
+      then (cache,env,dae);
 
     case (cache,env,_)
       equation
         false = Flags.isSet(Flags.GRAPH_INST);
         false = Flags.isSet(Flags.SCODE_INST);
-        str = AbsynUtil.pathString(className);
-        p = SymbolTable.getAbsyn();
-        (Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p, true);
-        re = AbsynUtil.restrString(restriction);
-        Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (AbsynUtil.isFunctionRestriction(restriction) or AbsynUtil.isPackageRestriction(restriction)),
-          Error.INST_INVALID_RESTRICTION,{str,re},AbsynUtil.dummyInfo);
 
         //System.stopTimer();
         //print("\nExists+Dependency: " + realString(System.getTimerIntervalTime()));
@@ -3377,12 +3377,6 @@ algorithm
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         DAEUtil.getFunctionList(FCore.getFunctionTree(cache),failOnError=true); // Make sure that the functions are valid before returning success
       then (cache,env,dae);
-
-    case (_,_,_)
-      equation
-        failure(Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn()));
-        Error.addMessage(Error.LOOKUP_ERROR, {AbsynUtil.pathString(className),"<TOP>"});
-      then fail();
 
     else
       equation
@@ -5683,14 +5677,6 @@ algorithm
         retStr = stringAppendList({"Check of ",classNameStr," completed successfully.","\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
           varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s)."});
       then Values.STRING(retStr);
-
-    // handle functions
-    case (env,_,_)
-      equation
-        Absyn.CLASS(restriction=restriction) = Interactive.getPathedClassInProgram(className, SymbolTable.getAbsyn());
-        true = AbsynUtil.isFunctionRestriction(restriction) or AbsynUtil.isPackageRestriction(restriction);
-        (cache,env,_) = runFrontEnd(cache,env,className,true);
-      then Values.STRING("");
 
     case (_,_,_)
       equation
