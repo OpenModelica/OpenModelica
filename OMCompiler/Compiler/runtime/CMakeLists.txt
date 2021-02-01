@@ -245,7 +245,7 @@ else()
   set(CONFIG_WITH_OPENMP 0)
 endif()
 
-set(WITH_UMFPACK "#define WITH_UMFPACK")
+set(WITH_SUITESPARSE "#define WITH_SUITESPARSE")
 set(WITH_HWLOC 0)
 set(WITH_UUID "#define WITH_LIBUUID 1")
 

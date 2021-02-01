@@ -55,9 +55,9 @@ AC_SUBST(MAKE)
 AC_SUBST(HAVE_LAPACK)
 AC_SUBST(HAVE_LAPACK_DEPRECATED)
 AC_SUBST(LD_LAPACK)
-AC_SUBST(WITH_UMFPACK)
-AC_SUBST(UMFPACK_TARGET)
-AC_SUBST(UMFPACK_LDFLAGS)
+AC_SUBST(WITH_SUITESPARSE)
+AC_SUBST(SUITESPARSE_TARGET)
+AC_SUBST(SUITESPARSE_LDFLAGS)
 AC_SUBST(OMNOTEBOOK)
 AC_SUBST(FPMATHFORTRAN)
 AC_SUBST(OMOPTIM_CC)
@@ -118,19 +118,6 @@ host_short=$host_cpu-$host_os
 
 echo "build_short: $build_short"
 echo "host_short: $host_short"
-
-AS_IF([test "x$with_UMFPACK" = xyes],
-[
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: Yes"
-  UMFPACK_TARGET="umfpack";
-  WITH_UMFPACK="#define WITH_UMFPACK"
-  UMFPACK_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd"
-],[
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: No"
-  UMFPACK_TARGET="";
-  WITH_UMFPACK="/* Without UMFPACK */"
-  UMFPACK_LDFLAGS=""
-])
 
 if echo $host | grep -i darwin; then
   DARWIN=1
@@ -532,6 +519,7 @@ if test "$WANT_STATIC_LPSOLVE" = "no"; then
   AC_SEARCH_LIBS(dlopen,dl)
   LIBDL="$LIBS"
   AC_SEARCH_LIBS(sqrt,m)
+  AC_SEARCH_LIBS(SuiteSparse_calloc,suitesparseconfig)
   AC_SEARCH_LIBS(colamd,colamd)
   AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[LIBLPSOLVE55=$LIBS],[COMPILE_LPSOLVE=1])
   LIBS=""
@@ -707,21 +695,21 @@ LIBS=""
 
 IPOPT_LDFLAGS="-lipopt -lcoinmumps"
 
-# check for umfpack
-AC_ARG_WITH(UMFPACK, [  --without-UMFPACK              Disable compilation with UMFPACK, a sparse linear systems solver],
-[],[with_UMFPACK=yes])
+# check for SuiteSparse
+AC_ARG_WITH(SUITESPARSE, [  --without-SUITESPARSE              Disable compilation with SUITESPARSE (UMFPACK, KLU)],
+[],[with_SUITESPARSE=yes])
 
-AS_IF([test "x$with_UMFPACK" = xyes],
+AS_IF([test "x$with_SUITESPARSE" = xyes],
 [
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: Yes"
-  UMFPACK_TARGET="umfpack";
-  WITH_UMFPACK="#define WITH_UMFPACK"
-  UMFPACK_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd"
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use SUITESPARSE: Yes"
+  SUITESPARSE_TARGET="suitesparse";
+  WITH_SUITESPARSE="#define WITH_SUITESPARSE"
+  SUITESPARSE_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd -lsuitesparseconfig"
 ],[
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: No"
-  UMFPACK_TARGET="";
-  WITH_UMFPACK="/* Without UMFPACK */"
-  UMFPACK_LDFLAGS=""
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use SUITESPARSE: No"
+  SUITESPARSE_TARGET="";
+  WITH_SUITESPARSE="/* Without SUITESPARSE */"
+  SUITESPARSE_LDFLAGS=""
 ])
 
 OLD_LDFLAGS="$LDFLAGS"
@@ -751,7 +739,7 @@ FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 AC_SUBST(CMAKE_LDFLAGS_UNDEFINED_LOOKUP)
 AC_SUBST(CMAKE_EXTRA_DEFINES)
 AC_SUBST(DLLEXT)
-AC_SUBST(UMFPACK_SHARED)
+AC_SUBST(SUITESPARSE_SHARED)
 AC_SUBST(CONFIG_OS)
 if test "$DARWIN" = "1"; then
   EXE=""
@@ -767,7 +755,7 @@ if test "$DARWIN" = "1"; then
   LIBZMQLIB=libzmq.dylib
   CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lomcgc -lpthread -lm $LIBDL -lstdc++"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lm -lpthread $LIBDL -lstdc++"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
@@ -785,7 +773,7 @@ if test "$DARWIN" = "1"; then
   OMC_LIBS="$OMC_LIBS -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
   CMAKE_LDFLAGS_UNDEFINED_LOOKUP="-Wl,-undefined -Wl,dynamic_lookup"
-  UMFPACK_SHARED=ON
+  SUITESPARSE_SHARED=ON
   CONFIG_OS=OSX
 elif echo "$host" | grep -iq "mingw"; then
   EXE=".exe"
@@ -802,7 +790,7 @@ elif echo "$host" | grep -iq "mingw"; then
   LIBZMQLIB=libzmq.a
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lexpat -lm"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
@@ -820,7 +808,7 @@ elif echo "$host" | grep -iq "mingw"; then
   CMAKE_EXTRA_DEFINES="-DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RC_COMPILER=$WINDRES"
   CPPFLAGS="$CPPFLAGS -DMSYS2_AUTOCONF=1"
   OMC_LIBS="$OMC_LIBS -lwsock32 -Wl,-Bstatic -lstdc++ -ltre  -lintl -liconv -Wl,-Bdynamic -lshlwapi"
-  UMFPACK_SHARED=OFF
+  SUITESPARSE_SHARED=OFF
   CONFIG_OS=Windows_NT
 else
   EXE=""
@@ -838,7 +826,7 @@ else
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
   RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $LIBRT -lexpat -lomcgc -lpthread -lm $LIBDL -lstdc++ -rdynamic"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
@@ -854,7 +842,7 @@ else
   OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
-  UMFPACK_SHARED=ON
+  SUITESPARSE_SHARED=ON
   CONFIG_OS=`echo $host_os | sed s/-gnu//`
 fi
 MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"

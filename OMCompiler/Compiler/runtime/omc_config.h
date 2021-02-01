@@ -131,7 +131,7 @@
 
 #include "revision.h"
 
-#define WITH_UMFPACK
+#define WITH_SUITESPARSE
 
 /* On Windows (with OMDev) assume we have lapack*/
 #define HAVE_LAPACK
