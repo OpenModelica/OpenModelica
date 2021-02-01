@@ -47,9 +47,6 @@ protected
   import NBEquation.Equation;
   import BVariable = NBVariable;
 
-  // Util import
-  import HashTableCrToInt = NBHashTableCrToInt;
-
   // SetBased Graph imports
   import SBGraphUtil = NFSBGraphUtil;
   import SBGraph.BipartiteIncidenceList;
@@ -174,7 +171,7 @@ public
       input Vector<Integer> eCount;
       input UnorderedMap<SetVertex, Integer> vertexMap;
       input UnorderedMap<SetEdge, Integer> edgeMap;
-      input HashTableCrToInt.HashTable ht               "hash table to check for relevance";
+      input UnorderedMap<ComponentRef, Integer> map       "unordered map to check for relevance";
       input Option<tuple<SBMultiInterval, Integer>> eqn_tpl_opt;
     protected
       SBMultiInterval eqn_mi;
@@ -200,7 +197,7 @@ public
             eCount      = eCount,
             vertexMap   = vertexMap,
             edgeMap     = edgeMap,
-            ht          = ht)
+            map         = map)
           );
         then ();
 
@@ -212,13 +209,13 @@ public
             eCount      = eCount,
             vertexMap   = vertexMap,
             edgeMap     = edgeMap,
-            ht          = ht)
+            map         = map)
           );
         then ();
 
         case Equation.FOR_EQUATION() algorithm
           body := applyIterator(eqn.iter, eqn.range, eqn.body);
-          fromEquation(body, graph, vCount, eCount, vertexMap, edgeMap, ht, SOME((eqn_mi, eqn_d)));
+          fromEquation(body, graph, vCount, eCount, vertexMap, edgeMap, map, SOME((eqn_mi, eqn_d)));
         then ();
 
         else algorithm
@@ -243,7 +240,7 @@ public
       input Vector<Integer> eCount;
       input UnorderedMap<SetVertex, Integer> vertexMap;
       input UnorderedMap<SetEdge, Integer> edgeMap;
-      input HashTableCrToInt.HashTable ht               "hash table to check for relevance";
+      input UnorderedMap<ComponentRef, Integer> map    "unordered map to check for relevance";
     algorithm
       _ := match exp
         local
@@ -252,7 +249,7 @@ public
           VertexDescriptor eqn_d, var_d;
 
         case Expression.CREF(cref = cref)
-          guard(BaseHashTable.hasKey(ComponentRef.stripSubscriptsAll(cref), ht))
+          guard(UnorderedMap.contains(ComponentRef.stripSubscriptsAll(cref), map))
           algorithm
             (eqn_mi, eqn_d) := eqn_tpl;
             (var_mi, var_d) := getVariableIntervals(

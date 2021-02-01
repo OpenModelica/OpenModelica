@@ -724,11 +724,10 @@ public
     end if;
 
     isEqual := match (cref1, cref2)
-      case (CREF(), CREF())
+      case (CREF(), CREF()) algorithm
         then InstNode.name(cref1.node) == InstNode.name(cref2.node) and
-             Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
-             isEqual(cref1.restCref, cref2.restCref);
-
+          Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
+          isEqual(cref1.restCref, cref2.restCref);
       case (EMPTY(), EMPTY()) then true;
       case (WILD(), WILD()) then true;
       else false;

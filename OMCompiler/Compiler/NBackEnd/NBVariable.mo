@@ -70,6 +70,7 @@ public
   import ExpandableArray;
   import Flags;
   import StringUtil;
+  import UnorderedMap;
   import Util;
 
 public
@@ -967,7 +968,7 @@ public
   // ==========================================================================
   uniontype VariablePointers
     record VARIABLE_POINTERS
-      HashTableCrToInt.HashTable ht             "Hash table for cref->index";
+      UnorderedMap<ComponentRef, Integer> map   "Map for cref->index";
       ExpandableArray<Pointer<Variable>> varArr "Array of variable pointers";
     end VARIABLE_POINTERS;
 
@@ -987,7 +988,7 @@ public
 
     function map
       "Traverses all variables and applies a function to them.
-       NOTE: Do not changes names with this, it will mess up the HashTable.
+       NOTE: Do not changes names with this, it will mess up the Mapping.
        Introduce new variables and delete old variables for that!"
       input output VariablePointers variables;
       input MapFunc func;
@@ -1013,7 +1014,7 @@ public
 
     function mapPtr
       "Traverses all variables as pointers and applies a function to them.
-       NOTE: Do not changes names with this, it will mess up the HashTable.
+       NOTE: Do not changes names with this, it will mess up the Mapping.
        Introduce new variables and delete old variables for that!
        Also does not check for referenceEq, the function has to update the
        pointer itself!"
@@ -1041,8 +1042,8 @@ public
       Integer arr_size, bucketSize;
     algorithm
       arr_size := max(size, BaseHashTable.lowBucketSize);
-      bucketSize := realInt(intReal(arr_size) * 1.4);
-      variables := VARIABLE_POINTERS(HashTableCrToInt.empty(bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
+      bucketSize := Util.nextPrime(arr_size);
+      variables := VARIABLE_POINTERS(UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_VARIABLE)));
     end empty;
 
     function clone
@@ -1098,16 +1099,18 @@ public
       input output VariablePointers variables;
     protected
       Variable var;
-      Integer idx;
+      Integer index;
     algorithm
       var := Pointer.access(varPointer);
-      if BaseHashTable.hasKey(var.name, variables.ht) then
-        idx := BaseHashTable.get(var.name, variables.ht);
-        ExpandableArray.update(idx, varPointer, variables.varArr);
-      else
-        (_, idx) := ExpandableArray.add(varPointer, variables.varArr);
-        variables.ht := BaseHashTable.add((var.name, idx), variables.ht);
-      end if;
+      _ := match UnorderedMap.get(var.name, variables.map)
+        case SOME(index) guard(index > 0) algorithm
+          ExpandableArray.update(index, varPointer, variables.varArr);
+        then ();
+        else algorithm
+          (_, index) := ExpandableArray.add(varPointer, variables.varArr);
+          UnorderedMap.add(var.name, index, variables.map);
+        then ();
+      end match;
     end add;
 
     function remove
@@ -1116,14 +1119,17 @@ public
       input output VariablePointers variables "only an output for mapping";
     protected
       Variable var;
-      Integer idx;
+      Integer index;
     algorithm
       var := Pointer.access(var_ptr);
-      if BaseHashTable.hasKey(var.name, variables.ht) then
-        idx := BaseHashTable.get(var.name, variables.ht);
-        ExpandableArray.delete(idx, variables.varArr);
-        BaseHashTable.delete(var.name, variables.ht);
-      end if;
+      _ := match UnorderedMap.get(var.name, variables.map)
+        case SOME(index) guard(index > 0) algorithm
+          ExpandableArray.delete(index, variables.varArr);
+          // set the index to -1 to avoid removing entries
+          UnorderedMap.add(var.name, -1, variables.map);
+        then ();
+        else ();
+      end match;
     end remove;
 
     function setVarAt
@@ -1136,7 +1142,7 @@ public
     algorithm
       ExpandableArray.set(idx, var_ptr, variables.varArr);
       var := Pointer.access(var_ptr);
-      variables.ht := BaseHashTable.add((var.name, idx), variables.ht);
+      UnorderedMap.add(var.name, idx, variables.map);
     end setVarAt;
 
     function getVarAt
@@ -1154,15 +1160,15 @@ public
       input ComponentRef cref;
       input VariablePointers variables;
       output Pointer<Variable> var_ptr;
+    protected
+      Integer index;
     algorithm
-      if BaseHashTable.hasKey(cref, variables.ht) then
-        var_ptr := ExpandableArray.get(BaseHashTable.get(cref, variables.ht), variables.varArr);
-      else
-        if Flags.isSet(Flags.FAILTRACE) then
+      var_ptr := match UnorderedMap.get(cref, variables.map)
+        case SOME(index) guard(index > 0) then ExpandableArray.get(index, variables.varArr);
+        else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});
-        end if;
-        fail();
-      end if;
+        then fail();
+      end match;
     end getVarSafe;
 
     function getVarNames
@@ -1180,7 +1186,7 @@ public
       Reorders the elements in order to remove all the gaps.
       Be careful: This changes the indices of the elements.
       Cannot use ExpandableArray.compress since it needs to
-      update the HashTable."
+      update the UnorderedMap."
       input output VariablePointers vars;
     protected
       Integer numberOfElements = MetaModelica.Dangerous.arrayGetNoBoundsChecking(vars.varArr.numberOfElements, 1);
@@ -1202,7 +1208,7 @@ public
             lastUsedIndex := lastUsedIndex-1;
           end while;
           // udpate HashTable element
-          BaseHashTable.update((getVarName(moved_var), i), vars.ht);
+          UnorderedMap.add(getVarName(moved_var), i, vars.map);
         end if;
       end while;
       MetaModelica.Dangerous.arrayUpdateNoBoundsChecking(vars.varArr.lastUsedIndex, 1, lastUsedIndex);

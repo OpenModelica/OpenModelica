@@ -58,12 +58,12 @@ public
 
   // New Backend imports
   import BVariable = NBVariable;
-  import HashTableCrToInt = NBHashTableCrToInt;
 
   // Util imports
   import BackendUtil = NBBackendUtil;
   import ExpandableArray;
   import StringUtil;
+  import UnorderedMap;
 
   uniontype Equation
     record SCALAR_EQUATION
@@ -1358,12 +1358,7 @@ public
 
   uniontype EquationPointers
     record EQUATION_POINTERS
-      "author: kabdelhak 2020
-      This uniontype is not really necessary, since it only wraps an expandable
-      array of pointers to equations, but it makes it easier maintanable
-      since all utility functions are in the same place. Also it mirrors
-      VariablePointers behavior."
-      HashTableCrToInt.HashTable ht               "Hash table for cref->index";
+      UnorderedMap<ComponentRef, Integer> map   "Map for cref->index";
       ExpandableArray<Pointer<Equation>> eqArr;
     end EQUATION_POINTERS;
 
@@ -1393,8 +1388,8 @@ public
       Integer arr_size, bucketSize;
     algorithm
       arr_size := max(size, BaseHashTable.lowBucketSize);
-      bucketSize := realInt(intReal(arr_size) * 1.4);
-      equationPointers := EQUATION_POINTERS(HashTableCrToInt.empty(bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
+      bucketSize := Util.nextPrime(arr_size);
+      equationPointers := EQUATION_POINTERS(UnorderedMap.new<Integer>(ComponentRef.hash, ComponentRef.isEqual, bucketSize), ExpandableArray.new(arr_size, Pointer.create(DUMMY_EQUATION())));
     end empty;
 
     function clone
@@ -1446,16 +1441,18 @@ public
       input output EquationPointers equations;
     protected
       ComponentRef name;
-      Integer idx;
+      Integer index;
     algorithm
       name := Equation.getEqnName(eqn);
-      if BaseHashTable.hasKey(name, equations.ht) then
-        idx := BaseHashTable.get(name, equations.ht);
-        ExpandableArray.update(idx, eqn, equations.eqArr);
-      else
-        (_, idx) := ExpandableArray.add(eqn, equations.eqArr);
-        equations.ht := BaseHashTable.add((name, idx), equations.ht);
-      end if;
+      _ := match UnorderedMap.get(name, equations.map)
+        case SOME(index) guard(index > 0) algorithm
+          ExpandableArray.update(index, eqn, equations.eqArr);
+        then ();
+        else algorithm
+          (_, index) := ExpandableArray.add(eqn, equations.eqArr);
+          UnorderedMap.add(name, index, equations.map);
+        then ();
+      end match;
     end add;
 
     function remove
@@ -1464,14 +1461,17 @@ public
       input output EquationPointers equations "only an output for mapping";
     protected
       ComponentRef name;
-      Integer idx;
+      Integer index;
     algorithm
       name := Equation.getEqnName(eqn);
-      if BaseHashTable.hasKey(name, equations.ht) then
-        idx := BaseHashTable.get(name, equations.ht);
-        ExpandableArray.delete(idx, equations.eqArr);
-        BaseHashTable.delete(name, equations.ht);
-      end if;
+      _ := match UnorderedMap.get(name, equations.map)
+        case SOME(index) guard(index > 0) algorithm
+          ExpandableArray.delete(index, equations.eqArr);
+          // set the index to -1 to avoid removing entries
+          UnorderedMap.add(name, -1, equations.map);
+        then ();
+        else ();
+      end match;
     end remove;
 
     function map

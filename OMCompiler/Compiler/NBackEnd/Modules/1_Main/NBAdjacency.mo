@@ -52,7 +52,6 @@ protected
 
   // Util import
   import BuiltinSystem = System;
-  import HashTableCrToInt = NBHashTableCrToInt;
 
   // SetBased Graph imports
   import SBGraph.BipartiteIncidenceList;
@@ -159,7 +158,7 @@ public
         m := arrayCreate(listLength(eqn_lst), {});
         for eqn_ptr in eqn_lst loop
           eqn := Pointer.access(eqn_ptr);
-          dependencies := BEquation.Equation.collectCrefs(eqn, function getDependentCref(ht = vars.ht));
+          dependencies := BEquation.Equation.collectCrefs(eqn, function getDependentCref(map = vars.map));
 
           _ := match Equation.getAttributes(eqn)
 
@@ -170,7 +169,7 @@ public
                 // for initialization all regular rules apply but states have to be
                 // sorted to be at the end
                 (non_state_dependencies, dependencies) := List.extractOnTrue(dependencies, function BVariable.checkCref(func = BVariable.isNonState));
-                m[eqn_idx] := getDependentCrefIndices(non_state_dependencies, vars.ht, true);
+                m[eqn_idx] := getDependentCrefIndices(non_state_dependencies, vars.map, true);
             then();
 
             // LINEAR and STATE SELECT
@@ -180,7 +179,7 @@ public
                 // if we only want linear dependencies, try to look if there is a derivative saved. remove all dependencies
                 // of that equation because those are the nonlinear ones.
                 // for now fail if there is no derivative, possible fallback: differentiate eq and save it
-                nonlinear_dependencies := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(ht = vars.ht));
+                nonlinear_dependencies := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = vars.map));
                 dependencies := List.setDifferenceOnTrue(dependencies, nonlinear_dependencies, ComponentRef.isEqual);
                 if st == MatrixStrictness.STATE_SELECT then
                   // if we are preparing for state selection we only search for linear occurences. One exception
@@ -188,7 +187,7 @@ public
                   // the last checked option, so they have a negative index and are afterwards sorted to be at the end
                   // of the list.
                   (nonlinear_dependencies, _) := List.extractOnTrue(nonlinear_dependencies, function BVariable.checkCref(func = function BVariable.isStateSelect(stateSelect = NFBackendExtension.StateSelect.NEVER)));
-                  m[eqn_idx] := getDependentCrefIndices(nonlinear_dependencies, vars.ht, true);
+                  m[eqn_idx] := getDependentCrefIndices(nonlinear_dependencies, vars.map, true);
                 end if;
             then ();
 
@@ -205,7 +204,7 @@ public
 
           // create the actual matrix row. Append because STATE_SELECT and INIT
           // have already added certain variables with negative index
-          m[eqn_idx] := listAppend(getDependentCrefIndices(dependencies, vars.ht), m[eqn_idx]);
+          m[eqn_idx] := listAppend(getDependentCrefIndices(dependencies, vars.map), m[eqn_idx]);
           eqn_idx := eqn_idx + 1;
         end for;
 
@@ -294,7 +293,7 @@ public
         graph       = graph,
         vCount      = vCount,
         eCount      = eCount,
-        ht          = vars.ht,
+        map         = vars.map,
         vertexMap   = vertexMap,
         edgeMap     = edgeMap,
         eqn_tpl_opt = NONE()
@@ -320,28 +319,28 @@ public
     end maxDimTraverse;
 
     function getDependentCref
-      input output ComponentRef cref          "the cref to check";
-      input Pointer<list<ComponentRef>> acc   "accumulator for relevant crefs";
-      input HashTableCrToInt.HashTable ht     "hash table to check for relevance";
+      input output ComponentRef cref                "the cref to check";
+      input Pointer<list<ComponentRef>> acc         "accumulator for relevant crefs";
+      input UnorderedMap<ComponentRef, Integer> map "unordered map to check for relevance";
     algorithm
-      if BaseHashTable.hasKey(cref, ht) then
+      if UnorderedMap.contains(cref, map) then
         Pointer.update(acc, cref :: Pointer.access(acc));
       end if;
     end getDependentCref;
 
     function getDependentCrefIndices
-      input list<ComponentRef> dependencies   "dependent var crefs";
-      input HashTableCrToInt.HashTable ht     "hash table to check for relevance";
+      input list<ComponentRef> dependencies         "dependent var crefs";
+      input UnorderedMap<ComponentRef, Integer> map "hash table to check for relevance";
       input Boolean negate = false;
       output list<Integer> indices = {};
     algorithm
       if negate then
         for cref in dependencies loop
-          indices := -BaseHashTable.get(cref, ht) :: indices;
+          indices := -UnorderedMap.getSafe(cref, map) :: indices;
         end for;
       else
         for cref in dependencies loop
-          indices := BaseHashTable.get(cref, ht) :: indices;
+          indices := UnorderedMap.getSafe(cref, map) :: indices;
         end for;
       end if;
       // remove duplicates and sort
