@@ -211,6 +211,14 @@ public
   protected
     Integer hash, index;
     list<Integer> bucket;
+
+    function update_indices
+      input list<Integer> bucket;
+      input Integer removedIndex;
+      output list<Integer> outBucket;
+    algorithm
+      outBucket := list(if i > removedIndex then i-1 else i for i in bucket);
+    end update_indices;
   algorithm
     (index, hash) := find(key, map);
     removed := index > 0;
@@ -228,6 +236,9 @@ public
     // Remove the key/value from the arrays.
     Vector.remove(map.keys, index);
     Vector.remove(map.values, index);
+
+    // Update the indices in the buckets.
+    Vector.apply(map.buckets, function update_indices(removedIndex = index));
   end remove;
 
   function get
