@@ -60,12 +60,6 @@ $(info Creating dirs: $(BUILD_DIRS))
 $(info $(shell mkdir -p $(BUILD_DIRS)))
 endif
 
-ifeq ($(UMFPACK_SHARED),OFF)
-	UMFPACK_LIB_TARGET=$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(STAEXT)
-else
-	UMFPACK_LIB_TARGET=$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
-endif
-
 .PHONY : interactive omc release all fmi test install-dirs susan susan_all susgen sustst install-openturns runtimeCPPinstall runtimeCPPinstallOld CMinpack metis Cdaskr boehm-gc libzmq cppzmq $(MINGW_EXTRA_LIBS) antlr-copy $(SEMLA_LIB) $(SEMLA_CLEAN)
 
 ifeq ($(OMENCRYPTION),yes)
@@ -118,7 +112,7 @@ interactive-common: .testvariables graphstream boehm-gc idl ModelicaExternalC an
 interactive-short: .testvariables interactive-common
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) bootstrap-dependencies OMBUILDDIR=$(OMBUILDDIR)
 
-interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(IPOPT_TARGET) $(UMFPACK_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB)
+interactive: .testvariables interactive-common lis Cdaskr CMinpack docs cppzmq $(IPOPT_TARGET) $(SUITESPARSE_TARGET) antlr-copy $(MINGW_EXTRA_LIBS) OMSI $(SEMLA_LIB)
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) bootstrap-dependencies-post
 
@@ -173,35 +167,19 @@ $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
 
 ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
 
-$(UMFPACK_LIB_TARGET): 3rdParty/SuiteSparse/CMakeLists.txt
-	mkdir -p 3rdParty/SuiteSparse/build
-	cd 3rdParty/SuiteSparse/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" -DBUILD_SHARED_LIBS:Bool=$(UMFPACK_SHARED)
-	$(MAKE) -C 3rdParty/SuiteSparse/build install
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libumfpack.dylib "$@"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libamd$(SHREXT)"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libklu.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libbtf.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libbtf$(SHREXT)"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libcolamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libcolamd$(SHREXT)"
-	test ! `uname` = Darwin || install_name_tool -change libamd.dylib @rpath/libamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
-	test ! `uname` = Darwin || install_name_tool -change libbtf.dylib @rpath/libbtf.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
-	test ! `uname` = Darwin || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)"
-	test ! `uname` = Darwin || install_name_tool -change libamd.dylib @rpath/libamd.dylib "$(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)"
-	#cp -au 3rdParty/SuiteSparse/build/*.$(STATIC_EXT) build/$(LIB_OMC)
-	#mkdir --parent build/include/omc/c/suitesparse
-	#cp -a 3rdParty/SuiteSparse/UMFPACK/Include/*.h build/include/omc/c/suitesparse
-	#cp -a 3rdParty/SuiteSparse/AMD/Include/*.h build/include/omc/c/suitesparse
-	#cp -a 3rdParty/SuiteSparse/UFconfig/*.h build/include/omc/c/suitesparse
-umfpack: $(UMFPACK_LIB_TARGET)
+suitesparse:
+	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
+	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE) .. -G \
+		$(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" \
+		-DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
+		-DBUILD_SHARED_LIBS:Bool=$(SUITESPARSE_SHARED)
+	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1/build install
 
-umfpack-clean:
-	if test -d 3rdParty/SuiteSparse/build ; then cd 3rdParty/SuiteSparse/build && $(MAKE) clean ; fi
-	rm -rf 3rdParty/SuiteSparse/build
-	rm -rf $(OMBUILDDIR)/include/omc/c/suitesparse
-	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libumfpack$(SHREXT)
-	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libamd$(SHREXT)
-	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libklu$(SHREXT)
-	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libbtf$(SHREXT)
-	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libcolamd$(SHREXT)
+suitesparse-clean:
+	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1 distclean
+	rm -rf 3rdParty/SuiteSparse-5.8.1/build 3rdParty/SuiteSparse-5.8.1/build_msvc
 
 $(OMBUILDDIR)/$(LIB_OMC)/libopenblas_openmodelica.a:
 	$(MAKE) -C 3rdParty/OpenBLAS-0.2.8 CC="$(CC)" CXX="$(CXX)" FC="$(FC)" FCFLAGS="$(FCFLAGS)" USE_THREAD=0 NO_LAPACKE=1 LIBNAMESUFFIX=openmodelica $(OPENBLAS_EXTRA_ARGS)
@@ -320,11 +298,6 @@ runtimeCPPinstallOld: runtimeCPP
 	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
 	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppCVode.dylib
-
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppUmfPack.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
-	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
 
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppLinearSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppLinearSolver.dylib
 	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppLinearSolver.dylib
@@ -486,7 +459,7 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean umfpack-clean OMSI-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
@@ -498,7 +471,6 @@ clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPcl
 	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf 3rdParty/sundials-5.4.0/build
-	rm -rf 3rdParty/SuitesParse/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
 	$(OMBUILDDIR)/bin/omc $(OMBUILDDIR)/bin/omc.exe $(OMBUILDDIR)/bin/omc-diff $(OMBUILDDIR)/bin/omc-diff.exe \
 	bom-error.log bom-error.sh tab-error.log
@@ -602,7 +574,7 @@ clean-sqlite3:
 	rm -rf 3rdParty/sqlite3/build
 
 # build sundials
-sundials: umfpack
+sundials: suitesparse
 	$(MAKE) -f $(defaultMakefileTarget) $(builddir_lib_omc)/libsundials_ida.a
 $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	mkdir -p 3rdParty/sundials-5.4.0/build
@@ -610,8 +582,8 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	    $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" \
 	    -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
 	    -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" -DLDFLAGS="$(LDFLAGS)" \
-	    -DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" \
-	    $(SUITESPARSE_LIBS) -DSUITESPARSECONFIG_LIBRARY="" \
+	    -DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
+	    $(SUITESPARSE_LIBS) \
 	    -DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF -DSUNDIALS_EXAMPLES_INSTALL_PATH=./examples_install \
 	    $(IS_MINGW32) $(IS_MINGW64) \
 	    -DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)")
@@ -660,9 +632,9 @@ clean-sundials:
 	rm -rf 3rdParty/sundials-5.4.0/build "$(OMBUILDDIR)/include/omc/cpp/sundials" "$(builddir_lib_omc)/libsundials"* "$(builddir_inc)/c/sundials"
 
 # Build Nox
-nox: 3rdParty/trilinos-nox/CMakeLists.txt
+nox: 3rdParty/trilinos-nox/CMakeLists.txt $(SUITESPARSE_TARGET)
 	mkdir -p 3rdParty/trilinos-nox/build
-	cd 3rdParty/trilinos-nox/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse/Include/" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DSUITESPARSECONFIG_LIBRARY="" -DOMDEV_DIR="$(OMDEVMSYS)"
+	cd 3rdParty/trilinos-nox/build && $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" -DKLU_ENABLE:Bool=ON -DKLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" $(SUITESPARSE_LIBS) $(IS_MINGW32) $(IS_MINGW64) -DOMDEV_DIR="$(OMDEVMSYS)"
 	$(MAKE) -C 3rdParty/trilinos-nox/build install
 	rm -r 3rdParty/trilinos-nox/build/lib/cmake
 	mkdir -p "$(builddir_lib_omc)/cpp"

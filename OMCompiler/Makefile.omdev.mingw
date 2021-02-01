@@ -84,8 +84,8 @@ SHREXT=.dll
 STAEXT=.a
 EXE=.exe
 IPOPT_TARGET=ipopt
-UMFPACK_TARGET=umfpack
-UMFPACK_SHARED=OFF
+SUITESPARSE_TARGET=suitesparse
+SUITESPARSE_SHARED=OFF
 SUNDIALS_TARGET=sundials
 LD_LAPACK=-lopenblas
 GRAPHLIB=libmetis.a
@@ -107,7 +107,7 @@ SEMLA_LIB=semla
 SEMLA_CLEAN=semla-clean
 endif
 
-main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall nox getMSVCversion omdev_extra_dlls install-openturns copycppheader copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc Umfpack_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
+main.PHONY: simulationruntimecmsvc runtimeCPPinstall runtimeCPPmsvcinstall OMSICPPinstall nox getMSVCversion omdev_extra_dlls install-openturns copycppheader copycppmsvcheader boehm-gc-lib fmil_msvc sundials_msvc CMinpack_msvc suitesparse_msvc runtimeOMSIBaseMSVCInstall omcCAPImsvcinstall
 
 include Makefile.common
 include Makefile.omsi.common
@@ -387,41 +387,39 @@ $(OMBUILDDIR)/lib/omc/msvc/cminpack.lib: getMSVCversion
 	# copy dll to bin folder
 	(cp -puf 3rdParty/CMinpack/install_msvc/lib/cminpack.lib $(OMBUILDDIR)/lib/omc/msvc/)
 
-Umfpack_msvc: $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
-$(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion
-	rm -f $(OMBUILDDIR)/lib/omc/msvc/amd.lib $(OMBUILDDIR)/lib/omc/msvc/klu.lib $(OMBUILDDIR)/lib/omc/msvc/btf.lib  $(OMBUILDDIR)/lib/omc/msvc/colamd.lib $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
+suitesparse_msvc: $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
+$(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion 3rdParty/SuiteSparse-5.8.1/CMakeLists.txt
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/amd.lib $(OMBUILDDIR)/lib/omc/msvc/klu.lib $(OMBUILDDIR)/lib/omc/msvc/btf.lib $(OMBUILDDIR)/lib/omc/msvc/colamd.lib $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib $(OMBUILDDIR)/lib/omc/msvc/suitesparseconfig.lib
 	rm -rf $(OMBUILDDIR)/include/omc/msvc/suitesparse
-	rm -rf 3rdParty/SuiteSparse/build_msvc
-	rm -rf 3rdParty/SuiteSparse/install_msvc
+	rm -rf 3rdParty/SuiteSparse-5.8.1/build_msvc
+	rm -rf 3rdParty/SuiteSparse-5.8.1/install_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
 	# Goto build msvc directory
-	test -d 3rdParty/SuiteSparse
-	mkdir -p 3rdParty/SuiteSparse/build_msvc
+	test -d 3rdParty/SuiteSparse-5.8.1
+	mkdir -p 3rdParty/SuiteSparse-5.8.1/build_msvc
 
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
-	echo 'Building Umfpack with MSVC'
-	echo @echo on > 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo echo Calling CMake >> 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe" -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)"' >> 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo echo Building Umfpack >> 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo @echo on >> 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo set MAKE= >> 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo set MAKEFLAGS= >> 3rdParty/SuiteSparse/build_msvc/build.bat
-	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/SuiteSparse/build_msvc/build.bat
+	echo 'Building SuiteSparse with MSVC'
+	echo @echo on > 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo echo Calling CMake >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="$(OMBUILDDIR_MSVC)" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc\\suitesparse" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo '../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo echo Building SuiteSparse >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo @echo on >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 
 	# Change into directory and run batch file
-	cd ./3rdParty/SuiteSparse/build_msvc; echo "change to 3rdParty/SuiteSparse/build_msvc";\
+	cd ./3rdParty/SuiteSparse-5.8.1/build_msvc; echo "change to 3rdParty/SuiteSparse-5.8.1/build_msvc";\
 	cmd /c build.bat
 
-	# copy dll to bin folder
-	(mkdir -p $(OMBUILDDIR)/include/omc/msvc/suitesparse)
-	(cp -puf 3rdParty/SuiteSparse/install_msvc/$(LIB_OMC)/*.lib $(OMBUILDDIR)/lib/omc/msvc/)
-	(cp -pur 3rdParty/SuiteSparse/install_msvc/include/omc/c/suitesparse/Include/*.h $(OMBUILDDIR)/include/omc/msvc/suitesparse/)
-
 # build sundials
-# TODO: We need Umfpack_msvc as a dependency, but Make doesn't wait for Umfpack_msvc to be finishes
+# TODO: We need suitesparse_msvc as a dependency, but Make doesn't wait for suitesparse_msvc to be finishes
 sundials_msvc: $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll
 $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.4.0/CMakeLists.txt
 	echo "Using OMBUILDDIR_MSVC: $(OMBUILDDIR_MSVC)"
@@ -501,7 +499,7 @@ runtimeCPPmsvcinstall: getMSVCversion
 	# Force make to do suitesparse and sundials in the correct order and wait for umfpack to be finished before starting sundials
 	# This is a terrible idea
 	rm -rf $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
-	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) Umfpack_msvc
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) suitesparse_msvc
 	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) sundials_msvc
 	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) fmil_msvc
 	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) CMinpack_msvc
@@ -520,7 +518,7 @@ simulationruntimecmsvc: getMSVCversion CMinpack_msvc fmil_msvc
 	# Force make to do suitesparse and sundials in the correct order and wait for umfpack to be finished before starting sundials
 	# This should be done smarter
 	rm -rf $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib
-	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) Umfpack_msvc
+	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) suitesparse_msvc
 	$(MAKE) -f $(defaultMakefileTarget) OMBUILDDIR=$(OMBUILDDIR) sundials_msvc
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/
