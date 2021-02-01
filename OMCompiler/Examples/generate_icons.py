@@ -773,7 +773,6 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
                 shape.push(x_12, y_12, x_n, y_n, x_n, y_n)
             else:
                 shape = dwg.polygon([getCoordinates([x, y], graphics, minX, maxY, transformation, coordinateSystem) for (x, y) in graphics['points']])
-            shape.fill('none', opacity=0)
         else:
             logger.error('Not handled: {0}'.format(graphics))
             return None
