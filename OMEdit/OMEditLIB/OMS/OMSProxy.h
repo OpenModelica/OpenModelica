@@ -38,7 +38,7 @@
 #include "Modeling/MessagesWidget.h"
 
 #include <QObject>
-#include <QTime>
+#include <QElapsedTimer>
 
 class OMSProxy : public QObject
 {
@@ -57,8 +57,8 @@ private:
   FILE *mpCommunicationLogFile;
   double mTotalOMSCallsTime;
 
-  void logCommand(QTime *commandTime, QString command);
-  void logResponse(QString command, oms_status_enu_t status, QTime *responseTime);
+  void logCommand(QString command);
+  void logResponse(QString command, oms_status_enu_t status, QElapsedTimer *responseTime);
 public:
   static OMSProxy* instance() {return mpInstance;}
 

@@ -861,7 +861,11 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
           } else if (simulationFlag.compare("s") == 0) {
             mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
           } else if (simulationFlag.compare("lv") == 0) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+            QStringList logStreams = value.split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
             QStringList logStreams = value.split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
             int i = 0;
             while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
               if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
@@ -1510,8 +1514,13 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
 
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
     mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    int xPos = QApplication::primaryScreen()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
+    int yPos = QApplication::primaryScreen()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
+#else // QT_VERSION_CHECK
     int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
     int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
+#endif // QT_VERSION_CHECK
     pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
     /* restore the window geometry. */
     if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
@@ -1668,13 +1677,21 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (logStreams.size() > 0) {
     simulationFlags.insert("lv", logStreams.join(","));
   }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
   QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
   foreach (QString additionalSimulationFlag, additionalSimulationFlags) {
     additionalSimulationFlag = additionalSimulationFlag.trimmed();
     if (additionalSimulationFlag.startsWith('-')) {
       additionalSimulationFlag.remove(0, 1);
     }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QStringList nameValueList = additionalSimulationFlag.split("=", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
     QStringList nameValueList = additionalSimulationFlag.split("=", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
     if (nameValueList.size() < 2) {
       simulationFlags.insert(nameValueList.at(0), "()");
     } else {

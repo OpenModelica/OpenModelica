@@ -1146,7 +1146,11 @@ void GraphicsView::bringForward(ShapeAnnotation *pShape)
     return;
   }
   // swap the shapes in the list
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+  mShapesList.swapItemsAt(shapeIndex, shapeIndex + 1);
+#else // QT_VERSION_CHECK
   mShapesList.swap(shapeIndex, shapeIndex + 1);
+#endif // QT_VERSION_CHECK
   // update the shapes z index
   for (int i = 0 ; i < mShapesList.size() ; i++) {
     mShapesList.at(i)->setZValue(i + 1);
@@ -1186,7 +1190,11 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
     return;
   }
   // swap the shapes in the list
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+  mShapesList.swapItemsAt(shapeIndex - 1, shapeIndex);
+#else // QT_VERSION_CHECK
   mShapesList.swap(shapeIndex - 1, shapeIndex);
+#endif // QT_VERSION_CHECK
   // update the shapes z index
   for (int i = 0 ; i < mShapesList.size() ; i++) {
     mShapesList.at(i)->setZValue(i + 1);
@@ -2399,7 +2407,7 @@ void GraphicsView::deleteInitialState(LineAnnotation *pInitialLineAnnotation)
 //! @see zoomOut()
 void GraphicsView::resetZoom()
 {
-  resetMatrix();
+  resetTransform();
   scale(1.0, -1.0);
   setIsCustomScale(false);
   resizeEvent(new QResizeEvent(QSize(0,0), QSize(0,0)));
@@ -2411,7 +2419,7 @@ void GraphicsView::resetZoom()
 void GraphicsView::zoomIn()
 {
   // zoom in limitation max: 1000%
-  if (matrix().m11() < 34 && matrix().m22() > -34) {
+  if (transform().m11() < 34 && transform().m22() > -34) {
     setIsCustomScale(true);
     scale(1.12, 1.12);
   }
@@ -2423,7 +2431,7 @@ void GraphicsView::zoomIn()
 void GraphicsView::zoomOut()
 {
   // zoom out limitation min: 10%
-  if (matrix().m11() > 0.2 && matrix().m22() < -0.2) {
+  if (transform().m11() > 0.2 && transform().m22() < -0.2) {
     setIsCustomScale(true);
     scale(1/1.12, 1/1.12);
   }
@@ -3885,6 +3893,34 @@ void GraphicsView::resizeEvent(QResizeEvent *event)
  */
 void GraphicsView::wheelEvent(QWheelEvent *event)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  static QPoint angleDelta = QPoint(0, 0);
+  angleDelta += event->angleDelta();
+  QPoint numDegrees = angleDelta / 8;
+  QPoint numSteps = numDegrees / 15; // see QWheelEvent documentation
+  if (numSteps.x() != 0 || numSteps.y() != 0) {
+    angleDelta = QPoint(0, 0);
+    const bool horizontal = qAbs(event->angleDelta().x()) > qAbs(event->angleDelta().y());
+    bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+    bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
+    // If Ctrl key is pressed and user has scrolled vertically then Zoom In/Out based on the scroll distance.
+    if (!horizontal && numSteps.y() != 0 && controlModifier) {
+      if (numSteps.y() > 0) {
+        zoomIn();
+      } else {
+        zoomOut();
+      }
+    } else if (horizontal) { // If user has scrolled horizontally then scroll the horizontal scrollbars.
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() - event->angleDelta().x());
+    } else if (!horizontal && shiftModifier) { // If Shift key is pressed and user has scrolled vertically then scroll the horizontal scrollbars.
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() - event->angleDelta().y());
+    } else if (!horizontal) { // If user has scrolled vertically then scroll the vertical scrollbars.
+      verticalScrollBar()->setValue(verticalScrollBar()->value() - event->angleDelta().y());
+    } else {
+      QGraphicsView::wheelEvent(event);
+    }
+  }
+#else // QT_VERSION_CHECK
   int numDegrees = event->delta() / 8;
   int numSteps = numDegrees * 3;
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
@@ -3906,6 +3942,7 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
   } else {
     QGraphicsView::wheelEvent(event);
   }
+#endif // QT_VERSION_CHECK
 }
 
 /*!
@@ -5551,7 +5588,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         // get the submodel position
         double values[] = {0.0, 0.0, 0.0};
         QGenericMatrix<3, 1, double> cX_R_cG_cG(values);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (subModelPositionList.size() > 2) {
           cX_R_cG_cG(0, 0) = subModelPositionList.at(0).toDouble();
           cX_R_cG_cG(0, 1) = subModelPositionList.at(1).toDouble();
@@ -5559,7 +5600,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         }
         // get the submodel angle
         double subModelPhi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (subModelAngleList.size() > 2) {
           subModelPhi[0] = subModelAngleList.at(0).toDouble();
           subModelPhi[1] = subModelAngleList.at(1).toDouble();
@@ -5568,7 +5613,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         QGenericMatrix<3, 3, double> cX_A_cG = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(subModelPhi));
         // get the interface position
         QGenericMatrix<3, 1, double> ci_R_cX_cX(values);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (interfacePositionList.size() > 2) {
           ci_R_cX_cX(0, 0) = interfacePositionList.at(0).toDouble();
           ci_R_cX_cX(0, 1) = interfacePositionList.at(1).toDouble();
@@ -5576,7 +5625,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         }
         // get the interface angle
         double interfacePhi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (interfaceAngleList.size() > 2) {
           interfacePhi[0] = interfaceAngleList.at(0).toDouble();
           interfacePhi[1] = interfaceAngleList.at(1).toDouble();
@@ -6000,7 +6053,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         //              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
         // get the angle
         double phi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (angleList.size() > 2) {
           phi[0] = -angleList.at(0).toDouble();
           phi[1] = -angleList.at(1).toDouble();
@@ -6009,7 +6066,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         QGenericMatrix<3, 3, double> T = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
         // get the position
         double position[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (positionList.size() > 2) {
           position[0] = positionList.at(0).toDouble();
           position[1] = positionList.at(1).toDouble();

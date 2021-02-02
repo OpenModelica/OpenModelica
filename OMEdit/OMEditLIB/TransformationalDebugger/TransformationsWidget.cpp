@@ -246,7 +246,7 @@ QVariant TVariablesTreeModel::data(const QModelIndex &index, int role) const
 Qt::ItemFlags TVariablesTreeModel::flags(const QModelIndex &index) const
 {
   if (!index.isValid())
-      return 0;
+      return Qt::ItemFlags();
 
   Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   /* Ticket #3207. Make all the items enable and selectable.

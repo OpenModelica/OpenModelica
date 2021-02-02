@@ -77,7 +77,7 @@ private:
   QPair<double, double> mMinMaxValues;
   OpcUaClient *mpParentClient;
   VariablesTreeItem *mpVariablesTreeItemRoot;
-  QTime mClock;
+  QElapsedTimer mClock;
   bool mSimulateWithSteps;
   const double mSampleInterval;
   double mInterval, mSpeedValue, mServerSampleInterval;

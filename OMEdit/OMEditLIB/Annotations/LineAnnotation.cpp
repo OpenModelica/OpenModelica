@@ -1615,7 +1615,7 @@ Qt::ItemFlags ExpandableConnectorTreeModel::flags(const QModelIndex &index) cons
       (pExpandableConnectorTreeItem->parent() && pExpandableConnectorTreeItem->parent()->getRestriction() == StringHandler::ExpandableConnector))) {
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   } else {
-    return 0;
+    return Qt::ItemFlags();
   }
 }
 

@@ -852,7 +852,11 @@ bool ShapePropertiesDialog::applyShapeProperties()
         QByteArray imageByteArray = imageFile.readAll();
         mpShapeAnnotation->setImageSource(imageByteArray.toBase64());
       }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+      mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap(Qt::ReturnByValue).toImage());
+#else // QT_VERSION_CHECK
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
+#endif // QT_VERSION_CHECK
     } else {
       /* find the class to create a relative path */
       MainWindow *pMainWindow = MainWindow::instance();
@@ -865,7 +869,11 @@ bool ShapePropertiesDialog::applyShapeProperties()
       QString relativeImagePath = classDirectory.relativeFilePath(mpFileTextBox->text());
       mpShapeAnnotation->setFileName(QString("modelica://").append(pLibraryTreeItem->getNameStructure()).append("/").append(relativeImagePath));
       mpShapeAnnotation->setImageSource("");
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+      mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap(Qt::ReturnByValue).toImage());
+#else // QT_VERSION_CHECK
       mpShapeAnnotation->setImage(mpPreviewImageLabel->pixmap()->toImage());
+#endif // QT_VERSION_CHECK
     }
   }
   LineAnnotation::LineType lineType = LineAnnotation::ShapeType;

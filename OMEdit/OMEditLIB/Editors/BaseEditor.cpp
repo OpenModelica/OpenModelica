@@ -873,7 +873,11 @@ int PlainTextEdit::lineNumberAreaWidth()
     ++digits;
   }
   const QFontMetrics fm(document()->defaultFont());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+  int space = fm.horizontalAdvance(QLatin1Char('9')) * digits;
+#else // QT_VERSION_CHECK
   int space = fm.width(QLatin1Char('9')) * digits;
+#endif // QT_VERSION_CHECK
   if (canHaveBreakpoints()) {
     space += fm.lineSpacing();
   } else {
@@ -1786,7 +1790,11 @@ QMimeData* PlainTextEdit::createMimeDataFromSelection() const
     const int selectionStart = cursor.selectionStart();
     const int endOfDocument = tempDocument->characterCount() - 1;
     for (QTextBlock current = start; current.isValid() && current != end; current = current.next()) {
-      foreach (const QTextLayout::FormatRange &range, current.layout()->additionalFormats()) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  foreach (const QTextLayout::FormatRange &range, current.layout()->formats()) {
+#else // QT_VERSION_CHECK
+  foreach (const QTextLayout::FormatRange &range, current.layout()->additionalFormats()) {
+#endif // QT_VERSION_CHECK
         const int startPosition = current.position() + range.start - selectionStart;
         const int endPosition = startPosition + range.length;
         if (endPosition <= 0 || startPosition >= endOfDocument) {
@@ -1970,7 +1978,11 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
         QString rectReplacement = QLatin1String(" ") + replacement + QLatin1String("); ");
 
         const QFontMetrics fm(document()->defaultFont());
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+        QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.horizontalAdvance(rectReplacement), lineRect.height());
+#else // QT_VERSION_CHECK
         QRectF collapseRect(lineRect.right() + 12, lineRect.top(), fm.width(rectReplacement), lineRect.height());
+#endif // QT_VERSION_CHECK
         painter.setRenderHint(QPainter::Antialiasing, true);
         painter.translate(.5, .5);
         painter.drawRoundedRect(collapseRect.adjusted(0, 0, 0, -1), 3, 3);
@@ -2014,7 +2026,11 @@ void PlainTextEdit::paintEvent(QPaintEvent *e)
 void PlainTextEdit::wheelEvent(QWheelEvent *event)
 {
   if (event->modifiers() & Qt::ControlModifier) {
-    if (event->delta() > 0) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  if (event->angleDelta().x() > 0 || event->angleDelta().y() > 0) {
+#else // QT_VERSION_CHECK
+  if (event->delta() > 0) {
+#endif // QT_VERSION_CHECK
       zoomIn();
     } else {
       zoomOut();

@@ -39,7 +39,7 @@
 class GLWidget : public QGLWidget
 {
 public:
-  GLWidget(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+  GLWidget(QWidget *pParent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
 };
 
 #endif // GLWIDGET_H

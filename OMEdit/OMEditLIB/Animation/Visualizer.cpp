@@ -628,8 +628,13 @@ osg::Image* UpdateVisitor::convertImage(const QImage& iImage)
     QImage glImage = QGLWidget::convertToGLFormat(iImage);
 #endif
     if (false == glImage.isNull()) {
-      unsigned char* data = new unsigned char[glImage.byteCount()];
-      for(int i=0; i < glImage.byteCount(); ++i) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+      int bytesSize = glImage.sizeInBytes();
+#else // QT_VERSION_CHECK
+      int bytesSize = glImage.byteCount();
+#endif // QT_VERSION_CHECK
+      unsigned char* data = new unsigned char[bytesSize];
+      for(int i=0; i < bytesSize; ++i) {
         data[i] = glImage.bits()[i];
       }
       osgImage->setImage(glImage.width(), glImage.height(), 1, 4, GL_RGBA, GL_UNSIGNED_BYTE, data, osg::Image::USE_NEW_DELETE, 1);

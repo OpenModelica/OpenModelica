@@ -592,32 +592,33 @@ void MainWindow::beforeClosingMainWindow()
   if (mpOMSSimulationDialog) {
     delete mpOMSSimulationDialog;
   }
-  /* save the TransformationsWidget last window geometry and splitters state. */
+
   QSettings *pSettings = Utilities::getApplicationSettings();
-  QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
-  if (mTransformationsWidgetHash.size() > 0) {
-    transformationsWidgets.toBack();
-    transformationsWidgets.previous();
-    TransformationsWidget *pTransformationsWidget = transformationsWidgets.value();
-    if (pTransformationsWidget) {
-      pSettings->beginGroup("transformationalDebugger");
-      pSettings->setValue("geometry", pTransformationsWidget->saveGeometry());
-      pSettings->setValue("variablesNestedHorizontalSplitter", pTransformationsWidget->getVariablesNestedHorizontalSplitter()->saveState());
-      pSettings->setValue("variablesNestedVerticalSplitter", pTransformationsWidget->getVariablesNestedVerticalSplitter()->saveState());
-      pSettings->setValue("variablesHorizontalSplitter", pTransformationsWidget->getVariablesHorizontalSplitter()->saveState());
-      pSettings->setValue("equationsNestedHorizontalSplitter", pTransformationsWidget->getEquationsNestedHorizontalSplitter()->saveState());
-      pSettings->setValue("equationsNestedVerticalSplitter", pTransformationsWidget->getEquationsNestedVerticalSplitter()->saveState());
-      pSettings->setValue("equationsHorizontalSplitter", pTransformationsWidget->getEquationsHorizontalSplitter()->saveState());
-      pSettings->setValue("transformationsVerticalSplitter", pTransformationsWidget->getTransformationsVerticalSplitter()->saveState());
-      pSettings->endGroup();
-    }
-  }
   /* delete the TransformationsWidgets */
+  const int size = mTransformationsWidgetHash.size();
+  int index = 0;
+  QHashIterator<QString, TransformationsWidget*> transformationsWidgets(mTransformationsWidgetHash);
   transformationsWidgets.toFront();
   while (transformationsWidgets.hasNext()) {
     transformationsWidgets.next();
     TransformationsWidget *pTransformationsWidget = transformationsWidgets.value();
-    delete pTransformationsWidget;
+    index++;
+    if (pTransformationsWidget) {
+      /* save the TransformationsWidget last window geometry and splitters state. */
+      if (index == size) { // last item
+        pSettings->beginGroup("transformationalDebugger");
+        pSettings->setValue("geometry", pTransformationsWidget->saveGeometry());
+        pSettings->setValue("variablesNestedHorizontalSplitter", pTransformationsWidget->getVariablesNestedHorizontalSplitter()->saveState());
+        pSettings->setValue("variablesNestedVerticalSplitter", pTransformationsWidget->getVariablesNestedVerticalSplitter()->saveState());
+        pSettings->setValue("variablesHorizontalSplitter", pTransformationsWidget->getVariablesHorizontalSplitter()->saveState());
+        pSettings->setValue("equationsNestedHorizontalSplitter", pTransformationsWidget->getEquationsNestedHorizontalSplitter()->saveState());
+        pSettings->setValue("equationsNestedVerticalSplitter", pTransformationsWidget->getEquationsNestedVerticalSplitter()->saveState());
+        pSettings->setValue("equationsHorizontalSplitter", pTransformationsWidget->getEquationsHorizontalSplitter()->saveState());
+        pSettings->setValue("transformationsVerticalSplitter", pTransformationsWidget->getTransformationsVerticalSplitter()->saveState());
+        pSettings->endGroup();
+      }
+      delete pTransformationsWidget;
+    }
   }
   mTransformationsWidgetHash.clear();
   /* save stackframes list and locals columns width */
@@ -1245,7 +1246,7 @@ void MainWindow::createOMNotebookImageCell(LibraryTreeItem *pLibraryTreeItem, QD
   QPainter painter(&modelImage);
   painter.setWindow(pGraphicsView->viewport()->rect());
   // paint the background color first
-  painter.fillRect(modelImage.rect(), pGraphicsView->palette().background());
+  painter.fillRect(modelImage.rect(), pGraphicsView->palette().window());
   // paint all the items
   pGraphicsView->render(&painter, QRectF(painter.viewport()), pGraphicsView->viewport()->rect());
   painter.end();
@@ -1427,7 +1428,11 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       throw OMPlot::PlotException("Invalid input" + QString(autoScale));
     }
     // plot variables
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QStringList variablesList = QString(variables).split(" ", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
     QStringList variablesList = QString(variables).split(" ", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
     VariablesTreeItem *pVariableTreeItem;
     VariablesTreeModel *pVariablesTreeModel = pMainWindow->getVariablesWidget()->getVariablesTreeModel();
     bool state = pVariablesTreeModel->blockSignals(true);

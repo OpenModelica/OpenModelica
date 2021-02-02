@@ -271,9 +271,9 @@ public:
 signals:
   void commandFinished();
 public slots:
-  void logCommand(QString command, QTime *commandTime) { logCommand(command, commandTime, false); }
-  void logCommand(QString command, QTime *commandTime, bool saveToHistory);
-  void logResponse(QString command, QString response, QTime *responseTime);
+  void logCommand(QString command) { logCommand(command, false); }
+  void logCommand(QString command, bool saveToHistory);
+  void logResponse(QString command, QString response, double elapsed);
   void showException(QString exception);
   void openOMCLoggerWidget();
   void sendCustomExpression();
