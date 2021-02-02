@@ -289,6 +289,22 @@ public
     value := Vector.get(map.values, 1);
   end first;
 
+  function toList
+    "Returns the keys and values as a list of tuples."
+    input UnorderedMap<K, V> map;
+    output list<tuple<K, V>> lst;
+  protected
+    list<K> keys = keyList(map);
+    list<V> values = valueList(map);
+  algorithm
+    if listLength(keys) == listLength(values) then
+      lst := List.zip(keys, values);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there is an unequal number of keys ("
+        + intString(listLength(keys)) + ") and values (" + intString(listLength(values)) + ")."});
+    end if;
+  end toList;
+
   function keyList
     "Returns the keys as a list."
     input UnorderedMap<K, V> map;

@@ -57,6 +57,7 @@ public
   import OldBackendDAE = BackendDAE;
 
   // New Backend imports
+  import StrongComponent = NBStrongComponent;
   import BVariable = NBVariable;
 
   // Util imports
@@ -1911,9 +1912,29 @@ public
     record INNER_EQUATION
       "Inner equation for torn systems."
       Pointer<Equation> eqn;
-      list<Pointer<Variable>> vars;
+      Pointer<Variable> var;
       //Option<Constraints> cons;
     end INNER_EQUATION;
+
+    function toString
+      input InnerEquation eqn;
+      input output String str;
+    algorithm
+      str := Equation.toString(Pointer.access(eqn.eqn), str + "(" + BVariable.pointerToString(eqn.var) + ") ");
+    end toString;
+
+    function fromStrongComponent
+      input StrongComponent comp;
+      output InnerEquation eqn;
+    algorithm
+      // ToDo: add more cases
+      eqn := match comp
+        case StrongComponent.SINGLE_EQUATION() then INNER_EQUATION(comp.eqn, comp.var);
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be an inner equation: " + StrongComponent.toString(comp)});
+        then fail();
+      end match;
+    end fromStrongComponent;
   end InnerEquation;
 
   annotation(__OpenModelica_Interface="backend");

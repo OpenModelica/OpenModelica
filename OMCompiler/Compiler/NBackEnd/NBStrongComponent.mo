@@ -305,9 +305,7 @@ public
           dependencies := listAppend(tmp, dependencies);
 
           // collect inner loop variables
-          for var in strict.innerEquations[i].vars loop
-            loop_vars := BVariable.getVarName(var) :: loop_vars;
-          end for;
+          loop_vars := BVariable.getVarName(strict.innerEquations[i].var) :: loop_vars;
         end for;
 
         // add all dependencies

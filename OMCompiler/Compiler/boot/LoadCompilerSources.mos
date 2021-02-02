@@ -315,8 +315,6 @@ if true then /* Suppress output */
     "../NBackEnd/Util/NBHashTableCrToCr.mo",
     "../NBackEnd/Util/NBHashTableCrToCrEqLst.mo",
     "../NBackEnd/Util/NBHashTableCrToCrLst.mo",
-    "../NBackEnd/Util/NBHashTableCrToInt.mo",
-    "../NBackEnd/Util/NBHashTableRSE.mo",
 
   // "NSimCode"
     "../NSimCode/HashTableSimCode.mo",

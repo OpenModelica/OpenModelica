@@ -459,6 +459,10 @@ public
 
         case StrongComponent.TORN_LOOP(strict = strict)
           algorithm
+            for i in 1:arrayLength(strict.innerEquations) loop
+              (tmp, simCodeIndices, funcTree) := fromInnerEquation(strict.innerEquations[i], simCodeIndices, funcTree, systemType);
+              eqns := tmp :: eqns;
+            end for;
             for eqn_ptr in strict.residual_eqns loop
               (tmp, simCodeIndices) := createResidual(Pointer.access(eqn_ptr), simCodeIndices);
               eqns := tmp :: eqns;
@@ -494,6 +498,24 @@ public
 
       end match;
     end fromStrongComponent;
+
+    function fromInnerEquation
+      input BEquation.InnerEquation innerEqn;
+      output Block blck;
+      input output SimCode.SimCodeIndices simCodeIndices;
+      input output FunctionTree funcTree;
+      input System.SystemType systemType;
+    algorithm
+      blck := match innerEqn
+        case BEquation.InnerEquation.INNER_EQUATION()
+          algorithm
+            (blck, simCodeIndices, funcTree) := createEquation(Pointer.access(innerEqn.var), Pointer.access(innerEqn.eqn), simCodeIndices, funcTree, systemType);
+        then blck;
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for \n" + BEquation.Equation.toString(Pointer.access(innerEqn.eqn))});
+        then fail();
+      end match;
+    end fromInnerEquation;
 
     function createResidual
       input BEquation.Equation eqn;

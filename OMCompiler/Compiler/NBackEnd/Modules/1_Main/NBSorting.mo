@@ -35,14 +35,17 @@ encapsulated package NBSorting
 "
 
 public
+  import StrongComponent = NBStrongComponent;
+
+protected
   import BEquation = NBEquation;
   import NBEquation.EquationPointers;
   import BVariable = NBVariable;
   import NBVariable.VariablePointers;
   import Adjacency = NBAdjacency;
-  import NBCausalize.Matching;
-  import StrongComponent = NBStrongComponent;
+  import Matching = NBMatching;
 
+public
   function tarjan
     "author: kabdelhak
     Sorting algorithm for directed graphs by Robert E. Tarjan.
@@ -58,7 +61,7 @@ public
         list<list<Integer>> comps_indices;
 
       case (Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX(), Matching.SCALAR_MATCHING()) algorithm
-        comps_indices := tarjanScalar(adj.m, matching.var_to_eqn);
+        comps_indices := tarjanScalar(adj.m, matching.var_to_eqn, matching.eqn_to_var);
         comps := list(StrongComponent.create(idx_lst, matching, vars, eqns) for idx_lst in comps_indices);
       then comps;
 
@@ -80,6 +83,7 @@ public
     This sorting algorithm only considers equations e that have a matched variable v with e = var_to_eqn[v]."
     input array<list<Integer>> m          "normal adjacency matrix";
     input array<Integer> var_to_eqn       "eqn := var_to_eqn[var]";
+    input array<Integer> eqn_to_var       "var := eqn_to_var[eqn]";
     output list<list<Integer>> comps = {} "eqn indices";
   protected
     Integer index = 0;
@@ -87,11 +91,12 @@ public
     array<Integer> number, lowlink;
     array<Boolean> onStack;
     Integer N = arrayLength(var_to_eqn);
+    Integer M = arrayLength(eqn_to_var);
     Integer eqn;
   algorithm
-    number := arrayCreate(N, -1);
-    lowlink := arrayCreate(N, -1);
-    onStack := arrayCreate(N, false);
+    number := arrayCreate(M, -1);
+    lowlink := arrayCreate(M, -1);
+    onStack := arrayCreate(M, false);
 
     // loop over all variables and find their component
     for var in 1:N loop

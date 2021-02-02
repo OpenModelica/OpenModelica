@@ -48,13 +48,17 @@ protected
   import Variable = NFVariable;
 
   // Backend imports
+  import Adjacency = NBAdjacency;
   import BEquation = NBEquation;
   import BJacobian = NBJacobian;
+  import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
   import NBEquation.Equation;
   import NBEquation.EquationPointers;
   import NBEquation.InnerEquation;
   import Jacobian = NBackendDAE.BackendDAE;
+  import Matching = NBMatching;
+  import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import NBVariable.VariablePointers;
@@ -83,7 +87,10 @@ public
     for eqn in set.residual_eqns loop
       str := str  + Equation.toString(Pointer.access(eqn), "\t") + "\n";
     end for;
-    // ToDo: inner equations and jacobian
+    str := str + "\n### Inner Equations:\n";
+    for eqn in set.innerEquations loop
+      str := str  + InnerEquation.toString(eqn, "\t") + "\n";
+    end for;
     if Util.isSome(set.jac) then
       str := str + "\n" + BJacobian.toString(Util.getOption(set.jac), "NLS", true);
     end if;
@@ -99,6 +106,9 @@ public
     constant Module.tearingInterface func = getModule();
     FunctionTree funcTree;
   algorithm
+    if Flags.isSet(Flags.TEARING_DUMP) then
+      print(StringUtil.headline_1("[" + System.System.systemTypeString(systemType) + "] Tearing") + "\n");
+    end if;
     bdae := match (systemType, bdae)
       local
         list<System.System> systems;
@@ -168,10 +178,12 @@ public
     "Returns the module function that was chosen by the user."
     output Module.tearingInterface func;
   protected
-    String flag = "none"; //Flags.getConfigString(Flags.JACOBIAN)
+    String flag = "default"; //Flags.getConfigString(Flags.JACOBIAN)
   algorithm
     (func) := match flag
-      case "none" then (tearingNone);
+      case "default"  then (tearingMinimal);
+      case "none"     then (tearingNone);
+      case "minimal"  then (tearingMinimal);
       /* ... New tearing modules have to be added here */
       else fail();
     end match;
@@ -241,7 +253,7 @@ protected
     Option<Jacobian> jacobian;
   algorithm
     index := index + 1;
-    dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), {});
+    dummy := BEquation.INNER_EQUATION(Pointer.create(Equation.DUMMY_EQUATION()), Pointer.create(NBVariable.DUMMY_VARIABLE));
     tearingSet := TEARING_SET(variables, equations, arrayCreate(0, dummy), NONE());
     comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed);
 
@@ -255,6 +267,83 @@ protected
 
     comp := StrongComponent.addLoopJacobian(comp, jacobian);
   end tearingNoneWork;
+
+  function tearingMinimal extends Module.tearingInterface;
+  algorithm
+    (comp, funcTree, index) := match comp
+      // apply tearing if it is an algebraic loop
+      case StrongComponent.ALGEBRAIC_LOOP()
+      then tearingMinimalWork(
+          name      = System.System.systemTypeString(systemType) + "_NLS_JAC_",
+          variables = comp.vars,
+          equations = comp.eqns,
+          mixed     = comp.mixed,
+          funcTree  = funcTree,
+          index     = index
+        );
+
+      // do nothing otherwise
+      else (comp, funcTree, index);
+    end match;
+  end tearingMinimal;
+
+  function tearingMinimalWork
+    input String name;
+    input list<Pointer<Variable>> variables;
+    input list<Pointer<Equation>> equations;
+    input Boolean mixed;
+    output StrongComponent comp;
+    input output FunctionTree funcTree;
+    input output Integer index;
+  protected
+    list<Pointer<Variable>> cont_lst, disc_lst;
+    list<Pointer<Equation>> residual_lst;
+    VariablePointers discreteVars;
+    EquationPointers eqns;
+    Adjacency.Matrix adj;
+    Matching matching;
+    list<StrongComponent> comps;
+    list<InnerEquation> innerEquations;
+    Tearing tearingSet;
+    Option<Jacobian> jacobian;
+
+  algorithm
+    index := index + 1;
+
+    (cont_lst, disc_lst) := List.splitOnTrue(variables, BVariable.isContinuous);
+    if listEmpty(disc_lst) then
+      cont_lst := variables;
+      residual_lst := equations;
+      innerEquations := {};
+    else
+      discreteVars := VariablePointers.fromList(disc_lst);
+      eqns := EquationPointers.fromList(equations);
+
+      // make ARRAY possible
+      (adj, SOME(funcTree)) := Adjacency.Matrix.create(discreteVars, eqns, NBAdjacency.MatrixType.SCALAR, NBAdjacency.MatrixStrictness.LINEAR, SOME(funcTree));
+      matching := Matching.regular(adj, true, false);
+      (_, _, _, residual_lst) := Matching.getMatches(matching, discreteVars, eqns);
+      comps := Sorting.tarjan(adj, matching, discreteVars, eqns);
+      innerEquations := list(BEquation.InnerEquation.fromStrongComponent(c) for c in comps);
+    end if;
+
+    tearingSet := TEARING_SET(cont_lst, residual_lst, listArray(innerEquations), NONE());
+    comp := StrongComponent.TORN_LOOP(index, tearingSet, NONE(), false, mixed);
+
+    // inner equations are part of the jacobian
+    (jacobian, funcTree) := BJacobian.simple(
+      variables = VariablePointers.fromList(variables),
+      equations = EquationPointers.fromList(equations),
+      comp      = comp,
+      funcTree  = funcTree,
+      name      = name + intString(index)
+    );
+
+    comp := StrongComponent.addLoopJacobian(comp, jacobian);
+    if Flags.isSet(Flags.TEARING_DUMP) and not listEmpty(disc_lst) then
+      print(StrongComponent.toString(comp) + "\n");
+    end if;
+  end tearingMinimalWork;
 
   annotation(__OpenModelica_Interface="backend");
 end NBTearing;

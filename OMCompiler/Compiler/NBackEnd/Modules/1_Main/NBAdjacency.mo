@@ -40,9 +40,11 @@ public
 protected
   // NF imports
   import ComponentRef = NFComponentRef;
+  import FunctionTree = NFFlatten.FunctionTree;
   import Variable = NFVariable;
 
   // NB imports
+  import Differentiate = NBDifferentiate;
   import BEquation = NBEquation;
   import NBEquation.Equation;
   import NBEquation.EquationAttributes;
@@ -93,10 +95,11 @@ public
       input MatrixType ty;
       input MatrixStrictness st = MatrixStrictness.FULL;
       output Matrix adj;
+      input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     algorithm
-      adj := match ty
-        case MatrixType.SCALAR then createScalar(vars, eqs, st);
-        case MatrixType.ARRAY  then createArray(vars, eqs, st);
+      (adj, funcTree) := match ty
+        case MatrixType.SCALAR then createScalar(vars, eqs, st, funcTree);
+        case MatrixType.ARRAY  then createArray(vars, eqs, st, funcTree);
         else algorithm
           Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because of unknown adjacency matrix type."});
         then fail();
@@ -144,15 +147,23 @@ public
       input EquationPointers eqs;
       input MatrixStrictness st = MatrixStrictness.FULL;
       output Matrix adj;
+      input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     protected
       Equation eqn;
       list<ComponentRef> dependencies, non_state_dependencies, nonlinear_dependencies;
+      BEquation.EquationAttributes attr;
+      Pointer<Differentiate.DifferentiationArguments> diffArgs_ptr;
+      Differentiate.DifferentiationArguments diffArgs;
       Pointer<Equation> derivative;
       list<Pointer<BEquation.Equation>> eqn_lst;
       array<list<Integer>> m, mT;
       Integer eqn_idx = 1;
     algorithm
       if ExpandableArray.getNumberOfElements(eqs.eqArr) > 0 then
+        if Util.isSome(funcTree) then
+          diffArgs_ptr := Pointer.create(Differentiate.DifferentiationArguments.timeDiffArgs(Util.getOption(funcTree)));
+        end if;
+
         eqn_lst := EquationPointers.toList(eqs);
         // create empty adjacency matrix and traverse equations to fill it
         m := arrayCreate(listLength(eqn_lst), {});
@@ -160,47 +171,37 @@ public
           eqn := Pointer.access(eqn_ptr);
           dependencies := BEquation.Equation.collectCrefs(eqn, function getDependentCref(map = vars.map));
 
-          _ := match Equation.getAttributes(eqn)
-
             // INIT
-            case EquationAttributes.EQUATION_ATTRIBUTES()
-              guard(st == MatrixStrictness.INIT)
-              algorithm
-                // for initialization all regular rules apply but states have to be
-                // sorted to be at the end
-                (non_state_dependencies, dependencies) := List.extractOnTrue(dependencies, function BVariable.checkCref(func = BVariable.isNonState));
-                m[eqn_idx] := getDependentCrefIndices(non_state_dependencies, vars.map, true);
-            then();
+          if (st == MatrixStrictness.INIT) then
+            // for initialization all regular rules apply but states have to be
+            // sorted to be at the end
+            (non_state_dependencies, dependencies) := List.extractOnTrue(dependencies, function BVariable.checkCref(func = BVariable.isNonState));
+            m[eqn_idx] := getDependentCrefIndices(non_state_dependencies, vars.map, true);
 
-            // LINEAR and STATE SELECT
-            case EquationAttributes.EQUATION_ATTRIBUTES(derivative = SOME(derivative))
-              guard(st > MatrixStrictness.FULL)
-              algorithm
-                // if we only want linear dependencies, try to look if there is a derivative saved. remove all dependencies
-                // of that equation because those are the nonlinear ones.
-                // for now fail if there is no derivative, possible fallback: differentiate eq and save it
-                nonlinear_dependencies := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = vars.map));
-                dependencies := List.setDifferenceOnTrue(dependencies, nonlinear_dependencies, ComponentRef.isEqual);
-                if st == MatrixStrictness.STATE_SELECT then
-                  // if we are preparing for state selection we only search for linear occurences. One exception
-                  // are StateSelect.NEVER variables, which are allowed to appear nonlinear. but they have to be
-                  // the last checked option, so they have a negative index and are afterwards sorted to be at the end
-                  // of the list.
-                  (nonlinear_dependencies, _) := List.extractOnTrue(nonlinear_dependencies, function BVariable.checkCref(func = function BVariable.isStateSelect(stateSelect = NFBackendExtension.StateSelect.NEVER)));
-                  m[eqn_idx] := getDependentCrefIndices(nonlinear_dependencies, vars.map, true);
-                end if;
-            then ();
-
-            // FAIL
-            case EquationAttributes.EQUATION_ATTRIBUTES(derivative = NONE())
-              guard(st > MatrixStrictness.FULL)
-              algorithm
-                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no derivative is saved and linear adjacency matrix is required!"});
-            then fail();
-
-            // FULL
-            else ();
-          end match;
+          // LINEAR and STATE SELECT
+          elseif (st > MatrixStrictness.FULL) then
+            attr := Equation.getAttributes(eqn);
+            if Util.isSome(attr.derivative) then
+              derivative := Util.getOption(attr.derivative);
+            elseif Util.isSome(funcTree) then
+              derivative := Differentiate.differentiateEquationPointer(eqn_ptr, diffArgs_ptr);
+            else
+              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because no derivative is saved and no function tree is given for linear adjacency matrix!"});
+            end if;
+            // if we only want linear dependencies, try to look if there is a derivative saved. remove all dependencies
+            // of that equation because those are the nonlinear ones.
+            // for now fail if there is no derivative, possible fallback: differentiate eq and save it
+            nonlinear_dependencies := BEquation.Equation.collectCrefs(Pointer.access(derivative), function getDependentCref(map = vars.map));
+            dependencies := List.setDifferenceOnTrue(dependencies, nonlinear_dependencies, ComponentRef.isEqual);
+            if st == MatrixStrictness.STATE_SELECT then
+              // if we are preparing for state selection we only search for linear occurences. One exception
+              // are StateSelect.NEVER variables, which are allowed to appear nonlinear. but they have to be
+              // the last checked option, so they have a negative index and are afterwards sorted to be at the end
+              // of the list.
+                (nonlinear_dependencies, _) := List.extractOnTrue(nonlinear_dependencies, function BVariable.checkCref(func = function BVariable.isStateSelect(stateSelect = NFBackendExtension.StateSelect.NEVER)));
+                m[eqn_idx] := getDependentCrefIndices(nonlinear_dependencies, vars.map, true);
+            end if;
+          end if;
 
           // create the actual matrix row. Append because STATE_SELECT and INIT
           // have already added certain variables with negative index
@@ -215,6 +216,10 @@ public
         if st > MatrixStrictness.LINEAR then
           m := absoluteMatrix(m);
           mT := absoluteMatrix(mT);
+        end if;
+        if Util.isSome(funcTree) then
+          diffArgs := Pointer.access(diffArgs_ptr);
+          funcTree := SOME(diffArgs.funcTree);
         end if;
 
         adj := SCALAR_ADJACENCY_MATRIX(m, mT, st);
@@ -264,6 +269,7 @@ public
       input EquationPointers eqs;
       input MatrixStrictness st = MatrixStrictness.FULL;
       output Matrix adj;
+      input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     protected
       BipartiteIncidenceList<SetVertex, SetEdge> graph;
       Pointer<Integer> max_dim = Pointer.create(1);

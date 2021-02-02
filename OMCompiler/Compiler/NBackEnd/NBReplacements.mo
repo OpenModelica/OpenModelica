@@ -96,17 +96,19 @@ public
   function simple
     "creates simple replacement rules for removeSimpleEquations"
     input list<StrongComponent> comps;
-    input output HashTableCrToExp.HashTable replacements;
+    input UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
-    replacements := List.fold(comps, addSimple, replacements);
+    for comp in comps loop
+      addSimple(comp, replacements);
+    end for;
   end simple;
 
   function addSimple
     "ToDo: More cases!"
     input StrongComponent comp;
-    input output HashTableCrToExp.HashTable replacements;
+    input UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
-    replacements := match comp
+    _ := match comp
       local
         ComponentRef varName;
         Equation solvedEq;
@@ -122,8 +124,9 @@ public
           replace_exp := Equation.getRHS(solvedEq);
           replace_exp := Expression.map(replace_exp, function applySimpleExp(replacements = replacements));
           // add the new replacement rule
-          replacements := BaseHashTable.add((varName, SimplifyExp.simplify(replace_exp)), replacements);
+          UnorderedMap.add(varName, SimplifyExp.simplify(replace_exp), replacements);
         else
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because strong component cannot be solved explicitely: " + StrongComponent.toString(comp)});
           fail();
         end if;
       then replacements;
@@ -141,7 +144,7 @@ public
     while removing simple equations on them."
     input output EqData eqData;
     input output VarData varData; // bindings
-    input HashTableCrToExp.HashTable replacements "rules for replacements are stored inside here";
+    input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
   protected
     list<tuple<ComponentRef, Expression>> entries;
     ComponentRef aliasCref;
@@ -186,7 +189,7 @@ public
     end match;
 
     // update alias variable bindings
-    entries := BaseHashTable.hashTableList(replacements);
+    entries := UnorderedMap.toList(replacements);
     for entry in entries loop
       (aliasCref, replacement) := entry;
       var_ptr := BVariable.getVarPointer(aliasCref);
@@ -199,11 +202,11 @@ public
   function applySimpleExp
     "Needs to be mapped with Expression.map()"
     input output Expression exp                   "Replacement happens inside this expression";
-    input HashTableCrToExp.HashTable replacements "rules for replacements are stored inside here";
+    input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
   algorithm
     exp := match exp
-      case Expression.CREF() guard(BaseHashTable.hasKey(exp.cref, replacements)) algorithm
-      then BaseHashTable.get(exp.cref, replacements);
+      case Expression.CREF() guard(UnorderedMap.contains(exp.cref, replacements))
+      then UnorderedMap.getSafe(exp.cref, replacements);
       else exp;
     end match;
   end applySimpleExp;
@@ -211,7 +214,7 @@ public
   function applySimpleVar
     "applys replacement on the variable binding expression"
     input output Variable var;
-    input HashTableCrToExp.HashTable replacements "rules for replacements are stored inside here";
+    input UnorderedMap<ComponentRef, Expression> replacements "rules for replacements are stored inside here";
   algorithm
     var := match var
       local
@@ -225,7 +228,7 @@ public
   end applySimpleVar;
 
   function simpleToString
-    input HashTableCrToExp.HashTable replacements;
+    input UnorderedMap<ComponentRef, Expression> replacements;
     output String str = "";
   protected
     list<tuple<ComponentRef, Expression>> entries;
@@ -233,7 +236,7 @@ public
     Expression value;
   algorithm
     str := StringUtil.headline_2("[dumprepl] Replacements: " + str);
-    entries := BaseHashTable.hashTableList(replacements);
+    entries := UnorderedMap.toList(replacements);
     for entry in entries loop
       (key, value) := entry;
       str := str + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";

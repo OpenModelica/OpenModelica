@@ -61,7 +61,6 @@ public
   // Backend Imports
   import BackendDAE = NBackendDAE;
   import BackendUtil = NBBackendUtil;
-  import HashTableCrToInt = NBHashTableCrToInt;
   import BVariable = NBVariable;
 
   //Util Imports

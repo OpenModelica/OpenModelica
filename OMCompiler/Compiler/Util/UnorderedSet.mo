@@ -132,7 +132,7 @@ public
   protected
     Integer hash;
   algorithm
-    (SOME(_), hash) := find(key, set);
+    (NONE(), hash) := find(key, set);
     addKey(key, hash, set);
   end addUnique;
 

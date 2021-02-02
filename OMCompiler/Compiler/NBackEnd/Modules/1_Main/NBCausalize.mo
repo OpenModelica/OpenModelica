@@ -70,7 +70,6 @@ protected
   // util imports
   import BackendUtil = NBBackendUtil;
   import Error;
-  import HashTableCrToInt = NBHashTableCrToInt;
   import List;
   import StringUtil;
   import UnorderedSet;

@@ -142,14 +142,7 @@ public
     end if;
 
     // Build differentiation argument structure
-    diffArguments := Differentiate.DIFFERENTIATION_ARGUMENTS(
-      diffCref        = ComponentRef.EMPTY(),
-      new_vars        = {},
-      jacobianHT      = NONE(),
-      diffType        = NBDifferentiate.DifferentiationType.TIME,
-      funcTree        = funcTree,
-      diffedFunctions = AvlSetPath.new()
-    );
+    diffArguments := Differentiate.DifferentiationArguments.timeDiffArgs(funcTree);
     diffArguments_ptr := Pointer.create(diffArguments);
 
     if Flags.isSet(Flags.DUMMY_SELECT) then

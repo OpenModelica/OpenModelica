@@ -57,7 +57,6 @@ protected
   import Causalize = NBCausalize;
   import Equation = NBEquation.Equation;
   import EquationPointers = NBEquation.EquationPointers;
-  import HashTableRSE = NBHashTableRSE;
   import Replacements = NBReplacements;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
@@ -65,6 +64,8 @@ protected
 
   // Util imports
   import StringUtil;
+  import UnorderedMap;
+  import UnorderedSet;
 public
   function main
     "Wrapper function for any detect states function. This will be
@@ -152,6 +153,9 @@ public
   constant SimpleSet EMPTY_SIMPLE_SET = SIMPLE_SET({}, {}, NONE());
 
 protected
+  // needed for unordered map
+  type SetPtr = Pointer<SimpleSet>;
+
   uniontype CrefTpl "used for findCrefs()"
     record CREF_TPL
       Boolean cont                "false if search already resulted in non simple structure";
@@ -168,7 +172,7 @@ protected
     "STEPS:
       1. collect alias sets (variables, equations, optional constant binding)
       2. balance sets - choose variable to keep if necessary
-      3. match/sort set (linear w.r.t. since all equations contain two crefs at max and are simple/linear)
+      3. match/sort set (linear w.r.t. unknowns since all equations contain two crefs at max and are simple/linear)
       4. apply replacements
       5. save replacements in bindings of alias variables
     "
@@ -176,7 +180,7 @@ protected
   algorithm
     (varData, eqData) := match (varData, eqData)
       local
-        HashTableCrToExp.HashTable replacements;
+        UnorderedMap<ComponentRef, Expression> replacements;
         EquationPointers newEquations;
         list<Pointer<Variable>> alias_vars, const_vars, non_trivial_alias;
         list<Pointer<Equation>> non_trivial_eqs;
@@ -193,7 +197,7 @@ protected
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
-          alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
+          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.simulation := EquationPointers.compress(newEquations);
@@ -247,7 +251,7 @@ protected
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
-          alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
+          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.temporary := EquationPointers.compress(newEquations);
@@ -285,7 +289,7 @@ protected
           // 5. save replacements in bindings of alias variables
           // -----------------------------------
           (eqData, varData) := Replacements.applySimple(eqData, varData, replacements);
-          alias_vars := list(BVariable.getVarPointer(cref) for cref in BaseHashTable.hashTableKeyList(replacements));
+          alias_vars := list(BVariable.getVarPointer(cref) for cref in UnorderedMap.keyList(replacements));
 
           // save new equations and compress affected arrays(some might have been removed)
           eqData.temporary := EquationPointers.compress(newEquations);
@@ -323,11 +327,11 @@ protected
     "
     input VariablePointers variables;
     input EquationPointers equations;
-    output HashTableCrToExp.HashTable replacements;
+    output UnorderedMap<ComponentRef, Expression> replacements;
     output EquationPointers newEquations;
   protected
     Integer size, setIdx = 1;
-    HashTableRSE.HashTable hashTable;
+    UnorderedMap<ComponentRef, SetPtr> map;
     list<SimpleSet> sets;
   algorithm
     // ------------------------------------------------------------------------------
@@ -336,10 +340,10 @@ protected
     // collect (cref) -> (simpleSet) hashtable
     size := BVariable.VariablePointers.size(variables);
     size := intMax(BaseHashTable.lowBucketSize, realInt(realMul(intReal(size), 0.7)));
-    hashTable := HashTableRSE.empty(size);
-    (newEquations, hashTable) := NBEquation.EquationPointers.foldRemovePtr(equations, findSimpleEquation, hashTable);
+    map := UnorderedMap.new<SetPtr>(ComponentRef.hash, ComponentRef.isEqual, size);
+    (newEquations, map) := NBEquation.EquationPointers.foldRemovePtr(equations, findSimpleEquation, map);
 
-    sets := getSimpleSets(hashTable, size);
+    sets := getSimpleSets(map, size);
     if Flags.isSet(Flags.DUMP_REPL) then
       print(StringUtil.headline_2("[dumprepl] Alias Sets:") + "\n");
       for set in sets loop
@@ -352,7 +356,7 @@ protected
     // 2. balance sets - choose variable to keep if necessary
     // 3. match/sort set (linear w.r.t. vars since all equations contain two crefs at max and are simple/linear)
     // --------------------------------------------------------------------------------------------------------
-    replacements := HashTableCrToExp.emptyHashTableSized(size);
+    replacements := UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual, size);
     for set in sets loop
       replacements := createReplacementRules(set, replacements);
     end for;
@@ -365,7 +369,7 @@ protected
   function findSimpleEquation
     "Checks if the equation is simple and adds it to the correct set in the hashTable."
     input Pointer<Equation> eq_ptr;
-    input output HashTableRSE.HashTable hashTable;
+    input output UnorderedMap<ComponentRef, SetPtr> map;
     output Boolean delete = false;
   protected
     Equation eq;
@@ -386,23 +390,23 @@ protected
       else crefTpl;
     end match;
 
-    (hashTable, delete) := match crefTpl
+    (map, delete) := match crefTpl
       local
-        Pointer<SimpleSet> set_ptr, set1_ptr, set2_ptr;
+        SetPtr set_ptr, set1_ptr, set2_ptr;
         SimpleSet set, set1, set2;
         ComponentRef cr1, cr2;
 
       // one variable is connected to a parameter or constant
       case CREF_TPL(cr_lst = {cr1}) algorithm
-        if not BaseHashTable.hasKey(cr1, hashTable) then
+        if not UnorderedMap.contains(cr1, map) then
           // the variable does not belong to a set -> create new one
           set := EMPTY_SIMPLE_SET;
           set.simple_variables := {BVariable.getVarPointer(cr1)};
           set.const_opt := SOME(Pointer.create(eq));
-          hashTable := BaseHashTable.add((cr1, Pointer.create(set)), hashTable);
+          UnorderedMap.add(cr1, Pointer.create(set), map);
         else
           // it already belongs to a set, try to update it and throw error if there already is a const binding
-          set_ptr := BaseHashTable.get(cr1, hashTable);
+          set_ptr := UnorderedMap.getSafe(cr1, map);
           set := Pointer.access(set_ptr);
           if isSome(set.const_opt) then
             Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to add Equation:\n"
@@ -414,14 +418,14 @@ protected
             Pointer.update(set_ptr, set);
           end if;
         end if;
-      then (hashTable, true);
+      then (map, true);
 
       // two variable crefs are connected by a simple equation
       case CREF_TPL(cr_lst = {cr1, cr2}) algorithm
-        if (BaseHashTable.hasKey(cr1, hashTable) and BaseHashTable.hasKey(cr2, hashTable)) then
+        if (UnorderedMap.contains(cr1, map) and UnorderedMap.contains(cr2, map)) then
           // Merge sets
-          set1_ptr := BaseHashTable.get(cr1, hashTable);
-          set2_ptr := BaseHashTable.get(cr2, hashTable);
+          set1_ptr := UnorderedMap.getSafe(cr1, map);
+          set2_ptr := UnorderedMap.getSafe(cr2, map);
           set1 := Pointer.access(set1_ptr);
           set2 := Pointer.access(set2_ptr);
           set := EMPTY_SIMPLE_SET;
@@ -454,50 +458,36 @@ protected
             set.simple_variables := listAppend(set2.simple_variables, set1.simple_variables);
             Pointer.update(set1_ptr, set);
             for var_ptr in set2.simple_variables loop
-              try
-                BaseHashTable.update((BVariable.getVarName(var_ptr), set1_ptr), hashTable);
-              else
-                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to update hashTable
-                  entry for variable: " + Variable.toString(Pointer.access(var_ptr)) +
-                  " while merging following sets:\n" +  SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
-                fail();
-              end try;
+              UnorderedMap.add(BVariable.getVarName(var_ptr), set1_ptr, map);
             end for;
           else
             set.simple_variables := listAppend(set2.simple_variables, set1.simple_variables);
             Pointer.update(set2_ptr, set);
             for var_ptr in set1.simple_variables loop
-              try
-                BaseHashTable.update((BVariable.getVarName(var_ptr), set2_ptr), hashTable);
-              else
-                Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed to update hashTable
-                  entry for variable: " + Variable.toString(Pointer.access(var_ptr)) +
-                  " while merging following sets:\n" +  SimpleSet.toString(set1) + "\n" + SimpleSet.toString(set2)});
-                fail();
-              end try;
+              UnorderedMap.add(BVariable.getVarName(var_ptr), set2_ptr, map);
             end for;
           end if;
 
-        elseif BaseHashTable.hasKey(cr1, hashTable) then
+        elseif UnorderedMap.contains(cr1, map) then
           // Update set
-          set_ptr := BaseHashTable.get(cr1, hashTable);
+          set_ptr := UnorderedMap.getSafe(cr1, map);
           set := Pointer.access(set_ptr);
           // add cr2 to variables and add new equation pointer
           set.simple_variables := BVariable.getVarPointer(cr2) :: set.simple_variables;
           set.simple_equations := Pointer.create(eq) :: set.simple_equations;
           Pointer.update(set_ptr, set);
           // add new hash entry for c2
-          hashTable := BaseHashTable.add((cr2, set_ptr), hashTable);
-        elseif BaseHashTable.hasKey(cr2, hashTable) then
+          UnorderedMap.add(cr2, set_ptr, map);
+        elseif UnorderedMap.contains(cr2, map) then
           // Update set
-          set_ptr := BaseHashTable.get(cr2, hashTable);
+          set_ptr := UnorderedMap.getSafe(cr2, map);
           set := Pointer.access(set_ptr);
           // add cr1 to variables and add new equation pointer
           set.simple_variables := BVariable.getVarPointer(cr1) :: set.simple_variables;
           set.simple_equations := Pointer.create(eq) :: set.simple_equations;
           Pointer.update(set_ptr, set);
           // add new hash entry for c1
-          hashTable := BaseHashTable.add((cr1, set_ptr), hashTable);
+          UnorderedMap.add(cr1, set_ptr, map);
         else
           // create new set
           set := EMPTY_SIMPLE_SET;
@@ -506,13 +496,13 @@ protected
           set.simple_equations := {Pointer.create(eq)};
           set_ptr := Pointer.create(set);
           // add new hash entry for both variables
-          hashTable := BaseHashTable.add((cr1, set_ptr), hashTable);
-          hashTable := BaseHashTable.add((cr2, set_ptr), hashTable);
+          UnorderedMap.add(cr1, set_ptr, map);
+          UnorderedMap.add(cr2, set_ptr, map);
         end if;
-      then (hashTable, true);
+      then (map, true);
 
       // no replacements can be done with this equation
-      else (hashTable, false);
+      else (map, false);
     end match;
   end findSimpleEquation;
 
@@ -642,24 +632,28 @@ protected
 
   function getSimpleSets
     "extracts all simple sets from the hashTable and avoids duplicates by marking variables"
-    input HashTableRSE.HashTable hashTable;
+    input UnorderedMap<ComponentRef, SetPtr> map;
     input Integer size;
     output list<SimpleSet> sets = {};
   protected
-    HashSet.HashSet cref_marks = HashSet.emptyHashSet(size);
-    list<tuple<ComponentRef, Pointer<SimpleSet>>> entry_lst;
+    UnorderedSet<ComponentRef> cref_marks = UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual, size);
+    list<tuple<ComponentRef, SetPtr>> entry_lst;
     ComponentRef simple_cref;
-    Pointer<SimpleSet> set_ptr;
+    SetPtr set_ptr;
     SimpleSet set;
   algorithm
-    entry_lst := BaseHashTable.hashTableList(hashTable);
+    entry_lst := UnorderedMap.toList(map);
     for entry in entry_lst loop
       (simple_cref, set_ptr) := entry;
-      if not BaseHashSet.has(simple_cref, cref_marks) then
+      if not UnorderedSet.contains(simple_cref, cref_marks) then
         set := Pointer.access(set_ptr);
         sets := set :: sets;
         for var_ptr in set.simple_variables loop
-          cref_marks := BaseHashSet.addUnique(BVariable.getVarName(var_ptr), cref_marks);
+          try
+            UnorderedSet.addUnique(BVariable.getVarName(var_ptr), cref_marks);
+          else
+            Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the set for " + BVariable.pointerToString(var_ptr) + " was already added."});
+          end try;
         end for;
       end if;
     end for;
@@ -668,7 +662,7 @@ protected
   function createReplacementRules
     "creates replacement rules from a simple set by causalizing it and replacing the expressions in order"
     input SimpleSet set;
-    input output HashTableCrToExp.HashTable replacements;
+    input output UnorderedMap<ComponentRef, Expression> replacements;
   algorithm
     // ToDo: fix variable attributes to keep
     // report errors/warnings
@@ -687,7 +681,7 @@ protected
         // causalize the system
         comps := Causalize.simple(vars, eqs);
         // create replacements from strong components
-        replacements := Replacements.simple(comps, replacements);
+        Replacements.simple(comps, replacements);
       then replacements;
 
       else algorithm
@@ -698,7 +692,7 @@ protected
         // causalize the system
         comps := Causalize.simple(vars, eqs);
         // create replacements from strong components
-        replacements := Replacements.simple(comps, replacements);
+        Replacements.simple(comps, replacements);
       then replacements;
     end match;
   end createReplacementRules;
