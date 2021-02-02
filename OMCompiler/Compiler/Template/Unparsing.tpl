@@ -63,7 +63,9 @@ end programExternalHeaderFromTypes;
 
 template classExternalHeader(SCode.Element cl, String pack)
 ::=
-match cl case c as SCode.CLASS(classDef=p as SCode.PARTS(__)) then (p.elementLst |> elt => elementExternalHeader(elt,c.name))
+match cl
+  case c as SCode.CLASS(restriction = SCode.R_METARECORD(moved = true, name = Absyn.IDENT(name = name))) then elementExternalHeader(cl, name)
+  case c as SCode.CLASS(classDef=p as SCode.PARTS(__)) then (p.elementLst |> elt => elementExternalHeader(elt,c.name))
 end classExternalHeader;
 
 template pathString(Absyn.Path path)
