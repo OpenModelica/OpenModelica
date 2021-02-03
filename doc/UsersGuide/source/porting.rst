@@ -197,6 +197,25 @@ and should be fixed by putting the variable *z* in the protected section:
     y := x+z;
   end f;
 
+Subscripting of expressions
+------
+There is a proposal of allowing expression subscripting, e.g.
+
+.. code-block:: modelica
+  model M
+    Real x[3];
+    Real y[3];
+    Real z;
+  equation
+    z = (x.*y)[2];
+    ...
+  end M;
+
+This construct is already accepted by some Modelica tools, but is not yet
+included in the current Modelica specification 3.5, nor even in the current working
+draft of 3.6, so it is not supported by OpenModelica
+
+
 Modelica_LinearSystems2 Library
 ------
 The Modelica_LinearSystem2 library was originally developed in Dymola
