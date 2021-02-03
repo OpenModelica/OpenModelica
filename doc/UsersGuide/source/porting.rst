@@ -6,14 +6,14 @@ of the latest specification of the Modelica language, released by the
 non-profit Modelica Association, see the
 `Modelica Language Specification <https://specification.modelica.org>`_. 
 This means that a main requirement for a Modelica library to work in
-OpenModelica is to be fully conforming to the Language Specification.
+OpenModelica is to be fully compliant to the Language Specification.
 
 Libraries and models developed with other Modelica tools may contain some code
 which is not valid according to the language specification, but still accepted
 by that tool, e.g. to support legacy code of their customers. In order to use
 those libraries and models in OpenModelica, one needs to make sure that there
-are no such occurrencies. Note that getting rid of those non-conformancies will
-not make the library only usable in OpenModelica; to the contrary, doing that
+are no such occurrencies. Note that getting rid of invalid Modelica code
+does not make the library *only* usable in OpenModelica; to the contrary, doing that
 is the best guarantee that the library will be usable both with the original
 tool used for development and with OpenModelica, as well as with any other present
 or future tool that follows the standard.
