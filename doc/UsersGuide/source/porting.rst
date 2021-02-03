@@ -2,9 +2,9 @@ Porting Modelica libraries to OpenModelica
 ===========
 
 One of the goals of OpenModelica is to provide a full, no-compromise implementation
-of the latest specification of the Modelica language, released by the
-non-profit Modelica Association, see the
-`Modelica Language Specification <https://specification.modelica.org>`_. 
+of the latest verion of the 
+`Modelica Language Specification <https://specification.modelica.org>`_,
+released by the non-profit `Modelica Association <https://www.modelica.org>`_.
 This means that a main requirement for a Modelica library to work in
 OpenModelica is to be fully compliant to the Language Specification.
 
