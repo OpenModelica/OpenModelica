@@ -5,6 +5,9 @@ One of the goals of OpenModelica is to provide a full, no-compromise implementat
 of the latest specification of the Modelica language, released by the
 non-profit Modelica Association, see
 `Modelica Language Specification<https://specification.modelica.org/>`. 
+
+`CNN <http://cnn.com>`_
+
 This means that a main requirement for a Modelica library to work in
 OpenModelica is to be fully conforming to the Language Specification.
 
