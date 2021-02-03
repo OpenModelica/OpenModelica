@@ -135,8 +135,8 @@ irrelevant, according to the language specification.
 Equality operator in algorithms
 -------
 The following code is illegal, because it uses the equality '=' operator, which
-is reserved for equations, instead of the assignment operatore ':=' inside
-an algorithm.
+is reserved for equations, instead of the assignment operator ':=' inside
+an algorithm:
 
 .. code-block:: modelica
 
@@ -171,7 +171,7 @@ Public non-input non-output variables in functions
 According to `Section 12.2 <https://specification.modelica.org/maint/3.5/functions.html#function-as-a-specialized-class>`_
 of the language specification, only input and output formal parameters are
 allowed in the function’s public variable section. Hence, the following function
-declaration is not valid
+declaration is not valid:
 
 .. code-block:: modelica
 
@@ -184,7 +184,7 @@ declaration is not valid
     y := x+z;
   end f;
 
-and should be fixed by putting the variable *z* in the protected section
+and should be fixed by putting the variable *z* in the protected section:
 
 .. code-block:: modelica
 
@@ -208,7 +208,11 @@ Library.
 
 In principle, these functions could be standardized and become part of
 the ModelicaServices library, which collects standardized interfaces to
-tool-specific functionality. Until this effort is undertaken, the
-Modelica_LinearSystem2 library cannot be considered as a full-fledged
+tool-specific functionality; then, OpenModelica could easily implement them
+based on its internal functionality. However, until this effort is undertaken,
+the Modelica_LinearSystem2 library cannot be considered as a full-fledged
 Modelica library, but only a Dymola-specific one.
 
+If you are interested in this feature and are willing to contribute to get
+it done, please contact the development team, e.g. by opening an ticket on
+the issue tracker.
