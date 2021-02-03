@@ -79,49 +79,54 @@ Access to conditional components
 -------
 According to `Section 4.4.5 <https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#conditional-component-declaration>`_
 of the language specification, "A component declared with a condition-attribute
-can only be modified and/or used in connections". Thus, the following
-patterns are legal
+can only be modified and/or used in connections". When dealing, e.g., with
+conditional input connectors, one can use the following patterns:
 
 .. code-block:: modelica
 
-  model M
-    Real y "Variable set by parameter or conditional input connector";
-    parameter Boolean activateInput "Activate conditional input connector";
-    parameter Boolean activatePin "Activate conditional pin connector";
-    Modelica.Blocks.Interfaces.RealInput conditionalInput = y if activateInput;
-    Modelica.Electrical.Analog.Interfaces.Pin pin if activatePin "Conditional pin connector";
-    parameter Real y_default = 1 "Default value for y if not connected";
-    parameter Real R "Resistance";
-  protected
-    Modelica.Electrical.Analog.Interfaces.Pin pinInternal "Internal hidden pin connector";
-  equation
-    if not activateInput then y = y_default;
-    connect(pin, pinInternal) "Automatically removed if pin is disabled";
-    if not activatePin then pinInternal.v = 0 "Default behaviour if pin is disabled";
-    pinInternal.v = R*y*pinInternal.i "Some equation involving pin connector";
-  end M;
+model M
+  parameter Boolean activateIn1 = true;
+  parameter Boolean activateIn2 = true;
+  Modelica.Blocks.Interfaces.RealInput u1_in if activateIn1;
+  Modelica.Blocks.Interfaces.RealInput u2_in = u2 if activateIn2;
+  Real u2 "internal variable corresponding to u2_in";
+  Real y;
+protected
+  Modelica.Blocks.Interfaces.RealInput u1 "internal connector corresponding to u1_in";
+equation
+  y = u1 + u2;
+  connect(u1_in, u1) "automatically disabled if u1_in is deactivated";
+  if not activateIn1 then
+    u1 = 0 "default value for protected connector value when u1_in is disabled";
+  end if;
+  if not activateIn2 then
+    u2 = 0 "default value for u2 when u2_in is disabled";
+  end if;
+end M;
 
-while the following ones are not
+where conditional components are only used in connect equations. The following
+patterns instead are not legal, because those components are also used in other
+equations; the fact that those equations are conditional is irrelevant:
 
 .. code-block:: modelica
 
-  model M
-    Real y "Variable set by parameter or conditional input connector";
-    parameter Boolean activateInput "Activate conditional input connector";
-    parameter Boolean activatePin "Activate conditional pin connector";
-    Modelica.Blocks.Interfaces.RealInput conditionalInput if activate;
-    Modelica.Electrical.Analog.Interfaces.Pin pin if conditionalPin "Conditional pin connector";
-    parameter Real y_default = 1 "Default value for y if not connected";
-    parameter Real R "Resistance";
-  equation
-    if not activateInput then conditionalPin.y = y_default "Illegal, conditional components used outside connection";
-    if not activatePin then pin.v = 0 "Illegal, conditional component used outside connection";
-    pinInternal.v = R*y*pinInternal.i "Some equation involving pin connector";
-  end M;
-
-You can make your library Modelica compliant by using the hidden connector
-pattern (for physical connectors with flow variables), or by using binding
-equations in conditional connector declarations (for input/output connectors).
+model M
+  parameter Boolean activateIn1 = true;
+  parameter Boolean activateIn2 = true;
+  Modelica.Blocks.Interfaces.RealInput u1_in if activateIn1;
+  Modelica.Blocks.Interfaces.RealInput u2_in if activateIn2;
+  Real u1 "internal variable corresponding to u1_in";
+  Real u2 "internal variable corresponding to u2_in";
+  Real y;
+equation
+  if activateIn1 then
+    u1 = u1_in "invalid: uses conditional u1_in outside connect equations";
+  end if;
+  if activateIn2 then
+    u2 = u2_in "invalid: uses conditional u1_in outside connect equations";
+  end if;
+  y = u1 + u2;
+end M;
 
 Equality operator in algorithms
 -------
