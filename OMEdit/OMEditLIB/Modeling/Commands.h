@@ -405,7 +405,7 @@ class OMSimulatorUndoCommand : public UndoCommand
 {
 public:
   OMSimulatorUndoCommand(const QString &modelName, const QString &oldSnapshot, const QString &newSnapshot, const QString &editedCref, const bool doSnapShot,
-                         const QString &commandText, UndoCommand *pParent = 0);
+                         const bool switchToEdited, const QString oldEditedCref, const QString newEditedCref, const QString &commandText, UndoCommand *pParent = 0);
   void redoInternal();
   void undo();
 private:
@@ -414,6 +414,9 @@ private:
   QString mNewSnapshot;
   QString mEditedCref;
   bool mDoSnapShot;
+  bool mSwitchToEdited;
+  QString mOldEditedCref;
+  QString mNewEditedCref;
   QStringList mExpandedLibraryTreeItemsList;
   QStringList mOpenedModelWidgetsList;
   QStringList mIconSelectedItemsList;

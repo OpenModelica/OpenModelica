@@ -1583,11 +1583,14 @@ void RenameCompositeModelCommand::undo()
  * \param oldSnapshot
  * \param newSnapshot
  * \param editedCref - Cref where the change has happened.
+ * \param doSnapShot
+ * \param switchToEdited
  * \param commandText
  * \param pParent
  */
 OMSimulatorUndoCommand::OMSimulatorUndoCommand(const QString &modelName, const QString &oldSnapshot, const QString &newSnapshot, const QString &editedCref,
-                                               const bool doSnapShot, const QString &commandText, UndoCommand *pParent)
+                                               const bool doSnapShot, const bool switchToEdited, const QString oldEditedCref, const QString newEditedCref,
+                                               const QString &commandText, UndoCommand *pParent)
   : UndoCommand(pParent)
 {
   mModelName = modelName;
@@ -1595,6 +1598,9 @@ OMSimulatorUndoCommand::OMSimulatorUndoCommand(const QString &modelName, const Q
   mNewSnapshot = newSnapshot;
   mEditedCref = editedCref;
   mDoSnapShot = doSnapShot;
+  mSwitchToEdited = switchToEdited;
+  mOldEditedCref = oldEditedCref;
+  mNewEditedCref = newEditedCref;
   mExpandedLibraryTreeItemsList.clear();
   mOpenedModelWidgetsList.clear();
   mIconSelectedItemsList.clear();
@@ -1623,7 +1629,7 @@ void OMSimulatorUndoCommand::redoInternal()
     OMSProxy::instance()->loadSnapshot(mModelName, mNewSnapshot);
   }
   // reload/redraw the OMSimulator model
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mNewSnapshot);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mNewSnapshot, mOldEditedCref, mNewEditedCref);
   // Get the new model LibraryTreeItem
   LibraryTreeItem *pNewModelLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItemOneLevel(mModelName);
   assert(pNewModelLibraryTreeItem);
@@ -1648,7 +1654,7 @@ void OMSimulatorUndoCommand::undo()
   if (mDoSnapShot) {
     OMSProxy::instance()->loadSnapshot(mModelName, mOldSnapshot);
   }
-  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mOldSnapshot);
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mOldSnapshot, mNewEditedCref, mOldEditedCref);
   // Get the new model LibraryTreeItem
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pNewModelLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItemOneLevel(mModelName);
@@ -1682,8 +1688,11 @@ void OMSimulatorUndoCommand::restoreClosedModelWidgets()
  */
 void OMSimulatorUndoCommand::switchToEditedModelWidget()
 {
-  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  LibraryTreeItem *pEditedLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mEditedCref);
-  assert(pEditedLibraryTreeItem);
-  pLibraryTreeModel->showModelWidget(pEditedLibraryTreeItem);
+  if (mSwitchToEdited) {
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pEditedLibraryTreeItem = pLibraryTreeModel->findLibraryTreeItem(mEditedCref);
+    if (pEditedLibraryTreeItem) {
+      pLibraryTreeModel->showModelWidget(pEditedLibraryTreeItem);
+    }
+  }
 }

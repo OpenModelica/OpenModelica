@@ -2023,7 +2023,7 @@ void LibraryTreeModel::expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem,
  * \param editedCref
  * \param snapShot
  */
-void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QString &editedCref, const QString &snapShot)
+void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QString &editedCref, const QString &snapShot, const QString &oldEditedCref, const QString &newEditedCref)
 {
   // Get the top level LibraryTreeItem and its ModelWidget
   LibraryTreeItem *pModelLibraryTreeItem = findLibraryTreeItemOneLevel(modelName);
@@ -2035,15 +2035,17 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   pModelLibraryTreeItem->setModelWidget(0);
   const QString filePath = pModelLibraryTreeItem->getFileName();
   // Get the edited LibraryTreeItem and its ModelWidget
-  LibraryTreeItem *pEditedLibraryTreeItem = findLibraryTreeItem(editedCref);
-  assert(pEditedLibraryTreeItem);
-  if (!pEditedLibraryTreeItem->getModelWidget()) {
-    showModelWidget(pEditedLibraryTreeItem, false);
+  LibraryTreeItem *pEditedLibraryTreeItem = findLibraryTreeItem(oldEditedCref.isEmpty() ? editedCref : oldEditedCref);
+  ModelWidget *pEditedModelWidget = 0;
+  if (pEditedLibraryTreeItem) {
+    if (!pEditedLibraryTreeItem->getModelWidget()) {
+      showModelWidget(pEditedLibraryTreeItem, false);
+    }
+    pEditedModelWidget = pEditedLibraryTreeItem->getModelWidget();
   }
-  ModelWidget *pEditedModelWidget = pEditedLibraryTreeItem->getModelWidget();
   // if the top level model and edited model are not the same
-  bool sameModelAndEditedCref = modelName.compare(editedCref) == 0;
-  if (!sameModelAndEditedCref) {
+  bool sameModelAndEditedCref = modelName.compare(oldEditedCref.isEmpty() ? editedCref : oldEditedCref) == 0;
+  if (!sameModelAndEditedCref && pEditedLibraryTreeItem) {
     pEditedLibraryTreeItem->setModelWidget(0);
   }
   // Get the position of LibraryTreeItem in the Libraries Browser.
@@ -2059,14 +2061,16 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
   // if the top level model and edited model are not the same
   LibraryTreeItem *pNewEditedLibraryTreeItem = 0;
   if (!sameModelAndEditedCref) {
-    pNewEditedLibraryTreeItem = findLibraryTreeItem(editedCref);
-    assert(pNewEditedLibraryTreeItem);
-    pNewEditedLibraryTreeItem->setModelWidget(pEditedModelWidget);
-    pEditedModelWidget->setLibraryTreeItem(pNewEditedLibraryTreeItem);
-    pEditedModelWidget->reDrawModelWidget();
-    QString contents;
-    if (OMSProxy::instance()->list(pNewEditedLibraryTreeItem->getNameStructure(), &contents)) {
-      pNewEditedLibraryTreeItem->setClassText(contents);
+    pNewEditedLibraryTreeItem = findLibraryTreeItem(newEditedCref.isEmpty() ? editedCref : newEditedCref);
+    if (pNewEditedLibraryTreeItem && pEditedModelWidget) {
+      pNewEditedLibraryTreeItem->setModelWidget(pEditedModelWidget);
+      pEditedModelWidget->setLibraryTreeItem(pNewEditedLibraryTreeItem);
+      pEditedModelWidget->setWindowTitle(QString("%1*").arg(pNewEditedLibraryTreeItem->getName()));
+      pEditedModelWidget->reDrawModelWidget();
+      QString contents;
+      if (OMSProxy::instance()->list(pNewEditedLibraryTreeItem->getNameStructure(), &contents)) {
+        pNewEditedLibraryTreeItem->setClassText(contents);
+      }
     }
   }
 }
