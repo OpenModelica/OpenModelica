@@ -105,8 +105,7 @@ conditional input connectors, one can use the following patterns:
   end M;
 
 where conditional components are only used in connect equations. The following
-patterns instead are not legal, because those components are also used in other
-equations; the fact that those equations are conditional is irrelevant:
+patterns instead are not legal: 
 
 .. code-block:: modelica
 
@@ -127,6 +126,11 @@ equations; the fact that those equations are conditional is irrelevant:
     end if;
     y = u1 + u2;
   end M;
+
+because those components are also used in other
+equations. The fact that those equations are conditional and are not activated
+when the corresponding conditional connectors are also not activated is
+irrelevant, according to the language specification.
 
 Equality operator in algorithms
 -------
