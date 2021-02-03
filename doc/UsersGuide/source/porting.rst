@@ -202,6 +202,7 @@ Subscripting of expressions
 There is a proposal of allowing expression subscripting, e.g.
 
 .. code-block:: modelica
+
   model M
     Real x[3];
     Real y[3];
