@@ -57,7 +57,8 @@ prefix is introduced, in which case the scalar modifier values is applied to
 all the elements of the array. Thus, if *MyComponent* has a Real parameter *p*,
 these are all valid declarations
 
-.. omc-loadstring ::
+.. code-block:: modelica
+
   parameter Real q = {0, 1, 2};
   MyComponent ma[3](p = {10, 20, 30});
   MyComponent mb[3](p = q);
@@ -65,7 +66,8 @@ these are all valid declarations
 
 while these are not
 
-.. omc-loadstring ::
+.. code-block:: modelica
+
   parameter Real r = 4;
   MyComponent ma[3](p = r);
   MyComponent mb[3](p = 20);
@@ -80,7 +82,8 @@ of the language specification, "A component declared with a condition-
 attribute can only be modified and/or used in connections". Thus, the following
 patterns are legal
 
-.. omc-loadstring ::
+.. code-block:: modelica
+
   Real y "Variable set by parameter or conditional input connector";
   parameter Boolean activateInput "Activate conditional input connector";
   parameter Boolean activatePin "Activate conditional pin connector";
@@ -98,7 +101,8 @@ equation
 
 while the following ones are not
 
-.. omc-loadstring ::
+.. code-block:: modelica
+
   Real y "Variable set by parameter or conditional input connector";
   parameter Boolean activateInput "Activate conditional input connector";
   parameter Boolean activatePin "Activate conditional pin connector";
@@ -121,7 +125,7 @@ The following code is illegal, because it uses the equality '=' operator, which
 is reserved for equations, instead of the assignment operatore ':=' inside
 an algorithm.
 
-.. omc-loadstring ::
+.. code-block:: modelica
 
   function f
     input Real x;
@@ -142,7 +146,8 @@ of the language specification, only input and output formal parameters are
 allowed in the function’s public variable section. Hence, the following function
 declaration is not valid
 
-.. omc-loadstring ::
+.. code-block:: modelica
+
   function f
     input Real x;
     output Real y;
@@ -153,7 +158,9 @@ declaration is not valid
   end f;
 
 and should be fixed by putting the variable *z* in the protected section
-.. omc-loadstring ::
+
+.. code-block:: modelica
+
   function f
     input Real x;
     output Real y;
