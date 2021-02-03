@@ -90,7 +90,7 @@ patterns are legal
     parameter Boolean activatePin "Activate conditional pin connector";
     Modelica.Blocks.Interfaces.RealInput conditionalInput = y if activateInput;
     Modelica.Electrical.Analog.Interfaces.Pin pin if activatePin "Conditional pin connector";
-    parameter Real y_default "Default value for y if not connected";
+    parameter Real y_default = 1 "Default value for y if not connected";
     parameter Real R "Resistance";
   protected
     Modelica.Electrical.Analog.Interfaces.Pin pinInternal "Internal hidden pin connector";
@@ -98,7 +98,7 @@ patterns are legal
     if not activateInput then y = y_default;
     connect(pin, pinInternal) "Automatically removed if pin is disabled";
     if not activatePin then pinInternal.v = 0 "Default behaviour if pin is disabled";
-    pinInternal.v = R*pinInternal.i "Some equation involving pin connector";
+    pinInternal.v = R*y*pinInternal.i "Some equation involving pin connector";
   end M;
 
 while the following ones are not
@@ -111,12 +111,12 @@ while the following ones are not
     parameter Boolean activatePin "Activate conditional pin connector";
     Modelica.Blocks.Interfaces.RealInput conditionalInput if activate;
     Modelica.Electrical.Analog.Interfaces.Pin pin if conditionalPin "Conditional pin connector";
-    parameter Real y_default "Default value for y if not connected";
+    parameter Real y_default = 1 "Default value for y if not connected";
     parameter Real R "Resistance";
   equation
     if not activateInput then conditionalPin.y = y_default "Illegal, conditional components used outside connection";
     if not activatePin then pin.v = 0 "Illegal, conditional component used outside connection";
-    pinInternal.v = R*pinInternal.i "Some equation involving pin connector";
+    pinInternal.v = R*y*pinInternal.i "Some equation involving pin connector";
   end M;
 
 You can make your library Modelica compliant by using the hidden connector
