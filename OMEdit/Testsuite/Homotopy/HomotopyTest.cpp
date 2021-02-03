@@ -86,7 +86,7 @@ void HomotopyTest::simulate(const QString &className, const int simulationNumber
        * otherwise the timeout of 2 mins has occurred.
        */
       QSignalSpy simulationSignalSpy(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)));
-      if (simulationSignalSpy.wait(120000)) {
+      if (simulationSignalSpy.wait(300000)) {
         readSimulationLogFile(simulationLogFileName);
       } else {
         QFAIL("Simulation not finished in time.");
