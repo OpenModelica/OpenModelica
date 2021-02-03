@@ -2,44 +2,44 @@ Porting Modelica libraries to OpenModelica
 ===========
 
 One of the goals of OpenModelica is to provide a full, no-compromise implementation
-of the latest verion of the 
+of the latest version of the 
 `Modelica Language Specification <https://specification.modelica.org>`_,
 released by the non-profit `Modelica Association <https://www.modelica.org>`_.
 This means that a main requirement for a Modelica library to work in
 OpenModelica is to be fully compliant to the Language Specification.
 
 Libraries and models developed with other Modelica tools may contain some code
-which is not valid according to the language specification, but still accepted
+which is not valid according to the current language specification, but still accepted
 by that tool, e.g. to support legacy code of their customers. In order to use
-those libraries and models in OpenModelica, one needs to make sure that there
-are no such occurrencies. Note that getting rid of invalid Modelica code
+those libraries and models in OpenModelica, one needs to make sure that such code
+is replaced by a valid one. Note that getting rid of invalid Modelica code
 does not make the library *only* usable in OpenModelica; to the contrary, doing that
-is the best guarantee that the library will be usable both with the original
-tool used for development and with OpenModelica, as well as with any other present
-or future tool that follows the standard.
+is the best guarantee that the library will be usable *both* with the original
+tool used for development *and* with OpenModelica, as well as with any other present
+or future Modelica tool that follows the standard strictly.
 
 The first recommendation is to use any flag or option of the tool that was
-originally used to develop the library, which checks for strict conformance
+originally used to develop the library, that allows to check for strict compliance
 to the language specification. For example, Dymola features a translation option
 'Pedantic mode for checking Modelica semantics' that issues an error if
 non-standard constructs are used.
 
-For your convenience, here you find a list of commonly reported issues.
+For your convenience, here you can find a list of commonly reported issues.
 
 Mapping of the library on the file system
 -------
 
-Packages can be mapped onto individual .mo files or onto hierarchical
+Packages can be mapped onto individual *.mo* files or onto hierarchical
 directory structures on the file system, according to the rules set forth in
-Section 13.4 of the language specification
 `Section 13.4 <https://specification.modelica.org/maint/3.5/packages.html#mapping-package-class-structures-to-a-hierarchical-file-system>`_.
+of the language specification.
 The file encoding must be UTF-8; the use of a BOM at the beginning of the file
-is deprecated and preferably avoided. If you are using non-ASCII characters
-in the comments or in the documentation, make sure you are not using any other
-encoding.
+is deprecated and preferably avoided. If there are using non-ASCII characters
+in the comments or in the documentation of your library, make sure that the
+file is encoded as UTF-8.
 
-If a directory-based representation is chosen, each .mo file must start with
-a within clause, and each directory should contain a package.order that lists
+If a directory-based representation is chosen, each *.mo* file must start with
+a *within* clause, and each directory should contain a package.order that lists
 all the classes and constants defined as separate files in that directory.
 
 When using revision control systems such as GIT or SVN, if the library is
@@ -78,12 +78,13 @@ appropriate.
 Access to conditional components
 -------
 According to `Section 4.4.5 <https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#conditional-component-declaration>`_
-of the language specification, "A component declared with a condition-
-attribute can only be modified and/or used in connections". Thus, the following
+of the language specification, "A component declared with a condition-attribute
+can only be modified and/or used in connections". Thus, the following
 patterns are legal
 
 .. code-block:: modelica
 
+model M
   Real y "Variable set by parameter or conditional input connector";
   parameter Boolean activateInput "Activate conditional input connector";
   parameter Boolean activatePin "Activate conditional pin connector";
@@ -98,11 +99,13 @@ equation
   connect(pin, pinInternal) "Automatically removed if pin is disabled";
   if not activatePin then pinInternal.v = 0 "Default behaviour if pin is disabled";
   pinInternal.v = R*pinInternal.i "Some equation involving pin connector";
+end M;
 
 while the following ones are not
 
 .. code-block:: modelica
 
+model M
   Real y "Variable set by parameter or conditional input connector";
   parameter Boolean activateInput "Activate conditional input connector";
   parameter Boolean activatePin "Activate conditional pin connector";
@@ -114,6 +117,7 @@ equation
   if not activateInput then conditionalPin.y = y_default "Illegal, conditional components used outside connection";
   if not activatePin then pin.v = 0 "Illegal, conditional component used outside connection";
   pinInternal.v = R*pinInternal.i "Some equation involving pin connector";
+end M;
 
 You can make your library Modelica compliant by using the hidden connector
 pattern (for physical connectors with flow variables), or by using binding
