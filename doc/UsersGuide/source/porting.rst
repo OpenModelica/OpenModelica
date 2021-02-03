@@ -129,7 +129,7 @@ patterns instead are not legal:
 
 because those components are also used in other
 equations. The fact that those equations are conditional and are not activated
-when the corresponding conditional connectors are also not activated is
+when the corresponding conditional components are also not activated is
 irrelevant, according to the language specification.
 
 Equality operator in algorithms
@@ -148,9 +148,23 @@ an algorithm.
     z = x + y;
   end f;
 
-so, the OpenModelica parser does not accept it. Some tools automatically and silently
-apply the correction to the code, please save it in its correct form to make
-it usable with OpenModelica.
+so, the OpenModelica parser does not accept it. The correct code is:
+
+.. code-block:: modelica
+
+  function f
+    input Real x;
+    input Real y = 0;
+    output Real z;
+  algorithm
+    z := x + y;
+  end f;
+
+Some tools automatically and silently apply the correction to the code, please
+save it in its correct form to make it usable with OpenModelica.
+
+Also note that binding *equations* with '=' sign are instead required for
+default values of function inputs.
 
 Public non-input non-output variables in functions
 ------
