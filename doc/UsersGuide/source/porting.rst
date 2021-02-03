@@ -3,7 +3,7 @@ Porting Modelica libraries to OpenModelica
 
 One of the goals of OpenModelica is to provide a full, no-compromise implementation
 of the latest specification of the Modelica language, released by the
-non-profit Modelica Association, see
+non-profit Modelica Association, see the
 `Modelica Language Specification <https://specification.modelica.org>`_. 
 This means that a main requirement for a Modelica library to work in
 OpenModelica is to be fully conforming to the Language Specification.
@@ -31,8 +31,8 @@ Mapping of the library on the file system
 
 Packages can be mapped onto individual .mo files or onto hierarchical
 directory structures on the file system, according to the rules set forth in
-Section 13.4 of the 
-`Modelica Specification<https://specification.modelica.org/maint/3.5/packages.html#mapping-package-class-structures-to-a-hierarchical-file-system>`_.
+Section 13.4 of the language specification
+`Section 13.4 <https://specification.modelica.org/maint/3.5/packages.html#mapping-package-class-structures-to-a-hierarchical-file-system>`_.
 The file encoding must be UTF-8; the use of a BOM at the beginning of the file
 is deprecated and preferably avoided. If you are using non-ASCII characters
 in the comments or in the documentation, make sure you are not using any other
@@ -50,7 +50,7 @@ on a directory that doesn't have the right name.
 
 Modifiers for arrays
 -------
-According to the rules set forth in `Section 7.2.5<https://specification.modelica.org/maint/3.5/inheritance-modification-and-redeclaration.html#modifiers-for-array-elements>`_ 
+According to the rules set forth in `Section 7.2.5 <https://specification.modelica.org/maint/3.5/inheritance-modification-and-redeclaration.html#modifiers-for-array-elements>`_ 
 of the language specification, when instantiating arrays of components, modifier
 values should be arrays of the same size of the component array, unless the *each*
 prefix is introduced, in which case the scalar modifier values is applied to
@@ -77,7 +77,7 @@ appropriate.
 
 Access to conditional components
 -------
-According to `Section 4.4.5<https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#conditional-component-declaration>`_
+According to `Section 4.4.5 <https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#conditional-component-declaration>`_
 of the language specification, "A component declared with a condition-
 attribute can only be modified and/or used in connections". Thus, the following
 patterns are legal
@@ -141,7 +141,7 @@ it usable with OpenModelica.
 
 Public non-input non-output variables in functions
 ------
-According to `Section 12.2<https://specification.modelica.org/maint/3.5/functions.html#function-as-a-specialized-class>`_
+According to `Section 12.2 <https://specification.modelica.org/maint/3.5/functions.html#function-as-a-specialized-class>`_
 of the language specification, only input and output formal parameters are
 allowed in the function’s public variable section. Hence, the following function
 declaration is not valid
