@@ -34,12 +34,12 @@ directory structures on the file system, according to the rules set forth in
 `Section 13.4 <https://specification.modelica.org/maint/3.5/packages.html#mapping-package-class-structures-to-a-hierarchical-file-system>`_.
 of the language specification.
 The file encoding must be UTF-8; the use of a BOM at the beginning of the file
-is deprecated and preferably avoided. If there are using non-ASCII characters
+is deprecated and preferably avoided. If there are non-ASCII characters
 in the comments or in the documentation of your library, make sure that the
 file is encoded as UTF-8.
 
 If a directory-based representation is chosen, each *.mo* file must start with
-a *within* clause, and each directory should contain a package.order that lists
+a *within* clause, and each directory should contain a *package.order* file that lists
 all the classes and constants defined as separate files in that directory.
 
 When using revision control systems such as GIT or SVN, if the library is
@@ -191,6 +191,7 @@ and should be fixed by putting the variable *z* in the protected section:
   function f
     input Real x;
     output Real y;
+  protected
     Real z;
   algorithm 
     z := 2;
@@ -214,7 +215,7 @@ There is a proposal of allowing expression subscripting, e.g.
 
 This construct is already accepted by some Modelica tools, but is not yet
 included in the current Modelica specification 3.5, nor even in the current working
-draft of 3.6, so it is not supported by OpenModelica
+draft of 3.6, so it is not currently supported by OpenModelica.
 
 
 Modelica_LinearSystems2 Library
@@ -233,6 +234,6 @@ based on its internal functionality. However, until this effort is undertaken,
 the Modelica_LinearSystem2 library cannot be considered as a full-fledged
 Modelica library, but only a Dymola-specific one.
 
-If you are interested in this feature and are willing to contribute to get
-it done, please contact the development team, e.g. by opening an ticket on
-the issue tracker.
+If you are interested in using this library in OpenModelica and are willing to
+contribute to get it supported, please contact the development team, e.g. by
+opening an ticket on the issue tracker.
