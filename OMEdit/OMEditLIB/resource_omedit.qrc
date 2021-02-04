@@ -34,6 +34,7 @@
         <file>Resources/icons/zoomReset.svg</file>
         <file>Resources/icons/zoomIn.svg</file>
         <file>Resources/icons/zoomOut.svg</file>
+        <file>Resources/icons/fit-to-diagram.svg</file>
         <file>Resources/icons/txt.svg</file>
         <file>Resources/icons/model-icon.svg</file>
         <file>Resources/icons/package-icon.svg</file>

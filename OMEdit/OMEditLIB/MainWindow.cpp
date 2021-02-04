@@ -3405,6 +3405,10 @@ void MainWindow::createActions()
   mpZoomOutAction->setShortcut(QKeySequence("Ctrl+-"));
   mpZoomOutAction->setEnabled(false);
   connect(mpZoomOutAction, SIGNAL(triggered()), SLOT(zoomOut()));
+  // fit to diagram
+  mpFitToDiagramAction = new QAction(QIcon(":/Resources/icons/fit-to-diagram.svg"), Helper::fitToDiagram, this);
+  mpFitToDiagramAction->setStatusTip(Helper::fitToDiagram);
+  mpFitToDiagramAction->setEnabled(false);
   // close window action
   mpCloseWindowAction = new QAction(tr("Close Window"), this);
   mpCloseWindowAction->setStatusTip(tr("Closes the active window"));
@@ -3875,9 +3879,12 @@ void MainWindow::createMenus()
   pViewMenu->addAction(mpToggleTabOrSubWindowView);
   pViewMenu->addSeparator();
   pViewMenu->addAction(mpShowGridLinesAction);
+  pViewMenu->addSeparator();
   pViewMenu->addAction(mpResetZoomAction);
   pViewMenu->addAction(mpZoomInAction);
   pViewMenu->addAction(mpZoomOutAction);
+  pViewMenu->addSeparator();
+  pViewMenu->addAction(mpFitToDiagramAction);
   // add View menu to menu bar
   menuBar()->addAction(pViewMenu->menuAction());
   // Simulation Menu
@@ -4273,6 +4280,8 @@ void MainWindow::createToolbars()
   mpViewToolBar->addAction(mpResetZoomAction);
   mpViewToolBar->addAction(mpZoomInAction);
   mpViewToolBar->addAction(mpZoomOutAction);
+  mpViewToolBar->addSeparator();
+  mpViewToolBar->addAction(mpFitToDiagramAction);
   // Shapes Toolbar
   mpShapesToolBar = addToolBar(tr("Shapes Toolbar"));
   mpShapesToolBar->setObjectName("Shapes Toolbar");

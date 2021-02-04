@@ -206,10 +206,14 @@ void GraphicsView::setExtentRectangle(const QRectF rectangle)
   qreal bottom = rectangle.top();
   qreal right = rectangle.right();
   qreal top = rectangle.bottom();
+  QRectF sceneRectangle(left, bottom, qFabs(left - right), qFabs(bottom - top));
   /* Ticket:4340 Extend vertical space
    * Make the drawing area 25% bigger than the actual size. So we can better use the panning feature.
    */
-  QRectF sceneRectangle(left * 1.5, bottom * 1.5, qFabs(left - right) * 1.5, qFabs(bottom - top) * 1.5);
+  const qreal factor = 0.25;
+  const qreal widthFactor = rectangle.width() * factor;
+  const qreal heightFactor = rectangle.width() * factor;
+  sceneRectangle.adjust(-widthFactor, -heightFactor, widthFactor, heightFactor);
   setSceneRect(sceneRectangle);
   centerOn(sceneRectangle.center());
 }
@@ -7659,6 +7663,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getSaveAsAction(), SIGNAL(triggered()), SLOT(saveAsModelWidget()));
   connect(MainWindow::instance()->getSaveTotalAction(), SIGNAL(triggered()), SLOT(saveTotalModelWidget()));
   connect(MainWindow::instance()->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
+  connect(MainWindow::instance()->getFitToDiagramAction(), SIGNAL(triggered()), SLOT(fitToDiagram()));
   connect(MainWindow::instance()->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
   connect(MainWindow::instance()->getAddSystemAction(), SIGNAL(triggered()), SLOT(addSystem()));
@@ -8243,6 +8248,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getResetZoomAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
   MainWindow::instance()->getZoomInAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
   MainWindow::instance()->getZoomOutAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
+  MainWindow::instance()->getFitToDiagramAction()->setEnabled(zoomEnabled && (modelica));
   MainWindow::instance()->getLineShapeAction()->setEnabled(enabled && modelica && !textView);
   MainWindow::instance()->getPolygonShapeAction()->setEnabled(enabled && modelica && !textView);
   MainWindow::instance()->getRectangleShapeAction()->setEnabled(enabled && modelica && !textView);
@@ -8489,6 +8495,74 @@ void ModelWidgetContainer::printModel()
     delete pPrintDialog;
   }
 #endif
+}
+
+/*!
+ * \brief ModelWidgetContainer::fitToDiagram
+ * Fits the active ModelWidget to its diagram.
+ */
+void ModelWidgetContainer::fitToDiagram()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget) {
+    // show the progressbar and set the message in status bar
+    MainWindow::instance()->getProgressBar()->setRange(0, 0);
+    MainWindow::instance()->showProgressBar();
+    MainWindow::instance()->getStatusBar()->showMessage(tr("Adapting extent to diagram"));
+    GraphicsView *pGraphicsView;
+    if (pModelWidget->getIconGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getIconGraphicsView();
+    } else {
+      pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    }
+    QRect diagramRect = pGraphicsView->itemsBoundingRect().toAlignedRect();
+    diagramRect = pGraphicsView->mapToScene(diagramRect).boundingRect().toRect();
+    // invert the rectangle as the drawing area has scale(1.0, -1.0);
+    int top = diagramRect.top();
+    diagramRect.setTop(diagramRect.bottom());
+    diagramRect.setBottom(top);
+    // Make the extent values interval of 10
+    int interval = 10;
+    diagramRect.setLeft(((diagramRect.left() / interval) * interval) - interval);
+    diagramRect.setBottom(((diagramRect.bottom() / interval) * interval) - interval);
+    diagramRect.setRight(((diagramRect.right() / interval) * interval) + interval);
+    diagramRect.setTop(((diagramRect.top() / interval) * interval) + interval);
+    // For read-only system libraries we just set the zoom and for writeable models we modify the extent.
+    if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+      pGraphicsView->setIsCustomScale(true);
+      pGraphicsView->fitInView(diagramRect, Qt::KeepAspectRatio);
+    } else {
+      // CoOrdinateSystem
+      CoOrdinateSystem oldCoOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
+      // version
+      QString oldVersion = pModelWidget->getLibraryTreeItem()->mClassInformation.version;
+      // uses annotation
+      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+      QList<QList<QString> > usesAnnotation = pOMCProxy->getUses(pModelWidget->getLibraryTreeItem()->getNameStructure());
+      QStringList oldUsesAnnotation;
+      for (int i = 0 ; i < usesAnnotation.size() ; i++) {
+        oldUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
+      }
+      QString oldUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(oldUsesAnnotation.join(","));
+      // construct a new CoOrdinateSystem
+      CoOrdinateSystem newCoOrdinateSystem = oldCoOrdinateSystem;
+      newCoOrdinateSystem.setLeft(diagramRect.left());
+      newCoOrdinateSystem.setBottom(diagramRect.bottom());
+      newCoOrdinateSystem.setRight(diagramRect.right());
+      newCoOrdinateSystem.setTop(diagramRect.top());
+      // push the CoOrdinateSystem change to undo stack
+      UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(pGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem, false,
+                                                                                                        oldVersion, oldVersion, oldUsesAnnotationString, oldUsesAnnotationString);
+      pModelWidget->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
+      pModelWidget->updateModelText();
+    }
+    // hide the progressbar and clear the message in status bar
+    MainWindow::instance()->getStatusBar()->clearMessage();
+    MainWindow::instance()->hideProgressBar();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("adapting extent to diagram")), Helper::scriptingKind, Helper::notificationLevel));
+  }
 }
 
 /*!
