@@ -35,42 +35,50 @@
 #define OMSSIMULATIONOUTPUTWIDGET_H
 
 #include "Util/Utilities.h"
+#include "Util/StringHandler.h"
 #include "OMSimulator.h"
 
 #include <QWidget>
 #include <QProgressBar>
 #include <QDateTime>
+#include <QTextBrowser>
 
 class ArchivedOMSSimulationItem;
-
+class OMSSimulationProcessThread;
 class OMSSimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  OMSSimulationOutputWidget(const QString &cref, QWidget *pParent = 0);
+  OMSSimulationOutputWidget(const QString &cref, const QString &fileName, QWidget *pParent = 0);
+  ~OMSSimulationOutputWidget();
   void simulateCallback(const char* ident, double time, oms_status_enu_t status);
   QString getCref() const {return mCref;}
   int isSimulationRunning() {return mIsSimulationRunning;}
+  OMSSimulationProcessThread* getOMSSimulationProcessThread() {return mpOMSSimulationProcessThread;}
 private:
   QString mCref;
   double mStartTime;
   double mStopTime;
   QString mResultFilePath;
-  Label *mpSimulationHeading;
-  QFrame *mpHorizontalLine;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelSimulationButton;
+  QTextBrowser *mpSimulationOutputTextBrowser;
   ArchivedOMSSimulationItem *mpArchivedOMSSimulationItem;
   QDateTime mResultFileLastModifiedDateTime;
   bool mIsSimulationRunning;
+  OMSSimulationProcessThread *mpOMSSimulationProcessThread;
 signals:
   void sendSimulationProgress(QString ident, double time, oms_status_enu_t status);
 public slots:
+  void simulationProcessStarted();
+  void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
+  void simulationProgressJson(QString progressJson);
+  void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
-  void simulationProgress(QString ident, double time, oms_status_enu_t status);
 protected:
   virtual void keyPressEvent(QKeyEvent *event) override;
+  virtual void closeEvent(QCloseEvent *event) override;
 };
 
 #endif // OMSSIMULATIONOUTPUTWIDGET_H

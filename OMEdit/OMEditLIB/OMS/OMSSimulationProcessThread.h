@@ -2,8 +2,8 @@
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-CurrentYear, Open Source Modelica Consortium (OSMC),
- * c/o Linköpings universitet, Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * c/o Link�pings universitet, Department of Computer and Information Science,
+ * SE-58183 Link�ping, Sweden.
  *
  * All rights reserved.
  *
@@ -30,25 +30,37 @@
 /*
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
+#ifndef OMSSIMULATIONPROCESSTHREAD_H
+#define OMSSIMULATIONPROCESSTHREAD_H
 
-#ifndef SIMULATIONPROCESSTHREAD_H
-#define SIMULATIONPROCESSTHREAD_H
-
-#include "Simulation/SimulationOutputWidget.h"
+#include "OMS/OMSSimulationOutputWidget.h"
 #include "Util/StringHandler.h"
 
 #include <QThread>
 
-class SimulationOutputWidget;
-class SimulationProcessThread : public QThread
+class OMSSimulationSubscriberThread : public QThread
 {
   Q_OBJECT
 public:
-  SimulationProcessThread(SimulationOutputWidget *pSimulationOutputWidget);
-  QProcess* getCompilationProcess() {return mpCompilationProcess;}
-  void setCompilationProcessKilled(bool killed) {mIsCompilationProcessKilled = killed;}
-  bool isCompilationProcessKilled() {return mIsCompilationProcessKilled;}
-  bool isCompilationProcessRunning() {return mIsCompilationProcessRunning;}
+  OMSSimulationSubscriberThread(QObject *parent = 0);
+  ~OMSSimulationSubscriberThread();
+  void setIsFinished(bool isFinished) {mIsFinished = isFinished;}
+private:
+  void *mpContext;
+  void *mpSubscriberSocket;
+  bool mIsFinished;
+protected:
+  virtual void run() override;
+signals:
+  void sendProgressJson(QString progressJson);
+};
+
+class OMSSimulationProcessThread : public QThread
+{
+  Q_OBJECT
+public:
+  OMSSimulationProcessThread(const QString &fileName, QObject *parent = 0);
+  ~OMSSimulationProcessThread();
   QProcess* getSimulationProcess() {return mpSimulationProcess;}
   void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
@@ -56,35 +68,22 @@ public:
 protected:
   virtual void run() override;
 private:
-  SimulationOutputWidget *mpSimulationOutputWidget;
-  QProcess *mpCompilationProcess;
-  bool mIsCompilationProcessKilled;
-  bool mIsCompilationProcessRunning;
+  QString mFileName;
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
-
-  void compileModel();
-  void runSimulationExecutable();
+  OMSSimulationSubscriberThread *mpOMSSimulationSubscriberThread;
 private slots:
-  void compilationProcessStarted();
-  void readCompilationStandardOutput();
-  void readCompilationStandardError();
-  void compilationProcessError(QProcess::ProcessError error);
-  void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void simulationProcessStarted();
   void readSimulationStandardOutput();
   void readSimulationStandardError();
   void simulationProcessError(QProcess::ProcessError error);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 signals:
-  void sendCompilationStarted();
-  void sendCompilationOutput(QString, QColor);
-  void sendCompilationFinished(int, QProcess::ExitStatus);
   void sendSimulationStarted();
-  void enableSimulationOutputTab();
   void sendSimulationOutput(QString, StringHandler::SimulationMessageType type, bool);
+  void sendProgressJson(QString);
   void sendSimulationFinished(int, QProcess::ExitStatus);
 };
 
-#endif // SIMULATIONPROCESSTHREAD_H
+#endif // OMSSIMULATIONPROCESSTHREAD_H

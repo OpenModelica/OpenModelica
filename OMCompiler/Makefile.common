@@ -387,6 +387,7 @@ $(builddir_lib_omc)/$(LIBZMQLIB):
 	#(rm -f $(builddir_lib_omc)/$(LIBZMQLIB)*)
 	#(rm -f $(builddir_bin)/$(LIBZMQLIB)*)
 	(cp -af 3rdParty/libzmq/build/lib/$(LIBZMQLIB)* $(builddir_lib_omc))
+	cp 3rdParty/libzmq/build/include/* $(builddir_inc)/c/
 	# Darwin has to be special always; libzmq*.dylib while Linux is libzmq.so* ...
 	(test ! `uname` = Darwin || cp -af 3rdParty/libzmq/build/lib/lib*.dylib $(builddir_lib_omc))
 ifeq ($(SHREXT),.dll)

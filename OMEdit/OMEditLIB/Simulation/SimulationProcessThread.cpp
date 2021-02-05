@@ -70,8 +70,6 @@ void SimulationProcessThread::compileModel()
   mpCompilationProcess = new QProcess;
   SimulationOptions simulationOptions = mpSimulationOutputWidget->getSimulationOptions();
   mpCompilationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
-  qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
-  qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
   connect(mpCompilationProcess, SIGNAL(started()), SLOT(compilationProcessStarted()), Qt::DirectConnection);
   connect(mpCompilationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readCompilationStandardOutput()), Qt::DirectConnection);
   connect(mpCompilationProcess, SIGNAL(readyReadStandardError()), SLOT(readCompilationStandardError()), Qt::DirectConnection);
@@ -125,7 +123,6 @@ void SimulationProcessThread::runSimulationExecutable()
    */
 //  mpSimulationProcess->setWorkingDirectory(simulationOptions.getWorkingDirectory());
   mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-  qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()), Qt::DirectConnection);
   connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()), Qt::DirectConnection);
   connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()), Qt::DirectConnection);
@@ -283,11 +280,9 @@ void SimulationProcessThread::simulationProcessError(QProcess::ProcessError erro
   Q_UNUSED(error);
   mIsSimulationProcessRunning = false;
   /* this signal is raised when we kill the simulation process forcefully. */
-  if (isSimulationProcessKilled()) {
-    exit();
-    return;
+  if (!isSimulationProcessKilled()) {
+    emit sendSimulationOutput(mpSimulationProcess->errorString(), StringHandler::Error, true);
   }
-  emit sendSimulationOutput(mpSimulationProcess->errorString(), StringHandler::Error, true);
   exit();
 }
 

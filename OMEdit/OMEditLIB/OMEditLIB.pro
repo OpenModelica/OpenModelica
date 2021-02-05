@@ -184,6 +184,7 @@ SOURCES += Util/Helper.cpp \
   OMS/SystemSimulationInformationDialog.cpp \
   OMS/OMSSimulationDialog.cpp \
   OMS/OMSSimulationOutputWidget.cpp \
+  OMS/OMSSimulationProcessThread.cpp \
   Animation/TimeManager.cpp \
   Util/ResourceCache.cpp \
   Util/NetworkAccessManager.cpp
@@ -276,6 +277,7 @@ HEADERS  += Util/Helper.h \
   OMS/SystemSimulationInformationDialog.h \
   OMS/OMSSimulationDialog.h \
   OMS/OMSSimulationOutputWidget.h \
+  OMS/OMSSimulationProcessThread.h \
   Animation/TimeManager.h \
   Interfaces/InformationInterface.h \
   Interfaces/ModelInterface.h \

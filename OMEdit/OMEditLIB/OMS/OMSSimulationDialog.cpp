@@ -38,8 +38,10 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ItemDelegate.h"
 #include "OMSSimulationOutputWidget.h"
+#include "OMSSimulationProcessThread.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Plotting/VariablesWidget.h"
+#include "Options/OptionsDialog.h"
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -156,6 +158,18 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
 OMSSimulationDialog::~OMSSimulationDialog()
 {
   foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, mOMSSimulationOutputWidgetsList) {
+    OMSSimulationProcessThread *pOMSSimulationProcessThread = pOMSSimulationOutputWidget->getOMSSimulationProcessThread();
+    /* If the OMSSimulationProcessThread is running then we need to stop it i.e exit its event loop.
+     * Kill the simulation processes if they are running before exiting the OMSSimulationProcessThread.
+     */
+    if (pOMSSimulationProcessThread->isRunning()) {
+      if (pOMSSimulationProcessThread->isSimulationProcessRunning() && pOMSSimulationProcessThread->getSimulationProcess()) {
+        pOMSSimulationProcessThread->getSimulationProcess()->kill();
+      }
+      pOMSSimulationProcessThread->exit();
+      pOMSSimulationProcessThread->wait();
+      delete pOMSSimulationProcessThread;
+    }
     delete pOMSSimulationOutputWidget;
   }
   mOMSSimulationOutputWidgetsList.clear();
@@ -219,7 +233,7 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
  */
 void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
-  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure());
+  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getFileName());
   mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
   int xPos = QApplication::primaryScreen()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
@@ -229,6 +243,11 @@ void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
   int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
 #endif // QT_VERSION_CHECK
   pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
+  /* restore the window geometry. */
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
+      && Utilities::getApplicationSettings()->contains("OMSSimulationOutputWidget/geometry")) {
+    pOMSSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("OMSSimulationOutputWidget/geometry").toByteArray());
+  }
   pOMSSimulationOutputWidget->show();
 }
 

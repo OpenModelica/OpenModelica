@@ -102,6 +102,10 @@ MainWindow::MainWindow(QWidget *parent)
   qRegisterMetaTypeStreamOperators<FindTextOM>("FindTextOM");
   qRegisterMetaTypeStreamOperators<DebuggerConfiguration>("DebuggerConfiguration");
   /*! @note The above three lines registers the structs as QMetaObjects. Do not remove/move them. */
+  qRegisterMetaType<QProcess::ProcessError>("QProcess::ProcessError");
+  qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
+  qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
+  /*! @note The above three lines registers the types for simulaiton threads. Do not remove them. */
   setObjectName("MainWindow");
   setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
   setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
