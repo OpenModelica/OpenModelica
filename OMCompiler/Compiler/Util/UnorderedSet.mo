@@ -188,6 +188,18 @@ public
     outKey := find(key, set);
   end get;
 
+  function getOrFail
+    "Returns a key if it exists in the set, otherwise fails."
+    input T key;
+    input UnorderedSet<T> set;
+    output T outKey;
+  protected
+    Option<T> okey;
+  algorithm
+    okey := find(key, set);
+    SOME(outKey) := okey;
+  end getOrFail;
+
   function contains
     "Returns whether the given key exists in the set or not."
     input T key;
