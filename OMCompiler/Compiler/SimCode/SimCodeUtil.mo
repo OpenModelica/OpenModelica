@@ -14596,30 +14596,32 @@ algorithm
 end simvarGraterThan;
 
 public function getNumContinuousEquations
-    input list<SimCode.SimEqSystem> eqns;
-    input Integer numStates;
-    output Integer n;
-    protected
-    Integer numEqns =0;
-    algorithm
-    for eqn in eqns loop
+  input list<SimCode.SimEqSystem> eqns;
+  input Integer numStates;
+  output Integer n;
+protected
+  Integer numEqns =0;
+algorithm
+  for eqn in eqns loop
+    numEqns := numEqns + getNumContinuousEquationsSingleEq(eqn);
+  end for;
+  n := numEqns+numStates;
+end getNumContinuousEquations;
 
-    numEqns := match(eqn)
-      local
-       SimCode.LinearSystem ls;
-       SimCode.NonlinearSystem nls;
-      case  SimCode.SES_LINEAR(lSystem = ls as SimCode.LINEARSYSTEM(__)) equation
-        numEqns = numEqns + listLength(ls.vars);
-        then numEqns;
-      case  SimCode.SES_NONLINEAR(nlSystem = nls as SimCode.NONLINEARSYSTEM(__)) equation
-       numEqns = numEqns + listLength(nls.crefs);
-       then numEqns;
-      else numEqns;
-      end match;
-    end for;
-    n:=numEqns+numStates;
-  end getNumContinuousEquations;
-
+protected function getNumContinuousEquationsSingleEq
+  input SimCode.SimEqSystem eqn;
+  output Integer n;
+algorithm
+  n := match(eqn)
+    local
+      SimCode.LinearSystem ls;
+      SimCode.NonlinearSystem nls;
+    case SimCode.SES_MIXED() then getNumContinuousEquationsSingleEq(eqn.cont);
+    case SimCode.SES_LINEAR(lSystem = ls as SimCode.LINEARSYSTEM(__)) then listLength(ls.vars);
+    case SimCode.SES_NONLINEAR(nlSystem = nls as SimCode.NONLINEARSYSTEM(__)) then listLength(nls.crefs);
+    else 1;
+  end match;
+end getNumContinuousEquationsSingleEq;
 
 public function sortCrefBasedOnSimCodeIndex
   input output list<DAE.ComponentRef> crs;
@@ -14780,6 +14782,44 @@ algorithm
     cache := BaseHashTable.add((eq,ix), cache);
   end if;
 end aliasSimEq;
+
+public function unbalancedEqSystemPartition
+  input list<SimCode.SimEqSystem> inList;
+  input Integer maxLength;
+  output list<list<SimCode.SimEqSystem>> partitions;
+protected
+  Integer length, eqLength;
+  list<SimCode.SimEqSystem> lst, cur;
+  SimCode.SimEqSystem first;
+algorithm
+  lst := inList;
+  cur := {};
+  partitions := {};
+  length := 0;
+  while not listEmpty(lst) loop
+    first::lst := lst;
+    eqLength := getNumContinuousEquationsSingleEq(first);
+    if length > 0 and length + eqLength > maxLength then
+      partitions := cur :: partitions;
+      length := 0;
+      cur := {};
+    end if;
+    length := eqLength + length;
+    cur := first :: cur;
+  end while;
+  if not listEmpty(cur) then
+    partitions := cur :: partitions;
+  end if;
+end unbalancedEqSystemPartition;
+
+public function selectNLEqSys
+  input list<SimCode.SimEqSystem> simEqSysIn;
+  output list<SimCode.SimEqSystem> eqs;
+protected
+  SimCode.SimEqSystem e;
+algorithm
+  eqs := list(match eq case SimCode.SES_NONLINEAR() then eq; case SimCode.SES_MIXED(cont=e as SimCode.SES_NONLINEAR()) then e; end match for eq guard match eq case SimCode.SES_NONLINEAR() then true; case SimCode.SES_MIXED(cont=SimCode.SES_NONLINEAR()) then true; else false; end match in simEqSysIn);
+end selectNLEqSys;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

@@ -191,6 +191,7 @@ calling program, as for any other array. If an error occurs, this
 function does not return, but calls "ModelicaError".
 */
 
+char* ModelicaDuplicateString(const char *str);
 
 char* ModelicaAllocateStringWithErrorReturn(size_t len);
 /*

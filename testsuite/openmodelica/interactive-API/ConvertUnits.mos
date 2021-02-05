@@ -9,6 +9,7 @@ convertUnits("degF","degC");getErrorString();
 convertUnits("K","Unknown");getErrorString();
 convertUnits("Pa","mmHg");getErrorString();
 convertUnits("m3/Pa","ml/mmHg");getErrorString();
+convertUnits("s-1","d-1");getErrorString();
 
 getDerivedUnits("K");getErrorString();
 getDerivedUnits("W");getErrorString();
@@ -27,11 +28,13 @@ getDerivedUnits("n");getErrorString();
 // (true,1.8,31.99999999999994)
 // ""
 // (false,1.0,0.0)
-// "Error: error parsing unit Unknown
+// "Error: Error parsing unit Unknown: Prefix not found
 // "
 // (true,133.322387415,0.0)
 // ""
 // (true,7.500615758456563e-09,0.0)
+// ""
+// (true,1.157407407407407e-05,0.0)
 // ""
 // {"degC","degF","degRk"}
 // ""
@@ -40,6 +43,6 @@ getDerivedUnits("n");getErrorString();
 // {"bar","inWG","mmHg","psi"}
 // ""
 // {}
-// "Error: error parsing unit n
+// "Error: Error parsing unit n: Unit not found
 // "
 // endResult

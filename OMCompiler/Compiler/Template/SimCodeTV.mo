@@ -1295,6 +1295,17 @@ package SimCodeUtil
     output Integer vr;
   end lookupVR;
 
+  function unbalancedEqSystemPartition
+    input list<SimCode.SimEqSystem> inList;
+    input Integer maxLength;
+    output list<list<SimCode.SimEqSystem>> outPartitions;
+  end unbalancedEqSystemPartition;
+
+  function selectNLEqSys
+    input list<SimCode.SimEqSystem> simEqSysIn;
+    output list<SimCode.SimEqSystem> eqs;
+  end selectNLEqSys;
+
 end SimCodeUtil;
 
 package SimCodeFunctionUtil

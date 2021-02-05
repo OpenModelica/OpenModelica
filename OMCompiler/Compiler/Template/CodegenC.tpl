@@ -514,7 +514,7 @@ template simulationFile_nls(SimCode simCode)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    <%functionNonLinearResiduals(nonLinearSystems, modelNamePrefixStr)%>
+    <%functionNonLinearResidualsMultiFile(nonLinearSystems, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), simCode.fullPathPrefix, simCode.fileNamePrefix, "02nls", modelNamePrefixStr)%>
 
     <%if intGt(varInfo.numNonLinearSystems, 0) then functionInitialNonLinearSystems(nonLinearSystems, modelNamePrefixStr)%>
 
@@ -2671,13 +2671,61 @@ template createLocalConstraints(SimEqSystem eq)
    end match
 end createLocalConstraints;
 
-template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String modelNamePrefix)
+template functionNonLinearResidualsMultiFile(list<SimEqSystem> nonlinearSystems, Integer equationsPerFile, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix)
+  "Generates functions in simulation file."
+::=
+  functionNonLinearResidualsMultiFile2(SimCodeUtil.unbalancedEqSystemPartition(selectNLEqSys(nonlinearSystems), equationsPerFile), fullPathPrefix, fileNamePrefix, partName, modelNamePrefix)
+end functionNonLinearResidualsMultiFile;
+
+template functionNonLinearResidualsMultiFile2(list<list<SimEqSystem>> nonlinearSystems, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix)
+  "Generates functions in simulation file."
+::=
+  match nonlinearSystems
+  case {} then ""
+  case {eqs} then
+    let &prototypes = buffer ""
+    functionNonLinearResiduals(eqs, modelNamePrefix, &prototypes)
+  else
+    let &prototypes = buffer ""
+    let &file = buffer ""
+    let &file +=
+    (nonlinearSystems |> eqs =>
+      let fileName = addFunctionIndex('<%fileNamePrefix%>_<%partName%>_part', ".c")
+      redirectToFile(fullPathPrefix + fileName) +
+      <<
+      /* Non Linear Systems <%fullPathPrefix + fileName%> */
+      <%simulationFileHeader(fileNamePrefix)%>
+      #include "<%fileNamePrefix%>_12jac.h"
+      #if defined(__cplusplus)
+      extern "C" {
+      #endif
+      <%functionNonLinearResiduals(eqs, modelNamePrefix, &prototypes)%>
+      #if defined(__cplusplus)
+      }
+      #endif
+      <%\n%>
+      >>
+      + closeFile()
+    )
+    prototypes + file
+end functionNonLinearResidualsMultiFile2;
+
+template getNLSPrototypes(Integer index)
+::=
+  <<
+  void residualFunc<%index%>(void** dataIn, const double* xloc, double* res, const int* iflag);
+  void initializeStaticDataNLS<%index%>(void *inData, threadData_t *threadData, void *inSystemData);
+  void getIterationVarsNLS<%index%>(struct DATA *inData, double *array);
+  >>
+end getNLSPrototypes;
+
+template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String modelNamePrefix, Text &prototypes)
   "Generates functions in simulation file."
 ::=
   (nonlinearSystems |> eqn => (
     let () = tmpTickReset(0)
     match eqn
-    case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix)
+    case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix,prototypes)
     // no dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
         jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,coloredCols=colorList,maxColorCols=maxColor))),
@@ -2687,6 +2735,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
+      let &prototypes += getNLSPrototypes(nls.index)
       <<
       <%residualFunction%>
       <%sparseData%>
@@ -2699,6 +2748,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
+      let &prototypes += getNLSPrototypes(nls.index)
       <<
       <%residualFunction%>
       <%sparseData%>
@@ -2723,6 +2773,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
+      let &prototypes += getNLSPrototypes(nls.index)
       <<
       /* start residuals for dynamic tearing sets */
       /* strict tearing set */
@@ -2752,6 +2803,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let sparseDataCasual = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
+      let &prototypes += getNLSPrototypes(nls.index)
       <<
       /* start residuals for dynamic tearing sets */
       /* strict tearing set */
@@ -2780,7 +2832,8 @@ match system
   case nls as NONLINEARSYSTEM(__) then
     let &varDecls = buffer ""
     let &innerEqns = buffer ""
-    let innerNLSSystems = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
+    let &dummyPrototypes = buffer ""
+    let innerNLSSystems = functionNonLinearResiduals(nls.eqs, modelNamePrefix, dummyPrototypes)
     let backupOutputs = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
         let body = (alg.knownOutputCrefs |> cr hasindex i0 =>
@@ -2902,6 +2955,8 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
       let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
       let colorString = genSPColors(colorList, "inSysData->sparsePattern->colorCols")
       <<
+
+      OMC_DISABLE_OPT
       void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
       {
         int i=0;
@@ -2944,6 +2999,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
     >>
   ;separator="\n")
   <<
+
+  OMC_DISABLE_OPT
   void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
   {
     DATA* data = (DATA*) inData;
@@ -2964,6 +3021,7 @@ template getIterationVars(list<ComponentRef> crefs, String indexName)
   ;separator="\n")
   <<
 
+  OMC_DISABLE_OPT
   void getIterationVars<%indexName%>(struct DATA *inData, double *array)
   {
     DATA* data = (DATA*) inData;

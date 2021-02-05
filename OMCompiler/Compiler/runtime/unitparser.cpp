@@ -46,6 +46,27 @@
 
 #endif
 
+string UnitRes::toString()
+{
+  switch (result) {
+  case UNIT_OK: return "OK";
+  case UNKNOWN_TOKEN: return "Unknown token";
+  case UNKNOWN_IDENT: return "Unknown ident";
+  case PARSE_ERROR: return "Parse error";
+  case UNIT_OFFSET_ERROR: return "Offset error";
+  case UNIT_EXPONENT_NOT_INT: return "Exponent is not an integer";
+  case UNIT_WRONG_BASE: return "Wrong base";
+  case UNIT_NOT_FOUND: return "Unit not found";
+  case PREFIX_NOT_FOUND: return "Prefix not found";
+  case INVALID_INT: return "Invalid integer";
+  case PREFIX_NOT_ALLOWED: return "Prefix not allowed";
+  case BASE_ALREADY_DEFINED: return "Base already defined";
+  case ERROR_ADDING_UNIT: return "Error adding unit";
+  case UNITS_DEFINED_WITH_DIFFERENT_EXPR:
+  default: return "Unknown error";
+  }
+}
+
 /***************************************************************************************/
 /*   CLASS: Rational                                                                   */
 /***************************************************************************************/
@@ -126,6 +147,29 @@ Rational Rational::mul(Rational q1, Rational q2) {
 
 Rational Rational::div(Rational q1, Rational q2) {
   return simplify(Rational(q1.num * q2.denom, q1.denom * q2.num));
+}
+
+static mmc_sint_t powint64(mmc_sint_t base, mmc_sint_t exp) {
+  int res = 1;
+  while (exp) {
+    if (exp & 1) {
+      res *= base;
+    }
+    exp >>= 1;
+    base *= base;
+  }
+  return res;
+}
+
+Rational Rational::pow(Rational q1, Rational q2) {
+  if (q2.denom != 1) {
+    MMC_THROW();
+  }
+  if (q2.num < 0) {
+    return simplify(Rational(powint64(q1.denom, -q2.num), powint64(q1.num, -q2.num)));
+  } else {
+    return simplify(Rational(powint64(q1.num, q2.num), powint64(q1.denom, q2.num)));
+  }
 }
 
 Rational Rational::simplify(const Rational q) {
@@ -221,11 +265,12 @@ UnitRes Unit::pow(Unit u, const Rational e, Unit& ur) {
   if (!u.offset.isZero())
     return UnitRes(UnitRes::UNIT_OFFSET_ERROR);
 
-  if (!u.scaleFactor.is(1))
-    return UnitRes(UnitRes::UNIT_SCALE_ERROR);
+  if (e.denom != 1)
+    return UnitRes(UnitRes::UNIT_EXPONENT_NOT_INT);
 
   ur = u;
   ur.prefixExpo = Rational::mul(u.prefixExpo, e);
+  ur.scaleFactor = Rational::pow(u.scaleFactor, e);
   ur.unitVec.clear();
   for (unsigned int i = 0; i < u.unitVec.size(); i++) {
     ur.unitVec.push_back(Rational::mul(u.unitVec[i], e));
@@ -916,8 +961,7 @@ UnitRes UnitParser::parseFactor(Scanner& scan, Unit& unit) {
       scan.setpos(scanpostemp);
       return UnitRes(UnitRes::UNIT_OK);
     } else {
-      Unit::pow(u1, q, unit);
-      return UnitRes(UnitRes::UNIT_OK);
+      res = Unit::pow(u1, q, unit);
       return res;
     }
 
