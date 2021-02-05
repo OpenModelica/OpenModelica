@@ -59,34 +59,10 @@ import SCodeUtil;
 import NFPrefixes.Variability;
 import EvalFunctionExt = NFEvalFunctionExt;
 import NFCeval.EvalTarget;
-
-encapsulated package ReplTree
-  import BaseAvlTree;
-  import Expression = NFExpression;
-  import NFInstNode.InstNode;
-
-  extends BaseAvlTree(redeclare type Key = InstNode,
-                      redeclare type Value = Expression);
-
-  redeclare function extends keyStr
-  algorithm
-    outString := InstNode.name(inKey);
-  end keyStr;
-
-  redeclare function extends valueStr
-  algorithm
-    outString := Expression.toString(inValue);
-  end valueStr;
-
-  redeclare function extends keyCompare
-  algorithm
-    outResult := InstNode.refCompare(inKey1, inKey2);
-  end keyCompare;
-
-  annotation(__OpenModelica_Interface="util");
-end ReplTree;
+import UnorderedMap;
 
 type FlowControl = enumeration(NEXT, CONTINUE, BREAK, RETURN, ASSERTION);
+type ArgumentMap = UnorderedMap<InstNode, Expression>;
 
 public
 function evaluate
@@ -108,7 +84,7 @@ function evaluateNormal
 protected
   list<Statement> fn_body;
   list<Binding> bindings;
-  ReplTree.Tree repl;
+  ArgumentMap arg_map;
   Integer call_count, limit;
   Pointer<Integer> call_counter = fn.callCounter;
   FlowControl ctrl;
@@ -130,16 +106,16 @@ algorithm
 
   try
     fn_body := Function.getBody(fn);
-    repl := createReplacements(fn, args);
+    arg_map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = true);
     // TODO: Also apply replacements to the replacements themselves, i.e. the
     //       bindings of the function parameters. But they probably need to be
     //       sorted by dependencies first.
-    fn_body := applyReplacements(repl, fn_body);
+    fn_body := applyReplacements(arg_map, fn_body);
     fn_body := optimizeBody(fn_body);
     ctrl := evaluateStatements(fn_body);
 
     if ctrl <> FlowControl.ASSERTION then
-      result := createResult(repl, fn.outputs);
+      result := createResult(arg_map, fn.outputs);
     else
       fail();
     end if;
@@ -205,29 +181,15 @@ function evaluateRecordConstructor
   input Boolean evaluate = true;
   output Expression result;
 protected
-  ReplTree.Tree repl;
+  ArgumentMap arg_map;
   Expression arg, repl_exp;
   list<Record.Field> fields;
   list<Expression> rest_args = args, expl = {};
   list<InstNode> inputs = fn.inputs, locals = fn.locals;
   InstNode node;
 algorithm
-  repl := ReplTree.new();
+  arg_map := createArgumentMap(fn.inputs, {}, fn.locals, args, mutableParams = false);
   fields := Type.recordFields(ty);
-
-  // Add the inputs and local variables to the replacement tree with their
-  // respective bindings.
-  for i in inputs loop
-    arg :: rest_args := rest_args;
-    repl := ReplTree.add(repl, i, arg);
-  end for;
-
-  for l in locals loop
-    repl := ReplTree.add(repl, l, getBindingExp(l, repl));
-  end for;
-
-  // Apply the replacements to all the variables.
-  repl := ReplTree.map(repl, function applyBindingReplacement(repl = repl));
 
   // Fetch the new binding expressions for all the variables, both inputs and
   // locals.
@@ -238,7 +200,7 @@ algorithm
       node :: locals := locals;
     end if;
 
-    expl := ReplTree.get(repl, node) :: expl;
+    expl := UnorderedMap.getOrFail(node, arg_map) :: expl;
   end for;
 
   // Create a new record expression from the list of arguments.
@@ -252,48 +214,60 @@ end evaluateRecordConstructor;
 
 protected
 
-function createReplacements
-  input Function fn;
+function createArgumentMap
+  input list<InstNode> inputs;
+  input list<InstNode> outputs;
+  input list<InstNode> locals;
   input list<Expression> args;
-  output ReplTree.Tree repl;
+  input Boolean mutableParams;
+  output ArgumentMap map;
 protected
   Expression arg;
   list<Expression> rest_args = args;
 algorithm
-  repl := ReplTree.new();
+  map := UnorderedMap.new<Expression>(InstNode.hash, InstNode.refEqual);
 
-  // Add inputs to the replacement tree. Since they can't be assigned to the
-  // replacements don't need to be mutable.
-  for i in fn.inputs loop
+  // Add inputs to the argument map. Inputs are never mutable.
+  for i in inputs loop
     arg :: rest_args := rest_args;
-    repl := addInputReplacement(i, arg, repl);
+    UnorderedMap.add(i, arg, map);
   end for;
 
-  // Add outputs and local variables to the replacement tree. These do need to
-  // be mutable to allow assigning to them.
-  repl := List.fold(fn.outputs, addMutableReplacement, repl);
-  repl := List.fold(fn.locals, addMutableReplacement, repl);
+  // Add outputs and local variables to the argument map.
+  // They sometimes need to be mutable and sometimes not.
+  List.fold(outputs, if mutableParams then addMutableArgument else addImmutableArgument, map);
+  List.fold(locals,  if mutableParams then addMutableArgument else addImmutableArgument, map);
 
-  // Apply the replacements to the replacements themselves. This is done after
-  // building the tree to make sure all the replacements are available.
-  repl := ReplTree.map(repl, function applyBindingReplacement(repl = repl));
-end createReplacements;
+  // Apply the arguments to the arguments themselves. This is done after
+  // building the map to make sure all the arguments are available.
+  UnorderedMap.apply(map, function applyBindingReplacement(map = map));
+end createArgumentMap;
 
-function addMutableReplacement
+function addMutableArgument
   input InstNode node;
-  input output ReplTree.Tree repl;
+  input output ArgumentMap map;
 protected
-  Binding binding;
-  Expression repl_exp;
+  Expression exp;
 algorithm
-  repl_exp := getBindingExp(node, repl);
-  repl_exp := Expression.makeMutable(repl_exp);
-  repl := ReplTree.add(repl, node, repl_exp);
-end addMutableReplacement;
+  exp := getBindingExp(node, map, mutableParams = true);
+  exp := Expression.makeMutable(exp);
+  UnorderedMap.add(node, exp, map);
+end addMutableArgument;
+
+function addImmutableArgument
+  input InstNode node;
+  input output ArgumentMap map;
+protected
+  Expression exp;
+algorithm
+  exp := getBindingExp(node, map, mutableParams = false);
+  UnorderedMap.add(node, exp, map);
+end addImmutableArgument;
 
 function getBindingExp
   input InstNode node;
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
+  input Boolean mutableParams;
   output Expression bindingExp;
 protected
   Binding binding;
@@ -303,30 +277,31 @@ algorithm
   if Binding.isBound(binding) then
     bindingExp := Expression.getBindingExp(Binding.getExp(binding));
   else
-    bindingExp := buildBinding(node, repl);
+    bindingExp := buildBinding(node, map, mutableParams);
   end if;
 end getBindingExp;
 
 function buildBinding
   input InstNode node;
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
+  input Boolean mutableParams;
   output Expression result;
 protected
   Type ty;
 algorithm
   ty := InstNode.getType(node);
-  ty := Type.mapDims(ty, function applyReplacementsDim(repl = repl));
+  ty := Type.mapDims(ty, function applyReplacementsDim(map = map));
 
   result := match ty
     case Type.ARRAY() guard Type.hasKnownSize(ty)
       then Expression.fillType(ty, Expression.EMPTY(Type.arrayElementType(ty)));
-    case Type.COMPLEX() then buildRecordBinding(node, repl);
+    case Type.COMPLEX() then buildRecordBinding(node, map, mutableParams);
     else Expression.EMPTY(ty);
   end match;
 end buildBinding;
 
 function applyReplacementsDim
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
   input output Dimension dim;
 algorithm
   dim := match dim
@@ -335,7 +310,7 @@ algorithm
 
     case Dimension.EXP()
       algorithm
-        exp := Expression.map(dim.exp, function applyReplacements2(repl = repl));
+        exp := Expression.map(dim.exp, function applyReplacements2(map = map));
         exp := Ceval.evalExp(exp);
       then
         Dimension.fromExp(exp, Variability.CONSTANT);
@@ -349,7 +324,8 @@ function buildRecordBinding
    Binding expressions will be taken from the record fields when available, and
    filled with empty expressions when not."
   input InstNode recordNode;
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
+  input Boolean mutableParams;
   output Expression result;
 protected
   InstNode cls_node = InstNode.classScope(recordNode);
@@ -357,7 +333,7 @@ protected
   array<InstNode> comps;
   list<Expression> bindings;
   Expression exp;
-  ReplTree.Tree local_repl;
+  ArgumentMap local_map;
 algorithm
   result := match cls
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
@@ -371,62 +347,56 @@ algorithm
         //   end R;
         // In that case we need to replace the 'x' in the binding of 'y' with
         // the binding expression of 'x'.
-        local_repl := ReplTree.new();
+        local_map := UnorderedMap.new<Expression>(InstNode.hash, InstNode.refEqual);
 
-        for i in arrayLength(comps):-1:1 loop
-          exp := Expression.makeMutable(getBindingExp(comps[i], repl));
-          // Add the expression to both the replacement tree and the list of bindings.
-          local_repl := ReplTree.add(local_repl, comps[i], exp);
-          bindings := exp :: bindings;
+        for comp in comps loop
+          exp := getBindingExp(comp, map, mutableParams);
+
+          if mutableParams then
+            exp := Expression.makeMutable(exp);
+          end if;
+
+          UnorderedMap.add(comp, exp, local_map);
         end for;
 
         // Replace references to record fields with those fields' bindings in the tree.
-        // This will also update the list of bindings since they share mutable expresions.
-        ReplTree.map(local_repl, function applyBindingReplacement(repl = local_repl));
+        UnorderedMap.apply(local_map, function applyBindingReplacement(map = local_map));
+        bindings := UnorderedMap.valueList(local_map);
       then
         Expression.makeRecord(InstNode.scopePath(cls_node, includeRoot = true), cls.ty, bindings);
 
-    case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass, repl);
+    case Class.TYPED_DERIVED() then buildRecordBinding(cls.baseClass, map, mutableParams);
   end match;
 end buildRecordBinding;
 
-function addInputReplacement
-  input InstNode node;
-  input Expression argument;
-  input output ReplTree.Tree repl;
-algorithm
-  repl := ReplTree.add(repl, node, argument);
-end addInputReplacement;
-
 function applyBindingReplacement
-  input InstNode node;
   input Expression exp;
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
   output Expression outExp;
 algorithm
-  outExp := Expression.map(exp, function applyReplacements2(repl = repl));
+  outExp := Expression.map(exp, function applyReplacements2(map = map));
 end applyBindingReplacement;
 
 function applyReplacements
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
   input output list<Statement> fnBody;
 algorithm
   fnBody := Statement.mapExpList(fnBody,
-    function Expression.map(func = function applyReplacements2(repl = repl)));
+    function Expression.map(func = function applyReplacements2(map = map)));
 end applyReplacements;
 
 function applyReplacements2
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
   input output Expression exp;
 algorithm
   exp := match exp
-    case Expression.CREF() then applyReplacementCref(repl, exp.cref, exp);
+    case Expression.CREF() then applyReplacementCref(map, exp.cref, exp);
     else exp;
   end match;
 end applyReplacements2;
 
 function applyReplacementCref
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
   input ComponentRef cref;
   input Expression exp;
   output Expression outExp;
@@ -444,7 +414,7 @@ algorithm
   else
     // Look up the replacement for the first part in the replacement tree.
     parent := ComponentRef.node(listHead(cref_parts));
-    repl_exp := ReplTree.getOpt(repl, parent);
+    repl_exp := UnorderedMap.get(parent, map);
 
     if isSome(repl_exp) then
       SOME(outExp) := repl_exp;
@@ -472,7 +442,7 @@ algorithm
       end try;
     end if;
 
-    outExp := Expression.map(outExp, function applyReplacements2(repl = repl));
+    outExp := Expression.map(outExp, function applyReplacements2(map = map));
   end if;
 end applyReplacementCref;
 
@@ -510,7 +480,7 @@ algorithm
 end optimizeStatement;
 
 function createResult
-  input ReplTree.Tree repl;
+  input ArgumentMap map;
   input list<InstNode> outputs;
   output Expression exp;
 protected
@@ -519,14 +489,14 @@ protected
   Expression e;
 algorithm
   if listLength(outputs) == 1 then
-    exp := Ceval.evalExp(ReplTree.get(repl, listHead(outputs)));
+    exp := Ceval.evalExp(UnorderedMap.getOrFail(listHead(outputs), map));
     assertAssignedOutput(listHead(outputs), exp);
   else
     expl := {};
     types := {};
 
     for o in outputs loop
-      e := Ceval.evalExp(ReplTree.get(repl, o));
+      e := Ceval.evalExp(UnorderedMap.getOrFail(o, map));
       assertAssignedOutput(o, e);
       expl := e :: expl;
     end for;
@@ -1182,13 +1152,13 @@ function evaluateExternal2
   input list<Expression> extArgs;
   output Expression result;
 protected
-  ReplTree.Tree repl;
+  ArgumentMap map;
   list<Expression> ext_args;
 algorithm
-  repl := createReplacements(fn, args);
-  ext_args := list(Expression.map(e, function applyReplacements2(repl = repl)) for e in extArgs);
+  map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = false);
+  ext_args := list(Expression.map(e, function applyReplacements2(map = map)) for e in extArgs);
   evaluateExternal3(name, ext_args);
-  result := createResult(repl, fn.outputs);
+  result := createResult(map, fn.outputs);
 end evaluateExternal2;
 
 function evaluateExternal3
