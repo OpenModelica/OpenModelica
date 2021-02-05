@@ -2902,6 +2902,8 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
       let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
       let colorString = genSPColors(colorList, "inSysData->sparsePattern->colorCols")
       <<
+
+      OMC_DISABLE_OPT
       void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
       {
         int i=0;
@@ -2944,6 +2946,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
     >>
   ;separator="\n")
   <<
+
+  OMC_DISABLE_OPT
   void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
   {
     DATA* data = (DATA*) inData;
@@ -2964,6 +2968,7 @@ template getIterationVars(list<ComponentRef> crefs, String indexName)
   ;separator="\n")
   <<
 
+  OMC_DISABLE_OPT
   void getIterationVars<%indexName%>(struct DATA *inData, double *array)
   {
     DATA* data = (DATA*) inData;
