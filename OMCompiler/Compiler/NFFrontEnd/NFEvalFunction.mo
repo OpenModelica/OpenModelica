@@ -1155,7 +1155,7 @@ protected
   ArgumentMap map;
   list<Expression> ext_args;
 algorithm
-  map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = false);
+  map := createArgumentMap(fn.inputs, fn.outputs, fn.locals, args, mutableParams = true);
   ext_args := list(Expression.map(e, function applyReplacements2(map = map)) for e in extArgs);
   evaluateExternal3(name, ext_args);
   result := createResult(map, fn.outputs);
