@@ -68,8 +68,7 @@ void OMSSimulationSubscriberThread::run()
 {
   while (!mIsFinished) {
     zmq_msg_t replyMsg;
-    int rc = zmq_msg_init(&replyMsg);
-    assert(rc == 0);
+    zmq_msg_init(&replyMsg);
     int size = zmq_msg_recv(&replyMsg, mpSubscriberSocket, ZMQ_DONTWAIT);
     if (size > -1) {
       // copy the zmq_msg_t to char*
