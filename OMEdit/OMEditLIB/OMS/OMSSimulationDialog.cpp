@@ -233,22 +233,26 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
  */
 void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
-  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), pLibraryTreeItem->getFileName());
-  mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-  int xPos = QApplication::primaryScreen()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::primaryScreen()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-#else // QT_VERSION_CHECK
-  int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-#endif // QT_VERSION_CHECK
-  pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
-  /* restore the window geometry. */
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
-      && Utilities::getApplicationSettings()->contains("OMSSimulationOutputWidget/geometry")) {
-    pOMSSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("OMSSimulationOutputWidget/geometry").toByteArray());
+  // export the model to a temp directory and send the file location.
+  QString fileName = QString("%1/%2.ssp").arg(Utilities::tempDirectory(), pLibraryTreeItem->getNameStructure());
+  if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
+    OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), fileName);
+    mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    int xPos = QApplication::primaryScreen()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
+    int yPos = QApplication::primaryScreen()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
+  #else // QT_VERSION_CHECK
+    int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
+    int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
+  #endif // QT_VERSION_CHECK
+    pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
+    /* restore the window geometry. */
+    if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
+        && Utilities::getApplicationSettings()->contains("OMSSimulationOutputWidget/geometry")) {
+      pOMSSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("OMSSimulationOutputWidget/geometry").toByteArray());
+    }
+    pOMSSimulationOutputWidget->show();
   }
-  pOMSSimulationOutputWidget->show();
 }
 
 /*!
