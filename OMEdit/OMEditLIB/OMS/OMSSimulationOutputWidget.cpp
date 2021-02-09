@@ -41,8 +41,18 @@
 #include "OMSSimulationProcessThread.h"
 
 #include <QGridLayout>
-#include <QtCore/qmath.h>
 
+/*!
+ * \class OMSSimulationOutputWidget
+ * \brief Simulation output window.
+ */
+/*!
+ * \brief OMSSimulationOutputWidget::OMSSimulationOutputWidget
+ * Creates a simulation output window.
+ * \param cref
+ * \param fileName
+ * \param pParent
+ */
 OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const QString &fileName, QWidget *pParent)
   : QWidget(pParent), mCref(cref)
 {
@@ -94,6 +104,10 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mpOMSSimulationProcessThread->start();
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::~OMSSimulationOutputWidget
+ * Saves the simulation output window geometry.
+ */
 OMSSimulationOutputWidget::~OMSSimulationOutputWidget()
 {
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
@@ -114,6 +128,10 @@ void OMSSimulationOutputWidget::simulateCallback(const char* ident, double time,
   emit sendSimulationProgress(QString(ident), time, status);
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::simulationProcessStarted
+ * Updates the simulation output window when the simulation has started.
+ */
 void OMSSimulationOutputWidget::simulationProcessStarted()
 {
   mpProgressLabel->setText(tr("Running simulation of %1. Please wait for a while.").arg(mCref));
@@ -123,6 +141,13 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpArchivedOMSSimulationItem->setStatus(Helper::running);
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::writeSimulationOutput
+ * Writes the simulation output.
+ * \param output
+ * \param type
+ * \param textFormat
+ */
 void OMSSimulationOutputWidget::writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat)
 {
   /* move the cursor down before adding to the logger. */
@@ -138,6 +163,11 @@ void OMSSimulationOutputWidget::writeSimulationOutput(QString output, StringHand
   mpSimulationOutputTextBrowser->insertPlainText(output);
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::simulationProgressJson
+ * Reads the simulation progress json and updates the progress bar.
+ * \param progressJson
+ */
 void OMSSimulationOutputWidget::simulationProgressJson(QString progressJson)
 {
   int colonIndex = progressJson.indexOf(":");
@@ -152,6 +182,12 @@ void OMSSimulationOutputWidget::simulationProgressJson(QString progressJson)
   }
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::simulationProcessFinished
+ * Updates the simulation output window when the simulation is finished.
+ * \param exitCode
+ * \param exitStatus
+ */
 void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   Q_UNUSED(exitCode);
@@ -195,6 +231,11 @@ void OMSSimulationOutputWidget::keyPressEvent(QKeyEvent *event)
   QWidget::keyPressEvent(event);
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::closeEvent
+ * Reimplementation of QWidget::closeEvent(). Ignores the event if simulation process is running.
+ * \param event
+ */
 void OMSSimulationOutputWidget::closeEvent(QCloseEvent *event)
 {
   if (mpOMSSimulationProcessThread->isSimulationProcessRunning()) {

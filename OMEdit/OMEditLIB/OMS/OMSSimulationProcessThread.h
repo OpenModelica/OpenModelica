@@ -38,10 +38,18 @@
 
 #include <QThread>
 
+/*!
+ * \brief The OMSSimulationSubscriberThread class
+ * Thread for zmq subscriber socket
+ */
 class OMSSimulationSubscriberThread : public QThread
 {
   Q_OBJECT
 public:
+  /*!
+   * \brief OMSSimulationSubscriberThread
+   * \param parent
+   */
   OMSSimulationSubscriberThread(QObject *parent = 0);
   ~OMSSimulationSubscriberThread();
   void setIsFinished(bool isFinished) {mIsFinished = isFinished;}
@@ -54,15 +62,34 @@ private:
   QString mEndPoint;
   QString mBindError;
 protected:
+  /*!
+   * \brief run
+   * Reimplementation of QThread::run();
+   * Runs a loop to read the simulation progress data.
+   */
   virtual void run() override;
 signals:
+  /*!
+   * \brief sendProgressJson
+   * Sends the simulation progress json to output window.
+   * \param progressJson
+   */
   void sendProgressJson(QString progressJson);
 };
 
+/*!
+ * \brief The OMSSimulationProcessThread class
+ * Thread for running the OMSimulatorPython process.
+ */
 class OMSSimulationProcessThread : public QThread
 {
   Q_OBJECT
 public:
+  /*!
+   * \brief OMSSimulationProcessThread
+   * \param fileName
+   * \param parent
+   */
   OMSSimulationProcessThread(const QString &fileName, QObject *parent = 0);
   ~OMSSimulationProcessThread();
   QProcess* getSimulationProcess() {return mpSimulationProcess;}
@@ -70,6 +97,11 @@ public:
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
 protected:
+  /*!
+   * \brief run
+   * Reimplementation of QThread::run();
+   * Starts the OMSimulatorPython process.
+   */
   virtual void run() override;
 private:
   QString mFileName;
@@ -78,15 +110,55 @@ private:
   bool mIsSimulationProcessRunning;
   OMSSimulationSubscriberThread *mpOMSSimulationSubscriberThread;
 private slots:
+  /*!
+   * \brief simulationProcessStarted
+   * Called when process has started and sends that information to output window.
+   */
   void simulationProcessStarted();
+  /*!
+   * \brief readSimulationStandardOutput
+   * Reads the simulation process standard output and sends it to output window.
+   */
   void readSimulationStandardOutput();
+  /*!
+   * \brief readSimulationStandardError
+   * Reads the simulation process standard error and sends it to output window.
+   */
   void readSimulationStandardError();
+  /*!
+   * \brief simulationProcessError
+   * Called when any error has occurred in running the simulation process.
+   * \param error
+   */
   void simulationProcessError(QProcess::ProcessError error);
+  /*!
+   * \brief simulationProcessFinished
+   * Called when process has finished and sends that information to output window.
+   * \param exitCode
+   * \param exitStatus
+   */
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 signals:
+  /*!
+   * \brief sendSimulationStarted
+   * Sends the information that simulation process started.
+   */
   void sendSimulationStarted();
+  /*!
+   * \brief sendSimulationOutput
+   * Sends the simulation output to output window.
+   * \param type
+   */
   void sendSimulationOutput(QString, StringHandler::SimulationMessageType type, bool);
+  /*!
+   * \brief sendProgressJson
+   * Sends the simulation process progress to output window for progress bar.
+   */
   void sendProgressJson(QString);
+  /*!
+   * \brief sendSimulationFinished
+   * Sends the information that simulation process finished.
+   */
   void sendSimulationFinished(int, QProcess::ExitStatus);
 };
 
