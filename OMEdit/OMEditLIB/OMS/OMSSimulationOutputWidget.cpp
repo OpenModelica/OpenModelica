@@ -81,12 +81,8 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   int bufferSize;
   OMSProxy::instance()->getResultFile(mCref, &resultFileName, &bufferSize);
   mResultFilePath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), QString(resultFileName));
-  QFileInfo resultFileInfo(mResultFilePath);
-  if (resultFileInfo.exists()) {
-    mResultFileLastModifiedDateTime = resultFileInfo.lastModified();
-  } else {
-    mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
-  }
+  // save the current datetime as last modified datetime for result file.
+  mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   mIsSimulationRunning = false;
 
   mpOMSSimulationProcessThread = new OMSSimulationProcessThread(fileName, this);
@@ -124,8 +120,6 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setTextVisible(true);
   mpCancelSimulationButton->setEnabled(true);
-  // save the current datetime as last modified datetime for result file.
-  mResultFileLastModifiedDateTime = QDateTime::currentDateTime();
   mpArchivedOMSSimulationItem->setStatus(Helper::running);
 }
 

@@ -41,9 +41,21 @@ OMSSimulationSubscriberThread::OMSSimulationSubscriberThread(QObject *parent)
 {
   mpContext = zmq_ctx_new();
   mpSubscriberSocket = zmq_socket(mpContext, ZMQ_SUB);
-  zmq_connect(mpSubscriberSocket, "tcp://localhost:1234");
-  zmq_setsockopt(mpSubscriberSocket, ZMQ_SUBSCRIBE, "", 0);
-  mIsFinished = false;
+  int rc = zmq_bind(mpSubscriberSocket, "tcp://127.0.0.1:*");
+  if (rc != 0) {
+    mIsFinished = true;
+    mEndPoint = "";
+    mBindError = QString("Error creating ZeroMQ subscriber socket. zmq_bind failed: %1\n").arg(strerror(errno));
+  } else {
+    mIsFinished = false;
+    // get the end point
+    const size_t endPointSize = 30;
+    char endPoint[endPointSize];
+    zmq_getsockopt(mpSubscriberSocket, ZMQ_LAST_ENDPOINT, &endPoint, (size_t *)&endPointSize);
+    mEndPoint = QString(endPoint);
+    zmq_setsockopt(mpSubscriberSocket, ZMQ_SUBSCRIBE, "", 0);
+    mBindError = "";
+  }
 }
 
 OMSSimulationSubscriberThread::~OMSSimulationSubscriberThread()
@@ -54,7 +66,7 @@ OMSSimulationSubscriberThread::~OMSSimulationSubscriberThread()
 
 void OMSSimulationSubscriberThread::run()
 {
-  do {
+  while (!mIsFinished) {
     zmq_msg_t replyMsg;
     int rc = zmq_msg_init(&replyMsg);
     assert(rc == 0);
@@ -68,7 +80,7 @@ void OMSSimulationSubscriberThread::run()
     }
     // release the zmq_msg_t
     zmq_msg_close(&replyMsg);
-  } while (!mIsFinished);
+  }
 }
 
 OMSSimulationProcessThread::OMSSimulationProcessThread(const QString &fileName, QObject *parent)
@@ -89,38 +101,43 @@ OMSSimulationProcessThread::~OMSSimulationProcessThread()
 
 void OMSSimulationProcessThread::run()
 {
-  mpSimulationProcess = new QProcess;
-  mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-  connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()), Qt::DirectConnection);
-  connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()), Qt::DirectConnection);
-  connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()), Qt::DirectConnection);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
-  connect(mpSimulationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)), Qt::DirectConnection);
-#else
-  connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)), Qt::DirectConnection);
-#endif
-  connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)), Qt::DirectConnection);
-  QStringList args(QString("C:/OpenModelica/OMSimulator/src/OMSimulatorServer/OMSimulatorServer.py"));
-  args << "--port-pub=1234";
-  args << QString("--model=%1").arg(mFileName);
-  // start the executable
-  QString fileName = QString("%1/bin/OMSimulatorPython3").arg(Helper::OpenModelicaHome);
-#ifdef WIN32
-  fileName = fileName.append(".bat");
-#endif
-  // run the simulation executable to create the result file
-  emit sendSimulationOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo, true);
-  mpSimulationProcess->start(fileName, args);
-
-  QThread::run();
+  mpOMSSimulationSubscriberThread = new OMSSimulationSubscriberThread;
+  connect(mpOMSSimulationSubscriberThread, SIGNAL(sendProgressJson(QString)), SIGNAL(sendProgressJson(QString)));
+  mpOMSSimulationSubscriberThread->start();
+  // Start the process if subscriber socket is listening
+  if (!mpOMSSimulationSubscriberThread->getEndPoint().isEmpty()) {
+    mpSimulationProcess = new QProcess;
+    mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+    connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()), Qt::DirectConnection);
+    connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()), Qt::DirectConnection);
+    connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()), Qt::DirectConnection);
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+    connect(mpSimulationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)), Qt::DirectConnection);
+  #else
+    connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)), Qt::DirectConnection);
+  #endif
+    connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)), Qt::DirectConnection);
+    QStringList args(QString("C:/OpenModelica/OMSimulator/src/OMSimulatorServer/OMSimulatorServer.py"));
+    args << QString("--endpoint-pub=%1").arg(mpOMSSimulationSubscriberThread->getEndPoint());
+    args << QString("--model=%1").arg(mFileName);
+    // start the executable
+    QString fileName = QString("%1/bin/OMSimulatorPython3").arg(Helper::OpenModelicaHome);
+  #ifdef WIN32
+    fileName = fileName.append(".bat");
+  #endif
+    // run the simulation executable to create the result file
+    emit sendSimulationOutput(QString("%1 %2\n").arg(fileName).arg(args.join(" ")), StringHandler::OMEditInfo, true);
+    mpSimulationProcess->start(fileName, args);
+    QThread::run();
+  } else {
+    emit sendSimulationOutput(mpOMSSimulationSubscriberThread->getBindError(), StringHandler::Error, true);
+    emit sendSimulationFinished(1, QProcess::NormalExit);
+  }
 }
 
 void OMSSimulationProcessThread::simulationProcessStarted()
 {
   mIsSimulationProcessRunning = true;
-  mpOMSSimulationSubscriberThread = new OMSSimulationSubscriberThread;
-  connect(mpOMSSimulationSubscriberThread, SIGNAL(sendProgressJson(QString)), SIGNAL(sendProgressJson(QString)));
-  mpOMSSimulationSubscriberThread->start();
   emit sendSimulationStarted();
 }
 
@@ -131,8 +148,7 @@ void OMSSimulationProcessThread::readSimulationStandardOutput()
 
 void OMSSimulationProcessThread::readSimulationStandardError()
 {
-  QString errorString = QString(mpSimulationProcess->readAllStandardError());
-  emit sendSimulationOutput(errorString, StringHandler::Error, true);
+  emit sendSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), StringHandler::Error, true);
 }
 
 void OMSSimulationProcessThread::simulationProcessError(QProcess::ProcessError error)

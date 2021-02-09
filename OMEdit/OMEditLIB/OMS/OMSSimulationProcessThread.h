@@ -45,10 +45,14 @@ public:
   OMSSimulationSubscriberThread(QObject *parent = 0);
   ~OMSSimulationSubscriberThread();
   void setIsFinished(bool isFinished) {mIsFinished = isFinished;}
+  QString getEndPoint() const {return mEndPoint;}
+  QString getBindError() const {return mBindError;}
 private:
   void *mpContext;
   void *mpSubscriberSocket;
   bool mIsFinished;
+  QString mEndPoint;
+  QString mBindError;
 protected:
   virtual void run() override;
 signals:

@@ -262,17 +262,19 @@ void OMSSimulationDialog::simulationFinished(const QString &resultFilePath, QDat
 {
   // read the result file
   QFileInfo resultFileInfo(resultFilePath);
-  if (!resultFileInfo.exists() || resultFileLastModifiedDateTime > resultFileInfo.lastModified()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to find the result file <b>%1</b>.").arg(resultFileInfo.absoluteFilePath()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
-    return;
+  resultFileInfo.setCaching(false);
+  QDateTime resultFileModificationTime = resultFileInfo.lastModified();
+  bool resultFileExists = resultFileInfo.exists();
+  // use secsTo as lastModified returns to second not to mili/nanoseconds, see #5251
+  bool resultFileNewer = resultFileLastModifiedDateTime.secsTo(resultFileModificationTime) >= 0;
+  if (resultFileExists && resultFileNewer) {
+    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
+    pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
+    MainWindow::instance()->getVariablesDockWidget()->show();
   }
-  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-  MainWindow::instance()->switchToPlottingPerspectiveSlot();
-  pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-  MainWindow::instance()->getVariablesDockWidget()->show();
 }
 
 /*!
