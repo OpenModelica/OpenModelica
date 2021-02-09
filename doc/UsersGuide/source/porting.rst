@@ -48,6 +48,10 @@ directory (that must have the same name as the top-level package) in the
 repository itself, to avoid problems in case the repository is cloned locally
 on a directory that doesn't have the right name.
 
+The top-level directory name, or the single *.mo* file containing the entire
+package, should be named exactly as the package (e.g. *Modelica*),
+possibly followed by a space and by the version number (e.g. *Modelica 3.2.3*).
+
 Modifiers for arrays
 -------
 According to the rules set forth in `Section 7.2.5 <https://specification.modelica.org/maint/3.5/inheritance-modification-and-redeclaration.html#modifiers-for-array-elements>`_ 
