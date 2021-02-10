@@ -194,6 +194,13 @@ algorithm
       then
         callExp;
 
+    case Call.TYPED_CALL(arguments = args)
+      algorithm
+        args := list(simplify(arg) for arg in args);
+        call.arguments := args;
+      then
+        Expression.CALL(call);
+
     case Call.TYPED_ARRAY_CONSTRUCTOR() then simplifyArrayConstructor(call);
     case Call.TYPED_REDUCTION() then simplifyReduction(call);
     else callExp;
