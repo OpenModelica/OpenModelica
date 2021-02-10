@@ -54,6 +54,7 @@ typedef struct SYNC_TIMER {
 
 
 void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTime);
+void freeSynchronous(DATA* data);
 void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo);
 void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime);
 int handleTimers(DATA *data, threadData_t *threadData, SOLVER_INFO* solverInfo);

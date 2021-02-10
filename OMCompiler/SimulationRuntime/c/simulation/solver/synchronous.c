@@ -37,13 +37,25 @@ extern "C" {
 #endif
 
 
+/**
+ * @brief Initialize memory for synchronus functionalities.
+ *
+ * Use freeSynchronous to free data again.
+ *
+ * @param data
+ * @param threadData
+ * @param startTime
+ */
 void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTime)
 {
   TRACE_PUSH
+  long i;
+
+  /* Free in case initSynchronous is called multiple times */
+  freeSynchronous(data);
 
   data->callback->function_initSynchronous(data, threadData);
   data->simulationInfo->intvlTimers = allocList(sizeof(SYNC_TIMER));
-  long i;
 
   for(i=0; i<data->modelData->nClocks; i++)
   {
@@ -57,11 +69,24 @@ void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTi
   }
 
   for(i=0; i<data->modelData->nSubClocks; i++) {
-    assertStreamPrint(NULL, NULL != data->modelData->subClocksInfo[i].solverMethod, "Continuous clocked systems aren't supported yet");
+    assertStreamPrint(threadData, NULL != data->modelData->subClocksInfo[i].solverMethod, "Continuous clocked systems aren't supported yet");
   }
 
   TRACE_POP
 }
+
+
+/**
+ * @brief Frees memories allocated with initSynchronous.
+ *
+ * @param data
+ */
+void freeSynchronous(DATA* data)
+{
+  freeList(data->simulationInfo->intvlTimers);
+  data->simulationInfo->intvlTimers = NULL;
+}
+
 
 #if !defined(OMC_MINIMAL_RUNTIME)
 static void insertTimer(LIST* list, SYNC_TIMER* timer)

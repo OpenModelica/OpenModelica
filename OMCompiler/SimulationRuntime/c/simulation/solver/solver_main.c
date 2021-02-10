@@ -51,6 +51,7 @@
 #include "meta/meta_modelica.h"
 #include "simulation/solver/epsilon.h"
 #include "simulation/solver/external_input.h"
+#include "synchronous.h"
 #include "linearSystem.h"
 #include "sym_solver_ssc.h"
 #include "irksco.h"
@@ -379,6 +380,7 @@ int freeSolverData(DATA* data, SOLVER_INFO* solverInfo)
   int i;
 
   freeList(solverInfo->eventLst);
+  freeSynchronous(data);
   /* free solver statistics */
   free(solverInfo->solverStats);
   free(solverInfo->solverStatsTmp);
