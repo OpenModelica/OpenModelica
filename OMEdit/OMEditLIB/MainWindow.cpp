@@ -2874,7 +2874,7 @@ void MainWindow::updateModelSwitcherMenu(QMdiSubWindow *pActivatedWindow)
       break;
     }
     ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
-    if (pModelWidget) {
+    if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
       mpModelSwitcherActions[j]->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
       mpModelSwitcherActions[j]->setData(pModelWidget->getLibraryTreeItem()->getNameStructure());
       mpModelSwitcherActions[j]->setVisible(true);

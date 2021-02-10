@@ -564,7 +564,9 @@ public:
   void dissociateBusWithConnector(QString busName, QString connectorName);
   void associateBusWithConnectors(QString busName);
   QList<QVariant> toOMSensData();
-  void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true);
+  void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true, const bool switchToEdited = true,
+                                    const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
+  void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;

@@ -6342,8 +6342,10 @@ QList<QVariant> ModelWidget::toOMSensData()
  * \brief ModelWidget::createOMSimulatorUndoCommand
  * Creates OMSimulatorUndoCommand and pushes it to the undo stack.
  * \param commandText
+ * \param doSnapShot
+ * \param switchToEdited
  */
-void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot)
+void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot, const bool switchToEdited, const QString oldEditedCref, const QString newEditedCref)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
@@ -6354,7 +6356,32 @@ void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const
   QString newSnapshot;
   OMSProxy::instance()->list(pModelLibraryTreeItem->getNameStructure(), &newSnapshot);
   mpUndoStack->push(new OMSimulatorUndoCommand(pModelLibraryTreeItem->getNameStructure(), oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(),
-                                               doSnapShot, "OMSimulator " + commandText));
+                                               doSnapShot, switchToEdited, oldEditedCref, newEditedCref, "OMSimulator " + commandText));
+}
+
+/*!
+ * \brief ModelWidget::createOMSimulatorRenameModelUndoCommand
+ * Creates OMSimulatorUndoCommand and pushes it to the undo stack.
+ * Used only for renaming of models.
+ * \param commandText
+ * \param cref
+ * \param newCref
+ */
+void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref)
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  if (!pModelLibraryTreeItem->getModelWidget()) {
+    pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
+  }
+  QString oldSnapshot = pModelLibraryTreeItem->getClassText(pLibraryTreeModel);
+  if (OMSProxy::instance()->rename(cref, newCref)) {
+    pModelLibraryTreeItem->setName(newCref);
+    pModelLibraryTreeItem->setNameStructure(newCref);
+    QString newSnapshot;
+    OMSProxy::instance()->list(newCref, &newSnapshot);
+    mpUndoStack->push(new OMSimulatorUndoCommand(newCref, oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(), true, true, "", "", "OMSimulator " + commandText));
+  }
 }
 
 /*!
@@ -6398,8 +6425,9 @@ void ModelWidget::handleCanUndoRedoChanged()
 {
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-    assert(pModelWidget);
-    pModelWidget->updateUndoRedoActions();
+    if (pModelWidget) {
+      pModelWidget->updateUndoRedoActions();
+    }
   } else {
     updateUndoRedoActions();
   }
@@ -7870,13 +7898,15 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
             QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
             for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
               ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
-              QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
-              if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-                listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
-              } else {
-                listItem->setText(pModelWidget->getLibraryTreeItem()->getName());
+              if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+                QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
+                if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+                  listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
+                } else {
+                  listItem->setText(pModelWidget->getLibraryTreeItem()->getName());
+                }
+                listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeItem()->getNameStructure());
               }
-              listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeItem()->getNameStructure());
             }
           } else {
             if (!mpRecentModelsList->selectedItems().isEmpty()) {
