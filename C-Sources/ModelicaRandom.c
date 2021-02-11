@@ -41,58 +41,7 @@
 */
 
 #include "ModelicaRandom.h"
-
-/* Have RANDOM int64 / uint64 */
-#if defined (_WIN32)
-#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__) || defined(__BORLANDC__)
-#define HAVE_RANDOM_INT64_T 1
-#define HAVE_RANDOM_UINT64_T 1
-#else
-#undef HAVE_RANDOM_INT64_T
-#undef HAVE_RANDOM_UINT64_T
-#endif
-#else
-#define HAVE_RANDOM_INT64_T 1
-#define HAVE_RANDOM_UINT64_T 1
-#endif
-
-/* Define to 1 if you have the <stdint.h> header file. */
-#if defined(_WIN32)
-#if defined(_MSC_VER) && _MSC_VER >= 1600
-#define HAVE_RANDOM_STDINT_H 1
-#elif defined(__WATCOMC__) || defined(__MINGW32__) || defined(__CYGWIN__)
-#define HAVE_RANDOM_STDINT_H 1
-#else
-#undef HAVE_RANDOM_STDINT_H
-#endif
-#elif defined(__GNUC__) && !defined(__VXWORKS__)
-#define HAVE_RANDOM_STDINT_H 1
-#else
-#undef HAVE_RANDOM_STDINT_H
-#endif
-
-/* Include integer type header */
-#if defined(HAVE_RANDOM_STDINT_H)
-#include <stdint.h>
-#else
-#define int32_t  int
-#define uint32_t unsigned int
-#if defined(HAVE_RANDOM_INT64_T)
-#if defined(__BORLANDC__) || (defined(_MSC_VER) && _MSC_VER < 1300)
-#define int64_t __int64
-#else
-#define int64_t long long
-#endif
-#endif
-#if defined(HAVE_RANDOM_UINT64_T)
-#if defined(__BORLANDC__) || (defined(_MSC_VER) && _MSC_VER < 1300)
-#define uint64_t unsigned __int64
-#else
-#define uint64_t unsigned long long
-#endif
-#endif
-#endif
-
+#include "stdint_wrap.h"
 #include <stdlib.h>
 #include <limits.h>
 #include <math.h>

@@ -91,6 +91,8 @@
 #endif
 
 #include "ModelicaUtilities.h"
+#include "stdint_wrap.h"
+#define HASH_NO_STDINT 1
 #if !defined(HASH_FUNCTION)
 #define HASH_FUNCTION HASH_AP
 #endif

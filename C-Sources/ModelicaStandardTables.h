@@ -43,6 +43,9 @@
    DUMMY_FUNCTION_USERTAB: Use a dummy function "usertab"
 
    Changelog:
+      Dec. 22, 2020: by Thomas Beutlich
+                     Added reading of CSV files (ticket #1153)
+
       Aug. 03, 2019: by Thomas Beutlich
                      Added second derivatives (ticket #2901)
 
@@ -150,6 +153,23 @@ MODELICA_EXPORT void* ModelicaStandardTables_CombiTimeTable_init2(_In_z_ const c
                                                   double shiftTime,
                                                   int timeEvents,
                                                   int verbose) MODELICA_NONNULLATTR;
+  /* Same as ModelicaStandardTables_CombiTimeTable_init3, but without delimiter and nHeaderLines
+     arguments
+  */
+
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTimeTable_init3(_In_z_ const char* fileName,
+                                                  _In_z_ const char* tableName,
+                                                  _In_ double* table, size_t nRow,
+                                                  size_t nColumn,
+                                                  double startTime,
+                                                  _In_ int* columns,
+                                                  size_t nCols, int smoothness,
+                                                  int extrapolation,
+                                                  double shiftTime,
+                                                  int timeEvents,
+                                                  int verbose,
+                                                  _In_z_ const char* delimiter,
+                                                  int nHeaderLines) MODELICA_NONNULLATTR;
   /* Initialize 1-dim. table where first column is time
 
      -> fileName: Name of file
@@ -182,6 +202,8 @@ MODELICA_EXPORT void* ModelicaStandardTables_CombiTimeTable_init2(_In_z_ const c
                     = 2: at discontinuities
                     = 3: no
      -> verbose: Print message that file is loading
+     -> delimiter: Column delimiter character (CSV file only)
+     -> nHeaderLines: Number of header lines to ignore (CSV file only)
      <- RETURN: Pointer to internal memory of table structure
   */
 
@@ -274,6 +296,20 @@ MODELICA_EXPORT void* ModelicaStandardTables_CombiTable1D_init2(_In_z_ const cha
                                                 size_t nCols, int smoothness,
                                                 int extrapolation,
                                                 int verbose) MODELICA_NONNULLATTR;
+  /* Same as ModelicaStandardTables_CombiTable1D_init3, but without delimiter and nHeaderLines
+     arguments
+  */
+
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTable1D_init3(_In_z_ const char* fileName,
+                                                _In_z_ const char* tableName,
+                                                _In_ double* table, size_t nRow,
+                                                size_t nColumn,
+                                                _In_ int* columns,
+                                                size_t nCols, int smoothness,
+                                                int extrapolation,
+                                                int verbose,
+                                                _In_z_ const char* delimiter,
+                                                int nHeaderLines) MODELICA_NONNULLATTR;
   /* Initialize 1-dim. table defined by matrix, where first column
      is x-axis and further columns of matrix are interpolated
 
@@ -301,6 +337,8 @@ MODELICA_EXPORT void* ModelicaStandardTables_CombiTable1D_init2(_In_z_ const cha
                        = 3: periodic
                        = 4: no
      -> verbose: Print message that file is loading
+     -> delimiter: Column delimiter character (CSV file only)
+     -> nHeaderLines: Number of header lines to ignore (CSV file only)
      <- RETURN: Pointer to internal memory of table structure
   */
 
@@ -362,6 +400,18 @@ MODELICA_EXPORT void* ModelicaStandardTables_CombiTable2D_init2(_In_z_ const cha
                                                 size_t nColumn, int smoothness,
                                                 int extrapolation,
                                                 int verbose) MODELICA_NONNULLATTR;
+  /* Same as ModelicaStandardTables_CombiTable2D_init3, but without delimiter and nHeaderLines
+     arguments
+  */
+
+MODELICA_EXPORT void* ModelicaStandardTables_CombiTable2D_init3(_In_z_ const char* fileName,
+                                                _In_z_ const char* tableName,
+                                                _In_ double* table, size_t nRow,
+                                                size_t nColumn, int smoothness,
+                                                int extrapolation,
+                                                int verbose,
+                                                _In_z_ const char* delimiter,
+                                                int nHeaderLines) MODELICA_NONNULLATTR;
   /* Initialize 2-dim. table defined by matrix, where first column
      is x-axis, first row is y-axis and the matrix elements are the
      z-values.
@@ -387,6 +437,8 @@ MODELICA_EXPORT void* ModelicaStandardTables_CombiTable2D_init2(_In_z_ const cha
                        = 3: periodic
                        = 4: no
      -> verbose: Print message that file is loading
+     -> delimiter: Column delimiter character (CSV file only)
+     -> nHeaderLines: Number of header lines to ignore (CSV file only)
      <- RETURN: Pointer to internal memory of table structure
   */
 

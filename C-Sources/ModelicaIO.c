@@ -37,6 +37,9 @@
       Modelica.Utilities.Streams.writeRealMatrix
 
    Changelog:
+      Dec. 22, 2020: by Thomas Beutlich
+                     Added reading of CSV files (ticket #1153)
+
       July 08, 2020: by Thomas Beutlich
                      Improved error message if reading text file with zero bytes
                      (ticket #3603)
@@ -165,6 +168,14 @@ static void readMatIO(_In_z_ const char* fileName, _In_z_ const char* matrixName
 static void readRealMatIO(_In_z_ const char* fileName, _In_z_ const char* matrixName,
                           _Inout_ MatIO* matio);
   /* Read a real variable from a MATLAB MAT-file using MatIO functions */
+
+static double* readCsvTable(_In_z_ const char* fileName, _In_z_ const char* tableName,
+                            _Out_ size_t* m, _Out_ size_t* n, _In_z_ const char* delimiter,
+                            int nHeaderLines) MODELICA_NONNULLATTR;
+  /* Read a table from a CSV file
+
+     <- RETURN: Pointer to array (row-wise storage) of table values
+  */
 
 static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tableName,
                             _Out_ size_t* m, _Out_ size_t* n) MODELICA_NONNULLATTR;
@@ -353,9 +364,18 @@ double* ModelicaIO_readRealTable(_In_z_ const char* fileName,
                                  _In_z_ const char* tableName,
                                  _Out_ size_t* m, _Out_ size_t* n,
                                  int verbose) {
-    double* table = NULL;
+    return ModelicaIO_readRealTable2(fileName, tableName, m, n, verbose, ",", 0);
+}
+
+double* ModelicaIO_readRealTable2(_In_z_ const char* fileName,
+                                  _In_z_ const char* tableName,
+                                  _Out_ size_t* m, _Out_ size_t* n,
+                                  int verbose, _In_z_ const char* delimiter,
+                                  int nHeaderLines) {
+    double* table;
     const char* ext;
     int isMatExt = 0;
+    int isCsvExt = 0;
 
     /* Table file can be either text or binary MATLAB MAT-file */
     ext = strrchr(fileName, '.');
@@ -363,6 +383,14 @@ double* ModelicaIO_readRealTable(_In_z_ const char* fileName,
         if (0 == strncmp(ext, ".mat", 4) ||
             0 == strncmp(ext, ".MAT", 4)) {
             isMatExt = 1;
+        }
+        else if (0 == strncmp(ext, ".csv", 4) ||
+            0 == strncmp(ext, ".CSV", 4)) {
+            isCsvExt = 1;
+            if (strlen(delimiter) != 1) {
+                ModelicaFormatError("Invalid column delimiter \"%s\", must be a single character.\n", delimiter);
+                return NULL;
+            }
         }
     }
 
@@ -374,6 +402,9 @@ double* ModelicaIO_readRealTable(_In_z_ const char* fileName,
 
     if (isMatExt == 1) {
         table = readMatTable(fileName, tableName, m, n);
+    }
+    else if (isCsvExt == 1) {
+        table = readCsvTable(fileName, tableName, m, n, delimiter, nHeaderLines);
     }
     else {
         table = readTxtTable(fileName, tableName, m, n);
@@ -657,6 +688,215 @@ static int IsNumber(char* token) {
         }
     }
     return isNumber && foundDigit > 0;
+}
+
+static double* readCsvTable(_In_z_ const char* fileName, _In_z_ const char* tableName,
+                            _Out_ size_t* m, _Out_ size_t* n, _In_z_ const char* delimiter,
+                            int nHeaderLines) {
+    double* table = NULL;
+    char* buf;
+    int bufLen = LINE_BUFFER_LENGTH;
+    FILE* fp;
+    int readError;
+    unsigned long nRow = 0;
+    unsigned long nCol = 0;
+    unsigned long lineNo = 1;
+#if defined(NO_LOCALE)
+    const char * const dec = ".";
+#elif defined(_MSC_VER) && _MSC_VER >= 1400
+    _locale_t loc;
+#elif defined(__GLIBC__) && defined(__GLIBC_MINOR__) && ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= (2 << 16) + 3)
+    locale_t loc;
+#else
+    char* dec;
+#endif
+    char delimTable[5] = " \t\r";
+    if (delimiter[0] != ' ' && delimiter[0] != '\t' && delimiter[0] != '\r') {
+        strncat(delimTable, delimiter, 1);
+    }
+
+    fp = fopen(fileName, "r");
+    if (NULL == fp) {
+        ModelicaFormatError("Not possible to open file \"%s\": "
+            "No such file or directory\n", fileName);
+        return NULL;
+    }
+
+    buf = (char*)malloc(LINE_BUFFER_LENGTH*sizeof(char));
+    if (NULL == buf) {
+        fclose(fp);
+        ModelicaError("Memory allocation error\n");
+        return NULL;
+    }
+
+    /* Ignore file header */
+    while (lineNo <= (unsigned long)nHeaderLines) {
+        if ((readError = readLine(&buf, &bufLen, fp)) != 0) {
+            free(buf);
+            fclose(fp);
+            if (readError < 0) {
+                ModelicaFormatError(
+                    "Error reading line %lu from file \"%s\": "
+                    "End-Of-File reached.\n", lineNo, fileName);
+            }
+            return NULL;
+        }
+        lineNo++;
+    }
+
+#if defined(NO_LOCALE)
+#elif defined(_MSC_VER) && _MSC_VER >= 1400
+    loc = _create_locale(LC_NUMERIC, "C");
+#elif defined(__GLIBC__) && defined(__GLIBC_MINOR__) && ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= (2 << 16) + 3)
+    loc = newlocale(LC_NUMERIC, "C", NULL);
+#else
+    dec = localeconv()->decimal_point;
+#endif
+
+    /* First pass: Loop over lines of file and determine dimensions */
+    while (readLine(&buf, &bufLen, fp) == 0) {
+        nRow++;
+        if (nRow == 1) {
+#if defined(_POSIX_) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+            char* nextToken = NULL;
+#endif
+            char* token = strtok_r(buf, delimTable, &nextToken);
+            while (NULL != token) {
+                token = strtok_r(NULL, delimTable, &nextToken);
+                nCol++;
+            }
+        }
+    }
+
+    /* Reset for second pass */
+    fseek(fp, 0, SEEK_SET);
+    lineNo = 1;
+    /* Ignore file header */
+    while (lineNo <= (unsigned long)nHeaderLines) {
+        readLine(&buf, &bufLen, fp);
+        lineNo++;
+    }
+    lineNo--;
+
+    {
+        size_t i = 0;
+
+        table = (double*)malloc(nRow*nCol*sizeof(double));
+        if (NULL == table) {
+            *m = 0;
+            *n = 0;
+            free(buf);
+            fclose(fp);
+#if defined(NO_LOCALE)
+#elif defined(_MSC_VER) && _MSC_VER >= 1400
+            _free_locale(loc);
+#elif defined(__GLIBC__) && defined(__GLIBC_MINOR__) && ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= (2 << 16) + 3)
+            freelocale(loc);
+#endif
+            ModelicaError("Memory allocation error\n");
+            return table;
+        }
+
+        readError = 0;
+        /* Loop over rows and store table row-wise */
+        for (i = 0; i < nRow; i++) {
+            size_t j = 0;
+            char* token;
+            char* endptr;
+#if defined(_POSIX_) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+            char* nextToken = NULL;
+#endif
+            if (readError != 0) {
+                break;
+            }
+
+            lineNo++;
+            readError = readLine(&buf, &bufLen, fp) != 0;
+#if defined(_POSIX_) || (defined(_MSC_VER) && _MSC_VER >= 1400)
+            nextToken = NULL;
+#endif
+            token = strtok_r(buf, delimTable, &nextToken);
+            for (j = 0; j < nCol; j++) {
+                if (token == NULL) {
+                    readError = 1;
+                    break;
+                }
+#if !defined(NO_LOCALE) && (defined(_MSC_VER) && _MSC_VER >= 1400)
+                table[i*nCol + j] = _strtod_l(token, &endptr, loc);
+                if (*endptr != 0) {
+                    readError = 1;
+                }
+#elif !defined(NO_LOCALE) && (defined(__GLIBC__) && defined(__GLIBC_MINOR__) && ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= (2 << 16) + 3))
+                table[i*nCol + j] = strtod_l(token, &endptr, loc);
+                if (*endptr != 0) {
+                    readError = 1;
+                }
+#else
+                if (*dec == '.') {
+                    table[i*nCol + j] = strtod(token, &endptr);
+                }
+                else if (NULL == strchr(token, '.')) {
+                    table[i*nCol + j] = strtod(token, &endptr);
+                }
+                else {
+                    char* token2 = (char*)malloc(
+                        (strlen(token) + 1)*sizeof(char));
+                    if (NULL != token2) {
+                        char* p;
+                        strcpy(token2, token);
+                        p = strchr(token2, '.');
+                        *p = *dec;
+                        table[i*nCol + j] = strtod(token2, &endptr);
+                        if (*endptr != 0) {
+                            readError = 1;
+                        }
+                        free(token2);
+                    }
+                    else {
+                        *m = 0;
+                        *n = 0;
+                        free(buf);
+                        fclose(fp);
+                        readError = 1;
+                        ModelicaError("Memory allocation error\n");
+                        break;
+                    }
+                }
+#endif
+                if (readError == 0) {
+                    token = strtok_r(NULL, delimTable, &nextToken);
+                }
+                else {
+                    break;
+                }
+            }
+        }
+    }
+
+    free(buf);
+    fclose(fp);
+#if defined(NO_LOCALE)
+#elif defined(_MSC_VER) && _MSC_VER >= 1400
+    _free_locale(loc);
+#elif defined(__GLIBC__) && defined(__GLIBC_MINOR__) && ((__GLIBC__ << 16) + __GLIBC_MINOR__ >= (2 << 16) + 3)
+    freelocale(loc);
+#endif
+
+    if (readError == 0) {
+        *m = (size_t)nRow;
+        *n = (size_t)nCol;
+    }
+    else {
+        free(table);
+        table = NULL;
+        *m = 0;
+        *n = 0;
+        ModelicaFormatError(
+            "Error in line %lu when reading numeric data of matrix "
+            "\"%s(%lu,%lu)\" from file \"%s\"\n", lineNo,
+            tableName, nRow, nCol, fileName);
+    }
+    return table;
 }
 
 static double* readTxtTable(_In_z_ const char* fileName, _In_z_ const char* tableName,
@@ -1023,6 +1263,9 @@ static int readLine(_In_ char** buf, _In_ int* bufLen, _In_ FILE* fp) {
 
     if (fgets(*buf, *bufLen, fp) == NULL) {
         return EOF;
+    }
+    if (feof(fp)) {
+        return 0;
     }
 
     do {

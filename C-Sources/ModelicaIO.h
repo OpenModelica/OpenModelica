@@ -39,6 +39,9 @@
                       functions shall be visible outside of the DLL
 
    Changelog:
+      Dec. 22, 2020: by Thomas Beutlich
+                     Added reading of CSV files (ticket #1153)
+
       Mar. 08, 2017: by Thomas Beutlich, ESI ITI GmbH
                      Added ModelicaIO_readRealTable from ModelicaStandardTables
                      (ticket #2192)
@@ -142,6 +145,25 @@ MODELICA_EXPORT double* ModelicaIO_readRealTable(_In_z_ const char* fileName,
      -> m: Number of rows
      -> n: Number of columns
      -> verbose: Print message that file is loading
+     <- RETURN: Array of dimensions m by n
+  */
+
+MODELICA_EXPORT double* ModelicaIO_readRealTable2(_In_z_ const char* fileName,
+                                 _In_z_ const char* tableName,
+                                 _Out_ size_t* m, _Out_ size_t* n,
+                                 int verbose, _In_z_ const char* delimiter,
+                                 int nHeaderLines) MODELICA_NONNULLATTR;
+  /* Read matrix and its dimensions from file
+     Note: Only called from ModelicaStandardTables, but impossible to be called
+     from a Modelica environment
+
+     -> fileName: Name of file
+     -> matrixName: Name of matrix
+     -> m: Number of rows
+     -> n: Number of columns
+     -> verbose: Print message that file is loading
+     -> delimiter: Column delimiter character (CSV file only)
+     -> nHeaderLines: Number of header lines to ignore (CSV file only)
      <- RETURN: Array of dimensions m by n
   */
 
