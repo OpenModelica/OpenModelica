@@ -38,11 +38,28 @@
 
 const int chunkSize = 10000;
 
+/*!
+ * \brief The OutputPlainTextEdit class
+ * Generic class to display the output in a non blocking way.\n
+ * It accumulates the output and uses a QTimer to display the result.\n
+ * The timer can be displayed with mUseTimer flag.
+ */
 class OutputPlainTextEdit : public QPlainTextEdit
 {
   Q_OBJECT
 public:
+  /*!
+   * \brief OutputPlainTextEdit
+   * \param parent
+   */
   OutputPlainTextEdit(QWidget *parent = 0);
+  /*!
+   * \brief appendOutput
+   * Appends the output to mQueuedOutput is mUseTimer is set.\n
+   * Otherwise writes the output directly.
+   * \param output
+   * \param format
+   */
   void appendOutput(const QString &output, const QTextCharFormat &format = QTextCharFormat());
   void setUseTimer(bool useTimer) {mUseTimer = useTimer;}
 private:
@@ -51,8 +68,19 @@ private:
   QTimer mQueueTimer;
   bool mUseTimer;
 
+  /*!
+   * \brief handleOutputChunk
+   * Writes the output with format.
+   * \param output
+   * \param format
+   */
   void handleOutputChunk(const QString &output, const QTextCharFormat &format);
 private slots:
+  /*!
+   * \brief handleNextOutputChunk
+   * Called when the mQueueTimer timeout is triggered.\n
+   * Reads one item from mQueuedOutput vector and restarts the mQueueTimer if vector is not empty.
+   */
   void handleNextOutputChunk();
 };
 

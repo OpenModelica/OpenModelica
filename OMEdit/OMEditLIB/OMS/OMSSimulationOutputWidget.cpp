@@ -123,7 +123,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
   #endif
     connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
-    QStringList args(QString("C:/OpenModelica/OMSimulator/src/OMSimulatorServer/OMSimulatorServer.py"));
+    QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
     args << QString("--endpoint-pub=%1").arg(QString(endPoint));
     args << QString("--model=%1").arg(fileName);
     // start the executable

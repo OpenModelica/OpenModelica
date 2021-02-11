@@ -93,7 +93,7 @@ void OutputPlainTextEdit::handleNextOutputChunk()
     auto &chunk = mQueuedOutput.first();
     if (chunk.first.size() <= chunkSize) {
       handleOutputChunk(chunk.first, chunk.second);
-      mQueuedOutput.removeFirst();
+      mQueuedOutput.remove(0);
     } else {
       handleOutputChunk(chunk.first.left(chunkSize), chunk.second);
       chunk.first.remove(0, chunkSize);
