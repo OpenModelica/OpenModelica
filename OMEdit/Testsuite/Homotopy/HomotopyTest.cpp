@@ -109,6 +109,7 @@ void HomotopyTest::readSimulationLogFile(const QString &simulationLogFilePath)
     QString contents = QString(simulationLogFile.readAll());
     simulationLogFile.close();
     if (!contents.contains(QStringLiteral("simulation terminated by an assertion at initialization"))) {
+      qDebug() << contents;
       QFAIL("Failed to find the expected output in the simulation log file i.e., simulation terminated by an assertion at initialization");
     }
   }
