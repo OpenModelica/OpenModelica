@@ -136,6 +136,71 @@ equations. The fact that those equations are conditional and are not activated
 when the corresponding conditional components are also not activated is
 irrelevant, according to the language specification.
 
+Access to classes defined in partial packages
+-------
+Consider the following example package
+
+.. code-block:: modelica
+
+  package TestPartialPackage
+    partial package PartialPackage
+      function f
+        input Real x;
+        output Real y;
+      algorithm
+        y := 2*x;
+      end f;
+    end PartialPackage;
+
+    package RegularPackage
+      extends PartialPackage;
+      model A
+        Real x = time;
+      end A;
+    end RegularPackage;
+
+    model M1
+      package P = PartialPackage;
+      Real x = P.f(time);
+    end M1;
+
+    model M2
+      extends M1(redeclare package P = RegularPackage);
+    end M2;
+
+    model M3
+      encapsulated package LocalPackage
+        import TestPartialPackage.PartialPackage;
+        extends PartialPackage;
+      end LocalPackage;
+      package P = LocalPackage;
+      Real x = P.f(time);
+    end M3;
+  end TestPartialPackage;
+
+Model *M1* references a class (a function, in this case) from a partial
+package. This is perfectly fine if one wants to write a generic model, which
+is then specialized by redeclaring the package to a non-partial one, as in
+*M2*. However, *Ml* cannot be compiled for simulation, since, according to
+`Section 5.3.2 <https://specification.modelica.org/maint/3.5/scoping-name-lookup-and-flattening.html#composite-name-lookup>`_
+of the language specification, the classes that are looked inside during
+lookup shall not be partial in a simulation model.
+
+This problem can be fixed by accessing that class (the function *f*, in this case)
+from a non-final package that extends the partial one, either by redeclaring
+the partial package to a non-partial one, as in *M2*, or by locally defining
+a non-partial package that extends from the partial one. The latter option is
+of course viable only if the class being accessed is in itself not a partial
+or somehow incomplete one.
+
+This issue is often encountered in models using *Modelica.Media*, that sometimes
+use some class definitions (e.g. unit types) from partial packages such as
+*Modelica.Media.Interfaces.PartialMedium*. The fix in most cases is just to
+use the same definition from the actual replaceable *Medium* package defined
+in the model, which will eventually be redeclared to a non-partial one
+in the simulation model.
+
+
 Equality operator in algorithms
 -------
 The following code is illegal, because it uses the equality '=' operator, which
