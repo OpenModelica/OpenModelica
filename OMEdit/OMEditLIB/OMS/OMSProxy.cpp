@@ -1092,7 +1092,7 @@ bool OMSProxy::loadSnapshot(QString cref, QString snapshot)
   QStringList args;
   args << "\"" + cref + "\"" << "\"" + snapshot + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_loadSnapshot(cref.toUtf8().constData(), snapshot.toUtf8().constData());
+  oms_status_enu_t status = oms_loadSnapshot(cref.toUtf8().constData(), snapshot.toUtf8().constData(), nullptr);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
