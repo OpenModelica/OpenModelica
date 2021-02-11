@@ -38,7 +38,6 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ItemDelegate.h"
 #include "OMSSimulationOutputWidget.h"
-#include "OMSSimulationProcessThread.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Plotting/VariablesWidget.h"
 #include "Options/OptionsDialog.h"
@@ -158,17 +157,8 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
 OMSSimulationDialog::~OMSSimulationDialog()
 {
   foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, mOMSSimulationOutputWidgetsList) {
-    OMSSimulationProcessThread *pOMSSimulationProcessThread = pOMSSimulationOutputWidget->getOMSSimulationProcessThread();
-    /* If the OMSSimulationProcessThread is running then we need to stop it i.e exit its event loop.
-     * Kill the simulation processes if they are running before exiting the OMSSimulationProcessThread.
-     */
-    if (pOMSSimulationProcessThread->isRunning()) {
-      if (pOMSSimulationProcessThread->isSimulationProcessRunning() && pOMSSimulationProcessThread->getSimulationProcess()) {
-        pOMSSimulationProcessThread->getSimulationProcess()->kill();
-      }
-      pOMSSimulationProcessThread->exit();
-      pOMSSimulationProcessThread->wait();
-      delete pOMSSimulationProcessThread;
+    if (pOMSSimulationOutputWidget->isSimulationProcessRunning() && pOMSSimulationOutputWidget->getSimulationProcess()) {
+      pOMSSimulationOutputWidget->getSimulationProcess()->kill();
     }
     delete pOMSSimulationOutputWidget;
   }

@@ -853,39 +853,6 @@ bool Utilities::isModelicaFile(QString extension)
 }
 
 /*!
- * \brief Utilities::insertText
- * Inserts the text to QPlainTextEdit.
- * \param pPlainTextEdit
- * \param text
- * \param color
- */
-void Utilities::insertText(QPlainTextEdit *pPlainTextEdit, QString text, QTextCharFormat format)
-{
-  // move the cursor down before adding to the logger.
-  QTextCursor textCursor = pPlainTextEdit->textCursor();
-  const bool atBottom = pPlainTextEdit->verticalScrollBar()->value() == pPlainTextEdit->verticalScrollBar()->maximum();
-  if (!textCursor.atEnd()) {
-    textCursor.movePosition(QTextCursor::End);
-  }
-  // insert the text
-  textCursor.beginEditBlock();
-  if (format.isValid()) {
-    textCursor.insertText(text, format);
-  } else {
-    textCursor.insertText(text);
-  }
-  textCursor.endEditBlock();
-  // move the cursor
-  if (atBottom) {
-    pPlainTextEdit->verticalScrollBar()->setValue(pPlainTextEdit->verticalScrollBar()->maximum());
-    // QPlainTextEdit destroys the first calls value in case of multiline
-    // text, so make sure that the scroll bar actually gets the value set.
-    // Is a noop if the first call succeeded.
-    pPlainTextEdit->verticalScrollBar()->setValue(pPlainTextEdit->verticalScrollBar()->maximum());
-  }
-}
-
-/*!
  * \brief Utilities::getRotationMatrix
  * Computes the corresponding rotation matrix for specified rotation vector
  * \param rotation Rotation vector with Euler angles

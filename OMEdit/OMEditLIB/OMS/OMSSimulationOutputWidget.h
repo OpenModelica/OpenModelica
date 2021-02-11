@@ -44,17 +44,16 @@
 #include <QTextBrowser>
 
 class ArchivedOMSSimulationItem;
-class OMSSimulationProcessThread;
+class OutputPlainTextEdit;
 class OMSSimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
   OMSSimulationOutputWidget(const QString &cref, const QString &fileName, QWidget *pParent = 0);
   ~OMSSimulationOutputWidget();
-  void simulateCallback(const char* ident, double time, oms_status_enu_t status);
-  QString getCref() const {return mCref;}
-  int isSimulationRunning() {return mIsSimulationRunning;}
-  OMSSimulationProcessThread* getOMSSimulationProcessThread() {return mpOMSSimulationProcessThread;}
+  QProcess* getSimulationProcess() {return mpSimulationProcess;}
+  bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
+  bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
 private:
   QString mCref;
   double mStartTime;
@@ -63,17 +62,24 @@ private:
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelSimulationButton;
-  QTextBrowser *mpSimulationOutputTextBrowser;
+  OutputPlainTextEdit *mpSimulationOutputPlainTextEdit;
   ArchivedOMSSimulationItem *mpArchivedOMSSimulationItem;
   QDateTime mResultFileLastModifiedDateTime;
-  bool mIsSimulationRunning;
-  OMSSimulationProcessThread *mpOMSSimulationProcessThread;
+  QProcess *mpSimulationProcess;
+  bool mIsSimulationProcessKilled;
+  bool mIsSimulationProcessRunning;
+  void *mpContext;
+  void *mpSubscriberSocket;
+  QTimer *mpSubscriberSocketTimer;
 signals:
   void sendSimulationProgress(QString ident, double time, oms_status_enu_t status);
 public slots:
   void simulationProcessStarted();
-  void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
-  void simulationProgressJson(QString progressJson);
+  void readSimulationStandardOutput();
+  void readSimulationStandardError();
+  void simulationProcessError(QProcess::ProcessError error);
+  void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
+  void simulationProgressJson();
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
 protected:
