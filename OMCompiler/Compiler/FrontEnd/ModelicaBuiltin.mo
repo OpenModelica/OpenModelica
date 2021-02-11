@@ -4756,6 +4756,7 @@ end oms_listUnconnectedConnectors;
 function oms_loadSnapshot
   input String cref;
   input String snapshot;
+  output String newCref;
   output Integer status;
 external "builtin";
 annotation(preferredView="text");
@@ -4767,14 +4768,6 @@ function oms_newModel
 external "builtin";
 annotation(preferredView="text");
 end oms_newModel;
-
-function oms_parseModelName
-  input String contents;
-  output String cref;
-  output Integer status;
-external "builtin";
-annotation(preferredView="text");
-end oms_parseModelName;
 
 function oms_removeSignalsFromResults
   input String cref;
