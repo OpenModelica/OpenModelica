@@ -338,21 +338,15 @@ algorithm
 
     case("oms_loadSnapshot",{Values.STRING(cref), Values.STRING(snapshot)})
       equation
-        status = OMSimulator.oms_loadSnapshot(cref,snapshot);
+        (newCref,status) = OMSimulator.oms_loadSnapshot(cref,snapshot);
       then
-        Values.INTEGER(status);
+        Values.TUPLE({Values.STRING(newCref),Values.INTEGER(status)});
 
     case("oms_newModel",{Values.STRING(cref)})
       equation
         status = OMSimulator.oms_newModel(cref);
       then
         Values.INTEGER(status);
-
-    case("oms_parseModelName",{Values.STRING(contents)})
-      equation
-        (cref,status) = OMSimulator.oms_parseModelName(contents);
-      then
-        Values.TUPLE({Values.STRING(cref),Values.INTEGER(status)});
 
     case("oms_removeSignalsFromResults",{Values.STRING(cref), Values.STRING(regex)})
       equation

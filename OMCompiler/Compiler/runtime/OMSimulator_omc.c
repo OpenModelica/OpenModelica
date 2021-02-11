@@ -187,14 +187,11 @@ static fnptr_oms_list oms_list = NULL;
 typedef int (*fnptr_oms_listUnconnectedConnectors)(const char*,char**);
 static fnptr_oms_listUnconnectedConnectors oms_listUnconnectedConnectors = NULL;
 
-typedef int (*fnptr_oms_loadSnapshot)(const char*,const char*);
+typedef int (*fnptr_oms_loadSnapshot)(const char*,const char*,char**);
 static fnptr_oms_loadSnapshot oms_loadSnapshot = NULL;
 
 typedef int (*fnptr_oms_newModel)(const char*);
 static fnptr_oms_newModel oms_newModel = NULL;
-
-typedef int (*fnptr_oms_parseModelName)(const char*,char**);
-static fnptr_oms_parseModelName oms_parseModelName = NULL;
 
 typedef int (*fnptr_oms_removeSignalsFromResults)(const char*,const char*);
 static fnptr_oms_removeSignalsFromResults oms_removeSignalsFromResults = NULL;
@@ -328,7 +325,6 @@ void resolveFunctionNames()
   oms_listUnconnectedConnectors = (fnptr_oms_listUnconnectedConnectors)AddressOf(OMSimulatorDLL, "oms_listUnconnectedConnectors");
   oms_loadSnapshot = (fnptr_oms_loadSnapshot)AddressOf(OMSimulatorDLL, "oms_loadSnapshot");
   oms_newModel = (fnptr_oms_newModel)AddressOf(OMSimulatorDLL, "oms_newModel");
-  oms_parseModelName = (fnptr_oms_parseModelName)AddressOf(OMSimulatorDLL, "oms_parseModelName");
   oms_removeSignalsFromResults = (fnptr_oms_removeSignalsFromResults)AddressOf(OMSimulatorDLL, "oms_removeSignalsFromResults");
   oms_rename = (fnptr_oms_rename)AddressOf(OMSimulatorDLL, "oms_rename");
   oms_reset = (fnptr_oms_reset)AddressOf(OMSimulatorDLL, "oms_reset");
@@ -900,14 +896,14 @@ extern const int OMSimulator_oms_listUnconnectedConnectors(const char* cref, cha
   return status;
 }
 
-extern const int OMSimulator_oms_loadSnapshot(const char* cref, const char* snapshot)
+extern const int OMSimulator_oms_loadSnapshot(const char* cref, const char* snapshot, char** newCref)
 {
   if(!oms_loadSnapshot)
   {
     printf("could not locate the function oms_loadSnapshot\n");
     exit(0);
   }
-  int status = oms_loadSnapshot(cref,snapshot);
+  int status = oms_loadSnapshot(cref, snapshot, newCref);
   return status;
 }
 
@@ -919,17 +915,6 @@ extern const int OMSimulator_oms_newModel(const char* cref)
     exit(0);
   }
   int status = oms_newModel(cref);
-  return status;
-}
-
-extern const int OMSimulator_oms_parseModelName(const char* contents, char** cref)
-{
-  if(!oms_parseModelName)
-  {
-    printf("could not locate the function oms_parseModelName\n");
-    exit(0);
-  }
-  int status = oms_parseModelName(contents,cref);
   return status;
 }
 
@@ -1229,4 +1214,3 @@ extern const int OMSimulator_oms_terminate(const char* cref)
   int status = oms_terminate(cref);
   return status;
 }
-

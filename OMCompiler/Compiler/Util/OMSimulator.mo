@@ -403,8 +403,9 @@ end oms_listUnconnectedConnectors;
 function oms_loadSnapshot
   input String cref;
   input String snapshot;
+  output String newCref;
   output Integer status;
-  external "C" status = OMSimulator_oms_loadSnapshot(cref,snapshot) annotation(Library = "omcruntime");
+  external "C" status = OMSimulator_oms_loadSnapshot(cref,snapshot,newCref) annotation(Library = "omcruntime");
 end oms_loadSnapshot;
 
 function oms_newModel
@@ -412,13 +413,6 @@ function oms_newModel
   output Integer status;
   external "C" status = OMSimulator_oms_newModel(cref) annotation(Library = "omcruntime");
 end oms_newModel;
-
-function oms_parseModelName
-  input String contents;
-  output String cref;
-  output Integer status;
-  external "C" status = OMSimulator_oms_parseModelName(contents,cref) annotation(Library = "omcruntime");
-end oms_parseModelName;
 
 function oms_removeSignalsFromResults
   input String cref;
