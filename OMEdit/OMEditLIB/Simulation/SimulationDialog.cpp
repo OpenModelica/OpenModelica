@@ -687,7 +687,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
 {
   if (!isReSimulate) {
     mIsReSimulate = false;
-    mWorkingDirectory = "";
     mClassName = mpLibraryTreeItem->getNameStructure();
     mFileName = mpLibraryTreeItem->getFileName();
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulationSetup).append(" - ").append(mClassName));
@@ -921,7 +920,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSimulateCheckBox->setVisible(true);
   } else {
     mIsReSimulate = true;
-    mWorkingDirectory = simulationOptions.getWorkingDirectory();
     mClassName = simulationOptions.getClassName();
     mFileName = simulationOptions.getFileName();
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::reSimulation).append(" - ").append(mClassName));
@@ -1316,7 +1314,11 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setOutputFormat(mpOutputFormatComboBox->currentText());
   simulationOptions.setSinglePrecision(mpSinglePrecisionCheckBox->isChecked());
   if (!mpFileNameTextBox->text().isEmpty()) {
-    simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
+    if (mpFileNameTextBox->text().contains('\'')) {
+      simulationOptions.setFileNamePrefix("_omcQuot_" + mpFileNameTextBox->text().toUtf8().toHex());
+    } else {
+      simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
+    }
   } else if (mClassName.contains('\'')) {
     simulationOptions.setFileNamePrefix("_omcQuot_" + mClassName.toUtf8().toHex());
   }
@@ -1334,26 +1336,17 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
   simulationOptions.setStoreVariablesAtEvents(mpStoreVariablesAtEventsCheckBox->isChecked());
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
-  if (mIsReSimulate) {
-    simulationOptions.setWorkingDirectory(mWorkingDirectory);
+  // create a folder with model name to dump the files in it.
+  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
+  if (!QDir().exists(modelDirectoryPath)) {
+    QDir().mkpath(modelDirectoryPath);
+  }
+  // set the folder as working directory
+  QString modelDirectory = MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
+  if (!modelDirectory.isEmpty()) {
+    simulationOptions.setWorkingDirectory(modelDirectoryPath);
   } else {
-    // create a folder with model name to dump the files in it.
-    /* Fix for ticket:5796
-     * Set the folder name to the model name with date time to avoid the long paths.
-     * The date time is added to ensure uniqueness.
-     */
-    QString folderName = QString("%1-%2").arg(StringHandler::getLastWordAfterDot(mClassName), QDateTime::currentDateTime().toString("yyMMddhhmmsszzz"));
-    QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), folderName);
-    if (!QDir().exists(modelDirectoryPath)) {
-      QDir().mkpath(modelDirectoryPath);
-    }
-    // set the folder as working directory
-    QString modelDirectory = MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
-    if (!modelDirectory.isEmpty()) {
-      simulationOptions.setWorkingDirectory(modelDirectoryPath);
-    } else {
-      simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
-    }
+    simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
   }
   // setup simulation flags
   QStringList simulationFlags;
@@ -1785,7 +1778,11 @@ void SimulationDialog::performSimulation()
   }
   simulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
   if (!mpFileNameTextBox->text().isEmpty()) {
-    simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+    if (mpFileNameTextBox->text().contains('\'')) {
+      simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(mpFileNameTextBox->text().toUtf8().toHex()).append("\"");
+    } else {
+      simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+    }
   } else if (mClassName.contains('\'')) {
     simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(mClassName.toUtf8().toHex()).append("\"");
   }
