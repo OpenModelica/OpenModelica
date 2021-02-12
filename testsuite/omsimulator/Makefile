@@ -18,6 +18,8 @@ resetWithLoops.mos \
 test03.mos \
 testDirectionalDerivatives.mos \
 testLoopsOverFMUs.mos \
+testSynchronousFMU_01.mos \
+testSynchronousFMU_02.mos
 
 FAILINGTESTFILES = \
 
@@ -42,7 +44,7 @@ test:
 # Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@rm -f $(CLEAN)
+	@rm -rf $(CLEAN)
 
 # Run this if you want to list out the files (dependencies).
 # do it after cleaning and updating the folder
