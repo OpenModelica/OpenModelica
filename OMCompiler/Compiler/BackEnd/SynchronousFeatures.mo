@@ -2981,10 +2981,10 @@ public function partitionIndependentBlocks0
   output Integer on = 0;
 algorithm
   for i in arrayLength(m):-1:1 loop
-    on := if partitionIndependentBlocksEq(i, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, rixs, vars, rvars) then on + 1 else on;
+    on := if partitionIndependentBlocksWork(i, false, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, rixs, vars, rvars) then on + 1 else on;
   end for;
   for i in arrayLength(rm):-1:1 loop
-    on := if partitionIndependentBlocksReq(i, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, rixs, vars, rvars) then on + 1 else on;
+    on := if partitionIndependentBlocksWork(i, true, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, rixs, vars, rvars) then on + 1 else on;
   end for;
 end partitionIndependentBlocks0;
 
@@ -3039,18 +3039,20 @@ protected function partitionIndependentBlocksMasked
 algorithm
   for i in arrayLength(m):-1:1 loop
     if mask[i] then
-      on := if partitionIndependentBlocksEq(i, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, remEqPartMap, vars, rvars) then on + 1 else on;
+      on := if partitionIndependentBlocksWork(i, false, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, remEqPartMap, vars, rvars) then on + 1 else on;
     end if;
   end for;
   for i in arrayLength(rm):-1:1 loop
-    on := if partitionIndependentBlocksReq(i, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, remEqPartMap, vars, rvars) then on + 1 else on;
+    on := if partitionIndependentBlocksWork(i, true, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, remEqPartMap, vars, rvars) then on + 1 else on;
   end for;
   for i in 1:arrayLength(rm) loop
   end for;
 end partitionIndependentBlocksMasked;
 
-protected function partitionIndependentBlocksEq
-  input Integer eqIdx;
+protected function partitionIndependentBlocksWork
+  input Integer idx;
+  input Boolean isRemovedIdx;
+
   input Integer partIdx;
   input BackendDAE.AdjacencyMatrix m;
   input BackendDAE.AdjacencyMatrixT mT;
@@ -3059,54 +3061,70 @@ protected function partitionIndependentBlocksEq
   input array<Integer> eqPartMap, varPartMap, rixs;
   input array<Boolean> vars, rvars;
   output Boolean ochange;
+protected
+  Integer eqIdx, rmIdx;
+  list<Integer> workListEq = {},  workListRm = {};
 algorithm
-  ochange := arrayGet(eqPartMap, eqIdx) == 0;
-
-  if ochange then
-    arrayUpdate(eqPartMap, eqIdx, partIdx);
-    for varIdx in arrayGet(m, eqIdx) loop
-      if not arrayGet(vars, intAbs(varIdx)) then
-        arrayUpdate(vars, intAbs(varIdx), true);
-        arrayUpdate(varPartMap,intAbs(varIdx), partIdx);
-        for nextEqIdx in arrayGet(mT, intAbs(varIdx)) loop
-          partitionIndependentBlocksEq(intAbs(nextEqIdx), partIdx, m, mT, rm, rmT, eqPartMap,varPartMap, rixs, vars, rvars);
-        end for;
-        for nextEqIdx in arrayGet(rmT, intAbs(varIdx)) loop
-          partitionIndependentBlocksReq(intAbs(nextEqIdx), partIdx, m, mT, rm, rmT, eqPartMap,varPartMap, rixs, vars, rvars);
-        end for;
-      end if;
-    end for;
+  if isRemovedIdx then
+    if arrayGet(rixs, idx) == 0 then
+      arrayUpdate(rixs, idx, partIdx);
+      workListRm := {idx};
+      ochange := true;
+    end if;
+  else
+    if arrayGet(eqPartMap, idx) == 0 then
+      arrayUpdate(eqPartMap, idx, partIdx);
+      workListEq := {idx};
+      ochange := true;
+    end if;
   end if;
-end partitionIndependentBlocksEq;
-
-protected function partitionIndependentBlocksReq
-  input Integer ix;
-  input Integer n;
-  input BackendDAE.AdjacencyMatrix m;
-  input BackendDAE.AdjacencyMatrixT mT;
-  input BackendDAE.AdjacencyMatrix rm;
-  input BackendDAE.AdjacencyMatrixT rmT;
-  input array<Integer> eqPartMap, varPartMap, rixs;
-  input array<Boolean> vars, rvars;
-  output Boolean ochange;
-algorithm
-  ochange := arrayGet(rixs, ix) == 0;
-
-  if ochange then
-    arrayUpdate(rixs, ix, n);
-    for i in arrayGet(rm, ix) loop
-      if not arrayGet(rvars, intAbs(i)) then
-        arrayUpdate(rvars, intAbs(i), true);
-        for j in arrayGet(mT, intAbs(i)) loop
-          partitionIndependentBlocksEq(intAbs(j), n, m, mT, rm, rmT, eqPartMap, varPartMap, rixs, vars, rvars);
-        end for;
-        for j in arrayGet(rmT, intAbs(i)) loop
-          partitionIndependentBlocksReq(intAbs(j), n, m, mT, rm, rmT, eqPartMap, varPartMap, rixs, vars, rvars);
-        end for;
-      end if;
-    end for;
+  if not ochange then
+    return;
   end if;
-end partitionIndependentBlocksReq;
+
+  while not (listEmpty(workListEq) and listEmpty(workListRm)) loop
+    if not listEmpty(workListEq) then
+      eqIdx :: workListEq := workListEq;
+      for varIdx in arrayGet(m, eqIdx) loop
+        if not arrayGet(vars, intAbs(varIdx)) then
+          arrayUpdate(vars, intAbs(varIdx), true);
+          arrayUpdate(varPartMap, intAbs(varIdx), partIdx);
+          for nextEqIdx in arrayGet(mT, intAbs(varIdx)) loop
+            if arrayGet(eqPartMap, intAbs(nextEqIdx)) == 0 then
+              workListEq := intAbs(nextEqIdx) :: workListEq;
+              arrayUpdate(eqPartMap, intAbs(nextEqIdx), partIdx);
+            end if;
+          end for;
+          for nextEqIdx in arrayGet(rmT, intAbs(varIdx)) loop
+            if arrayGet(rixs, intAbs(nextEqIdx)) == 0 then
+              workListRm := intAbs(nextEqIdx) :: workListRm;
+              arrayUpdate(rixs, intAbs(nextEqIdx), partIdx);
+            end if;
+          end for;
+        end if;
+      end for;
+    else
+      rmIdx :: workListRm := workListRm;
+      for varIdx in arrayGet(rm, rmIdx) loop
+        if not arrayGet(rvars, intAbs(varIdx)) then
+          arrayUpdate(rvars, intAbs(varIdx), true);
+          for nextEqIdx in arrayGet(mT, intAbs(varIdx)) loop
+            if arrayGet(eqPartMap, intAbs(nextEqIdx)) == 0 then
+              workListEq := intAbs(nextEqIdx) :: workListEq;
+              arrayUpdate(eqPartMap, intAbs(nextEqIdx), partIdx);
+            end if;
+          end for;
+          for nextEqIdx in arrayGet(rmT, intAbs(varIdx)) loop
+            if arrayGet(rixs, intAbs(nextEqIdx)) == 0 then
+              workListRm := intAbs(nextEqIdx) :: workListRm;
+              arrayUpdate(rixs, intAbs(nextEqIdx), partIdx);
+            end if;
+          end for;
+        end if;
+      end for;
+    end if;
+  end while;
+end partitionIndependentBlocksWork;
 
 public function partitionIndependentBlocksSplitBlocks
   "Partitions the independent blocks into list<array<...>> by first constructing
