@@ -2311,7 +2311,7 @@ author:Waurich TUD 2014-11"
   input BackendDAE.EqSystem sysIn;
   output BackendDAE.EqSystem sysOut;
 algorithm
-  sysOut := matchcontinue (tplsIn, m, mT, sysIn)
+  sysOut := match (tplsIn, m, mT, sysIn)
     local
       Integer sharedVar, eqIdx1, eqIdx2, varIdx1, varIdx2, varIdx_remain, varIdxAlias, eqIdxDel, eqIdxLeft, n;
       list<Integer> eqIdcs, eqs1, eqs2, vars1, vars2, aliasVars;
@@ -2406,7 +2406,7 @@ case (SHORTCUT_CSE(eqIdcs={eqIdx1, eqIdx2}, sharedVar=sharedVar)::rest, _, _, sy
     then commonSubExpressionUpdate(rest, m, mT, syst);
  case (_::rest, _, _, _)
   then commonSubExpressionUpdate(rest, m, mT, sysIn);
-  end matchcontinue;
+  end match;
 end commonSubExpressionUpdate;
 
 
