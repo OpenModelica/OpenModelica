@@ -46,6 +46,7 @@
 #include "../simulation/solver/fmi_events.h"
 #include "../simulation/simulation_info_json.h"
 #include "../simulation/simulation_input_xml.h"
+#include "../simulation/solver/synchronous.h"
 #include "../simulation/options.h"
 #include "../util/simulation_options.h"
 #include "../util/omc_error.h"
@@ -215,6 +216,11 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
   int i, done=0;
   ModelInstance* comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
+  fmi2Real nextSampleEvent;
+  fmi2Boolean nextSampleEventDefined;
+  fmi2Boolean nextTimerDefined;
+  fmi2Real nextTimerActivationTime;
+  int syncRet;
 
   if (nullPointer(comp, "fmi2EventUpdate", "eventInfo", eventInfo)) {
     return fmi2Error;
@@ -259,7 +265,10 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
       }
     }
 
-    if (checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData)) {
+    /* Handle clock timers */
+    syncRet = handleTimersFMI(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, &nextTimerDefined, &nextTimerActivationTime);
+
+    if (checkForDiscreteChanges(comp->fmuData, comp->threadData) || comp->fmuData->simulationInfo->needToIterate || checkRelations(comp->fmuData) || syncRet==2 ) {
       FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Need to iterate(discrete changes)!")
       eventInfo->newDiscreteStatesNeeded = fmi2True;
       eventInfo->valuesOfContinuousStatesChanged = fmi2True;
@@ -280,14 +289,23 @@ fmi2Status fmi2EventUpdate(fmi2Component c, fmi2EventInfo* eventInfo)
     storePreValues(comp->fmuData);
     updateRelationsPre(comp->fmuData);
 
-    //Get Next Event Time
-    double nextSampleEvent=0;
-    nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-    if (nextSampleEvent == -1) {
-      eventInfo->nextEventTimeDefined = fmi2False;
-    } else {
+    nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
+
+    /* Get next event time */
+    if (nextSampleEventDefined && !nextTimerDefined) {
       eventInfo->nextEventTimeDefined = fmi2True;
       eventInfo->nextEventTime = nextSampleEvent;
+    }
+    else if (!nextSampleEventDefined && nextTimerDefined) {
+      eventInfo->nextEventTimeDefined = fmi2True;
+      eventInfo->nextEventTime = nextTimerActivationTime;
+    }
+    else if (nextSampleEventDefined && nextTimerDefined) {
+      eventInfo->nextEventTimeDefined = fmi2True;
+      eventInfo->nextEventTime = fmin(nextSampleEvent,nextTimerActivationTime);
+    }
+    else {
+      eventInfo->nextEventTimeDefined = fmi2False;
     }
     FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EventUpdate: Checked for Sample Events! Next Sample Event %g",eventInfo->nextEventTime)
 
@@ -621,6 +639,9 @@ void fmi2FreeInstance(fmi2Component c)
     FMI2CS_deInitializeSolverData(comp);
   }
 
+  /* Free synchronus data */
+  freeSynchronous(comp->fmuData);
+
   /* free simuation data */
   comp->functions->freeMemory(comp->fmuData->modelData);
   comp->functions->freeMemory(comp->fmuData->simulationInfo);
@@ -676,7 +697,8 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   ModelInstance *comp = (ModelInstance *)c;
   threadData_t *threadData = comp->threadData;
   jmp_buf *old_jmp = threadData->mmc_jumper;
-  double nextSampleEvent;
+  fmi2Real nextSampleEvent;
+  fmi2Boolean nextSampleEventDefined;
   int done=0;
 
   threadData->currentErrorStage = ERROR_SIMULATION;
@@ -715,17 +737,16 @@ fmi2Status fmi2ExitInitializationMode(fmi2Component c)
   comp->eventInfo.valuesOfContinuousStatesChanged = fmi2True;
 
   /* get next event time (sample calls) */
-  nextSampleEvent = 0;
-  nextSampleEvent = getNextSampleTimeFMU(comp->fmuData);
-  if (nextSampleEvent == -1)
-  {
-    comp->eventInfo.nextEventTimeDefined = fmi2False;
-  }
-  else
+  nextSampleEventDefined = getNextSampleTimeFMU(comp->fmuData, &nextSampleEvent);
+  if (nextSampleEventDefined)
   {
     comp->eventInfo.nextEventTimeDefined = fmi2True;
     comp->eventInfo.nextEventTime = nextSampleEvent;
     fmi2EventUpdate(comp, &(comp->eventInfo));
+  }
+  else
+  {
+    comp->eventInfo.nextEventTimeDefined = fmi2False;
   }
   FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2EnterInitializationMode: succeed")
   res = fmi2OK;

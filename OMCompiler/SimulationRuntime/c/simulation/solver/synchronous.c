@@ -88,7 +88,16 @@ void freeSynchronous(DATA* data)
 }
 
 
-#if !defined(OMC_MINIMAL_RUNTIME)
+//#if !defined(OMC_MINIMAL_RUNTIME)
+
+/**
+ * @brief Insert given timer into ordered list of timers.
+ *
+ * Timer with lowest activation time is at the start of the list, last at the end.
+ *
+ * @param list    List with timers
+ * @param timer   Timer to insert into list.
+ */
 static void insertTimer(LIST* list, SYNC_TIMER* timer)
 {
   TRACE_PUSH
@@ -205,6 +214,7 @@ static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, doub
   TRACE_POP
 }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
 /**
   * Return 0, if there is no fired timers;
            1, if there is a fired timer;
@@ -246,7 +256,68 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   TRACE_POP
   return ret;
 }
-#endif /* !defined(OMC_MINIMAL_RUNTIME) */
+
+#else /* #if !defined(OMC_MINIMAL_RUNTIME) */
+
+/**
+ * @brief Handle timer clocks and return next time a timer will fire
+ *
+ * Update timers and output when the next timer will fire.
+ * Used for Synchronus features in FMUs.
+ *
+ * @param data                            data
+ * @param threadData                      thread data, for errro handling
+ * @param currentTime                     Current solver timer.
+ * @param nextTimerDefined                0 (false) if no next timer is defined.
+ *                                        1 (true) if a next timer is defined. Then the time is outputted in nextTimerActivationTime.
+ * @param nextTimerActivationTime         If nextTimerDefined is true it will contain the next time a timer will fire.
+ * @return int                            Return 0, if there is no fired timers;
+ *                                               1, if there is a fired timer;
+ *                                               2, if there is a fired timer which trigger event;
+ */
+int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, int *nextTimerDefined ,double *nextTimerActivationTime)
+{
+  TRACE_PUSH
+  int ret = 0;
+  int i=0;
+
+  *nextTimerDefined = 0;
+
+  if (listLen(data->simulationInfo->intvlTimers) > 0)
+  {
+    SYNC_TIMER* nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
+    while(nextTimer->activationTime <= currentTime + SYNC_EPS)
+    {
+      long idx =  nextTimer->idx;
+      double activationTime = nextTimer->activationTime;
+      SYNC_TIMER_TYPE type = nextTimer->type;
+      listPopFront(data->simulationInfo->intvlTimers);
+      switch(type)
+      {
+        case SYNC_BASE_CLOCK:
+          handleBaseClock(data, threadData, idx, activationTime);
+          break;
+        case SYNC_SUB_CLOCK:
+          data->callback->function_equationsSynchronous(data, threadData, idx);
+          if (data->modelData->subClocksInfo[idx].holdEvents)
+            ret = 2;
+          else
+            ret = ret == 2 ? ret : 1;
+          break;
+      }
+      if (listLen(data->simulationInfo->intvlTimers) == 0) break;
+      nextTimer = (SYNC_TIMER*)listNodeData(listFirstNode(data->simulationInfo->intvlTimers));
+    }
+
+    /* Next time a timer will activate: */
+    *nextTimerActivationTime = nextTimer->activationTime;
+    *nextTimerDefined = 1;
+  }
+
+  TRACE_POP
+  return ret;
+}
+#endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
 
 #ifdef __cplusplus
 }

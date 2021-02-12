@@ -149,7 +149,7 @@ void activateHysteresis(DATA* data);
 void storeRelations(DATA* data);
 void setZCtol(double relativeTol);
 
-double getNextSampleTimeFMU(DATA *data);
+int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent);
 
 void storeOldValues(DATA *data);
 

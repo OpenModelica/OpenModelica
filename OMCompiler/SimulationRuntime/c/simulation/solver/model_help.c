@@ -859,15 +859,16 @@ void storeRelations(DATA* data)
   TRACE_POP
 }
 
-/*! \fn getNextSampleTimeFMU
+/**
+ * @brief Get time of next sample event if one is defined.
  *
- *  function return next sample time.
+ * Function returns 0 if a time is defined and -1 otherwise.
  *
- *  \param [in]  [data]
- *
- *  \author wbraun
+ * @param data                  Data
+ * @param nextSampleEvent       On output time of next sample event.
+ * @return int                  1 if a sample event is defined, 0 otherwise
  */
-double getNextSampleTimeFMU(DATA *data)
+int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
 {
   TRACE_PUSH
 
@@ -875,11 +876,12 @@ double getNextSampleTimeFMU(DATA *data)
   {
     infoStreamPrint(LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo->nextSampleEvent);
     TRACE_POP
-    return data->simulationInfo->nextSampleEvent;
+    *nextSampleEvent = data->simulationInfo->nextSampleEvent;
+    return 1 /* TRUE */;
   }
 
   TRACE_POP
-  return -1;
+  return 0 /* FALSE */;
 }
 
 /*! \fn initializeDataStruc
