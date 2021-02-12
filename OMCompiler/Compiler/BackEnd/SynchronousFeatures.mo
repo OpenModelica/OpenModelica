@@ -3035,17 +3035,20 @@ protected function partitionIndependentBlocksMasked
   input array<Boolean> mask; //clockedEqsMask
   input array<Integer> eqPartMap, varPartMap, remEqPartMap; //eqPartMap, varPartMap, remEqPartMap
   input array<Boolean> vars, rvars; //usedVars, usedRemovedVars
-  output Integer on = 0;
+  output Integer on;
 algorithm
+  on := 0;
   for i in arrayLength(m):-1:1 loop
     if mask[i] then
-      on := if partitionIndependentBlocksWork(i, false, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, remEqPartMap, vars, rvars) then on + 1 else on;
+      if partitionIndependentBlocksWork(i, false, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, remEqPartMap, vars, rvars) then
+        on := on + 1;
+      end if;
     end if;
   end for;
   for i in arrayLength(rm):-1:1 loop
-    on := if partitionIndependentBlocksWork(i, true, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, remEqPartMap, vars, rvars) then on + 1 else on;
-  end for;
-  for i in 1:arrayLength(rm) loop
+    if partitionIndependentBlocksWork(i, true, on + 1, m, mT, rm, rmT, eqPartMap, varPartMap, remEqPartMap, vars, rvars) then
+      on := on + 1;
+    end if;
   end for;
 end partitionIndependentBlocksMasked;
 
@@ -3065,6 +3068,7 @@ protected
   Integer eqIdx, rmIdx;
   list<Integer> workListEq = {},  workListRm = {};
 algorithm
+  ochange := false;
   if isRemovedIdx then
     if arrayGet(rixs, idx) == 0 then
       arrayUpdate(rixs, idx, partIdx);
