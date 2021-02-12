@@ -196,7 +196,7 @@ static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, doub
   SYNC_TIMER timer;
   timer.idx = idx;
   timer.type = SYNC_BASE_CLOCK;
-  timer.activationTime = curTime + clkData->interval;;
+  timer.activationTime = curTime + clkData->interval;
   insertTimer(data->simulationInfo->intvlTimers, &timer);
 
   clkData->timepoint = curTime;

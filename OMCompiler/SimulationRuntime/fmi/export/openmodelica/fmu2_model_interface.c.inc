@@ -84,8 +84,8 @@ const char* stateToString(ModelInstance *comp)
     case modelContinuousTimeMode: return "Continuous-Time Mode";
     case modelTerminated: return "Terminated";
     case modelError: return "Error";
+    default: return "Unknown";
   }
-  return "Unknown";
 }
 
 static fmi2Boolean invalidNumber(ModelInstance *comp, const char *f, const char *arg, int n, int nExpected)
@@ -514,7 +514,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
     FILTERED_LOG(comp, fmi2OK, LOG_STATUSWARNING, "fmi2Instantiate: Ignoring unknown resource URI: %s", fmuResourceLocation)
   }
 
-  /* intialize modelData */
+  /* initialize modelData */
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
   fmu2_model_interface_setupDataStruc(comp->fmuData, comp->threadData);

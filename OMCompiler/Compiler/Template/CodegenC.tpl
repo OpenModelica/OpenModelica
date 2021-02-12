@@ -181,8 +181,8 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file);
     extern int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
     extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data, threadData_t *threadData);
-    extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long i);
-    extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long i);
+    extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long clockIndex);
+    extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long clockIndex);
     extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
@@ -372,15 +372,15 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
   <<
   <%auxFunction%>
   /* Update the base clock. */
-  void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long i)
+  void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
   {
     TRACE_PUSH
     <%varDecls%>
     modelica_boolean ret;
-    switch (i) {
+    switch (clockIndex) {
       <%body%>
       default:
-        throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", i);
+        throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", clockIndex);
         break;
     }
     TRACE_POP
@@ -397,10 +397,10 @@ match baseClock
     let si = daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    if (data->simulationInfo->clocksData[i].cnt > 0)
-      data->simulationInfo->clocksData[i].interval = data->localData[0]->timeValue - data->simulationInfo->clocksData[i].timepoint;
+    if (data->simulationInfo->clocksData[clockIndex].cnt > 0)
+      data->simulationInfo->clocksData[clockIndex].interval = data->localData[0]->timeValue - data->simulationInfo->clocksData[clockIndex].timepoint;
     else
-      data->simulationInfo->clocksData[i].interval = <%si%>;
+      data->simulationInfo->clocksData[clockIndex].interval = <%si%>;
     >>
   else
     let &preExp = buffer ""
@@ -415,7 +415,7 @@ match baseClock
         'ModelicaMessage("Using default Clock(1.0)!");'
     <<
     <%preExp%>
-    data->simulationInfo->clocksData[i].interval = <%interval%>;
+    data->simulationInfo->clocksData[clockIndex].interval = <%interval%>;
     <%warning%>
     >>
 end updatePartition;
@@ -439,15 +439,15 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
   <%systs%>
 
   /*Clocked systems equations */
-  int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long i)
+  int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
   {
     TRACE_PUSH
     int ret;
 
-    switch (i) {
+    switch (clockIndex) {
       <%cases%>
       default:
-        throwStreamPrint(NULL, "Internal Error: unknown sub partition %ld", i);
+        throwStreamPrint(NULL, "Internal Error: unknown sub partition %ld", clockIndex);
         ret = 1;
         break;
     }
