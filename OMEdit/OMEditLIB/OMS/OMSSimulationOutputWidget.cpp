@@ -117,20 +117,27 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     connect(mpSimulationProcess, SIGNAL(started()), SLOT(simulationProcessStarted()));
     connect(mpSimulationProcess, SIGNAL(readyReadStandardOutput()), SLOT(readSimulationStandardOutput()));
     connect(mpSimulationProcess, SIGNAL(readyReadStandardError()), SLOT(readSimulationStandardError()));
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
     connect(mpSimulationProcess, SIGNAL(errorOccurred(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
-  #else
+#else
     connect(mpSimulationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(simulationProcessError(QProcess::ProcessError)));
-  #endif
+#endif
     connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
     QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
     args << QString("--endpoint-pub=%1").arg(QString(endPoint));
     args << QString("--model=%1").arg(fileName);
     // start the executable
-    QString process = QString("%1/bin/OMSimulatorPython3").arg(Helper::OpenModelicaHome);
-  #ifdef WIN32
-    process = process.append(".bat");
-  #endif
+    QString process;
+#ifdef WIN32
+    process = QString("python");
+    QProcessEnvironment processEnvironment = QProcessEnvironment::systemEnvironment();
+    QString OMHOME = QString(Helper::OpenModelicaHome);
+    processEnvironment.insert("PYTHONPATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PYTHONPATH"));
+    processEnvironment.insert("PATH",  OMHOME + "/bin;" + OMHOME + "/lib;" + processEnvironment.value("PATH"));
+    mpSimulationProcess->setProcessEnvironment(processEnvironment);
+#else
+    process = QString("%1/bin/OMSimulatorPython3").arg(Helper::OpenModelicaHome);
+#endif
     // run the simulation executable to create the result file
     writeSimulationOutput(QString("%1 %2\n").arg(process).arg(args.join(" ")), StringHandler::OMEditInfo);
     mpSimulationProcess->start(process, args);
@@ -169,16 +176,29 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpArchivedOMSSimulationItem->setStatus(Helper::running);
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::readSimulationStandardOutput
+ * Reads the simulation stdout.
+ */
 void OMSSimulationOutputWidget::readSimulationStandardOutput()
 {
   writeSimulationOutput(QString(mpSimulationProcess->readAllStandardOutput()), StringHandler::Unknown);
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::readSimulationStandardError
+ * Reads the simulation stderr.
+ */
 void OMSSimulationOutputWidget::readSimulationStandardError()
 {
   writeSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), StringHandler::Error);
 }
 
+/*!
+ * \brief OMSSimulationOutputWidget::simulationProcessError
+ * Handles the simulation process error.
+ * \param error
+ */
 void OMSSimulationOutputWidget::simulationProcessError(QProcess::ProcessError error)
 {
   Q_UNUSED(error);
