@@ -221,6 +221,7 @@ private:
   QString mClassName;
   QString mFileName;
   bool mIsReSimulate;
+  QString mWorkingDirectory;
   // interactive simulation
   QMap<int, OpcUaClient*> mOpcUaClientsMap;
 

@@ -571,7 +571,6 @@ void SimulationDialog::setUpForm()
                                    "If you want to change the output path then update the working directory in Options/Preferences."));
   mpResultFileNameLabel = new Label(tr("Result File (Optional):"));
   mpResultFileNameTextBox = new QLineEdit;
-  connect(mpFileNameTextBox, SIGNAL(textEdited(QString)), SLOT(resultFileNameChanged(QString)));
   connect(mpOutputFormatComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(resultFileNameChanged(QString)));
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
@@ -688,12 +687,19 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
 {
   if (!isReSimulate) {
     mIsReSimulate = false;
+    mWorkingDirectory = "";
     mClassName = mpLibraryTreeItem->getNameStructure();
     mFileName = mpLibraryTreeItem->getFileName();
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::simulationSetup).append(" - ").append(mClassName));
     mpSimulationHeading->setText(QString(Helper::simulationSetup).append(" - ").append(mClassName));
     // apply simulation options
     mpLibraryTreeItem->mSimulationOptions.setClassName(mClassName);
+    /* Fix for ticket:5796
+     * Set the file name prefix to the model name to avoid the long paths.
+     */
+    if (!mpLibraryTreeItem->mSimulationOptions.isValid()) {
+      mpLibraryTreeItem->mSimulationOptions.setFileNamePrefix(StringHandler::getLastWordAfterDot(mClassName));
+    }
     applySimulationOptions(mpLibraryTreeItem->mSimulationOptions);
     /* Fix for ticket:4975
      * If SimulationOptions is invalid it means we are going to simulate this class for the first time.
@@ -705,13 +711,13 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       // if the class has experiment annotation then read it.
       if (MainWindow::instance()->getOMCProxy()->isExperiment(mClassName)) {
         // get the simulation options....
-        OMCInterface::getSimulationOptions_res simulationOptions = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
+        OMCInterface::getSimulationOptions_res simulationOptions_res = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
         // since we always get simulationOptions so just get the values from array
-        mpStartTimeTextBox->setText(QString::number(simulationOptions.startTime));
-        mpStopTimeTextBox->setText(QString::number(simulationOptions.stopTime));
-        mpToleranceTextBox->setText(QString::number(simulationOptions.tolerance));
-        mpNumberofIntervalsSpinBox->setValue(simulationOptions.numberOfIntervals);
-        mpIntervalTextBox->setText(QString::number(simulationOptions.interval));
+        mpStartTimeTextBox->setText(QString::number(simulationOptions_res.startTime));
+        mpStopTimeTextBox->setText(QString::number(simulationOptions_res.stopTime));
+        mpToleranceTextBox->setText(QString::number(simulationOptions_res.tolerance));
+        mpNumberofIntervalsSpinBox->setValue(simulationOptions_res.numberOfIntervals);
+        mpIntervalTextBox->setText(QString::number(simulationOptions_res.interval));
       }
       // apply the global translation flags
       TranslationFlagsWidget *pGlobalTranslationFlagsWidget = OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget();
@@ -915,6 +921,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSimulateCheckBox->setVisible(true);
   } else {
     mIsReSimulate = true;
+    mWorkingDirectory = simulationOptions.getWorkingDirectory();
     mClassName = simulationOptions.getClassName();
     mFileName = simulationOptions.getFileName();
     setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::reSimulation).append(" - ").append(mClassName));
@@ -1327,17 +1334,26 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setEquidistantTimeGrid(mpEquidistantTimeGridCheckBox->isChecked());
   simulationOptions.setStoreVariablesAtEvents(mpStoreVariablesAtEventsCheckBox->isChecked());
   simulationOptions.setShowGeneratedFiles(mpShowGeneratedFilesCheckBox->isChecked());
-  // create a folder with model name to dump the files in it.
-  QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), mClassName);
-  if (!QDir().exists(modelDirectoryPath)) {
-    QDir().mkpath(modelDirectoryPath);
-  }
-  // set the folder as working directory
-  QString modelDirectory = MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
-  if (!modelDirectory.isEmpty()) {
-    simulationOptions.setWorkingDirectory(modelDirectoryPath);
+  if (mIsReSimulate) {
+    simulationOptions.setWorkingDirectory(mWorkingDirectory);
   } else {
-    simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+    // create a folder with model name to dump the files in it.
+    /* Fix for ticket:5796
+     * Set the folder name to the model name with date time to avoid the long paths.
+     * The date time is added to ensure uniqueness.
+     */
+    QString folderName = QString("%1-%2").arg(StringHandler::getLastWordAfterDot(mClassName), QDateTime::currentDateTime().toString("yyMMddhhmmsszzz"));
+    QString modelDirectoryPath = QString("%1/%2").arg(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), folderName);
+    if (!QDir().exists(modelDirectoryPath)) {
+      QDir().mkpath(modelDirectoryPath);
+    }
+    // set the folder as working directory
+    QString modelDirectory = MainWindow::instance()->getOMCProxy()->changeDirectory(modelDirectoryPath);
+    if (!modelDirectory.isEmpty()) {
+      simulationOptions.setWorkingDirectory(modelDirectoryPath);
+    } else {
+      simulationOptions.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+    }
   }
   // setup simulation flags
   QStringList simulationFlags;
