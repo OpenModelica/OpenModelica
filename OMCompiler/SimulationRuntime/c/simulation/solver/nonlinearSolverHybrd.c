@@ -61,7 +61,7 @@ static void wrapper_fvec_hybrj(const integer* n, const double* x, double* f, dou
 /*! \fn allocate memory for nonlinear system solver hybrd
  *
  */
-int allocateHybrdData(int size, void** voiddata)
+int allocateHybrdData(size_t size, void** voiddata)
 {
   DATA_HYBRD* data = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
 
