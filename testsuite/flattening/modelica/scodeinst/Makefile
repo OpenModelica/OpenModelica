@@ -609,6 +609,7 @@ ImportUnqualified2.mo \
 ImportUnqualified3.mo \
 ImpureCall1.mo \
 Inline1.mo \
+Inline2.mo \
 InnerOuter1.mo \
 InnerOuter2.mo \
 InnerOuter3.mo \

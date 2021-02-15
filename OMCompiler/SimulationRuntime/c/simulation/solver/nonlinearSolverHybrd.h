@@ -51,7 +51,7 @@ void hybrj_( void(*) (const integer*, const double*, double*, double *, const in
   double *r, integer *lr, double *qtf, double *wa1, double *wa2,
   double *wa3, double *wa4, void* user_data);
 
-extern int allocateHybrdData(int size, void **data);
+extern int allocateHybrdData(size_t size, void **data);
 extern int freeHybrdData(void **data);
 extern int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber);
 
