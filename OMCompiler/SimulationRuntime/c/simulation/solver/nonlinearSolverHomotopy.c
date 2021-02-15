@@ -681,7 +681,7 @@ double vecScalarProd(int n, double *a, double *b)
 void matVecMult(int n, int m, double *A, double *b, double *c)
 {
   int i, j;
-  #warning "Fix the performance problem here; this order will trash the cache"
+  #pragma message "Fix the performance problem here; this order will trash the cache"
   for (i=0;i<n;i++) {
     c[i] = 0.0;
     for (j=0;j<m;j++)
@@ -693,7 +693,7 @@ void matVecMult(int n, int m, double *A, double *b, double *c)
 void matVecMultAbs(int n, int m, double *A, double *b, double *c)
 {
   int i, j;
-  #warning "Fix the performance problem here; this order will trash the cache"
+  #pragma message "Fix the performance problem here; this order will trash the cache"
   for (i=0;i<n;i++) {
     c[i] = 0.0;
     for (j=0;j<m;j++)
@@ -705,7 +705,7 @@ void matVecMultAbs(int n, int m, double *A, double *b, double *c)
 void matVecMultBB(int n, double *A, double *b, double *c)
 {
   int i, j;
-  #warning "Fix the performance problem here; this order will trash the cache"
+  #pragma message "Fix the performance problem here; this order will trash the cache"
   for (i=0;i<n;i++) {
     c[i] = 0.0;
     for (j=0;j<n;j++)
@@ -717,7 +717,7 @@ void matVecMultBB(int n, double *A, double *b, double *c)
 void matVecMultAbsBB(int n, double *A, double *b, double *c)
 {
   int i, j;
-  #warning "Fix the performance problem here; this order will trash the cache"
+  #pragma message "Fix the performance problem here; this order will trash the cache"
   for (i=0;i<n;i++) {
     c[i] = 0.0;
     for (j=0;j<n;j++)
@@ -729,7 +729,7 @@ void matVecMultAbsBB(int n, double *A, double *b, double *c)
 void matAddBB(int n, double* A, double* B, double* C)
 {
   int i, j;
-  #warning "Fix the performance problem here; this order will trash the cache"
+  #pragma message "Fix the performance problem here; this order will trash the cache"
   for (i=0;i<n;i++) {
     for (j=0;j<n+1;j++)
       C[i + j*n] = A[i + j*n] + B[i + j*n];
@@ -740,7 +740,7 @@ void matAddBB(int n, double* A, double* B, double* C)
 void matDiffBB(int n, double* A, double* B, double* C)
 {
   int i, j;
-  #warning "Fix the performance problem here; this order will trash the cache"
+  #pragma message "Fix the performance problem here; this order will trash the cache"
   for (i=0;i<n;i++) {
     for (j=0;j<n;j++)
       C[i + j*n] = A[i + j*n] - B[i + j*n];
@@ -753,7 +753,7 @@ void scaleMatrixRows(int n, int m, double *A)
   const double delta = sqrt(DBL_EPSILON);
   int i, j;
   double rowMax;
-  #warning "Fix the performance problem here; this order will trash the cache"
+  #pragma message "Fix the performance problem here; this order will trash the cache"
   for (i=0;i<n;i++) {
     rowMax = 0; /* This might be changed to delta */
     for (j=0;j<n;j++) {
@@ -772,7 +772,7 @@ void scaleMatrixRows(int n, int m, double *A)
 void orthogonalBacktraceMatrix(DATA_HOMOTOPY* solverData, double* hJac, double* hvec, double* v, double* hJac2, int n, int m)
 {
   int i, j;
-  #warning "Fix the performance problem here; this order will trash the cache"
+  #pragma message "Fix the performance problem here; this order will trash the cache"
   for (i=0; i<n; i++)
   {
     for (j=0; j<m; j++)
