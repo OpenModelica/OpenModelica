@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 getErrorString();
 echo(false);
 py:=getInstallationDirectoryPath() + "/share/doc/omc/testmodels/generate_icons.py";

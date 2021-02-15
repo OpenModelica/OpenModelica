@@ -5,7 +5,7 @@
 // Test algeraic loops over FMUs A and B or C and D. Can't be solved by fixed-point-iteration
 // Using KINSOL to solve loops.
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 
 loadString("
 package loopsOverFMUs

@@ -15,7 +15,7 @@ end test_Bug3034;
 ");
 getErrorString();
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 translateModelFMU(test_Bug3034, version="2.0");
 getErrorString();
 importFMU("test_Bug3034.fmu");

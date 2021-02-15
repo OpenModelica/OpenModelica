@@ -9,7 +9,7 @@ setCommandLineOptions("--preOptModules+=dumpDAE"); getErrorString();
 setCommandLineOptions("--postOptModules+=dumpDAE"); getErrorString();
 setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("VectorizedSolarSystem.mo"); getErrorString();
 
 simulate(VectorizedSolarSystemTest); getErrorString();

@@ -8,7 +8,7 @@
 // symbolic and colored symbolic Jacobians.
 
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 
 setCommandLineOptions("-d=newInst,symJacConstantSplit --generateSymbolicJacobian"); getErrorString();
 

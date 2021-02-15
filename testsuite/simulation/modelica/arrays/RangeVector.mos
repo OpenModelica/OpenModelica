@@ -7,7 +7,7 @@
 // Drmodelica: 7.2  Array Constructor (p. 210)
 // cflags: -d=-newInst
 // 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("Oscillator.mo");
 simulate(Oscillator,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

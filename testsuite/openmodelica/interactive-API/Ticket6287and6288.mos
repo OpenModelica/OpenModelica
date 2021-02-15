@@ -7,7 +7,7 @@
 
 setCommandLineOptions("-d=nfAPI,showStatement"); getErrorString();
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("DC_Drive.mo"); getErrorString();
 loadFile("DC_Drive2.mo"); getErrorString();
 
@@ -30,7 +30,7 @@ getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData,DC_Drive2.DCPM_Utilities.Dr
 // true
 // Evaluating: getErrorString()
 // ""
-// Evaluating: loadModel(Modelica)
+// Evaluating: loadModel(Modelica, {"3.2.3"})
 // true
 // Evaluating: getErrorString()
 // ""

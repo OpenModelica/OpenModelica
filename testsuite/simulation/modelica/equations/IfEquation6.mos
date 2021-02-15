@@ -6,7 +6,7 @@
 // 
 // 
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 
 loadFile("IfEquation6.mo"); getErrorString();
 

@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 // Integer variables, Integer input variables, no continuous-time states, time events, state events
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("IntegerNetwork1.mo"); getErrorString();
 translateModelFMU(IntegerNetwork1, version="2.0"); getErrorString();
 

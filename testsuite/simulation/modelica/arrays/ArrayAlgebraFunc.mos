@@ -6,7 +6,7 @@
 // Drmodelica: 7.7 Built-in Functions (p. 225)
 // cflags: -d=-newInst
 //
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("ArrayAlgebraFunc.mo");
 simulate(ArrayAlgebraFunc,numberOfIntervals=10, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

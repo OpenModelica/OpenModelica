@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica);getErrorString();
+loadModel(Modelica, {"3.2.3"});getErrorString();
 loadString("
 model SortTest
   input Real u; // prevent evaluation by frontend

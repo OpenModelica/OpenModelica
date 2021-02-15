@@ -6,7 +6,7 @@
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadString("
 package FunctionPointer
   partial function pfunc

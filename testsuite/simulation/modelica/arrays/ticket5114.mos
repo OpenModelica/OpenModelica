@@ -4,7 +4,7 @@
 // teardown_command: rm -rf Test5114*
 // cflags: -d=-newInst
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadString("
 model A
   parameter Modelica.Mechanics.MultiBody.Frames.Orientation R_start =

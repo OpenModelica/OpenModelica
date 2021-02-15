@@ -6,7 +6,7 @@
 // Drmodelica: 7.3 General Array concatenation (p. 213)
 // cflags: -d=-newInst
 //
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("ConcatArr1.mo");
 simulate(ConcatArr1,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

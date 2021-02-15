@@ -8,7 +8,7 @@
 //
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("Ticket4258a.mo"); getErrorString();
 simulate(simple_BasicHX_water_gas); getErrorString();
 

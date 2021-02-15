@@ -21,7 +21,7 @@ end MatrixIOTest;
 "); getErrorString();
 
 translateModelFMU(MatrixIOTest, version = "2.0"); getErrorString();
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 importFMU("MatrixIOTest.fmu"); getErrorString();
 loadFile("MatrixIOTest_me_FMU.mo"); getErrorString();
 

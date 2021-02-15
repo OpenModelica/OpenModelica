@@ -6,7 +6,7 @@
 // test for #3656
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("Elevator.mo"); getErrorString();
 
 simulate(Elevator.Elevator); getErrorString();

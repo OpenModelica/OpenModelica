@@ -4,7 +4,7 @@
 // cflags: -d=backenddaeinfo -d=-newInst
 
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("Tearing13.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();

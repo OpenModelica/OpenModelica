@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, stopTime=3.0); getErrorString();
 val(rev.phi, 0);
 val(rev.phi, 1);

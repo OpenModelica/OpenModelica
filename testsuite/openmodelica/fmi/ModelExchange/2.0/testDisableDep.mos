@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 setCommandLineOptions("--std=3.3 -d=disableFMIDependency");
 loadString("
 model testDID

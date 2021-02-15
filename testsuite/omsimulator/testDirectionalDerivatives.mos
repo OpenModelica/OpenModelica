@@ -6,7 +6,7 @@
 //
 // Test initialization, simulation with fmi2GetDirectionalDerivative and deinitialization of FMU with OMSimulator
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 getErrorString();
 
 setCommandLineOptions("-d=newInst,-disableDirectionalDerivatives");

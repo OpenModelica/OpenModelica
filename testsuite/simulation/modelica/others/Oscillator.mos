@@ -7,7 +7,7 @@
 // Drmodelica: 5.3 Oscillating Mass Connected to a Spring (p. 156)
 // cflags: -d=-newInst
 // 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("Oscillator.mo");
 simulate(Oscillator,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

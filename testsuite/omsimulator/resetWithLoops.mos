@@ -3,7 +3,7 @@
 // teardown_command: rm -rf resetWithLoops-fmu/ model_res.mat resetWithLoops.lua resetWithLoops.fmu resetWithLoops.log resetWithLoops_systemCall.log temp-resetWithLoops
 // cflags: -d=-newInst
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 
 system("mkdir -p resetWithLoops-fmu");
 echo(false); cd("resetWithLoops-fmu"); echo(true);

@@ -6,7 +6,7 @@
 //  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("SmoothEvent1.mo"); getErrorString();
 loadFile("SmoothEvent2.mo"); getErrorString();
 loadFile("SmoothEvent3.mo"); getErrorString();

@@ -30,6 +30,12 @@ if not installPackage(Complex, "3.2.3+maint.om", exactMatch=true) then
   print(getErrorString());
   exit(1);
 end if;
+if not installPackage(Complex, "4.0.0+maint.om", exactMatch=true) then
+  print("Complex 4.0.0+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
 if not installPackage(Complex, "3.2.2+maint.om", exactMatch=true) then
   print("Complex 3.2.2+maint.om failed
 ");
@@ -68,6 +74,18 @@ if not installPackage(Modelica, "3.2.2+maint.om", exactMatch=true) then
 end if;
 if not installPackage(Modelica, "2.2.2+maint.om", exactMatch=true) then
   print("Modelica 2.2.2+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(Modelica, "4.0.0+maint.om", exactMatch=true) then
+  print("Modelica 4.0.0+maint.om failed
+");
+  print(getErrorString());
+  exit(1);
+end if;
+if not installPackage(ModelicaServices, "4.0.0+maint.om", exactMatch=true) then
+  print("ModelicaServices 4.0.0+maint.om failed
 ");
   print(getErrorString());
   exit(1);
