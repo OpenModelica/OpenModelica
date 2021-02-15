@@ -280,7 +280,6 @@ void SimulationProcessThread::readSimulationStandardError()
  */
 void SimulationProcessThread::simulationProcessError(QProcess::ProcessError error)
 {
-  Q_UNUSED(error);
   mIsSimulationProcessRunning = false;
   /* this signal is raised when we kill the simulation process forcefully. */
   if (isSimulationProcessKilled()) {
@@ -288,6 +287,9 @@ void SimulationProcessThread::simulationProcessError(QProcess::ProcessError erro
     return;
   }
   emit sendSimulationOutput(mpSimulationProcess->errorString(), StringHandler::Error, true);
+  if (error == QProcess::FailedToStart) {
+    emit sendSimulationFinished(0, QProcess::NormalExit);
+  }
   exit();
 }
 

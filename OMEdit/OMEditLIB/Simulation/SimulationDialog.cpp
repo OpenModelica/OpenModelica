@@ -571,7 +571,6 @@ void SimulationDialog::setUpForm()
                                    "If you want to change the output path then update the working directory in Options/Preferences."));
   mpResultFileNameLabel = new Label(tr("Result File (Optional):"));
   mpResultFileNameTextBox = new QLineEdit;
-  connect(mpFileNameTextBox, SIGNAL(textEdited(QString)), SLOT(resultFileNameChanged(QString)));
   connect(mpOutputFormatComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(resultFileNameChanged(QString)));
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
@@ -694,6 +693,12 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSimulationHeading->setText(QString(Helper::simulationSetup).append(" - ").append(mClassName));
     // apply simulation options
     mpLibraryTreeItem->mSimulationOptions.setClassName(mClassName);
+    /* Fix for ticket:5796
+     * Set the file name prefix to the model name to avoid the long paths.
+     */
+    if (!mpLibraryTreeItem->mSimulationOptions.isValid()) {
+      mpLibraryTreeItem->mSimulationOptions.setFileNamePrefix(StringHandler::getLastWordAfterDot(mClassName));
+    }
     applySimulationOptions(mpLibraryTreeItem->mSimulationOptions);
     /* Fix for ticket:4975
      * If SimulationOptions is invalid it means we are going to simulate this class for the first time.
@@ -705,13 +710,13 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       // if the class has experiment annotation then read it.
       if (MainWindow::instance()->getOMCProxy()->isExperiment(mClassName)) {
         // get the simulation options....
-        OMCInterface::getSimulationOptions_res simulationOptions = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
+        OMCInterface::getSimulationOptions_res simulationOptions_res = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
         // since we always get simulationOptions so just get the values from array
-        mpStartTimeTextBox->setText(QString::number(simulationOptions.startTime));
-        mpStopTimeTextBox->setText(QString::number(simulationOptions.stopTime));
-        mpToleranceTextBox->setText(QString::number(simulationOptions.tolerance));
-        mpNumberofIntervalsSpinBox->setValue(simulationOptions.numberOfIntervals);
-        mpIntervalTextBox->setText(QString::number(simulationOptions.interval));
+        mpStartTimeTextBox->setText(QString::number(simulationOptions_res.startTime));
+        mpStopTimeTextBox->setText(QString::number(simulationOptions_res.stopTime));
+        mpToleranceTextBox->setText(QString::number(simulationOptions_res.tolerance));
+        mpNumberofIntervalsSpinBox->setValue(simulationOptions_res.numberOfIntervals);
+        mpIntervalTextBox->setText(QString::number(simulationOptions_res.interval));
       }
       // apply the global translation flags
       TranslationFlagsWidget *pGlobalTranslationFlagsWidget = OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget();
@@ -1309,7 +1314,11 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setOutputFormat(mpOutputFormatComboBox->currentText());
   simulationOptions.setSinglePrecision(mpSinglePrecisionCheckBox->isChecked());
   if (!mpFileNameTextBox->text().isEmpty()) {
-    simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
+    if (mpFileNameTextBox->text().contains('\'')) {
+      simulationOptions.setFileNamePrefix("_omcQuot_" + mpFileNameTextBox->text().toUtf8().toHex());
+    } else {
+      simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
+    }
   } else if (mClassName.contains('\'')) {
     simulationOptions.setFileNamePrefix("_omcQuot_" + mClassName.toUtf8().toHex());
   }
@@ -1769,7 +1778,11 @@ void SimulationDialog::performSimulation()
   }
   simulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
   if (!mpFileNameTextBox->text().isEmpty()) {
-    simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+    if (mpFileNameTextBox->text().contains('\'')) {
+      simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(mpFileNameTextBox->text().toUtf8().toHex()).append("\"");
+    } else {
+      simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+    }
   } else if (mClassName.contains('\'')) {
     simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(mClassName.toUtf8().toHex()).append("\"");
   }
