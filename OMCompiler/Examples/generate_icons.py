@@ -113,7 +113,7 @@ def ask_omc(question, opt=None, parsed=True):
 
     try:
         if parsed:
-            res = omc.execute(expression)
+            res = omc.sendExpression(expression)
             omc.clearOMParserResult()
         else:
             res = omc.sendExpression(expression, parsed=False)
