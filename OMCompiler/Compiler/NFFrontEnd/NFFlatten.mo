@@ -449,7 +449,7 @@ protected
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
   Variability var;
-  Boolean unfix;
+  Boolean unfix, paramCall = false;
 algorithm
   Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr,
     comment = cmt, info = info) := comp;
@@ -459,18 +459,29 @@ algorithm
     SOME(binding) := outerBinding;
     unfix := Binding.isUnbound(binding) and var == Variability.PARAMETER;
   else
-    binding := flattenBinding(binding, prefix);
-    unfix := false;
+    try
+      // kabdelhak: ticket #6267
+      // if the binding is just a function call create an initial equation for it
+      // and do not flatten. Do this instead if binding contains a function call?
+      paramCall := Type.isArray(ty) and Expression.isImpureCall(Expression.getBindingExp(Binding.getTypedExp(binding)));
+      unfix := paramCall;
+    else
+      unfix := false;
+    end try;
+    if not unfix then
+      binding := flattenBinding(binding, prefix);
+    end if;
   end if;
 
   // If the component is an array component with a binding and at least discrete variability,
   // move the binding into an equation. This avoids having to scalarize the binding.
   if not settings.nfAPI then
-    if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
+    if Type.isArray(ty) and Binding.isBound(binding) and (var >= Variability.DISCRETE or paramCall) then
       name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
         ElementSource.createElementSource(info));
-      sections := Sections.prependEquation(eq, sections);
+      // create initial equation if it is a parameter
+      sections := Sections.prependEquation(eq, sections, paramCall);
       binding := NFBinding.EMPTY_BINDING;
 
       // Moving the binding of an input variable to an equation can change how
