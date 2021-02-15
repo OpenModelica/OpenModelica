@@ -1,6 +1,7 @@
 SLOWLOGS = \
 bootstrapping.log \
 msl31.log \
+msl40simulation.log \
 msl32simulation.log \
 msl32simulation_cpp_mini.log \
 simulationmodelicamsl22.log \
@@ -449,6 +450,9 @@ msl22mechanics.log: omc-diff
 	@echo $@ done
 biochem.log: omc-diff
 	$(MAKE) -C flattening/libraries/biochem -f Makefile test > $@
+	@echo $@ done
+msl40simulation.log: omc-diff
+	$(MAKE) -C simulation/libraries/msl40 -f Makefile test > $@
 	@echo $@ done
 msl32simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/msl32 -f Makefile test > $@

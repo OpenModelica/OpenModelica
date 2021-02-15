@@ -1,0 +1,23 @@
+// name:        Simulate Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks [version 4.0.0]
+// keyword:     simulate MSL 4.0.0 Modelica.Clocked clocked
+// status:      correct
+// cflags:
+//
+// Simulates model with clocked feature
+//
+
+loadModel(Modelica,{"4.0.0"}); getErrorString();
+
+simulate(Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks);
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 4.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// endResult
