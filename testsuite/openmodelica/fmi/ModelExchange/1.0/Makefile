@@ -1,6 +1,10 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
+
+# test that currently fail. Move up when fixed.
+# Run make testfailing
+FAILINGTESTFILES= \
 BouncingBall.mos \
 BouncingBallSourceFMU.mos \
 EnumerationTest.mos \
@@ -19,10 +23,6 @@ CoupledClutches.mos \
 BooleanNetwork1.mos \
 IntegerNetwork1.mos \
 StringParameters.mos
-
-# test that currently fail. Move up when fixed.
-# Run make testfailing
-FAILINGTESTFILES= \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -47,7 +47,7 @@ test:
 # Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@rm -f $(CLEAN)
+	@rm -rf $(CLEAN)
 
 # Run this if you want to list out the files (dependencies).
 # do it after cleaning and updating the folder

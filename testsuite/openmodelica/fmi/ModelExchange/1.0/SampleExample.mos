@@ -1,6 +1,6 @@
 // name:     SampleEvent
 // keywords: fmu export import
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml SampleEvent.fmu SampleEvent_* SampleEvent_me_FMU.mo SampleEvent.libs SampleEvent.lib SampleEvent.so SampleEvent.dll SampleEvent.c SampleEvent.makefile
 // cflags: -d=-newInst
 // Event handling

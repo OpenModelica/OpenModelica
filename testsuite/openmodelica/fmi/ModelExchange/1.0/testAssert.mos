@@ -1,6 +1,6 @@
 // name:     testAssert
 // keywords: fmu export import
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml testAssertFMI* output.log testAssertFMI/*
 // cflags: -d=-newInst
 

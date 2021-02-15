@@ -1,5 +1,5 @@
 // keywords: fmu export import
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf modelDescription.xml BouncingBall.fmu BouncingBall.fmutmp
 // cflags: -d=-newInst
 // Event handling in FMU Import
