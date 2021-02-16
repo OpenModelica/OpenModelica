@@ -40,6 +40,7 @@
 #include "OMSSimulationOutputWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Plotting/VariablesWidget.h"
+#include "Options/OptionsDialog.h"
 
 #include <QGridLayout>
 #include <QMessageBox>
@@ -156,6 +157,9 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
 OMSSimulationDialog::~OMSSimulationDialog()
 {
   foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, mOMSSimulationOutputWidgetsList) {
+    if (pOMSSimulationOutputWidget->isSimulationProcessRunning() && pOMSSimulationOutputWidget->getSimulationProcess()) {
+      pOMSSimulationOutputWidget->getSimulationProcess()->kill();
+    }
     delete pOMSSimulationOutputWidget;
   }
   mOMSSimulationOutputWidgetsList.clear();
@@ -219,17 +223,26 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
  */
 void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
 {
-  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure());
-  mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-  int xPos = QApplication::primaryScreen()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::primaryScreen()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-#else // QT_VERSION_CHECK
-  int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-  int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-#endif // QT_VERSION_CHECK
-  pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
-  pOMSSimulationOutputWidget->show();
+  // export the model to a temp directory and send the file location.
+  QString fileName = QString("%1/%2.ssp").arg(Utilities::tempDirectory(), pLibraryTreeItem->getNameStructure());
+  if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
+    OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), fileName);
+    mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
+  #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+    int xPos = QApplication::primaryScreen()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
+    int yPos = QApplication::primaryScreen()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
+  #else // QT_VERSION_CHECK
+    int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
+    int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
+  #endif // QT_VERSION_CHECK
+    pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
+    /* restore the window geometry. */
+    if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
+        && Utilities::getApplicationSettings()->contains("OMSSimulationOutputWidget/geometry")) {
+      pOMSSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("OMSSimulationOutputWidget/geometry").toByteArray());
+    }
+    pOMSSimulationOutputWidget->show();
+  }
 }
 
 /*!
@@ -243,17 +256,19 @@ void OMSSimulationDialog::simulationFinished(const QString &resultFilePath, QDat
 {
   // read the result file
   QFileInfo resultFileInfo(resultFilePath);
-  if (!resultFileInfo.exists() || resultFileLastModifiedDateTime > resultFileInfo.lastModified()) {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to find the result file <b>%1</b>.").arg(resultFileInfo.absoluteFilePath()),
-                                                          Helper::scriptingKind, Helper::errorLevel));
-    return;
+  resultFileInfo.setCaching(false);
+  QDateTime resultFileModificationTime = resultFileInfo.lastModified();
+  bool resultFileExists = resultFileInfo.exists();
+  // use secsTo as lastModified returns to second not to mili/nanoseconds, see #5251
+  bool resultFileNewer = resultFileLastModifiedDateTime.secsTo(resultFileModificationTime) >= 0;
+  if (resultFileExists && resultFileNewer) {
+    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
+    OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+    QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
+    pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
+    MainWindow::instance()->getVariablesDockWidget()->show();
   }
-  VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-  MainWindow::instance()->switchToPlottingPerspectiveSlot();
-  pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-  MainWindow::instance()->getVariablesDockWidget()->show();
 }
 
 /*!

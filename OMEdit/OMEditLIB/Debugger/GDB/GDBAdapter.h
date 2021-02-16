@@ -43,6 +43,7 @@
 #include <QTimer>
 
 #include "Debugger/Parser/GDBMIParser.h"
+#include "Util/OutputPlainTextEdit.h"
 #include "Debugger/Breakpoints/BreakpointsWidget.h"
 #include "Simulation/SimulationOptions.h"
 
@@ -54,16 +55,14 @@ class GDBLoggerWidget : public QWidget
   Q_OBJECT
 public:
   GDBLoggerWidget(QWidget *pParent = 0);
-  QPlainTextEdit* getCommandsTextBox() {return mpCommandsTextBox;}
-  QPlainTextEdit* getResponseTextBox() {return mpResponseTextBox;}
   QLineEdit* getCommandTextBox() {return mpCommandTextBox;}
   QPushButton* getSendCommandButton() {return mpSendCommandButton;}
   void logDebuggerCommand(QString command);
   void logDebuggerStandardResponse(QString response);
   void logDebuggerErrorResponse(QString response);
 private:
-  QPlainTextEdit *mpCommandsTextBox;
-  QPlainTextEdit *mpResponseTextBox;
+  OutputPlainTextEdit *mpCommandsTextBox;
+  OutputPlainTextEdit *mpResponseTextBox;
   QLineEdit *mpCommandTextBox;
   QPushButton *mpSendCommandButton;
 
@@ -74,7 +73,7 @@ public slots:
   void handleGDBProcessFinished();
 };
 
-class TargetOutputWidget : public QPlainTextEdit
+class TargetOutputWidget : public OutputPlainTextEdit
 {
   Q_OBJECT
 public:

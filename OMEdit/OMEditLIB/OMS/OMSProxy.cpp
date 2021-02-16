@@ -34,9 +34,9 @@
 #include "OMSProxy.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
-#include "OMSSimulationDialog.h"
-#include "OMSSimulationOutputWidget.h"
 #include "Util/Utilities.h"
+
+#include <QTime>
 
 #define LOG_COMMAND(command,args) \
   QElapsedTimer commandTime; \
@@ -67,23 +67,8 @@ void loggingCallback(oms_message_type_enu_t type, const char *message)
       level = Helper::notificationLevel;
       break;
   }
-  emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica,
-                                                           QString(message), Helper::scriptingKind, level));
-
+  emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica, QString(message), Helper::scriptingKind, level));
   //  qDebug() << "loggingCallback" << type << message;
-}
-
-void simulateCallback(const char* ident, double time, oms_status_enu_t status)
-{
-//  qDebug() << "simulateCallback" << ident << time << status;
-  QList<OMSSimulationOutputWidget*> OMSSimulationOutputWidgetList;
-  OMSSimulationOutputWidgetList = MainWindow::instance()->getOMSSimulationDialog()->getOMSSimulationOutputWidgetsList();
-  foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, OMSSimulationOutputWidgetList) {
-    if (pOMSSimulationOutputWidget->isSimulationRunning() && pOMSSimulationOutputWidget->getCref().compare(QString(ident)) == 0) {
-      pOMSSimulationOutputWidget->simulateCallback(ident, time, status);
-      break;
-    }
-  }
 }
 
 /*!
@@ -1631,23 +1616,6 @@ void OMSProxy::setWorkingDirectory(QString path)
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_setWorkingDirectory(path.toUtf8().constData());
   logResponse(command, status, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::simulate_asynchronous
- * Starts the asynchronous simulation.
- * \param cref
- * \return
- */
-bool OMSProxy::simulate_asynchronous(QString cref)
-{
-  QString command = "oms_simulate_asynchronous";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_simulate_asynchronous(cref.toUtf8().constData(), simulateCallback);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
 }
 
 /*!

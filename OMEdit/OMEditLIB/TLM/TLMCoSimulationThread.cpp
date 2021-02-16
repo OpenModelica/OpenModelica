@@ -91,8 +91,6 @@ void TLMCoSimulationThread::runManager()
   TLMCoSimulationOptions tlmCoSimulationOptions = mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions();
   QFileInfo fileInfo(tlmCoSimulationOptions.getFileName());
   mpManagerProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
-  qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   connect(mpManagerProcess, SIGNAL(started()), SLOT(managerProcessStarted()));
   connect(mpManagerProcess, SIGNAL(readyReadStandardOutput()), SLOT(readManagerStandardOutput()));
   connect(mpManagerProcess, SIGNAL(readyReadStandardError()), SLOT(readManagerStandardError()));

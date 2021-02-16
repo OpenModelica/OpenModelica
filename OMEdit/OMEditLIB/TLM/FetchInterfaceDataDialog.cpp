@@ -30,6 +30,7 @@
 
 #include "FetchInterfaceDataDialog.h"
 #include "Util/Helper.h"
+#include "Util/OutputPlainTextEdit.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/ItemDelegate.h"
@@ -72,7 +73,7 @@ FetchInterfaceDataDialog::FetchInterfaceDataDialog(LibraryTreeItem *pLibraryTree
   connect(mpFetchAgainButton, SIGNAL(clicked()), SLOT(fetchAgainInterfaceData()));
   // output
   mpOutputLabel = new Label(Helper::output);
-  mpOutputTextBox = new QPlainTextEdit;
+  mpOutputTextBox = new OutputPlainTextEdit;
   mpOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   // main Layout
   QGridLayout *pMainGridLayout = new QGridLayout;
@@ -148,7 +149,7 @@ void FetchInterfaceDataDialog::writeManagerOutput(QString output, StringHandler:
 {
   QTextCharFormat format;
   format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  Utilities::insertText(mpOutputTextBox, output, format);
+  mpOutputTextBox->appendOutput(output, format);
 }
 
 /*!

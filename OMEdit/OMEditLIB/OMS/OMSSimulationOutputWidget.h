@@ -35,42 +35,56 @@
 #define OMSSIMULATIONOUTPUTWIDGET_H
 
 #include "Util/Utilities.h"
+#include "Util/StringHandler.h"
 #include "OMSimulator.h"
 
 #include <QWidget>
 #include <QProgressBar>
 #include <QDateTime>
+#include <QTextBrowser>
 
 class ArchivedOMSSimulationItem;
-
+class OutputPlainTextEdit;
 class OMSSimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  OMSSimulationOutputWidget(const QString &cref, QWidget *pParent = 0);
-  void simulateCallback(const char* ident, double time, oms_status_enu_t status);
-  QString getCref() const {return mCref;}
-  int isSimulationRunning() {return mIsSimulationRunning;}
+  OMSSimulationOutputWidget(const QString &cref, const QString &fileName, QWidget *pParent = 0);
+  ~OMSSimulationOutputWidget();
+  QProcess* getSimulationProcess() {return mpSimulationProcess;}
+  bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
+  bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
 private:
   QString mCref;
   double mStartTime;
   double mStopTime;
   QString mResultFilePath;
-  Label *mpSimulationHeading;
-  QFrame *mpHorizontalLine;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelSimulationButton;
+  OutputPlainTextEdit *mpSimulationOutputPlainTextEdit;
   ArchivedOMSSimulationItem *mpArchivedOMSSimulationItem;
   QDateTime mResultFileLastModifiedDateTime;
-  bool mIsSimulationRunning;
+  QProcess *mpSimulationProcess;
+  bool mIsSimulationProcessKilled;
+  bool mIsSimulationProcessRunning;
+  void *mpContext;
+  void *mpSubscriberSocket;
+  QTimer *mpSubscriberSocketTimer;
 signals:
   void sendSimulationProgress(QString ident, double time, oms_status_enu_t status);
 public slots:
+  void simulationProcessStarted();
+  void readSimulationStandardOutput();
+  void readSimulationStandardError();
+  void simulationProcessError(QProcess::ProcessError error);
+  void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
+  void simulationProgressJson();
+  void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
-  void simulationProgress(QString ident, double time, oms_status_enu_t status);
 protected:
   virtual void keyPressEvent(QKeyEvent *event) override;
+  virtual void closeEvent(QCloseEvent *event) override;
 };
 
 #endif // OMSSIMULATIONOUTPUTWIDGET_H

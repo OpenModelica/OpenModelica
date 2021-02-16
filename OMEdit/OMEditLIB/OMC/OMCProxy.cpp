@@ -54,6 +54,7 @@ void omc_Main_setWindowsPaths(threadData_t *threadData, void* _inOMHome);
 
 #include "OMCProxy.h"
 #include "MainWindow.h"
+#include "Util/OutputPlainTextEdit.h"
 #include "Element/Element.h"
 #include "Options/OptionsDialog.h"
 #include "Modeling/MessagesWidget.h"
@@ -81,11 +82,12 @@ OMCProxy::OMCProxy(threadData_t* threadData, QWidget *pParent)
   mpOMCLoggerWidget->setWindowIcon(QIcon(":/Resources/icons/console.svg"));
   mpOMCLoggerWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::OpenModelicaCompilerCLI));
   // OMC Logger textbox
-  mpOMCLoggerTextBox = new QPlainTextEdit;
+  mpOMCLoggerTextBox = new OutputPlainTextEdit;
   mpOMCLoggerTextBox->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   mpOMCLoggerTextBox->setReadOnly(true);
   mpOMCLoggerTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
+  mpOMCLoggerTextBox->setUseTimer(false);
   mpExpressionTextBox = new CustomExpressionBox(this);
   connect(mpExpressionTextBox, SIGNAL(returnPressed()), SLOT(sendCustomExpression()));
   mpOMCLoggerSendButton = new QPushButton(Helper::send);
@@ -353,7 +355,7 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
     QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
     QTextCharFormat format;
     format.setFont(font);
-    Utilities::insertText(mpOMCLoggerTextBox, command + "\n", format);
+    mpOMCLoggerTextBox->appendOutput(command + "\n", format);
     if (saveToHistory) {
       // add the expression to commands list
       mCommandsList.append(command);
@@ -402,7 +404,7 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed)
     QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
     QTextCharFormat format;
     format.setFont(font);
-    Utilities::insertText(mpOMCLoggerTextBox, response + "\n\n", format);
+    mpOMCLoggerTextBox->appendOutput(response + "\n\n", format);
     // write the log to communication log file
     if (mpCommunicationLogFile) {
       mTotalOMCCallsTime += elapsed;

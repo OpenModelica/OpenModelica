@@ -41,6 +41,7 @@
 
 class LibraryTreeItem;
 class Label;
+class OutputPlainTextEdit;
 class FetchInterfaceDataThread;
 class ModelWidget;
 class LineAnnotation;
@@ -60,7 +61,7 @@ private:
   QPushButton *mpCancelButton;
   QPushButton *mpFetchAgainButton;
   Label *mpOutputLabel;
-  QPlainTextEdit *mpOutputTextBox;
+  OutputPlainTextEdit *mpOutputTextBox;
   FetchInterfaceDataThread *mpFetchInterfaceDataThread;
 public slots:
   void cancelFetchingInterfaceData();

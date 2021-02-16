@@ -41,6 +41,7 @@
 #include "Util/Utilities.h"
 
 class CustomExpressionBox;
+class OutputPlainTextEdit;
 class ElementInfo;
 class StringHandler;
 class OMCInterface;
@@ -61,7 +62,7 @@ private:
   QWidget *mpOMCLoggerWidget;
   CustomExpressionBox *mpExpressionTextBox;
   QPushButton *mpOMCLoggerSendButton;
-  QPlainTextEdit *mpOMCLoggerTextBox;
+  OutputPlainTextEdit *mpOMCLoggerTextBox;
   QWidget *mpOMCDiffWidget;
   Label *mpOMCDiffBeforeLabel;
   QPlainTextEdit *mpOMCDiffBeforeTextBox;

@@ -479,7 +479,6 @@ namespace Utilities {
 #endif
   bool isCFile(QString extension);
   bool isModelicaFile(QString extension);
-  void insertText(QPlainTextEdit *pPlainTextEdit, QString text, QTextCharFormat format = QTextCharFormat());
   QGenericMatrix<3,3, double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
 #ifdef WIN32
   QString getGDBPath();

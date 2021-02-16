@@ -47,6 +47,7 @@
 #include <QTcpServer>
 
 class Label;
+class OutputPlainTextEdit;
 class SimulationProcessThread;
 class SimulationOutputHandler;
 class SimulationOutputWidget;
@@ -86,7 +87,6 @@ public:
   QTabWidget* getGeneratedFilesTabWidget() {return mpGeneratedFilesTabWidget;}
   bool isOutputStructured() {return mIsOutputStructured;}
   SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
-  QPlainTextEdit* getCompilationOutputTextBox() {return mpCompilationOutputTextBox;}
   QTcpServer* getTcpServer() {return mpTcpServer;}
   bool isSocketDisconnected() {return mSocketDisconnected;}
   SimulationProcessThread* getSimulationProcessThread() {return mpSimulationProcessThread;}
@@ -107,7 +107,7 @@ private:
   bool mIsOutputStructured;
   QTextBrowser *mpSimulationOutputTextBrowser;
   SimulationOutputTree *mpSimulationOutputTree;
-  QPlainTextEdit *mpCompilationOutputTextBox;
+  OutputPlainTextEdit *mpCompilationOutputTextBox;
   ArchivedSimulationItem *mpArchivedSimulationItem;
   QTcpServer *mpTcpServer;
   bool mSocketDisconnected;

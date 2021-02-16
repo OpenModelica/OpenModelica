@@ -36,6 +36,7 @@
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ItemDelegate.h"
 #include "Options/OptionsDialog.h"
+#include "Util/OutputPlainTextEdit.h"
 #include "SimulationOutputHandler.h"
 #include "Editors/CEditor.h"
 #include "Editors/TextEditor.h"
@@ -269,7 +270,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   }
   mpGeneratedFilesTabWidget->setTabEnabled(0, false);
   // Compilation Output TextBox
-  mpCompilationOutputTextBox = new QPlainTextEdit;
+  mpCompilationOutputTextBox = new OutputPlainTextEdit;
   mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, tr("Compilation"));
   mpGeneratedFilesTabWidget->setTabEnabled(1, false);
@@ -399,6 +400,9 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mSocketDisconnected = true;
   mpTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
   connect(mpTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
+  // make the compilation tab enabled and current only once.
+  mpGeneratedFilesTabWidget->setTabEnabled(1, true);
+  mpGeneratedFilesTabWidget->setCurrentIndex(1);
   // create the thread
   mpSimulationProcessThread = new SimulationProcessThread(this);
   connect(mpSimulationProcessThread, SIGNAL(sendCompilationStarted()), SLOT(compilationProcessStarted()));
@@ -608,12 +612,9 @@ void SimulationOutputWidget::compilationProcessStarted()
  */
 void SimulationOutputWidget::writeCompilationOutput(QString output, QColor color)
 {
-  mpGeneratedFilesTabWidget->setTabEnabled(1, true);
   QTextCharFormat format;
   format.setForeground(color);
-  Utilities::insertText(mpCompilationOutputTextBox, output, format);
-  /* make the compilation tab the current one */
-  mpGeneratedFilesTabWidget->setCurrentIndex(1);
+  mpCompilationOutputTextBox->appendOutput(output, format);
 }
 
 /*!

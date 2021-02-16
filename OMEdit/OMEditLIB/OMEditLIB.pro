@@ -101,6 +101,7 @@ for(path, INCLUDEPATH) {
 SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
+  Util/OutputPlainTextEdit.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
@@ -191,6 +192,7 @@ SOURCES += Util/Helper.cpp \
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
   Util/StringHandler.h \
+  Util/OutputPlainTextEdit.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \

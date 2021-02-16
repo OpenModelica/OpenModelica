@@ -145,7 +145,6 @@ public:
   bool setTolerance(QString cref, double absoluteTolerance, double relativeTolerance);
   bool setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize);
   void setWorkingDirectory(QString path);
-  bool simulate_asynchronous(QString cref);
   bool terminate(QString cref);
 signals:
   void logGUIMessage(MessageItem messageItem);
