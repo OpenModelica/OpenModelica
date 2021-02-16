@@ -79,6 +79,12 @@ algorithm
   execStat(getInstanceName());
 end scalarize;
 
+function expandComplexCref
+  input output Expression exp;
+algorithm
+  exp := Expression.map(exp, expandComplexCref_traverser);
+end expandComplexCref;
+
 protected
 function scalarizeVariable
   input Variable var;
@@ -175,12 +181,6 @@ algorithm
     attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER)) :: attrs;
   end for;
 end nextTypeAttributes;
-
-function expandComplexCref
-  input output Expression exp;
-algorithm
-  exp := Expression.map(exp, expandComplexCref_traverser);
-end expandComplexCref;
 
 function expandComplexCref_traverser
   input output Expression exp;

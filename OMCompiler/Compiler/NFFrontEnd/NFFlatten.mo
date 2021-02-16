@@ -74,6 +74,7 @@ import Connector = NFConnector;
 import ConnectEquations = NFConnectEquations;
 import Connections = NFConnections;
 import Face = NFConnector.Face;
+import Scalarize = NFScalarize;
 import System;
 import ComplexType = NFComplexType;
 import NFInstNode.CachedData;
@@ -449,7 +450,10 @@ protected
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
   Variability var;
-  Boolean unfix, paramCall = false;
+  Boolean unfix;
+  Boolean bindingIsCall, iteratorIsSubscripted, forceInitialEq = false;
+  ExpressionIterator binding_iter;
+  Expression typedBinding;
 algorithm
   Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr,
     comment = cmt, info = info) := comp;
@@ -463,25 +467,29 @@ algorithm
       // kabdelhak: ticket #6267
       // if the binding is just a function call create an initial equation for it
       // and do not flatten. Do this instead if binding contains a function call?
-      paramCall := Type.isArray(ty) and Expression.isImpureCall(Expression.getBindingExp(Binding.getTypedExp(binding)));
-      unfix := paramCall;
+      typedBinding := Binding.getTypedExp(binding);
+      binding_iter := ExpressionIterator.fromExp(Scalarize.expandComplexCref(typedBinding));
+      bindingIsCall := Expression.isCall(Expression.getBindingExp(Binding.getTypedExp(binding)));
+      iteratorIsSubscripted := ExpressionIterator.isSubscriptedArrayCall(binding_iter);
+      forceInitialEq := bindingIsCall and iteratorIsSubscripted and var <= Variability.DISCRETE;
+      unfix := forceInitialEq;
+      binding := flattenBinding(binding, prefix);
     else
+      forceInitialEq := false;
       unfix := false;
     end try;
-    if not unfix then
-      binding := flattenBinding(binding, prefix);
-    end if;
+
   end if;
 
   // If the component is an array component with a binding and at least discrete variability,
   // move the binding into an equation. This avoids having to scalarize the binding.
   if not settings.nfAPI then
-    if Type.isArray(ty) and Binding.isBound(binding) and (var >= Variability.DISCRETE or paramCall) then
+    if Type.isArray(ty) and Binding.isBound(binding) and (var >= Variability.DISCRETE or forceInitialEq) then
       name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
         ElementSource.createElementSource(info));
       // create initial equation if it is a parameter
-      sections := Sections.prependEquation(eq, sections, paramCall);
+      sections := Sections.prependEquation(eq, sections, forceInitialEq);
       binding := NFBinding.EMPTY_BINDING;
 
       // Moving the binding of an input variable to an equation can change how
