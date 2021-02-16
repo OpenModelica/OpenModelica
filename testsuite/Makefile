@@ -155,6 +155,7 @@ linearization.log \
 modelicaML.log \
 streams.log \
 redeclare.log \
+fmi_10.log \
 fmi_me_20.log \
 omsimulator.log \
 fmi_cs_st.log \
@@ -477,6 +478,9 @@ MathematicalAspects_simulation.log: omc-diff
 	@echo $@ done
 PNlib_simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/PNlib -f Makefile test > $@
+	@echo $@ done
+fmi_10.log: omc-diff
+	$(MAKE) -C openmodelica/fmi/2.0 -f Makefile test > $@
 	@echo $@ done
 fmi_me_20.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0/ -f Makefile test > $@

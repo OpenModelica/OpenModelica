@@ -1,0 +1,18 @@
+// name:     exportDeprecatedFMU
+// keywords: fmi 1.0 deprecated
+// status: correct
+// teardown_command:
+//
+// Try to export a 1.0 FMU and get error saying that this is no longer available.
+
+// Generate FMU
+loadModel(Modelica); getErrorString();
+buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version = "1.0"); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "Error: Support for FMI version 1.0 was dropped in OpenModelica v1.18. Use FMI 2.0.
+// "
+// endResult

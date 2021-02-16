@@ -1731,14 +1731,17 @@ algorithm
         /* Initialize FMI objects */
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true = b; /* if something goes wrong while initializing */
+        str1 = FMI.getFMIModelIdentifier(fmiInfo);
+        str2 = FMI.getFMIType(fmiInfo);
+        str3 = FMI.getFMIVersion(fmiInfo);
+        if FMI.isFMIVersion10(str3) then
+          Error.addMessage(Error.DROPPED_FMI_10, {str3});
+        end if;
         fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList = listReverse(fmiModelVariablesList);
         s1 = System.tolower(Autoconf.platform);
         str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
         pd = Autoconf.pathDelimiter;
-        str1 = FMI.getFMIModelIdentifier(fmiInfo);
-        str2 = FMI.getFMIType(fmiInfo);
-        str3 = FMI.getFMIVersion(fmiInfo);
         outputFile = stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"});
         filename_1 = if b1 then stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}) else stringAppendList({str1,"_",str2,"_FMU.mo"});
         System.writeFile(outputFile, str);
@@ -1775,13 +1778,16 @@ algorithm
         (b, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) =
           FMIExt.initializeFMIImport(modeldescriptionfilename, tmpDir, fmiLogLevel, inputConnectors, outputConnectors, true);
         true = b; /* if something goes wrong while initializing */
+        str1 = FMI.getFMIModelIdentifier(fmiInfo);
+        str3 = FMI.getFMIVersion(fmiInfo);
+        if FMI.isFMIVersion10(str3) then
+          Error.addMessage(Error.DROPPED_FMI_10, {str3});
+        end if;
         fmiTypeDefinitionsList = listReverse(fmiTypeDefinitionsList);
         fmiModelVariablesList = listReverse(fmiModelVariablesList);
         s1 = System.tolower(Autoconf.platform);
         str = Tpl.tplString(CodegenFMU.importFMUModelDescription, FMI.FMIIMPORT(s1, modeldescriptionfilename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiTypeDefinitionsList, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList, inputConnectors, outputConnectors));
         pd = Autoconf.pathDelimiter;
-        str1 = FMI.getFMIModelIdentifier(fmiInfo);
-        str3 = FMI.getFMIVersion(fmiInfo);
         outputFile = stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"});
         filename_1 = if b1 then stringAppendList({workdir,pd,str1,"_Input_Output_FMU.mo"}) else stringAppendList({str1,"_Input_Output_FMU.mo"});
         System.writeFile(outputFile, str);
@@ -3783,7 +3789,7 @@ protected function buildModelFMU
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input Absyn.Path className "path for the model";
-  input String FMUVersion;
+  input String FMUVersion "Only 2.0 supported";
   input String inFMUType;
   input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
@@ -3806,7 +3812,11 @@ protected
 algorithm
 
   cache := inCache;
-  if not FMI.checkFMIVersion(FMUVersion) then
+  if FMI.isFMIVersion10(FMUVersion) then
+    outValue := Values.STRING("");
+    Error.addMessage(Error.DROPPED_FMI_10, {FMUVersion});
+    return;
+  elseif not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
     Error.addMessage(Error.UNKNOWN_FMU_VERSION, {FMUVersion});
     return;
@@ -3828,7 +3838,7 @@ algorithm
   // NOTE: The FMUs use fileNamePrefix for the internal name when it would be expected to be fileNamePrefix that decides the .fmu filename
   //       The scripting environment from a user's perspective is like that. fmuTargetName is the name of the .fmu in the templates, etc.
   filenameprefix := Util.stringReplaceChar(if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix, ".", "_");
-  fmuTargetName := if FMUVersion == "1.0" then filenameprefix else (if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix);
+  fmuTargetName := if inFileNamePrefix == "<default>" then AbsynUtil.pathString(className) else inFileNamePrefix;
   if isSome(inSimSettings)  then
     SOME(simSettings) := inSimSettings;
   else

@@ -226,7 +226,6 @@ public function checkFMIVersion "Checks if the FMU version is supported."
   output Boolean success;
 algorithm
   success := match (inFMIVersion)
-    case ("1.0") then true;
     case ("2.0") then true;
     else false;
   end match;
@@ -274,7 +273,6 @@ public function canExportFMU
   output Boolean success;
 algorithm
   success := match (inFMUVersion, inFMIType)
-    case ("1.0", "me") then true;
     case ("2.0", "me") then true;
     case ("2.0", "cs") then true;
     case ("2.0", "me_cs") then true;
