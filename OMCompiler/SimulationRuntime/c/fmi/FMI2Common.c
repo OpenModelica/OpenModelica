@@ -35,6 +35,14 @@ extern "C" {
 #include "FMI2Common.h"
 
 /*
+ * Used for logging import messages.
+ */
+void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
+{
+  printf("module = %s, log level = %s: %s\n", module, jm_log_level_to_string(log_level), message);fflush(NULL);
+}
+
+/*
  * Used for logging FMU messages.
  * Logger function used by the FMU 2.0 internally.
  */

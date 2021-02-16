@@ -42,7 +42,6 @@ $(builddir_inc)/c/simulation/solver/ \
 $(builddir_inc)/c/simulation/solver/initialization/ \
 $(builddir_inc)/c/meta/ \
 $(builddir_inc)/c/util/ \
-$(builddir_inc)/c/fmi1/ \
 $(builddir_inc)/c/fmi2/ \
 $(builddir_inc)/scripting-API \
 $(builddir_java) \

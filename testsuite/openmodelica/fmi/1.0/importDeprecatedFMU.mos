@@ -1,0 +1,23 @@
+// name:     importDeprecated
+// keywords: fmi 1.0 deprecated
+// status: correct
+// teardown_command:
+//
+// Try to import a 1.0 FMU and get error saying that this is no longer available.
+// Try to import a 1.0 FMU ModelDescription and get an error as well.
+
+// Import FMU
+importFMU("resources/HelloFMI10World.fmu"); getErrorString();
+
+// Import ModelDescription.xml
+importFMUModelDescription("resources/modelDescription10.xml"); getErrorString();
+
+// Result:
+// ""
+// "Error: The FMU version is 1.0. Unknown/Unsupported FMU version.
+// "
+//   adding: modelDescription.xml (deflated 57%)
+// ""
+// "Error: The FMU version is 1.0. Unknown/Unsupported FMU version.
+// "
+// endResult

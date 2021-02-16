@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fmiModelDescription
+  fmiVersion="1.0"
+  modelName="HelloFMIWorld"
+  modelIdentifier="HelloFMIWorld"
+  guid="{a494b35e-1fff-4f8f-bd09-e2db06af4ae6}"
+  description=""
+  generationTool="OpenModelica Compiler OMCompiler v1.18.0-dev.48+g318558d18b"
+  generationDateAndTime="2021-02-16T15:34:25Z"
+  variableNamingConvention="structured"
+  numberOfContinuousStates="1"
+  numberOfEventIndicators="0">
+  <DefaultExperiment startTime="0.0" stopTime="1.0" tolerance="1e-06"/>
+  <ModelVariables>
+  <ScalarVariable
+    name="x"
+    valueReference="0"
+    variability="continuous"
+    causality="internal"
+    alias="noAlias">
+    <Real start="1.0"/>
+  </ScalarVariable>
+  <ScalarVariable
+    name="der(x)"
+    valueReference="1"
+    variability="continuous"
+    causality="internal"
+    alias="noAlias">
+    <Real/>
+  </ScalarVariable>
+  <ScalarVariable
+    name="a"
+    valueReference="2"
+    variability="parameter"
+    causality="internal"
+    alias="noAlias">
+    <Real start="2.0"/>
+  </ScalarVariable>
+  </ModelVariables>
+</fmiModelDescription>

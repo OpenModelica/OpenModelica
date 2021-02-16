@@ -32,7 +32,6 @@
 extern "C" {
 #endif
 
-#include "FMICommon.h"
 #include "FMI2Common.h"
 
 /*

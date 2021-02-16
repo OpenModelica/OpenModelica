@@ -20,7 +20,6 @@ flatteningPlanarMechanics.log \
 TestMedia.log \
 cppruntime.log \
 cppruntimeHpcom.log \
-cppruntimeFMU1.log \
 cppruntimeFMU2.log \
 cppruntimeStaticLinking.log \
 cppruntimeGenDebugSymbols.log \
@@ -156,7 +155,7 @@ linearization.log \
 modelicaML.log \
 streams.log \
 redeclare.log \
-fmi_me_10.log \
+fmi_10.log \
 fmi_me_20.log \
 omsimulator.log \
 fmi_cs_st.log \
@@ -414,9 +413,6 @@ cppruntimeHpcom.log: omc-diff
 cppruntimeOMEdit.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/omedit -f Makefile test  > $@
 	@echo $@ done
-cppruntimeFMU1.log: omc-diff
-	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile test  > $@
-	@echo $@ done
 cppruntimeFMU2.log: omc-diff
 	$(MAKE) -j1 -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile test  > $@
 	@echo $@ done
@@ -483,8 +479,8 @@ MathematicalAspects_simulation.log: omc-diff
 PNlib_simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/PNlib -f Makefile test > $@
 	@echo $@ done
-fmi_me_10.log: omc-diff
-	$(MAKE) -C openmodelica/fmi/ModelExchange/1.0/ -f Makefile test > $@
+fmi_10.log: omc-diff
+	$(MAKE) -C openmodelica/fmi/1.0 -f Makefile test > $@
 	@echo $@ done
 fmi_me_20.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0/ -f Makefile test > $@
@@ -659,7 +655,6 @@ clean_g_2 :
 	$(MAKE) -C openmodelica/cppruntime -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/hpcom -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/omedit -f Makefile clean
-	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/fmu/modelExchange/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/staticLinking -f Makefile clean
 	$(MAKE) -C openmodelica/cppruntime/genDebugSymbols -f Makefile clean
@@ -728,7 +723,6 @@ clean_g_4:
 	$(MAKE) -C openmodelica/cppruntime/libraries/msl32 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulation/2.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/CoSimulationStandAlone -f Makefile clean
-	$(MAKE) -C openmodelica/fmi/ModelExchange/1.0 -f Makefile clean
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0 -f Makefile clean
 	$(MAKE) -C omsimulator -f Makefile clean
 	$(MAKE) -C simulation/libraries/3rdParty/PlanarMechanics -f Makefile clean

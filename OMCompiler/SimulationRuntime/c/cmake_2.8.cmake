@@ -357,7 +357,6 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/util)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/c/dataReconciliation)
 
   # OMDEV PATH
@@ -392,11 +391,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
-                   ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
-           ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
-
-  ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
+  ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC})
   TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta ModelicaExternalC libexpat initialization lapack_win32_MT)
 
   # Dependencies
@@ -477,13 +472,9 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmu1_model_interface.h
-                   ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmiModelFunctions.h
-           ${OMCTRUNCHOME}/OMCompiler/SimulationRuntime/fmi/export/fmi1/fmiModelTypes.h)
-
   ADD_DEFINITIONS(/TP ${FMU_MODELNAME}.c)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
-  ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
+  ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC})
   TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta ModelicaExternalC libexpat initialization lapack_win32_MT ${SUNDIALS_LIBRARIES})
 
   # Dependencies

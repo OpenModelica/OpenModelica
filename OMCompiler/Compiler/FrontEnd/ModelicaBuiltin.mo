@@ -2488,7 +2488,7 @@ The only required argument is the className, while all others have some default 
   Example command:
   translateModelFMU(className, version=\"2.0\");"
   input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 1.0 or 2.0.";
+  input String version = "2.0" "FMU version, 2.0.";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   input Boolean includeResources = false "include Modelica based resources via loadResource or not";
@@ -2503,7 +2503,7 @@ The only required argument is the className, while all others have some default 
   Example command:
   buildModelFMU(className, version=\"2.0\");"
   input TypeName className "the class that should translated";
-  input String version = "2.0" "FMU version, 1.0 or 2.0.";
+  input String version = "2.0" "FMU version, 2.0.";
   input String fmuType = "me" "FMU type, me (model exchange), cs (co-simulation), me_cs (both model exchange and co-simulation)";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"className\"";
   input String platforms[:] = {"static"} "The list of platforms to generate code for. \"dynamic\"=current platform, dynamically link the runtime. \"static\"=current platform, statically link everything. Else, use a host triple, e.g. \"x86_64-linux-gnu\" or \"x86_64-w64-mingw32\"";

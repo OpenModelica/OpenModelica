@@ -1,28 +1,13 @@
 TEST = ../../../../rtest -v
 
 TESTFILES = \
-BouncingBall.mos \
-BouncingBallSourceFMU.mos \
-EnumerationTest.mos \
-HelloFMIWorld.mos \
-InOutTest.mos \
-JuliansBib.mos \
-Modelica.Blocks.Sources.BooleanPulse.mos \
-Modelica.Electrical.Analog.Examples.ChuaCircuit.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.mos \
-Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.mos \
-Pendulum.mos \
-SampleExample.mos \
-testAssert.mos \
-TanksConnectedPI.mos \
-CoupledClutches.mos \
-BooleanNetwork1.mos \
-IntegerNetwork1.mos \
-StringParameters.mos
+exportDeprecatedFMU.mos \
+importDeprecatedFMU.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing
-FAILINGTESTFILES= \
+FAILINGTESTFILES = \
+simpleStiffFMU_dynamic.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
@@ -30,8 +15,8 @@ DEPENDENCIES = \
 *.mo \
 *.mos \
 Makefile \
-
-
+resources/HelloFMI10World.fmu \
+resources/modelDescription10.xml \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
@@ -47,7 +32,7 @@ test:
 # Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
-	@rm -f $(CLEAN)
+	@rm -rf $(CLEAN)
 
 # Run this if you want to list out the files (dependencies).
 # do it after cleaning and updating the folder

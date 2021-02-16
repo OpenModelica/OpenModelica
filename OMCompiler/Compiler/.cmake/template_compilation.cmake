@@ -125,14 +125,6 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU.t
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCFunctions.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)
 
-omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU1.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.mo
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeBackendTV.mo
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.tpl
-                        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenUtil.tpl)
-
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMU2.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/SimCodeTV.mo
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenFMUCommon.tpl
@@ -283,5 +275,3 @@ omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Template/VisualXMLTpl
 
 omc_add_template_target(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegen.tpl
                         DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/susan_codegen/TplCodegenTV.mo)
-
-
