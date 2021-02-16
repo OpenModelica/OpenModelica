@@ -480,7 +480,7 @@ PNlib_simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/3rdParty/PNlib -f Makefile test > $@
 	@echo $@ done
 fmi_10.log: omc-diff
-	$(MAKE) -C openmodelica/fmi/2.0 -f Makefile test > $@
+	$(MAKE) -C openmodelica/fmi/1.0 -f Makefile test > $@
 	@echo $@ done
 fmi_me_20.log: omc-diff
 	$(MAKE) -C openmodelica/fmi/ModelExchange/2.0/ -f Makefile test > $@
