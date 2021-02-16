@@ -1493,6 +1493,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   >>
 end fmudeffile;
 
+// TODO AHeu: Is this used for FMI 2.0 or only 1.0??
 template importFMUModelDescription(FmiImport fmi)
  "Generates Modelica code for FMU model description"
 ::=
@@ -1568,367 +1569,10 @@ template importFMUModelica(FmiImport fmi)
 match fmi
 case FMIIMPORT(__) then
   match fmiInfo
-    case (INFO(fmiVersion = "1.0", fmiType = 0)) then
-      importFMU1ModelExchange(fmi)
-    case (INFO(fmiVersion = "1.0", fmiType = 1)) then
-      importFMU1CoSimulationStandAlone(fmi)
     case (INFO(fmiVersion = "2.0", fmiType = 1)) then
       importFMU2ModelExchange(fmi)
 end importFMUModelica;
 
-template importFMU1ModelExchange(FmiImport fmi)
- "Generates Modelica code for FMI Model Exchange version 1.0"
-::=
-match fmi
-case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
-  /* Get Real parameters and their value references */
-  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1, "1.0")
-  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2, "1.0")
-  /* Get Integer parameters and their value references */
-  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1, "1.0")
-  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2, "1.0")
-  /* Get Boolean parameters and their value references */
-  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1, "1.0")
-  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2, "1.0")
-  /* Get String parameters and their value references */
-  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1, "1.0")
-  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2, "1.0")
-  /* Get dependent Real parameters and their value references */
-  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1, "1.0")
-  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2, "1.0")
-  /* Get dependent Integer parameters and their value references */
-  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1, "1.0")
-  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2, "1.0")
-  /* Get dependent Boolean parameters and their value references */
-  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1, "1.0")
-  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2, "1.0")
-  /* Get dependent String parameters and their value references */
-  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1, "1.0")
-  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2, "1.0")
-  /* Get input Real varibales and their value references */
-  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1, "1.0")
-  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2, "1.0")
-  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3, "1.0")
-  /* Get input Integer varibales and their value references */
-  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1, "1.0")
-  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2, "1.0")
-  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3, "1.0")
-  /* Get input Boolean varibales and their value references */
-  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1, "1.0")
-  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2, "1.0")
-  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3, "1.0")
-  /* Get input String varibales and their value references */
-  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1, "1.0")
-  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2, "1.0")
-  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3, "1.0")
-  /* Get output Real varibales and their value references */
-  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1, "1.0")
-  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2, "1.0")
-  /* Get output Integer varibales and their value references */
-  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1, "1.0")
-  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2, "1.0")
-  /* Get output Boolean varibales and their value references */
-  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1, "1.0")
-  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2, "1.0")
-  /* Get output String varibales and their value references */
-  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1, "1.0")
-  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2, "1.0")
-  <<
-  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
-    <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
-    constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
-    parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
-    parameter Boolean debugLogging = <%fmiDebugOutput%> "enables the FMU simulation logging" annotation (Dialog(tab="FMI", group="Enable logging"));
-    <%dumpFMIModelVariablesList("1.0", fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
-  protected
-    FMI1ModelExchange fmi1me = FMI1ModelExchange(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging);
-    constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
-    Real fmi_x[numberOfContinuousStates] "States";
-    Real fmi_x_new[numberOfContinuousStates](each fixed = true) "New States";
-    constant Integer numberOfEventIndicators = <%listLength(fmiInfo.fmiNumberOfEventIndicators)%>;
-    Real fmi_z[numberOfEventIndicators] "Events Indicators";
-    Boolean fmi_z_positive[numberOfEventIndicators](each fixed = true);
-    parameter Real flowStartTime(fixed=false);
-    Real flowTime;
-    parameter Real flowInitialized(fixed=false);
-    parameter Real flowParamsStart(fixed=false);
-    parameter Real flowInitInputs(fixed=false);
-    Real flowStatesInputs;
-    <%if not stringEq(realInputVariablesVRs, "") then "Real "+realInputVariablesReturnNames+";"%>
-    <%if not stringEq(integerInputVariablesVRs, "") then "Integer "+integerInputVariablesReturnNames+";"%>
-    <%if not stringEq(booleanInputVariablesVRs, "") then "Boolean "+booleanInputVariablesReturnNames+";"%>
-    <%if not stringEq(stringInputVariablesVRs, "") then "String "+stringInputVariablesReturnNames+";"%>
-    Boolean callEventUpdate;
-    constant Boolean intermediateResults = false;
-    Boolean newStatesAvailable(fixed = true);
-    Real triggerDSSEvent;
-    Real nextEventTime;
-  initial equation
-    flowStartTime = fmi1Functions.fmi1SetTime(fmi1me, time, 1);
-    flowInitialized = fmi1Functions.fmi1Initialize(fmi1me, flowParamsStart+flowInitInputs+flowStartTime);
-    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
-    <<
-    fmi_x = fmi1Functions.fmi1GetContinuousStates(fmi1me, numberOfContinuousStates, flowParamsStart+flowInitialized);
-    >>
-    %>
-  initial algorithm
-    flowParamsStart := 1;
-    <%if not stringEq(realParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetRealParameter(fmi1me, {"+realParametersVRs+"}, {"+realParametersNames+"});"%>
-    <%if not stringEq(integerParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetIntegerParameter(fmi1me, {"+integerParametersVRs+"}, {"+integerParametersNames+"});"%>
-    <%if not stringEq(booleanParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetBooleanParameter(fmi1me, {"+booleanParametersVRs+"}, {"+booleanParametersNames+"});"%>
-    <%if not stringEq(stringParametersVRs, "") then "flowParamsStart := fmi1Functions.fmi1SetStringParameter(fmi1me, {"+stringParametersVRs+"}, {"+stringParametersNames+"});"%>
-    flowInitInputs := 1;
-  initial equation
-    <%if not stringEq(realDependentParametersVRs, "") then "{"+realDependentParametersNames+"} = fmi1Functions.fmi1GetReal(fmi1me, {"+realDependentParametersVRs+"}, flowInitialized);"%>
-    <%if not stringEq(integerDependentParametersVRs, "") then "{"+integerDependentParametersNames+"} = fmi1Functions.fmi1GetInteger(fmi1me, {"+integerDependentParametersVRs+"}, flowInitialized);"%>
-    <%if not stringEq(booleanDependentParametersVRs, "") then "{"+booleanDependentParametersNames+"} = fmi1Functions.fmi1GetBoolean(fmi1me, {"+booleanDependentParametersVRs+"}, flowInitialized);"%>
-    <%if not stringEq(stringDependentParametersVRs, "") then "{"+stringDependentParametersNames+"} = fmi1Functions.fmi1GetString(fmi1me, {"+stringDependentParametersVRs+"}, flowInitialized);"%>
-  equation
-    flowTime = fmi1Functions.fmi1SetTime(fmi1me, time, flowInitialized);
-    <%if not stringEq(realInputVariablesVRs, "") then "{"+realInputVariablesReturnNames+"} = fmi1Functions.fmi1SetReal(fmi1me, {"+realInputVariablesVRs+"}, {"+realInputVariablesNames+"});"%>
-    <%if not stringEq(integerInputVariablesVRs, "") then "{"+integerInputVariablesReturnNames+"} = fmi1Functions.fmi1SetInteger(fmi1me, {"+integerInputVariablesVRs+"}, {"+integerInputVariablesNames+"});"%>
-    <%if not stringEq(booleanInputVariablesVRs, "") then "{"+booleanInputVariablesReturnNames+"} = fmi1Functions.fmi1SetBoolean(fmi1me, {"+booleanInputVariablesVRs+"}, {"+booleanInputVariablesNames+"});"%>
-    <%if not stringEq(stringInputVariablesVRs, "") then "{"+stringInputVariablesReturnNames+"} = fmi1Functions.fmi1SetString(fmi1me, {"+stringInputVariablesVRs+"}, {"+stringStartVariablesNames+"});"%>
-    flowStatesInputs = fmi1Functions.fmi1SetContinuousStates(fmi1me, fmi_x, flowParamsStart + flowTime);
-    der(fmi_x) = fmi1Functions.fmi1GetDerivatives(fmi1me, numberOfContinuousStates, flowStatesInputs);
-    fmi_z  = fmi1Functions.fmi1GetEventIndicators(fmi1me, numberOfEventIndicators, flowStatesInputs);
-    for i in 1:size(fmi_z,1) loop
-      fmi_z_positive[i] = if not terminal() then fmi_z[i] > 0 else pre(fmi_z_positive[i]);
-    end for;
-    callEventUpdate = fmi1Functions.fmi1CompletedIntegratorStep(fmi1me, flowStatesInputs);
-    triggerDSSEvent = noEvent(if callEventUpdate then flowStatesInputs+1.0 else flowStatesInputs-1.0);
-    nextEventTime = fmi1Functions.fmi1nextEventTime(fmi1me, flowStatesInputs);
-    <%if not boolAnd(stringEq(realOutputVariablesNames, ""), stringEq(realOutputVariablesVRs, "")) then "{"+realOutputVariablesNames+"} = fmi1Functions.fmi1GetReal(fmi1me, {"+realOutputVariablesVRs+"}, flowStatesInputs);"%>
-    <%if not boolAnd(stringEq(integerOutputVariablesNames, ""), stringEq(integerOutputVariablesVRs, "")) then "{"+integerOutputVariablesNames+"} = fmi1Functions.fmi1GetInteger(fmi1me, {"+integerOutputVariablesVRs+"}, flowStatesInputs);"%>
-    <%if not boolAnd(stringEq(booleanOutputVariablesNames, ""), stringEq(booleanOutputVariablesVRs, "")) then "{"+booleanOutputVariablesNames+"} = fmi1Functions.fmi1GetBoolean(fmi1me, {"+booleanOutputVariablesVRs+"}, flowStatesInputs);"%>
-    <%if not boolAnd(stringEq(stringOutputVariablesNames, ""), stringEq(stringOutputVariablesVRs, "")) then "{"+stringOutputVariablesNames+"} = fmi1Functions.fmi1GetString(fmi1me, {"+stringOutputVariablesVRs+"}, flowStatesInputs);"%>
-    <%dumpOutputGetEnumerationVariables(fmiModelVariablesList, fmiTypeDefinitionsList, "fmi1Functions.fmi1GetInteger", "fmi1me")%>
-  algorithm
-  <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
-  <<
-    when {<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>, triggerDSSEvent > flowStatesInputs, nextEventTime < time, terminal()} then
-  >>
-  else
-  <<
-    when {triggerDSSEvent > flowStatesInputs, nextEventTime < time, terminal()} then
-  >>
-  %>
-      newStatesAvailable := fmi1Functions.fmi1EventUpdate(fmi1me, intermediateResults);
-  <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
-  <<
-      if newStatesAvailable then
-        fmi_x_new := fmi1Functions.fmi1GetContinuousStates(fmi1me, numberOfContinuousStates, flowStatesInputs);
-        <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
-      end if;
-  >>
-  %>
-    end when;
-    annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
-    annotation (Icon(graphics={
-        Rectangle(
-          extent={{-100,100},{100,-100}},
-          lineColor={0,0,0},
-          fillColor={240,240,240},
-          fillPattern=FillPattern.Solid,
-          lineThickness=0.5),
-        Text(
-          extent={{-100,40},{100,0}},
-          lineColor={0,0,0},
-          textString="%name"),
-        Text(
-          extent={{-100,-50},{100,-90}},
-          lineColor={0,0,0},
-          textString="V1.0")}));
-  protected
-    class FMI1ModelExchange
-      extends ExternalObject;
-        function constructor
-          input Integer logLevel;
-          input String workingDirectory;
-          input String instanceName;
-          input Boolean debugLogging;
-          output FMI1ModelExchange fmi1me;
-          external "C" fmi1me = FMI1ModelExchangeConstructor_OMC(logLevel, workingDirectory, instanceName, debugLogging) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-        end constructor;
-
-        function destructor
-          input FMI1ModelExchange fmi1me;
-          external "C" FMI1ModelExchangeDestructor_OMC(fmi1me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-        end destructor;
-    end FMI1ModelExchange;
-
-    <%dumpFMITypeDefinitionsMappingFunctions(fmiTypeDefinitionsList)%>
-
-    <%dumpFMITypeDefinitionsArrayMappingFunctions(fmiTypeDefinitionsList)%>
-
-    package fmi1Functions
-      function fmi1Initialize
-        input FMI1ModelExchange fmi1me;
-        input Real preInitialized;
-        output Real postInitialized=preInitialized;
-        external "C" fmi1Initialize_OMC(fmi1me) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1Initialize;
-
-      function fmi1SetTime
-        input FMI1ModelExchange fmi1me;
-        input Real inTime;
-        input Real inFlow;
-        output Real outFlow = inFlow;
-        external "C" fmi1SetTime_OMC(fmi1me, inTime) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetTime;
-
-      function fmi1GetContinuousStates
-        input FMI1ModelExchange fmi1me;
-        input Integer numberOfContinuousStates;
-        input Real inFlowParams;
-        output Real fmi_x[numberOfContinuousStates];
-        external "C" fmi1GetContinuousStates_OMC(fmi1me, numberOfContinuousStates, inFlowParams, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetContinuousStates;
-
-      function fmi1SetContinuousStates
-        input FMI1ModelExchange fmi1me;
-        input Real fmi_x[:];
-        input Real inFlowParams;
-        output Real outFlowStates;
-        external "C" outFlowStates = fmi1SetContinuousStates_OMC(fmi1me, size(fmi_x, 1), inFlowParams, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetContinuousStates;
-
-      function fmi1GetDerivatives
-        input FMI1ModelExchange fmi1me;
-        input Integer numberOfContinuousStates;
-        input Real inFlowStates;
-        output Real fmi_x[numberOfContinuousStates];
-        external "C" fmi1GetDerivatives_OMC(fmi1me, numberOfContinuousStates, inFlowStates, fmi_x) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetDerivatives;
-
-      function fmi1GetEventIndicators
-        input FMI1ModelExchange fmi1me;
-        input Integer numberOfEventIndicators;
-        input Real inFlowStates;
-        output Real fmi_z[numberOfEventIndicators];
-        external "C" fmi1GetEventIndicators_OMC(fmi1me, numberOfEventIndicators, inFlowStates, fmi_z) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetEventIndicators;
-
-      function fmi1GetReal
-        input FMI1ModelExchange fmi1me;
-        input Real realValuesReferences[:];
-        input Real inFlowStatesInput;
-        output Real realValues[size(realValuesReferences, 1)];
-        external "C" fmi1GetReal_OMC(fmi1me, size(realValuesReferences, 1), realValuesReferences, inFlowStatesInput, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetReal;
-
-      function fmi1SetReal
-        input FMI1ModelExchange fmi1me;
-        input Real realValueReferences[:];
-        input Real realValues[size(realValueReferences, 1)];
-        output Real outValues[size(realValueReferences, 1)] = realValues;
-        external "C" fmi1SetReal_OMC(fmi1me, size(realValueReferences, 1), realValueReferences, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetReal;
-
-      function fmi1SetRealParameter
-        input FMI1ModelExchange fmi1me;
-        input Real realValueReferences[:];
-        input Real realValues[size(realValueReferences, 1)];
-        output Real out_Value = 1;
-        external "C" fmi1SetReal_OMC(fmi1me, size(realValueReferences, 1), realValueReferences, realValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetRealParameter;
-
-      function fmi1GetInteger
-        input FMI1ModelExchange fmi1me;
-        input Real integerValueReferences[:];
-        input Real inFlowStatesInput;
-        output Integer integerValues[size(integerValueReferences, 1)];
-        external "C" fmi1GetInteger_OMC(fmi1me, size(integerValueReferences, 1), integerValueReferences, inFlowStatesInput, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetInteger;
-
-      function fmi1SetInteger
-        input FMI1ModelExchange fmi1me;
-        input Real integerValuesReferences[:];
-        input Integer integerValues[size(integerValuesReferences, 1)];
-        output Integer outValues[size(integerValuesReferences, 1)] = integerValues;
-        external "C" fmi1SetInteger_OMC(fmi1me, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetInteger;
-
-      function fmi1SetIntegerParameter
-        input FMI1ModelExchange fmi1me;
-        input Real integerValuesReferences[:];
-        input Integer integerValues[size(integerValuesReferences, 1)];
-        output Real out_Value = 1;
-        external "C" fmi1SetInteger_OMC(fmi1me, size(integerValuesReferences, 1), integerValuesReferences, integerValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetIntegerParameter;
-
-      function fmi1GetBoolean
-        input FMI1ModelExchange fmi1me;
-        input Real booleanValuesReferences[:];
-        input Real inFlowStatesInput;
-        output Boolean booleanValues[size(booleanValuesReferences, 1)];
-        external "C" fmi1GetBoolean_OMC(fmi1me, size(booleanValuesReferences, 1), booleanValuesReferences, inFlowStatesInput, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetBoolean;
-
-      function fmi1SetBoolean
-        input FMI1ModelExchange fmi1me;
-        input Real booleanValueReferences[:];
-        input Boolean booleanValues[size(booleanValueReferences, 1)];
-        output Boolean outValues[size(booleanValueReferences, 1)] = booleanValues;
-        external "C" fmi1SetBoolean_OMC(fmi1me, size(booleanValueReferences, 1), booleanValueReferences, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetBoolean;
-
-      function fmi1SetBooleanParameter
-        input FMI1ModelExchange fmi1me;
-        input Real booleanValueReferences[:];
-        input Boolean booleanValues[size(booleanValueReferences, 1)];
-        output Real out_Value = 1;
-        external "C" fmi1SetBoolean_OMC(fmi1me, size(booleanValueReferences, 1), booleanValueReferences, booleanValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetBooleanParameter;
-
-      function fmi1GetString
-        input FMI1ModelExchange fmi1me;
-        input Real stringValuesReferences[:];
-        input Real inFlowStatesInput;
-        output String stringValues[size(stringValuesReferences, 1)];
-        external "C" fmi1GetString_OMC(fmi1me, size(stringValuesReferences, 1), stringValuesReferences, inFlowStatesInput, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetString;
-
-      function fmi1SetString
-        input FMI1ModelExchange fmi1me;
-        input Real stringValueReferences[:];
-        input String stringValues[size(stringValueReferences, 1)];
-        output String outValues[size(stringValueReferences, 1)] = stringValues;
-        external "C" fmi1SetString_OMC(fmi1me, size(stringValueReferences, 1), stringValueReferences, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetString;
-
-      function fmi1SetStringParameter
-        input FMI1ModelExchange fmi1me;
-        input Real stringValueReferences[:];
-        input String stringValues[size(stringValueReferences, 1)];
-        output Real out_Value = 1;
-        external "C" fmi1SetString_OMC(fmi1me, size(stringValueReferences, 1), stringValueReferences, stringValues, 1) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetStringParameter;
-
-      function fmi1EventUpdate
-        input FMI1ModelExchange fmi1me;
-        input Boolean intermediateResults;
-        output Boolean outNewStatesAvailable;
-        external "C" outNewStatesAvailable = fmi1EventUpdate_OMC(fmi1me, intermediateResults) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1EventUpdate;
-
-      function fmi1nextEventTime
-        input FMI1ModelExchange fmi1me;
-        input Real inFlowStates;
-        output Real outNewnextTime;
-        external "C" outNewnextTime = fmi1nextEventTime_OMC(fmi1me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1nextEventTime;
-
-      function fmi1CompletedIntegratorStep
-        input FMI1ModelExchange fmi1me;
-        input Real inFlowStates;
-        output Boolean outCallEventUpdate;
-        external "C" outCallEventUpdate = fmi1CompletedIntegratorStep_OMC(fmi1me, inFlowStates) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1CompletedIntegratorStep;
-    end fmi1Functions;
-  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
-  >>
-end importFMU1ModelExchange;
 
 template importFMU2ModelExchange(FmiImport fmi)
  "Generates Modelica code for FMI Model Exchange version 2.0"
@@ -2307,232 +1951,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   >>
 end importFMU2ModelExchange;
 
-template importFMU1CoSimulationStandAlone(FmiImport fmi)
- "Generates Modelica code for FMI Co-simulation stand alone version 1.0"
-::=
-match fmi
-case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
-  /* Get Real parameters and their value references */
-  let realParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 1, "1.0")
-  let realParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", false, 2, "1.0")
-  /* Get Integer parameters and their value references */
-  let integerParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 1, "1.0")
-  let integerParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", false, 2, "1.0")
-  /* Get Boolean parameters and their value references */
-  let booleanParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 1, "1.0")
-  let booleanParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", false, 2, "1.0")
-  /* Get String parameters and their value references */
-  let stringParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 1, "1.0")
-  let stringParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", false, 2, "1.0")
-  /* Get dependent Real parameters and their value references */
-  let realDependentParametersVRs = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 1, "1.0")
-  let realDependentParametersNames = dumpVariables(fmiModelVariablesList, "real", "parameter", true, 2, "1.0")
-  /* Get dependent Integer parameters and their value references */
-  let integerDependentParametersVRs = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 1, "1.0")
-  let integerDependentParametersNames = dumpVariables(fmiModelVariablesList, "integer", "parameter", true, 2, "1.0")
-  /* Get dependent Boolean parameters and their value references */
-  let booleanDependentParametersVRs = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 1, "1.0")
-  let booleanDependentParametersNames = dumpVariables(fmiModelVariablesList, "boolean", "parameter", true, 2, "1.0")
-  /* Get dependent String parameters and their value references */
-  let stringDependentParametersVRs = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 1, "1.0")
-  let stringDependentParametersNames = dumpVariables(fmiModelVariablesList, "string", "parameter", true, 2, "1.0")
-  /* Get input Real varibales and their value references */
-  let realInputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "input", false, 1, "1.0")
-  let realInputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 2, "1.0")
-  let realInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "real", "input", false, 3, "1.0")
-  /* Get input Integer varibales and their value references */
-  let integerInputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "input", false, 1, "1.0")
-  let integerInputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 2, "1.0")
-  let integerInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "integer", "input", false, 3, "1.0")
-  /* Get input Boolean varibales and their value references */
-  let booleanInputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 1, "1.0")
-  let booleanInputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 2, "1.0")
-  let booleanInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "boolean", "input", false, 3, "1.0")
-  /* Get input String varibales and their value references */
-  let stringInputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "input", false, 1, "1.0")
-  let stringStartVariablesNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 2, "1.0")
-  let stringInputVariablesReturnNames = dumpVariables(fmiModelVariablesList, "string", "input", false, 3, "1.0")
-  /* Get output Real varibales and their value references */
-  let realOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "real", "output", false, 1, "1.0")
-  let realOutputVariablesNames = dumpVariables(fmiModelVariablesList, "real", "output", false, 2, "1.0")
-  /* Get output Integer varibales and their value references */
-  let integerOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "integer", "output", false, 1, "1.0")
-  let integerOutputVariablesNames = dumpVariables(fmiModelVariablesList, "integer", "output", false, 2, "1.0")
-  /* Get output Boolean varibales and their value references */
-  let booleanOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 1, "1.0")
-  let booleanOutputVariablesNames = dumpVariables(fmiModelVariablesList, "boolean", "output", false, 2, "1.0")
-  /* Get output String varibales and their value references */
-  let stringOutputVariablesVRs = dumpVariables(fmiModelVariablesList, "string", "output", false, 1, "1.0")
-  let stringOutputVariablesNames = dumpVariables(fmiModelVariablesList, "string", "output", false, 2, "1.0")
-  <<
-  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
-    <%dumpFMITypeDefinitions(fmiTypeDefinitionsList)%>
-    constant String fmuLocation = "file://<%fmuWorkingDirectory%>/resources";
-    constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
-    parameter Integer logLevel = <%fmiLogLevel%> "log level used during the loading of FMU" annotation (Dialog(tab="FMI", group="Enable logging"));
-    parameter Boolean debugLogging = <%fmiDebugOutput%> "enables the FMU simulation logging" annotation (Dialog(tab="FMI", group="Enable logging"));
-    constant String mimeType = "";
-    constant Real timeout = 0.0;
-    constant Boolean visible = false;
-    constant Boolean interactive = false;
-    parameter Real startTime = <%fmiExperimentAnnotation.fmiExperimentStartTime%> "start time used to initialize the slave" annotation (Dialog(tab="FMI", group="Step time"));
-    parameter Real stopTime = <%fmiExperimentAnnotation.fmiExperimentStopTime%> "stop time used to initialize the slave" annotation (Dialog(tab="FMI", group="Step time"));
-    parameter Real numberOfSteps = 500 annotation (Dialog(tab="FMI", group="Step time"));
-    parameter Real communicationStepSize = (stopTime-startTime)/numberOfSteps "step size used by fmiDoStep" annotation (Dialog(tab="FMI", group="Step time"));
-    constant Boolean stopTimeDefined = true;
-    <%dumpFMIModelVariablesList("1.0", fmiModelVariablesList, fmiTypeDefinitionsList, generateInputConnectors, generateOutputConnectors)%>
-  protected
-    FMI1CoSimulation fmi1cs = FMI1CoSimulation(logLevel, fmuWorkingDir, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, fmuLocation, mimeType, timeout, visible, interactive, startTime, stopTimeDefined, stopTime);
-    parameter Real flowInitialized(fixed=false);
-    Real flowStep;
-    <%if not stringEq(realInputVariablesVRs, "") then "Real "+realInputVariablesReturnNames+";"%>
-    <%if not stringEq(integerInputVariablesVRs, "") then "Integer "+integerInputVariablesReturnNames+";"%>
-    <%if not stringEq(booleanInputVariablesVRs, "") then "Boolean "+booleanInputVariablesReturnNames+";"%>
-    <%if not stringEq(stringInputVariablesVRs, "") then "String "+stringInputVariablesReturnNames+";"%>
-  initial equation
-    flowInitialized = fmi1Functions.fmi1InitializeSlave(fmi1cs, 1);
-  equation
-    <%if not boolAnd(stringEq(realOutputVariablesNames, ""), stringEq(realOutputVariablesVRs, "")) then "{"+realOutputVariablesNames+"} = fmi1Functions.fmi1GetReal(fmi1cs, {"+realOutputVariablesVRs+"}, flowInitialized);"%>
-    <%if not boolAnd(stringEq(integerOutputVariablesNames, ""), stringEq(integerOutputVariablesVRs, "")) then "{"+integerOutputVariablesNames+"} = fmi1Functions.fmi1GetInteger(fmi1cs, {"+integerOutputVariablesVRs+"}, flowInitialized);"%>
-    <%if not boolAnd(stringEq(booleanOutputVariablesNames, ""), stringEq(booleanOutputVariablesVRs, "")) then "{"+booleanOutputVariablesNames+"} = fmi1Functions.fmi1GetBoolean(fmi1cs, {"+booleanOutputVariablesVRs+"}, flowInitialized);"%>
-    <%if not boolAnd(stringEq(stringOutputVariablesNames, ""), stringEq(stringOutputVariablesVRs, "")) then "{"+stringOutputVariablesNames+"} = fmi1Functions.fmi1GetString(fmi1cs, {"+stringOutputVariablesVRs+"}, flowInitialized);"%>
-    <%if not stringEq(realInputVariablesVRs, "") then "{"+realInputVariablesReturnNames+"} = fmi1Functions.fmi1SetReal(fmi1cs, {"+realInputVariablesVRs+"}, {"+realInputVariablesNames+"});"%>
-    <%if not stringEq(integerInputVariablesVRs, "") then "{"+integerInputVariablesReturnNames+"} = fmi1Functions.fmi1SetInteger(fmi1cs, {"+integerInputVariablesVRs+"}, {"+integerInputVariablesNames+"});"%>
-    <%if not stringEq(booleanInputVariablesVRs, "") then "{"+booleanInputVariablesReturnNames+"} = fmi1Functions.fmi1SetBoolean(fmi1cs, {"+booleanInputVariablesVRs+"}, {"+booleanInputVariablesNames+"});"%>
-    <%if not stringEq(stringInputVariablesVRs, "") then "{"+stringInputVariablesReturnNames+"} = fmi1Functions.fmi1SetString(fmi1cs, {"+stringInputVariablesVRs+"}, {"+stringStartVariablesNames+"});"%>
-    flowStep = fmi1Functions.fmi1DoStep(fmi1cs, time, communicationStepSize, true, flowInitialized);
-    annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
-    annotation (Icon(graphics={
-        Rectangle(
-          extent={{-100,100},{100,-100}},
-          lineColor={0,0,0},
-          fillColor={240,240,240},
-          fillPattern=FillPattern.Solid,
-          lineThickness=0.5),
-        Text(
-          extent={{-100,40},{100,0}},
-          lineColor={0,0,0},
-          textString="%name"),
-        Text(
-          extent={{-100,-50},{100,-90}},
-          lineColor={0,0,0},
-          textString="V1.0")}));
-  protected
-    class FMI1CoSimulation
-      extends ExternalObject;
-        function constructor
-          input Integer fmiLogLevel;
-          input String workingDirectory;
-          input String instanceName;
-          input Boolean debugLogging;
-          input String fmuLocation;
-          input String mimeType;
-          input Real timeOut;
-          input Boolean visible;
-          input Boolean interactive;
-          input Real tStart;
-          input Boolean stopTimeDefined;
-          input Real tStop;
-          output FMI1CoSimulation fmi1cs;
-          external "C" fmi1cs = FMI1CoSimulationConstructor_OMC(fmiLogLevel, workingDirectory, instanceName, debugLogging, fmuLocation, mimeType, timeOut, visible, interactive, tStart, stopTimeDefined, tStop) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-        end constructor;
-
-        function destructor
-          input FMI1CoSimulation fmi1cs;
-          external "C" FMI1CoSimulationDestructor_OMC(fmi1cs) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-        end destructor;
-    end FMI1CoSimulation;
-
-    <%dumpFMITypeDefinitionsMappingFunctions(fmiTypeDefinitionsList)%>
-
-    <%dumpFMITypeDefinitionsArrayMappingFunctions(fmiTypeDefinitionsList)%>
-
-    package fmi1Functions
-      function fmi1InitializeSlave
-        input FMI1CoSimulation fmi1cs;
-        input Real preInitialized;
-        output Real postInitialized=preInitialized;
-        external "C" fmi1InitializeSlave_OMC(fmi1cs) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1InitializeSlave;
-
-      function fmi1DoStep
-        input FMI1CoSimulation fmi1cs;
-        input Real currentCommunicationPoint;
-        input Real communicationStepSize;
-        input Boolean newStep;
-        input Real preInitialized;
-        output Real postInitialized=preInitialized;
-        external "C" fmi1DoStep_OMC(fmi1cs, currentCommunicationPoint, communicationStepSize, newStep) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1DoStep;
-
-      function fmi1GetReal
-        input FMI1CoSimulation fmi1cs;
-        input Real realValuesReferences[:];
-        input Real inFlowStatesInput;
-        output Real realValues[size(realValuesReferences, 1)];
-        external "C" fmi1GetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, inFlowStatesInput, realValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetReal;
-
-      function fmi1SetReal
-        input FMI1CoSimulation fmi1cs;
-        input Real realValuesReferences[:];
-        input Real realValues[size(realValuesReferences, 1)];
-        output Real out_Values[size(realValuesReferences, 1)];
-        external "C" fmi1SetReal_OMC(fmi1cs, size(realValuesReferences, 1), realValuesReferences, realValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetReal;
-
-      function fmi1GetInteger
-        input FMI1CoSimulation fmi1cs;
-        input Real integerValuesReferences[:];
-        input Real inFlowStatesInput;
-        output Integer integerValues[size(integerValuesReferences, 1)];
-        external "C" fmi1GetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, inFlowStatesInput, integerValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetInteger;
-
-      function fmi1SetInteger
-        input FMI1CoSimulation fmi1cs;
-        input Real integerValuesReferences[:];
-        input Integer integerValues[size(integerValuesReferences, 1)];
-        output Real out_Values[size(integerValuesReferences, 1)];
-        external "C" fmi1SetInteger_OMC(fmi1cs, size(integerValuesReferences, 1), integerValuesReferences, integerValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetInteger;
-
-      function fmi1GetBoolean
-        input FMI1CoSimulation fmi1cs;
-        input Real booleanValuesReferences[:];
-        input Real inFlowStatesInput;
-        output Boolean booleanValues[size(booleanValuesReferences, 1)];
-        external "C" fmi1GetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, inFlowStatesInput, booleanValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetBoolean;
-
-      function fmi1SetBoolean
-        input FMI1CoSimulation fmi1cs;
-        input Real booleanValuesReferences[:];
-        input Boolean booleanValues[size(booleanValuesReferences, 1)];
-        output Boolean out_Values[size(booleanValuesReferences, 1)];
-        external "C" fmi1SetBoolean_OMC(fmi1cs, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetBoolean;
-
-      function fmi1GetString
-        input FMI1CoSimulation fmi1cs;
-        input Real stringValuesReferences[:];
-        input Real inFlowStatesInput;
-        output String stringValues[size(stringValuesReferences, 1)];
-        external "C" fmi1GetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, inFlowStatesInput, stringValues, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1GetString;
-
-      function fmi1SetString
-        input FMI1CoSimulation fmi1cs;
-        input Real stringValuesReferences[:];
-        input String stringValues[size(stringValuesReferences, 1)];
-        output String out_Values[size(stringValuesReferences, 1)];
-        external "C" fmi1SetString_OMC(fmi1cs, size(stringValuesReferences, 1), stringValuesReferences, stringValues, out_Values, 2) annotation(Library = {"OpenModelicaFMIRuntimeC", "fmilib"});
-      end fmi1SetString;
-    end fmi1Functions;
-  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
-  >>
-end importFMU1CoSimulationStandAlone;
-
 template dumpFMITypeDefinitions(list<TypeDefinitions> fmiTypeDefinitionsList)
  "Generates the Type Definitions code."
 ::=
@@ -2648,28 +2066,7 @@ template dumpFMIModelVariable(String FMUVersion, ModelVariables fmiModelVariable
 ::=
 match FMUVersion
 case "1.0" then
-  match fmiModelVariable
-  case REALVARIABLE(__) then
-    <<
-    <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIRealModelVariableStartValue(FMUVersion, variability, hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
-    >>
-  case INTEGERVARIABLE(__) then
-    <<
-    <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIIntegerModelVariableStartValue(FMUVersion, variability, hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
-    >>
-  case BOOLEANVARIABLE(__) then
-    <<
-    <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIBooleanModelVariableStartValue(FMUVersion, variability, hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
-    >>
-  case STRINGVARIABLE(__) then
-    <<
-    <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIStringModelVariableStartValue(FMUVersion, variability, hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
-    >>
-  case ENUMERATIONVARIABLE(__) then
-    <<
-    <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIEnumerationModelVariableStartValue(fmiTypeDefinitionsList, baseType, hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(x1Placement, x2Placement, y1Placement, y2Placement, generateInputConnectors, generateOutputConnectors, causality)%>;
-    >>
-  end match
+  errorMsg("CodegenFMU.dumpFMIModelVariable: FMI1 not supported any more.")
 case "2.0" then
   match fmiModelVariable
   case REALVARIABLE(__) then
@@ -2724,15 +2121,7 @@ template dumpFMIRealModelVariableStartValue(String FMUVersion, String variabilit
 ::=
 match FMUVersion
 case "1.0" then
-  match variabilityCausality
-  case "parameter" then
-    if boolAnd(hasStartValue,isFixed) then " = "+startValue
-    else if boolAnd(hasStartValue,boolNot(isFixed)) then "(start="+startValue+",fixed=false)"
-    else if boolAnd(boolNot(hasStartValue),isFixed) then "(fixed=true)"
-    else if boolAnd(boolNot(hasStartValue),boolNot(isFixed)) then "(fixed=false)"
-  case "" then
-    if boolAnd(hasStartValue,boolNot(isFixed)) then "(start="+startValue+",fixed=false)"
-  end match
+  errorMsg("CodegenFMU.dumpFMIRealModelVariableStartValue: FMI1 not supported any more.")
 case "2.0" then
   match variabilityCausality
   case "parameter" then
@@ -2748,15 +2137,7 @@ template dumpFMIIntegerModelVariableStartValue(String FMUVersion, String variabi
 ::=
 match FMUVersion
 case "1.0" then
-  match variabilityCausality
-  case "parameter" then
-    if boolAnd(hasStartValue,isFixed) then " = "+startValue
-    else if boolAnd(hasStartValue,boolNot(isFixed)) then "(start="+startValue+",fixed=false)"
-    else if boolAnd(boolNot(hasStartValue),isFixed) then "(fixed=true)"
-    else if boolAnd(boolNot(hasStartValue),boolNot(isFixed)) then "(fixed=false)"
-  case "" then
-    if boolAnd(hasStartValue,boolNot(isFixed)) then "(start="+startValue+",fixed=false)"
-  end match
+  errorMsg("CodegenFMU.dumpFMIIntegerModelVariableStartValue: FMI1 not supported any more.")
 case "2.0" then
   match variabilityCausality
   case "parameter" then
@@ -2772,15 +2153,7 @@ template dumpFMIBooleanModelVariableStartValue(String FMUVersion, String variabi
 ::=
 match FMUVersion
 case "1.0" then
-  match variabilityCausality
-  case "parameter" then
-    if boolAnd(hasStartValue,isFixed) then " = "+startValue
-    else if boolAnd(hasStartValue,boolNot(isFixed)) then "(start="+startValue+",fixed=false)"
-    else if boolAnd(boolNot(hasStartValue),isFixed) then "(fixed=true)"
-    else if boolAnd(boolNot(hasStartValue),boolNot(isFixed)) then "(fixed=false)"
-  case "" then
-    if boolAnd(hasStartValue,boolNot(isFixed)) then "(start="+startValue+",fixed=false)"
-  end match
+  errorMsg("CodegenFMU.dumpFMIBooleanModelVariableStartValue: FMI1 not supported any more.")
 case "2.0" then
   match variabilityCausality
   case "parameter" then
@@ -2796,16 +2169,7 @@ template dumpFMIStringModelVariableStartValue(String FMUVersion, String variabil
 ::=
 match FMUVersion
 case "1.0" then
-  match variabilityCausality
-  case "parameter" then
-    if boolAnd(hasStartValue,isFixed) then " = \""+startValue+"\""
-    /* If we set fixed=false, we generate bad code; let make OM handle the bad values */
-    else if boolAnd(hasStartValue,boolNot(isFixed)) then "(start=\""+startValue+"\")"
-    else if boolAnd(boolNot(hasStartValue),isFixed) then "(fixed=true)"
-    else if boolAnd(boolNot(hasStartValue),boolNot(isFixed)) then "(fixed=false)"
-  case "" then
-    if boolAnd(hasStartValue,boolNot(isFixed)) then "(start=\""+startValue+"\",fixed=false)"
-  end match
+  errorMsg("CodegenFMU.dumpFMIStringModelVariableStartValue: FMI1 not supported any more.")
 case "2.0" then
   match variabilityCausality
   case "parameter" then
@@ -2845,191 +2209,166 @@ template dumpVariables(list<ModelVariables> fmiModelVariablesList, String type, 
 end dumpVariables;
 
 template dumpVariable(ModelVariables fmiModelVariable, String type, String variabilityCausality, Boolean dependent, Integer what, String fmiVersion)
+"Dump FMI 2.0 variable
+TODO: Move to CodegenFMU2.tpl"
 ::=
-if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
-<<
-<%
-if stringEq(fmiVersion,"1.0") then
-match fmiModelVariable
-  case REALVARIABLE(variability="parameter", hasStartValue=true) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-end match
-else if stringEq(fmiVersion,"2.0") then
-  match fmiModelVariable
-  case REALVARIABLE(causality="parameter", hasStartValue=true) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
-<<
-<%
-if stringEq(fmiVersion,"1.0") then
-match fmiModelVariable
-  case INTEGERVARIABLE(variability="parameter", hasStartValue=true) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-end match
-else if stringEq(fmiVersion,"2.0") then
-match fmiModelVariable
-  case INTEGERVARIABLE(causality="parameter", hasStartValue=true) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
-<<
-<%
-if stringEq(fmiVersion,"1.0") then
-match fmiModelVariable
-  case BOOLEANVARIABLE(variability="parameter", hasStartValue=true) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-end match
-else if stringEq(fmiVersion,"2.0") then
-match fmiModelVariable
-  case BOOLEANVARIABLE(causality="parameter", hasStartValue=true) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
-<<
-<%
-if stringEq(fmiVersion,"1.0") then
-match fmiModelVariable
-  case STRINGVARIABLE(variability="parameter", hasStartValue=true) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-end match
-else if stringEq(fmiVersion,"2.0") then
-match fmiModelVariable
-  case STRINGVARIABLE(causality="parameter", hasStartValue=true) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
-<<
-<%
-if stringEq(fmiVersion,"1.0") then
-match fmiModelVariable
-  case REALVARIABLE(variability="parameter",  hasStartValue=false, isFixed=false) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-end match
-else if stringEq(fmiVersion,"2.0") then
-match fmiModelVariable
-  case REALVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
-<<
-<%
-if stringEq(fmiVersion,"1.0") then
-match fmiModelVariable
-  case INTEGERVARIABLE(variability="parameter",  hasStartValue=false, isFixed=false) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-end match
-else if stringEq(fmiVersion,"2.0") then
-match fmiModelVariable
-  case INTEGERVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
-<<
-<%
-if stringEq(fmiVersion,"1.0") then
-match fmiModelVariable
-  case BOOLEANVARIABLE(variability="parameter",  hasStartValue=false, isFixed=false) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-end match
-else if stringEq(fmiVersion,"2.0") then
-match fmiModelVariable
-  case BOOLEANVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
-<<
-<%
-if stringEq(fmiVersion,"1.0") then
-match fmiModelVariable
-  case STRINGVARIABLE(variability="parameter",  hasStartValue=false, isFixed=false) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-end match
-else if stringEq(fmiVersion,"2.0") then
-match fmiModelVariable
-  case STRINGVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "real"), stringEq(variabilityCausality, "input")) then
-<<
-<%
-match fmiModelVariable
-  case REALVARIABLE(causality="input") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
-%>
->>
-else if boolAnd(stringEq(type, "integer"), stringEq(variabilityCausality, "input")) then
-<<
-<%
-match fmiModelVariable
-  case INTEGERVARIABLE(causality="input") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
-%>
->>
-else if boolAnd(stringEq(type, "boolean"), stringEq(variabilityCausality, "input")) then
-<<
-<%
-match fmiModelVariable
-  case BOOLEANVARIABLE(causality="input") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
-%>
->>
-else if boolAnd(stringEq(type, "string"), stringEq(variabilityCausality, "input")) then
-<<
-<%
-match fmiModelVariable
-  case STRINGVARIABLE(causality="input") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
-%>
->>
-else if boolAnd(stringEq(type, "real"), stringEq(variabilityCausality, "output")) then
-<<
-<%
-match fmiModelVariable
-  case REALVARIABLE(variability = "",causality="") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-  case REALVARIABLE(variability = "",causality="output") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "integer"), stringEq(variabilityCausality, "output")) then
-<<
-<%
-match fmiModelVariable
-  case INTEGERVARIABLE(variability = "",causality="") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-  case INTEGERVARIABLE(variability = "",causality="output") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "boolean"), stringEq(variabilityCausality, "output")) then
-<<
-<%
-match fmiModelVariable
-  case BOOLEANVARIABLE(variability = "",causality="") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-  case BOOLEANVARIABLE(variability = "",causality="output") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
-else if boolAnd(stringEq(type, "string"), stringEq(variabilityCausality, "output")) then
-<<
-<%
-match fmiModelVariable
-  case STRINGVARIABLE(variability = "",causality="") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-  case STRINGVARIABLE(variability = "",causality="output") then
-    if intEq(what,1) then valueReference else if intEq(what,2) then name
-%>
->>
+  // TODO: Check if fmiVersion is "2.0"
+
+  // Real non-dependent parameter
+  if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
+    <<
+    <%
+      match fmiModelVariable
+      case REALVARIABLE(causality="parameter", hasStartValue=true) then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+      end match
+    %>
+    >>
+  // Integer non-dependent parameter
+  else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
+    <<
+    <%
+    match fmiModelVariable
+      case INTEGERVARIABLE(causality="parameter", hasStartValue=true) then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // Boolean non-dependent parameter
+  else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
+    <<
+    <%
+    match fmiModelVariable
+      case BOOLEANVARIABLE(causality="parameter", hasStartValue=true) then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // String non-dependent parameter
+  else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality, "parameter"), boolNot(dependent)))) then
+    <<
+    <%
+    match fmiModelVariable
+      case STRINGVARIABLE(causality="parameter", hasStartValue=true) then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // Real dependent parameter
+  else if boolAnd(stringEq(type, "real"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
+    <<
+    <%
+    match fmiModelVariable
+      case REALVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // Integer dependent parameter
+  else if boolAnd(stringEq(type, "integer"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
+    <<
+    <%
+    match fmiModelVariable
+      case INTEGERVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // Boolean dependent parameter
+  else if boolAnd(stringEq(type, "boolean"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
+    <<
+    <%
+    match fmiModelVariable
+      case BOOLEANVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+   // String dependent parameter
+  else if boolAnd(stringEq(type, "string"), (boolAnd(stringEq(variabilityCausality, "parameter"), dependent))) then
+    <<
+    <%
+    match fmiModelVariable
+      case STRINGVARIABLE(causality="parameter", hasStartValue=false, isFixed=false) then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // Real input
+  else if boolAnd(stringEq(type, "real"), stringEq(variabilityCausality, "input")) then
+    <<
+    <%
+    match fmiModelVariable
+      case REALVARIABLE(causality="input") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
+    %>
+    >>
+  // Integer input
+  else if boolAnd(stringEq(type, "integer"), stringEq(variabilityCausality, "input")) then
+    <<
+    <%
+    match fmiModelVariable
+      case INTEGERVARIABLE(causality="input") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
+    %>
+    >>
+  // Boolean input
+  else if boolAnd(stringEq(type, "boolean"), stringEq(variabilityCausality, "input")) then
+  <<
+    <%
+    match fmiModelVariable
+      case BOOLEANVARIABLE(causality="input") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
+    %>
+    >>
+  // String input
+  else if boolAnd(stringEq(type, "string"), stringEq(variabilityCausality, "input")) then
+    <<
+    <%
+    match fmiModelVariable
+      case STRINGVARIABLE(causality="input") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name else if intEq(what,3) then "fmi_input_"+name
+    %>
+    >>
+  // Real output
+  else if boolAnd(stringEq(type, "real"), stringEq(variabilityCausality, "output")) then
+    <<
+    <%
+    match fmiModelVariable
+      case REALVARIABLE(variability = "",causality="") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+      case REALVARIABLE(variability = "",causality="output") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // Integer output
+  else if boolAnd(stringEq(type, "integer"), stringEq(variabilityCausality, "output")) then
+    <<
+    <%
+    match fmiModelVariable
+      case INTEGERVARIABLE(variability = "",causality="") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+      case INTEGERVARIABLE(variability = "",causality="output") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // Boolean output
+  else if boolAnd(stringEq(type, "boolean"), stringEq(variabilityCausality, "output")) then
+    <<
+    <%
+    match fmiModelVariable
+      case BOOLEANVARIABLE(variability = "",causality="") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+      case BOOLEANVARIABLE(variability = "",causality="output") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  // String output
+  else if boolAnd(stringEq(type, "string"), stringEq(variabilityCausality, "output")) then
+    <<
+    <%
+    match fmiModelVariable
+      case STRINGVARIABLE(variability = "",causality="") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+      case STRINGVARIABLE(variability = "",causality="output") then
+        if intEq(what,1) then valueReference else if intEq(what,2) then name
+    %>
+    >>
+  else
+    errorMsg("CodegenFMU.dumpVariable: Unknown combination of type, variabilityCausality and dependency.")
 end dumpVariable;
 
 template dumpOutputGetEnumerationVariables(list<ModelVariables> fmiModelVariablesList, list<TypeDefinitions> fmiTypeDefinitionsList, String fmiGetFunction, String fmiType)
