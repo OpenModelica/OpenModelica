@@ -126,6 +126,10 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
     args << QString("--endpoint-pub=%1").arg(QString(endPoint));
     args << QString("--model=%1").arg(fileName);
+    OMSimulatorPage *pOMSimulatorPage = OptionsDialog::instance()->getOMSimulatorPage();
+    int logLevel = pOMSimulatorPage->getLoggingLevelComboBox()->itemData(pOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
+    args << QString("--logLevel=%1").arg(logLevel);
+    args << QString("--option=%1").arg(pOMSimulatorPage->getCommandLineOptionsTextBox()->text());
     // start the executable
     QString process;
 #ifdef WIN32
