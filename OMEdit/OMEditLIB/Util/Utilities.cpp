@@ -80,6 +80,18 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpScrollToActiveButton->setToolTip(scrollToActiveButtonText);
   mpScrollToActiveButton->setAutoRaise(true);
   mpScrollToActiveButton->hide();
+  // expand all button
+  mpExpandAllButton = new QToolButton;
+  mpExpandAllButton->setText(Helper::expandAll);
+  mpExpandAllButton->setIcon(QIcon(":/Resources/icons/bottom.svg"));
+  mpExpandAllButton->setToolTip(Helper::expandAll);
+  mpExpandAllButton->setAutoRaise(true);
+  // collapse all button
+  mpCollapseAllButton = new QToolButton;
+  mpCollapseAllButton->setText(Helper::collapseAll);
+  mpCollapseAllButton->setIcon(QIcon(":/Resources/icons/top.svg"));
+  mpCollapseAllButton->setToolTip(Helper::collapseAll);
+  mpCollapseAllButton->setAutoRaise(true);
   // show hide button
   mpShowHideButton = new QToolButton;
   QString showHideButtonText = tr("Show/hide filters");
@@ -101,30 +113,25 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpSyntaxComboBox->setItemData(1, tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\"."), Qt::ToolTipRole);
   mpSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
   mpSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
-  // expand all button
-  mpExpandAllButton = new QPushButton(Helper::expandAll);
-  mpExpandAllButton->setAutoDefault(false);
-  // collapse all button
-  mpCollapseAllButton = new QPushButton(Helper::collapseAll);
-  mpCollapseAllButton->setAutoDefault(false);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pFiltersWidgetLayout->setAlignment(Qt::AlignTop);
   pFiltersWidgetLayout->addWidget(mpCaseSensitiveCheckBox, 0, 0);
   pFiltersWidgetLayout->addWidget(mpSyntaxComboBox, 0, 1);
-  pFiltersWidgetLayout->addWidget(mpExpandAllButton, 1, 0);
-  pFiltersWidgetLayout->addWidget(mpCollapseAllButton, 1, 1);
   mpFiltersWidget->setLayout(pFiltersWidgetLayout);
   mpFiltersWidget->hide();
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setSpacing(0);
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->addWidget(mpFilterTextBox, 0, 0);
   pMainLayout->addWidget(mpScrollToActiveButton, 0, 1);
-  pMainLayout->addWidget(mpShowHideButton, 0, 2);
-  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 3);
+  pMainLayout->addWidget(mpExpandAllButton, 0, 2);
+  pMainLayout->addWidget(mpCollapseAllButton, 0, 3);
+  pMainLayout->addWidget(mpShowHideButton, 0, 4);
+  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 5);
   setLayout(pMainLayout);
 }
 
