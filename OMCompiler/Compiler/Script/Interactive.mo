@@ -13944,7 +13944,7 @@ algorithm
     _ := match (el)
         local
           Absyn.Element elt;
-        case Absyn.ELEMENTITEM(element = elt)
+        case Absyn.ELEMENTITEM(element = elt as Absyn.ELEMENT(specification = Absyn.COMPONENTS()))
           algorithm
             outAbsynElementLst := elt :: outAbsynElementLst;
           then ();
