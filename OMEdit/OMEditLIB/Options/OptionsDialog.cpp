@@ -214,6 +214,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("createBackupFile")) {
     mpGeneralSettingsPage->getCreateBackupFileCheckbox()->setChecked(mpSettings->value("createBackupFile").toBool());
   }
+  // read nfAPINoise
+  if (mpSettings->contains("simulation/nfAPINoise")) {
+    mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->setChecked(mpSettings->value("simulation/nfAPINoise").toBool());
+  }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
@@ -256,6 +260,10 @@ void OptionsDialog::readGeneralSettings()
   // replaceable support
   if (mpSettings->contains("replaceableSupport")) {
     mpGeneralSettingsPage->setReplaceableSupport(mpSettings->value("replaceableSupport").toBool());
+  }
+  // read nfAPI
+  if (mpSettings->contains("simulation/nfAPI")) {
+    mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->setChecked(mpSettings->value("simulation/nfAPI").toBool());
   }
 }
 
@@ -641,12 +649,6 @@ void OptionsDialog::readSimulationSettings()
   }
   if (mpSettings->contains("simulation/deleteEntireSimulationDirectory")) {
     mpSimulationPage->getDeleteEntireSimulationDirectoryCheckBox()->setChecked(mpSettings->value("simulation/deleteEntireSimulationDirectory").toBool());
-  }
-  if (mpSettings->contains("simulation/nfAPI")) {
-    mpSimulationPage->getEnableNewInstantiationAPICheckBox()->setChecked(mpSettings->value("simulation/nfAPI").toBool());
-  }
-  if (mpSettings->contains("simulation/nfAPINoise")) {
-    mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->setChecked(mpSettings->value("simulation/nfAPINoise").toBool());
   }
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
@@ -1038,6 +1040,11 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("activateAccessAnnotations", mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->itemData(mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->currentIndex()).toInt());
   // save create backup file
   mpSettings->setValue("createBackupFile", mpGeneralSettingsPage->getCreateBackupFileCheckbox()->isChecked());
+  // save nfAPINoise
+  mpSettings->setValue("simulation/nfAPINoise", mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked());
+  if (mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPINoise");
+  }
   // save library icon size
   mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
   // save the max. text length to show on a library icon
@@ -1081,6 +1088,11 @@ void OptionsDialog::saveGeneralSettings()
   MainWindow::instance()->updateRecentFileActionsAndList();
   // save replaceable support
   mpSettings->setValue("replaceableSupport", mpGeneralSettingsPage->getReplaceableSupport());
+  // save nfAPI
+  mpSettings->setValue("simulation/nfAPI", mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->isChecked());
+  if (mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPI");
+  }
 }
 
 //! Saves the Libraries section settings to omedit.ini
@@ -1333,16 +1345,6 @@ void OptionsDialog::saveGlobalSimulationSettings()
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=true");
   } else {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=false");
-  }
-  // save nfAPI
-  mpSettings->setValue("simulation/nfAPI", mpSimulationPage->getEnableNewInstantiationAPICheckBox()->isChecked());
-  if (mpSimulationPage->getEnableNewInstantiationAPICheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPI");
-  }
-  // save nfAPINoise
-  mpSettings->setValue("simulation/nfAPINoise", mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked());
-  if (mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPINoise");
   }
 }
 
@@ -1927,27 +1929,30 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // create backup file
   mpCreateBackupFileCheckbox = new QCheckBox(tr("Create a model.bak-mo backup file when deleting a model."));
   mpCreateBackupFileCheckbox->setChecked(true);
+  /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
+  mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
   // set the layout of general settings group
-  QGridLayout *generalSettingsLayout = new QGridLayout;
-  generalSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  generalSettingsLayout->addWidget(mpLanguageLabel, 0, 0);
-  generalSettingsLayout->addWidget(mpLanguageComboBox, 0, 1, 1, 2);
-  generalSettingsLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
-  generalSettingsLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
-  generalSettingsLayout->addWidget(mpWorkingDirectoryBrowseButton, 1, 2);
-  generalSettingsLayout->addWidget(mpToolbarIconSizeLabel, 2, 0);
-  generalSettingsLayout->addWidget(mpToolbarIconSizeSpinBox, 2, 1, 1, 2);
-  generalSettingsLayout->addWidget(mpPreserveUserCustomizations, 3, 0, 1, 3);
-  generalSettingsLayout->addWidget(mpTerminalCommandLabel, 4, 0);
-  generalSettingsLayout->addWidget(mpTerminalCommandTextBox, 4, 1);
-  generalSettingsLayout->addWidget(mpTerminalCommandBrowseButton, 4, 2);
-  generalSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
-  generalSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
-  generalSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 6, 0, 1, 3);
-  generalSettingsLayout->addWidget(mpActivateAccessAnnotationsLabel, 7, 0);
-  generalSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
-  generalSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
-  mpGeneralSettingsGroupBox->setLayout(generalSettingsLayout);
+  QGridLayout *pGeneralSettingsLayout = new QGridLayout;
+  pGeneralSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGeneralSettingsLayout->addWidget(mpLanguageLabel, 0, 0);
+  pGeneralSettingsLayout->addWidget(mpLanguageComboBox, 0, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
+  pGeneralSettingsLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
+  pGeneralSettingsLayout->addWidget(mpWorkingDirectoryBrowseButton, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpToolbarIconSizeLabel, 2, 0);
+  pGeneralSettingsLayout->addWidget(mpToolbarIconSizeSpinBox, 2, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpPreserveUserCustomizations, 3, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandLabel, 4, 0);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandTextBox, 4, 1);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandBrowseButton, 4, 2);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 6, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsLabel, 7, 0);
+  pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
+  mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
   // library icon size
@@ -2033,10 +2038,15 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpOptionalFeaturesGroupBox = new QGroupBox(tr("Optional Features"));
   // handle replaceable support
   mpReplaceableSupport = new QCheckBox(tr("Enable Replaceable Support *"));
+  //! @todo Remove this once we enable this bydefault in OMC.
+  /* Enable new instantiation use in OMC API */
+  mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
+  mpEnableNewInstantiationAPICheckBox->setChecked(true);
   // Optional Features Layout
   QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
   pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pOptionalFeaturesLayout->addWidget(mpReplaceableSupport, 0, 0);
+  pOptionalFeaturesLayout->addWidget(mpEnableNewInstantiationAPICheckBox, 1, 0);
   mpOptionalFeaturesGroupBox->setLayout(pOptionalFeaturesLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
@@ -3803,12 +3813,6 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpIgnoreCommandLineOptionsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_commandLineOptions annotation"));
   // ignore simulation flags annotation checkbox
   mpIgnoreSimulationFlagsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_simulationFlags annotation"));
-  //! @todo Remove this once we enable this bydefault in OMC.
-  /* Enable new instantiation use in OMC API */
-  mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
-  mpEnableNewInstantiationAPICheckBox->setChecked(true);
-  /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
-  mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
@@ -3872,8 +3876,6 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpCXXCompilerComboBox, row++, 1);
   pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, row++, 0, 1, 2);
-  pSimulationLayout->addWidget(mpEnableNewInstantiationAPICheckBox, row++, 0, 1, 2);
-  pSimulationLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, row++, 0, 1, 2);
