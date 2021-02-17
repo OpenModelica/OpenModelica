@@ -11544,7 +11544,7 @@ algorithm
         (outCache, outEnv, outGraphicProgram, outGraphicEnvCache);
 
     // No cache, make partial or full cache as needed.
-    case Interactive.Interactive.GRAPHIC_ENV_NO_CACHE()
+    case Interactive.GRAPHIC_ENV_NO_CACHE()
       algorithm
         if AbsynUtil.onlyLiteralsInAnnotationMod(inAnnotationMod) then
           outGraphicProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
@@ -11639,12 +11639,12 @@ algorithm
         ErrorExt.setCheckpoint("buildEnvForGraphicProgram");
         try
         (cache, env, graphic_prog) :=
-          buildEnvForGraphicProgram(Interactive.Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
+          buildEnvForGraphicProgram(Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
           ErrorExt.rollBack("buildEnvForGraphicProgram");
         else
           ErrorExt.delCheckpoint("buildEnvForGraphicProgram");
           // Fallback to only the graphical primitives left in the program
-          (cache, env, graphic_prog) := buildEnvForGraphicProgram(Interactive.Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
+          (cache, env, graphic_prog) := buildEnvForGraphicProgram(Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
         end try;
 
         smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
