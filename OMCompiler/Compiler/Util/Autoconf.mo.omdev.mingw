@@ -5,6 +5,8 @@ encapsulated package Autoconf
 
   constant String bstatic = "-Wl,-Bstatic";
   constant String bdynamic = "-Wl,-Bdynamic";
+
+  constant String linkType = " -Wl,-B$(OMC_LDFLAGS_LINK_TYPE) " "OMC_LDFLAGS_LINK_TYPE is set in the Makefile, can be overrided when calling make";
   constant String configureCommandLine = "Manually created Makefiles for OMDev";
   constant String os = "Windows_NT";
   constant String make = "make";
@@ -16,7 +18,7 @@ encapsulated package Autoconf
   constant String ldflags_sundials = " -lsundials_nvecserial -lsundials_sunmatrixdense -lsundials_sunmatrixsparse" +
                                      " -lsundials_sunlinsoldense -lsundials_sunlinsolklu -lsundials_sunlinsollapackdense -lsundials_sunlinsolspbcgs -lsundials_sunlinsolspfgmr -lsundials_sunlinsolspgmr -lsundials_sunlinsolsptfqmr -lsundials_sunnonlinsolnewton" +
                                      " -lsundials_cvode -lsundials_cvodes -lsundials_idas -lsundials_kinsol";
-  constant String ldflags_basic = " -Wl,-Bstatic -lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis" +
+  constant String ldflags_basic = linkType + "-lomcgc -lregex -ltre -lintl -liconv -lexpat -static-libgcc -luuid -loleaut32 -lole32 -limagehlp -lws2_32 -llis" +
                                   ldflags_sundials +
                                   ldflags_suitesparse +
                                   " -lipopt -lcoinmumps -lpthread -lm " +
@@ -26,8 +28,8 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = " -Wl,-Bstatic -lSimulationRuntimeC -Wl,-Bdynamic" + ldflags_basic + " -lwsock32 -lstdc++";
-  constant String ldflags_runtime_fmu = " -Wl,-Bstatic -lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
+  constant String ldflags_runtime_sim = linkType + "-lSimulationRuntimeC -Wl,-Bdynamic" + ldflags_basic + " -lwsock32 -lstdc++";
+  constant String ldflags_runtime_fmu = linkType + "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
                                         libFortran +
                                         "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
                                         libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lszip -Wl,-Bdynamic";
