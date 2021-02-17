@@ -4046,8 +4046,6 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   connect(mpTreeSearchFilters->getFilterTextBox(), SIGNAL(textEdited(QString)), SLOT(searchClasses()));
   connect(mpTreeSearchFilters->getCaseSensitiveCheckBox(), SIGNAL(toggled(bool)), SLOT(searchClasses()));
   connect(mpTreeSearchFilters->getSyntaxComboBox(), SIGNAL(currentIndexChanged(int)), SLOT(searchClasses()));
-  mpTreeSearchFilters->getExpandAllButton()->hide();
-  mpTreeSearchFilters->getCollapseAllButton()->hide();
   mpTreeSearchFilters->getScrollToActiveButton()->setVisible(!OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked());
   connect(mpTreeSearchFilters->getScrollToActiveButton(), SIGNAL(clicked()), SLOT(scrollToActiveLibraryTreeItem()));
   // create tree view
@@ -4059,6 +4057,9 @@ LibraryWidget::LibraryWidget(QWidget *pParent)
   mpLibraryTreeView->setModel(mpLibraryTreeProxyModel);
   connect(mpLibraryTreeModel, SIGNAL(rowsInserted(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
   connect(mpLibraryTreeModel, SIGNAL(rowsRemoved(QModelIndex,int,int)), mpLibraryTreeProxyModel, SLOT(invalidate()));
+  mpTreeSearchFilters->getExpandAllButton()->setEnabled(false);
+  mpTreeSearchFilters->getExpandAllButton()->setToolTip(tr("Expanding the Libraries Browser is a time consuming and non-responsive operation so this button is disabled intentionally."));
+  connect(mpTreeSearchFilters->getCollapseAllButton(), SIGNAL(clicked()), mpLibraryTreeView, SLOT(collapseAll()));
   // create a dummy librarytreeItem
   mpLibraryTreeModel->createLibraryTreeItem(LibraryTreeItem::Text, "All", "OMEdit.Search.Feature", "", true, mpLibraryTreeModel->getRootLibraryTreeItem());
   // create the layout

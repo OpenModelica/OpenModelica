@@ -125,22 +125,22 @@ public:
   QLineEdit* getFilterTextBox() {return mpFilterTextBox;}
   QTimer* getFilterTimer() {return mpFilterTimer;}
   QToolButton* getScrollToActiveButton() {return mpScrollToActiveButton;}
+  QToolButton* getExpandAllButton() {return mpExpandAllButton;}
+  QToolButton* getCollapseAllButton() {return mpCollapseAllButton;}
   QComboBox* getSyntaxComboBox() {return mpSyntaxComboBox;}
   QCheckBox* getCaseSensitiveCheckBox() {return mpCaseSensitiveCheckBox;}
-  QPushButton* getExpandAllButton() {return mpExpandAllButton;}
-  QPushButton* getCollapseAllButton() {return mpCollapseAllButton;}
 
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 private:
   QLineEdit *mpFilterTextBox;
   QTimer *mpFilterTimer;
   QToolButton *mpScrollToActiveButton;
+  QToolButton *mpExpandAllButton;
+  QToolButton *mpCollapseAllButton;
   QToolButton *mpShowHideButton;
   QWidget *mpFiltersWidget;
   QComboBox *mpSyntaxComboBox;
   QCheckBox *mpCaseSensitiveCheckBox;
-  QPushButton *mpExpandAllButton;
-  QPushButton *mpCollapseAllButton;
 private slots:
   void showHideFilters(bool On);
 signals:
