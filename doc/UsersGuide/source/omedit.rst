@@ -1037,6 +1037,9 @@ General
 
   -  *Create a model.bak-mo backup file when deleting a model*
 
+  -  *Display errors/warnings when instantiating the graphical annotations* - if true then the errors/warnings
+     are shown when using OMC API for graphical annotations.
+
 -  Libraries Browser
 
   -  *Library Icon Size* – Sets the size for library icons.
@@ -1063,6 +1066,8 @@ General
 -  Optional Features
 
   -  *Enable replaceable support* - Enables/disables the replaceable support.
+
+  -  *Enable new frontend use in OMC API (faster GUI response)* - if true then uses the new frontend in OMC API calls.
 
 Libraries
 ~~~~~~~~~
@@ -1284,11 +1289,6 @@ Simulation
 
   -  *Ignore __OpenModelica_simulationFlags annotation* – if true then ignores the __OpenModelica_simulationFlags
      annotation while running the simulation.
-
-  -  *Enable new frontend use in OMC API (faster GUI response)* - if true then uses the new frontend in OMC API calls.
-
-  -  *Display errors/warnings when instantiating the graphical annotations* - if true then the errors/warnings
-     are shown when using OMC API for graphical annotations.
 
   -  *Save class before simulation* – if true then always saves the class before running the simulation.
 
