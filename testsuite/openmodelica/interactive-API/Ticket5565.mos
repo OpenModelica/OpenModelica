@@ -6,7 +6,7 @@
 
 setCommandLineOptions("-d=nfAPI,showStatement");
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 
 getComponents(Modelica.Mechanics.MultiBody.Parts.Body, useQuotes = true); getErrorString();
 getComponentAnnotations(Modelica.Mechanics.MultiBody.Parts.Body); getErrorString();
@@ -45,7 +45,7 @@ getInheritedClasses(Modelica.Fluid.Machines.BaseClasses.PartialPump.HeatTransfer
 
 // Result:
 // true
-// Evaluating: loadModel(Modelica)
+// Evaluating: loadModel(Modelica, {"3.2.3"})
 // true
 // Evaluating: getErrorString()
 // ""

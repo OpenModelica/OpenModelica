@@ -6,7 +6,7 @@
 //  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("Test3PhaseSystemsInitParam1.mo"); getErrorString();
 loadFile("Test3PhaseSystemsInitParam2.mo"); getErrorString();
 

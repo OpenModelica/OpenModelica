@@ -5,7 +5,7 @@
 // Checks that the BUG https://openmodelica.org:8443/cb/issue/1370 is now gone! Also, it was way more than this bug!
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("Modelica.Math.Matrices.mo"); getErrorString();
 simulate(TestMatrices, numberOfIntervals = 1); getErrorString();
 "eigenValues";

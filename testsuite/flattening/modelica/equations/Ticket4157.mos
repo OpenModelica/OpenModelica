@@ -6,7 +6,7 @@
 // Check some handling of compex equations
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("Ticket4157.mo");
 
 instantiateModel(Ticket4157.when_init_complex); getErrorString();

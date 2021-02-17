@@ -3,7 +3,7 @@
 // teardown_command: rm -f SolverFailure.FiniteEscapeTime* output.log
 // cflags: -d=-newInst
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("DebugPackage.mo"); getErrorString();
 
 simulate(SolverFailure.FiniteEscapeTime); getErrorString();

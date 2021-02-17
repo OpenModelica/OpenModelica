@@ -7,7 +7,7 @@
 // 
 
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 getErrorString();
 
 loadString("

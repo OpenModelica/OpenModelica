@@ -7,7 +7,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 simulate(Modelica.Mechanics.MultiBody.Examples.Elementary.DoublePendulum,stopTime=3.0);
 getErrorString();
 

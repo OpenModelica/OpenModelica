@@ -1,7 +1,7 @@
 // status: correct
 // cflags: -d=-newInst
 
-loadModel(Modelica);getErrorString();
+loadModel(Modelica, {"3.2.3"});getErrorString();
 loadString("
 model DrumBoiler
   extends Modelica.Fluid.Examples.DrumBoiler.DrumBoiler(use_inputs=false);

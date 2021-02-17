@@ -7,7 +7,7 @@
 
 setCommandLineOptions("-d=nfAPI"); getErrorString();
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 getElementAnnotations(Modelica.Mechanics.MultiBody.World); getErrorString();
 
 // Result:

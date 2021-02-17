@@ -3,7 +3,7 @@
 // status: correct
 // cflags: -d=-newInst --std=3.3
 //
-loadModel(Modelica);getErrorString();
+loadModel(Modelica, {"3.2.3"});getErrorString();
 
 loadFile("boolSubClocks.mo");
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();

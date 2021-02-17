@@ -1,24 +1,22 @@
-TEST = ../../rtest -v --return-with-error-code
+TEST = ../../../rtest -v
 
 TESTFILES = \
-GenerateMSLIcons.mos
+Modelica.Clocked.Examples.CascadeControlledDrive.AbsoluteClocks.mos \
 
-
-# test that currently fail. Move up when fixed.
-# Run make testfailing
-FAILINGTESTFILES= \
+# Run make failingtest
+FAILINGTESTFILES = \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
 DEPENDENCIES = \
 *.mo \
 *.mos \
-Makefile
-
+Makefile \
 
 CLEAN = `ls | grep -w -v -f deps.tmp`
 
 .PHONY : test clean getdeps failingtest
+
 
 test:
 	@echo
@@ -30,6 +28,7 @@ test:
 # Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
+	@rm -f *.mos.txt
 	@rm -rf $(CLEAN)
 
 # Run this if you want to list out the files (dependencies).

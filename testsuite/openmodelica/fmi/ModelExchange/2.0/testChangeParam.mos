@@ -25,7 +25,7 @@ equation
 end test_ChangeParam;
 ");
 getErrorString();
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 
 
 translateModelFMU(test_ChangeParam, version="2.0");

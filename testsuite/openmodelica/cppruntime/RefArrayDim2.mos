@@ -6,7 +6,7 @@
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadString("
 model AliasArrayTest
   Real[3,3] A = {{t, 2, 3}, {4, t, 6}, {7, 8, t}}; // RefArrayDim2

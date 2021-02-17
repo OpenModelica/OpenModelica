@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica);getErrorString();
+loadModel(Modelica, {"3.2.3"});getErrorString();
 loadFile("./SteamPipe.mo");
 loadString("
 model testSteamPipeLin

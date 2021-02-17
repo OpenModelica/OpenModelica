@@ -9,7 +9,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("SiemensPower/package.mo");
 
 // test simple model

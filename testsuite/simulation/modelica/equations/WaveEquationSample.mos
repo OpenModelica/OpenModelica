@@ -7,7 +7,7 @@
 // Drmodelica: "15: Pressure Dynamics in 1D Ducts - Solving Wave Equations by Discretized PDEs (p. 587)
 // cflags: -d=-newInst
 // 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("WaveEquationSample.mo");
 simulate(WaveEquationSample,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

@@ -23,7 +23,7 @@ end DIC;
 ");
 translateModelFMU(DIC, version="1.0"); getErrorString();
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 setCommandLineOptions("+simCodeTarget=C"); getErrorString();
 importFMU("DIC.fmu"); getErrorString();
 loadFile("DIC_me_FMU.mo"); getErrorString();

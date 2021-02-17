@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadString("
 model test_Bug3049
    output Modelica.SIunits.AbsolutePressure p1 = 1e5;

@@ -6,7 +6,7 @@
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadString("
 model SolveTest
   Real[:, :] A = [0, 1; 2, 3];

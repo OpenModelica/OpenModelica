@@ -5,7 +5,7 @@
 // Ticket 4046
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadString("
 model TestFalseIterationNLS
   Modelica.SIunits.Pressure p;

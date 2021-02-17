@@ -3,7 +3,7 @@
 // status: correct
 // cflags: -d=-newInst
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("OverdeterminedInitialization.mo"); getErrorString();
 
 setCommandLineOptions("-d=initialization"); getErrorString();

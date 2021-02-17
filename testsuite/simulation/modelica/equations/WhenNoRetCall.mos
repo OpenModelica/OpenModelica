@@ -6,7 +6,7 @@
 // 
 // 
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("WhenNoRetCall.mo");
 simulate(WhenNoRetCall);
 getErrorString(); // simulation failed, check error string.

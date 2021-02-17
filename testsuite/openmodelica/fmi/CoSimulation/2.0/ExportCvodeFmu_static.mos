@@ -7,7 +7,7 @@
 // Export Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum as 2.0 CS FMU with CVODE solver
 
 // Generate FMU
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 setCommandLineOptions("--fmiFlags=s:cvode"); getErrorString();
 translateModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version = "2.0", fmuType="me_cs"); getErrorString();
 

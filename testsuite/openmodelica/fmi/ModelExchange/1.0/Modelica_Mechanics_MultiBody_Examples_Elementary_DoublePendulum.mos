@@ -7,7 +7,7 @@
 // Modelica Standard Library
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 // Although it is not correct to do it by default, evaluate protected parameters,
 // otherwise building the _me_FMU.mo fails. It seems that it is necessary to evaluate string parameters.
 setCommandLineOptions("--evaluateProtectedParameters"); getErrorString();

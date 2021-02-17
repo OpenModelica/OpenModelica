@@ -7,7 +7,7 @@
 // Drmodelica: 11.1 Function Annotations (p. 372)
 // cflags: -d=-newInst
 // 
-//loadModel(Modelica);
+//loadModel(Modelica, {"3.2.3"});
 loadFile("FuncDer.mo");
 simulate(FuncDer,numberOfIntervals=2, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

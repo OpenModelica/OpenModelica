@@ -6,7 +6,7 @@
 // Drmodelica: 8.2  connect equations (p. 244)
 // cflags: -d=-newInst
 // 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("ConnectForEquations.mo");
 simulate(ConnectForEquations,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 // Real variables, Real input variable, continuous-time states, state events, event iteration
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 setDebugFlags("hpcom,hardcodedStartValues"); getErrorString();
 setCommandLineOptions("+simCodeTarget=Cpp +n=1 +hpcomCode=openmp +hpcomScheduler=level"); getErrorString();
 loadFile("CoupledClutches.mo"); getErrorString();
