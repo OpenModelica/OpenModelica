@@ -477,8 +477,18 @@ uniontype Function
     input output InstNode fnNode;
     input InstContext.Type context;
     input SourceInfo info;
+  protected
+    SCode.Element def;
+    Integer numError = Error.getNumErrorMessages();
   algorithm
-    fnNode := Inst.instantiate(fnNode, context = context, instPartial = true);
+    try
+      fnNode := Inst.instantiate(fnNode, context = context, instPartial = true);
+    else
+      true := Error.getNumErrorMessages() == numError;
+      def := InstNode.definition(fnNode);
+      Error.addSourceMessage(Error.UNKNOWN_ERROR_INST_FUNCTION, {SCodeDump.unparseElementStr(def)}, SCodeUtil.elementInfo(def));
+      fail();
+    end try;
 
     // Set up an empty function cache to signal that this function is
     // currently being instantiated, so recursive functions can be handled.
