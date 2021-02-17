@@ -88,8 +88,6 @@ void freeSynchronous(DATA* data)
 }
 
 
-//#if !defined(OMC_MINIMAL_RUNTIME)
-
 /**
  * @brief Insert given timer into ordered list of timers.
  *
@@ -147,23 +145,6 @@ void checkForSynchronous(DATA *data, SOLVER_INFO* solverInfo)
   TRACE_POP
 }
 
-/*
-void printSubClock(SUBCLOCK_INFO* subClock)
-{
-  printf("sub-clock\n");
-  printf("shift: %ld / %ld\n", subClock->shift.m, subClock->shift.n);
-  printf("factor: %ld / %ld\n", subClock->factor.m, subClock->factor.n);
-  printf("solverMethod: %s\n", subClock->solverMethod);
-  printf("holdEvents: %s\n\n", subClock->holdEvents ? "true" : "false");
-  fflush(stdout);
-}
-
-void printRATIONAL(RATIONAL* r)
-{
-  printf("RATIONAL: %ld / %ld\n", r->m, r->n);
-  fflush(stdout);
-}
-*/
 
 void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
@@ -194,6 +175,7 @@ void fireClock(DATA* data, threadData_t *threadData, long idx, double curTime)
   }
   TRACE_POP
 }
+
 
 static void handleBaseClock(DATA* data, threadData_t *threadData, long idx, double curTime)
 {
@@ -256,8 +238,7 @@ int handleTimers(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
   TRACE_POP
   return ret;
 }
-
-#else /* #if !defined(OMC_MINIMAL_RUNTIME) */
+#endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
 
 /**
  * @brief Handle timer clocks and return next time a timer will fire
@@ -317,7 +298,6 @@ int handleTimersFMI(DATA* data, threadData_t *threadData, double currentTime, in
   TRACE_POP
   return ret;
 }
-#endif /* #if !defined(OMC_MINIMAL_RUNTIME) */
 
 #ifdef __cplusplus
 }
