@@ -681,10 +681,10 @@ double vecScalarProd(int n, double *a, double *b)
 void matVecMult(int n, int m, double *A, double *b, double *c)
 {
   int i, j;
-  #pragma message "Fix the performance problem here; this order will trash the cache"
-  for (i=0;i<n;i++) {
+  for (i=0;i<n;i++)
     c[i] = 0.0;
-    for (j=0;j<m;j++)
+  for (j=0;j<m;j++) {
+    for (i=0;i<n;i++)
       c[i] += A[i+j*(m-1)]*b[j];
   }
 }
@@ -693,10 +693,10 @@ void matVecMult(int n, int m, double *A, double *b, double *c)
 void matVecMultAbs(int n, int m, double *A, double *b, double *c)
 {
   int i, j;
-  #pragma message "Fix the performance problem here; this order will trash the cache"
-  for (i=0;i<n;i++) {
+  for (i=0;i<n;i++)
     c[i] = 0.0;
-    for (j=0;j<m;j++)
+  for (j=0;j<m;j++) {
+    for (i=0;i<n;i++)
       c[i] += fabs(A[i+j*(m-1)]*b[j]);
   }
 }
@@ -705,10 +705,10 @@ void matVecMultAbs(int n, int m, double *A, double *b, double *c)
 void matVecMultBB(int n, double *A, double *b, double *c)
 {
   int i, j;
-  #pragma message "Fix the performance problem here; this order will trash the cache"
-  for (i=0;i<n;i++) {
+  for (i=0;i<n;i++)
     c[i] = 0.0;
-    for (j=0;j<n;j++)
+  for (j=0;j<n;j++) {
+    for (i=0;i<n;i++)
       c[i] += A[i+j*n]*b[j];
   }
 }
@@ -717,11 +717,11 @@ void matVecMultBB(int n, double *A, double *b, double *c)
 void matVecMultAbsBB(int n, double *A, double *b, double *c)
 {
   int i, j;
-  #pragma message "Fix the performance problem here; this order will trash the cache"
-  for (i=0;i<n;i++) {
+  for (i=0;i<n;i++)
     c[i] = 0.0;
-    for (j=0;j<n;j++)
-       c[i] += fabs(A[i+j*n]*b[j]);
+  for (j=0;j<n;j++) {
+    for (i=0;i<n;i++)
+      c[i] += fabs(A[i+j*n]*b[j]);
   }
 }
 
@@ -729,9 +729,8 @@ void matVecMultAbsBB(int n, double *A, double *b, double *c)
 void matAddBB(int n, double* A, double* B, double* C)
 {
   int i, j;
-  #pragma message "Fix the performance problem here; this order will trash the cache"
-  for (i=0;i<n;i++) {
-    for (j=0;j<n+1;j++)
+  for (j=0;j<n+1;j++) {
+    for (i=0;i<n;i++)
       C[i + j*n] = A[i + j*n] + B[i + j*n];
   }
 }
@@ -740,9 +739,8 @@ void matAddBB(int n, double* A, double* B, double* C)
 void matDiffBB(int n, double* A, double* B, double* C)
 {
   int i, j;
-  #pragma message "Fix the performance problem here; this order will trash the cache"
-  for (i=0;i<n;i++) {
-    for (j=0;j<n;j++)
+  for (j=0;j<n;j++) {
+    for (i=0;i<n;i++)
       C[i + j*n] = A[i + j*n] - B[i + j*n];
   }
 }
@@ -750,40 +748,49 @@ void matDiffBB(int n, double* A, double* B, double* C)
 /* Matrix has dimension [n x m] */
 void scaleMatrixRows(int n, int m, double *A)
 {
-  const double delta = sqrt(DBL_EPSILON);
+  const double delta = 0; /* This might be changed to sqrt(DBL_EPSILON) */
   int i, j;
-  double rowMax;
-  #pragma message "Fix the performance problem here; this order will trash the cache"
-  for (i=0;i<n;i++) {
-    rowMax = 0; /* This might be changed to delta */
-    for (j=0;j<n;j++) {
-      if (fabs(A[i+j*(m-1)]) > rowMax) {
-         rowMax = fabs(A[i+j*(m-1)]);
+  double* rowsMax = (double*) calloc(n,sizeof(double));
+
+  for (i=0;i<n;i++)
+    rowsMax[i] = 0;
+
+  /* find maximum of each row */
+  for (j=0;j<n;j++) {
+    for (i=0;i<n;i++) {
+      if (fabs(A[i+j*(m-1)]) > rowsMax[i]) {
+         rowsMax[i] = fabs(A[i+j*(m-1)]);
       }
     }
-    if (rowMax>0) {
-      for (j=0;j<m;j++)
-        A[i+j*(m-1)] /= rowMax;
-    }
   }
+
+  /* remove zero normailzation */
+  for (i=0;i<n;i++) {
+    if (rowsMax[i] <= delta)
+      rowsMax[i] = 1.0;
+  }
+
+  /* scale matrix */
+  for (j=0;j<m;j++) {
+    for (i=0;i<n;i++)
+      A[i+j*(m-1)] /= rowsMax[i];
+  }
+
+  free(rowsMax);
 }
 
 /* Build the newton matrix for the corrector step with orthogonal backtrace strategy */
 void orthogonalBacktraceMatrix(DATA_HOMOTOPY* solverData, double* hJac, double* hvec, double* v, double* hJac2, int n, int m)
 {
   int i, j;
-  #pragma message "Fix the performance problem here; this order will trash the cache"
-  for (i=0; i<n; i++)
-  {
-    for (j=0; j<m; j++)
-    {
+  for (j=0; j<m; j++) {
+    for (i=0; i<n; i++) {
       hJac2[i + j*m] = hJac[i + j*(m-1)];
     }
-    hJac2[i + m*m] = hvec[i];
-  }
-  for (j=0; j<m; j++)
-  {
     hJac2[n + j*m] = v[j];
+  }
+  for (i=0; i<n; i++) {
+    hJac2[i + m*m] = hvec[i];
   }
   hJac2[n + m*m] = 0;
 }
