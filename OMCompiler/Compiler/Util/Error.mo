@@ -1060,6 +1060,8 @@ public constant ErrorTypes.Message NOTIFY_PKG_NO_INSTALL = ErrorTypes.MESSAGE(61
   Gettext.gettext("%s %s will not be installed since version %s is installed."));
 public constant ErrorTypes.Message DEPRECATED_FLAG = ErrorTypes.MESSAGE(614, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("The flag '%s' is deprecated. Please use '%s' instead."));
+public constant ErrorTypes.Message UNKNOWN_ERROR_INST_FUNCTION = ErrorTypes.MESSAGE(615, ErrorTypes.TRANSLATION(), ErrorTypes.INTERNAL(),
+  Gettext.gettext("Unknown error trying to instantiate function: %s."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));
