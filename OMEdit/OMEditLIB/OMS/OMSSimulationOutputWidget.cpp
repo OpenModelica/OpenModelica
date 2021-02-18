@@ -129,7 +129,13 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     OMSimulatorPage *pOMSimulatorPage = OptionsDialog::instance()->getOMSimulatorPage();
     int logLevel = pOMSimulatorPage->getLoggingLevelComboBox()->itemData(pOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
     args << QString("--logLevel=%1").arg(logLevel);
-    args << QString("--option=%1").arg(pOMSimulatorPage->getCommandLineOptionsTextBox()->text().replace(" ", ";"));
+    QStringList options = StringHandler::splitStringWithSpaces(pOMSimulatorPage->getCommandLineOptionsTextBox()->text());
+    if (!options.isEmpty()) {
+      args << QString("--option");
+    }
+    foreach (QString option, options) {
+      args << QString("\"%1\"").arg(option);
+    }
     // start the executable
     QString process;
 #ifdef WIN32
