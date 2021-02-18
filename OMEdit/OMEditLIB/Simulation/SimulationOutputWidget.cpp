@@ -485,9 +485,8 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   /* append the output */
   /* write the error message */
   if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
-      QString simulationLogFilePath = QString("%1/%2.log").arg(mSimulationOptions.getWorkingDirectory()).arg(mSimulationOptions.getClassName());
-      mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>")
-                                                .arg(simulationLogFilePath));
+      QString simulationLogFilePath = QString("%1/%2.log").arg(mSimulationOptions.getWorkingDirectory()).arg(mSimulationOptions.getOutputFileName());
+      mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>").arg(simulationLogFilePath));
   } else {
     mpSimulationOutputTextBrowser->insertPlainText(text);
   }
@@ -784,7 +783,7 @@ void SimulationOutputWidget::openTransformationalDebugger()
  */
 void SimulationOutputWidget::openSimulationLogFile()
 {
-  QUrl logFile (QString("file:///%1/%2.log").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getClassName()));
+  QUrl logFile (QString("file:///%1/%2.log").arg(mSimulationOptions.getWorkingDirectory(), mSimulationOptions.getOutputFileName()));
   if (!QDesktopServices::openUrl(logFile)) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(logFile.toString()), Helper::ok);
