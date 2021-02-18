@@ -11111,7 +11111,7 @@ protected
   Absyn.Program placementProgram;
   GraphicEnvCache cache;
 algorithm
-  if true /* not Flags.isSet(Flags.NF_API) */ then
+  if not Flags.isSet(Flags.NF_API) then
     placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
     (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
@@ -11141,13 +11141,11 @@ protected
   Absyn.Path modelPath;
 algorithm
 
-  /*
   if Flags.isSet(Flags.NF_API) then
     (fullProgram, modelPath) := Interactive.cacheProgramAndPath(inCache);
     outStringLst := NFApi.evaluateAnnotations(fullProgram, modelPath, inElements);
     return;
   end if;
-  */
 
   for e in listReverse(inElements) loop
     outStringLst := matchcontinue e
