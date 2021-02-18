@@ -11111,7 +11111,7 @@ protected
   Absyn.Program placementProgram;
   GraphicEnvCache cache;
 algorithm
-  if true /* not Flags.isSet(Flags.NF_API) */ then
+  if not Flags.isSet(Flags.NF_API) then
     placementProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
     (_,env) := Inst.makeEnvFromProgram(graphicProgramSCode);
@@ -11141,13 +11141,11 @@ protected
   Absyn.Path modelPath;
 algorithm
 
-  /*
   if Flags.isSet(Flags.NF_API) then
     (fullProgram, modelPath) := Interactive.cacheProgramAndPath(inCache);
     outStringLst := NFApi.evaluateAnnotations(fullProgram, modelPath, inElements);
     return;
   end if;
-  */
 
   for e in listReverse(inElements) loop
     outStringLst := matchcontinue e
@@ -11546,7 +11544,7 @@ algorithm
         (outCache, outEnv, outGraphicProgram, outGraphicEnvCache);
 
     // No cache, make partial or full cache as needed.
-    case Interactive.GRAPHIC_ENV_NO_CACHE()
+    case Interactive.Interactive.GRAPHIC_ENV_NO_CACHE()
       algorithm
         if AbsynUtil.onlyLiteralsInAnnotationMod(inAnnotationMod) then
           outGraphicProgram := modelicaAnnotationProgram(Config.getAnnotationVersion());
@@ -11641,12 +11639,12 @@ algorithm
         ErrorExt.setCheckpoint("buildEnvForGraphicProgram");
         try
         (cache, env, graphic_prog) :=
-          buildEnvForGraphicProgram(Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
+          buildEnvForGraphicProgram(Interactive.Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), mod);
           ErrorExt.rollBack("buildEnvForGraphicProgram");
         else
           ErrorExt.delCheckpoint("buildEnvForGraphicProgram");
           // Fallback to only the graphical primitives left in the program
-          (cache, env, graphic_prog) := buildEnvForGraphicProgram(Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
+          (cache, env, graphic_prog) := buildEnvForGraphicProgram(Interactive.Interactive.GRAPHIC_ENV_NO_CACHE(inFullProgram, inModelPath), {});
         end try;
 
         smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())),
