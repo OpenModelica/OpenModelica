@@ -1452,7 +1452,7 @@ qreal StringHandler::getNormalizedAngle(qreal angle)
   \param value - the string to split.
   \return the list of strings.
   */
-QStringList StringHandler::splitStringWithSpaces(QString value)
+QStringList StringHandler::splitStringWithSpaces(QString value, bool keepEmptyParts)
 {
   QStringList lst;
   QString res;
@@ -1460,7 +1460,9 @@ QStringList StringHandler::splitStringWithSpaces(QString value)
   value = value.trimmed();
   for (int i = 0 ; i < value.size() ; i++) {
     if (value.at(i) == ' ' && !quotesOpen) {
-      lst.append(res);
+      if (keepEmptyParts || !res.isEmpty()) {
+        lst.append(res);
+      }
       res.clear();
     } else if (value.at(i) == '"' && quotesOpen) {
       quotesOpen = false;

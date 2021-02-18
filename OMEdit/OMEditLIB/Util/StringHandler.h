@@ -142,7 +142,7 @@ public:
   static QStringList getAnnotation(QString componentAnnotation, QString annotationName);
   static QString getPlacementAnnotation(QString componentAnnotation);
   static qreal getNormalizedAngle(qreal angle);
-  static QStringList splitStringWithSpaces(QString value);
+  static QStringList splitStringWithSpaces(QString value, bool keepEmptyParts = true);
   static void fillEncodingComboBox(QComboBox *pEncodingComboBox);
   static QStringList makeVariableParts(QString variable);
   static QStringList makeVariablePartsWithInd(QString variable);
