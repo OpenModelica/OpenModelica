@@ -142,7 +142,7 @@ QVariant SimulationMessageModel::data(const QModelIndex &index, int role) const
     // create display text
     if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
       QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
-                                      .arg(mpSimulationOutputWidget->getSimulationOptions().getClassName());
+                                      .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
       text = QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>").arg(simulationLogFilePath);
     } else {
       text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() ? "" : debugLink);
@@ -261,7 +261,7 @@ SimulationOutputHandler::SimulationOutputHandler(SimulationOutputWidget *pSimula
   mShownDisplayLimitReachedMessage = false;
   mpSimulationMessage = 0;
   QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
-                                  .arg(mpSimulationOutputWidget->getSimulationOptions().getClassName());
+                                  .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
 #ifdef Q_OS_WIN
   mpSimulationLogFile = _wfopen((wchar_t*)simulationLogFilePath.utf16(), L"w");
 #else
