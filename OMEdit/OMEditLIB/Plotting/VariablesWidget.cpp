@@ -864,10 +864,8 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     }
   }
   /* close the .mat file */
-  if (fileName.endsWith(".mat")) {
-    if (matReader.file) {
-      omc_free_matlab4_reader(&matReader);
-    }
+  if (fileName.endsWith(".mat") && matReader.file) {
+    omc_free_matlab4_reader(&matReader);
   }
   mpVariablesTreeView->collapseAll();
   QModelIndex idx = variablesTreeItemIndex(pTopVariablesTreeItem);
@@ -896,6 +894,7 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
     if (pVariablesTreeItem->isActive()) {
       mpVariablesTreeView->getVariablesWidget()->enableVisualizationControls(false);
       mpVariablesTreeView->getVariablesWidget()->rewindVisualization();
+      mpVariablesTreeView->getVariablesWidget()->closeResultFile();
     }
     beginRemoveRows(variablesTreeItemIndex(pVariablesTreeItem->parent()), 0, pVariablesTreeItem->getChildren().size());
     pVariablesTreeItem->removeChildren();

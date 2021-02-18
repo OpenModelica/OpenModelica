@@ -213,6 +213,7 @@ public:
   void updateInitXmlFile(SimulationOptions simulationOptions);
   void initializeVisualization(SimulationOptions simulationOptions);
   double readVariableValue(QString variable, double time);
+  void closeResultFile();
 private:
   TreeSearchFilters *mpTreeSearchFilters;
   Label *mpSimulationTimeLabel;
@@ -239,7 +240,6 @@ private:
   csv_data *mpCSVData;
   QFile mPlotFileReader;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
-  void closeResultFile();
   void openResultFile();
   void updateVisualization();
 public slots:
