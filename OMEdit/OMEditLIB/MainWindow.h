@@ -158,6 +158,7 @@ public:
   QAction* getResetZoomAction() {return mpResetZoomAction;}
   QAction* getZoomInAction() {return mpZoomInAction;}
   QAction* getZoomOutAction() {return mpZoomOutAction;}
+  QAction* getFitToDiagramAction() {return mpFitToDiagramAction;}
   QAction* getCloseAllWindowsAction() {return mpCloseAllWindowsAction;}
   QAction* getCloseAllWindowsButThisAction() {return mpCloseAllWindowsButThisAction;}
   QAction* getSimulationSetupAction() {return mpSimulationSetupAction;}
@@ -346,6 +347,7 @@ private:
   QAction *mpResetZoomAction;
   QAction *mpZoomInAction;
   QAction *mpZoomOutAction;
+  QAction *mpFitToDiagramAction;
   QAction *mpCloseWindowAction;
   QAction *mpCloseAllWindowsAction;
   QAction *mpCloseAllWindowsButThisAction;

@@ -211,6 +211,7 @@ public:
   static QString resetZoom;
   static QString zoomIn;
   static QString zoomOut;
+  static QString fitToDiagram;
   static QString loading;
   static QString question;
   static QString search;

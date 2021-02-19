@@ -687,6 +687,7 @@ public slots:
   void saveAsModelWidget();
   void saveTotalModelWidget();
   void printModel();
+  void fitToDiagram();
   void showSimulationParams();
   void alignInterfaces();
   void addSystem();

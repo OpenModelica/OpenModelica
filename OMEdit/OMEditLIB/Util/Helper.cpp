@@ -205,6 +205,7 @@ QString Helper::paste;
 QString Helper::resetZoom;
 QString Helper::zoomIn;
 QString Helper::zoomOut;
+QString Helper::fitToDiagram;
 QString Helper::loading;
 QString Helper::question;
 QString Helper::search;
@@ -502,6 +503,7 @@ void Helper::initHelperVariables()
   Helper::resetZoom = tr("Reset Zoom");
   Helper::zoomIn = tr("Zoom In");
   Helper::zoomOut = tr("Zoom Out");
+  Helper::fitToDiagram = tr("Fit to Diagram");
   Helper::loading = tr("Loading");
   Helper::question = tr("Question");
   Helper::search = tr("Search");
