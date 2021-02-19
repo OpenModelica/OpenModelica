@@ -103,7 +103,6 @@ private:
   Label *mpLoggingIntervalLabel;
   QLineEdit *mpLoggingIntervalTextBox;
   Label *mpSignalFilterLabel;
-  QLineEdit *mpSignalFilterTextBox;
   QTreeWidget *mpArchivedSimulationsTreeWidget;
   // buttons
   QPushButton *mpOkButton;

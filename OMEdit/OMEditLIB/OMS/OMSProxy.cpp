@@ -1404,42 +1404,6 @@ bool OMSProxy::getResultFile(QString cref, char **pFilename, int *pBufferSize)
 }
 
 /*!
- * \brief OMSProxy::getSignalFilter
- * gets the signal filter regex.
- * \param cref
- * \param regex
- * \return
- */
-bool OMSProxy::getSignalFilter(QString cref, char **regex)
-{
-  QString command = "oms_getSignalFilter";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getSignalFilter(cref.toUtf8().constData(), regex);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setSignalFilter
- * Sets the signal filter.
- * \param cref
- * \param regex
- * \return
- */
-bool OMSProxy::setSignalFilter(QString cref, QString regex)
-{
-  QString command = "oms_setSignalFilter";
-  QStringList args;
-  args << "\"" + cref + "\"" << "\"" + regex + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setSignalFilter(cref.toUtf8().constData(), regex.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::setSolver
  * Sets the solver.
  * \param cref
