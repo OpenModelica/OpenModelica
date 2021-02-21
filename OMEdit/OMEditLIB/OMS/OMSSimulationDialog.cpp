@@ -103,7 +103,6 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeSpinBox, 5, 1);
   pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalLabel, 6, 0);
   pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpSignalFilterLabel, 7, 0);
   pGeneralWidget->setLayout(pGeneralTabWidgetGridLayout);
   pTabWidget->addTab(pGeneralWidget, Helper::general);
   // Archived simulation tab layout
