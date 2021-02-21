@@ -465,6 +465,7 @@ if true then /* Suppress output */
     "../Util/DiffAlgorithm.mo",
     "../Util/DisjointSets.mo",
     "../Util/ExpandableArray.mo",
+    "../Util/FFI.mo",
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",
     "../Util/GraphML.mo",

@@ -609,6 +609,17 @@ uniontype InstNode
     end match;
   end classScope;
 
+  function libraryScope
+    "Returns the top-level class the given node belongs to."
+    input InstNode node;
+    output InstNode lib;
+  algorithm
+    lib := match node
+      case CLASS_NODE(parentScope = CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE())) then node;
+      else libraryScope(parentScope(node));
+    end match;
+  end libraryScope;
+
   function topScope
     input InstNode node;
     output InstNode topScope;

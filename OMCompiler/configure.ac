@@ -589,11 +589,6 @@ fi
 
 fi
 
-AC_CHECK_HEADERS(ffi.h,[],[AC_MSG_ERROR([ffi.h not found])])
-LIBS=""
-AC_CHECK_LIB(ffi,ffi_call,[],[AC_MSG_ERROR([libffi not found])])
-OMC_LIBS=$LIBS
-
 OMC_AC_LAPACK(RequireFound)
 
 SUNDIALS_NVECTOR_LDFLAGS="-lsundials_nvecserial"

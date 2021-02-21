@@ -1,0 +1,20 @@
+// name:     ModelicaStrings_scanString
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.ExternalC.ModelicaStrings_scanString); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.ExternalC.ModelicaStrings_scanString
+//   constant String s1 = \"hello\";
+//   constant String s2 = \"\";
+// end FFITest.ExternalC.ModelicaStrings_scanString;
+// "
+// ""
+// endResult

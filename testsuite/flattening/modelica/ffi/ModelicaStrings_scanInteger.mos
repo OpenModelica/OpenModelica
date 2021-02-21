@@ -1,0 +1,19 @@
+// name:     ModelicaStrings_scanInteger
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.ExternalC.ModelicaStrings_scanInteger); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.ExternalC.ModelicaStrings_scanInteger
+//   constant Integer x = 4524;
+// end FFITest.ExternalC.ModelicaStrings_scanInteger;
+// "
+// ""
+// endResult

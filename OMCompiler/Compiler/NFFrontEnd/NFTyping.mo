@@ -2380,6 +2380,7 @@ algorithm
               info := InstNode.info(classNode);
               sections.args := list(typeExternalArg(arg, info, classNode) for arg in sections.args);
               sections.outputRef := typeCref(sections.outputRef, context, info);
+              checkExternalCallResult(sections.outputRef, info);
             then
               sections;
 
@@ -2534,6 +2535,30 @@ algorithm
 
   end match;
 end makeDefaultExternalCall;
+
+function checkExternalCallResult
+  input ComponentRef result;
+  input SourceInfo info;
+protected
+  Type ty;
+algorithm
+  if not ComponentRef.isCref(result) then
+    return;
+  end if;
+
+  ty := ComponentRef.nodeType(result);
+
+  if Type.isArray(ty) then
+    Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,
+      {Type.toString(ty)}, info);
+    fail();
+  end if;
+
+  if ComponentRef.variability(result) < Variability.DISCRETE then
+    Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_NOT_VAR, {}, info);
+    fail();
+  end if;
+end checkExternalCallResult;
 
 function typeComponentSections
   input InstNode component;

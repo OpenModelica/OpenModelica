@@ -1,0 +1,20 @@
+// name:     Boolean1
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Scalars.Boolean1); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.Scalars.Boolean1
+//   constant Boolean b1 = true;
+//   constant Boolean b2 = false;
+// end FFITest.Scalars.Boolean1;
+// "
+// ""
+// endResult

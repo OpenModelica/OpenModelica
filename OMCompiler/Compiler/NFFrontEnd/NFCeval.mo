@@ -1810,7 +1810,6 @@ algorithm
         printFailedEvalError(getInstanceName(), exp, sourceInfo());
       then
         fail();
-
     else ();
   end match;
 end evalCast;
@@ -1833,7 +1832,7 @@ algorithm
         if Function.isBuiltin(c.fn) then
           Expression.bindingExpMap(Expression.CALL(c), function evalBuiltinCallExp(target = target))
         else
-          Expression.bindingExpMap(Expression.CALL(c), evalNormalCallExp);
+          Expression.bindingExpMap(Expression.CALL(c), function evalNormalCallExp(target = target));
 
     case Call.TYPED_ARRAY_CONSTRUCTOR()
       algorithm
@@ -1949,19 +1948,21 @@ end evalBuiltinCall;
 
 function evalNormalCallExp
   input Expression callExp;
+  input EvalTarget target;
   output Expression result;
 protected
   Function fn;
   list<Expression> args;
 algorithm
   Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args)) := callExp;
-  result := evalNormalCall(fn, args);
+  result := evalNormalCall(fn, args, target);
 end evalNormalCallExp;
 
 function evalNormalCall
   input Function fn;
   input list<Expression> args;
-  output Expression result = EvalFunction.evaluate(fn, args);
+  input EvalTarget target;
+  output Expression result = EvalFunction.evaluate(fn, args, target);
 end evalNormalCall;
 
 function evalBuiltinAbs

@@ -44,7 +44,7 @@ LDFLAGS=-L./ $(LOMPARSE) $(LCOMPILERRUNTIME) -L"$(OMHOME)/lib/omc" \
 -Wl,--enable-stdcall-fixup -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic -static-libgcc \
 -L../../3rdParty/lpsolve/build/lib \
 -lgfortran -ltre -lomniORB420_rt -lomnithread40_rt \
--lzmq -lffi \
+-lzmq \
 $(OMENCRYPTIONLIBS) \
 $(LDFLAGS_CURL) \
 $(EXTRA_LD_FLAGS)

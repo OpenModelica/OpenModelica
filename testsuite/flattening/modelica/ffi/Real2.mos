@@ -1,0 +1,19 @@
+// name:     Real2
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Scalars.Real2); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.Scalars.Real2
+//   constant Real r = 6.0;
+// end FFITest.Scalars.Real2;
+// "
+// ""
+// endResult

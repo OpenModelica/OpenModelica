@@ -1045,6 +1045,20 @@ public
     rangeExp := makeRange(start_exp, step_exp, stop_exp);
   end makeIntegerRange;
 
+  function makeTuple
+    input list<Expression> expl;
+    output Expression tupleExp;
+  protected
+    list<Type> tyl;
+  algorithm
+    if listLength(expl) == 1 then
+      tupleExp := listHead(expl);
+    else
+      tyl := list(typeOf(e) for e in expl);
+      tupleExp := TUPLE(Type.TUPLE(tyl, NONE()), expl);
+    end if;
+  end makeTuple;
+
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
     input list<Subscript> subscripts;

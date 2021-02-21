@@ -151,7 +151,7 @@ void makeLibsAndCache(libs='core') {
   """
   generateTemplates()
   sh "touch omc.skip"
-  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff"
+  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff ffi-test-lib"
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
       sh cmd

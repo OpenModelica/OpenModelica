@@ -1,0 +1,21 @@
+// name:     Record3
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Records.Record3); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.Records.Record3
+//   constant Integer r3.i1 = 1;
+//   constant Real r3.r = 2.0;
+//   constant Integer r3.i2 = 3;
+// end FFITest.Records.Record3;
+// "
+// ""
+// endResult
