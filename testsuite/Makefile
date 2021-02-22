@@ -713,6 +713,7 @@ clean_g_3 :
 	  $(MAKE) -C flattening/libraries/msl22 -f Makefile clean; \
 	fi
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean
+	$(MAKE) -C simulation/libraries/msl40 -f Makefile clean
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile clean
 	$(MAKE) -C openmodelica/linearization -f Makefile clean
 	$(MAKE) -C openmodelica/modelicaML -f Makefile clean
