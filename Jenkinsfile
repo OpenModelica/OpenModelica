@@ -62,7 +62,7 @@ pipeline {
           }
           steps {
             // Xenial is GCC 5
-            script { common.buildOMC('gcc-5', 'g++-5', '', true) }
+            script { common.buildOMC('gcc-5', 'g++-5', '', true, false) }
             stash name: 'omc-gcc', includes: 'build/**, **/config.status'
           }
         }
@@ -78,7 +78,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC('clang', 'clang++', '--without-hwloc', true)
+              common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
               common.getVersion()
             }
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
@@ -106,7 +106,7 @@ pipeline {
               withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
                 sh "echo PATH: \$PATH QTDIR: \$QTDIR"
                 sh "${env.GMAKE} --version"
-                common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary", true)
+                common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary", true, false)
                 common.buildGUI('', false)
                 sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
                 sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
@@ -135,7 +135,7 @@ pipeline {
             script {
               withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
-                common.buildOMC('cc', 'c++', '', true)
+                common.buildOMC('cc', 'c++', '', true, false)
                 common.makeLibsAndCache()
                 common.buildOMSens()
                 common.buildGUI('', true)
@@ -167,7 +167,8 @@ pipeline {
                 '/opt/rh/devtoolset-8/root/usr/bin/gcc',
                 '/opt/rh/devtoolset-8/root/usr/bin/g++',
                 'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran',
-                false)  // Building C++ runtime doesn't work at the moment
+                false, // Building C++ runtime doesn't work at the moment
+                false)
             }
             //stash name: 'omc-centos7', includes: 'build/**, **/config.status'
           }
