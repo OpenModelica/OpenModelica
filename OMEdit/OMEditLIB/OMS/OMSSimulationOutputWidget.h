@@ -43,6 +43,28 @@
 #include <QDateTime>
 #include <QTextBrowser>
 
+class ProgressSubscriberSocket : public QObject
+{
+  Q_OBJECT
+public:
+  ProgressSubscriberSocket();
+  ~ProgressSubscriberSocket();
+  QString getEndPoint() const {return mEndPoint;}
+  QString getErrorString() const {return mErrorString;}
+  bool isSocketConnected() const {return mSocketConnected;}
+  void setSocketConnected(bool socketConnected) {mSocketConnected = socketConnected;}
+private:
+  void *mpContext;
+  void *mpSocket;
+  QString mEndPoint;
+  QString mErrorString;
+  bool mSocketConnected;
+signals:
+  void simulationProgressJson(const QString &progressJson);
+public slots:
+  void readProgressJson();
+};
+
 class ArchivedOMSSimulationItem;
 class OutputPlainTextEdit;
 class OMSSimulationOutputWidget : public QWidget
@@ -68,18 +90,15 @@ private:
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
-  void *mpContext;
-  void *mpSubscriberSocket;
-  QTimer *mpSubscriberSocketTimer;
-signals:
-  void sendSimulationProgress(QString ident, double time, oms_status_enu_t status);
+  ProgressSubscriberSocket *mpProgressSubscriberSocket;
+  QThread mProgressThread;
 public slots:
   void simulationProcessStarted();
   void readSimulationStandardOutput();
   void readSimulationStandardError();
   void simulationProcessError(QProcess::ProcessError error);
   void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
-  void simulationProgressJson();
+  void simulationProgressJson(const QString &progressJson);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
 protected:
