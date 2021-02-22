@@ -162,7 +162,7 @@ void makeLibsAndCache(libs='core') {
   }
 }
 
-void buildOMC(CC, CXX, extraFlags, buildCpp) {
+void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
   if (isWindows()) {
@@ -243,9 +243,12 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
   sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
   // OMSimulator requires HOME to be set and writeable
   def outputSync = sh(script: "${makeCommand()} --version | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\\+//'", returnStdout: true).toInteger() >= 4 ? "--output-sync=recurse" : ""
-  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} omc omc-diff omsimulator"
+  if (clean) {
+    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} clean"
+  }
+  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} omc omc-diff omsimulator"
   // test make install
-  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} install"
+  sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} install"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
   // Run sanity tests
   sh '''
