@@ -1,6 +1,6 @@
 // name:     BouncingBall
 // keywords: fmu export import
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml BouncingBall.fmu BouncingBall_* BouncingBall.libs BouncingBall.lib BouncingBall.so BouncingBall.dll BouncingBall.c BouncingBall.makefile
 // cflags: -d=-newInst
 // Event handling in FMU Import

@@ -1,6 +1,6 @@
 // name:     Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum
 // keywords: simulation MSL Examples
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_* Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.libs Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.lib Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.so Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.c Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.makefile Modelica_from_nxy_*
 // cflags: -d=-newInst
 // Simulation Results

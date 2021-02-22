@@ -1,6 +1,6 @@
 // name:     StringParameters
 // keywords: fmu export import
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml StringParameters.fmu StringParameters_* StringParameters.libs StringParameters.lib StringParameters.so StringParameters.dll StringParameters.c StringParameters.makefile
 // cflags: -d=-newInst
 // Event handling in FMU Import

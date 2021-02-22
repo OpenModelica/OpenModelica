@@ -1,6 +1,6 @@
 // name:     TanksConnectedPI
 // keywords: fmu export import
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml TanksConnectedPI.fmu _TanksConnectedPI* TanksConnectedPI_* TanksConnectedPI.libs TanksConnectedPI.lib TanksConnectedPI TanksConnectedPI.exe TanksConnectedPI.so TanksConnectedPI.dll TanksConnectedPI.c TanksConnectedPI.makefile output.log TanksConnectedPI/*
 // cflags: -d=-newInst
 //
