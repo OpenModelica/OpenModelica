@@ -449,7 +449,7 @@ protected
   Equation eq;
   list<tuple<String, Binding>> ty_attrs;
   Variability var;
-  Boolean unfix;
+  Boolean unfix, bindingIsCall, forceInitEq = false;
 algorithm
   Component.TYPED_COMPONENT(ty = ty, binding = binding, attributes = comp_attr,
     comment = cmt, info = info) := comp;
@@ -460,17 +460,29 @@ algorithm
     unfix := Binding.isUnbound(binding) and var == Variability.PARAMETER;
   else
     binding := flattenBinding(binding, prefix);
-    unfix := false;
+    // kabdelhak: ticket #6267
+    // if the simplified binding is just a function call create an initial equation for it
+    try
+      bindingIsCall := Expression.isCall(SimplifyExp.simplify(Expression.getBindingExp(Binding.getTypedExp(binding))));
+    else
+      bindingIsCall := false;
+    end try;
+    if bindingIsCall and Type.isArray(ty) and var <= Variability.PARAMETER then
+      forceInitEq := true;
+      unfix := true;
+    else
+      unfix := false;
+    end if;
   end if;
 
   // If the component is an array component with a binding and at least discrete variability,
   // move the binding into an equation. This avoids having to scalarize the binding.
   if not settings.nfAPI then
-    if Type.isArray(ty) and Binding.isBound(binding) and var >= Variability.DISCRETE then
+    if Type.isArray(ty) and Binding.isBound(binding) and (var >= Variability.DISCRETE or forceInitEq) then
       name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
       eq := Equation.ARRAY_EQUALITY(Expression.CREF(ty, name), Binding.getTypedExp(binding), ty,
         ElementSource.createElementSource(info));
-      sections := Sections.prependEquation(eq, sections);
+      sections := Sections.prependEquation(eq, sections, forceInitEq);
       binding := NFBinding.EMPTY_BINDING;
 
       // Moving the binding of an input variable to an equation can change how
