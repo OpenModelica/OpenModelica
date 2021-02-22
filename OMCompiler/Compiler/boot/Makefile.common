@@ -22,7 +22,7 @@ PATCH_SOURCES=true
 
 PATCHES := $(patsubst %.patch.xz,%.patch,$(wildcard patches/*.patch.xz))
 
-LIBFFIAR=$(TOP_DIR)/3rdParty/libffi/build/lib/libffi.a
+LIBFFIAR=$(TOP_DIR)/3rdParty/libffi/install/lib*/libffi.a
 LIBOMCGRAPHSTREAMAR=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a
 LIBOMCBACKENDRUNTIMEAR=$(TOP_DIR)/Compiler/runtime/libomcbackendruntime.a
 

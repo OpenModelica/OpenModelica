@@ -652,12 +652,12 @@ clean-nox:
 LIBFFI=3rdParty/libffi
 libffi: $(LIBFFI)
 	(cd "$(LIBFFI)" && (test -f Makefile || ./autogen.sh))
-	(cd "$(LIBFFI)" && (test -f Makefile || (./configure --prefix="`pwd`/build" --enable-shared=no --disable-docs CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
+	(cd "$(LIBFFI)" && (test -f Makefile || (./configure --prefix="`pwd`/install" --enable-shared=no --disable-docs CC="$(CC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" && $(MAKE) clean)))
 	$(MAKE) -C "$(LIBFFI)"
 	$(MAKE) -C "$(LIBFFI)" install
 
 libffi-clean:
-	$(MAKE) -C "$(LIBFFI)" clean
+	-$(MAKE) -C "$(LIBFFI)" clean
 
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos
