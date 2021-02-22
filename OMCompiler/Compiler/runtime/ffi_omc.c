@@ -29,7 +29,7 @@
  *
  */
 
-#include "../../3rdParty/libffi/build/include/ffi.h"
+#include "../../3rdParty/libffi/install/include/ffi.h"
 #include <gc.h>
 
 #include "systemimpl.h"
