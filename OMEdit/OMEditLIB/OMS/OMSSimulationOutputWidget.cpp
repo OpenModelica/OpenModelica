@@ -44,6 +44,65 @@
 #include <QGridLayout>
 
 /*!
+ * \class ProgressSubscriberSocket
+ * \brief Reads the simulation progress in a loop.
+ */
+/*!
+ * \brief ProgressSubscriberSocket::ProgressSubscriberSocket
+ */
+ProgressSubscriberSocket::ProgressSubscriberSocket()
+{
+  // create subscriber socket
+  mpContext = zmq_ctx_new();
+  mpSocket = zmq_socket(mpContext, ZMQ_SUB);
+  int rc = zmq_bind(mpSocket, "tcp://127.0.0.1:*");
+  if (rc == 0) {
+    // get the end point
+    const size_t endPointSize = 30;
+    char endPoint[endPointSize];
+    zmq_getsockopt(mpSocket, ZMQ_LAST_ENDPOINT, &endPoint, (size_t *)&endPointSize);
+    zmq_setsockopt(mpSocket, ZMQ_SUBSCRIBE, "", 0);
+    mEndPoint = QString(endPoint);
+    mErrorString = "";
+  } else {
+    mEndPoint = "";
+    mErrorString = QString("Error creating ZeroMQ subscriber socket. zmq_bind failed: %1\n").arg(strerror(errno));
+  }
+  mSocketConnected = false;
+}
+
+/*!
+ * \brief ProgressSubscriberSocket::~ProgressSubscriberSocket
+ */
+ProgressSubscriberSocket::~ProgressSubscriberSocket()
+{
+  zmq_close(mpSocket);
+  zmq_ctx_destroy(mpContext);
+}
+
+/*!
+ * \brief ProgressSubscriberSocket::readProgressJson
+ * Reads the socket message in a infinite loop in a blocking mode.
+ */
+void ProgressSubscriberSocket::readProgressJson()
+{
+  while (isSocketConnected()) {
+    zmq_msg_t replyMsg;
+    zmq_msg_init(&replyMsg);
+    int size = zmq_msg_recv(&replyMsg, mpSocket, ZMQ_DONTWAIT);
+    if (size > -1) {
+      // copy the zmq_msg_t to char*
+      char *reply = (char*)malloc(size + 1);
+      memcpy(reply, zmq_msg_data(&replyMsg), size);
+      reply[size] = 0;
+      emit simulationProgressJson(QString(reply));
+    }
+    // release the zmq_msg_t
+    zmq_msg_close(&replyMsg);
+  }
+}
+
+/*!
  * \class OMSSimulationOutputWidget
  * \brief Simulation output window.
  */
@@ -98,19 +157,11 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mIsSimulationProcessKilled = false;
   mIsSimulationProcessRunning = false;
   // create subscriber socket
-  mpContext = zmq_ctx_new();
-  mpSubscriberSocket = zmq_socket(mpContext, ZMQ_SUB);
-  int rc = zmq_bind(mpSubscriberSocket, "tcp://127.0.0.1:*");
-  if (rc == 0) {
-    // get the end point
-    const size_t endPointSize = 30;
-    char endPoint[endPointSize];
-    zmq_getsockopt(mpSubscriberSocket, ZMQ_LAST_ENDPOINT, &endPoint, (size_t *)&endPointSize);
-    zmq_setsockopt(mpSubscriberSocket, ZMQ_SUBSCRIBE, "", 0);
-    mpSubscriberSocketTimer = new QTimer;
-    mpSubscriberSocketTimer->setInterval(10);
-    connect(mpSubscriberSocketTimer, SIGNAL(timeout()), SLOT(simulationProgressJson()));
-    mpSubscriberSocketTimer->start();
+  mpProgressSubscriberSocket = new ProgressSubscriberSocket;
+  if (mpProgressSubscriberSocket->getErrorString().isEmpty()) {
+    mpProgressSubscriberSocket->moveToThread(&mProgressThread);
+    connect(&mProgressThread, SIGNAL(started()), mpProgressSubscriberSocket, SLOT(readProgressJson()));
+    connect(mpProgressSubscriberSocket, SIGNAL(simulationProgressJson(QString)), this, SLOT(simulationProgressJson(QString)));
     // start the simulation process
     mpSimulationProcess = new QProcess;
     mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
@@ -124,7 +175,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
 #endif
     connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
     QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
-    args << QString("--endpoint-pub=%1").arg(QString(endPoint));
+    args << QString("--endpoint-pub=%1").arg(QString(mpProgressSubscriberSocket->getEndPoint()));
     args << QString("--model=%1").arg(fileName);
     OMSimulatorPage *pOMSimulatorPage = OptionsDialog::instance()->getOMSimulatorPage();
     int logLevel = pOMSimulatorPage->getLoggingLevelComboBox()->itemData(pOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
@@ -152,7 +203,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     writeSimulationOutput(QString("%1 %2\n").arg(process).arg(args.join(" ")), StringHandler::OMEditInfo);
     mpSimulationProcess->start(process, args);
   } else {
-    writeSimulationOutput(QString("Error creating ZeroMQ subscriber socket. zmq_bind failed: %1\n").arg(strerror(errno)), StringHandler::OMEditInfo);
+    writeSimulationOutput(mpProgressSubscriberSocket->getErrorString(), StringHandler::Error);
   }
 }
 
@@ -165,11 +216,10 @@ OMSSimulationOutputWidget::~OMSSimulationOutputWidget()
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     Utilities::getApplicationSettings()->setValue("OMSSimulationOutputWidget/geometry", saveGeometry());
   }
+  delete mpProgressSubscriberSocket;
   if (mpSimulationProcess) {
     mpSimulationProcess->deleteLater();
   }
-  zmq_close(mpSubscriberSocket);
-  zmq_ctx_destroy(mpContext);
 }
 
 /*!
@@ -184,6 +234,8 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpProgressBar->setTextVisible(true);
   mpCancelSimulationButton->setEnabled(true);
   mpArchivedOMSSimulationItem->setStatus(Helper::running);
+  mpProgressSubscriberSocket->setSocketConnected(true);
+  mProgressThread.start();
 }
 
 /*!
@@ -212,7 +264,6 @@ void OMSSimulationOutputWidget::readSimulationStandardError()
 void OMSSimulationOutputWidget::simulationProcessError(QProcess::ProcessError error)
 {
   Q_UNUSED(error);
-  mpSubscriberSocketTimer->stop();
   mIsSimulationProcessRunning = false;
   /* this signal is raised when we kill the simulation process forcefully. */
   if (!isSimulationProcessKilled()) {
@@ -236,31 +287,20 @@ void OMSSimulationOutputWidget::writeSimulationOutput(const QString &output, Str
 /*!
  * \brief OMSSimulationOutputWidget::simulationProgressJson
  * Reads the simulation progress json and updates the progress bar.
+ * \param progressJson
  */
-void OMSSimulationOutputWidget::simulationProgressJson()
+void OMSSimulationOutputWidget::simulationProgressJson(const QString &progressJson)
 {
-  zmq_msg_t replyMsg;
-  zmq_msg_init(&replyMsg);
-  int size = zmq_msg_recv(&replyMsg, mpSubscriberSocket, ZMQ_DONTWAIT);
-  if (size > -1) {
-    // copy the zmq_msg_t to char*
-    char *reply = (char*)malloc(size + 1);
-    memcpy(reply, zmq_msg_data(&replyMsg), size);
-    reply[size] = 0;
-    QString progressJson = QString(reply);
-    int colonIndex = progressJson.indexOf(":");
-    if (colonIndex != -1) {
-      QString progressStr = progressJson.mid(colonIndex + 1);
-      progressStr.chop(1);
-      bool ok;
-      int progress = progressStr.toInt(&ok);
-      if (ok) {
-        mpProgressBar->setValue(progress);
-      }
+  int colonIndex = progressJson.indexOf(":");
+  if (colonIndex != -1) {
+    QString progressStr = progressJson.mid(colonIndex + 1);
+    progressStr.chop(1);
+    bool ok;
+    int progress = progressStr.toInt(&ok);
+    if (ok) {
+      mpProgressBar->setValue(progress);
     }
   }
-  // release the zmq_msg_t
-  zmq_msg_close(&replyMsg);
 }
 
 /*!
@@ -271,7 +311,6 @@ void OMSSimulationOutputWidget::simulationProgressJson()
  */
 void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  mpSubscriberSocketTimer->stop();
   mIsSimulationProcessRunning = false;
   QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
@@ -288,6 +327,9 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   // simulation finished show the results
   MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
   mpArchivedOMSSimulationItem->setStatus(Helper::finished);
+  mpProgressSubscriberSocket->setSocketConnected(false);
+  mProgressThread.exit();
+  mProgressThread.wait();
 }
 
 /*!
