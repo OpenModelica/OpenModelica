@@ -2842,7 +2842,7 @@ algorithm
       else (false,"");
     end match;
     if existNonLin then
-      msg := System.gettext("For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\")");
+      msg := System.gettext("For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\")");
       Error.addMessage(Error.INITIALIZATION_ITERATION_VARIABLES, {name, msg});
     end if;
   end if;
@@ -2937,7 +2937,7 @@ algorithm
           if not (listEmpty(nonLin) and listEmpty(nonLinStart) and listEmpty(lin)) then
             print("Info: Only non-linear iteration variables in non-linear eqation systems require start values. " +
                  "All other start values have no influence on convergence and are ignored. " +
-                 "Use \"-d=dumpLoops\" to show all loops. In OMEdit Tools->Options->Simulation->OMCFlags, in "+
+                 "Use \"-d=dumpLoops\" to show all loops. In OMEdit Tools->Options->Simulation->Additional Translation Flags, in "+
                  "OMNotebook call setCommandLineOptions(\"-d=dumpLoops\")\n\n");
           end if;
         then();
