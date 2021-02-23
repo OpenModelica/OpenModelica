@@ -363,6 +363,13 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   pCentralwidget->setLayout(pCentralgrid);
   //Set the centralwidget
   setCentralWidget(pCentralwidget);
+  //! @todo Remove the following MSL verison block once we have fixed the MSL handling.
+  // set MSL version
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  if (!pSettings->contains("MSLVersion") || !pSettings->value("MSLVersion").toBool()) {
+    MSLVersionDialog *pMSLVersionDialog = new MSLVersionDialog;
+    pMSLVersionDialog->exec();
+  }
   // Load and add user defined Modelica libraries into the Library Widget.
   mpLibraryWidget->getLibraryTreeModel()->addModelicaLibraries();
   // set command line options
@@ -370,8 +377,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
   }
   OptionsDialog::instance()->saveSimulationSettings();
-    // restore OMEdit widgets state
-  QSettings *pSettings = Utilities::getApplicationSettings();
+  // restore OMEdit widgets state
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
     bool restoreMessagesWidget = !MessagesWidget::instance()->getAllMessageWidget()->getMessagesTextBrowser()->toPlainText().isEmpty();
@@ -4549,4 +4555,107 @@ void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
   mpOMContributorsLabel->setToolTip("");
 
   pNetworkReply->deleteLater();
+}
+
+/*!
+ * \brief MSLVersionDialog::MSLVersionDialog
+ * \param parent
+ */
+MSLVersionDialog::MSLVersionDialog(QWidget *parent)
+  : QDialog(parent)
+{
+  QString title = tr("Setup of Modelica Standard Library version");
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowFlag(Qt::WindowCloseButtonHint, false);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, title));
+  // heading
+  Label *pHeadingLabel = Utilities::getHeadingLabel(title);
+  // horizontal line
+  QFrame *pHorizontalLine = Utilities::getHeadingLine();
+  // Information
+  const QString info = QString("OpenModelica 1.17.x supports both Modelica Standard Library (MSL) v. 3.2.3 and v. 4.0.0. Please note that synchronous components in Modelica.Clocked are still not fully reliable, while most other models work fine in both versions.<br /><br />"
+                               "MSL 3.2.3 and 4.0.0 are mutually incompatible, because of changes of class names and paths; for example, Modelica.SIunits became Modelica.Units.SI in version 4.0.0; see ​<a href=\"https://github.com/modelica/ModelicaStandardLibrary/releases/tag/v4.0.0\">link</a> for further information. Please note that conversion scripts are not yet available in OpenModelica 1.17.x, so you need to use other Modelica tools to upgrade existing libraries to use MSL 4.0.0. Conversion scripts support are planned to be supported in version 1.18.0.<br /><br />"
+                               "On Windows, both version of the MSL are installed automatically by the installer. On Linux, you have to install them using apt-get or the package manager, as explained in the installation instructions.<br /><br />"
+                               "You have three options:"
+                               "<ol>"
+                               "<li>Automatically load MSL 3.2.3 in the package browser when starting OMEdit. You can then load other models or packages that use MSL 3.2.3, or start new ones that will use it. If you then open a model or package that uses MSL 4.0.0, errors will occur. This option is recommended if you are not interested in MSL 4.0.0 and you would like to get the same behaviour as in OpenModelica 1.16.x.</li>"
+                               "<li>Automatically load MSL 4.0.0 in the package browser when starting OMEdit. You can then load other models or packages that use MSL 4.0.0, or start new ones that will use it. If you then open a model or package that uses MSL 3.2.3, errors will occur. This option is recommended if you exclusively use new libraries depending on MSL 4.0.0.</li>"
+                               "<li>Do not load MSL when starting OMEdit. When you open a model or library, the appropriate version of MSL will be loaded automatically, based on the uses() annotation of library being opened. This option is recommended if you work with different projects, some using MSL 3.2.3 and some others using MSL 4.0.0. It is also recommended if you are a developer of the Modelica Standard Library, so you want to load your own modified version instead of the pre-installed, officially released read-only version.</li>"
+                               "</ol>"
+                               "Please choose one option:");
+  Label *pInfoLabel = new Label(info);
+  pInfoLabel->setWordWrap(true);
+  pInfoLabel->setTextFormat(Qt::RichText);
+  pInfoLabel->setTextInteractionFlags(pInfoLabel->textInteractionFlags() | Qt::LinksAccessibleByMouse | Qt::LinksAccessibleByKeyboard);
+  pInfoLabel->setOpenExternalLinks(true);
+  pInfoLabel->setToolTip("");
+  // options
+  mpMSL3RadioButton = new QRadioButton("Load MSL 3.2.3 when starting OMEdit");
+  mpMSL3RadioButton->setChecked(true);
+  mpMSL4RadioButton = new QRadioButton("Load MSL 4.0.0 when starting OMEdit");
+  mpNoMSLRadioButton = new QRadioButton("Do not load MSL when starting OMEdit");
+  QButtonGroup *pButtonGroup = new QButtonGroup;
+  pButtonGroup->addButton(mpMSL3RadioButton);
+  pButtonGroup->addButton(mpMSL4RadioButton);
+  pButtonGroup->addButton(mpNoMSLRadioButton);
+  // radio buttons layout
+  QVBoxLayout *pRadioButtonsLayout = new QVBoxLayout;
+  pRadioButtonsLayout->setAlignment(Qt::AlignTop);
+  pRadioButtonsLayout->setSpacing(0);
+  pRadioButtonsLayout->addWidget(mpMSL3RadioButton);
+  pRadioButtonsLayout->addWidget(mpMSL4RadioButton);
+  pRadioButtonsLayout->addWidget(mpNoMSLRadioButton);
+  // more info
+  Label *pPostInfoLabel = new Label(QString("You can later change this setting by going to Tools | Options | Libraries, where you can add or remove the Modelica library from the list of automatically loaded system libraries, as well as specify which version of the library you want to load. Version tag \"default\" will load the latest released version (i.e. 4.0.0 for MSL)"));
+  pPostInfoLabel->setWordWrap(true);
+  pPostInfoLabel->setToolTip("");
+  // Create the buttons
+  QPushButton *pOkButton = new QPushButton(Helper::ok);
+  connect(pOkButton, SIGNAL(clicked()), SLOT(setMSLVersion()));
+  // layout
+  QGridLayout *pMainGridLayout = new QGridLayout;
+  pMainGridLayout->setAlignment(Qt::AlignTop);
+  pMainGridLayout->addWidget(pHeadingLabel, 0, 0);
+  pMainGridLayout->addWidget(pHorizontalLine, 1, 0);
+  pMainGridLayout->addWidget(pInfoLabel, 2, 0);
+  pMainGridLayout->addLayout(pRadioButtonsLayout, 3, 0);
+  pMainGridLayout->addWidget(pPostInfoLabel, 4, 0);
+  pMainGridLayout->addWidget(pOkButton, 5, 0, Qt::AlignRight);
+  setLayout(pMainGridLayout);
+}
+
+/*!
+ * \brief MSLVersionDialog::setMSLVersion
+ */
+void MSLVersionDialog::setMSLVersion()
+{
+  QSettings *pSettings = Utilities::getApplicationSettings();
+  // First clear any Modelica and ModelicaReference setting
+  pSettings->beginGroup("libraries");
+  QStringList libraries = pSettings->childKeys();
+  foreach (QString lib, libraries) {
+    if (lib.compare("Modelica") == 0 || lib.compare("ModelicaReference") == 0) {
+      pSettings->remove(lib);
+    }
+  }
+  pSettings->endGroup();
+  // set the Modelica version based on user setting.
+  if (mpMSL3RadioButton->isChecked()) {
+    pSettings->setValue("libraries/Modelica", "3.2.3");
+  } else if (mpMSL4RadioButton->isChecked()) {
+    pSettings->setValue("libraries/Modelica", "4.0.0");
+  } else { // mpNoMSLRadioButton->isChecked()
+    pSettings->setValue("forceModelicaLoad", false);
+  }
+  pSettings->setValue("MSLVersion", true);
+  accept();
+}
+
+/*!
+ * \brief MSLVersionDialog::reject
+ * Override QDialog::reject() so we can't close the dialog.
+ */
+void MSLVersionDialog::reject()
+{
+  // do nothing here.
 }
