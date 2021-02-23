@@ -13,7 +13,7 @@ model testFinalCon7
   Real y2;
   Real y3(start = -1);
   input Real u;
-  
+
   Real final_con1(min = -5, max = 5) annotation(isFinalConstraint = true);
   Real final_con2(min = -5, max = 5) annotation(isFinalConstraint = true);
   Real cost annotation(isLagrange = true);
@@ -72,7 +72,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

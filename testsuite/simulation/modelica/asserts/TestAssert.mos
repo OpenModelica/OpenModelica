@@ -3,7 +3,7 @@
 // status: correct
 // teardown_command: rm -rf TestAssert.Test* output.log
 // cflags: -d=-newInst
-// 
+//
 
 //print(\"What's up with x = \" + realString(y) + \" at time \" + realString(time) + \"\n\");
 loadString("
@@ -24,7 +24,7 @@ package TestAssert
     der(y) = 1;
   end TestWarningConstant;
 
-  model TestWarningVariable 
+  model TestWarningVariable
     M m1(x = 3 * time);
     M m2(x = 4 * time);
     M m3(x = 6 * time);
@@ -85,7 +85,7 @@ simulate(TestAssert.TestErrorVariable); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // record SimulationResult
 //     resultFile = "TestAssert.TestWarningVariable_res.mat",

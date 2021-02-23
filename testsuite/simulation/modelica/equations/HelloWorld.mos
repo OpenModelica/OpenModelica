@@ -6,7 +6,7 @@
 // Equation handling
 // Drmodelica: 2.1 Hello World (p. 19)
 // cflags: -d=-newInst
-// 
+//
 loadFile("HelloWorld.mo");
 simulate(HelloWorld, startTime=0.0, stopTime=1.0, numberOfIntervals=2, tolerance=1e-5);
 val(x,0.0);getErrorString();
@@ -25,7 +25,7 @@ val(der(x),1.0);getErrorString();
 // "
 // end SimulationResult;
 // 1.0
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0.6065402534538799
 // ""

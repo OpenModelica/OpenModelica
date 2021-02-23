@@ -3,7 +3,7 @@
 // status: correct
 // teardown_command: rm -rf TestModel* output.log
 // cflags: -d=-newInst
-// 
+//
 //  Simulate model with an algorithm that contains asserts and when-statement.
 //
 loadFile("whenInAlgorithm.mo"); getErrorString();
@@ -20,11 +20,11 @@ simulate(whenInAlgorithm, tolerance=1e-6,startTime=0, stopTime=2,numberOfInterva
 //     resultFile = "whenInAlgorithm_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 20, tolerance = 1e-06, method = 'euler', fileNamePrefix = 'whenInAlgorithm', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// stdout            | info    | 
+// stdout            | info    |
 // |                 | |       | This is some debug output that needs testing.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

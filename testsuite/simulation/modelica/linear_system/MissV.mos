@@ -14,7 +14,7 @@ package linear_system
   model MissV
     Real pb(start = 12000000);
     Real Qb;
-    Real pa(start = 12000000); 
+    Real pa(start = 12000000);
     Real Qa;
     parameter Real s = 1e-3;
     parameter Real v = 5e3;
@@ -58,7 +58,7 @@ val(pb, 1.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 6999999.999999999
 // 6999999.999999999

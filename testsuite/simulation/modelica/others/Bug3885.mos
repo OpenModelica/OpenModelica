@@ -2,9 +2,9 @@
 // keywords: delay
 // status: correct
 // cflags: -d=-newInst
-// 
+//
 // refs ticket:3885, ticket:4441
-// 
+//
 
 loadModel(Modelica,{"3.2"});
 getErrorString();
@@ -42,7 +42,7 @@ val(A.temperature.T,{0,1});
 // "
 // end SimulationResult;
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
-// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: There are iteration variables with default zero start attribute. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
 // "
 // {436.3297199023242,372.7702574038623}
 // {500.9498115061938,500.9498202400582}

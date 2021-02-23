@@ -4,9 +4,9 @@
 // cflags:
 // teardown_command: rm -rf initializationTests.SingularInitial* _initializationTests.SingularInitial* output.log
 // cflags: -d=-newInst
-// 
+//
 //  #2561
-// 
+//
 loadString("
 within ;
 package initializationTests
@@ -37,7 +37,7 @@ simulate(initializationTests.SingularInitial, startTime=0.0, stopTime=0.0); getE
 // "
 // end SimulationResult;
 // "Notification: The given system is mixed-determined.   [index = 1]
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
-// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

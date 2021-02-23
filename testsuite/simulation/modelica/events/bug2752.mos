@@ -13,7 +13,7 @@ model bug2752
   Real x, y[3], z[3];
   Real a[3],b[3];
   parameter Integer N = 3;
-algorithm 
+algorithm
   for j in 1:N loop
     if not a[j] > x then
       z[j] :=  a[j];
@@ -22,11 +22,11 @@ algorithm
     else
     end if;
   end for;
-equation 
+equation
   der(x) = 1;
   a = { 2*der(x), 3*der(x), 4*der(x)};
   b = { 5*der(x), 6*der(x), 7*der(x)};
-algorithm 
+algorithm
   for j in 1:N loop
     if not a[j] > x then
       y[j] :=  a[j];
@@ -63,7 +63,7 @@ val(y[3], 4.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 4.0
 // 4.0

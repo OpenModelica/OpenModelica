@@ -22,9 +22,9 @@ model foo
 	y[6] := 6*sumx^2;
 	tmpy := 7*sumx^2;
 	y[7] := exp(-sqrt(tmpy/sum(y[i] for i in 1:6))/tmpy);
-    annotation(Inline=true); 
+    annotation(Inline=true);
   end f;
-  
+
   Real y(fixed = true, start = 1);
   Real v(fixed = true, start = -1);
   Real h(start = 0);
@@ -35,7 +35,7 @@ protected
 
   Real[5] x;
   Real[:] z = {i*sin(time) + 1 for i in 1:10};
-  Real[5] w = {z[i]^i/sum(z) for i in 1:5}; 
+  Real[5] w = {z[i]^i/sum(z) for i in 1:5};
 equation
    x[1] = a[1] + a[2] + w[1];
    x[2] = z[1] + a[1];
@@ -51,7 +51,7 @@ equation
    d = sum(w);
    der(y) = sin(c) - cos(sum(f(x))) + sum(a)/10;
    der(v) = y - d;
-   
+
    when sample(0,0.1) then
      h = v + y + sum(f(z[1:5]))/10 + sum(f(z[6:10]))/10;
    end when;
@@ -86,7 +86,7 @@ val(h,{0,0.5,1.0}); // 0, -17.139
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {0.04812243429093915,-2.749810253792299,-24.0237961570759}
 // true
@@ -98,7 +98,7 @@ val(h,{0,0.5,1.0}); // 0, -17.139
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {0.04812243429093915,-2.749810335170811,-24.02379626652536}
 // endResult

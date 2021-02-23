@@ -13,7 +13,7 @@ within ;
 package eventTests
   model whenTest1
     Real x;
-  equation 
+  equation
     when time > -1.0 then
       x = 1;
     end when;
@@ -36,7 +36,7 @@ val(x, 1.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0.0
 // 0.0

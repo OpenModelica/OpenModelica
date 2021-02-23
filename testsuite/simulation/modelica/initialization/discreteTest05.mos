@@ -15,22 +15,22 @@ package initializationTests
     Real x;
     Boolean free;
 
-  initial equation 
+  initial equation
     x = if free then 1.0 else 2.0;
 
-  equation 
+  equation
     der(x) = if free then 1.0 else 2.0;
     free = false;
   end discreteTest5_baseModel;
-  
+
   model discreteTest5
     discreteTest5_baseModel bm;
     Real y;
 
-  initial equation 
+  initial equation
     y = if pre(bm.free) then 1.0 else 2.0;
 
-  equation 
+  equation
     der(y) = if bm.free then 1.0 else 2.0;
   end discreteTest5;
 end initializationTests;
@@ -62,7 +62,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.discrete
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {{0.0,0.0},{2.0,2.0},{2.0,2.0},{0.0,0.0}}
 // ""

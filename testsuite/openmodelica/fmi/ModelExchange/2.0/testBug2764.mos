@@ -35,7 +35,7 @@ readFile("modelDescription.tmp.xml");
 // true
 // ""
 // "test_Bug2764.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>

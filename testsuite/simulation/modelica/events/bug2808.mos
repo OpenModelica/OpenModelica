@@ -17,7 +17,7 @@ function compare
   output Boolean result;
 external \"C\" result = ModelicaStrings_compare(string1, string2, caseSensitive) annotation(Library=\"ModelicaExternalC\");
 end compare;
-  Real x; 
+  Real x;
 equation
   der(x) = if compare(\"test\",\"Test\",false) and x < 0.5 then 1.0 else 0.5;
 end bug2808;
@@ -39,7 +39,7 @@ val(der(x),1.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 1.0
 // 1.0
