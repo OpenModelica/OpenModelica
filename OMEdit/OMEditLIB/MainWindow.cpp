@@ -4574,15 +4574,15 @@ MSLVersionDialog::MSLVersionDialog(QWidget *parent)
   QFrame *pHorizontalLine = Utilities::getHeadingLine();
   // Information
   const QString info = QString("OpenModelica 1.17.x supports both Modelica Standard Library (MSL) v3.2.3 and v4.0.0. Please note that synchronous components in Modelica.Clocked are still not fully reliable, while most other models work fine in both versions.<br /><br />"
-                               "MSL v3.2.3 and v4.0.0 are mutually incompatible, because of changes of class names and paths; for example, Modelica.SIunits became Modelica.Units.SI in v4.0.0; see ​<a href=\"https://github.com/modelica/ModelicaStandardLibrary/releases/tag/v4.0.0\">link</a> for further information. Please note that conversion scripts are not yet available in OpenModelica 1.17.x, so you need to use other Modelica tools to upgrade existing libraries to use MSL v4.0.0. Conversion scripts are planned to be supported in OpenModelica 1.18.0.<br /><br />"
-                               "On Windows, both versions of the MSL are installed automatically by the installer. On Linux, you have to install them using apt-get, as explained on the <a href=\"https://openmodelica.org/download/download-linux\">OpenModelica download page</a>, or the package manager.<br /><br />"
-                               "You have three options:"
+                               "MSL v3.2.3 and v4.0.0 are mutually incompatible, because of changes of class names and paths; for example, Modelica.SIunits became Modelica.Units.SI in v4.0.0 (​<a href=\"https://github.com/modelica/ModelicaStandardLibrary/releases/tag/v4.0.0\">further information</a>). Please note that conversion scripts are not yet available in OpenModelica 1.17.x, so you need to use other Modelica tools to upgrade existing libraries to use MSL v4.0.0. Conversion script support is planned in OpenModelica 1.18.0.<br /><br />"
+                               "On Windows, both versions of the MSL are installed automatically by the installer. On Linux, follow the instructions on the <a href=\"https://openmodelica.org/download/download-linux\">OpenModelica download page</a>.<br /><br />"
+                               "You have three startup options:"
                                "<ol>"
-                               "<li>Automatically load MSL v3.2.3 in the libraries browser when starting OMEdit. You can then load other models or packages that use MSL v3.2.3, or start new ones that will use it. If you then open a model or package that uses MSL v4.0.0, errors will occur. This option is recommended if you are not interested in MSL v4.0.0 and you would like to get the same behaviour as in OpenModelica 1.16.x.</li>"
-                               "<li>Automatically load MSL v4.0.0 in the libraries browser when starting OMEdit. You can then load other models or packages that use MSL v4.0.0, or start new ones that will use it. If you then open a model or package that uses MSL v3.2.3, errors will occur. This option is recommended if you exclusively use new libraries depending on MSL v4.0.0.</li>"
-                               "<li>Do not load MSL when starting OMEdit. When you open a model or library, the appropriate version of MSL will be loaded automatically, based on the uses() annotation of library being opened. This option is recommended if you work with different projects, some using MSL v3.2.3 and some others using MSL v4.0.0. It is also recommended if you are a developer of the Modelica Standard Library, so you want to load your own modified version instead of the pre-installed version modified for OpenModelica.</li>"
+                               "<li>Automatically load MSL v3.2.3. You can then load other models or packages that use MSL v3.2.3, or start new ones that will use it. If you then open a model or package that uses MSL v4.0.0, errors will occur. This option is recommended if you are not interested in MSL v4.0.0 and you would like to get the same behaviour as in OpenModelica 1.16.x.</li>"
+                               "<li>Automatically load MSL v4.0.0. You can then load other models or packages that use MSL v4.0.0, or start new ones that will use it. If you then open a model or package that uses MSL v3.2.3, errors will occur. This option is recommended if you exclusively use new libraries depending on MSL v4.0.0.</li>"
+                               "<li>Do not load MSL. When you open a model or library, the appropriate version of MSL will be loaded automatically, based on the uses() annotation of library being opened. This option is recommended if you work with different projects, some using MSL v3.2.3 and some others using MSL v4.0.0. It is also recommended if you are a developer of the Modelica Standard Library, so you want to load your own modified version instead of the pre-installed version modified for OpenModelica.</li>"
                                "</ol>"
-                               "Please choose one option:");
+                               "Please choose one startup option:");
   Label *pInfoLabel = new Label(info);
   pInfoLabel->setWordWrap(true);
   pInfoLabel->setTextFormat(Qt::RichText);
@@ -4590,9 +4590,9 @@ MSLVersionDialog::MSLVersionDialog(QWidget *parent)
   pInfoLabel->setOpenExternalLinks(true);
   pInfoLabel->setToolTip("");
   // options
-  mpMSL3RadioButton = new QRadioButton("Load MSL v3.2.3 when starting OMEdit");
-  mpMSL4RadioButton = new QRadioButton("Load MSL v4.0.0 when starting OMEdit");
-  mpNoMSLRadioButton = new QRadioButton("Do not load MSL when starting OMEdit");
+  mpMSL3RadioButton = new QRadioButton("Load MSL v3.2.3");
+  mpMSL4RadioButton = new QRadioButton("Load MSL v4.0.0");
+  mpNoMSLRadioButton = new QRadioButton("Do not load MSL");
   QButtonGroup *pButtonGroup = new QButtonGroup;
   pButtonGroup->addButton(mpMSL3RadioButton);
   pButtonGroup->addButton(mpMSL4RadioButton);
