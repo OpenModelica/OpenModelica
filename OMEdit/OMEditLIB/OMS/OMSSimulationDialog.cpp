@@ -201,7 +201,6 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
   mpResultFileTextBox->setText(QString(fileName));
   // result file buffer size
   mpResultFileBufferSizeSpinBox->setValue(bufferSize);
-  // signalFilter
   mpOkButton->setEnabled(!mpLibraryTreeItem->isSystemLibrary());
 
   return QDialog::exec();
