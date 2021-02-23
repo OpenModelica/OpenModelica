@@ -776,7 +776,7 @@ template arrayVarAllocInit(ComponentRef var_cref, Type var_type, list<DAE.Dimens
         >>
       else
         let &preExpAlloc = buffer ""
-        let dims_str = (var_dims |> dim =>  dimension(dim, context, &preExpAlloc, &varDecls, &auxFunction) ;separator=", ")
+        let dims_str = (var_dims |> dim => '(_index_t)<%dimension(dim, context, &preExpAlloc, &varDecls, &auxFunction)%>' ;separator=", ")
         <<
         <%preExpAlloc%>
         alloc_<%type_name%>_array(&(<%var_name%>), <%listLength(var_dims)%>, <%dims_str%>);
@@ -795,7 +795,7 @@ template arrayVarAllocInit(ComponentRef var_cref, Type var_type, list<DAE.Dimens
         >>
       else
         let &preExpAlloc = buffer ""
-        let dims_str = (var_dims |> dim =>  dimension(dim, context, &preExpAlloc, &varDecls, &auxFunction) ;separator=", ")
+        let dims_str = (var_dims |> dim => '(_index_t)<%dimension(dim, context, &preExpAlloc, &varDecls, &auxFunction)%>' ;separator=", ")
         <<
         <%preExpAlloc%>
         alloc_<%type_name%>_array(&(<%var_name%>), <%listLength(var_dims)%>, <%dims_str%>); // <%var_name%> has no default value.<%\n%>
@@ -1780,7 +1780,7 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let varName = '<%prefix%>._<%crefStr(var.name)%>'
   let initRecords = initRecordMembers(var, &varDecls, &varInits, &auxFunction)
   let &varInits += initRecords
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
+  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
   if instDims then
     let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     let defaultValue = varAllocDefaultValue(var, "", varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
@@ -2126,7 +2126,7 @@ match var
 case var as VARIABLE(parallelism = PARGLOBAL(__)) then
   let varName = '<%contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)%>'
 
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
+  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
 
   if instDims then
     let &varDecls += 'device_<%expTypeShort(var.ty)%>_array <%varName%>;<%\n%>'
@@ -2151,7 +2151,7 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
 case var as VARIABLE(parallelism = PARLOCAL(__)) then
   let varName = '<%contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)%>'
 
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
+  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
   if instDims then
     let &varDecls += 'device_local_<%expTypeShort(var.ty)%>_array <%varName%>;<%\n%>'
     let defaultAlloc = 'alloc_device_local_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
@@ -2186,7 +2186,7 @@ case var as VARIABLE(__) then
   let &varDecls += if not outStruct then '<%varType(var)%> <%contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)%>;<%\n%>' //else ""
   let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)%>'
 
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
+  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
   if instDims then
     let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array_c99_<%listLength(instDims)%>(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>, memory_state);<%\n%>'
     let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
@@ -2287,7 +2287,7 @@ match var
 case var as VARIABLE(parallelism = PARGLOBAL(__)) then
   let varName = '<%contextCrefNoPrevExp(var.name,contextFunction,&auxFunction)%>'
   let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
+  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
   if instDims then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     let &varAssign += '<%dest%>.c<%ix%> = <%varName%>;<%\n%>'
@@ -2300,7 +2300,7 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
 case var as VARIABLE(parallelism = PARLOCAL(__)) then
   let varName = '<%contextCrefNoPrevExp(var.name,contextFunction,&auxFunction)%>'
   let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
+  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
   if instDims then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     let &varAssign += '<%dest%>.c<%ix%> = <%varName%>;<%\n%>'
@@ -2313,7 +2313,7 @@ case var as VARIABLE(parallelism = PARLOCAL(__)) then
 case var as VARIABLE(__) then
   let varName = '<%contextCrefNoPrevExp(var.name,contextFunction,&auxFunction)%>'
   let &varDecls += '<%varType(var)%> <%varName%>;<%\n%>'
-  let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction) ;separator=", ")
+  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
   if instDims then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     let &varAssign += '<%dest%>.c<%ix%> = <%varName%>;<%\n%>'
@@ -2519,7 +2519,7 @@ template extFunCallBiVar(Variable var, Text &preExp, Text &varDecls, Text &auxFu
       case SOME(v) then
         '<%daeExp(v, contextFunction, &preExp, &varDecls, &auxFunction)%>'
       else ""
-    let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &preExp, &varDecls, &auxFunction) ;separator=", ")
+    let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
     if instDims then
       let type = expTypeArray(var.ty)
       let &preExp += 'alloc_<%type%>(&<%var_name%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
@@ -2541,7 +2541,7 @@ template extFunCallBiVarF77(Variable var, Text &preExp, Text &varDecls, Text &au
       case SOME(v) then
         '<%daeExp(v, contextFunction, &preExp, &varDecls, &auxFunction)%>'
       else ""
-    let instDimsInit = (instDims |> dim => dimension(dim, contextFunction, &preExp, &varDecls, &auxFunction) ;separator=", ")
+    let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
     if instDims then
       let type = expTypeArray(var.ty)
       let &preExp += 'alloc_<%type%>(&<%var_name%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
@@ -3042,7 +3042,7 @@ template indexedAssign(DAE.Exp lhs, String exp, Context context,
         let type = expTypeShort(aty)
         let wrapperArray = tempDecl(arrayType, &varDecls)
         let dimsLenStr = listLength(crefDims(cr))
-        let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+        let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
         let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction)
         <<
         <%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>
@@ -5179,14 +5179,14 @@ template daeExpCrefRhsSimContext(Exp ecr, Context context, Text &preExp,
     let wrapperArray = tempDecl(arrayType, &varDecls)
     if crefSubIsScalar(cr) then
       let dimsLenStr = listLength(dims)
-      let dimsValuesStr = (dims |> dim => dimension(dim, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
       let nosubname = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction)
       let t = '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&((&<%nosubname%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
     wrapperArray
     else
       let dimsLenStr = listLength(crefDims(cr))
-      let dimsValuesStr = (crefDims(cr) |> dim => dimension(dim, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      let dimsValuesStr = (crefDims(cr) |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
       let arrName = contextCref(crefStripSubs(cr), context, &preExp, &varDecls, &auxFunction)
       let &preExp += '<%type%>_array_create(&<%wrapperArray%>, (modelica_<%type%>*)&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let slicedArray = tempDecl(arrayType, &varDecls)
@@ -5330,7 +5330,7 @@ template daeExpCrefLhsSimContext(Exp ecr, Context context, Text &preExp,
     let wrapperArray = tempDecl(arrayType, &varDecls)
     if crefSubIsScalar(cr) then
       let dimsLenStr = listLength(dims)
-      let dimsValuesStr = (dims |> dim => dimension(dim, context, &preExp, &varDecls, &auxFunction) ;separator=", ")
+      let dimsValuesStr = (dims |> dim => '(_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
       let nosubname = contextCrefIsPre(crefStripSubs(cr),context, &auxFunction, isPre)
       let t = '<%type%>_array_create(&<%wrapperArray%>, ((modelica_<%type%>*)&((&<%nosubname%>)<%indexSubs(crefDims(cr), crefSubs(crefArrayGetFirstCref(cr)), context, &preExp, &varDecls, &auxFunction)%>)), <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
       let &preExp += t
@@ -5353,7 +5353,7 @@ template indexSubs(list<Dimension> dims, list<Subscript> subs, Context context, 
   if intNe(listLength(dims),listLength(subs)) then
     error(sourceInfo(),'indexSubs got different number of dimensions and subscripts')
   else '[calc_base_index_dims_subs(<%listLength(dims)%><%
-    dims |> dim => ', <%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>'%><%
+    dims |> dim => ', (_index_t)<%dimension(dim, context, &preExp, &varDecls, &auxFunction)%>'%><%
     subs |> INDEX(__) => ', <%daeSubscriptExp(exp, context, &preExp, &varDecls, &auxFunction)%>'
     %>)]'
 end indexSubs;
@@ -6685,7 +6685,7 @@ case ARRAY(array = array, scalar = scalar, ty = T_ARRAY(ty = t as T_COMPLEX(__))
   let arrayTypeStr = expTypeArray(ty)
   let arrayVar = tempDecl(arrayTypeStr, &varDecls)
   let rec_name = expTypeShort(t)
-  let &preExp += 'alloc_<%rec_name%>_array(&<%arrayVar%>, 1, <%listLength(array)%>);<%\n%>'
+  let &preExp += 'alloc_<%rec_name%>_array(&<%arrayVar%>, 1, (_index_t)<%listLength(array)%>);<%\n%>'
   let params = (array |> e hasindex i1 fromindex 1 =>
       let prefix = if scalar then '' else error(sourceInfo(), 'what is this suppsoed to do?')
       let src = daeExp(e, context, &preExp, &varDecls, &auxFunction)
@@ -6725,7 +6725,7 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp,
     then
     let arrayTypeStr = expTypeArray(ty)
     let tmp = tempDecl(arrayTypeStr, &varDecls)
-    let &preExp += 'alloc_<%arrayTypeStr%>(&<%tmp%>, 2, 0, 1);<%\n%>'
+    let &preExp += 'alloc_<%arrayTypeStr%>(&<%tmp%>, 2, (_index_t)0, (_index_t)1);<%\n%>'
     tmp
   case m as MATRIX(__) then
     let typeStr = expTypeShort(m.ty)
@@ -6745,7 +6745,7 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp,
           '<%els%>'
           ;separator="\n")
         let &preExp += '/* -- start: matrix[<%rows%>,<%cols%>] -- */<%\n%>'
-        let &preExp += 'alloc_<%typeStr%>_array(&<%tmp%>, 2, <%rows%>, <%cols%>);<%\n%>'
+        let &preExp += 'alloc_<%typeStr%>_array(&<%tmp%>, 2, (_index_t)<%rows%>, (_index_t)<%cols%>);<%\n%>'
         let &preExp += '<%matrix%><%\n%>'
         let &preExp += '/* -- end: matrix[<%rows%>,<%cols%>] -- */<%\n%>'
         tmp
@@ -7203,13 +7203,13 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
        <% match typeof(r.expr)
         case T_COMPLEX(complexClassType = record_state) then
           let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
-          'alloc_generic_array(&<%res%>,sizeof(<%rec_name%>),1,<%length%>);'
+          'alloc_generic_array(&<%res%>, sizeof(<%rec_name%>), 1, (_index_t)<%length%>);'
         case T_ARRAY(__) then
           let dimSizes = dims |> dim => match dim
-            case DIM_INTEGER(__) then ', <%integer%>'
-            case DIM_BOOLEAN(__) then ", 2"
-            case DIM_ENUM(__) then ', <%size%>'
-            case DAE.DIM_EXP(exp=e) then ', <%daeExp(e,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%>'
+            case DIM_INTEGER(__) then ', (_index_t)<%integer%>'
+            case DIM_BOOLEAN(__) then ", (_index_t)2"
+            case DIM_ENUM(__) then ', (_index_t)<%size%>'
+            case DAE.DIM_EXP(exp=e) then ', (_index_t)<%daeExp(e,context,&rangeExpPre,&tmpVarDecls, &auxFunction)%>'
             else error(sourceInfo(), 'array reduction unable to generate code for element of unknown dimension sizes; type <%unparseType(typeof(r.expr))%>: <%ExpressionDumpTpl.dumpExp(r.expr,"\"")%>')
             ; separator = ", "
           'alloc_<%arrayTypeResult%>(&<%res%>, <%intAdd(1,listLength(dims))%>, <%length%><%dimSizes%>);'
