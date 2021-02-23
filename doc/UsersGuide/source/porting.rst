@@ -286,6 +286,93 @@ This construct is already accepted by some Modelica tools, but is not yet
 included in the current Modelica specification 3.5, nor even in the current working
 draft of 3.6, so it is not currently supported by OpenModelica.
 
+Incomplete specification of initial conditions
+------
+The simulation of Modelica models of dynamical systems requires the tool to
+determine a consistent initial solution for the simulation to start. In
+principle, this can be done by adding to the system equations one initial
+condition for each continuous state variable (after index reduction) and one
+initial condition for each discrete variable, then solving the resulting
+initialization problem. These initial conditions can be formulated by adding
+a *start = <expression>* and a *fixed = true* attribute to those variables, e.g.
+
+.. code-block:: modelica
+
+  parameter Real v_start = 2.5;
+  Real x(start = 10, fixed = true);
+  discrete Real v(start = v_start, fixed = true);
+  Integer i(start = 2, fixed = true);
+
+or by adding initial equations, e.g.:
+
+.. code-block:: modelica
+
+    parameter Real x_start = 10;
+    Real x;
+    Real y(start = 3.5);
+    discrete Real v;
+    Integer i;
+  initial equation
+    x = x_start;
+    der(y) = 0;
+    v = 2.5;
+    i = 2;
+
+Note that in the latter case, the start attribute on *y* is not used directly
+to set the initial value of that variable, but only potentially used as initial
+guess for the solution of the initialization problem, that may require using
+an iterative nonlinear solver. Also note that sets of initial equations are
+often added to the models taken from reusable component libraries
+by selecting certain component parameters, such as *initOpt* or similar.
+
+If the number of initial conditions matches the number of continuous and
+discrete states, then the initialization problem is well-defined. Although
+this is per se not a guarantee that all tools will be able to solve it and find
+the same solution, this is for sure a prerequisite for across-tool portability.
+
+Conversely, if the number of initial conditions is less than the number of
+states, the tool has to add some initial equations, using some heuristics
+to change the fixed attribute of some variables from false to true. Consider
+for example the following model:
+
+.. code-block:: modelica
+
+  model M
+    Real x;
+    Real y(start = 1);
+    Real z(start = 2);
+  equation
+    der(x) = y + z;
+    y = 2*x;
+    z = 10*x + 1;
+  end M;
+
+This model has one state variable *x*, no variables with *fixed = true* 
+attributes and no initial equation, so there is one missing initial condition.
+One tool could choose to add the *fixed = true* attribute to the state variable
+*x*, fixing it to the default value of zero of its *start* attribute. Or, it
+could decide to give more priority to variables that have an explicitly modified
+*start* attribute, hence fix the initial value of *y* to 1, or the initial value
+of *z* to 2. Three completely different simulations would ensue.
+
+The Modelica Language Specification,
+`Section 8.6 <https://specification.modelica.org/maint/3.5/equations.html#initialization-initial-equation-and-initial-algorithm>`_
+does not prescribe or recommend any specific choice criterion in this case.
+Hence, different tools, or even different versions of the same tool, could add
+different initial conditions, leading to completely different simulations.
+In order to avoid any ambiguity and achieve good portability, it is thus
+recommended to make sure that the initial conditions of all simulation model
+are well-specified.
+
+A model with not enough initial conditions causes the OMC to issue the
+following translation warning: "The initial conditions are not fully specified".
+By activating the Tools | Options | Simulation | Show additional information from
+the initialization process option, or the *-d=initialization* compiler flag,
+one can get an explicit list of the additional equations that OpenModelica
+automatically adds to get a fully specified initialization problem, which may be
+helpful to figure out which initial conditions are missing. In this case, we
+recommend to amend the source code of the model by adding suitable extre initial
+conditions, until that warning message no longer appears.
 
 Modelica_LinearSystems2 Library
 ------
