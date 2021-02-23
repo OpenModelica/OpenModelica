@@ -298,8 +298,9 @@ a *start = <expression>* and a *fixed = true* attribute to those variables, e.g.
 
 .. code-block:: modelica
 
+  parameter Real x_start = 10;
   parameter Real v_start = 2.5;
-  Real x(start = 10, fixed = true);
+  Real x(start = x_start, fixed = true);
   discrete Real v(start = v_start, fixed = true);
   Integer i(start = 2, fixed = true);
 
@@ -308,15 +309,16 @@ or by adding initial equations, e.g.:
 .. code-block:: modelica
 
     parameter Real x_start = 10;
+    parameter Real v_start = 2.5;
     Real x;
-    Real y(start = 3.5);
     discrete Real v;
     Integer i;
+    Real y(start = 3.5);
   initial equation
     x = x_start;
-    der(y) = 0;
-    v = 2.5;
+    v = v_start;
     i = 2;
+    der(y) = 0;
 
 Note that in the latter case, the start attribute on *y* is not used directly
 to set the initial value of that variable, but only potentially used as initial
