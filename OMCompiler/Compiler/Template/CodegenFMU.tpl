@@ -1347,6 +1347,8 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       AR=@AR@
       CFLAGS=@CFLAGS@
       LD=$(CC) -shared
+      # define OMC_LDFLAGS_LINK_TYPE env variable to override this
+      OMC_LDFLAGS_LINK_TYPE=static
       LDFLAGS=@LDFLAGS@ @LIBS@
       DLLEXT=@DLLEXT@
       NEED_RUNTIME=@NEED_RUNTIME@
