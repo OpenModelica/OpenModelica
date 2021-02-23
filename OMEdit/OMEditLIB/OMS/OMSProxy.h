@@ -109,7 +109,6 @@ public:
                            char ***types, char ***descriptions);
   bool getTolerance(QString cref, double* absoluteTolerance, double* relativeTolerance);
   bool getVariableStepSize(QString cref, double* initialStepSize, double* minimumStepSize, double* maximumStepSize);
-  bool getSignalFilter(QString cref, char **regex);
   bool instantiate(QString cref);
   bool initialize(QString cref);
   bool list(QString cref, QString *pContents);
@@ -134,7 +133,6 @@ public:
   bool setReal(QString cref, double value);
   bool setResultFile(QString cref, QString filename, int bufferSize);
   bool getResultFile(QString cref, char **pFilename, int *pBufferSize);
-  bool setSignalFilter(QString cref, QString regex);
   bool setSolver(QString cref, oms_solver_enu_t solver);
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);

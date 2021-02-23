@@ -85,10 +85,6 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   // logging interval
   mpLoggingIntervalLabel = new Label(tr("Logging Interval:"));
   mpLoggingIntervalTextBox = new QLineEdit("0");
-  // signal filter
-  mpSignalFilterLabel = new Label(tr("Signal Filter:"));
-  mpSignalFilterTextBox = new QLineEdit;
-  mpSignalFilterTextBox->setToolTip(tr("Leave empty to include all signals otherwise use a regex to filter."));
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -107,8 +103,6 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   pGeneralTabWidgetGridLayout->addWidget(mpResultFileBufferSizeSpinBox, 5, 1);
   pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalLabel, 6, 0);
   pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
-  pGeneralTabWidgetGridLayout->addWidget(mpSignalFilterLabel, 7, 0);
-  pGeneralTabWidgetGridLayout->addWidget(mpSignalFilterTextBox, 7, 1);
   pGeneralWidget->setLayout(pGeneralTabWidgetGridLayout);
   pTabWidget->addTab(pGeneralWidget, Helper::general);
   // Archived simulation tab layout
@@ -207,10 +201,6 @@ int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibrar
   mpResultFileTextBox->setText(QString(fileName));
   // result file buffer size
   mpResultFileBufferSizeSpinBox->setValue(bufferSize);
-  // signalFilter
-  char *regex = (char*)"";
-  OMSProxy::instance()->getSignalFilter(mModelCref, &regex);
-  mpSignalFilterTextBox->setText(QString(regex));
   mpOkButton->setEnabled(!mpLibraryTreeItem->isSystemLibrary());
 
   return QDialog::exec();
@@ -315,7 +305,6 @@ void OMSSimulationDialog::saveSimulationSettings()
   OMSProxy::instance()->setStopTime(mModelCref, mpStopTimeTextBox->text().toDouble());
   OMSProxy::instance()->setResultFile(mModelCref, mpResultFileTextBox->text(), mpResultFileBufferSizeSpinBox->value());
   OMSProxy::instance()->setLoggingInterval(mModelCref, mpLoggingIntervalTextBox->text().toDouble());
-  OMSProxy::instance()->setSignalFilter(mModelCref, mpSignalFilterTextBox->text());
 
   ModelWidget *pModelWidget = mpLibraryTreeItem->getModelWidget();
   pModelWidget->createOMSimulatorUndoCommand(QString("Simulation setup %1").arg(mModelCref));
