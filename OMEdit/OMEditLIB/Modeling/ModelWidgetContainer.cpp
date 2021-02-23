@@ -3204,7 +3204,8 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   painter->setPen(Qt::NoPen);
   painter->drawRect(rect);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
-  painter->drawRect(mMergedCoOrdinateSystem.getExtentRectangle());
+  QRectF extentRectangle = mMergedCoOrdinateSystem.getExtentRectangle();
+  painter->drawRect(extentRectangle);
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines() && !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView())) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(lightGrayPen);
@@ -3240,12 +3241,12 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     }
     /* set the middle horizontal and vertical line gray */
     painter->setPen(grayPen);
-    painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
-    painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
+    painter->drawLine(QPointF(rect.left(), extentRectangle.center().y()), QPointF(rect.right(), extentRectangle.center().y()));
+    painter->drawLine(QPointF(extentRectangle.center().x(), rect.top()), QPointF(extentRectangle.center().x(), rect.bottom()));
   }
   // draw scene rectangle
   painter->setPen(grayPen);
-  painter->drawRect(mMergedCoOrdinateSystem.getExtentRectangle());
+  painter->drawRect(extentRectangle);
 }
 
 //! Defines what happens when clicking in a GraphicsView.
