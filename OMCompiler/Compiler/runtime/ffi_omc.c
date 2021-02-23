@@ -210,10 +210,9 @@ static ffi_type* exp_alignment_and_type(void *exp, struct Alignment *align, int 
       align->size = size_of_type(type);
       return type_to_type_spec(type);
       }
-
-    default:
-      return &ffi_type_void;
   }
+
+  MMC_THROW();
 }
 
 /* Returns the size in bytes of the C type corresponding to the given type */
@@ -438,10 +437,9 @@ static void* mk_exp_from_arg(void *arg, void *value, struct Alignment *align)
 
     case NFExpression__EMPTY_3dBOX1:
       return mk_exp_from_type(MMC_STRUCTDATA(arg)[UNBOX_OFFSET], value);
-
-    default:
-      return NULL;
   }
+
+  MMC_THROW();
 }
 
 /* Returns the appropriate ffi_type for a type */
