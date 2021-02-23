@@ -599,7 +599,7 @@ algorithm
       end try;
 
       // If inlining fails, try to evaluate the binding instead.
-      if not Expression.isRecord(binding_exp) then
+      if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
         try
           binding_exp_eval := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
 
