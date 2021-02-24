@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _DrModelicaForTesting.ModifiedFiltersInSeries.* DrModelicaForTesting.ModifiedFiltersInSeries_* DrModelicaForTesting.ModifiedFiltersInSeries DrModelicaForTesting.ModifiedFiltersInSeries.exe DrModelicaForTesting.ModifiedFiltersInSeries.cpp DrModelicaForTesting.ModifiedFiltersInSeries.makefile DrModelicaForTesting.ModifiedFiltersInSeries.libs DrModelicaForTesting.ModifiedFiltersInSeries.log DrModelicaForTesting.ModifiedFiltersInSeries.c DrModelicaForTesting.ModifiedFiltersInSeries.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -17,8 +17,8 @@ simulate(DrModelicaForTesting.ModifiedFiltersInSeries, numberOfIntervals=200, st
 res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.ModifiedFiltersInSeries_res.mat",
   "ReferenceFiles/ModifiedFiltersInSeries_ref.mat","DrModelicaForTesting.ModifiedFiltersInSeries_diff.csv",0.01,0.013,
   {"F12.F1.T", "F12.F1.u", "F12.F2.T", "F12.F2.u"});
-  
-    
+
+
 // Result:
 // true
 // ""
@@ -31,7 +31,7 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Mod
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // endResult

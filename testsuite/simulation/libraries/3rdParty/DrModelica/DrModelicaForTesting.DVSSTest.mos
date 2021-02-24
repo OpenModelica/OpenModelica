@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _DrModelicaForTesting.DVSSTest.* DrModelicaForTesting.DVSSTest_* DrModelicaForTesting.DVSSTest DrModelicaForTesting.DVSSTest.exe DrModelicaForTesting.DVSSTest.cpp DrModelicaForTesting.DVSSTest.makefile DrModelicaForTesting.DVSSTest.libs DrModelicaForTesting.DVSSTest.log DrModelicaForTesting.DVSSTest.c DrModelicaForTesting.DVSSTest.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -17,7 +17,7 @@ simulate(DrModelicaForTesting.DVSSTest, numberOfIntervals=200, stopTime=1.0); ge
 res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.DVSSTest_res.mat",
   "ReferenceFiles/DVSSTest_ref.mat","DrModelicaForTesting.DVSSTest_diff.csv",0.01,0.013,
   {"dvss.n","dvss.m","dvss.p","dvss.T"});
-  
+
 // Result:
 // true
 // ""
@@ -30,7 +30,7 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.DVS
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // endResult
