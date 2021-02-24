@@ -59,6 +59,7 @@ extern "C" {
 #include <QMdiSubWindow>
 #include <QMdiArea>
 #include <QShortcut>
+#include <QRadioButton>
 
 class OMCProxy;
 class TransformationsWidget;
@@ -582,6 +583,23 @@ private:
   Label *mpOMContributorsLabel;
 private slots:
   void readOMContributors(QNetworkReply *pNetworkReply);
+};
+
+class MSLVersionDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  MSLVersionDialog(QWidget *parent = 0);
+private:
+  QRadioButton *mpMSL3RadioButton;
+  QRadioButton *mpMSL4RadioButton;
+  QRadioButton *mpNoMSLRadioButton;
+private slots:
+  void setMSLVersion();
+
+  // QDialog interface
+public slots:
+  virtual void reject() override;
 };
 
 #endif // MAINWINDOW_H
