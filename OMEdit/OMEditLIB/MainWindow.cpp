@@ -377,6 +377,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
     mpOMCProxy->setCommandLineOptions("-d=infoXmlOperations");
   }
   OptionsDialog::instance()->saveSimulationSettings();
+  OptionsDialog::instance()->saveNFAPISettings();
   // restore OMEdit widgets state
   if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
     restoreGeometry(pSettings->value("application/geometry").toByteArray());
