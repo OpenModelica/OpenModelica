@@ -486,6 +486,7 @@ void MessagesWidget::addSimulationTab(QWidget *pSimulationWidget, const QString 
     }
   }
   mpMessagesTabWidget->setCurrentIndex(mpMessagesTabWidget->addTab(pSimulationWidget, name));
+  emit MessageAdded();
 }
 
 /*!
