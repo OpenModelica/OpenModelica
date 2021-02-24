@@ -136,7 +136,7 @@ val(y[10], 1.0);
 // 4/31 (10): assignClock1.y = assignClock1.u   [dynamic |0|0|0|0|]
 // 5/41 (10): for $i1 in 1 : 10 loop
 //     $DER.integrator1[$i1].y = integrator1[$i1].k * integrator1[$i1].u; end for;    [dynamic |0|0|0|0|]
-// 6/51 (10): for i in 1 : 10 loop 
+// 6/51 (10): for i in 1 : 10 loop
 //     (integrator1[i].y - previous(integrator1[i].y)) / interval() = if firstTick() then 0.0 else $DER.integrator1[i].y; end for;    [dynamic |0|0|0|0|]
 //
 //
@@ -199,7 +199,7 @@ val(y[10], 1.0);
 // Notification: Automatically loaded package Modelica_Synchronous 0.93.0-dev due to uses annotation.
 // Warning: Requested package Modelica of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
 // Warning: Requested package ModelicaServices of version 3.2.3, but this package was already loaded with version 3.2.2. There are no conversion annotations for this version but 3.2.3 is newer than 3.2.2. There is a possibility that 3.2.2 remains backwards compatible, but it is not loaded so OpenModelica cannot verify this.
-// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 10.0
 // 20.0

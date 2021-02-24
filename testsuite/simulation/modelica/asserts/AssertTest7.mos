@@ -3,8 +3,8 @@
 // status:   correct
 // teardown_command: rm -rf Test7* output.log
 // cflags: -d=-newInst
-// 
-// 
+//
+//
 loadFile("AssertTest7.mo");
 getErrorString();
 
@@ -131,16 +131,16 @@ getErrorString();
 // Value of x(=0.5)
 // Value of x(=0.5)
 // Value of x(=0.5)
-// DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE                                    
+// DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE
 //       In above,  R1 =   5.0000000000000E-01   R2 =   3.5157427188218E-16
-// DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE                             
-// DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE                                    
+// DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE
+// DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE
 // stdout            | warning | A Modelica assert prevents the integrator to continue. For more information use -lv LOG_SOLVER
 // stdout            | warning | can't continue. time = 0.500000
 // Value of x(=0.5)
 // stdout            | info    | model terminate | Integrator failed. | Simulation terminated at time 0.5
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

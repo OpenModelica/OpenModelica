@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _DrModelicaForTesting.Activate.* DrModelicaForTesting.Activate_* DrModelicaForTesting.Activate DrModelicaForTesting.Activate.exe DrModelicaForTesting.Activate.cpp DrModelicaForTesting.Activate.makefile DrModelicaForTesting.Activate.libs DrModelicaForTesting.Activate.log DrModelicaForTesting.Activate.c DrModelicaForTesting.Activate.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -16,7 +16,7 @@ simulate(DrModelicaForTesting.Activate, numberOfIntervals=200, stopTime=1.0); ge
 res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Activate_res.mat",
   "ReferenceFiles/Activate_ref.mat","DrModelicaForTesting.Activate_diff.csv",0.01,0.013,
   {"y","z"});
- 
+
 // Result:
 // true
 // ""
@@ -29,7 +29,7 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Act
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // endResult

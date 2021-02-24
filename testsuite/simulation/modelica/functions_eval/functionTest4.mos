@@ -11,7 +11,7 @@ simulate(PartEvalFunc.functionTest4);getErrorString();
 res := OpenModelica.Scripting.compareSimulationResults("PartEvalFunc.functionTest4_res.mat",
   "ReferenceFiles/functionTest4.mat",
   "PartEvalFunc.functionTest4_diff.csv", 0.01, 0.0001,
-  {"a","b","c","d","r1.x","r1.y","r2.x","r2.y"}); 
+  {"a","b","c","d","r1.x","r1.y","r2.x","r2.y"});
 getErrorString();
 // Result:
 // true
@@ -45,7 +45,7 @@ getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

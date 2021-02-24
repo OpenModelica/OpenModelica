@@ -15,37 +15,37 @@ package initializationTests
     Real x,y,z,x1,y1,z1,x2,y2,z2,x3,y3,z3,a,b,c,d,e,f;
     // Real x,y,z,x1,y1,z1,x2,y2,z2 annotation(tearingSelect=always),x3,y3,z3,a,b,c,d,e,f;
     parameter Real p1 = 10;
-    
+
   equation
     // a = sin(p1* time + 1);
     a = sin(p1* time + 3.1415/2);
-    
+
     x + 5 = z + a;
     -y + 10 = z + p1;
     x - y + 9 = z;
-    
+
     b = sin(a*x);
-    
+
     // ********** Beginning of homotopy iteration loop
     c = homotopy(b^2, b);
-    
+
     x1 + 5 = z1 + c;
     -y1 + 10 = z1 + p1;
     x1 - y1 + 9 = z1;
-    
+
     d = x1 + y1 + z1;
-    
+
     homotopy(x2^2, x2) + 5 = z2 + 5;
     homotopy(y2^2, -d) + 10 = z2 + p1;
     x2 + y2 + 9 = z2;
-    
+
     e = sin(d*x2);
-    
+
     x3 + 5 = z3 + e;
     -y3 + 10 = z3*y3 + p1;
     x3 - y3 + 9 = z3;
     // ********** End of homotopy iteration loop
-    
+
     f = x + y + z + a + b + c + d + e + x1 + y1 + z1 + x2 + y2 + z2 + x3 + y3 + z3;
   end homotopy4;
 end initializationTests;
@@ -134,8 +134,8 @@ val(f, 0.0);
 // "
 // end SimulationResult;
 // "Notification: Tearing is skipped for strong component 4 because of activated compiler flag 'noTearingForComponent=4'.
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac4. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac4. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {{0.0,0.0},{-9.0,-9.0},{4.999999998926914,4.999999998926914},{-4.999999998926914,-4.999999998926914},{0.999999998926914,0.999999998926914},{-0.412118494041246,-0.412118494041246},{0.1698416531308245,0.1698416531308245},{-9.0,-9.0},{-0.956375928404503,-0.956375928404503},{-9.0,-9.0},{4.169841653130824,4.169841653130824},{-4.169841653130824,-4.169841653130824},{3.0,3.0},{-3.0,-3.0},{9.0,9.0},{-6.956375928404503,-6.956375928404503},{3.043624071595497,3.043624071595497},{-1.0,-1.0},{-23.11140462719703,-23.11140462719703}}
 // ""

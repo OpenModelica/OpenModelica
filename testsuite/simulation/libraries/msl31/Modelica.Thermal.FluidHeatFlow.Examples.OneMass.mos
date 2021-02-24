@@ -46,7 +46,7 @@ runScript(modelTesting);getErrorString();
 // [Modelica 3.1.0+maint.om/Thermal/FluidHeatFlow.mo:2253:9-2255:54:writable] Warning: Parameter pipe.V_flowLaminar has no value, and is fixed during initialization (fixed=true), using available start value (start=0.1) as default value.
 // [Modelica 3.1.0+maint.om/Thermal/FluidHeatFlow.mo:1702:7-1704:58:writable] Warning: Parameter pump.constantVolumeFlow has no value, and is fixed during initialization (fixed=true), using available start value (start=1.0) as default value.
 // [Modelica 3.1.0+maint.om/Thermal/FluidHeatFlow.mo:1600:7-1602:56:writable] Warning: Parameter ambient1.constantAmbientPressure has no value, and is fixed during initialization (fixed=true), using available start value (start=0.0) as default value.
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("-d=initialization").
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
 //
 // "true
 // "

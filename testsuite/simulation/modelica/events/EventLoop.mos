@@ -3,7 +3,7 @@
 // status: correct
 // teardown_command: rm -rf EventIterationLoop* output.log
 // cflags: -d=-newInst
-// 
+//
 //  Simulate model containing EventIterationsLoop
 //
 
@@ -19,7 +19,7 @@ equation
     i = pre(i) + 1;
     b2 = not pre(b2);
   end when;
-  when {pre(b1),pre(b2)} then 
+  when {pre(b1),pre(b2)} then
     b1 = not pre(b1);
   end when;
 end EventIterationLoop;
@@ -42,6 +42,6 @@ getErrorString();
 // |                 | |       | The limit of event iterations can be specified using the runtime flag '–mei=<value>'.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

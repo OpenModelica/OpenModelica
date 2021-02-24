@@ -15,7 +15,7 @@ package initializationTests
     Real x;
     Real y;
     Real z;
-    
+
   equation
     homotopy(x^2, x) + 5 = z + 5;
     homotopy(y^2, -y) + 10 = z + 10;
@@ -56,11 +56,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * x.SeedNLSJac1 [Real]
 // 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - x.SeedNLSJac1 [Real]
 // 	13: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + (-2.0) * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
 //
 // ========================================
@@ -84,11 +84,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * x.SeedNLSJac1 [Real]
 // 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - x.SeedNLSJac1 [Real]
 // 	13: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + (-2.0) * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
 //
 // ========================================
@@ -111,11 +111,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	4: z.$pDERNLSJac0.dummyVarNLSJac0=y.SeedNLSJac0 * (-1.0 + 2.0 * y * __HOM_LAMBDA + __HOM_LAMBDA) [Real]
 // 	5: x.$pDERNLSJac0.dummyVarNLSJac0=z.$pDERNLSJac0.dummyVarNLSJac0 - y.SeedNLSJac0 [Real]
 // 	6: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0=2.0 * x * x.$pDERNLSJac0.dummyVarNLSJac0 * __HOM_LAMBDA + x.$pDERNLSJac0.dummyVarNLSJac0 * (1.0 - __HOM_LAMBDA) - z.$pDERNLSJac0.dummyVarNLSJac0 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: x.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: x.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
 //
 // ========================================
@@ -161,40 +161,40 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	4: z.$pDERNLSJac0.dummyVarNLSJac0=y.SeedNLSJac0 * (-1.0 + 2.0 * y * __HOM_LAMBDA + __HOM_LAMBDA) [Real]
 // 	5: x.$pDERNLSJac0.dummyVarNLSJac0=z.$pDERNLSJac0.dummyVarNLSJac0 - y.SeedNLSJac0 [Real]
 // 	6: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0=2.0 * x * x.$pDERNLSJac0.dummyVarNLSJac0 * __HOM_LAMBDA + x.$pDERNLSJac0.dummyVarNLSJac0 * (1.0 - __HOM_LAMBDA) - z.$pDERNLSJac0.dummyVarNLSJac0 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: x.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: x.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 (no alias)  initial: 	no arrCref index:() []
 // 	Jacobian idx: 1
 // 	11: z.$pDERNLSJac1.dummyVarNLSJac1=2.0 * x * x.SeedNLSJac1 [Real]
 // 	12: y.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 - x.SeedNLSJac1 [Real]
 // 	13: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1=z.$pDERNLSJac1.dummyVarNLSJac1 + (-2.0) * y * y.$pDERNLSJac1.dummyVarNLSJac1 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: y.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 (no alias)  initial: 	no arrCref index:() []
 // 	Jacobian idx: 2
-// 	
+//
 // 	Jacobian idx: 3
-// 	
+//
 // 	Jacobian idx: 4
-// 	
+//
 // 	Jacobian idx: 5
-// 	
+//
 // 	Jacobian idx: 6
-// 	
+//
 //
 // modelInfo:
 // ========================================
 // algVars (3)
 // ----------------------
-// index: 0: x (no alias)  initial: 	no arrCref index:(1) [] 
-// index: 1: y (no alias)  initial: 	no arrCref index:(2) [] 
-// index: 2: z (no alias)  initial: 	no arrCref index:(3) [] 
+// index: 0: x (no alias)  initial: 	no arrCref index:(1) []
+// index: 1: y (no alias)  initial: 	no arrCref index:(2) []
+// index: 2: z (no alias)  initial: 	no arrCref index:(3) []
 // functions:
 // -----------
 //
@@ -205,7 +205,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {{0.0,0.0},{3.0,3.0},{-3.0,-3.0},{9.0,9.0}}
 // ""
@@ -230,11 +230,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	17: z.$pDERNLSJac4.dummyVarNLSJac4=2.0 * x * x.SeedNLSJac4 [Real]
 // 	18: y.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 - x.SeedNLSJac4 [Real]
 // 	19: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + (-2.0) * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: y.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: y.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
 //
 // ========================================
@@ -258,11 +258,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	17: z.$pDERNLSJac4.dummyVarNLSJac4=2.0 * x * x.SeedNLSJac4 [Real]
 // 	18: y.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 - x.SeedNLSJac4 [Real]
 // 	19: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + (-2.0) * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: y.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: y.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
 //
 // ========================================
@@ -285,11 +285,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	4: z.$pDERNLSJac2.dummyVarNLSJac2=y.SeedNLSJac2 * (-1.0 + 2.0 * y * __HOM_LAMBDA + __HOM_LAMBDA) [Real]
 // 	5: x.$pDERNLSJac2.dummyVarNLSJac2=z.$pDERNLSJac2.dummyVarNLSJac2 - y.SeedNLSJac2 [Real]
 // 	6: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2=2.0 * x * x.$pDERNLSJac2.dummyVarNLSJac2 * __HOM_LAMBDA + x.$pDERNLSJac2.dummyVarNLSJac2 * (1.0 - __HOM_LAMBDA) - z.$pDERNLSJac2.dummyVarNLSJac2 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: x.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: x.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
 //
 // ========================================
@@ -300,7 +300,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // ========================================
 // 13:  (LINEAR) index:0 jacobian: true
 // 	variables:
-// index: -1: z (no alias)  initial: 	no arrCref index:() [] 
+// index: -1: z (no alias)  initial: 	no arrCref index:() []
 // 	b-vector:
 // 	8: y=10.0 - (10.0 + z) [Real]
 // 	9: x=z - (9.0 + y) [Real]
@@ -308,11 +308,11 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	Jacobian idx: 1
 // 	11: x.$pDERLSJac3.dummyVarLSJac3=2.0 * z.SeedLSJac3 [Real]
 // 	12: $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3=z.SeedLSJac3 - x.$pDERLSJac3.dummyVarLSJac3 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: x.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: y.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: x.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() []
+// index: 0: y.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() []
 // 	simJac:
 //
@@ -354,49 +354,49 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // 	4: z.$pDERNLSJac2.dummyVarNLSJac2=y.SeedNLSJac2 * (-1.0 + 2.0 * y * __HOM_LAMBDA + __HOM_LAMBDA) [Real]
 // 	5: x.$pDERNLSJac2.dummyVarNLSJac2=z.$pDERNLSJac2.dummyVarNLSJac2 - y.SeedNLSJac2 [Real]
 // 	6: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2=2.0 * x * x.$pDERNLSJac2.dummyVarNLSJac2 * __HOM_LAMBDA + x.$pDERNLSJac2.dummyVarNLSJac2 * (1.0 - __HOM_LAMBDA) - z.$pDERNLSJac2.dummyVarNLSJac2 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: x.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: x.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2 (no alias)  initial: 	no arrCref index:() []
 // 	Jacobian idx: 1
 // 	11: x.$pDERLSJac3.dummyVarLSJac3=2.0 * z.SeedLSJac3 [Real]
 // 	12: $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3=z.SeedLSJac3 - x.$pDERLSJac3.dummyVarLSJac3 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: x.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: y.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: x.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() []
+// index: 0: y.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3 (no alias)  initial: 	no arrCref index:() []
 // 	Jacobian idx: 2
 // 	17: z.$pDERNLSJac4.dummyVarNLSJac4=2.0 * x * x.SeedNLSJac4 [Real]
 // 	18: y.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 - x.SeedNLSJac4 [Real]
 // 	19: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4=z.$pDERNLSJac4.dummyVarNLSJac4 + (-2.0) * y * y.$pDERNLSJac4.dummyVarNLSJac4 [Real]
-// 	
+//
 // columnVars(3)
 // ----------------------
-// index: 1: y.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() [] 
-// index: 0: z.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() [] 
+// index: 1: y.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
+// index: 0: z.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
 // index: 0: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 (no alias)  initial: 	no arrCref index:() []
 // 	Jacobian idx: 3
-// 	
+//
 // 	Jacobian idx: 4
-// 	
+//
 // 	Jacobian idx: 5
-// 	
+//
 // 	Jacobian idx: 6
-// 	
+//
 // 	Jacobian idx: 7
-// 	
+//
 //
 // modelInfo:
 // ========================================
 // algVars (3)
 // ----------------------
-// index: 0: x (no alias)  initial: 	no arrCref index:(1) [] 
-// index: 1: y (no alias)  initial: 	no arrCref index:(2) [] 
-// index: 2: z (no alias)  initial: 	no arrCref index:(3) [] 
+// index: 0: x (no alias)  initial: 	no arrCref index:(1) []
+// index: 1: y (no alias)  initial: 	no arrCref index:(2) []
+// index: 2: z (no alias)  initial: 	no arrCref index:(3) []
 // functions:
 // -----------
 //
@@ -407,7 +407,7 @@ res := OpenModelica.Scripting.readSimulationResult("initializationTests.homotopy
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac2. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac2. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {{0.0,0.0},{3.0,3.0},{-3.0,-3.0},{9.0,9.0}}
 // ""

@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _PlanarMechanicsForTesting.Examples.TestIdealWheel.* PlanarMechanicsForTesting.Examples.TestIdealWheel_i* PlanarMechanicsForTesting.Examples.TestIdealWheel_d* PlanarMechanicsForTesting.Examples.TestIdealWheel_r* PlanarMechanicsForTesting.Examples.TestIdealWheel_f* PlanarMechanicsForTesting.Examples.TestIdealWheel PlanarMechanicsForTesting.Examples.TestIdealWheel.exe PlanarMechanicsForTesting.Examples.TestIdealWheel.cpp PlanarMechanicsForTesting.Examples.TestIdealWheel.makefile PlanarMechanicsForTesting.Examples.TestIdealWheel.libs PlanarMechanicsForTesting.Examples.TestIdealWheel.log PlanarMechanicsForTesting.Examples.TestIdealWheel.c PlanarMechanicsForTesting.Examples.TestIdealWheel.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -30,8 +30,8 @@ res := OpenModelica.Scripting.compareSimulationResults("PlanarMechanicsForTestin
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
-// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // endResult
