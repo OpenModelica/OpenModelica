@@ -366,7 +366,7 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   //! @todo Remove the following MSL verison block once we have fixed the MSL handling.
   // set MSL version
   QSettings *pSettings = Utilities::getApplicationSettings();
-  if (!pSettings->contains("MSLVersion") || !pSettings->value("MSLVersion").toBool()) {
+  if (!isTestsuiteRunning() && (!pSettings->contains("MSLVersion") || !pSettings->value("MSLVersion").toBool())) {
     MSLVersionDialog *pMSLVersionDialog = new MSLVersionDialog;
     pMSLVersionDialog->exec();
   }
