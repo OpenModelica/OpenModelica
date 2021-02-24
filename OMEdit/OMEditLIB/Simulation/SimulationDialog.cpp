@@ -1099,6 +1099,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
    */
   mpTranslationFlagsWidget->applyFlags();
   OptionsDialog::instance()->saveGlobalSimulationSettings();
+  OptionsDialog::instance()->saveNFAPISettings();
   // set profiling
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
   // set the infoXMLOperations flag
@@ -1226,6 +1227,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
   // reset simulation settings
   OptionsDialog::instance()->saveSimulationSettings();
+  OptionsDialog::instance()->saveNFAPISettings();
   // set the infoXMLOperations flag
   if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
