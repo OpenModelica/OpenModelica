@@ -185,12 +185,6 @@ function oms_addTLMConnection
   external "C" status = OMSimulator_oms_addTLMConnection(crefA,crefB,delay,alpha,linearimpedance,angularimpedance) annotation(Library = "omcruntime");
 end oms_addTLMConnection;
 
-function oms_cancelSimulation_asynchronous
-  input String cref;
-  output Integer status;
-  external "C" status = OMSimulator_oms_cancelSimulation_asynchronous(cref) annotation(Library = "omcruntime");
-end oms_cancelSimulation_asynchronous;
-
 function oms_compareSimulationResults
   input String filenameA;
   input String filenameB;

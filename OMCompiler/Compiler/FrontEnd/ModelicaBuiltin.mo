@@ -4508,13 +4508,6 @@ external "builtin";
 annotation(preferredView="text");
 end oms_addTLMConnection;
 
-function oms_cancelSimulation_asynchronous
-  input String cref;
-  output Integer status;
-external "builtin";
-annotation(preferredView="text");
-end oms_cancelSimulation_asynchronous;
-
 function oms_compareSimulationResults
   input String filenameA;
   input String filenameB;

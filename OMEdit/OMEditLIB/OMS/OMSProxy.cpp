@@ -511,23 +511,6 @@ bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, doub
 }
 
 /*!
- * \brief OMSProxy::cancelSimulation_asynchronous
- * Cancels the current model asynchronous simulation.
- * \param cref
- * \return
- */
-bool OMSProxy::cancelSimulation_asynchronous(QString cref)
-{
-  QString command = "oms_cancelSimulation_asynchronous";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_cancelSimulation_asynchronous(cref.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::deleteConnection
  * Deletes the connection
  * \param crefA
