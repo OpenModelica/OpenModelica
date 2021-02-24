@@ -1040,11 +1040,6 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("activateAccessAnnotations", mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->itemData(mpGeneralSettingsPage->getActivateAccessAnnotationsComboBox()->currentIndex()).toInt());
   // save create backup file
   mpSettings->setValue("createBackupFile", mpGeneralSettingsPage->getCreateBackupFileCheckbox()->isChecked());
-  // save nfAPINoise
-  mpSettings->setValue("simulation/nfAPINoise", mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked());
-  if (mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPINoise");
-  }
   // save library icon size
   mpSettings->setValue("libraryIconSize", mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->value());
   // save the max. text length to show on a library icon
@@ -1088,6 +1083,19 @@ void OptionsDialog::saveGeneralSettings()
   MainWindow::instance()->updateRecentFileActionsAndList();
   // save replaceable support
   mpSettings->setValue("replaceableSupport", mpGeneralSettingsPage->getReplaceableSupport());
+  saveNFAPISettings();
+}
+
+/*!
+ * \brief OptionsDialog::saveNFAPISettings
+ */
+void OptionsDialog::saveNFAPISettings()
+{
+  // save nfAPINoise
+  mpSettings->setValue("simulation/nfAPINoise", mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked());
+  if (mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPINoise");
+  }
   // save nfAPI
   mpSettings->setValue("simulation/nfAPI", mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->isChecked());
   if (mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->isChecked()) {
