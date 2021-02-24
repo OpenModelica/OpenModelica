@@ -114,6 +114,7 @@ public:
   void readOMSimulatorSettings();
   void readTraceabilitySettings();
   void saveGeneralSettings();
+  void saveNFAPISettings();
   void saveLibrariesSettings();
   void saveTextEditorSettings();
   void saveModelicaEditorSettings();
