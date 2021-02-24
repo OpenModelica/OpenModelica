@@ -146,6 +146,7 @@ uniontype Modifier
     InstNode element;
     Modifier innerMod;
     Modifier outerMod;
+    Modifier constrainingMod;
   end REDECLARE;
 
   record NOMOD end NOMOD;
@@ -169,6 +170,7 @@ public
         Boolean is_each;
         InstNode node;
         list<InstNode> pars;
+        Modifier cc_mod;
 
       case SCode.NOMOD() then NOMOD();
 
@@ -190,11 +192,34 @@ public
           if InstNode.isClass(node) then
             Inst.partialInstClass(node);
           end if;
+
+          cc_mod := createConstrainingMod(elem, parents, scope);
         then
-          REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD(), NOMOD());
+          REDECLARE(mod.finalPrefix, mod.eachPrefix, node, NOMOD(), NOMOD(), cc_mod);
 
     end match;
   end create;
+
+  function createConstrainingMod
+    input SCode.Element element;
+    input list<InstNode> parents;
+    input InstNode scope;
+    output Modifier mod;
+  protected
+    SCode.Mod smod;
+  algorithm
+    mod := match element
+      case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
+          SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
+        then create(smod, element.name, ModifierScope.CLASS(element.name), parents, scope);
+
+      case SCode.Element.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
+          SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
+        then create(smod, element.name, ModifierScope.COMPONENT(element.name), parents, scope);
+
+      else NOMOD();
+    end match;
+  end createConstrainingMod;
 
   function stripSCodeMod
     input output SCode.Element elem;
@@ -428,6 +453,10 @@ public
           innerMod.outerMod := merge(outerMod, innerMod.outerMod);
         then
           innerMod;
+
+      case (REDECLARE(constrainingMod = NOMOD()), REDECLARE(constrainingMod = MODIFIER()))
+        then REDECLARE(outerMod.finalPrefix, outerMod.eachPrefix, outerMod.element,
+          outerMod.innerMod, outerMod.outerMod, innerMod.constrainingMod);
 
       case (REDECLARE(), _) then outerMod;
       case (_, REDECLARE()) then innerMod;

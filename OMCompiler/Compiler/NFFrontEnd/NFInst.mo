@@ -1415,7 +1415,7 @@ protected
   Component comp;
   SCode.Element def;
   InstNode comp_node, rdcl_node;
-  Modifier outer_mod, inner_mod, cc_mod = innerMod;
+  Modifier outer_mod, inner_mod, cc_mod = innerMod, cc_def_mod;
   SCode.Mod cc_smod;
   String name;
   InstNode parent;
@@ -1437,7 +1437,8 @@ algorithm
   if Modifier.isRedeclare(outer_mod) then
     checkOuterComponentMod(outer_mod, def, comp_node);
 
-    Modifier.REDECLARE(element = rdcl_node, innerMod = inner_mod, outerMod = outer_mod) := outer_mod;
+    Modifier.REDECLARE(element = rdcl_node, innerMod = inner_mod,
+      outerMod = outer_mod, constrainingMod = cc_mod) := outer_mod;
 
     next_context := InstContext.set(context, NFInstContext.REDECLARED);
     instComponentDef(def, Modifier.NOMOD(), inner_mod, NFComponent.DEFAULT_ATTR,
@@ -1446,14 +1447,17 @@ algorithm
     cc_smod := SCodeUtil.getConstrainingMod(def);
     if not SCodeUtil.isEmptyMod(cc_smod) then
       name := InstNode.name(node);
-      cc_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), {}, parent);
+      cc_def_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), {}, parent);
+      cc_mod := Modifier.merge(cc_mod, cc_def_mod);
     end if;
+
+    cc_mod := Modifier.merge(cc_mod, innerMod);
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
     redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node, instLevel, context);
   else
-    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, context);
+    instComponentDef(def, outer_mod, innerMod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, context);
   end if;
 end instComponent;
 
