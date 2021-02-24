@@ -44,13 +44,13 @@
 #include <QGridLayout>
 
 /*!
- * \class ProgressSubscriberSocket
+ * \class SimulationSubscriberSocket
  * \brief Reads the simulation progress in a loop.
  */
 /*!
- * \brief ProgressSubscriberSocket::ProgressSubscriberSocket
+ * \brief SimulationSubscriberSocket::SimulationSubscriberSocket
  */
-ProgressSubscriberSocket::ProgressSubscriberSocket()
+SimulationSubscriberSocket::SimulationSubscriberSocket()
 {
   // create subscriber socket
   mpContext = zmq_ctx_new();
@@ -72,19 +72,19 @@ ProgressSubscriberSocket::ProgressSubscriberSocket()
 }
 
 /*!
- * \brief ProgressSubscriberSocket::~ProgressSubscriberSocket
+ * \brief SimulationSubscriberSocket::~SimulationSubscriberSocket
  */
-ProgressSubscriberSocket::~ProgressSubscriberSocket()
+SimulationSubscriberSocket::~SimulationSubscriberSocket()
 {
   zmq_close(mpSocket);
   zmq_ctx_destroy(mpContext);
 }
 
 /*!
- * \brief ProgressSubscriberSocket::readProgressJson
+ * \brief SimulationSubscriberSocket::readProgressJson
  * Reads the socket message in a infinite loop in a blocking mode.
  */
-void ProgressSubscriberSocket::readProgressJson()
+void SimulationSubscriberSocket::readProgressJson()
 {
   while (isSocketConnected()) {
     zmq_msg_t replyMsg;
@@ -157,11 +157,11 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mIsSimulationProcessKilled = false;
   mIsSimulationProcessRunning = false;
   // create subscriber socket
-  mpProgressSubscriberSocket = new ProgressSubscriberSocket;
-  if (mpProgressSubscriberSocket->getErrorString().isEmpty()) {
-    mpProgressSubscriberSocket->moveToThread(&mProgressThread);
-    connect(&mProgressThread, SIGNAL(started()), mpProgressSubscriberSocket, SLOT(readProgressJson()));
-    connect(mpProgressSubscriberSocket, SIGNAL(simulationProgressJson(QString)), this, SLOT(simulationProgressJson(QString)));
+  mpSimulationSubscriberSocket = new SimulationSubscriberSocket;
+  if (mpSimulationSubscriberSocket->getErrorString().isEmpty()) {
+    mpSimulationSubscriberSocket->moveToThread(&mProgressThread);
+    connect(&mProgressThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readProgressJson()));
+    connect(mpSimulationSubscriberSocket, SIGNAL(simulationProgressJson(QString)), this, SLOT(simulationProgressJson(QString)));
     // start the simulation process
     mpSimulationProcess = new QProcess;
     mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
@@ -175,7 +175,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
 #endif
     connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
     QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
-    args << QString("--endpoint-pub=%1").arg(QString(mpProgressSubscriberSocket->getEndPoint()));
+    args << QString("--endpoint-pub=%1").arg(QString(mpSimulationSubscriberSocket->getEndPoint()));
     args << QString("--model=%1").arg(fileName);
     OMSimulatorPage *pOMSimulatorPage = OptionsDialog::instance()->getOMSimulatorPage();
     int logLevel = pOMSimulatorPage->getLoggingLevelComboBox()->itemData(pOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
@@ -203,7 +203,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     writeSimulationOutput(QString("%1 %2\n").arg(process).arg(args.join(" ")), StringHandler::OMEditInfo);
     mpSimulationProcess->start(process, args);
   } else {
-    writeSimulationOutput(mpProgressSubscriberSocket->getErrorString(), StringHandler::Error);
+    writeSimulationOutput(mpSimulationSubscriberSocket->getErrorString(), StringHandler::Error);
   }
 }
 
@@ -213,11 +213,16 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
  */
 OMSSimulationOutputWidget::~OMSSimulationOutputWidget()
 {
-  if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()) {
-    Utilities::getApplicationSettings()->setValue("OMSSimulationOutputWidget/geometry", saveGeometry());
+  // progress subscriber thread
+  if (mpSimulationSubscriberSocket->isSocketConnected()) {
+    mpSimulationSubscriberSocket->setSocketConnected(false);
+    mProgressThread.exit();
+    mProgressThread.wait();
   }
-  delete mpProgressSubscriberSocket;
-  if (mpSimulationProcess) {
+  delete mpSimulationSubscriberSocket;
+  // simulation process
+  if (mpSimulationProcess && isSimulationProcessRunning()) {
+    mpSimulationProcess->kill();
     mpSimulationProcess->deleteLater();
   }
 }
@@ -234,7 +239,7 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpProgressBar->setTextVisible(true);
   mpCancelSimulationButton->setEnabled(true);
   mpArchivedOMSSimulationItem->setStatus(Helper::running);
-  mpProgressSubscriberSocket->setSocketConnected(true);
+  mpSimulationSubscriberSocket->setSocketConnected(true);
   mProgressThread.start();
 }
 
@@ -327,7 +332,7 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   // simulation finished show the results
   MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
   mpArchivedOMSSimulationItem->setStatus(Helper::finished);
-  mpProgressSubscriberSocket->setSocketConnected(false);
+  mpSimulationSubscriberSocket->setSocketConnected(false);
   mProgressThread.exit();
   mProgressThread.wait();
 }
@@ -346,33 +351,5 @@ void OMSSimulationOutputWidget::cancelSimulation()
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelSimulationButton->setEnabled(false);
     mpArchivedOMSSimulationItem->setStatus(Helper::finished);
-  }
-}
-
-/*!
- * \brief OMSSimulationOutputWidget::keyPressEvent
- * Closes the widget when Esc key is pressed.
- * \param event
- */
-void OMSSimulationOutputWidget::keyPressEvent(QKeyEvent *event)
-{
-  if (event->key() == Qt::Key_Escape) {
-    close();
-    return;
-  }
-  QWidget::keyPressEvent(event);
-}
-
-/*!
- * \brief OMSSimulationOutputWidget::closeEvent
- * Reimplementation of QWidget::closeEvent(). Ignores the event if simulation process is running.
- * \param event
- */
-void OMSSimulationOutputWidget::closeEvent(QCloseEvent *event)
-{
-  if (isSimulationProcessRunning()) {
-    event->ignore();
-  } else {
-    event->accept();
   }
 }

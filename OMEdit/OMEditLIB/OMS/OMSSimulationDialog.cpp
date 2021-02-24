@@ -144,21 +144,6 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   setLayout(pMainGridLayout);
 }
 
-/*!
- * \brief OMSSimulationDialog::~OMSSimulationDialog
- * OMSSimulationDialog destructor.
- */
-OMSSimulationDialog::~OMSSimulationDialog()
-{
-  foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, mOMSSimulationOutputWidgetsList) {
-    if (pOMSSimulationOutputWidget->isSimulationProcessRunning() && pOMSSimulationOutputWidget->getSimulationProcess()) {
-      pOMSSimulationOutputWidget->getSimulationProcess()->kill();
-    }
-    delete pOMSSimulationOutputWidget;
-  }
-  mOMSSimulationOutputWidgetsList.clear();
-}
-
 int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibraryTreeItem)
 {
   mModelCref = modelCref;
@@ -217,21 +202,8 @@ void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
   QString fileName = QString("%1/%2.ssp").arg(Utilities::tempDirectory(), pLibraryTreeItem->getNameStructure());
   if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
     OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), fileName);
-    mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-    int xPos = QApplication::primaryScreen()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::primaryScreen()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-  #else // QT_VERSION_CHECK
-    int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-  #endif // QT_VERSION_CHECK
-    pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
-    /* restore the window geometry. */
-    if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
-        && Utilities::getApplicationSettings()->contains("OMSSimulationOutputWidget/geometry")) {
-      pOMSSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("OMSSimulationOutputWidget/geometry").toByteArray());
-    }
-    pOMSSimulationOutputWidget->show();
+    MessagesWidget::instance()->addSimulationTab(pOMSSimulationOutputWidget, pLibraryTreeItem->getNameStructure());
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
   }
 }
 
@@ -271,10 +243,7 @@ void OMSSimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetIte
 {
   ArchivedOMSSimulationItem *pArchivedOMSSimulationItem = dynamic_cast<ArchivedOMSSimulationItem*>(pTreeWidgetItem);
   if (pArchivedOMSSimulationItem) {
-    OMSSimulationOutputWidget *pSimulationOutputWidget = pArchivedOMSSimulationItem->getOMSSimulationOutputWidget();
-    pSimulationOutputWidget->show();
-    pSimulationOutputWidget->raise();
-    pSimulationOutputWidget->setWindowState(pSimulationOutputWidget->windowState() & (~Qt::WindowMinimized));
+    MessagesWidget::instance()->addSimulationTab(pArchivedOMSSimulationItem->getOMSSimulationOutputWidget(), pArchivedOMSSimulationItem->text(0));
   }
 }
 

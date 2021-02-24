@@ -38,9 +38,12 @@
 #include "LibraryTreeWidget.h"
 #include "Util/Helper.h"
 #include "Options/OptionsDialog.h"
+#include "OMS/OMSSimulationOutputWidget.h"
 
 #include <QMenu>
 #include <QMessageBox>
+
+const int fixedTabsCount = 4;
 
 /*!
  * \class MessageItem
@@ -414,6 +417,18 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   mpMessagesTabWidget->addTab(mpWarningMessageWidget, tr("Warnings"));
   mpErrorMessageWidget = new MessageWidget;
   mpMessagesTabWidget->addTab(mpErrorMessageWidget, tr("Errors"));
+  // make the tabs closable
+  mpMessagesTabWidget->setTabsClosable(true);
+  // Remove the close button of first few fixed tabs
+  QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, mpMessagesTabWidget->tabBar());
+  for (int i = 0; i < fixedTabsCount; ++i) {
+    QWidget *pTabButtonWidget = mpMessagesTabWidget->tabBar()->tabButton(i, closeSide);
+    if (pTabButtonWidget) {
+      pTabButtonWidget->deleteLater();
+    }
+    mpMessagesTabWidget->tabBar()->setTabButton(i, closeSide, 0);
+  }
+  connect(mpMessagesTabWidget, SIGNAL(tabCloseRequested(int)), SLOT(closeTab(int)));
   mSuppressMessagesList.clear();
 #ifdef Q_OS_WIN
   // nothing
@@ -452,6 +467,38 @@ void MessagesWidget::applyMessagesSettings()
   mpNotificationMessageWidget->applyMessagesSettings();
   mpWarningMessageWidget->applyMessagesSettings();
   mpErrorMessageWidget->applyMessagesSettings();
+}
+
+/*!
+ * \brief MessagesWidget::addSimulationTab
+ * Adds a simulation tab.
+ * \param pSimulationWidget
+ * \param name
+ */
+void MessagesWidget::addSimulationTab(QWidget *pSimulationWidget, const QString &name)
+{
+  /* ticket:4406 Option to automatically close simulation tabs where simulation is done.
+   * Close all completed simulation tabs.
+   */
+  if (OptionsDialog::instance()->getSimulationPage()->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked()) {
+    for (int i = fixedTabsCount; i < mpMessagesTabWidget->count(); ++i) {
+      closeTab(i);
+    }
+  }
+  mpMessagesTabWidget->setCurrentIndex(mpMessagesTabWidget->addTab(pSimulationWidget, name));
+}
+
+/*!
+ * \brief MessagesWidget::closeTab
+ * Removes the tab from MessagesWidget.
+ * \param index
+ */
+void MessagesWidget::closeTab(int index)
+{
+  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+  }
 }
 
 /*!

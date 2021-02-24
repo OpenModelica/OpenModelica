@@ -77,14 +77,12 @@ class OMSSimulationDialog : public QDialog
   Q_OBJECT
 public:
   OMSSimulationDialog(QWidget *pParent = 0);
-  ~OMSSimulationDialog();
   using QDialog::exec;
   int exec(const QString &modelCref, LibraryTreeItem *pLibraryTreeItem);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime);
 
   QTreeWidget* getArchivedSimulationsTreeWidget() {return mpArchivedSimulationsTreeWidget;}
-  QList<OMSSimulationOutputWidget*> getOMSSimulationOutputWidgetsList() {return mOMSSimulationOutputWidgetsList;}
 private:
   QString mModelCref;
   LibraryTreeItem *mpLibraryTreeItem;
