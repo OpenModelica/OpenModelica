@@ -375,7 +375,7 @@ the initialization process option, or the *-d=initialization* compiler flag,
 one can get an explicit list of the additional equations that OpenModelica
 automatically adds to get a fully specified initialization problem, which may be
 helpful to figure out which initial conditions are missing. In this case, we
-recommend to amend the source code of the model by adding suitable extre initial
+recommend to amend the source code of the model by adding suitable extra initial
 conditions, until that warning message no longer appears.
 
 Modelica_LinearSystems2 Library
