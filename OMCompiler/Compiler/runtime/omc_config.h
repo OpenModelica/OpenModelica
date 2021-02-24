@@ -110,12 +110,8 @@
   #define DEFAULT_CFLAGS "-falign-functions ${MODELICAUSERCFLAGS}"
 #endif
 
-#if defined(__x86_64__)
-  /* -fPIC needed on x86_64! */
-  #define DEFAULT_LINKER DEFAULT_LD" -shared -Xlinker --export-all-symbols -fPIC"
-#else
-  #define DEFAULT_LINKER DEFAULT_LD" -shared -Xlinker --export-all-symbols"
-#endif
+/* for windows/mingw we don't need -fPIC for x86_64 target, also clang doesn't support it, gcc ignores it */
+#define DEFAULT_LINKER DEFAULT_LD" -shared -Xlinker --export-all-symbols"
 
 #define CONFIG_IPOPT_INC /* Without IPOPT */
 #define CONFIG_IPOPT_LIB /* Without IPOPT */
