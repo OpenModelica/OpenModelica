@@ -97,9 +97,6 @@ static fnptr_oms_addTLMBus oms_addTLMBus = NULL;
 typedef int (*fnptr_oms_addTLMConnection)(const char*,const char*,double,double,double,double);
 static fnptr_oms_addTLMConnection oms_addTLMConnection = NULL;
 
-typedef int (*fnptr_oms_cancelSimulation_asynchronous)(const char*);
-static fnptr_oms_cancelSimulation_asynchronous oms_cancelSimulation_asynchronous = NULL;
-
 typedef int (*fnptr_oms_compareSimulationResults)(const char*,const char*,const char*,double,double);
 static fnptr_oms_compareSimulationResults oms_compareSimulationResults = NULL;
 
@@ -293,7 +290,6 @@ void resolveFunctionNames()
   oms_addTimeIndicator = (fnptr_oms_addTimeIndicator)AddressOf(OMSimulatorDLL, "oms_addTimeIndicator");
   oms_addTLMBus = (fnptr_oms_addTLMBus)AddressOf(OMSimulatorDLL, "oms_addTLMBus");
   oms_addTLMConnection = (fnptr_oms_addTLMConnection)AddressOf(OMSimulatorDLL, "oms_addTLMConnection");
-  oms_cancelSimulation_asynchronous = (fnptr_oms_cancelSimulation_asynchronous)AddressOf(OMSimulatorDLL, "oms_cancelSimulation_asynchronous");
   oms_compareSimulationResults = (fnptr_oms_compareSimulationResults)AddressOf(OMSimulatorDLL, "oms_compareSimulationResults");
   oms_copySystem = (fnptr_oms_copySystem)AddressOf(OMSimulatorDLL, "oms_copySystem");
   oms_delete = (fnptr_oms_delete)AddressOf(OMSimulatorDLL, "oms_delete");
@@ -563,17 +559,6 @@ extern const int OMSimulator_oms_addTLMConnection(const char* crefA, const char*
     exit(0);
   }
   int status = oms_addTLMConnection(crefA,crefB,delay,alpha,linearimpedance,angularimpedance);
-  return status;
-}
-
-extern const int OMSimulator_oms_cancelSimulation_asynchronous(const char* cref)
-{
-  if(!oms_cancelSimulation_asynchronous)
-  {
-    printf("could not locate the function oms_cancelSimulation_asynchronous\n");
-    exit(0);
-  }
-  int status = oms_cancelSimulation_asynchronous(cref);
   return status;
 }
 

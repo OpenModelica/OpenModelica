@@ -156,12 +156,6 @@ algorithm
       then
         Values.INTEGER(status);
 
-    case("oms_cancelSimulation_asynchronous",{Values.STRING(cref)})
-      equation
-        status = OMSimulator.oms_cancelSimulation_asynchronous(cref);
-      then
-        Values.INTEGER(status);
-
     case("oms_compareSimulationResults",{Values.STRING(filenameA), Values.STRING(filenameB), Values.STRING(var), Values.REAL(relTol), Values.REAL(absTol)})
       equation
         status = OMSimulator.oms_compareSimulationResults(filenameA,filenameB,var,relTol,absTol);
