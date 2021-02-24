@@ -289,11 +289,13 @@ draft of 3.6, so it is not currently supported by OpenModelica.
 Incomplete specification of initial conditions
 ------
 The simulation of Modelica models of dynamical systems requires the tool to
-determine a consistent initial solution for the simulation to start. In
-principle, this can be done by adding to the system equations one initial
-condition for each continuous state variable (after index reduction) and one
-initial condition for each discrete variable, then solving the resulting
-initialization problem. These initial conditions can be formulated by adding
+determine a consistent initial solution for the simulation to start. To do so,
+the system equations are augmented by adding one initial condition for each
+continuous state variable (after index reduction) and one initial condition for
+each discrete state variable. Then, the augmented system is solved upon
+initialization.
+
+These initial conditions can be formulated by adding
 a *start = <expression>* and a *fixed = true* attribute to those variables, e.g.
 
 .. code-block:: modelica
