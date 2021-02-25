@@ -8519,43 +8519,48 @@ void ModelWidgetContainer::fitToDiagram()
     QRect diagramRect = pGraphicsView->itemsBoundingRect().toAlignedRect();
     diagramRect = pGraphicsView->mapToScene(diagramRect).boundingRect().toRect();
     // invert the rectangle as the drawing area has scale(1.0, -1.0);
-    int top = diagramRect.top();
+    const int top = diagramRect.top();
     diagramRect.setTop(diagramRect.bottom());
     diagramRect.setBottom(top);
-    // Make the extent values interval of 10
-    int interval = 10;
-    diagramRect.setLeft(((diagramRect.left() / interval) * interval) - interval);
-    diagramRect.setBottom(((diagramRect.bottom() / interval) * interval) - interval);
-    diagramRect.setRight(((diagramRect.right() / interval) * interval) + interval);
-    diagramRect.setTop(((diagramRect.top() / interval) * interval) + interval);
+    // Make the extent values interval of 10 based on grid size
+    const int xInterval = qRound(pGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep()) * 10;
+    const int yInterval = qRound(pGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep()) * 10;
+    const int left = qRound((double)diagramRect.left() / xInterval) * xInterval;
+    const int bottom = qRound((double)diagramRect.bottom() / yInterval) * yInterval;
+    const int right = qRound((double)diagramRect.right() / xInterval) * xInterval;
+    const int top_ = qRound((double)diagramRect.top() / yInterval) * yInterval;
+    QRectF adaptedRect(left, bottom, qAbs(left - right), qAbs(bottom - top_));
     // For read-only system libraries we just set the zoom and for writeable models we modify the extent.
     if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
       pGraphicsView->setIsCustomScale(true);
       pGraphicsView->fitInView(diagramRect, Qt::KeepAspectRatio);
     } else {
-      // CoOrdinateSystem
-      CoOrdinateSystem oldCoOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
-      // version
-      QString oldVersion = pModelWidget->getLibraryTreeItem()->mClassInformation.version;
-      // uses annotation
-      OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-      QList<QList<QString> > usesAnnotation = pOMCProxy->getUses(pModelWidget->getLibraryTreeItem()->getNameStructure());
-      QStringList oldUsesAnnotation;
-      for (int i = 0 ; i < usesAnnotation.size() ; i++) {
-        oldUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
+      // avoid putting unnecessary commands on the stack
+      if (adaptedRect.width() != 0 && adaptedRect.height() != 0 && adaptedRect != pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle()) {
+        // CoOrdinateSystem
+        CoOrdinateSystem oldCoOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
+        // version
+        QString oldVersion = pModelWidget->getLibraryTreeItem()->mClassInformation.version;
+        // uses annotation
+        OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+        QList<QList<QString> > usesAnnotation = pOMCProxy->getUses(pModelWidget->getLibraryTreeItem()->getNameStructure());
+        QStringList oldUsesAnnotation;
+        for (int i = 0 ; i < usesAnnotation.size() ; i++) {
+          oldUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
+        }
+        QString oldUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(oldUsesAnnotation.join(","));
+        // construct a new CoOrdinateSystem
+        CoOrdinateSystem newCoOrdinateSystem = oldCoOrdinateSystem;
+        newCoOrdinateSystem.setLeft(adaptedRect.left());
+        newCoOrdinateSystem.setBottom(adaptedRect.bottom());
+        newCoOrdinateSystem.setRight(adaptedRect.right());
+        newCoOrdinateSystem.setTop(adaptedRect.top());
+        // push the CoOrdinateSystem change to undo stack
+        UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(pGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem, false,
+                                                                                                          oldVersion, oldVersion, oldUsesAnnotationString, oldUsesAnnotationString);
+        pModelWidget->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
+        pModelWidget->updateModelText();
       }
-      QString oldUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(oldUsesAnnotation.join(","));
-      // construct a new CoOrdinateSystem
-      CoOrdinateSystem newCoOrdinateSystem = oldCoOrdinateSystem;
-      newCoOrdinateSystem.setLeft(diagramRect.left());
-      newCoOrdinateSystem.setBottom(diagramRect.bottom());
-      newCoOrdinateSystem.setRight(diagramRect.right());
-      newCoOrdinateSystem.setTop(diagramRect.top());
-      // push the CoOrdinateSystem change to undo stack
-      UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(pGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem, false,
-                                                                                                        oldVersion, oldVersion, oldUsesAnnotationString, oldUsesAnnotationString);
-      pModelWidget->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
-      pModelWidget->updateModelText();
     }
     // hide the progressbar and clear the message in status bar
     MainWindow::instance()->getStatusBar()->clearMessage();
