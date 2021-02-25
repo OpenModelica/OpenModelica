@@ -79,6 +79,7 @@ typedef void* iconv_t;
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <rpc.h>
+#include <psapi.h>
 #define getFunctionPointerFromDLL  GetProcAddress
 #define FreeLibraryFromHandle !FreeLibrary
 
@@ -1325,8 +1326,8 @@ static const char* SystemImpl__getUUIDStr(void)
 {
   static char uuidStr[37] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  unsigned char *tmp;
-  UUID uuid;
+  unsigned char *tmp = NULL;
+  UUID uuid = {0};
   if (UuidCreate(&uuid) == RPC_S_OK)
     UuidToString(&uuid, &tmp);
   tmp[36] = '\0';
@@ -1372,7 +1373,9 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
     }
 
     h = LoadLibrary(libname);
-  } else {
+  } else { /* no library name, fetch current module handle */
+    /* set the libname */
+    strcpy(libname, "[own process]");
     h = GetModuleHandle(0);
   }
 
@@ -1393,16 +1396,6 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
     LocalFree(lpMsgBuf);
     return -1;
   }
-
-  /* adrpo, pass the mmc_GC_state pointer from the current process!
-  mmc_GC_set_state_lib_function = (mmc_GC_function_set_gc_state)getFunctionPointerFromDLL(h, "mmc_GC_set_state");
-  if (mmc_GC_set_state_lib_function == NULL) {
-    fprintf(stderr, "Unable to get pointer for mmc_GC_set_state in  %s!\n", libname);
-    fflush(stderr);
-    return -1;
-  }
-  mmc_GC_set_state_lib_function(mmc_GC_state);
-  */
 
   libIndex = alloc_ptr();
   if (libIndex < 0) {
@@ -1449,16 +1442,6 @@ int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
     c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     return -1;
   }
-
-  /* adrpo, pass the mmc_GC_state pointer from the current process!
-  mmc_GC_set_state_lib_function = (mmc_GC_function_set_gc_state)getFunctionPointerFromDLL(h, "mmc_GC_set_state");
-  if (mmc_GC_set_state_lib_function == NULL) {
-    fprintf(stderr, "Unable to get pointer for mmc_GC_set_state in  %s!\n", libname);
-    fflush(stderr);
-    return -1;
-  }
-  mmc_GC_set_state_lib_function(mmc_GC_state);
-  */
 
   libIndex = alloc_ptr();
   if (libIndex < 0) {
@@ -1535,6 +1518,7 @@ int SystemImpl__lookupFunction(int libIndex, const char *str)
   modelica_ptr_t lib = NULL, func = NULL;
   function_t funcptr;
   int funcIndex;
+  long lastError = 0;
 
   lib = lookup_ptr(libIndex);
 
@@ -1542,12 +1526,56 @@ int SystemImpl__lookupFunction(int libIndex, const char *str)
     return -1;
 
   funcptr =  (int (*)(threadData_t*, type_description*, type_description*)) getFunctionPointerFromDLL(lib->data.lib, str);
+  lastError = GetLastError();
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  /* windows is special :)
+   * if we didn't find the function, search it in all the loaded DLLs as Linux does
+   */
+  if (funcptr == NULL) {
+    HMODULE hMods[1024];
+    HMODULE hProcess = GetCurrentProcess();
+    DWORD cbNeeded;
+    unsigned int i;
+    char szModName[MAX_PATH];
+
+    /* see if the GetModuleHandle(0) is in the current process and an executable */
+    if ( GetModuleFileNameEx( hProcess, lib->data.lib, szModName, sizeof(szModName) / sizeof(char)) )
+    {
+      // if strcmp(szModName[strlen(szModName)-4], ".exe")
+      if ( EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded) )
+      {
+        for ( i = 0; i < (cbNeeded / sizeof(modelica_integer)); i++ )
+        {
+          funcptr = (int (*)(threadData_t*, type_description*, type_description*)) getFunctionPointerFromDLL(hMods[i], str);
+          if (funcptr != NULL)
+          {
+            break;
+          }
+
+          /* // uncomment for debugging
+          {
+            if ( GetModuleFileNameEx( hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(char)) )
+            {
+              fprintf(stderr, "function %s in %s handle:[%p][%d] funcptr[%p] GetLastError:%d\n", str, szModName, hMods[i], i, funcptr, GetLastError()); fflush(NULL);
+            }
+          }
+          */
+        }
+      }
+    }
+  }
+#endif
 
   if (funcptr == NULL) {
     const char* err_toks[2];
     char id_buf[11];
-    snprintf(id_buf, 11, "%lu", GetLastError());
+    snprintf(id_buf, 11, "%lu", lastError);
+#if defined(__MINGW32__) || defined(_MSC_VER)
     err_toks[0] = id_buf;
+#else
+    err_toks[0] = dlerror();
+#endif
     err_toks[1] = str;
     c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, gettext("Unable to find `%s': %s.\n"), err_toks, 2);
     return -1;

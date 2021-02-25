@@ -201,8 +201,16 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
      echo rm -rf ./M* ./OMCppM*
      echo cd ..
      echo rm -rf .sanity-check
+     echo echo Testing some models from testsuite, ffi, meta
      echo cd testsuite/flattening/libraries/biochem
      echo ../../../rtest --return-with-error-code EnzMM.mos
+     echo cd \${MSYS_WORKSPACE}
+     echo cd testsuite/flattening/modelica/ffi
+     echo ../../../rtest --return-with-error-code ModelicaInternal_countLines.mos
+     echo ../../../rtest --return-with-error-code Integer1.mos
+     echo cd \${MSYS_WORKSPACE}
+     echo cd testsuite/metamodelica/meta
+     echo ../../rtest --return-with-error-code AlgPatternm.mos
      echo echo Testing if we can compile in a path with spaces
      echo cd \${MSYS_WORKSPACE}
      echo mkdir -p ./path\\ with\\ space/
