@@ -871,7 +871,7 @@ protected
   DAE.Type ty;
   list<DAE.Dimension> dims;
   list<Integer> ds;
-  Integer len;
+  Integer len, exp_count;
   list<DAE.Exp> exps;
   DAE.Exp exp1;
   Absyn.Ident call1, call2;
@@ -911,8 +911,15 @@ algorithm
   for sub in subs loop
     DAE.INDEX(DAE.ICONST(1)) := sub;
   end for;
+
   // Same number of expressions as expected...
-  true := (1+listLength(exps))==len;
+  exp_count := listLength(exps) + 1;
+  true := exp_count == len;
+
+  // Check that the number of expressions matches the size of the array the cref represents.
+  dims := Types.getDimensions(ComponentReference.crefLastType(cr1));
+  true := exp_count == product(i for i in Expression.dimensionsSizes(dims));
+
   for exp in exps loop
     //DAE.CREF(componentRef=cr2) := exp;
     (cr2, call2) := match exp
