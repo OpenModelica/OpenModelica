@@ -38,6 +38,7 @@
 #include "OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Options/OptionsDialog.h"
+#include "Simulation/ArchivedSimulationsWidget.h"
 #include "Util/OutputPlainTextEdit.h"
 #include "zmq.h"
 
@@ -144,8 +145,8 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   // save the model stop time
   OMSProxy::instance()->getStopTime(mCref, &mStopTime);
   // create the ArchivedSimulationItem
-  mpArchivedOMSSimulationItem = new ArchivedOMSSimulationItem(mCref, mStartTime, mStopTime, this);
-  MainWindow::instance()->getOMSSimulationDialog()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedOMSSimulationItem);
+  mpArchivedSimulationItem = new ArchivedSimulationItem(mCref, mStartTime, mStopTime, this);
+  ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
   // save the last modified datetime of result file.
   char *resultFileName = (char*)"";
   int bufferSize;
@@ -238,7 +239,7 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setTextVisible(true);
   mpCancelSimulationButton->setEnabled(true);
-  mpArchivedOMSSimulationItem->setStatus(Helper::running);
+  mpArchivedSimulationItem->setStatus(Helper::running);
   mpSimulationSubscriberSocket->setSocketConnected(true);
   mProgressThread.start();
 }
@@ -331,7 +332,7 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   mpCancelSimulationButton->setEnabled(false);
   // simulation finished show the results
   MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
-  mpArchivedOMSSimulationItem->setStatus(Helper::finished);
+  mpArchivedSimulationItem->setStatus(Helper::finished);
   mpSimulationSubscriberSocket->setSocketConnected(false);
   mProgressThread.exit();
   mProgressThread.wait();
@@ -350,6 +351,6 @@ void OMSSimulationOutputWidget::cancelSimulation()
     mpProgressLabel->setText(tr("Simulation of %1 is cancelled.").arg(mCref));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelSimulationButton->setEnabled(false);
-    mpArchivedOMSSimulationItem->setStatus(Helper::finished);
+    mpArchivedSimulationItem->setStatus(Helper::finished);
   }
 }

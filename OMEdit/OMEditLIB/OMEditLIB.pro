@@ -143,6 +143,7 @@ SOURCES += Util/Helper.cpp \
   Simulation/SimulationProcessThread.cpp \
   Simulation/SimulationOutputHandler.cpp \
   Simulation/OpcUaClient.cpp \
+  Simulation/ArchivedSimulationsWidget.cpp \
   TLM/FetchInterfaceDataDialog.cpp \
   TLM/FetchInterfaceDataThread.cpp \
   TLM/TLMCoSimulationDialog.cpp \
@@ -235,6 +236,7 @@ HEADERS  += Util/Helper.h \
   Simulation/SimulationProcessThread.h \
   Simulation/SimulationOutputHandler.h \
   Simulation/OpcUaClient.h \
+  Simulation/ArchivedSimulationsWidget.h \
   TLM/FetchInterfaceDataDialog.h \
   TLM/FetchInterfaceDataThread.h \
   TLM/TLMCoSimulationOptions.h \

@@ -105,24 +105,6 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
   pGeneralWidget->setLayout(pGeneralTabWidgetGridLayout);
   pTabWidget->addTab(pGeneralWidget, Helper::general);
-  // Archived simulation tab layout
-  QWidget *pArchivedSimulationsTab = new QWidget;
-  // archived simulation tree widget
-  mpArchivedSimulationsTreeWidget = new QTreeWidget;
-  mpArchivedSimulationsTreeWidget->setItemDelegate(new ItemDelegate(mpArchivedSimulationsTreeWidget));
-  mpArchivedSimulationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpArchivedSimulationsTreeWidget->setColumnCount(4);
-  QStringList headers;
-  headers << tr("Model") << Helper::dateTime << Helper::startTime << Helper::stopTime << Helper::status;
-  mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
-  mpArchivedSimulationsTreeWidget->setIndentation(0);
-  connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
-  QGridLayout *pArchivedSimulationsTabGridLayout = new QGridLayout;
-  pArchivedSimulationsTabGridLayout->setAlignment(Qt::AlignTop);
-  pArchivedSimulationsTabGridLayout->addWidget(mpArchivedSimulationsTreeWidget, 0, 0);
-  pArchivedSimulationsTab->setLayout(pArchivedSimulationsTabGridLayout);
-  // add Archived simulations Tab to Simulation TabWidget
-  pTabWidget->addTab(pArchivedSimulationsTab, Helper::archivedSimulations);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -230,20 +212,6 @@ void OMSSimulationDialog::simulationFinished(const QString &resultFilePath, QDat
     MainWindow::instance()->switchToPlottingPerspectiveSlot();
     pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
     MainWindow::instance()->getVariablesDockWidget()->show();
-  }
-}
-
-/*!
- * \brief OMSSimulationDialog::showArchivedSimulation
- * Slot activated when mpArchivedSimulationsListWidget itemDoubleClicked signal is raised.\n
- * Shows the archived OMSSimulationOutputWidget.
- * \param pTreeWidgetItem
- */
-void OMSSimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
-{
-  ArchivedOMSSimulationItem *pArchivedOMSSimulationItem = dynamic_cast<ArchivedOMSSimulationItem*>(pTreeWidgetItem);
-  if (pArchivedOMSSimulationItem) {
-    MessagesWidget::instance()->addSimulationTab(pArchivedOMSSimulationItem->getOMSSimulationOutputWidget(), pArchivedOMSSimulationItem->text(0));
   }
 }
 

@@ -367,6 +367,7 @@ private:
 #if !defined(WITHOUT_OSG)
   QAction *mpSimulateWithAnimationAction;
 #endif
+  QAction *mpArchivedSimulationsAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
   QAction *mpAttachDebuggerToRunningProcessAction;
@@ -504,6 +505,7 @@ public slots:
   void simulateModel();
   void simulateModelWithTransformationalDebugger();
   void simulateModelWithAlgorithmicDebugger();
+  void showArchivedSimulations();
   void simulateModelWithAnimation();
   void exportModelFMU();
   void importModelFMU();

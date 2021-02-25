@@ -98,6 +98,14 @@ public slots:
   void clearAllTabsMessages();
 };
 
+class MessagesTabWidget : public QTabWidget
+{
+  Q_OBJECT
+public:
+  MessagesTabWidget(QWidget *pParent = 0);
+  void removeCloseButtonfromFixedTabs();
+};
+
 class MessagesWidget : public QWidget
 {
   Q_OBJECT
@@ -110,7 +118,7 @@ private:
   MessagesWidget(QWidget *pParent = 0);
 
   static MessagesWidget *mpInstance;
-  QTabWidget *mpMessagesTabWidget;
+  MessagesTabWidget *mpMessagesTabWidget;
   MessageWidget *mpAllMessageWidget;
   MessageWidget *mpNotificationMessageWidget;
   MessageWidget *mpWarningMessageWidget;

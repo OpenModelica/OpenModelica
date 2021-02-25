@@ -65,7 +65,7 @@ public slots:
   void readProgressJson();
 };
 
-class ArchivedOMSSimulationItem;
+class ArchivedSimulationItem;
 class OutputPlainTextEdit;
 class OMSSimulationOutputWidget : public QWidget
 {
@@ -85,7 +85,7 @@ private:
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelSimulationButton;
   OutputPlainTextEdit *mpSimulationOutputPlainTextEdit;
-  ArchivedOMSSimulationItem *mpArchivedOMSSimulationItem;
+  ArchivedSimulationItem *mpArchivedSimulationItem;
   QDateTime mResultFileLastModifiedDateTime;
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
