@@ -43,12 +43,12 @@
 #include <QDateTime>
 #include <QTextBrowser>
 
-class ProgressSubscriberSocket : public QObject
+class SimulationSubscriberSocket : public QObject
 {
   Q_OBJECT
 public:
-  ProgressSubscriberSocket();
-  ~ProgressSubscriberSocket();
+  SimulationSubscriberSocket();
+  ~SimulationSubscriberSocket();
   QString getEndPoint() const {return mEndPoint;}
   QString getErrorString() const {return mErrorString;}
   bool isSocketConnected() const {return mSocketConnected;}
@@ -65,7 +65,7 @@ public slots:
   void readProgressJson();
 };
 
-class ArchivedOMSSimulationItem;
+class ArchivedSimulationItem;
 class OutputPlainTextEdit;
 class OMSSimulationOutputWidget : public QWidget
 {
@@ -85,12 +85,12 @@ private:
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelSimulationButton;
   OutputPlainTextEdit *mpSimulationOutputPlainTextEdit;
-  ArchivedOMSSimulationItem *mpArchivedOMSSimulationItem;
+  ArchivedSimulationItem *mpArchivedSimulationItem;
   QDateTime mResultFileLastModifiedDateTime;
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
-  ProgressSubscriberSocket *mpProgressSubscriberSocket;
+  SimulationSubscriberSocket *mpSimulationSubscriberSocket;
   QThread mProgressThread;
 public slots:
   void simulationProcessStarted();
@@ -101,9 +101,6 @@ public slots:
   void simulationProgressJson(const QString &progressJson);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
-protected:
-  virtual void keyPressEvent(QKeyEvent *event) override;
-  virtual void closeEvent(QCloseEvent *event) override;
 };
 
 #endif // OMSSIMULATIONOUTPUTWIDGET_H

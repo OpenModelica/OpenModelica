@@ -319,6 +319,8 @@ Simulation Menu
 -  *Simulate with Algorithmic Debugger* - Simulates the current model and
    opens the algorithmic debugger.
 -  *Simulate with Animation* - Simulates the current model and open the animation.
+-  *Archived Simulations* - Shows the list of simulations already finished or running.
+   Double clicking on any of them opens the simulation output window.
 
 Debug Menu
 ----------
@@ -644,12 +646,6 @@ Output
 -  *Store Variables at Events –* adds the variables at time events.
 
 -  *Show Generated File* – displays the generated files in a dialog box.
-
-Archived Simulations
-~~~~~~~~~~~~~~~~~~~~
-
-Shows the list of simulations already finished or running.
-Double clicking on any of them opens the simulation output window.
 
 .. _omedit-2d-plotting :
 

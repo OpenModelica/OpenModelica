@@ -31,7 +31,8 @@
  * @author Adeel Asghar <adeel.asghar@liu.se>
  */
 
-#include "Simulation/SimulationOutputWidget.h"
+#include "SimulationOutputWidget.h"
+#include "ArchivedSimulationsWidget.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Modeling/ItemDelegate.h"
@@ -393,8 +394,8 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   pMainLayout->addWidget(mpGeneratedFilesTabWidget, 2, 0, 1, 4);
   setLayout(pMainLayout);
   // create the ArchivedSimulationItem
-  mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions, this);
-  MainWindow::instance()->getSimulationDialog()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
+  mpArchivedSimulationItem = new ArchivedSimulationItem(mSimulationOptions.getClassName(), mSimulationOptions.getStartTime().toDouble(), mSimulationOptions.getStopTime().toDouble(), this);
+  ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
   // start the tcp server
   mpTcpServer = new QTcpServer;
   mSocketDisconnected = true;

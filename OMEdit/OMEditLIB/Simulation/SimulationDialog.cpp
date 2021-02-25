@@ -602,23 +602,6 @@ void SimulationDialog::setUpForm()
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
-  // Archived Simulations tab
-  mpArchivedSimulationsTab = new QWidget;
-  mpArchivedSimulationsTreeWidget = new QTreeWidget;
-  mpArchivedSimulationsTreeWidget->setItemDelegate(new ItemDelegate(mpArchivedSimulationsTreeWidget));
-  mpArchivedSimulationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpArchivedSimulationsTreeWidget->setColumnCount(4);
-  QStringList headers;
-  headers << tr("Class") << Helper::dateTime << Helper::startTime << Helper::stopTime << Helper::status;
-  mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
-  mpArchivedSimulationsTreeWidget->setIndentation(0);
-  connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
-  QGridLayout *pArchivedSimulationsTabLayout = new QGridLayout;
-  pArchivedSimulationsTabLayout->setAlignment(Qt::AlignTop);
-  pArchivedSimulationsTabLayout->addWidget(mpArchivedSimulationsTreeWidget, 0, 0);
-  mpArchivedSimulationsTab->setLayout(pArchivedSimulationsTabLayout);
-  // add Archived simulations Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpArchivedSimulationsTab, Helper::archivedSimulations);
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -2300,23 +2283,6 @@ void SimulationDialog::showSimulationFlagsHelp()
   if (!QDesktopServices::openUrl(simulationflagsPath)) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(simulationflagsPath.toString()), Helper::ok);
-  }
-}
-
-/*!
- * \brief SimulationDialog::showArchivedSimulation
- * Slot activated when mpArchivedSimulationsListWidget itemDoubleClicked signal is raised.\n
- * Shows the archived SimulationOutputWidget.
- * \param pTreeWidgetItem
- */
-void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
-{
-  ArchivedSimulationItem *pArchivedSimulationItem = dynamic_cast<ArchivedSimulationItem*>(pTreeWidgetItem);
-  if (pArchivedSimulationItem) {
-    SimulationOutputWidget *pSimulationOutputWidget = pArchivedSimulationItem->getSimulationOutputWidget();
-    pSimulationOutputWidget->show();
-    pSimulationOutputWidget->raise();
-    pSimulationOutputWidget->setWindowState(pSimulationOutputWidget->windowState() & (~Qt::WindowMinimized));
   }
 }
 

@@ -105,24 +105,6 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   pGeneralTabWidgetGridLayout->addWidget(mpLoggingIntervalTextBox, 6, 1);
   pGeneralWidget->setLayout(pGeneralTabWidgetGridLayout);
   pTabWidget->addTab(pGeneralWidget, Helper::general);
-  // Archived simulation tab layout
-  QWidget *pArchivedSimulationsTab = new QWidget;
-  // archived simulation tree widget
-  mpArchivedSimulationsTreeWidget = new QTreeWidget;
-  mpArchivedSimulationsTreeWidget->setItemDelegate(new ItemDelegate(mpArchivedSimulationsTreeWidget));
-  mpArchivedSimulationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpArchivedSimulationsTreeWidget->setColumnCount(4);
-  QStringList headers;
-  headers << tr("Model") << Helper::dateTime << Helper::startTime << Helper::stopTime << Helper::status;
-  mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
-  mpArchivedSimulationsTreeWidget->setIndentation(0);
-  connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
-  QGridLayout *pArchivedSimulationsTabGridLayout = new QGridLayout;
-  pArchivedSimulationsTabGridLayout->setAlignment(Qt::AlignTop);
-  pArchivedSimulationsTabGridLayout->addWidget(mpArchivedSimulationsTreeWidget, 0, 0);
-  pArchivedSimulationsTab->setLayout(pArchivedSimulationsTabGridLayout);
-  // add Archived simulations Tab to Simulation TabWidget
-  pTabWidget->addTab(pArchivedSimulationsTab, Helper::archivedSimulations);
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -142,21 +124,6 @@ OMSSimulationDialog::OMSSimulationDialog(QWidget *pParent)
   pMainGridLayout->addWidget(pTabWidget, 2, 0);
   pMainGridLayout->addWidget(mpButtonBox, 3, 0);
   setLayout(pMainGridLayout);
-}
-
-/*!
- * \brief OMSSimulationDialog::~OMSSimulationDialog
- * OMSSimulationDialog destructor.
- */
-OMSSimulationDialog::~OMSSimulationDialog()
-{
-  foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, mOMSSimulationOutputWidgetsList) {
-    if (pOMSSimulationOutputWidget->isSimulationProcessRunning() && pOMSSimulationOutputWidget->getSimulationProcess()) {
-      pOMSSimulationOutputWidget->getSimulationProcess()->kill();
-    }
-    delete pOMSSimulationOutputWidget;
-  }
-  mOMSSimulationOutputWidgetsList.clear();
 }
 
 int OMSSimulationDialog::exec(const QString &modelCref, LibraryTreeItem *pLibraryTreeItem)
@@ -217,21 +184,8 @@ void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
   QString fileName = QString("%1/%2.ssp").arg(Utilities::tempDirectory(), pLibraryTreeItem->getNameStructure());
   if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
     OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), fileName);
-    mOMSSimulationOutputWidgetsList.append(pOMSSimulationOutputWidget);
-  #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-    int xPos = QApplication::primaryScreen()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::primaryScreen()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-  #else // QT_VERSION_CHECK
-    int xPos = QApplication::desktop()->availableGeometry().width() - pOMSSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::desktop()->availableGeometry().height() - pOMSSimulationOutputWidget->frameSize().height() - 20;
-  #endif // QT_VERSION_CHECK
-    pOMSSimulationOutputWidget->setGeometry(xPos, yPos, pOMSSimulationOutputWidget->width(), pOMSSimulationOutputWidget->height());
-    /* restore the window geometry. */
-    if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
-        && Utilities::getApplicationSettings()->contains("OMSSimulationOutputWidget/geometry")) {
-      pOMSSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("OMSSimulationOutputWidget/geometry").toByteArray());
-    }
-    pOMSSimulationOutputWidget->show();
+    MessagesWidget::instance()->addSimulationTab(pOMSSimulationOutputWidget, pLibraryTreeItem->getNameStructure());
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
   }
 }
 
@@ -258,23 +212,6 @@ void OMSSimulationDialog::simulationFinished(const QString &resultFilePath, QDat
     MainWindow::instance()->switchToPlottingPerspectiveSlot();
     pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
     MainWindow::instance()->getVariablesDockWidget()->show();
-  }
-}
-
-/*!
- * \brief OMSSimulationDialog::showArchivedSimulation
- * Slot activated when mpArchivedSimulationsListWidget itemDoubleClicked signal is raised.\n
- * Shows the archived OMSSimulationOutputWidget.
- * \param pTreeWidgetItem
- */
-void OMSSimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
-{
-  ArchivedOMSSimulationItem *pArchivedOMSSimulationItem = dynamic_cast<ArchivedOMSSimulationItem*>(pTreeWidgetItem);
-  if (pArchivedOMSSimulationItem) {
-    OMSSimulationOutputWidget *pSimulationOutputWidget = pArchivedOMSSimulationItem->getOMSSimulationOutputWidget();
-    pSimulationOutputWidget->show();
-    pSimulationOutputWidget->raise();
-    pSimulationOutputWidget->setWindowState(pSimulationOutputWidget->windowState() & (~Qt::WindowMinimized));
   }
 }
 

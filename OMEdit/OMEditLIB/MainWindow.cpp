@@ -53,6 +53,7 @@
 #include "Animation/ViewerWidget.h"
 #endif
 #include "Util/Helper.h"
+#include "Simulation/ArchivedSimulationsWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
 #include "TLM/FetchInterfaceDataDialog.h"
 #include "TLM/TLMCoSimulationOutputWidget.h"
@@ -333,6 +334,8 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   createMenus();
   // enable/disable re-simulation toolbar based on variables browser visibiltiy.
   connect(mpVariablesDockWidget, SIGNAL(visibilityChanged(bool)), this, SLOT(enableReSimulationToolbar(bool)));
+  // Create the archived simulation widget
+  ArchivedSimulationsWidget::create();
   // Create simulation dialog when needed
   mpSimulationDialog = 0;
   // Create TLM co-simulation dialog when needed
@@ -594,6 +597,8 @@ void MainWindow::beforeClosingMainWindow()
   // delete the OMSProxy object
   OMSProxy::destroy();
   delete mpModelWidgetContainer;
+  // delete the ArchivedSimulationsWidget object
+  ArchivedSimulationsWidget::destroy();
   if (mpSimulationDialog) {
     delete mpSimulationDialog;
   }
@@ -2314,6 +2319,15 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
 }
 
 /*!
+ * \brief MainWindow::showArchivedSimulations
+ * Shows the list of archived simulations.
+ */
+void MainWindow::showArchivedSimulations()
+{
+  ArchivedSimulationsWidget::instance()->show();
+}
+
+/*!
  * \brief MainWindow::exportModelFMU
  * Exports the current model to FMU
  */
@@ -3487,6 +3501,10 @@ void MainWindow::createActions()
   mpSimulateWithAnimationAction->setEnabled(false);
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
 #endif
+  // archived simulations action
+  mpArchivedSimulationsAction = new QAction(Helper::archivedSimulations, this);
+  mpArchivedSimulationsAction->setStatusTip(tr("Shows the list of archived simulations"));
+  connect(mpArchivedSimulationsAction, SIGNAL(triggered()), SLOT(showArchivedSimulations()));
   // Debug Menu
   // Debug configurations
   mpDebugConfigurationsAction = new QAction(Helper::debugConfigurations, this);
@@ -3908,6 +3926,8 @@ void MainWindow::createMenus()
 #if !defined(WITHOUT_OSG)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
+  pSimulationMenu->addSeparator();
+  pSimulationMenu->addAction(mpArchivedSimulationsAction);
   // add Simulation menu to menu bar
   menuBar()->addAction(pSimulationMenu->menuAction());
   // Debug menu
