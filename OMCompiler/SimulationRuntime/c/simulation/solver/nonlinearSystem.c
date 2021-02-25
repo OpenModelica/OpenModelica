@@ -949,10 +949,12 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   int j;
   int nlsLs;
   int kinsol = 0;
+  int res;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
   char buffer[4096];
   FILE *pFile = NULL;
+  double originalLambda = data->simulationInfo->lambda;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
@@ -1160,7 +1162,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     );
   }
 #endif
-  return check_nonlinear_solution(data, 1, sysNumber);
+  res = check_nonlinear_solution(data, 1, sysNumber);
+  data->simulationInfo->lambda = originalLambda;
+  return res;
 }
 
 /*! \fn check_nonlinear_solutions
