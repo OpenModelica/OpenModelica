@@ -90,7 +90,6 @@
 /* adrpo: add -loleaut32 as is used by ExternalMedia */
 #define DEFAULT_LDFLAGS "-fopenmp -Wl,-Bstatic -lregex -ltre -lintl -liconv -lexpat -lomcgc -lpthread -loleaut32 -limagehlp -lhdf5 -lz -lszip -Wl,-Bdynamic"
 
-
 #define CONFIG_WITH_OPENMP 1
 
 #define CONFIG_DEFAULT_OPENMODELICAHOME NULL
@@ -105,9 +104,9 @@
    * Visual Studio then use the SSE instructions,
    * not the normal i387 FPU
    */
-  #define DEFAULT_CFLAGS "-falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-Wno-parentheses-equality -falign-functions -mstackrealign -msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}"
 #else
-  #define DEFAULT_CFLAGS "-falign-functions ${MODELICAUSERCFLAGS}"
+  #define DEFAULT_CFLAGS "-Wno-parentheses-equality -falign-functions ${MODELICAUSERCFLAGS}"
 #endif
 
 /* for windows/mingw we don't need -fPIC for x86_64 target, also clang doesn't support it, gcc ignores it */
