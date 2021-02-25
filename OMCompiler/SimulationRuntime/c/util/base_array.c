@@ -54,7 +54,7 @@ void base_array_create(base_array_t *dest, void *data, int ndims, va_list ap)
     dest->dim_size = size_alloc(ndims);
 
     for(i = 0; i < ndims; ++i) {
-        dest->dim_size[i] = va_arg(ap, int);
+        dest->dim_size[i] = va_arg(ap, _index_t);
     }
 
     /* uncomment for debugging!
