@@ -2,8 +2,14 @@ CC = gcc
 CFLAGS = -fPIC -Wall -Wextra -O2 -g
 LDFLAGS = -shared
 RM = rm -f
+
+ifeq (MINGW,$(findstring MINGW,$(shell uname)))
+TARGET_LIB = FFITestLib.dll
+TARGET_DIR = win64
+else # linux
 TARGET_LIB = libFFITestLib.so
 TARGET_DIR = linux64
+endif
 
 OBJS = FFITestLib.o
 
