@@ -462,7 +462,7 @@ if test -z "$RUNTIMECFLAGS"; then
   CFLAGS="$FPIC"
   AC_MSG_CHECKING([runtime compiler CFLAGS])
   RUNTIMECFLAGS="$FPIC"
-  for flag in -falign-functions -mfpmath=sse -fno-dollars-in-identifiers; do
+  for flag in -falign-functions -mfpmath=sse -fno-dollars-in-identifiers -Wno-parentheses-equality; do
     CFLAGS="$FPIC $flag -Werror"
     AC_TRY_LINK([], [return 0;], [RUNTIMECFLAGS="$RUNTIMECFLAGS $flag"],[])
   done
