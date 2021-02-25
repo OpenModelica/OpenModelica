@@ -80,10 +80,14 @@ libomcruntime-boot.a : $(OMC_OBJ_BOOT) Dynload_omc$(OBJEXT)
 libomcruntime.dylib : $(OMC_OBJ)
 	rm -f $@
 	$(CXX) -shared $(RPATH) -install_name @rpath/$@ -o $@ $(OMC_OBJ) $(LDFLAGS) $(CXXFLAGS)
+	test ! `uname` = Darwin || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib $@
+	test ! `uname` = Darwin || install_name_tool -change libsuitesparseconfig.dylib @rpath/libsuitesparseconfig.dylib $@
 
 libomcruntime-boot.dylib : $(OMC_OBJ_BOOT)
 	rm -f $@
 	$(CXX) -shared $(RPATH) -install_name `pwd`/$@ -o $@ $(OMC_OBJ_BOOT) $(LDFLAGS) $(CXXFLAGS)
+	test ! `uname` = Darwin || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib $@
+	test ! `uname` = Darwin || install_name_tool -change libsuitesparseconfig.dylib @rpath/libsuitesparseconfig.dylib $@
 
 libomcruntime.so : $(OMC_OBJ)
 	rm -f $@
