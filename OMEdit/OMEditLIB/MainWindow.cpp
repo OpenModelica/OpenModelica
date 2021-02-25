@@ -2701,11 +2701,12 @@ void MainWindow::runOMSensPlugin()
 {
   if (!mpOMSensPlugin) {
     // load OMSens plugin
-#ifdef Q_OS_WIN
-    QPluginLoader loader(QString("%1/lib/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome));
-#elif defined(Q_OS_MAC)
+#ifdef defined(Q_OS_MAC)
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("OMSens is not supported on MacOS"), Helper::scriptingKind, Helper::errorLevel));
     return;
+#else
+#ifdef Q_OS_WIN
+    QPluginLoader loader(QString("%1/lib/omc/omsensplugin.dll").arg(Helper::OpenModelicaHome));
 #else
     QPluginLoader loader(QString("%1/lib/%2/omc/libomsensplugin.so").arg(Helper::OpenModelicaHome, HOST_SHORT));
 #endif
@@ -2726,6 +2727,7 @@ void MainWindow::runOMSensPlugin()
   } else {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName).arg(Helper::information), tr("Please open a model before starting the OMSens plugin."), Helper::ok);
   }
+#endif
 }
 
 /*!
