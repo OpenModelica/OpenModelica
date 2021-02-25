@@ -183,6 +183,8 @@ $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMCRUNTI
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $(ALL_OBJECTS) $(GEN_DIR)_main_omc.o $(LDFLAGS)
 	test ! "$(SHREXT)" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
+	test ! "$(SHREXT)" = ".dylib" || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib $@
+	test ! "$(SHREXT)" = ".dylib" || install_name_tool -change libsuitesparseconfig.dylib @rpath/libsuitesparseconfig.dylib $@
 
 ifeq (${STATIC},)
 #shared

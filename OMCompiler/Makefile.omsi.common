@@ -37,11 +37,11 @@ OMSIBaseInstall: $(SUNDIALS_TARGET) fmil
 	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSIBase.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
 	test ! `uname` = Darwin || install_name_tool -id @rpath/omsi/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
+	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
+	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
 	test ! `uname` = Darwin || install_name_tool -change libOMSISolver.dylib @rpath/libOMSISolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSIBase.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
+	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
+	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(OMBUILDDIR)/$(LIB_OMC)/omsi/libOMSISolver.dylib
 
 OMSIBaseMSVC: fmil_msvc sundials_msvc
 	$(MAKE) -C SimulationRuntime/OMSI/ -f Makefile.omdev.mingw OMSIBaseMSVC OMBUILDDIR=$(OMBUILDDIR)
