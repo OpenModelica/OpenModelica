@@ -246,18 +246,23 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   # Platform: <%makefileParams.platform%>
 
   # Dynamic loading uses -O0 by default
-  SIM_OR_DYNLOAD_OPT_LEVEL=-O0
+  # define OMC_CFLAGS_OPTIMIZATION env variable to your desired optimization level to override this
+  OMC_CFLAGS_OPTIMIZATION=-O0
+  SIM_OR_DYNLOAD_OPT_LEVEL=$(OMC_CFLAGS_OPTIMIZATION)
   CC=<%if acceptParModelicaGrammar() then 'g++' else '<%makefileParams.ccompiler%>'%>
   CXX=<%makefileParams.cxxcompiler%>
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g"%>
+  DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
   CFLAGS= $(DEBUG_FLAGS) <%makefileParams.cflags%>
   CPPFLAGS= -I"<%makefileParams.omhome%>/include/omc/c" <%makefileParams.includes ; separator=" "%><%
     if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"
   %>
-  LDFLAGS= -L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -Wl,<%ExtraStack%>-rpath,'<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc' <%ParModelicaExpLibs%> <%WinMingwExtraLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
+  # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
+  OMC_LDFLAGS_LINK_TYPE=dynamic
+  RUNTIME_LIBS=<%makefileParams.runtimelibs%>
+  LDFLAGS= -L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -Wl,<%ExtraStack%>-rpath,'<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc' <%ParModelicaExpLibs%> <%WinMingwExtraLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS)
   PERL=perl
   MAINFILE=<%name%>.c
 
