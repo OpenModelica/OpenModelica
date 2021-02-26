@@ -321,6 +321,9 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView, const QString 
   }
   pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
+  // Fixes issue #7150. Set the focus on the name instead of path.
+  mpNameTextBox->selectAll();
+  mpNameTextBox->setFocus();
 }
 
 /*!
@@ -354,6 +357,8 @@ void AddSubModelDialog::browseSubModelPath()
   if (!path.isEmpty()) {
     mpPathTextBox->setText(path);
     mpNameTextBox->setText(name);
+    mpNameTextBox->selectAll();
+    mpNameTextBox->setFocus();
   }
 }
 
