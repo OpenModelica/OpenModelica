@@ -104,6 +104,71 @@ void SimulationSubscriberSocket::readProgressJson()
 }
 
 /*!
+ * \class SimulationRequestSocket
+ * \brief Request socket for simulation.
+ */
+/*!
+ * \brief SimulationRequestSocket::SimulationRequestSocket
+ */
+SimulationRequestSocket::SimulationRequestSocket()
+{
+  // create request reply socket
+  mpContext = zmq_ctx_new();
+  mpSocket = zmq_socket(mpContext, ZMQ_REQ);
+  int rc = zmq_bind(mpSocket, "tcp://127.0.0.1:*");
+  if (rc == 0) {
+    // get the end point
+    const size_t endPointSize = 30;
+    char endPoint[endPointSize];
+    zmq_getsockopt(mpSocket, ZMQ_LAST_ENDPOINT, &endPoint, (size_t *)&endPointSize);
+    mEndPoint = QString(endPoint);
+    mErrorString = "";
+  } else {
+    mEndPoint = "";
+    mErrorString = QString("Error creating ZeroMQ request socket. zmq_bind failed: %1\n").arg(strerror(errno));
+  }
+  mSocketConnected = false;
+}
+
+/*!
+ * \brief SimulationRequestSocket::~SimulationRequestSocket
+ */
+SimulationRequestSocket::~SimulationRequestSocket()
+{
+  zmq_close(mpSocket);
+  zmq_ctx_destroy(mpContext);
+}
+
+/*!
+ * \brief SimulationRequestSocket::sendRequest
+ * \param request
+ */
+void SimulationRequestSocket::sendRequest(const QString &request)
+{
+  const char* request_ = request.toStdString().c_str();
+  // send request
+  zmq_msg_t requestMsg;
+  zmq_msg_init_size(&requestMsg, strlen(request_));
+  // copy the char* to zmq_msg_t
+  memcpy(zmq_msg_data(&requestMsg), request_, strlen(request_));
+  zmq_msg_send(&requestMsg, mpSocket, 0);
+  zmq_msg_close(&requestMsg);
+  // read the reply
+  zmq_msg_t replyMsg;
+  zmq_msg_init(&replyMsg);
+  // Block until a message is available to be received from socket
+  int size = zmq_msg_recv(&replyMsg, mpSocket, 0);
+  if (size > -1) {
+    // copy the zmq_msg_t to char*
+    char *reply = (char*)malloc(size + 1);
+    memcpy(reply, zmq_msg_data(&replyMsg), size);
+    reply[size] = 0;
+    qDebug() << reply;
+  }
+  zmq_msg_close(&replyMsg);
+}
+
+/*!
  * \class OMSSimulationOutputWidget
  * \brief Simulation output window.
  */
@@ -112,9 +177,10 @@ void SimulationSubscriberSocket::readProgressJson()
  * Creates a simulation output window.
  * \param cref
  * \param fileName
+ * \param interactive
  * \param pParent
  */
-OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const QString &fileName, QWidget *pParent)
+OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const QString &fileName, bool interactive, QWidget *pParent)
   : QWidget(pParent), mCref(cref)
 {
   // progress label
@@ -136,8 +202,17 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpProgressLabel, 0, 0);
   pMainLayout->addWidget(mpProgressBar, 0, 1);
-  pMainLayout->addWidget(mpCancelSimulationButton, 0, 2);
-  pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 1, 0, 1, 3);
+  QPushButton *pPauseButton = new QPushButton("Pause");
+  connect(pPauseButton, SIGNAL(clicked()), SLOT(pauseSimulation()));
+  pMainLayout->addWidget(pPauseButton, 0, 2);
+  QPushButton *pContinueButton = new QPushButton("Continue");
+  connect(pContinueButton, SIGNAL(clicked()), SLOT(continueSimulation()));
+  pMainLayout->addWidget(pContinueButton, 0, 3);
+  QPushButton *pEndButton = new QPushButton("End");
+  connect(pEndButton, SIGNAL(clicked()), SLOT(endSimulation()));
+  //pMainLayout->addWidget(pEndButton, 0, 4);
+  pMainLayout->addWidget(mpCancelSimulationButton, 0, 5);
+  pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 1, 0, 1, 6);
   setLayout(pMainLayout);
   // save the model start time
   OMSProxy::instance()->getStartTime(mCref, &mStartTime);
@@ -158,10 +233,31 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mIsSimulationProcessRunning = false;
   // create subscriber socket
   mpSimulationSubscriberSocket = new SimulationSubscriberSocket;
-  if (mpSimulationSubscriberSocket->getErrorString().isEmpty()) {
-    mpSimulationSubscriberSocket->moveToThread(&mProgressThread);
-    connect(&mProgressThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readProgressJson()));
+  if (interactive) {
+    // create request socket
+    mpSimulationRequestSocket = new SimulationRequestSocket;
+  } else {
+    mpSimulationRequestSocket = 0;
+  }
+  bool errorInitializingSockets = false;
+  if (!mpSimulationSubscriberSocket->getErrorString().isEmpty()) {
+    writeSimulationOutput(mpSimulationSubscriberSocket->getErrorString(), StringHandler::Error);
+    errorInitializingSockets = true;
+  }
+  if (interactive && !mpSimulationRequestSocket->getErrorString().isEmpty()) {
+    writeSimulationOutput(mpSimulationRequestSocket->getErrorString(), StringHandler::Error);
+    errorInitializingSockets = true;
+  }
+  if (!errorInitializingSockets) {
+    mpSimulationSubscriberSocket->moveToThread(&mSimulationSubscribeThread);
+    connect(&mSimulationSubscribeThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readProgressJson()));
     connect(mpSimulationSubscriberSocket, SIGNAL(simulationProgressJson(QString)), this, SLOT(simulationProgressJson(QString)));
+    if (mpSimulationRequestSocket) {
+      mpSimulationRequestSocket->moveToThread(&mSimulationRequestReplyThread);
+      connect(this, SIGNAL(sendRequest(QString)), mpSimulationRequestSocket, SLOT(sendRequest(QString)));
+//      connect(&mSimulationRequestReplyThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readProgressJson()));
+//      connect(mpSimulationSubscriberSocket, SIGNAL(simulationProgressJson(QString)), this, SLOT(simulationProgressJson(QString)));
+    }
     // start the simulation process
     mpSimulationProcess = new QProcess;
     mpSimulationProcess->setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
@@ -175,8 +271,12 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
 #endif
     connect(mpSimulationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(simulationProcessFinished(int,QProcess::ExitStatus)));
     QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
-    args << QString("--endpoint-pub=%1").arg(QString(mpSimulationSubscriberSocket->getEndPoint()));
     args << QString("--model=%1").arg(fileName);
+    args << QString("--endpoint-pub=%1").arg(QString(mpSimulationSubscriberSocket->getEndPoint()));
+    if (interactive) {
+      args << QString("--endpoint-rep=%1").arg(QString(mpSimulationRequestSocket->getEndPoint()));
+      args << QStringLiteral("--interactive");
+    }
     OMSimulatorPage *pOMSimulatorPage = OptionsDialog::instance()->getOMSimulatorPage();
     int logLevel = pOMSimulatorPage->getLoggingLevelComboBox()->itemData(pOMSimulatorPage->getLoggingLevelComboBox()->currentIndex()).toInt();
     args << QString("--logLevel=%1").arg(logLevel);
@@ -202,8 +302,6 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     // run the simulation executable to create the result file
     writeSimulationOutput(QString("%1 %2\n").arg(process).arg(args.join(" ")), StringHandler::OMEditInfo);
     mpSimulationProcess->start(process, args);
-  } else {
-    writeSimulationOutput(mpSimulationSubscriberSocket->getErrorString(), StringHandler::Error);
   }
 }
 
@@ -216,8 +314,13 @@ OMSSimulationOutputWidget::~OMSSimulationOutputWidget()
   // progress subscriber thread
   if (mpSimulationSubscriberSocket->isSocketConnected()) {
     mpSimulationSubscriberSocket->setSocketConnected(false);
-    mProgressThread.exit();
-    mProgressThread.wait();
+    mSimulationSubscribeThread.exit();
+    mSimulationSubscribeThread.wait();
+    if (mpSimulationRequestSocket) {
+      mSimulationRequestReplyThread.exit();
+      mSimulationRequestReplyThread.wait();
+      delete mpSimulationRequestSocket;
+    }
   }
   delete mpSimulationSubscriberSocket;
   // simulation process
@@ -240,7 +343,10 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpCancelSimulationButton->setEnabled(true);
   mpArchivedSimulationItem->setStatus(Helper::running);
   mpSimulationSubscriberSocket->setSocketConnected(true);
-  mProgressThread.start();
+  mSimulationSubscribeThread.start();
+  if (mpSimulationRequestSocket) {
+    mSimulationRequestReplyThread.start();
+  }
 }
 
 /*!
@@ -333,8 +439,12 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
   mpArchivedSimulationItem->setStatus(Helper::finished);
   mpSimulationSubscriberSocket->setSocketConnected(false);
-  mProgressThread.exit();
-  mProgressThread.wait();
+  mSimulationSubscribeThread.exit();
+  mSimulationSubscribeThread.wait();
+  if (mpSimulationRequestSocket) {
+    mSimulationRequestReplyThread.exit();
+    mSimulationRequestReplyThread.wait();
+  }
 }
 
 /*!
@@ -351,5 +461,26 @@ void OMSSimulationOutputWidget::cancelSimulation()
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelSimulationButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
+  }
+}
+
+void OMSSimulationOutputWidget::pauseSimulation()
+{
+  if (mpSimulationRequestSocket) {
+    emit sendRequest("{\"fcn\": \"simulation\", \"arg\": \"pause\"}");
+  }
+}
+
+void OMSSimulationOutputWidget::continueSimulation()
+{
+  if (mpSimulationRequestSocket) {
+    emit sendRequest("{\"fcn\": \"simulation\", \"arg\": \"continue\"}");
+  }
+}
+
+void OMSSimulationOutputWidget::endSimulation()
+{
+  if (mpSimulationRequestSocket) {
+    emit sendRequest("{\"fcn\": \"simulation\", \"arg\": \"end\"}");
   }
 }

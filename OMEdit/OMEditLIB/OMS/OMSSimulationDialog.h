@@ -54,7 +54,7 @@ public:
   OMSSimulationDialog(QWidget *pParent = 0);
   using QDialog::exec;
   int exec(const QString &modelCref, LibraryTreeItem *pLibraryTreeItem);
-  void simulate(LibraryTreeItem *pLibraryTreeItem);
+  void simulate(LibraryTreeItem *pLibraryTreeItem, bool interactive = false);
   void simulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime);
 private:
   QString mModelCref;

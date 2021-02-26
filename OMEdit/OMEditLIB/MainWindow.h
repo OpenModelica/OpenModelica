@@ -169,6 +169,7 @@ public:
 #if !defined(WITHOUT_OSG)
   QAction* getSimulateWithAnimationAction() {return mpSimulateWithAnimationAction;}
 #endif
+  QAction* getSimulateModelInteractiveAction() {return mpSimulateModelInteractiveAction;}
   QAction* getCheckModelAction() {return mpCheckModelAction;}
   QAction* getCheckAllModelsAction() {return mpCheckAllModelsAction;}
   QAction* getInstantiateModelAction() {return mpInstantiateModelAction;}
@@ -366,6 +367,7 @@ private:
 #if !defined(WITHOUT_OSG)
   QAction *mpSimulateWithAnimationAction;
 #endif
+  QAction *mpSimulateModelInteractiveAction;
   QAction *mpArchivedSimulationsAction;
   // Debug Menu
   QAction *mpDebugConfigurationsAction;
@@ -506,6 +508,7 @@ public slots:
   void simulateModelWithAlgorithmicDebugger();
   void showArchivedSimulations();
   void simulateModelWithAnimation();
+  void simulateModelInteractive();
   void exportModelFMU();
   void importModelFMU();
   void importFMUModelDescription();

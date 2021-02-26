@@ -2297,6 +2297,23 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
   }
 }
 
+void MainWindow::simulateModelInteractive()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    // get the top level LibraryTreeItem
+    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      if (!mpOMSSimulationDialog) {
+        mpOMSSimulationDialog = new OMSSimulationDialog(this);
+      }
+      if (pTopLevelLibraryTreeItem) {
+        mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem, true);
+      }
+    }
+  }
+}
+
 /*!
  * \brief MainWindow::showArchivedSimulations
  * Shows the list of archived simulations.
@@ -3477,6 +3494,11 @@ void MainWindow::createActions()
   mpSimulateWithAnimationAction->setEnabled(false);
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
 #endif
+  // simulate interactive action
+  mpSimulateModelInteractiveAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
+  mpSimulateModelInteractiveAction->setStatusTip(Helper::simulateTip);
+  mpSimulateModelInteractiveAction->setEnabled(false);
+  connect(mpSimulateModelInteractiveAction, SIGNAL(triggered()), SLOT(simulateModelInteractive()));
   // archived simulations action
   mpArchivedSimulationsAction = new QAction(Helper::archivedSimulations, this);
   mpArchivedSimulationsAction->setStatusTip(tr("Shows the list of archived simulations"));
@@ -3902,6 +3924,7 @@ void MainWindow::createMenus()
 #if !defined(WITHOUT_OSG)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
+  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
   pSimulationMenu->addSeparator();
   pSimulationMenu->addAction(mpArchivedSimulationsAction);
   // add Simulation menu to menu bar
@@ -4349,6 +4372,7 @@ void MainWindow::createToolbars()
 #if !defined(WITHOUT_OSG)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
+  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
