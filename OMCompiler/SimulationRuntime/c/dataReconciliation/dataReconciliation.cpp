@@ -114,7 +114,7 @@ struct errorData
 /*
  * create html report with error logs
  */
-void createErrorHtmlReport(DATA * data)
+void createErrorHtmlReport(DATA * data, int status = 0)
 {
   // create HTML Report with Error Logs
   ofstream myfile;
@@ -150,13 +150,39 @@ void createErrorHtmlReport(DATA * data)
   myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
   myfile << "</table>\n";
 
+  /* add analysis section */
+  myfile << "<h2> Analysis: </h2>\n";
+  myfile << "<table> \n";
+  myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
+  myfile << "</table> \n";
+
+  // Auxiliary Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
+  // Intermediate Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+
+  // Error log
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt" << " target=_blank> Errors </a> </h2>\n";
+    myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
   }
   else
   {
-    myfile << "<h2> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Errors </a> </h2>\n";
+    myfile << "<h2> <a href=" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
+  }
+
+  // debug log
+  if (status == 0)
+  {
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt"<< " target=_blank> Debug log </a> </h2>\n";
+    }
+    else
+    {
+      myfile << "<h2> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
+    }
   }
 
   myfile << "</table>\n";
@@ -203,10 +229,11 @@ bool isStringValidDouble(std::string &cref)
 
 /*
  * check string is a empty, (i.e) contains only "," in csv input
+ * also ignore lines starting with c comments //
  */
 bool isLineEmptyData(std::string &cref)
 {
-  return std::regex_match(cref, std::regex("^[,]*$"));
+  return std::regex_match(cref, std::regex("^[,|/]+.*"));
 }
 
 /*
@@ -1756,7 +1783,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   myfile << "<h2> Analysis: </h2>\n";
   myfile << "<table> \n";
   myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << csvinputs.headers.size() << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of iterations to convergence: </th> \n" << "<td>" << iterationcount << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Final value of (J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
@@ -1776,6 +1803,9 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 
   // Auxiliary Conditions
   myfile << "<h3> <a href=" << data->modelData->modelName << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
+
+  // Intermediate Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
 
   // Debug log
   if (omc_flag[FLAG_OUTPUT_PATH])
@@ -1943,9 +1973,17 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   return 0;
 }
 
-int dataReconciliation(DATA * data, threadData_t * threadData)
+int dataReconciliation(DATA * data, threadData_t * threadData, int status)
 {
   TRACE_PUSH
+
+  // report run time initialization and non linear convergence error to html
+  if (status != 0)
+  {
+    createErrorHtmlReport(data, status);
+    exit(1);
+  }
+
   const char * epselon = NULL;
   epselon = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Eps];
 

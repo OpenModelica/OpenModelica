@@ -595,12 +595,12 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     alarm(0);
   }
 
-  if(0 == retVal && omc_flag[FLAG_DATA_RECONCILE])
+  if (omc_flag[FLAG_DATA_RECONCILE])
   {
-  infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Starting!");
-  infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
-  retVal = dataReconciliation(data, threadData);
-  infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Completed!");
+    infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Starting!");
+    infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+    retVal = dataReconciliation(data, threadData, retVal);
+    infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Completed!");
   }
 
   if(0 == retVal && create_linearmodel) {
