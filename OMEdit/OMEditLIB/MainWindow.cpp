@@ -1588,7 +1588,7 @@ void MainWindow::createNewModelicaClass()
  */
 void MainWindow::createNewSSPModel()
 {
-  CreateModelDialog *pCreateModelDialog = new CreateModelDialog;
+  CreateModelDialog *pCreateModelDialog = new CreateModelDialog(this);
   pCreateModelDialog->exec();
 }
 

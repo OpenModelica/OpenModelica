@@ -172,7 +172,7 @@ ModelicaClassDialog::ModelicaClassDialog(QWidget *pParent)
   : QDialog(pParent)
 {
   setAttribute(Qt::WA_DeleteOnClose);
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::createNewModelicaClass));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName).arg(Helper::createNewModelicaClass));
   setMinimumWidth(400);
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
