@@ -76,7 +76,6 @@ public:
   static QString txtFileTypes;
   static QString figaroFileTypes;
   static QString visualizationFileTypes;
-  static QString omsFileTypes;
   static QString subModelFileTypes;
   static int treeIndentation;
   static QSize iconSize;
@@ -151,6 +150,7 @@ public:
   static QString error;
   static QString chooseFile;
   static QString chooseFiles;
+  static QString saveFile;
   static QString attributes;
   static QString properties;
   static QString add;

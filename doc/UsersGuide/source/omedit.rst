@@ -242,7 +242,9 @@ The prespective shows the list of stack frames, breakpoints and variables.
 File Menu
 ---------
 
--  *New Modelica Class* - Creates a new Modelica class.
+-  *New*
+  -  *New Modelica Class* - Creates a new Modelica class.
+  -  *New SSP Model* - Creates a new SSP model.
 -  *Open Model/Library File(s)* - Opens the Modelica file or a library.
 -  *Open/Convert Modelica File(s) With Encoding* - Opens the Modelica file or
    a library with a specific encoding. It is also possible to convert to UTF-8.
@@ -331,8 +333,6 @@ Debug Menu
 SSP Menu
 --------
 
--  *New SSP Model* - Creates a new SSP model.
--  *Open SSP Model(s)* - Opens the SSP model(s).
 -  *Add System* - Adds the system to a model.
 -  *Add/Edit Icon* - Add/Edit the system/submodel icon.
 -  *Delete Icon* - Deletes the system/submodel icon.
@@ -380,7 +380,7 @@ Creating a New Modelica Class
 Creating a new Modelica class in OMEdit is rather straightforward.
 Choose any of the following methods,
 
--  Select File > New Modelica Class from the menu.
+-  Select File > New > New Modelica Class from the menu.
 
 -  Click on New Modelica Class toolbar button.
 

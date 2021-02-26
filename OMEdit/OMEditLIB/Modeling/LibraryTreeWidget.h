@@ -371,7 +371,6 @@ private:
   QAction *mpOpenClassAction;
   QAction *mpInformationAction;
   QAction *mpNewModelicaClassAction;
-  QAction *mpNewModelicaClassEmptyAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveTotalAction;
@@ -409,7 +408,6 @@ private:
   QAction *mpGenerateVerificationScenariosAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
-  QAction *mpNewOMSimulatorModelEmptyAction;
   QAction *mpOMSRenameAction;
   QAction *mpUnloadOMSModelAction;
   void createActions();
@@ -422,7 +420,6 @@ public slots:
   void openClass();
   void openInformationDialog();
   void createNewModelicaClass();
-  void createNewModelicaClassEmpty();
   void saveClass();
   void saveAsClass();
   void saveTotalClass();
@@ -457,7 +454,6 @@ public slots:
   void generateVerificationScenarios();
   void fetchInterfaceData();
   void TLMSimulate();
-  void createNewOMSModelEmpty();
   void OMSRename();
   void unloadOMSModel();
 protected:
