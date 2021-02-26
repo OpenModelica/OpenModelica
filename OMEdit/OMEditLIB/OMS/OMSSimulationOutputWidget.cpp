@@ -133,12 +133,12 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mpSimulationOutputPlainTextEdit->setFont(QFont(Helper::monospacedFontInfo.family()));
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
-  pMainLayout->setContentsMargins(5, 5, 5, 5);
+  pMainLayout->setContentsMargins(2, 2, 2, 2);
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pMainLayout->addWidget(mpProgressLabel, 0, 0, 1, 2);
-  pMainLayout->addWidget(mpProgressBar, 1, 0);
-  pMainLayout->addWidget(mpCancelSimulationButton, 1, 1);
-  pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 2, 0, 1, 2);
+  pMainLayout->addWidget(mpProgressLabel, 0, 0);
+  pMainLayout->addWidget(mpProgressBar, 0, 1);
+  pMainLayout->addWidget(mpCancelSimulationButton, 0, 2);
+  pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 1, 0, 1, 3);
   setLayout(pMainLayout);
   // save the model start time
   OMSProxy::instance()->getStartTime(mCref, &mStartTime);
