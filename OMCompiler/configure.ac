@@ -100,7 +100,7 @@ AC_SUBST(MINGW_EXTRA_LIBS)
 AC_SUBST(BSTATIC)
 AC_SUBST(OMC_TBB_ROOT)
 AC_SUBST(ENABLE_PARMODAUTO)
-
+AC_SUBST(EXTRA_MACOS_FLAGS_SUNDIALS)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -287,7 +287,11 @@ AC_LANG_PUSH([C++])
 OLD_CXXFLAGS=$CXXFLAGS
 for flag in -stdlib=libstdc++; do
   CXXFLAGS="$OLD_CXXFLAGS $flag"
-  AC_TRY_LINK([], [return 0;], [LDFLAGS_LIBSTDCXX="$flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
+  AC_TRY_LINK(
+    [#include <regex>],
+    [int main() {return 0;}],
+    [LDFLAGS_LIBSTDCXX="$flag"],
+    [CXXFLAGS="$OLD_CXXFLAGS"])
 done
 AC_LANG_POP([C++])
 
@@ -947,6 +951,7 @@ OPENMODELICA_SPEC_PLATFORM=`echo $host_cpu-darwin | sed "s/i@<:@3456@:>@86/i386/
 else
 OPENMODELICA_SPEC_PLATFORM=`echo $host_cpu-$host_os | sed "s/linux-gnu/linux/" | sed "s/linux-gnu/linux/" | sed "s/i@<:@3456@:>@86/i386/" | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
 fi
+
 AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM])
 AC_MSG_CHECKING([for Modelica platform name])
 if test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-linux" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-linux"; then
@@ -957,6 +962,14 @@ else
   MODELICA_SPEC_PLATFORM=$OPENMODELICA_SPEC_PLATFORM
 fi
 AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
+
+AC_MSG_CHECKING([add extra sundials cmake config flags on MacOS])
+if test "$DARWIN" = "1"; then
+EXTRA_MACOS_FLAGS_SUNDIALS="-DSUNDIALS_F77_FUNC_CASE:String=lower -DSUNDIALS_F77_FUNC_UNDERSCORES:String=one"
+else
+EXTRA_MACOS_FLAGS_SUNDIALS=
+fi
+AC_MSG_RESULT([$EXTRA_MACOS_FLAGS_SUNDIALS])
 
 CFLAGS="$CFLAGS"
 

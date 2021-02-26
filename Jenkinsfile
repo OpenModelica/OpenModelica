@@ -103,7 +103,7 @@ pipeline {
           steps {
             script {
               // Qt5 is MacOS 10.12+...
-              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
+              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}:/usr/local/bin/", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
                 sh "echo PATH: \$PATH QTDIR: \$QTDIR"
                 sh "${env.GMAKE} --version"
                 common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary", true, false)

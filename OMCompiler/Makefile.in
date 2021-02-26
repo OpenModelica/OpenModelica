@@ -11,8 +11,8 @@ includedir = @includedir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
-CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS_UNDEFINED_LOOKUP@" cmake @CMAKE_EXTRA_DEFINES@
-CMAKE_CHECK_UNDEFINED_LOOKUP = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" cmake @CMAKE_EXTRA_DEFINES@
+CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@LDFLAGS@" cmake @CMAKE_EXTRA_DEFINES@
+CMAKE_NO_CHECK_UNDEFINED = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS_UNDEFINED_LOOKUP@ @LDFLAGS@" cmake @CMAKE_EXTRA_DEFINES@
 CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@ @CMAKE_LDFLAGS_UNDEFINED_LOOKUP@" cmake @CMAKE_EXTRA_DEFINES@
 CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
@@ -52,6 +52,9 @@ IPOPT_TARGET=@IPOPT_TARGET@
 SUITESPARSE_TARGET=@SUITESPARSE_TARGET@
 SUITESPARSE_SHARED=@SUITESPARSE_SHARED@
 SUNDIALS_TARGET=sundials
+
+EXTRA_MACOS_FLAGS_SUNDIALS=@EXTRA_MACOS_FLAGS_SUNDIALS@
+
 # We don't want the shared version, but symbols are not exported if we use the static version
 # This compiles the shared and static versions, but we only copy the static version...
 FMILIB_SHARED = @FMILIB_SHARED@
@@ -98,7 +101,7 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
 omc-bootstrapped: $(SEMLA_LIB)
-	$(MAKE) interactive sim-dependencies
+	$(MAKE) interactive sim-dependencies install-openturns
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
 	@# See if any library is linked directly into the build dirs (we should use @rpath everywhere)

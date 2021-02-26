@@ -29,7 +29,13 @@
  *
  */
 
+
+#if defined(__APPLE__) /* MacOS doesn't like static libffi, use the system one */
+#include <ffi.h>
+#else /* sane systems */
 #include "../../3rdParty/libffi/install/include/ffi.h"
+#endif
+
 #include <gc.h>
 
 #include "systemimpl.h"

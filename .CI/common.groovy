@@ -250,13 +250,10 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
   sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
   // OMSimulator requires HOME to be set and writeable
-  def outputSync = sh(script: "${makeCommand()} --version | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\\+//'", returnStdout: true).toInteger() >= 4 ? "--output-sync=recurse" : ""
   if (clean) {
-    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} clean"
+    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
   }
-  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} omc omc-diff omsimulator"
-  // test make install
-  sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} install"
+  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
   // Run sanity tests
   sh '''
@@ -345,12 +342,14 @@ void buildGUI(stash, isQt5) {
   sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   // compile OMSens_Qt for Qt5
   if (isQt5) {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator" // Pretend we already built omc since we already did so
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -q -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator" // Pretend we already built omc since we already did so
   } else {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omsens_qt" // Pretend we already built omc since we already did so
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} -q omc omc-diff ReferenceFiles omsimulator omsens_qt" // Pretend we already built omc since we already did so
   }
-  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse" // Builds the GUI files
+  sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
 
+  // test make install after qt builds
+  sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
   }
 }
 
@@ -509,6 +508,22 @@ def shouldWeRunTests() {
 
 def isPR() {
   return env.CHANGE_ID ? true : false
+}
+
+def outputSync()
+{
+ def osync = sh(script: "${makeCommand()} --version | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\\+//'", returnStdout: true).toInteger() >= 4 ? "--output-sync=recurse" : ""
+ return osync;
+}
+
+
+def ignoreOnMac() {
+  def uname = sh script: 'uname', returnStdout: true
+  def ignore = ""
+  if (uname.startsWith("Darwin")) {
+    ignore = "|| true"
+  }
+  return ignore;
 }
 
 return this
