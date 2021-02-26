@@ -209,6 +209,7 @@ public:
   QAction* getCommitFilesAction() {return mpCommitFilesAction;}
   QAction* getRevertCommitAction() {return mpRevertCommitAction;}
   QAction* getCleanWorkingDirectoryAction() {return mpCleanWorkingDirectoryAction;}
+  QMenu* getNewModelMenu() const {return mpNewModelMenu;}
   QToolBar* getShapesToolBar() const {return mpShapesToolBar;}
   QToolBar* getCheckToolBar() const {return mpCheckToolBar;}
   QToolBar* getSimulationToolBar() const {return mpSimulationToolBar;}
@@ -306,6 +307,7 @@ private:
   // File Menu
   // Modelica File Actions
   QAction *mpNewModelicaClassAction;
+  QAction *mpNewSSPModelAction;
   QAction *mpOpenModelicaFileAction;
   QAction *mpOpenModelicaFileWithEncodingAction;
   QAction *mpLoadModelicaLibraryAction;
@@ -316,9 +318,6 @@ private:
   QAction *mpNewCompositeModelFileAction;
   QAction *mpOpenCompositeModelFileAction;
   QAction *mpLoadExternModelAction;
-  // OMSimulator File Actions
-  QAction *mpNewOMSimulatorModelAction;
-  QAction *mpOpenOMSModelFileAction;
   QAction *mpOpenDirectoryAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
@@ -440,6 +439,7 @@ private:
   QAction *mpAddSubModelAction;
   QAction *mpOMSSimulateAction;
   // Toolbars
+  QMenu *mpNewModelMenu;
   QMenu *mpRecentFilesMenu;
   QMenu *mpLibrariesMenu;
   QToolBar *mpFileToolBar;
@@ -467,6 +467,7 @@ public slots:
   void switchToAlgorithmicDebuggingPerspectiveSlot();
   void showSearchBrowser();
   void createNewModelicaClass();
+  void createNewSSPModel();
   void openModelicaFile();
   void showOpenModelicaFileDialog();
   void loadModelicaLibrary();
@@ -476,8 +477,6 @@ public slots:
   void createNewCompositeModelFile();
   void openCompositeModelFile();
   void loadExternalModels();
-  void createNewOMSModel();
-  void openOMSModelFile();
   void openDirectory();
   void loadSystemLibrary();
   void writeOutputFileData(QString data);

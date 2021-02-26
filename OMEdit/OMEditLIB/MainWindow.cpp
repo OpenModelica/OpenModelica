@@ -1582,10 +1582,21 @@ void MainWindow::createNewModelicaClass()
   pModelicaClassDialog->exec();
 }
 
+/*!
+ * \brief MainWindow::createNewSSPModel
+ * Opens the new SSP model dialog.
+ */
+void MainWindow::createNewSSPModel()
+{
+  CreateModelDialog *pCreateModelDialog = new CreateModelDialog;
+  pCreateModelDialog->exec();
+}
+
+
 void MainWindow::openModelicaFile()
 {
   QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL, Helper::omFileTypes, NULL);
+  fileNames = StringHandler::getOpenFileNames(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFiles), NULL, Helper::omFileTypes, NULL);
   if (fileNames.isEmpty()) {
     return;
   }
@@ -1599,7 +1610,7 @@ void MainWindow::openModelicaFile()
     // if file doesn't exists
     if (!QFile::exists(file)) {
       QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
+      pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::error));
       pMessageBox->setIcon(QMessageBox::Critical);
       pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
       pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
@@ -1760,54 +1771,6 @@ void MainWindow::openCompositeModelFile()
   }
   mpStatusBar->clearMessage();
   hideProgressBar();
-}
-
-/*!
- * \brief MainWindow::createNewOMSModel
- * Opens the new OMSimulator model dialog.
- */
-void MainWindow::createNewOMSModel()
-{
-  CreateModelDialog *pCreateModelDialog = new CreateModelDialog;
-  pCreateModelDialog->exec();
-}
-
-/*!
- * \brief MainWindow::openOMSModelFile
- * Opens the OMSimulator model file(s).\n
- * Slot activated when mpOpenOMSModelFileAction triggered signal is raised.
- */
-void MainWindow::openOMSModelFile()
-{
-  QStringList fileNames;
-  fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles), NULL, Helper::omsFileTypes, NULL);
-  if (fileNames.isEmpty()) {
-    return;
-  }
-  int progressValue = 0;
-  mpProgressBar->setRange(0, fileNames.size());
-  showProgressBar();
-  foreach (QString file, fileNames) {
-    file = file.replace("\\", "/");
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(file));
-    mpProgressBar->setValue(++progressValue);
-    // if file doesn't exists
-    if (!QFile::exists(file)) {
-      QMessageBox *pMessageBox = new QMessageBox(this);
-      pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-      pMessageBox->setIcon(QMessageBox::Critical);
-      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-      pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(file)));
-      pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(file)));
-      pMessageBox->setStandardButtons(QMessageBox::Ok);
-      pMessageBox->exec();
-    } else {
-      mpLibraryWidget->openFile(file, Helper::utf8);
-    }
-  }
-  mpStatusBar->clearMessage();
-  hideProgressBar();
-
 }
 
 /*!
@@ -3250,10 +3213,14 @@ void MainWindow::createActions()
   /* Menu Actions */
   // File Menu
   // create new Modelica class action
-  mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
+  mpNewModelicaClassAction = new QAction(Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   mpNewModelicaClassAction->setShortcut(QKeySequence("Ctrl+n"));
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
+  // create new SSP Model action
+  mpNewSSPModelAction = new QAction(Helper::newOMSimulatorModel, this);
+  mpNewSSPModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
+  connect(mpNewSSPModelAction, SIGNAL(triggered()), SLOT(createNewSSPModel()));
   // open Modelica file action
   mpOpenModelicaFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), Helper::openModelicaFiles, this);
   mpOpenModelicaFileAction->setShortcut(QKeySequence("Ctrl+o"));
@@ -3292,15 +3259,6 @@ void MainWindow::createActions()
   mpLoadExternModelAction = new QAction(tr("Load External Model(s)"), this);
   mpLoadExternModelAction->setStatusTip(tr("Loads the External Model(s) for the TLM co-simulation"));
   connect(mpLoadExternModelAction, SIGNAL(triggered()), SLOT(loadExternalModels()));
-  // create new OMSimulator Model action
-  mpNewOMSimulatorModelAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newOMSimulatorModel, this);
-  mpNewOMSimulatorModelAction->setStatusTip(Helper::newOMSimulatorModelTip);
-  mpNewOMSimulatorModelAction->setShortcut(QKeySequence("Ctrl+t"));
-  connect(mpNewOMSimulatorModelAction, SIGNAL(triggered()), SLOT(createNewOMSModel()));
-  // open OMSimulator Model file action
-  mpOpenOMSModelFileAction = new QAction(QIcon(":/Resources/icons/open.svg"), tr("Open SSP Model(s)"), this);
-  mpOpenOMSModelFileAction->setStatusTip(tr("Opens the SSP model file(s)"));
-  connect(mpOpenOMSModelFileAction, SIGNAL(triggered()), SLOT(openOMSModelFile()));
   // open the directory action
   mpOpenDirectoryAction = new QAction(tr("Open Directory"), this);
   mpOpenDirectoryAction->setStatusTip(tr("Opens the directory"));
@@ -3770,7 +3728,7 @@ void MainWindow::createMenus()
   pFileMenu->setObjectName("menuFile");
   pFileMenu->setTitle(tr("&File"));
   // add actions to File menu
-  pFileMenu->addAction(mpNewModelicaClassAction);
+  pFileMenu->addMenu(mpNewModelMenu);
   pFileMenu->addAction(mpOpenModelicaFileAction);
   pFileMenu->addAction(mpOpenModelicaFileWithEncodingAction);
   pFileMenu->addAction(mpLoadModelicaLibraryAction);
@@ -3941,24 +3899,21 @@ void MainWindow::createMenus()
   // add Debug menu to menu bar
   menuBar()->addAction(pDebugMenu->menuAction());
   // OMSimulator menu
-  QMenu *pOMSimulatorMenu = new QMenu(menuBar());
-  pOMSimulatorMenu->setTitle(tr("&SSP"));
-  // add actions to OMSimulator menu
-  pOMSimulatorMenu->addAction(mpNewOMSimulatorModelAction);
-  pOMSimulatorMenu->addAction(mpOpenOMSModelFileAction);
-  pOMSimulatorMenu->addSeparator();
-  pOMSimulatorMenu->addAction(mpAddSystemAction);
-  pOMSimulatorMenu->addSeparator();
-  pOMSimulatorMenu->addAction(mpAddOrEditIconAction);
-  pOMSimulatorMenu->addAction(mpDeleteIconAction);
-  pOMSimulatorMenu->addSeparator();
-  pOMSimulatorMenu->addAction(mpAddConnectorAction);
-  pOMSimulatorMenu->addAction(mpAddBusAction);
-  pOMSimulatorMenu->addAction(mpAddTLMBusAction);
-  pOMSimulatorMenu->addSeparator();
-  pOMSimulatorMenu->addAction(mpAddSubModelAction);
+  QMenu *pSSPMenu = new QMenu(menuBar());
+  pSSPMenu->setTitle(tr("&SSP"));
+  // add actions to SSP menu
+  pSSPMenu->addAction(mpAddSystemAction);
+  pSSPMenu->addSeparator();
+  pSSPMenu->addAction(mpAddOrEditIconAction);
+  pSSPMenu->addAction(mpDeleteIconAction);
+  pSSPMenu->addSeparator();
+  pSSPMenu->addAction(mpAddConnectorAction);
+  pSSPMenu->addAction(mpAddBusAction);
+  pSSPMenu->addAction(mpAddTLMBusAction);
+  pSSPMenu->addSeparator();
+  pSSPMenu->addAction(mpAddSubModelAction);
   // add OMSimulator menu to menu bar
-  menuBar()->addAction(pOMSimulatorMenu->menuAction());
+  menuBar()->addAction(pSSPMenu->menuAction());
 #ifndef Q_OS_MAC
   // Sensitivity Optimization menu
   QMenu *pSensitivityOptimizationMenu = new QMenu(menuBar());
@@ -4287,7 +4242,22 @@ void MainWindow::createToolbars()
   mpFileToolBar->setObjectName("File Toolbar");
   mpFileToolBar->setAllowedAreas(Qt::TopToolBarArea);
   // add actions to File Toolbar
-  mpFileToolBar->addAction(mpNewModelicaClassAction);
+  // New Menu
+  mpNewModelMenu = new QMenu;
+  mpNewModelMenu = new QMenu(menuBar());
+  mpNewModelMenu->setObjectName("NewModelMenu");
+  mpNewModelMenu->setTitle(tr("&New"));
+  mpNewModelMenu->setIcon(QIcon(":/Resources/icons/new.svg"));
+  mpNewModelMenu->addAction(mpNewModelicaClassAction);
+  mpNewModelMenu->addAction(mpNewSSPModelAction);
+  // new ToolButton
+  QToolButton *pNewToolButton = new QToolButton;
+  pNewToolButton->setMenu(mpNewModelMenu);
+  pNewToolButton->setPopupMode(QToolButton::MenuButtonPopup);
+  // Don't change the order of following two lines otherwise the icon of toolbar button is overwritten by default action.
+  pNewToolButton->setDefaultAction(mpNewModelicaClassAction);
+  pNewToolButton->setIcon(QIcon(":/Resources/icons/new.svg"));
+  mpFileToolBar->addWidget(pNewToolButton);
   mpFileToolBar->addAction(mpOpenModelicaFileAction);
   mpFileToolBar->addAction(mpSaveAction);
   mpFileToolBar->addAction(mpSaveAsAction);

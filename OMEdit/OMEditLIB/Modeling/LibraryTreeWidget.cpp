@@ -2971,11 +2971,6 @@ void LibraryTreeView::createActions()
   mpNewModelicaClassAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
   mpNewModelicaClassAction->setStatusTip(Helper::createNewModelicaClass);
   connect(mpNewModelicaClassAction, SIGNAL(triggered()), SLOT(createNewModelicaClass()));
-  // new Modelica Class Empty Action
-  mpNewModelicaClassEmptyAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newModelicaClass, this);
-  mpNewModelicaClassEmptyAction->setStatusTip(Helper::createNewModelicaClass);
-  mpNewModelicaClassEmptyAction->setShortcut(QKeySequence("Ctrl+n"));
-  connect(mpNewModelicaClassEmptyAction, SIGNAL(triggered()), SLOT(createNewModelicaClassEmpty()));
   // save Action
   mpSaveAction = new QAction(QIcon(":/Resources/icons/save.svg"), Helper::save, this);
   mpSaveAction->setStatusTip(Helper::saveTip);
@@ -3132,11 +3127,6 @@ void LibraryTreeView::createActions()
   mpTLMCoSimulationAction = new QAction(QIcon(":/Resources/icons/tlm-simulate.svg"), Helper::tlmCoSimulationSetup, this);
   mpTLMCoSimulationAction->setStatusTip(Helper::tlmCoSimulationSetupTip);
   connect(mpTLMCoSimulationAction, SIGNAL(triggered()), SLOT(TLMSimulate()));
-  // create new OMSimulator Model action
-  mpNewOMSimulatorModelEmptyAction = new QAction(QIcon(":/Resources/icons/new.svg"), Helper::newOMSimulatorModel, this);
-  mpNewOMSimulatorModelEmptyAction->setStatusTip(Helper::newOMSimulatorModelTip);
-  mpNewOMSimulatorModelEmptyAction->setShortcut(QKeySequence("Ctrl+t"));
-  connect(mpNewOMSimulatorModelEmptyAction, SIGNAL(triggered()), SLOT(createNewOMSModelEmpty()));
   // OMSimulator rename Action
   mpOMSRenameAction = new QAction(Helper::rename, this);
   mpOMSRenameAction->setStatusTip(Helper::OMSRenameTip);
@@ -3404,9 +3394,7 @@ void LibraryTreeView::showContextMenu(QPoint point)
       }
     }
   } else {
-    menu.addAction(mpNewModelicaClassEmptyAction);
-    menu.addSeparator();
-    menu.addAction(mpNewOMSimulatorModelEmptyAction);
+    menu.addMenu(MainWindow::instance()->getNewModelMenu());
     menu.addSeparator();
     menu.addAction(mpNewFileEmptyAction);
     menu.addAction(mpNewFolderEmptyAction);
@@ -3463,16 +3451,6 @@ void LibraryTreeView::createNewModelicaClass()
     pModelicaClassDialog->getParentClassTextBox()->setText(pLibraryTreeItem->getNameStructure());
     pModelicaClassDialog->exec();
   }
-}
-
-/*!
- * \brief LibraryTreeView::createNewModelicaClassEmpty
- * Opens the create new ModelicaClassDialog for creating a new top level class.
- */
-void LibraryTreeView::createNewModelicaClassEmpty()
-{
-  ModelicaClassDialog *pModelicaClassDialog = new ModelicaClassDialog(MainWindow::instance());
-  pModelicaClassDialog->exec();
 }
 
 /*!
@@ -3904,16 +3882,6 @@ void LibraryTreeView::TLMSimulate()
   if (pLibraryTreeItem) {
     MainWindow::instance()->TLMSimulate(pLibraryTreeItem);
   }
-}
-
-/*!
- * \brief LibraryTreeView::createNewOMSModelEmpty
- * Opens the new OMSimulator model dialog.
- */
-void LibraryTreeView::createNewOMSModelEmpty()
-{
-  CreateModelDialog *pCreateModelDialog = new CreateModelDialog;
-  pCreateModelDialog->exec();
 }
 
 /*!
@@ -4991,8 +4959,7 @@ bool LibraryWidget::saveTextLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   QString fileName;
   if (pLibraryTreeItem->getFileName().isEmpty()) {
     QString name = pLibraryTreeItem->getName();
-    fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
-                                              Helper::txtFileTypes, NULL, "txt", &name);
+    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::txtFileTypes, NULL, "txt", &name);
     if (fileName.isEmpty()) { // if user press ESC
       return false;
     }
@@ -5026,7 +4993,7 @@ bool LibraryWidget::saveOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
   QString fileName;
   if (pLibraryTreeItem->getFileName().isEmpty()) {
     QString name = pLibraryTreeItem->getName();
-    fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL, Helper::omsFileTypes, NULL, "ssp", &name);
+    fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::omFileTypes, NULL, "ssp", &name);
     if (fileName.isEmpty()) { // if user press ESC
       return false;
     }
@@ -5088,8 +5055,7 @@ bool LibraryWidget::saveAsCompositeModelLibraryTreeItem(LibraryTreeItem *pLibrar
 {
   QString fileName;
   QString name = pLibraryTreeItem->getName();
-  fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
-                                            Helper::xmlFileTypes, NULL, "xml", &name);
+  fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::xmlFileTypes, NULL, "xml", &name);
   if (fileName.isEmpty()) {   // if user press ESC
     return false;
   }
@@ -5106,8 +5072,7 @@ bool LibraryWidget::saveAsOMSLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem)
 {
   QString fileName;
   QString name = pLibraryTreeItem->getName();
-  fileName = StringHandler::getSaveFileName(this, QString(Helper::applicationName).append(" - ").append(tr("Save File")), NULL,
-                                            Helper::omsFileTypes, NULL, "ssp", &name);
+  fileName = StringHandler::getSaveFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::saveFile), NULL, Helper::omFileTypes, NULL, "ssp", &name);
   if (fileName.isEmpty()) { // if user press ESC
     return false;
   }
