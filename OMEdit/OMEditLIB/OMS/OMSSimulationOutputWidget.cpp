@@ -145,7 +145,7 @@ SimulationRequestSocket::~SimulationRequestSocket()
  */
 void SimulationRequestSocket::sendRequest(const QString &request)
 {
-  const char* request_ = request.toStdString().c_str();
+  const char* request_ = request.toUtf8().constData();
   // send request
   zmq_msg_t requestMsg;
   zmq_msg_init_size(&requestMsg, strlen(request_));
