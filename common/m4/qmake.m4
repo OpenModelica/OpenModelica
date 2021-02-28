@@ -42,6 +42,7 @@ if test -n "$QMAKE"; then
     echo 'cat $MAKEFILE | \
       sed "s/-arch@<:@\\@:>@* i386//g" | \
       sed "s/-arch@<:@\\@:>@* x86_64//g" | \
+      sed "s/-arch \$(arch)//g" | \
       sed "s/-arch//g" | \
       sed "s/-Xarch@<:@^ @:>@*//g" > $MAKEFILE.fixed && \
       mv $MAKEFILE.fixed $MAKEFILE' >> qmake.sh
