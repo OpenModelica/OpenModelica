@@ -100,7 +100,7 @@ antlr-copy:
 sim-dependencies: fmi $(BOOTSTRAP_FMIL_DEP) opencl_rt lis metis opc parmodauto
 
 install-openturns:
-	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
+	(cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
 $(builddir_share)/omc/omc_communication.idl: Compiler/runtime/omc_communication.idl
 	mkdir -p $(builddir_share)/omc
@@ -169,15 +169,25 @@ ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
 
 suitesparse:
 	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
-	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE) .. -G \
+	cd 3rdParty/SuiteSparse-5.8.1/build && $(CMAKE_NO_CHECK_UNDEFINED) .. -G \
 		$(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" \
 		-DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" \
 		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
 		-DBUILD_SHARED_LIBS:Bool=$(SUITESPARSE_SHARED)
 	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1/build install
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libcolamd.dylib 3rdParty/SuiteSparse-5.8.1/build/libcolamd.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsuitesparseconfig.dylib 3rdParty/SuiteSparse-5.8.1/build/libsuitesparseconfig.dylib
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libamd.dylib               "$(builddir_lib_omc)/libamd.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libbtf.dylib               "$(builddir_lib_omc)/libbtf.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libcolamd.dylib            "$(builddir_lib_omc)/libcolamd.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libklu.dylib               "$(builddir_lib_omc)/libklu.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsuitesparseconfig.dylib "$(builddir_lib_omc)/libsuitesparseconfig.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libumfpack.dylib           "$(builddir_lib_omc)/libumfpack.dylib"
+	# fix rpaths
+	test ! `uname` = Darwin || install_name_tool -change libbtf.dylib    "@rpath/libbtf.dylib"    "$(builddir_lib_omc)/libklu.dylib"
+	test ! `uname` = Darwin || install_name_tool -change libamd.dylib    "@rpath/libamd.dylib"    "$(builddir_lib_omc)/libklu.dylib"
+	test ! `uname` = Darwin || install_name_tool -change libcolamd.dylib "@rpath/libcolamd.dylib" "$(builddir_lib_omc)/libklu.dylib"
+	test ! `uname` = Darwin || install_name_tool -change libamd.dylib    "@rpath/libamd.dylib"    "$(builddir_lib_omc)/libumfpack.dylib"
+
 
 suitesparse-clean:
 	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1 distclean
@@ -382,7 +392,7 @@ libzmq: $(builddir_lib_omc)/$(LIBZMQLIB)
 $(builddir_lib_omc)/$(LIBZMQLIB):
 	test -d 3rdParty/libzmq
 	mkdir -p 3rdParty/libzmq/build
-	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE_CHECK_UNDEFINED_LOOKUP) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_INSTALL_PREFIX="`pwd`" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/libzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_INSTALL_PREFIX="`pwd`" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF -DZMQ_BUILD_TESTS:Bool=OFF -DENABLE_CPACK:Bool=OFF -DCMAKE_BUILD_TYPE=Release .. -G $(CMAKE_TARGET))
 	test -f 3rdParty/libzmq/build/lib/$(LIBZMQLIB) || $(MAKE) -C 3rdParty/libzmq/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/$(LIBZMQLIB) 3rdParty/libzmq/build/lib/$(LIBZMQLIB)
 	# copy dll/so to $(LIB_OMC) and $(builddir_bin) folders
@@ -398,7 +408,7 @@ endif
 cppzmq: libzmq
 	test -d 3rdParty/cppzmq
 	mkdir -p 3rdParty/cppzmq/build
-	(cd 3rdParty/cppzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE_CHECK_UNDEFINED_LOOKUP) -DCMAKE_FIND_DEBUG_MODE:Bool=ON -DCPPZMQ_BUILD_TESTS:Bool=OFF -DZeroMQ_DIR=../libzmq/build/share/cmake/ZeroMQ  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_FIND_DEBUG_MODE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_INSTALL_PREFIX="`pwd`" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF  .. -G $(CMAKE_TARGET))
+	(cd 3rdParty/cppzmq/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_FIND_DEBUG_MODE:Bool=ON -DCPPZMQ_BUILD_TESTS:Bool=OFF -DZeroMQ_DIR=../libzmq/build/share/cmake/ZeroMQ  -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_FIND_DEBUG_MODE:Bool=ON -DCMAKE_AR:String="$(AR)" -DCMAKE_INSTALL_PREFIX="`pwd`" -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DWITH_PERF_TOOL:Bool=OFF  .. -G $(CMAKE_TARGET))
 	$(MAKE) -C 3rdParty/cppzmq/build install
 libzmq-clean:
 	rm -rf 3rdParty/libzmq/build
@@ -589,7 +599,7 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	    $(SUITESPARSE_LIBS) \
 	    -DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF -DSUNDIALS_EXAMPLES_INSTALL_PATH=./examples_install \
 	    $(IS_MINGW32) $(IS_MINGW64) \
-	    -DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)")
+	    -DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS))
 	$(MAKE) -C 3rdParty/sundials-5.4.0/build install
 	# Test SUNDIALS but allow it to fail
 	#-$(MAKE) -C 3rdParty/sundials-5.4.0/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
@@ -597,36 +607,43 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	# adrpo: do not copy the headers as they are not needed!
 	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
-	# copy the libs to the build/lib/omc directory
-	find 3rdParty/sundials-5.4.0/build/lib* -xtype f -exec cp -pf {} $(builddir_lib_omc) ";"
+	# copy the libs to the build/lib/omc directory, Darwin find doesn't know xtype, use gfind instead
+	test ! `uname` != Darwin || find 3rdParty/sundials-5.4.0/build/lib* -xtype f -exec cp -pf {} $(builddir_lib_omc) ";"
+	test ! `uname` = Darwin || gfind 3rdParty/sundials-5.4.0/build/lib* -xtype f -exec cp -apf {} $(builddir_lib_omc) ";"
 
+	# this is rather weird, only the file with full version number is the actual lib all the other ones are symlinks
+	# strange stuff is that *install_name_tool* on a symlink will replace the symlink with the changed dylib
+	# see http://mac-os-forge.2317878.n4.nabble.com/install-name-tool-problem-with-symlinks-on-Xcode-12-2-td406984.html
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.4.4.0.dylib "$(builddir_lib_omc)/libsundials_arkode.4.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.4.dylib     "$(builddir_lib_omc)/libsundials_arkode.4.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_arkode.dylib       "$(builddir_lib_omc)/libsundials_arkode.dylib"
-
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.5.4.0.dylib "$(builddir_lib_omc)/libsundials_cvode.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.5.dylib     "$(builddir_lib_omc)/libsundials_cvode.5.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvode.dylib       "$(builddir_lib_omc)/libsundials_cvode.dylib"
-
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.5.4.0.dylib "$(builddir_lib_omc)/libsundials_cvodes.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.5.dylib     "$(builddir_lib_omc)/libsundials_cvodes.5.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_cvodes.dylib       "$(builddir_lib_omc)/libsundials_cvodes.dylib"
-
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.5.4.0.dylib "$(builddir_lib_omc)/libsundials_ida.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.5.dylib     "$(builddir_lib_omc)/libsundials_ida.5.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_ida.dylib       "$(builddir_lib_omc)/libsundials_ida.dylib"
-
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.4.4.0.dylib "$(builddir_lib_omc)/libsundials_idas.4.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.4.dylib     "$(builddir_lib_omc)/libsundials_idas.4.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_idas.dylib       "$(builddir_lib_omc)/libsundials_idas.dylib"
-
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.5.4.0.dylib "$(builddir_lib_omc)/libsundials_kinsol.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.5.dylib     "$(builddir_lib_omc)/libsundials_kinsol.5.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.dylib       "$(builddir_lib_omc)/libsundials_kinsol.dylib"
-
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.5.4.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.5.dylib     "$(builddir_lib_omc)/libsundials_nvecserial.5.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.dylib       "$(builddir_lib_omc)/libsundials_nvecserial.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecmanyvector.5.4.0.dylib "$(builddir_lib_omc)/libsundials_nvecmanyvector.5.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_nvecmanyvector.5.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsoldense.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsoldense.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolklu.3.4.0.dylib   "$(builddir_lib_omc)/libsundials_sunlinsolklu.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsollapackband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsollapackband.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsollapackdense.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsollapackdense.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolpcg.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolpcg.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolspbcgs.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolspbcgs.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolspfgmr.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolspfgmr.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolspgmr.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolspgmr.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolsptfqmr.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolsptfqmr.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunmatrixband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunmatrixband.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunmatrixdense.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunmatrixdense.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunmatrixsparse.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunmatrixsparse.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunnonlinsolfixedpoint.2.4.0.dylib "$(builddir_lib_omc)/libsundials_sunnonlinsolfixedpoint.2.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunnonlinsolnewton.2.4.0.dylib "$(builddir_lib_omc)/libsundials_sunnonlinsolnewton.2.4.0.dylib"
+
+	# fix the rpath in some of the libs
+	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixdense.3.dylib "@rpath/libsundials_sunmatrixdense.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsoldense.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixdense.3.dylib "@rpath/libsundials_sunmatrixdense.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackdense.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixdense.3.dylib "@rpath/libsundials_sunmatrixdense.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackdense.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixsparse.3.dylib "@rpath/libsundials_sunmatrixsparse.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsolklu.3.4.0.dylib"
+
 	# copy the dlls to the build bin directory
 	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials-5.4.0/build/lib/*$(SHREXT) $(builddir_bin))
 	@touch "$@"

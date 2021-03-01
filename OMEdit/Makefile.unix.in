@@ -20,7 +20,7 @@ OMEditLIB/Resources/nls/qm.stamp: OMEditLIB/OMEditLIB.pro OMEditLIB/Resources/nl
 	$(LRELEASE) $<
 	@touch $@
 
-$(NAME): parsergen qjson-build Makefile OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri omc_config.h
+$(NAME): parsergen qjson-build Makefile omc_config.h
 	$(MAKE) -f Makefile
 
 build: $(NAME)
@@ -28,8 +28,7 @@ build: $(NAME)
 parsergen:
 	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.unix
 
-Makefile: OMEdit.pro OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri
-	@test ! -f $@ || rm $@
+Makefile: OMEdit.pro OMEditLIB/OMEditLIB.unix.config.pri OMEditGUI/OMEditGUI.unix.config.pri omc_config.h
 	$(QMAKE) -r
 Makefile.unix: Makefile.unix.in
 	(cd @top_builddir@; ./config.status)
