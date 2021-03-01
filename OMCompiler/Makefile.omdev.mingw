@@ -50,7 +50,7 @@ docdir = ${prefix}/doc
 MSGPACK_CFLAGS = -march=i686
 
 CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS)" $(OMDEVMSYS)/bin/cmake/bin/cmake
-CMAKE_CHECK_UNDEFINED_LOOKUP = $(CMAKE)
+CMAKE_NO_CHECK_UNDEFINED = $(CMAKE)
 CMAKE_TARGET = "MSYS Makefiles"
 
 ifeq (MINGW32,$(findstring MINGW32,$(shell uname)))
