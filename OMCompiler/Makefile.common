@@ -320,6 +320,16 @@ runtimeCPPinstallOld: runtimeCPP
 	test ! `uname` = Darwin || install_name_tool -change libOMCppModelicaUtilities.dylib @rpath/libOMCppModelicaUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppSimController.dylib
 	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppSimController.dylib
 
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppUmfPack.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppExtensionUtilities.dylib @rpath/libOMCppExtensionUtilities.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
+
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libOMCppUmfPack.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppSolver.dylib @rpath/libOMCppSolver.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
+	test ! `uname` = Darwin || install_name_tool -change libOMCppMath.dylib @rpath/libOMCppMath.dylib $(OMBUILDDIR)/$(LIB_OMC)/cpp/libOMCppUmfPack.dylib
+
+
 
 runtimeCPPclean:
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
@@ -607,9 +617,8 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	# adrpo: do not copy the headers as they are not needed!
 	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
-	# copy the libs to the build/lib/omc directory, Darwin find doesn't know xtype, use gfind instead
-	test ! `uname` != Darwin || find 3rdParty/sundials-5.4.0/build/lib* -xtype f -exec cp -pf {} $(builddir_lib_omc) ";"
-	test ! `uname` = Darwin || gfind 3rdParty/sundials-5.4.0/build/lib* -xtype f -exec cp -apf {} $(builddir_lib_omc) ";"
+	# copy the libs to the build/lib/omc directory
+	cp -apf 3rdParty/sundials-5.4.0/build/lib*/* $(builddir_lib_omc)
 
 	# this is rather weird, only the file with full version number is the actual lib all the other ones are symlinks
 	# strange stuff is that *install_name_tool* on a symlink will replace the symlink with the changed dylib
@@ -622,7 +631,7 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_kinsol.5.4.0.dylib "$(builddir_lib_omc)/libsundials_kinsol.5.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecserial.5.4.0.dylib "$(builddir_lib_omc)/libsundials_nvecserial.5.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_nvecmanyvector.5.4.0.dylib "$(builddir_lib_omc)/libsundials_nvecmanyvector.5.4.0.dylib"
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_nvecmanyvector.5.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsolband.3.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsoldense.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsoldense.3.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsolklu.3.4.0.dylib   "$(builddir_lib_omc)/libsundials_sunlinsolklu.3.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libsundials_sunlinsollapackband.3.4.0.dylib "$(builddir_lib_omc)/libsundials_sunlinsollapackband.3.4.0.dylib"
@@ -643,6 +652,8 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixdense.3.dylib "@rpath/libsundials_sunmatrixdense.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackdense.3.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixdense.3.dylib "@rpath/libsundials_sunmatrixdense.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackdense.3.4.0.dylib"
 	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixsparse.3.dylib "@rpath/libsundials_sunmatrixsparse.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsolklu.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixband.3.dylib "@rpath/libsundials_sunmatrixband.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsolband.3.4.0.dylib"
+	test ! `uname` = Darwin || install_name_tool -change libsundials_sunmatrixband.3.dylib "@rpath/libsundials_sunmatrixband.3.dylib" "$(builddir_lib_omc)/libsundials_sunlinsollapackband.3.4.0.dylib"
 
 	# copy the dlls to the build bin directory
 	test ! "$(SHREXT)" = ".dll" || (cp -pf 3rdParty/sundials-5.4.0/build/lib/*$(SHREXT) $(builddir_bin))

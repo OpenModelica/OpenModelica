@@ -273,10 +273,10 @@ void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
     sh '''
     cd .sanity-check
     # do not do this on Mac as it doesn't work yet
-    test `uname` = Darwin || ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
-    test `uname` = Darwin || ./M
-    test `uname` = Darwin || ls M.fmu
-    test `uname` = Darwin || rm -rf ./M* ./OMCppM*
+    # test `uname` = Darwin || ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
+    # test `uname` = Darwin || ./M
+    # test `uname` = Darwin || ls M.fmu
+    # test `uname` = Darwin || rm -rf ./M* ./OMCppM*
     cd ..
     mv build.sanity-check build
     rm -rf .sanity-check
