@@ -492,8 +492,7 @@ algorithm
   // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
   if unfix then
-    ty_attrs := List.removeOnTrue("fixed", isTypeAttributeNamed, ty_attrs);
-    ty_attrs := ("fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT)) :: ty_attrs;
+    ty_attrs := Binding.setAttr(ty_attrs, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
   end if;
 
   vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info) :: vars;
