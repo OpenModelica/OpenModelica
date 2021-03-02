@@ -991,7 +991,7 @@ algorithm
         end if;
       then
         Binding.TYPED_BINDING(exp, ty, var, each_ty,
-          Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false, binding.info);
+          Mutable.create(NFBinding.EvalState.NOT_EVALUATED), binding.info);
 
     case Binding.TYPED_BINDING() then binding;
     case Binding.UNBOUND() then binding;
@@ -1055,7 +1055,7 @@ algorithm
         end if;
       then
         Binding.TYPED_BINDING(exp, ty, var, NFBinding.EachType.NOT_EACH,
-          Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false, info);
+          Mutable.create(NFBinding.EvalState.NOT_EVALUATED), info);
 
   end match;
 end typeComponentCondition;

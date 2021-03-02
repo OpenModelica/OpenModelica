@@ -91,13 +91,13 @@ public
     Variability variability;
     EachType eachType;
     Mutable<EvalState> evalState;
-    Boolean isFlattened;
     SourceInfo info;
   end TYPED_BINDING;
 
   record FLAT_BINDING
     Expression bindingExp;
     Variability variability;
+    SourceInfo info;
   end FLAT_BINDING;
 
   record CEVAL_BINDING
@@ -320,15 +320,14 @@ public
           ty := Expression.typeOf(exp);
           var := Expression.variability(exp);
         then
-          TYPED_BINDING(exp, ty, var, fieldBinding.eachType, fieldBinding.evalState,
-                        fieldBinding.isFlattened, fieldBinding.info);
+          TYPED_BINDING(exp, ty, var, fieldBinding.eachType, fieldBinding.evalState, fieldBinding.info);
 
       case FLAT_BINDING()
         algorithm
           exp := Expression.recordElement(field_name, fieldBinding.bindingExp);
           var := Expression.variability(exp);
         then
-          FLAT_BINDING(exp, var);
+          FLAT_BINDING(exp, var, fieldBinding.info);
 
       case CEVAL_BINDING()
         algorithm
@@ -363,6 +362,7 @@ public
       case RAW_BINDING() then binding.info;
       case UNTYPED_BINDING() then binding.info;
       case TYPED_BINDING() then binding.info;
+      case FLAT_BINDING() then binding.info;
       else AbsynUtil.dummyInfo;
     end match;
   end getInfo;

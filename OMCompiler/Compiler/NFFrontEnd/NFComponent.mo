@@ -487,7 +487,7 @@ public
       if InstNode.isRecord(cls_node) then
         try
           record_exp := Class.makeRecordExp(cls_node);
-          binding := Binding.FLAT_BINDING(record_exp, Expression.variability(record_exp));
+          binding := Binding.FLAT_BINDING(record_exp, Expression.variability(record_exp), Binding.getInfo(binding));
         else
         end try;
       end if;

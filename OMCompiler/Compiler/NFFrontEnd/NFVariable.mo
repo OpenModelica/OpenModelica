@@ -97,6 +97,7 @@ public
     Expression bind_exp, exp;
     list<Expression> expl;
     Integer crefs_len, expl_len;
+    SourceInfo info;
   algorithm
     if Type.isArray(var.ty) then
       // Expand the name.
@@ -128,11 +129,12 @@ public
         end if;
 
         bind_var := Binding.variability(binding);
+        info := Binding.getInfo(binding);
 
         for cr in crefs loop
           v.name := cr;
           exp :: expl := expl;
-          v.binding := Binding.FLAT_BINDING(exp, bind_var);
+          v.binding := Binding.FLAT_BINDING(exp, bind_var, info);
           vars := v :: vars;
         end for;
       else

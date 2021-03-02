@@ -3246,8 +3246,7 @@ algorithm
           printBindingTypeError(name, binding, comp_ty, exp_ty, component);
           fail();
         elseif isCastMatch(ty_match) then
-          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.eachType,
-            binding.evalState, binding.isFlattened, binding.info);
+          binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.eachType, binding.evalState, binding.info);
         end if;
       then
         ();

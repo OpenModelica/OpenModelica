@@ -86,7 +86,7 @@ function scalarizeVariable
   input output list<Equation> eqns;
 protected
   ComponentRef name;
-  Binding binding;
+  Binding binding, fixed_binding;
   Type ty, elem_ty;
   Visibility vis;
   Component.Attributes attr;
@@ -122,23 +122,24 @@ algorithm
           // create an initial equation instead
           eqns := Equation.ARRAY_EQUALITY(Expression.CREF(ty, var.name), Binding.getTypedExp(binding), ty,
             ElementSource.createElementSource(info)) :: eqns;
+          fixed_binding := Binding.FLAT_BINDING(Expression.fillType(ty, Expression.BOOLEAN(false)), Variability.CONSTANT, info);
           for cr in crefs loop
             // unfix all scalar variables because it has to be solved in the initial equation instead
-            ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-            ty_attr := Binding.setAttr(ty_attr, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
+            ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters, info);
+            ty_attr := Binding.setAttr(ty_attr, "fixed", fixed_binding);
             vars := Variable.VARIABLE(cr, elem_ty, NFBinding.EMPTY_BINDING, vis, attr, ty_attr, {}, cmt, info) :: vars;
           end for;
         else
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-            binding := Binding.FLAT_BINDING(exp, bind_var);
-            ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+            binding := Binding.FLAT_BINDING(exp, bind_var, info);
+            ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters, info);
             vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
           end for;
         end if;
       else
         for cr in crefs loop
-          ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+          ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters, info);
           vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
         end for;
       end if;
@@ -176,6 +177,7 @@ end scalarizeTypeAttributes;
 function nextTypeAttributes
   input list<String> names;
   input array<ExpressionIterator> iters;
+  input SourceInfo info;
   output list<tuple<String, Binding>> attrs = {};
 protected
   Integer i = 1;
@@ -186,7 +188,7 @@ algorithm
     (iter, exp) := ExpressionIterator.next(iters[i]);
     arrayUpdate(iters, i, iter);
     i := i + 1;
-    attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER)) :: attrs;
+    attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER, info)) :: attrs;
   end for;
 end nextTypeAttributes;
 

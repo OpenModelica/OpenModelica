@@ -139,7 +139,7 @@ public
         then fromExp(binding.bindingExp);
 
       case Binding.FLAT_BINDING()
-        then EACH_ITERATOR(binding.bindingExp);
+        then fromExp(binding.bindingExp);
     end match;
   end fromBinding;
 
