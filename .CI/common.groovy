@@ -126,7 +126,7 @@ void patchConfigStatus() {
   if (isUnix())
   {
     // Running on nodes with different paths for the workspace
-    sh 'sed -i.bak "s,--with-ombuilddir=[A-Za-z0-9./_-]*,--with-ombuilddir=`pwd`/build," config.status OMCompiler/config.status'
+    sh 'sed -i.bak -e "s,--with-ombuilddir=[A-Za-z0-9./_-]*,--with-ombuilddir=`pwd`/build," -e "s,--prefix=[A-Za-z0-9./_-]*,--prefix=`pwd`/install," config.status OMCompiler/config.status'
   }
 }
 
