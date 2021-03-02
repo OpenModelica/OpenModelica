@@ -618,7 +618,7 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
 	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
 	# copy the libs to the build/lib/omc directory
-	cp -apf 3rdParty/sundials-5.4.0/build/lib*/* $(builddir_lib_omc)
+	find 3rdParty/sundials-5.4.0/build/lib* -not -type d -exec cp -apf {} $(builddir_lib_omc) ";"
 
 	# this is rather weird, only the file with full version number is the actual lib all the other ones are symlinks
 	# strange stuff is that *install_name_tool* on a symlink will replace the symlink with the changed dylib
