@@ -2276,6 +2276,18 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
   for (i=0; i<numEntries; i++) {
     /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
     fprintf(stderr, "is %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
+    if (version[0]==0 && version[1]==0 && version[2]==0) {
+      const char *entryVersionExtra = entries[i].versionExtra;
+      if (entryVersionExtra[0] == '-' && versionExtra[0] != '-') {
+        entryVersionExtra = entryVersionExtra+1;
+      }
+      if (0==strncmp(entryVersionExtra,versionExtra,strlen(versionExtra))) {
+        *outDir = entries[i].dir;
+        *outName = entries[i].file;
+        *isDir = entries[i].fileIsDir;
+        return 0;
+      }
+    }
     if (modelicaPathEntryVersionEqual(entries[i].version,version,MODELICAPATH_LEVELS) && 0==strncmp(entries[i].versionExtra,versionExtra,strlen(versionExtra))) {
       *outDir = entries[i].dir;
       *outName = entries[i].file;

@@ -162,7 +162,7 @@ algorithm
   matches := false;
   for v in JSON.STRING(version)::providedVersions loop
     JSON.STRING(str) := v;
-    if SemanticVersion.compare(SemanticVersion.parse(str),wantedVersion) == 0 then
+    if SemanticVersion.compare(SemanticVersion.parse(str, nonsemverAsZeroZeroZero=true),wantedVersion) == 0 then
       matches := true;
       return;
     end if;
@@ -304,8 +304,8 @@ algorithm
     obj := getPackageIndex(printError);
     libobject := JSON.get(JSON.get(obj, "libs"), id);
     (vers as JSON.OBJECT(orderedKeys=versions)) := JSON.get(libobject, "versions");
-    wantedVersion := SemanticVersion.parse(version);
-    result := List.map(List.sort(list((version,SemanticVersion.parse(version),getSupportLevel(JSON.get(JSON.get(vers, version),"support"))) for version guard providesExpectedVersion(version, JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.ARRAY({})), wantedVersion) in versions), compareVersionsAndSupportLevel), Util.tuple31);
+    wantedVersion := SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true);
+    result := List.map(List.sort(list((version,SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true),getSupportLevel(JSON.get(JSON.get(vers, version),"support"))) for version guard providesExpectedVersion(version, JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.ARRAY({})), wantedVersion) in versions), compareVersionsAndSupportLevel), Util.tuple31);
   else
     return;
   end try;

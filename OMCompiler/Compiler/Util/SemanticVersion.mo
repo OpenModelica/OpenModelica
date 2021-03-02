@@ -50,6 +50,7 @@ end Version;
 
 function parse
   input String s;
+  input Boolean nonsemverAsZeroZeroZero = false;
   output Version v;
 protected
   Integer n;
@@ -59,7 +60,7 @@ protected
 algorithm
   (n, matches) := System.regex(s, semverRegex, maxMatches=5, extended=true);
   if n < 2 then
-    v := NONSEMVER(s);
+    v := if nonsemverAsZeroZeroZero then SEMVER(0,0,0,Util.stringSplitAtChar(s, "."),{}) else NONSEMVER(s);
     return;
   end if;
   // OSX regex cannot handle everything in the same regex, so we have manual splitting of prerelease and meta strings
@@ -107,20 +108,26 @@ algorithm
     case (_,NONSEMVER()) then 1;
     case (SEMVER(),SEMVER())
       algorithm
-        c := Util.intCompare(v1.major, v2.major);
-        if c <> 0 then
-          return;
-        end if;
-        c := Util.intCompare(v1.minor, v2.minor);
-        if c <> 0 then
-          return;
-        end if;
-        c := Util.intCompare(v1.patch, v2.patch);
-        if c <> 0 then
-          return;
+        if (v1.major==0 and v1.minor==0 and v1.patch==0) or (v2.major==0 and v2.minor==0 and v2.patch==0) then
+          c := 0;
+        else
+          c := Util.intCompare(v1.major, v2.major);
+          if c <> 0 then
+            return;
+          end if;
+          c := Util.intCompare(v1.minor, v2.minor);
+          if c <> 0 then
+            return;
+          end if;
+          c := Util.intCompare(v1.patch, v2.patch);
+          if c <> 0 then
+            return;
+          end if;
         end if;
 
-        c := compareIdentifierList(v1.prerelease, v2.prerelease);
+        if comparePrerelease then
+          c := compareIdentifierList(v1.prerelease, v2.prerelease);
+        end if;
         if c == 0 and compareBuildInformation then
           c := compareIdentifierList(v1.meta, v2.meta);
         end if;
