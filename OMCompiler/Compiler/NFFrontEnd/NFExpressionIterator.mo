@@ -35,6 +35,7 @@ protected
   import ComponentRef = NFComponentRef;
   import NFInstNode.InstNode;
   import ExpandExp = NFExpandExp;
+  import SimplifyExp = NFSimplifyExp;
 
 public
   import Expression = NFExpression;
@@ -227,6 +228,23 @@ public
 
     expl := listReverse(expl);
   end toList;
+
+  function isSubscriptedArrayCall
+    "only checks first slice for a subscripted call and assumes it holds for all of them"
+    input ExpressionIterator iterator;
+    input Boolean trySimplify = true;
+    output Boolean b;
+  algorithm
+    b := match iterator
+      local
+        Expression call;
+      case ARRAY_ITERATOR(slice = Expression.SUBSCRIPTED_EXP(exp = call as Expression.CALL())::_)
+        then (not trySimplify) or Expression.isCall(SimplifyExp.simplify(call));
+      case ARRAY_ITERATOR(slice = Expression.BINDING_EXP(exp = Expression.SUBSCRIPTED_EXP(exp = call as Expression.CALL()))::_)
+        then (not trySimplify) or Expression.isCall(SimplifyExp.simplify(call));
+      else false;
+    end match;
+  end isSubscriptedArrayCall;
 
 protected
   function nextArraySlice
