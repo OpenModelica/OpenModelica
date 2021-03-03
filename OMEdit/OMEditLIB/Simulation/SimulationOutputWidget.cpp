@@ -980,6 +980,8 @@ void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::E
   if (!mSimulationOptions.getBuildOnly()) {
     deleteIntermediateCompilationFiles();
   }
+  // this signal is used by testsuite to know that the simulation is finished.
+  emit simulationFinished();
 }
 
 /*!

@@ -81,9 +81,9 @@ void HomotopyTest::simulate(const QString &className, const int simulationNumber
                                       .arg(pSimulationOutputWidget->getSimulationOptions().getOutputFileName());
       /* Use QSignalSpy to check if simulation is finished or not.
        * if its finished then we read the simulation file.
-       * otherwise the timeout of 2 mins has occurred.
+       * otherwise the timeout of 5 mins has occurred.
        */
-      QSignalSpy simulationSignalSpy(pSimulationOutputWidget->getSimulationProcess(), SIGNAL(finished(int,QProcess::ExitStatus)));
+      QSignalSpy simulationSignalSpy(pSimulationOutputWidget, SIGNAL(simulationFinished()));
       if (simulationSignalSpy.wait(300000)) {
         readSimulationLogFile(simulationLogFileName);
       } else {

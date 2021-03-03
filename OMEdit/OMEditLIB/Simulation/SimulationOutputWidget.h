@@ -150,6 +150,8 @@ private slots:
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
 public slots:
   void openTransformationBrowser(QUrl url);
+signals:
+  void simulationFinished();
 };
 
 #endif // SIMULATIONOUTPUTWIDGET_H
