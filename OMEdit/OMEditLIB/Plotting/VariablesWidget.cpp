@@ -902,9 +902,9 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
 
     if (pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation()) {
       // remove the right interactive simulation output widget
-      const auto& p = MessagesWidget::instance()->getSimulationOutputWidget(pVariablesTreeItem->getFileName());
+      SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(pVariablesTreeItem->getFileName());
       if (pSimulationOutputWidget) {
-        MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(p);
+        MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(pSimulationOutputWidget);
       }
     }
     if (pVariablesTreeItem) {
