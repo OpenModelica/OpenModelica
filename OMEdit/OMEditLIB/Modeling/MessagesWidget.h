@@ -39,6 +39,8 @@
 
 #include <QTextBrowser>
 
+class SimulationOutputWidget;
+
 class MessageItem
 {
 public:
@@ -134,11 +136,14 @@ public:
   MessageWidget* getErrorMessageWidget() {return mpErrorMessageWidget;}
   void resetMessagesNumber();
   void applyMessagesSettings();
-  void addSimulationTab(QWidget *pSimulationWidget, const QString &name);
+  void addSimulationOutputTab(QWidget *pSimulationOutputTab, const QString &name, bool removeExisting = true);
+  int getSimulationOutputTabsSize();
+  SimulationOutputWidget* getSimulationOutputWidget(const QString &className);
 signals:
   void MessageAdded();
+private slots:
+  bool closeTab(int index);
 public slots:
-  void closeTab(int index);
   void addGUIMessage(MessageItem messageItem);
   void clearMessages();
 };

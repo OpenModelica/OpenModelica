@@ -1102,8 +1102,7 @@ void Utilities::removeDirectoryRecursivly(QString path)
   QFileInfo fileInfo(path);
   if (fileInfo.isDir()) {
     QDir dir(path);
-    QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
-                                          QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+    QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
     for (int i = 0 ; i < filesList.count() ; ++i) {
       removeDirectoryRecursivly(QString("%1/%2").arg(path, filesList.at(i)));
     }

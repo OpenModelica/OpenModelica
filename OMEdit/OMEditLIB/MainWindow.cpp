@@ -111,7 +111,6 @@ MainWindow::MainWindow(QWidget *parent)
   setWindowTitle(Helper::applicationName + " - "  + Helper::applicationIntroText);
   setWindowIcon(QIcon(":/Resources/icons/modeling.png"));
   setMinimumSize(400, 300);
-  resize(800, 600);
   setContentsMargins(1, 1, 1, 1);
 }
 
@@ -229,7 +228,6 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   mpLibraryWidget = new LibraryWidget(this);
   // Create LibraryDockWidget
   mpLibraryDockWidget = new QDockWidget(tr("Libraries Browser"), this);
-  //mpLibraryDockWidget->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
   mpLibraryDockWidget->setObjectName("Libraries");
   mpLibraryDockWidget->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
   mpLibraryDockWidget->setWidget(mpLibraryWidget);
@@ -352,20 +350,13 @@ void MainWindow::setUpMainWindow(threadData_t *threadData)
   // create the Git commands instance
   //mpGitCommands = new GitCommands(this);
   GitCommands::create();
-  //Create a centralwidget for the main window
-  QWidget *pCentralwidget = new QWidget;
+  // Create a centralwidget for the main window
   mpCentralStackedWidget = new QStackedWidget;
   mpCentralStackedWidget->addWidget(mpWelcomePageWidget);
   mpCentralStackedWidget->addWidget(mpModelWidgetContainer);
   mpCentralStackedWidget->addWidget(mpPlotWindowContainer);
-  // set the layout
-  QGridLayout *pCentralgrid = new QGridLayout;
-  pCentralgrid->setVerticalSpacing(4);
-  pCentralgrid->setContentsMargins(0, 1, 0, 0);
-  pCentralgrid->addWidget(mpCentralStackedWidget, 0, 0);
-  pCentralwidget->setLayout(pCentralgrid);
   //Set the centralwidget
-  setCentralWidget(pCentralwidget);
+  setCentralWidget(mpCentralStackedWidget);
   //! @todo Remove the following MSL verison block once we have fixed the MSL handling.
   // set MSL version
   QSettings *pSettings = Utilities::getApplicationSettings();
@@ -668,11 +659,12 @@ void MainWindow::beforeClosingMainWindow()
     }
   }
   mMOLDirectoriesList.clear();
+  // close any result file
+  // delete the MessagesWidget object
+  MessagesWidget::destroy();
   delete pSettings;
   // delete the OptionsDialog object
   OptionsDialog::destroy();
-  // delete the MessagesWidget object
-  MessagesWidget::destroy();
   // delete the GDBAdapter object
   GDBAdapter::destroy();
   // delete the GitCommands object

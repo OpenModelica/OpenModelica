@@ -37,9 +37,7 @@
 #include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-#include "Simulation/SimulationDialog.h"
 #include "Simulation/SimulationOutputWidget.h"
-#include "Simulation/SimulationProcessThread.h"
 
 #define GC_THREADS
 extern "C" {
@@ -76,8 +74,8 @@ void HomotopyTest::simulate(const QString &className, const int simulationNumber
   }
 
   MainWindow::instance()->simulate(pLibraryTreeItem);
-  if (MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().size() > simulationNumber) {
-    SimulationOutputWidget *pSimulationOutputWidget = MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().last();
+  if (MessagesWidget::instance()->getSimulationOutputTabsSize() > simulationNumber) {
+    SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
     if (pSimulationOutputWidget->getSimulationOptions().getClassName().compare(className) == 0) {
       QString simulationLogFileName = QString("%1/%2.log").arg(pSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
                                       .arg(pSimulationOutputWidget->getSimulationOptions().getOutputFileName());
@@ -85,7 +83,7 @@ void HomotopyTest::simulate(const QString &className, const int simulationNumber
        * if its finished then we read the simulation file.
        * otherwise the timeout of 2 mins has occurred.
        */
-      QSignalSpy simulationSignalSpy(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)));
+      QSignalSpy simulationSignalSpy(pSimulationOutputWidget->getSimulationProcess(), SIGNAL(finished(int,QProcess::ExitStatus)));
       if (simulationSignalSpy.wait(300000)) {
         readSimulationLogFile(simulationLogFileName);
       } else {

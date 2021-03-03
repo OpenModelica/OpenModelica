@@ -44,7 +44,6 @@
 #include "Plotting/DiagramWindow.h"
 #include "Simulation/SimulationDialog.h"
 #include "Simulation/SimulationOutputWidget.h"
-#include "Simulation/SimulationProcessThread.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
 
 #include <qjson/parser.h>
@@ -902,12 +901,10 @@ bool VariablesTreeModel::removeVariableTreeItem(QString variable)
     pParentVariablesTreeItem->removeChild(pVariablesTreeItem);
 
     if (pVariablesTreeItem->getSimulationOptions().isInteractiveSimulation()) {
-      for (const auto& p : MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList()) {
-        // remove the right interactive output widget
-        if (p->getSimulationOptions().getClassName() == pVariablesTreeItem->getFileName()) {
-          MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(p);
-          break;
-        }
+      // remove the right interactive simulation output widget
+      const auto& p = MessagesWidget::instance()->getSimulationOutputWidget(pVariablesTreeItem->getFileName());
+      if (pSimulationOutputWidget) {
+        MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(p);
       }
     }
     if (pVariablesTreeItem) {

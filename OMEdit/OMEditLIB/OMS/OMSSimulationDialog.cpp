@@ -184,7 +184,7 @@ void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem)
   QString fileName = QString("%1/%2.ssp").arg(Utilities::tempDirectory(), pLibraryTreeItem->getNameStructure());
   if (OMSProxy::instance()->saveModel(pLibraryTreeItem->getNameStructure(), fileName)) {
     OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), fileName);
-    MessagesWidget::instance()->addSimulationTab(pOMSSimulationOutputWidget, pLibraryTreeItem->getNameStructure());
+    MessagesWidget::instance()->addSimulationOutputTab(pOMSSimulationOutputWidget, pLibraryTreeItem->getNameStructure());
     MainWindow::instance()->switchToPlottingPerspectiveSlot();
   }
 }
