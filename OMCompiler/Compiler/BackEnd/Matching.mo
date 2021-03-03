@@ -94,28 +94,13 @@ public function RegularMatching "
   output array<Integer> ass1 "eqn := ass1[var]";
   output array<Integer> ass2 "var := ass2[eqn]";
   output Boolean perfectMatching;
-algorithm
-  ass1 := arrayCreate(nVars, -1);
-  ass2 := arrayCreate(nEqns, -1);
-  (ass1, ass2, perfectMatching, _, _) := ContinueMatching(m, nVars, nEqns, ass1, ass2, false);
-end RegularMatching;
-
-function SingularMatching "
-  Use this function if you expect it to be singular. Also returns marked equations and variables
-  after pantelides algorithm."
-  input BackendDAE.AdjacencyMatrix m;
-  input Integer nVars;
-  input Integer nEqns;
-  output array<Integer> ass1 "eqn := ass1[var]";
-  output array<Integer> ass2 "var := ass2[eqn]";
-  output Boolean perfectMatching;
   output array<Boolean> eMark;
   output array<Boolean> vMark;
 algorithm
   ass1 := arrayCreate(nVars, -1);
   ass2 := arrayCreate(nEqns, -1);
   (ass1, ass2, perfectMatching, eMark, vMark) := ContinueMatching(m, nVars, nEqns, ass1, ass2, false);
-end SingularMatching;
+end RegularMatching;
 
 public function ContinueMatching "
   This function returns at least a partial matching for singular systems.

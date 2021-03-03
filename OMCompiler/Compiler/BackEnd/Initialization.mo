@@ -1293,7 +1293,7 @@ algorithm
     //BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
     //BackendDAEEXT.getAssignment(ass2, ass1);
     //perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, ass1, {}));
-    (ass1, ass2, perfectMatching, eMarks, vMarks) := Matching.SingularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
+    (ass1, ass2, perfectMatching, eMarks, vMarks) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
     if debug then
       BackendDump.dumpMatchingVars(ass1);
       BackendDump.dumpMatchingEqns(ass2);
