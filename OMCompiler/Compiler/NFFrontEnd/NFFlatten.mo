@@ -963,6 +963,7 @@ algorithm
   outExp := match exp
     case Expression.BINDING_EXP(exp = outExp)
       algorithm
+        outExp := flattenExp(outExp, prefix);
         parents := listRest(exp.parents);
 
         if not exp.isEach then
@@ -975,7 +976,7 @@ algorithm
           end if;
         end if;
       then
-        flattenExp(outExp, prefix);
+        outExp;
 
     else exp;
   end match;
