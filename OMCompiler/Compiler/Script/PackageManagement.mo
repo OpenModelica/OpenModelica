@@ -144,6 +144,7 @@ function providesExpectedVersion
 protected
   list<JSON> providedVersions;
   String str;
+  SemanticVersion.Version thisVersion;
 algorithm
   _ := match wantedVersion
     case SemanticVersion.NONSEMVER(str) guard str == "default" or str == ""
@@ -162,7 +163,8 @@ algorithm
   matches := false;
   for v in JSON.STRING(version)::providedVersions loop
     JSON.STRING(str) := v;
-    if SemanticVersion.compare(SemanticVersion.parse(str, nonsemverAsZeroZeroZero=true),wantedVersion) == 0 then
+    thisVersion := SemanticVersion.parse(str, nonsemverAsZeroZeroZero=true);
+    if SemanticVersion.compare(thisVersion,wantedVersion,comparePrerelease=SemanticVersion.isPrerelease(wantedVersion) and SemanticVersion.isPrerelease(wantedVersion)) == 0 then
       matches := true;
       return;
     end if;
@@ -319,7 +321,7 @@ function installPackage
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
   list<tuple<String,String>> urlPathList, urlPathListToDownload;
-  String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha;
+  String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
   for p in packageList loop
@@ -348,15 +350,19 @@ algorithm
 
     destPathPkgMo := destPath + "/package.mo";
     destPathPkgInfo := destPath + "/" + metaDataFileName;
-    if Util.endsWith(pack.path, ".mo") then
-      destPath := destPathPkgMo;
-    end if;
     oldSha := "";
     if System.regularFileExists(destPathPkgInfo) then
       try
         oldSha := getShaOrZipfile(JSON.parseFile(destPathPkgInfo));
       else
       end try;
+    end if;
+
+    if Util.endsWith(pack.path, ".mo") then
+      // We are not copying a full directory, so also look for Resources in the zip-file
+      dirOfPath := System.dirname(pack.path);
+      Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "Resources" else dirOfPath + "/Resources", destPath+"/Resources");
+      destPath := destPathPkgMo;
     end if;
 
     Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
