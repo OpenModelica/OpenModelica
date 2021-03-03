@@ -395,7 +395,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
   // start the tcp server
   mpTcpServer = new QTcpServer;
-  mSocketDisconnected = true;
+  mpTcpSocket = 0;
   mpTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
   connect(mpTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
   mpCompilationProcess = 0;
@@ -435,7 +435,7 @@ SimulationOutputWidget::~SimulationOutputWidget()
     delete mpSimulationOutputHandler;
   }
   if (mpTcpServer) {
-    delete mpTcpServer;
+    mpTcpServer->deleteLater();
   }
 }
 
@@ -764,10 +764,9 @@ void SimulationOutputWidget::createSimulationProgressSocket()
   if (sender()) {
     QTcpServer *pTcpServer = qobject_cast<QTcpServer*>(const_cast<QObject*>(sender()));
     if (pTcpServer && pTcpServer->hasPendingConnections()) {
-      QTcpSocket *pTcpSocket = pTcpServer->nextPendingConnection();
-      mSocketDisconnected = false;
-      connect(pTcpSocket, SIGNAL(readyRead()), SLOT(readSimulationProgress()));
-      connect(pTcpSocket, SIGNAL(disconnected()), SLOT(socketDisconnected()));
+      mpTcpSocket = pTcpServer->nextPendingConnection();
+      connect(mpTcpSocket, SIGNAL(readyRead()), SLOT(readSimulationProgress()));
+      connect(mpTcpSocket, SIGNAL(disconnected()), mpTcpSocket, SLOT(deleteLater()));
       disconnect(pTcpServer, SIGNAL(newConnection()), this, SLOT(createSimulationProgressSocket()));
     }
   }
@@ -780,25 +779,12 @@ void SimulationOutputWidget::createSimulationProgressSocket()
  */
 void SimulationOutputWidget::readSimulationProgress()
 {
-  if (sender()) {
-    QTcpSocket *pTcpSocket = qobject_cast<QTcpSocket*>(const_cast<QObject*>(sender()));
-    if (pTcpSocket) {
-      QString output = QString(pTcpSocket->readAll());
-      if (!output.isEmpty()) {
-        writeSimulationOutput(output, StringHandler::Unknown, false);
-      }
+  if (mpTcpSocket) {
+    QString output = QString(mpTcpSocket->readAll());
+    if (!output.isEmpty()) {
+      writeSimulationOutput(output, StringHandler::Unknown, false);
     }
   }
-}
-
-/*!
- * \brief SimulationOutputWidget::socketDisconnected
- * Slot activated when QTcpSocket disconnected SIGNAL is raised.\n
- * Writes the exit status and exit code of the simulation process.
- */
-void SimulationOutputWidget::socketDisconnected()
-{
-  mSocketDisconnected = true;
 }
 
 /*!
@@ -952,8 +938,8 @@ void SimulationOutputWidget::simulationProcessError(QProcess::ProcessError error
  */
 void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  while (!isSocketDisconnected()) {
-    Sleep::msleep(1);
+  if (mpTcpSocket) {
+    readSimulationProgress();
   }
   mIsSimulationProcessRunning = false;
   QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));

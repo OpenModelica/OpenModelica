@@ -87,7 +87,6 @@ public:
   bool isOutputStructured() {return mIsOutputStructured;}
   SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
   QTcpServer* getTcpServer() {return mpTcpServer;}
-  bool isSocketDisconnected() {return mSocketDisconnected;}
   QProcess* getCompilationProcess() {return mpCompilationProcess;}
   void setCompilationProcessKilled(bool killed) {mIsCompilationProcessKilled = killed;}
   bool isCompilationProcessKilled() {return mIsCompilationProcessKilled;}
@@ -116,7 +115,7 @@ private:
   SimulationOutputTree *mpSimulationOutputTree;
   ArchivedSimulationItem *mpArchivedSimulationItem;
   QTcpServer *mpTcpServer;
-  bool mSocketDisconnected;
+  QTcpSocket *mpTcpSocket;
   QProcess *mpCompilationProcess;
   bool mIsCompilationProcessKilled;
   bool mIsCompilationProcessRunning;
@@ -137,7 +136,6 @@ private slots:
   void openSimulationLogFile();
   void createSimulationProgressSocket();
   void readSimulationProgress();
-  void socketDisconnected();
   void compilationProcessStarted();
   void readCompilationStandardOutput();
   void readCompilationStandardError();
