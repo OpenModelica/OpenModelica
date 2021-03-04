@@ -412,7 +412,7 @@ match baseClock
       else "unspecified"
       let interval = match intvl case "unspecified" then '1.0' else intvl
       let warning = match intvl case "unspecified" then
-        'ModelicaMessage("Using default Clock(1.0)!");'
+        'warningStreamPrint(LOG_STDOUT, 0, "Using default Clock(1.0)!");'
     <<
     <%preExp%>
     data->simulationInfo->clocksData[clockIndex].interval = <%interval%>;
