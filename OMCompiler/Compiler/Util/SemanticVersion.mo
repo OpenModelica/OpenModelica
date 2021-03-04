@@ -206,8 +206,11 @@ algorithm
   split := Util.stringSplitAtChar(s, "+");
   prerelease::split := split;
   meta := if listEmpty(split) then "" else listGet(split, 1);
-  prereleaseLst := if stringLength(prerelease) > 0 then Util.stringSplitAtChar(Util.stringRest(prerelease), ".") else {};
-  metaLst := if stringLength(meta) > 0 then Util.stringSplitAtChar(Util.stringRest(meta), ".") else {};
+  if stringGetStringChar(prerelease, 1) == "-" then
+    prerelease := Util.stringRest(prerelease);
+  end if;
+  prereleaseLst := if stringLength(prerelease) > 0 then Util.stringSplitAtChar(prerelease, ".") else {};
+  metaLst := if stringLength(meta) > 0 then Util.stringSplitAtChar(meta, ".") else {};
 end splitPrereleaseAndMeta;
 
 function compareIdentifierList
