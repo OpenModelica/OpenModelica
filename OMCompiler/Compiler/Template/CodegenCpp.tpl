@@ -9344,7 +9344,7 @@ case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
         else "unspecified"
       let interval = match intvl case "unspecified" then '1.0' else intvl
       let warning = match intvl case "unspecified" then
-        'ModelicaMessage("Using default Clock(1.0)!");'
+        'LOGGER_WRITE("Using default Clock(1.0)!", LC_MODEL, LL_WARNING);'
       let subClocks = (subPartitions |> subPartition =>
         match subPartition
         case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
