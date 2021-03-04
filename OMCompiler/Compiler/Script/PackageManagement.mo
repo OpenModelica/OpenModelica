@@ -39,7 +39,6 @@ protected
 
 import Autoconf;
 import AvlSetString;
-import BaseAvlSet;
 import Curl;
 import Error;
 import Global;
