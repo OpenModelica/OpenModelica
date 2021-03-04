@@ -38,6 +38,8 @@ import SemanticVersion;
 protected
 
 import Autoconf;
+import AvlSetString;
+import BaseAvlSet;
 import Curl;
 import Error;
 import Global;
@@ -291,6 +293,37 @@ algorithm
   end try;
 end getPackageIndex;
 
+function getAllProvidedVersionsForLibrary
+  input String lib;
+  input Boolean printError;
+  output list<String> result;
+protected
+  JSON obj, libobject, vers;
+  AvlSetString.Tree tree;
+  list<String> versions;
+  list<JSON> values;
+algorithm
+  result := {};
+  tree := AvlSetString.new();
+  try
+    obj := getPackageIndex(printError);
+    libobject := JSON.get(JSON.get(obj, "libs"), lib);
+    (vers as JSON.OBJECT(orderedKeys=versions)) := JSON.get(libobject, "versions");
+
+    for version in versions loop
+      tree := AvlSetString.add(tree, version);
+      JSON.ARRAY(values=values) := JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.ARRAY({}));
+      for v in values loop
+        tree := AvlSetString.add(tree, JSON.getString(v));
+      end for;
+    end for;
+
+    result := AvlSetString.listKeys(tree);
+  else
+    return;
+  end try;
+end getAllProvidedVersionsForLibrary;
+
 function versionsThatProvideTheWanted
   input String id;
   input String version;
@@ -491,7 +524,7 @@ algorithm
   end if;
   if not success then
     if listEmpty(candidates) then
-      Error.addSourceMessage(Error.ERROR_PKG_NOT_FOUND_VERSION, {pkg, version}, makeSourceInfo(getIndexPath()));
+      Error.addSourceMessage(Error.ERROR_PKG_NOT_FOUND_VERSION, {pkg, version, stringDelimitList(getAllProvidedVersionsForLibrary(pkg, true),"\n")}, makeSourceInfo(getIndexPath()));
       return;
     end if;
 

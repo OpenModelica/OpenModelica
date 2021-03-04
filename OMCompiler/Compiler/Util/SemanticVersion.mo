@@ -54,13 +54,22 @@ function parse
   output Version v;
 protected
   Integer n;
-  String major, minor, patch, prerelease, meta, nextString, versions;
+  String major, minor, patch, nextString, versions;
   list<String> prereleaseLst, metaLst, matches, split, versionsLst;
   constant String semverRegex = "^([0-9][0-9]*\\.?[0-9]*\\.?[0-9]*)([+-][0-9A-Za-z.-]*)?$";
 algorithm
   (n, matches) := System.regex(s, semverRegex, maxMatches=5, extended=true);
   if n < 2 then
-    v := if nonsemverAsZeroZeroZero then SEMVER(0,0,0,Util.stringSplitAtChar(s, "."),{}) else NONSEMVER(s);
+    if stringLength(s) == 0 then
+      v := NONSEMVER("");
+      return;
+    end if;
+    if nonsemverAsZeroZeroZero then
+      (prereleaseLst, metaLst) := splitPrereleaseAndMeta(s);
+      v := SEMVER(0,0,0,prereleaseLst,metaLst);
+    else
+      v := NONSEMVER(s);
+    end if;
     return;
   end if;
   // OSX regex cannot handle everything in the same regex, so we have manual splitting of prerelease and meta strings
@@ -79,20 +88,7 @@ algorithm
     patch := "0";
   end if;
 
-  nextString := if listEmpty(split) then "" else listGet(split, 1);
-  if stringEmpty(nextString) then
-    prerelease := "";
-    meta := "";
-  elseif stringGetStringChar(nextString, 1) == "+" then
-    prerelease := "";
-    meta := nextString;
-  else
-    split := Util.stringSplitAtChar(nextString, "+");
-    prerelease::split := split;
-    meta := if listEmpty(split) then "" else listGet(split, 1);
-  end if;
-  prereleaseLst := if stringLength(prerelease) > 0 then Util.stringSplitAtChar(Util.stringRest(prerelease), ".") else {};
-  metaLst := if stringLength(meta) > 0 then Util.stringSplitAtChar(Util.stringRest(meta), ".") else {};
+  (prereleaseLst, metaLst) := splitPrereleaseAndMeta(if listEmpty(split) then "" else listGet(split, 1));
   v := SEMVER(stringInt(major),stringInt(minor),stringInt(patch),prereleaseLst,metaLst);
 end parse;
 
@@ -186,6 +182,33 @@ algorithm
 end isSemVer;
 
 protected
+
+function splitPrereleaseAndMeta
+  input String s;
+  output list<String> prereleaseLst;
+  output list<String> metaLst;
+protected
+  String meta, prerelease;
+  list<String> split;
+algorithm
+  prereleaseLst := {};
+  metaLst := {};
+
+  if stringEmpty(s) then
+    return;
+  end if;
+
+  if stringGetStringChar(s, 1) == "+" then
+    metaLst := if stringLength(s) > 1 then Util.stringSplitAtChar(Util.stringRest(s), ".") else {};
+    return;
+  end if;
+
+  split := Util.stringSplitAtChar(s, "+");
+  prerelease::split := split;
+  meta := if listEmpty(split) then "" else listGet(split, 1);
+  prereleaseLst := if stringLength(prerelease) > 0 then Util.stringSplitAtChar(Util.stringRest(prerelease), ".") else {};
+  metaLst := if stringLength(meta) > 0 then Util.stringSplitAtChar(Util.stringRest(meta), ".") else {};
+end splitPrereleaseAndMeta;
 
 function compareIdentifierList
   input list<String> w1, w2;
