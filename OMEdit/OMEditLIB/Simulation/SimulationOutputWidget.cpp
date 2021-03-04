@@ -72,6 +72,7 @@ SimulationOutputTree::SimulationOutputTree(SimulationOutputWidget *pSimulationOu
   setMouseTracking(true); /* important for Debug more links. */
   setSelectionMode(QAbstractItemView::ExtendedSelection);
   setContextMenuPolicy(Qt::CustomContextMenu);
+  setFont(QFont(Helper::monospacedFontInfo.family()));
   connect(this, SIGNAL(customContextMenuRequested(QPoint)), SLOT(showContextMenu(QPoint)));
   connect(header(), SIGNAL(sectionResized(int,int,int)), SLOT(callLayoutChanged(int,int,int)));
   // create actions
