@@ -85,7 +85,7 @@ function scalarizeVariable
   input output list<Variable> vars;
   input output list<Equation> eqns;
 protected
-  ComponentRef name;
+  ComponentRef name, arr_name;
   Binding binding;
   Type ty, elem_ty;
   Visibility vis;
@@ -119,15 +119,18 @@ algorithm
         // if the scalarized binding would result in an indexed call e.g. f()[1] then don't do it!
         // fixes ticket #6267
         if ExpressionIterator.isSubscriptedArrayCall(binding_iter) then
+          // arr_name := ComponentRef.prefixCref(InstNode.NAME_NODE("$ARR"), ty, {}, name);
           // create an initial equation instead
-          eqns := Equation.ARRAY_EQUALITY(Expression.CREF(ty, var.name), Binding.getTypedExp(binding), ty,
-            ElementSource.createElementSource(info)) :: eqns;
-          for cr in crefs loop
+          //eqns := Equation.ARRAY_EQUALITY(Expression.CREF(ty, var.name), Binding.getTypedExp(binding), ty,
+            //ElementSource.createElementSource(info)) :: eqns;
+          //for cr in crefs loop
             // unfix all scalar variables because it has to be solved in the initial equation instead
-            ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-            ty_attr := Binding.setAttr(ty_attr, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
-            vars := Variable.VARIABLE(cr, elem_ty, NFBinding.EMPTY_BINDING, vis, attr, ty_attr, {}, cmt, info) :: vars;
-          end for;
+            //ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+            //ty_attr := Binding.setAttr(ty_attr, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
+            //vars := Variable.VARIABLE(cr, elem_ty, NFBinding.EMPTY_BINDING, vis, attr, ty_attr, {}, cmt, info) :: vars;
+          //end for;
+          var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
+          vars := var :: vars;
         else
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
