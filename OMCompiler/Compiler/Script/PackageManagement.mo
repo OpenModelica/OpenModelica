@@ -361,12 +361,16 @@ algorithm
     if Util.endsWith(pack.path, ".mo") then
       // We are not copying a full directory, so also look for Resources in the zip-file
       dirOfPath := System.dirname(pack.path);
-      Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "" else dirOfPath, destPath);
-      expectedLocation := destPath + "/" + System.basename(pack.path);
-      if not System.rename(expectedLocation, destPathPkgMo) then
-        Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {cachePath + System.basename(pack.urlToZipFile), expectedLocation});
-        // System.removeDirectory(destPath);
-        fail();
+      if pack.singleFileStructureCopyAllFiles then
+        Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "" else dirOfPath, destPath);
+        expectedLocation := destPath + "/" + System.basename(pack.path);
+        if not System.rename(expectedLocation, destPathPkgMo) then
+          Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {cachePath + System.basename(pack.urlToZipFile), expectedLocation});
+          // System.removeDirectory(destPath);
+          fail();
+        end if;
+      else
+        Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPathPkgMo);
       end if;
     else
       Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
@@ -408,6 +412,7 @@ uniontype PackageInstallInfo
     String urlToZipFile;
     String path;
     String sha;
+    Boolean singleFileStructureCopyAllFiles;
     JSON json;
   end PKG_INSTALL_INFO;
 end PackageInstallInfo;
@@ -480,7 +485,7 @@ algorithm
       else
         zip := "";
       end if;
-      packageToInstall := PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, JSON.emptyObject());
+      packageToInstall := PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, false, JSON.emptyObject());
       indexHasPkg := JSON.hasKey(JSON.get(index, "libs"), pkg);
     end if;
   end if;
@@ -514,7 +519,7 @@ algorithm
 
   if (not success) or (sha <> "" and sha <> getShaOrZipfile(versionObj)) then
     success := true;
-    packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), versionObj);
+    packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), JSON.getBoolean(JSON.getOrDefault(versionObj, "singleFileStructureCopyAllFiles", JSON.FALSE())), versionObj);
   end if;
 
   (usesObj as JSON.OBJECT(orderedKeys=usesPackages)) := JSON.getOrDefault(versionObj, "uses", JSON.emptyObject());
