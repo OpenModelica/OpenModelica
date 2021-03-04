@@ -553,7 +553,7 @@ algorithm
     if debug then BackendDump.printEqSystem(syst); end if;
     (adjMatrix, _, _, mapEqnScalarArray) := BackendDAEUtil.adjacencyMatrixScalar(syst, BackendDAE.NORMAL(), SOME(functionTree), isInitial);
     if debug then BackendDump.dumpAdjacencyMatrix(adjMatrix); end if;
-    (assignVarEqn, assignEqnVar, true) := Matching.RegularMatching(adjMatrix, BackendDAEUtil.systemSize(syst), BackendDAEUtil.systemSize(syst));
+    (assignVarEqn, assignEqnVar, true, _, _) := Matching.RegularMatching(adjMatrix, BackendDAEUtil.systemSize(syst), BackendDAEUtil.systemSize(syst));
     if debug then BackendDump.dumpMatching(assignVarEqn); end if;
 
     // get discrete vars indexes and then the equations

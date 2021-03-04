@@ -1250,6 +1250,11 @@ protected
   array<Integer> mapIncRowEqn;
   Boolean perfectMatching;
   Integer maxMixedDeterminedIndex = intMax(0, Flags.getConfigInt(Flags.MAX_MIXED_DETERMINED_INDEX));
+
+  array<Boolean> eMarks, vMarks;
+  list<Integer> singular_eqns_idx, singular_vars_idx;
+  Integer overDetIndex, underDetIndex, scalarEqnSize;
+  BackendDAE.Equation eq;
   constant Boolean debug = false;
 algorithm
   for index in 0:maxMixedDeterminedIndex loop
@@ -1288,7 +1293,7 @@ algorithm
     //BackendDAEEXT.matching(nVars+nAddVars, nEqns+nAddEqs, 5, 0, 0.0, 1);
     //BackendDAEEXT.getAssignment(ass2, ass1);
     //perfectMatching := listEmpty(Matching.getUnassigned(nVars+nAddVars, ass1, {}));
-    (ass1, ass2, perfectMatching) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
+    (ass1, ass2, perfectMatching, eMarks, vMarks) := Matching.RegularMatching(m, nVars+nAddVars, nEqns+nAddEqs);
     if debug then
       BackendDump.dumpMatchingVars(ass1);
       BackendDump.dumpMatchingEqns(ass2);
@@ -1343,6 +1348,36 @@ algorithm
       print("index-" + intString(index) + " ende\n");
     end if;
   end for;
+
+  if Flags.isSet(Flags.INITIALIZATION) then
+    overDetIndex := listLength(list(i for i guard(ass1[i] < 0) in 1:arrayLength(ass1)));
+    underDetIndex := listLength(list(i for i guard(ass2[i] < 0) in 1:arrayLength(ass2)));
+
+    // get singular indices from markings after pantelides matching
+    // take care to crop the end such that the artificial variables are not taken into account
+    singular_eqns_idx := list(i for i guard(eMarks[i]) in 1:arrayLength(mapIncRowEqn));
+    singular_vars_idx := list(i for i guard(vMarks[i]) in 1:BackendVariable.varsSize(syst.orderedVars));
+
+    // get array indices from scalar indices
+    scalarEqnSize := listLength(singular_eqns_idx);
+    singular_eqns_idx := List.uniqueOnTrue(list(mapIncRowEqn[i] for i in singular_eqns_idx), intEq);
+
+    print("\n------------ UNBALANCED INITIAL SYSTEM ------------\n");
+    print("The initial system is over- as well as underdetermined and it could not be resolved after " + intString(maxMixedDeterminedIndex) + " iterations.\n\n");
+    print("==== OVERDETERMINATION BY " + intString(overDetIndex) + " EQUATION(S)\n");
+    print("==== UNDERDETERMINATION OF " + intString(underDetIndex) + " VARIABLE(S)\n");
+    print("\n---- involved set eqns (" + intString(scalarEqnSize) + "/" + intString(listLength(singular_eqns_idx)) + "):\n");
+    for eqn in singular_eqns_idx loop
+      eq := BackendEquation.get(syst.orderedEqs, mapIncRowEqn[eqn]);
+      print("  " + intString(eqn) + "(" + intString(BackendEquation.equationSize(eq)) + "):\t" + BackendDump.equationString(eq) + "\n");
+    end for;
+    print("\n---- involved set vars (" + intString(listLength(singular_vars_idx)) + "):\n");
+    for var in singular_vars_idx loop
+      print("  " + intString(var) + ":\t" + BackendDump.varString(BackendVariable.getVarAt(syst.orderedVars, var)) + "\n");
+    end for;
+    print("--------------------------------------------------\n");
+  end if;
+
   Error.addMessage(Error.MIXED_DETERMINED, {intString(maxMixedDeterminedIndex)});
   fail();
 end fixInitialSystem;

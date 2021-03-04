@@ -1001,7 +1001,7 @@ public constant ErrorTypes.Message VAR_NO_REMAINING_EQN = ErrorTypes.MESSAGE(582
 public constant ErrorTypes.Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = ErrorTypes.MESSAGE(583, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Moving binding to initial equation section and setting fixed attribute of %s to false."));
 public constant ErrorTypes.Message MIXED_DETERMINED = ErrorTypes.MESSAGE(584, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
-  Gettext.gettext("The initialization problem of given system is mixed-determined. It is under- as well as overdetermined and the mixed-determination-index is too high. [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\" to simulate with a higher threshold or consider changing some initial equations, fixed variables and start values."));
+  Gettext.gettext("The initialization problem of given system is mixed-determined. It is under- as well as overdetermined and the mixed-determination-index is too high. [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\" to simulate with a higher threshold or consider changing some initial equations, fixed variables and start values. Use -d=initialization for more information."));
 public constant ErrorTypes.Message STACK_OVERFLOW_DETAILED = ErrorTypes.MESSAGE(585, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Stack overflow occurred while evaluating %s:\n%s"));
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),

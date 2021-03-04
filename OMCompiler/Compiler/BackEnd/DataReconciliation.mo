@@ -167,7 +167,7 @@ algorithm
   end if;
 
   // Perform limited matching on the overdermined System to get subset of equations which are not matched to form the E-BLT
-  (match1, match2) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
+  (match1, match2, _, _, _) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
 
   BackendDump.dumpMatching(match1);
 
@@ -220,7 +220,7 @@ algorithm
   (adjacencyMatrix, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.adjacencyMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
 
   // Perform the matching on the new Square-System of equations
-  (match1, match2) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
+  (match1, match2, _, _, _) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
   BackendDump.dumpMatching(match1);
 
   s_BLTBlocks := Sorting.Tarjan(adjacencyMatrix, match1);  // run the tarjan algorithm to create the S-BLT on the Square-System
