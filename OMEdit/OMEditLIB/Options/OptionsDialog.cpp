@@ -179,9 +179,8 @@ void OptionsDialog::readGeneralSettings()
   }
   // read the working directory
   if (mpSettings->contains("workingDirectory")) {
-    MainWindow::instance()->getOMCProxy()->changeDirectory(mpSettings->value("workingDirectory").toString());
+    mpGeneralSettingsPage->setWorkingDirectory(mpSettings->value("workingDirectory").toString());
   }
-  mpGeneralSettingsPage->setWorkingDirectory(MainWindow::instance()->getOMCProxy()->changeDirectory());
   // read toolbar icon size
   if (mpSettings->contains("toolbarIconSize")) {
     mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->setValue(mpSettings->value("toolbarIconSize").toInt());
@@ -960,13 +959,7 @@ void OptionsDialog::readOMSimulatorSettings()
 {
   // read command line options
   if (mpSettings->contains("OMSimulator/commandLineOptions")) {
-    QString commandLineOptions = mpSettings->value("OMSimulator/commandLineOptions").toString();
-    mpOMSimulatorPage->getCommandLineOptionsTextBox()->setText(commandLineOptions);
-    OMSProxy::instance()->setCommandLineOption(commandLineOptions);
-  }
-  // read working directory
-  if (mpSettings->contains("workingDirectory")) {
-    OMSProxy::instance()->setWorkingDirectory(mpSettings->value("workingDirectory").toString());
+    mpOMSimulatorPage->getCommandLineOptionsTextBox()->setText(mpSettings->value("OMSimulator/commandLineOptions").toString());
   }
   // read logging level
   int index;
@@ -974,7 +967,6 @@ void OptionsDialog::readOMSimulatorSettings()
     index = mpOMSimulatorPage->getLoggingLevelComboBox()->findData(mpSettings->value("OMSimulator/loggingLevel").toInt());
     if (index > -1) {
       mpOMSimulatorPage->getLoggingLevelComboBox()->setCurrentIndex(index);
-      OMSProxy::instance()->setLoggingLevel(mpSettings->value("OMSimulator/loggingLevel").toInt());
     }
   }
 }
