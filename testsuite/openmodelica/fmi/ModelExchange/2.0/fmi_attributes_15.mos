@@ -70,6 +70,7 @@ readFile("fmi_attributes_15_tmp.xml")
 //       <File name=\"./util/base_array.c\" />
 //       <File name=\"./util/boolean_array.c\" />
 //       <File name=\"./util/division.c\" />
+//       <File name=\"./util/doubleEndedList.c\" />
 //       <File name=\"./util/generic_array.c\" />
 //       <File name=\"./util/index_spec.c\" />
 //       <File name=\"./util/integer_array.c\" />

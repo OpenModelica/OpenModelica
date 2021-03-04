@@ -30,6 +30,7 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
                   base_array$(OBJ_EXT) \
                   boolean_array$(OBJ_EXT) \
                   division$(OBJ_EXT) \
+                  doubleEndedList$(OBJ_EXT) \
                   generic_array$(OBJ_EXT) \
                   index_spec$(OBJ_EXT) \
                   integer_array$(OBJ_EXT) \
@@ -56,6 +57,7 @@ UTIL_OBJS_MINIMAL=$(UTIL_OBJS_NO_FMI) \
 UTIL_HFILES_MINIMAL=base_array.h \
                     boolean_array.h \
                     division.h \
+                    doubleEndedList.h \
                     generic_array.h \
                     index_spec.h \
                     integer_array.h \

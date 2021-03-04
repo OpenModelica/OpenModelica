@@ -142,6 +142,7 @@ RUNTIMEUTIL_HEADERS = \
 ./util/utility.h \
 ./util/varinfo.h \
 ./util/list.h \
+./util/doubleEndedList.h \
 ./util/rational.h \
 ./util/modelica_string_lit.h \
 ./util/omc_init.h
