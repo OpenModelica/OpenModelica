@@ -321,7 +321,7 @@ function installPackage
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
   list<tuple<String,String>> urlPathList, urlPathListToDownload;
-  String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath;
+  String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
   for p in packageList loop
@@ -361,11 +361,17 @@ algorithm
     if Util.endsWith(pack.path, ".mo") then
       // We are not copying a full directory, so also look for Resources in the zip-file
       dirOfPath := System.dirname(pack.path);
-      Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "Resources" else dirOfPath + "/Resources", destPath+"/Resources");
-      destPath := destPathPkgMo;
+      Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "" else dirOfPath, destPath);
+      expectedLocation := destPath + "/" + System.basename(pack.path);
+      if not System.rename(expectedLocation, destPathPkgMo) then
+        Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {cachePath + System.basename(pack.urlToZipFile), expectedLocation});
+        // System.removeDirectory(destPath);
+        fail();
+      end if;
+    else
+      Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
     end if;
 
-    Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
     if System.regularFileExists(destPathPkgMo) then
       if oldSha == "" then
         Error.addSourceMessage(Error.NOTIFY_PKG_INSTALL_DONE, {pack.sha}, makeSourceInfo(destPathPkgMo));
@@ -436,7 +442,7 @@ algorithm
         return;
       end if;
       Error.addMessage(Error.WARNING_PKG_CONFLICTING_VERSIONS, {pkg, SemanticVersion.toString(pkgInfo.version), version});
-      success := false;
+      success := true;
       return;
     end if;
   end for;
