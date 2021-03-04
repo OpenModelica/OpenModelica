@@ -1037,7 +1037,7 @@ public constant ErrorTypes.Message STATE_STATESELECT_PREFER_REVERT = ErrorTypes.
 public constant ErrorTypes.Message ERROR_PKG_NOT_IDENT = ErrorTypes.MESSAGE(601, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The package manager only accepts simple identifiers (%s has a dot in it)."));
 public constant ErrorTypes.Message ERROR_PKG_NOT_FOUND_VERSION = ErrorTypes.MESSAGE(602, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("The package index did not contain an entry for package %s that provides version %s."));
+  Gettext.gettext("The package index did not contain an entry for package %s that provides version %s. The following versions are available:\n%s"));
 public constant ErrorTypes.Message ERROR_PKG_NOT_EXACT_MATCH = ErrorTypes.MESSAGE(603, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The package index did not contain an entry for package %s of version %s. There are other versions that claim to be compatible: %s."));
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_ON_PATH = ErrorTypes.MESSAGE(604, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
