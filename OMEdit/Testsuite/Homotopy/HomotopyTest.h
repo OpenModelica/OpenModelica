@@ -67,11 +67,10 @@ private slots:
 public:
   /*!
    * \brief simulate
-   * Simulates the class. The simulationNumber argument tells which simulation it is i.e., first, second and so on.
+   * Simulates the class.
    * \param className
-   * \param simulationNumber
    */
-  void simulate(const QString &className, const int simulationNumber);
+  void simulate(const QString &className);
   void readSimulationLogFile(const QString &simulationLogFilePath);
 };
 

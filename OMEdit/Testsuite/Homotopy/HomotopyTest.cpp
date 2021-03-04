@@ -53,12 +53,12 @@ void HomotopyTest::initTestCase()
 
 void HomotopyTest::simulateHomotopyTestM1()
 {
-  simulate(QStringLiteral("HomotopyTest.M1"), 0);
+  simulate(QStringLiteral("HomotopyTest.M1"));
 }
 
 void HomotopyTest::simulateHomotopyTestM2()
 {
-  simulate(QStringLiteral("HomotopyTest.M2"), 1);
+  simulate(QStringLiteral("HomotopyTest.M2"));
 }
 
 void HomotopyTest::cleanupTestCase()
@@ -66,7 +66,7 @@ void HomotopyTest::cleanupTestCase()
   MainWindow::instance()->close();
 }
 
-void HomotopyTest::simulate(const QString &className, const int simulationNumber)
+void HomotopyTest::simulate(const QString &className)
 {
   LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
   if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
@@ -74,8 +74,8 @@ void HomotopyTest::simulate(const QString &className, const int simulationNumber
   }
 
   MainWindow::instance()->simulate(pLibraryTreeItem);
-  if (MessagesWidget::instance()->getSimulationOutputTabsSize() > simulationNumber) {
-    SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
+  SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
+  if (pSimulationOutputWidget) {
     if (pSimulationOutputWidget->getSimulationOptions().getClassName().compare(className) == 0) {
       QString simulationLogFileName = QString("%1/%2.log").arg(pSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
                                       .arg(pSimulationOutputWidget->getSimulationOptions().getOutputFileName());

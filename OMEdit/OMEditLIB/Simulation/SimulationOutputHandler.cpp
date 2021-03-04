@@ -220,9 +220,8 @@ void SimulationMessageModel::callLayoutChanged()
   Helper function to find the QModelIndex.
   \sa simulationMessageIndex()
   */
-QModelIndex SimulationMessageModel::simulationMessageIndexHelper(const SimulationMessage *pSimulationMessage,
-                                                             const SimulationMessage *pParentSimulationMessage,
-                                                             const QModelIndex &parentIndex) const
+QModelIndex SimulationMessageModel::simulationMessageIndexHelper(const SimulationMessage *pSimulationMessage, const SimulationMessage *pParentSimulationMessage,
+                                                                 const QModelIndex &parentIndex) const
 {
   if (pSimulationMessage == pParentSimulationMessage)
     return parentIndex;
@@ -305,6 +304,19 @@ void SimulationOutputHandler::writeSimulationLog(const QString &text)
 {
   if (mpSimulationLogFile) {
     fputs(text.toUtf8().constData(), mpSimulationLogFile);
+  }
+}
+
+/*!
+ * \brief SimulationOutputHandler::addSimulationMessage
+ * \param pSimulationMessage
+ */
+void SimulationOutputHandler::addSimulationMessage(SimulationMessage *pSimulationMessage)
+{
+  if (mpSimulationOutputWidget->isOutputStructured()) {
+    mpSimulationMessageModel->insertSimulationMessage(pSimulationMessage);
+  } else {
+    mpSimulationOutputWidget->writeSimulationMessage(pSimulationMessage);
   }
 }
 
@@ -442,11 +454,7 @@ bool SimulationOutputHandler::endElement(const QString &namespaceURI, const QStr
     mLevel--;
     // if mLevel is 0 then we have finished the one complete top level message tag. Add it to SimulationMessageModel now.
     if (mLevel == 0) {
-      if (mpSimulationOutputWidget->isOutputStructured()) {
-        mpSimulationMessageModel->insertSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
-      } else {
-        mpSimulationOutputWidget->writeSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
-      }
+      addSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
     }
   }
   return true;

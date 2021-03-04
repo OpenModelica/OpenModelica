@@ -79,6 +79,11 @@ class SimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
+  enum SocketState {
+    NotConnected,
+    Connected,
+    Disconnected
+  };
   SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent = 0);
   ~SimulationOutputWidget();
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
@@ -109,6 +114,8 @@ private:
   QList<QString> mGeneratedFilesList;
   QList<QString> mGeneratedAlgLoopFilesList;
   OutputPlainTextEdit *mpCompilationOutputTextBox;
+  QString mSimulationStandardOutput;
+  QString mSimulationStandardError;
   SimulationOutputHandler *mpSimulationOutputHandler;
   bool mIsOutputStructured;
   QTextBrowser *mpSimulationOutputTextBrowser;
@@ -116,6 +123,7 @@ private:
   ArchivedSimulationItem *mpArchivedSimulationItem;
   QTcpServer *mpTcpServer;
   QTcpSocket *mpTcpSocket;
+  SocketState mSocketState;
   QProcess *mpCompilationProcess;
   bool mIsCompilationProcessKilled;
   bool mIsCompilationProcessRunning;
@@ -130,12 +138,14 @@ private:
   void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void deleteIntermediateCompilationFiles();
   void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
+  void simulationProcessFinishedHelper();
 private slots:
   void cancelCompilationOrSimulation();
   void openTransformationalDebugger();
   void openSimulationLogFile();
   void createSimulationProgressSocket();
   void readSimulationProgress();
+  void socketDisconnected();
   void compilationProcessStarted();
   void readCompilationStandardOutput();
   void readCompilationStandardError();

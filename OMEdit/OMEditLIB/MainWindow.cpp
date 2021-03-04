@@ -2656,7 +2656,7 @@ void MainWindow::runOMSensPlugin()
 {
   if (!mpOMSensPlugin) {
     // load OMSens plugin
-#ifdef defined(Q_OS_MAC)
+#ifdef Q_OS_MAC
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("OMSens is not supported on MacOS"), Helper::scriptingKind, Helper::errorLevel));
     return;
 #else

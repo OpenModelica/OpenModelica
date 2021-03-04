@@ -249,6 +249,8 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   mpCompilationOutputTextBox = new OutputPlainTextEdit;
   mpCompilationOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   mpGeneratedFilesTabWidget->addTab(mpCompilationOutputTextBox, tr("Compilation"));
+  mSimulationStandardOutput.clear();
+  mSimulationStandardError.clear();
   // Simulation output handler
   mpSimulationOutputHandler = 0;
   // Simulation Output TextBox
@@ -395,7 +397,7 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
   ArchivedSimulationsWidget::instance()->getArchivedSimulationsTreeWidget()->addTopLevelItem(mpArchivedSimulationItem);
   // start the tcp server
   mpTcpServer = new QTcpServer;
-  mpTcpSocket = 0;
+  mSocketState = SocketState::NotConnected;
   mpTcpServer->listen(QHostAddress(QHostAddress::LocalHost));
   connect(mpTcpServer, SIGNAL(newConnection()), SLOT(createSimulationProgressSocket()));
   mpCompilationProcess = 0;
@@ -490,7 +492,7 @@ void SimulationOutputWidget::writeSimulationMessage(SimulationMessage *pSimulati
   /* write the error message */
   if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
       QString simulationLogFilePath = QString("%1/%2.log").arg(mSimulationOptions.getWorkingDirectory()).arg(mSimulationOptions.getOutputFileName());
-      mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>").arg(simulationLogFilePath));
+      mpSimulationOutputTextBrowser->insertHtml(QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>\n").arg(simulationLogFilePath));
   } else {
     mpSimulationOutputTextBrowser->insertPlainText(text);
   }
@@ -699,6 +701,70 @@ void SimulationOutputWidget::writeSimulationOutput(QString output, StringHandler
 }
 
 /*!
+ * \brief SimulationOutputWidget::simulationProcessFinishedHelper
+ * Helper function for socketDisconnected and simulationProcessFinished
+ */
+void SimulationOutputWidget::simulationProcessFinishedHelper()
+{
+  /* We first read all the data from the socket and then read the stdout and stderr
+   * Otherwise the mixed data is sent to the parser which leads to issues like issue #7245
+   */
+  if (!mSimulationStandardOutput.isEmpty()) {
+    writeSimulationOutput(mSimulationStandardOutput, StringHandler::Unknown, true);
+    mSimulationStandardOutput.clear();
+  }
+  if (!mSimulationStandardError.isEmpty()) {
+    writeSimulationOutput(mSimulationStandardError, StringHandler::Error, true);
+    mSimulationStandardError.clear();
+  }
+
+  int exitCode = mpSimulationProcess->exitCode();
+  QProcess::ExitStatus exitStatus = mpSimulationProcess->exitStatus();
+  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
+  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
+    /* Ticket:4486
+     * Don't print the success message since omc now outputs the success information.
+     */
+    //writeSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
+  } else {
+    if (mpSimulationOutputHandler) {
+      SimulationMessage *pSimulationMessage;
+      if (isOutputStructured()) {
+        pSimulationMessage = new SimulationMessage(mpSimulationOutputHandler->getSimulationMessageModel()->getRootSimulationMessage());
+      } else {
+        pSimulationMessage = new SimulationMessage;
+      }
+      pSimulationMessage->mStream = "stdout";
+      pSimulationMessage->mType = StringHandler::Error;
+      pSimulationMessage->mLevel = 0;
+
+      if (mpSimulationProcess->error() == QProcess::UnknownError) {
+        pSimulationMessage->mText = exitCodeStr;
+      } else {
+        pSimulationMessage->mText = mpSimulationProcess->errorString() + "\n" + exitCodeStr;
+      }
+
+      mpSimulationOutputHandler->addSimulationMessage(pSimulationMessage);
+    }
+  }
+
+  mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mSimulationOptions.getClassName()));
+  mpProgressBar->setValue(mpProgressBar->maximum());
+  mpCancelButton->setEnabled(false);
+  MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
+  mpArchivedSimulationItem->setStatus(Helper::finished);
+  if (mpSimulationOutputHandler) {
+    mpSimulationOutputHandler->simulationProcessFinished();
+  }
+  // remove the generated files
+  if (!mSimulationOptions.getBuildOnly()) {
+    deleteIntermediateCompilationFiles();
+  }
+  // this signal is used by testsuite to know that the simulation is finished.
+  emit simulationFinished();
+}
+
+/*!
  * \brief SimulationOutputWidget::cancelCompilationOrSimulation
  * Slot activated when mpCancelButton clicked signal is raised.\n
  * Cancels a running compilaiton/simulation by killing the compilation/simulation process.
@@ -764,9 +830,11 @@ void SimulationOutputWidget::createSimulationProgressSocket()
   if (sender()) {
     QTcpServer *pTcpServer = qobject_cast<QTcpServer*>(const_cast<QObject*>(sender()));
     if (pTcpServer && pTcpServer->hasPendingConnections()) {
-      mpTcpSocket = pTcpServer->nextPendingConnection();
-      connect(mpTcpSocket, SIGNAL(readyRead()), SLOT(readSimulationProgress()));
-      connect(mpTcpSocket, SIGNAL(disconnected()), mpTcpSocket, SLOT(deleteLater()));
+      QTcpSocket *pTcpSocket = pTcpServer->nextPendingConnection();
+      mSocketState = SocketState::Connected;
+      connect(pTcpSocket, SIGNAL(readyRead()), SLOT(readSimulationProgress()));
+      connect(pTcpSocket, SIGNAL(disconnected()), SLOT(socketDisconnected()));
+      connect(pTcpSocket, SIGNAL(disconnected()), pTcpSocket, SLOT(deleteLater()));
       disconnect(pTcpServer, SIGNAL(newConnection()), this, SLOT(createSimulationProgressSocket()));
     }
   }
@@ -774,16 +842,31 @@ void SimulationOutputWidget::createSimulationProgressSocket()
 
 /*!
  * \brief SimulationOutputWidget::readSimulationProgress
- * Slot activated when QTcpSocket readyRead or disconnected SIGNAL is raised.\n
+ * Slot activated when QTcpSocket readyRead SIGNAL is raised.\n
  * Sends the recieved data to xml parser.
  */
 void SimulationOutputWidget::readSimulationProgress()
 {
-  if (mpTcpSocket) {
-    QString output = QString(mpTcpSocket->readAll());
-    if (!output.isEmpty()) {
-      writeSimulationOutput(output, StringHandler::Unknown, false);
+  if (sender()) {
+    QTcpSocket *pTcpSocket = qobject_cast<QTcpSocket*>(const_cast<QObject*>(sender()));
+    if (pTcpSocket) {
+      QString output = QString(pTcpSocket->readAll());
+      if (!output.isEmpty()) {
+        writeSimulationOutput(output, StringHandler::Unknown, false);
+      }
     }
+  }
+}
+
+/*!
+ * \brief SimulationOutputWidget::socketDisconnected
+ * Slot activated when QTcpSocket disconnected SIGNAL is raised.\n
+ */
+void SimulationOutputWidget::socketDisconnected()
+{
+  mSocketState = SocketState::Disconnected;
+  if (!mIsSimulationProcessRunning) {
+    simulationProcessFinishedHelper();
   }
 }
 
@@ -899,7 +982,7 @@ void SimulationOutputWidget::readSimulationStandardOutput()
   QRegExp rx("info/network");
   QString stdOutput = mpSimulationProcess->readAllStandardOutput();
   if (!stdOutput.contains(rx)) {
-    writeSimulationOutput(stdOutput, StringHandler::Unknown, true);
+    mSimulationStandardOutput.append(stdOutput);
   }
 }
 
@@ -909,7 +992,7 @@ void SimulationOutputWidget::readSimulationStandardOutput()
  */
 void SimulationOutputWidget::readSimulationStandardError()
 {
-  writeSimulationOutput(QString(mpSimulationProcess->readAllStandardError()), StringHandler::Error, true);
+  mSimulationStandardError.append(mpSimulationProcess->readAllStandardError());
 }
 
 /*!
@@ -938,36 +1021,13 @@ void SimulationOutputWidget::simulationProcessError(QProcess::ProcessError error
  */
 void SimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
-  if (mpTcpSocket) {
-    readSimulationProgress();
-  }
+  Q_UNUSED(exitCode);
+  Q_UNUSED(exitStatus);
   mIsSimulationProcessRunning = false;
-  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
-  if (exitStatus == QProcess::NormalExit && exitCode == 0) {
-    /* Ticket:4486
-     * Don't print the success message since omc now outputs the success information.
-     */
-    //emit sendSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo, true);
-  } else if (mpSimulationProcess->error() == QProcess::UnknownError) {
-    writeSimulationOutput(exitCodeStr, StringHandler::Error, true);
-  } else {
-    writeSimulationOutput(mpSimulationProcess->errorString() + "\n" + exitCodeStr, StringHandler::Error, true);
+  // We are relying on QTcpSocket that it will always send disconnected() SIGNAL.
+  if (mSocketState != SocketState::Connected) {
+    simulationProcessFinishedHelper();
   }
-
-  mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mSimulationOptions.getClassName()));
-  mpProgressBar->setValue(mpProgressBar->maximum());
-  mpCancelButton->setEnabled(false);
-  MainWindow::instance()->getSimulationDialog()->simulationProcessFinished(mSimulationOptions, mResultFileLastModifiedDateTime);
-  mpArchivedSimulationItem->setStatus(Helper::finished);
-  if (mpSimulationOutputHandler) {
-    mpSimulationOutputHandler->simulationProcessFinished();
-  }
-  // remove the generated files
-  if (!mSimulationOptions.getBuildOnly()) {
-    deleteIntermediateCompilationFiles();
-  }
-  // this signal is used by testsuite to know that the simulation is finished.
-  emit simulationFinished();
 }
 
 /*!
