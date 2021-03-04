@@ -7635,6 +7635,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   setDocumentMode(true);
 #if QT_VERSION >= 0x040800
   setTabsClosable(true);
+  setTabsMovable(true);
 #endif
   if (OptionsDialog::instance()->getGraphicalViewsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
