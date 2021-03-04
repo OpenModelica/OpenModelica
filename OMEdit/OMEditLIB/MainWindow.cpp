@@ -1889,11 +1889,35 @@ void MainWindow::openRecentFile()
   }
 }
 
+/*!
+ * \brief MainWindow::clearRecentFilesList
+ * Clears the recent files list. Asks the user for confirmation.
+ */
 void MainWindow::clearRecentFilesList()
 {
-  QSettings *pSettings = Utilities::getApplicationSettings();
-  pSettings->remove("recentFilesList/files");
-  updateRecentFileActionsAndList();
+  QMessageBox *pMessageBox = new QMessageBox(this);
+  pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
+  pMessageBox->setIcon(QMessageBox::Question);
+  pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+  pMessageBox->setText(tr("Are you sure you want to clear recent files?"));
+  pMessageBox->setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+  pMessageBox->setDefaultButton(QMessageBox::Yes);
+  int answer = pMessageBox->exec();
+  switch (answer) {
+    case QMessageBox::Yes:
+      {
+        QSettings *pSettings = Utilities::getApplicationSettings();
+        pSettings->remove("recentFilesList/files");
+        updateRecentFileActionsAndList();
+      }
+      break;
+    case QMessageBox::No:
+      // No was clicked.
+      break;
+    default:
+      // should never be reached
+      break;
+  }
 }
 
 /*!
