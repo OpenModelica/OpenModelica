@@ -42,7 +42,6 @@
 #include "Plotting/VariablesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/Commands.h"
-#include "SimulationProcessThread.h"
 #if !defined(WITHOUT_OSG)
 #include "Animation/AnimationWindow.h"
 #endif
@@ -68,28 +67,10 @@ SimulationDialog::SimulationDialog(QWidget *pParent)
 
 SimulationDialog::~SimulationDialog()
 {
-  foreach (SimulationOutputWidget *pSimulationOutputWidget, mSimulationOutputWidgetsList) {
-    SimulationProcessThread *pSimulationProcessThread = pSimulationOutputWidget->getSimulationProcessThread();
-    /* If the SimulationProcessThread is running then we need to stop it i.e exit its event loop.
-     * Kill the compilation and simulation processes if they are running before exiting the SimulationProcessThread.
-     */
-    if (pSimulationProcessThread->isRunning()) {
-      if (pSimulationProcessThread->isCompilationProcessRunning() && pSimulationProcessThread->getCompilationProcess()) {
-        pSimulationProcessThread->getCompilationProcess()->kill();
-      }
-      if (pSimulationProcessThread->isSimulationProcessRunning() && pSimulationProcessThread->getSimulationProcess()) {
-        pSimulationProcessThread->getSimulationProcess()->kill();
-      }
-      pSimulationProcessThread->exit();
-      pSimulationProcessThread->wait();
-    }
-    delete pSimulationOutputWidget;
-  }
   // kill the clients
   foreach (OpcUaClient *pOpcUaClient, mOpcUaClientsMap) {
     delete pOpcUaClient;
   }
-  mSimulationOutputWidgetsList.clear();
   mOpcUaClientsMap.clear();
 }
 
@@ -148,25 +129,22 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
 void SimulationDialog::removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget)
 {
   // close the window
-  if (mOpcUaClientsMap.contains(pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber())) {
+  // remove the old opc ua instance
+  int port = pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
+  if (mOpcUaClientsMap.contains(port)) {
     OMPlot::PlotWindow *pPlotWindow = mOpcUaClientsMap.value(pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber())->getTargetPlotWindow();
     if (pPlotWindow) {
       pPlotWindow->parentWidget()->close();
     }
-  }
-  // remove the old opc ua instance
-  int port = pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
-  if (mOpcUaClientsMap.contains(port)) {
     delete mOpcUaClientsMap.value(port);
     mOpcUaClientsMap.remove(port);
   }
-  // removes the output widget of the removed interactive simulation item
-  if (mSimulationOutputWidgetsList.contains(pSimulationOutputWidget)) {
-    terminateSimulationProcess(pSimulationOutputWidget);
-    mSimulationOutputWidgetsList.removeOne(pSimulationOutputWidget);
-    if (pSimulationOutputWidget) {
-      delete pSimulationOutputWidget;
-    }
+  // Kill the compilation and simulation processes if they are running.
+  if (pSimulationOutputWidget->isCompilationProcessRunning() && pSimulationOutputWidget->getCompilationProcess()) {
+    pSimulationOutputWidget->getCompilationProcess()->kill();
+  }
+  if (pSimulationOutputWidget->isSimulationProcessRunning() && pSimulationOutputWidget->getSimulationProcess()) {
+    pSimulationOutputWidget->getSimulationProcess()->kill();
   }
 }
 
@@ -1494,34 +1472,9 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
     if (simulationOptions.isReSimulate() && simulationOptions.isInteractiveSimulation()) {
       removeVariablesFromTree(simulationOptions.getClassName());
     }
-    /* ticket:4406 Option to automatically close Simulation Completed Window
-     * Close all completed SimulationOutputWidget windows
-     */
-    if (OptionsDialog::instance()->getSimulationPage()->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked()) {
-      foreach (SimulationOutputWidget *pSimulationOutputWidget, mSimulationOutputWidgetsList) {
-        if (!(pSimulationOutputWidget->getSimulationProcessThread()->isCompilationProcessRunning() ||
-              pSimulationOutputWidget->getSimulationProcessThread()->isSimulationProcessRunning())) {
-          pSimulationOutputWidget->close();
-        }
-      }
-    }
-
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
-    mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-    int xPos = QApplication::primaryScreen()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::primaryScreen()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
-#else // QT_VERSION_CHECK
-    int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
-#endif // QT_VERSION_CHECK
-    pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
-    /* restore the window geometry. */
-    if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
-        && Utilities::getApplicationSettings()->contains("SimulationOutputWidget/geometry")) {
-      pSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("SimulationOutputWidget/geometry").toByteArray());
-    }
-    pSimulationOutputWidget->show();
+    MessagesWidget::instance()->addSimulationOutputTab(pSimulationOutputWidget, simulationOptions.getOutputFileName());
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
   }
 }
 
@@ -1919,23 +1872,6 @@ void SimulationDialog::setInteractiveControls(bool enabled)
     pOpcUaClient->getTargetPlotWindow()->getPauseSimulationButton()->setEnabled(!enabled);
     //plotpicker
     pOpcUaClient->getTargetPlotWindow()->getPlot()->getPlotPicker()->setEnabled(enabled);
-  }
-}
-
-void SimulationDialog::terminateSimulationProcess(SimulationOutputWidget *pSimulationOutputWidget)
-{
-  SimulationProcessThread *pSimulationProcessThread = pSimulationOutputWidget->getSimulationProcessThread();
-  // If the SimulationProcessThread is running then we need to stop it i.e exit its event loop.
-  // Kill the compilation and simulation processes if they are running before exiting the SimulationProcessThread.
-  if (pSimulationProcessThread->isRunning()) {
-    if (pSimulationProcessThread->isCompilationProcessRunning() && pSimulationProcessThread->getCompilationProcess()) {
-      pSimulationProcessThread->getCompilationProcess()->kill();
-    }
-    if (pSimulationProcessThread->isSimulationProcessRunning() && pSimulationProcessThread->getSimulationProcess()) {
-      pSimulationProcessThread->getSimulationProcess()->kill();
-    }
-    pSimulationProcessThread->exit();
-    pSimulationProcessThread->wait();
   }
 }
 

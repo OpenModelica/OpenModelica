@@ -42,7 +42,7 @@ const int chunkSize = 10000;
  * \brief The OutputPlainTextEdit class
  * Generic class to display the output in a non blocking way.\n
  * It accumulates the output and uses a QTimer to display the result.\n
- * The timer can be displayed with mUseTimer flag.
+ * The timer can be disabled with mUseTimer flag.
  */
 class OutputPlainTextEdit : public QPlainTextEdit
 {

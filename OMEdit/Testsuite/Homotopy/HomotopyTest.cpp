@@ -37,9 +37,7 @@
 #include "OMEditApplication.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
-#include "Simulation/SimulationDialog.h"
 #include "Simulation/SimulationOutputWidget.h"
-#include "Simulation/SimulationProcessThread.h"
 
 #define GC_THREADS
 extern "C" {
@@ -55,12 +53,12 @@ void HomotopyTest::initTestCase()
 
 void HomotopyTest::simulateHomotopyTestM1()
 {
-  simulate(QStringLiteral("HomotopyTest.M1"), 0);
+  simulate(QStringLiteral("HomotopyTest.M1"));
 }
 
 void HomotopyTest::simulateHomotopyTestM2()
 {
-  simulate(QStringLiteral("HomotopyTest.M2"), 1);
+  simulate(QStringLiteral("HomotopyTest.M2"));
 }
 
 void HomotopyTest::cleanupTestCase()
@@ -68,7 +66,7 @@ void HomotopyTest::cleanupTestCase()
   MainWindow::instance()->close();
 }
 
-void HomotopyTest::simulate(const QString &className, const int simulationNumber)
+void HomotopyTest::simulate(const QString &className)
 {
   LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(className);
   if (!Util::expandLibraryTreeItemParentHierarchy(pLibraryTreeItem)) {
@@ -76,16 +74,16 @@ void HomotopyTest::simulate(const QString &className, const int simulationNumber
   }
 
   MainWindow::instance()->simulate(pLibraryTreeItem);
-  if (MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().size() > simulationNumber) {
-    SimulationOutputWidget *pSimulationOutputWidget = MainWindow::instance()->getSimulationDialog()->getSimulationOutputWidgetsList().last();
+  SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(className);
+  if (pSimulationOutputWidget) {
     if (pSimulationOutputWidget->getSimulationOptions().getClassName().compare(className) == 0) {
       QString simulationLogFileName = QString("%1/%2.log").arg(pSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
                                       .arg(pSimulationOutputWidget->getSimulationOptions().getOutputFileName());
       /* Use QSignalSpy to check if simulation is finished or not.
        * if its finished then we read the simulation file.
-       * otherwise the timeout of 2 mins has occurred.
+       * otherwise the timeout of 5 mins has occurred.
        */
-      QSignalSpy simulationSignalSpy(pSimulationOutputWidget->getSimulationProcessThread(), SIGNAL(sendSimulationFinished(int,QProcess::ExitStatus)));
+      QSignalSpy simulationSignalSpy(pSimulationOutputWidget, SIGNAL(simulationFinished()));
       if (simulationSignalSpy.wait(300000)) {
         readSimulationLogFile(simulationLogFileName);
       } else {

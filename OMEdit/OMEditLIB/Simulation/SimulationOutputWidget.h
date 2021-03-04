@@ -48,7 +48,6 @@
 
 class Label;
 class OutputPlainTextEdit;
-class SimulationProcessThread;
 class SimulationOutputHandler;
 class SimulationOutputWidget;
 class SimulationMessage;
@@ -80,6 +79,11 @@ class SimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
+  enum SocketState {
+    NotConnected,
+    Connected,
+    Disconnected
+  };
   SimulationOutputWidget(SimulationOptions simulationOptions, QWidget *pParent = 0);
   ~SimulationOutputWidget();
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
@@ -88,8 +92,14 @@ public:
   bool isOutputStructured() {return mIsOutputStructured;}
   SimulationOutputTree* getSimulationOutputTree() {return mpSimulationOutputTree;}
   QTcpServer* getTcpServer() {return mpTcpServer;}
-  bool isSocketDisconnected() {return mSocketDisconnected;}
-  SimulationProcessThread* getSimulationProcessThread() {return mpSimulationProcessThread;}
+  QProcess* getCompilationProcess() {return mpCompilationProcess;}
+  void setCompilationProcessKilled(bool killed) {mIsCompilationProcessKilled = killed;}
+  bool isCompilationProcessKilled() {return mIsCompilationProcessKilled;}
+  bool isCompilationProcessRunning() {return mIsCompilationProcessRunning;}
+  QProcess* getSimulationProcess() {return mpSimulationProcess;}
+  void setSimulationProcessKilled(bool killed) {mIsSimulationProcessKilled = killed;}
+  bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
+  bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
   void addGeneratedFileTab(QString fileName);
   void writeSimulationMessage(SimulationMessage *pSimulationMessage);
   void embeddedServerInitialized();
@@ -103,36 +113,53 @@ private:
   QTabWidget *mpGeneratedFilesTabWidget;
   QList<QString> mGeneratedFilesList;
   QList<QString> mGeneratedAlgLoopFilesList;
+  OutputPlainTextEdit *mpCompilationOutputTextBox;
+  QString mSimulationStandardOutput;
+  QString mSimulationStandardError;
   SimulationOutputHandler *mpSimulationOutputHandler;
   bool mIsOutputStructured;
   QTextBrowser *mpSimulationOutputTextBrowser;
   SimulationOutputTree *mpSimulationOutputTree;
-  OutputPlainTextEdit *mpCompilationOutputTextBox;
   ArchivedSimulationItem *mpArchivedSimulationItem;
   QTcpServer *mpTcpServer;
-  bool mSocketDisconnected;
-  SimulationProcessThread *mpSimulationProcessThread;
+  QTcpSocket *mpTcpSocket;
+  SocketState mSocketState;
+  QProcess *mpCompilationProcess;
+  bool mIsCompilationProcessKilled;
+  bool mIsCompilationProcessRunning;
+  QProcess *mpSimulationProcess;
+  bool mIsSimulationProcessKilled;
+  bool mIsSimulationProcessRunning;
   QDateTime mResultFileLastModifiedDateTime;
 
+  void compileModel();
+  void runSimulationExecutable();
+  void writeCompilationOutput(QString output, QColor color);
+  void compilationProcessFinishedHelper(int exitCode, QProcess::ExitStatus exitStatus);
   void deleteIntermediateCompilationFiles();
-public slots:
+  void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
+  void simulationProcessFinishedHelper();
+private slots:
+  void cancelCompilationOrSimulation();
+  void openTransformationalDebugger();
+  void openSimulationLogFile();
   void createSimulationProgressSocket();
   void readSimulationProgress();
   void socketDisconnected();
   void compilationProcessStarted();
-  void writeCompilationOutput(QString output, QColor color);
+  void readCompilationStandardOutput();
+  void readCompilationStandardError();
+  void compilationProcessError(QProcess::ProcessError error);
   void compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void simulationProcessStarted();
-  void enableSimulationOutputTab();
-  void writeSimulationOutput(QString output, StringHandler::SimulationMessageType type, bool textFormat);
+  void readSimulationStandardOutput();
+  void readSimulationStandardError();
+  void simulationProcessError(QProcess::ProcessError error);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
-  void cancelCompilationOrSimulation();
-  void openTransformationalDebugger();
-  void openSimulationLogFile();
+public slots:
   void openTransformationBrowser(QUrl url);
-protected:
-  virtual void keyPressEvent(QKeyEvent *event) override;
-  virtual void closeEvent(QCloseEvent *event) override;
+signals:
+  void simulationFinished();
 };
 
 #endif // SIMULATIONOUTPUTWIDGET_H

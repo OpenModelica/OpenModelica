@@ -38,6 +38,8 @@
 #include "LibraryTreeWidget.h"
 #include "Util/Helper.h"
 #include "Options/OptionsDialog.h"
+#include "Simulation/SimulationDialog.h"
+#include "Simulation//SimulationOutputWidget.h"
 #include "OMS/OMSSimulationOutputWidget.h"
 
 #include <QMenu>
@@ -424,7 +426,11 @@ void MessagesWidget::create()
  */
 void MessagesWidget::destroy()
 {
-  mpInstance->deleteLater();
+  /* We want to delete right away instead to clean stuff properly in beforeClosingMainWindow
+   * So don not use deleteLater();
+   */
+  //mpInstance->deleteLater();
+  delete mpInstance;
   mpInstance = 0;
 }
 
@@ -488,25 +494,29 @@ void MessagesWidget::applyMessagesSettings()
 }
 
 /*!
- * \brief MessagesWidget::addSimulationTab
- * Adds a simulation tab.
- * \param pSimulationWidget
+ * \brief MessagesWidget::addSimulationOutputTab
+ * Adds a simulation output tab.
+ * \param pSimulationOutputTab
  * \param name
+ * \param removeExisting - Removes all the tabs where simulation is finished.
  */
-void MessagesWidget::addSimulationTab(QWidget *pSimulationWidget, const QString &name)
+void MessagesWidget::addSimulationOutputTab(QWidget *pSimulationOutputTab, const QString &name, bool removeExisting)
 {
   /* ticket:4406 Option to automatically close simulation tabs where simulation is done.
    * Close all completed simulation tabs.
    */
-  if (OptionsDialog::instance()->getSimulationPage()->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked()) {
+  if (removeExisting && OptionsDialog::instance()->getSimulationPage()->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked()) {
     for (int i = fixedTabsCount; i < mpMessagesTabWidget->count(); ++i) {
-      closeTab(i);
+      // move one step back if tab is removed successfully
+      if (closeTab(i)) {
+        --i;
+      }
     }
   }
   // if tab already exists then just don't try to add it again.
   bool tabFound = false;
   for (int i = 0; i < mpMessagesTabWidget->count(); ++i) {
-    if (mpMessagesTabWidget->widget(i) == pSimulationWidget) {
+    if (mpMessagesTabWidget->widget(i) == pSimulationOutputTab) {
       mpMessagesTabWidget->setCurrentIndex(i);
       tabFound = true;
       break;
@@ -514,22 +524,60 @@ void MessagesWidget::addSimulationTab(QWidget *pSimulationWidget, const QString 
   }
   // add the tab if it doesn't already exist
   if (!tabFound) {
-    mpMessagesTabWidget->setCurrentIndex(mpMessagesTabWidget->addTab(pSimulationWidget, name));
+    mpMessagesTabWidget->setCurrentIndex(mpMessagesTabWidget->addTab(pSimulationOutputTab, name));
   }
   emit MessageAdded();
 }
 
 /*!
+ * \brief MessagesWidget::getSimulationOutputTabsSize
+ * Returns the size of Simulation output tabs.
+ * \return
+ */
+int MessagesWidget::getSimulationOutputTabsSize()
+{
+  return mpMessagesTabWidget->count() - fixedTabsCount;
+}
+
+/*!
+ * \brief MessagesWidget::getSimulationOutputWidget
+ * Finds and returns the SimulationOutputWidget
+ * \param className
+ * \return
+ */
+SimulationOutputWidget* MessagesWidget::getSimulationOutputWidget(const QString &className)
+{
+  for (int i = fixedTabsCount; i < mpMessagesTabWidget->count(); ++i) {
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(i));
+    if (pSimulationOutputWidget && pSimulationOutputWidget->getSimulationOptions().getClassName().compare(className) == 0) {
+      return pSimulationOutputWidget;
+    }
+  }
+  return 0;
+}
+
+/*!
  * \brief MessagesWidget::closeTab
  * Removes the tab from MessagesWidget.
+ * Returns true if tab is removed.
  * \param index
  */
-void MessagesWidget::closeTab(int index)
+bool MessagesWidget::closeTab(int index)
 {
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pSimulationOutputWidget && !pSimulationOutputWidget->isCompilationProcessRunning() && !pSimulationOutputWidget->isSimulationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    if (pSimulationOutputWidget->getSimulationOptions().isInteractiveSimulation()) {
+      MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(pSimulationOutputWidget);
+    }
+    return true;
+  }
   OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
   if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {
     mpMessagesTabWidget->removeTab(index);
+    return true;
   }
+  return false;
 }
 
 /*!

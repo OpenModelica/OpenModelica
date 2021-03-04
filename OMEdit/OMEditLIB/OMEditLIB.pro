@@ -140,7 +140,6 @@ SOURCES += Util/Helper.cpp \
   Simulation/TranslationFlagsWidget.cpp \
   Simulation/SimulationDialog.cpp \
   Simulation/SimulationOutputWidget.cpp \
-  Simulation/SimulationProcessThread.cpp \
   Simulation/SimulationOutputHandler.cpp \
   Simulation/OpcUaClient.cpp \
   Simulation/ArchivedSimulationsWidget.cpp \
@@ -233,7 +232,6 @@ HEADERS  += Util/Helper.h \
   Simulation/TranslationFlagsWidget.h \
   Simulation/SimulationDialog.h \
   Simulation/SimulationOutputWidget.h \
-  Simulation/SimulationProcessThread.h \
   Simulation/SimulationOutputHandler.h \
   Simulation/OpcUaClient.h \
   Simulation/ArchivedSimulationsWidget.h \

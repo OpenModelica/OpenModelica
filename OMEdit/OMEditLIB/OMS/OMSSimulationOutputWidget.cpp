@@ -117,7 +117,6 @@ void SimulationSubscriberSocket::readProgressJson()
 OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const QString &fileName, QWidget *pParent)
   : QWidget(pParent), mCref(cref)
 {
-  setWindowTitle(QString("%1 - %2 - %3").arg(Helper::applicationName, mCref, Helper::simulationOutput));
   // progress label
   mpProgressLabel = new Label(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mCref));
   mpProgressLabel->setTextFormat(Qt::RichText);

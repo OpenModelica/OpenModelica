@@ -65,9 +65,7 @@ public:
   SimulationDialog(QWidget *pParent = 0);
   ~SimulationDialog();
   void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
-  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger,
-                      bool launchAnimation);
-  QList<SimulationOutputWidget*> getSimulationOutputWidgetsList() {return mSimulationOutputWidgetsList;}
+  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation);
   OpcUaClient* getOpcUaClient(int port);
   void removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget);
 private:
@@ -210,7 +208,6 @@ private:
   void saveDialogGeometry();
   void killSimulationProcess(int port);
   void removeVariablesFromTree(QString className);
-  void terminateSimulationProcess(SimulationOutputWidget *pSimulationOutputWidget);
   void setInteractiveControls(bool enabled);
 public:
   void reSimulate(SimulationOptions simulationOptions);

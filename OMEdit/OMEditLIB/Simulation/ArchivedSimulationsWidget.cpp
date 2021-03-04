@@ -37,8 +37,8 @@
 #include "Util/Helper.h"
 #include "Modeling/MessagesWidget.h"
 #include "Options/OptionsDialog.h"
-#include "SimulationOutputWidget.h"
 
+#include <QDateTime>
 #include <QGridLayout>
 
 ArchivedSimulationItem::ArchivedSimulationItem(const QString &name, const double startTime, const double stopTime, QWidget *pSimulationOutputWidget)
@@ -110,17 +110,7 @@ void ArchivedSimulationsWidget::showArchivedSimulation(QTreeWidgetItem *pTreeWid
 {
   ArchivedSimulationItem *pArchivedSimulationItem = dynamic_cast<ArchivedSimulationItem*>(pTreeWidgetItem);
   if (pArchivedSimulationItem && pArchivedSimulationItem->getSimulationOutputWidget()) {
-    /*! @todo We should add the SimulationOutputWidget to MessagesWidget in future
-     * so the following block will be removed and also the #include "SimulationOutputWidget.h"
-     */
-    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(pArchivedSimulationItem->getSimulationOutputWidget());
-    if (pSimulationOutputWidget) {
-      pSimulationOutputWidget->show();
-      pSimulationOutputWidget->raise();
-      pSimulationOutputWidget->setWindowState(pSimulationOutputWidget->windowState() & (~Qt::WindowMinimized));
-    } else {
-      MessagesWidget::instance()->addSimulationTab(pArchivedSimulationItem->getSimulationOutputWidget(), pArchivedSimulationItem->text(0));
-    }
+    MessagesWidget::instance()->addSimulationOutputTab(pArchivedSimulationItem->getSimulationOutputWidget(), pArchivedSimulationItem->text(0), false);
   }
 }
 
