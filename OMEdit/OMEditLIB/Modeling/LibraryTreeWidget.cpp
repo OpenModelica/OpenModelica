@@ -3963,7 +3963,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
     } else if (controlModifier && event->key() == Qt::Key_C) {
       QApplication::clipboard()->setText(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
-      if (isTopLevel && isModelicaLibraryType) {
+      if (isModelicaLibraryType) {
         unloadClass();
       } else if (isTopLevel && isOMSimulatorLibraryType) {
         unloadOMSModel();
