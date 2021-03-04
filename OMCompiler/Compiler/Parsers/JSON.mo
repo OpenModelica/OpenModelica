@@ -170,6 +170,16 @@ algorithm
   JSON.STRING(str) := obj;
 end getString;
 
+function getBoolean
+  input JSON obj;
+  output Boolean b;
+algorithm
+  b := match obj
+    case JSON.TRUE() then true;
+    case JSON.FALSE() then false;
+  end match;
+end getBoolean;
+
 function parse
   input String content;
   input String fileName="<String>";
