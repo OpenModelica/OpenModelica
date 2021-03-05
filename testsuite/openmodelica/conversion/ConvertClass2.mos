@@ -1,0 +1,23 @@
+// name:   ConvertClass2
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertClass2
+    extends Modelica.Icons.TypeComplex;
+  end ConvertClass2;
+");
+
+convertPackage(ConvertClass2, "scripts/ConvertClass2.mos");
+getErrorString();
+list(ConvertClass2);
+
+// Result:
+// true
+// true
+// ""
+// "model ConvertClass2
+//   extends Complex;
+// end ConvertClass2;"
+// endResult

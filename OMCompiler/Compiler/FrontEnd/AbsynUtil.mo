@@ -1932,6 +1932,40 @@ algorithm
   end match;
 end pathSecondIdent;
 
+public function pathNthIdent
+  "Returns the n:th identifier in a path. Fails if n is out of bounds."
+  input Absyn.Path path;
+  input Integer n;
+  output Absyn.Ident ident;
+protected
+  Absyn.Path p = makeNotFullyQualified(path);
+algorithm
+  for i in 2:n loop
+    Absyn.QUALIFIED(path = p) := p;
+  end for;
+
+  ident := pathFirstIdent(p);
+end pathNthIdent;
+
+public function pathSetNthIdent
+  "Replaces the n:th identifier in a path. Fails if n is out of bounds."
+  input Absyn.Path path;
+  input Absyn.Ident ident;
+  input Integer n;
+  output Absyn.Path outPath;
+algorithm
+  if n == 1 then
+    outPath := pathSetFirstIdent(path, ident);
+  else
+    outPath := match path
+      case Absyn.QUALIFIED()
+        then Absyn.QUALIFIED(path.name, pathSetNthIdent(path.path, ident, n - 1));
+      case Absyn.FULLYQUALIFIED()
+        then Absyn.FULLYQUALIFIED(pathSetNthIdent(path.path, ident, n));
+    end match;
+  end if;
+end pathSetNthIdent;
+
 public function pathRest
   input Absyn.Path inPath;
   output Absyn.Path outPath;
@@ -3208,6 +3242,33 @@ algorithm
     case Absyn.CREF_FULLYQUALIFIED() then crefFirstIdent(inCref.componentRef);
   end match;
 end crefFirstIdent;
+
+public function crefSetFirstIdent
+  input output Absyn.ComponentRef cref;
+  input Absyn.Ident ident;
+algorithm
+  () := match cref
+    case Absyn.CREF_IDENT()
+      algorithm
+        cref.name := ident;
+      then
+        ();
+
+    case Absyn.CREF_QUAL()
+      algorithm
+        cref.name := ident;
+      then
+        ();
+
+    case Absyn.CREF_FULLYQUALIFIED()
+      algorithm
+        cref.componentRef := crefSetFirstIdent(cref.componentRef, ident);
+      then
+        ();
+
+    else ();
+  end match;
+end crefSetFirstIdent;
 
 public function crefSecondIdent
   input Absyn.ComponentRef cref;
@@ -6517,6 +6578,17 @@ public function isNotPartial
 algorithm
   outBoolean := not isPartial(inClass);
 end isNotPartial;
+
+public function crefIsWild
+  input Absyn.ComponentRef cref;
+  output Boolean wild;
+algorithm
+  wild := match cref
+    case Absyn.WILD() then true;
+    case Absyn.ALLWILD() then true;
+    else false;
+  end match;
+end crefIsWild;
 
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

@@ -543,6 +543,8 @@ constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(185, "combineSubscripts", fal
   Gettext.gettext("Move all subscripts to the end of component references."));
 constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(186, "zmqDangerousAcceptConnectionsFromAnywhere", false,
   Gettext.gettext("When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1."));
+constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(187, "dumpConversionRules", false,
+  Gettext.gettext("Dumps the rules when converting a package using a conversion script."));
 
 public
 // CONFIGURATION FLAGS

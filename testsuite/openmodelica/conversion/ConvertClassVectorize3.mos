@@ -1,0 +1,23 @@
+// name:   ConvertClassVectorize3
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertClassVectorize3
+    A a;
+    B b;
+    C c;
+    D d;
+  end ConvertClassVectorize3;
+");
+
+convertPackage(ConvertClassVectorize3, "scripts/ConvertClassVectorize3.mos");
+getErrorString();
+
+// Result:
+// true
+// false
+// "[scripts/ConvertClassVectorize3.mos:1:1-1:31:writable] Error: Invalid conversion rule ‘convertClass({\"A\", \"B\"}, {\"X\"})‘.
+// "
+// endResult

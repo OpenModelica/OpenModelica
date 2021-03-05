@@ -1,0 +1,23 @@
+// name:   ConvertClass1
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertClass1
+    Modelica.SIunits.Velocity v;
+  end ConvertClass1;
+");
+
+convertPackage(ConvertClass1, "scripts/ConvertClass1.mos");
+getErrorString();
+list(ConvertClass1);
+
+// Result:
+// true
+// true
+// ""
+// "model ConvertClass1
+//   Modelica.Units.SI.Velocity v;
+// end ConvertClass1;"
+// endResult

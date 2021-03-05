@@ -107,6 +107,16 @@ public function stringCref
   external "C" cref=ParserExt_stringCref(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end stringCref;
 
+public function stringMod
+  input String str;
+  input String infoFilename;
+  input Integer acceptedGram;
+  input Integer languageStandardInt;
+  input Boolean runningTestsuite;
+  output Absyn.ElementArg cref;
+  external "C" cref=ParserExt_stringMod(str, infoFilename, acceptedGram, languageStandardInt, runningTestsuite) annotation(Library = {"omparse","omantlr3","omcruntime"});
+end stringMod;
+
 public function startLibraryVendorExecutable "Starts the library vendor executable"
   input String lvePath;
   output Boolean success;

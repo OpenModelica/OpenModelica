@@ -4321,6 +4321,12 @@ annotation(
 </html>"), preferredView="text");
 end generateScriptingAPI;
 
+function convertPackage
+  input TypeName cl;
+  input String scriptFile;
+external "builtin";
+end convertPackage;
+
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined);

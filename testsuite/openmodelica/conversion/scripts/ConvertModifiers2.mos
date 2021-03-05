@@ -1,0 +1,2 @@
+convertModifiers("Modelica.Mechanics.MultiBody.Forces.WorldForce",
+                 {"diameter"}, fill("", 0), true)

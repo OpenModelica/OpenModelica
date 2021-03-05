@@ -1,0 +1,25 @@
+// name:   ConvertClass3
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertClass3
+    extends Modelica.SIunits.Icons.Conversion;
+    Modelica.SIunits.Length x;
+  end ConvertClass3;
+");
+
+convertPackage(ConvertClass3, "scripts/ConvertClass3.mos");
+getErrorString();
+list(ConvertClass3);
+
+// Result:
+// true
+// true
+// ""
+// "model ConvertClass3
+//   extends Modelica.Units.Icons.Conversion;
+//   Modelica.Units.SI.Length x;
+// end ConvertClass3;"
+// endResult
