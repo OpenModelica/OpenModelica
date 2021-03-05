@@ -8016,14 +8016,19 @@ protected function extractVarFromVar
   input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
 protected
   list<DAE.ComponentRef> scalar_crefs;
+  BackendDAE.Var scalarVar;
 algorithm
-  // extract the sim var
-  if BackendVariable.isParam(dlowVar) and Types.isArray(dlowVar.varType) then
+  // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
+  if BackendVariable.isParam(dlowVar) and Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
     for cref in scalar_crefs loop
-      extractVarFromVar2(BackendVariable.makeVar(cref), inAliasVars, inVars, simVars, hs, iterationVars);
+      // extract the sim var
+      scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
+      scalarVar.varType := ComponentReference.crefTypeFull(cref);
+      extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, iterationVars);
     end for;
   else
+    // extract the sim var
     extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, iterationVars);
   end if;
 end extractVarFromVar;
