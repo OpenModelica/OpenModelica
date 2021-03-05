@@ -110,9 +110,6 @@ algorithm
         return;
       end if;
 
-      elem_ty := Type.arrayElementType(ty);
-      (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
-
       if Binding.isBound(binding) then
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
         bind_var := Binding.variability(binding);
@@ -122,6 +119,8 @@ algorithm
           var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
           vars := var :: vars;
         else
+          elem_ty := Type.arrayElementType(ty);
+          (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
             binding := Binding.FLAT_BINDING(exp, bind_var);
@@ -130,6 +129,8 @@ algorithm
           end for;
         end if;
       else
+        elem_ty := Type.arrayElementType(ty);
+        (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
         for cr in crefs loop
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
           vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
