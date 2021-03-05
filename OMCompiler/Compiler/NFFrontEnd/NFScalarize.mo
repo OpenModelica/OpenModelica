@@ -110,25 +110,17 @@ algorithm
         return;
       end if;
 
-      elem_ty := Type.arrayElementType(ty);
-      (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
-
       if Binding.isBound(binding) then
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
         bind_var := Binding.variability(binding);
         // if the scalarized binding would result in an indexed call e.g. f()[1] then don't do it!
         // fixes ticket #6267
         if ExpressionIterator.isSubscriptedArrayCall(binding_iter) then
-          // create an initial equation instead
-          eqns := Equation.ARRAY_EQUALITY(Expression.CREF(ty, var.name), Binding.getTypedExp(binding), ty,
-            ElementSource.createElementSource(info)) :: eqns;
-          for cr in crefs loop
-            // unfix all scalar variables because it has to be solved in the initial equation instead
-            ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-            ty_attr := Binding.setAttr(ty_attr, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
-            vars := Variable.VARIABLE(cr, elem_ty, NFBinding.EMPTY_BINDING, vis, attr, ty_attr, {}, cmt, info) :: vars;
-          end for;
+          var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
+          vars := var :: vars;
         else
+          elem_ty := Type.arrayElementType(ty);
+          (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
             binding := Binding.FLAT_BINDING(exp, bind_var);
@@ -137,6 +129,8 @@ algorithm
           end for;
         end if;
       else
+        elem_ty := Type.arrayElementType(ty);
+        (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
         for cr in crefs loop
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
           vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;

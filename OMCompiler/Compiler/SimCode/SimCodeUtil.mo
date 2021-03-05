@@ -6976,14 +6976,19 @@ protected function makeSolved_fromStartValue
   output SimCode.SimEqSystem outSimEqn;
   output Integer outUniqueEqIndex;
 protected
-  DAE.Exp e;
+  DAE.Exp e, varExp;
   DAE.ComponentRef cr;
   DAE.ElementSource source;
 algorithm
-  cr := BackendVariable.varCref(inVar);
   e := BackendVariable.varBindExpStartValueNoFail(inVar);
   source := BackendVariable.getVarSource(inVar);
-  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+  if Types.isArray(inVar.varType) then
+    varExp := BackendVariable.varExp(inVar);
+    outSimEqn := SimCode.SES_ARRAY_CALL_ASSIGN(inUniqueEqIndex, varExp, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+  else
+    cr := BackendVariable.varCref(inVar);
+    outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+  end if;
   outUniqueEqIndex := inUniqueEqIndex+1;
 end makeSolved_fromStartValue;
 
@@ -8010,6 +8015,34 @@ protected function extractVarFromVar
   input Mutable<HashSet.HashSet> hs "all processed crefs";
   input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
 protected
+  list<DAE.ComponentRef> scalar_crefs;
+  BackendDAE.Var scalarVar;
+algorithm
+  // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
+  if BackendVariable.isParam(dlowVar) and Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
+    scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
+    for cref in scalar_crefs loop
+      // extract the sim var
+      scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
+      scalarVar.varType := ComponentReference.crefTypeFull(cref);
+      extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, iterationVars);
+    end for;
+  else
+    // extract the sim var
+    extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, iterationVars);
+  end if;
+end extractVarFromVar;
+
+// one dlow var can result in multiple simvars: input and output are a subset
+// of algvars for example
+protected function extractVarFromVar2
+  input BackendDAE.Var dlowVar;
+  input BackendDAE.Variables inAliasVars;
+  input BackendDAE.Variables inVars;
+  input array<list<SimCodeVar.SimVar>> simVars;
+  input Mutable<HashSet.HashSet> hs "all processed crefs";
+  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
+protected
   SimCodeVar.SimVar simVar;
   SimCodeVar.SimVar derivSimvar;
   SimCodeVar.Initial initial_;
@@ -8017,7 +8050,6 @@ protected
   DAE.ComponentRef name;
   Integer len;
 algorithm
-  // extract the sim var
   simVar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars, iterationVars);
   isalias := isAliasVar(simVar);
 
@@ -8164,7 +8196,8 @@ algorithm
   else
     Error.addInternalError("Failed to find the correct SimVar list for Var: " + BackendDump.varString(dlowVar), sourceInfo());
   end if;
-end extractVarFromVar;
+end extractVarFromVar2;
+
 
 protected function addSimVar
   input SimCodeVar.SimVar simVar;
