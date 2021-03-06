@@ -5415,7 +5415,8 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
  */
 bool ModelWidget::omsimulatorEditorTextChanged()
 {
-  if (OMSProxy::instance()->loadSnapshot(mpLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText())) {
+  QString newCref;
+  if (OMSProxy::instance()->importSnapshot(mpLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), &newCref)) {
     createOMSimulatorUndoCommand("Text edited");
     return true;
   } else {

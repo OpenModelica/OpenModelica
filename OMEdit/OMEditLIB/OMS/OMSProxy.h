@@ -112,7 +112,7 @@ public:
   bool initialize(QString cref);
   bool list(QString cref, QString *pContents);
   bool loadModel(QString filename, QString* pModelName);
-  bool loadSnapshot(QString cref, QString snapshot);
+  bool importSnapshot(QString cref, QString snapshot, QString* pNewCref);
   bool newModel(QString cref);
   bool rename(const QString &cref, const QString &newCref);
   bool omsDelete(QString cref);

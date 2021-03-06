@@ -1013,12 +1013,13 @@ bool OMSProxy::initialize(QString cref)
  */
 bool OMSProxy::list(QString cref, QString *pContents)
 {
-  QString command = "oms_list";
+  QString command = "oms_exportSnapshot";
+  QString cref_ = cref + ":SystemStructure.ssd";
   QStringList args;
-  args << "\"" + cref + "\"";
+  args << "\"" + cref_ + "\"";
   LOG_COMMAND(command, args);
   char* contents = NULL;
-  oms_status_enu_t status = oms_list(cref.toUtf8().constData(), &contents);
+  oms_status_enu_t status = oms_exportSnapshot(cref_.toUtf8().constData(), &contents);
   if (contents) {
     *pContents = QString(contents);
     free(contents);
@@ -1048,19 +1049,28 @@ bool OMSProxy::loadModel(QString filename, QString* pModelName)
 }
 
 /*!
- * \brief OMSProxy::loadSnapshot
+ * \brief OMSProxy::importSnapshot
  * Loads the snapshot of the model.
  * \param cref
  * \param snapshot
+ * \param pNewCref
  * \return
  */
-bool OMSProxy::loadSnapshot(QString cref, QString snapshot)
+bool OMSProxy::importSnapshot(QString cref, QString snapshot, QString* pNewCref)
 {
-  QString command = "oms_loadSnapshot";
+  QString command = "oms_importSnapshot";
   QStringList args;
-  args << "\"" + cref + "\"" << "\"" + snapshot + "\"";
+  QString cref_ = cref + ":SystemStructure.ssd";
+  args << "\"" + cref_ + "\"" << "\"" + snapshot + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_loadSnapshot(cref.toUtf8().constData(), snapshot.toUtf8().constData(), nullptr);
+  char* new_cref = NULL;
+  oms_status_enu_t status = oms_importSnapshot(cref_.toUtf8().constData(), snapshot.toUtf8().constData(), &new_cref);
+  if (new_cref) {
+    *pNewCref = QString(new_cref);
+    free(new_cref);
+  }
+  else
+    *pNewCref = cref;
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
