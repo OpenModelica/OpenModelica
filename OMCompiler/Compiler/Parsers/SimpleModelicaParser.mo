@@ -381,9 +381,7 @@ algorithm
     (tokens, tree) := scan(tokens, tree, TokenId.EQUALS);
   end if;
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
-  (tokens, tree) := scan(tokens, tree, TokenId.LPAR);
-  (tokens, tree) := expression_list(tokens, tree);
-  (tokens, tree) := scan(tokens, tree, TokenId.RPAR);
+  (tokens, tree) := output_expression_list(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end external_function_call;
 
@@ -873,7 +871,7 @@ algorithm
   end if;
   (tokens, tree, b) := LA1(tokens, tree, First._annotation);
   if b then
-    // (tokens, tree) := _annotation(tokens, tree);
+    (tokens, tree) := _annotation(tokens, tree);
   end if;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end extends_clause;
