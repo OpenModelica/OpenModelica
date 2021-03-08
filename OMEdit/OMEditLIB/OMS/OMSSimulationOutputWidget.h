@@ -65,26 +65,45 @@ public slots:
   void readProgressJson();
 };
 
+class SimulationRequestSocket;
+
+class SimulationReply : public QObject
+{
+  Q_OBJECT
+public:
+  SimulationReply(SimulationRequestSocket *pSimulationRequestSocket);
+private:
+  SimulationRequestSocket *mpSimulationRequestSocket;
+signals:
+  void simulationReply(const QString &reply);
+public slots:
+  void readSimulationReply();
+};
+
 class SimulationRequestSocket : public QObject
 {
   Q_OBJECT
 public:
   SimulationRequestSocket();
   ~SimulationRequestSocket();
+  void* getSocket() const {return mpSocket;}
   QString getEndPoint() const {return mEndPoint;}
   QString getErrorString() const {return mErrorString;}
   bool isSocketConnected() const {return mSocketConnected;}
-  void setSocketConnected(bool socketConnected) {mSocketConnected = socketConnected;}
 private:
   void *mpContext;
   void *mpSocket;
   QString mEndPoint;
   QString mErrorString;
   bool mSocketConnected;
+  SimulationReply *mpSimulationReply;
+  QThread mSimulationReplyThread;
 signals:
-  void simulationProgressJson(const QString &progressJson);
+  void simulationReply(const QString &progressJson);
 public slots:
   void sendRequest(const QString &request);
+  void startReadReplyLoop();
+  void stopReadReplyLoop();
 };
 
 class ArchivedSimulationItem;
@@ -115,7 +134,6 @@ private:
   SimulationSubscriberSocket *mpSimulationSubscriberSocket;
   SimulationRequestSocket *mpSimulationRequestSocket;
   QThread mSimulationSubscribeThread;
-  QThread mSimulationRequestReplyThread;
 signals:
   void sendRequest(const QString &request);
 public slots:
@@ -125,6 +143,7 @@ public slots:
   void simulationProcessError(QProcess::ProcessError error);
   void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
   void simulationProgressJson(const QString &progressJson);
+  void simulationReply(const QString &reply);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
   void pauseSimulation();

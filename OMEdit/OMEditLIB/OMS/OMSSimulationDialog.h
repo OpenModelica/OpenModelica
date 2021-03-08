@@ -73,7 +73,6 @@ private:
   QSpinBox *mpResultFileBufferSizeSpinBox;
   Label *mpLoggingIntervalLabel;
   QLineEdit *mpLoggingIntervalTextBox;
-  QTreeWidget *mpArchivedSimulationsTreeWidget;
   // buttons
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;

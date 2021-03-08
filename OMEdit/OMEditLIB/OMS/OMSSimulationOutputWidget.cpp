@@ -104,6 +104,40 @@ void SimulationSubscriberSocket::readProgressJson()
 }
 
 /*!
+ * \class SimulationReply
+ * \brief Request socket for simulation.
+ */
+/*!
+ * \brief SimulationReply::SimulationReply
+ * \param pSimulationRequestSocket
+ */
+SimulationReply::SimulationReply(SimulationRequestSocket *pSimulationRequestSocket)
+{
+  mpSimulationRequestSocket = pSimulationRequestSocket;
+}
+
+/*!
+ * \brief SimulationReply::readSimulationReply
+ */
+void SimulationReply::readSimulationReply()
+{
+  while (mpSimulationRequestSocket->isSocketConnected()) {
+    zmq_msg_t replyMsg;
+    zmq_msg_init(&replyMsg);
+    int size = zmq_msg_recv(&replyMsg, mpSimulationRequestSocket->getSocket(), ZMQ_DONTWAIT);
+    if (size > -1) {
+      // copy the zmq_msg_t to char*
+      char *reply = (char*)malloc(size + 1);
+      memcpy(reply, zmq_msg_data(&replyMsg), size);
+      reply[size] = 0;
+      emit simulationReply(QString(reply));
+    }
+    // release the zmq_msg_t
+    zmq_msg_close(&replyMsg);
+  }
+}
+
+/*!
  * \class SimulationRequestSocket
  * \brief Request socket for simulation.
  */
@@ -123,9 +157,13 @@ SimulationRequestSocket::SimulationRequestSocket()
     zmq_getsockopt(mpSocket, ZMQ_LAST_ENDPOINT, &endPoint, (size_t *)&endPointSize);
     mEndPoint = QString(endPoint);
     mErrorString = "";
+    mpSimulationReply = new SimulationReply(this);
+    connect(&mSimulationReplyThread, SIGNAL(started()), mpSimulationReply, SLOT(readSimulationReply()));
+    connect(mpSimulationReply, SIGNAL(simulationReply(QString)), this, SIGNAL(simulationReply(QString)));
   } else {
     mEndPoint = "";
     mErrorString = QString("Error creating ZeroMQ request socket. zmq_bind failed: %1\n").arg(strerror(errno));
+    mpSimulationReply = 0;
   }
   mSocketConnected = false;
 }
@@ -137,6 +175,9 @@ SimulationRequestSocket::~SimulationRequestSocket()
 {
   zmq_close(mpSocket);
   zmq_ctx_destroy(mpContext);
+  if (mpSimulationReply) {
+    mpSimulationReply->deleteLater();
+  }
 }
 
 /*!
@@ -151,21 +192,30 @@ void SimulationRequestSocket::sendRequest(const QString &request)
   zmq_msg_init_size(&requestMsg, strlen(request_));
   // copy the char* to zmq_msg_t
   memcpy(zmq_msg_data(&requestMsg), request_, strlen(request_));
-  zmq_msg_send(&requestMsg, mpSocket, 0);
+  zmq_msg_send(&requestMsg, mpSocket, ZMQ_DONTWAIT);
   zmq_msg_close(&requestMsg);
-  // read the reply
-  zmq_msg_t replyMsg;
-  zmq_msg_init(&replyMsg);
-  // Block until a message is available to be received from socket
-  int size = zmq_msg_recv(&replyMsg, mpSocket, 0);
-  if (size > -1) {
-    // copy the zmq_msg_t to char*
-    char *reply = (char*)malloc(size + 1);
-    memcpy(reply, zmq_msg_data(&replyMsg), size);
-    reply[size] = 0;
-    qDebug() << reply;
+}
+
+/*!
+ * \brief SimulationRequestSocket::startReadReplyLoop
+ */
+void SimulationRequestSocket::startReadReplyLoop()
+{
+  if (mpSimulationReply) {
+    mSocketConnected = true;
+    mpSimulationReply->moveToThread(&mSimulationReplyThread);
+    mSimulationReplyThread.start();
   }
-  zmq_msg_close(&replyMsg);
+}
+
+/*!
+ * \brief SimulationRequestSocket::stopReadReplyLoop
+ */
+void SimulationRequestSocket::stopReadReplyLoop()
+{
+  mSocketConnected = false;
+  mSimulationReplyThread.exit();
+  mSimulationReplyThread.wait();
 }
 
 /*!
@@ -253,10 +303,8 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     connect(&mSimulationSubscribeThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readProgressJson()));
     connect(mpSimulationSubscriberSocket, SIGNAL(simulationProgressJson(QString)), this, SLOT(simulationProgressJson(QString)));
     if (mpSimulationRequestSocket) {
-      mpSimulationRequestSocket->moveToThread(&mSimulationRequestReplyThread);
       connect(this, SIGNAL(sendRequest(QString)), mpSimulationRequestSocket, SLOT(sendRequest(QString)));
-//      connect(&mSimulationRequestReplyThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readProgressJson()));
-//      connect(mpSimulationSubscriberSocket, SIGNAL(simulationProgressJson(QString)), this, SLOT(simulationProgressJson(QString)));
+      connect(mpSimulationRequestSocket, SIGNAL(simulationReply(QString)), SLOT(simulationReply(QString)));
     }
     // start the simulation process
     mpSimulationProcess = new QProcess;
@@ -311,18 +359,18 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
  */
 OMSSimulationOutputWidget::~OMSSimulationOutputWidget()
 {
-  // progress subscriber thread
+  // simulation subscriber socket
   if (mpSimulationSubscriberSocket->isSocketConnected()) {
     mpSimulationSubscriberSocket->setSocketConnected(false);
     mSimulationSubscribeThread.exit();
     mSimulationSubscribeThread.wait();
-    if (mpSimulationRequestSocket) {
-      mSimulationRequestReplyThread.exit();
-      mSimulationRequestReplyThread.wait();
-      delete mpSimulationRequestSocket;
-    }
   }
   delete mpSimulationSubscriberSocket;
+  // simulation request socket
+  if (mpSimulationRequestSocket) {
+    mpSimulationRequestSocket->stopReadReplyLoop();
+    delete mpSimulationRequestSocket;
+  }
   // simulation process
   if (mpSimulationProcess && isSimulationProcessRunning()) {
     mpSimulationProcess->kill();
@@ -345,7 +393,7 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpSimulationSubscriberSocket->setSocketConnected(true);
   mSimulationSubscribeThread.start();
   if (mpSimulationRequestSocket) {
-    mSimulationRequestReplyThread.start();
+    mpSimulationRequestSocket->startReadReplyLoop();
   }
 }
 
@@ -414,6 +462,11 @@ void OMSSimulationOutputWidget::simulationProgressJson(const QString &progressJs
   }
 }
 
+void OMSSimulationOutputWidget::simulationReply(const QString &reply)
+{
+  qDebug() << reply;
+}
+
 /*!
  * \brief OMSSimulationOutputWidget::simulationProcessFinished
  * Updates the simulation output window when the simulation is finished.
@@ -442,8 +495,7 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   mSimulationSubscribeThread.exit();
   mSimulationSubscribeThread.wait();
   if (mpSimulationRequestSocket) {
-    mSimulationRequestReplyThread.exit();
-    mSimulationRequestReplyThread.wait();
+    mpSimulationRequestSocket->stopReadReplyLoop();
   }
 }
 
