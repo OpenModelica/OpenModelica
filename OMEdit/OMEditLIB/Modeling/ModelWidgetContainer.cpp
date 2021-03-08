@@ -4965,9 +4965,6 @@ void ModelWidget::createModelWidgetComponents()
         pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
         // create an editor
         mpEditor = new OMSimulatorEditor(this);
-        if (!mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemLibrary()) {
-          mpEditor->getPlainTextEdit()->setReadOnly(true);
-        }
         OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
         pOMSimulatorEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
         OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(OptionsDialog::instance()->getOMSimulatorEditorPage(), mpEditor->getPlainTextEdit());
@@ -5182,10 +5179,6 @@ void ModelWidget::reDrawModelWidget()
     drawOMSModelIconElements();
     drawOMSModelDiagramElements();
     drawOMSModelConnections();
-    if (mpEditor && mpLibraryTreeItem->isTopLevel()) {
-      mpEditor->getPlainTextEdit()->setReadOnly(mpLibraryTreeItem->isSystemLibrary());
-      mpEditor->getPlainTextEdit()->setReadOnlyStyleSheet();
-    }
   } else {
     // Draw icon view
     mExtendsModifiersLoaded = false;
