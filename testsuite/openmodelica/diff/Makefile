@@ -14,6 +14,7 @@ MoveComment.mos \
 MoveComponent.mos \
 MoveConnection.mos \
 removeComponentModifiers.mos \
+SubExpParenthesis.mos \
 Tables.mos \
 TestDiffListAPI.mos \
 ticket3619.mos \
