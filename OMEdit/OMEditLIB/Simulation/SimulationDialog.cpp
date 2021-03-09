@@ -634,8 +634,18 @@ bool SimulationDialog::validate()
     mpIntervalTextBox->setText("0.002");
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
-    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+    return false;
+  }
+  /* Ticket:5974
+   * Check if there is already active simulation running of this model.
+   */
+  SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(mClassName);
+  if (pSimulationOutputWidget && (pSimulationOutputWidget->isCompilationProcessRunning() || pSimulationOutputWidget->isSimulationProcessRunning())) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Simulation of model <b>%1</b> is already running. Please wait for it to finish or cancel it before running another simulation of the same model.")
+                          .arg(mClassName), Helper::ok);
     return false;
   }
   return true;
