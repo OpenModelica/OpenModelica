@@ -393,7 +393,7 @@ SESCAPE : esc='\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' 
     char chars[2] = {LA(1),'\0'};
     const char *str = chars;
     int len = strlen((char*)$text->chars);
-    if ((chars[0] & 0xE0) == 0xD0) {
+    if (((chars[0] & 0xE0) == 0xC0) || ((chars[0] & 0xF0) == 0xE0) || ((chars[0] & 0xF8) == 0xF0) ) {
       c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Lexer treating \\ as \\\\, since the next byte is the start of a UTF-8 character and thus not a valid Modelica escape sequence.",
           &str, 0, $line, $pos+1, $line, $pos+len+1,
           ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
