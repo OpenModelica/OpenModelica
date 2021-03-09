@@ -4629,7 +4629,14 @@ MSLVersionDialog::MSLVersionDialog(QWidget *parent)
   pMainGridLayout->addLayout(pRadioButtonsLayout, 3, 0);
   pMainGridLayout->addWidget(pPostInfoLabel, 4, 0);
   pMainGridLayout->addWidget(pOkButton, 5, 0, Qt::AlignRight);
-  setLayout(pMainGridLayout);
+  mpWidget = new QWidget;
+  mpWidget->setLayout(pMainGridLayout);
+  QScrollArea *pScrollArea = new QScrollArea;
+  pScrollArea->setWidgetResizable(true);
+  pScrollArea->setWidget(mpWidget);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->addWidget(pScrollArea);
+  setLayout(pMainLayout);
 }
 
 /*!
@@ -4671,4 +4678,16 @@ void MSLVersionDialog::setMSLVersion()
 void MSLVersionDialog::reject()
 {
   // do nothing here.
+}
+
+/*!
+ * \brief MSLVersionDialog::sizeHint
+ * \return
+ */
+QSize MSLVersionDialog::sizeHint() const
+{
+  QSize size = QWidget::sizeHint();
+  size.rwidth() = mpWidget->width();
+  size.rheight() = mpWidget->height() + 50; // add 50 for dialog frame and title bar
+  return size;
 }

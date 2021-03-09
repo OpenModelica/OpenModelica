@@ -597,12 +597,17 @@ private:
   QRadioButton *mpMSL3RadioButton;
   QRadioButton *mpMSL4RadioButton;
   QRadioButton *mpNoMSLRadioButton;
+  QWidget *mpWidget;
 private slots:
   void setMSLVersion();
 
   // QDialog interface
 public slots:
   virtual void reject() override;
+
+  // QWidget interface
+public:
+  virtual QSize sizeHint() const override;
 };
 
 #endif // MAINWINDOW_H
