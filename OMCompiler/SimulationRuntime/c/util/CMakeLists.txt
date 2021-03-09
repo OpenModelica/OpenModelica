@@ -39,7 +39,7 @@ SET(util_headers ../gc/memory_pool.h
                  base_array.h
                  boolean_array.h
                  division.h
-                 doubleEnded.h
+                 doubleEndedList.h
                  index_spec.h
                  integer_array.h
                  jacobian_util.h
