@@ -13357,9 +13357,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
-// <quantity string=\"&quot;AngularAcceleration&quot;\">
+// <quantity string=\"{&quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;}\">
 // </quantity>
-// <unit string=\"&quot;rad/s2&quot;\">
+// <unit string=\"{&quot;rad/s2&quot;, &quot;rad/s2&quot;, &quot;rad/s2&quot;}\">
 // </unit>
 // </attributesValues>
 // </variable>
@@ -13375,9 +13375,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
-// <quantity string=\"&quot;AngularAcceleration&quot;\">
+// <quantity string=\"{&quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;}\">
 // </quantity>
-// <unit string=\"&quot;rad/s2&quot;\">
+// <unit string=\"{&quot;rad/s2&quot;, &quot;rad/s2&quot;, &quot;rad/s2&quot;}\">
 // </unit>
 // </attributesValues>
 // </variable>
@@ -13393,9 +13393,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
-// <quantity string=\"&quot;AngularAcceleration&quot;\">
+// <quantity string=\"{&quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;}\">
 // </quantity>
-// <unit string=\"&quot;rad/s2&quot;\">
+// <unit string=\"{&quot;rad/s2&quot;, &quot;rad/s2&quot;, &quot;rad/s2&quot;}\">
 // </unit>
 // </attributesValues>
 // </variable>

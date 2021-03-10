@@ -1076,12 +1076,15 @@ public
 
   function toListReverse
     input ComponentRef cref;
+    input Boolean includeScope = true;
     input list<ComponentRef> accum = {};
     output list<ComponentRef> crefs;
   algorithm
     crefs := match cref
+      case CREF() guard includeScope
+        then toListReverse(cref.restCref, includeScope, cref :: accum);
       case CREF(origin = Origin.CREF)
-        then toListReverse(cref.restCref, cref :: accum);
+        then toListReverse(cref.restCref, includeScope, cref :: accum);
       else accum;
     end match;
   end toListReverse;
@@ -1356,6 +1359,32 @@ public
       else ();
     end match;
   end removeOuterCrefPrefix;
+
+  function mapTypes
+    input ComponentRef cref;
+    input MapFunc func;
+    output ComponentRef outCref;
+
+    partial function MapFunc
+      input output Type e;
+    end MapFunc;
+  algorithm
+    outCref := match cref
+      local
+        ComponentRef rest;
+        Type ty;
+
+      case CREF()
+        algorithm
+          ty := func(cref.ty);
+          rest := mapTypes(cref.restCref, func);
+        then
+          CREF(cref.node, cref.subscripts, ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end mapTypes;
+
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

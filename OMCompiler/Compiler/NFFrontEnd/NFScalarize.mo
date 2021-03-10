@@ -100,6 +100,7 @@ protected
   list<String> ty_attr_names;
   array<ExpressionIterator> ty_attr_iters;
   Variability bind_var;
+  Binding.Source bind_src;
 algorithm
   if Type.isArray(var.ty) then
     try
@@ -112,18 +113,19 @@ algorithm
 
       if Binding.isBound(binding) then
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
-        bind_var := Binding.variability(binding);
         // if the scalarized binding would result in an indexed call e.g. f()[1] then don't do it!
         // fixes ticket #6267
         if ExpressionIterator.isSubscriptedArrayCall(binding_iter) then
           var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
           vars := var :: vars;
         else
+          bind_var := Binding.variability(binding);
+          bind_src := Binding.source(binding);
           elem_ty := Type.arrayElementType(ty);
           (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-            binding := Binding.FLAT_BINDING(exp, bind_var);
+            binding := Binding.FLAT_BINDING(exp, bind_var, bind_src);
             ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
             vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
           end for;
@@ -180,7 +182,7 @@ algorithm
     (iter, exp) := ExpressionIterator.next(iters[i]);
     arrayUpdate(iters, i, iter);
     i := i + 1;
-    attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER)) :: attrs;
+    attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER, NFBinding.Source.BINDING)) :: attrs;
   end for;
 end nextTypeAttributes;
 

@@ -13413,5 +13413,16 @@ algorithm
   end match;
 end consToListIgnoreSharedLiteralWork;
 
+public function arrayFirstScalar
+  "Returns the first scalar element of an array, i.e. exp[1, 1, ...]."
+  input DAE.Exp exp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := match exp
+    case DAE.ARRAY() then arrayFirstScalar(listHead(exp.array));
+    else exp;
+  end match;
+end arrayFirstScalar;
+
 annotation(__OpenModelica_Interface="frontend");
 end Expression;

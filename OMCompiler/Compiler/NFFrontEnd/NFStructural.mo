@@ -112,7 +112,7 @@ public
     end if;
 
     if Binding.hasExp(binding) then
-      isNotFixed := isExpressionNotFixed(Expression.getBindingExp(Binding.getExp(binding)), requireFinal, maxDepth);
+      isNotFixed := isExpressionNotFixed(Binding.getExp(binding), requireFinal, maxDepth);
     else
       isNotFixed := true;
     end if;

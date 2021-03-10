@@ -487,7 +487,8 @@ public
       if InstNode.isRecord(cls_node) then
         try
           record_exp := Class.makeRecordExp(cls_node);
-          binding := Binding.FLAT_BINDING(record_exp, Expression.variability(record_exp));
+          binding := Binding.FLAT_BINDING(record_exp,
+            Expression.variability(record_exp), NFBinding.Source.GENERATED);
         else
         end try;
       end if;
@@ -921,7 +922,7 @@ public
 
     while true loop
       (name, binding) := listHead(ty_attrs);
-      bind_exp := Expression.getBindingExp(Binding.getExp(binding));
+      bind_exp := Expression.expandSplitIndices(Binding.getExp(binding));
       binding_dims := Type.dimensionCount(Expression.typeOf(bind_exp));
 
       if var_dims > binding_dims then
@@ -1036,7 +1037,7 @@ public
       return;
     end if;
 
-    fixed := fixed and Expression.isTrue(Expression.getBindingExp(Binding.getExp(binding)));
+    fixed := fixed and Expression.isTrue(Binding.getExp(binding));
   end getFixedAttribute;
 
   function getUnitAttribute
@@ -1054,7 +1055,7 @@ public
       return;
     end if;
 
-    unit := Expression.getBindingExp(Binding.getExp(binding));
+    unit := Binding.getExp(binding);
 
     unitString := match unit
       case Expression.STRING() then unit.value;

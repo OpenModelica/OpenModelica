@@ -9781,17 +9781,27 @@ protected function extractVarUnitStr "author: asodja, 2010-03-11
   DAE.VariablesAttributes structures."
   input Option<DAE.Exp> exp;
   output String str;
+protected
+  DAE.Exp e;
 algorithm
-  str := match exp
-    local
-      DAE.Exp e;
-    case SOME(DAE.SCONST(str)) then str;
-    case NONE() then "";
-    case SOME(e)
-      algorithm
-        Error.addInternalError("Unexpected expression (should have been handled earlier, probably in the front-end. Unit/displayUnit expression is not a string literal: " + ExpressionDump.printExpStr(e), sourceInfo());
-      then "";
-  end match;
+  if isSome(exp) then
+    SOME(e) := exp;
+    // TODO: When not expanding an array variable we might get an array
+    // expression here, which can't really be handled properly right now.
+    // For now just take the first scalar value and hope for the best.
+    e := Expression.arrayFirstScalar(e);
+
+    str := match e
+      case DAE.SCONST() then e.string;
+      else
+        algorithm
+          Error.addInternalError("Unexpected expression (should have been handled earlier, probably in the front-end. Unit/displayUnit expression is not a string literal: " + ExpressionDump.printExpStr(e), sourceInfo());
+        then
+          fail();
+    end match;
+  else
+    str := "";
+  end if;
 end extractVarUnitStr;
 
 protected function getMinMaxValues "extract min/max values from BackendDAE.Variable"

@@ -797,9 +797,11 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
-        mod := Modifier.fromElement(InstNode.definition(node), {}, par);
+        mod := Modifier.fromElement(InstNode.definition(node), par);
+        mod := Modifier.propagate(mod, node, par);
         // Merge with any outer modifications.
-        outer_mod := Modifier.merge(outerMod, cls.modifier);
+        outer_mod := Modifier.propagate(cls.modifier, node, par);
+        outer_mod := Modifier.merge(outerMod, outer_mod);
         mod := Modifier.merge(outer_mod, mod);
 
         // Apply the modifiers of extends nodes.
@@ -843,8 +845,10 @@ algorithm
         Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
-        mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.rootParent(node));
-        outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
+        mod := Modifier.fromElement(InstNode.definition(node), InstNode.rootParent(node));
+        mod := Modifier.propagate(mod, node, par);
+        outer_mod := Modifier.propagate(cls.modifier, node, par);
+        outer_mod := Modifier.merge(outerMod, outer_mod);
         mod := Modifier.merge(outer_mod, mod);
         attrs := updateClassConnectorType(cls.restriction, cls.attributes);
         attributes := mergeDerivedAttributes(attrs, attributes, parent);
@@ -876,8 +880,8 @@ algorithm
         updateComponentType(parent, node);
         cls_tree := Class.classTree(InstNode.getClass(node));
 
-        mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
-        outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
+        mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
+        outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
         applyModifier(mod, cls_tree, InstNode.name(node));
 
@@ -1009,7 +1013,7 @@ algorithm
 
   // Create a modifier from the extends.
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
-  ext_mod := Modifier.fromElement(elem, {}, scope);
+  ext_mod := Modifier.fromElement(elem, scope);
   ext_mod := Modifier.merge(InstNode.getModifier(extendsNode), ext_mod);
 
   if not Class.isBuiltin(cls) then
@@ -1448,7 +1452,7 @@ algorithm
     cc_smod := SCodeUtil.getConstrainingMod(def);
     if not SCodeUtil.isEmptyMod(cc_smod) then
       name := InstNode.name(node);
-      cc_def_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), {}, parent);
+      cc_def_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), parent);
       cc_mod := Modifier.merge(cc_mod, cc_def_mod);
     end if;
 
@@ -1489,17 +1493,16 @@ algorithm
 
     case SCode.COMPONENT(info = info)
       algorithm
-        decl_mod := Modifier.fromElement(component, {}, parent);
+        decl_mod := Modifier.fromElement(component, parent);
         cc_mod := instConstrainingMod(component, parent);
         mod := Modifier.merge(decl_mod, cc_mod);
         mod := Modifier.merge(mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
-        mod := Modifier.addParent(node, mod);
         checkOuterComponentMod(mod, component, node);
 
         dims := list(Dimension.RAW_DIM(d, parent) for d in component.attributes.arrayDims);
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
-        condition := Binding.fromAbsyn(component.condition, false, {node}, parent, info);
+        condition := Binding.fromAbsyn(component.condition, false, parent, info);
 
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).
@@ -1526,6 +1529,7 @@ algorithm
         InstNode.updateComponent(inst_comp, node);
 
         // Instantiate the type of the component.
+        mod := Modifier.propagate(mod, node, node);
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
           useBinding and not Binding.isBound(binding), parent, node, info, instLevel, context);
         ty := InstNode.getClass(ty_node);
@@ -1559,11 +1563,11 @@ algorithm
 
     case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
         SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-      then Modifier.create(smod, element.name, ModifierScope.CLASS(element.name), {}, parent);
+      then Modifier.create(smod, element.name, ModifierScope.CLASS(element.name), parent);
 
     case SCode.Element.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
         SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-      then Modifier.create(smod, element.name, ModifierScope.COMPONENT(element.name), {}, parent);
+      then Modifier.create(smod, element.name, ModifierScope.COMPONENT(element.name), parent);
 
     else Modifier.NOMOD();
   end match;
@@ -2365,7 +2369,6 @@ algorithm
 
     case Modifier.MODIFIER(binding = binding)
       algorithm
-        binding := Binding.addParent(node, binding);
         attribute.binding := instBinding(binding, context);
       then
         ();
@@ -2443,9 +2446,12 @@ algorithm
     case Binding.RAW_BINDING()
       algorithm
         bind_exp := instExp(binding.bindingExp, binding.scope, context, binding.info);
-        bind_exp := Expression.BINDING_EXP(bind_exp, Type.UNKNOWN(), Type.UNKNOWN(), binding.parents, binding.isEach);
+
+        if not listEmpty(binding.subs) then
+          bind_exp := Expression.SUBSCRIPTED_EXP(bind_exp, binding.subs, Type.UNKNOWN(), true);
+        end if;
       then
-        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.isEach, binding.info);
+        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.eachType, binding.source, binding.info);
 
     else binding;
   end match;
