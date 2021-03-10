@@ -3360,6 +3360,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
       let delayExp = daeExp(d, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       <<
+      equationIndexes[1] = <%id%>;
       <%preExp%>
       storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, data->localData[0]->timeValue, <%delayExp%>, <%delayExpMax%>);<%\n%>
       >>
@@ -3370,6 +3371,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   {
     TRACE_PUSH
 
+    int equationIndexes[2] = {1,-1};
     <%varDecls%>
     <%storePart%>
 
