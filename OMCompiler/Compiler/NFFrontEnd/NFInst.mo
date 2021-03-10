@@ -604,7 +604,8 @@ algorithm
         // An external object may not contain extends other than the ExternalObject one.
         if arrayLength(tree.exts) > 1 then
           for ext in tree.exts loop
-            if InstNode.name(ext) <> "ExternalObject" then
+            if InstNode.name(ext) <> "ExternalObject" and
+               ClassTree.recursiveElementCount(Class.classTree(InstNode.getClass(ext))) <> 0 then
               InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition =
                 SCode.EXTENDS(baseClassPath = base_path))) := ext;
               Error.addSourceMessage(Error.EXTERNAL_OBJECT_INVALID_ELEMENT,
