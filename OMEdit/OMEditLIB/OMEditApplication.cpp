@@ -161,7 +161,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
 
   if (!testsuiteRunning) {
     // finally show the main window
-    pMainwindow->showMaximized();
+    pMainwindow->show();
     // hide the splash screen
     SplashScreen::instance()->finish(pMainwindow);
   }
