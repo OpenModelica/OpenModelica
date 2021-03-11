@@ -5272,6 +5272,10 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   }
   /* if user has changed the class contents then refresh it. */
   if (className.compare(mpLibraryTreeItem->getNameStructure()) == 0) {
+    /* before calling the updateChildClasses() which calls reDrawModelWidget()
+     * we need to remove the inherited classes connect signal/slot of all classes.
+     */
+    ModelWidget::removeInheritedClasses(mpLibraryTreeItem);
     mpLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(mpLibraryTreeItem->getNameStructure()));
     reDrawModelWidget();
     mpLibraryTreeItem->setClassText(modelicaText);
@@ -5279,10 +5283,6 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pParentLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
     }
-    /* before calling the updateChildClasses() which calls reDrawModelWidget()
-     * we need to remove the inherited classes connect signal/slot of all classes.
-     */
-    ModelWidget::removeInheritedClasses(mpLibraryTreeItem);
     // update child classes
     updateChildClasses(mpLibraryTreeItem);
   } else {
