@@ -2367,7 +2367,7 @@ int OMCProxy::readSimulationResultSize(QString fileName)
 QStringList OMCProxy::readSimulationResultVars(QString fileName)
 {
   QStringList variablesList = mpOMCInterface->readSimulationResultVars(fileName, true, false);
-  std::sort(variablesList.begin(), variablesList.end());
+  std::sort(variablesList.begin(), variablesList.end(), StringHandler::naturalSortForResultVariables);
   printMessagesStringInternal();
   // close the simulation result file.
   closeSimulationResultFile();
