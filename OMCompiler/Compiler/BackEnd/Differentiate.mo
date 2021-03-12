@@ -1288,6 +1288,14 @@ algorithm
       then
         (zero, inFunctionTree);
 
+    // Fallback case -> not known cref results in zero
+    // D(y)/dx => 0
+    case (DAE.CREF(ty = tp), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
+      equation
+        (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+      then
+        (zero, inFunctionTree);
+
    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
