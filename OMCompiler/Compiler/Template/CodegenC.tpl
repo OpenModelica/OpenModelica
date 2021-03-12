@@ -438,7 +438,7 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
 
   <%systs%>
 
-  /*Clocked systems equations */
+  /* Clocked systems equations */
   int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
   {
     TRACE_PUSH
