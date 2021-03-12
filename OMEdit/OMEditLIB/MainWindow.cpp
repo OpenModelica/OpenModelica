@@ -2652,8 +2652,7 @@ void MainWindow::openTerminal()
   QString terminalCommand = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommand();
   if (terminalCommand.isEmpty()) {
     QString message = GUIMessages::getMessage(GUIMessages::TERMINAL_COMMAND_NOT_SET).arg(Helper::toolsOptionsPath);
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, message, Helper::scriptingKind,
-                                                Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, message, Helper::scriptingKind, Helper::errorLevel));
     return;
   }
   QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
