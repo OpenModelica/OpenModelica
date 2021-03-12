@@ -1055,6 +1055,10 @@ int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber)
       }
       /* take the best approximation */
       memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
+
+      giveUp = 1;
+      success = 0;
+      break;
     }
   }
 
