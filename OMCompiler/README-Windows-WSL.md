@@ -17,16 +17,16 @@ echo deb-src http://build.openmodelica.org/apt bionic nightly | sudo tee -a /etc
 # Get key for OpenModelica
 wget -q http://build.openmodelica.org/apt/openmodelica.asc -O- | sudo apt-key add -
 
-sudo apt-get update
-sudo apt-get build-dep openmodelica
+sudo apt update
+sudo apt build-dep openmodelica
 ```
 ## Install additional dependencies
 If you want to build documentation and run all tests successfully you need some additional programs. There are two options:
 
 - Instal the bare minimum to run the testsuite:
 ```bash
-sudo apt-get update
-apt-get install flex zip unzip libomp-dev
+sudo apt update
+sudo apt install flex zip unzip libomp-dev
 ```
 
 OR
