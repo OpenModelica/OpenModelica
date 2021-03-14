@@ -543,6 +543,7 @@ algorithm
           (CodegenC.simulationFile_dae, "_16dae.c"),
           (CodegenC.simulationFile_dae_header, "_16dae.h"),
           (CodegenC.simulationFile_inl, "_17inl.c"),
+          (CodegenC.simulationFile_spd, "_18spd.c"),
           (CodegenC.simulationHeaderFile, "_model.h")
         } loop
           (func,str) := f;
@@ -1229,6 +1230,7 @@ protected
   SimCode.ExtObjInfo extObjInfo;
   SimCode.HashTableCrefToSimVar crefToSimVarHT;
   SimCodeFunction.MakefileParams makefileParams;
+  SimCode.SpatialDistributionInfo spatialInfo;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   Integer maxDelayedExpIndex;
   Integer uniqueEqIndex = 1;
@@ -1285,6 +1287,7 @@ algorithm
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, false);
     //create delay exps
     (delayedExps, maxDelayedExpIndex) := SimCodeUtil.extractDelayedExpressions(inBackendDAE);
+    spatialInfo := SimCodeUtil.extractSpatialDistributionInfo(inBackendDAE);
 
     // created event suff e.g. zeroCrossings, samples, ...
     timeEvents := inBackendDAE.shared.eventInfo.timeEvents;
@@ -1340,7 +1343,7 @@ algorithm
     // disable start value calculation, it's only helpful in case of algebraic loops
     // and they are not present in DAEmode
     tmpB := FlagsUtil.set(Flags.NO_START_CALC, true);
-    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, fileDir, 0, tempVars);
+    modelInfo := SimCodeUtil.createModelInfo(className, p, emptyBDAE, inInitDAE, functions, {}, 0, spatialInfo.maxIndex, fileDir, 0, tempVars);
     FlagsUtil.set(Flags.NO_START_CALC, tmpB);
 
     //create hash table
@@ -1457,6 +1460,7 @@ algorithm
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
       delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+      spatialInfo                 = spatialInfo,
       jacobianMatrixes            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
       fileNamePrefix              = filenamePrefix,

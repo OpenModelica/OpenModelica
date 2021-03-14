@@ -274,6 +274,7 @@ protected
   Integer countSenParams;
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  SimCode.SpatialDistributionInfo spatialInfo;
   BackendDAE.InlineData inlineData;
   list<SimCodeVar.SimVar> inlineSimKnVars;
   BackendDAE.Variables emptyVars;
@@ -448,6 +449,7 @@ algorithm
     if debug then execStat("simCode: extractDiscreteModelVars"); end if;
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, isFMU);
     (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
+    spatialInfo := extractSpatialDistributionInfo(dlow);
     execStat("simCode: created of all other equations (e.g. parameter, nominal, assert, etc)");
 
     // append removed equation to all equations, since these are actually
@@ -472,7 +474,7 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
+    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
@@ -710,6 +712,7 @@ algorithm
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
       delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+      spatialInfo                 = spatialInfo,
       jacobianMatrixes            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
       fileNamePrefix              = filenamePrefix,
@@ -5584,6 +5587,38 @@ algorithm
   end match;
 end extractIdAndExpFromDelayExp;
 
+function extractSpatialDistributionInfo
+  "Create spatialDistribution simCode from backend DAE."
+  input BackendDAE.BackendDAE dlow;
+  output SimCode.SpatialDistributionInfo spatialInfo;
+protected
+  list<SimCode.SpatialDistribution> spatial_lst;
+  Mutable<Integer> maxIndex_ptr = Mutable.create(-1);
+algorithm
+  ((_,spatial_lst)) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), {}));
+  spatialInfo := SimCode.SPATIAL_DISTRIBUTION_INFO(spatial_lst, Mutable.access(maxIndex_ptr));
+end extractSpatialDistributionInfo;
+
+function extractSpatialDistributionInfoExp
+  input output DAE.Exp callExp;
+  input output list<SimCode.SpatialDistribution> spatialInfo;
+  input Mutable<Integer> maxIndex_ptr;
+algorithm
+  spatialInfo := match callExp
+    local
+      Integer i, initSize;
+      DAE.Exp in0, in1, pos, dir, initPnts, initVals;
+    case DAE.CALL(path = Absyn.IDENT("spatialDistribution"), expLst={DAE.ICONST(i), in0, in1, pos, dir, initPnts, initVals})
+      algorithm
+        if i > Mutable.access(maxIndex_ptr) then
+          Mutable.update(maxIndex_ptr, i);
+        end if;
+        initSize := Expression.sizeOf(Expression.typeof(initPnts));
+    then SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize) :: spatialInfo;
+    else spatialInfo;
+  end match;
+end extractSpatialDistributionInfoExp;
+
 public function createExtObjInfo
   input BackendDAE.Shared shared;
   output SimCode.ExtObjInfo extObjInfo;
@@ -7238,6 +7273,7 @@ public function createModelInfo
   input list<SimCodeFunction.Function> functions;
   input list<String> labels;
   input Integer numStateSets;
+  input Integer numSpatialDistributions;
   input String fileDir;
   input Integer nSubClock;
   input list<SimCodeVar.SimVar> tempVars;
@@ -7293,6 +7329,7 @@ algorithm
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
                                    arrayLength(dlow.shared.partitionsInfo.basePartitions),
                                    arrayLength(dlow.shared.partitionsInfo.subPartitions),
+                                   numSpatialDistributions + 1,
                                    hasLargeEqSystems, {}, {}, unitDefinitions);
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());

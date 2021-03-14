@@ -36,6 +36,7 @@ SET(solver_sources  ../../../../3rdParty/Cdaskr/solver/daux.c
                     radau.c
                     sample.c
                     solver_main.c
+                    spatialDistribution.c
                     stateset.c
                     sundials_error.c
                     sym_solver_ssc.c)
@@ -65,6 +66,7 @@ SET(solver_headers  ../../../../3rdParty/Cdaskr/solver/ddaskr_types.h
                     omc_math.h
                     radau.h
                     solver_main.h
+                    spatialDistribution.h
                     stateset.h
                     sundials_error.h
                     sym_solver_ssc.h)

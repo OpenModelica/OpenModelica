@@ -50,6 +50,7 @@
 #include "epsilon.h"
 #include "fmi_events.h"
 #include "stateset.h"
+#include "spatialDistribution.h"
 #include "../../meta/meta_modelica.h"
 
 #ifdef USE_PARJAC
@@ -952,6 +953,7 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->clocksInfo = (CLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nClocks * sizeof(CLOCK_INFO));
   data->modelData->subClocksInfo = (SUBCLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSubClocks * sizeof(SUBCLOCK_INFO));
   data->simulationInfo->clocksData = (CLOCK_DATA*) calloc(data->modelData->nClocks, sizeof(CLOCK_DATA));
+  data->simulationInfo->spatialDistributionData = allocSpatialDistribution(data->modelData->nSpatialDistributions);
   data->simulationInfo->intvlTimers = NULL;
 
   /* set default solvers for algebraic loops */
@@ -1183,6 +1185,9 @@ void deInitializeDataStruc(DATA *data)
   omc_alloc_interface.free_uncollectable(data->modelData->clocksInfo);
   omc_alloc_interface.free_uncollectable(data->modelData->subClocksInfo);
   free(data->simulationInfo->clocksData);
+
+  freeSpatialDistribution(data->simulationInfo->spatialDistributionData, data->modelData->nSpatialDistributions);
+  free(data->simulationInfo->spatialDistributionData);
 
   /* free simulationInfo arrays */
   free(data->simulationInfo->zeroCrossings);

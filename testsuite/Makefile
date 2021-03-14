@@ -72,6 +72,7 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
+simulationspartialDistribution.log \
 simulationtypes.log \
 simulationmodelicamsl22.log \
 msl31mediasimulation.log \
@@ -124,6 +125,7 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
+simulationspartialDistribution.log \
 simulationtypes.log \
 modelicaasserts.log \
 modelicaalgorithms-functions.log \
@@ -370,6 +372,9 @@ simulationrecords.log: omc-diff
 	@echo $@ done
 simulationsolver.log: omc-diff
 	$(MAKE) -C simulation/modelica/solver -f Makefile test > $@
+	@echo $@ done
+simulationspartialDistribution.log: omc-diff
+	$(MAKE) -C simulation/modelica/spatialDistribution -f Makefile test > $@
 	@echo $@ done
 simulationtypes.log: omc-diff
 	$(MAKE) -C simulation/modelica/types -f Makefile test > $@

@@ -42,6 +42,7 @@
 #include "util/rtclock.h"
 #include "util/rational.h"
 #include "util/list.h"
+#include "util/doubleEndedList.h"
 #include "util/simulation_options.h"
 
 #define omc_dummyVarInfo {-1,-1,"","",omc_dummyFileInfo}
@@ -564,6 +565,7 @@ typedef struct MODEL_DATA
   long nRelations;
   long nMathEvents;                    /* number of math triggering functions e.g. cail, floor, integer */
   long nDelayExpressions;
+  long nSpatialDistributions;          /* Number of different spatialDistribution-calls. */
   long nExtObjs;
   long nMixedSystems;
   long nLinearSystems;
@@ -591,6 +593,17 @@ typedef struct CLOCK_DATA {
   modelica_real timepoint;
   long cnt;
 } CLOCK_DATA;
+
+typedef struct SPATIAL_DISTRIBUTION_DATA {
+  unsigned int index;
+  modelica_boolean isInitialized;
+
+  modelica_real oldPosX;
+
+  DOUBLE_ENDED_LIST* transportedQuantity;
+  DOUBLE_ENDED_LIST* storedEvents;
+  int lastStoredEventValue;
+} SPATIAL_DISTRIBUTION_DATA;
 
 enum EVAL_CONTEXT
 {
@@ -659,6 +672,8 @@ typedef struct SIMULATION_INFO
 
   LIST* intvlTimers;
   CLOCK_DATA *clocksData;
+
+  SPATIAL_DISTRIBUTION_DATA* spatialDistributionData;     /* Array of spatialDistribution data */
 
   modelica_real* zeroCrossings;
   modelica_real* zeroCrossingsPre;
