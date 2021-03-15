@@ -46,7 +46,7 @@ class TreeSearchFilters;
 class Label;
 
 typedef QPair<int,QString> IntStringPair;
-Q_DECLARE_METATYPE(IntStringPair);
+Q_DECLARE_METATYPE(IntStringPair)
 
 class VariablesTreeItem
 {
@@ -147,10 +147,9 @@ public:
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
-  VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *root) const;
+  VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
-  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
-                                           const QModelIndex &parentIndex) const;
+  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
   void parseInitXml(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   bool removeVariableTreeItem(QString variable);

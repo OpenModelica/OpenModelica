@@ -483,13 +483,13 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
   return flags;
 }
 
-VariablesTreeItem* VariablesTreeModel::findVariablesTreeItem(const QString &name, VariablesTreeItem *root) const
+VariablesTreeItem* VariablesTreeModel::findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity) const
 {
-  if (root->getVariableName() == name) {
-    return root;
+  if (pVariablesTreeItem->getVariableName().compare(name, caseSensitivity) == 0) {
+    return pVariablesTreeItem;
   }
-  for (int i = root->getChildren().size(); --i >= 0; ) {
-    if (VariablesTreeItem *item = findVariablesTreeItem(name, root->getChildren().at(i))) {
+  for (int i = pVariablesTreeItem->getChildren().size(); --i >= 0; ) {
+    if (VariablesTreeItem *item = findVariablesTreeItem(name, pVariablesTreeItem->getChildren().at(i), caseSensitivity)) {
       return item;
     }
   }
@@ -650,7 +650,6 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
             definedIn[v1] = QList<IntStringPair>();
           }
           definedIn[v1] << IntStringPair(veq["eqIndex"].toInt(), veq.find("section") != veq.end() ? veq["section"].toString() : QString("unknown"));
-          QString v1_1 = QString("%1.%2").arg(fileName ,v1);
           if (veq.find("uses") != veq.end()) {
             QStringList uses = Utilities::variantListToStringList(veq["uses"].toList());
             foreach (QString v2, uses) {
@@ -722,30 +721,36 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
           findVariable = QString("%1.%2.%3").arg(fileName, parentVariable, variable);
         }
       }
-      if ((pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem)) != NULL) {
-        QString addVar = "";
-        /* if last item of derivative */
-        if ((variables.size() == count) && (plotVariable.startsWith("der("))) {
-          addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
-        } else if ((variables.size() == count) && (plotVariable.startsWith("previous("))) { /* if last item of previous */
-          addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
-        } else {
-          addVar = variable;
+      // if its the last item then don't try to find the item as we will always fail to find it
+      if (variables.size() != count) {
+        pParentVariablesTreeItem = findVariablesTreeItem(findVariable, pParentVariablesTreeItem);
+        if (pParentVariablesTreeItem) {
+          QString addVar = "";
+          /* if last item of derivative */
+          if ((variables.size() == count) && (plotVariable.startsWith("der("))) {
+            addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "der(");
+          } else if ((variables.size() == count) && (plotVariable.startsWith("previous("))) { /* if last item of previous */
+            addVar = StringHandler::joinDerivativeAndPreviousVariable(plotVariable, variable, "previous(");
+          } else {
+            addVar = variable;
+          }
+          if (count == 1) {
+            parentVariable = addVar;
+          } else {
+            parentVariable += "." + addVar;
+          }
+          count++;
+          continue;
         }
-        if (count == 1) {
-          parentVariable = addVar;
-        } else {
-          parentVariable += "." + addVar;
-        }
-        count++;
-        continue;
       }
       /* If pParentVariablesTreeItem is 0 and it is first loop iteration then use pTopVariablesTreeItem as parent.
        * If loop iteration is not first and pParentVariablesTreeItem is 0 then find the parent item.
        */
       if (!pParentVariablesTreeItem && count > 1) {
         pParentVariablesTreeItem = findVariablesTreeItem(fileName + "." + parentVariable, pTopVariablesTreeItem);
-      } else {
+      }
+      // Just make sure parent is not NULL
+      if (!pParentVariablesTreeItem) {
         pParentVariablesTreeItem = pTopVariablesTreeItem;
       }
       QModelIndex index = variablesTreeItemIndex(pParentVariablesTreeItem);
@@ -845,6 +850,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       beginInsertRows(index, row, row);
       pParentVariablesTreeItem->insertChild(row, pVariablesTreeItem);
       endInsertRows();
+      pParentVariablesTreeItem = pVariablesTreeItem;
       QString addVar = "";
       /* if last item of derivative */
       if ((variables.size() == count) && (plotVariable.startsWith("der("))) {
