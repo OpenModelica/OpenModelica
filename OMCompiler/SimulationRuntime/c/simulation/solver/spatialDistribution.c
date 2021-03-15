@@ -46,8 +46,9 @@
 /**
  * @brief Describing value z(x,t).
  *
- * See Modelica specifincation 3.7.2.2 spatialDistribution for details
+ * See Modelica specification 3.7.2.2 spatialDistribution for details
  * on transported quantity z(x,t).
+ * https://specification.modelica.org/maint/3.4/Ch3.html#spatialdistribution
  */
 typedef struct TRANSPORTED_QUANTITY_DATA {
   double position;    /* position x */
@@ -313,7 +314,7 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
  *
  * (out0, out1) = spatialDistribution (in0, in1, posX, isPositiveVelocity)
  * If an event was outputted integrator needs to iterate.
- * Doesn't store in0 or in1 because this function doesn't know it the step will be accepted.
+ * Doesn't store in0 or in1 because this function doesn't know if the step will be accepted.
  *
  * @param data                Data
  * @param threadData          Thread data for error handling
@@ -716,7 +717,7 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
     return walkedOverEvents;
   }
 
-  /* Move to neighbor*/
+  /* Move to neighbor */
   prevVisitedNode = currentNode;
   prevVisitedNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(prevVisitedNode);
 
@@ -817,7 +818,7 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
     omc_throw_function(NULL);
   }
 
-  /* Move to neighbor*/
+  /* Move to neighbor */
   prevVisitedNode = currentNode;
   prevVisitedNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(prevVisitedNode);
 

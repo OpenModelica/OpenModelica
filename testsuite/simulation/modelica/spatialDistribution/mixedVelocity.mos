@@ -3,7 +3,7 @@
 // status:              correct
 // teardown_command:    rm -f SingleBeltChangingVel*
 //
-// Simple modle with spatialDistribution with changing velocity.
+// Simple model with spatialDistribution with changing velocity.
 
 loadModel(Modelica); getErrorString();
 loadString("model SingleBeltChangingVel

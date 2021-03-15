@@ -3,7 +3,7 @@
 // status:              correct
 // teardown_command:    rm -f negativeVelocitySpatialDistribution*
 //
-// Simple modle with spatialDistribution with constant velocity.
+// Simple model with spatialDistribution with constant velocity.
 // Initialized with (0,1) (1,1)
 
 loadModel(Modelica); getErrorString();

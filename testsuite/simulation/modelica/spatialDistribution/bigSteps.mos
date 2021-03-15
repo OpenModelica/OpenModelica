@@ -3,7 +3,7 @@
 // status:              correct
 // teardown_command:    rm -f bigStepsModel*
 //
-// Simple modle with fast velocity and big steps.
+// Simple model with fast velocity and big steps.
 
 loadModel(Modelica); getErrorString();
 loadString("

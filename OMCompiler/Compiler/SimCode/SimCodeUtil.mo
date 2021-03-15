@@ -5613,6 +5613,9 @@ algorithm
         if i > Mutable.access(maxIndex_ptr) then
           Mutable.update(maxIndex_ptr, i);
         end if;
+        if not Expression.sizeOf(Expression.typeof(initPnts)) == Expression.sizeOf(Expression.typeof(initVals)) then
+          Error.addInternalError("function extractDelayedExpressions failed: initialPoints and initialValues of spatialDistribution are not of the same size.", sourceInfo());
+        end if;
         initSize := Expression.sizeOf(Expression.typeof(initPnts));
     then SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize) :: spatialInfo;
     else spatialInfo;
