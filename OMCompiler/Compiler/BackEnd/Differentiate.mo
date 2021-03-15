@@ -1288,7 +1288,7 @@ algorithm
       then
         (zero, inFunctionTree);
 
-    // Fallback case -> not known cref results in zero
+    // fallback case -> not known cref results in zero
     // D(y)/dx => 0
     case (DAE.CREF(ty = tp), _, _, BackendDAE.DIFFERENTIATION_TIME(), _)
       equation
