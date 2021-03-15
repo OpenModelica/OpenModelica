@@ -380,7 +380,9 @@ private:
   QAction *mpCleanWorkingDirectoryAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
+#ifdef Q_OS_WIN
   QAction *mpShowOpenModelicaCommandPromptAction;
+#endif
   QAction *mpShowOMCDiffWidgetAction;
   QAction *mpOpenTemporaryDirectoryAction;
   QAction *mpOpenWorkingDirectoryAction;
@@ -513,7 +515,9 @@ public slots:
   void exportReadonlyPackage();
   void exportModelXML();
   void exportModelFigaro();
+#ifdef Q_OS_WIN
   void showOpenModelicaCommandPrompt();
+#endif
   void runOMSensPlugin();
   void exportModelToOMNotebook();
   void importModelfromOMNotebook();

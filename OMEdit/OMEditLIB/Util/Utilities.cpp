@@ -471,6 +471,36 @@ void CodeColorsWidget::pickColor()
   emit colorUpdated();
 }
 
+/*!
+ * \brief QDetachableProcess::QDetachableProcess
+ * Implementation from https://stackoverflow.com/questions/42051405/qprocess-with-cmd-command-does-not-result-in-command-line-window
+ * \param pParent
+ */
+QDetachableProcess::QDetachableProcess(QObject *pParent)
+  : QProcess(pParent)
+{
+#ifdef Q_OS_WIN
+  setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
+    args->flags |= CREATE_NEW_CONSOLE;
+    args->startupInfo->dwFlags &=~ STARTF_USESTDHANDLES;
+  });
+#endif
+}
+
+/*!
+ * \brief QDetachableProcess::start
+ * Starts a process and detaches from it.
+ * \param program
+ * \param arguments
+ * \param mode
+ */
+void QDetachableProcess::start(const QString &program, const QStringList &arguments, QIODevice::OpenMode mode)
+{
+  QProcess::start(program, arguments, mode);
+  waitForStarted();
+  setProcessState(QProcess::NotRunning);
+}
+
 QString Utilities::escapeForHtmlNonSecure(const QString &str)
 {
   return QString(str)
