@@ -35,19 +35,21 @@
 extern "C" {
 #endif
 
-/* m/n */
+/**
+ * @brief Rational number m/n
+ */
 typedef struct RATIONAL {
-  long m;
-  long n;
+  long m;       /**< numerator */
+  long n;       /**< denominator */
 } RATIONAL;
 
 RATIONAL makeRATIONAL(long a, long b);
-RATIONAL addInt2Rat(long a, RATIONAL b);
-RATIONAL subInt2Rat(long a, RATIONAL b);
+RATIONAL addInt2Rat(long integer, RATIONAL rational);
+RATIONAL subInt2Rat(long integer, RATIONAL rational);
+RATIONAL multInt2Rat(long integer, RATIONAL rational);
 RATIONAL addRat2Rat(RATIONAL a, RATIONAL b);
 RATIONAL multRat2Rat(RATIONAL a, RATIONAL b);
 RATIONAL divRat2Rat(RATIONAL a, RATIONAL b);
-RATIONAL multInt2Rat(long a, RATIONAL b);
 double rat2Real(RATIONAL a);
 long ceilRat(RATIONAL a);
 long ceilRatStrict(RATIONAL a);
