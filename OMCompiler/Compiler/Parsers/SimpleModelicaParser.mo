@@ -348,7 +348,10 @@ algorithm
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.EXTERNAL);
   if b then
     (tokens, tree) := scanOpt(tokens, tree, TokenId.STRING); // language
-    (tokens, tree) := external_function_call(tokens, tree);
+    (tokens, tree, id) := peek(tokens, tree);
+    if not (id==TokenId.ANNOTATION or id==TokenId.SEMICOLON) then
+      (tokens, tree) := external_function_call(tokens, tree);
+    end if;
     (tokens, tree, b) := LA1(tokens, tree, First._annotation);
     if b then
       (tokens, tree) := _annotation(tokens, tree);
@@ -722,6 +725,7 @@ algorithm
       end if;
     end if;
   end if;
+  (tokens, tree) := comment(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end import_clause;
 
@@ -1270,7 +1274,11 @@ algorithm
     if b then
       (tokens, tree) := function_call_args(tokens, tree);
     end if;
-  elseif listMember(id, {TokenId.DOT, TokenId.IDENT}) then
+  elseif listMember(id, {TokenId.DOT, TokenId.IDENT, TokenId.FUNCTION}) then
+    if id == TokenId.FUNCTION then
+      // Function partial applications sort of looks like a normal call
+      (tokens, tree) := consume(tokens, tree);
+    end if;
     (tokens, tree) := component_reference(tokens, tree);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.LPAR});
     if b then
