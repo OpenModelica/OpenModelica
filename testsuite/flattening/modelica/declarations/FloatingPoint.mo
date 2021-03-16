@@ -23,8 +23,6 @@ equation
 end FloatingPoint;
 
 // Result:
-// [flattening/modelica/declarations/FloatingPoint.mo:18:22-18:27:writable] Warning: Treating .13E2 as 0.13E2. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.
-//
 // class FloatingPoint
 //   constant Real r1 = 1.797693134862316e+308;
 //   constant Real r2 = 2.225073858507201e-308;

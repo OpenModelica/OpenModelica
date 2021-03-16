@@ -455,12 +455,7 @@ UNSIGNED_INTEGER :
   | ('.' { $type = DOT; } )
       ( (DIGIT)+ EXPONENT?
           {
-            const char *strs[2] = {(char*)$text->chars,(char*)$text->chars};
-            int len = strlen((char*)$text->chars);
             $type = UNSIGNED_REAL;
-            c_add_source_message(NULL,2, ErrorType_syntax, ErrorLevel_warning, "Treating \%s as 0\%s. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.",
-               strs, 2, $line, $pos+1, $line, $pos+len+1,
-               ModelicaParser_readonly, ModelicaParser_filename_C_testsuiteFriendly);
            }
          | /* Modelica 3.0 element-wise operators! */
          (('+' { $type = PLUS_EW; })
