@@ -59,6 +59,7 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   /* set curve width and style */
   setCurveWidth(mpParentPlot->getParentPlotWindow()->getCurveWidth());
   setCurveStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle());
+  setToggleSign(false);
 #if QWT_VERSION > 0x060000
   setLegendAttribute(QwtPlotCurve::LegendShowLine);
   setLegendIconSize(QSize(30, 30));
