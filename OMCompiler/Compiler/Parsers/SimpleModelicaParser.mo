@@ -1472,10 +1472,11 @@ algorithm
   (tokens, tree) := scanOpt(tokens, tree, TokenId.DOT);
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
   while true loop
-    (tokens, tree, b) := scanOpt(tokens, tree, TokenId.DOT);
+    (tokens, tree, b) := LAk(tokens, tree, {{TokenId.DOT}, {TokenId.IDENT}});
     if not b then
       break;
     end if;
+    (tokens, tree) := scan(tokens, tree, TokenId.DOT);
     (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
   end while;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
