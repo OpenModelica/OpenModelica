@@ -88,7 +88,6 @@ initialalgorithm  "initial"{whitespace}"algorithm"
 "record" return RECORD;
 "redeclare" return REDECLARE;
 "replaceable" return REPLACEABLE;
-"results" return RESULTS;
 "then" return THEN;
 "true" return TRUE;
 "type" return TYPE;
