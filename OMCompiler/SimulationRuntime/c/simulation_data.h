@@ -494,17 +494,27 @@ typedef struct MODEL_DATA_XML
   EQUATION_INFO *equationInfo;         /* lazy loading; read from file if it is NULL when accessed */
 } MODEL_DATA_XML;
 
+/**
+ * @brief Information about one sub-clock.
+ */
 typedef struct SUBCLOCK_INFO {
-  RATIONAL shift;
-  RATIONAL factor;
-  const char* solverMethod;
-  modelica_boolean holdEvents;
+  RATIONAL shift;                 /**< Shift of clock compared to base-clock.
+                                   *  For shiftSample(u, shiftCounter, resolution) this is shiftCounter/resolution,
+                                   *  for backSample((u, backCounter, resolution)) this is backCounter/resolution. */
+  RATIONAL factor;                /**< Factor on how much slower/faster the sub-clock is compared to base-clock.
+                                   *   For subSample(u,factor) this is factor/1,
+                                   *   for superSample(u,factor) this is 1/factor. */
+  const char* solverMethod;       /**< Integration method to solve differential equations in clocked discretized continuous-time partition */
+  modelica_boolean holdEvents;    /**< Trigger event at activation time of clock if true. */
 } SUBCLOCK_INFO;
 
+/**
+ * @brief Informations about one base-clock and its sub-clocks.
+ */
 typedef struct CLOCK_INFO {
-  long nSubClocks;
-  SUBCLOCK_INFO* subClocks;
-  modelica_boolean isBoolClock;
+  long nSubClocks;                /**< Number of sub-clocks */
+  SUBCLOCK_INFO* subClocks;       /**< Array with information of each sub-clock */
+  modelica_boolean isBoolClock;   /**< True if base-clock is a boolean clock, otherwise false */
 } CLOCK_INFO;
 
 typedef struct MODEL_DATA
@@ -586,10 +596,13 @@ typedef struct MODEL_DATA
   long ndataReconVars;
 }MODEL_DATA;
 
+/**
+ * @brief Base clock data.
+ */
 typedef struct CLOCK_DATA {
-  modelica_real interval;
-  modelica_real timepoint;
-  long cnt;
+  modelica_real interval;     /**< Period in which timer needs to fire */
+  modelica_real timepoint;    /**< Next activation time */
+  long cnt;                   /**< Number ob times clock was fired */
 } CLOCK_DATA;
 
 enum EVAL_CONTEXT
@@ -657,8 +670,8 @@ typedef struct SIMULATION_INFO
   double *nextSampleTimes;             /* array of next sample time */
   modelica_boolean *samples;           /* array of the current value for all sample-calls */
 
-  LIST* intvlTimers;
-  CLOCK_DATA *clocksData;
+  LIST* intvlTimers;                  /* Sorted list with time points for next clocks that need to fire */
+  CLOCK_DATA *clocksData;             /* Containing simulation data for clocks. E.g interval and next evaluation time */
 
   modelica_real* zeroCrossings;
   modelica_real* zeroCrossingsPre;
