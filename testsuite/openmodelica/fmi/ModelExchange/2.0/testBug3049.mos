@@ -59,6 +59,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"test_Bug3049_15syn.c\" />
 //       <File name=\"test_Bug3049_16dae.c\" />
 //       <File name=\"test_Bug3049_17inl.c\" />
+//       <File name=\"test_Bug3049_18spd.c\" />
 //       <File name=\"test_Bug3049_init_fmu.c\" />
 //       <File name=\"test_Bug3049_FMU.c\" />
 //       <File name=\"./util/read_matlab4.c\" />
@@ -101,6 +102,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./simulation/solver/fmi_events.c\" />
 //       <File name=\"./simulation/solver/model_help.c\" />
 //       <File name=\"./simulation/solver/omc_math.c\" />
+//       <File name=\"./simulation/solver/spatialDistribution.c\" />
 //       <File name=\"./simulation/solver/stateset.c\" />
 //       <File name=\"./simulation/solver/synchronous.c\" />
 //       <File name=\"./simulation/solver/initialization/initialization.c\" />

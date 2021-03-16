@@ -696,6 +696,8 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     data->callback->updateBoundVariableAttributes(data, threadData);
   }
 
+  data->callback->function_initSpatialDistribution(data, threadData);
+
   /* update static data of linear/non-linear system solvers */
   updateStaticDataOfLinearSystems(data, threadData);
   updateStaticDataOfNonlinearSystems(data, threadData);
@@ -791,6 +793,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
 
   initSample(data, threadData, data->simulationInfo->startTime, data->simulationInfo->stopTime);
   data->callback->function_storeDelayed(data, threadData);
+  data->callback->function_storeSpatialDistribution(data, threadData);
   data->callback->function_updateRelations(data, threadData, 1);
   initSynchronous(data, threadData, data->simulationInfo->startTime);
 

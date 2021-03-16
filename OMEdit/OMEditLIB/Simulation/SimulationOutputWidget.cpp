@@ -348,6 +348,8 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "%1_16dae.h"
                         << "%1_17inl.c"
                         << "%1_17inl.o"
+                        << "%1_18spd.c"
+                        << "%1_18spd.o"
                         << "%1_functions.c"
                         << "%1_functions.o"
                         << "%1_functions.h"

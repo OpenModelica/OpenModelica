@@ -371,6 +371,7 @@ fmi2Status updateIfNeeded(ModelInstance *comp, const char *f)
       comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
       comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
       comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+      comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
       storePreValues(comp->fmuData);
     }
     comp->_need_update = 0;
@@ -1270,6 +1271,7 @@ fmi2Status fmi2CompletedIntegratorStep(fmi2Component c, fmi2Boolean noSetFMUStat
     comp->fmuData->callback->functionAlgebraics(comp->fmuData, comp->threadData);
     comp->fmuData->callback->output_function(comp->fmuData, comp->threadData);
     comp->fmuData->callback->function_storeDelayed(comp->fmuData, comp->threadData);
+    comp->fmuData->callback->function_storeSpatialDistribution(comp->fmuData, threadData);
     storePreValues(comp->fmuData);
     *enterEventMode = fmi2False;
     *terminateSimulation = fmi2False;

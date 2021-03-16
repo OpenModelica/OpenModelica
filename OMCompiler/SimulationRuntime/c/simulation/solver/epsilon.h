@@ -28,6 +28,8 @@
  *
  */
 
+#include <float.h>
+
 #ifndef EPSILON_H
 #define EPSILON_H
 
@@ -57,5 +59,12 @@ static const double MINIMAL_STEP_SIZE = 1e-12;
  * in multiplied by minimum(tolerance, step-size)
  */
 static const double TOL_HYSTERESIS_ZEROCROSSINGS = 1e-4;
+
+/*
+ * used in spatialDistribution.c for function initSpatialDistribution
+ */
+static const double SPATIAL_EPS = DBL_EPSILON;
+
+static const double SPATIAL_ZERO_DELTA_X = 1e-12;
 
 #endif

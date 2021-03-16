@@ -134,12 +134,19 @@ int (*setc_function)(DATA*, threadData_t*);
  */
 int (*function_storeDelayed)(DATA *data, threadData_t*);
 
+/* Functions for storing and initializing spatial distribution
+ * operator.
+ */
+int (*function_storeSpatialDistribution)(DATA *data, threadData_t*);
+int (*function_initSpatialDistribution)(DATA *data, threadData_t*);
+
 /*! \fn updateBoundVariableAttributes
  *
  *  This function updates all bound start, nominal, min, and max values.
  *
  *  \param [ref] [data]
  */
+
 int (*updateBoundVariableAttributes)(DATA *data, threadData_t*);
 
 /*! \fn functionInitialEquations

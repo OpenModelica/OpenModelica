@@ -181,7 +181,12 @@ end translateModel;
      // main file
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
+     let()= textFileConvertLines(simulationFile_spd(simCode), '<%modelNamePrefix%>_18spd.c')
+     // update bound start values, update bound parameters
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile(simCode,guid,fmuVersion), '<%modelNamePrefix%>.c')
+
      ""
   end match
 end generateSimulationFiles;

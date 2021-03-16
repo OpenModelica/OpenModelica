@@ -94,6 +94,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/cvode_solver.h \
 ./simulation/solver/perform_simulation.c.inc \
 ./simulation/solver/real_time_sync.h \
 ./simulation/solver/solver_main.h \
+./simulation/solver/spatialDistribution.h \
 ./simulation/solver/stateset.h \
 ./simulation/solver/sundials_error.h \
 ./simulation/solver/synchronous.h
