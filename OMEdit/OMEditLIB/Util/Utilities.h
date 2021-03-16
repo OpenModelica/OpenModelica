@@ -438,6 +438,14 @@ public:
   }
 };
 
+class QDetachableProcess : public QProcess
+{
+  Q_OBJECT
+public:
+  QDetachableProcess(QObject *pParent = 0);
+  void start(const QString &program, const QStringList &arguments, OpenMode mode = ReadWrite);
+};
+
 namespace Utilities {
 
   enum LineEndingMode {
