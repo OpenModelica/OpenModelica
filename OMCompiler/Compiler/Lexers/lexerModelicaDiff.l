@@ -339,7 +339,7 @@ algorithm
       case (e as (_,TOKEN(id=TokenId.NEWLINE)))::(Diff.Add,TOKEN(id=TokenId.NEWLINE))::rest
         then (false,e::rest,tmp);
       case (e as (_,TOKEN(id=TokenId.NEWLINE)))::rest then (true,rest,e::tmp);
-      case (Diff.Add,TOKEN(id=TokenId.WHITESPACE))::(e as (Diff.Add,t))::rest guard lastIsNewline
+      case (Diff.Add,TOKEN(id=TokenId.WHITESPACE))::(e as (Diff.Add,_))::rest guard lastIsNewline
         then (false,rest,e::
           (Diff.Add,TOKEN("WHITESPACE",TokenId.WHITESPACE,sum(" " for i in 1:depth),1,depth,0,0,0,0))
           ::tmp);
@@ -486,13 +486,15 @@ function reportErrors
   input list<Token> tokens;
 protected
   Integer i=0;
+  String content;
 algorithm
   for t in tokens loop
     i := i+1;
     if i>10 then
       Error.addMessage(Error.SCANNER_ERROR_LIMIT, {});
     end if;
-    Error.addSourceMessage(Error.SCANNER_ERROR, {tokenContent(t)}, tokenSourceInfo(t));
+    content := tokenContent(t);
+    Error.addSourceMessage(Error.SCANNER_ERROR, {StringUtil.convertCharNonAsciiToHex(content)}, tokenSourceInfo(t));
   end for;
   if not listEmpty(tokens) then
     fail();
