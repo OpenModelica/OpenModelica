@@ -300,191 +300,191 @@ algorithm
       then tok;
     case (56) // #line 91 "lexerModelicaDiff.l"
       algorithm
-        tok := TOKEN(fileNm,TokenId.RESULTS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        tok := TOKEN(fileNm,TokenId.THEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
     case (57) // #line 92 "lexerModelicaDiff.l"
       algorithm
-        tok := TOKEN(fileNm,TokenId.THEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        tok := TOKEN(fileNm,TokenId.TRUE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
     case (58) // #line 93 "lexerModelicaDiff.l"
       algorithm
-        tok := TOKEN(fileNm,TokenId.TRUE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        tok := TOKEN(fileNm,TokenId.TYPE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
     case (59) // #line 94 "lexerModelicaDiff.l"
       algorithm
-        tok := TOKEN(fileNm,TokenId.TYPE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        tok := TOKEN(fileNm,TokenId.WHEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
     case (60) // #line 95 "lexerModelicaDiff.l"
       algorithm
-        tok := TOKEN(fileNm,TokenId.WHEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        tok := TOKEN(fileNm,TokenId.WHILE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
     case (61) // #line 96 "lexerModelicaDiff.l"
       algorithm
-        tok := TOKEN(fileNm,TokenId.WHILE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        tok := TOKEN(fileNm,TokenId.WITHIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
     case (62) // #line 97 "lexerModelicaDiff.l"
       algorithm
-        tok := TOKEN(fileNm,TokenId.WITHIN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
+        tok := TOKEN(fileNm,TokenId.RETURN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
     case (63) // #line 98 "lexerModelicaDiff.l"
       algorithm
-        tok := TOKEN(fileNm,TokenId.RETURN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
-      then tok;
-    case (64) // #line 99 "lexerModelicaDiff.l"
-      algorithm
         tok := TOKEN(fileNm,TokenId.BREAK,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (65) // #line 101 "lexerModelicaDiff.l"
+    case (64) // #line 100 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LPAR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (66) // #line 102 "lexerModelicaDiff.l"
+    case (65) // #line 101 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.RPAR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (67) // #line 103 "lexerModelicaDiff.l"
+    case (66) // #line 102 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LBRACK,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (68) // #line 104 "lexerModelicaDiff.l"
+    case (67) // #line 103 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.RBRACK,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (69) // #line 105 "lexerModelicaDiff.l"
+    case (68) // #line 104 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LBRACE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (70) // #line 106 "lexerModelicaDiff.l"
+    case (69) // #line 105 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.RBRACE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (71) // #line 107 "lexerModelicaDiff.l"
+    case (70) // #line 106 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EQEQ,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (72) // #line 108 "lexerModelicaDiff.l"
+    case (71) // #line 107 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.EQUALS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (73) // #line 109 "lexerModelicaDiff.l"
+    case (72) // #line 108 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COMMA,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (74) // #line 110 "lexerModelicaDiff.l"
+    case (73) // #line 109 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.ASSIGN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (75) // #line 111 "lexerModelicaDiff.l"
+    case (74) // #line 110 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COLONCOLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (76) // #line 112 "lexerModelicaDiff.l"
+    case (75) // #line 111 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.COLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (77) // #line 113 "lexerModelicaDiff.l"
+    case (76) // #line 112 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.SEMICOLON,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (78) // #line 115 "lexerModelicaDiff.l"
+    case (77) // #line 114 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PURE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (79) // #line 116 "lexerModelicaDiff.l"
+    case (78) // #line 115 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IMPURE,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (80) // #line 117 "lexerModelicaDiff.l"
+    case (79) // #line 116 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.OPTIMIZATION,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (81) // #line 119 "lexerModelicaDiff.l"
+    case (80) // #line 118 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PLUS_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (82) // #line 120 "lexerModelicaDiff.l"
+    case (81) // #line 119 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.MINUS_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (83) // #line 121 "lexerModelicaDiff.l"
+    case (82) // #line 120 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STAR_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (84) // #line 122 "lexerModelicaDiff.l"
+    case (83) // #line 121 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.SLASH_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (85) // #line 123 "lexerModelicaDiff.l"
+    case (84) // #line 122 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.POWER_EW,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (86) // #line 125 "lexerModelicaDiff.l"
+    case (85) // #line 124 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STAR,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (87) // #line 126 "lexerModelicaDiff.l"
+    case (86) // #line 125 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.MINUS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (88) // #line 127 "lexerModelicaDiff.l"
+    case (87) // #line 126 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.PLUS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (89) // #line 128 "lexerModelicaDiff.l"
+    case (88) // #line 127 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LESSEQ,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (90) // #line 129 "lexerModelicaDiff.l"
+    case (89) // #line 128 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LESSGT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (91) // #line 130 "lexerModelicaDiff.l"
+    case (90) // #line 129 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.LESS,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (92) // #line 131 "lexerModelicaDiff.l"
+    case (91) // #line 130 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.GREATER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (93) // #line 132 "lexerModelicaDiff.l"
+    case (92) // #line 131 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.GREATEREQ,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (94) // #line 134 "lexerModelicaDiff.l"
+    case (93) // #line 133 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.POWER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (95) // #line 135 "lexerModelicaDiff.l"
+    case (94) // #line 134 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.SLASH,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (96) // #line 137 "lexerModelicaDiff.l"
+    case (95) // #line 136 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.SUBTYPEOF,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (97) // #line 139 "lexerModelicaDiff.l"
+    case (96) // #line 138 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.STREAM,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (98) // #line 141 "lexerModelicaDiff.l"
+    case (97) // #line 140 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.DOT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (99) // #line 143 "lexerModelicaDiff.l"
+    case (98) // #line 142 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IDENT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (100) // #line 145 "lexerModelicaDiff.l"
+    case (99) // #line 144 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.IDENT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (101) // #line 147 "lexerModelicaDiff.l"
+    case (100) // #line 146 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId.UNSIGNED_INTEGER,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (102) // #line 149 "lexerModelicaDiff.l"
+    case (101) // #line 148 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 7;
+        bufferRet := buffer;
+      then noToken;
+    case (102) // #line 153 "lexerModelicaDiff.l"
+      algorithm
         bufferRet := buffer;
       then noToken;
     case (103) // #line 154 "lexerModelicaDiff.l"
@@ -493,54 +493,50 @@ algorithm
       then noToken;
     case (104) // #line 155 "lexerModelicaDiff.l"
       algorithm
-        bufferRet := buffer;
-      then noToken;
-    case (105) // #line 156 "lexerModelicaDiff.l"
-      algorithm
         mm_startSt := 1;
         tok := TOKEN(fileNm,TokenId.STRING,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
+    case (105) // #line 156 "lexerModelicaDiff.l"
+      algorithm
+        bufferRet := buffer;
+      then noToken;
     case (106) // #line 157 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (107) // #line 158 "lexerModelicaDiff.l"
-      algorithm
-        bufferRet := buffer;
-      then noToken;
-    case (108) // #line 161 "lexerModelicaDiff.l"
+    case (107) // #line 160 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 3;
         bufferRet := buffer;
       then noToken;
-    case (109) // #line 166 "lexerModelicaDiff.l"
+    case (108) // #line 165 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 1;
         tok := TOKEN(fileNm,TokenId.BLOCK_COMMENT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
+    case (109) // #line 166 "lexerModelicaDiff.l"
+      algorithm
+        bufferRet := buffer;
+      then noToken;
     case (110) // #line 167 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (111) // #line 168 "lexerModelicaDiff.l"
-      algorithm
-        bufferRet := buffer;
-      then noToken;
-    case (112) // #line 175 "lexerModelicaDiff.l"
+    case (111) // #line 174 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 5;
         bufferRet := buffer;
       then noToken;
-    case (113) // #line 181 "lexerModelicaDiff.l"
+    case (112) // #line 180 "lexerModelicaDiff.l"
       algorithm
         mm_startSt := 1;
         tok := TOKEN(fileNm,TokenId.LINE_COMMENT,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
       then tok;
-    case (114) // #line 182 "lexerModelicaDiff.l"
+    case (113) // #line 181 "lexerModelicaDiff.l"
       algorithm
         bufferRet := buffer;
       then noToken;
-    case (115) // #line 185 "lexerModelicaDiff.l"
+    case (114) // #line 184 "lexerModelicaDiff.l"
       algorithm
         tok := TOKEN(fileNm,TokenId._NO_TOKEN,fileContents,mm_pos-buffer,buffer,lineNrStart,mm_ePos+1,mm_linenr,mm_sPos+1);
         errorTokens := tok :: errorTokens;
@@ -639,7 +635,6 @@ type TokenId = enumeration(
   RECORD,
   REDECLARE,
   REPLACEABLE,
-  RESULTS,
   RETURN,
   RPAR,
   SEMICOLON,
@@ -729,10 +724,10 @@ function lex "Scan starts the lexical analysis, load the tables and consume the 
   output list<Token> tokens "return list of tokens";
   output list<Token> errorTokens={};
 protected
-  Integer startSt,numStates,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
+  Integer startSt,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
   list<Integer> cProg,cProg2;
   list<String> chars;
-  array<Integer> states;
+  list<Integer> states;
   String s1,s2;
   import MetaModelica.Dangerous.listReverseInPlace;
   import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
@@ -749,8 +744,7 @@ algorithm
   lineNrStart := 1;
   buffer := 0;
 
-  states := arrayCreate(128,1);
-  numStates := 1;
+  states := {};
 
   if (debug==true) then
      print("\nLexer analyzer LexerCode..." + fileName + "\n");
@@ -766,7 +760,7 @@ algorithm
   i := 1;
   while i <= contentLen loop
      cTok := stringGet(contents,i);
-     (tokens,numBacktrack,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,numStates,errorTokens) := consume(cTok,tokens,contents,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,numStates,fileName,errorTokens);
+     (tokens,numBacktrack,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,errorTokens) := consume(cTok,tokens,contents,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,fileName,errorTokens);
      i := i - numBacktrack + 1;
   end while;
   tokens := listReverseInPlace(tokens);
@@ -780,8 +774,7 @@ function consume
   input Integer startSt;
   input Integer currSt,pos,sPos,ePos,linenr,inLineNrStart;
   input Integer inBuffer;
-  input array<Integer> inStates;
-  input Integer inNumStates;
+  input list<Integer> inStates;
   input String fileName;
   input list<Token> inErrorTokens;
   output list<Token> resToken;
@@ -789,8 +782,7 @@ function consume
   output Integer mm_startSt;
   output Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
   output Integer buffer;
-  output array<Integer> states;
-  output Integer numStates;
+  output list<Integer> states;
   output list<Token> errorTokens=inErrorTokens;
 protected
   Token tok;
@@ -806,7 +798,6 @@ algorithm
   lineNrStart := inLineNrStart;
   buffer := inBuffer;
   states := inStates;
-  numStates := inNumStates;
 
   baseCond := LexTable.yy_base[mm_currSt];
   if (debug==true) then
@@ -844,8 +835,7 @@ algorithm
   else
     mm_currSt := LexTable.yy_nxt[c];
   end if;
-  numStates := numStates+1; // TODO: BAD BAD BAD. At least arrayUpdate should be a safe operation... We need to grow the number of states on demand though.
-  arrayUpdate(states,numStates,mm_currSt);
+  states := mm_currSt::states;
 
   baseCond := LexTable.yy_base[mm_currSt];
   if (baseCond==LexTable.yy_finish) then
@@ -853,7 +843,7 @@ algorithm
       print("\n[RESTORE=" + intString(LexTable.yy_accept[mm_currSt]) + "]");
     end if;
 
-    (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
+    (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states);
 
     if (debug==true) then
       print("\nFound rule: " + String(act));
@@ -866,8 +856,7 @@ algorithm
     end if;
 
     mm_currSt := mm_startSt;
-    arrayUpdate(states,1,mm_startSt);
-    numStates := 1;
+    states := {};
 
     /* Either a token was output (get new positions for next token). Or a whitespace was emitted. */
     if buffer <> buffer2 then
@@ -900,8 +889,7 @@ function findRule
   input Integer linenr;
   input Integer inBuffer;
   input Integer inBkBuffer;
-  input array<Integer> inStates;
-  input Integer inNumStates;
+  input list<Integer> inStates;
   output Integer action;
   output Integer mm_currSt;
   output Integer mm_pos;
@@ -909,11 +897,10 @@ function findRule
   output Integer mm_linenr;
   output Integer buffer;
   output Integer bkBuffer;
-  output array<Integer> states;
-  output Integer numStates;
+  output list<Integer> states;
 protected
   array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist;
-  Integer lp,lp1,stCmp;
+  Integer lp,lp1,stCmp,cp;
   Boolean st;
   import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking; // Bounds checked with debug=true
   import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
@@ -925,46 +912,32 @@ algorithm
   buffer := inBuffer;
   bkBuffer := inBkBuffer;
   states := inStates;
-  numStates := inNumStates;
 
-  stCmp := arrayGet(states,numStates);
+  stCmp := listGet(states, 1);
   lp := LexTable.yy_accept[stCmp];
   lp1 := LexTable.yy_accept[stCmp+1];
 
   st := intGt(lp,0) and intLt(lp,lp1);
-  (action, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := match(numStates,st)
-    local
-      Integer act,cp;
-      list<Integer> restBuff;
-    case (_,true)
-      algorithm
-        if debug then
-          checkArrayModelica(LexTable.yy_accept,stCmp,sourceInfo());
-          checkArrayModelica(LexTable.yy_acclist,lp,sourceInfo());
-        end if;
-        lp := LexTable.yy_accept[stCmp];
-        act := LexTable.yy_acclist[lp];
-      then (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates);
-    case (_,false)
-      algorithm
-        cp := stringGet(fileContents,mm_pos-1);
-        buffer := buffer-1;
-        bkBuffer := bkBuffer+1;
-        mm_pos := mm_pos - 1;
-        mm_sPos := mm_sPos -1;
-        if (cp==10) then
-          mm_sPos := mm_ePos;
-          mm_linenr := mm_linenr-1;
-        end if;
-        if debug then
-          checkArray(states,numStates,sourceInfo());
-        end if;
-        mm_currSt := arrayGet(states,numStates);
-        numStates := numStates - 1;
-        (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
-      then (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates);
-
-  end match;
+  if st then
+    if debug then
+      checkArrayModelica(LexTable.yy_accept,stCmp,sourceInfo());
+      checkArrayModelica(LexTable.yy_acclist,lp,sourceInfo());
+    end if;
+    lp := LexTable.yy_accept[stCmp];
+    action := LexTable.yy_acclist[lp];
+  else
+    cp := stringGet(fileContents,mm_pos-1);
+    buffer := buffer-1;
+    bkBuffer := bkBuffer+1;
+    mm_pos := mm_pos - 1;
+    mm_sPos := mm_sPos -1;
+    if (cp==10) then
+      mm_sPos := mm_ePos;
+      mm_linenr := mm_linenr-1;
+    end if;
+    mm_currSt::states := states;
+    (action, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states);
+  end if;
 end findRule;
 
 function evalState
@@ -1025,64 +998,62 @@ algorithm
 end checkArrayModelica;
 
 package LexTable
-  constant Integer yy_limit = 400;
-  constant Integer yy_finish = 458;
+  constant Integer yy_limit = 395;
+  constant Integer yy_finish = 453;
   constant Integer yy_acclist[:] = array(
-      116,  115,    1,  115,    2,  115,  115,  102,  115,  115,
-       65,  115,   66,  115,   86,  115,   88,  115,   73,  115,
-       87,  115,   98,  115,   95,  115,  101,  115,   76,  115,
-       77,  115,   91,  115,   72,  115,   92,  115,   99,  115,
-       67,  115,   68,  115,   94,  115,   99,  115,   99,  115,
-       99,  115,   99,  115,   99,  115,   99,  115,   99,  115,
-       99,  115,   99,  115,   99,  115,   99,  115,   99,  115,
-       99,  115,   99,  115,   99,  115,   99,  115,   69,  115,
-       70,  115,  110,  115,  111,  115,  110,  115,  114,  115,
-      113,  115,  106,  115,  107,  115,  105,  106,  115,  106,
+      115,  114,    1,  114,    2,  114,  114,  101,  114,  114,
+       64,  114,   65,  114,   85,  114,   87,  114,   72,  114,
+       86,  114,   97,  114,   94,  114,  100,  114,   75,  114,
+       76,  114,   90,  114,   71,  114,   91,  114,   98,  114,
+       66,  114,   67,  114,   93,  114,   98,  114,   98,  114,
+       98,  114,   98,  114,   98,  114,   98,  114,   98,  114,
+       98,  114,   98,  114,   98,  114,   98,  114,   98,  114,
+       98,  114,   98,  114,   98,  114,   98,  114,   68,  114,
+       69,  114,  109,  114,  110,  114,  109,  114,  113,  114,
+      112,  114,  105,  114,  106,  114,  104,  105,  114,  105,
 
-      115,    1,    2,   83,   81,   82,   84,    5,   85,  108,
-      112,    3,  101,   75,   74,   89,   90,   71,   93,   99,
-       99,   99,   99,   99,   99,   99,   99,   99,   99,   99,
-       99,   99,   99,   99,   99,   99,   99,   99,   34,   99,
-       99,   36,   99,   99,   99,   99,   99,   46,   99,   99,
-       99,   99,   99,   99,   99,   99,   99,   99,   99,   99,
-       99,   99,  109,  103,  104,  100,    3,    4,   99,    7,
-       99,   99,   99,   99,   99,   99,   99,   15,   99,   99,
-       99,   99,   99,   21,   99,   99,   99,   99,   99,   99,
-       99,   99,   32,   99,   99,   99,   99,   99,   99,   99,
+      114,    1,    2,   82,   80,   81,   83,    5,   84,  107,
+      111,    3,  100,   74,   73,   88,   89,   70,   92,   98,
+       98,   98,   98,   98,   98,   98,   98,   98,   98,   98,
+       98,   98,   98,   98,   98,   98,   98,   98,   34,   98,
+       98,   36,   98,   98,   98,   98,   98,   46,   98,   98,
+       98,   98,   98,   98,   98,   98,   98,   98,   98,   98,
+       98,   98,  108,  102,  103,   99,    3,    4,   98,    7,
+       98,   98,   98,   98,   98,   98,   98,   15,   98,   98,
+       98,   98,   98,   21,   98,   98,   98,   98,   98,   98,
+       98,   98,   32,   98,   98,   98,   98,   98,   98,   98,
 
-       99,   42,   99,   99,   99,   99,   99,   99,   99,   99,
-       99,   99,   99,   99,   99,   99,   99,   99,   99,   99,
-       99,   99,   99,   99,   99,    5,    3,   99,   99,   99,
-       99,   99,   99,   99,   99,   99,   17,   99,   18,   99,
-       99,   99,   99,   99,   99,   99,   99,   31,   99,   99,
-       99,   99,   99,   99,   99,   40,   99,   99,   99,   99,
-       99,   99,   99,   99,   99,   99,   99,   99,   78,   99,
-       99,   99,   99,   99,   99,   99,   99,   57,   99,   58,
-       99,   59,   99,   60,   99,   99,   99,   99,   99,    9,
-       99,   64,   99,   10,   99,   99,   99,   99,   99,   99,
+       98,   42,   98,   98,   98,   98,   98,   98,   98,   98,
+       98,   98,   98,   98,   98,   98,   98,   98,   98,   98,
+       98,   98,   98,   98,    5,    3,   98,   98,   98,   98,
+       98,   98,   98,   98,   98,   17,   98,   18,   98,   98,
+       98,   98,   98,   98,   98,   98,   31,   98,   98,   98,
+       98,   98,   98,   98,   40,   98,   98,   98,   98,   98,
+       98,   98,   98,   98,   98,   98,   98,   77,   98,   98,
+       98,   98,   98,   98,   98,   56,   98,   57,   98,   58,
+       98,   59,   98,   98,   98,   98,   98,    9,   98,   63,
+       98,   10,   98,   98,   98,   98,   98,   98,   98,   98,
 
-       99,   99,   99,   99,   99,   99,   99,   29,   99,   30,
-       99,   99,   99,   99,   99,   38,   99,   39,   99,   41,
-       99,   99,   99,   43,   99,   99,   99,   99,   99,   99,
-       99,   99,   99,   99,   99,   99,   99,   99,   99,   61,
-       99,   99,   99,   99,   99,   99,   99,   99,   99,   19,
-       99,   99,   99,   99,   99,   99,   99,   99,   99,   35,
-       99,   79,   99,   99,   99,   99,   47,   99,   99,   99,
-       99,   99,   99,   52,   99,   53,   99,   99,   99,   99,
-       63,   99,   97,   99,   99,   62,   99,   99,   99,   11,
-       99,   99,   99,   99,   99,   99,   99,   99,   99,   99,
+       98,   98,   98,   98,   98,   29,   98,   30,   98,   98,
+       98,   98,   98,   38,   98,   39,   98,   41,   98,   98,
+       98,   43,   98,   98,   98,   98,   98,   98,   98,   98,
+       98,   98,   98,   98,   98,   98,   60,   98,   98,   98,
+       98,   98,   98,   98,   98,   98,   19,   98,   98,   98,
+       98,   98,   98,   98,   98,   98,   35,   98,   78,   98,
+       98,   98,   98,   47,   98,   98,   98,   98,   98,   98,
+       52,   98,   53,   98,   98,   98,   62,   98,   96,   98,
+       98,   61,   98,   98,   98,   11,   98,   98,   98,   98,
+       98,   98,   98,   98,   98,   98,   26,   98,   98,   98,
 
-       26,   99,   99,   99,   37,   99,   99,   99,   99,   48,
-       99,   99,   50,   99,   99,   99,   99,   56,   99,   99,
-       99,   99,   99,   13,   99,   99,   99,   14,   99,   20,
-       99,   99,   99,   23,   99,   99,   28,   99,   33,   99,
-       44,   99,   99,   45,   99,   99,   99,   99,   99,   99,
-        6,   99,   99,   12,   99,   99,   99,   99,   99,   99,
-       99,   49,   99,   51,   99,   54,   99,   99,   96,   99,
-        8,   99,   99,   16,   99,   99,   99,   25,   99,   99,
-       99,   99,   99,   22,   99,   99,   55,   99,   99,   24,
-       99,   80,   99,   27,   99
-
+       37,   98,   98,   98,   98,   48,   98,   98,   50,   98,
+       98,   98,   98,   98,   98,   98,   98,   13,   98,   98,
+       98,   14,   98,   20,   98,   98,   98,   23,   98,   98,
+       28,   98,   33,   98,   44,   98,   98,   45,   98,   98,
+       98,   98,   98,   98,    6,   98,   98,   12,   98,   98,
+       98,   98,   98,   98,   98,   49,   98,   51,   98,   54,
+       98,   98,   95,   98,    8,   98,   98,   16,   98,   98,
+       98,   25,   98,   98,   98,   98,   98,   22,   98,   98,
+       55,   98,   98,   24,   98,   79,   98,   27,   98
    );
   constant Integer yy_accept[:] = array(
         1,    1,    1,    1,    1,    1,    1,    1,    1,    2,
@@ -1104,30 +1075,30 @@ package LexTable
       192,  193,  195,  196,  197,  198,  199,  200,  201,  202,
       204,  205,  206,  207,  208,  209,  210,  211,  212,  213,
       214,  215,  216,  217,  218,  219,  220,  221,  222,  223,
-      224,  225,  226,  226,  227,  227,  228,  229,  230,  231,
-      232,  233,  234,  235,  236,  237,  239,  241,  242,  243,
+      224,  225,  225,  226,  226,  227,  228,  229,  230,  231,
+      232,  233,  234,  235,  236,  238,  240,  241,  242,  243,
 
-      244,  245,  246,  247,  248,  250,  251,  252,  253,  254,
-      255,  256,  258,  259,  260,  261,  262,  263,  264,  265,
-      266,  267,  268,  269,  271,  272,  273,  274,  275,  276,
-      277,  278,  280,  282,  284,  286,  287,  288,  289,  290,
-      292,  294,  296,  297,  298,  299,  300,  301,  302,  303,
-      304,  305,  306,  307,  308,  310,  312,  313,  314,  315,
-      316,  318,  320,  322,  323,  324,  326,  327,  328,  329,
-      330,  331,  332,  333,  334,  335,  336,  337,  338,  339,
-      340,  342,  343,  344,  345,  346,  347,  348,  349,  350,
-      352,  353,  354,  355,  356,  357,  358,  359,  360,  362,
+      244,  245,  246,  247,  249,  250,  251,  252,  253,  254,
+      255,  257,  258,  259,  260,  261,  262,  263,  264,  265,
+      266,  267,  268,  270,  271,  272,  273,  274,  275,  276,
+      278,  280,  282,  284,  285,  286,  287,  288,  290,  292,
+      294,  295,  296,  297,  298,  299,  300,  301,  302,  303,
+      304,  305,  306,  308,  310,  311,  312,  313,  314,  316,
+      318,  320,  321,  322,  324,  325,  326,  327,  328,  329,
+      330,  331,  332,  333,  334,  335,  336,  337,  339,  340,
+      341,  342,  343,  344,  345,  346,  347,  349,  350,  351,
+      352,  353,  354,  355,  356,  357,  359,  361,  362,  363,
 
-      364,  365,  366,  367,  369,  370,  371,  372,  373,  374,
-      376,  378,  379,  380,  381,  383,  385,  386,  388,  389,
-      390,  392,  393,  394,  395,  396,  397,  398,  399,  400,
-      401,  403,  404,  405,  407,  408,  409,  410,  412,  413,
-      415,  416,  417,  418,  420,  421,  422,  423,  424,  426,
-      427,  428,  430,  432,  433,  434,  436,  437,  439,  441,
-      443,  444,  446,  447,  448,  449,  450,  451,  453,  454,
-      456,  457,  458,  459,  460,  461,  462,  464,  466,  468,
-      469,  471,  473,  474,  476,  477,  478,  480,  481,  482,
-      483,  484,  486,  487,  489,  490,  492,  494,  496,  496
+      364,  366,  367,  368,  369,  370,  371,  373,  375,  376,
+      377,  379,  381,  382,  384,  385,  386,  388,  389,  390,
+      391,  392,  393,  394,  395,  396,  397,  399,  400,  401,
+      403,  404,  405,  406,  408,  409,  411,  412,  413,  414,
+      415,  416,  417,  418,  420,  421,  422,  424,  426,  427,
+      428,  430,  431,  433,  435,  437,  438,  440,  441,  442,
+      443,  444,  445,  447,  448,  450,  451,  452,  453,  454,
+      455,  456,  458,  460,  462,  463,  465,  467,  468,  470,
+      471,  472,  474,  475,  476,  477,  478,  480,  481,  483,
+      484,  486,  488,  490,  490
 
    );
   constant Integer yy_ec[:] = array(
@@ -1169,98 +1140,96 @@ package LexTable
         4,    6,    4,    2,    2
    );
   constant Integer yy_base[:] = array(
-        0,    0,   53,   54,  454,  453,   55,   56,  455,  458,
-       64,  458,  451,  458,  427,  458,  458,  458,  458,  458,
-      458,   56,   60,   62,   57,  458,   39,  431,  430,    0,
-      458,  458,  458,   44,   35,   48,   55,   60,   68,   62,
-      408,  407,  406,   69,   77,  414,   46,   79,   72,  458,
-      458,  458,  458,  430,  458,  458,  458,  458,  458,   93,
-      118,  458,  113,    0,  458,  458,  458,  458,  109,  458,
-      458,  458,  110,  113,  124,  458,  458,  458,  458,  458,
-      458,    0,  410,  103,  402,  410,  413,  400,   95,  394,
-      408,  392,  116,  389,  102,  397,  394,  392,  388,  391,
+        0,    0,   53,   54,  449,  448,   55,   56,  450,  453,
+       64,  453,  446,  453,  422,  453,  453,  453,  453,  453,
+      453,   56,   60,   62,   57,  453,   39,  426,  425,    0,
+      453,  453,  453,   44,   35,   48,   55,   60,   68,   62,
+      403,  402,  401,   69,   77,  409,   46,   79,   72,  453,
+      453,  453,  453,  425,  453,  453,  453,  453,  453,   93,
+      118,  453,  113,    0,  453,  453,  453,  453,  109,  453,
+      453,  453,  110,  113,  124,  453,  453,  453,  453,  453,
+      453,    0,  405,  103,  397,  405,  408,  395,   95,  389,
+      403,  387,  116,  384,  102,  392,  389,  387,  383,  386,
 
-        0,  388,  113,  388,  397,  381,  118,    0,  380,  393,
-      121,  383,   68,  126,  379,  393,  389,  373,  377,  122,
-      372,  458,  458,  153,  458,  163,  150,  164,  401,  400,
-      374,    0,  373,  383,  384,  366,  122,  374,    0,  379,
-      373,  375,  378,    0,  366,  376,  375,  370,  356,  372,
-      350,    0,  368,  140,  351,  364,  348,  352,  361,    0,
-      348,  355,  128,  346,  352,  155,  342,  349,  354,  344,
-      352,  345,  335,  334,  348,  333,  338,  345,  344,  335,
-      336,  338,  356,  355,  354,  353,  324,  321,  329,  328,
-      319,  331,  316,  321,  316,    0,  148,  317,  326,  311,
+        0,  383,  113,  383,  392,  376,  118,    0,  375,  388,
+      121,  378,   68,  126,  374,  388,  384,  368,  372,  122,
+      367,  453,  453,  146,  453,  162,  144,  166,  396,  395,
+      369,    0,  368,  378,  379,  361,  121,  369,    0,  374,
+      368,  370,  373,    0,  361,  371,  370,  365,  351,  367,
+      345,    0,  363,  133,  346,  359,  343,  347,  356,    0,
+      343,  350,  127,  341,  347,  142,  337,  344,  349,  339,
+      347,  340,  330,  344,  329,  334,  341,  340,  331,  332,
+      334,  352,  351,  350,  349,  320,  317,  325,  324,  315,
+      327,  312,  317,  312,    0,  145,  313,  322,  307,  312,
 
-      316,  145,  323,  316,    0,  307,  308,  307,  314,  305,
-      302,    0,  309,  318,  306,  300,  296,  304,  313,  301,
-      303,  306,  301,    0,  292,  305,  306,  295,  288,  303,
-      279,    0,    0,    0,    0,  297,  292,  291,  298,    0,
-        0,    0,  295,  158,  292,  291,  289,  286,  275,  275,
-      282,  286,  285,  275,    0,    0,  278,  267,  280,  283,
-        0,    0,    0,  264,  273,    0,  262,  266,  272,  273,
-      276,  273,  272,  270,  262,  269,  252,  257,  257,  253,
-        0,  254,  247,  246,  245,  250,  261,  241,  241,    0,
-      254,  238,  256,  242,  254,  236,  252,  238,    0,    0,
+      143,  319,  312,    0,  303,  304,  303,  310,  301,  298,
+        0,  305,  314,  302,  296,  292,  300,  309,  297,  299,
+      302,  297,    0,  288,  301,  302,  285,  300,  276,    0,
+        0,    0,    0,  294,  289,  288,  295,    0,    0,    0,
+      292,  156,  289,  288,  286,  283,  272,  272,  279,  283,
+      282,  272,    0,    0,  275,  264,  277,  280,    0,    0,
+        0,  261,  270,    0,  259,  263,  269,  270,  273,  270,
+      269,  267,  259,  266,  255,  255,  251,    0,  252,  245,
+      244,  243,  248,  259,  239,  239,    0,  252,  236,  254,
+      240,  252,  234,  250,  236,    0,    0,  238,  234,  222,
 
-      240,  236,  224,    0,  247,  242,  227,  234,  225,    0,
-        0,  242,  237,  223,    0,    0,  235,    0,  231,  229,
-      223,  217,  226,  221,  228,  219,  220,  211,  216,  226,
-        0,  216,  213,    0,  208,  223,  219,    0,  217,    0,
-      216,  203,  218,    0,  204,  205,  202,  198,    0,  201,
-      204,    0,    0,  211,  202,    0,  199,    0,    0,    0,
-      190,    0,  191,  203,  201,  201,  194,    0,  182,    0,
-      168,  153,  152,  155,  163,  158,    0,    0,    0,  155,
-        0,    0,  161,    0,  159,  150,    0,  147,  137,  132,
-      121,    0,   91,    0,   39,    0,    0,    0,  458,  203,
+        0,  245,  240,  225,  232,  223,    0,    0,  240,  235,
+        0,    0,  234,    0,  230,  228,  222,  216,  225,  220,
+      227,  218,  219,  210,  215,  225,    0,  215,  212,    0,
+      207,  222,  218,    0,  216,    0,  215,  202,  217,  203,
+      204,  201,  197,    0,  200,  203,    0,    0,  210,  201,
+        0,  198,    0,    0,    0,  189,    0,  190,  202,  200,
+      202,  195,    0,  185,    0,  188,  153,  152,  156,  164,
+      159,    0,    0,    0,  155,    0,    0,  161,    0,  159,
+      150,    0,  148,  154,  156,  131,    0,   91,    0,   39,
+        0,    0,    0,  453,  201,  207,  213,  218,  221,  225
 
-      209,  215,  220,  223,  227
    );
   constant Integer yy_def[:] = array(
-      399,    1,  400,  400,  401,  401,  402,  402,  399,  399,
-      399,  399,  399,  399,  403,  399,  399,  399,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  404,
-      399,  399,  399,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  399,
+      394,    1,  395,  395,  396,  396,  397,  397,  394,  394,
+      394,  394,  394,  394,  398,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  399,
+      394,  394,  394,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  398,  400,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  399,  399,  399,  399,  399,  399,  399,  399,  399,
       399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  403,  405,  399,  399,  399,  399,  399,  399,
+
       399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  394,  394,  394,  394,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
 
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  399,  399,  399,  399,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
 
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      399,  399,  399,    0,  394,  394,  394,  394,  394,  394
 
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,  404,  404,
-      404,  404,  404,  404,  404,  404,  404,  404,    0,  399,
-
-      399,  399,  399,  399,  399
    );
   constant Integer yy_nxt[:] = array(
        10,   11,   12,   13,   11,   10,   14,   15,   16,   17,
@@ -1272,54 +1241,53 @@ package LexTable
        79,   59,   59,   54,   54,   61,   65,   66,   61,   67,
        71,   68,   69,   85,   76,   72,   73,   77,   74,   86,
        60,   60,   83,   70,   84,   75,   87,   89,   91,   88,
-      398,   90,  115,  116,   75,  101,   96,  168,   92,  123,
+      393,   90,  115,  116,   75,  101,   96,  168,   92,  123,
 
        93,  102,  103,   94,   97,  111,   98,  120,  121,   99,
        95,  107,  169,  108,  117,  100,  109,  110,  124,   61,
       125,  112,   61,  118,  113,   69,  127,   73,  138,   74,
-      119,  397,  126,  128,  132,  129,   75,  129,   64,  139,
+      119,  392,  126,  128,  132,  129,   75,  129,   64,  139,
       130,  126,  128,  133,  147,   75,  143,  144,  148,  155,
-      161,  165,  396,  156,  180,  157,  170,  171,  181,  123,
-      216,  395,  192,  145,  162,  166,  127,  193,  172,  394,
-      217,  173,  174,  128,  183,  185,  183,  185,  124,  184,
-      186,  207,  128,  220,  247,  253,  286,  208,  393,  254,
-      392,  391,  390,  389,  388,  387,  386,  248,  385,  384,
+      161,  165,  123,  156,  179,  157,  170,  171,  180,  215,
+      127,  191,  391,  145,  162,  166,  192,  128,  172,  216,
+      219,  124,  173,  182,  206,  182,  128,  184,  183,  184,
+      207,  245,  185,  251,  283,  390,  389,  252,  220,  388,
+      387,  386,  385,  384,  246,  383,  382,  381,  380,  379,
 
-      383,  221,  287,   52,   52,   52,   52,   52,   52,   55,
-       55,   55,   55,   55,   55,   57,   57,   57,   57,   57,
-       57,   63,  382,   63,   63,   63,   82,  381,   82,   63,
-      380,   63,   63,  379,  378,  377,  376,  375,  374,  373,
-      372,  371,  370,  369,  368,  367,  366,  365,  364,  363,
-      362,  361,  360,  359,  358,  357,  356,  355,  354,  353,
-      352,  351,  350,  349,  348,  347,  346,  345,  344,  343,
-      342,  341,  340,  339,  338,  337,  336,  335,  334,  333,
-      332,  331,  330,  329,  328,  327,  326,  325,  324,  323,
-      322,  321,  320,  319,  318,  317,  316,  315,  314,  313,
+      284,   52,   52,   52,   52,   52,   52,   55,   55,   55,
+       55,   55,   55,   57,   57,   57,   57,   57,   57,   63,
+      378,   63,   63,   63,   82,  377,   82,   63,  376,   63,
+       63,  375,  374,  373,  372,  371,  370,  369,  368,  367,
+      366,  365,  364,  363,  362,  361,  360,  359,  358,  357,
+      356,  355,  354,  353,  352,  351,  350,  349,  348,  347,
+      346,  345,  344,  343,  342,  341,  340,  339,  338,  337,
+      336,  335,  334,  333,  332,  331,  330,  329,  328,  327,
+      326,  325,  324,  323,  322,  321,  320,  319,  318,  317,
+      316,  315,  314,  313,  312,  311,  310,  309,  308,  307,
 
-      312,  311,  310,  309,  308,  307,  306,  305,  304,  303,
-      302,  301,  300,  299,  298,  297,  296,  295,  294,  293,
-      292,  291,  290,  289,  288,  285,  284,  283,  282,  281,
-      280,  279,  278,  277,  276,  275,  274,  273,  272,  271,
-      270,  269,  268,  267,  266,  265,  264,  263,  262,  261,
-      260,  259,  258,  257,  256,  255,  252,  251,  250,  249,
-      246,  245,  244,  243,  242,  241,  240,  239,  238,  186,
-      186,  184,  184,  237,  236,  235,  234,  233,  232,  231,
-      230,  229,  228,  227,  226,  225,  224,  223,  222,  219,
-      218,  215,  214,  213,  212,  211,  210,  209,  206,  205,
+      306,  305,  304,  303,  302,  301,  300,  299,  298,  297,
+      296,  295,  294,  293,  292,  291,  290,  289,  288,  287,
+      286,  285,  282,  281,  280,  279,  278,  277,  276,  275,
+      274,  273,  272,  271,  270,  269,  268,  267,  266,  265,
+      264,  263,  262,  261,  260,  259,  258,  257,  256,  255,
+      254,  253,  250,  249,  248,  247,  244,  243,  242,  241,
+      240,  239,  238,  237,  236,  185,  185,  183,  183,  235,
+      234,  233,  232,  231,  230,  229,  228,  227,  226,  225,
+      224,  223,  222,  221,  218,  217,  214,  213,  212,  211,
+      210,  209,  208,  205,  204,  203,  202,  201,  200,  199,
 
-      204,  203,  202,  201,  200,  199,  198,  197,  196,  195,
-      194,  191,  190,  189,  188,  187,  130,  130,  182,  179,
-      178,  177,  176,  175,  167,  164,  163,  160,  159,  158,
-      154,  153,  152,  151,  150,  149,  146,  142,  141,  140,
-      137,  136,  135,  134,  131,  122,  114,  106,  105,  104,
-       81,   80,   64,   62,  399,   56,   56,    9,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      198,  197,  196,  195,  194,  193,  190,  189,  188,  187,
+      186,  130,  130,  181,  178,  177,  176,  175,  174,  167,
+      164,  163,  160,  159,  158,  154,  153,  152,  151,  150,
+      149,  146,  142,  141,  140,  137,  136,  135,  134,  131,
+      122,  114,  106,  105,  104,   81,   80,   64,   62,  394,
+       56,   56,    9,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
 
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  399
+      394,  394,  394,  394,  394,  394,  394,  394
    );
   constant Integer yy_chk[:] = array(
         1,    1,    1,    1,    1,    1,    1,    1,    1,    1,
@@ -1331,54 +1299,53 @@ package LexTable
        27,    7,    8,    3,    4,   11,   22,   22,   11,   22,
        23,   22,   22,   35,   25,   23,   24,   25,   24,   35,
         7,    8,   34,   22,   34,   24,   36,   37,   38,   36,
-      395,   37,   47,   47,   24,   40,   39,  113,   38,   60,
+      390,   37,   47,   47,   24,   40,   39,  113,   38,   60,
 
        38,   40,   40,   38,   39,   45,   39,   49,   49,   39,
        38,   44,  113,   44,   48,   39,   44,   44,   60,   61,
        63,   45,   61,   48,   45,   69,   73,   74,   89,   74,
-       48,  393,   69,   73,   84,   75,   74,   75,   63,   89,
+       48,  388,   69,   73,   84,   75,   74,   75,   63,   89,
        75,   69,   73,   84,   95,   74,   93,   93,   95,  103,
-      107,  111,  391,  103,  120,  103,  114,  114,  120,  124,
-      163,  390,  137,   93,  107,  111,  127,  137,  114,  389,
-      163,  114,  114,  127,  126,  128,  126,  128,  124,  126,
-      128,  154,  127,  166,  197,  202,  244,  154,  388,  202,
-      386,  385,  383,  380,  376,  375,  374,  197,  373,  372,
+      107,  111,  124,  103,  120,  103,  114,  114,  120,  163,
+      127,  137,  386,   93,  107,  111,  137,  127,  114,  163,
+      166,  124,  114,  126,  154,  126,  127,  128,  126,  128,
+      154,  196,  128,  201,  242,  385,  384,  201,  166,  383,
+      381,  380,  378,  375,  196,  371,  370,  369,  368,  367,
 
-      371,  166,  244,  400,  400,  400,  400,  400,  400,  401,
-      401,  401,  401,  401,  401,  402,  402,  402,  402,  402,
-      402,  403,  369,  403,  403,  403,  404,  367,  404,  405,
-      366,  405,  405,  365,  364,  363,  361,  357,  355,  354,
-      351,  350,  348,  347,  346,  345,  343,  342,  341,  339,
-      337,  336,  335,  333,  332,  330,  329,  328,  327,  326,
-      325,  324,  323,  322,  321,  320,  319,  317,  314,  313,
-      312,  309,  308,  307,  306,  305,  303,  302,  301,  298,
-      297,  296,  295,  294,  293,  292,  291,  289,  288,  287,
-      286,  285,  284,  283,  282,  280,  279,  278,  277,  276,
+      242,  395,  395,  395,  395,  395,  395,  396,  396,  396,
+      396,  396,  396,  397,  397,  397,  397,  397,  397,  398,
+      366,  398,  398,  398,  399,  364,  399,  400,  362,  400,
+      400,  361,  360,  359,  358,  356,  352,  350,  349,  346,
+      345,  343,  342,  341,  340,  339,  338,  337,  335,  333,
+      332,  331,  329,  328,  326,  325,  324,  323,  322,  321,
+      320,  319,  318,  317,  316,  315,  313,  310,  309,  306,
+      305,  304,  303,  302,  300,  299,  298,  295,  294,  293,
+      292,  291,  290,  289,  288,  286,  285,  284,  283,  282,
+      281,  280,  279,  277,  276,  275,  274,  273,  272,  271,
 
-      275,  274,  273,  272,  271,  270,  269,  268,  267,  265,
-      264,  260,  259,  258,  257,  254,  253,  252,  251,  250,
-      249,  248,  247,  246,  245,  243,  239,  238,  237,  236,
-      231,  230,  229,  228,  227,  226,  225,  223,  222,  221,
-      220,  219,  218,  217,  216,  215,  214,  213,  211,  210,
-      209,  208,  207,  206,  204,  203,  201,  200,  199,  198,
-      195,  194,  193,  192,  191,  190,  189,  188,  187,  186,
-      185,  184,  183,  182,  181,  180,  179,  178,  177,  176,
-      175,  174,  173,  172,  171,  170,  169,  168,  167,  165,
-      164,  162,  161,  159,  158,  157,  156,  155,  153,  151,
+      270,  269,  268,  267,  266,  265,  263,  262,  258,  257,
+      256,  255,  252,  251,  250,  249,  248,  247,  246,  245,
+      244,  243,  241,  237,  236,  235,  234,  229,  228,  227,
+      226,  225,  224,  222,  221,  220,  219,  218,  217,  216,
+      215,  214,  213,  212,  210,  209,  208,  207,  206,  205,
+      203,  202,  200,  199,  198,  197,  194,  193,  192,  191,
+      190,  189,  188,  187,  186,  185,  184,  183,  182,  181,
+      180,  179,  178,  177,  176,  175,  174,  173,  172,  171,
+      170,  169,  168,  167,  165,  164,  162,  161,  159,  158,
+      157,  156,  155,  153,  151,  150,  149,  148,  147,  146,
 
-      150,  149,  148,  147,  146,  145,  143,  142,  141,  140,
-      138,  136,  135,  134,  133,  131,  130,  129,  121,  119,
-      118,  117,  116,  115,  112,  110,  109,  106,  105,  104,
-      102,  100,   99,   98,   97,   96,   94,   92,   91,   90,
-       88,   87,   86,   85,   83,   54,   46,   43,   42,   41,
-       29,   28,   15,   13,    9,    6,    5,  399,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
+      145,  143,  142,  141,  140,  138,  136,  135,  134,  133,
+      131,  130,  129,  121,  119,  118,  117,  116,  115,  112,
+      110,  109,  106,  105,  104,  102,  100,   99,   98,   97,
+       96,   94,   92,   91,   90,   88,   87,   86,   85,   83,
+       54,   46,   43,   42,   41,   29,   28,   15,   13,    9,
+        6,    5,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
+      394,  394,  394,  394,  394,  394,  394,  394,  394,  394,
 
-      399,  399,  399,  399,  399,  399,  399,  399,  399,  399,
-      399,  399,  399
+      394,  394,  394,  394,  394,  394,  394,  394
    );
 
 end LexTable;
