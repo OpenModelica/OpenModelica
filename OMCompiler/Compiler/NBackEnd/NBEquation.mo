@@ -1834,31 +1834,38 @@ public
       input output EqData eqData;
       input list<Pointer<Equation>> eq_lst;
       input EqType eqType;
+      input Boolean newName = true;
     algorithm
       eqData := match (eqData, eqType)
 
         case (EQ_DATA_SIM(), EqType.CONTINUOUS) algorithm
-          for eqn_ptr in eq_lst loop
-            Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
-          end for;
+          if newName then
+            for eqn_ptr in eq_lst loop
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+            end for;
+          end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
           eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
           eqData.continuous := EquationPointers.addList(eq_lst, eqData.continuous);
         then eqData;
 
         case (EQ_DATA_SIM(), EqType.DISCRETE) algorithm
-          for eqn_ptr in eq_lst loop
-            Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
-          end for;
+          if newName then
+            for eqn_ptr in eq_lst loop
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+            end for;
+          end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
           eqData.simulation := EquationPointers.addList(eq_lst, eqData.simulation);
           eqData.discretes := EquationPointers.addList(eq_lst, eqData.discretes);
         then eqData;
 
         case (EQ_DATA_SIM(), EqType.INITIAL) algorithm
-          for eqn_ptr in eq_lst loop
-            Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
-          end for;
+          if newName then
+            for eqn_ptr in eq_lst loop
+              Equation.createName(eqn_ptr, eqData.uniqueIndex, "SIM");
+            end for;
+          end if;
           eqData.equations := EquationPointers.addList(eq_lst, eqData.equations);
           eqData.initials := EquationPointers.addList(eq_lst, eqData.initials);
         then eqData;

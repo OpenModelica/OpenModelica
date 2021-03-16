@@ -113,11 +113,11 @@ public
 
   function fromCref
     input ComponentRef cref;
+    input Binding binding = NFBinding.EMPTY_BINDING;
     output Variable variable;
   protected
     InstNode node;
     Type ty;
-    Binding binding;
     Prefixes.Visibility vis;
     SourceInfo info;
   algorithm
@@ -125,7 +125,7 @@ public
     ty := ComponentRef.getSubscriptedType(cref);
     vis := InstNode.visibility(node);
     info := InstNode.info(node);
-    variable := Variable.VARIABLE(cref, ty, NFBinding.EMPTY_BINDING, vis, NFComponent.DEFAULT_ATTR, {}, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
+    variable := Variable.VARIABLE(cref, ty, binding, vis, NFComponent.DEFAULT_ATTR, {}, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
   function getVar
@@ -466,7 +466,7 @@ public
           state := BVariable.getVarPointer(cref);
           qual.name := DERIVATIVE_STR;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
-          var := BVariable.fromCref(cref);
+          var := fromCref(cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
           var_ptr := Pointer.create(var);
           cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
@@ -477,6 +477,19 @@ public
       then fail();
     end match;
   end makeDerVar;
+
+  function getStateVar
+    input Pointer<Variable> der_var;
+    output Pointer<Variable> state_var;
+  algorithm
+    state_var := match Pointer.access(der_var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE_DER(state = state_var)))
+      then state_var;
+      else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(der_var) + " because of wrong variable kind."});
+        then fail();
+    end match;
+  end getStateVar;
 
   function getStateCref
     "Returns the state variable component reference from a state derivative component reference.
@@ -604,7 +617,7 @@ public
           disc := BVariable.getVarPointer(cref);
           qual.name := PREVIOUS_STR;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
-          var := BVariable.fromCref(cref);
+          var := fromCref(cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.PREVIOUS(disc));
           var_ptr := Pointer.create(var);
           cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
@@ -660,7 +673,7 @@ public
           // prepend the seed str and the matrix name and create the new cref
           qual.name := SEED_STR + "_" + name;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
-          var := BVariable.fromCref(cref);
+          var := fromCref(cref);
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.SEED_VAR(old_var_ptr));
           // create the new variable pointer and safe it to the component reference
@@ -694,7 +707,7 @@ public
           // prepend the seed str and the matrix name and create the new cref_DIFF_DIFF
           qual.name := PARTIAL_DERIVATIVE_STR + "_" + name;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
-          var := BVariable.fromCref(cref);
+          var := fromCref(cref);
           // update the variable to be a jac var and pass the pointer to the original variable
           // ToDo: tmps will get JAC_DIFF_VAR !
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_VAR());
@@ -727,7 +740,7 @@ public
           // prepend the seed str and the matrix name and create the new cref
           qual.name := START_STR;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
-          var := BVariable.fromCref(cref);
+          var := fromCref(cref);
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.START(old_var_ptr));
           // create the new variable pointer and safe it to the component reference
@@ -760,7 +773,7 @@ public
     // Type for residuals is always REAL() !
     cref := ComponentRef.CREF(node, subs, ty, NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
-    var := BVariable.fromCref(cref);
+    var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DAE_RESIDUAL_VAR(uniqueIndex));
     // create the new variable pointer and safe it to the component reference
@@ -783,13 +796,46 @@ public
     node := InstNode.VAR_NODE(name + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
     cref := ComponentRef.CREF(node, {}, Type.BOOLEAN(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
     // create variable and set its kind to dae_residual (change name?)
-    var := BVariable.fromCref(cref);
+    var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE());
     // create the new variable pointer and safe it to the component reference
     var_ptr := Pointer.create(var);
     cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
   end makeEventVar;
+
+  function makeAuxStateVar
+    "Creates a generic boolean variable pointer from a unique index and context name.
+    e.g. (\"$WHEN\", 4) --> $WHEN_4"
+    input Integer uniqueIndex         "unique identifier index";
+    input Option<Expression> binding  "optional binding expression";
+    output Pointer<Variable> var_ptr  "pointer to new variable";
+    output ComponentRef cref          "new component reference";
+    output Pointer<Variable> der_var  "pointer to new derivative variable";
+    output ComponentRef der_cref      "new derivative component reference";
+  protected
+    InstNode node;
+    Variable var;
+    Expression bnd;
+  algorithm
+    // create inst node with dummy variable pointer and create cref from it
+    node := InstNode.VAR_NODE(AUXILIARY_STR + "_" + intString(uniqueIndex), Pointer.create(DUMMY_VARIABLE));
+    cref := ComponentRef.CREF(node, {}, Type.REAL(), NFComponentRef.Origin.SCOPE, ComponentRef.EMPTY());
+    // create variable and add optional binding
+    if isSome(binding) then
+      bnd := Util.getOption(binding);
+      var := fromCref(cref, Binding.FLAT_BINDING(bnd, Expression.variability(bnd)));
+    else
+      var := fromCref(cref);
+    end if;
+    // update the variable to be a seed and pass the pointer to the original variable
+    var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.ALGEBRAIC());
+    // create the new variable pointer and safe it to the component reference
+    var_ptr := Pointer.create(var);
+    cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+    (der_cref, der_var) := BVariable.makeDerVar(cref);
+    var_ptr := BVariable.makeStateVar(var_ptr, der_var);
+  end makeAuxStateVar;
 
   function getBindingVariability
     "returns the variability of the binding, fails if it has the wrong type.
@@ -1474,6 +1520,7 @@ public
           varData.variables := VariablePointers.addList(var_lst, varData.variables);
           varData.knowns := VariablePointers.addList(var_lst, varData.knowns);
           varData.states := VariablePointers.addList(var_lst, varData.states);
+          varData.initials := VariablePointers.addList(var_lst, varData.initials);
           // also remove from algebraics in the case it was moved
           varData.unknowns := VariablePointers.removeList(var_lst, varData.unknowns);
           varData.algebraics := VariablePointers.removeList(var_lst, varData.algebraics);
@@ -1483,6 +1530,7 @@ public
           varData.variables := VariablePointers.addList(var_lst, varData.variables);
           varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
           varData.derivatives := VariablePointers.addList(var_lst, varData.derivatives);
+          varData.initials := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         // algebraic variables, dummy states and dummy derivatives are mathematically equal
@@ -1490,11 +1538,12 @@ public
           varData.variables := VariablePointers.addList(var_lst, varData.variables);
           varData.unknowns := VariablePointers.addList(var_lst, varData.unknowns);
           varData.algebraics := VariablePointers.addList(var_lst, varData.algebraics);
+          varData.initials := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
-        // algebraic variables, dummy states and dummy derivatives are mathematically equal
         case (VAR_DATA_SIM(), VarType.START) algorithm
           varData.variables := VariablePointers.addList(var_lst, varData.variables);
+          varData.initials := VariablePointers.addList(var_lst, varData.initials);
         then varData;
 
         // ToDo: other cases

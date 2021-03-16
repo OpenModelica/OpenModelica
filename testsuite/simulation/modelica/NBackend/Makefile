@@ -12,6 +12,7 @@ implicitEquation.mos \
 eventSystem.mos \
 minimalTearing.mos \
 underdetermined_init.mos \
+detectStates.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

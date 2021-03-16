@@ -179,6 +179,7 @@ public
     varData := match varData
       case VarData.VAR_DATA_SIM() algorithm
         varData.variables := VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));
+        varData.aliasVars := VariablePointers.map(varData.aliasVars, function applySimpleVar(replacements = replacements));
       then varData;
       case VarData.VAR_DATA_JAC() algorithm
         varData.variables := VariablePointers.map(varData.variables, function applySimpleVar(replacements = replacements));

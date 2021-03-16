@@ -235,6 +235,11 @@ protected
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
           eqData.initials := EquationPointers.addList(non_trivial_eqs, eqData.initials);
           eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
+
+          // if we replaced variables by constants it is possible that new simple equations formed
+          if not listEmpty(const_vars) then
+            (varData, eqData) := removeSimpleEquationsDefault(varData, eqData);
+          end if;
       then (varData, eqData);
 
       case (BVariable.VAR_DATA_JAC(), BEquation.EQ_DATA_JAC())
@@ -346,10 +351,14 @@ protected
     sets := getSimpleSets(map, size);
     if Flags.isSet(Flags.DUMP_REPL) then
       print(StringUtil.headline_2("[dumprepl] Alias Sets:") + "\n");
-      for set in sets loop
-        print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + SimpleSet.toString(set) + "\n");
-        setIdx := setIdx + 1;
-      end for;
+      if listEmpty(sets) then
+        print("<No Alias Sets>\n\n");
+      else
+        for set in sets loop
+          print(StringUtil.headline_4("Alias Set " + intString(setIdx) + ":") + SimpleSet.toString(set) + "\n");
+          setIdx := setIdx + 1;
+        end for;
+      end if;
     end if;
 
     // --------------------------------------------------------------------------------------------------------

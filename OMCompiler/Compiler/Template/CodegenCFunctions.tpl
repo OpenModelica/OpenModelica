@@ -6499,6 +6499,16 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
     let &preExp += '<%tvar%> = delayImpl(data, threadData, <%index%>, <%var1%>, data->localData[0]->timeValue, <%var2%>, <%var3%>);<%\n%>'
     tvar
 
+  case CALL(path=IDENT(name="spatialDistribution"), expLst={ICONST(integer=index), in0, in1, posX, posVelo}) then
+    let tvar = tempDecl("modelica_real", &varDecls)
+
+    let var1 = daeExp(in0, context, &preExp, &varDecls, &auxFunction)
+    let var2 = daeExp(in1, context, &preExp, &varDecls, &auxFunction)
+    let var3 = daeExp(posX, context, &preExp, &varDecls, &auxFunction)
+    let var4 = daeExp(posVelo, context, &preExp, &varDecls, &auxFunction)
+    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%>, <%var1%>, <%var2%>, <%var3%>, <%var4%>);<%\n%>'
+    tvar
+
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp, &varDecls, &auxFunction)
     '((modelica_integer)(<%castedVar%>))'

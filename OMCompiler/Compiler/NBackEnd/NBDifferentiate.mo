@@ -44,8 +44,8 @@ public
   import Call = NFCall;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import Function = NFFunction.Function;
-  import FunctionTree = NFFlatten.FunctionTree;
+  import NFFunction.Function;
+  import NFFlatten.{FunctionTree, FunctionTreeImpl};
   import Operator = NFOperator;
   import Type = NFType;
   import NFPrefixes.Variability;
@@ -80,7 +80,7 @@ public
     end DIFFERENTIATION_ARGUMENTS;
 
     function timeDiffArgs
-      input FunctionTree funcTree;
+      input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
       output DifferentiationArguments diffArgs = DIFFERENTIATION_ARGUMENTS(
         diffCref        = ComponentRef.EMPTY(),
         new_vars        = {},

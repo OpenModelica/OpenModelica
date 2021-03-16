@@ -66,14 +66,12 @@ protected
   // Backend imports
   import Adjacency = NBAdjacency;
   import BEquation = NBEquation;
-  import NBEquation.EqData;
-  import NBEquation.EquationPointers;
+  import NBEquation.{Equation, EquationPointers, EqData};
   import Jacobian = NBackendDAE;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
   import BVariable = NBVariable;
-  import NBVariable.VarData;
-  import NBVariable.VariablePointers;
+  import NBVariable.{VariablePointers, VarData};
   import NBEvents.EventInfo;
 
   // Util imports
@@ -177,13 +175,14 @@ public
      This function is only allowed to read and change equations, change algebraic
      variables to states and create state derivatives."
     input output VariablePointers variables     "All variables";
-    input output EquationPointers equations     "System equations";
     input output VariablePointers unknowns      "Unknowns";
     input output VariablePointers knowns        "Knowns";
     input output VariablePointers initials      "Initial unknowns";
     input output VariablePointers states        "States";
     input output VariablePointers derivatives   "State derivatives (der(x) -> $DER.x)";
     input output VariablePointers algebraics    "Algebraic variables";
+    input EquationPointers equations            "System equations";
+    output list<Pointer<Equation>> aux_eqns     "New auxiliary equations";
   end detectContinuousStatesInterface;
 
   partial function detectDiscreteStatesInterface

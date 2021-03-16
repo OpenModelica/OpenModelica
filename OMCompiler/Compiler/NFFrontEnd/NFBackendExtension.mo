@@ -161,7 +161,7 @@ public
         case DUMMY_DER() then           "[DDER]";
         case DUMMY_STATE() then         "[DSTA]";
         case DISCRETE() then            "[DISC]";
-        case DISCRETE_STATE() then      "[DSTA]";
+        case DISCRETE_STATE() then      "[DISS]";
         case PREVIOUS() then            "[PRE-]";
         case PARAMETER() then           "[PRMT]";
         case CONSTANT() then            "[CNST]";
