@@ -1011,6 +1011,13 @@ function listArrayLiteral<A>
 external "builtin";
 end listArrayLiteral;
 
+function listAppendDestroy<A> "O(listLength(lstFirstDestroyed))"
+  input list<A> lstFirstDestroyed "this list will be destroyed, the end of this list will be set to the second list";
+  input list<A> lstSecondKept "this list is not touched";
+  output list<A> lstFirstDestroyedReturned;
+external "builtin";
+end listAppendDestroy;
+
 end Dangerous;
 
 end MetaModelica;

@@ -92,6 +92,7 @@ extern modelica_metatype boxptr_stringHashDjb2Mod(threadData_t*,modelica_metatyp
 /* List Operations */
 extern modelica_metatype listReverse(modelica_metatype);
 extern modelica_metatype listReverseInPlace(modelica_metatype);
+extern modelica_metatype listAppendDestroy(modelica_metatype, modelica_metatype);
 #define listSetRest(X,Y) boxptr_listSetRest(threadData,X,Y)
 #define listSetFirst(X,Y) boxptr_listSetFirst(threadData,X,Y)
 extern void boxptr_listSetRest(threadData_t*,modelica_metatype,modelica_metatype);
