@@ -175,7 +175,7 @@ algorithm
   outProgram := Absyn.PROGRAM({cl},Absyn.TOP());
 end loadClassFromMps;
 
-protected function loadClassFromMp
+public function loadClassFromMp
   input String id "the actual class name";
   input String path;
   input String name;
