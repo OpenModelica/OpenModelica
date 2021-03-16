@@ -43,10 +43,11 @@ end scan;
 
 function scanString "Scan starts the lexical analysis, load the tables and consume the program to output the tokens"
   input String fileSource "input source code file";
+  input String fileName = "<StringSource>";
   output list<Token> tokens "return list of tokens";
   output list<Token> errorTokens;
 algorithm
-  (tokens, errorTokens) := lex("<StringSource>",fileSource);
+  (tokens, errorTokens) := lex(fileName,fileSource);
 end scanString;
 
 
@@ -1688,13 +1689,15 @@ function reportErrors
   input list<Token> tokens;
 protected
   Integer i=0;
+  String content;
 algorithm
   for t in tokens loop
     i := i+1;
     if i>10 then
       Error.addMessage(Error.SCANNER_ERROR_LIMIT, {});
     end if;
-    Error.addSourceMessage(Error.SCANNER_ERROR, {tokenContent(t)}, tokenSourceInfo(t));
+    content := tokenContent(t);
+    Error.addSourceMessage(Error.SCANNER_ERROR, {StringUtil.convertCharNonAsciiToHex(content)}, tokenSourceInfo(t));
   end for;
   if not listEmpty(tokens) then
     fail();
