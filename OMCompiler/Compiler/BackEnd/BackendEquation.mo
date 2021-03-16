@@ -2921,6 +2921,10 @@ algorithm
       eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
     then eqn;
 
+    case eqn as BackendDAE.FOR_EQUATION() equation
+      eqn.source = ElementSource.addSymbolicTransformation(eqn.source, inSymOp);
+    then eqn;
+
     else equation
       Error.addInternalError("BackendEquation.addOperation failed", sourceInfo());
     then fail();

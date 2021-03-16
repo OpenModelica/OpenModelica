@@ -3953,6 +3953,7 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={e1}))
       equation
         (e2, shared) = Differentiate.differentiateExpTime(e1, vars, Mutable.access(inShared));
+        false = Expression.isZero(e2);
         Mutable.update(inShared, shared);
         (e2, _) = ExpressionSimplify.simplify(e2);
         (_, vars) = Expression.traverseExpBottomUp(e2, derCrefsExp, vars);
