@@ -429,16 +429,11 @@ modelica_metatype listAppendDestroy(modelica_metatype lstFirstDestroyed, modelic
   if (MMC_NILTEST(lstFirstDestroyed)) {
     return listSecondKept;
   }
-  while (!MMC_NILTEST(lst))
-  {
-    /* reached the end, set the element */
-    if (MMC_NILTEST(MMC_CDR(lst)))
-    {
-      MMC_CDR(lst) = listSecondKept;
-      break;
-    }
+  while (!MMC_NILTEST(MMC_CDR(lst))) {
     lst = MMC_CDR(lst);
   }
+  /* reached the end, set the element */
+  MMC_CDR(lst) = listSecondKept;
   return lstFirstDestroyed;
 }
 
