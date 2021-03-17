@@ -604,7 +604,7 @@ function element_list
   extends partialParser;
 protected
   TokenId id;
-  Boolean b;
+  Boolean b, isAnnotation;
 algorithm
   outTree := {};
   while true loop
@@ -612,17 +612,20 @@ algorithm
     if not b then
       break;
     end if;
-    (tokens, tree) := element(tokens, tree);
+    (tokens, tree, isAnnotation) := element(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
-    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$element")))::outTree;
-    tree := {};
+    if not isAnnotation then
+      outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$element")))::outTree;
+      tree := {};
+    end if;
   end while;
   outTree := listAppend(tree, listAppend(outTree, inTree));
 end element_list;
 
 function element
   extends partialParser;
+  output Boolean isAnnotation = false;
 protected
   TokenId id;
   Boolean b,b1;
@@ -636,6 +639,11 @@ algorithm
     case TokenId.EXTENDS
       algorithm
         (tokens, tree) := extends_clause(tokens, tree);
+      then ();
+    case TokenId.ANNOTATION
+      algorithm
+        (tokens, tree) := _annotation(tokens, tree);
+        isAnnotation := true;
       then ();
     else
       algorithm
@@ -3287,6 +3295,7 @@ package First "First token possible for a given non-terminal in the Modelica 3 g
   };
   constant list<TokenId> component_clause = listAppend(type_prefix,name);
   constant list<TokenId> element = listAppend(component_clause, listAppend(class_definition, {
+    TokenId.ANNOTATION,
     TokenId.IMPORT,
     TokenId.EXTENDS,
     TokenId.REDECLARE,
