@@ -90,6 +90,7 @@ Ticket6167.mos \
 Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
+Ticket6406.mos \
 ReadOnlyPkg.mos
 
 # test that currently fail. Move up when fixed.
