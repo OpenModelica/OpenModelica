@@ -2441,6 +2441,8 @@ protected
           if isSome(oexp) then
             SOME(outExp) := oexp;
             // TODO: Apply subscripts.
+          else
+            outExp := exp;
           end if;
         then
           outExp;
