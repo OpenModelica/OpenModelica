@@ -1245,7 +1245,6 @@ algorithm
         algorithm
           // Flatten the condition and body of the branch.
           cond := flattenExp(cond, prefix);
-          eql := flattenEquations(eql, prefix, settings);
 
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
@@ -1266,6 +1265,7 @@ algorithm
             // The condition is true and the branch will thus always be selected
             // if reached, so we can discard the remaining branches.
             branches := {};
+            eql := flattenEquations(eql, prefix, settings);
 
             if listEmpty(bl) then
               // If we haven't collected any other branches yet, replace the if-equation with this branch.
@@ -1277,6 +1277,7 @@ algorithm
           elseif not Expression.isFalse(cond) then
             // Only add the branch to the list of branches if the condition is not
             // literal false, otherwise just drop it since it will never trigger.
+            eql := flattenEquations(eql, prefix, settings);
             bl := Equation.makeBranch(cond, listReverseInPlace(eql), var) :: bl;
           end if;
         then
