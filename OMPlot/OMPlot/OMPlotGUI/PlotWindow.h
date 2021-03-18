@@ -178,6 +178,7 @@ public slots:
   void setLogX(bool on);
   void setLogY(bool on);
   void setAutoScale(bool on);
+  bool toggleSign(PlotCurve *pPlotCurve, bool checked);
   void showSetupDialog();
   void showSetupDialog(QString variable);
 };

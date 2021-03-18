@@ -233,9 +233,9 @@ bool PlotCurve::hasCustomColor()
  * \brief PlotCurve::toggleVisibility
  * Toggles the curve visibility.
  */
-void PlotCurve::toggleVisibility()
+void PlotCurve::toggleVisibility(bool visibility)
 {
-  setVisible(!isVisible());
+  setVisible(visibility);
   QwtText text = title();
   if (isVisible()) {
     text.setColor(QColor(Qt::black));
