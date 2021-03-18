@@ -102,7 +102,7 @@ public:
   QString getYVariable();
   void setCustomColor(bool value);
   bool hasCustomColor();
-  void toggleVisibility();
+  void toggleVisibility(bool visibility);
   void setData(const double* xData, const double* yData, int size);
   QwtPlotDirectPainter* getPlotDirectPainter() {return mpPlotDirectPainter;}
   QwtPlotMarker* getPointMarker() const {return mpPointMarker;}

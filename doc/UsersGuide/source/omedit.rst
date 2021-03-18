@@ -731,6 +731,39 @@ Diagram Window. To show it click on Diagram Window toolbar button (|diagram-wind
 
 .. _omedit-resimulation :
 
+Plot Window
+~~~~~~~~~~~
+
+A plot window shows the plot curve of instance variables. Several plot curves can be plotted in the
+same plot window. See :numref:`omedit-plotting-perspective`.
+
+Plot Window Menu
+^^^^^^^^^^^^^^^^
+
+-  *Auto Scale* - Automatically scales the horizontal and vertical axes.
+-  *Fit in View* - Adjusts the plot canvas to according to the size of plot curves.
+-  *Save* - Saves the plot to file system as .png, .svg or .bmp.
+-  *Print* - Prints the plot.
+-  *Grid* - Shows grid lines.
+-  *Detailed Grid* - Shows detailed grid lines.
+-  *No Grid* - Hides grid lines.
+-  *Log X* - Logarithmic scale of the horizontal axis.
+-  *Log Y* - Logarithmic scale of the vertical axis.
+-  *Setup* - Shows a setup window.
+  -  *Variables* - List of all plotted variables.
+    -  *General* - Variable general information.
+      -  *Legend* - Display name for legend.
+      -  *File* - File name where variable data is stored.
+    -  *Appearance* - Visual settings of variable.
+      -  *Color* - Display color.
+      -  *Pattern* - Line pattern of curve.
+      -  *Thickness* - Line thickness of curve.
+      -  *Hide* - Hide/Show the curve.
+      -  *Toggle Sign* - Toggles the sign of curve.
+    -  *Titles* - Plot, axes and footer titles settings.
+    -  *Legend* - Sets legend position and font.
+    -  *Range* - Automatic or manual axes range.
+
 Re-simulating a Model
 ---------------------
 
