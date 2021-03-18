@@ -527,6 +527,7 @@ FuncStringInvalid1.mo \
 FuncStringInvalid2.mo \
 FuncUnknownDim1.mo \
 FuncUnknownDim2.mo \
+FuncUnknownDim3.mo \
 FuncVariability.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
