@@ -2422,9 +2422,12 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
+        if not InstContext.inRelaxed(context) then
+          Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
+          fail();
+        end if;
       then
-        fail();
+        ();
 
   end match;
 end instComponentExpressions;

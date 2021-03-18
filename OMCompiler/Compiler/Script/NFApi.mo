@@ -149,7 +149,7 @@ protected
   list<Absyn.ElementArg> el = {};
   list<String> stringLst = {};
   Absyn.Exp absynExp;
-  Expression exp;
+  Expression exp, save;
   DAE.Exp dexp;
   list<Absyn.ComponentItem> items;
   Option<Absyn.ConstrainClass> cc;
@@ -226,7 +226,12 @@ algorithm
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
               exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
               (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
-              // exp := NFCeval.evalExp(exp);
+              save := exp;
+              try
+                exp := NFCeval.evalExp(save);
+              else
+                exp := save;
+              end try;
               exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
               str := str + ", " + Expression.toString(exp);
             else
@@ -235,6 +240,11 @@ algorithm
           end if;
         then
           str;
+
+      case Absyn.MODIFICATION(
+          path = Absyn.IDENT(annName),
+          modification = SOME(Absyn.CLASSMOD(_, _)))
+        then stringAppendList({annName, "(error)"});
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
         algorithm
@@ -257,6 +267,9 @@ algorithm
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           str;
+
+      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
+        then stringAppendList({annName, "(error)"});
 
     end matchcontinue;
 
@@ -422,7 +435,7 @@ algorithm
 
       case Absyn.MODIFICATION(
           path = Absyn.IDENT(annName),
-          modification = SOME(Absyn.CLASSMOD(_, Absyn.NOMOD())))
+          modification = SOME(Absyn.CLASSMOD(_, _)))
         then stringAppendList({annName, "(error)"});
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
@@ -446,6 +459,9 @@ algorithm
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           stringAppendList({annName, "(", str, ")"});
+
+      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
+        then stringAppendList({annName, "(error)"});
 
     end matchcontinue;
 
