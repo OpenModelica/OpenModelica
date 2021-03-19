@@ -482,6 +482,7 @@ namespace Utilities {
   void highlightCurrentLine(QPlainTextEdit *pPlainTextEdit);
   void highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFormat parenthesesMatchFormat, QTextCharFormat parenthesesMisMatchFormat);
   qint64 getProcessId(QProcess *pProcess);
+  QString formatExitCode(int code);
 #ifdef WIN32
   void killProcessTreeWindows(DWORD myprocID);
 #endif
