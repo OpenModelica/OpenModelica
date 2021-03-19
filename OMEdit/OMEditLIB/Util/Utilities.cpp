@@ -801,6 +801,23 @@ qint64 Utilities::getProcessId(QProcess *pProcess)
   return processId;
 }
 
+/*!
+ * \brief Utilities::formatExitCode
+ * Returns the given process exit code as a string in an OS appropriate format.
+ * \param code
+ * \return
+ */
+QString Utilities::formatExitCode(int code)
+{
+#ifdef WIN32
+  // Use 0xXXXXXXXX format on Windows.
+  return QStringLiteral("0x%1").arg(code, 8, 16, QChar('0'));
+#else
+  // Use normal decimal on other OS.
+  return QString::number(code);
+#endif
+}
+
 #ifdef WIN32
 /* adrpo: found this on http://stackoverflow.com/questions/1173342/terminate-a-process-tree-c-for-windows
  * thanks go to: mjmarsh & Firas Assaad
