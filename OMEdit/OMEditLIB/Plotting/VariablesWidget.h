@@ -44,6 +44,7 @@
 class OMCProxy;
 class TreeSearchFilters;
 class Label;
+class VariableNode;
 
 typedef QPair<int,QString> IntStringPair;
 Q_DECLARE_METATYPE(IntStringPair)
@@ -160,6 +161,7 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
+  void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
@@ -262,6 +264,21 @@ private slots:
   void incrementVisualization();
 signals:
   void updateDynamicSelect(double time);
+};
+
+class VariableNode
+{
+public:
+  VariableNode(const QVector<QVariant> &variableNodeData);
+  ~VariableNode();
+  QVector<QVariant> mVariableNodeData;
+  bool mEditable;
+  QString mVariability;
+  QHash<QString, VariableNode*> mChildren;
+
+  static VariableNode* findVariableNode(const QString &name, VariableNode *pParentVariableNode);
+  void setEditable(bool editable) {mEditable = editable;}
+  void setVariability(const QString &variability) {mVariability = variability;}
 };
 
 #endif // VARIABLESWIDGET_H
