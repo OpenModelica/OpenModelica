@@ -546,11 +546,12 @@ bool JsonDocument::parse(const QString &fileName)
 bool JsonDocument::parse(const QByteArray &jsonData)
 {
   bool success = true;
+  QString msg("Failed to parse json %1 with error %2");
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QJsonParseError jsonParserError;
   QJsonDocument doc = QJsonDocument::fromJson(jsonData, &jsonParserError);
   if (doc.isNull()) {
-    errorString = QString("Failed to parse json %1 with error %2").arg(jsonData, jsonParserError.errorString());
+    errorString = QString(msg).arg(jsonData, jsonParserError.errorString());
     success = false;
   } else {
     result = doc.toVariant();
@@ -559,7 +560,7 @@ bool JsonDocument::parse(const QByteArray &jsonData)
   QJson::Parser parser;
   result = parser.parse(jsonData, &success);
   if (!success) {
-    errorString = GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(file.fileName(), parser.errorString());
+    errorString = QString(msg).arg(jsonData, parser.errorString());
   }
 #endif // QT_VERSION_CHECK
   return success;
