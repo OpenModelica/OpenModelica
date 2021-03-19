@@ -598,6 +598,16 @@ public
     end match;
   end isPolymorphic;
 
+  function isNoRetCall
+    input Type ty;
+    output Boolean ret;
+  algorithm
+    ret := match ty
+      case NORETCALL() then true;
+      else false;
+    end match;
+  end isNoRetCall;
+
   function firstTupleType
     input Type ty;
     output Type outTy;

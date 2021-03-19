@@ -5732,17 +5732,29 @@ protected function checkValidNoRetcall
   input DAE.Exp exp;
   input SourceInfo info;
 algorithm
-  _ := match (exp,info)
+  () := match exp
     local
       String str;
-    case (DAE.CALL(),_) then ();
-    case (DAE.REDUCTION(),_) then ();
-    case (DAE.TUPLE({}),_) then ();
+
+    case DAE.CALL(attr = DAE.CALL_ATTR(ty = DAE.T_NORETCALL())) then ();
+    case DAE.CALL()
+      algorithm
+        if not exp.attr.isImpure then
+          Error.addSourceMessage(Error.DISCARDING_PURE_RETURN_VALUE,
+            {AbsynUtil.pathString(exp.path)}, info);
+        end if;
+      then
+        ();
+    case DAE.REDUCTION() then ();
+    case DAE.TUPLE({}) then ();
+
     else
-      equation
-        str = ExpressionDump.printExpStr(exp);
+      algorithm
+        str := ExpressionDump.printExpStr(exp);
         Error.addSourceMessage(Error.NORETCALL_INVALID_EXP,{str},info);
-      then fail();
+      then
+        fail();
+
   end match;
 end checkValidNoRetcall;
 

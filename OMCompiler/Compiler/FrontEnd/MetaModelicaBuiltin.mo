@@ -735,7 +735,7 @@ impure function listArray<A>
 external "builtin";
 end listArray;
 
-function arrayUpdate<A>
+impure function arrayUpdate<A>
   "O(1)"
   input array<A> arr;
   input Integer index;
@@ -769,14 +769,14 @@ function anyString<A>
 external "builtin";
 end anyString;
 
-function printAny<A>
+impure function printAny<A>
   "print(anyString(a)), but to stderr"
   input A a;
 external "builtin";
   annotation(__OpenModelica_Impure = true);
 end printAny;
 
-function debug_print<A>
+impure function debug_print<A>
   "For RML compatibility"
   input String str;
   input A a;
@@ -906,7 +906,7 @@ function stringCharListString
 external "builtin" str=stringAppendList(strs);
 end stringCharListString;
 
-function fail
+impure function fail
   external "builtin";
 end fail;
 
@@ -958,7 +958,7 @@ function arrayGetNoBoundsChecking<A> "O(1)"
 external "builtin";
 end arrayGetNoBoundsChecking;
 
-function arrayUpdateNoBoundsChecking<A> "O(1)"
+impure function arrayUpdateNoBoundsChecking<A> "O(1)"
   input array<A> arr;
   input Integer index;
   input A newValue;

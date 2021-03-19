@@ -742,7 +742,7 @@ algorithm
   end if;
 end join;
 
-function copy<T>
+impure function copy<T>
   "Copies all values from inArraySrc to inArrayDest. Fails if inArraySrc is
    larger than inArrayDest.
 
@@ -761,7 +761,7 @@ algorithm
   end for;
 end copy;
 
-function copyN<T>
+impure function copyN<T>
   "Copies the first inN values from inArraySrc to inArrayDest. Fails if
    inN is larger than either inArraySrc or inArrayDest."
   input array<T> inArraySrc;
@@ -781,7 +781,7 @@ algorithm
   end for;
 end copyN;
 
-function copyRange<T>
+impure function copyRange<T>
   "Copies a range of elements from one array to another."
   input array<T> srcArray "The array to copy from.";
   input array<T> dstArray "The array to insert into.";

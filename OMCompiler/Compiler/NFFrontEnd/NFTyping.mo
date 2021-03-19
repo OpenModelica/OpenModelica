@@ -2649,7 +2649,9 @@ algorithm
 
     case Equation.NORETCALL()
       algorithm
-        e1 := typeExp(eq.exp, context, ElementSource.getInfo(eq.source));
+        info := ElementSource.getInfo(eq.source);
+        (e1, ty1) := typeExp(eq.exp, context, info);
+        checkNoRetCall(e1, ty1, info);
       then
         Equation.NORETCALL(e1, eq.source);
 
@@ -2916,7 +2918,9 @@ algorithm
 
     case Statement.NORETCALL()
       algorithm
-        e1 := typeExp(st.exp, context, ElementSource.getInfo(st.source));
+        info := ElementSource.getInfo(st.source);
+        (e1, ty1) := typeExp(st.exp, context, info);
+        checkNoRetCall(e1, ty1, info);
       then
         Statement.NORETCALL(e1, st.source);
 
@@ -3269,6 +3273,25 @@ algorithm
     fail();
   end if;
 end typeReinit;
+
+function checkNoRetCall
+  input Expression exp;
+  input Type returnType;
+  input SourceInfo info;
+algorithm
+  () := match exp
+    case Expression.CALL() guard not Type.isNoRetCall(returnType)
+      algorithm
+        if not Call.isImpure(exp.call) and not Type.isEmptyArray(returnType) then
+          Error.addSourceMessage(Error.DISCARDING_PURE_RETURN_VALUE,
+            {AbsynUtil.pathString(Call.functionName(exp.call))}, info);
+        end if;
+      then
+        ();
+
+    else ();
+  end match;
+end checkNoRetCall;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTyping;

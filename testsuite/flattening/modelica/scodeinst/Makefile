@@ -560,6 +560,7 @@ FunctionMultiOutput3.mo \
 FunctionMultiOutput4.mo \
 FunctionMultiOutput5.mo \
 FunctionNoOutput1.mo \
+FunctionNoOutput2.mo \
 FunctionNonInputOutputParameter.mo \
 FunctionRecordArg1.mo \
 FunctionRecordArg2.mo \

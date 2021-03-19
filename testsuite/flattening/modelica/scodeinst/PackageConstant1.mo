@@ -27,7 +27,7 @@ equation
   z = P.x2;
 algorithm
   z := P.x3;
-  f(1.0);
+  z := f(1.0);
 end PackageConstant2;
 
 // Result:
@@ -45,6 +45,6 @@ end PackageConstant2;
 //   z = 2.0;
 // algorithm
 //   z := 3.0;
-//   f(1.0);
+//   z := f(1.0);
 // end PackageConstant2;
 // endResult

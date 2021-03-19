@@ -17,7 +17,7 @@ model OperationSubEW2
   Real r1;
   Real r2[2];
 equation
-  f(r1, r2);
+  r2 = f(r1, r2);
 end OperationSubEW2;
 
 // Result:
@@ -35,6 +35,6 @@ end OperationSubEW2;
 //   Real r2[1];
 //   Real r2[2];
 // equation
-//   f(r1, r2);
+//   r2 = f(r1, r2);
 // end OperationSubEW2;
 // endResult

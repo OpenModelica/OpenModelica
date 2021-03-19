@@ -848,6 +848,8 @@ public constant ErrorTypes.Message CONVERSION_MISMATCHED_PLACEHOLDER = ErrorType
   Gettext.gettext("Mismatched % in conversion modifier ‘%s‘."));
 public constant ErrorTypes.Message CONVERSION_MISSING_PLACEHOLDER_VALUE = ErrorTypes.MESSAGE(388, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("No replacement value for placeholder ‘%s‘ could be found."));
+public constant ErrorTypes.Message DISCARDING_PURE_RETURN_VALUE = ErrorTypes.MESSAGE(389, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("Discarding return value of call to pure function ‘%s‘."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
