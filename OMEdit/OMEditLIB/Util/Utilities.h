@@ -448,6 +448,18 @@ public:
   void start(const QString &program, const QStringList &arguments, OpenMode mode = ReadWrite);
 };
 
+class JsonDocument : public QObject
+{
+  Q_OBJECT
+public:
+  JsonDocument(QObject *pParent = 0);
+  bool parse(const QString &fileName);
+  bool parse(const QByteArray &jsonData);
+
+  QVariant result;
+  QString errorString;
+};
+
 namespace Utilities {
 
   enum LineEndingMode {

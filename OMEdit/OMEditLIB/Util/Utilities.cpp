@@ -53,6 +53,8 @@
 #include <QXmlSchemaValidator>
 #include <QDir>
 
+#include <qjson/parser.h>
+
 SplashScreen *SplashScreen::mpInstance = 0;
 
 SplashScreen *SplashScreen::instance()
@@ -499,6 +501,68 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
   QProcess::start(program, arguments, mode);
   waitForStarted();
   setProcessState(QProcess::NotRunning);
+}
+
+JsonDocument::JsonDocument(QObject *pParent)
+  : QObject(pParent)
+{
+  result.clear();
+  errorString = "";
+}
+
+bool JsonDocument::parse(const QString &fileName)
+{
+  bool success = true;
+  QFile file(fileName);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  if (file.exists()) {
+    if (file.open(QIODevice::ReadOnly)) {
+      QJsonParseError jsonParserError;
+      QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &jsonParserError);
+      if (doc.isNull()) {
+        errorString = QString("Failed to parse file %1 with error %2").arg(file.fileName(), jsonParserError.errorString());
+        success = false;
+      } else {
+        result = doc.toVariant();
+      }
+      file.close();
+    } else {
+      errorString = GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(file.fileName(), file.errorString());
+      success = false;
+    }
+  }
+#else // QT_VERSION_CHECK
+  if (file.exists()) {
+    QJson::Parser parser;
+    result = parser.parse(&file, &success);
+    if (!success) {
+      errorString = GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(file.fileName(), parser.errorString());
+    }
+  }
+#endif // QT_VERSION_CHECK
+  return success;
+}
+
+bool JsonDocument::parse(const QByteArray &jsonData)
+{
+  bool success = true;
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  QJsonParseError jsonParserError;
+  QJsonDocument doc = QJsonDocument::fromJson(jsonData, &jsonParserError);
+  if (doc.isNull()) {
+    errorString = QString("Failed to parse json %1 with error %2").arg(jsonData, jsonParserError.errorString());
+    success = false;
+  } else {
+    result = doc.toVariant();
+  }
+#else // QT_VERSION_CHECK
+  QJson::Parser parser;
+  result = parser.parse(jsonData, &success);
+  if (!success) {
+    errorString = GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(file.fileName(), parser.errorString());
+  }
+#endif // QT_VERSION_CHECK
+  return success;
 }
 
 QString Utilities::escapeForHtmlNonSecure(const QString &str)

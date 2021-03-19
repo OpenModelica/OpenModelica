@@ -40,7 +40,6 @@
 #include "Modeling/ItemDelegate.h"
 #include "Editors/TransformationsEditor.h"
 #include "Editors/ModelicaEditor.h"
-#include <qjson/parser.h>
 #include "diff_match_patch.h"
 
 #include <QStatusBar>
@@ -805,20 +804,17 @@ static OMEquation* getOMEquation(QList<OMEquation*> equations, int index)
 
 void TransformationsWidget::loadTransformations()
 {
-  QFile file(mInfoJSONFullFileName);
   mEquations.clear();
   mVariables.clear();
   hasOperationsEnabled = false;
   if (mInfoJSONFullFileName.endsWith(".json")) {
-    QJson::Parser parser;
-    bool ok;
-    QVariantMap result;
-    result = parser.parse(&file, &ok).toMap();
-    if (!ok) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(mInfoJSONFullFileName)
-                                                            .arg(parser.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    JsonDocument jsonDocument;
+    if (!jsonDocument.parse(mInfoJSONFullFileName)) {
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
+      MainWindow::instance()->printStandardOutAndErrorFilesMessages();
       return;
     }
+    QVariantMap result = jsonDocument.result.toMap();
     QVariantMap vars = result["variables"].toMap();
     QVariantList eqs = result["equations"].toList();
     for(QVariantMap::const_iterator iter = vars.begin(); iter != vars.end(); ++iter) {
@@ -882,6 +878,7 @@ void TransformationsWidget::loadTransformations()
     parseProfiling(mProfJSONFullFileName);
     fetchEquations();
   } else {
+    QFile file(mInfoJSONFullFileName);
     mpInfoXMLFileHandler = new MyHandler(file,mVariables,mEquations);
     mpTVariablesTreeModel->insertTVariablesItems(mVariables);
     /* load equations */
@@ -1317,15 +1314,9 @@ void TransformationsWidget::filterEquationOperations(int index)
 
 void TransformationsWidget::parseProfiling(QString fileName)
 {
-  QFile *file = new QFile(fileName);
-  if (!file->exists()) {
-    delete file;
-    return;
-  }
-  QJson::Parser parser;
-  bool ok;
-  QVariantMap result = parser.parse(file, &ok).toMap();
-  if (ok) {
+  JsonDocument jsonDocument;
+  if (jsonDocument.parse(fileName)) {
+    QVariantMap result = jsonDocument.result.toMap();
     double totalStepsTime = result["totalTimeProfileBlocks"].toDouble();
     QVariantList functions = result["functions"].toList();
     QVariantList list = result["profileBlocks"].toList();
@@ -1341,8 +1332,7 @@ void TransformationsWidget::parseProfiling(QString fileName)
       mEquations[id]->profileBlock = i + functions.size();
     }
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(fileName)
-                                                          .arg(parser.errorString()), Helper::scriptingKind, Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->printStandardOutAndErrorFilesMessages();
   }
-  delete file;
 }

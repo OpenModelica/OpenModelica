@@ -78,7 +78,6 @@
 #include "omc_config.h"
 #include "Util/NetworkAccessManager.h"
 
-#include <qjson/parser.h>
 #include <QtSvg/QSvgGenerator>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -1355,8 +1354,7 @@ void MainWindow::printStandardOutAndErrorFilesMessages()
       QString outputFileData = outputFile.readAll();
       if (!outputFileData.isEmpty()) {
         outputFilePosition = outputFile.pos();
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, outputFileData,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, outputFileData, Helper::scriptingKind, Helper::notificationLevel));
       }
     }
     outputFile.close();
@@ -4551,15 +4549,15 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
  */
 void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
 {
-  QJson::Parser parser;
-  bool ok;
   QList<QVariant> result;
   const QByteArray jsonData = pNetworkReply->readAll();
-  result = parser.parse(jsonData, &ok).toList();
-  if (!ok) {
+  JsonDocument jsonDocument;
+  if (!jsonDocument.parse(jsonData)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Failed to parse json of github contributors.", Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->printStandardOutAndErrorFilesMessages();
+  } else {
+    result = jsonDocument.result.toList();
   }
-
   QString contributors;
   foreach (QVariant variant, result) {
     QVariantMap map = variant.toMap();
