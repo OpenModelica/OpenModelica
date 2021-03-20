@@ -55,12 +55,11 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Causalize = NBCausalize;
-  import Equation = NBEquation.Equation;
-  import EquationPointers = NBEquation.EquationPointers;
+  import NBEquation.{Equation, EquationPointers};
   import Replacements = NBReplacements;
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
-  import VariablePointers = NBVariable.VariablePointers;
+  import NBVariable.VariablePointers;
 
   // Util imports
   import StringUtil;
@@ -204,12 +203,6 @@ protected
           eqData.equations := EquationPointers.compress(eqData.equations);
           eqData.continuous := EquationPointers.compress(eqData.continuous);
 
-          // categorize alias vars and sort them to the correct arrays
-          (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
-
-          // add non trivial alias to knowns, but leave them in other arrays
-          varData.knowns := VariablePointers.addList(non_trivial_alias, varData.knowns);
-
           // remove alias vars from all relevant arrays after splitting off non trivial alias vars
           varData.variables := VariablePointers.removeList(alias_vars, varData.variables);
           varData.unknowns := VariablePointers.removeList(alias_vars, varData.unknowns);
@@ -217,6 +210,9 @@ protected
           varData.states := VariablePointers.removeList(alias_vars, varData.states);
           varData.discretes := VariablePointers.removeList(alias_vars, varData.discretes);
           varData.initials := VariablePointers.removeList(alias_vars, varData.initials);
+
+          // categorize alias vars and sort them to the correct arrays
+          (non_trivial_alias, alias_vars) := List.splitOnTrue(alias_vars, BVariable.hasNonTrivialAliasBinding);
 
           // split off constant alias
           // update constant start values and add to parameters
@@ -229,12 +225,12 @@ protected
 
           // add only the actual 1/-1 alias vars to alias vars
           varData.aliasVars := VariablePointers.addList(alias_vars, varData.aliasVars);
+          varData.nonTrivialAlias := VariablePointers.addList(non_trivial_alias, varData.nonTrivialAlias);
 
           // add non trivial alias to removed
           non_trivial_eqs := list(Equation.generateBindingEquation(var, eqData.uniqueIndex) for var in non_trivial_alias);
           eqData.removed := EquationPointers.addList(non_trivial_eqs, eqData.removed);
-          eqData.initials := EquationPointers.addList(non_trivial_eqs, eqData.initials);
-          eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
+          //eqData.equations := EquationPointers.addList(non_trivial_eqs, eqData.equations);
 
           // if we replaced variables by constants it is possible that new simple equations formed
           if not listEmpty(const_vars) then
@@ -343,8 +339,7 @@ protected
     // 1. collect alias sets (variables, equations, optional constant binding)
     // ------------------------------------------------------------------------------
     // collect (cref) -> (simpleSet) hashtable
-    size := BVariable.VariablePointers.size(variables);
-    size := intMax(BaseHashTable.lowBucketSize, realInt(realMul(intReal(size), 0.7)));
+    size := VariablePointers.size(variables);
     map := UnorderedMap.new<SetPtr>(ComponentRef.hash, ComponentRef.isEqual, size);
     (newEquations, map) := NBEquation.EquationPointers.foldRemovePtr(equations, findSimpleEquation, map);
 
@@ -390,7 +385,7 @@ protected
       case BEquation.SIMPLE_EQUATION()
       then findCrefsSimple(eq.lhs, eq.rhs, crefTpl);
 
-      case BEquation.SCALAR_EQUATION() algorithm
+      case BEquation.SCALAR_EQUATION() guard(isSimple(eq.lhs) and isSimple(eq.rhs)) algorithm
         crefTpl := Expression.fold(eq.rhs, findCrefs, crefTpl);
         crefTpl := Expression.fold(eq.lhs, findCrefs, crefTpl);
       then crefTpl;

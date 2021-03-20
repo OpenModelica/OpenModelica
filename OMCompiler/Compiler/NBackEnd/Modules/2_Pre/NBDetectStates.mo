@@ -49,6 +49,7 @@ protected
   import Expression = NFExpression;
   import Function = NFFunction;
   import InstNode = NFInstNode.InstNode;
+  import SimplifyExp = NFSimplifyExp;
   import Variable = NFVariable;
 
   // Backend imports
@@ -123,27 +124,28 @@ protected
     VariablePointers algebraics     "Algebraic variables";
     VariablePointers discretes      "Discrete variables";
     VariablePointers previous       "Previous discrete variables (pre(d) -> $PRE.d)";
-    VariablePointers auxiliaries, aliasVars, parameters, constants     "(only to reconstruct VAR_DATA_SIM)";
+    VariablePointers auxiliaries, aliasVars, nonTrivialAlias, parameters, constants     "(only to reconstruct VAR_DATA_SIM)";
     list<Pointer<Equation>> aux_eqns;
   algorithm
-    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, previous = previous, parameters = parameters, constants = constants) := varData;
+    BVariable.VAR_DATA_SIM(variables = variables, unknowns = unknowns, knowns = knowns, initials = initials, auxiliaries = auxiliaries, aliasVars = aliasVars, nonTrivialAlias = nonTrivialAlias, states = states, derivatives = derivatives, algebraics = algebraics, discretes = discretes, previous = previous, parameters = parameters, constants = constants) := varData;
     BEquation.EQ_DATA_SIM(equations = equations, discretes = disc_eqns) := eqData;
     (variables, unknowns, knowns, initials, states, derivatives, algebraics, aux_eqns) := continuousFunc(variables, unknowns, knowns, initials, states, derivatives, algebraics, equations);
     (variables, disc_eqns, knowns, initials, discretes, previous) := discreteFunc(variables, disc_eqns, knowns, initials, discretes, previous);
     varData := BVariable.VAR_DATA_SIM(
-      variables     = variables,
-      unknowns      = unknowns,
-      knowns        = knowns,
-      initials      = initials,
-      auxiliaries   = auxiliaries,
-      aliasVars     = aliasVars,
-      derivatives   = derivatives,
-      algebraics    = algebraics,
-      discretes     = discretes,
-      previous      = previous,
-      states        = states,
-      parameters    = parameters,
-      constants     = constants
+      variables       = variables,
+      unknowns        = unknowns,
+      knowns          = knowns,
+      initials        = initials,
+      auxiliaries     = auxiliaries,
+      aliasVars       = aliasVars,
+      nonTrivialAlias = nonTrivialAlias,
+      derivatives     = derivatives,
+      algebraics      = algebraics,
+      discretes       = discretes,
+      previous        = previous,
+      states          = states,
+      parameters      = parameters,
+      constants       = constants
     );
     eqData := EqData.addTypedList(eqData, aux_eqns, EqData.EqType.CONTINUOUS, false);
   end detectStatesDefault;
@@ -240,6 +242,7 @@ protected
           else
             // one or less algebraic variables > differentiate the expression
             (returnExp, oDiffArgs) := Differentiate.differentiateExpression(arg, diffArgs);
+            returnExp := SimplifyExp.simplify(returnExp);
             if listLength(oDiffArgs.new_vars) == 1 then
               der_var := List.first(oDiffArgs.new_vars);
               Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));

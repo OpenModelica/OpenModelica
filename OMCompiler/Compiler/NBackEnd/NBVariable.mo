@@ -135,6 +135,7 @@ public
     var := Pointer.access(getVarPointer(cref));
   end getVar;
 
+  // The following functions provide layers of protection. Whenever accessing names or pointers use these!
   function getVarPointer
     input ComponentRef cref;
     output Pointer<Variable> var;
@@ -142,7 +143,7 @@ public
     var := match cref
       local
         Pointer<Variable> varPointer;
-      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then setVarName(varPointer, cref);
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) +
         ", because of wrong InstNode (not VAR_NODE). Show lowering errors with -d=failtrace."});
@@ -159,6 +160,16 @@ public
     var := Pointer.access(var_ptr);
     name := BackendDAE.lowerComponentReferenceInstNode(var.name, var_ptr);
   end getVarName;
+
+  function setVarName
+    input output Pointer<Variable> var_ptr;
+    input ComponentRef name;
+  protected
+    Variable var = Pointer.access(var_ptr);
+  algorithm
+    var.name := name;
+    Pointer.update(var_ptr, var);
+  end setVarName;
 
   function getDimensions
     input Pointer<Variable> var_ptr;
@@ -221,6 +232,16 @@ public
     end match;
   end isStart;
 
+  function isTime
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.TIME())) then true;
+      else false;
+    end match;
+  end isTime;
+
   function isContinuous
     input Pointer<Variable> var;
     output Boolean b;
@@ -229,6 +250,8 @@ public
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE_STATE())) then false;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.DISCRETE())) then false;
       case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PREVIOUS())) then false;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then false;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then false;
       else true;
     end match;
   end isContinuous;
@@ -304,6 +327,18 @@ public
     end match;
   end isConst;
 
+  function isKnown
+    input Pointer<Variable> var;
+    output Boolean b;
+  algorithm
+    b := match Pointer.access(var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER())) then true;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.CONSTANT())) then true;
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE())) then true;
+      else false;
+    end match;
+  end isKnown;
+
   function isDAEResidual
     input Pointer<Variable> var;
     output Boolean b;
@@ -313,20 +348,6 @@ public
       else false;
     end match;
   end isDAEResidual;
-
-  function setVariableKind
-    input output Variable var;
-    input BackendExtension.VariableKind varKind;
-  algorithm
-    var := match var
-      local
-        BackendExtension.BackendInfo backendinfo;
-      case NFVariable.VARIABLE(backendinfo = backendinfo) algorithm
-        backendinfo.varKind := varKind;
-        var.backendinfo := backendinfo;
-      then var;
-    end match;
-  end setVariableKind;
 
   function isInput
     input Pointer<Variable> var;
@@ -463,7 +484,7 @@ public
         Variable var;
       case qual as InstNode.VAR_NODE()
         algorithm
-          state := BVariable.getVarPointer(cref);
+          state := getVarPointer(cref);
           qual.name := DERIVATIVE_STR;
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
           var := fromCref(cref);
@@ -1216,6 +1237,25 @@ public
       end match;
     end getVarSafe;
 
+    function getVarIndex
+      "Returns -1 if cref was deleted or cannot be found."
+      input ComponentRef cref;
+      input VariablePointers variables;
+      output Integer index;
+    algorithm
+      index := match UnorderedMap.get(cref, variables.map)
+        case SOME(index) then index;
+        case NONE() then -1;
+      end match;
+    end getVarIndex;
+
+    function contains
+      "Returns true if the variable is in the variable pointer array."
+      input Pointer<Variable> var;
+      input VariablePointers variables;
+      output Boolean b = UnorderedMap.contains(getVarName(var), variables.map);
+    end contains;
+
     function getVarNames
       "returns a list of crefs representing the names of all variables"
       input VariablePointers variables;
@@ -1226,6 +1266,23 @@ public
       mapPtr(variables, function getVarNameTraverse(acc = acc));
       names := listReverse(Pointer.access(acc));
     end getVarNames;
+
+    function getMarkedVars
+      input VariablePointers variables;
+      input array<Boolean> marks;
+      output list<Pointer<Variable>> marked_vars;
+    protected
+      list<Integer> indices = BackendUtil.findTrueIndices(marks);
+    algorithm
+      if arrayLength(marks) == VariablePointers.size(variables) then
+        marked_vars := list(getVarAt(variables, index) for index in indices);
+      else
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the number var marks ("
+          + intString(arrayLength(marks)) + ") is not equal to the number of variables ("
+          + intString(VariablePointers.size(variables)) + ")."});
+        fail();
+      end if;
+    end getMarkedVars;
 
     function compress"O(n)
       Reorders the elements in order to remove all the gaps.
@@ -1319,7 +1376,8 @@ public
       VariablePointers initials           "All initial unknowns (unknowns + states + previous + parameters(non const binding))";
       VariablePointers auxiliaries        "Variables created by the backend known to be solved
                                           by given binding. E.g. $cse";
-      VariablePointers aliasVars          "Variables removed due to alias removal";
+      VariablePointers aliasVars          "Variables removed due to alias removal with 1 or -1 coefficient";
+      VariablePointers nonTrivialAlias    "Variables removed due to alias removal";
 
       /* subset of unknowns */
       VariablePointers derivatives        "State derivatives (der(x) -> $DER.x)";

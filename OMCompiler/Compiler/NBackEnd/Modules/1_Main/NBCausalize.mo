@@ -112,6 +112,9 @@ public
 
       case (System.SystemType.INI, BackendDAE.MAIN(init = systems, varData = varData, eqData = eqData, funcTree = funcTree))
         algorithm
+          if Flags.isSet(Flags.INITIALIZATION) then
+            print(StringUtil.headline_1("Balance Initialization") + "\n");
+          end if;
           for system in systems loop
             (new_system, varData, eqData, funcTree) := func(system, varData, eqData, funcTree, NBAdjacency.MatrixStrictness.INIT);
             new_systems := new_system :: new_systems;

@@ -327,10 +327,10 @@ protected
   protected
     Variable lowVar;
     Pointer<Variable> lowVar_ptr, time_ptr, dummy_ptr;
-    list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {};
+    list<Pointer<Variable>> unknowns_lst = {}, knowns_lst = {}, initials_lst = {}, auxiliaries_lst = {}, aliasVars_lst = {}, nonTrivialAlias_lst = {};
     list<Pointer<Variable>> states_lst = {}, derivatives_lst = {}, algebraics_lst = {}, discretes_lst = {}, previous_lst = {};
     list<Pointer<Variable>> parameters_lst = {}, constants_lst = {};
-    VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars;
+    VariablePointers variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias;
     VariablePointers states, derivatives, algebraics, discretes, previous;
     VariablePointers parameters, constants;
   algorithm
@@ -405,6 +405,7 @@ protected
     initials := VariablePointers.fromList(initials_lst);
     auxiliaries := VariablePointers.fromList(auxiliaries_lst);
     aliasVars := VariablePointers.fromList(aliasVars_lst);
+    nonTrivialAlias := VariablePointers.fromList(nonTrivialAlias_lst);
 
     states := VariablePointers.fromList(states_lst);
     derivatives := VariablePointers.fromList(derivatives_lst);
@@ -419,7 +420,7 @@ protected
     VariablePointers.map(variables, function lowerVariableBinding(variables = variables));
 
     /* create variable data */
-    variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars,
+    variableData := BVariable.VAR_DATA_SIM(variables, unknowns, knowns, initials, auxiliaries, aliasVars, nonTrivialAlias,
                     derivatives, algebraics, discretes, previous, states, parameters, constants);
   end lowerVariableData;
 

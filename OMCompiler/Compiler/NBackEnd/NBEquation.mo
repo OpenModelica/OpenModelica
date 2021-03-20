@@ -1502,7 +1502,7 @@ public
     function mapPtr
       "Traverses all equations wrapped in pointers and applies a function to them.
       Note: the equation can only be updated if the function itself updates it!"
-      input output EquationPointers equations;
+      input EquationPointers equations;
       input MapFunc func;
       partial function MapFunc
         input Pointer<Equation> e;
@@ -1649,14 +1649,36 @@ public
       end for;
     end foldRemovePtr;
 
-    function getEqnAt
-      "Returns the equation pointer at given index. If there is none it fails."
+    function getEqnAt "O(1)
+      Returns the equation pointer at given index. If there is none it fails."
       input EquationPointers equations;
       input Integer index;
       output Pointer<Equation> eqn;
     algorithm
       eqn := ExpandableArray.get(index, equations.eqArr);
     end getEqnAt;
+
+    function getEqnByName "O(1)
+      Returns the equation with specified name, fails if it does not exist."
+      input EquationPointers equations;
+      input ComponentRef name;
+      output Pointer<Equation> eqn;
+    algorithm
+      eqn := match UnorderedMap.get(name, equations.map)
+        local
+          Integer index;
+        case SOME(index) guard(index > 0)
+        then getEqnAt(equations, index);
+
+        case SOME(index) algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the equation with the name " + ComponentRef.toString(name) + " has already been deleted."});
+        then fail();
+
+        else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there is no equation with the name " + ComponentRef.toString(name) + "."});
+        then fail();
+      end match;
+    end getEqnByName;
 
     function compress "O(n)
       Reorders the elements in order to remove all the gaps.
@@ -1676,6 +1698,10 @@ public
       end for;
       // compress the array
       equations.eqArr := ExpandableArray.compress(equations.eqArr);
+      // fix the mapping. ToDo: can this be done more efficiently?
+      for i in 1:ExpandableArray.getNumberOfElements(equations.eqArr) loop
+        UnorderedMap.add(Equation.getEqnName(ExpandableArray.get(i, equations.eqArr)), i, equations.map);
+      end for;
     end compress;
 
      function sort

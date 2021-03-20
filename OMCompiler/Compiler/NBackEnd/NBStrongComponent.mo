@@ -119,8 +119,8 @@ public
       case SINGLE_EQUATION()
         algorithm
           str := StringUtil.headline_3("BLOCK" + indexStr + ": Single Equation");
-          str := str + "### Variable:" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
-          str := str + "### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+          str := str + "### Variable:\n" + Variable.toString(Pointer.access(comp.var), "\t") + "\n";
+          str := str + "### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
       case SINGLE_ARRAY()
@@ -130,7 +130,7 @@ public
           for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
       case SINGLE_ALGORITHM()
@@ -140,7 +140,7 @@ public
           for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
       case SINGLE_RECORD_EQUATION()
@@ -150,7 +150,7 @@ public
           for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
       case SINGLE_WHEN_EQUATION()
@@ -160,7 +160,7 @@ public
           for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
       case SINGLE_IF_EQUATION()
@@ -170,7 +170,7 @@ public
           for var in comp.vars loop
             str := str + Variable.toString(Pointer.access(var), "\t") + "\n";
           end for;
-          str := str + "\n### Equation:" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
+          str := str + "\n### Equation:\n" + Equation.toString(Pointer.access(comp.eqn), "\t") + "\n";
       then str;
 
       case ALGEBRAIC_LOOP()

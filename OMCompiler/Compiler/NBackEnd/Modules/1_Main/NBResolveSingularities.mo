@@ -304,7 +304,7 @@ protected
     Pointer<Variable> var;
   algorithm
     var := BVariable.getVarPointer(cref);
-    if (BVariable.isState(var) or BVariable.isStateDerivative(var) or BVariable.isAlgebraic(var)) then
+    if (BVariable.isContinuous(var) and not BVariable.isTime(var)) then
       Pointer.update(acc, cref :: Pointer.access(acc));
     end if;
   end getStateCandidate;

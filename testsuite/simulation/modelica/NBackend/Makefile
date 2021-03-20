@@ -13,6 +13,7 @@ eventSystem.mos \
 minimalTearing.mos \
 underdetermined_init.mos \
 detectStates.mos \
+partitioning.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make failingtest

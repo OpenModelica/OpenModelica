@@ -150,7 +150,7 @@ public
       input output Option<FunctionTree> funcTree = NONE() "only needed for LINEAR without existing derivatives";
     protected
       Equation eqn;
-      list<ComponentRef> dependencies, non_state_dependencies, nonlinear_dependencies;
+      list<ComponentRef> dependencies, state_dependencies, nonlinear_dependencies;
       BEquation.EquationAttributes attr;
       Pointer<Differentiate.DifferentiationArguments> diffArgs_ptr;
       Differentiate.DifferentiationArguments diffArgs;
@@ -159,7 +159,7 @@ public
       array<list<Integer>> m, mT;
       Integer eqn_idx = 1;
     algorithm
-      if ExpandableArray.getNumberOfElements(eqs.eqArr) > 0 then
+      if ExpandableArray.getNumberOfElements(vars.varArr) > 0 or ExpandableArray.getNumberOfElements(eqs.eqArr) > 0 then
         if Util.isSome(funcTree) then
           diffArgs_ptr := Pointer.create(Differentiate.DifferentiationArguments.timeDiffArgs(Util.getOption(funcTree)));
         end if;
@@ -175,8 +175,8 @@ public
           if (st == MatrixStrictness.INIT) then
             // for initialization all regular rules apply but states have to be
             // sorted to be at the end
-            (non_state_dependencies, dependencies) := List.extractOnTrue(dependencies, function BVariable.checkCref(func = BVariable.isNonState));
-            m[eqn_idx] := getDependentCrefIndices(non_state_dependencies, vars.map, true);
+            (state_dependencies, dependencies) := List.extractOnTrue(dependencies, function BVariable.checkCref(func = BVariable.isState));
+            m[eqn_idx] := getDependentCrefIndices(state_dependencies, vars.map, true);
 
           // LINEAR and STATE SELECT
           elseif (st > MatrixStrictness.FULL) then

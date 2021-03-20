@@ -45,9 +45,9 @@ protected
   // Backend imports
   import BackendDAE = NBackendDAE;
   import BEquation = NBEquation;
-  import NBEquation.Equation;
-  import NBEquation.EquationPointers;
+  import NBEquation.{Equation,EquationPointers};
   import BVariable = NBVariable;
+  import NBVariable.VariablePointers;
   import Causalize = NBCausalize;
   import Jacobian = NBJacobian;
   import Module = NBModule;
@@ -82,7 +82,7 @@ public
 
             varData.variables := variables;
             varData.initials := initialVars;
-            eqData.equations := sortInit(equations);
+            eqData.equations := equations;
             eqData.initials := initialEqs;
 
             bdae.varData := varData;
@@ -222,7 +222,7 @@ public
     initialVars := BVariable.VariablePointers.addList(initial_param_vars, initialVars);
   end createParameterEquations;
 
-  function sortInit
+  function sortInitEqns
     "sorts initial equations to be at the start of the array"
     input output EquationPointers equations;
   protected
@@ -236,7 +236,23 @@ public
       end if;
     end for;
     equations := EquationPointers.fromList(DoubleEnded.toListAndClear(eqns));
-  end sortInit;
+  end sortInitEqns;
+
+  function sortInitVars
+    "sorts initial variables such that states are at the end of the array"
+    input output VariablePointers variables;
+  protected
+    DoubleEnded.MutableList<Pointer<Variable>> vars = DoubleEnded.empty(Pointer.create(NBVariable.DUMMY_VARIABLE));
+  algorithm
+    for var in VariablePointers.toList(variables) loop
+      if BVariable.isState(var) then
+        DoubleEnded.push_back(vars, var);
+      else
+        DoubleEnded.push_front(vars, var);
+      end if;
+    end for;
+    variables := VariablePointers.fromList(DoubleEnded.toListAndClear(vars));
+  end sortInitVars;
 
   annotation(__OpenModelica_Interface="backend");
 end NBInitialization;

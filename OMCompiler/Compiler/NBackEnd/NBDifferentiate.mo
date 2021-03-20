@@ -551,7 +551,7 @@ public
       // ALGEBRAIC => STATE_DER
       // make y a state and add new STATE_DER
       case (Expression.CREF(), DifferentiationType.TIME, _)
-        guard(BVariable.isAlgebraic(var_ptr))
+        guard(BVariable.isContinuous(var_ptr))
         algorithm
           // create derivative
           (derCref, der_ptr) := BVariable.makeDerVar(exp.cref);

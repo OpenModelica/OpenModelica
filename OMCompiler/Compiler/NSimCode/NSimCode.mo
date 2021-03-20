@@ -263,7 +263,7 @@ public
             // all non constant parameter equations will be added to the initial system.
             // There is no actual need for parameter equations block
             param := {};
-            no_ret := {};
+            // start allSim with no return equations
             (no_ret, simCodeIndices, funcTree) := SimStrongComponent.Block.createNoReturnBlocks(no_ret_eq, simCodeIndices, funcTree, NBSystem.SystemType.ODE);
             algorithms := {};
             (init, simCodeIndices, funcTree) := SimStrongComponent.Block.createInitialBlocks(bdae.init, simCodeIndices, funcTree);

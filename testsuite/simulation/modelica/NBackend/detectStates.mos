@@ -8,7 +8,7 @@ loadString("
   model expandDerOperator1
     Real x,y,z;
   equation
-    der(x) = sin(time) + z;
+    der(x) = sin(time);
     der(y) = cos(time);
     z = der(x+y);
   end expandDerOperator1;
@@ -18,7 +18,7 @@ loadString("
   model expandDerOperator2
     Real x,y,z;
   equation
-    der(x) = sin(time) + z;
+    der(x) = sin(time);
     y = cos(time);
     z = der(x+y);
   end expandDerOperator2;
@@ -31,7 +31,7 @@ loadString("
   equation
     x = sin(time) + z;
     y = cos(time);
-    z = der(x + y);
+    z = der(x+y);
   end expandDerOperator3;
 "); getErrorString();
 
@@ -54,13 +54,11 @@ simulate(expandDerOperator3); getErrorString();
 // 	<no discrete states>
 //
 // record SimulationResult
-//     resultFile = "",
+//     resultFile = "expandDerOperator1_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'expandDerOperator1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "Simulation execution failed for model: expandDerOperator1
-// stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
-// assert            | debug   | Solving non-linear system 6 failed at time=0.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// assert            | info    | simulation terminated by an assertion at initialization
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
 // ""

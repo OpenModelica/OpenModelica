@@ -260,7 +260,6 @@ public
   end getSafe;
 
   function getKey
-
     "Returns SOME(key) if the key exists in the map, otherwise NONE()."
     input K key;
     input UnorderedMap<K, V> map;
@@ -541,15 +540,16 @@ protected
     KeyEq eqfn = map.eqFn;
     list<Integer> bucket;
   algorithm
-    hash := hashfn(key, Vector.size(map.buckets));
-    bucket := Vector.get(map.buckets, hash + 1);
-
-    for i in bucket loop
-      if eqfn(key, Vector.getNoBounds(map.keys, i)) then
-        index := i;
-        break;
-      end if;
-    end for;
+    if Vector.size(map.buckets) > 0 then
+      hash := hashfn(key, Vector.size(map.buckets));
+      bucket := Vector.get(map.buckets, hash + 1);
+      for i in bucket loop
+        if eqfn(key, Vector.getNoBounds(map.keys, i)) then
+          index := i;
+          break;
+        end if;
+      end for;
+    end if;
   end find;
 
   function addEntry

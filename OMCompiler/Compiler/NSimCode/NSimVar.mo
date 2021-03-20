@@ -710,7 +710,7 @@ public
       output SimVars simVars;
       input output SimCode.SimCodeIndices simCodeIndices;
     protected
-      list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {};
+      list<SimVar> stateVars = {}, derivativeVars = {}, algVars = {}, nonTrivialAlias = {};
       list<SimVar> discreteAlgVars = {}, intAlgVars = {}, boolAlgVars = {}, stringAlgVars = {};
       list<SimVar> inputVars = {};
       list<SimVar> outputVars = {};
@@ -735,6 +735,7 @@ public
             ({stateVars}, simCodeIndices)                                               := createSimVarLists(qual.states, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
             ({derivativeVars}, simCodeIndices)                                          := createSimVarLists(qual.derivatives, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
             ({algVars}, simCodeIndices)                                                 := createSimVarLists(qual.algebraics, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
+            ({nonTrivialAlias}, simCodeIndices)                                         := createSimVarLists(qual.nonTrivialAlias, simCodeIndices, SplitType.NONE, VarType.SIMULATION);
             ({discreteAlgVars, intAlgVars, boolAlgVars, stringAlgVars}, simCodeIndices) := createSimVarLists(qual.discretes, simCodeIndices, SplitType.TYPE, VarType.SIMULATION);
             ({aliasVars, intAliasVars, boolAliasVars, stringAliasVars}, simCodeIndices) := createSimVarLists(qual.aliasVars, simCodeIndices, SplitType.TYPE, VarType.ALIAS);
             ({paramVars, intParamVars, boolParamVars, stringParamVars}, simCodeIndices) := createSimVarLists(qual.parameters, simCodeIndices, SplitType.TYPE, VarType.PARAMETER);
@@ -752,7 +753,7 @@ public
       simVars := SIMVARS(
         stateVars                           = stateVars,
         derivativeVars                      = derivativeVars,
-        algVars                             = algVars,
+        algVars                             = listAppend(algVars, nonTrivialAlias),
         discreteAlgVars                     = discreteAlgVars,
         intAlgVars                          = intAlgVars,
         boolAlgVars                         = boolAlgVars,
