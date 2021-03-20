@@ -55,9 +55,9 @@ AC_SUBST(MAKE)
 AC_SUBST(HAVE_LAPACK)
 AC_SUBST(HAVE_LAPACK_DEPRECATED)
 AC_SUBST(LD_LAPACK)
-AC_SUBST(WITH_UMFPACK)
-AC_SUBST(UMFPACK_TARGET)
-AC_SUBST(UMFPACK_LDFLAGS)
+AC_SUBST(WITH_SUITESPARSE)
+AC_SUBST(SUITESPARSE_TARGET)
+AC_SUBST(SUITESPARSE_LDFLAGS)
 AC_SUBST(OMNOTEBOOK)
 AC_SUBST(FPMATHFORTRAN)
 AC_SUBST(OMOPTIM_CC)
@@ -92,7 +92,6 @@ AC_SUBST(OMC)
 AC_SUBST(OMCTARGET)
 AC_SUBST(BOOTSTRAP_STATIC)
 AC_SUBST(LIBDL)
-AC_SUBST(LIBDL)
 AC_SUBST(BOOST_INCLUDE)
 AC_SUBST(LDFLAGS_LIBSTDCXX)
 AC_SUBST(CPP_RUNTIME_ARGS)
@@ -101,7 +100,7 @@ AC_SUBST(MINGW_EXTRA_LIBS)
 AC_SUBST(BSTATIC)
 AC_SUBST(OMC_TBB_ROOT)
 AC_SUBST(ENABLE_PARMODAUTO)
-
+AC_SUBST(EXTRA_MACOS_FLAGS_SUNDIALS)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -119,19 +118,6 @@ host_short=$host_cpu-$host_os
 
 echo "build_short: $build_short"
 echo "host_short: $host_short"
-
-AS_IF([test "x$with_UMFPACK" = xyes],
-[
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: Yes"
-  UMFPACK_TARGET="umfpack";
-  WITH_UMFPACK="#define WITH_UMFPACK"
-  UMFPACK_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd"
-],[
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: No"
-  UMFPACK_TARGET="";
-  WITH_UMFPACK="/* Without UMFPACK */"
-  UMFPACK_LDFLAGS=""
-])
 
 if echo $host | grep -i darwin; then
   DARWIN=1
@@ -301,7 +287,11 @@ AC_LANG_PUSH([C++])
 OLD_CXXFLAGS=$CXXFLAGS
 for flag in -stdlib=libstdc++; do
   CXXFLAGS="$OLD_CXXFLAGS $flag"
-  AC_TRY_LINK([], [return 0;], [LDFLAGS_LIBSTDCXX="$flag"],[CXXFLAGS="$OLD_CXXFLAGS"])
+  AC_TRY_LINK(
+    [#include <regex>],
+    [int main() {return 0;}],
+    [LDFLAGS_LIBSTDCXX="$flag"],
+    [CXXFLAGS="$OLD_CXXFLAGS"])
 done
 AC_LANG_POP([C++])
 
@@ -378,8 +368,8 @@ fi
 dnl Checks for header files.
 AC_HEADER_STDC
 
-AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header files)])
-# AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header files)])
+AC_CHECK_HEADERS(sys/time.h, [], [AC_MSG_ERROR(Missing header file sys/time.h)])
+# AC_CHECK_HEADERS(sqlite3.h, [], [AC_MSG_ERROR(Missing header file sqlite3.h)])
 
 AC_MSG_CHECKING([for antlr.Tool support])
 mkdir -p "$OMBUILDDIR/share/omc/java"
@@ -476,7 +466,7 @@ if test -z "$RUNTIMECFLAGS"; then
   CFLAGS="$FPIC"
   AC_MSG_CHECKING([runtime compiler CFLAGS])
   RUNTIMECFLAGS="$FPIC"
-  for flag in -falign-functions -mfpmath=sse -fno-dollars-in-identifiers; do
+  for flag in -falign-functions -mfpmath=sse -fno-dollars-in-identifiers -Wno-parentheses-equality; do
     CFLAGS="$FPIC $flag -Werror"
     AC_TRY_LINK([], [return 0;], [RUNTIMECFLAGS="$RUNTIMECFLAGS $flag"],[])
   done
@@ -533,6 +523,7 @@ if test "$WANT_STATIC_LPSOLVE" = "no"; then
   AC_SEARCH_LIBS(dlopen,dl)
   LIBDL="$LIBS"
   AC_SEARCH_LIBS(sqrt,m)
+  AC_SEARCH_LIBS(SuiteSparse_calloc,suitesparseconfig)
   AC_SEARCH_LIBS(colamd,colamd)
   AC_SEARCH_LIBS(make_lp,[lpsolve55_pic lpsolve55],[LIBLPSOLVE55=$LIBS],[COMPILE_LPSOLVE=1])
   LIBS=""
@@ -616,7 +607,7 @@ SUNDIALS_LDFLAGS="$SUNDIALS_NVECTOR_LDFLAGS $SUNDIALS_SUNMATRIX_LDFLAGS $SUNDIAL
 FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
 SUNDIALS_TARGET="sundials"
 
-AC_CHECK_HEADERS(curl/curl.h, [], [AC_MSG_ERROR(Missing header files)])
+AC_CHECK_HEADERS(curl/curl.h, [], [AC_MSG_ERROR(Missing header file curl/curl.h)])
 
 LIBS=""
 AC_CHECK_LIB(curl,curl_global_init, [RT_LDFLAGS="$RT_LDFLAGS -lcurl"], [AC_MSG_ERROR([Missing libcurl])])
@@ -703,21 +694,21 @@ LIBS=""
 
 IPOPT_LDFLAGS="-lipopt -lcoinmumps"
 
-# check for umfpack
-AC_ARG_WITH(UMFPACK, [  --without-UMFPACK              Disable compilation with UMFPACK, a sparse linear systems solver],
-[],[with_UMFPACK=yes])
+# check for SuiteSparse
+AC_ARG_WITH(SUITESPARSE, [  --without-SUITESPARSE              Disable compilation with SUITESPARSE (UMFPACK, KLU)],
+[],[with_SUITESPARSE=yes])
 
-AS_IF([test "x$with_UMFPACK" = xyes],
+AS_IF([test "x$with_SUITESPARSE" = xyes],
 [
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: Yes"
-  UMFPACK_TARGET="umfpack";
-  WITH_UMFPACK="#define WITH_UMFPACK"
-  UMFPACK_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd"
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use SUITESPARSE: Yes"
+  SUITESPARSE_TARGET="suitesparse";
+  WITH_SUITESPARSE="#define WITH_SUITESPARSE"
+  SUITESPARSE_LDFLAGS="-lumfpack -lklu -lbtf -lcolamd -lamd -lsuitesparseconfig"
 ],[
-  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use UMFPACK: No"
-  UMFPACK_TARGET="";
-  WITH_UMFPACK="/* Without UMFPACK */"
-  UMFPACK_LDFLAGS=""
+  FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use SUITESPARSE: No"
+  SUITESPARSE_TARGET="";
+  WITH_SUITESPARSE="/* Without SUITESPARSE */"
+  SUITESPARSE_LDFLAGS=""
 ])
 
 OLD_LDFLAGS="$LDFLAGS"
@@ -747,7 +738,7 @@ FINAL_MESSAGES="$FINAL_MESSAGES\nParModelica: $OPENCL"
 AC_SUBST(CMAKE_LDFLAGS_UNDEFINED_LOOKUP)
 AC_SUBST(CMAKE_EXTRA_DEFINES)
 AC_SUBST(DLLEXT)
-AC_SUBST(UMFPACK_SHARED)
+AC_SUBST(SUITESPARSE_SHARED)
 AC_SUBST(CONFIG_OS)
 if test "$DARWIN" = "1"; then
   EXE=""
@@ -763,7 +754,7 @@ if test "$DARWIN" = "1"; then
   LIBZMQLIB=libzmq.dylib
   CMINPACKLIB_SHARED=ON
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lexpat -lomcgc -lpthread -lm $LIBDL -lstdc++"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack -liconv"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lm -lpthread $LIBDL -lstdc++"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL -liconv"
   # All libraries are dynamically linked; we don't need anything else
@@ -781,7 +772,7 @@ if test "$DARWIN" = "1"; then
   OMC_LIBS="$OMC_LIBS -Wl,-undefined -Wl,dynamic_lookup"
   BOOTSTRAP_STATIC=""
   CMAKE_LDFLAGS_UNDEFINED_LOOKUP="-Wl,-undefined -Wl,dynamic_lookup"
-  UMFPACK_SHARED=ON
+  SUITESPARSE_SHARED=ON
   CONFIG_OS=OSX
 elif echo "$host" | grep -iq "mingw"; then
   EXE=".exe"
@@ -798,7 +789,7 @@ elif echo "$host" | grep -iq "mingw"; then
   LIBZMQLIB=libzmq.a
   CMINPACKLIB_SHARED=OFF
   RT_LDFLAGS_SIM="$LDFLAGS $RT_LDFLAGS -lstdc++ -lomcgc -lexpat -lm"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc -lexpat -Wl,-Bstatic -lpthread -Wl,-Bdynamic -static-libgcc -lm"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
@@ -816,7 +807,7 @@ elif echo "$host" | grep -iq "mingw"; then
   CMAKE_EXTRA_DEFINES="-DCMAKE_SYSTEM_NAME=Windows -DCMAKE_RC_COMPILER=$WINDRES"
   CPPFLAGS="$CPPFLAGS -DMSYS2_AUTOCONF=1"
   OMC_LIBS="$OMC_LIBS -lwsock32 -Wl,-Bstatic -lstdc++ -ltre  -lintl -liconv -Wl,-Bdynamic -lshlwapi"
-  UMFPACK_SHARED=OFF
+  SUITESPARSE_SHARED=OFF
   CONFIG_OS=Windows_NT
 else
   EXE=""
@@ -834,7 +825,7 @@ else
   # For static runtime on Linux:
   # -Wl,-whole-archive -lSimulationRuntimeC -Wl,-no-whole-archive
   RT_LDFLAGS_SIM="$LDFLAGS -Wl,-z,origin -Wl,-rpath,'\$\$ORIGIN' $RT_LDFLAGS $LIBRT -lexpat -lomcgc -lpthread -lm $LIBDL -lstdc++ -rdynamic"
-  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $UMFPACK_LDFLAGS -llis -lcdaskr -lcminpack"
+  RT_LDFLAGS_SIM_OPTIONAL="$SUNDIALS_LDFLAGS $IPOPT_LDFLAGS $SUITESPARSE_LDFLAGS -llis -lcdaskr -lcminpack"
   RT_LDFLAGS="$LDFLAGS $RT_LDFLAGS -lomcgc $LIBRT -lpthread -lm $LIBDL -lstdc++ -rdynamic"
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   # All libraries are dynamically linked; we don't need anything else
@@ -850,7 +841,7 @@ else
   OS_TARGET="linux"
   AR_SH="$AR -ru"
   BOOTSTRAP_STATIC=""
-  UMFPACK_SHARED=ON
+  SUITESPARSE_SHARED=ON
   CONFIG_OS=`echo $host_os | sed s/-gnu//`
 fi
 MSL_EXTRA_ARGS="--disable-hdf5 --enable-static-zlib --enable-static --disable-shared"
@@ -960,6 +951,7 @@ OPENMODELICA_SPEC_PLATFORM=`echo $host_cpu-darwin | sed "s/i@<:@3456@:>@86/i386/
 else
 OPENMODELICA_SPEC_PLATFORM=`echo $host_cpu-$host_os | sed "s/linux-gnu/linux/" | sed "s/linux-gnu/linux/" | sed "s/i@<:@3456@:>@86/i386/" | tr "@<:@:upper:@:>@ " "@<:@:lower:@:>@-"`
 fi
+
 AC_MSG_RESULT([$OPENMODELICA_SPEC_PLATFORM])
 AC_MSG_CHECKING([for Modelica platform name])
 if test "$OPENMODELICA_SPEC_PLATFORM" = "x86_64-linux" -o "$OPENMODELICA_SPEC_PLATFORM" = "i386-linux"; then
@@ -970,6 +962,14 @@ else
   MODELICA_SPEC_PLATFORM=$OPENMODELICA_SPEC_PLATFORM
 fi
 AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
+
+AC_MSG_CHECKING([add extra sundials cmake config flags on MacOS])
+if test "$DARWIN" = "1"; then
+EXTRA_MACOS_FLAGS_SUNDIALS="-DSUNDIALS_F77_FUNC_CASE:String=lower -DSUNDIALS_F77_FUNC_UNDERSCORES:String=one"
+else
+EXTRA_MACOS_FLAGS_SUNDIALS=
+fi
+AC_MSG_RESULT([$EXTRA_MACOS_FLAGS_SUNDIALS])
 
 CFLAGS="$CFLAGS"
 

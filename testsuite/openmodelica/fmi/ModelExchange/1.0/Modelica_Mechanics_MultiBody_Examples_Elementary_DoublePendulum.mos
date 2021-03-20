@@ -1,13 +1,13 @@
 // name:     Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum
 // keywords: simulation MSL Examples
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_* Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum_me_FMU.mo Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.libs Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.lib BouncingBall.so Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.dll Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.c Modelica_Mechanics_MultiBody_Examples_Elementary_DoublePendulum.makefile Modelica_from_nxy_*
 // cflags: -d=-newInst
 // Simulation Results
 // Modelica Standard Library
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 // Although it is not correct to do it by default, evaluate protected parameters,
 // otherwise building the _me_FMU.mo fails. It seems that it is necessary to evaluate string parameters.
 setCommandLineOptions("--evaluateProtectedParameters"); getErrorString();

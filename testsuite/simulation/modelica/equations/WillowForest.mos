@@ -7,7 +7,7 @@
 // Drmodelica: 15.4.2 An Energy Forest Annual Growth Model for Willow Trees (p. 559) Not in the notebook
 // cflags: -d=-newInst
 // 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("WillowForest.mo");
 simulate(WillowForest,numberOfIntervals=100, tolerance=1e-5, numberOfIntervals=100); // 2 intervals == 3 values
 echo(false); // turns of output 

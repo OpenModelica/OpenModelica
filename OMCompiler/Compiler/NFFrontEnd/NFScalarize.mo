@@ -62,17 +62,17 @@ function scalarize
   input output FlatModel flatModel;
 protected
   list<Variable> vars = {};
-  list<Equation> eql = {}, ieql = {};
+  list<Equation> eql = {}, ieql = {}, neql = {};
   list<Algorithm> alg = {}, ialg = {};
 algorithm
   for c in flatModel.variables loop
-    vars := scalarizeVariable(c, vars);
+    (vars, neql) := scalarizeVariable(c, vars, neql);
   end for;
 
   flatModel.variables := listReverseInPlace(vars);
   flatModel.equations := Equation.mapExpList(flatModel.equations, expandComplexCref);
   flatModel.equations := scalarizeEquations(flatModel.equations);
-  flatModel.initialEquations := Equation.mapExpList(flatModel.initialEquations, expandComplexCref);
+  flatModel.initialEquations := Equation.mapExpList(listAppend(flatModel.initialEquations, neql), expandComplexCref);
   flatModel.initialEquations := scalarizeEquations(flatModel.initialEquations);
   flatModel.algorithms := list(scalarizeAlgorithm(a) for a in flatModel.algorithms);
   flatModel.initialAlgorithms := list(scalarizeAlgorithm(a) for a in flatModel.initialAlgorithms);
@@ -84,10 +84,11 @@ protected
 function scalarizeVariable
   input Variable var;
   input output list<Variable> vars;
+  input output list<Equation> eqns;
 protected
   ComponentRef name;
   Binding binding;
-  Type ty;
+  Type ty, elem_ty;
   Visibility vis;
   Component.Attributes attr;
   list<tuple<String, Binding>> ty_attr;
@@ -111,23 +112,31 @@ algorithm
         return;
       end if;
 
-      ty := Type.arrayElementType(ty);
-      (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
-
       if Binding.isBound(binding) then
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
         bind_var := Binding.variability(binding);
 
-        for cr in crefs loop
-          (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-          binding := Binding.FLAT_BINDING(exp, bind_var);
-          ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
-        end for;
+        // if the scalarized binding would result in an indexed call e.g. f()[1] then don't do it!
+        // fixes ticket #6267
+        if ExpressionIterator.isSubscriptedArrayCall(binding_iter) then
+          var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
+          vars := var :: vars;
+        else
+          elem_ty := Type.arrayElementType(ty);
+          (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
+          for cr in crefs loop
+            (binding_iter, exp) := ExpressionIterator.next(binding_iter);
+            binding := Binding.FLAT_BINDING(exp, bind_var);
+            ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
+            vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
+          end for;
+        end if;
       else
+        elem_ty := Type.arrayElementType(ty);
+        (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
         for cr in crefs loop
           ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
-          vars := Variable.VARIABLE(cr, ty, binding, vis, attr, ty_attr, {}, cmt, info, binfo) :: vars;
+          vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
         end for;
       end if;
     else

@@ -431,6 +431,7 @@ package SimCode
       ExtObjInfo extObjInfo;
       SimCodeFunction.MakefileParams makefileParams;
       DelayedExpression delayedExps;
+      SpatialDistributionInfo spatialInfo;
       list<JacobianMatrix> jacobianMatrixes;
       Option<SimulationSettings> simulationSettingsOpt;
       String fileNamePrefix;
@@ -479,6 +480,26 @@ package SimCode
       Integer maxDelayedIndex;
     end DELAYED_EXPRESSIONS;
   end DelayedExpression;
+
+  uniontype SpatialDistributionInfo
+    record SPATIAL_DISTRIBUTION_INFO
+      list<SpatialDistribution> spatialDistributions;
+      Integer maxIndex;
+    end SPATIAL_DISTRIBUTION_INFO;
+  end SpatialDistributionInfo;
+
+  uniontype SpatialDistribution
+    record SPATIAL_DISTRIBUTION
+      Integer index         "uniqueIndex";
+      DAE.Exp in0           "input 0";
+      DAE.Exp in1           "input 1";
+      DAE.Exp pos           "current pos";
+      DAE.Exp dir           "flow direction";
+      DAE.Exp initPnts      "initial grid points";
+      DAE.Exp initVals      "initial grid values";
+      Integer initSize      "number of initial points";
+    end SPATIAL_DISTRIBUTION;
+  end SpatialDistribution;
 
   uniontype SimulationSettings
     record SIMULATION_SETTINGS
@@ -710,6 +731,7 @@ package SimCode
       list<Absyn.Class> sortedClasses;
       Integer nClocks;
       Integer nSubClocks;
+      Integer nSpatialDistributions;
       list<SimEqSystem> linearSystems;
       list<SimEqSystem> nonLinearSystems;
       list<UnitDefinition> unitDefinitions "export unitDefintion in modelDescription.xml";
@@ -1294,6 +1316,17 @@ package SimCodeUtil
     input SimCode.SimCode simCode;
     output Integer vr;
   end lookupVR;
+
+  function unbalancedEqSystemPartition
+    input list<SimCode.SimEqSystem> inList;
+    input Integer maxLength;
+    output list<list<SimCode.SimEqSystem>> outPartitions;
+  end unbalancedEqSystemPartition;
+
+  function selectNLEqSys
+    input list<SimCode.SimEqSystem> simEqSysIn;
+    output list<SimCode.SimEqSystem> eqs;
+  end selectNLEqSys;
 
 end SimCodeUtil;
 

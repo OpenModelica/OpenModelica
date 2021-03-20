@@ -1,0 +1,93 @@
+// name: Ticket6287and6288.mos
+// keywords:
+// status: correct
+//
+// Tests if -d=nfAPI works fine for getElementModifierValues on replaceable *components*
+//
+
+setCommandLineOptions("-d=nfAPI,showStatement"); getErrorString();
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadFile("DC_Drive.mo"); getErrorString();
+loadFile("DC_Drive2.mo"); getErrorString();
+
+getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled,"driveData"); getErrorString();
+getElementModifierValues(DC_Drive.Examples.DCPMCurrentControlled,driveData.machineData); getErrorString();
+getAllSubtypeOf(DC_Drive.DriveParameters.MachineDataSets.MachineData,DC_Drive.DriveParameters.DriveData); getErrorString();
+removeElementModifiers(DC_Drive.Examples.DCPMCurrentControlled,"driveData",false); getErrorString();
+setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code(())); getErrorString();
+getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled,"driveData"); getErrorString();
+setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code((redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData))); getErrorString();
+getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled,"driveData"); getErrorString();
+getElementModifierValues(DC_Drive.Examples.DCPMCurrentControlled,driveData.machineData); getErrorString();
+
+getElementModifierNames(DC_Drive2.DCPM_CurrentControlled,"driveData"); getErrorString();
+getElementModifierValues(DC_Drive2.DCPM_CurrentControlled,driveData.machineData); getErrorString();
+getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData,DC_Drive2.DCPM_Utilities.DriveData); getErrorString();
+
+
+// Result:
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: loadModel(Modelica, {"3.2.3"})
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: loadFile("DC_Drive.mo")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: loadFile("DC_Drive2.mo")
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled, "driveData")
+// {"machineData"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getElementModifierValues(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData)
+// "redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getAllSubtypeOf(DC_Drive.DriveParameters.MachineDataSets.MachineData, DC_Drive.DriveParameters.DriveData)
+// {DC_Drive.DriveParameters.MachineDataSets.M48V}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: removeElementModifiers(DC_Drive.Examples.DCPMCurrentControlled, "driveData", false)
+// true
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code())
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled, "driveData")
+// {}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: setElementModifierValue(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData, $Code((redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData)))
+// Ok
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getElementModifierNames(DC_Drive.Examples.DCPMCurrentControlled, "driveData")
+// {"machineData"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getElementModifierValues(DC_Drive.Examples.DCPMCurrentControlled, driveData.machineData)
+// "redeclare DC_Drive.DriveParameters.MachineDataSets.M48V machineData"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getElementModifierNames(DC_Drive2.DCPM_CurrentControlled, "driveData")
+// {"machineData"}
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getElementModifierValues(DC_Drive2.DCPM_CurrentControlled, driveData.machineData)
+// "redeclare DC_Drive2.DCPM_Utilities.M48V machineData"
+// Evaluating: getErrorString()
+// ""
+// Evaluating: getAllSubtypeOf(DC_Drive2.DCPM_Utilities.MachineData, DC_Drive2.DCPM_Utilities.DriveData)
+// {DC_Drive2.DCPM_Utilities.M48V}
+// Evaluating: getErrorString()
+// ""
+// endResult

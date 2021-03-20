@@ -2783,7 +2783,7 @@ algorithm
 
     if isCompatibleMatch(matchKind) then
       cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, NFType.Branch.TRUE);
-      condExp := Expression.setType(cond_ty, e1);
+      condExp := Expression.typeCast(e1, cond_ty);
       otherExp := e2;
       return;
     end if;
@@ -2793,7 +2793,7 @@ algorithm
 
     if isCompatibleMatch(matchKind) then
       cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, NFType.Branch.FALSE);
-      condExp := Expression.setType(cond_ty, e1);
+      condExp := Expression.typeCast(e1, cond_ty);
       otherExp := e2;
       return;
     end if;
@@ -2809,7 +2809,7 @@ algorithm
     end if;
 
     if isCompatibleMatch(matchKind) then
-      condExp := Expression.setType(cond_ty, condExp);
+      condExp := Expression.typeCast(condExp, cond_ty);
     end if;
   end if;
 end matchConditionalArrayExp;
@@ -2838,7 +2838,7 @@ algorithm
 
     if isCompatibleMatch(matchKind) then
       cond_ty := Type.CONDITIONAL_ARRAY(compatibleType, false_ty, NFType.Branch.TRUE);
-      exp := Expression.setType(cond_ty, e);
+      exp := Expression.typeCast(e, cond_ty);
       return;
     end if;
 
@@ -2847,7 +2847,7 @@ algorithm
 
     if isCompatibleMatch(matchKind) then
       cond_ty := Type.CONDITIONAL_ARRAY(true_ty, compatibleType, NFType.Branch.FALSE);
-      exp := Expression.setType(cond_ty, e);
+      exp := Expression.typeCast(e, cond_ty);
       return;
     end if;
   else
@@ -2860,7 +2860,7 @@ algorithm
     end if;
 
     if isCompatibleMatch(matchKind) then
-      exp := Expression.setType(cond_ty, exp);
+      exp := Expression.typeCast(exp, cond_ty);
     end if;
   end if;
 end matchConditionalArrayTypes;

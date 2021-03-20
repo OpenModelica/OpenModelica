@@ -44,7 +44,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <ctime>
+#include <regex>
 #include "omc_config.h"
+#include "../util/omc_file.h"
 #include <cmath>
 #include "dataReconciliation.h"
 using namespace std;
@@ -74,6 +76,19 @@ struct csvData
   vector< vector<string> > rx;
 };
 
+struct correlationData
+{
+  vector<double> data;
+  vector<string> rowHeaders;
+  vector<string> columnHeaders;
+};
+
+struct correlationDataWarning
+{
+  vector<string> diagonalEntry;
+  vector<string> aboveDiagonalEntry;
+};
+
 struct matrixData
 {
   int rows;
@@ -99,7 +114,7 @@ struct errorData
 /*
  * create html report with error logs
  */
-void createErrorHtmlReport(DATA * data)
+void createErrorHtmlReport(DATA * data, int status = 0)
 {
   // create HTML Report with Error Logs
   ofstream myfile;
@@ -135,83 +150,45 @@ void createErrorHtmlReport(DATA * data)
   myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
   myfile << "</table>\n";
 
+  /* add analysis section */
+  myfile << "<h2> Analysis: </h2>\n";
+  myfile << "<table> \n";
+  myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
+  myfile << "</table> \n";
+
+  // Auxiliary Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
+  // Intermediate Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+
+  // Error log
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt" << " target=_blank> Errors </a> </h2>\n";
+    myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
   }
   else
   {
-    myfile << "<h2> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Errors </a> </h2>\n";
+    myfile << "<h2> <a href=" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
+  }
+
+  // debug log
+  if (status == 0)
+  {
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt"<< " target=_blank> Debug log </a> </h2>\n";
+    }
+    else
+    {
+      myfile << "<h2> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
+    }
   }
 
   myfile << "</table>\n";
   myfile << "</body>\n</html>";
   myfile.flush();
   myfile.close();
-}
-
-/*
- * Function which reads the csv file
- * and stores the covariance matrix Sx for DataReconciliation
- */
-csvData readcsvfiles(const char * filename, ofstream & logfile)
-{
-  ifstream ip(filename);
-  string line;
-  vector<double> xdata;
-  vector<double> vals;
-  vector<string> names;
-  vector< vector<string> > rx;
-  int Sxrowcount = 0;
-  int linecount = 1;
-  int Sxcolscount = 0;
-  bool flag = false;
-  int myarraycount = 0;
-  if (!ip.good())
-  {
-    //errorStreamPrint(LOG_STDOUT, 0, "file name not found %s.",filename);
-    logfile << "|  error   |   " << "file name not found " << filename << "\n";
-    logfile.close();
-    exit(1);
-  }
-  while (ip.good())
-  {
-    getline(ip, line);
-    if (linecount > 1 && !line.empty())
-    {
-      //cout << "array info:" << line << "\n";
-      std::replace(line.begin(), line.end(), ';', ' ');
-      std::replace(line.begin(), line.end(), ',', ' ');
-      stringstream ss(line);
-      string temp;
-      int skip = 0;
-      while (ss >> temp)
-      {
-        if (skip == 0)
-        {
-          names.push_back(temp.c_str());
-          Sxrowcount++;
-        }
-        if (skip > 0)
-        {
-          //cout << "check temp:" << temp << " double" << atof(temp.c_str()) <<"\n";
-          vals.push_back(atof(temp.c_str()));
-          if (flag == false)
-          {
-            Sxcolscount++;
-          }
-        }
-        skip++;
-      }
-      flag = true;
-      //Sxrowcount++;
-    }
-    linecount++;
-  }
-  //cout << "csvdata header:" << names[0] << names[1] << names[2] << "";
-  //cout << "linecount:" << linecount << " " << "rowcount :" << Sxrowcount << " " << "colscount:" << Sxcolscount << "\n";
-  csvData data = {linecount, Sxrowcount, Sxcolscount, xdata, vals, names, rx};
-  return data;
 }
 
 /*
@@ -243,11 +220,28 @@ int getVariableIndex(vector<string> headers, string name, ofstream & logfile, DA
 }
 
 /*
+ * check string is a valid double
+ */
+bool isStringValidDouble(std::string &cref)
+{
+  return std::regex_match(cref, std::regex("[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?"));
+}
+
+/*
+ * check string is a empty, (i.e) contains only "," in csv input
+ * also ignore lines starting with c comments //
+ */
+bool isLineEmptyData(std::string &cref)
+{
+  return std::regex_match(cref, std::regex("^[,|/]+.*"));
+}
+
+/*
  * Function which reads the csv file
  * and stores the initial measured value X and HalfWidth confidence
  * interval Wx and also the input variable names
  */
-csvData readcsvInputs(ofstream & logfile, DATA * data)
+csvData readMeasurementInputFile(ofstream & logfile, DATA * data)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Sx];
@@ -270,9 +264,9 @@ csvData readcsvInputs(ofstream & logfile, DATA * data)
   int Sxrowcount = 0;
   int linecount = 1;
   int Sxcolscount = 0;
-  bool flag = false, rx_ik = false;
-  int myarraycount = 0;
+  bool flag = false;
   vector<errorData> errorInfo;
+  vector<int> errorInfoHeaders;
 
   if (!ip.good())
   {
@@ -286,19 +280,26 @@ csvData readcsvInputs(ofstream & logfile, DATA * data)
   {
     getline(ip, line);
     vector<string> t1;
-    if (linecount > 1 && !line.empty())
+    if (linecount > 1 && !line.empty() && !isLineEmptyData(line))
     {
-      //logfile << "array info:" << line << "\n";
+      //std::cout << "\nline info:" << line;
       std::replace(line.begin(), line.end(), ';', ',');
-      //std::replace(line.begin(), line.end(), ',', ' ');
+      // remove whitespace in a string
+      line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+
       stringstream ss(line);
       string temp;
       int columnCount = 0;
       bool col0 = false, col1 = false, col2 = false;
       while (getline(ss, temp, ','))
       {
-        if (columnCount == 0 && !temp.empty())
+        if (columnCount == 0)
         {
+          // // error : no variable of interest is provided by user at column #1
+          if (temp.empty())
+          {
+            errorInfoHeaders.push_back(linecount);
+          }
           col0 = true;
           names.push_back(temp.c_str());
           Sxrowcount++;
@@ -307,20 +308,20 @@ csvData readcsvInputs(ofstream & logfile, DATA * data)
             Sxcolscount++;
           }
         }
-        //TODO validate input types
-        if (columnCount == 1 && !temp.empty())
+        if (columnCount == 1 && !temp.empty() && isStringValidDouble(temp))
         {
-          col1 = true;
+          //std::cout << "\n x: " << temp << " type : "<< isStringValidDouble(temp);
           //logfile << "xdata" << temp << " double" << atof(temp.c_str()) <<"\n";
+          col1 = true;
           xdata.push_back(atof(temp.c_str()));
           if (flag == false)
           {
             Sxcolscount++;
           }
         }
-        //TODO validate input types
-        if (columnCount == 2 && !temp.empty())
+        if (columnCount == 2 && !temp.empty() && isStringValidDouble(temp))
         {
+          //std::cout << "\n sxdata: " << temp << " valid type " << isStringValidDouble(temp);
           //logfile << "sxdata" << temp << " double" << atof(temp.c_str()) <<"\n";
           col2 = true;
           sxdata.push_back(atof(temp.c_str()));
@@ -329,15 +330,12 @@ csvData readcsvInputs(ofstream & logfile, DATA * data)
             Sxcolscount++;
           }
         }
-
-//        if (columnCount > 2)
-//        {
-//          //logfile << "found xi " << line << "\n";
-//          t1.push_back(temp.c_str());
-//          rx_ik = true;
-//        }
+        // ignore columns greater than 3
+        if (columnCount > 2)
+        {
+          break;
+        }
         columnCount++;
-        //std::cout << "\n Debug Line " << columnCount << ":= "  << temp.c_str()  << " bool: "<< col0 << col1 << col2 << "\n";
       }
       flag = true;
 
@@ -360,26 +358,38 @@ csvData readcsvInputs(ofstream & logfile, DATA * data)
         errorInfo.push_back(info);
       }
     }
-    if (rx_ik == true)
-    {
-      rx.push_back(t1);
-    }
     linecount++;
   }
 
-  if (!errorInfo.empty())
+// user error : variable of interest is missing in column #1
+  if (!errorInfoHeaders.empty())
   {
-    for (const auto & info : errorInfo)
+    for (const auto &line : errorInfoHeaders)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s in measurement input file %s is incorrect because of (no-Value/wrong-Type), with following data [%s, %s, %s] ", info.name.c_str(), filename, info.name.c_str(), info.x.c_str(), info.sx.c_str());
-      logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " in measurement input file " << filename << " is incorrect because of (no-Value/wrong-Type), with following data " << "[" << info.name << ", " << info.x << ", " << info.sx  << "]" <<"\n";
+      errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in measurement input file  %s is missing in line #%d ", filename, line);
+      logfile << "|  error   |   " << "the name of the variable of interest in measurement input file " << filename << " is missing in line #" << line << "\n";
     }
     logfile.close();
     createErrorHtmlReport(data);
     exit(1);
   }
+
+  // user error #6: Entry for variable of interest <variable name> in measurement input file <input file name> is incorrect: <reason (no value or incorrect value type)>
+  if (!errorInfo.empty())
+  {
+    for (const auto & info : errorInfo)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s in measurement input file %s is incorrect because of (no-Value/wrong-Type), with following data: [%s, %s, %s] ", info.name.c_str(), filename, info.name.c_str(), info.x.c_str(), info.sx.c_str());
+      logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " in measurement input file " << filename << " is incorrect because of (no-Value/wrong-Type), with following data: " << "[" << info.name << ", " << info.x << ", " << info.sx  << "]" <<"\n";
+    }
+    logfile.close();
+    createErrorHtmlReport(data);
+    exit(1);
+  }
+
   //logfile << "csvdata header:" << "header length: " << names.size() << "   " << names[0] << names[1] << names[2] << "" << "\n";
   //logfile << "linecount:" << linecount << " " << "rowcount :" << Sxrowcount << " " << "colscount:" << Sxcolscount << "\n";
+
   csvData csvData = {linecount, Sxrowcount, Sxcolscount, xdata, sxdata, names, rx};
   return csvData;
 }
@@ -476,6 +486,37 @@ void printVectorMatrixWithHeaders(vector<double> matrix, int rows, int cols, vec
 }
 
 /*
+ Function to Print the corelation matrix in row based format with headers
+ */
+void printCorelationMatrix(vector<double> cx_data, vector<string> rowHeaders, vector<string> columnHeaders, string name, ofstream & logfile, correlationDataWarning & warningCorrelationData)
+{
+  if (cx_data.empty())
+  {
+    return;
+  }
+
+  logfile << "\n" << "************ " << name << " **********" << "\n";
+  for (int i = 0; i < rowHeaders.size(); i++)
+  {
+    logfile << std::right << setw(10) << rowHeaders[i];
+    for (int j = 0; j < columnHeaders.size(); j++)
+    {
+      if (i == j && cx_data[columnHeaders.size() * i + j] != 0)
+      {
+        warningCorrelationData.diagonalEntry.push_back(rowHeaders[i]);
+      }
+      else if (j > i && cx_data[columnHeaders.size() * i + j] != 0)
+      {
+        warningCorrelationData.aboveDiagonalEntry.push_back(rowHeaders[i]);
+      }
+      logfile << std::right << setw(15) << cx_data[columnHeaders.size() * i + j];
+    }
+    logfile << "\n";
+  }
+  logfile << "\n";
+}
+
+/*
  *
  Function Which gets the diagonal elements of the matrix
  */
@@ -526,7 +567,7 @@ void solveMatrixMultiplication(double *matrixA, double *matrixB, int rowsa, int 
   if (colsA != rowsB)
   {
     //cout << "\n Error: Column of First Matrix not equal to Rows  of Second Matrix \n ";
-    //errorStreamPrint(LOG_STDOUT, 0, "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix %i != %i.",colsA,rowsB);
+    errorStreamPrint(LOG_STDOUT, 0, "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix %i != %i.",colsA,rowsB);
     logfile << "|  error   |   " << "solveMatrixMultiplication() Failed!, Column of First Matrix not equal to Rows of Second Matrix " << colsA << " != " << rowsB << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -552,8 +593,8 @@ void solveSystemFstar(int n, int nhrs, double *tmpMatrixD, double *tmpMatrixC, o
   if (info > 0)
   {
     //cout << "The solution could not be computed, The info satus is : " << info;
-    //errorStreamPrint(LOG_STDOUT, 0, "solveSystemFstar() Failed !, The solution could not be computed, The info satus is %i.", info);
-    logfile << "|  error   |   " << "solveSystemFstar() Failed !, The solution could not be computed, The info satus is" << info << "\n";
+    errorStreamPrint(LOG_STDOUT, 0, "solveSystemFstar() Failed !, The solution could not be computed, The info satus is %i ", info);
+    logfile << "|  error   |   " << "solveSystemFstar() Failed !, The solution could not be computed, The info satus is " << info << "\n";
     logfile.close();
     createErrorHtmlReport(data);
     exit(1);
@@ -574,6 +615,7 @@ void solveMatrixSubtraction(matrixData A, matrixData B, double *result, ofstream
     createErrorHtmlReport(data);
     exit(1);
   }
+
   //printColumnAlginment(A.data,A.rows,A.column,"A-Matrix");
   //printColumnAlginment(B.data,B.rows,B.column,"B-Matrix");
 
@@ -599,6 +641,7 @@ matrixData solveMatrixAddition(matrixData A, matrixData B, ofstream &logfile, DA
     createErrorHtmlReport(data);
     exit(1);
   }
+
   //printColumnAlginment(A.data,A.rows,A.column,"A-Matrix");
   //printColumnAlginment(B.data,B.rows,B.column,"B-Matrix");
 
@@ -726,7 +769,7 @@ matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream &
   int rows = jacobian->sizeRows;
   if (cols == 0)
   {
-    //errorStreamPrint(LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix F");
+    errorStreamPrint(LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix F");
     logfile << "|  error   |   " << "Cannot Compute Jacobian Matrix F" << "\n";
     logfile.close();
     createErrorHtmlReport(data);
@@ -774,27 +817,6 @@ matrixData getTransposeMatrix(matrixData jacF)
 }
 
 /*
- * function which checks and reads
- * covariance matrix Sx from csv files
- * and stores the data in vector format
- */
-//csvData readCovarianceMatrixSx(DATA *data, threadData_t *threadData, ofstream &logfile)
-//{
-//  char *Sxfile = NULL;
-//  Sxfile = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Sx];
-//  if (Sxfile == NULL)
-//  {
-//    errorStreamPrint(LOG_STDOUT, 0, "input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.");
-//    logfile << "|  error   |   " << "input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.\n";
-//    logfile.close();
-//    exit(1);
-//  }
-//  //csvData Sx_result=readcsvfiles(Sxfile,logfile);
-//  csvData Sx_result = readcsvInputs(Sxfile, logfile);
-//  return Sx_result;
-//}
-
-/*
  * Function which reads the vector
  * and assign to c pointer arrays
  */
@@ -807,12 +829,272 @@ matrixData getCovarianceMatrixSx(csvData Sx_result, DATA *data, threadData_t *th
 }
 
 /*
+ * function which validates corelation inputs
+ * and displays error messages for
+ * user error #7: variable of interest has multiple entry in measurement input file
+ * user error #8: variable of interest in correlation input file does not correspond to variable of interest
+ */
+void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile, vector<string> headers, string comments)
+{
+  vector<string> noEntry, multipleEntry, entry;
+  for (int i = 0; i < headers.size(); i++)
+  {
+    bool flag = false;
+    for (int j = 0; j < Sx_result.headers.size(); j++)
+    {
+      if (strcmp(headers[i].c_str(), Sx_result.headers[j].c_str()) == 0)
+      {
+        //std::cout << "\n matched variables of interest: "<< headers[i] << " => " << Sx_result.headers[j]  << " pos: " << j << "\n";
+        flag = true;
+        auto it = find(entry.begin(), entry.end(), headers[i]);
+        if (it != entry.end())
+        {
+          //std::cout << "Element found in myvector: " << headers[i] << "\n";
+          multipleEntry.push_back(headers[i]);
+        }
+        else
+        {
+          entry.push_back(headers[i]);
+        }
+      }
+    }
+
+    // user error variable of interest in correlation input file does not correspond to variable of interest
+    if (flag == false)
+    {
+      noEntry.push_back(headers[i]);
+    }
+  }
+
+  // dump user error #7: variable of interest , has multiple entry in measurement input file
+  for (int i = 0; i < multipleEntry.size(); i++)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in correlation input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+    logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << " at " << comments << " has multiple entries in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "\n";
+  }
+
+  // dump user error #8: variable of interest in correlation input file does not correspond to variable of interest
+  for (int i = 0; i < noEntry.size(); i++)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s entry in correlation input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+    logfile << "|  error   |   " << "variable of interest " << noEntry[i]  << ", at " << comments << " entry in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " does not correspond to a variable of interest" << "\n";
+  }
+
+  if (!noEntry.empty() || !multipleEntry.empty())
+  {
+    logfile.close();
+    createErrorHtmlReport(data);
+    exit(1);
+  }
+}
+
+/*
+ * function which validates corelation inputs is
+ * square matrix or not and displays error messages for
+ * user error #10: Lines and columns are in different orders
+ */
+void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector<string> rowHeaders, vector<string> columnHeaders)
+{
+  if (rowHeaders != columnHeaders)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "Lines and columns of correlation matrix in correlation input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+    logfile << "|  error   |   " << "Lines and columns of correlation matrix in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " do not have identical names in the same order." << "\n";
+
+    // user error #10: missing line headers
+    for (const auto & index : columnHeaders)
+    {
+      auto it = std::find(rowHeaders.begin(), rowHeaders.end(), index);
+      if (it == rowHeaders.end())
+      {
+        errorStreamPrint(LOG_STDOUT, 0, "Line %s is missing", index.c_str());
+        logfile << "|  error   |   " << "Line " << index << " is missing " << "\n";
+      }
+    }
+
+    // user error #10 : missing column headers
+    for (const auto & index : rowHeaders)
+    {
+      auto it = find(columnHeaders.begin(), columnHeaders.end(), index);
+      if (it == columnHeaders.end())
+      {
+        errorStreamPrint(LOG_STDOUT, 0, "Column %s is missing", index.c_str());
+        logfile << "|  error   |   " << "Column " << index << " is missing " << "\n";
+      }
+    }
+
+    // user error #10 : missing line Vs column
+    for (int i = 0; i < rowHeaders.size(); i++)
+    {
+      //std::cout << "\n " << i << rowHeaders[i] << " Vs " << columnHeaders[i];
+      if (rowHeaders[i] != columnHeaders[i])
+      {
+        errorStreamPrint(LOG_STDOUT, 0, "Lines and columns are in different orders %s Vs %s", rowHeaders[i].c_str(), columnHeaders[i].c_str());
+        logfile << "|  error   |   " << "Lines and columns are in different orders " << rowHeaders[i] << " Vs " << columnHeaders[i] << "\n";
+      }
+    }
+
+    logfile.close();
+    createErrorHtmlReport(data);
+    exit(1);
+  }
+}
+
+/*
+ * Function which reads the correlation coefficient input file
+ * and stores the correlation coefficient matrix Cx for DataReconciliation
+ */
+correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data)
+{
+  char * filename = NULL;
+  filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Cx];
+
+  vector<string> columnHeaders, rowHeaders;
+  vector<double> cx_data;
+  vector<errorData> errorInfo;
+  correlationData Cx;
+  vector<int> errorInfoHeaders;
+
+  if (filename == NULL)
+  {
+    Cx = {cx_data, rowHeaders, columnHeaders};
+    return Cx;
+  }
+
+  // read the file
+  ifstream ip(filename);
+  string line;
+  if (!ip.good())
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "correlation coefficient input file path not found %s.", filename);
+    logfile << "|  error   |   " << "correlation coefficient input file path not found  " << filename << "\n";
+    logfile.close();
+    createErrorHtmlReport(data);
+    exit(1);
+  }
+
+  int linecount = 1;
+  while (ip.good())
+  {
+    getline(ip, line);
+    vector<string> t1;
+    std::replace(line.begin(), line.end(), ';', ',');
+    // remove whitespace in a string
+    line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+    stringstream ss(line);
+    string temp;
+    if (linecount == 1 && !line.empty())
+    {
+      int columnCount = 1;
+      while (getline(ss, temp, ','))
+      {
+        if (columnCount > 1)
+        {
+          //std::cout << "\nreading Column headers : " << temp;
+          columnHeaders.push_back(temp);
+        }
+        columnCount++;
+      }
+    }
+    else if (linecount > 1 && !line.empty() && !isLineEmptyData(line))
+    {
+      //std::cout << "\nreading covariance matrix : " << line << " size : " << columnHeaders.size();
+      int columnCount = 1;
+      while (getline(ss, temp, ','))
+      {
+        if (columnCount == 1)
+        {
+          // error : no variable of interest is provided by user at column #1
+          if (temp.empty())
+          {
+            errorInfoHeaders.push_back(linecount);
+          }
+          rowHeaders.push_back(temp);
+        }
+        else
+        {
+          //std::cout << "\nreading Column values : " << temp << " : " << columnCount << " value= " << atof(temp.c_str());
+          if (temp.empty())
+          {
+            cx_data.push_back(0);
+          }
+          else if (!isStringValidDouble(temp))
+          {
+            //std::cout << "\n check wrong type : " << columnCount << " = " << columnHeaders[columnCount-2];
+            errorData info = {rowHeaders.back(), columnHeaders[columnCount-2], temp};
+            errorInfo.push_back(info);
+          }
+          else
+          {
+            cx_data.push_back(atof(temp.c_str()));
+          }
+        }
+        columnCount++;
+      }
+      if (columnCount - 2 == columnHeaders.size())
+      {
+        // rows and columns have values correctly entered
+      }
+      else
+      {
+        // just in case, fill the empty rows with zeros
+        int count = columnHeaders.size() - (columnCount -2);
+        for (int i = 0; i < count; ++i)
+        {
+          cx_data.push_back(0);
+        }
+      }
+    }
+    linecount++;
+  }
+
+  // user error : variable of interest is missing in column #1
+  if (!errorInfoHeaders.empty())
+  {
+    for (const auto &line : errorInfoHeaders)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in correlation input file  %s is missing in line #%d ", filename, line);
+      logfile << "|  error   |   " << "the name of the variable of interest in correlation input file " << filename << " is missing in line #" << line << "\n";
+    }
+    logfile.close();
+    createErrorHtmlReport(data);
+    exit(1);
+  }
+
+  // user error #9: Entry for variable of interest <variable name> and variable of interest <variable name> in correlation input file <input file name> is incorrect: incorrect value type.
+  if (!errorInfo.empty())
+  {
+    for (const auto & info : errorInfo)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+      logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << filename <<  " is incorrect because of wrong-Type: " << "[" << info.sx  << "]" <<"\n";
+    }
+    logfile.close();
+    createErrorHtmlReport(data);
+    exit(1);
+  }
+
+  // validate correlation input column headers
+  validateCorelationInputs(Sx_result, data, logfile, columnHeaders, "column headers");
+
+  // validate correlation input column headers
+  validateCorelationInputs(Sx_result, data, logfile, rowHeaders, "row headers");
+
+  // check for square matrix
+  validateCorelationInputsSquareMatrix(data, logfile, rowHeaders, columnHeaders);
+
+  Cx = {cx_data, rowHeaders, columnHeaders};
+
+  return Cx;
+}
+
+
+/*
  * Function which Computes
  * covariance matrix Sx based on
  * Half width confidence interval provided by user (i.e) csvData.sxdata
  * Sx=(Wxi/1.96)^2
  */
-matrixData computeCovarianceMatrixSx(csvData Sx_result, ofstream &logfile, DATA * data)
+matrixData computeCovarianceMatrixSx(csvData Sx_result, correlationData Cx_data, ofstream &logfile, DATA * data)
 {
   double *tempSx = (double*) calloc(Sx_result.sxdata.size() * Sx_result.sxdata.size(), sizeof(double));
   vector<double> tmpdata;
@@ -837,60 +1119,49 @@ matrixData computeCovarianceMatrixSx(csvData Sx_result, ofstream &logfile, DATA 
     }
     k++;
   }
-  //logfile << "tmpdatasize" << tmpdata.size() << "\n";
-  //logfile << "Size of vector :" << Sx_result.rx.size() << "\n";
 
-  /* check for corelation coefficient matrix and insert the elements in correct position*/
-  for (unsigned int l = 0; l < Sx_result.rx.size(); l++)
+  // check for correlation coefficient Cx_data is not empty and recompute the covariance matrix
+  if (! Cx_data.data.empty())
   {
-    int pos1;
-    int pos2;
-    double xi;
-    double xk;
-    for (unsigned int m = 0; m < Sx_result.rx[l].size(); m++)
+    for (int i = 0; i < Cx_data.rowHeaders.size(); i++)
     {
-      if (m == 0)
+      for (int j = 0; j < Cx_data.columnHeaders.size(); j++)
       {
-        pos1 = getVariableIndex(Sx_result.headers, Sx_result.rx[l][m], logfile, data);
-        xi = tmpdata[(Sx_result.rowcount * pos1) + pos1];
-        //logfile << "xi =>"<< pos1 << "= "<< xi << "\n";
-      }
+        // consider the values which are strictly below the diagonal entry
+        if (j < i && Cx_data.data[Cx_data.columnHeaders.size() * i + j] != 0)
+        {
+          //std::cout << "\n value : " << Cx_data.rowHeaders[i] << "=" << Cx_data.data[columnHeaders.size() * i + j];
+          int rowpos = getVariableIndex(Sx_result.headers, Cx_data.rowHeaders[i], logfile, data);
+          int colpos = getVariableIndex(Sx_result.headers, Cx_data.columnHeaders[j], logfile, data);
 
-      if (m == 1)
-      {
-        pos2 = getVariableIndex(Sx_result.headers, Sx_result.rx[l][m], logfile, data);
-        xk = tmpdata[(Sx_result.rowcount * pos2) + pos2];
-        //logfile << "xk =>"<< pos2 << "= "<< xk << "\n";
-      }
-      if (m == 2)
-      {
-        //logfile << "position:" << pos1 << ": " << pos2 << "\n";
-        //logfile << "rx_ik" << Sx_result.rx[l][m] << "*" << xi << "*" << xk << "\n";
-        //logfile << atof((Sx_result.rx[l][m]).c_str())*sqrt(xi)*sqrt(xk) << "\n";
-        double tmprx = atof((Sx_result.rx[l][m]).c_str()) * sqrt(xi) * sqrt(xk);
-        // find the symmetric position and insert the elements
-        //logfile << "final position :" << (Sx_result.rowcount*pos1)+pos2 << "value is: "<< tmprx << "\n";
-        //logfile << "final position :" << (Sx_result.rowcount*pos2)+pos1 << "value is: "<< tmprx << "\n";
-        tmpdata[(Sx_result.rowcount * pos1) + pos2] = tmprx;
-        tmpdata[(Sx_result.rowcount * pos2) + pos1] = tmprx;
+          double xi = tmpdata[(Sx_result.rowcount * rowpos) + rowpos];
+          double xk = tmpdata[(Sx_result.rowcount * colpos) + colpos];
+
+          //std::cout << "\n row pos : "  << rowpos << " col pos: " << colpos << " xi " << xi;
+          double tmprx = Cx_data.data[Cx_data.columnHeaders.size() * i + j] * sqrt(xi) * sqrt(xk);
+
+          // find the symmetric position and insert the elements
+          tmpdata[(Sx_result.rowcount * rowpos) + colpos] = tmprx;
+          tmpdata[(Sx_result.rowcount * colpos) + rowpos] = tmprx;
+        }
       }
     }
-    //logfile << "\n";
   }
+
   initColumnMatrix(tmpdata, Sx_result.rowcount, Sx_result.rowcount, tempSx);
   matrixData Sx_data = {Sx_result.rowcount, Sx_result.rowcount, tempSx};
   return Sx_data;
 }
 
 /*
- * function which validates the inputs read from csv file
+ * function which validates the inputs read from measurement input file
  * and validates (i.e) all the variables of interest in input file = all variables of interest in model
  * and displays error message if the above condition fails.
  * Also it perform internal mapping to sort the variable of interest in input file to match with variables of interest in model
  * which is very important for jacobians and also to get correct numerical results
  */
 
-csvData validateInputs(csvData Sx_result, DATA * data, ofstream &logfile)
+csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logfile)
 {
   if (data->modelData->ndataReconVars != Sx_result.headers.size())
   {
@@ -914,7 +1185,7 @@ csvData validateInputs(csvData Sx_result, DATA * data, ofstream &logfile)
     {
       if (strcmp(knowns[i], Sx_result.headers[j].c_str()) == 0)
       {
-        //std::cout << "\n matched variables of interest: "<< knowns[i] << " => " << Sx_result.headers[j]  << " pos: " << j "\n";
+        //std::cout << "\n matched variables of interest: "<< knowns[i] << " => " << Sx_result.headers[j]  << " pos: " << j << " size : " << Sx_result.headers.size() << "\n";
         mapindex.push_back(j);
         flag = true;
         count ++;
@@ -933,21 +1204,35 @@ csvData validateInputs(csvData Sx_result, DATA * data, ofstream &logfile)
     }
   }
 
-  // dump user error: variable of interest, has no entry in measurement input file
+  // dump user error #3: variable of interest, has no entry in measurement input file
   for (int i = 0; i < noEntry.size(); i++)
   {
     errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, has no entry in measurement input file %s ", noEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
     logfile << "|  error   |   " << "variable of interest " << noEntry[i] << ", has no entry in measurement input file" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "\n";
   }
 
-  // dump user error: variable of interest , has multiple entry in measurement input file
+  // dump user error #4: variable of interest , has multiple entry in measurement input file
   for (int i = 0; i < multipleEntry.size(); i++)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, has multiple entry in measurement input file %s ", multipleEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
-    logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << ", has multiple entry in measurement input file" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "\n";
+    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, has multiple entries in measurement input file %s ", multipleEntry[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
+    logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << ", has multiple entries in measurement input file " << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "\n";
   }
 
-  if (!noEntry.empty() || !multipleEntry.empty())
+  // dump user error #5 entry in measurement input file does not correspond to a variable of interest
+  bool userError5 = false;
+  for (int i = 0; i < data->modelData->ndataReconVars; i++)
+  {
+    auto it = find(mapindex.begin(), mapindex.end(), i);
+    if (it == mapindex.end())
+    {
+      //std::cout << "\n not found" << i;
+      userError5 = true;
+      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, entry in measurement input file %s does not correspond to a variable of interest ", Sx_result.headers[i].c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Sx]);
+      logfile << "|  error   |   " << "variable of interest " << Sx_result.headers[i] << ", entry in measurement input file " << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << " does not correspond to a variable of interest" << "\n";
+    }
+  }
+
+  if (!noEntry.empty() || !multipleEntry.empty() || userError5)
   {
     logfile.close();
     free(knowns);
@@ -1186,7 +1471,7 @@ void checkInExpensiveMatrixInverse(ofstream & logfile, DATA * data)
   //printMatrix(checksx,3,1,"InExpensive_Matrix_Inverse");
 }
 
-int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixData Sx, matrixData tmpjacF, matrixData tmpjacFt, double eps, int iterationcount, csvData csvinputs, matrixData xdiag, matrixData sxdiag, ofstream &logfile)
+int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixData Sx, matrixData tmpjacF, matrixData tmpjacFt, double eps, int iterationcount, csvData csvinputs, matrixData xdiag, matrixData sxdiag, ofstream &logfile, correlationDataWarning & warningCorrelationData)
 {
   // set the inputs from csv file to simulationInfo datainputVars
   for (int i = 0; i < x.rows * x.column; i++)
@@ -1330,7 +1615,7 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
     x.data = reconciled_X.data;
     //Sx.data=reconciled_Sx.data;
     iterationcount++;
-    return RunReconciliation(data, threadData, x, Sx, jacF, jacFt, eps, iterationcount, csvinputs, xdiag, sxdiag, logfile);
+    return RunReconciliation(data, threadData, x, Sx, jacF, jacFt, eps, iterationcount, csvinputs, xdiag, sxdiag, logfile, warningCorrelationData);
   }
 
   if (value < eps && iterationcount == 1)
@@ -1458,19 +1743,21 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   std::string nonReconciledVarsFilename = string(data->modelData->modelName) +  "_NonReconcilcedVars.txt";
   vector<std::string> nonReconciledVars;
 
-  ifstream ip(nonReconciledVarsFilename);
+  ifstream nonreconcilevarsip(nonReconciledVarsFilename);
   string line;
-  if (ip.good())
+  if (nonreconcilevarsip.good())
   {
-    while (ip.good())
+    while (nonreconcilevarsip.good())
     {
-      getline(ip, line);
+      getline(nonreconcilevarsip, line);
       if (!line.empty())
       {
         //std::cout << "\n reading nonVariables of interest : " << line;
         nonReconciledVars.push_back(line);
       }
     }
+    nonreconcilevarsip.close();
+    omc_unlink(nonReconciledVarsFilename.c_str());
   }
 
   /* Add Overview Data */
@@ -1481,15 +1768,22 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Measurement input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << "no file provided" << "</td> </tr>\n";
+  if (omc_flagValue[FLAG_DATA_RECONCILE_Cx])
+  {
+    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "</td> </tr>\n";
+  }
+  else
+  {
+    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << "no file provided" << "</td> </tr>\n";
+  }
   myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
   myfile << "</table>\n";
 
   /* Add Analysis data */
   myfile << "<h2> Analysis: </h2>\n";
   myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Number of extracted equations: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << csvinputs.headers.size() << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Number of iterations to convergence: </th> \n" << "<td>" << iterationcount << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Final value of (J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
   myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
@@ -1510,6 +1804,9 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   // Auxiliary Conditions
   myfile << "<h3> <a href=" << data->modelData->modelName << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
 
+  // Intermediate Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+
   // Debug log
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
@@ -1518,6 +1815,36 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   else
   {
     myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  }
+
+  // create a warning log for correlation input file
+  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
+  {
+    myfile << "<h3> <a href=" << data->modelData->modelName << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
+    /* create a warning log file */
+    ofstream warningfile;
+    std::stringstream warning_file;
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_warning.txt";
+    }
+    else
+    {
+      warning_file << data->modelData->modelName << "_warning.txt";
+    }
+
+    warningfile.open(warning_file.str().c_str());
+    // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.diagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    warningfile.close();
   }
 
   /* Add Results data */
@@ -1646,9 +1973,17 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   return 0;
 }
 
-int dataReconciliation(DATA * data, threadData_t * threadData)
+int dataReconciliation(DATA * data, threadData_t * threadData, int status)
 {
   TRACE_PUSH
+
+  // report run time initialization and non linear convergence error to html
+  if (status != 0)
+  {
+    createErrorHtmlReport(data, status);
+    exit(1);
+  }
+
   const char * epselon = NULL;
   epselon = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Eps];
 
@@ -1678,17 +2013,20 @@ int dataReconciliation(DATA * data, threadData_t * threadData)
     exit(1);
   }
 
-  // read the csv data provide by user
-  csvData csvdata = readcsvInputs(logfile, data);
+  // read the measurement input data provide by user
+  csvData csvdata = readMeasurementInputFile(logfile, data);
 
-  // validate the input data read from csvData
-  csvData Sx_data = validateInputs(csvdata, data, logfile);
+  // validate the input data read from measurement input file
+  csvData Sx_data = validateMeasurementInputs(csvdata, data, logfile);
 
   // extracts the input data (x) from csvData
   inputData x = getInputData(Sx_data, logfile);
 
+  // read the correlation coefficient input data provide by user
+  correlationData Cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data);
+
   // Compute the covariance matrix (Sx) from csvData
-  matrixData Sx = computeCovarianceMatrixSx(Sx_data, logfile, data);
+  matrixData Sx = computeCovarianceMatrixSx(Sx_data, Cx_data, logfile, data);
 
   // Compute the Jacobian Matrix F
   matrixData jacF = getJacobianMatrixF(data, threadData, logfile);
@@ -1703,15 +2041,16 @@ int dataReconciliation(DATA * data, threadData_t * threadData)
   matrixData tmp_x = {x.rows, x.column, x.data};
   matrixData x_diag = copyMatrix(tmp_x);
 
+  correlationDataWarning warningCorrelationData;
   // Print the initial information
   logfile << "\n\nInitial Data \n" << "=============\n";
   printMatrixWithHeaders(x.data, x.rows, x.column, Sx_data.headers, "X", logfile);
   printVectorMatrixWithHeaders(Sx_data.sxdata, Sx_data.rowcount, 1, Sx_data.headers, "Half-WidthConfidenceInterval", logfile);
+  printCorelationMatrix(Cx_data.data, Cx_data.rowHeaders, Cx_data.columnHeaders, "Co-Relation_Coefficient", logfile, warningCorrelationData);
   printMatrixWithHeaders(Sx.data, Sx.rows, Sx.column, Sx_data.headers, "Sx", logfile);
 
   // Start the Algorithm
-  RunReconciliation(data, threadData, x, Sx, jacF, jacFt, atof(epselon), 1, Sx_data, x_diag, tmpSx_diag, logfile);
-
+  RunReconciliation(data, threadData, x, Sx, jacF, jacFt, atof(epselon), 1, Sx_data, x_diag, tmpSx_diag, logfile, warningCorrelationData);
   logfile << "|  info    |   " << "DataReconciliation Completed! \n";
   logfile.flush();
   logfile.close();

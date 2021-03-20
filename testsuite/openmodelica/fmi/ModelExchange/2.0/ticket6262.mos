@@ -1,0 +1,59 @@
+// name:     ticket6262
+// status: correct
+// teardown_command: rm -rf ticket6262.fmu ticket6262.log ticket6262.xml ticket6262_tmp.xml
+
+loadString("
+model ticket6262
+  input Real x(start = x_start);
+  parameter Real x_start = 6.0;
+  Real y;
+equation
+  y = x;
+end ticket6262;
+"); getErrorString();
+
+translateModelFMU(ticket6262, version = "2.0"); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq ticket6262.fmu modelDescription.xml > ticket6262_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" ticket6262_tmp.xml > ticket6262.xml"); getErrorString();
+readFile("ticket6262.xml"); getErrorString()
+
+// Result:
+// true
+// ""
+// "ticket6262.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     causality=\"input\"
+//     >
+//     <Real start=\"6.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"x_start\"
+//     valueReference=\"1\"
+//     variability=\"fixed\"
+//     causality=\"parameter\"
+//     >
+//     <Real start=\"6.0\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"y\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// endResult

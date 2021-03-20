@@ -949,10 +949,12 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
   int j;
   int nlsLs;
   int kinsol = 0;
+  int res;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
   char buffer[4096];
   FILE *pFile = NULL;
+  double originalLambda = data->simulationInfo->lambda;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
   kinsol = (data->simulationInfo->nlsMethod == NLS_KINSOL);
@@ -1000,7 +1002,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
 
   equidistantHomotopy = data->simulationInfo->initial
                         && nonlinsys->homotopySupport
-                        && (data->callback->useHomotopy == 0 && init_lambda_steps > 1);
+                        && (data->callback->useHomotopy == 0 && init_lambda_steps >= 1);
 
   solveWithHomotopySolver = data->simulationInfo->initial
                             && nonlinsys->homotopySupport
@@ -1010,7 +1012,7 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
                         || !nonlinsys->homotopySupport           // There is no homotopy in this component
                         || (data->callback->useHomotopy == 1)    // Equidistant homotopy is performed globally in symbolic_initialization()
                         || (data->callback->useHomotopy == 0     // Equidistant local homotopy is selected but homotopy is deactivated ...
-                            && init_lambda_steps <= 1);          // ... by the number of steps
+                            && init_lambda_steps <= 0);          // ... by the number of steps
 
   nonlinsys->solved = 0;
   nonlinsys->initHomotopy = 0;
@@ -1086,9 +1088,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     }
 #endif
 
-    for(step=0; step<init_lambda_steps; ++step)
+    for(step=0; step<=init_lambda_steps; ++step)
     {
-      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
+      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps);
 
       if (data->simulationInfo->lambda > 1.0) {
         data->simulationInfo->lambda = 1.0;
@@ -1160,7 +1162,9 @@ int solve_nonlinear_system(DATA *data, threadData_t *threadData, int sysNumber)
     );
   }
 #endif
-  return check_nonlinear_solution(data, 1, sysNumber);
+  res = check_nonlinear_solution(data, 1, sysNumber);
+  data->simulationInfo->lambda = originalLambda;
+  return res;
 }
 
 /*! \fn check_nonlinear_solutions

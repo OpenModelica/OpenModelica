@@ -11,11 +11,11 @@ equation
    (a-4-b-time)*y = x * time +time;
    a + b - 7*c = x*y +1 +y;
    z = x - y;
-   
+
    (a-4-b-time)*y1 = x1 * time +time;
    a + b - 7*c = x1*y1 +1 +y;
    z1 = x1 - y1;
-   
+
    z2 = z + z1;
 end dynamicTearing1;
 "); getErrorString();
@@ -1575,8 +1575,8 @@ val(z2,1.1); getErrorString();
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
-// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac0. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // x at time=0.0
 // 6.928029805957065e-310

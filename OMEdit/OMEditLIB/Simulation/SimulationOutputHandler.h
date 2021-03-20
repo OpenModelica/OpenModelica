@@ -87,8 +87,7 @@ private:
   SimulationMessage* mpRootSimulationMessage;
   QModelIndexList mSelectedRowsList;
 
-  QModelIndex simulationMessageIndexHelper(const SimulationMessage *pSimulationMessage, const SimulationMessage *pParentSimulationMessage,
-                                           const QModelIndex &parentIndex) const;
+  QModelIndex simulationMessageIndexHelper(const SimulationMessage *pSimulationMessage, const SimulationMessage *pParentSimulationMessage, const QModelIndex &parentIndex) const;
 };
 
 class SimulationOutputHandler : private QXmlDefaultHandler
@@ -97,6 +96,7 @@ private:
   SimulationOutputWidget *mpSimulationOutputWidget;
   int mLevel;
   int mNumberOfBytes;
+  bool mShownDisplayLimitReachedMessage;
   SimulationMessage* mpSimulationMessage;
   QMap<int, SimulationMessage*> mSimulationMessagesLevelMap;
   SimulationMessageModel *mpSimulationMessageModel;
@@ -114,6 +114,7 @@ public:
   SimulationMessageModel* getSimulationMessageModel() {return mpSimulationMessageModel;}
   void parseSimulationOutput(QString output);
   void writeSimulationLog(const QString &text);
+  void addSimulationMessage(SimulationMessage *pSimulationMessage);
   void simulationProcessFinished();
 };
 

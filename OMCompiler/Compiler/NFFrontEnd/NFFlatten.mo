@@ -92,6 +92,7 @@ import DAE;
 import Structural = NFStructural;
 import ArrayConnections = NFArrayConnections;
 import UnorderedMap;
+import Inline = NFInline;
 
 public
 type FunctionTree = FunctionTreeImpl.Tree;
@@ -488,11 +489,10 @@ algorithm
   name := ComponentRef.prefixCref(comp_node, ty, {}, prefix);
   ty_attrs := list(flattenTypeAttribute(m, name) for m in typeAttrs);
 
-  // Set fixed = true for parameters that are part of a record instance whose
+  // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
   if unfix then
-    ty_attrs := List.removeOnTrue("fixed", isTypeAttributeNamed, ty_attrs);
-    ty_attrs := ("fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT)) :: ty_attrs;
+    ty_attrs := Binding.setAttr(ty_attrs, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
   end if;
 
   // kabdelhak: add dummy backend info, will be changed to actual value in
@@ -575,7 +575,7 @@ protected
   ComponentRef name;
   Binding binding;
   Option<Binding> opt_binding;
-  Expression binding_exp;
+  Expression binding_exp, binding_exp_eval;
   Equation eq;
   list<Expression> bindings;
   Variability comp_var, binding_var;
@@ -593,10 +593,26 @@ algorithm
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
       binding_exp := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
+      // Try to use inlining first.
       try
-        binding_exp := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
+        binding_exp := Inline.inlineRecordConstructorCall(binding_exp);
       else
       end try;
+
+      // If inlining fails, try to evaluate the binding instead.
+      if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
+        try
+          binding_exp_eval := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
+
+          // Throw away the evaluated binding if the number of dimensions no
+          // longer match after evaluation, in case Ceval fails to apply the
+          // subscripts correctly.
+          // TODO: Fix this, it shouldn't be needed.
+          0 := Type.dimensionDiff(ty, Expression.typeOf(binding_exp_eval));
+          binding_exp := binding_exp_eval;
+        else
+        end try;
+      end if;
     else
       binding_exp := SimplifyExp.simplify(binding_exp);
     end if;
@@ -948,6 +964,7 @@ algorithm
   outExp := match exp
     case Expression.BINDING_EXP(exp = outExp)
       algorithm
+        outExp := flattenExp(outExp, prefix);
         parents := listRest(exp.parents);
 
         if not exp.isEach then
@@ -960,7 +977,7 @@ algorithm
           end if;
         end if;
       then
-        flattenExp(outExp, prefix);
+        outExp;
 
     else exp;
   end match;
@@ -1240,7 +1257,6 @@ algorithm
         algorithm
           // Flatten the condition and body of the branch.
           cond := flattenExp(cond, prefix);
-          eql := flattenEquations(eql, prefix, settings);
 
           // Evaluate structural conditions.
           if var <= Variability.STRUCTURAL_PARAMETER then
@@ -1261,6 +1277,7 @@ algorithm
             // The condition is true and the branch will thus always be selected
             // if reached, so we can discard the remaining branches.
             branches := {};
+            eql := flattenEquations(eql, prefix, settings);
 
             if listEmpty(bl) then
               // If we haven't collected any other branches yet, replace the if-equation with this branch.
@@ -1272,6 +1289,7 @@ algorithm
           elseif not Expression.isFalse(cond) then
             // Only add the branch to the list of branches if the condition is not
             // literal false, otherwise just drop it since it will never trigger.
+            eql := flattenEquations(eql, prefix, settings);
             bl := Equation.makeBranch(cond, listReverseInPlace(eql), var) :: bl;
           end if;
         then

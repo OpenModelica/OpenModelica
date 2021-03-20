@@ -57,9 +57,10 @@ win32 {
 
   _cxx = $$(CXX)
   contains(_cxx, clang++) {
-    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport")
+    message("Found clang++ on windows in $CXX, removing unknown flags: -fno-keep-inline-dllexport -mthreads")
     QMAKE_CFLAGS -= -fno-keep-inline-dllexport
     QMAKE_CXXFLAGS -= -fno-keep-inline-dllexport
+    QMAKE_CXXFLAGS_EXCEPTIONS_ON -= -mthreads
   }
 
 
@@ -100,6 +101,7 @@ for(path, INCLUDEPATH) {
 SOURCES += Util/Helper.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
+  Util/OutputPlainTextEdit.cpp \
   MainWindow.cpp \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.cpp \
   OMC/OMCProxy.cpp \
@@ -138,9 +140,9 @@ SOURCES += Util/Helper.cpp \
   Simulation/TranslationFlagsWidget.cpp \
   Simulation/SimulationDialog.cpp \
   Simulation/SimulationOutputWidget.cpp \
-  Simulation/SimulationProcessThread.cpp \
   Simulation/SimulationOutputHandler.cpp \
   Simulation/OpcUaClient.cpp \
+  Simulation/ArchivedSimulationsWidget.cpp \
   TLM/FetchInterfaceDataDialog.cpp \
   TLM/FetchInterfaceDataThread.cpp \
   TLM/TLMCoSimulationDialog.cpp \
@@ -190,6 +192,7 @@ SOURCES += Util/Helper.cpp \
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
   Util/StringHandler.h \
+  Util/OutputPlainTextEdit.h \
   MainWindow.h \
   $$OPENMODELICAHOME/include/omc/scripting-API/OpenModelicaScriptingAPIQt.h \
   OMC/OMCProxy.h \
@@ -229,9 +232,9 @@ HEADERS  += Util/Helper.h \
   Simulation/TranslationFlagsWidget.h \
   Simulation/SimulationDialog.h \
   Simulation/SimulationOutputWidget.h \
-  Simulation/SimulationProcessThread.h \
   Simulation/SimulationOutputHandler.h \
   Simulation/OpcUaClient.h \
+  Simulation/ArchivedSimulationsWidget.h \
   TLM/FetchInterfaceDataDialog.h \
   TLM/FetchInterfaceDataThread.h \
   TLM/TLMCoSimulationOptions.h \
@@ -336,7 +339,10 @@ OTHER_FILES += Resources/css/stylesheet.qss \
 CONFIG += warn_on
 # Only disable the unused variable/function/parameter warning
 win32 {
-  QMAKE_CXXFLAGS += -Wno-clobbered
+  # -Wno-clobbered is not recognized by clang
+  !contains(_cxx, clang++) {
+    QMAKE_CXXFLAGS += -Wno-clobbered
+  }
 }
 
 RESOURCES += resource_omedit.qrc

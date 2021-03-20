@@ -45,6 +45,7 @@
 #include "Util/StringHandler.h"
 
 class Label;
+class OutputPlainTextEdit;
 class TLMCoSimulationThread;
 
 class TLMCoSimulationOutputWidget : public QWidget
@@ -63,11 +64,11 @@ private:
   Label *mpManagerOutputLabel;
   QPushButton *mpStopManagerButton;
   QPushButton *mpOpenManagerLogFileButton;
-  QPlainTextEdit *mpManagerOutputTextBox;
+  OutputPlainTextEdit *mpManagerOutputTextBox;
   Label *mpMonitorOutputLabel;
   QPushButton *mpStopMonitorButton;
   QPushButton *mpOpenMonitorLogFileButton;
-  QPlainTextEdit *mpMonitorOutputTextBox;
+  OutputPlainTextEdit *mpMonitorOutputTextBox;
   TLMCoSimulationThread *mpTLMCoSimulationProcessThread;
   QDateTime mResultFileLastModifiedDateTime;
 public slots:

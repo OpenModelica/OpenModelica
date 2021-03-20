@@ -58,42 +58,14 @@ class SimulationOutputWidget;
 class LibraryTreeItem;
 class TranslationFlagsWidget;
 
-class ArchivedSimulationItem : public QTreeWidgetItem
-{
-public:
-  ArchivedSimulationItem(SimulationOptions simulationOptions, SimulationOutputWidget *pSimulationOutputWidget)
-    : mpSimulationOutputWidget(pSimulationOutputWidget)
-  {
-    setText(0, simulationOptions.getClassName());
-    setToolTip(0, simulationOptions.getClassName());
-    setText(1, QDateTime::currentDateTime().toString());
-    setToolTip(1, QDateTime::currentDateTime().toString());
-    setText(2, simulationOptions.getStartTime());
-    setToolTip(2, simulationOptions.getStartTime());
-    setText(3, simulationOptions.getStopTime());
-    setToolTip(3, simulationOptions.getStopTime());
-    setStatus(Helper::running);
-  }
-  SimulationOutputWidget* getSimulationOutputWidget() {return mpSimulationOutputWidget;}
-  void setStatus(QString status) {
-    setText(4, status);
-    setToolTip(4, status);
-  }
-private:
-  SimulationOutputWidget *mpSimulationOutputWidget;
-};
-
 class SimulationDialog : public QDialog
 {
   Q_OBJECT
 public:
   SimulationDialog(QWidget *pParent = 0);
   ~SimulationDialog();
-  QTreeWidget* getArchivedSimulationsTreeWidget() {return mpArchivedSimulationsTreeWidget;}
   void show(LibraryTreeItem *pLibraryTreeItem, bool isReSimulate, SimulationOptions simulationOptions);
-  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger,
-                      bool launchAnimation);
-  QList<SimulationOutputWidget*> getSimulationOutputWidgetsList() {return mSimulationOutputWidgetsList;}
+  void directSimulate(LibraryTreeItem *pLibraryTreeItem, bool launchTransformationalDebugger, bool launchAlgorithmicDebugger, bool launchAnimation);
   OpcUaClient* getOpcUaClient(int port);
   void removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget);
 private:
@@ -204,9 +176,6 @@ private:
   QCheckBox *mpEquidistantTimeGridCheckBox;
   QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
-  // Archived Simulation Flags Tab
-  QWidget *mpArchivedSimulationsTab;
-  QTreeWidget *mpArchivedSimulationsTreeWidget;
   // checkboxes
   QCheckBox *mpSaveExperimentAnnotationCheckBox;
   QCheckBox *mpSaveSimulationFlagsAnnotationCheckBox;
@@ -239,7 +208,6 @@ private:
   void saveDialogGeometry();
   void killSimulationProcess(int port);
   void removeVariablesFromTree(QString className);
-  void terminateSimulationProcess(SimulationOutputWidget *pSimulationOutputWidget);
   void setInteractiveControls(bool enabled);
 public:
   void reSimulate(SimulationOptions simulationOptions);
@@ -259,7 +227,6 @@ public slots:
   void browseEquationSystemInitializationFile();
   void browseDataReconciliationInputFile();
   void showSimulationFlagsHelp();
-  void showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem);
   void simulate();
   void reject();
   void updateInteractiveSimulationCurves();

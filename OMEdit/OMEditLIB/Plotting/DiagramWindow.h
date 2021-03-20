@@ -53,6 +53,8 @@ private:
   GraphicsScene *mpGraphicsScene;
   GraphicsView *mpGraphicsView;
   QVBoxLayout *mpMainLayout;
+
+  void deleteGraphicsViewAndScene();
 protected:
   virtual void closeEvent(QCloseEvent *event) override;
 };

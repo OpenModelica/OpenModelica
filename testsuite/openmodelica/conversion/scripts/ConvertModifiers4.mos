@@ -1,0 +1,1 @@
+convertModifiers("Modelica.StateGraph.Step", fill("", 0), {"nIn=1", "nOut=1"})

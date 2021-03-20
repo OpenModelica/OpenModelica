@@ -17,3 +17,5 @@ ReferenceFiles/**/*.mat
 /invalid-files.log
 /invalid-files.sorted
 /.gitvalidfiles.sorted
+flattening/modelica/ffi/FFITest/Resources/BuildProjects/gcc/FFITestLib.dll
+flattening/modelica/ffi/FFITest/Resources/Library/

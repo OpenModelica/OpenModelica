@@ -82,22 +82,25 @@ protected
 algorithm
   ass1 := arrayCreate(N, -1);
   ass2 := arrayCreate(N, -1);
-  (ass1, ass2, true) := ContinueMatching(m, N, N, ass1, ass2, true);
+  (ass1, ass2, true, _, _) := ContinueMatching(m, N, N, ass1, ass2, true);
 end PerfectMatching;
 
 public function RegularMatching "
   This function returns at least a partial matching for singular systems, starting from scratch.
-  Unmatched nodes are represented by -1."
+  Unmatched nodes are represented by -1. The eMark and vMark vectors are only relevant if
+  perfectMatching = false."
   input BackendDAE.AdjacencyMatrix m;
   input Integer nVars;
   input Integer nEqns;
-  output array<Integer> ass1 "eqn := ass1[var]";
-  output array<Integer> ass2 "var := ass2[eqn]";
+  output array<Integer> ass1      "eqn := ass1[var]";
+  output array<Integer> ass2      "var := ass2[eqn]";
   output Boolean perfectMatching;
+  output array<Boolean> eMark     "equations contained in the minimal structurally singular subset";
+  output array<Boolean> vMark     "variables contained in the minimal structurally singular subset";
 algorithm
   ass1 := arrayCreate(nVars, -1);
   ass2 := arrayCreate(nEqns, -1);
-  (ass1, ass2, perfectMatching) := ContinueMatching(m, nVars, nEqns, ass1, ass2, false);
+  (ass1, ass2, perfectMatching, eMark, vMark) := ContinueMatching(m, nVars, nEqns, ass1, ass2, false);
 end RegularMatching;
 
 public function ContinueMatching "
@@ -110,9 +113,10 @@ public function ContinueMatching "
   input output array<Integer> ass2 "var := ass2[eqn]";
   input Boolean stopAtSingularity = false;
   output Boolean perfectMatching = true;
+  output array<Boolean> eMark;
+  output array<Boolean> vMark;
 protected
   Integer i, j;
-  array<Boolean> eMark, vMark;
   array<Integer> eMarkIx, vMarkIx;
   Integer eMarkN=0, vMarkN=0;
   Boolean success;

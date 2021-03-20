@@ -159,7 +159,7 @@ protected function callTearingMethod
   input BackendDAE.Shared ishared;
   input list<Integer> eindex;
   input list<Integer> vindx;
-  input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
+  input BackendDAE.FullJacobian ojac;
   input BackendDAE.JacobianType jacType;
   input Boolean mixedSystem;
   input Integer strongComponentIndex;
@@ -221,7 +221,7 @@ algorithm
       case MINIMAL_TEARING()
           algorithm
            if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-             print("\nTearing type: total\n");
+             print("\nTearing type: minimal\n");
            end if;
            ocomp := minimalTearing(isyst, ishared, eindex, vindx, jacType, mixedSystem);
            if debug then execStat("Tearing.minimalTearing"); end if;
@@ -1853,7 +1853,7 @@ try
   // dumpTearingSetGlobalIndexes(BackendDAE.TEARINGSET(iterationVars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()),size," - STRICT SET");
 
   // Return torn system
-  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(iterationVars, residualequations, listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()), NONE(), linear, mixedSystem);
+  ocomp := BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(listReverse(iterationVars), listReverse(residualequations), listReverse(innerEquations), BackendDAE.EMPTY_JACOBIAN()), NONE(), linear, mixedSystem);
 else
   Error.addInternalError("function minimalTearing failed", sourceInfo());
   fail();

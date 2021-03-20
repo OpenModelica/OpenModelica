@@ -33,7 +33,7 @@
 
 #include "omc_config.h"
 
-#ifdef WITH_UMFPACK
+#ifdef WITH_SUITESPARSE
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

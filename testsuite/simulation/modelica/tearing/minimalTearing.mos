@@ -7,7 +7,7 @@
 // Solve example with discrete variables inside loops.
 // Will fail with tearingMethod=noTearing
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 
 setTearingMethod("minimalTearing"); getErrorString();
 

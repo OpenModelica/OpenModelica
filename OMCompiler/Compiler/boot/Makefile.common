@@ -22,17 +22,30 @@ PATCH_SOURCES=true
 
 PATCHES := $(patsubst %.patch.xz,%.patch,$(wildcard patches/*.patch.xz))
 
+detected_OS ?= $(shell uname -s)
+
+# Darwin doesn't like our static libffi, use the system one
+# we get dyld: Symbol not found: _ffi_type_double, basically
+# no ffi symbols are put in libOpenModelicaCompiler.dylib
+ifeq ($(detected_OS),Darwin)
+LIBFFI=-lffi
+else # sane systems
+LIBFFI=$(TOP_DIR)/3rdParty/libffi/install/lib*/libffi.a
+endif
+LIBOMCGRAPHSTREAMAR=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a
+LIBOMCBACKENDRUNTIMEAR=$(TOP_DIR)/Compiler/runtime/libomcbackendruntime.a
+
 ifeq ($(BOOTSTRAP_STAGE_1),1)
 OMCRUNTIMEAR=$(OMCRUNTIMEAR1)
 OMPARSEAR=../../Parser/libomparse-boot.a
 LOMPARSE=$(OMPARSEAR)
-LCOMPILERRUNTIME=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a $(TOP_DIR)/Compiler/runtime/libomcbackendruntime.a $(abspath $(OMCRUNTIMEAR)) $(RPATH_BOOT_STAGE_1)
+LCOMPILERRUNTIME= $(LIBOMCGRAPHSTREAMAR) $(LIBOMCBACKENDRUNTIMEAR) $(abspath $(OMCRUNTIMEAR)) $(LIBFFI) $(RPATH_BOOT_STAGE_1)
 FMILIB_OR_BOOT=
 else
 OMCRUNTIMEAR=$(OMCRUNTIMEAR2)
 OMPARSEAR=$(OMHOME)/$(LIB_OMC)/libomparse.a
 LOMPARSE=-lomparse
-LCOMPILERRUNTIME=$(TOP_DIR)/Compiler/runtime/libomcgraphstream.a $(TOP_DIR)/Compiler/runtime/libomcbackendruntime.a -lomcruntime
+LCOMPILERRUNTIME=$(LIBOMCGRAPHSTREAMAR) $(LIBOMCBACKENDRUNTIMEAR) -lomcruntime $(LIBFFI)
 FMILIB_OR_BOOT=$(FMILIB) -lexpat
 endif
 
@@ -179,6 +192,8 @@ $(OMHOME)/$(LIB_OMC)/libOpenModelicaCompiler$(SHREXT): $(ALL_OBJECTS) $(OMCRUNTI
 	@test ! -z "`echo $(ALL_OBJECTS)`" || (echo Empty dependencies for $@ ; false)
 	$(CC) -shared $(RPATH) $(INSTALL_NAME) -o $@ $(ALL_OBJECTS) $(GEN_DIR)_main_omc.o $(LDFLAGS)
 	test ! "$(SHREXT)" = ".dylib" || install_name_tool -id @rpath/libOpenModelicaCompiler.dylib $@
+	test ! "$(SHREXT)" = ".dylib" || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib $@
+	test ! "$(SHREXT)" = ".dylib" || install_name_tool -change libsuitesparseconfig.dylib @rpath/libsuitesparseconfig.dylib $@
 
 ifeq (${STATIC},)
 #shared

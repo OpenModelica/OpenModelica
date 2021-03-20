@@ -3,8 +3,8 @@
 // status: correct
 // teardown_command: rm -rf equationsTests.when_sorting* _equationsTests.when_sorting* output.log
 // cflags: -d=-newInst
-// 
-//  Simulate model containing two when equation, that 
+//
+//  Simulate model containing two when equation, that
 //
 
 loadString("
@@ -61,7 +61,7 @@ val(y, 2.1);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // v
 // 1.0

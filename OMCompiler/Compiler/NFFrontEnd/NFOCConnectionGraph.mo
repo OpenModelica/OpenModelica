@@ -262,8 +262,8 @@ protected
   Type ty, ty1, ty2;
   Integer priority;
   Expression root, msg;
-  Connector c1, c2, cc1, cc2;
-  list<Connector> cl1, cl2, lhsl, rhsl;
+  Connector c1, c2;
+  list<Connector> cl1, cl2;
   Equation replaceEq;
   Expression expLHS, expRHS;
   InstNode fn_node_lhs, fn_node_rhs;
@@ -280,42 +280,36 @@ algorithm
     for c1 in cl1 loop
       c2 :: cl2 := cl2;
 
-      lhsl := Connector.split(c1);
-      rhsl := Connector.split(c2);
+      for conn in Connection.split(Connection.CONNECTION(c1, c2)) loop
+        lhs := Connector.name(conn.lhs);
+        rhs := Connector.name(conn.rhs);
+        if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
+          lhs := getOverconstrainedCref(lhs);
+          rhs := getOverconstrainedCref(rhs);
 
-      for cc1 in lhsl loop
-        cc2 :: rhsl := rhsl;
-        if not (Connector.isDeleted(cc1) or Connector.isDeleted(cc2)) then
-          lhs := Connector.name(cc1);
-          rhs := Connector.name(cc2);
-          if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
-            lhs := getOverconstrainedCref(lhs);
-            rhs := getOverconstrainedCref(rhs);
+          lhsArr := ComponentRef.stripSubscripts(lhs);
+          rhsArr := ComponentRef.stripSubscripts(rhs);
 
-            lhsArr := ComponentRef.stripSubscripts(lhs);
-            rhsArr := ComponentRef.stripSubscripts(rhs);
+          ty1 := ComponentRef.getComponentType(lhsArr);
+          ty2 := ComponentRef.getComponentType(rhsArr);
 
-            ty1 := ComponentRef.getComponentType(lhsArr);
-            ty2 := ComponentRef.getComponentType(rhsArr);
+          fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)), context);
+          (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, context, ElementSource.getInfo(source));
+          expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
 
-            fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)), context);
-            (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, context, ElementSource.getInfo(source));
-            expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
+          (expRHS, ty, var) := Typing.typeExp(expRHS, context, ElementSource.getInfo(source));
 
-            (expRHS, ty, var) := Typing.typeExp(expRHS, context, ElementSource.getInfo(source));
+          fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)), context);
+          (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, context, ElementSource.getInfo(source));
+          expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
 
-            fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)), context);
-            (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, context, ElementSource.getInfo(source));
-            expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
+          (expLHS, ty, var) := Typing.typeExp(expLHS, context, ElementSource.getInfo(source));
 
-            (expLHS, ty, var) := Typing.typeExp(expLHS, context, ElementSource.getInfo(source));
+          replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
 
-            replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
+          eqsEqualityConstraint := {replaceEq};
 
-            eqsEqualityConstraint := {replaceEq};
-
-            return;
-          end if;
+          return;
         end if;
       end for;
     end for;

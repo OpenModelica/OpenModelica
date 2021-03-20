@@ -1,0 +1,2 @@
+convertModifiers("Modelica.Thermal.FluidHeatFlow.Components.IsolatedPipe",
+  fill("", 0), {"useHeatPort=false"});

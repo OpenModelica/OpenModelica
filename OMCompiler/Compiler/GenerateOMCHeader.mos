@@ -5,6 +5,9 @@ loadFile("Util/ErrorTypes.mo");
 loadFile("Util/Config.mo");
 loadFile("Util/Gettext.mo");
 loadFile("Util/FMI.mo");
+loadFile("NFFrontEnd/NFType.mo");
+loadFile("NFFrontEnd/NFExpression.mo");
+loadFile("NFFrontEnd/NFDimension.mo");
 err:=getErrorString();
 if err == "" then loadOK := true; end if;
 a:=loadOK; // Will cause exit(1) if loadOK is undefined

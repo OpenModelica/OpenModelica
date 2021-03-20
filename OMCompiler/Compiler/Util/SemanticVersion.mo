@@ -50,16 +50,26 @@ end Version;
 
 function parse
   input String s;
+  input Boolean nonsemverAsZeroZeroZero = false;
   output Version v;
 protected
   Integer n;
-  String major, minor, patch, prerelease, meta, nextString, versions;
+  String major, minor, patch, nextString, versions;
   list<String> prereleaseLst, metaLst, matches, split, versionsLst;
   constant String semverRegex = "^([0-9][0-9]*\\.?[0-9]*\\.?[0-9]*)([+-][0-9A-Za-z.-]*)?$";
 algorithm
   (n, matches) := System.regex(s, semverRegex, maxMatches=5, extended=true);
   if n < 2 then
-    v := NONSEMVER(s);
+    if stringLength(s) == 0 then
+      v := NONSEMVER("");
+      return;
+    end if;
+    if nonsemverAsZeroZeroZero then
+      (prereleaseLst, metaLst) := splitPrereleaseAndMeta(s);
+      v := SEMVER(0,0,0,prereleaseLst,metaLst);
+    else
+      v := NONSEMVER(s);
+    end if;
     return;
   end if;
   // OSX regex cannot handle everything in the same regex, so we have manual splitting of prerelease and meta strings
@@ -78,20 +88,7 @@ algorithm
     patch := "0";
   end if;
 
-  nextString := if listEmpty(split) then "" else listGet(split, 1);
-  if stringEmpty(nextString) then
-    prerelease := "";
-    meta := "";
-  elseif stringGetStringChar(nextString, 1) == "+" then
-    prerelease := "";
-    meta := nextString;
-  else
-    split := Util.stringSplitAtChar(nextString, "+");
-    prerelease::split := split;
-    meta := if listEmpty(split) then "" else listGet(split, 1);
-  end if;
-  prereleaseLst := if stringLength(prerelease) > 0 then Util.stringSplitAtChar(Util.stringRest(prerelease), ".") else {};
-  metaLst := if stringLength(meta) > 0 then Util.stringSplitAtChar(Util.stringRest(meta), ".") else {};
+  (prereleaseLst, metaLst) := splitPrereleaseAndMeta(if listEmpty(split) then "" else listGet(split, 1));
   v := SEMVER(stringInt(major),stringInt(minor),stringInt(patch),prereleaseLst,metaLst);
 end parse;
 
@@ -107,20 +104,26 @@ algorithm
     case (_,NONSEMVER()) then 1;
     case (SEMVER(),SEMVER())
       algorithm
-        c := Util.intCompare(v1.major, v2.major);
-        if c <> 0 then
-          return;
-        end if;
-        c := Util.intCompare(v1.minor, v2.minor);
-        if c <> 0 then
-          return;
-        end if;
-        c := Util.intCompare(v1.patch, v2.patch);
-        if c <> 0 then
-          return;
+        if (v1.major==0 and v1.minor==0 and v1.patch==0) or (v2.major==0 and v2.minor==0 and v2.patch==0) then
+          c := 0;
+        else
+          c := Util.intCompare(v1.major, v2.major);
+          if c <> 0 then
+            return;
+          end if;
+          c := Util.intCompare(v1.minor, v2.minor);
+          if c <> 0 then
+            return;
+          end if;
+          c := Util.intCompare(v1.patch, v2.patch);
+          if c <> 0 then
+            return;
+          end if;
         end if;
 
-        c := compareIdentifierList(v1.prerelease, v2.prerelease);
+        if comparePrerelease then
+          c := compareIdentifierList(v1.prerelease, v2.prerelease);
+        end if;
         if c == 0 and compareBuildInformation then
           c := compareIdentifierList(v1.meta, v2.meta);
         end if;
@@ -179,6 +182,36 @@ algorithm
 end isSemVer;
 
 protected
+
+function splitPrereleaseAndMeta
+  input String s;
+  output list<String> prereleaseLst;
+  output list<String> metaLst;
+protected
+  String meta, prerelease;
+  list<String> split;
+algorithm
+  prereleaseLst := {};
+  metaLst := {};
+
+  if stringEmpty(s) then
+    return;
+  end if;
+
+  if stringGetStringChar(s, 1) == "+" then
+    metaLst := if stringLength(s) > 1 then Util.stringSplitAtChar(Util.stringRest(s), ".") else {};
+    return;
+  end if;
+
+  split := Util.stringSplitAtChar(s, "+");
+  prerelease::split := split;
+  meta := if listEmpty(split) then "" else listGet(split, 1);
+  if stringGetStringChar(prerelease, 1) == "-" then
+    prerelease := Util.stringRest(prerelease);
+  end if;
+  prereleaseLst := if stringLength(prerelease) > 0 then Util.stringSplitAtChar(prerelease, ".") else {};
+  metaLst := if stringLength(meta) > 0 then Util.stringSplitAtChar(meta, ".") else {};
+end splitPrereleaseAndMeta;
 
 function compareIdentifierList
   input list<String> w1, w2;

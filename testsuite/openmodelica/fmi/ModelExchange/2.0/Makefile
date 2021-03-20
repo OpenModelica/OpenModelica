@@ -42,6 +42,7 @@ testInitialEquationsFMI.mos \
 TestSourceCodeFMU.mos \
 ticket5670.mos \
 ZeroStates.mos \
+ticket6262.mos \
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

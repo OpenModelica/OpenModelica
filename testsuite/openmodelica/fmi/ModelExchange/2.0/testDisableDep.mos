@@ -5,7 +5,7 @@
 // cflags: -d=-newInst
 //
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 setCommandLineOptions("--std=3.3 -d=disableFMIDependency");
 loadString("
 model testDID
@@ -40,7 +40,7 @@ readFile("modelDescription.tmp.xml");
 // true
 // ""
 // "testDID.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
@@ -73,6 +73,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_15syn.c\" />
 //       <File name=\"testDID_16dae.c\" />
 //       <File name=\"testDID_17inl.c\" />
+//       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_FMU.c\" />
 //       <File name=\"./util/read_matlab4.c\" />
@@ -83,6 +84,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/base_array.c\" />
 //       <File name=\"./util/boolean_array.c\" />
 //       <File name=\"./util/division.c\" />
+//       <File name=\"./util/doubleEndedList.c\" />
 //       <File name=\"./util/generic_array.c\" />
 //       <File name=\"./util/index_spec.c\" />
 //       <File name=\"./util/integer_array.c\" />
@@ -114,17 +116,13 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./simulation/solver/fmi_events.c\" />
 //       <File name=\"./simulation/solver/model_help.c\" />
 //       <File name=\"./simulation/solver/omc_math.c\" />
+//       <File name=\"./simulation/solver/spatialDistribution.c\" />
 //       <File name=\"./simulation/solver/stateset.c\" />
 //       <File name=\"./simulation/solver/synchronous.c\" />
 //       <File name=\"./simulation/solver/initialization/initialization.c\" />
 //       <File name=\"./meta/meta_modelica_catch.c\" />
 //     </SourceFiles>
 //   </ModelExchange>
-//   <TypeDefinitions>
-//     <Clocks>
-//       <Clock><Inferred/></Clock>
-//     </Clocks>
-//   </TypeDefinitions>
 //   <LogCategories>
 //     <Category name=\"logEvents\" />
 //     <Category name=\"logSingularLinearSystems\" />
@@ -173,7 +171,6 @@ readFile("modelDescription.tmp.xml");
 //     name=\"previous(_D_outputAlias_y1)\"
 //     valueReference=\"4\"
 //     variability=\"discrete\"
-//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -182,7 +179,6 @@ readFile("modelDescription.tmp.xml");
 //     name=\"previous(_D_outputAlias_y2)\"
 //     valueReference=\"5\"
 //     variability=\"discrete\"
-//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -191,7 +187,6 @@ readFile("modelDescription.tmp.xml");
 //     name=\"der(_D_outputAlias_y1)\"
 //     valueReference=\"6\"
 //     variability=\"discrete\"
-//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -200,7 +195,6 @@ readFile("modelDescription.tmp.xml");
 //     name=\"der(_D_outputAlias_y2)\"
 //     valueReference=\"7\"
 //     variability=\"discrete\"
-//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -209,8 +203,6 @@ readFile("modelDescription.tmp.xml");
 //     name=\"_D_outputAlias_y1\"
 //     valueReference=\"8\"
 //     variability=\"discrete\"
-//     clockIndex=\"1\"
-//     previous=\"5\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -219,8 +211,6 @@ readFile("modelDescription.tmp.xml");
 //     name=\"_D_outputAlias_y2\"
 //     valueReference=\"9\"
 //     variability=\"discrete\"
-//     clockIndex=\"1\"
-//     previous=\"6\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -237,7 +227,6 @@ readFile("modelDescription.tmp.xml");
 //     name=\"ud\"
 //     valueReference=\"11\"
 //     variability=\"discrete\"
-//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -247,7 +236,6 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"12\"
 //     variability=\"discrete\"
 //     causality=\"output\"
-//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -257,7 +245,6 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"13\"
 //     variability=\"discrete\"
 //     causality=\"output\"
-//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>

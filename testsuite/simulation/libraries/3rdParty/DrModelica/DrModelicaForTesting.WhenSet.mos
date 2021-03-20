@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _DrModelicaForTesting.WhenSet.* DrModelicaForTesting.WhenSet_* DrModelicaForTesting.WhenSet DrModelicaForTesting.WhenSet.exe DrModelicaForTesting.WhenSet.cpp DrModelicaForTesting.WhenSet.makefile DrModelicaForTesting.WhenSet.libs DrModelicaForTesting.WhenSet.log DrModelicaForTesting.WhenSet.c DrModelicaForTesting.WhenSet.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -17,8 +17,8 @@ simulate(DrModelicaForTesting.WhenSet, numberOfIntervals=200, stopTime=1.0); get
 res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.WhenSet_res.mat",
   "ReferenceFiles/WhenSet_ref.mat","DrModelicaForTesting.WhenSet_diff.csv",0.01,0.013,
   {"x","y1", "y2", "y3"});
-  
-  
+
+
 // Result:
 // true
 // ""
@@ -31,7 +31,7 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Whe
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // endResult

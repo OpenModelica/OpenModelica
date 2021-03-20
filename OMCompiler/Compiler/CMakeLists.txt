@@ -190,15 +190,14 @@ add_library(OpenModelicaCompiler STATIC ${OMC_C_SOURCE_FILES} .cmake/omc_entry_p
 
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
-# This flag is interesting. OMC will segfault (at least on Windows old OMDev) on very deep
-# recursive calls if this flag is enabled. E.g., try translating the CodegenCpp* tpl files to mo files with
-# an omc not compiled without this flag. The tpl parser is quite recursive and will
-# segfault on parsing comments with very long lines ~300. *CPP tpl files have lines longer
+# OMC will overflow the stack (at least on Windows old OMDev) on very deep
+# E.g., try translating the CodegenCpp* tpl files to mo files with
+# an omc not compiled without large stack size. The tpl parser is quite recursive and will
+# overflow on parsing comments with very long lines ~300. *CPP tpl files have lines longer
 # than that.
-# GCC manual says it is enabled on levels -O and higher. Explicitly disable it.
-if(MINGW)
-#   target_compile_options(OpenModelicaCompiler PRIVATE -fno-ipa-pure-const)
-endif()
+# if(MINGW)
+#   target_link_options(OpenModelicaCompiler PUBLIC -Wl,--stack,33554432)
+# endif()
 
 add_dependencies(OpenModelicaCompiler DEPENDENCY_UPDATE)
 
@@ -221,9 +220,11 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_io)
 add_executable(omc .cmake/omc_main.c)
 target_link_libraries(omc PRIVATE OpenModelicaCompiler)
 
-# target_link_options(omc PRIVATE -Wl,--stack,33554432)
-
 target_link_options(omc PRIVATE -rdynamic)
+
+# if(MINGW)
+#   target_link_options(omc PRIVATE -Wl,--stack,33554432)
+# endif()
 
 
 
@@ -239,13 +240,13 @@ install(TARGETS omc OpenModelicaCompiler
 # Install the *ModelicaBuiltin files to <library_dir>/omc/ that is where omc.exe expects them to be.
 # They are also part of "compiler" installation component.
 install(FILES NFFrontEnd/NFModelicaBuiltin.mo
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            DESTINATION lib/omc
             COMPONENT compiler)
 install(FILES FrontEnd/ModelicaBuiltin.mo
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            DESTINATION lib/omc
             COMPONENT compiler)
 install(FILES FrontEnd/MetaModelicaBuiltin.mo
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/omc
+            DESTINATION lib/omc
             COMPONENT compiler)
 
 

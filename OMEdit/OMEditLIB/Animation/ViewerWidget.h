@@ -71,7 +71,7 @@ class ViewerWidget : public GLWidget
 {
   Q_OBJECT
 public:
-  ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = 0);
+  ViewerWidget(QWidget *pParent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
   osgViewer::View* getSceneView() {return mpSceneView;}
   std::string getSelectedShape() {return mSelectedShape;}
   void setSelectedShape(std::string shape) {mSelectedShape = shape;}

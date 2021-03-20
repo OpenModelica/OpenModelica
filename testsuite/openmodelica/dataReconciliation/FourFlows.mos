@@ -141,6 +141,10 @@ getErrorString();
 // 3/3 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
 //
 //
+// SET_S_After_Minimal_Extraction (0, 0)
+// ==========================================================================
+//
+//
 // Unknown variables in SET_S  (0)
 // ========================================
 //
@@ -195,7 +199,6 @@ getErrorString();
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
-// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// "Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
 // "
 // endResult

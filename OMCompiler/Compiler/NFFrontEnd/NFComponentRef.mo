@@ -252,6 +252,16 @@ public
     CREF(restCref = restCref) := cref;
   end rest;
 
+  function last
+    input ComponentRef cref;
+    output ComponentRef lastCref;
+  algorithm
+    lastCref := match cref
+      case CREF(restCref = CREF()) then last(cref.restCref);
+      else cref;
+    end match;
+  end last;
+
   function firstNonScope
     input ComponentRef cref;
     output ComponentRef first;
@@ -1378,6 +1388,24 @@ public
       end if;
     end for;
   end listHasDiscrete;
+
+  function removeOuterCrefPrefix
+    input output ComponentRef cref;
+  algorithm
+    () := match cref
+      case ComponentRef.CREF()
+        algorithm
+          if InstNode.isGeneratedInner(cref.node) then
+            cref.restCref := EMPTY();
+          else
+            cref.restCref := removeOuterCrefPrefix(cref.restCref);
+          end if;
+        then
+          ();
+
+      else ();
+    end match;
+  end removeOuterCrefPrefix;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

@@ -3249,8 +3249,23 @@ algorithm
       Integer var_1;
       Boolean addMMLCode;
       DAE.ElementSource source "the origin of the element";
+      BackendDAE.Var scalarVar;
+      list<DAE.ComponentRef> scalar_crefs;
 
     case ({},_,_) then ();
+    case (((v as BackendDAE.VAR()) :: xs), varno, addMMLCode)
+      guard(BackendVariable.isParam(v) and Types.isArray(v.varType))
+      algorithm
+        scalar_crefs := ComponentReference.expandCref(v.varName, false);
+        for cref in scalar_crefs loop
+          // extract the sim var
+          scalarVar := BackendVariable.copyVarNewName(cref, v);
+          scalarVar.varType := ComponentReference.crefTypeFull(cref);
+          dumpVars2({scalarVar}, varno, addMMLCode);
+          varno := varno + 1;
+        end for;
+        dumpVars2(xs,varno,addMMLCode);
+    then ();
     case (((v as BackendDAE.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,

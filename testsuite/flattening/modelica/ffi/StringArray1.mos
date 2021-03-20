@@ -1,0 +1,21 @@
+// name:     StringArray1
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Arrays.StringArray1); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.Arrays.StringArray1
+//   constant Integer lens[1] = 4;
+//   constant Integer lens[2] = 5;
+//   constant Integer lens[3] = 5;
+// end FFITest.Arrays.StringArray1;
+// "
+// ""
+// endResult

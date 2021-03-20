@@ -7,7 +7,7 @@
 // Drmodelica: 4.5 Design a Class to be Extended (p. 137)
 // cflags: -d=-newInst
 // 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 loadFile("TempResistor3.mo");
 simulate(TempResistor3,numberOfIntervals=100, tolerance=1e-5); // 2 intervals == 3 values
 echo(false); // turns of output 

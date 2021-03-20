@@ -2,7 +2,7 @@
 // status: correct
 // cflags: -d=-newInst
 
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 getErrorString();
 
 setCommandLineOptions("+gDynOpt");

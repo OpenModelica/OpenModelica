@@ -46,6 +46,10 @@ Legend::Legend(Plot *pParent)
   mpPlot = pParent;
   mpPlotCurve = 0;
 
+  mpToggleSignAction = new QAction(tr("Toggle Sign"), this);
+  mpToggleSignAction->setCheckable(true);
+  connect(mpToggleSignAction, SIGNAL(triggered(bool)), SLOT(toggleSign(bool)));
+
   mpSetupAction = new QAction(tr("Setup"), this);
   connect(mpSetupAction, SIGNAL(triggered()), SLOT(showSetupDialog()));
 
@@ -89,6 +93,16 @@ bool Legend::eventFilter(QObject *object, QEvent *event)
   return QwtLegend::eventFilter(object, event);
 }
 
+void Legend::toggleSign(bool checked)
+{
+  if (mpPlotCurve) {
+    mpPlot->getParentPlotWindow()->toggleSign(mpPlotCurve, checked);
+    mpPlot->replot();
+    mpPlot->getParentPlotWindow()->fitInView();
+    mpPlotCurve = 0;
+  }
+}
+
 void Legend::showSetupDialog()
 {
   if (mpPlotCurve) {
@@ -108,6 +122,11 @@ void Legend::legendMenu(const QPoint& pos)
   if (mpPlotCurve) {
     /* context menu */
     QMenu menu(mpPlot);
+    bool state = mpToggleSignAction->blockSignals(true);
+    mpToggleSignAction->setChecked(mpPlotCurve->getToggleSign());
+    mpToggleSignAction->blockSignals(state);
+    menu.addAction(mpToggleSignAction);
+    menu.addSeparator();
     menu.addAction(mpSetupAction);
     menu.exec(mapToGlobal(pos));
   }
@@ -149,7 +168,7 @@ void Legend::mousePressEvent(QMouseEvent *event)
   mpPlotCurve = dynamic_cast<PlotCurve*>(find(childAt(event->pos())));
 #endif
   if (mpPlotCurve) {
-    mpPlotCurve->toggleVisibility();
+    mpPlotCurve->toggleVisibility(!mpPlotCurve->isVisible());
   }
 
 }
@@ -172,11 +191,11 @@ void Legend::mouseDoubleClickEvent(QMouseEvent *event)
   if (mpPlotCurve) {
     foreach (PlotCurve *pPlotCurve, mpPlot->getPlotCurvesList()) {
       if (pPlotCurve == mpPlotCurve) {
-        pPlotCurve->setVisible(false);
+        pPlotCurve->toggleVisibility(true);
       } else {
-        pPlotCurve->setVisible(true);
+        pPlotCurve->toggleVisibility(false);
       }
-      pPlotCurve->toggleVisibility();
+
     }
   }
 }

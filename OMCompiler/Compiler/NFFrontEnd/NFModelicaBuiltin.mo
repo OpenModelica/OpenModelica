@@ -37,6 +37,12 @@ type StateSelect = enumeration(
   always "Do use it as a state."
 ) annotation(__OpenModelica_builtin = true);
 
+type Uncertainty = enumeration(
+  given,
+  sought,
+  refine
+) annotation(__OpenModelica_builtin = true);
+
 partial class ExternalObject
   annotation(__OpenModelica_builtin=true);
 end ExternalObject;
@@ -4523,6 +4529,12 @@ annotation(
 </html>"), preferredView="text");
 end generateScriptingAPI;
 
+function convertPackage
+  input TypeName cl;
+  input String scriptFile;
+external "builtin";
+end convertPackage;
+
 // OMSimulator API calls
 type oms_system = enumeration(oms_system_none,oms_system_tlm, oms_system_wc,oms_system_sc);
 type oms_causality = enumeration(oms_causality_input, oms_causality_output, oms_causality_parameter, oms_causality_bidir, oms_causality_undefined);
@@ -4709,13 +4721,6 @@ function oms_addTLMConnection
 external "builtin";
 annotation(preferredView="text");
 end oms_addTLMConnection;
-
-function oms_cancelSimulation_asynchronous
-  input String cref;
-  output Integer status;
-external "builtin";
-annotation(preferredView="text");
-end oms_cancelSimulation_asynchronous;
 
 function oms_compareSimulationResults
   input String filenameA;
@@ -4958,6 +4963,7 @@ end oms_listUnconnectedConnectors;
 function oms_loadSnapshot
   input String cref;
   input String snapshot;
+  output String newCref;
   output Integer status;
 external "builtin";
 annotation(preferredView="text");
@@ -4969,14 +4975,6 @@ function oms_newModel
 external "builtin";
 annotation(preferredView="text");
 end oms_newModel;
-
-function oms_parseModelName
-  input String contents;
-  output String cref;
-  output Integer status;
-external "builtin";
-annotation(preferredView="text");
-end oms_parseModelName;
 
 function oms_removeSignalsFromResults
   input String cref;

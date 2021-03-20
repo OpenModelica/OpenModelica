@@ -274,6 +274,7 @@ protected
   Integer countSenParams;
   list<tuple<Integer, Integer>> equationSccMapping, eqBackendSimCodeMapping;
   list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
+  SimCode.SpatialDistributionInfo spatialInfo;
   BackendDAE.InlineData inlineData;
   list<SimCodeVar.SimVar> inlineSimKnVars;
   BackendDAE.Variables emptyVars;
@@ -448,6 +449,7 @@ algorithm
     if debug then execStat("simCode: extractDiscreteModelVars"); end if;
     makefileParams := SimCodeFunctionUtil.createMakefileParams(includeDirs, libs, libPaths, false, isFMU);
     (delayedExps, maxDelayedExpIndex) := extractDelayedExpressions(dlow);
+    spatialInfo := extractSpatialDistributionInfo(dlow);
     execStat("simCode: created of all other equations (e.g. parameter, nominal, assert, etc)");
 
     // append removed equation to all equations, since these are actually
@@ -472,7 +474,7 @@ algorithm
     if debug then execStat("simCode: createStateSets"); end if;
 
     // create model info
-    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, inFileDir, listLength(clockedSysts), tempvars);
+    modelInfo := createModelInfo(inClassName, program, dlow, inInitDAE, functions, {}, numStateSets, spatialInfo.maxIndex, inFileDir, listLength(clockedSysts), tempvars);
     if debug then execStat("simCode: createModelInfo and variables"); end if;
 
     //build labels
@@ -710,6 +712,7 @@ algorithm
       extObjInfo                  = extObjInfo,
       makefileParams              = makefileParams,
       delayedExps                 = SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+      spatialInfo                 = spatialInfo,
       jacobianMatrixes            = SymbolicJacs,
       simulationSettingsOpt       = simSettingsOpt,
       fileNamePrefix              = filenamePrefix,
@@ -5584,6 +5587,41 @@ algorithm
   end match;
 end extractIdAndExpFromDelayExp;
 
+function extractSpatialDistributionInfo
+  "Create spatialDistribution simCode from backend DAE."
+  input BackendDAE.BackendDAE dlow;
+  output SimCode.SpatialDistributionInfo spatialInfo;
+protected
+  list<SimCode.SpatialDistribution> spatial_lst;
+  Mutable<Integer> maxIndex_ptr = Mutable.create(-1);
+algorithm
+  ((_,spatial_lst)) := BackendDAEUtil.traverseBackendDAEExps(dlow, Expression.traverseSubexpressionsHelper, (function extractSpatialDistributionInfoExp(maxIndex_ptr = maxIndex_ptr), {}));
+  spatialInfo := SimCode.SPATIAL_DISTRIBUTION_INFO(spatial_lst, Mutable.access(maxIndex_ptr));
+end extractSpatialDistributionInfo;
+
+function extractSpatialDistributionInfoExp
+  input output DAE.Exp callExp;
+  input output list<SimCode.SpatialDistribution> spatialInfo;
+  input Mutable<Integer> maxIndex_ptr;
+algorithm
+  spatialInfo := match callExp
+    local
+      Integer i, initSize;
+      DAE.Exp in0, in1, pos, dir, initPnts, initVals;
+    case DAE.CALL(path = Absyn.IDENT("spatialDistribution"), expLst={DAE.ICONST(i), in0, in1, pos, dir, initPnts, initVals})
+      algorithm
+        if i > Mutable.access(maxIndex_ptr) then
+          Mutable.update(maxIndex_ptr, i);
+        end if;
+        if not Expression.sizeOf(Expression.typeof(initPnts)) == Expression.sizeOf(Expression.typeof(initVals)) then
+          Error.addInternalError("function extractDelayedExpressions failed: initialPoints and initialValues of spatialDistribution are not of the same size.", sourceInfo());
+        end if;
+        initSize := Expression.sizeOf(Expression.typeof(initPnts));
+    then SimCode.SPATIAL_DISTRIBUTION(i, in0, in1, pos, dir, initPnts, initVals, initSize) :: spatialInfo;
+    else spatialInfo;
+  end match;
+end extractSpatialDistributionInfoExp;
+
 public function createExtObjInfo
   input BackendDAE.Shared shared;
   output SimCode.ExtObjInfo extObjInfo;
@@ -6976,14 +7014,19 @@ protected function makeSolved_fromStartValue
   output SimCode.SimEqSystem outSimEqn;
   output Integer outUniqueEqIndex;
 protected
-  DAE.Exp e;
+  DAE.Exp e, varExp;
   DAE.ComponentRef cr;
   DAE.ElementSource source;
 algorithm
-  cr := BackendVariable.varCref(inVar);
   e := BackendVariable.varBindExpStartValueNoFail(inVar);
   source := BackendVariable.getVarSource(inVar);
-  outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+  if Types.isArray(inVar.varType) then
+    varExp := BackendVariable.varExp(inVar);
+    outSimEqn := SimCode.SES_ARRAY_CALL_ASSIGN(inUniqueEqIndex, varExp, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+  else
+    cr := BackendVariable.varCref(inVar);
+    outSimEqn := SimCode.SES_SIMPLE_ASSIGN(inUniqueEqIndex, cr, e, source, BackendDAE.EQ_ATTR_DEFAULT_UNKNOWN);
+  end if;
   outUniqueEqIndex := inUniqueEqIndex+1;
 end makeSolved_fromStartValue;
 
@@ -7233,6 +7276,7 @@ public function createModelInfo
   input list<SimCodeFunction.Function> functions;
   input list<String> labels;
   input Integer numStateSets;
+  input Integer numSpatialDistributions;
   input String fileDir;
   input Integer nSubClock;
   input list<SimCodeVar.SimVar> tempVars;
@@ -7288,6 +7332,7 @@ algorithm
                                    List.sort(program.classes, AbsynUtil.classNameGreater),
                                    arrayLength(dlow.shared.partitionsInfo.basePartitions),
                                    arrayLength(dlow.shared.partitionsInfo.subPartitions),
+                                   numSpatialDistributions + 1,
                                    hasLargeEqSystems, {}, {}, unitDefinitions);
   else
     Error.addInternalError("createModelInfo failed", sourceInfo());
@@ -8010,6 +8055,34 @@ protected function extractVarFromVar
   input Mutable<HashSet.HashSet> hs "all processed crefs";
   input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
 protected
+  list<DAE.ComponentRef> scalar_crefs;
+  BackendDAE.Var scalarVar;
+algorithm
+  // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
+  if BackendVariable.isParam(dlowVar) and Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
+    scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
+    for cref in scalar_crefs loop
+      // extract the sim var
+      scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
+      scalarVar.varType := ComponentReference.crefTypeFull(cref);
+      extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, iterationVars);
+    end for;
+  else
+    // extract the sim var
+    extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, iterationVars);
+  end if;
+end extractVarFromVar;
+
+// one dlow var can result in multiple simvars: input and output are a subset
+// of algvars for example
+protected function extractVarFromVar2
+  input BackendDAE.Var dlowVar;
+  input BackendDAE.Variables inAliasVars;
+  input BackendDAE.Variables inVars;
+  input array<list<SimCodeVar.SimVar>> simVars;
+  input Mutable<HashSet.HashSet> hs "all processed crefs";
+  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
+protected
   SimCodeVar.SimVar simVar;
   SimCodeVar.SimVar derivSimvar;
   SimCodeVar.Initial initial_;
@@ -8017,7 +8090,6 @@ protected
   DAE.ComponentRef name;
   Integer len;
 algorithm
-  // extract the sim var
   simVar := dlowvarToSimvar(dlowVar, SOME(inAliasVars), inVars, iterationVars);
   isalias := isAliasVar(simVar);
 
@@ -8164,7 +8236,8 @@ algorithm
   else
     Error.addInternalError("Failed to find the correct SimVar list for Var: " + BackendDump.varString(dlowVar), sourceInfo());
   end if;
-end extractVarFromVar;
+end extractVarFromVar2;
+
 
 protected function addSimVar
   input SimCodeVar.SimVar simVar;
@@ -13821,6 +13894,9 @@ protected
 algorithm
   // create list of elements
   elts := match var
+  // check for exportVar = NONE() in type_ = T_ARRAY() which is filtered by default and should not be exported to modeldescription.xml in fmus
+  case SimCodeVar.SIMVAR(type_=DAE.T_ARRAY(), exportVar = NONE()) then {};
+
   case SimCodeVar.SIMVAR(type_=DAE.T_ARRAY(), variable_index=SOME(index), fmi_index=SOME(fmi_index)) algorithm
     dims := List.map(List.lastN(var.numArrayElement, listLength(var.numArrayElement)), stringInt);
     elt := var;
@@ -14600,30 +14676,32 @@ algorithm
 end simvarGraterThan;
 
 public function getNumContinuousEquations
-    input list<SimCode.SimEqSystem> eqns;
-    input Integer numStates;
-    output Integer n;
-    protected
-    Integer numEqns =0;
-    algorithm
-    for eqn in eqns loop
+  input list<SimCode.SimEqSystem> eqns;
+  input Integer numStates;
+  output Integer n;
+protected
+  Integer numEqns =0;
+algorithm
+  for eqn in eqns loop
+    numEqns := numEqns + getNumContinuousEquationsSingleEq(eqn);
+  end for;
+  n := numEqns+numStates;
+end getNumContinuousEquations;
 
-    numEqns := match(eqn)
-      local
-       SimCode.LinearSystem ls;
-       SimCode.NonlinearSystem nls;
-      case  SimCode.SES_LINEAR(lSystem = ls as SimCode.LINEARSYSTEM(__)) equation
-        numEqns = numEqns + listLength(ls.vars);
-        then numEqns;
-      case  SimCode.SES_NONLINEAR(nlSystem = nls as SimCode.NONLINEARSYSTEM(__)) equation
-       numEqns = numEqns + listLength(nls.crefs);
-       then numEqns;
-      else numEqns;
-      end match;
-    end for;
-    n:=numEqns+numStates;
-  end getNumContinuousEquations;
-
+protected function getNumContinuousEquationsSingleEq
+  input SimCode.SimEqSystem eqn;
+  output Integer n;
+algorithm
+  n := match(eqn)
+    local
+      SimCode.LinearSystem ls;
+      SimCode.NonlinearSystem nls;
+    case SimCode.SES_MIXED() then getNumContinuousEquationsSingleEq(eqn.cont);
+    case SimCode.SES_LINEAR(lSystem = ls as SimCode.LINEARSYSTEM(__)) then listLength(ls.vars);
+    case SimCode.SES_NONLINEAR(nlSystem = nls as SimCode.NONLINEARSYSTEM(__)) then listLength(nls.crefs);
+    else 1;
+  end match;
+end getNumContinuousEquationsSingleEq;
 
 public function sortCrefBasedOnSimCodeIndex
   input output list<DAE.ComponentRef> crs;
@@ -14784,6 +14862,44 @@ algorithm
     cache := BaseHashTable.add((eq,ix), cache);
   end if;
 end aliasSimEq;
+
+public function unbalancedEqSystemPartition
+  input list<SimCode.SimEqSystem> inList;
+  input Integer maxLength;
+  output list<list<SimCode.SimEqSystem>> partitions;
+protected
+  Integer length, eqLength;
+  list<SimCode.SimEqSystem> lst, cur;
+  SimCode.SimEqSystem first;
+algorithm
+  lst := inList;
+  cur := {};
+  partitions := {};
+  length := 0;
+  while not listEmpty(lst) loop
+    first::lst := lst;
+    eqLength := getNumContinuousEquationsSingleEq(first);
+    if length > 0 and length + eqLength > maxLength then
+      partitions := cur :: partitions;
+      length := 0;
+      cur := {};
+    end if;
+    length := eqLength + length;
+    cur := first :: cur;
+  end while;
+  if not listEmpty(cur) then
+    partitions := cur :: partitions;
+  end if;
+end unbalancedEqSystemPartition;
+
+public function selectNLEqSys
+  input list<SimCode.SimEqSystem> simEqSysIn;
+  output list<SimCode.SimEqSystem> eqs;
+protected
+  SimCode.SimEqSystem e;
+algorithm
+  eqs := list(match eq case SimCode.SES_NONLINEAR() then eq; case SimCode.SES_MIXED(cont=e as SimCode.SES_NONLINEAR()) then e; end match for eq guard match eq case SimCode.SES_NONLINEAR() then true; case SimCode.SES_MIXED(cont=SimCode.SES_NONLINEAR()) then true; else false; end match in simEqSysIn);
+end selectNLEqSys;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;

@@ -8,7 +8,7 @@
 
 setCommandLineOptions("-d=nfAPI"); getErrorString();
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 getIconAnnotation(Modelica.Fluid.Valves.ValveLinear); getErrorString();
 getIconAnnotation(Modelica.Fluid.Vessels.OpenTank); getErrorString();
 

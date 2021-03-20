@@ -1,7 +1,7 @@
 // name:     Homotopy.mos
 // keywords: ticket #2542
 // status:   correct
-// cflags: -d=-newInst
+// cflags: -d=newInst
 // 
 // Ticket #2542
 // 
@@ -22,35 +22,35 @@ instantiateModel(HomotopyTest); getErrrorString();
 
 // Result:
 // true
-// 
+//
 // "class HomotopyTest
 //   parameter Real a = 20.0;
-//   parameter Real p = homotopy(1.0 + a, a);
+//   parameter Real p = homotopy(a + 1.0, a);
 // end HomotopyTest;
 // "
-// 
+//
 // true
-// 
+//
 // "class HomotopyTest
 //   parameter Real a = 20.0;
-//   parameter Real p = 1.0 + a;
+//   parameter Real p = a + 1.0;
 // end HomotopyTest;
 // "
-// 
+//
 // true
-// 
+//
 // "class HomotopyTest
 //   parameter Real a = 20.0;
 //   parameter Real p = a;
 // end HomotopyTest;
 // "
-// 
+//
 // true
-// 
+//
 // "class HomotopyTest
 //   parameter Real a = 20.0;
-//   parameter Real p = homotopy(1.0 + a, a);
+//   parameter Real p = homotopy(a + 1.0, a);
 // end HomotopyTest;
 // "
-// 
+//
 // endResult

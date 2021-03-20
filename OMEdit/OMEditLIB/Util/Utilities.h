@@ -124,21 +124,23 @@ public:
   TreeSearchFilters(QWidget *pParent = 0);
   QLineEdit* getFilterTextBox() {return mpFilterTextBox;}
   QTimer* getFilterTimer() {return mpFilterTimer;}
+  QToolButton* getScrollToActiveButton() {return mpScrollToActiveButton;}
+  QToolButton* getExpandAllButton() {return mpExpandAllButton;}
+  QToolButton* getCollapseAllButton() {return mpCollapseAllButton;}
   QComboBox* getSyntaxComboBox() {return mpSyntaxComboBox;}
   QCheckBox* getCaseSensitiveCheckBox() {return mpCaseSensitiveCheckBox;}
-  QPushButton* getExpandAllButton() {return mpExpandAllButton;}
-  QPushButton* getCollapseAllButton() {return mpCollapseAllButton;}
 
   bool eventFilter(QObject *pObject, QEvent *pEvent);
 private:
   QLineEdit *mpFilterTextBox;
   QTimer *mpFilterTimer;
+  QToolButton *mpScrollToActiveButton;
+  QToolButton *mpExpandAllButton;
+  QToolButton *mpCollapseAllButton;
   QToolButton *mpShowHideButton;
   QWidget *mpFiltersWidget;
   QComboBox *mpSyntaxComboBox;
   QCheckBox *mpCaseSensitiveCheckBox;
-  QPushButton *mpExpandAllButton;
-  QPushButton *mpCollapseAllButton;
 private slots:
   void showHideFilters(bool On);
 signals:
@@ -169,8 +171,8 @@ signals:
 class Label : public QLabel
 {
 public:
-  Label(QWidget *parent = 0, Qt::WindowFlags flags = 0);
-  Label(const QString &text, QWidget *parent = 0, Qt::WindowFlags flags = 0);
+  Label(QWidget *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
+  Label(const QString &text, QWidget *parent = 0, Qt::WindowFlags flags = Qt::WindowFlags());
   Qt::TextElideMode elideMode() const {return mElideMode;}
   void setElideMode(Qt::TextElideMode elideMode) {mElideMode = elideMode;}
   virtual QSize minimumSizeHint() const override;
@@ -438,6 +440,14 @@ public:
   }
 };
 
+class QDetachableProcess : public QProcess
+{
+  Q_OBJECT
+public:
+  QDetachableProcess(QObject *pParent = 0);
+  void start(const QString &program, const QStringList &arguments, OpenMode mode = ReadWrite);
+};
+
 namespace Utilities {
 
   enum LineEndingMode {
@@ -472,12 +482,12 @@ namespace Utilities {
   void highlightCurrentLine(QPlainTextEdit *pPlainTextEdit);
   void highlightParentheses(QPlainTextEdit *pPlainTextEdit, QTextCharFormat parenthesesMatchFormat, QTextCharFormat parenthesesMisMatchFormat);
   qint64 getProcessId(QProcess *pProcess);
+  QString formatExitCode(int code);
 #ifdef WIN32
   void killProcessTreeWindows(DWORD myprocID);
 #endif
   bool isCFile(QString extension);
   bool isModelicaFile(QString extension);
-  void insertText(QPlainTextEdit *pPlainTextEdit, QString text, QTextCharFormat format = QTextCharFormat());
   QGenericMatrix<3,3, double> getRotationMatrix(QGenericMatrix<3,1,double> rotation);
 #ifdef WIN32
   QString getGDBPath();

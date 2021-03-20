@@ -114,6 +114,7 @@ public:
   void readOMSimulatorSettings();
   void readTraceabilitySettings();
   void saveGeneralSettings();
+  void saveNFAPISettings();
   void saveLibrariesSettings();
   void saveTextEditorSettings();
   void saveModelicaEditorSettings();
@@ -235,19 +236,23 @@ public:
   QCheckBox* getHideVariablesBrowserCheckBox() {return mpHideVariablesBrowserCheckBox;}
   QComboBox* getActivateAccessAnnotationsComboBox() {return mpActivateAccessAnnotationsComboBox;}
   QCheckBox* getCreateBackupFileCheckbox() {return mpCreateBackupFileCheckbox;}
+  QCheckBox* getDisplayNFAPIErrorsWarningsCheckBox() {return mpDisplayNFAPIErrorsWarningsCheckBox;}
   QSpinBox* getLibraryIconSizeSpinBox() {return mpLibraryIconSizeSpinBox;}
   QSpinBox* getLibraryIconTextLengthSpinBox() {return mpLibraryIconTextLengthSpinBox;}
   void setShowProtectedClasses(bool value) {mpShowProtectedClasses->setChecked(value);}
   bool getShowProtectedClasses() {return mpShowProtectedClasses->isChecked();}
   void setShowHiddenClasses(bool value) {mpShowHiddenClasses->setChecked(value);}
   bool getShowHiddenClasses() {return mpShowHiddenClasses->isChecked();}
+  QCheckBox* getSynchronizeWithModelWidgetCheckBox() {return mpSynchronizeWithModelWidgetCheckBox;}
   QGroupBox* getEnableAutoSaveGroupBox() {return mpEnableAutoSaveGroupBox;}
   QSpinBox* getAutoSaveIntervalSpinBox() {return mpAutoSaveIntervalSpinBox;}
   int getWelcomePageView();
   void setWelcomePageView(int view);
   QCheckBox* getShowLatestNewsCheckBox() {return mpShowLatestNewsCheckBox;}
+  QSpinBox* getRecentFilesAndLatestNewsSizeSpinBox() {return mpRecentFilesAndLatestNewsSizeSpinBox;}
   void setReplaceableSupport(bool value) {mpReplaceableSupport->setChecked(value);}
   bool getReplaceableSupport() {return mpReplaceableSupport->isChecked();}
+  QCheckBox* getEnableNewInstantiationAPICheckBox() {return mpEnableNewInstantiationAPICheckBox;}
 private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralSettingsGroupBox;
@@ -268,6 +273,7 @@ private:
   Label *mpActivateAccessAnnotationsLabel;
   QComboBox *mpActivateAccessAnnotationsComboBox;
   QCheckBox *mpCreateBackupFileCheckbox;
+  QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
   QGroupBox *mpLibrariesBrowserGroupBox;
   Label *mpLibraryIconSizeLabel;
   QSpinBox *mpLibraryIconSizeSpinBox;
@@ -275,6 +281,7 @@ private:
   QSpinBox *mpLibraryIconTextLengthSpinBox;
   QCheckBox *mpShowProtectedClasses;
   QCheckBox *mpShowHiddenClasses;
+  QCheckBox *mpSynchronizeWithModelWidgetCheckBox;
   QGroupBox *mpEnableAutoSaveGroupBox;
   Label *mpAutoSaveIntervalLabel;
   QSpinBox *mpAutoSaveIntervalSpinBox;
@@ -283,8 +290,10 @@ private:
   QRadioButton *mpHorizontalViewRadioButton;
   QRadioButton *mpVerticalViewRadioButton;
   QCheckBox *mpShowLatestNewsCheckBox;
+  QSpinBox *mpRecentFilesAndLatestNewsSizeSpinBox;
   QGroupBox *mpOptionalFeaturesGroupBox;
   QCheckBox *mpReplaceableSupport;
+  QCheckBox *mpEnableNewInstantiationAPICheckBox;
 public slots:
   void selectWorkingDirectory();
   void selectTerminalCommand();
@@ -601,8 +610,6 @@ public:
   QComboBox* getCXXCompilerComboBox() {return mpCXXCompilerComboBox;}
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
-  QCheckBox* getEnableNewInstantiationAPICheckBox() {return mpEnableNewInstantiationAPICheckBox;}
-  QCheckBox* getDisplayNFAPIErrorsWarningsCheckBox() {return mpDisplayNFAPIErrorsWarningsCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
   QCheckBox* getSwitchToPlottingPerspectiveCheckBox() {return mpSwitchToPlottingPerspectiveCheckBox;}
   QCheckBox* getCloseSimulationOutputWidgetsBeforeSimulationCheckBox() {return mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;}
@@ -626,8 +633,6 @@ private:
   QComboBox *mpCXXCompilerComboBox;
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
-  QCheckBox *mpEnableNewInstantiationAPICheckBox;
-  QCheckBox *mpDisplayNFAPIErrorsWarningsCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
   QCheckBox *mpSwitchToPlottingPerspectiveCheckBox;
   QCheckBox *mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox;
@@ -921,6 +926,7 @@ public:
   QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
   QComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
   QCheckBox *getIncludeSourceCodeCheckBox() const {return mpIncludeSourceCodeCheckBox;}
+  QCheckBox *getGenerateDebugSymbolsCheckBox() const {return mpGenerateDebugSymbolsCheckBox;}
   QCheckBox* getDeleteFMUDirectoryAndModelCheckBox() {return mpDeleteFMUDirectoryAndModelCheckBox;}
 
   static const QString FMU_FULL_CLASS_NAME_DOTS_PLACEHOLDER;
@@ -945,6 +951,7 @@ private:
   QComboBox *mpLinkingComboBox;
   QComboBox *mpModelDescriptionFiltersComboBox;
   QCheckBox *mpIncludeSourceCodeCheckBox;
+  QCheckBox *mpGenerateDebugSymbolsCheckBox;
   QGroupBox *mpImportGroupBox;
   QCheckBox *mpDeleteFMUDirectoryAndModelCheckBox;
 public slots:

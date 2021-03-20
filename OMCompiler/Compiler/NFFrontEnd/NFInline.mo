@@ -31,18 +31,24 @@
 
 encapsulated package NFInline
 
+import Call = NFCall;
+import Expression = NFExpression;
+
+protected
+import Binding = NFBinding;
+import Class = NFClass;
+import Component = NFComponent;
 import ComponentRef = NFComponentRef;
 import DAE.InlineType;
 import Dimension = NFDimension;
-import Expression = NFExpression;
 import Flags;
-import Call = NFCall;
 import NFFunction.Function;
 import NFInstNode.InstNode;
 import Statement = NFStatement;
 import Subscript = NFSubscript;
 import Type = NFType;
 
+public
 function inlineCallExp
   input Expression callExp;
   output Expression result;
@@ -112,6 +118,42 @@ algorithm
     else Expression.CALL(call);
   end match;
 end inlineCall;
+
+function inlineRecordConstructorCall
+  input Expression exp;
+  output Expression outExp;
+protected
+  Function fn;
+  Expression arg;
+  list<Expression> args;
+  list<Statement> body;
+  Binding binding;
+algorithm
+  outExp := match exp
+    case Expression.CALL(call = Call.TYPED_CALL(fn = fn, arguments = args))
+        guard InstNode.name(InstNode.parentScope(fn.node)) == "'constructor'"
+      algorithm
+        body := Function.getBody(fn);
+        true := listEmpty(body);
+        true := listEmpty(fn.locals);
+
+        binding := Component.getBinding(InstNode.component(listHead(fn.outputs)));
+
+        if Binding.hasExp(binding) then
+          outExp := Binding.getExp(binding);
+          true := Expression.isRecord(outExp);
+        else
+          outExp := Class.makeRecordExp(listHead(fn.outputs));
+        end if;
+
+        for i in fn.inputs loop
+          arg :: args := args;
+          outExp := Expression.map(outExp, func = function replaceCrefNode(node = i, value = arg));
+        end for;
+      then
+        outExp;
+  end match;
+end inlineRecordConstructorCall;
 
 protected
 function replaceCrefNode

@@ -1,0 +1,21 @@
+// name:     RealArray1
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Arrays.RealArray1); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.Arrays.RealArray1
+//   constant Real x[1] = 2.0;
+//   constant Real x[2] = 4.0;
+//   constant Real x[3] = 6.0;
+// end FFITest.Arrays.RealArray1;
+// "
+// ""
+// endResult

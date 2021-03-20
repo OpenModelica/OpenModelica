@@ -45,10 +45,6 @@ extern "C" {
 
 OMEDITTEST_MAIN(Diagram)
 
-/*!
- * \brief Test::chuaCircuit
- * Browses to Modelica.Electrical.Analog.Examples.ChuaCircuit and loads it diagram view.
- */
 void Diagram::chuaCircuit()
 {
   LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Examples.ChuaCircuit");
@@ -63,6 +59,9 @@ void Diagram::chuaCircuit()
   QModelIndex modelIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->libraryTreeItemIndex(pLibraryTreeItem);
   QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->libraryTreeItemDoubleClicked(proxyIndex);
+}
 
+void Diagram::cleanupTestCase()
+{
   MainWindow::instance()->close();
 }

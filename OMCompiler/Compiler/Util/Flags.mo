@@ -301,8 +301,8 @@ constant DebugFlag TPL_PERF_TIMES = DEBUG_FLAG(64, "tplPerfTimes", false,
   Gettext.gettext("Enables output of template performance data for rendering text to file."));
 constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(65, "checkSimplify", false,
   Gettext.gettext("Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed."));
-constant DebugFlag SCODE_INST = DEBUG_FLAG(66, "newInst", false,
-  Gettext.gettext("Enables experimental new instantiation phase."));
+constant DebugFlag SCODE_INST = DEBUG_FLAG(66, "newInst", true,
+  Gettext.gettext("Enables new instantiation phase."));
 constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(67, "writeToBuffer", false,
   Gettext.gettext("Enables writing simulation results to buffer."));
 constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(68, "backenddaeinfo", false,
@@ -442,7 +442,7 @@ constant DebugFlag DEBUG_DIFFERENTIATION = DEBUG_FLAG(134, "debugDifferentiation
 constant DebugFlag DEBUG_DIFFERENTIATION_VERBOSE = DEBUG_FLAG(135, "debugDifferentiationVerbose", false,
   Gettext.gettext("Dumps verbose debug output for the differentiation process."));
 constant DebugFlag FMU_EXPERIMENTAL = DEBUG_FLAG(136, "fmuExperimental", false,
-  Gettext.gettext("Include an extra function in the FMU fmi7GetSpecificDerivatives."));
+  Gettext.gettext("Include an extra function in the FMU fmi2GetSpecificDerivatives."));
 constant DebugFlag DUMP_DGESV = DEBUG_FLAG(137, "dumpdgesv", false,
   Gettext.gettext("Enables dumping of the information whether DGESV is used to solve linear systems."));
 constant DebugFlag MULTIRATE_PARTITION = DEBUG_FLAG(138, "multirate", false,
@@ -543,11 +543,13 @@ constant DebugFlag COMBINE_SUBSCRIPTS = DEBUG_FLAG(185, "combineSubscripts", fal
   Gettext.gettext("Move all subscripts to the end of component references."));
 constant DebugFlag ZMQ_LISTEN_TO_ALL = DEBUG_FLAG(186, "zmqDangerousAcceptConnectionsFromAnywhere", false,
   Gettext.gettext("When opening a zmq connection, listen on all interfaces instead of only connections from 127.0.0.1."));
-constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(187, "dumpSimplify", false,
+constant DebugFlag DUMP_CONVERSION_RULES = DEBUG_FLAG(187, "dumpConversionRules", false,
+  Gettext.gettext("Dumps the rules when converting a package using a conversion script."));
+constant DebugFlag DUMP_SIMPLIFY = DEBUG_FLAG(188, "dumpSimplify", false,
   Gettext.gettext("Dumps expressions before and after simplification."));
-constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(188, "dumpBackendClocks", false,
+constant DebugFlag DUMP_BACKEND_CLOCKS = DEBUG_FLAG(189, "dumpBackendClocks", false,
   Gettext.gettext("Dumps times for each backend module (only new backend)."));
-constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(189, "dumpSetBasedGraphs", false,
+constant DebugFlag DUMP_SET_BASED_GRAPHS = DEBUG_FLAG(190, "dumpSetBasedGraphs", false,
   Gettext.gettext("Dumps information about set based graphs for efficient array handling (only new frontend and new backend)."));
 
 public
@@ -584,8 +586,8 @@ constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
 constant ConfigFlag LANGUAGE_STANDARD = CONFIG_FLAG(8, "std", NONE(), EXTERNAL(),
   ENUM_FLAG(1000,
     {("1.x", 10), ("2.x", 20), ("3.0", 30), ("3.1", 31), ("3.2", 32), ("3.3", 33),
-     ("3.4", 34), ("latest",1000), ("3.5", 1035), ("experimental", 9999)}),
-  SOME(STRING_OPTION({"1.x", "2.x", "3.1", "3.2", "3.3", "3.4", "latest", "3.5", "experimental"})),
+     ("3.4", 34), ("3.5", 35), ("latest",1000), ("experimental", 9999)}),
+  SOME(STRING_OPTION({"1.x", "2.x", "3.1", "3.2", "3.3", "3.4", "3.5", "latest", "experimental"})),
   Gettext.gettext("Sets the language standard that should be used."));
 
 constant ConfigFlag SHOW_ERROR_MESSAGES = CONFIG_FLAG(9, "showErrorMessages",

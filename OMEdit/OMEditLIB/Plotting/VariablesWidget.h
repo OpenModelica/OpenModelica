@@ -44,9 +44,10 @@
 class OMCProxy;
 class TreeSearchFilters;
 class Label;
+class VariableNode;
 
 typedef QPair<int,QString> IntStringPair;
-Q_DECLARE_METATYPE(IntStringPair);
+Q_DECLARE_METATYPE(IntStringPair)
 
 class VariablesTreeItem
 {
@@ -147,10 +148,9 @@ public:
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
-  VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *root) const;
+  VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
-  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
-                                           const QModelIndex &parentIndex) const;
+  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
   void parseInitXml(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   bool removeVariableTreeItem(QString variable);
@@ -161,6 +161,7 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
+  void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
@@ -213,6 +214,7 @@ public:
   void updateInitXmlFile(SimulationOptions simulationOptions);
   void initializeVisualization(SimulationOptions simulationOptions);
   double readVariableValue(QString variable, double time);
+  void closeResultFile();
 private:
   TreeSearchFilters *mpTreeSearchFilters;
   Label *mpSimulationTimeLabel;
@@ -239,7 +241,6 @@ private:
   csv_data *mpCSVData;
   QFile mPlotFileReader;
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
-  void closeResultFile();
   void openResultFile();
   void updateVisualization();
 public slots:
@@ -263,6 +264,21 @@ private slots:
   void incrementVisualization();
 signals:
   void updateDynamicSelect(double time);
+};
+
+class VariableNode
+{
+public:
+  VariableNode(const QVector<QVariant> &variableNodeData);
+  ~VariableNode();
+  QVector<QVariant> mVariableNodeData;
+  bool mEditable;
+  QString mVariability;
+  QHash<QString, VariableNode*> mChildren;
+
+  static VariableNode* findVariableNode(const QString &name, VariableNode *pParentVariableNode);
+  void setEditable(bool editable) {mEditable = editable;}
+  void setVariability(const QString &variability) {mVariability = variability;}
 };
 
 #endif // VARIABLESWIDGET_H

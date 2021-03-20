@@ -13,7 +13,7 @@ model M
   Real x[2];
   Real y[2];
   Real z[2];
-  
+
   type E = enumeration(one, two);
   Integer i(start=1);
   Boolean b(start=false);
@@ -56,7 +56,7 @@ val(z[2], 1.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // 0.0
 // 15.2500000000004

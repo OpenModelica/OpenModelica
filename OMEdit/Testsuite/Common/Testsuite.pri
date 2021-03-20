@@ -50,6 +50,8 @@ INCLUDEPATH += ../../ \
   ../../OMEditLIB \
   ../Common \
   $$OPENMODELICAHOME/include \
+  $$OPENMODELICAHOME/include/omplot \
+  $$OPENMODELICAHOME/include/omplot/qwt \
   $$OPENMODELICAHOME/include/omc/c \
   $$OPENMODELICAHOME/include/omc/scripting-API
 

@@ -36,7 +36,7 @@
 
 #include "../../simulation_data.h"
 
-int allocateHomotopyData(int size, void** data);
+int allocateHomotopyData(size_t size, void** data);
 int freeHomotopyData(void** data);
 
 int solveHomotopy(DATA *data, threadData_t *threadData, int sysNumber);

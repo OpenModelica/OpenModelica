@@ -142,7 +142,7 @@ QVariant SimulationMessageModel::data(const QModelIndex &index, int role) const
     // create display text
     if (pSimulationMessage->mText.compare("Reached display limit") == 0) {
       QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
-                                      .arg(mpSimulationOutputWidget->getSimulationOptions().getClassName());
+                                      .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
       text = QString("Reached display limit. To read the full log open the file <a href=\"file:///%1\">%1</a>").arg(simulationLogFilePath);
     } else {
       text = pSimulationMessage->mText + (pSimulationMessage->mIndex.isEmpty() ? "" : debugLink);
@@ -220,9 +220,8 @@ void SimulationMessageModel::callLayoutChanged()
   Helper function to find the QModelIndex.
   \sa simulationMessageIndex()
   */
-QModelIndex SimulationMessageModel::simulationMessageIndexHelper(const SimulationMessage *pSimulationMessage,
-                                                             const SimulationMessage *pParentSimulationMessage,
-                                                             const QModelIndex &parentIndex) const
+QModelIndex SimulationMessageModel::simulationMessageIndexHelper(const SimulationMessage *pSimulationMessage, const SimulationMessage *pParentSimulationMessage,
+                                                                 const QModelIndex &parentIndex) const
 {
   if (pSimulationMessage == pParentSimulationMessage)
     return parentIndex;
@@ -258,9 +257,10 @@ SimulationOutputHandler::SimulationOutputHandler(SimulationOutputWidget *pSimula
   mpSimulationOutputWidget = pSimulationOutputWidget;
   mLevel = 0;
   mNumberOfBytes = 0;
+  mShownDisplayLimitReachedMessage = false;
   mpSimulationMessage = 0;
   QString simulationLogFilePath = QString("%1/%2.log").arg(mpSimulationOutputWidget->getSimulationOptions().getWorkingDirectory())
-                                  .arg(mpSimulationOutputWidget->getSimulationOptions().getClassName());
+                                  .arg(mpSimulationOutputWidget->getSimulationOptions().getOutputFileName());
 #ifdef Q_OS_WIN
   mpSimulationLogFile = _wfopen((wchar_t*)simulationLogFilePath.utf16(), L"w");
 #else
@@ -308,6 +308,19 @@ void SimulationOutputHandler::writeSimulationLog(const QString &text)
 }
 
 /*!
+ * \brief SimulationOutputHandler::addSimulationMessage
+ * \param pSimulationMessage
+ */
+void SimulationOutputHandler::addSimulationMessage(SimulationMessage *pSimulationMessage)
+{
+  if (mpSimulationOutputWidget->isOutputStructured()) {
+    mpSimulationMessageModel->insertSimulationMessage(pSimulationMessage);
+  } else {
+    mpSimulationOutputWidget->writeSimulationMessage(pSimulationMessage);
+  }
+}
+
+/*!
  * \brief SimulationOutputHandler::simulationProcessFinished
  * Closes the simulation log file.
  */
@@ -338,8 +351,7 @@ bool SimulationOutputHandler::isMaximumDisplayLimitReached() const
  * \param atts
  * \return
  */
-bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QString &localName, const QString &qName,
-                                           const QXmlAttributes &atts)
+bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QString &localName, const QString &qName, const QXmlAttributes &atts)
 {
   Q_UNUSED(namespaceURI);
   Q_UNUSED(localName);
@@ -354,22 +366,27 @@ bool SimulationOutputHandler::startElement(const QString &namespaceURI, const QS
    * and display a message showing that the limit is reached.
    */
   if (isMaximumDisplayLimitReached()) {
-    while (mLevel > 0) {
+    // Only generate the reached display limit message once.
+    if (!mShownDisplayLimitReachedMessage) {
+      mShownDisplayLimitReachedMessage = true;
+
+      while (mLevel > 0) {
+        endElement("", "", "message");
+      }
+
+      if (mpSimulationOutputWidget->isOutputStructured()) {
+        mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
+      } else {
+        mpSimulationMessage = new SimulationMessage;
+      }
+      mpSimulationMessage->mStream = "stdout";
+      mpSimulationMessage->mType = StringHandler::OMEditInfo;
+      mpSimulationMessage->mText = QString("Reached display limit");
+      mpSimulationMessage->mLevel = mLevel;
+      mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
+      mLevel++;
       endElement("", "", "message");
     }
-
-    if (mpSimulationOutputWidget->isOutputStructured()) {
-      mpSimulationMessage = new SimulationMessage(mpSimulationMessageModel->getRootSimulationMessage());
-    } else {
-      mpSimulationMessage = new SimulationMessage;
-    }
-    mpSimulationMessage->mStream = "stdout";
-    mpSimulationMessage->mType = StringHandler::OMEditInfo;
-    mpSimulationMessage->mText = QString("Reached display limit");
-    mpSimulationMessage->mLevel = mLevel;
-    mSimulationMessagesLevelMap.insert(mLevel, mpSimulationMessage);
-    mLevel++;
-    endElement("", "", "message");
     return true;
   }
 
@@ -437,11 +454,7 @@ bool SimulationOutputHandler::endElement(const QString &namespaceURI, const QStr
     mLevel--;
     // if mLevel is 0 then we have finished the one complete top level message tag. Add it to SimulationMessageModel now.
     if (mLevel == 0) {
-      if (mpSimulationOutputWidget->isOutputStructured()) {
-        mpSimulationMessageModel->insertSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
-      } else {
-        mpSimulationOutputWidget->writeSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
-      }
+      addSimulationMessage(mSimulationMessagesLevelMap.value(0, 0));
     }
   }
   return true;

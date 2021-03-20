@@ -6,7 +6,7 @@
 // 
 // Solving of a linear system of equations
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 
 buildModel(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses2);
 getErrorString();

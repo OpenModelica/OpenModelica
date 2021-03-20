@@ -451,6 +451,12 @@ end choices;
 //   group = \"Shape definition\"));
 //   ...
 // end BodyShape;
+
+record Documentation
+  String info = \"\" \"Description of the class\";
+  String revisions = \"\" \"Revision history\";
+  // Spec 3.5 Figure[:] figures = {}; \"Simulation result figures\";
+end Documentation;
 "
 ;
 

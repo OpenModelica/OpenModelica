@@ -1,7 +1,7 @@
 def common
 def shouldWeBuildOSX
 def shouldWeBuildMINGW
-def shouldWeBuildCENTOS6
+def shouldWeBuildCENTOS7
 def shouldWeRunTests
 def isPR
 pipeline {
@@ -15,7 +15,7 @@ pipeline {
   parameters {
     booleanParam(name: 'BUILD_OSX', defaultValue: false, description: 'Build with OSX')
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
-    booleanParam(name: 'BUILD_CENTOS6', defaultValue: false, description: 'Build on CentOS6 with CMake2.8')
+    booleanParam(name: 'BUILD_CENTOS7', defaultValue: false, description: 'Build on CentOS7 with CMake 2.8')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -38,8 +38,8 @@ pipeline {
           print "shouldWeBuildOSX: ${shouldWeBuildOSX}"
           shouldWeBuildMINGW = common.shouldWeBuildMINGW()
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
-          shouldWeBuildCENTOS6 = common.shouldWeBuildCENTOS6()
-          print "shouldWeBuildCENTOS6: ${shouldWeBuildCENTOS6}"
+          shouldWeBuildCENTOS7 = common.shouldWeBuildCENTOS7()
+          print "shouldWeBuildCENTOS7: ${shouldWeBuildCENTOS7}"
           shouldWeRunTests = common.shouldWeRunTests()
           print "shouldWeRunTests: ${shouldWeRunTests}"
         }
@@ -62,7 +62,7 @@ pipeline {
           }
           steps {
             // Xenial is GCC 5
-            script { common.buildOMC('gcc-5', 'g++-5', '', true) }
+            script { common.buildOMC('gcc-5', 'g++-5', '', true, false) }
             stash name: 'omc-gcc', includes: 'build/**, **/config.status'
           }
         }
@@ -78,7 +78,7 @@ pipeline {
           }
           steps {
             script {
-              common.buildOMC('clang', 'clang++', '--without-hwloc', true)
+              common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
               common.getVersion()
             }
             stash name: 'omc-clang', includes: 'build/**, **/config.status'
@@ -103,12 +103,14 @@ pipeline {
           steps {
             script {
               // Qt5 is MacOS 10.12+...
-              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
+              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}:/usr/local/bin/", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
                 sh "echo PATH: \$PATH QTDIR: \$QTDIR"
                 sh "${env.GMAKE} --version"
-                common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary", true)
+                common.buildOMC('cc', 'c++', "OMPCC='gcc-mp-5 -fopenmp -mno-avx' GNUCXX=g++-mp-5 FC=gfortran-mp-5 LDFLAGS=-L${env.MACPORTS}/lib CPPFLAGS=-I${env.MACPORTS}/include --without-omlibrary", true, false)
                 common.buildGUI('', false)
+                sh label: "All dylibs and their deps in build/", script: 'find build/ -name "*.dylib" -exec otool -L {} ";"'
                 sh label: "Look for relative paths in dylibs", script: '! ( find build/ -name "*.dylib" -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
+                sh label: "All executables and therir deps in build/bin", script: 'find build/bin -type f -exec otool -L {} ";"'
                 sh label: "Look for relative paths in bin folder", script: '! ( find build/bin -type f -exec otool -L {} ";" | tr -d "\t" | grep -v : | grep -v "^[/@]" )'
                 // TODO: OMCppOSUSimulation throws error for help display
                 //sh label: "Sanity check for Cpp runtime", script: "./build/bin/OMCppOSUSimulation --help"
@@ -135,26 +137,27 @@ pipeline {
             script {
               withEnv (["PATH=C:\\OMDev\\tools\\msys\\usr\\bin;C:\\Program Files\\TortoiseSVN\\bin;c:\\bin\\jdk\\bin;c:\\bin\\nsis\\;${env.PATH};c:\\bin\\git\\bin;"]) {
                 bat "echo PATH: %PATH%"
-                common.buildOMC('cc', 'c++', '', true)
+                common.buildOMC('cc', 'c++', '', true, false)
                 common.makeLibsAndCache()
+                common.buildOMSens()
                 common.buildGUI('', true)
                 common.buildAndRunOMEditTestsuite('')
               }
             }
           }
         }
-        stage('CentOS6') {
+        stage('CentOS7') {
           agent {
             dockerfile {
               additionalBuildArgs '--pull'
-              dir '.CI/cache-centos6'
+              dir '.CI/cache-centos7'
               label 'linux'
               args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
           }
           when {
             beforeAgent true
-            expression { shouldWeBuildCENTOS6 }
+            expression { shouldWeBuildCENTOS7 }
           }
           environment {
             QTDIR = "/usr/lib64/qt5/"
@@ -166,9 +169,10 @@ pipeline {
                 '/opt/rh/devtoolset-8/root/usr/bin/gcc',
                 '/opt/rh/devtoolset-8/root/usr/bin/g++',
                 'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran',
-                false)  // Building C++ runtime doesn't work at the moment
+                false, // Building C++ runtime doesn't work at the moment
+                false)
             }
-            //stash name: 'omc-centos6', includes: 'build/**, **/config.status'
+            //stash name: 'omc-centos7', includes: 'build/**, **/config.status'
           }
         }
         stage('checks') {

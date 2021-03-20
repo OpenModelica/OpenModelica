@@ -29,19 +29,19 @@ package sampleTests
      Boolean clock1, clock2;
      Integer cntr1(start=0);
      Integer cntr2(start=2);
-     
+
     equation
       clock1 = sample(0,0.1);
       clock2 = sample(0,0.001);
       i1.el.val = cntr1+1;
       i2.el.val = cntr1+40;
       i3.el.val = cntr2;
-      
+
     algorithm
       when clock1 then
         cntr1 := pre(cntr1)+1;
       end when;
-      
+
       when clock2 then
         cntr2 := pre(cntr2)+1;
       end when;
@@ -74,7 +74,7 @@ val(i3.el.val,1.0);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "i1.el.val"
 // 2.0

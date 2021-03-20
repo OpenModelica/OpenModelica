@@ -1,0 +1,27 @@
+// name:   ConvertModifiers4
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertModifiers4
+    model M
+      Modelica.StateGraph.Step step(nIn = 2);
+    end M;
+  end ConvertModifiers4;
+");
+
+convertPackage(ConvertModifiers4, "scripts/ConvertModifiers4.mos");
+getErrorString();
+list(ConvertModifiers4);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertModifiers4
+//   model M
+//     Modelica.StateGraph.Step step(nOut = 1, nIn = 2);
+//   end M;
+// end ConvertModifiers4;"
+// endResult

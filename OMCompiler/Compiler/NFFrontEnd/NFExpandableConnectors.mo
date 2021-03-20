@@ -328,6 +328,7 @@ function markComponentPresent
 protected
   Component comp;
   ConnectorType.Type cty;
+  Class cls;
 algorithm
   comp := InstNode.component(node);
   cty := Component.connectorType(comp);
@@ -336,6 +337,12 @@ algorithm
     cty := ConnectorType.setPresent(cty);
     comp := Component.setConnectorType(cty, comp);
     InstNode.updateComponent(comp, node);
+
+    // Also mark the component's children as present.
+    if Type.isComplex(Component.getType(comp)) then
+      cls := InstNode.getClass(Component.classInstance(comp));
+      ClassTree.applyComponents(Class.classTree(cls), markComponentPresent);
+    end if;
   end if;
 end markComponentPresent;
 

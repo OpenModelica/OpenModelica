@@ -1,3 +1,3 @@
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("BigModel.mo"); getErrorString();
 checkModel(BigModel.CircuitL6); getErrorString();

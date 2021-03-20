@@ -541,9 +541,9 @@ extern const char* System_getUUIDStr()
   return strcpy(ModelicaAllocateString(strlen(res)),res);
 }
 
-extern int System_loadLibrary(const char *name, int printDebug)
+extern int System_loadLibrary(const char *name, int relativePath, int printDebug)
 {
-  int res = SystemImpl__loadLibrary(name, printDebug);
+  int res = SystemImpl__loadLibrary(name, relativePath, printDebug);
   if (res == -1) MMC_THROW();
   return res;
 }

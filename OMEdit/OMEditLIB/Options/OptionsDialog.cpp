@@ -179,9 +179,8 @@ void OptionsDialog::readGeneralSettings()
   }
   // read the working directory
   if (mpSettings->contains("workingDirectory")) {
-    MainWindow::instance()->getOMCProxy()->changeDirectory(mpSettings->value("workingDirectory").toString());
+    mpGeneralSettingsPage->setWorkingDirectory(mpSettings->value("workingDirectory").toString());
   }
-  mpGeneralSettingsPage->setWorkingDirectory(MainWindow::instance()->getOMCProxy()->changeDirectory());
   // read toolbar icon size
   if (mpSettings->contains("toolbarIconSize")) {
     mpGeneralSettingsPage->getToolbarIconSizeSpinBox()->setValue(mpSettings->value("toolbarIconSize").toInt());
@@ -214,6 +213,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("createBackupFile")) {
     mpGeneralSettingsPage->getCreateBackupFileCheckbox()->setChecked(mpSettings->value("createBackupFile").toBool());
   }
+  // read nfAPINoise
+  if (mpSettings->contains("simulation/nfAPINoise")) {
+    mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->setChecked(mpSettings->value("simulation/nfAPINoise").toBool());
+  }
   // read library icon size
   if (mpSettings->contains("libraryIconSize")) {
     mpGeneralSettingsPage->getLibraryIconSizeSpinBox()->setValue(mpSettings->value("libraryIconSize").toInt());
@@ -231,6 +234,10 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("showHiddenClasses")) {
     mpGeneralSettingsPage->setShowHiddenClasses(mpSettings->value("showHiddenClasses").toBool());
   }
+  // read synchronize with ModelWidget
+  if (mpSettings->contains("synchronizeWithModelWidget")) {
+    mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->setChecked(mpSettings->value("synchronizeWithModelWidget").toBool());
+  }
   // read auto save
   if (mpSettings->contains("autoSave/enable")) {
     mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->setChecked(mpSettings->value("autoSave/enable").toBool());
@@ -245,9 +252,17 @@ void OptionsDialog::readGeneralSettings()
   if (mpSettings->contains("welcomePage/showLatestNews")) {
     mpGeneralSettingsPage->getShowLatestNewsCheckBox()->setChecked(mpSettings->value("welcomePage/showLatestNews").toBool());
   }
+  // recent files size
+  if (mpSettings->contains("welcomePage/recentFilesSize")) {
+    mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->setValue(mpSettings->value("welcomePage/recentFilesSize").toInt());
+  }
   // replaceable support
   if (mpSettings->contains("replaceableSupport")) {
     mpGeneralSettingsPage->setReplaceableSupport(mpSettings->value("replaceableSupport").toBool());
+  }
+  // read nfAPI
+  if (mpSettings->contains("simulation/nfAPI")) {
+    mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->setChecked(mpSettings->value("simulation/nfAPI").toBool());
   }
 }
 
@@ -634,12 +649,6 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/deleteEntireSimulationDirectory")) {
     mpSimulationPage->getDeleteEntireSimulationDirectoryCheckBox()->setChecked(mpSettings->value("simulation/deleteEntireSimulationDirectory").toBool());
   }
-  if (mpSettings->contains("simulation/nfAPI")) {
-    mpSimulationPage->getEnableNewInstantiationAPICheckBox()->setChecked(mpSettings->value("simulation/nfAPI").toBool());
-  }
-  if (mpSettings->contains("simulation/nfAPINoise")) {
-    mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->setChecked(mpSettings->value("simulation/nfAPINoise").toBool());
-  }
   if (mpSettings->contains("simulation/outputMode")) {
     mpSimulationPage->setOutputMode(mpSettings->value("simulation/outputMode").toString());
   }
@@ -912,6 +921,10 @@ void OptionsDialog::readFMISettings()
   if (mpSettings->contains("FMIExport/IncludeSourceCode")) {
     mpFMIPage->getIncludeSourceCodeCheckBox()->setChecked(mpSettings->value("FMIExport/IncludeSourceCode").toBool());
   }
+  // read generate debug symbols
+  if (mpSettings->contains("FMIExport/GenerateDebugSymbols")) {
+    mpFMIPage->getGenerateDebugSymbolsCheckBox()->setChecked(mpSettings->value("FMIExport/GenerateDebugSymbols").toBool());
+  }
   // read delete FMU directory
   if (mpSettings->contains("FMIImport/DeleteFMUDirectoyAndModel")) {
     mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->setChecked(mpSettings->value("FMIImport/DeleteFMUDirectoyAndModel").toBool());
@@ -946,13 +959,7 @@ void OptionsDialog::readOMSimulatorSettings()
 {
   // read command line options
   if (mpSettings->contains("OMSimulator/commandLineOptions")) {
-    QString commandLineOptions = mpSettings->value("OMSimulator/commandLineOptions").toString();
-    mpOMSimulatorPage->getCommandLineOptionsTextBox()->setText(commandLineOptions);
-    OMSProxy::instance()->setCommandLineOption(commandLineOptions);
-  }
-  // read working directory
-  if (mpSettings->contains("workingDirectory")) {
-    OMSProxy::instance()->setWorkingDirectory(mpSettings->value("workingDirectory").toString());
+    mpOMSimulatorPage->getCommandLineOptionsTextBox()->setText(mpSettings->value("OMSimulator/commandLineOptions").toString());
   }
   // read logging level
   int index;
@@ -960,7 +967,6 @@ void OptionsDialog::readOMSimulatorSettings()
     index = mpOMSimulatorPage->getLoggingLevelComboBox()->findData(mpSettings->value("OMSimulator/loggingLevel").toInt());
     if (index > -1) {
       mpOMSimulatorPage->getLoggingLevelComboBox()->setCurrentIndex(index);
-      OMSProxy::instance()->setLoggingLevel(mpSettings->value("OMSimulator/loggingLevel").toInt());
     }
   }
 }
@@ -1036,6 +1042,9 @@ void OptionsDialog::saveGeneralSettings()
   mpSettings->setValue("showHiddenClasses", mpGeneralSettingsPage->getShowHiddenClasses());
   // show/hide the protected classes
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->showHideProtectedClasses();
+  // save synchronize with ModelWidget
+  mpSettings->setValue("synchronizeWithModelWidget", mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->isChecked());
+  MainWindow::instance()->getLibraryWidget()->getTreeSearchFilters()->getScrollToActiveButton()->setVisible(!mpGeneralSettingsPage->getSynchronizeWithModelWidgetCheckBox()->isChecked());
   // save auto save
   mpSettings->setValue("autoSave/enable", mpGeneralSettingsPage->getEnableAutoSaveGroupBox()->isChecked());
   mpSettings->setValue("autoSave/interval", mpGeneralSettingsPage->getAutoSaveIntervalSpinBox()->value());
@@ -1053,15 +1062,37 @@ void OptionsDialog::saveGeneralSettings()
   }
   mpSettings->setValue("welcomePage/view", mpGeneralSettingsPage->getWelcomePageView());
   bool showLatestNews = mpGeneralSettingsPage->getShowLatestNewsCheckBox()->isChecked();
-  if (MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) {
+  int recentFilesSize = mpSettings->value("welcomePage/recentFilesSize").toInt();
+  if ((MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->isHidden() && showLatestNews) || recentFilesSize != mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->value()) {
     MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->show();
     MainWindow::instance()->getWelcomePageWidget()->addLatestNewsListItems();
   } else if (!showLatestNews) {
     MainWindow::instance()->getWelcomePageWidget()->getLatestNewsFrame()->hide();
   }
   mpSettings->setValue("welcomePage/showLatestNews", showLatestNews);
+  // recent files size
+  mpSettings->setValue("welcomePage/recentFilesSize", mpGeneralSettingsPage->getRecentFilesAndLatestNewsSizeSpinBox()->value());
+  MainWindow::instance()->updateRecentFileActionsAndList();
   // save replaceable support
   mpSettings->setValue("replaceableSupport", mpGeneralSettingsPage->getReplaceableSupport());
+  saveNFAPISettings();
+}
+
+/*!
+ * \brief OptionsDialog::saveNFAPISettings
+ */
+void OptionsDialog::saveNFAPISettings()
+{
+  // save nfAPINoise
+  mpSettings->setValue("simulation/nfAPINoise", mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked());
+  if (mpGeneralSettingsPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPINoise");
+  }
+  // save nfAPI
+  mpSettings->setValue("simulation/nfAPI", mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->isChecked());
+  if (mpGeneralSettingsPage->getEnableNewInstantiationAPICheckBox()->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPI");
+  }
 }
 
 //! Saves the Libraries section settings to omedit.ini
@@ -1315,16 +1346,6 @@ void OptionsDialog::saveGlobalSimulationSettings()
   } else {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+ignoreSimulationFlagsAnnotation=false");
   }
-  // save nfAPI
-  mpSettings->setValue("simulation/nfAPI", mpSimulationPage->getEnableNewInstantiationAPICheckBox()->isChecked());
-  if (mpSimulationPage->getEnableNewInstantiationAPICheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPI");
-  }
-  // save nfAPINoise
-  mpSettings->setValue("simulation/nfAPINoise", mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked());
-  if (mpSimulationPage->getDisplayNFAPIErrorsWarningsCheckBox()->isChecked()) {
-    MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=nfAPINoise");
-  }
 }
 
 //! Saves the Messages section settings to omedit.ini
@@ -1473,6 +1494,7 @@ void OptionsDialog::saveFMISettings()
   mpSettings->setValue("FMIExport/Platforms", platforms);
   mpSettings->setValue("FMIExport/ModelDescriptionFilter", mpFMIPage->getModelDescriptionFiltersComboBox()->currentText());
   mpSettings->setValue("FMIExport/IncludeSourceCode", mpFMIPage->getIncludeSourceCodeCheckBox()->isChecked());
+  mpSettings->setValue("FMIExport/GenerateDebugSymbols", mpFMIPage->getGenerateDebugSymbolsCheckBox()->isChecked());
   mpSettings->setValue("FMIImport/DeleteFMUDirectoyAndModel", mpFMIPage->getDeleteFMUDirectoryAndModelCheckBox()->isChecked());
 }
 
@@ -1879,7 +1901,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
 #elif defined(Q_OS_MAC)
   mpTerminalCommandTextBox->setText("");
 #else
-  mpTerminalCommandTextBox->setText("");
+  mpTerminalCommandTextBox->setText("x-terminal-emulator");
 #endif
   mpTerminalCommandBrowseButton = new QPushButton(Helper::browse);
   mpTerminalCommandBrowseButton->setAutoDefault(false);
@@ -1907,27 +1929,30 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // create backup file
   mpCreateBackupFileCheckbox = new QCheckBox(tr("Create a model.bak-mo backup file when deleting a model."));
   mpCreateBackupFileCheckbox->setChecked(true);
+  /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
+  mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
   // set the layout of general settings group
-  QGridLayout *generalSettingsLayout = new QGridLayout;
-  generalSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  generalSettingsLayout->addWidget(mpLanguageLabel, 0, 0);
-  generalSettingsLayout->addWidget(mpLanguageComboBox, 0, 1, 1, 2);
-  generalSettingsLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
-  generalSettingsLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
-  generalSettingsLayout->addWidget(mpWorkingDirectoryBrowseButton, 1, 2);
-  generalSettingsLayout->addWidget(mpToolbarIconSizeLabel, 2, 0);
-  generalSettingsLayout->addWidget(mpToolbarIconSizeSpinBox, 2, 1, 1, 2);
-  generalSettingsLayout->addWidget(mpPreserveUserCustomizations, 3, 0, 1, 3);
-  generalSettingsLayout->addWidget(mpTerminalCommandLabel, 4, 0);
-  generalSettingsLayout->addWidget(mpTerminalCommandTextBox, 4, 1);
-  generalSettingsLayout->addWidget(mpTerminalCommandBrowseButton, 4, 2);
-  generalSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
-  generalSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
-  generalSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 6, 0, 1, 3);
-  generalSettingsLayout->addWidget(mpActivateAccessAnnotationsLabel, 7, 0);
-  generalSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
-  generalSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
-  mpGeneralSettingsGroupBox->setLayout(generalSettingsLayout);
+  QGridLayout *pGeneralSettingsLayout = new QGridLayout;
+  pGeneralSettingsLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  pGeneralSettingsLayout->addWidget(mpLanguageLabel, 0, 0);
+  pGeneralSettingsLayout->addWidget(mpLanguageComboBox, 0, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpWorkingDirectoryLabel, 1, 0);
+  pGeneralSettingsLayout->addWidget(mpWorkingDirectoryTextBox, 1, 1);
+  pGeneralSettingsLayout->addWidget(mpWorkingDirectoryBrowseButton, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpToolbarIconSizeLabel, 2, 0);
+  pGeneralSettingsLayout->addWidget(mpToolbarIconSizeSpinBox, 2, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpPreserveUserCustomizations, 3, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandLabel, 4, 0);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandTextBox, 4, 1);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandBrowseButton, 4, 2);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandArgumentsLabel, 5, 0);
+  pGeneralSettingsLayout->addWidget(mpTerminalCommandArgumentsTextBox, 5, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpHideVariablesBrowserCheckBox, 6, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsLabel, 7, 0);
+  pGeneralSettingsLayout->addWidget(mpActivateAccessAnnotationsComboBox, 7, 1, 1, 2);
+  pGeneralSettingsLayout->addWidget(mpCreateBackupFileCheckbox, 8, 0, 1, 3);
+  pGeneralSettingsLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, 9, 0, 1, 3);
+  mpGeneralSettingsGroupBox->setLayout(pGeneralSettingsLayout);
   // Libraries Browser group box
   mpLibrariesBrowserGroupBox = new QGroupBox(tr("Libraries Browser"));
   // library icon size
@@ -1943,6 +1968,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   mpShowProtectedClasses = new QCheckBox(tr("Show Protected Classes"));
   // show hidden classes
   mpShowHiddenClasses = new QCheckBox(tr("Show Hidden Classes (Ignores the annotation(Protection(access = Access.hide)))"));
+  // synchronize Libraries Browser with ModelWidget
+  mpSynchronizeWithModelWidgetCheckBox = new QCheckBox(tr("Synchronize with Model Widget"));
+  mpSynchronizeWithModelWidgetCheckBox->setChecked(true);
   // Libraries Browser group box layout
   QGridLayout *pLibrariesBrowserLayout = new QGridLayout;
   pLibrariesBrowserLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -1953,6 +1981,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   pLibrariesBrowserLayout->addWidget(mpLibraryIconTextLengthSpinBox, 1, 1);
   pLibrariesBrowserLayout->addWidget(mpShowProtectedClasses, 2, 0, 1, 2);
   pLibrariesBrowserLayout->addWidget(mpShowHiddenClasses, 3, 0, 1, 2);
+  pLibrariesBrowserLayout->addWidget(mpSynchronizeWithModelWidgetCheckBox, 4, 0, 1, 2);
   mpLibrariesBrowserGroupBox->setLayout(pLibrariesBrowserLayout);
   // Auto Save
   mpEnableAutoSaveGroupBox = new QGroupBox(tr("Enable Auto Save"));
@@ -1991,21 +2020,33 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
   // Show/hide latest news checkbox
   mpShowLatestNewsCheckBox = new QCheckBox(tr("Show Latest News"));
   mpShowLatestNewsCheckBox->setChecked(true);
+  // Recent files and latest news size
+  Label *pRecentFilesAndLatestNewsSizeLabel = new Label(tr("Recent Files and Latest News Size:"));
+  mpRecentFilesAndLatestNewsSizeSpinBox = new QSpinBox;
+  mpRecentFilesAndLatestNewsSizeSpinBox->setValue(15);
   // Welcome Page layout
   QGridLayout *pWelcomePageGridLayout = new QGridLayout;
   pWelcomePageGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
-  pWelcomePageGridLayout->addLayout(pWelcomePageViewButtonsLayout, 0, 0);
-  pWelcomePageGridLayout->addWidget(mpShowLatestNewsCheckBox, 1, 0);
+  pWelcomePageGridLayout->setColumnStretch(1, 1);
+  pWelcomePageGridLayout->addLayout(pWelcomePageViewButtonsLayout, 0, 0, 1, 2, Qt::AlignLeft);
+  pWelcomePageGridLayout->addWidget(mpShowLatestNewsCheckBox, 1, 0, 1, 2);
+  pWelcomePageGridLayout->addWidget(pRecentFilesAndLatestNewsSizeLabel, 2, 0);
+  pWelcomePageGridLayout->addWidget(mpRecentFilesAndLatestNewsSizeSpinBox, 2, 1);
   mpWelcomePageGroupBox->setLayout(pWelcomePageGridLayout);
 
   // Optional Features Box
   mpOptionalFeaturesGroupBox = new QGroupBox(tr("Optional Features"));
   // handle replaceable support
   mpReplaceableSupport = new QCheckBox(tr("Enable Replaceable Support *"));
+  //! @todo Remove this once we enable this bydefault in OMC.
+  /* Enable new instantiation use in OMC API */
+  mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
+  mpEnableNewInstantiationAPICheckBox->setChecked(true);
   // Optional Features Layout
   QGridLayout *pOptionalFeaturesLayout = new QGridLayout;
   pOptionalFeaturesLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pOptionalFeaturesLayout->addWidget(mpReplaceableSupport, 0, 0);
+  pOptionalFeaturesLayout->addWidget(mpEnableNewInstantiationAPICheckBox, 1, 0);
   mpOptionalFeaturesGroupBox->setLayout(pOptionalFeaturesLayout);
   // set the layout
   QVBoxLayout *pMainLayout = new QVBoxLayout;
@@ -3772,12 +3813,6 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpIgnoreCommandLineOptionsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_commandLineOptions annotation"));
   // ignore simulation flags annotation checkbox
   mpIgnoreSimulationFlagsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_simulationFlags annotation"));
-  //! @todo Remove this once we enable this bydefault in OMC.
-  /* Enable new instantiation use in OMC API */
-  mpEnableNewInstantiationAPICheckBox = new QCheckBox(tr("Enable new frontend use in the OMC API (faster GUI response)"));
-  mpEnableNewInstantiationAPICheckBox->setChecked(true);
-  /* Display errors/warnings when new instantiation fails in evaluating graphical annotations */
-  mpDisplayNFAPIErrorsWarningsCheckBox = new QCheckBox(tr("Display errors/warnings when instantiating the graphical annotations"));
   /* save class before simulation checkbox */
   mpSaveClassBeforeSimulationCheckBox = new QCheckBox(tr("Save class before simulation"));
   mpSaveClassBeforeSimulationCheckBox->setToolTip(tr("Disabling this will effect the debugger functionality."));
@@ -3841,8 +3876,6 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpCXXCompilerComboBox, row++, 1);
   pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, row++, 0, 1, 2);
-  pSimulationLayout->addWidget(mpEnableNewInstantiationAPICheckBox, row++, 0, 1, 2);
-  pSimulationLayout->addWidget(mpDisplayNFAPIErrorsWarningsCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSwitchToPlottingPerspectiveCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpCloseSimulationOutputWidgetsBeforeSimulationCheckBox, row++, 0, 1, 2);
@@ -4879,6 +4912,8 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   mpIncludeSourceCodeCheckBox = new QCheckBox(tr("Include Source Code (model description filter \"blackBox\" will override this, because black box FMUs do never contain their source code.)"));
   mpIncludeSourceCodeCheckBox->setChecked(true);
   enableIncludeSourcesCheckBox(mpModelDescriptionFiltersComboBox->currentText());
+  // generate debug symbols
+  mpGenerateDebugSymbolsCheckBox = new QCheckBox(tr("Generate Debug Symbols"));
   // set the export group box layout
   QGridLayout *pExportLayout = new QGridLayout;
   pExportLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -4893,6 +4928,7 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pExportLayout->addWidget(new Label(tr("Model Description Filters:")), 5, 0);
   pExportLayout->addWidget(mpModelDescriptionFiltersComboBox, 5, 1);
   pExportLayout->addWidget(mpIncludeSourceCodeCheckBox, 6, 0, 1, 3);
+  pExportLayout->addWidget(mpGenerateDebugSymbolsCheckBox, 7, 0, 1, 3);
   mpExportGroupBox->setLayout(pExportLayout);
   // import groupbox
   mpImportGroupBox = new QGroupBox(tr("Import"));

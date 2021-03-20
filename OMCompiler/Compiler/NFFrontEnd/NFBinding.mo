@@ -789,5 +789,22 @@ public
     );
   end makeBindingExp;
 
+  function setAttr
+    "sets a specific attribute value and adds it if it does not exist"
+    input output list<tuple<String, Binding>> ty_attr;
+    input String attr_name;
+    input Binding attr_value;
+  algorithm
+    ty_attr := match ty_attr
+      local
+        tuple<String, Binding> at;
+        list<tuple<String, Binding>> rest;
+        String name;
+      case (name, _ ) :: rest guard(name == attr_name)  then (attr_name, attr_value) :: rest;
+      case at :: rest                                   then at :: setAttr(rest, attr_name, attr_value);
+      case {}                                           then {(attr_name, attr_value)};
+    end match;
+  end setAttr;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

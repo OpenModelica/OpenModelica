@@ -45,27 +45,22 @@ extern "C" {
 
 OMEDITTEST_MAIN(BrowseMSL)
 
-/*!
- * \brief Test::electricalAnalogBasic
- * Browses the Modelica.Electrical.Analog.Basic
- */
 void BrowseMSL::electricalAnalogBasic()
 {
   if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Electrical.Analog.Basic"))) {
     QFAIL("Expanding to Modelica.Electrical.Analog.Basic failed.");
   }
-  MainWindow::instance()->close();
 }
 
-/*!
- * \brief Test::mediaAir
- * Browses the Modelica.Media.Air
- */
 void BrowseMSL::mediaAir()
 {
   OMEDITTEST_SKIP("Enable this testcase by removing this line once the ticket#5669 (https://trac.openmodelica.org/OpenModelica/ticket/5669) is fixed.");
   if (!Util::expandLibraryTreeItemParentHierarchy(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem("Modelica.Media.Air"))) {
     QFAIL("Expanding to Modelica.Media.Air failed.");
   }
+}
+
+void BrowseMSL::cleanupTestCase()
+{
   MainWindow::instance()->close();
 }

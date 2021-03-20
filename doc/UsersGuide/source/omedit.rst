@@ -242,7 +242,9 @@ The prespective shows the list of stack frames, breakpoints and variables.
 File Menu
 ---------
 
--  *New Modelica Class* - Creates a new Modelica class.
+-  *New*
+  -  *New Modelica Class* - Creates a new Modelica class.
+  -  *New SSP Model* - Creates a new SSP model.
 -  *Open Model/Library File(s)* - Opens the Modelica file or a library.
 -  *Open/Convert Modelica File(s) With Encoding* - Opens the Modelica file or
    a library with a specific encoding. It is also possible to convert to UTF-8.
@@ -313,13 +315,14 @@ Simulation Menu
 -  *Check All Models* - Checks all the models of a library.
 -  *Instantiate Model* - Instantiates the current model.
 -  *Simulation Setup* - Opens the simulation setup window.
--  *Instantiate SSP Model* - Instantiates the current SSP model.
 -  *Simulate* - Simulates the current model.
 -  *Simulate with Transformational Debugger* - Simulates the current model and
    opens the transformational debugger.
 -  *Simulate with Algorithmic Debugger* - Simulates the current model and
    opens the algorithmic debugger.
 -  *Simulate with Animation* - Simulates the current model and open the animation.
+-  *Archived Simulations* - Shows the list of simulations already finished or running.
+   Double clicking on any of them opens the simulation output window.
 
 Debug Menu
 ----------
@@ -330,8 +333,6 @@ Debug Menu
 SSP Menu
 --------
 
--  *New SSP Model* - Creates a new SSP model.
--  *Open SSP Model(s)* - Opens the SSP model(s).
 -  *Add System* - Adds the system to a model.
 -  *Add/Edit Icon* - Add/Edit the system/submodel icon.
 -  *Delete Icon* - Deletes the system/submodel icon.
@@ -379,7 +380,7 @@ Creating a New Modelica Class
 Creating a new Modelica class in OMEdit is rather straightforward.
 Choose any of the following methods,
 
--  Select File > New Modelica Class from the menu.
+-  Select File > New > New Modelica Class from the menu.
 
 -  Click on New Modelica Class toolbar button.
 
@@ -646,12 +647,6 @@ Output
 
 -  *Show Generated File* – displays the generated files in a dialog box.
 
-Archived Simulations
-~~~~~~~~~~~~~~~~~~~~
-
-Shows the list of simulations already finished or running.
-Double clicking on any of them opens the simulation output window.
-
 .. _omedit-2d-plotting :
 
 2D Plotting
@@ -735,6 +730,39 @@ Diagram Window. To show it click on Diagram Window toolbar button (|diagram-wind
   :height: 14pt
 
 .. _omedit-resimulation :
+
+Plot Window
+~~~~~~~~~~~
+
+A plot window shows the plot curve of instance variables. Several plot curves can be plotted in the
+same plot window. See :numref:`omedit-plotting-perspective`.
+
+Plot Window Menu
+^^^^^^^^^^^^^^^^
+
+-  *Auto Scale* - Automatically scales the horizontal and vertical axes.
+-  *Fit in View* - Adjusts the plot canvas to according to the size of plot curves.
+-  *Save* - Saves the plot to file system as .png, .svg or .bmp.
+-  *Print* - Prints the plot.
+-  *Grid* - Shows grid lines.
+-  *Detailed Grid* - Shows detailed grid lines.
+-  *No Grid* - Hides grid lines.
+-  *Log X* - Logarithmic scale of the horizontal axis.
+-  *Log Y* - Logarithmic scale of the vertical axis.
+-  *Setup* - Shows a setup window.
+  -  *Variables* - List of all plotted variables.
+    -  *General* - Variable general information.
+      -  *Legend* - Display name for legend.
+      -  *File* - File name where variable data is stored.
+    -  *Appearance* - Visual settings of variable.
+      -  *Color* - Display color.
+      -  *Pattern* - Line pattern of curve.
+      -  *Thickness* - Line thickness of curve.
+      -  *Hide* - Hide/Show the curve.
+      -  *Toggle Sign* - Toggles the sign of curve.
+    -  *Titles* - Plot, axes and footer titles settings.
+    -  *Legend* - Sets legend position and font.
+    -  *Range* - Automatic or manual axes range.
 
 Re-simulating a Model
 ---------------------
@@ -1037,6 +1065,9 @@ General
 
   -  *Create a model.bak-mo backup file when deleting a model*
 
+  -  *Display errors/warnings when instantiating the graphical annotations* - if true then the errors/warnings
+     are shown when using OMC API for graphical annotations.
+
 -  Libraries Browser
 
   -  *Library Icon Size* – Sets the size for library icons.
@@ -1049,6 +1080,9 @@ General
   -  *Show Hidden Classes* – If enabled then Libraries Browser will also list the hidden classes.
      Ignores the annotation(Protection(access = Access.hide))
 
+  -  *Synchronize with Model Widget* – If enabled then Libraries Browser will scroll automatically
+     to the active Model Widget i.e., the current model.
+
 -  Enable Auto Save - Enables/disables the auto save feature.
 
 -  *Auto Save interval* – Sets the auto save interval value. The minimum
@@ -1060,9 +1094,13 @@ General
 
   -  *Show Latest News* - If enabled then the latest news from https://openmodelica.org are shown.
 
+  -  *Recent Files and Latest News Size* - Sets the display size for recent files and latest news items.
+
 -  Optional Features
 
   -  *Enable replaceable support* - Enables/disables the replaceable support.
+
+  -  *Enable new frontend use in OMC API (faster GUI response)* - if true then uses the new frontend in OMC API calls.
 
 Libraries
 ~~~~~~~~~
@@ -1284,11 +1322,6 @@ Simulation
 
   -  *Ignore __OpenModelica_simulationFlags annotation* – if true then ignores the __OpenModelica_simulationFlags
      annotation while running the simulation.
-
-  -  *Enable new frontend use in OMC API (faster GUI response)* - if true then uses the new frontend in OMC API calls.
-
-  -  *Display errors/warnings when instantiating the graphical annotations* - if true then the errors/warnings
-     are shown when using OMC API for graphical annotations.
 
   -  *Save class before simulation* – if true then always saves the class before running the simulation.
 

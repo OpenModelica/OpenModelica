@@ -1,6 +1,6 @@
 // name:     Modelica_Electrical_Analog_Examples_ChuaCircuit
 // keywords: simulation MSL Examples
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Electrical_Analog_Examples_ChuaCircuit.fmu Modelica_Electrical_Analog_Examples_ChuaCircuit_* Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU.mo Modelica_Electrical_Analog_Examples_ChuaCircuit.libs Modelica_Electrical_Analog_Examples_ChuaCircuit.lib Modelica_Electrical_Analog_Examples_ChuaCircuit.so Modelica_Electrical_Analog_Examples_ChuaCircuit.dll Modelica_Electrical_Analog_Examples_ChuaCircuit.c Modelica_Electrical_Analog_Examples_ChuaCircuit.makefile
 // cflags: -d=-newInst
 // Simulation Results
@@ -34,7 +34,7 @@ val(C2_v, 3);
 // Result:
 // true
 // "Modelica_Electrical_Analog_Examples_ChuaCircuit.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "Modelica_Electrical_Analog_Examples_ChuaCircuit_me_FMU.mo"
 // ""

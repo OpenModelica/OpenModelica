@@ -61,6 +61,7 @@ public:
   static Rational add(Rational q1, Rational q2);
   static Rational mul(Rational q1, Rational q2);
   static Rational div(Rational q1, Rational q2);
+  static Rational pow(Rational q1, Rational q2);
   static mmc_sint_t gcd(mmc_sint_t a, mmc_sint_t b);
 
 };
@@ -75,7 +76,7 @@ struct UnitRes{
     UNKNOWN_IDENT,
     PARSE_ERROR,
     UNIT_OFFSET_ERROR,
-    UNIT_SCALE_ERROR,
+    UNIT_EXPONENT_NOT_INT,
     UNIT_WRONG_BASE, //Need to be base 10 for exponent prefixes
     UNIT_NOT_FOUND,
     PREFIX_NOT_FOUND,
@@ -93,6 +94,7 @@ struct UnitRes{
   ResVal result;      //Result enum
   unsigned int charNo;  //If error, charcter number in string where the error is
   string message;      //String message. E.g. for UNKNOWN_IDENT, the identifier is given
+  string toString();
 };
 
 class Unit{

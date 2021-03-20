@@ -11,20 +11,23 @@ desired = {
   "Complex": {
     "3.2.1+maint.om",
     "3.2.2+maint.om",
-    "3.2.3+maint.om"
+    "3.2.3+maint.om",
+    "4.0.0+maint.om"
   },
   "Modelica": {
     "2.2.2+maint.om",
     "3.1.0+maint.om",
     "3.2.1+maint.om",
     "3.2.2+maint.om",
-    "3.2.3+maint.om"
+    "3.2.3+maint.om",
+    "4.0.0+maint.om"
   },
   "ModelicaServices": {
     "1.0.0",
     "3.2.1+maint.om",
     "3.2.2+maint.om",
-    "3.2.3+maint.om"
+    "3.2.3+maint.om",
+    "4.0.0+maint.om"
   },
   "ModelicaTest": {
     "3.2.3+maint.om"

@@ -27,7 +27,7 @@ OMC_OBJ_SHARED = Error_omc$(OBJEXT) \
   Lapack_omc.o Settings_omc$(OBJEXT) \
   UnitParserExt_omc.o unitparser.o \
   IOStreamExt_omc.o Socket_omc.o ZeroMQ_omc.o getMemorySize.o OMSimulator_omc.o \
-  is_utf8.o om_curl.o om_unzip.o
+  is_utf8.o om_curl.o om_unzip.o ffi_omc.o \
 
 OMC_OBJ_STUBS = corbaimpl_stub_omc.o
 
@@ -80,10 +80,14 @@ libomcruntime-boot.a : $(OMC_OBJ_BOOT) Dynload_omc$(OBJEXT)
 libomcruntime.dylib : $(OMC_OBJ)
 	rm -f $@
 	$(CXX) -shared $(RPATH) -install_name @rpath/$@ -o $@ $(OMC_OBJ) $(LDFLAGS) $(CXXFLAGS)
+	test ! `uname` = Darwin || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib $@
+	test ! `uname` = Darwin || install_name_tool -change libsuitesparseconfig.dylib @rpath/libsuitesparseconfig.dylib $@
 
 libomcruntime-boot.dylib : $(OMC_OBJ_BOOT)
 	rm -f $@
 	$(CXX) -shared $(RPATH) -install_name `pwd`/$@ -o $@ $(OMC_OBJ_BOOT) $(LDFLAGS) $(CXXFLAGS)
+	test ! `uname` = Darwin || install_name_tool -change libcolamd.dylib @rpath/libcolamd.dylib $@
+	test ! `uname` = Darwin || install_name_tool -change libsuitesparseconfig.dylib @rpath/libsuitesparseconfig.dylib $@
 
 libomcruntime.so : $(OMC_OBJ)
 	rm -f $@
@@ -114,6 +118,7 @@ ZeroMQ_omc.o : zeromqimpl.c
 UnitParserExt_omc.o : unitparserext.cpp unitparser.h
 BackendDAEEXT_omc.o : BackendDAEEXT.cpp $(RML_COMPAT) matching.c matchmaker.h matching_cheap.c
 OMSimulator_omc.o : OMSimulator_omc.c
+ffi_omc.o : ffi_omc.c
 
 # Objects depending on BOOTH
 Dynload_omc$(OBJEXT): systemimpl.h errorext.h $(BOOTH) $(SimRuntimeCDir)/util/read_write.h $(SimRuntimeCDir)/gc/omc_gc.h Dynload.cpp $(RML_COMPAT)

@@ -1,0 +1,71 @@
+// name:                negativeVelocity.mos
+// keywords:            spatialDistribution
+// status:              correct
+// teardown_command:    rm -f negativeVelocitySpatialDistribution*
+//
+// Simple model with spatialDistribution with constant velocity.
+// Initialized with (0,1) (1,1)
+
+loadModel(Modelica); getErrorString();
+loadString("
+  model negativeVelocitySpatialDistribution
+    \"Single conveyor belt transporting sand with constant positive velocity
+    and input from the left side. Using event-free initialization.\"
+  extends Modelica.Icons.Example;
+  Real leftInput = 0;
+  Real rightInput;
+  Real leftOutput;
+  Real rightOutput;
+  constant Real[:] initialPoints(each min = 0, each max = 1) = {0.0, 1.0};
+  constant Real[:] initialValues = {1.0, 0.0};
+  Real v = -1;
+  Boolean posV;
+  Real x(start=0, fixed=true);
+  Real solution;
+equation
+  rightInput = sin(time);
+  v = der(x);
+  posV = v >= 0;
+  (leftOutput, rightOutput) = spatialDistribution(leftInput, rightInput, x, posV, initialPoints, initialValues);
+  solution = if (time < 1) then 1-time else sin(time-1);
+  annotation(
+    experiment(StartTime = 0, StopTime = 2, Tolerance = 1e-06, Interval = 0.004));
+end negativeVelocitySpatialDistribution;"); getErrorString();
+
+// Simulate
+simulate(negativeVelocitySpatialDistribution, stopTime=2.0); getErrorString();
+
+// Get initialValues
+val(leftOutput, 0.0);  val(solution, 0.0);
+val(leftOutput, 0.5);  val(solution, 0.5);
+val(leftOutput, 1.0);  val(solution, 1.0);
+
+// Get input from 1 second ago
+val(leftOutput, 1.5);  val(solution, 1.5);
+val(leftOutput, 2.0);  val(solution, 2.0);
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "negativeVelocitySpatialDistribution_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'negativeVelocitySpatialDistribution', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 1.0
+// 1.0
+// 0.5
+// 0.5
+// 0.0
+// 0.0
+// 0.479425538604203
+// 0.479425538604203
+// 0.8414709848078965
+// 0.8414709848078965
+// endResult

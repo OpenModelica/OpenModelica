@@ -201,14 +201,17 @@ public
     ty := match ty
       local
         list<Dimension> dims;
+        Type tty, fty;
 
       case ARRAY(dimensions = _ :: dims)
         then if listEmpty(dims) then ty.elementType else ARRAY(ty.elementType, dims);
 
       case CONDITIONAL_ARRAY()
-        then CONDITIONAL_ARRAY(unliftArray(ty.trueType),
-                               unliftArray(ty.falseType),
-                               ty.matchedBranch);
+        algorithm
+          tty := unliftArray(ty.trueType);
+          fty := unliftArray(ty.falseType);
+        then
+          if isEqual(tty, fty) then tty else CONDITIONAL_ARRAY(tty, fty, ty.matchedBranch);
 
     end match;
   end unliftArray;
@@ -220,6 +223,7 @@ public
     ty := match ty
       local
         list<Dimension> dims;
+        Type tty, fty;
 
       case ARRAY(dimensions = dims)
         algorithm
@@ -230,9 +234,11 @@ public
           if listEmpty(dims) then ty.elementType else ARRAY(ty.elementType, dims);
 
       case CONDITIONAL_ARRAY()
-        then CONDITIONAL_ARRAY(unliftArrayN(N, ty.trueType),
-                               unliftArrayN(N, ty.falseType),
-                               ty.matchedBranch);
+        algorithm
+          tty := unliftArrayN(N, ty.trueType);
+          fty := unliftArrayN(N, ty.falseType);
+        then
+          if isEqual(tty, fty) then tty else CONDITIONAL_ARRAY(tty, fty, ty.matchedBranch);
 
     end match;
   end unliftArrayN;

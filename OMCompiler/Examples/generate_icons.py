@@ -44,8 +44,10 @@ import svgwrite
 from OMPython import OMCSessionZMQ
 omc = OMCSessionZMQ()
 
-# OpenModelica setup commands
-OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc")']
+# OpenModelica setup commands (use old front-end, see #6301)
+OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc,-newInst")']
+# use new front-end and nfAPI
+# OMC_SETUP_COMMANDS = ['setCommandLineOptions("-d=nogen,noevalfunc,newInst,nfAPI")']
 
 def classToFileName(cl):
   """
@@ -111,7 +113,7 @@ def ask_omc(question, opt=None, parsed=True):
 
     try:
         if parsed:
-            res = omc.execute(expression)
+            res = omc.sendExpression(expression)
             omc.clearOMParserResult()
         else:
             res = omc.sendExpression(expression, parsed=False)
@@ -771,7 +773,6 @@ def getSvgFromGraphics(dwg, graphics, minX, maxY, includeInvisibleText, transfor
                 shape.push(x_12, y_12, x_n, y_n, x_n, y_n)
             else:
                 shape = dwg.polygon([getCoordinates([x, y], graphics, minX, maxY, transformation, coordinateSystem) for (x, y) in graphics['points']])
-            shape.fill('none', opacity=0)
         else:
             logger.error('Not handled: {0}'.format(graphics))
             return None

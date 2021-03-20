@@ -268,6 +268,7 @@ protected
   Option<DAE.Exp> quantity = NONE(), unit = NONE(), displayUnit = NONE();
   Option<DAE.Exp> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
   Option<DAE.StateSelect> state_select = NONE();
+  Option<DAE.Uncertainty> uncertain = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -283,6 +284,7 @@ algorithm
       case "stateSelect" algorithm state_select := convertStateSelectAttribute(b); then ();
       // TODO: VAR_ATTR_REAL has no field for unbounded.
       case "unbounded"   then ();
+      case "uncertain"   algorithm uncertain := convertUncertaintyAttribute(b); then ();
       case "unit"        algorithm unit := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
@@ -297,7 +299,7 @@ algorithm
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_REAL(
     quantity, unit, displayUnit, min, max, start, fixed, nominal,
-    state_select, NONE(), NONE(), NONE(), NONE(), isFinal, NONE()));
+    state_select, uncertain, NONE(), NONE(), NONE(), isFinal, NONE()));
 end convertRealVarAttributes;
 
 function convertIntVarAttributes
@@ -475,6 +477,44 @@ algorithm
         fail();
   end match;
 end lookupStateSelectMember;
+
+function convertUncertaintyAttribute
+  input Binding binding;
+  output Option<DAE.Uncertainty> stateSelect;
+protected
+  InstNode node;
+  String name;
+  Expression exp = Expression.getBindingExp(Binding.getTypedExp(binding));
+algorithm
+  name := match exp
+    case Expression.ENUM_LITERAL() then exp.name;
+    case Expression.CREF(cref = ComponentRef.CREF(node = node)) then InstNode.name(node);
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() +
+          " got invalid Uncertainty expression " + Expression.toString(exp), sourceInfo());
+      then
+        fail();
+  end match;
+
+  stateSelect := SOME(lookupUncertaintyMember(name));
+end convertUncertaintyAttribute;
+
+function lookupUncertaintyMember
+  input String name;
+  output DAE.Uncertainty stateSelect;
+algorithm
+  stateSelect := match name
+    case "given" then DAE.Uncertainty.GIVEN();
+    case "sought" then DAE.Uncertainty.SOUGHT();
+    case "refine" then DAE.Uncertainty.REFINE();
+    else
+      algorithm
+        Error.assertion(false, getInstanceName() + " got unknown Uncertainty literal " + name, sourceInfo());
+      then
+        fail();
+  end match;
+end lookupUncertaintyMember;
 
 function convertEquations
   input list<Equation> equations;

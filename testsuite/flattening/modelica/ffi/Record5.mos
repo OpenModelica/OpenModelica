@@ -1,0 +1,17 @@
+// name:     Record5
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Records.Record5); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "[flattening/modelica/ffi/FFITest/package.mo:239:5-244:16:writable] Error: The language feature \"record return value in external function\" is not supported. Suggested workaround: Pass the record as an output parameter
+// "
+// endResult

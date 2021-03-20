@@ -126,7 +126,7 @@ void patchConfigStatus() {
   if (isUnix())
   {
     // Running on nodes with different paths for the workspace
-    sh 'sed -i.bak "s,--with-ombuilddir=[A-Za-z0-9./_-]*,--with-ombuilddir=`pwd`/build," config.status OMCompiler/config.status'
+    sh 'sed -i.bak -e "s,--with-ombuilddir=[A-Za-z0-9./_-]*,--with-ombuilddir=`pwd`/build," -e "s,--prefix=[A-Za-z0-9./_-]*,--prefix=`pwd`/install," config.status OMCompiler/config.status'
   }
 }
 
@@ -151,7 +151,7 @@ void makeLibsAndCache(libs='core') {
   """
   generateTemplates()
   sh "touch omc.skip"
-  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff"
+  def cmd = "${makeCommand()} -j${numLogicalCPU()} --output-sync=recurse libs-for-testing ReferenceFiles omc-diff ffi-test-lib"
   if (env.SHARED_LOCK) {
     lock(env.SHARED_LOCK) {
       sh cmd
@@ -162,7 +162,7 @@ void makeLibsAndCache(libs='core') {
   }
 }
 
-void buildOMC(CC, CXX, extraFlags, buildCpp) {
+void buildOMC(CC, CXX, extraFlags, Boolean buildCpp, Boolean clean) {
   standardSetup()
 
   if (isWindows()) {
@@ -201,8 +201,16 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
      echo rm -rf ./M* ./OMCppM*
      echo cd ..
      echo rm -rf .sanity-check
+     echo echo Testing some models from testsuite, ffi, meta
      echo cd testsuite/flattening/libraries/biochem
      echo ../../../rtest --return-with-error-code EnzMM.mos
+     echo cd \${MSYS_WORKSPACE}
+     echo cd testsuite/flattening/modelica/ffi
+     echo ../../../rtest --return-with-error-code ModelicaInternal_countLines.mos
+     echo ../../../rtest --return-with-error-code Integer1.mos
+     echo cd \${MSYS_WORKSPACE}
+     echo cd testsuite/metamodelica/meta
+     echo ../../rtest --return-with-error-code AlgPatternm.mos
      echo echo Testing if we can compile in a path with spaces
      echo cd \${MSYS_WORKSPACE}
      echo mkdir -p ./path\\ with\\ space/
@@ -242,10 +250,10 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
   def withCppRuntime = buildCpp ? "--with-cppruntime":"--without-cppruntime"
   sh "./configure CC='${CC}' CXX='${CXX}' FC=gfortran CFLAGS=-Os ${withCppRuntime} --without-omc --without-omlibrary --with-omniORB --enable-modelica3d --prefix=`pwd`/install ${extraFlags}"
   // OMSimulator requires HOME to be set and writeable
-  def outputSync = sh(script: "${makeCommand()} --version | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\\+//'", returnStdout: true).toInteger() >= 4 ? "--output-sync=recurse" : ""
-  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} omc omc-diff omsimulator"
-  // test make install
-  sh "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync} install"
+  if (clean) {
+    sh label: 'clean', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} clean"
+  }
+  sh label: 'build', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} omc omc-diff omsimulator"
   sh 'find build/lib/*/omc/ -name "*.so" -exec strip {} ";"'
   // Run sanity tests
   sh '''
@@ -265,16 +273,37 @@ void buildOMC(CC, CXX, extraFlags, buildCpp) {
     sh '''
     cd .sanity-check
     # do not do this on Mac as it doesn't work yet
-    test `uname` = Darwin || ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
-    test `uname` = Darwin || ./M
-    test `uname` = Darwin || ls M.fmu
-    test `uname` = Darwin || rm -rf ./M* ./OMCppM*
+    # test `uname` = Darwin || ../build.sanity-check/bin/omc --simCodeTarget=Cpp testSanity.mos
+    # test `uname` = Darwin || ./M
+    # test `uname` = Darwin || ls M.fmu
+    # test `uname` = Darwin || rm -rf ./M* ./OMCppM*
     cd ..
     mv build.sanity-check build
     rm -rf .sanity-check
     '''
   }
   sh "cd OMCompiler/Compiler/boot && ./find-unused-import.sh ../*/*.mo"
+  }
+}
+
+void buildOMSens() {
+  if (isWindows()) {
+  bat ("""
+     set OMDEV=C:\\OMDev
+     echo on
+     (
+     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+     echo cd \${MSYS_WORKSPACE}
+     echo export MAKETHREADS=-j16
+     echo set -e
+     echo time make -f Makefile.omdev.mingw \${MAKETHREADS} omsens
+     ) > buildOMSensWindows.sh
+
+     set MSYSTEM=MINGW64
+     set MSYS2_PATH_TYPE=inherit
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMSensWindows.sh && ./buildOMSensWindows.sh && rm -f ./buildOMSensWindows.sh"
+  """)
   }
 }
 
@@ -310,15 +339,17 @@ void buildGUI(stash, isQt5) {
   if (stash) {
     patchConfigStatus()
   }
-  sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
+  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   // compile OMSens_Qt for Qt5
   if (isQt5) {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator" // Pretend we already built omc since we already did so
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip && ${makeCommand()} -q -j${numPhysicalCPU()} omc omc-diff ReferenceFiles omsimulator" // Pretend we already built omc since we already did so
   } else {
-    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omsens_qt" // Pretend we already built omc since we already did so
+    sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omsens_qt.skip && ${makeCommand()} -j${numPhysicalCPU()} -q omc omc-diff ReferenceFiles omsimulator omsens_qt" // Pretend we already built omc since we already did so
   }
-  sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse" // Builds the GUI files
+  sh "${makeCommand()} -j${numPhysicalCPU()} ${outputSync()}" // Builds the GUI files
 
+  // test make install after qt builds
+  sh label: 'install', script: "HOME='${env.WORKSPACE}' ${makeCommand()} -j${numPhysicalCPU()} ${outputSync()} install ${ignoreOnMac()}"
   }
 }
 
@@ -353,7 +384,7 @@ void buildAndRunOMEditTestsuite(stash) {
   if (stash) {
     patchConfigStatus()
   }
-  sh 'CONFIG=`./config.status --config` && ./configure `eval $CONFIG`'
+  sh 'echo ./configure `./config.status --config` > config.status.2 && bash ./config.status.2'
   sh "touch omc.skip omc-diff.skip ReferenceFiles.skip omsimulator.skip omedit.skip omplot.skip omparser.skip && ${makeCommand()} -q omc omc-diff ReferenceFiles omsimulator omedit omplot omparser" // Pretend we already built omc since we already did so
   sh "${makeCommand()} -j${numPhysicalCPU()} --output-sync=recurse omedit-testsuite" // Builds the OMEdit testsuite
   sh label: 'RunOMEditTestsuite', script: '''
@@ -444,13 +475,13 @@ def shouldWeBuildMINGW() {
   return params.BUILD_MINGW
 }
 
-def shouldWeBuildCENTOS6() {
+def shouldWeBuildCENTOS7() {
   if (isPR()) {
     if (pullRequest.labels.contains("CI/Build CentOS")) {
       return true
     }
   }
-  return params.BUILD_CENTOS6
+  return params.BUILD_CENTOS7
 }
 
 def shouldWeRunTests() {
@@ -477,6 +508,22 @@ def shouldWeRunTests() {
 
 def isPR() {
   return env.CHANGE_ID ? true : false
+}
+
+def outputSync()
+{
+ def osync = sh(script: "${makeCommand()} --version | grep -o -E '[0-9]+' | head -1 | sed -e 's/^0\\+//'", returnStdout: true).toInteger() >= 4 ? "--output-sync=recurse" : ""
+ return osync;
+}
+
+
+def ignoreOnMac() {
+  def uname = sh script: 'uname', returnStdout: true
+  def ignore = ""
+  if (uname.startsWith("Darwin")) {
+    ignore = "|| true"
+  }
+  return ignore;
 }
 
 return this

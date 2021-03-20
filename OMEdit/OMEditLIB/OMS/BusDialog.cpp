@@ -303,7 +303,7 @@ QVariant ConnectorsModel::data(const QModelIndex &index, int role) const
 Qt::ItemFlags ConnectorsModel::flags(const QModelIndex &index) const
 {
   if (!index.isValid()) {
-    return 0;
+    return Qt::ItemFlags();
   } else {
     Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
     ConnectorItem *pConnectorItem = static_cast<ConnectorItem*>(index.internalPointer());
@@ -553,13 +553,21 @@ void AddBusDialog::addBus()
                                   .arg(QString(mpLibraryTreeItem->getOMSBusConnector()->connectors[i])));
       }
     }
-    // add connectors to the bus
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QSet<QString> connectorsSet(connectors.begin(), connectors.end());
+    QSet<QString> existingConnectorsSet(existingConnectors.begin(), existingConnectors.end());
+    QSet<QString> addConnectors = connectorsSet.subtract(existingConnectorsSet);
+    QSet<QString> deleteConnectors = existingConnectorsSet.subtract(connectorsSet);
+#else // QT_VERSION_CHECK
     QSet<QString> addConnectors = connectors.toSet().subtract(existingConnectors.toSet());
+    QSet<QString> deleteConnectors = existingConnectors.toSet().subtract(connectors.toSet());
+#endif // QT_VERSION_CHECK
+    // add connectors to the bus
     foreach (QString connector, addConnectors) {
       OMSProxy::instance()->addConnectorToBus(bus, connector);
     }
     // delete connectors from the bus
-    QSet<QString> deleteConnectors = existingConnectors.toSet().subtract(connectors.toSet());
     foreach (QString connector, deleteConnectors) {
       OMSProxy::instance()->deleteConnectorFromBus(bus, connector);
     }

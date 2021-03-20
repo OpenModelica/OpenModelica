@@ -432,6 +432,7 @@ public
         extObjInfo                    = OldSimCode.EXTOBJINFO({}, {}), // ToDo: add this once external object info is supported
         makefileParams                = simCode.makefileParams, // ToDo: convert this to new structures
         delayedExps                   = OldSimCode.DELAYED_EXPRESSIONS({}, 0), // ToDo: add this once delayed expressions are supported
+        spatialInfo                   = OldSimCode.SPATIAL_DISTRIBUTION_INFO({}, 0),
         jacobianMatrixes              = jacobians,
         simulationSettingsOpt         = simCode.simulationSettingsOpt, // replace with new struct later on
         fileNamePrefix                = AbsynUtil.pathString(simCode.modelInfo.name),
@@ -503,6 +504,7 @@ public
       //Files files "all the files from SourceInfo and DAE.ElementSource";
       Integer nClocks;
       Integer nSubClocks;
+      Integer nSpatialDistributions;
       Boolean hasLargeLinearEquationSystems; // True if model has large linear eq. systems that are crucial for performance.
       list<SimStrongComponent.Block> linearLoops;
       list<SimStrongComponent.Block> nonlinearLoops;
@@ -532,7 +534,7 @@ public
     algorithm
       (vars, simCodeIndices) := SimVars.create(varData, simCodeIndices);
       info := VarInfo.create(vars, eventInfo, simCodeIndices);
-      modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, true, linearLoops, nonlinearLoops);
+      modelInfo := MODEL_INFO(name, "", directory, vars, info, functions, {}, {}, {}, 0, 0, 0, true, linearLoops, nonlinearLoops);
     end create;
 
     function setSeedVars
@@ -572,6 +574,7 @@ public
         //Files files "all the files from SourceInfo and DAE.ElementSource";
         nClocks                         = modelInfo.nClocks,
         nSubClocks                      = modelInfo.nSubClocks,
+        nSpatialDistributions           = modelInfo.nSpatialDistributions,
         hasLargeLinearEquationSystems   = modelInfo.hasLargeLinearEquationSystems,
         linearSystems                   = SimStrongComponent.Block.convertList(modelInfo.linearLoops),
         nonLinearSystems                = SimStrongComponent.Block.convertList(modelInfo.nonlinearLoops),

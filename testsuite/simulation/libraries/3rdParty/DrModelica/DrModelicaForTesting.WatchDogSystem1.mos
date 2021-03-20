@@ -4,7 +4,7 @@
 // teardown_command: rm -rf _DrModelicaForTesting.WatchDogSystem1.* DrModelicaForTesting.WatchDogSystem1_* DrModelicaForTesting.WatchDogSystem1 DrModelicaForTesting.WatchDogSystem1.exe DrModelicaForTesting.WatchDogSystem1.cpp DrModelicaForTesting.WatchDogSystem1.makefile DrModelicaForTesting.WatchDogSystem1.libs DrModelicaForTesting.WatchDogSystem1.log DrModelicaForTesting.WatchDogSystem1.c DrModelicaForTesting.WatchDogSystem1.o output.log
 // cflags: -d=-newInst
 //
-// Simulation Results 
+// Simulation Results
 // Modelica Standard Library
 //
 
@@ -17,8 +17,8 @@ simulate(DrModelicaForTesting.WatchDogSystem1, numberOfIntervals=200, stopTime=1
 res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.WatchDogSystem1_res.mat",
   "ReferenceFiles/WatchDogSystem1_ref.mat","DrModelicaForTesting.WatchDogSystem1_diff.csv",0.01,0.013,
   {"turnOn.eventTime","turnOn.dOutput.signal", "turnOff.eventTime", "deadlineEmitter.eventTime", "watchdog.dOn.signal"});
-  
-  
+
+
 // Result:
 // true
 // ""
@@ -31,7 +31,7 @@ res := OpenModelica.Scripting.compareSimulationResults("DrModelicaForTesting.Wat
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // endResult

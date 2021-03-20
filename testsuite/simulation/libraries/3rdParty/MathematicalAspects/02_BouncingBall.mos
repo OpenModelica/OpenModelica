@@ -6,7 +6,7 @@
 //  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("BouncingBall.mo"); getErrorString();
 loadFile("BouncingBall1.mo"); getErrorString();
 loadFile("BouncingBall2.mo"); getErrorString();
@@ -45,7 +45,7 @@ res := OpenModelica.Scripting.compareSimulationResults("BouncingBall2_res.mat",
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
@@ -57,7 +57,7 @@ res := OpenModelica.Scripting.compareSimulationResults("BouncingBall2_res.mat",
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
@@ -69,7 +69,7 @@ res := OpenModelica.Scripting.compareSimulationResults("BouncingBall2_res.mat",
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {"Files Equal!"}
 // "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.

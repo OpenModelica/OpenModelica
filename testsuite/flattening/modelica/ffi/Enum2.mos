@@ -1,0 +1,19 @@
+// name:     Enum2
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Scalars.Enum2); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.Scalars.Enum2
+//   constant enumeration(one, two, three) x = FFITest.Scalars.E1.three;
+// end FFITest.Scalars.Enum2;
+// "
+// ""
+// endResult

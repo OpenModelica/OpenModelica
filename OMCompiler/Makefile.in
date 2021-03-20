@@ -11,8 +11,8 @@ includedir = @includedir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
-CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS_UNDEFINED_LOOKUP@" cmake @CMAKE_EXTRA_DEFINES@
-CMAKE_CHECK_UNDEFINED_LOOKUP = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" cmake @CMAKE_EXTRA_DEFINES@
+CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@LDFLAGS@" cmake @CMAKE_EXTRA_DEFINES@
+CMAKE_NO_CHECK_UNDEFINED = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS_UNDEFINED_LOOKUP@ @LDFLAGS@" cmake @CMAKE_EXTRA_DEFINES@
 CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@ @CMAKE_LDFLAGS_UNDEFINED_LOOKUP@" cmake @CMAKE_EXTRA_DEFINES@
 CMAKE_TARGET = "Unix Makefiles"
 OPENCL = @OPENCL@
@@ -49,9 +49,12 @@ LD_LAPACK=@LD_LAPACK@
 LAPACK_TARGET=@LAPACK_TARGET@
 OPENBLAS_EXTRA_ARGS=@OPENBLAS_EXTRA_ARGS@
 IPOPT_TARGET=@IPOPT_TARGET@
-UMFPACK_TARGET=@UMFPACK_TARGET@
-UMFPACK_SHARED=@UMFPACK_SHARED@
+SUITESPARSE_TARGET=@SUITESPARSE_TARGET@
+SUITESPARSE_SHARED=@SUITESPARSE_SHARED@
 SUNDIALS_TARGET=sundials
+
+EXTRA_MACOS_FLAGS_SUNDIALS=@EXTRA_MACOS_FLAGS_SUNDIALS@
+
 # We don't want the shared version, but symbols are not exported if we use the static version
 # This compiles the shared and static versions, but we only copy the static version...
 FMILIB_SHARED = @FMILIB_SHARED@
@@ -74,7 +77,7 @@ OMENCRYPTION=@OMENCRYPTION@
 LVE_EXE_SUFFIX=@MODELICA_SPEC_PLATFORM@
 MINGW_EXTRA_LIBS=@MINGW_EXTRA_LIBS@
 
-SUITESPARSE_LIBS = -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)"
+SUITESPARSE_LIBS = -DKLU_LIBRARY="libklu$(SHREXT)" -DAMD_LIBRARY="libamd$(SHREXT)" -DCOLAMD_LIBRARY="libcolamd$(SHREXT)" -DBTF_LIBRARY="libbtf$(SHREXT)" -DSUITESPARSECONFIG_LIBRARY="libsuitesparseconfig$(SHREXT)"
 
 ifeq ($(OMENCRYPTION),yes)
 SEMLA_LIB=semla
@@ -97,8 +100,8 @@ $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 3rdParty/gc/.libs/libomcgc.so: 3rdParty/gc/Makefile
 	$(MAKE) -C 3rdParty/gc/ libomcgc.la
 
-omc-bootstrapped: $(SELMA_LIB)
-	$(MAKE) interactive sim-dependencies
+omc-bootstrapped: $(SEMLA_LIB)
+	$(MAKE) interactive sim-dependencies install-openturns
 	$(MAKE) -C Compiler/boot OMBUILDDIR=$(OMBUILDDIR)
 	$(MAKE) -f $(defaultMakefileTarget) -C Compiler install_scripts OMBUILDDIR=$(OMBUILDDIR)
 	@# See if any library is linked directly into the build dirs (we should use @rpath everywhere)

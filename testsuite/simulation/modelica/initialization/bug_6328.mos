@@ -1,0 +1,699 @@
+// name: bug_6328
+// keywords: initialization, homotopy, symbolic Jacobian
+// status: correct
+// cflags:
+// teardown_command: rm -rf temp-bug_6328/
+//
+// Generate symbolic Jacobian for system with homotopy operator. So differentiate lambda*actual + (1-lambda)*simplified.
+// The Jacobian should be used during initialization for 0<lambda<1.
+// The important equations from the dump are:
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): $res_NLSJac1_2.$pDERNLSJac1.dummyVarNLSJac1 = y1.SeedNLSJac1 + __HOM_LAMBDA * cos(y1) * y1.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y1.SeedNLSJac1 + __HOM_LAMBDA * cos(y2) * y2.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y2.SeedNLSJac1 - y2.SeedNLSJac1   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = y1.SeedNLSJac1 + __HOM_LAMBDA * cos(y1) * y1.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y1.SeedNLSJac1 + y2.SeedNLSJac1 + __HOM_LAMBDA * cos(y2) * y2.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y2.SeedNLSJac1   [dynamic |0|0|0|0|]
+//
+
+// Work in clean temp folder
+echo(false);
+remove("temp-bug_6328"); mkdir("temp-bug_6328"); cd("temp-bug_6328");
+echo(true);
+
+loadString("
+package TestJacobian_6328
+  model Test
+    Real x1,x2;
+    Real y1,y2;
+  equation
+    x1 + sin(x1) + x2 + sin(x2) = 1;
+    x1 + sin(x1) - x2 + sin(x2) = 0;
+    y1 + homotopy(sin(y1),y1) + y2 + homotopy(sin(y2),y2) = 1;
+    y1 + homotopy(sin(y1),y1) - y2 + homotopy(sin(y2),y2) = 0;
+  end Test;
+end TestJacobian_6328;
+");
+
+setCommandLineOptions("-d=newInst,symjacdump --tearingMethod=minimalTearing");
+buildModel(TestJacobian_6328.Test);
+
+system("./TestJacobian_6328.Test -nls=kinsol -nlsLS=klu", "outputFile-Test.txt");
+readFile("outputFile-Test.txt");
+
+// Result:
+// true
+// true
+// true
+// Create symbolic Jacobians from:
+// Independent Variables
+// ========================================
+// 1: x1:VARIABLE()  type: Real
+// 2: x2:VARIABLE()  type: Real
+// Dependent Variables
+// ========================================
+// 1: $res_NLSJac0_1:VARIABLE()  type: Real
+// 2: $res_NLSJac0_2:VARIABLE()  type: Real
+// Basic equation system:
+// differentiated equations
+// ========================================
+// 1/1 (1): $res_NLSJac0_2 := x1 + sin(x1) + sin(x2) - x2
+// 2/2 (1): $res_NLSJac0_1 := -1.0 + x1 + sin(x1) + x2 + sin(x2)
+// related variables
+// ========================================
+// 1: $res_NLSJac0_2:VARIABLE()  type: Real
+// 2: $res_NLSJac0_1:VARIABLE()  type: Real
+// known variables
+// ========================================
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res_NLSJac0_2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): $res_NLSJac0_2.$pDERNLSJac0.dummyVarNLSJac0 = x1.SeedNLSJac0 + cos(x1) * x1.SeedNLSJac0 + cos(x2) * x2.SeedNLSJac0 - x2.SeedNLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = x1.SeedNLSJac0 + cos(x1) * x1.SeedNLSJac0 + x2.SeedNLSJac0 * (1.0 + cos(x2))   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: input x1.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
+// 2: input x2.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
+// 3: $res_NLSJac0_2:VARIABLE()  type: Real
+// 4: $res_NLSJac0_1:VARIABLE()  type: Real
+//
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: $res_NLSJac0_2.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0:VARIABLE()  type: Real unreplaceable
+// 3: $cse2:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): $res_NLSJac0_2.$pDERNLSJac0.dummyVarNLSJac0 = x1.SeedNLSJac0 + $cse1 * x1.SeedNLSJac0 + $cse2 * x2.SeedNLSJac0 - x2.SeedNLSJac0   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac0_1.$pDERNLSJac0.dummyVarNLSJac0 = x1.SeedNLSJac0 + $cse1 * x1.SeedNLSJac0 + x2.SeedNLSJac0 * (1.0 + $cse2)   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse2 = cos(x2)   [unknown |0|0|0|0|]
+// 4/4 (1): $cse1 = cos(x1)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+//
+//
+// StrongComponents
+// ========================================
+// {4:4}
+// {3:3}
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: $res_NLSJac0_1:VARIABLE()  type: Real
+// 2: $res_NLSJac0_2:VARIABLE()  type: Real
+// 3: input x2.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
+// 4: input x1.SeedNLSJac0:STATE_DER()  type: Real unreplaceable
+//
+// Create symbolic Jacobians from:
+// Independent Variables
+// ========================================
+// 1: y1:VARIABLE()  type: Real
+// 2: y2:VARIABLE()  type: Real
+// Dependent Variables
+// ========================================
+// 1: $res_NLSJac1_1:VARIABLE()  type: Real
+// 2: $res_NLSJac1_2:VARIABLE()  type: Real
+// Basic equation system:
+// differentiated equations
+// ========================================
+// 1/1 (1): $res_NLSJac1_2 := y1 + homotopy(sin(y1), y1) + homotopy(sin(y2), y2) - y2
+// 2/2 (1): $res_NLSJac1_1 := -1.0 + y1 + homotopy(sin(y1), y1) + y2 + homotopy(sin(y2), y2)
+// related variables
+// ========================================
+// 1: $res_NLSJac1_2:VARIABLE()  type: Real
+// 2: $res_NLSJac1_1:VARIABLE()  type: Real
+// known variables
+// ========================================
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res_NLSJac1_2.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): $res_NLSJac1_2.$pDERNLSJac1.dummyVarNLSJac1 = y1.SeedNLSJac1 + __HOM_LAMBDA * cos(y1) * y1.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y1.SeedNLSJac1 + __HOM_LAMBDA * cos(y2) * y2.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y2.SeedNLSJac1 - y2.SeedNLSJac1   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = y1.SeedNLSJac1 + __HOM_LAMBDA * cos(y1) * y1.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y1.SeedNLSJac1 + y2.SeedNLSJac1 + __HOM_LAMBDA * cos(y2) * y2.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y2.SeedNLSJac1   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: input y1.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 2: input y2.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 3: $res_NLSJac1_2:VARIABLE()  type: Real
+// 4: $res_NLSJac1_1:VARIABLE()  type: Real
+//
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: $res_NLSJac1_2.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1:VARIABLE()  type: Real unreplaceable
+// 3: $cse4:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: $cse3:VARIABLE(protected = true )  type: Real unreplaceable
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): $res_NLSJac1_2.$pDERNLSJac1.dummyVarNLSJac1 = y1.SeedNLSJac1 + __HOM_LAMBDA * $cse3 * y1.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y1.SeedNLSJac1 + __HOM_LAMBDA * $cse4 * y2.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y2.SeedNLSJac1 - y2.SeedNLSJac1   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac1_1.$pDERNLSJac1.dummyVarNLSJac1 = y1.SeedNLSJac1 + __HOM_LAMBDA * $cse3 * y1.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y1.SeedNLSJac1 + y2.SeedNLSJac1 + __HOM_LAMBDA * $cse4 * y2.SeedNLSJac1 + (1.0 - __HOM_LAMBDA) * y2.SeedNLSJac1   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse4 = cos(y2)   [unknown |0|0|0|0|]
+// 4/4 (1): $cse3 = cos(y1)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+//
+//
+// StrongComponents
+// ========================================
+// {4:4}
+// {3:3}
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: $res_NLSJac1_1:VARIABLE()  type: Real
+// 2: $res_NLSJac1_2:VARIABLE()  type: Real
+// 3: input y2.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+// 4: input y1.SeedNLSJac1:STATE_DER()  type: Real unreplaceable
+//
+// Create symbolic Jacobians from:
+// Independent Variables
+// ========================================
+// 1: x1:VARIABLE()  type: Real
+// 2: x2:VARIABLE()  type: Real
+// Dependent Variables
+// ========================================
+// 1: $res_NLSJac2_1:VARIABLE()  type: Real
+// 2: $res_NLSJac2_2:VARIABLE()  type: Real
+// Basic equation system:
+// differentiated equations
+// ========================================
+// 1/1 (1): $res_NLSJac2_2 := x1 + sin(x1) + sin(x2) - x2
+// 2/2 (1): $res_NLSJac2_1 := -1.0 + x1 + sin(x1) + x2 + sin(x2)
+// related variables
+// ========================================
+// 1: $res_NLSJac2_2:VARIABLE()  type: Real
+// 2: $res_NLSJac2_1:VARIABLE()  type: Real
+// known variables
+// ========================================
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res_NLSJac2_2.$pDERNLSJac2.dummyVarNLSJac2:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): $res_NLSJac2_2.$pDERNLSJac2.dummyVarNLSJac2 = x1.SeedNLSJac2 + cos(x1) * x1.SeedNLSJac2 + cos(x2) * x2.SeedNLSJac2 - x2.SeedNLSJac2   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2 = x1.SeedNLSJac2 + cos(x1) * x1.SeedNLSJac2 + x2.SeedNLSJac2 * (1.0 + cos(x2))   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: input x1.SeedNLSJac2:STATE_DER()  type: Real unreplaceable
+// 2: input x2.SeedNLSJac2:STATE_DER()  type: Real unreplaceable
+// 3: $res_NLSJac2_2:VARIABLE()  type: Real
+// 4: $res_NLSJac2_1:VARIABLE()  type: Real
+//
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: $res_NLSJac2_2.$pDERNLSJac2.dummyVarNLSJac2:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2:VARIABLE()  type: Real unreplaceable
+// 3: $cse6:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: $cse5:VARIABLE(protected = true )  type: Real unreplaceable
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): $res_NLSJac2_2.$pDERNLSJac2.dummyVarNLSJac2 = x1.SeedNLSJac2 + $cse5 * x1.SeedNLSJac2 + $cse6 * x2.SeedNLSJac2 - x2.SeedNLSJac2   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac2_1.$pDERNLSJac2.dummyVarNLSJac2 = x1.SeedNLSJac2 + $cse5 * x1.SeedNLSJac2 + x2.SeedNLSJac2 * (1.0 + $cse6)   [dynamic |0|0|0|0|]
+// 3/3 (1): $cse6 = cos(x2)   [unknown |0|0|0|0|]
+// 4/4 (1): $cse5 = cos(x1)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 4 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+//
+//
+// StrongComponents
+// ========================================
+// {4:4}
+// {3:3}
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: $res_NLSJac2_1:VARIABLE()  type: Real
+// 2: $res_NLSJac2_2:VARIABLE()  type: Real
+// 3: input x2.SeedNLSJac2:STATE_DER()  type: Real unreplaceable
+// 4: input x1.SeedNLSJac2:STATE_DER()  type: Real unreplaceable
+//
+// Create symbolic Jacobians from:
+// Independent Variables
+// ========================================
+// 1: y1:VARIABLE()  type: Real
+// 2: y2:VARIABLE()  type: Real
+// Dependent Variables
+// ========================================
+// 1: $res_LSJac3_1:VARIABLE()  type: Real
+// 2: $res_LSJac3_2:VARIABLE()  type: Real
+// Basic equation system:
+// differentiated equations
+// ========================================
+// 1/1 (1): $res_LSJac3_2 := 2.0 * y1
+// 2/2 (1): $res_LSJac3_1 := -1.0 + 2.0 * (y1 + y2)
+// related variables
+// ========================================
+// 1: $res_LSJac3_2:VARIABLE()  type: Real
+// 2: $res_LSJac3_1:VARIABLE()  type: Real
+// known variables
+// ========================================
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res_LSJac3_2.$pDERLSJac3.dummyVarLSJac3:VARIABLE()  type: Real unreplaceable
+// 2: $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): $res_LSJac3_2.$pDERLSJac3.dummyVarLSJac3 = 2.0 * y1.SeedLSJac3   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3 = 2.0 * (y1.SeedLSJac3 + y2.SeedLSJac3)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: input y1.SeedLSJac3:STATE_DER()  type: Real unreplaceable
+// 2: input y2.SeedLSJac3:STATE_DER()  type: Real unreplaceable
+// 3: $res_LSJac3_2:VARIABLE()  type: Real
+// 4: $res_LSJac3_1:VARIABLE()  type: Real
+//
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (2)
+// ========================================
+// 1: $res_LSJac3_2.$pDERLSJac3.dummyVarLSJac3:VARIABLE()  type: Real unreplaceable
+// 2: $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (2, 2)
+// ========================================
+// 1/1 (1): $res_LSJac3_2.$pDERLSJac3.dummyVarLSJac3 = 2.0 * y1.SeedLSJac3   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_LSJac3_1.$pDERLSJac3.dummyVarLSJac3 = 2.0 * (y1.SeedLSJac3 + y2.SeedLSJac3)   [dynamic |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 2 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+//
+//
+// StrongComponents
+// ========================================
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (4)
+// ========================================
+// 1: $res_LSJac3_1:VARIABLE()  type: Real
+// 2: $res_LSJac3_2:VARIABLE()  type: Real
+// 3: input y2.SeedLSJac3:STATE_DER()  type: Real unreplaceable
+// 4: input y1.SeedLSJac3:STATE_DER()  type: Real unreplaceable
+//
+// Create symbolic Jacobians from:
+// Independent Variables
+// ========================================
+// 1: x1:VARIABLE()  type: Real
+// 2: $cse9:VARIABLE(protected = true )  type: Real unreplaceable
+// 3: $cse10:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: x2:VARIABLE()  type: Real
+// Dependent Variables
+// ========================================
+// 1: $res_NLSJac4_1:VARIABLE()  type: Real
+// 2: $res_NLSJac4_2:VARIABLE()  type: Real
+// 3: $res_NLSJac4_3:VARIABLE()  type: Real
+// 4: $res_NLSJac4_4:VARIABLE()  type: Real
+// Basic equation system:
+// differentiated equations
+// ========================================
+// 1/1 (1): $res_NLSJac4_4 := -1.0 + x1 + $cse9 + x2 + $cse10
+// 2/2 (1): $res_NLSJac4_3 := sin(x1) - $cse9
+// 3/3 (1): $res_NLSJac4_2 := x1 + $cse9 + $cse10 - x2
+// 4/4 (1): $res_NLSJac4_1 := sin(x2) - $cse10
+// related variables
+// ========================================
+// 1: $res_NLSJac4_4:VARIABLE()  type: Real
+// 2: $res_NLSJac4_3:VARIABLE()  type: Real
+// 3: $res_NLSJac4_2:VARIABLE()  type: Real
+// 4: $res_NLSJac4_1:VARIABLE()  type: Real
+// known variables
+// ========================================
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: $res_NLSJac4_4.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac4_3.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+// 3: $res_NLSJac4_2.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+// 4: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): $res_NLSJac4_4.$pDERNLSJac4.dummyVarNLSJac4 = x1.SeedNLSJac4 + $cse9.SeedNLSJac4 + x2.SeedNLSJac4 + $cse10.SeedNLSJac4   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac4_3.$pDERNLSJac4.dummyVarNLSJac4 = cos(x1) * x1.SeedNLSJac4 - $cse9.SeedNLSJac4   [unknown |0|0|0|0|]
+// 3/3 (1): $res_NLSJac4_2.$pDERNLSJac4.dummyVarNLSJac4 = x1.SeedNLSJac4 + $cse9.SeedNLSJac4 + $cse10.SeedNLSJac4 - x2.SeedNLSJac4   [dynamic |0|0|0|0|]
+// 4/4 (1): $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 = cos(x2) * x2.SeedNLSJac4 - $cse10.SeedNLSJac4   [unknown |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (8)
+// ========================================
+// 1: input x1.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
+// 2: input $cse9.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
+// 3: input $cse10.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
+// 4: input x2.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
+// 5: $res_NLSJac4_4:VARIABLE()  type: Real
+// 6: $res_NLSJac4_3:VARIABLE()  type: Real
+// 7: $res_NLSJac4_2:VARIABLE()  type: Real
+// 8: $res_NLSJac4_1:VARIABLE()  type: Real
+//
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (6)
+// ========================================
+// 1: $res_NLSJac4_4.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac4_3.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+// 3: $res_NLSJac4_2.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+// 4: $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4:VARIABLE()  type: Real unreplaceable
+// 5: $cse12:VARIABLE(protected = true )  type: Real unreplaceable
+// 6: $cse11:VARIABLE(protected = true )  type: Real unreplaceable
+//
+//
+// Equations (6, 6)
+// ========================================
+// 1/1 (1): $res_NLSJac4_4.$pDERNLSJac4.dummyVarNLSJac4 = x1.SeedNLSJac4 + $cse9.SeedNLSJac4 + x2.SeedNLSJac4 + $cse10.SeedNLSJac4   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac4_3.$pDERNLSJac4.dummyVarNLSJac4 = $cse11 * x1.SeedNLSJac4 - $cse9.SeedNLSJac4   [unknown |0|0|0|0|]
+// 3/3 (1): $res_NLSJac4_2.$pDERNLSJac4.dummyVarNLSJac4 = x1.SeedNLSJac4 + $cse9.SeedNLSJac4 + $cse10.SeedNLSJac4 - x2.SeedNLSJac4   [dynamic |0|0|0|0|]
+// 4/4 (1): $res_NLSJac4_1.$pDERNLSJac4.dummyVarNLSJac4 = $cse12 * x2.SeedNLSJac4 - $cse10.SeedNLSJac4   [unknown |0|0|0|0|]
+// 5/5 (1): $cse12 = cos(x2)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse11 = cos(x1)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 5
+// var 6 is solved in eqn 6
+//
+//
+// StrongComponents
+// ========================================
+// {6:6}
+// {5:5}
+// {4:4}
+// {3:3}
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (8)
+// ========================================
+// 1: $res_NLSJac4_1:VARIABLE()  type: Real
+// 2: $res_NLSJac4_2:VARIABLE()  type: Real
+// 3: $res_NLSJac4_3:VARIABLE()  type: Real
+// 4: $res_NLSJac4_4:VARIABLE()  type: Real
+// 5: input x2.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
+// 6: input $cse10.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
+// 7: input $cse9.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
+// 8: input x1.SeedNLSJac4:STATE_DER()  type: Real unreplaceable
+//
+// Create symbolic Jacobians from:
+// Independent Variables
+// ========================================
+// 1: y1:VARIABLE()  type: Real
+// 2: $cse7:VARIABLE(protected = true )  type: Real unreplaceable
+// 3: $cse8:VARIABLE(protected = true )  type: Real unreplaceable
+// 4: y2:VARIABLE()  type: Real
+// Dependent Variables
+// ========================================
+// 1: $res_NLSJac5_1:VARIABLE()  type: Real
+// 2: $res_NLSJac5_2:VARIABLE()  type: Real
+// 3: $res_NLSJac5_3:VARIABLE()  type: Real
+// 4: $res_NLSJac5_4:VARIABLE()  type: Real
+// Basic equation system:
+// differentiated equations
+// ========================================
+// 1/1 (1): $res_NLSJac5_4 := -1.0 + y1 + $cse7 + y2 + $cse8
+// 2/2 (1): $res_NLSJac5_3 := sin(y1) - $cse7
+// 3/3 (1): $res_NLSJac5_2 := y1 + $cse7 + $cse8 - y2
+// 4/4 (1): $res_NLSJac5_1 := sin(y2) - $cse8
+// related variables
+// ========================================
+// 1: $res_NLSJac5_4:VARIABLE()  type: Real
+// 2: $res_NLSJac5_3:VARIABLE()  type: Real
+// 3: $res_NLSJac5_2:VARIABLE()  type: Real
+// 4: $res_NLSJac5_1:VARIABLE()  type: Real
+// known variables
+// ========================================
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: $res_NLSJac5_4.$pDERNLSJac5.dummyVarNLSJac5:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac5_3.$pDERNLSJac5.dummyVarNLSJac5:VARIABLE()  type: Real unreplaceable
+// 3: $res_NLSJac5_2.$pDERNLSJac5.dummyVarNLSJac5:VARIABLE()  type: Real unreplaceable
+// 4: $res_NLSJac5_1.$pDERNLSJac5.dummyVarNLSJac5:VARIABLE()  type: Real unreplaceable
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): $res_NLSJac5_4.$pDERNLSJac5.dummyVarNLSJac5 = y1.SeedNLSJac5 + $cse7.SeedNLSJac5 + y2.SeedNLSJac5 + $cse8.SeedNLSJac5   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac5_3.$pDERNLSJac5.dummyVarNLSJac5 = cos(y1) * y1.SeedNLSJac5 - $cse7.SeedNLSJac5   [unknown |0|0|0|0|]
+// 3/3 (1): $res_NLSJac5_2.$pDERNLSJac5.dummyVarNLSJac5 = y1.SeedNLSJac5 + $cse7.SeedNLSJac5 + $cse8.SeedNLSJac5 - y2.SeedNLSJac5   [dynamic |0|0|0|0|]
+// 4/4 (1): $res_NLSJac5_1.$pDERNLSJac5.dummyVarNLSJac5 = cos(y2) * y2.SeedNLSJac5 - $cse8.SeedNLSJac5   [unknown |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (8)
+// ========================================
+// 1: input y1.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
+// 2: input $cse7.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
+// 3: input $cse8.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
+// 4: input y2.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
+// 5: $res_NLSJac5_4:VARIABLE()  type: Real
+// 6: $res_NLSJac5_3:VARIABLE()  type: Real
+// 7: $res_NLSJac5_2:VARIABLE()  type: Real
+// 8: $res_NLSJac5_1:VARIABLE()  type: Real
+//
+// Symbolic Jacobian:
+//
+// unknown partition
+// ========================================
+//
+// Variables (6)
+// ========================================
+// 1: $res_NLSJac5_4.$pDERNLSJac5.dummyVarNLSJac5:VARIABLE()  type: Real unreplaceable
+// 2: $res_NLSJac5_3.$pDERNLSJac5.dummyVarNLSJac5:VARIABLE()  type: Real unreplaceable
+// 3: $res_NLSJac5_2.$pDERNLSJac5.dummyVarNLSJac5:VARIABLE()  type: Real unreplaceable
+// 4: $res_NLSJac5_1.$pDERNLSJac5.dummyVarNLSJac5:VARIABLE()  type: Real unreplaceable
+// 5: $cse14:VARIABLE(protected = true )  type: Real unreplaceable
+// 6: $cse13:VARIABLE(protected = true )  type: Real unreplaceable
+//
+//
+// Equations (6, 6)
+// ========================================
+// 1/1 (1): $res_NLSJac5_4.$pDERNLSJac5.dummyVarNLSJac5 = y1.SeedNLSJac5 + $cse7.SeedNLSJac5 + y2.SeedNLSJac5 + $cse8.SeedNLSJac5   [dynamic |0|0|0|0|]
+// 2/2 (1): $res_NLSJac5_3.$pDERNLSJac5.dummyVarNLSJac5 = $cse13 * y1.SeedNLSJac5 - $cse7.SeedNLSJac5   [unknown |0|0|0|0|]
+// 3/3 (1): $res_NLSJac5_2.$pDERNLSJac5.dummyVarNLSJac5 = y1.SeedNLSJac5 + $cse7.SeedNLSJac5 + $cse8.SeedNLSJac5 - y2.SeedNLSJac5   [dynamic |0|0|0|0|]
+// 4/4 (1): $res_NLSJac5_1.$pDERNLSJac5.dummyVarNLSJac5 = $cse14 * y2.SeedNLSJac5 - $cse8.SeedNLSJac5   [unknown |0|0|0|0|]
+// 5/5 (1): $cse14 = cos(y2)   [unknown |0|0|0|0|]
+// 6/6 (1): $cse13 = cos(y1)   [unknown |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 6 variables and equations
+// var 1 is solved in eqn 1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 5
+// var 6 is solved in eqn 6
+//
+//
+// StrongComponents
+// ========================================
+// {6:6}
+// {5:5}
+// {4:4}
+// {3:3}
+// {2:2}
+// {1:1}
+//
+//
+//
+// BackendDAEType: jacobian
+//
+//
+// Known variables only depending on parameters and constants - globalKnownVars (8)
+// ========================================
+// 1: $res_NLSJac5_1:VARIABLE()  type: Real
+// 2: $res_NLSJac5_2:VARIABLE()  type: Real
+// 3: $res_NLSJac5_3:VARIABLE()  type: Real
+// 4: $res_NLSJac5_4:VARIABLE()  type: Real
+// 5: input y2.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
+// 6: input $cse8.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
+// 7: input $cse7.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
+// 8: input y1.SeedNLSJac5:STATE_DER()  type: Real unreplaceable
+//
+// {"TestJacobian_6328.Test","TestJacobian_6328.Test_init.xml"}
+// 0
+// "LOG_SUCCESS       | info    | The initialization finished successfully with 3 homotopy steps.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// endResult

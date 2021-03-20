@@ -78,7 +78,7 @@ import FlatModel = NFFlatModel;
 import Flatten = NFFlatten;
 import Global;
 import InstUtil = NFInstUtil;
-import InteractiveUtil;
+import Interactive;
 import List;
 import Lookup = NFLookup;
 import MetaModelica.Dangerous;
@@ -149,7 +149,7 @@ protected
   list<Absyn.ElementArg> el = {};
   list<String> stringLst = {};
   Absyn.Exp absynExp;
-  Expression exp;
+  Expression exp, save;
   DAE.Exp dexp;
   list<Absyn.ComponentItem> items;
   Option<Absyn.ConstrainClass> cc;
@@ -226,7 +226,12 @@ algorithm
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
               exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
               (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
-              // exp := NFCeval.evalExp(exp);
+              save := exp;
+              try
+                exp := NFCeval.evalExp(save);
+              else
+                exp := save;
+              end try;
               exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
               str := str + ", " + Expression.toString(exp);
             else
@@ -235,6 +240,11 @@ algorithm
           end if;
         then
           str;
+
+      case Absyn.MODIFICATION(
+          path = Absyn.IDENT(annName),
+          modification = SOME(Absyn.CLASSMOD(_, _)))
+        then stringAppendList({annName, "(error)"});
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
         algorithm
@@ -257,6 +267,9 @@ algorithm
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           str;
+
+      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
+        then stringAppendList({annName, "(error)"});
 
     end matchcontinue;
 
@@ -317,12 +330,13 @@ protected
   list<Absyn.ComponentItem> items;
   Option<Absyn.ConstrainClass> cc;
   SourceInfo info;
-  list<Absyn.ElementArg> mod;
+  list<Absyn.ElementArg> mod, anns;
   Absyn.EqMod eqmod;
   SCode.Mod smod;
   DAE.DAElist dae;
   Type ty;
   Variability var;
+  Option<Absyn.Comment> cmt;
 algorithm
   // handle the annotations
   for i in inElements loop
@@ -335,6 +349,25 @@ algorithm
 
       case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
         then {}::elArgs;
+
+      case Absyn.ELEMENT(specification = Absyn.CLASSDEF(
+           class_ = Absyn.CLASS(body = Absyn.DERIVED(comment = cmt))),
+           constrainClass = cc)
+        algorithm
+          anns := match cmt
+            case SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(anns))))
+              then anns;
+            else {};
+          end match;
+        then
+          listAppend(anns, AbsynUtil.getAnnotationsFromConstraintClass(cc))::elArgs;
+
+      case Absyn.ELEMENT(specification = Absyn.COMPONENTS())
+        then {} :: elArgs;
+
+      case Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = Absyn.CLASS(body = Absyn.DERIVED())))
+        then {} :: elArgs;
+
 
       else elArgs;
     end matchcontinue;
@@ -402,7 +435,7 @@ algorithm
 
       case Absyn.MODIFICATION(
           path = Absyn.IDENT(annName),
-          modification = SOME(Absyn.CLASSMOD(_, Absyn.NOMOD())))
+          modification = SOME(Absyn.CLASSMOD(_, _)))
         then stringAppendList({annName, "(error)"});
 
       case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
@@ -426,6 +459,9 @@ algorithm
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           stringAppendList({annName, "(", str, ")"});
+
+      case Absyn.MODIFICATION(path = Absyn.IDENT(annName), modification = NONE(), info = info)
+        then stringAppendList({annName, "(error)"});
 
     end matchcontinue;
 
@@ -577,7 +613,7 @@ algorithm
     (_, scode_builtin) := FBuiltin.getInitialFunctions();
     program := AbsynToSCode.translateAbsyn2SCode(absynProgram);
     program := listAppend(scode_builtin, program);
-    placementProgram := InteractiveUtil.modelicaAnnotationProgram(Config.getAnnotationVersion());
+    placementProgram := Interactive.modelicaAnnotationProgram(Config.getAnnotationVersion());
     graphicProgramSCode := AbsynToSCode.translateAbsyn2SCode(placementProgram);
     program := listAppend(graphicProgramSCode, program);
 
@@ -624,9 +660,6 @@ algorithm
   // Look up the class to instantiate and mark it as the root class.
   cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
-
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
 
   // Instantiate the class.
   inst_cls := NFInst.instantiate(cls, context = NFInstContext.RELAXED);
@@ -680,12 +713,8 @@ algorithm
   flat_model := EvalConstants.evaluate(flat_model);
   flat_model := UnitCheck.checkUnits(flat_model);
   flat_model := SimplifyModel.simplify(flat_model);
+  flat_model := Package.collectConstants(flat_model);
   funcs := Flatten.collectFunctions(flat_model);
-
-  // Collect package constants that couldn't be substituted with their values
-  // (e.g. because they where used with non-constant subscripts), and add them
-  // to the model.
-  flat_model := Package.collectConstants(flat_model, funcs);
 
   // Scalarize array components in the flat model.
   if Flags.isSet(Flags.NF_SCALARIZE) then
@@ -767,12 +796,8 @@ algorithm
   cls := Lookup.lookupClassName(classPath, top, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
-
   // Expand the class.
   expanded_cls := NFInst.expand(cls);
-  NFInst.insertGeneratedInners(expanded_cls, top, NFInstContext.RELAXED);
 
   if Flags.isSet(Flags.EXEC_STAT) then
     execStat("NFApi.frontEndLookup_dispatch("+ name +")");

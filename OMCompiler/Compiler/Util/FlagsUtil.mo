@@ -243,6 +243,7 @@ constant list<Flags.DebugFlag> allDebugFlags = {
   Flags.ARRAY_CONNECT,
   Flags.COMBINE_SUBSCRIPTS,
   Flags.ZMQ_LISTEN_TO_ALL,
+  Flags.DUMP_CONVERSION_RULES,
   Flags.DUMP_SIMPLIFY,
   Flags.DUMP_BACKEND_CLOCKS,
   Flags.DUMP_SET_BASED_GRAPHS
@@ -1841,6 +1842,9 @@ function flagDataString
   output String str;
 algorithm
   str := match flagData
+    local
+      Integer v;
+
     case Flags.BOOL_FLAG() then boolString(flagData.data);
     case Flags.INT_FLAG() then intString(flagData.data);
     case Flags.INT_LIST_FLAG()
@@ -1849,7 +1853,17 @@ algorithm
     case Flags.REAL_FLAG() then realString(flagData.data);
     case Flags.STRING_FLAG() then flagData.data;
     case Flags.STRING_LIST_FLAG() then stringDelimitList(flagData.data, ",");
-    case Flags.ENUM_FLAG() then Util.tuple21(listGet(flagData.validValues, flagData.data));
+    case Flags.ENUM_FLAG()
+      algorithm
+        for vt in flagData.validValues loop
+          (str, v) := vt;
+          if v == flagData.data then
+            return;
+          end if;
+        end for;
+      then
+        "";
+
     else "";
   end match;
 end flagDataString;
@@ -1864,6 +1878,7 @@ protected
   array<Flags.FlagData> config_flags;
   String name;
   list<String> strl = {};
+  Boolean fvalue;
 algorithm
   try
     Flags.FLAGS(debugFlags = debug_flags, configFlags = config_flags) := loadFlags(false);
@@ -1883,8 +1898,10 @@ algorithm
   end for;
 
   for f in allDebugFlags loop
-    if f.default <> debug_flags[f.index] then
-      strl := f.name :: strl;
+    fvalue := debug_flags[f.index];
+    if f.default <> fvalue then
+      name := if fvalue then f.name else "no" + f.name;
+      strl := name :: strl;
     end if;
   end for;
 

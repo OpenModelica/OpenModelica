@@ -76,7 +76,6 @@ public:
   static QString txtFileTypes;
   static QString figaroFileTypes;
   static QString visualizationFileTypes;
-  static QString omsFileTypes;
   static QString subModelFileTypes;
   static int treeIndentation;
   static QSize iconSize;
@@ -151,6 +150,7 @@ public:
   static QString error;
   static QString chooseFile;
   static QString chooseFiles;
+  static QString saveFile;
   static QString attributes;
   static QString properties;
   static QString add;
@@ -211,6 +211,7 @@ public:
   static QString resetZoom;
   static QString zoomIn;
   static QString zoomOut;
+  static QString fitToDiagram;
   static QString loading;
   static QString question;
   static QString search;
@@ -420,7 +421,6 @@ public:
   static QString stopTime;
   static QString status;
   static QString speed;
-  static QString instantiateOMSModelTip;
   static QString terminateInstantiation;
   static QString terminateInstantiationTip;
   static QString archivedSimulations;

@@ -204,7 +204,7 @@ getErrorString();
 //
 // -Passed
 //
-// Condition-5 "SET_S should be square "
+// Condition-5 "SET_S should be square"
 // ==========================================================================
 // -Passed
 //  Set_S has 2 equations and 2 variables
@@ -219,7 +219,6 @@ getErrorString();
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
-// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// "Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
 // "
 // endResult

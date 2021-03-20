@@ -14,7 +14,7 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ -I$(builddir_inc)/c/suitesparse/Include/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC
+CPPFLAGS = -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 # CXXFLAGS can include everything as before. For FMI we need to use relative paths since
 # automatic builds might not add the -I., etc
@@ -94,6 +94,7 @@ RUNTIMESIMSOLVER_HEADERS = ./simulation/solver/cvode_solver.h \
 ./simulation/solver/perform_simulation.c.inc \
 ./simulation/solver/real_time_sync.h \
 ./simulation/solver/solver_main.h \
+./simulation/solver/spatialDistribution.h \
 ./simulation/solver/stateset.h \
 ./simulation/solver/sundials_error.h \
 ./simulation/solver/synchronous.h
@@ -142,6 +143,7 @@ RUNTIMEUTIL_HEADERS = \
 ./util/utility.h \
 ./util/varinfo.h \
 ./util/list.h \
+./util/doubleEndedList.h \
 ./util/rational.h \
 ./util/modelica_string_lit.h \
 ./util/omc_init.h
@@ -296,19 +298,19 @@ install: bootstrap-dependencies $(LIBSIMULATION) $(LIBFMIRUNTIME) $(ALL_OBJS) fm
 	cp -p $(LIBSIMULATION) $(LIBFMIRUNTIME) $(LIBSIMULATIONFMI) $(builddir_lib)
 	# FMI runtime libs
 	test ! -f libSimulationRuntimeC.bc || cp libSimulationRuntimeC.bc $(builddir_lib)/emcc/libSimulationRuntimeC.so
-	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.0.dylib @rpath/libsundials_idas.0.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.2.dylib @rpath/libsundials_ida.2.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.2.dylib @rpath/libsundials_cvodes.2.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.1.dylib @rpath/libsundials_cvode.1.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.4.dylib @rpath/libsundials_idas.4.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.5.dylib @rpath/libsundials_ida.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.5.dylib @rpath/libsundials_cvodes.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.5.dylib @rpath/libsundials_cvode.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(builddir_lib)/$(LIBFMIRUNTIME)
 	# C runtime libs
-	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.0.dylib @rpath/libsundials_idas.0.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.2.dylib @rpath/libsundials_ida.2.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.2.dylib @rpath/libsundials_cvodes.2.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.1.dylib @rpath/libsundials_cvode.1.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.0.dylib @rpath/libsundials_nvecserial.0.dylib $(builddir_lib)/$(LIBSIMULATION)
-	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.1.dylib @rpath/libsundials_kinsol.1.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_idas.4.dylib @rpath/libsundials_idas.4.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_ida.5.dylib @rpath/libsundials_ida.5.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_cvodes.5.dylib @rpath/libsundials_cvodes.5.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_cvode.5.dylib @rpath/libsundials_cvode.5.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_nvecserial.5.dylib @rpath/libsundials_nvecserial.5.dylib $(builddir_lib)/$(LIBSIMULATION)
+	test ! `uname` = Darwin || install_name_tool -change libsundials_kinsol.5.dylib @rpath/libsundials_kinsol.5.dylib $(builddir_lib)/$(LIBSIMULATION)
 	test ! `uname` = Darwin || install_name_tool -change liblis.dylib @rpath/liblis.dylib $(builddir_lib)/$(LIBSIMULATION)
 	# copy fmi stuff
 	mkdir -p $(builddir_inc)/c/fmi-export

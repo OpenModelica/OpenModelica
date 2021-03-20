@@ -1,6 +1,7 @@
 SLOWLOGS = \
 bootstrapping.log \
 msl31.log \
+msl40simulation.log \
 msl32simulation.log \
 msl32simulation_cpp_mini.log \
 simulationmodelicamsl22.log \
@@ -39,7 +40,8 @@ flatteningBuildings.log \
 buildings.log \
 requirements.log \
 scalable.log \
-device.log
+device.log \
+ffi.log
 
 SIMULATIONLOGS = \
 linearization.log \
@@ -71,6 +73,7 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
+simulationspartialDistribution.log \
 simulationtypes.log \
 simulationmodelicamsl22.log \
 msl31mediasimulation.log \
@@ -123,6 +126,7 @@ simulationothers.log \
 simulationpackages.log \
 simulationrecords.log \
 simulationsolver.log \
+simulationspartialDistribution.log \
 simulationtypes.log \
 modelicaasserts.log \
 modelicaalgorithms-functions.log \
@@ -373,6 +377,9 @@ simulationrecords.log: omc-diff
 simulationsolver.log: omc-diff
 	$(MAKE) -C simulation/modelica/solver -f Makefile test > $@
 	@echo $@ done
+simulationspartialDistribution.log: omc-diff
+	$(MAKE) -C simulation/modelica/spatialDistribution -f Makefile test > $@
+	@echo $@ done
 simulationtypes.log: omc-diff
 	$(MAKE) -C simulation/modelica/types -f Makefile test > $@
 	@echo $@ done
@@ -453,6 +460,9 @@ msl22mechanics.log: omc-diff
 	@echo $@ done
 biochem.log: omc-diff
 	$(MAKE) -C flattening/libraries/biochem -f Makefile test > $@
+	@echo $@ done
+msl40simulation.log: omc-diff
+	$(MAKE) -C simulation/libraries/msl40 -f Makefile test > $@
 	@echo $@ done
 msl32simulation.log: omc-diff
 	$(MAKE) -C simulation/libraries/msl32 -f Makefile test > $@
@@ -611,6 +621,9 @@ device.log: omc-diff
 flatmodelica.log: omc-diff
 	$(MAKE) -C openmodelica/flatmodelica -f Makefile test > $@
 	@echo $@ done
+ffi.log: omc-diff
+	$(MAKE) -C flattening/modelica/ffi -f Makefile test > $@
+	@echo $@ done
 
 failingtest: omc-diff
 	cd mofiles; $(MAKE) -f Makefile failingtest; \
@@ -709,6 +722,7 @@ clean_g_3 :
 	  $(MAKE) -C flattening/libraries/msl22 -f Makefile clean; \
 	fi
 	$(MAKE) -C flattening/libraries/biochem -f Makefile clean
+	$(MAKE) -C simulation/libraries/msl40 -f Makefile clean
 	$(MAKE) -C openmodelica/bootstrapping -f Makefile clean
 	$(MAKE) -C openmodelica/linearization -f Makefile clean
 	$(MAKE) -C openmodelica/modelicaML -f Makefile clean

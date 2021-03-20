@@ -91,8 +91,6 @@ void TLMCoSimulationThread::runManager()
   TLMCoSimulationOptions tlmCoSimulationOptions = mpTLMCoSimulationOutputWidget->getTLMCoSimulationOptions();
   QFileInfo fileInfo(tlmCoSimulationOptions.getFileName());
   mpManagerProcess->setWorkingDirectory(fileInfo.absoluteDir().absolutePath());
-  qRegisterMetaType<QProcess::ExitStatus>("QProcess::ExitStatus");
-  qRegisterMetaType<StringHandler::SimulationMessageType>("StringHandler::SimulationMessageType");
   connect(mpManagerProcess, SIGNAL(started()), SLOT(managerProcessStarted()));
   connect(mpManagerProcess, SIGNAL(readyReadStandardOutput()), SLOT(readManagerStandardOutput()));
   connect(mpManagerProcess, SIGNAL(readyReadStandardError()), SLOT(readManagerStandardError()));
@@ -182,7 +180,7 @@ void TLMCoSimulationThread::readManagerStandardError()
 void TLMCoSimulationThread::managerProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   setIsManagerProcessRunning(false);
-  QString exitCodeStr = tr("TLMManager process failed. Exited with code %1.\n").arg(QString::number(exitCode));
+  QString exitCodeStr = tr("TLMManager process failed. Exited with code %1.\n").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     emit sendManagerOutput(tr("TLMManager process finished successfully.\n"), StringHandler::OMEditInfo);
   } else if (mpManagerProcess->error() == QProcess::UnknownError) {
@@ -251,7 +249,7 @@ void TLMCoSimulationThread::monitorProcessFinished(int exitCode, QProcess::ExitS
   if (mpProgressFileTimer) {
     mpProgressFileTimer->stop();
   }
-  QString exitCodeStr = tr("TLMMonitor process failed. Exited with code %1.\n").arg(QString::number(exitCode));
+  QString exitCodeStr = tr("TLMMonitor process failed. Exited with code %1.\n").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     emit sendMonitorOutput(tr("TLMMonitor process finished successfully.\n"), StringHandler::OMEditInfo);
   } else if (mpMonitorProcess->error() == QProcess::UnknownError) {

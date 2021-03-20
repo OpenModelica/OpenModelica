@@ -1,0 +1,60 @@
+// name:     testSynchronousFMU_01.mos
+// status:   correct
+// teardown_command: rm -rf tempSynchronous01/
+//
+// Test FMU with clock from Modelica_Synchronous with MSL 3.2.3.
+
+
+setCommandLineOptions("--std=3.5"); getErrorString();
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(Modelica_Synchronous); getErrorString();
+
+echo(false);
+mkdir("tempSynchronous01/"); cd("tempSynchronous01/");
+echo(true);
+
+// Refernce results without FMU
+simulate(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, stopTime=0.25, outputFormat="csv"); getErrorString();
+
+// Build FMU with Synchronous features
+buildModelFMU(Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample, version="2.0", fmuType="me"); getErrorString();
+
+// Simulate FMU with OMSimulator
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu"
+  +" --stopTime=0.25 --tolerance=1e-8 --deleteTempFiles=true --tempDir=temp"
+  +" --resultFile=Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample-oms_res.csv --stripRoot=true --suppressPath=true --skipCSVHeader=true",
+  "testSynchronousFMU_systemCall.log"); getErrorString();
+//readFile("testSynchronousFMU_systemCall.log"); getErrorString();
+
+// Compare results
+diffSimulationResults(
+  "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample_res.csv",
+  "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample-oms_res.csv",
+  "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample_diff.csv",
+  1e-8, 1e-4, 0.002,
+  {"sample1.y"}); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// true
+// ""
+// true
+// record SimulationResult
+//     resultFile = "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample_res.csv",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.25, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample', options = '', outputFormat = 'csv', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// "Modelica_Synchronous.Examples.Elementary.ClockSignals.SubSample.fmu"
+// ""
+// 0
+// ""
+// (true,{})
+// ""
+// endResult

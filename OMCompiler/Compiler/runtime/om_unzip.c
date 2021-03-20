@@ -78,8 +78,7 @@ int om_unzip(const char *zipFileName, const char *pathToExtract, const char *des
     }
     filenameStart = filename + commonLength;
     const size_t filename_length = strlen(filenameStart);
-
-    if (strlen(filenameStart) < pathToExtractLen || (filenameStart[pathToExtractLen] != '\0' && filenameStart[pathToExtractLen] != '/') || 0 != strncmp(filenameStart, pathToExtract, pathToExtractLen)) {
+    if (pathToExtractLen && (strlen(filenameStart) < pathToExtractLen || (filenameStart[pathToExtractLen] != '\0' && filenameStart[pathToExtractLen] != '/') || 0 != strncmp(filenameStart, pathToExtract, pathToExtractLen))) {
       /* Do nothing; not a path we want to copy */
     } else if (filenameStart[ filename_length-1 ] == dir_delimter) {
       /* Directory */

@@ -1,0 +1,17 @@
+// name:     ArrayResult1
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.ErrorChecking.ArrayResult1); getErrorString();
+
+// Result:
+// true
+// ""
+// ""
+// "[flattening/modelica/ffi/FFITest/package.mo:262:5-266:21:writable] Error: The lhs (result) of the external function declaration has array type (Real[3]), but this is not allowed in the specification. You need to pass it as an input to the function (preferably also with a size()-expression to avoid out-of-bounds errors in the external call).
+// "
+// endResult

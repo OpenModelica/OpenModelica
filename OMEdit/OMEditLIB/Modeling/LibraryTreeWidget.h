@@ -154,13 +154,6 @@ public:
   const oms_external_tlm_model_info_t* getExternalTLMModelInfo() const {return mpExternalTLMModelInfo;}
   void setSubModelPath(QString subModelPath) {mSubModelPath = subModelPath;}
   QString getSubModelPath() const {return mSubModelPath;}
-  void setModelState(const oms_modelState_enu_t &modelState) {mModelState = modelState;}
-  /*!
-   * \brief isOMSModelInstantiated
-   * Returns true if OMSimulator model in oms_modelState_instantiated state.
-   * \return
-   */
-  bool isOMSModelInstantiated() const {return mModelState == oms_modelState_instantiated;}
   QString getTooltip() const;
   QIcon getLibraryTreeItemIcon() const;
   bool inRange(int lineNumber);
@@ -231,7 +224,6 @@ private:
   const oms_fmu_info_t *mpFMUInfo;
   const oms_external_tlm_model_info_t *mpExternalTLMModelInfo;
   QString mSubModelPath;
-  oms_modelState_enu_t mModelState;
 signals:
   void loaded(LibraryTreeItem *pLibraryTreeItem);
   void loadedForComponent();
@@ -320,7 +312,7 @@ public:
   bool unloadOMSModel(LibraryTreeItem *pLibraryTreeItem, bool doDelete = true, bool askQuestion = true);
   void getExpandedLibraryTreeItemsList(LibraryTreeItem *pLibraryTreeItem, QStringList *pExpandedLibraryTreeItemsList);
   void expandLibraryTreeItems(LibraryTreeItem *pLibraryTreeItem, QStringList expandedLibraryTreeItemsList);
-  void reLoadOMSimulatorModel(const QString &modelName, const QString &editedCref, const QString &snapShot);
+  void reLoadOMSimulatorModel(const QString &modelName, const QString &editedCref, const QString &snapShot, const QString &oldEditedCref, const QString &newEditedCref);
   bool unloadLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, bool doDeleteClass);
   bool removeLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   bool deleteTextFile(LibraryTreeItem *pLibraryTreeItem, bool askQuestion = true);
@@ -379,7 +371,6 @@ private:
   QAction *mpOpenClassAction;
   QAction *mpInformationAction;
   QAction *mpNewModelicaClassAction;
-  QAction *mpNewModelicaClassEmptyAction;
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveTotalAction;
@@ -417,7 +408,6 @@ private:
   QAction *mpGenerateVerificationScenariosAction;
   QAction *mpFetchInterfaceDataAction;
   QAction *mpTLMCoSimulationAction;
-  QAction *mpNewOMSimulatorModelEmptyAction;
   QAction *mpOMSRenameAction;
   QAction *mpUnloadOMSModelAction;
   void createActions();
@@ -430,7 +420,6 @@ public slots:
   void openClass();
   void openInformationDialog();
   void createNewModelicaClass();
-  void createNewModelicaClassEmpty();
   void saveClass();
   void saveAsClass();
   void saveTotalClass();
@@ -465,7 +454,6 @@ public slots:
   void generateVerificationScenarios();
   void fetchInterfaceData();
   void TLMSimulate();
-  void createNewOMSModelEmpty();
   void OMSRename();
   void unloadOMSModel();
 protected:
@@ -517,6 +505,7 @@ private:
   bool saveCompositeModelLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem, QString fileName);
   bool saveTotalLibraryTreeItemHelper(LibraryTreeItem *pLibraryTreeItem);
 public slots:
+  void scrollToActiveLibraryTreeItem();
   void searchClasses();
 };
 

@@ -7,8 +7,8 @@
 // type A = Real[2]; A[3] a; a should have [2][3] dimensions!
 // 
 
-loadModel(Modelica); getErrorString();
-loadModel(ModelicaServices); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+loadModel(ModelicaServices, {"3.2.3"}); getErrorString();
 loadFile("TypeTest.mo"); getErrorString();
 
 instantiateModel(TypeTest); getErrorString();

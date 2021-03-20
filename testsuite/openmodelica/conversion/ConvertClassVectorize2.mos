@@ -1,0 +1,29 @@
+// name:   ConvertClassVectorize2
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertClassVectorize2
+    A a;
+    B b;
+    C c;
+    D d;
+  end ConvertClassVectorize2;
+");
+
+convertPackage(ConvertClassVectorize2, "scripts/ConvertClassVectorize2.mos");
+getErrorString();
+list(ConvertClassVectorize2);
+
+// Result:
+// true
+// true
+// ""
+// "model ConvertClassVectorize2
+//   X a;
+//   Y b;
+//   C c;
+//   D d;
+// end ConvertClassVectorize2;"
+// endResult

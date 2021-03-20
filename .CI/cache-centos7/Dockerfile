@@ -1,4 +1,4 @@
-FROM docker.openmodelica.org/build-deps:el6.amd64
+FROM docker.openmodelica.org/build-deps:el7.amd64
 
 # Install git, zip
 RUN yum -y install git zip

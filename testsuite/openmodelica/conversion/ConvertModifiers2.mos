@@ -1,0 +1,27 @@
+// name:   ConvertModifiers2
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertModifiers2
+    model M
+      Modelica.Mechanics.MultiBody.Forces.WorldForce force(diameter = 1.0, animation = false);
+    end M;
+  end ConvertModifiers2;
+");
+
+convertPackage(ConvertModifiers2, "scripts/ConvertModifiers2.mos");
+getErrorString();
+list(ConvertModifiers2);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertModifiers2
+//   model M
+//     Modelica.Mechanics.MultiBody.Forces.WorldForce force(animation = false);
+//   end M;
+// end ConvertModifiers2;"
+// endResult

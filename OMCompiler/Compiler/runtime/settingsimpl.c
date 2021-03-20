@@ -67,7 +67,7 @@ static char* omc_installationPath = NULL;
 static char* omc_modelicaPath = NULL;
 static char* omc_userHome = NULL;
 
-extern char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimpl.c
+extern char* _replace(char* source_str,char* search_str,char* replace_str); //Defined in systemimplmisc.c
 
 static void commonSetEnvVar(const char *var, const char *value);
 

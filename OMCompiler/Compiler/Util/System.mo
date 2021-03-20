@@ -257,11 +257,14 @@ public function getLDFlags
 end getLDFlags;
 
 public function loadLibrary
+  "Loads and returns a handle to the library given by the filename. If the
+   filename is empty the returned handle will be for the whole program."
   input String inLib;
-  input Boolean inPrintDebug;
+  input Boolean relativePath "If the path is relative or absolute";
+  input Boolean printDebug;
   output Integer outLibHandle;
 
-  external "C" outLibHandle=System_loadLibrary(inLib, inPrintDebug) annotation(Library = "omcruntime");
+  external "C" outLibHandle=System_loadLibrary(inLib, relativePath, printDebug) annotation(Library = "omcruntime");
 end loadLibrary;
 
 public function lookupFunction

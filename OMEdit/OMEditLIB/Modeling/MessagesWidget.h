@@ -39,6 +39,8 @@
 
 #include <QTextBrowser>
 
+class SimulationOutputWidget;
+
 class MessageItem
 {
 public:
@@ -98,6 +100,14 @@ public slots:
   void clearAllTabsMessages();
 };
 
+class MessagesTabWidget : public QTabWidget
+{
+  Q_OBJECT
+public:
+  MessagesTabWidget(QWidget *pParent = 0);
+  void removeCloseButtonfromFixedTabs();
+};
+
 class MessagesWidget : public QWidget
 {
   Q_OBJECT
@@ -110,14 +120,14 @@ private:
   MessagesWidget(QWidget *pParent = 0);
 
   static MessagesWidget *mpInstance;
-  QTabWidget *mpMessagesTabWidget;
+  MessagesTabWidget *mpMessagesTabWidget;
   MessageWidget *mpAllMessageWidget;
   MessageWidget *mpNotificationMessageWidget;
   MessageWidget *mpWarningMessageWidget;
   MessageWidget *mpErrorMessageWidget;
+  QVector<QWidget*> mSimulationWidgetsVector;
 
   QStringList mSuppressMessagesList;
-
 public:
   static MessagesWidget* instance() {return mpInstance;}
   MessageWidget* getAllMessageWidget() {return mpAllMessageWidget;}
@@ -126,8 +136,13 @@ public:
   MessageWidget* getErrorMessageWidget() {return mpErrorMessageWidget;}
   void resetMessagesNumber();
   void applyMessagesSettings();
+  void addSimulationOutputTab(QWidget *pSimulationOutputTab, const QString &name, bool removeExisting = true);
+  int getSimulationOutputTabsSize();
+  SimulationOutputWidget* getSimulationOutputWidget(const QString &className);
 signals:
   void MessageAdded();
+private slots:
+  bool closeTab(int index);
 public slots:
   void addGUIMessage(MessageItem messageItem);
   void clearMessages();

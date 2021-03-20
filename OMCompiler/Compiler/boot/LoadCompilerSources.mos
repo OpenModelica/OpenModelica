@@ -459,6 +459,7 @@ if true then /* Suppress output */
     "../Script/MMToJuliaUtil.mo",
     "../Script/MMToJuliaKeywords.mo",
     "../Script/NFApi.mo",
+    "../Script/Conversion.mo",
 
     "../SimCode/HpcOmSimCodeMain.mo",
     "../SimCode/SerializeInitXML.mo",
@@ -512,6 +513,7 @@ if true then /* Suppress output */
     "../Util/DiffAlgorithm.mo",
     "../Util/DisjointSets.mo",
     "../Util/ExpandableArray.mo",
+    "../Util/FFI.mo",
     "../Util/FMI.mo",
     "../Util/FMIExt.mo",
     "../Util/GraphML.mo",

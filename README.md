@@ -82,6 +82,11 @@ If you have issues building you can try to clean and reset the repository using:
 > git submodule foreach --recursive git reset --hard
 > git submodule update --init --recursive
 ```
+To check your working copy status and the hashes of the submodules, use:
+```bash
+> git status
+> git submodule status --recursive
+```
 
 ### How to contribute to the OpenModelica Compiler
 

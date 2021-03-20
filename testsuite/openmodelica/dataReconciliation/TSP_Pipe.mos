@@ -894,7 +894,7 @@ getErrorString();
 //
 // -Passed
 //
-// Condition-5 "SET_S should be square "
+// Condition-5 "SET_S should be square"
 // ==========================================================================
 // -Passed
 //  Set_S has 6 equations and 6 variables
@@ -909,8 +909,7 @@ getErrorString();
 // stdout            | info    | DataReconciliation Completed!
 // "
 // end SimulationResult;
-// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
-// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// "Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).

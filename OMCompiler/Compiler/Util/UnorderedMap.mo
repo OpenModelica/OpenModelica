@@ -212,6 +212,14 @@ public
   protected
     Integer hash, index;
     list<Integer> bucket;
+
+    function update_indices
+      input list<Integer> bucket;
+      input Integer removedIndex;
+      output list<Integer> outBucket;
+    algorithm
+      outBucket := list(if i > removedIndex then i-1 else i for i in bucket);
+    end update_indices;
   algorithm
     (index, hash) := find(key, map);
     removed := index > 0;
@@ -229,6 +237,9 @@ public
     // Remove the key/value from the arrays.
     Vector.remove(map.keys, index);
     Vector.remove(map.values, index);
+
+    // Update the indices in the buckets.
+    Vector.apply(map.buckets, function update_indices(removedIndex = index));
   end remove;
 
   function get
@@ -258,6 +269,27 @@ public
       fail();
     end if;
   end getSafe;
+
+  function getOrFail
+    "Return the value associated with the given key, or fails if no such value exists."
+    input K key;
+    input UnorderedMap<K, V> map;
+    output V value;
+  algorithm
+    value := Vector.get(map.values, find(key, map));
+  end getOrFail;
+
+  function getOrDefault
+    input K key;
+    input UnorderedMap<K, V> map;
+    input V default;
+    output V value;
+  protected
+    Integer index;
+  algorithm
+    index := find(key, map);
+    value := if index > 0 then Vector.getNoBounds(map.values, index) else default;
+  end getOrDefault;
 
   function getKey
     "Returns SOME(key) if the key exists in the map, otherwise NONE()."

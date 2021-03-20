@@ -4,7 +4,7 @@
 
 // use new inline method
 setCommandLineOptions("+inlineMethod=append");
-loadModel(Modelica);
+loadModel(Modelica, {"3.2.3"});
 getErrorString();
 loadString("
 model A
@@ -20,7 +20,7 @@ equation
   der(y) = cos(time*x);
   tmp0 = c.re;
   z = tmp0;
-  w = Modelica.ComplexMath.imag(z*Modelica.ComplexMath.conj(c2)); 
+  w = Modelica.ComplexMath.imag(z*Modelica.ComplexMath.conj(c2));
 end A;
 ");
 getErrorString();
@@ -40,7 +40,7 @@ val(z,{0,0.5,1.0});
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // {0.0,0.04147451142667286,0.3099044610647076}
 // endResult

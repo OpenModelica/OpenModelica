@@ -63,7 +63,7 @@ public
     KeyEq eqFn;
   end UNORDERED_SET;
 
-  function new
+  function new<T>
     "Creates a new set given a hash function, equality function, and optional
      desired bucket count. An approriate bucket count is
      Util.nextPrime(number of elements that will be added), but starting with a
@@ -79,6 +79,19 @@ public
     buckets := Mutable.create(arrayCreate(bucketCount, {}));
     set := UNORDERED_SET(buckets, Mutable.create(0), hash, keyEq);
   end new;
+
+  function fromList
+    input list<T> elements;
+    input Hash hash;
+    input KeyEq keyEq;
+    output UnorderedSet<T> set;
+  algorithm
+    set := new<T>(hash, keyEq, Util.nextPrime(listLength(elements)));
+
+    for e in elements loop
+      add(e, set);
+    end for;
+  end fromList;
 
   function copy
     "Returns a copy of the given set."
@@ -174,6 +187,18 @@ public
   algorithm
     outKey := find(key, set);
   end get;
+
+  function getOrFail
+    "Returns a key if it exists in the set, otherwise fails."
+    input T key;
+    input UnorderedSet<T> set;
+    output T outKey;
+  protected
+    Option<T> okey;
+  algorithm
+    okey := find(key, set);
+    SOME(outKey) := okey;
+  end getOrFail;
 
   function contains
     "Returns whether the given key exists in the set or not."

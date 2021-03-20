@@ -55,6 +55,7 @@ import List;
 import Matching;
 import Util;
 import System;
+import Settings;
 
 protected type ExtAdjacencyMatrixRow = tuple<Integer,list<Integer>>;
 protected type ExtAdjacencyMatrix = list<ExtAdjacencyMatrixRow>;
@@ -88,7 +89,7 @@ protected
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations;
+  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
 
   list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
@@ -166,7 +167,7 @@ algorithm
   end if;
 
   // Perform limited matching on the overdermined System to get subset of equations which are not matched to form the E-BLT
-  (match1, match2) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
+  (match1, match2, _, _, _) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
 
   BackendDump.dumpMatching(match1);
 
@@ -219,7 +220,7 @@ algorithm
   (adjacencyMatrix, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.adjacencyMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
 
   // Perform the matching on the new Square-System of equations
-  (match1, match2) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
+  (match1, match2, _, _, _) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
   BackendDump.dumpMatching(match1);
 
   s_BLTBlocks := Sorting.Tarjan(adjacencyMatrix, match1);  // run the tarjan algorithm to create the S-BLT on the Square-System
@@ -375,7 +376,11 @@ algorithm
   setS_Eq := getEquationsFromSBLTAndEBLT(setS, currentSystem.orderedEqs, e_BLT_EquationsWithIndex);
 
   // dump minimal SET-S equations
-  BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S_After_Minimal_Extraction");
+  if not listEmpty(tempSetS) then
+    BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S_After_Minimal_Extraction");
+  else
+    print("\nSET_S_After_Minimal_Extraction (0, 0)\n" + UNDERLINE +"\n\n");
+  end if;
 
   // prepare outdiff vars (i.e) variables of interest
   outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
@@ -400,6 +405,16 @@ algorithm
   dumpSetSVars(outOtherVars, "Unknown variables in SET_S ");
   //BackendDump.dumpVariables(BackendVariable.listVar(setSVars),"Unknown variables in SET_S_checks ");
   BackendDump.dumpVariables(BackendVariable.listVar(paramVars),"Parameters in SET_S");
+
+  // write set-C equation to HTML file
+  auxillaryConditionsFilename := shared.info.fileNamePrefix + "_AuxiliaryConditions.html";
+  auxillaryEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setC_Eq), "Auxiliary conditions");
+  System.writeFile(auxillaryConditionsFilename, auxillaryEquations);
+
+  // write set-S equation to HTML file
+  intermediateEquationsFilename := shared.info.fileNamePrefix + "_IntermediateEquations.html";
+  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations");
+  System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
   VerifyDataReconciliation(tempSetC, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq, shared);
 
@@ -446,11 +461,6 @@ algorithm
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outOtherEqns, "remaining equations in Set-S");
   modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
-
-  // write set-C equation to HTML file
-  auxillaryConditionsFilename := shared.info.fileNamePrefix + "_AuxiliaryConditions.html";
-  auxillaryEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setC_Eq), "Auxiliary conditions");
-  System.writeFile(auxillaryConditionsFilename, auxillaryEquations);
 
   // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
   outDAE := BackendDAE.DAE({currentSystem}, shared);
@@ -646,11 +656,15 @@ protected function dumpExtractedEquationsToHTML
   input String comment;
   output String outstring="";
 algorithm
-  outstring := "<html>\n<body>\n<h2>" + comment + "</h2>\n<ol>";
-  for eq in BackendEquation.equationList(eqs) loop
-    outstring := outstring + "\n" + "  <li>" + BackendDump.equationString(eq) + " </li>";
-  end for;
-  outstring := outstring + "\n</ol>\n</body>\n</html>";
+  if listEmpty(BackendEquation.equationList(eqs)) then
+    outstring := "The set of " + comment + " is empty.";
+  else
+    outstring := "<html>\n<body>\n<h2>" + comment + "</h2>\n<ol>";
+    for eq in BackendEquation.equationList(eqs) loop
+      outstring := outstring + "\n" + "  <li>" + BackendDump.equationString(eq) + " </li>";
+    end for;
+    outstring := outstring + "\n</ol>\n</body>\n</html>";
+  end if;
 end dumpExtractedEquationsToHTML;
 
 public function setBoundaryConditionEquationsAndVars
@@ -1811,9 +1825,10 @@ protected
   list<Integer> tmplistvar1, tmplistvar2, tmplistvar3, sets_eqs, sets_vars, extractedeqs;
   Integer eqnumber, varnumber;
   list<tuple<Integer,list<Integer>>> var_dependencytree, eq_dependencytree;
-  String str, resstr;
+  String str, resstr, condition1, condition2, condition3, condition4, condition5, auxilliaryConditions, varsToReconcile;
   list<BackendDAE.Var> var, convar;
   Boolean rule2 = true;
+  list<BackendDAE.Equation> condition1_eqs;
 algorithm
 
   print("\n\nAutomatic Verification Steps of DataReconciliation Algorithm"+ "\n" + UNDERLINE + "\n");
@@ -1822,15 +1837,22 @@ algorithm
   BackendDump.dumpVarList(var, "knownVariables:"+ dumplistInteger(listReverse(knowns)));
   print("-SET_C:"+ dumplistInteger(setc)+ "\n" + "-SET_S:" + dumplistInteger(sets) +"\n\n");
 
+  auxilliaryConditions := intString(listLength(setc));
+  varsToReconcile := intString(listLength(knowns));
+
   //Condition-1
+  condition1 := "Condition-1 \"SET_C and SET_S must not have no equations in common\" ";
+  print(condition1 + "\n" + UNDERLINE + "\n");
   matchedeq := List.intersectionOnTrue(setc, sets, intEq);
-  print("Condition-1 " + "\"SET_C and SET_S must not have no equations in common\"" + "\n" + UNDERLINE + "\n");
+
   if listEmpty(matchedeq) then
     print("-Passed\n\n");
   else
     print("-Failed\n");
-    BackendDump.dumpEquationList(List.map1r(matchedeq, BackendEquation.get, allEqs),"-Equations Found in SET_C and SET_S:" + dumplistInteger(matchedeq));
-    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 1- Failed : The system is ill-posed."});
+    condition1_eqs := List.map1r(matchedeq, BackendEquation.get, allEqs);
+    BackendDump.dumpEquationList(condition1_eqs, "Sets C and S have equations in common" + dumplistInteger(matchedeq));
+    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 1-Failed: SET_C and SET_S must not have no equations in common: The data reconciliation problem is ill-posed"});
+    generateCompileTimeHtmlReport(shared, "Internal Error: Condition 1-Failed: \"SET_C and SET_S must not have no equations in common\": The data reconciliation problem is ill-posed", auxilliaryConditions, varsToReconcile, condition1=("Sets C and S have equations in common", condition1_eqs));
     fail();
   end if;
 
@@ -1838,7 +1860,8 @@ algorithm
   (matchedknownssets, matchedunknownssets) := getVariableOccurence(sets, mExt, knowns);
 
   // Condition -2
-  print("Condition-2 " + "\"All variables of interest must be involved in SET_C or SET_S\"" + "\n" +UNDERLINE  +"\n");
+  condition2 := "Condition-2 \"All variables of interest must be involved in SET_C or SET_S\" ";
+  print(condition2 +  "\n" + UNDERLINE + "\n");
   (tmplist1, tmplist2, tmplist3) := List.intersection1OnTrue(matchedknownssetc, knowns, intEq);
 
   if listEmpty(tmplist3) then
@@ -1851,10 +1874,11 @@ algorithm
       str := dumplistInteger(tmplist2);
       print("-Failed\n");
       BackendDump.dumpVarList(List.map1r(tmplist2, BackendVariable.getVarAt, allVars), "knownVariables not Found:" + dumplistInteger(tmplist2));
-      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 2- Failed : The system is ill-posed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed"});
       rule2 := false;
       str := dumpToCsv("", List.map1r(tmplist2, BackendVariable.getVarAt, allVars));
       System.writeFile(shared.info.fileNamePrefix + "_NonReconcilcedVars.txt", str);
+      //generateCompileTimeHtmlReport(shared, "Condition 2-Failed: \"All variables of interest must be involved in SET_C or SET_S\": The data reconciliation problem is ill-posed", condition2 = ("Sets C and S does not have the following known variables", List.map1r(tmplist2, BackendVariable.getVarAt, allVars)));
       //fail();
     end if;
     if (rule2) then
@@ -1865,18 +1889,28 @@ algorithm
   end if;
 
   //Condition-3
-  print("Condition-3 " +"\"SET_C equations must be strictly less than Variable of Interest\"" + "\n" + UNDERLINE +"\n");
+  condition3 := "Condition-3 \"SET_C equations must be strictly less than Variable of Interest\" ";
+  print(condition3 + "\n" + UNDERLINE + "\n");
+
   if (listLength(setc) < listLength(knowns) and not listEmpty(setc)) then
     print("-Passed"+ "\n" + "-SET_C contains:" + intString(listLength(setc)) + " equations < " + intString(listLength(knowns))+" known variables \n\n");
   else
-    resstr:="-Failed"+ "\n" + "-SET_C contains:" + intString(listLength(setc)) + " equations  > " + intString(listLength(knowns)) +" known variables \n\n";
+    condition3 := "Set-C has " + intString(listLength(setc)) + " equations and " + intString(listLength(knowns)) + " variables to be reconciled";
+    resstr := "-Failed" + "\n" + "-" + condition3 + "\n\n";
     print(resstr);
-    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 3-Failed : The system is ill-posed."});
+    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 3-Failed: The number of auxiliary conditions must be strictly less than the number of variables to be reconciled. The data reconciliation problem is ill-posed"});
+    if listEmpty(setc) then
+      condition3 := "<b>User Error:</b> Condition 7 failed: \"The set of auxiliary conditions is empty.\" The data reconciliation problem is ill-posed";
+      generateCompileTimeHtmlReport(shared, "", auxilliaryConditions, varsToReconcile, condition3 = condition3);
+    else
+      generateCompileTimeHtmlReport(shared, "<b>User Error:</b> Condition 3-Failed: \"The number of auxiliary conditions must be strictly less than the number of variables to be reconciled.\": The data reconciliation problem is ill-posed",auxilliaryConditions, varsToReconcile, condition3 = condition3);
+    end if;
     fail();
   end if;
 
   //Condition-4
-  print("Condition-4 " +"\"SET_S should contain all intermediate variables involved in SET_C\"" + "\n" + UNDERLINE +"\n");
+  condition4 := "Condition-4 \"SET_S should contain all intermediate variables involved in SET_C\" ";
+  print(condition4 + "\n" + UNDERLINE + "\n");
   (tmplistvar1, tmplistvar2, tmplistvar3) := List.intersection1OnTrue(matchedunknownssetc, matchedunknownssets, intEq);
 
   if listEmpty(matchedunknownssetc) then
@@ -1890,13 +1924,16 @@ algorithm
       print("-Passed\n\n");
     else
       BackendDump.dumpVarList(List.map1r(tmplistvar2, BackendVariable.getVarAt, allVars), "-SET_S does not have intermediate variables involved in SET_C:" + dumplistInteger(tmplistvar2));
-      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 4-Failed : The system is ill-posed."});
+      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 4-Failed: SET_S should contain all intermediate variables involved in SET_C: The data reconciliation problem is ill-posed"});
+      generateCompileTimeHtmlReport(shared, "<b>Internal Error:</b> Condition 4-Failed: \"SET_S should contain all intermediate variables involved in SET_C\": The data reconciliation problem is ill-posed", auxilliaryConditions, varsToReconcile, condition4 = ("Set-S does not have intermediate variables involved in Set-C", List.map1r(tmplistvar2, BackendVariable.getVarAt, allVars)));
       fail();
     end if;
   end if;
 
   //Condition-5
-  print("Condition-5 " +"\"SET_S should be square \"" + "\n" + UNDERLINE +"\n");
+  condition5 := "Condition-5 \"SET_S should be square\" ";
+  print(condition5 + "\n" + UNDERLINE + "\n");
+
   if(listEmpty(sets)) then
     print("-Passed"+"\n"+"-SET_S contains 0 intermediate variables and 0 equations \n\n");
     return;
@@ -1904,12 +1941,88 @@ algorithm
     if(listLength(sets)==listLength(BackendVariable.varList(outsetS_vars))) then
       print("-Passed" + "\n "+ "Set_S has " + intString(listLength(sets)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables\n\n");
     else
-      print("-Failed" + "\n "+ "Set_S has " + intString(listLength(sets)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables\n\n");
-      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed Set_S is not square: The system is ill-posed."});
+      condition5 := "Set-S has " + intString(listLength(sets)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables";
+      print("-Failed" + "\n "+ condition5 + "\n\n");
+      Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed: Set_S should be square: The data reconciliation problem is ill-posed"});
+      generateCompileTimeHtmlReport(shared, "<b>Internal Error:</b> Condition 5-Failed: \"Set_S should be square\": The data reconciliation problem is ill-posed", auxilliaryConditions, varsToReconcile, condition5 = condition5);
       fail();
     end if;
   end if;
 end VerifyDataReconciliation;
+
+protected function generateCompileTimeHtmlReport
+  "generate html report for internal errors reported during verification of extraction algorithm"
+  input BackendDAE.Shared shared;
+  input String conditions;
+  input String auxilliaryConditions;
+  input String varsToReconcile;
+  input tuple<String, list<BackendDAE.Equation>> condition1 = ("", {});
+  input tuple<String, list<BackendDAE.Var>> condition2 = ("", {});
+  input String condition3 = "";
+  input tuple<String, list<BackendDAE.Var>> condition4 = ("", {});
+  input String condition5 = "";
+protected
+  String data, condition1_msg, condition2_msg, condition4_msg;
+  list<BackendDAE.Equation> condition1_eqs;
+  list<BackendDAE.Var> condition2_vars, condition4_vars;
+algorithm
+    data := "<html> \n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n <h2> Overview: </h2> \n";
+    data := data + "<table> \n <tr> \n <th align=right> Model file: </th> \n";
+    data := data + "<td>"+ shared.info.fileNamePrefix + ".mo" + "</td>\n</tr>\n";
+    data := data + " <tr> \n <th align=right> Model name: </th>\n";
+    data := data + "<td>" + shared.info.fileNamePrefix + "</td>\n</tr>\n";
+    data := data + "<tr> \n <th align=right> Generated: </th>\n";
+    data := data + "<td>" + System.getCurrentTimeStr() + "<b> by OpenModelica " + Settings.getVersionNr() + "</b>" + "</td>\n</tr>\n <table>\n";
+    data := data + "<h2> Analysis: </h2>\n<table>";
+    data := data + "<tr>\n <th align=right> Number of auxiliary conditions: </th> \n <td>" + auxilliaryConditions + "</td>\n</tr>\n";
+    data := data + "<tr>\n <th align=right> Number of variables to be reconciled: </th> \n <td>" + varsToReconcile + "</td>\n</tr>\n</table>";
+    data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_AuxiliaryConditions.html target=_blank> Auxiliary conditions </a> </h3>";
+    data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_IntermediateEquations.html target=_blank> Intermediate equations </a> </h3>";
+    data := data + "<h3> Errors: </h3> " + "\n <p>" + conditions + "</p>" + "\n";
+
+    // condition-1
+    (condition1_msg, condition1_eqs) := condition1;
+    if not listEmpty(condition1_eqs) then
+      data := data + "<p>" + condition1_msg + "\n <ol>";
+      for eq in condition1_eqs loop
+        data := data + "\n" + "  <li>" + BackendDump.equationString(eq) + " </li>";
+      end for;
+      data := data + "\n</ol> \n</p>";
+    end if;
+
+    //// condition-2
+    // (condition2_msg, condition2_vars) := condition2;
+    // if not listEmpty(condition2_vars) then
+    //   data := data + "<p>" + condition2_msg + "\n <ol>";
+    //   for var in condition2_vars loop
+    //     data := data + "\n <li>" + BackendDump.varStringShort(var) + "</li>";
+    //   end for;
+    //   data := data + "\n</ol>";
+    // end if;
+
+    // condition-3
+    if not stringEmpty(condition3) then
+      data := data + "<p>" + condition3 + "</p>";
+    end if;
+
+    //condition-4
+    (condition4_msg, condition4_vars) := condition4;
+    if not listEmpty(condition4_vars) then
+      data := data + "<p>" + condition4_msg + "\n <ol>";
+      for var in condition4_vars loop
+        data := data + "\n <li>" + BackendDump.varStringShort(var) + "</li>";
+      end for;
+      data := data + "\n</ol>";
+    end if;
+
+    // condition-5
+    if not stringEmpty(condition5) then
+      data := data + "<p>" + condition5 + "</p>";
+    end if;
+
+    data := data + "\n</html>";
+    System.writeFile(shared.info.fileNamePrefix + ".html", data);
+end generateCompileTimeHtmlReport;
 
 public function getVariableOccurence
   "return list of knowns and unknowns variables from set-C or Set-S"

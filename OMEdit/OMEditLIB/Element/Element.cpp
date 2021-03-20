@@ -946,34 +946,13 @@ QRectF Element::boundingRect() const
 
 /*!
  * \brief Element::itemsBoundingRect
- * Gets the bounding rectangle of all the items added to the component.
+ * Gets the bounding rectangle of the Element and its children.
  * \return
  */
 QRectF Element::itemsBoundingRect()
 {
-  QRectF rect;
-  /* ticket:4431 use Element's sceneBoundingRect()
-   * instead of calling sceneBoundingRect() on its items.
-   */
-  foreach (Element *pElement, mInheritedElementsList) {
-    rect |= pElement->sceneBoundingRect();
-  }
-  foreach (Element *pElement, mElementsList) {
-    rect |= pElement->sceneBoundingRect();
-  }
-  foreach (QGraphicsItem *item, mShapesList) {
-    rect |= item->sceneBoundingRect();
-  }
-  if (mpNonExistingElementLine->isVisible()) {
-    rect |= mpNonExistingElementLine->sceneBoundingRect();
-  }
-  if (mpDefaultElementRectangle->isVisible()) {
-    rect |= mpDefaultElementRectangle->sceneBoundingRect();
-  }
-  if (mpDefaultElementText->isVisible()) {
-    rect |= mpDefaultElementText->sceneBoundingRect();
-  }
-  return rect;
+  QRectF rect = boundingRect() | childrenBoundingRect();
+  return mapToScene(rect).boundingRect();
 }
 
 void Element::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

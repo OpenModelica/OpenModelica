@@ -676,8 +676,8 @@ public constant ErrorTypes.Message CYCLIC_DIMENSIONS = ErrorTypes.MESSAGE(300, E
   Gettext.gettext("Dimension %s of %s, '%s', could not be evaluated due to a cyclic dependency."));
 public constant ErrorTypes.Message INVALID_DIMENSION_TYPE = ErrorTypes.MESSAGE(301, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Dimension '%s' of type %s is not an integer expression or an enumeration or Boolean type name."));
-public constant ErrorTypes.Message RAGGED_DIMENSION = ErrorTypes.MESSAGE(302, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("Ragged dimensions are not yet supported (from dimension '%s')"));
+public constant ErrorTypes.Message NON_PARAMETER_EXPRESSION_DIMENSION = ErrorTypes.MESSAGE(302, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Expression ‘%s‘ that determines the size of dimension ‘%s‘ of ‘%s‘ is not an evaluable parameter expression."));
 public constant ErrorTypes.Message INVALID_TYPENAME_USE = ErrorTypes.MESSAGE(303, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Type name '%s' is not allowed in this context."));
 public constant ErrorTypes.Message FOUND_WRONG_INNER_ELEMENT = ErrorTypes.MESSAGE(305, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -836,6 +836,18 @@ public constant ErrorTypes.Message TOP_LEVEL_INPUT_WITH_BINDING = ErrorTypes.MES
   Gettext.gettext("Top-level input ‘%s‘ has a binding equation and will not be accessible as an input of the model."));
 public constant ErrorTypes.Message NON_DISCRETE_WHEN_CONDITION = ErrorTypes.MESSAGE(382, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("When-condition ‘%s‘ is not a discrete-time expression."));
+public constant ErrorTypes.Message CYCLIC_FUNCTION_COMPONENTS = ErrorTypes.MESSAGE(383, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Cyclically dependent function components found: %s"));
+public constant ErrorTypes.Message EXTERNAL_FUNCTION_NOT_FOUND = ErrorTypes.MESSAGE(384, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("External function ‘%s‘ could not be found in any of the given shared libraries:\n%s"));
+public constant ErrorTypes.Message INVALID_CONVERSION_RULE = ErrorTypes.MESSAGE(385, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid conversion rule ‘%s‘."));
+public constant ErrorTypes.Message CONVERSION_MESSAGE = ErrorTypes.MESSAGE(386, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("%s"));
+public constant ErrorTypes.Message CONVERSION_MISMATCHED_PLACEHOLDER = ErrorTypes.MESSAGE(387, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("Mismatched % in conversion modifier ‘%s‘."));
+public constant ErrorTypes.Message CONVERSION_MISSING_PLACEHOLDER_VALUE = ErrorTypes.MESSAGE(388, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
+  Gettext.gettext("No replacement value for placeholder ‘%s‘ could be found."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));
@@ -998,7 +1010,7 @@ public constant ErrorTypes.Message VAR_NO_REMAINING_EQN = ErrorTypes.MESSAGE(582
 public constant ErrorTypes.Message MOVING_PARAMETER_BINDING_TO_INITIAL_EQ_SECTION = ErrorTypes.MESSAGE(583, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Moving binding to initial equation section and setting fixed attribute of %s to false."));
 public constant ErrorTypes.Message MIXED_DETERMINED = ErrorTypes.MESSAGE(584, ErrorTypes.SYMBOLIC(), ErrorTypes.ERROR(),
-  Gettext.gettext("The initialization problem of given system is mixed-determined. It is under- as well as overdetermined and the mixed-determination-index is too high. [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\" to simulate with a higher threshold or consider changing some initial equations, fixed variables and start values."));
+  Gettext.gettext("The initialization problem of given system is mixed-determined. It is under- as well as overdetermined and the mixed-determination-index is too high. [index > %s]\nPlease checkout the option \"--maxMixedDeterminedIndex\" to simulate with a higher threshold or consider changing some initial equations, fixed variables and start values. Use -d=initialization for more information."));
 public constant ErrorTypes.Message STACK_OVERFLOW_DETAILED = ErrorTypes.MESSAGE(585, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Stack overflow occurred while evaluating %s:\n%s"));
 public constant ErrorTypes.Message NF_VECTOR_INVALID_DIMENSIONS = ErrorTypes.MESSAGE(586, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
@@ -1034,7 +1046,7 @@ public constant ErrorTypes.Message STATE_STATESELECT_PREFER_REVERT = ErrorTypes.
 public constant ErrorTypes.Message ERROR_PKG_NOT_IDENT = ErrorTypes.MESSAGE(601, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The package manager only accepts simple identifiers (%s has a dot in it)."));
 public constant ErrorTypes.Message ERROR_PKG_NOT_FOUND_VERSION = ErrorTypes.MESSAGE(602, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
-  Gettext.gettext("The package index did not contain an entry for package %s that provides version %s."));
+  Gettext.gettext("The package index did not contain an entry for package %s that provides version %s. The following versions are available:\n%s"));
 public constant ErrorTypes.Message ERROR_PKG_NOT_EXACT_MATCH = ErrorTypes.MESSAGE(603, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("The package index did not contain an entry for package %s of version %s. There are other versions that claim to be compatible: %s."));
 public constant ErrorTypes.Message ERROR_PKG_INDEX_NOT_ON_PATH = ErrorTypes.MESSAGE(604, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
@@ -1059,6 +1071,8 @@ public constant ErrorTypes.Message NOTIFY_PKG_NO_INSTALL = ErrorTypes.MESSAGE(61
   Gettext.gettext("%s %s will not be installed since version %s is installed."));
 public constant ErrorTypes.Message DEPRECATED_FLAG = ErrorTypes.MESSAGE(614, ErrorTypes.SCRIPTING(), ErrorTypes.WARNING(),
   Gettext.gettext("The flag '%s' is deprecated. Please use '%s' instead."));
+public constant ErrorTypes.Message UNKNOWN_ERROR_INST_FUNCTION = ErrorTypes.MESSAGE(615, ErrorTypes.TRANSLATION(), ErrorTypes.INTERNAL(),
+  Gettext.gettext("Unknown error trying to instantiate function: %s."));
 
 public constant ErrorTypes.Message MATCH_SHADOWING = ErrorTypes.MESSAGE(5001, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Local variable '%s' shadows another variable."));

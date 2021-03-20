@@ -34,15 +34,15 @@
 #include "OMSProxy.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
-#include "OMSSimulationDialog.h"
-#include "OMSSimulationOutputWidget.h"
 #include "Util/Utilities.h"
 
+#include <QTime>
+
 #define LOG_COMMAND(command,args) \
-  QTime commandTime; \
+  QElapsedTimer commandTime; \
   commandTime.start(); \
   command = QString("%1(%2)").arg(command, args.join(",")); \
-  logCommand(&commandTime, command);
+  logCommand(command);
 
 /*!
  * \brief loggingCallback
@@ -67,23 +67,8 @@ void loggingCallback(oms_message_type_enu_t type, const char *message)
       level = Helper::notificationLevel;
       break;
   }
-  emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica,
-                                                           QString(message), Helper::scriptingKind, level));
-
+  emit OMSProxy::instance()->emitLogGUIMessage(MessageItem(MessageItem::Modelica, QString(message), Helper::scriptingKind, level));
   //  qDebug() << "loggingCallback" << type << message;
-}
-
-void simulateCallback(const char* ident, double time, oms_status_enu_t status)
-{
-//  qDebug() << "simulateCallback" << ident << time << status;
-  QList<OMSSimulationOutputWidget*> OMSSimulationOutputWidgetList;
-  OMSSimulationOutputWidgetList = MainWindow::instance()->getOMSSimulationDialog()->getOMSSimulationOutputWidgetsList();
-  foreach (OMSSimulationOutputWidget *pOMSSimulationOutputWidget, OMSSimulationOutputWidgetList) {
-    if (pOMSSimulationOutputWidget->isSimulationRunning() && pOMSSimulationOutputWidget->getCref().compare(QString(ident)) == 0) {
-      pOMSSimulationOutputWidget->simulateCallback(ident, time, status);
-      break;
-    }
-  }
 }
 
 /*!
@@ -146,13 +131,12 @@ OMSProxy::~OMSProxy()
  * \brief OMSProxy::logCommand
  * Writes the command to the omscommunication.log file.
  * \param command - the command to write
- * \param commandTime - the command start time
  */
-void OMSProxy::logCommand(QTime *commandTime, QString command)
+void OMSProxy::logCommand(QString command)
 {
   // write the log to communication log file
   if (mpCommunicationLogFile) {
-    fputs(QString("%1 %2\n").arg(command, commandTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
+    fputs(QString("%1 %2\n").arg(command, QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
   }
 }
 
@@ -163,7 +147,7 @@ void OMSProxy::logCommand(QTime *commandTime, QString command)
  * \param status - execution status of the command
  * \param responseTime - the response end time
  */
-void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *responseTime)
+void OMSProxy::logResponse(QString command, oms_status_enu_t status, QElapsedTimer *responseTime)
 {
   double elapsed = (double)responseTime->elapsed() / 1000.0;
   QString firstLine("");
@@ -178,7 +162,7 @@ void OMSProxy::logResponse(QString command, oms_status_enu_t status, QTime *resp
   // write the log to communication log file
   if (mpCommunicationLogFile) {
     mTotalOMSCallsTime += elapsed;
-    fputs(QString("%1 %2\n").arg(status).arg(responseTime->currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
+    fputs(QString("%1 %2\n").arg(status).arg(QTime::currentTime().toString("hh:mm:ss:zzz")).toUtf8().constData(), mpCommunicationLogFile);
     fputs(QString("#s#; %1; %2; \'%3\'\n\n").arg(QString::number(elapsed, 'f', 6)).arg(QString::number(mTotalOMSCallsTime, 'f', 6)).arg(firstLine).toUtf8().constData(),  mpCommunicationLogFile);
   }
 
@@ -522,23 +506,6 @@ bool OMSProxy::addTLMConnection(QString crefA, QString crefB, double delay, doub
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_addTLMConnection(crefA.toUtf8().constData(), crefB.toUtf8().constData(), delay, alpha,
                                                  linearimpedance, angularimpedance);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::cancelSimulation_asynchronous
- * Cancels the current model asynchronous simulation.
- * \param cref
- * \return
- */
-bool OMSProxy::cancelSimulation_asynchronous(QString cref)
-{
-  QString command = "oms_cancelSimulation_asynchronous";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_cancelSimulation_asynchronous(cref.toUtf8().constData());
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1093,7 +1060,7 @@ bool OMSProxy::loadSnapshot(QString cref, QString snapshot)
   QStringList args;
   args << "\"" + cref + "\"" << "\"" + snapshot + "\"";
   LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_loadSnapshot(cref.toUtf8().constData(), snapshot.toUtf8().constData());
+  oms_status_enu_t status = oms_loadSnapshot(cref.toUtf8().constData(), snapshot.toUtf8().constData(), nullptr);
   logResponse(command, status, &commandTime);
   return statusToBool(status);
 }
@@ -1420,42 +1387,6 @@ bool OMSProxy::getResultFile(QString cref, char **pFilename, int *pBufferSize)
 }
 
 /*!
- * \brief OMSProxy::getSignalFilter
- * gets the signal filter regex.
- * \param cref
- * \param regex
- * \return
- */
-bool OMSProxy::getSignalFilter(QString cref, char **regex)
-{
-  QString command = "oms_getSignalFilter";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_getSignalFilter(cref.toUtf8().constData(), regex);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
- * \brief OMSProxy::setSignalFilter
- * Sets the signal filter.
- * \param cref
- * \param regex
- * \return
- */
-bool OMSProxy::setSignalFilter(QString cref, QString regex)
-{
-  QString command = "oms_setSignalFilter";
-  QStringList args;
-  args << "\"" + cref + "\"" << "\"" + regex + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_setSignalFilter(cref.toUtf8().constData(), regex.toUtf8().constData());
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
-}
-
-/*!
  * \brief OMSProxy::setSolver
  * Sets the solver.
  * \param cref
@@ -1632,23 +1563,6 @@ void OMSProxy::setWorkingDirectory(QString path)
   LOG_COMMAND(command, args);
   oms_status_enu_t status = oms_setWorkingDirectory(path.toUtf8().constData());
   logResponse(command, status, &commandTime);
-}
-
-/*!
- * \brief OMSProxy::simulate_asynchronous
- * Starts the asynchronous simulation.
- * \param cref
- * \return
- */
-bool OMSProxy::simulate_asynchronous(QString cref)
-{
-  QString command = "oms_simulate_asynchronous";
-  QStringList args;
-  args << "\"" + cref + "\"";
-  LOG_COMMAND(command, args);
-  oms_status_enu_t status = oms_simulate_asynchronous(cref.toUtf8().constData(), simulateCallback);
-  logResponse(command, status, &commandTime);
-  return statusToBool(status);
 }
 
 /*!

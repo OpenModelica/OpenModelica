@@ -41,7 +41,7 @@
  */
 QByteArray CommandFactory::GDBSet(QString command)
 {
-  return QByteArray("-gdb-set ").append(command);
+  return QByteArray("-gdb-set ").append(command.toUtf8());
 }
 
 /*!
@@ -52,7 +52,7 @@ QByteArray CommandFactory::GDBSet(QString command)
  */
 QByteArray CommandFactory::attach(QString processID)
 {
-  return QByteArray("attach ").append(processID);
+  return QByteArray("attach ").append(processID.toUtf8());
 }
 
 /*!
@@ -107,7 +107,7 @@ QByteArray CommandFactory::breakInsert(QString fileName, int line, bool isDisabl
  */
 QByteArray CommandFactory::breakDelete(QStringList breakpointIDs)
 {
-  return QByteArray("-break-delete ").append(breakpointIDs.join(" "));
+  return QByteArray("-break-delete ").append(breakpointIDs.join(" ").toUtf8());
 }
 
 /*!
@@ -118,7 +118,7 @@ QByteArray CommandFactory::breakDelete(QStringList breakpointIDs)
  */
 QByteArray CommandFactory::breakEnable(QStringList breakpointIDs)
 {
-  return QByteArray("-break-enable ").append(breakpointIDs.join(" "));
+  return QByteArray("-break-enable ").append(breakpointIDs.join(" ").toUtf8());
 }
 
 /*!
@@ -129,7 +129,7 @@ QByteArray CommandFactory::breakEnable(QStringList breakpointIDs)
  */
 QByteArray CommandFactory::breakDisable(QStringList breakpointIDs)
 {
-  return QByteArray("-break-disable ").append(breakpointIDs.join(" "));
+  return QByteArray("-break-disable ").append(breakpointIDs.join(" ").toUtf8());
 }
 
 /*!
@@ -143,7 +143,7 @@ QByteArray CommandFactory::breakDisable(QStringList breakpointIDs)
  */
 QByteArray CommandFactory::breakAfter(QString breakpointID, int count)
 {
-  return QByteArray("-break-after ").append(breakpointID).append(" ").append(QString::number(count));
+  return QByteArray("-break-after ").append(breakpointID.toUtf8()).append(" ").append(QString::number(count).toUtf8());
 }
 
 /*!
@@ -157,7 +157,7 @@ QByteArray CommandFactory::breakAfter(QString breakpointID, int count)
  */
 QByteArray CommandFactory::breakCondition(QString breakpointID, QString condition)
 {
-  return QByteArray("-break-condition ").append(breakpointID).append(" ").append("\"\\\"" + condition + "\\\"\"");
+  return QByteArray("-break-condition ").append(breakpointID.toUtf8()).append(" ").append(QString("\"\\\"" + condition + "\\\"\"").toUtf8());
 }
 
 /*!

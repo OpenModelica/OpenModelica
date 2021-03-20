@@ -1,0 +1,19 @@
+// name:     Integer2
+// keywords: ffi
+// status:   correct
+// cflags: -d=newInst
+//
+//
+
+loadFile("FFITest/package.mo"); getErrorString();
+instantiateModel(FFITest.Scalars.Integer2); getErrorString();
+
+// Result:
+// true
+// ""
+// "class FFITest.Scalars.Integer2
+//   constant Integer r = 120;
+// end FFITest.Scalars.Integer2;
+// "
+// ""
+// endResult

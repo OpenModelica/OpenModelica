@@ -53,6 +53,7 @@ private:
   QString mDisplayUnit;
   qreal mWidth;
   int mStyle;
+  bool mToggleSign;
 
   Plot *mpParentPlot;
   QwtPlotDirectPainter *mpPlotDirectPainter;
@@ -75,6 +76,8 @@ public:
   qreal getCurveWidth() {return mWidth;}
   void setCurveStyle(int style);
   int getCurveStyle() {return mStyle;}
+  bool getToggleSign() const {return mToggleSign;}
+  void setToggleSign(bool toggleSign) {mToggleSign = toggleSign;}
   void setXAxisVector(QVector<double> vector);
   void addXAxisValue(double value);
   void updateXAxisValue(int index, double value);
@@ -99,7 +102,7 @@ public:
   QString getYVariable();
   void setCustomColor(bool value);
   bool hasCustomColor();
-  void toggleVisibility();
+  void toggleVisibility(bool visibility);
   void setData(const double* xData, const double* yData, int size);
   QwtPlotDirectPainter* getPlotDirectPainter() {return mpPlotDirectPainter;}
   QwtPlotMarker* getPointMarker() const {return mpPointMarker;}

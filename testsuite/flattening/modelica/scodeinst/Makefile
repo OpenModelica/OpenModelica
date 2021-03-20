@@ -417,6 +417,7 @@ ExternalObject1.mo \
 ExternalObject2.mo \
 ExternalObject3.mo \
 ExternalObject4.mo \
+ExternalObject5.mo \
 ExternalObjectInvalidElement1.mo \
 ExternalObjectInvalidStructor1.mo \
 ExternalObjectMissingStructor1.mo \
@@ -459,6 +460,7 @@ FuncBuiltinDiagonal.mo \
 FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
 FuncBuiltinFill.mo \
+FuncBuiltinFill2.mo \
 FuncBuiltinFloor.mo \
 FuncBuiltinGetInstanceName.mo \
 FuncBuiltinHomotopy.mo \
@@ -526,6 +528,7 @@ FuncStringInvalid1.mo \
 FuncStringInvalid2.mo \
 FuncUnknownDim1.mo \
 FuncUnknownDim2.mo \
+FuncUnknownDim3.mo \
 FuncVariability.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
@@ -543,6 +546,8 @@ FunctionalArg1.mo \
 FunctionalArg2.mo \
 FunctionalArgBinary1.mo \
 FunctionalArgInvalidType1.mo \
+FunctionCompOrder1.mo \
+FunctionCompOrder2.mo \
 FunctionDerivative1.mo \
 FunctionDerivativeInvalidInput1.mo \
 FunctionDerivativeInvalidOrder1.mo \
@@ -575,6 +580,7 @@ IfEquation8.mo \
 IfEquationEval1.mo \
 IfEquationEval2.mo \
 IfEquationEval3.mo \
+IfEquationEval4.mo \
 IfEquationImpure1.mo \
 IfExpression1.mo \
 IfExpression2.mo \
@@ -606,6 +612,7 @@ ImportUnqualified2.mo \
 ImportUnqualified3.mo \
 ImpureCall1.mo \
 Inline1.mo \
+Inline2.mo \
 InnerOuter1.mo \
 InnerOuter2.mo \
 InnerOuter3.mo \
@@ -631,6 +638,7 @@ InnerOuterMissing4.mo \
 InnerOuterMissing5.mo \
 InnerOuterMissing6.mo \
 InnerOuterMissing7.mo \
+InnerOuterMissing8.mo \
 InnerOuterNotInner1.mo \
 InStreamArray.mo \
 InStreamFlowThreshold.mo \
@@ -723,6 +731,8 @@ OperatorOverloadConstructorSimple.mo \
 OperatorOverloadError1.mo \
 OperatorOverloadSum1.mo \
 PackageConstant1.mo \
+PackageConstant3.mo \
+PackageConstant4.mo \
 ParameterBug.mos \
 PartialApplication1.mo \
 PartialApplicationInvalidArg1.mo \

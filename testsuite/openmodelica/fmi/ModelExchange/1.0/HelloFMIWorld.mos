@@ -1,6 +1,6 @@
 // name:     HelloFMIWorld
 // keywords: fmu export import
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml HelloFMIWorld.fmu HelloFMIWorld_* HelloFMIWorld.libs HelloFMIWorld.lib HelloFMIWorld.so HelloFMIWorld.dll HelloFMIWorld.c HelloFMIWorld.makefile
 // cflags: -d=-newInst
 // Event handling
@@ -19,7 +19,7 @@ val(x,1);
 // Result:
 // true
 // "HelloFMIWorld.fmu"
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "HelloFMIWorld_me_FMU.mo"
 // true

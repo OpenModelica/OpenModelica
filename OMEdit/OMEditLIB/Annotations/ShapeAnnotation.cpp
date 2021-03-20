@@ -426,7 +426,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mFontName = pShapeAnnotation->mFontName;
   mTextStyles = pShapeAnnotation->mTextStyles;
   mHorizontalAlignment = pShapeAnnotation->mHorizontalAlignment;
-  mOriginalFileName = mOriginalFileName;
+  mOriginalFileName = pShapeAnnotation->mOriginalFileName;
   mFileName = pShapeAnnotation->mFileName;
   mClassFileName = pShapeAnnotation->mClassFileName;
   mImageSource = pShapeAnnotation->mImageSource;
@@ -1554,6 +1554,7 @@ void ShapeAnnotation::cornerItemReleased(const bool changed)
         pLineAnnotation->updateOMSConnection();
         pModelWidget->createOMSimulatorUndoCommand(QString("Update OMS Connection connect(%1, %2)").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName()));
         pModelWidget->updateModelText();
+        return;
       }
     } else {
       if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {

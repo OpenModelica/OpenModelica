@@ -35,6 +35,7 @@
 #include "MainWindow.h"
 #include "Util/Utilities.h"
 #include "Util/Helper.h"
+#include "Util/OutputPlainTextEdit.h"
 #include "TLMCoSimulationThread.h"
 #include "TLMCoSimulationDialog.h"
 
@@ -75,7 +76,7 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(QWidget *pParent)
   pManagerButtonsHorizontalLayout->addWidget(mpStopManagerButton);
   pManagerButtonsHorizontalLayout->addWidget(mpOpenManagerLogFileButton);
   // manager Output TextBox
-  mpManagerOutputTextBox = new QPlainTextEdit;
+  mpManagerOutputTextBox = new OutputPlainTextEdit;
   mpManagerOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   // monitor output label
   mpMonitorOutputLabel = new Label(tr("Monitor Output"));
@@ -92,7 +93,7 @@ TLMCoSimulationOutputWidget::TLMCoSimulationOutputWidget(QWidget *pParent)
   pMonitorButtonsHorizontalLayout->addWidget(mpStopMonitorButton);
   pMonitorButtonsHorizontalLayout->addWidget(mpOpenMonitorLogFileButton);
   // monitor Output TextBox
-  mpMonitorOutputTextBox = new QPlainTextEdit;
+  mpMonitorOutputTextBox = new OutputPlainTextEdit;
   mpMonitorOutputTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
   // layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -216,7 +217,7 @@ void TLMCoSimulationOutputWidget::openMonitorLogFile()
  */
 void TLMCoSimulationOutputWidget::managerProcessStarted()
 {
-  mpProgressLabel->setText(tr("Running co-simulation using the <b>%1</b> composite model. Please wait for a while.").arg(mTLMCoSimulationOptions.getClassName()));
+  mpProgressLabel->setText(tr("Running co-simulation of the composite model <b>%1</b>. Please wait for a while.").arg(mTLMCoSimulationOptions.getClassName()));
   mpProgressBar->setRange(0, 100);
   mpProgressBar->setTextVisible(true);
   mpProgressBar->setValue(0);
@@ -242,7 +243,7 @@ void TLMCoSimulationOutputWidget::writeManagerOutput(QString output, StringHandl
 {
   QTextCharFormat format;
   format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  Utilities::insertText(mpManagerOutputTextBox, output, format);
+  mpManagerOutputTextBox->appendOutput(output, format);
 }
 
 /*!
@@ -255,7 +256,7 @@ void TLMCoSimulationOutputWidget::managerProcessFinished(int exitCode, QProcess:
 {
   Q_UNUSED(exitCode);
   Q_UNUSED(exitStatus);
-  mpProgressLabel->setText(tr("Co-simulation using the <b>%1</b> composite model is finished.").arg(mTLMCoSimulationOptions.getClassName()));
+  mpProgressLabel->setText(tr("Co-simulation of the composite model <b>%1</b> is finished.").arg(mTLMCoSimulationOptions.getClassName()));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpStopManagerButton->setEnabled(false);
   MainWindow::instance()->getTLMCoSimulationDialog()->simulationProcessFinished(mTLMCoSimulationOptions, mResultFileLastModifiedDateTime);
@@ -282,7 +283,7 @@ void TLMCoSimulationOutputWidget::writeMonitorOutput(QString output, StringHandl
 {
   QTextCharFormat format;
   format.setForeground(StringHandler::getSimulationMessageTypeColor(type));
-  Utilities::insertText(mpMonitorOutputTextBox, output, format);
+  mpMonitorOutputTextBox->appendOutput(output, format);
 }
 
 /*!

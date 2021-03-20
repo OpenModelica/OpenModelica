@@ -1,0 +1,2 @@
+convertModifiers("Modelica.Mechanics.MultiBody.Forces.Force",
+  {"forceDiameter"}, {"connectionLineDiameter=%forceDiameter%"}, false)

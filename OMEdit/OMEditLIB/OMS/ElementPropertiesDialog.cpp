@@ -60,10 +60,6 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
   // Create the name label and text box
   mpNameLabel = new Label(Helper::name);
   mpNameTextBox = new QLineEdit(mpComponent->getName());
-  /*! @todo Remove the following line once oms_rename is available for elements.
-   * And then fix the OMSRenameCommand accordingly.
-   */
-  mpNameTextBox->setDisabled(true);
 
   if (mpComponent->getLibraryTreeItem()->getExternalTLMModelInfo()) {
     const oms_external_tlm_model_info_t *pExternalTLMModelInfo = mpComponent->getLibraryTreeItem()->getExternalTLMModelInfo();
@@ -339,10 +335,6 @@ void ElementPropertiesDialog::updateProperties()
     return;
   }
   ModelWidget *pModelWidget = mpComponent->getGraphicsView()->getModelWidget();
-  // if the name is same as old then skip.
-  if (mpNameTextBox->text().compare(mpComponent->getName()) != 0) {
-    OMSProxy::instance()->rename(mpComponent->getName(), mpNameTextBox->text());
-  }
   // Update parametes and inputs
   int parametersIndex = 0;
   int inputsIndex = 0;
@@ -398,6 +390,10 @@ void ElementPropertiesDialog::updateProperties()
         }
       }
     }
+  }
+  // if the name is same as old then skip.
+  if (mpNameTextBox->text().compare(mpComponent->getName()) != 0) {
+    OMSProxy::instance()->rename(mpComponent->getLibraryTreeItem()->getNameStructure(), mpNameTextBox->text());
   }
   bool doSnapShot = !mpComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->isSystemLibrary();
   pModelWidget->createOMSimulatorUndoCommand(QString("Update Element %1 Parameters").arg(mpNameTextBox->text()), doSnapShot);

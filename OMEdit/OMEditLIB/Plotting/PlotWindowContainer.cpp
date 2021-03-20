@@ -59,6 +59,7 @@ PlotWindowContainer::PlotWindowContainer(QWidget *pParent)
   setDocumentMode(true);
 #if QT_VERSION >= 0x040800
   setTabsClosable(true);
+  setTabsMovable(true);
 #endif
   if (OptionsDialog::instance()->getPlottingPage()->getPlottingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
@@ -454,6 +455,7 @@ void PlotWindowContainer::addAnimationWindow(bool maximized)
     pAnimationWindow->setWindowState(Qt::WindowMaximized);
   }
 #else
+  Q_UNUSED(maximized);
   assert(0);
 #endif
 }

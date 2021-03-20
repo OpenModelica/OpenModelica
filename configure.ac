@@ -60,7 +60,7 @@ fi
 
 AC_SUBST(CMAKE_LDFLAGS)
 if echo $host | grep -i darwin; then
-  CMAKE_LDFLAGS="-Wl,-undefined -Wl,dynamic_lookup"
+  CMAKE_LDFLAGS="-Wl,-U,libintl_gettext"
 fi
 
 m4_include([common/m4/corba.m4])

@@ -56,6 +56,7 @@ import NFClassTree.ClassTree;
 import SCodeUtil;
 import IOStream;
 import Variable = NFVariable;
+import UnorderedMap;
 
 public
 uniontype InstNodeType
@@ -80,6 +81,7 @@ uniontype InstNodeType
 
   record TOP_SCOPE
     "The unnamed class containing all the top-level classes."
+    UnorderedMap<String, InstNode> generatedInners;
   end TOP_SCOPE;
 
   record ROOT_CLASS
@@ -99,35 +101,13 @@ uniontype InstNodeType
     InstNode parent;
     InstNodeType originalType;
   end REDECLARED_CLASS;
+
+  record GENERATED_INNER
+    "A generated inner element due to a missing outer."
+  end GENERATED_INNER;
 end InstNodeType;
 
-encapsulated package NodeTree
-  import BaseAvlTree;
-  import NFInstNode.InstNode;
-
-  extends BaseAvlTree(redeclare type Key = String,
-                      redeclare type Value = InstNode);
-
-  redeclare function extends keyStr
-  algorithm
-    outString := inKey;
-  end keyStr;
-
-  redeclare function extends valueStr
-  algorithm
-    outString := InstNode.toString(inValue);
-  end valueStr;
-
-  redeclare function extends keyCompare
-  algorithm
-    outResult := stringCompare(inKey1, inKey2);
-  end keyCompare;
-
-  annotation(__OpenModelica_Interface="util");
-end NodeTree;
-
-
-constant Integer NUMBER_OF_CACHES = 3;
+constant Integer NUMBER_OF_CACHES = 2;
 
 uniontype CachedData
 
@@ -142,11 +122,6 @@ uniontype CachedData
     Boolean typed;
     Boolean specialBuiltin;
   end FUNCTION;
-
-  record TOP_SCOPE
-    NodeTree.Tree addedInner;
-    InstNode rootClass;
-  end TOP_SCOPE;
 
   function empty
     output array<CachedData> cache = arrayCreate(NUMBER_OF_CACHES, NO_CACHE());
@@ -216,17 +191,6 @@ uniontype CachedData
     input array<CachedData> in_caches;
     output array<CachedData> out_caches = arrayUpdate(in_caches, 2, NO_CACHE());
   end clearPackageCache;
-
-  function getInnerOuterCache
-    input array<CachedData> in_caches;
-    output CachedData out_cache = arrayGet(in_caches, 3);
-  end getInnerOuterCache;
-
-  function setInnerOuterCache
-    input array<CachedData> in_caches;
-    input CachedData in_cache;
-    output array<CachedData> out_caches = arrayUpdate(in_caches, 3, in_cache);
-  end setInnerOuterCache;
 end CachedData;
 
 uniontype InstNode
@@ -655,6 +619,17 @@ uniontype InstNode
       else node;
     end match;
   end classScope;
+
+  function libraryScope
+    "Returns the top-level class the given node belongs to."
+    input InstNode node;
+    output InstNode lib;
+  algorithm
+    lib := match node
+      case CLASS_NODE(parentScope = CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE())) then node;
+      else libraryScope(parentScope(node));
+    end match;
+  end libraryScope;
 
   function topScope
     input InstNode node;
@@ -1130,6 +1105,17 @@ uniontype InstNode
     end match;
   end isInnerOuterNode;
 
+  function isGeneratedInner
+    input InstNode node;
+    output Boolean isInner;
+  algorithm
+    isInner := match node
+      case CLASS_NODE(nodeType = InstNodeType.GENERATED_INNER()) then true;
+      case COMPONENT_NODE(nodeType = InstNodeType.GENERATED_INNER()) then true;
+      else false;
+    end match;
+  end isGeneratedInner;
+
   function resolveInner
     input InstNode node;
     output InstNode innerNode;
@@ -1218,26 +1204,6 @@ uniontype InstNode
       else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
     end match;
   end clearPackageCache;
-
-  function getInnerOuterCache
-    input InstNode inNode;
-    output CachedData pack_cache;
-  algorithm
-    pack_cache := match inNode
-      case CLASS_NODE() then CachedData.getInnerOuterCache(inNode.caches);
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
-    end match;
-  end getInnerOuterCache;
-
-  function setInnerOuterCache
-    input output InstNode node;
-    input CachedData in_out_cache;
-  algorithm
-    () := match node
-      case CLASS_NODE() algorithm CachedData.setInnerOuterCache(node.caches, in_out_cache); then ();
-      else algorithm Error.assertion(false, getInstanceName() + " got node without cache", sourceInfo()); then fail();
-    end match;
-  end setInnerOuterCache;
 
   function openImplicitScope
     input output InstNode scope;
@@ -1735,6 +1701,12 @@ uniontype InstNode
     end match;
   end getSections;
 
+  function hash
+    "Returns the hash of an InstNode's name."
+    input InstNode node;
+    input Integer mod;
+    output Integer hash = stringHashDjb2Mod(name(node), mod);
+  end hash;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

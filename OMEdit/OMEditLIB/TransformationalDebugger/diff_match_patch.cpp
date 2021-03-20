@@ -2045,7 +2045,11 @@ QList<Patch> diff_match_patch::patch_fromText(const QString &textline) {
   if (textline.isEmpty()) {
     return patches;
   }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QStringList text = textline.split("\n", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
   QStringList text = textline.split("\n", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
   Patch patch;
   QRegExp patchHeader("^@@ -(\\d+),?(\\d*) \\+(\\d+),?(\\d*) @@$");
   char sign;

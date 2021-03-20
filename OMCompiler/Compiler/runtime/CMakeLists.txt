@@ -210,7 +210,7 @@ else()
   set(MODELICA_SPEC_PLATFORM "${OMC_TARGET_SYSTEM_NAME}32")
 endif()
 
-set(host_short ${CMAKE_SYSTEM_PROCESSOR}-${OMC_TARGET_SYSTEM_NAME})
+set(host_short ${CMAKE_LIBRARY_ARCHITECTURE})
 
 set(RUNTIMECC ${CMAKE_C_COMPILER})
 set(CC ${CMAKE_C_COMPILER})
@@ -230,8 +230,6 @@ if(LAPACK_FOUND)
   endif()
 endif()
 
-# set(prefix ${CMAKE_INSTALL_PREFIX})
-set(prefix "")
 
 find_package(Git)
 execute_process(COMMAND
@@ -247,7 +245,7 @@ else()
   set(CONFIG_WITH_OPENMP 0)
 endif()
 
-set(WITH_UMFPACK "#define WITH_UMFPACK")
+set(WITH_SUITESPARSE "#define WITH_SUITESPARSE")
 set(WITH_HWLOC 0)
 set(WITH_UUID "#define WITH_LIBUUID 1")
 
@@ -286,6 +284,11 @@ else()
 
   set(CONFIG_OS ${OMC_TARGET_SYSTEM_NAME})
   set(MAKE ${CMAKE_MAKE_PROGRAM})
+
+  string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
+  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC  -llapack -lblas   -lm -lomcgc -lpthread -rdynamic")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC  -llapack -lblas   -lm -lomcgc -lpthread -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas   -lm -lpthread -rdynamic -Wl,--no-undefined")
  
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
 endif()

@@ -42,7 +42,6 @@
 #include "Plotting/VariablesWidget.h"
 #include "Plotting/PlotWindowContainer.h"
 #include "Modeling/Commands.h"
-#include "SimulationProcessThread.h"
 #if !defined(WITHOUT_OSG)
 #include "Animation/AnimationWindow.h"
 #endif
@@ -68,28 +67,10 @@ SimulationDialog::SimulationDialog(QWidget *pParent)
 
 SimulationDialog::~SimulationDialog()
 {
-  foreach (SimulationOutputWidget *pSimulationOutputWidget, mSimulationOutputWidgetsList) {
-    SimulationProcessThread *pSimulationProcessThread = pSimulationOutputWidget->getSimulationProcessThread();
-    /* If the SimulationProcessThread is running then we need to stop it i.e exit its event loop.
-       Kill the compilation and simulation processes if they are running before exiting the SimulationProcessThread.
-      */
-    if (pSimulationProcessThread->isRunning()) {
-      if (pSimulationProcessThread->isCompilationProcessRunning() && pSimulationProcessThread->getCompilationProcess()) {
-        pSimulationProcessThread->getCompilationProcess()->kill();
-      }
-      if (pSimulationProcessThread->isSimulationProcessRunning() && pSimulationProcessThread->getSimulationProcess()) {
-        pSimulationProcessThread->getSimulationProcess()->kill();
-      }
-      pSimulationProcessThread->exit();
-      pSimulationProcessThread->wait();
-      delete pSimulationOutputWidget;
-    }
-  }
   // kill the clients
   foreach (OpcUaClient *pOpcUaClient, mOpcUaClientsMap) {
     delete pOpcUaClient;
   }
-  mSimulationOutputWidgetsList.clear();
   mOpcUaClientsMap.clear();
 }
 
@@ -148,25 +129,22 @@ void SimulationDialog::directSimulate(LibraryTreeItem *pLibraryTreeItem, bool la
 void SimulationDialog::removeSimulationOutputWidget(SimulationOutputWidget* pSimulationOutputWidget)
 {
   // close the window
-  if (mOpcUaClientsMap.contains(pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber())) {
+  // remove the old opc ua instance
+  int port = pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
+  if (mOpcUaClientsMap.contains(port)) {
     OMPlot::PlotWindow *pPlotWindow = mOpcUaClientsMap.value(pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber())->getTargetPlotWindow();
     if (pPlotWindow) {
       pPlotWindow->parentWidget()->close();
     }
-  }
-  // remove the old opc ua instance
-  int port = pSimulationOutputWidget->getSimulationOptions().getInteractiveSimulationPortNumber();
-  if (mOpcUaClientsMap.contains(port)) {
     delete mOpcUaClientsMap.value(port);
     mOpcUaClientsMap.remove(port);
   }
-  // removes the output widget of the removed interactive simulation item
-  if (mSimulationOutputWidgetsList.contains(pSimulationOutputWidget)) {
-    terminateSimulationProcess(pSimulationOutputWidget);
-    mSimulationOutputWidgetsList.removeOne(pSimulationOutputWidget);
-    if (pSimulationOutputWidget) {
-      delete pSimulationOutputWidget;
-    }
+  // Kill the compilation and simulation processes if they are running.
+  if (pSimulationOutputWidget->isCompilationProcessRunning() && pSimulationOutputWidget->getCompilationProcess()) {
+    pSimulationOutputWidget->getCompilationProcess()->kill();
+  }
+  if (pSimulationOutputWidget->isSimulationProcessRunning() && pSimulationOutputWidget->getSimulationProcess()) {
+    pSimulationOutputWidget->getSimulationProcess()->kill();
   }
 }
 
@@ -571,7 +549,6 @@ void SimulationDialog::setUpForm()
                                    "If you want to change the output path then update the working directory in Options/Preferences."));
   mpResultFileNameLabel = new Label(tr("Result File (Optional):"));
   mpResultFileNameTextBox = new QLineEdit;
-  connect(mpFileNameTextBox, SIGNAL(textEdited(QString)), SLOT(resultFileNameChanged(QString)));
   connect(mpOutputFormatComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(resultFileNameChanged(QString)));
   // Variable filter
   mpVariableFilterLabel = new Label(tr("Variable Filter (Optional):"));
@@ -603,23 +580,6 @@ void SimulationDialog::setUpForm()
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
-  // Archived Simulations tab
-  mpArchivedSimulationsTab = new QWidget;
-  mpArchivedSimulationsTreeWidget = new QTreeWidget;
-  mpArchivedSimulationsTreeWidget->setItemDelegate(new ItemDelegate(mpArchivedSimulationsTreeWidget));
-  mpArchivedSimulationsTreeWidget->setTextElideMode(Qt::ElideMiddle);
-  mpArchivedSimulationsTreeWidget->setColumnCount(4);
-  QStringList headers;
-  headers << tr("Class") << Helper::dateTime << Helper::startTime << Helper::stopTime << Helper::status;
-  mpArchivedSimulationsTreeWidget->setHeaderLabels(headers);
-  mpArchivedSimulationsTreeWidget->setIndentation(0);
-  connect(mpArchivedSimulationsTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(showArchivedSimulation(QTreeWidgetItem*)));
-  QGridLayout *pArchivedSimulationsTabLayout = new QGridLayout;
-  pArchivedSimulationsTabLayout->setAlignment(Qt::AlignTop);
-  pArchivedSimulationsTabLayout->addWidget(mpArchivedSimulationsTreeWidget, 0, 0);
-  mpArchivedSimulationsTab->setLayout(pArchivedSimulationsTabLayout);
-  // add Archived simulations Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpArchivedSimulationsTab, Helper::archivedSimulations);
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -674,8 +634,18 @@ bool SimulationDialog::validate()
     mpIntervalTextBox->setText("0.002");
   }
   if (mpStartTimeTextBox->text().toDouble() > mpStopTimeTextBox->text().toDouble()) {
-    QMessageBox::critical(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::error),
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::SIMULATION_STARTTIME_LESSTHAN_STOPTIME), Helper::ok);
+    return false;
+  }
+  /* Ticket:5974
+   * Check if there is already active simulation running of this model.
+   */
+  SimulationOutputWidget *pSimulationOutputWidget = MessagesWidget::instance()->getSimulationOutputWidget(mClassName);
+  if (pSimulationOutputWidget && (pSimulationOutputWidget->isCompilationProcessRunning() || pSimulationOutputWidget->isSimulationProcessRunning())) {
+    QMessageBox::critical(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::error),
+                          tr("Simulation of model <b>%1</b> is already running. Please wait for it to finish or cancel it before running another simulation of the same model.")
+                          .arg(mClassName), Helper::ok);
     return false;
   }
   return true;
@@ -694,6 +664,12 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
     mpSimulationHeading->setText(QString(Helper::simulationSetup).append(" - ").append(mClassName));
     // apply simulation options
     mpLibraryTreeItem->mSimulationOptions.setClassName(mClassName);
+    /* Fix for ticket:5796
+     * Set the file name prefix to the model name to avoid the long paths.
+     */
+    if (!mpLibraryTreeItem->mSimulationOptions.isValid()) {
+      mpLibraryTreeItem->mSimulationOptions.setFileNamePrefix(StringHandler::getLastWordAfterDot(mClassName));
+    }
     applySimulationOptions(mpLibraryTreeItem->mSimulationOptions);
     /* Fix for ticket:4975
      * If SimulationOptions is invalid it means we are going to simulate this class for the first time.
@@ -705,13 +681,13 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       // if the class has experiment annotation then read it.
       if (MainWindow::instance()->getOMCProxy()->isExperiment(mClassName)) {
         // get the simulation options....
-        OMCInterface::getSimulationOptions_res simulationOptions = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
+        OMCInterface::getSimulationOptions_res simulationOptions_res = MainWindow::instance()->getOMCProxy()->getSimulationOptions(mClassName);
         // since we always get simulationOptions so just get the values from array
-        mpStartTimeTextBox->setText(QString::number(simulationOptions.startTime));
-        mpStopTimeTextBox->setText(QString::number(simulationOptions.stopTime));
-        mpToleranceTextBox->setText(QString::number(simulationOptions.tolerance));
-        mpNumberofIntervalsSpinBox->setValue(simulationOptions.numberOfIntervals);
-        mpIntervalTextBox->setText(QString::number(simulationOptions.interval));
+        mpStartTimeTextBox->setText(QString::number(simulationOptions_res.startTime));
+        mpStopTimeTextBox->setText(QString::number(simulationOptions_res.stopTime));
+        mpToleranceTextBox->setText(QString::number(simulationOptions_res.tolerance));
+        mpNumberofIntervalsSpinBox->setValue(simulationOptions_res.numberOfIntervals);
+        mpIntervalTextBox->setText(QString::number(simulationOptions_res.interval));
       }
       // apply the global translation flags
       TranslationFlagsWidget *pGlobalTranslationFlagsWidget = OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget();
@@ -861,7 +837,11 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
           } else if (simulationFlag.compare("s") == 0) {
             mpMethodComboBox->setCurrentIndex(mpMethodComboBox->findText(value));
           } else if (simulationFlag.compare("lv") == 0) {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+            QStringList logStreams = value.split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
             QStringList logStreams = value.split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
             int i = 0;
             while (QLayoutItem* pLayoutItem = mpLoggingGroupLayout->itemAt(i)) {
               if (dynamic_cast<QCheckBox*>(pLayoutItem->widget())) {
@@ -1099,6 +1079,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
    */
   mpTranslationFlagsWidget->applyFlags();
   OptionsDialog::instance()->saveGlobalSimulationSettings();
+  OptionsDialog::instance()->saveNFAPISettings();
   // set profiling
   MainWindow::instance()->getOMCProxy()->setCommandLineOptions("+profiling=" + mpProfilingComboBox->currentText());
   // set the infoXMLOperations flag
@@ -1132,11 +1113,11 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   if (!result) {
     //! @todo Remove this once new frontend is used as default and old frontend is removed.
-    bool newFrontendEnabled = false;
+    bool newFrontendEnabled = true;
     QList<QString> options = MainWindow::instance()->getOMCProxy()->getCommandLineOptions();
     foreach (QString option, options) {
-      if (option.contains("newInst")) {
-        newFrontendEnabled = true;
+      if (option.contains("nonewInst")) {
+        newFrontendEnabled = false;
         break;
       }
     }
@@ -1226,6 +1207,7 @@ bool SimulationDialog::translateModel(QString simulationParameters)
   }
   // reset simulation settings
   OptionsDialog::instance()->saveSimulationSettings();
+  OptionsDialog::instance()->saveNFAPISettings();
   // set the infoXMLOperations flag
   if (OptionsDialog::instance()->getDebuggerPage()->getGenerateOperationsCheckBox()->isChecked()) {
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=infoXmlOperations");
@@ -1305,7 +1287,11 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setOutputFormat(mpOutputFormatComboBox->currentText());
   simulationOptions.setSinglePrecision(mpSinglePrecisionCheckBox->isChecked());
   if (!mpFileNameTextBox->text().isEmpty()) {
-    simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
+    if (mpFileNameTextBox->text().contains('\'')) {
+      simulationOptions.setFileNamePrefix("_omcQuot_" + mpFileNameTextBox->text().toUtf8().toHex());
+    } else {
+      simulationOptions.setFileNamePrefix(mpFileNameTextBox->text());
+    }
   } else if (mClassName.contains('\'')) {
     simulationOptions.setFileNamePrefix("_omcQuot_" + mClassName.toUtf8().toHex());
   }
@@ -1496,29 +1482,9 @@ void SimulationDialog::createAndShowSimulationOutputWidget(SimulationOptions sim
     if (simulationOptions.isReSimulate() && simulationOptions.isInteractiveSimulation()) {
       removeVariablesFromTree(simulationOptions.getClassName());
     }
-    /* ticket:4406 Option to automatically close Simulation Completed Window
-     * Close all completed SimulationOutputWidget windows
-     */
-    if (OptionsDialog::instance()->getSimulationPage()->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked()) {
-      foreach (SimulationOutputWidget *pSimulationOutputWidget, mSimulationOutputWidgetsList) {
-        if (!(pSimulationOutputWidget->getSimulationProcessThread()->isCompilationProcessRunning() ||
-              pSimulationOutputWidget->getSimulationProcessThread()->isSimulationProcessRunning())) {
-          pSimulationOutputWidget->close();
-        }
-      }
-    }
-
     SimulationOutputWidget *pSimulationOutputWidget = new SimulationOutputWidget(simulationOptions);
-    mSimulationOutputWidgetsList.append(pSimulationOutputWidget);
-    int xPos = QApplication::desktop()->availableGeometry().width() - pSimulationOutputWidget->frameSize().width() - 20;
-    int yPos = QApplication::desktop()->availableGeometry().height() - pSimulationOutputWidget->frameSize().height() - 20;
-    pSimulationOutputWidget->setGeometry(xPos, yPos, pSimulationOutputWidget->width(), pSimulationOutputWidget->height());
-    /* restore the window geometry. */
-    if (OptionsDialog::instance()->getGeneralSettingsPage()->getPreserveUserCustomizations()
-        && Utilities::getApplicationSettings()->contains("SimulationOutputWidget/geometry")) {
-      pSimulationOutputWidget->restoreGeometry(Utilities::getApplicationSettings()->value("SimulationOutputWidget/geometry").toByteArray());
-    }
-    pSimulationOutputWidget->show();
+    MessagesWidget::instance()->addSimulationOutputTab(pSimulationOutputWidget, simulationOptions.getOutputFileName());
+    MainWindow::instance()->switchToPlottingPerspectiveSlot();
   }
 }
 
@@ -1668,13 +1634,21 @@ void SimulationDialog::saveSimulationFlagsAnnotation()
   if (logStreams.size() > 0) {
     simulationFlags.insert("lv", logStreams.join(","));
   }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+  QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
   QStringList additionalSimulationFlags = mpAdditionalSimulationFlagsTextBox->text().split(" ", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
   foreach (QString additionalSimulationFlag, additionalSimulationFlags) {
     additionalSimulationFlag = additionalSimulationFlag.trimmed();
     if (additionalSimulationFlag.startsWith('-')) {
       additionalSimulationFlag.remove(0, 1);
     }
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+    QStringList nameValueList = additionalSimulationFlag.split("=", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
     QStringList nameValueList = additionalSimulationFlag.split("=", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
     if (nameValueList.size() < 2) {
       simulationFlags.insert(nameValueList.at(0), "()");
     } else {
@@ -1752,7 +1726,11 @@ void SimulationDialog::performSimulation()
   }
   simulationParameters.append(", outputFormat=").append("\"").append(mpOutputFormatComboBox->currentText()).append("\"");
   if (!mpFileNameTextBox->text().isEmpty()) {
-    simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+    if (mpFileNameTextBox->text().contains('\'')) {
+      simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(mpFileNameTextBox->text().toUtf8().toHex()).append("\"");
+    } else {
+      simulationParameters.append(", fileNamePrefix=").append("\"").append(mpFileNameTextBox->text()).append("\"");
+    }
   } else if (mClassName.contains('\'')) {
     simulationParameters.append(", fileNamePrefix=").append("\"_omcQuot_").append(mClassName.toUtf8().toHex()).append("\"");
   }
@@ -1904,23 +1882,6 @@ void SimulationDialog::setInteractiveControls(bool enabled)
     pOpcUaClient->getTargetPlotWindow()->getPauseSimulationButton()->setEnabled(!enabled);
     //plotpicker
     pOpcUaClient->getTargetPlotWindow()->getPlot()->getPlotPicker()->setEnabled(enabled);
-  }
-}
-
-void SimulationDialog::terminateSimulationProcess(SimulationOutputWidget *pSimulationOutputWidget)
-{
-  SimulationProcessThread *pSimulationProcessThread = pSimulationOutputWidget->getSimulationProcessThread();
-  // If the SimulationProcessThread is running then we need to stop it i.e exit its event loop.
-  // Kill the compilation and simulation processes if they are running before exiting the SimulationProcessThread.
-  if (pSimulationProcessThread->isRunning()) {
-    if (pSimulationProcessThread->isCompilationProcessRunning() && pSimulationProcessThread->getCompilationProcess()) {
-      pSimulationProcessThread->getCompilationProcess()->kill();
-    }
-    if (pSimulationProcessThread->isSimulationProcessRunning() && pSimulationProcessThread->getSimulationProcess()) {
-      pSimulationProcessThread->getSimulationProcess()->kill();
-    }
-    pSimulationProcessThread->exit();
-    pSimulationProcessThread->wait();
   }
 }
 
@@ -2268,23 +2229,6 @@ void SimulationDialog::showSimulationFlagsHelp()
   if (!QDesktopServices::openUrl(simulationflagsPath)) {
     QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error),
                           GUIMessages::getMessage(GUIMessages::UNABLE_TO_OPEN_FILE).arg(simulationflagsPath.toString()), Helper::ok);
-  }
-}
-
-/*!
- * \brief SimulationDialog::showArchivedSimulation
- * Slot activated when mpArchivedSimulationsListWidget itemDoubleClicked signal is raised.\n
- * Shows the archived SimulationOutputWidget.
- * \param pTreeWidgetItem
- */
-void SimulationDialog::showArchivedSimulation(QTreeWidgetItem *pTreeWidgetItem)
-{
-  ArchivedSimulationItem *pArchivedSimulationItem = dynamic_cast<ArchivedSimulationItem*>(pTreeWidgetItem);
-  if (pArchivedSimulationItem) {
-    SimulationOutputWidget *pSimulationOutputWidget = pArchivedSimulationItem->getSimulationOutputWidget();
-    pSimulationOutputWidget->show();
-    pSimulationOutputWidget->raise();
-    pSimulationOutputWidget->setWindowState(pSimulationOutputWidget->windowState() & (~Qt::WindowMinimized));
   }
 }
 

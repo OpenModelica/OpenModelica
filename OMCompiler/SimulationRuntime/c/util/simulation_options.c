@@ -40,6 +40,7 @@ const char *FLAG_NAME[FLAG_MAX+1] = {
   /* FLAG_CSV_OSTEP */                    "csvOstep",
   /* FLAG_CVODE_ITER */                   "cvodeNonlinearSolverIteration",
   /* FLAG_CVODE_LMM */                    "cvodeLinearMultistepMethod",
+  /* FLAG_DATA_RECONCILE_Cx */            "cx",
   /* FLAG_DAE_MODE */                     "daeMode",
   /* FLAG_DELTA_X_LINEARIZE */            "deltaXLinearize",
   /* FLAG_DELTA_X_SOLVER */               "deltaXSolver",
@@ -158,6 +159,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_CSV_OSTEP */                    "value specifies csv-files for debug values for optimizer step",
   /* FLAG_CVODE_ITER */                   "nonlinear solver iteration for CVODE solver",
   /* FLAG_CVODE_LMM */                    "linear multistep method for CVODE solver",
+  /* FLAG_DATA_RECONCILE_Cx */            "value specifies a csv-file with inputs as correlation coefficient matrix Cx for DataReconciliation",
   /* FLAG_DAE_MODE */                     "flag to let the integrator use daeResiduals",
   /* FLAG_DELTA_X_LINEARIZE */            "value specifies the delta x value for numerical differentiation used by linearization. The default value is 1e-5.",
   /* FLAG_DELTA_X_SOLVER */               "value specifies the delta x value for numerical differentiation used by integrator. The default values is sqrt(DBL_EPSILON).",
@@ -195,7 +197,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_IIF */                          "value specifies an external file for the initialization of the model relative to -inputPath",
   /* FLAG_IIM */                          "value specifies the initialization method",
   /* FLAG_IIT */                          "[double] value specifies a time for the initialization of the model",
-  /* FLAG_ILS */                          "[int (default 4)] number of lambda steps for homotopy methods",
+  /* FLAG_ILS */                          "[int (default 3)] number of lambda steps for homotopy methods",
   /* FLAG_IMPRK_ORDER */                  "[int (default 5)] value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1-6",
   /* FLAG_IMPRK_LS */                     "selects the linear solver of the integration methods: impeuler, trapezoid and imprungekuta",
   /* FLAG_INITIAL_STEP_SIZE */            "value specifies an initial step size for supported solver",
@@ -293,6 +295,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "                Use together with flag -cvodeNonlinearSolverIteration=CV_ITER_NEWTON or don't set cvodeNonlinearSolverIteration.\n"
   "  * CV_ADAMS  - Adams-Moulton linear multistep method for nonstiff problems.\n"
   "                Use together with flag -cvodeNonlinearSolverIteration=CV_ITER_FIXED_POINT or don't set cvodeNonlinearSolverIteration.",
+  /* FLAG_DATA_RECONCILE_Cx */
+  "  Value specifies an csv-file with inputs as correlation coefficient matrix Cx for DataReconciliation",
   /* FLAG_DAE_MODE */
   "  Enables daeMode simulation if the model was compiled with the omc flag --daeMode and ida method is used.",
   /* FLAG_DELTA_X_LINEARIZE */
@@ -381,7 +385,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  Value [Real] specifies a time for the initialization of the model.",
   /* FLAG_ILS */
   "  Value specifies the number of steps for homotopy method (required: -iim=symbolic).\n"
-  "  The value is an Integer with default value 4.",
+  "  The value is an Integer with default value 3.",
   /* FLAG_IMPRK_ORDER */
   "  Value specifies the integration order of the implicit Runge-Kutta method. Valid values: 1 to 6. Default order is 5.",
   /* FLAG_IMPRK_LS */
@@ -570,6 +574,7 @@ const int FLAG_TYPE[FLAG_MAX] = {
   /* FLAG_CSV_OSTEP */                    FLAG_TYPE_OPTION,
   /* FLAG_CVODE_ITER */                   FLAG_TYPE_OPTION,
   /* FLAG_CVODE_LMM */                    FLAG_TYPE_OPTION,
+  /* FLAG_DATA_RECONCILE_Cx */            FLAG_TYPE_OPTION,
   /* FLAG_DAE_SOLVING */                  FLAG_TYPE_FLAG,
   /* FLAG_DELTA_X_LINEARIZE */            FLAG_TYPE_OPTION,
   /* FLAG_DELTA_X_SOLVER */               FLAG_TYPE_OPTION,

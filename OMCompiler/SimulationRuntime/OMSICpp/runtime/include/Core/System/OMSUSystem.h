@@ -24,7 +24,7 @@ class DiscreteEvents;
 
 
 
-typedef vector<tuple<fmi2_value_reference_t, unsigned int>> out_vars_vr_t;
+typedef vector<tuple<fmi2_import_variable_t*, unsigned int>> out_vars_t;
 
 
 
@@ -215,9 +215,10 @@ public:
 
 private:
 
-    bool addValueReference(fmi2_import_variable_t* v, out_vars_vr_t& output_value_references,
-                           out_vars_vr_t& param_value_references,
+    bool addVariable(fmi2_import_variable_t* v, out_vars_t& output_value_references,
+                           out_vars_t& param_value_references,
                            unsigned int var_idx);
+    void addValueReferences();
     void initializeResultOutputVars();
 
     bool _instantiated;
@@ -233,13 +234,17 @@ private:
     output_real_vars_t _real_vars;
     output_der_vars_t _der_vars;
     output_res_vars_t _res_vars;
-    //value references and index in memory
-    out_vars_vr_t _real_out_vars_vr;
-    out_vars_vr_t _real_param_vars_vr;
-    out_vars_vr_t _int_out_vars_vr;
-    out_vars_vr_t _int_param_vars_vr;
-    out_vars_vr_t _bool_out_vars_vr;
-    out_vars_vr_t _bool_param_vars_vr;
-    out_vars_vr_t _string_out_vars_vr;
-    out_vars_vr_t _string_param_vars_vr;
+    //model variables and index in memory
+    out_vars_t _real_out_vars;
+    out_vars_t _real_param_vars;
+    out_vars_t _int_out_vars;
+    out_vars_t _int_param_vars;
+    out_vars_t _bool_out_vars;
+    out_vars_t _bool_param_vars;
+    out_vars_t _string_out_vars;
+    out_vars_t _string_param_vars;
+    //fmu value references for model variables
+    fmi2_value_reference_t*  _real_vr;
+    fmi2_value_reference_t*  _int_vr;
+    fmi2_value_reference_t*  _bool_vr;
 };

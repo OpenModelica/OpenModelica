@@ -1,6 +1,6 @@
 // name:     Modelica.Blocks.Sources.BooleanPulse
 // keywords: simulation MSL Examples
-// status: correct
+// status: erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml Modelica_Blocks_Sources_BooleanPulse.fmu Modelica_Blocks_Sources_BooleanPulse_* Modelica.Blocks.Sources.BooleanPulse_* Modelica_Blocks_Sources_BooleanPulse_me_FMU.mo Modelica_Blocks_Sources_BooleanPulse.libs Modelica_Blocks_Sources_BooleanPulse.lib Modelica_Blocks_Sources_BooleanPulse.so Modelica_Blocks_Sources_BooleanPulse.dll Modelica_Blocks_Sources_BooleanPulse.c Modelica_Blocks_Sources_BooleanPulse.makefile
 // cflags: -d=-newInst
 // Simulation Results

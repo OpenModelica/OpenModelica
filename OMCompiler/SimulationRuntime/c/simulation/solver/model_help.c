@@ -50,6 +50,7 @@
 #include "epsilon.h"
 #include "fmi_events.h"
 #include "stateset.h"
+#include "spatialDistribution.h"
 #include "../../meta/meta_modelica.h"
 
 #ifdef USE_PARJAC
@@ -859,15 +860,16 @@ void storeRelations(DATA* data)
   TRACE_POP
 }
 
-/*! \fn getNextSampleTimeFMU
+/**
+ * @brief Get time of next sample event if one is defined.
  *
- *  function return next sample time.
+ * Function returns 0 if a time is defined and -1 otherwise.
  *
- *  \param [in]  [data]
- *
- *  \author wbraun
+ * @param data                  Data
+ * @param nextSampleEvent       On output time of next sample event.
+ * @return int                  1 if a sample event is defined, 0 otherwise
  */
-double getNextSampleTimeFMU(DATA *data)
+int getNextSampleTimeFMU(DATA *data, double *nextSampleEvent)
 {
   TRACE_PUSH
 
@@ -875,11 +877,12 @@ double getNextSampleTimeFMU(DATA *data)
   {
     infoStreamPrint(LOG_EVENTS, 0, "Next event time = %f", data->simulationInfo->nextSampleEvent);
     TRACE_POP
-    return data->simulationInfo->nextSampleEvent;
+    *nextSampleEvent = data->simulationInfo->nextSampleEvent;
+    return 1 /* TRUE */;
   }
 
   TRACE_POP
-  return -1;
+  return 0 /* FALSE */;
 }
 
 /*! \fn initializeDataStruc
@@ -950,6 +953,8 @@ void initializeDataStruc(DATA *data, threadData_t *threadData)
   data->modelData->clocksInfo = (CLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nClocks * sizeof(CLOCK_INFO));
   data->modelData->subClocksInfo = (SUBCLOCK_INFO*) omc_alloc_interface.malloc_uncollectable(data->modelData->nSubClocks * sizeof(SUBCLOCK_INFO));
   data->simulationInfo->clocksData = (CLOCK_DATA*) calloc(data->modelData->nClocks, sizeof(CLOCK_DATA));
+  data->simulationInfo->spatialDistributionData = allocSpatialDistribution(data->modelData->nSpatialDistributions);
+  data->simulationInfo->intvlTimers = NULL;
 
   /* set default solvers for algebraic loops */
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -1179,6 +1184,10 @@ void deInitializeDataStruc(DATA *data)
 
   omc_alloc_interface.free_uncollectable(data->modelData->clocksInfo);
   omc_alloc_interface.free_uncollectable(data->modelData->subClocksInfo);
+  free(data->simulationInfo->clocksData);
+
+  freeSpatialDistribution(data->simulationInfo->spatialDistributionData, data->modelData->nSpatialDistributions);
+  free(data->simulationInfo->spatialDistributionData);
 
   /* free simulationInfo arrays */
   free(data->simulationInfo->zeroCrossings);

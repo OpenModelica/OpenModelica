@@ -38,6 +38,7 @@ import SemanticVersion;
 protected
 
 import Autoconf;
+import AvlSetString;
 import Curl;
 import Error;
 import Global;
@@ -144,6 +145,7 @@ function providesExpectedVersion
 protected
   list<JSON> providedVersions;
   String str;
+  SemanticVersion.Version thisVersion;
 algorithm
   _ := match wantedVersion
     case SemanticVersion.NONSEMVER(str) guard str == "default" or str == ""
@@ -162,7 +164,8 @@ algorithm
   matches := false;
   for v in JSON.STRING(version)::providedVersions loop
     JSON.STRING(str) := v;
-    if SemanticVersion.compare(SemanticVersion.parse(str),wantedVersion) == 0 then
+    thisVersion := SemanticVersion.parse(str, nonsemverAsZeroZeroZero=true);
+    if SemanticVersion.compare(thisVersion,wantedVersion,comparePrerelease=SemanticVersion.isPrerelease(wantedVersion) and SemanticVersion.isPrerelease(wantedVersion)) == 0 then
       matches := true;
       return;
     end if;
@@ -289,6 +292,37 @@ algorithm
   end try;
 end getPackageIndex;
 
+function getAllProvidedVersionsForLibrary
+  input String lib;
+  input Boolean printError;
+  output list<String> result;
+protected
+  JSON obj, libobject, vers;
+  AvlSetString.Tree tree;
+  list<String> versions;
+  list<JSON> values;
+algorithm
+  result := {};
+  tree := AvlSetString.new();
+  try
+    obj := getPackageIndex(printError);
+    libobject := JSON.get(JSON.get(obj, "libs"), lib);
+    (vers as JSON.OBJECT(orderedKeys=versions)) := JSON.get(libobject, "versions");
+
+    for version in versions loop
+      tree := AvlSetString.add(tree, version);
+      JSON.ARRAY(values=values) := JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.ARRAY({}));
+      for v in values loop
+        tree := AvlSetString.add(tree, JSON.getString(v));
+      end for;
+    end for;
+
+    result := AvlSetString.listKeys(tree);
+  else
+    return;
+  end try;
+end getAllProvidedVersionsForLibrary;
+
 function versionsThatProvideTheWanted
   input String id;
   input String version;
@@ -304,8 +338,8 @@ algorithm
     obj := getPackageIndex(printError);
     libobject := JSON.get(JSON.get(obj, "libs"), id);
     (vers as JSON.OBJECT(orderedKeys=versions)) := JSON.get(libobject, "versions");
-    wantedVersion := SemanticVersion.parse(version);
-    result := List.map(List.sort(list((version,SemanticVersion.parse(version),getSupportLevel(JSON.get(JSON.get(vers, version),"support"))) for version guard providesExpectedVersion(version, JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.ARRAY({})), wantedVersion) in versions), compareVersionsAndSupportLevel), Util.tuple31);
+    wantedVersion := SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true);
+    result := List.map(List.sort(list((version,SemanticVersion.parse(version, nonsemverAsZeroZeroZero=true),getSupportLevel(JSON.get(JSON.get(vers, version),"support"))) for version guard providesExpectedVersion(version, JSON.getOrDefault(JSON.get(vers, version), "provides", JSON.ARRAY({})), wantedVersion) in versions), compareVersionsAndSupportLevel), Util.tuple31);
   else
     return;
   end try;
@@ -319,7 +353,7 @@ function installPackage
 protected
   list<PackageInstallInfo> packageList, packagesToInstall;
   list<tuple<String,String>> urlPathList, urlPathListToDownload;
-  String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha;
+  String cachePath, path, destPath, destPathPkgMo, destPathPkgInfo, oldSha, dirOfPath, expectedLocation;
 algorithm
   (success,packageList) := installPackageWork(pkg, version, exactMatch, false, {});
   for p in packageList loop
@@ -348,9 +382,6 @@ algorithm
 
     destPathPkgMo := destPath + "/package.mo";
     destPathPkgInfo := destPath + "/" + metaDataFileName;
-    if Util.endsWith(pack.path, ".mo") then
-      destPath := destPathPkgMo;
-    end if;
     oldSha := "";
     if System.regularFileExists(destPathPkgInfo) then
       try
@@ -359,7 +390,24 @@ algorithm
       end try;
     end if;
 
-    Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
+    if Util.endsWith(pack.path, ".mo") then
+      // We are not copying a full directory, so also look for Resources in the zip-file
+      dirOfPath := System.dirname(pack.path);
+      if pack.singleFileStructureCopyAllFiles then
+        Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), if dirOfPath =="." then "" else dirOfPath, destPath);
+        expectedLocation := destPath + "/" + System.basename(pack.path);
+        if not System.rename(expectedLocation, destPathPkgMo) then
+          Error.addMessage(Error.ERROR_PKG_INSTALL_NO_PACKAGE_MO, {cachePath + System.basename(pack.urlToZipFile), expectedLocation});
+          // System.removeDirectory(destPath);
+          fail();
+        end if;
+      else
+        Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPathPkgMo);
+      end if;
+    else
+      Unzip.unzipPath(cachePath + System.basename(pack.urlToZipFile), pack.path, destPath);
+    end if;
+
     if System.regularFileExists(destPathPkgMo) then
       if oldSha == "" then
         Error.addSourceMessage(Error.NOTIFY_PKG_INSTALL_DONE, {pack.sha}, makeSourceInfo(destPathPkgMo));
@@ -396,6 +444,7 @@ uniontype PackageInstallInfo
     String urlToZipFile;
     String path;
     String sha;
+    Boolean singleFileStructureCopyAllFiles;
     JSON json;
   end PKG_INSTALL_INFO;
 end PackageInstallInfo;
@@ -430,7 +479,7 @@ algorithm
         return;
       end if;
       Error.addMessage(Error.WARNING_PKG_CONFLICTING_VERSIONS, {pkg, SemanticVersion.toString(pkgInfo.version), version});
-      success := false;
+      success := true;
       return;
     end if;
   end for;
@@ -468,13 +517,13 @@ algorithm
       else
         zip := "";
       end if;
-      packageToInstall := PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, JSON.emptyObject());
+      packageToInstall := PKG_INSTALL_INFO(false, pkg, semverToInstall, zip, path, sha, false, JSON.emptyObject());
       indexHasPkg := JSON.hasKey(JSON.get(index, "libs"), pkg);
     end if;
   end if;
   if not success then
     if listEmpty(candidates) then
-      Error.addSourceMessage(Error.ERROR_PKG_NOT_FOUND_VERSION, {pkg, version}, makeSourceInfo(getIndexPath()));
+      Error.addSourceMessage(Error.ERROR_PKG_NOT_FOUND_VERSION, {pkg, version, stringDelimitList(getAllProvidedVersionsForLibrary(pkg, true),"\n")}, makeSourceInfo(getIndexPath()));
       return;
     end if;
 
@@ -502,7 +551,7 @@ algorithm
 
   if (not success) or (sha <> "" and sha <> getShaOrZipfile(versionObj)) then
     success := true;
-    packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), versionObj);
+    packageToInstall := PKG_INSTALL_INFO(true, pkg, semverToInstall, JSON.getString(JSON.get(versionObj, "zipfile")), JSON.getString(JSON.get(versionObj, "path")), getShaOrZipfile(versionObj), JSON.getBoolean(JSON.getOrDefault(versionObj, "singleFileStructureCopyAllFiles", JSON.FALSE())), versionObj);
   end if;
 
   (usesObj as JSON.OBJECT(orderedKeys=usesPackages)) := JSON.getOrDefault(versionObj, "uses", JSON.emptyObject());

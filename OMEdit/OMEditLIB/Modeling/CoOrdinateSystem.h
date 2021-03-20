@@ -88,6 +88,8 @@ public:
   QRectF getExtentRectangle() const;
   void reset();
   bool isComplete() const;
+
+  CoOrdinateSystem& operator=(const CoOrdinateSystem &coOrdinateSystem) noexcept = default;
 private:
   qreal mLeft;
   bool mHasLeft;

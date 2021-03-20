@@ -65,18 +65,9 @@ DiagramWindow::DiagramWindow(QWidget *parent) : QWidget(parent)
  */
 void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
 {
-  // Stop any running visualization when we are going to draw a diagram.
-  MainWindow::instance()->getVariablesWidget()->rewindVisualization();
-
   if (pModelWidget && pModelWidget->getDiagramGraphicsView()) {
     setWindowTitle(pModelWidget->getLibraryTreeItem()->getName());
-    if (mpGraphicsView) {
-      delete mpGraphicsScene;
-      mpGraphicsScene = 0;
-      mpMainLayout->removeWidget(mpGraphicsView);
-      delete mpGraphicsView;
-      mpGraphicsView = 0;
-    }
+    deleteGraphicsViewAndScene();
     mpGraphicsScene = new GraphicsScene(StringHandler::Diagram, pModelWidget);
     mpGraphicsView = new GraphicsView(StringHandler::Diagram, pModelWidget, true);
     mpGraphicsView->setScene(mpGraphicsScene);
@@ -138,23 +129,35 @@ void DiagramWindow::drawDiagram(ModelWidget *pModelWidget)
 
 /*!
  * \brief DiagramWindow::removeDiagram
- * When the corresponsing ModelWidget is about to delete then clear the DiagramWindow.
+ * When the corresponding ModelWidget is about to delete then clear the DiagramWindow.
  * \param pModelWidget
  */
 void DiagramWindow::removeDiagram(ModelWidget *pModelWidget)
 {
   if (mpGraphicsView && mpGraphicsView->getModelWidget() == pModelWidget) {
-    // Stop any running visualization when we are going to draw a diagram.
-    MainWindow::instance()->getVariablesWidget()->rewindVisualization();
     // set the window title to default
     setWindowTitle("Diagram");
-    // clear the GraphicsView and delete it
+    deleteGraphicsViewAndScene();
+  }
+}
+
+/*!
+ * \brief DiagramWindow::deleteGraphicsViewAndScene
+ * Clears the GraphicsView and deletes it and GraphicsScene.
+ */
+void DiagramWindow::deleteGraphicsViewAndScene()
+{
+  // Stop any running visualization
+  MainWindow::instance()->getVariablesWidget()->rewindVisualization();
+  if (mpGraphicsView) {
     mpGraphicsView->clearGraphicsView();
-    delete mpGraphicsScene;
-    mpGraphicsScene = 0;
     mpMainLayout->removeWidget(mpGraphicsView);
-    delete mpGraphicsView;
+    mpGraphicsView->deleteLater();
     mpGraphicsView = 0;
+  }
+  if (mpGraphicsScene) {
+    mpGraphicsScene->deleteLater();
+    mpGraphicsScene = 0;
   }
 }
 

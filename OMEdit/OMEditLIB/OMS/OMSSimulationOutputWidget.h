@@ -35,42 +35,72 @@
 #define OMSSIMULATIONOUTPUTWIDGET_H
 
 #include "Util/Utilities.h"
+#include "Util/StringHandler.h"
 #include "OMSimulator.h"
 
 #include <QWidget>
 #include <QProgressBar>
 #include <QDateTime>
+#include <QTextBrowser>
 
-class ArchivedOMSSimulationItem;
+class SimulationSubscriberSocket : public QObject
+{
+  Q_OBJECT
+public:
+  SimulationSubscriberSocket();
+  ~SimulationSubscriberSocket();
+  QString getEndPoint() const {return mEndPoint;}
+  QString getErrorString() const {return mErrorString;}
+  bool isSocketConnected() const {return mSocketConnected;}
+  void setSocketConnected(bool socketConnected) {mSocketConnected = socketConnected;}
+private:
+  void *mpContext;
+  void *mpSocket;
+  QString mEndPoint;
+  QString mErrorString;
+  bool mSocketConnected;
+signals:
+  void simulationProgressJson(const QString &progressJson);
+public slots:
+  void readProgressJson();
+};
 
+class ArchivedSimulationItem;
+class OutputPlainTextEdit;
 class OMSSimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  OMSSimulationOutputWidget(const QString &cref, QWidget *pParent = 0);
-  void simulateCallback(const char* ident, double time, oms_status_enu_t status);
-  QString getCref() const {return mCref;}
-  int isSimulationRunning() {return mIsSimulationRunning;}
+  OMSSimulationOutputWidget(const QString &cref, const QString &fileName, QWidget *pParent = 0);
+  ~OMSSimulationOutputWidget();
+  QProcess* getSimulationProcess() {return mpSimulationProcess;}
+  bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
+  bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
 private:
   QString mCref;
   double mStartTime;
   double mStopTime;
   QString mResultFilePath;
-  Label *mpSimulationHeading;
-  QFrame *mpHorizontalLine;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
   QPushButton *mpCancelSimulationButton;
-  ArchivedOMSSimulationItem *mpArchivedOMSSimulationItem;
+  OutputPlainTextEdit *mpSimulationOutputPlainTextEdit;
+  ArchivedSimulationItem *mpArchivedSimulationItem;
   QDateTime mResultFileLastModifiedDateTime;
-  bool mIsSimulationRunning;
-signals:
-  void sendSimulationProgress(QString ident, double time, oms_status_enu_t status);
+  QProcess *mpSimulationProcess;
+  bool mIsSimulationProcessKilled;
+  bool mIsSimulationProcessRunning;
+  SimulationSubscriberSocket *mpSimulationSubscriberSocket;
+  QThread mProgressThread;
 public slots:
+  void simulationProcessStarted();
+  void readSimulationStandardOutput();
+  void readSimulationStandardError();
+  void simulationProcessError(QProcess::ProcessError error);
+  void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
+  void simulationProgressJson(const QString &progressJson);
+  void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
-  void simulationProgress(QString ident, double time, oms_status_enu_t status);
-protected:
-  virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // OMSSIMULATIONOUTPUTWIDGET_H

@@ -1101,6 +1101,10 @@ getErrorString();
 // 54/54 (1): singularPressureLoss1.pro_ph.T = 0.0   [dynamic |0|0|0|0|]
 //
 //
+// SET_S_After_Minimal_Extraction (0, 0)
+// ==========================================================================
+//
+//
 // Unknown variables in SET_S  (0)
 // ========================================
 //
@@ -1144,15 +1148,14 @@ getErrorString();
 // Condition-3 "SET_C equations must be strictly less than Variable of Interest"
 // ==========================================================================
 // -Failed
-// -SET_C contains:0 equations  > 3 known variables
+// -Set-C has 0 equations and 3 variables to be reconciled
 //
 // record SimulationResult
 //     resultFile = "",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.TSP_Pipe4', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcile -sx=./NewDataReconciliationSimpleTests/resources/DataReconciliationSimpleTests.TSP_Pipe4_Inputs.csv -eps=0.0023 -lv=LOG_JAC'",
 //     messages = "Failed to build model: NewDataReconciliationSimpleTests.TSP_Pipe4"
 // end SimulationResult;
-// "Warning: Requested package Modelica of version default, but this package was already loaded with version 3.2.3. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
-// Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
+// "Warning: Requested package ThermoSysPro of version default, but this package was already loaded with version 3.2. OpenModelica cannot reason about compatibility between the two packages since they are not semantic versions.
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:3:3-43:17:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidInlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/WaterSteam/Connectors.mo:87:3-127:18:writable] Warning: Connector .ThermoSysPro.WaterSteam.Connectors.FluidOutlet is not balanced: The number of potential variables (4) is not equal to the number of flow variables (0).
 // [ThermoSysPro 3.2.0/Properties/WaterSteam/Common.mo:703:3-754:22:writable] Warning: pro.x was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
@@ -1190,8 +1193,8 @@ getErrorString();
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph_der.mo:179:3-182:49:writable] Warning: du2satp_der was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh1satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
 // [ThermoSysPro 3.2.0/Properties/WaterSteamSimple/prop4_Ph.mo:76:3-76:60:writable] Warning: dh2satp was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed.
-// Error: Internal error : Condition 2- Failed : The system is ill-posed.
-// Error: Internal error : Condition 3-Failed : The system is ill-posed.
+// Error: Internal error : Condition 2-Failed: All variables of interest must be involved in Set-C or Set-S: The data reconciliation problem is ill-posed
+// Error: Internal error : Condition 3-Failed: The number of auxiliary conditions must be strictly less than the number of variables to be reconciled. The data reconciliation problem is ill-posed
 // Error: pre-optimization module dataReconciliation (simulation) failed.
 // "
 // endResult

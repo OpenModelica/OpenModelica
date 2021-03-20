@@ -11,7 +11,17 @@ model List1
     list<list<Boolean>> boolList2;
     list<list<String>> stringList1;
     list<list<list<String>>> stringList2;
-  algorithm
+    list<String> keep = {"6", "7", "8"}, lst, destroy;
+    array<String> arr;
+algorithm
+    arr := arrayCreate(5, "#");
+    destroy := arrayList(arr);
+    print("destroy: " + stringDelimitList(destroy, ", ") + "\n");
+    print("keep: " + stringDelimitList(keep, ", ") + "\n");
+    lst :=  MetaModelica.Dangerous.listAppendDestroy(destroy, keep);
+    print("a destroy: " + stringDelimitList(destroy, ", ") + "\n");
+    print("a keep: " + stringDelimitList(keep, ", ") + "\n");
+    print("a lst: " + stringDelimitList(lst, ", ") + "\n");
     listInt1 := {1,2,3,4};
     listInt2 := 1 :: listInt1;
     listInt2 := 1 :: listInt2;

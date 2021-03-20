@@ -144,9 +144,6 @@ algorithm
            AbsynUtil.dummyInfo, checkAccessViolations = false);
   cls := InstNode.setNodeType(InstNodeType.ROOT_CLASS(InstNode.EMPTY_NODE()), cls);
 
-  // Initialize the storage for automatically generated inner elements.
-  top := InstNode.setInnerOuterCache(top, CachedData.TOP_SCOPE(NodeTree.new(), cls));
-
   // Instantiate the class.
   inst_cls := instantiate(cls, context = context);
   checkPartialClass(cls, context);
@@ -177,13 +174,13 @@ algorithm
   // Apply simplifications to the model.
   flatModel := SimplifyModel.simplify(flatModel);
 
-  // Collect a tree of all functions that are still used in the flat model.
-  functions := Flatten.collectFunctions(flatModel);
-
   // Collect package constants that couldn't be substituted with their values
   // (e.g. because they where used with non-constant subscripts), and add them
   // to the model.
-  flatModel := Package.collectConstants(flatModel, functions);
+  flatModel := Package.collectConstants(flatModel);
+
+  // Collect a tree of all functions that are still used in the flat model.
+  functions := Flatten.collectFunctions(flatModel);
 
   // Dump the flat model to a stream if dumpFlat = true.
   flatString := if dumpFlat then
@@ -242,6 +239,7 @@ protected
   SCode.Element cls_elem;
   Class cls;
   ClassTree elems;
+  InstNodeType node_ty;
 algorithm
   // Create a fake SCode.Element for the top scope, so we don't have to make the
   // definition in InstNode an Option only because of this node.
@@ -251,7 +249,8 @@ algorithm
     SCode.COMMENT(NONE(), NONE()), AbsynUtil.dummyInfo);
 
   // Make an InstNode for the top scope, to use as the parent of the top level elements.
-  topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), InstNodeType.TOP_SCOPE());
+  node_ty := InstNodeType.TOP_SCOPE(UnorderedMap.new<InstNode>(System.stringHashDjb2Mod, stringEq));
+  topNode := InstNode.newClass(cls_elem, InstNode.EMPTY_NODE(), node_ty);
 
   // Create a new class from the elements, and update the inst node with it.
   cls := Class.fromSCode(topClasses, false, topNode, NFClass.DEFAULT_PREFIXES);
@@ -611,7 +610,8 @@ algorithm
         // An external object may not contain extends other than the ExternalObject one.
         if arrayLength(tree.exts) > 1 then
           for ext in tree.exts loop
-            if InstNode.name(ext) <> "ExternalObject" then
+            if InstNode.name(ext) <> "ExternalObject" and
+               ClassTree.recursiveElementCount(Class.classTree(InstNode.getClass(ext))) <> 0 then
               InstNode.CLASS_NODE(nodeType = InstNodeType.BASE_CLASS(definition =
                 SCode.EXTENDS(baseClassPath = base_path))) := ext;
               Error.addSourceMessage(Error.EXTERNAL_OBJECT_INVALID_ELEMENT,
@@ -1422,7 +1422,7 @@ protected
   Component comp;
   SCode.Element def;
   InstNode comp_node, rdcl_node;
-  Modifier outer_mod, inner_mod, cc_mod = innerMod;
+  Modifier outer_mod, inner_mod, cc_mod = innerMod, cc_def_mod;
   SCode.Mod cc_smod;
   String name;
   InstNode parent;
@@ -1444,7 +1444,8 @@ algorithm
   if Modifier.isRedeclare(outer_mod) then
     checkOuterComponentMod(outer_mod, def, comp_node);
 
-    Modifier.REDECLARE(element = rdcl_node, innerMod = inner_mod, outerMod = outer_mod) := outer_mod;
+    Modifier.REDECLARE(element = rdcl_node, innerMod = inner_mod,
+      outerMod = outer_mod, constrainingMod = cc_mod) := outer_mod;
 
     next_context := InstContext.set(context, NFInstContext.REDECLARED);
     instComponentDef(def, Modifier.NOMOD(), inner_mod, NFComponent.DEFAULT_ATTR,
@@ -1453,14 +1454,17 @@ algorithm
     cc_smod := SCodeUtil.getConstrainingMod(def);
     if not SCodeUtil.isEmptyMod(cc_smod) then
       name := InstNode.name(node);
-      cc_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), {}, parent);
+      cc_def_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), {}, parent);
+      cc_mod := Modifier.merge(cc_mod, cc_def_mod);
     end if;
+
+    cc_mod := Modifier.merge(cc_mod, innerMod);
 
     outer_mod := Modifier.merge(InstNode.getModifier(rdcl_node), outer_mod);
     InstNode.setModifier(outer_mod, rdcl_node);
     redeclareComponent(rdcl_node, node, Modifier.NOMOD(), cc_mod, attributes, node, instLevel, context);
   else
-    instComponentDef(def, outer_mod, cc_mod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, context);
+    instComponentDef(def, outer_mod, innerMod, attributes, useBinding, comp_node, parent, instLevel, originalAttr, context);
   end if;
 end instComponent;
 
@@ -2424,9 +2428,12 @@ algorithm
 
     else
       algorithm
-        Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
+        if not InstContext.inRelaxed(context) then
+          Error.assertion(false, getInstanceName() + " got invalid component", sourceInfo());
+          fail();
+        end if;
       then
-        fail();
+        ();
 
   end match;
 end instComponentExpressions;
@@ -2665,6 +2672,7 @@ algorithm
         prefixed_cref := ComponentRef.fromNodeList(InstNode.scopeList(scope));
         prefixed_cref := if ComponentRef.isEmpty(prefixed_cref) then
           cref else ComponentRef.append(cref, prefixed_cref);
+        prefixed_cref := ComponentRef.removeOuterCrefPrefix(prefixed_cref);
       then
         Expression.CREF(Type.UNKNOWN(), prefixed_cref);
 
@@ -3320,8 +3328,7 @@ function insertGeneratedInners
   input InstNode topScope;
   input InstContext.Type context;
 protected
-  NodeTree.Tree inner_tree;
-  list<tuple<String, InstNode>> inner_nodes;
+  UnorderedMap<String, InstNode> generated_inners;
   list<Mutable<InstNode>> inner_comps;
   InstNode n, on;
   String name, str;
@@ -3330,19 +3337,17 @@ protected
   InstNode base_node;
   Boolean name_defined;
 algorithm
-  CachedData.TOP_SCOPE(addedInner = inner_tree) := InstNode.getInnerOuterCache(topScope);
+  InstNodeType.TOP_SCOPE(generatedInners = generated_inners) := InstNode.nodeType(topScope);
 
-  // Empty tree => nothing more to do.
-  if NodeTree.isEmpty(inner_tree) then
+  // No inners => nothing more to do.
+  if UnorderedMap.isEmpty(generated_inners) then
     return;
   end if;
 
-  inner_nodes := NodeTree.toList(inner_tree);
   inner_comps := {};
 
-  for e in inner_nodes loop
-    (name, n) := e;
-
+  for n in UnorderedMap.valueArray(generated_inners) loop
+    name := InstNode.name(n);
     checkTopLevelOuter(name, n, node, context);
 
     // Always print a warning that an inner element was automatically generated.

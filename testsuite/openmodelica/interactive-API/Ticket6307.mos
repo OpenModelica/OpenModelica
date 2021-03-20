@@ -1,0 +1,59 @@
+// name: Ticket6307.mos
+// keywords:
+// status: correct
+//
+// Tests if -d=nfAPI will give the correct response for getComponentAnnotations
+//
+
+setCommandLineOptions("-d=nfAPI"); getErrorString();
+
+loadString("
+model Ticket6307
+  model M
+    parameter Real x = 1;
+  end M;
+  replaceable model M1 = M(x=2) annotation(choicesAllMatching=true);
+  Real a annotation(choicesAllMatching=true);
+  Real b annotation(choicesAllMatching=true);
+end Ticket6307;
+"); getErrorString();
+
+getComponents(Ticket6307); getErrorString();
+getComponentAnnotations(Ticket6307); getErrorString();
+
+getElements(Ticket6307); getErrorString();
+getElementAnnotations(Ticket6307); getErrorString();
+
+setCommandLineOptions("-d=nfAPI"); getErrorString();
+
+getComponents(Ticket6307); getErrorString();
+getComponentAnnotations(Ticket6307); getErrorString();
+
+getElements(Ticket6307); getErrorString();
+getElementAnnotations(Ticket6307); getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// ""
+// {{Real,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// ""
+// {{choicesAllMatching=true},{choicesAllMatching=true}}
+// ""
+// {{"cl", "model", Ticket6307.M, M1, "", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}},{"co", "-", Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}},{"co", "-", Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}}
+// ""
+// {{choicesAllMatching=true},{choicesAllMatching=true},{choicesAllMatching=true}}
+// ""
+// true
+// ""
+// {{Real,a,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}},{Real,b,"", "public", false, false, false, false, "unspecified", "none", "unspecified",{}}}
+// ""
+// {{choicesAllMatching=true},{choicesAllMatching=true}}
+// ""
+// {{"cl", "model", Ticket6307.M, M1, "", "public", false, false, false, true, "unspecified", "none", "unspecified", $Any, {}},{"co", "-", Real, a, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}},{"co", "-", Real, b, "", "public", false, false, false, false, "unspecified", "none", "unspecified", $Any, {}}}
+// ""
+// {{choicesAllMatching=true},{choicesAllMatching=true},{choicesAllMatching=true}}
+// ""
+// endResult

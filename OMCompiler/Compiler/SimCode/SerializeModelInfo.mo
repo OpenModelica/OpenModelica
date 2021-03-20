@@ -1329,8 +1329,10 @@ algorithm
   (exp,eqs) := branch;
   File.write(file,"[");
   serializeExp(file,exp);
-  File.write(file,",");
-  serializeList(file,eqs,serializeEquationIndex);
+  if not listEmpty(eqs) then
+    File.write(file,",");
+    serializeList(file,eqs,serializeEquationIndex);
+  end if;
   File.write(file,"]");
 end serializeIfBranch;
 

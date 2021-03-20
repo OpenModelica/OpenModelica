@@ -181,7 +181,12 @@ end translateModel;
      // main file
      let()=tmpTickResetIndex(0, 0)
      let()=tmpTickResetIndex(0, 1)
+     let()= textFileConvertLines(simulationFile_spd(simCode), '<%modelNamePrefix%>_18spd.c')
+     // update bound start values, update bound parameters
+     let()=tmpTickResetIndex(0, 0)
+     let()=tmpTickResetIndex(0, 1)
      let()= textFileConvertLines(simulationFile(simCode,guid,fmuVersion), '<%modelNamePrefix%>.c')
+
      ""
   end match
 end generateSimulationFiles;
@@ -1347,6 +1352,8 @@ template fmuMakefile(String target, SimCode simCode, String FMUVersion, list<Str
       AR=@AR@
       CFLAGS=@CFLAGS@
       LD=$(CC) -shared
+      # define OMC_LDFLAGS_LINK_TYPE env variable to override this
+      OMC_LDFLAGS_LINK_TYPE=static
       LDFLAGS=@LDFLAGS@ @LIBS@
       DLLEXT=@DLLEXT@
       NEED_RUNTIME=@NEED_RUNTIME@

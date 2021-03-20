@@ -1,6 +1,6 @@
 // name:     BooleanNetwork1
 // keywords: BooleanNetwork1 FMI-Export FMI-Import
-// status:   correct
+// status:   erroneous
 // teardown_command: rm -rf binaries sources modelDescription.xml BooleanNetwork1.fmu BooleanNetwork1_me_FMU.mo BooleanNetwork1.lib* BooleanNetwork1.so BooleanNetwork1.dll BooleanNetwork1_*.c BooleanNetwork1_*.h BooleanNetwork1_*.o BooleanNetwork1_*.json
 // cflags: -d=-newInst
 // Boolean variables, Boolean input variable, no continuous-time states, time events

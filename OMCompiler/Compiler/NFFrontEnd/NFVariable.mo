@@ -42,9 +42,11 @@ encapsulated uniontype NFVariable
   import BackendInfo = NFBackendExtension.BackendInfo;
 
 protected
-  import Variable = NFVariable;
+  import ExpandExp = NFExpandExp;
   import IOStream;
   import Util;
+  import Variable = NFVariable;
+  import MetaModelica.Dangerous.listReverseInPlace;
 
 public
   record VARIABLE
@@ -64,6 +66,7 @@ public
     input ComponentRef cref;
     output Variable variable;
   protected
+    list<ComponentRef> crefs;
     InstNode node;
     Component comp;
     Type ty;
@@ -76,7 +79,7 @@ public
     node := ComponentRef.node(cref);
     comp := InstNode.component(node);
     ty := ComponentRef.getSubscriptedType(cref);
-    binding := Component.getBinding(comp);
+    binding := Component.getImplicitBinding(comp);
     vis := InstNode.visibility(node);
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
@@ -97,6 +100,69 @@ public
     input Variable var2;
     output Boolean b = ComponentRef.isEqual(var1.name, var2.name);
   end equalName;
+
+  function expand
+    "Expands an array variable into its scalar elements."
+    input Variable var;
+    output list<Variable> vars;
+  protected
+    list<ComponentRef> crefs;
+    Variable v;
+    Binding binding;
+    Variability bind_var;
+    Expression bind_exp, exp;
+    list<Expression> expl;
+    Integer crefs_len, expl_len;
+  algorithm
+    if Type.isArray(var.ty) then
+      // Expand the name.
+      crefs := list(Expression.toCref(e) for e in
+        Expression.arrayScalarElements(ExpandExp.expandCref(Expression.fromCref(var.name))));
+
+      v := var;
+      v.ty := Type.arrayElementType(v.ty);
+      vars := {};
+      binding := var.binding;
+
+      // If the variable has a binding we need to expand it too.
+      if Binding.isBound(binding) then
+        bind_exp := Binding.getTypedExp(binding);
+        expl := Expression.arrayScalarElements(ExpandExp.expand(bind_exp));
+
+        crefs_len := listLength(crefs);
+        expl_len := listLength(expl);
+
+        // If the binding has fewer dimensions than the variable, 'multiply' the
+        // list of binding expression until they match.
+        if expl_len < crefs_len then
+          if intMod(crefs_len, expl_len) <> 0 then
+            Error.assertion(false, getInstanceName() + " failed to expand " +
+              ComponentRef.toString(var.name), sourceInfo());
+          end if;
+
+          expl := List.flatten(List.fill(expl, intDiv(crefs_len, expl_len)));
+        end if;
+
+        bind_var := Binding.variability(binding);
+
+        for cr in crefs loop
+          v.name := cr;
+          exp :: expl := expl;
+          v.binding := Binding.FLAT_BINDING(exp, bind_var);
+          vars := v :: vars;
+        end for;
+      else
+        for cr in crefs loop
+          v.name := cr;
+          vars := v :: vars;
+        end for;
+      end if;
+
+      vars := listReverseInPlace(vars);
+    else
+      vars := {var};
+    end if;
+  end expand;
 
   function isStructural
     input Variable variable;

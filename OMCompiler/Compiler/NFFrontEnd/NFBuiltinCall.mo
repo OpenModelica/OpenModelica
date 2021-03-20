@@ -1025,6 +1025,7 @@ protected
     Function fn;
     list<Dimension> dims;
     Boolean evaluated;
+    Integer index = 1;
   algorithm
     ty_args := {fillArg};
     dims := {};
@@ -1034,9 +1035,16 @@ protected
     for arg in dimensionArgs loop
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, context, info);
 
-      if arg_var <= Variability.STRUCTURAL_PARAMETER and
-         arg_pur == Purity.PURE and
-         not InstContext.inFunction(context) then
+      if not (InstContext.inAlgorithm(context) or InstContext.inFunction(context)) then
+        if arg_var > Variability.PARAMETER or arg_pur == Purity.IMPURE or
+           Structural.isExpressionNotFixed(arg) then
+          Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
+            {Expression.toString(arg), String(index),
+             List.toString(fillArg :: dimensionArgs, Expression.toString,
+                 ComponentRef.toString(fnRef), "(", ", ", ")", true)}, info);
+        end if;
+
+        Structural.markExp(arg);
         arg := Ceval.evalExpBinding(arg);
         arg := Expression.getScalarBindingExp(arg);
         arg_ty := Expression.typeOf(arg);
@@ -1940,7 +1948,7 @@ protected
     Integer args_count;
     Expression e1, e2;
   algorithm
-    Call.TYPED_CALL(arguments = args) := Call.typeMatchNormalCall(call, context, info);
+    Call.TYPED_CALL(arguments = args) := Call.typeMatchNormalCall(call, context, info, vectorize = false);
     args_count := listLength(args);
 
     callExp := match args
@@ -2224,7 +2232,7 @@ protected
     Expression counter, resolution;
   algorithm
     ty_call as Call.TYPED_CALL(arguments = {_, counter, resolution}, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, context, info);
+      Call.typeMatchNormalCall(call, context, info, vectorize = false);
     Structural.markExp(counter);
     Structural.markExp(resolution);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
@@ -2243,7 +2251,7 @@ protected
     Expression counter, resolution;
   algorithm
     ty_call as Call.TYPED_CALL(arguments = {_, counter, resolution}, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, context, info);
+      Call.typeMatchNormalCall(call, context, info, vectorize = false);
     Structural.markExp(counter);
     Structural.markExp(resolution);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
@@ -2262,7 +2270,7 @@ protected
     Expression factor;
   algorithm
     ty_call as Call.TYPED_CALL(arguments = {_, factor}, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, context, info);
+      Call.typeMatchNormalCall(call, context, info, vectorize = false);
     Structural.markExp(factor);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
   end typeSubSampleCall;
@@ -2280,7 +2288,7 @@ protected
     Expression factor;
   algorithm
     ty_call as Call.TYPED_CALL(arguments = {_, factor}, ty = ty, var = var) :=
-      Call.typeMatchNormalCall(call, context, info);
+      Call.typeMatchNormalCall(call, context, info, vectorize = false);
     Structural.markExp(factor);
     callExp := Expression.CALL(Call.unboxArgs(ty_call));
   end typeSuperSampleCall;

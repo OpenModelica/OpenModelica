@@ -2,7 +2,7 @@
 // Note: Requires PATH to include cross-compilers for darwin, mingw, armhf
 // cflags: -d=-newInst
 
-if not loadModel(Modelica) then
+if not loadModel(Modelica, {"3.2.3"}) then
   print(getErrorString());
   exit(1);
 end if;

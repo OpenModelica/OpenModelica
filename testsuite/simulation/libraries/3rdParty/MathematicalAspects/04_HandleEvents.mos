@@ -6,7 +6,7 @@
 //  Examples to the Tutorial "Mathematical Aspects of Object-Oriented Modeling and Simulation"
 //
 
-loadModel(Modelica); getErrorString();
+loadModel(Modelica, {"3.2.3"}); getErrorString();
 loadFile("HandleEvents1.mo"); getErrorString();
 loadFile("HandleEvents2.mo"); getErrorString();
 
@@ -47,7 +47,7 @@ res := OpenModelica.Scripting.compareSimulationResults("HandleEvents2_res.mat",
 // "
 // end SimulationResult;
 // {"Files Equal!"}
-// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
 // "
 // endResult

@@ -38,7 +38,7 @@
 #include "Modeling/MessagesWidget.h"
 
 #include <QObject>
-#include <QTime>
+#include <QElapsedTimer>
 
 class OMSProxy : public QObject
 {
@@ -57,8 +57,8 @@ private:
   FILE *mpCommunicationLogFile;
   double mTotalOMSCallsTime;
 
-  void logCommand(QTime *commandTime, QString command);
-  void logResponse(QString command, oms_status_enu_t status, QTime *responseTime);
+  void logCommand(QString command);
+  void logResponse(QString command, oms_status_enu_t status, QElapsedTimer *responseTime);
 public:
   static OMSProxy* instance() {return mpInstance;}
 
@@ -82,7 +82,6 @@ public:
   bool addSystem(QString cref, oms_system_enu_t type);
   bool addTLMBus(QString cref, oms_tlm_domain_t domain, int dimensions, const oms_tlm_interpolation_t interpolation);
   bool addTLMConnection(QString crefA, QString crefB, double delay, double alpha, double linearimpedance, double angularimpedance);
-  bool cancelSimulation_asynchronous(QString cref);
   bool deleteConnection(QString crefA, QString crefB);
   bool deleteConnectorFromBus(QString busCref, QString connectorCref);
   bool deleteConnectorFromTLMBus(QString busCref, QString connectorCref);
@@ -109,7 +108,6 @@ public:
                            char ***types, char ***descriptions);
   bool getTolerance(QString cref, double* absoluteTolerance, double* relativeTolerance);
   bool getVariableStepSize(QString cref, double* initialStepSize, double* minimumStepSize, double* maximumStepSize);
-  bool getSignalFilter(QString cref, char **regex);
   bool instantiate(QString cref);
   bool initialize(QString cref);
   bool list(QString cref, QString *pContents);
@@ -134,7 +132,6 @@ public:
   bool setReal(QString cref, double value);
   bool setResultFile(QString cref, QString filename, int bufferSize);
   bool getResultFile(QString cref, char **pFilename, int *pBufferSize);
-  bool setSignalFilter(QString cref, QString regex);
   bool setSolver(QString cref, oms_solver_enu_t solver);
   bool setStartTime(QString cref, double startTime);
   bool setStopTime(QString cref, double stopTime);
@@ -145,7 +142,6 @@ public:
   bool setTolerance(QString cref, double absoluteTolerance, double relativeTolerance);
   bool setVariableStepSize(QString cref, double initialStepSize, double minimumStepSize, double maximumStepSize);
   void setWorkingDirectory(QString path);
-  bool simulate_asynchronous(QString cref);
   bool terminate(QString cref);
 signals:
   void logGUIMessage(MessageItem messageItem);

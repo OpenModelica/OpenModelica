@@ -839,6 +839,7 @@ public
     Type t, t2, ety;
     list<Expression> el;
     Expression e1, e2;
+    Integer dim_diff;
   algorithm
     ety := Type.arrayElementType(ty);
 
@@ -884,8 +885,8 @@ public
         algorithm
           e1 := typeCast(exp.trueBranch, ety);
           e2 := typeCast(exp.falseBranch, ety);
-          t := if Type.isConditionalArray(exp.ty) then
-            Type.setConditionalArrayTypes(exp.ty, typeOf(e1), typeOf(e2)) else typeOf(e1);
+          t := if Type.isConditionalArray(ty) then
+            Type.setConditionalArrayTypes(ty, typeOf(e1), typeOf(e2)) else typeOf(e1);
         then
           IF(t, exp.condition, e1, e2);
 
@@ -898,10 +899,12 @@ public
 
       case BINDING_EXP()
         algorithm
-          t := Type.setArrayElementType(exp.expType, ety);
-          t2 := Type.setArrayElementType(exp.bindingType, ety);
+          e1 := typeCast(exp.exp, ty);
+          t := typeOf(e1);
+          dim_diff := Type.dimensionDiff(exp.expType, exp.bindingType);
+          t2 := if dim_diff > 0 then Type.unliftArrayN(dim_diff, t) else t;
         then
-          BINDING_EXP(typeCast(exp.exp, ety), t, t2, exp.parents, exp.isEach);
+          BINDING_EXP(e1, t, t2, exp.parents, exp.isEach);
 
       // Other expressions are handled by making a CAST expression.
       else typeCastGeneric(exp, ety);
@@ -911,8 +914,12 @@ public
   function typeCastGeneric
     input output Expression exp;
     input Type ty;
+  protected
+    Type exp_ty = typeOf(exp);
   algorithm
-    exp := CAST(Type.setArrayElementType(typeOf(exp), ty), exp);
+    if not Type.isEqual(ty, Type.arrayElementType(exp_ty)) then
+      exp := CAST(Type.setArrayElementType(exp_ty, ty), exp);
+    end if;
   end typeCastGeneric;
 
   function realValue
@@ -1073,6 +1080,20 @@ public
 
     rangeExp := makeRange(start_exp, step_exp, stop_exp);
   end makeIntegerRange;
+
+  function makeTuple
+    input list<Expression> expl;
+    output Expression tupleExp;
+  protected
+    list<Type> tyl;
+  algorithm
+    if listLength(expl) == 1 then
+      tupleExp := listHead(expl);
+    else
+      tyl := list(typeOf(e) for e in expl);
+      tupleExp := TUPLE(Type.TUPLE(tyl, NONE()), expl);
+    end if;
+  end makeTuple;
 
   function applySubscripts
     "Subscripts an expression with the given list of subscripts."
@@ -4809,6 +4830,13 @@ public
         list<Expression> expl;
 
       case RECORD() then listGet(recordExp.elements, index);
+
+      case CREF()
+        algorithm
+          Type.COMPLEX(cls = node) := Type.arrayElementType(typeOf(recordExp));
+          node := Class.nthComponent(index, InstNode.getClass(node));
+        then
+          fromCref(ComponentRef.prefixCref(node, InstNode.getType(node), {}, recordExp.cref));
 
       case ARRAY(elements = {}, ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         then makeEmptyArray(InstNode.getType(Class.nthComponent(index, InstNode.getClass(node))));

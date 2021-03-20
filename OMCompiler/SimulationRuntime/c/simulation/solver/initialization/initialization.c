@@ -74,7 +74,7 @@
 #include <math.h>
 #include <string.h>
 
-extern int init_lambda_steps = 4;
+extern int init_lambda_steps = 3;
 
 /*! \fn void dumpInitializationStatus(DATA *data)
  *
@@ -212,7 +212,7 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 
   adaptiveGlobal = data->callback->useHomotopy == 2;  /* new global homotopy approach (adaptive lambda) */
   solveWithGlobalHomotopy = homotopySupport
-                            && ((data->callback->useHomotopy == 1 && init_lambda_steps > 1) || adaptiveGlobal);
+                            && ((data->callback->useHomotopy == 1 && init_lambda_steps >= 1) || adaptiveGlobal);
 
 #if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
   /* initial sample and delay before initial the system */
@@ -309,9 +309,9 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
 #ifndef OMC_EMCC
   MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
-    for(step=0; step<init_lambda_steps; ++step)
+    for(step=0; step<=init_lambda_steps; ++step)
     {
-      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps-1);
+      data->simulationInfo->lambda = ((double)step)/(init_lambda_steps);
       lambda = data->simulationInfo->lambda;
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g", lambda);
 
@@ -322,9 +322,21 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
       }
 
       if(0 == step)
-        data->callback->functionInitialEquations_lambda0(data, threadData);
+      {
+        if(data->callback->functionInitialEquations_lambda0 != NULL)
+        {
+          data->callback->functionInitialEquations_lambda0(data, threadData);
+        }
+        else
+        {
+          warningStreamPrint(LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
+          data->callback->functionInitialEquations(data, threadData);
+        }
+      }
       else
+      {
         data->callback->functionInitialEquations(data, threadData);
+      }
 
       infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "homotopy parameter lambda = %g done\n---------------------------", lambda);
 
@@ -377,7 +389,15 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
     // Solve lambda0-DAE
     data->simulationInfo->lambda = 0;
     infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solve simplified lambda0-DAE");
-    data->callback->functionInitialEquations_lambda0(data, threadData);
+    if(data->callback->functionInitialEquations_lambda0 != NULL)
+    {
+      data->callback->functionInitialEquations_lambda0(data, threadData);
+    }
+    else
+    {
+      warningStreamPrint(LOG_INIT_HOMOTOPY, 0, "No initialEquation_lambda0 was generated. Using normal initial equation system with lambda=0 instead.");
+      data->callback->functionInitialEquations(data, threadData);
+    }
     infoStreamPrint(LOG_INIT_HOMOTOPY, 0, "solving simplified lambda0-DAE done\n---------------------------");
 
     // Run along the homotopy path and solve the actual system
@@ -676,6 +696,8 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
     data->callback->updateBoundVariableAttributes(data, threadData);
   }
 
+  data->callback->function_initSpatialDistribution(data, threadData);
+
   /* update static data of linear/non-linear system solvers */
   updateStaticDataOfLinearSystems(data, threadData);
   updateStaticDataOfNonlinearSystems(data, threadData);
@@ -771,6 +793,7 @@ int initialization(DATA *data, threadData_t *threadData, const char* pInitMethod
 
   initSample(data, threadData, data->simulationInfo->startTime, data->simulationInfo->stopTime);
   data->callback->function_storeDelayed(data, threadData);
+  data->callback->function_storeSpatialDistribution(data, threadData);
   data->callback->function_updateRelations(data, threadData, 1);
   initSynchronous(data, threadData, data->simulationInfo->startTime);
 

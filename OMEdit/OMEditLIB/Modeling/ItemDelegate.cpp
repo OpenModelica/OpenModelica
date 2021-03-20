@@ -32,6 +32,7 @@
  */
 
 #include "ItemDelegate.h"
+#include "Modeling/ModelWidgetContainer.h"
 #include "Modeling/LibraryTreeWidget.h"
 #include "Plotting/VariablesWidget.h"
 #include "Simulation/SimulationOutputWidget.h"
@@ -98,10 +99,10 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   if (value.isValid()) {
     if (value.type() == QVariant::Icon) {
       icon = qvariant_cast<QIcon>(value);
-      decorationRect = QRect(QPoint(0, 0), icon.actualSize(option.decorationSize, iconMode, iconState));
+      decorationRect = QRect(QPoint(0, 0), icon.actualSize(opt.decorationSize, iconMode, iconState));
     } else {
       pixmap = decoration(opt, value);
-      decorationRect = QRect(QPoint(0, 0), option.decorationSize).intersected(pixmap.rect());
+      decorationRect = QRect(QPoint(0, 0), opt.decorationSize).intersected(pixmap.rect());
     }
   }
   QString text;
@@ -109,7 +110,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   value = index.data(Qt::DisplayRole);
   if (value.isValid()) {
     text = formatDisplayText(value);
-    displayRect = textRectangle(painter, option.rect, opt.font, text);
+    displayRect = textRectangle(painter, opt.rect, opt.font, text);
   }
   QRect checkRect;
   Qt::CheckState checkState = Qt::Unchecked;
@@ -124,20 +125,6 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   }
   // do the layout
   doLayout(opt, &checkRect, &decorationRect, &displayRect, false);
-  /* We check if item belongs to QTreeView and QTreeView model is LibraryTreeProxyModel.
-   * If LibraryTreeItem is unsaved then draw its background as Qt::darkRed.
-   */
-  if (parent() && qobject_cast<QTreeView*>(parent())) {
-    QTreeView *pTreeView = qobject_cast<QTreeView*>(parent());
-    LibraryTreeProxyModel *pLibraryTreeProxyModel = qobject_cast<LibraryTreeProxyModel*>(pTreeView->model());
-    if (pLibraryTreeProxyModel) {
-      QModelIndex sourceIndex = pLibraryTreeProxyModel->mapToSource(index);
-      LibraryTreeItem *pLibraryTreeItem = static_cast<LibraryTreeItem*>(sourceIndex.internalPointer());
-      if (pLibraryTreeItem && !pLibraryTreeItem->isSaved()) {
-        opt.palette.setBrush(QPalette::Highlight, Qt::darkRed);
-      }
-    }
-  }
   // draw background
   drawBackground(painter, opt, index);
   // hover
@@ -148,7 +135,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   if (mDrawGrid) {
     QPen pen;
     if (!mGridColor.isValid()) {
-      int gridHint = qApp->style()->styleHint(QStyle::SH_Table_GridLineColor, &option);
+      int gridHint = qApp->style()->styleHint(QStyle::SH_Table_GridLineColor, &opt);
       const QColor gridColor = static_cast<QRgb>(gridHint);
       pen.setColor(gridColor);
     } else {
@@ -156,8 +143,8 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     }
     painter->save();
     painter->setPen(pen);
-    painter->drawLine(option.rect.topRight(), option.rect.bottomRight());
-    painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight());
+    painter->drawLine(opt.rect.topRight(), opt.rect.bottomRight());
+    painter->drawLine(opt.rect.bottomLeft(), opt.rect.bottomRight());
     painter->restore();
   }
   /* ticket:5050 Use Qt::ElideRight for value column only if the value is a double in non-scientific notation.
@@ -176,20 +163,20 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
   if (mDrawRichText) {
     QAbstractTextDocumentLayout::PaintContext ctx;
     QTextDocument textDocument;
-    initTextDocument(&textDocument, opt.font, option.rect.width());
+    initTextDocument(&textDocument, opt.font, opt.rect.width());
 
     QVariant variant = index.data(Qt::ForegroundRole);
     if (variant.isValid()) {
-      if (option.state & ~QStyle::State_Selected) {
+      if (opt.state & ~QStyle::State_Selected) {
         ctx.palette.setColor(QPalette::Text, variant.value<QColor>());
       }
     }
-    QPalette::ColorGroup cg = option.state & QStyle::State_Enabled ? QPalette::Normal : QPalette::Disabled;
-    if (cg == QPalette::Normal && !(option.state & QStyle::State_Active)) {
+    QPalette::ColorGroup cg = opt.state & QStyle::State_Enabled ? QPalette::Normal : QPalette::Disabled;
+    if (cg == QPalette::Normal && !(opt.state & QStyle::State_Active)) {
       cg = QPalette::Inactive;
     }
-    if (option.state & QStyle::State_Selected) {
-      ctx.palette.setColor(QPalette::Text, option.palette.color(cg, QPalette::HighlightedText));
+    if (opt.state & QStyle::State_Selected) {
+      ctx.palette.setColor(QPalette::Text, opt.palette.color(cg, QPalette::HighlightedText));
     }
 
     textDocument.setHtml(text);
@@ -207,7 +194,7 @@ void ItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
     if (mDrawRichText) {
       decorationRect = QRect(decorationRect.left(), displayRect.top() + 4, decorationRect.width(), decorationRect.height());
     }
-    icon.paint(painter, decorationRect, option.decorationAlignment, QIcon::Normal, QIcon::Off);
+    icon.paint(painter, decorationRect, opt.decorationAlignment, QIcon::Normal, QIcon::Off);
   } else {
     drawDecoration(painter, opt, decorationRect, pixmap);
   }

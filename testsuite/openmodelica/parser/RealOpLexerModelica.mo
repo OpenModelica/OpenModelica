@@ -17,8 +17,6 @@ end A;
 // Error processing file: RealOpLexerModelica.mo
 // Failed to parse file: RealOpLexerModelica.mo!
 //
-// [openmodelica/parser/RealOpLexerModelica.mo:11:21-11:23:writable] Warning: Treating .2 as 0.2. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.
-// [openmodelica/parser/RealOpLexerModelica.mo:13:22-13:24:writable] Warning: Treating .2 as 0.2. This is not standard Modelica and only done for compatibility with old code. Support for this feature may be removed in the future.
 // [openmodelica/parser/RealOpLexerModelica.mo:12:23-12:24:writable] Error: No viable alternative near token: 2
 //
 // # Error encountered! Exiting...

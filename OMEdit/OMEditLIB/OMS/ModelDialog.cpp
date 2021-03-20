@@ -157,6 +157,17 @@ void CreateModelDialog::createNewModel()
       LibraryTreeItem *pLibraryTreeItem = pLibraryTreeModel->createLibraryTreeItem(mpNameTextBox->text(), mpNameTextBox->text(), "", false, pLibraryTreeModel->getRootLibraryTreeItem());
       if (pLibraryTreeItem) {
         pLibraryTreeModel->showModelWidget(pLibraryTreeItem);
+        // expand the ssp model
+        QModelIndex modelIndex = pLibraryTreeModel->libraryTreeItemIndex(pLibraryTreeItem);
+        QModelIndex proxyIndex = MainWindow::instance()->getLibraryWidget()->getLibraryTreeProxyModel()->mapFromSource(modelIndex);
+        MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->expand(proxyIndex);
+        // open the root system inside it
+        if (pLibraryTreeItem->childrenSize() > 0) {
+          LibraryTreeItem *pRootSystemLibraryTreeItem  = pLibraryTreeItem->childAt(0);
+          if (pRootSystemLibraryTreeItem) {
+            pLibraryTreeModel->showModelWidget(pRootSystemLibraryTreeItem);
+          }
+        }
       }
       accept();
     } else {
@@ -310,6 +321,9 @@ AddSubModelDialog::AddSubModelDialog(GraphicsView *pGraphicsView, const QString 
   }
   pMainLayout->addWidget(mpButtonBox, 5, 0, 1, 3, Qt::AlignRight);
   setLayout(pMainLayout);
+  // Fixes issue #7150. Set the focus on the name instead of path.
+  mpNameTextBox->selectAll();
+  mpNameTextBox->setFocus();
 }
 
 /*!
@@ -343,6 +357,8 @@ void AddSubModelDialog::browseSubModelPath()
   if (!path.isEmpty()) {
     mpPathTextBox->setText(path);
     mpNameTextBox->setText(name);
+    mpNameTextBox->selectAll();
+    mpNameTextBox->setFocus();
   }
 }
 

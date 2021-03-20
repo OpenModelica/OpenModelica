@@ -61,7 +61,7 @@ static void wrapper_fvec_hybrj(const integer* n, const double* x, double* f, dou
 /*! \fn allocate memory for nonlinear system solver hybrd
  *
  */
-int allocateHybrdData(int size, void** voiddata)
+int allocateHybrdData(size_t size, void** voiddata)
 {
   DATA_HYBRD* data = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
 
@@ -1055,6 +1055,10 @@ int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber)
       }
       /* take the best approximation */
       memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
+
+      giveUp = 1;
+      success = 0;
+      break;
     }
   }
 

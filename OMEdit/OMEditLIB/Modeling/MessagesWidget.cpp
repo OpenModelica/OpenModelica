@@ -38,9 +38,14 @@
 #include "LibraryTreeWidget.h"
 #include "Util/Helper.h"
 #include "Options/OptionsDialog.h"
+#include "Simulation/SimulationDialog.h"
+#include "Simulation//SimulationOutputWidget.h"
+#include "OMS/OMSSimulationOutputWidget.h"
 
 #include <QMenu>
 #include <QMessageBox>
+
+const int fixedTabsCount = 4;
 
 /*!
  * \class MessageItem
@@ -373,6 +378,33 @@ void MessageWidget::clearAllTabsMessages()
 }
 
 /*!
+ * \brief MessagesTabWidget::MessagesTabWidget
+ * We need to subclass QTabWidget since tabBar() is protected function in Qt4.
+ * \param pParent
+ */
+MessagesTabWidget::MessagesTabWidget(QWidget *pParent)
+  : QTabWidget(pParent)
+{
+  setTabsClosable(true);
+}
+
+/*!
+ * \brief MessagesTabWidget::removeCloseButtonfromFixedTabs
+ * Removes the close button from first few fixed tabs.
+ */
+void MessagesTabWidget::removeCloseButtonfromFixedTabs()
+{
+  QTabBar::ButtonPosition closeSide = (QTabBar::ButtonPosition)style()->styleHint(QStyle::SH_TabBar_CloseButtonPosition, 0, tabBar());
+  for (int i = 0; i < fixedTabsCount; ++i) {
+    QWidget *pTabButtonWidget = tabBar()->tabButton(i, closeSide);
+    if (pTabButtonWidget) {
+      pTabButtonWidget->deleteLater();
+    }
+    tabBar()->setTabButton(i, closeSide, 0);
+  }
+}
+
+/*!
  * \class MessagesWidget
  * \brief Tab widget for showing notifications, warning and error messages.
  */
@@ -394,7 +426,11 @@ void MessagesWidget::create()
  */
 void MessagesWidget::destroy()
 {
-  mpInstance->deleteLater();
+  /* We want to delete right away instead to clean stuff properly in beforeClosingMainWindow
+   * So don not use deleteLater();
+   */
+  //mpInstance->deleteLater();
+  delete mpInstance;
   mpInstance = 0;
 }
 
@@ -405,7 +441,7 @@ void MessagesWidget::destroy()
 MessagesWidget::MessagesWidget(QWidget *pParent)
   : QWidget(pParent)
 {
-  mpMessagesTabWidget = new QTabWidget;
+  mpMessagesTabWidget = new MessagesTabWidget;
   mpAllMessageWidget = new MessageWidget;
   mpMessagesTabWidget->addTab(mpAllMessageWidget, tr("All"));
   mpNotificationMessageWidget = new MessageWidget;
@@ -414,6 +450,9 @@ MessagesWidget::MessagesWidget(QWidget *pParent)
   mpMessagesTabWidget->addTab(mpWarningMessageWidget, tr("Warnings"));
   mpErrorMessageWidget = new MessageWidget;
   mpMessagesTabWidget->addTab(mpErrorMessageWidget, tr("Errors"));
+  // Remove the close button of first few fixed tabs
+  mpMessagesTabWidget->removeCloseButtonfromFixedTabs();
+  connect(mpMessagesTabWidget, SIGNAL(tabCloseRequested(int)), SLOT(closeTab(int)));
   mSuppressMessagesList.clear();
 #ifdef Q_OS_WIN
   // nothing
@@ -452,6 +491,93 @@ void MessagesWidget::applyMessagesSettings()
   mpNotificationMessageWidget->applyMessagesSettings();
   mpWarningMessageWidget->applyMessagesSettings();
   mpErrorMessageWidget->applyMessagesSettings();
+}
+
+/*!
+ * \brief MessagesWidget::addSimulationOutputTab
+ * Adds a simulation output tab.
+ * \param pSimulationOutputTab
+ * \param name
+ * \param removeExisting - Removes all the tabs where simulation is finished.
+ */
+void MessagesWidget::addSimulationOutputTab(QWidget *pSimulationOutputTab, const QString &name, bool removeExisting)
+{
+  /* ticket:4406 Option to automatically close simulation tabs where simulation is done.
+   * Close all completed simulation tabs.
+   */
+  if (removeExisting && OptionsDialog::instance()->getSimulationPage()->getCloseSimulationOutputWidgetsBeforeSimulationCheckBox()->isChecked()) {
+    for (int i = fixedTabsCount; i < mpMessagesTabWidget->count(); ++i) {
+      // move one step back if tab is removed successfully
+      if (closeTab(i)) {
+        --i;
+      }
+    }
+  }
+  // if tab already exists then just don't try to add it again.
+  bool tabFound = false;
+  for (int i = 0; i < mpMessagesTabWidget->count(); ++i) {
+    if (mpMessagesTabWidget->widget(i) == pSimulationOutputTab) {
+      mpMessagesTabWidget->setCurrentIndex(i);
+      tabFound = true;
+      break;
+    }
+  }
+  // add the tab if it doesn't already exist
+  if (!tabFound) {
+    mpMessagesTabWidget->setCurrentIndex(mpMessagesTabWidget->addTab(pSimulationOutputTab, name));
+  }
+  emit MessageAdded();
+}
+
+/*!
+ * \brief MessagesWidget::getSimulationOutputTabsSize
+ * Returns the size of Simulation output tabs.
+ * \return
+ */
+int MessagesWidget::getSimulationOutputTabsSize()
+{
+  return mpMessagesTabWidget->count() - fixedTabsCount;
+}
+
+/*!
+ * \brief MessagesWidget::getSimulationOutputWidget
+ * Finds and returns the SimulationOutputWidget
+ * \param className
+ * \return
+ */
+SimulationOutputWidget* MessagesWidget::getSimulationOutputWidget(const QString &className)
+{
+  for (int i = fixedTabsCount; i < mpMessagesTabWidget->count(); ++i) {
+    SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(i));
+    if (pSimulationOutputWidget && pSimulationOutputWidget->getSimulationOptions().getClassName().compare(className) == 0) {
+      return pSimulationOutputWidget;
+    }
+  }
+  return 0;
+}
+
+/*!
+ * \brief MessagesWidget::closeTab
+ * Removes the tab from MessagesWidget.
+ * Returns true if tab is removed.
+ * \param index
+ */
+bool MessagesWidget::closeTab(int index)
+{
+  SimulationOutputWidget *pSimulationOutputWidget = qobject_cast<SimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pSimulationOutputWidget && !pSimulationOutputWidget->isCompilationProcessRunning() && !pSimulationOutputWidget->isSimulationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    if (pSimulationOutputWidget->getSimulationOptions().isInteractiveSimulation()) {
+      MainWindow::instance()->getSimulationDialog()->removeSimulationOutputWidget(pSimulationOutputWidget);
+    }
+    return true;
+  }
+  OMSSimulationOutputWidget *pOMSSimulationOutputWidget = qobject_cast<OMSSimulationOutputWidget*>(mpMessagesTabWidget->widget(index));
+  if (pOMSSimulationOutputWidget && !pOMSSimulationOutputWidget->isSimulationProcessRunning()) {
+    mpMessagesTabWidget->removeTab(index);
+    return true;
+  }
+  return false;
 }
 
 /*!

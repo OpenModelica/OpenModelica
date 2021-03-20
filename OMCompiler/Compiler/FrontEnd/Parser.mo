@@ -77,9 +77,11 @@ end parseexp;
 function parsestring "Parse a string as if it were a stored definition"
   input String str;
   input String infoFilename = "<interactive>";
+  input Integer grammar = Config.acceptedGrammar();
+  input Integer languageStd = Flags.getConfigEnum(Flags.LANGUAGE_STANDARD);
   output Absyn.Program outProgram;
 algorithm
-  outProgram := ParserExt.parsestring(str, infoFilename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
+  outProgram := ParserExt.parsestring(str, infoFilename, grammar, languageStd, Testsuite.isRunning());
   /* Check that the program is not totally off the charts */
   _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
 end parsestring;
@@ -122,6 +124,14 @@ function stringCref
 algorithm
   cref := ParserExt.stringCref(str, "<internal>", Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
 end stringCref;
+
+function stringMod
+  input String str;
+  input String filename = "<internal>";
+  output Absyn.ElementArg mod;
+algorithm
+  mod := ParserExt.stringMod(str, filename, Config.acceptedGrammar(), Flags.getConfigEnum(Flags.LANGUAGE_STANDARD), Testsuite.isRunning());
+end stringMod;
 
 function parallelParseFiles
   input list<String> filenames;

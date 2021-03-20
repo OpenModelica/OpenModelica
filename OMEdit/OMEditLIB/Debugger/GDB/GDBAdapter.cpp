@@ -57,13 +57,15 @@ GDBLoggerWidget::GDBLoggerWidget(QWidget *pParent)
   : QWidget(pParent)
 {
   /* GDB commands area */
-  mpCommandsTextBox = new QPlainTextEdit;
+  mpCommandsTextBox = new OutputPlainTextEdit;
   mpCommandsTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpCommandsTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpCommandsTextBox->setUseTimer(false);
   /* GDB commands area */
-  mpResponseTextBox = new QPlainTextEdit;
+  mpResponseTextBox = new OutputPlainTextEdit;
   mpResponseTextBox->setLineWrapMode(QPlainTextEdit::WidgetWidth);
   mpResponseTextBox->setFont(QFont(Helper::monospacedFontInfo.family()));
+  mpResponseTextBox->setUseTimer(false);
   /* user command text box */
   mpCommandTextBox = new QLineEdit;
   mpCommandTextBox->setEnabled(false);
@@ -101,7 +103,7 @@ GDBLoggerWidget::GDBLoggerWidget(QWidget *pParent)
  */
 void GDBLoggerWidget::logDebuggerCommand(QString command)
 {
-  Utilities::insertText(mpCommandsTextBox, command + "\n\n");
+  mpCommandsTextBox->appendOutput(command + "\n\n");
 }
 
 /*!
@@ -135,7 +137,7 @@ void GDBLoggerWidget::logDebuggerResponse(QString response, QColor color)
   QString newLine = response.endsWith("\n") ? "\n" : "\n\n";
   QTextCharFormat format;
   format.setForeground(color);
-  Utilities::insertText(mpResponseTextBox, response + newLine, format);
+  mpResponseTextBox->appendOutput(response + newLine, format);
 }
 
 /*!
@@ -187,7 +189,7 @@ void GDBLoggerWidget::handleGDBProcessFinished()
  * \param pParent
  */
 TargetOutputWidget::TargetOutputWidget(QWidget *pParent)
-  : QPlainTextEdit(pParent)
+  : OutputPlainTextEdit(pParent)
 {
   setFont(QFont(Helper::monospacedFontInfo.family()));
   connect(GDBAdapter::instance(), SIGNAL(GDBProcessStarted()), SLOT(handleGDBProcessStarted()));
@@ -230,7 +232,7 @@ void TargetOutputWidget::logDebuggerOutput(QString output, QColor color)
   QString newLine = output.endsWith("\n") ? "" : "\n";
   QTextCharFormat format;
   format.setForeground(color);
-  Utilities::insertText(this, output + newLine, format);
+  OutputPlainTextEdit::appendOutput(output + newLine, format);
 }
 
 /*!
@@ -1143,7 +1145,7 @@ void GDBAdapter::handleGDBMIStreamRecord(GDBMIStreamRecord *pGDBMIStreamRecord)
 void GDBAdapter::handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
   QString consoleData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
-  mPendingConsoleStreamOutput += consoleData;
+  mPendingConsoleStreamOutput += consoleData.toUtf8();
   /* Only display some selected console messages */
   if (consoleData.startsWith("Reading symbols from ") || consoleData.startsWith("[New ") || consoleData.startsWith("[Thread ")) {
     MainWindow::instance()->getStackFramesWidget()->setStatusMessage(consoleData.simplified());
@@ -1160,7 +1162,7 @@ void GDBAdapter::handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 void GDBAdapter::handleGDBMILogStream(GDBMIStreamRecord *pGDBMIStreamRecord)
 {
   QString logData = StringHandler::unparse(pGDBMIStreamRecord->value.c_str());
-  mPendingLogStreamOutput += logData;
+  mPendingLogStreamOutput += logData.toUtf8();
   /*! \note Skip the log messages we get as a result of pending breakpoint.
    * e.g., No source file named Catch.omc.
    */
@@ -1431,7 +1433,7 @@ void GDBAdapter::readGDBStandardOutput()
   int newstart = 0;
   int scan = mStandardOutputBuffer.size();
   QString standardOutput = mpGDBProcess->readAllStandardOutput();
-  mStandardOutputBuffer.append(standardOutput);
+  mStandardOutputBuffer.append(standardOutput.toUtf8());
   // This can trigger when a blocking command starts an event loop.
   if (isParsingStandardOutput()) {
     GDBMICommand cmd = mGDBMICommandsHash.value(currentToken());
@@ -1539,7 +1541,7 @@ void GDBAdapter::handleGDBProcessFinishedForSimulation(int exitCode)
 void GDBAdapter::GDBcommandTimeout()
 {
   QList<int> keys = mGDBMICommandsHash.keys();
-  qSort(keys);
+  std::sort(keys.begin(), keys.end());
   bool killIt = false;
   foreach (int key, keys) {
     const GDBMICommand &cmd = mGDBMICommandsHash.value(key);

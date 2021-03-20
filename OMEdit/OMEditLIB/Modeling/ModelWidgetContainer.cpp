@@ -206,10 +206,14 @@ void GraphicsView::setExtentRectangle(const QRectF rectangle)
   qreal bottom = rectangle.top();
   qreal right = rectangle.right();
   qreal top = rectangle.bottom();
+  QRectF sceneRectangle(left, bottom, qFabs(left - right), qFabs(bottom - top));
   /* Ticket:4340 Extend vertical space
    * Make the drawing area 25% bigger than the actual size. So we can better use the panning feature.
    */
-  QRectF sceneRectangle(left * 1.5, bottom * 1.5, qFabs(left - right) * 1.5, qFabs(bottom - top) * 1.5);
+  const qreal factor = 0.25;
+  const qreal widthFactor = rectangle.width() * factor;
+  const qreal heightFactor = rectangle.width() * factor;
+  sceneRectangle.adjust(-widthFactor, -heightFactor, widthFactor, heightFactor);
   setSceneRect(sceneRectangle);
   centerOn(sceneRectangle.center());
 }
@@ -1146,7 +1150,11 @@ void GraphicsView::bringForward(ShapeAnnotation *pShape)
     return;
   }
   // swap the shapes in the list
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+  mShapesList.swapItemsAt(shapeIndex, shapeIndex + 1);
+#else // QT_VERSION_CHECK
   mShapesList.swap(shapeIndex, shapeIndex + 1);
+#endif // QT_VERSION_CHECK
   // update the shapes z index
   for (int i = 0 ; i < mShapesList.size() ; i++) {
     mShapesList.at(i)->setZValue(i + 1);
@@ -1186,7 +1194,11 @@ void GraphicsView::sendBackward(ShapeAnnotation *pShape)
     return;
   }
   // swap the shapes in the list
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 13, 0))
+  mShapesList.swapItemsAt(shapeIndex - 1, shapeIndex);
+#else // QT_VERSION_CHECK
   mShapesList.swap(shapeIndex - 1, shapeIndex);
+#endif // QT_VERSION_CHECK
   // update the shapes z index
   for (int i = 0 ; i < mShapesList.size() ; i++) {
     mShapesList.at(i)->setZValue(i + 1);
@@ -2225,6 +2237,8 @@ void GraphicsView::addConnection(Element *pComponent)
         }
       }
     }
+    // Once we are done creating the connection then we should set mpConnectionLineAnnotation to 0.
+    mpConnectionLineAnnotation = 0;
   }
 }
 
@@ -2234,11 +2248,11 @@ void GraphicsView::addConnection(Element *pComponent)
  */
 void GraphicsView::removeCurrentConnection()
 {
-  if (isCreatingConnection()) {
-    setIsCreatingConnection(false);
-    deleteConnectionFromList(mpConnectionLineAnnotation);
-    removeItem(mpConnectionLineAnnotation);
-    delete mpConnectionLineAnnotation;
+  setIsCreatingConnection(false);
+  deleteConnectionFromList(mpConnectionLineAnnotation);
+  removeItem(mpConnectionLineAnnotation);
+  if (mpConnectionLineAnnotation) {
+    mpConnectionLineAnnotation->deleteLater();
     mpConnectionLineAnnotation = 0;
   }
 }
@@ -2397,7 +2411,7 @@ void GraphicsView::deleteInitialState(LineAnnotation *pInitialLineAnnotation)
 //! @see zoomOut()
 void GraphicsView::resetZoom()
 {
-  resetMatrix();
+  resetTransform();
   scale(1.0, -1.0);
   setIsCustomScale(false);
   resizeEvent(new QResizeEvent(QSize(0,0), QSize(0,0)));
@@ -2409,7 +2423,7 @@ void GraphicsView::resetZoom()
 void GraphicsView::zoomIn()
 {
   // zoom in limitation max: 1000%
-  if (matrix().m11() < 34 && matrix().m22() > -34) {
+  if (transform().m11() < 34 && transform().m22() > -34) {
     setIsCustomScale(true);
     scale(1.12, 1.12);
   }
@@ -2421,7 +2435,7 @@ void GraphicsView::zoomIn()
 void GraphicsView::zoomOut()
 {
   // zoom out limitation min: 10%
-  if (matrix().m11() > 0.2 && matrix().m22() < -0.2) {
+  if (transform().m11() > 0.2 && transform().m22() < -0.2) {
     setIsCustomScale(true);
     scale(1/1.12, 1/1.12);
   }
@@ -3190,7 +3204,8 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
   painter->setPen(Qt::NoPen);
   painter->drawRect(rect);
   painter->setBrush(QBrush(Qt::white, Qt::SolidPattern));
-  painter->drawRect(mMergedCoOrdinateSystem.getExtentRectangle());
+  QRectF extentRectangle = mMergedCoOrdinateSystem.getExtentRectangle();
+  painter->drawRect(extentRectangle);
   if (mpModelWidget->getModelWidgetContainer()->isShowGridLines() && !(mpModelWidget->getLibraryTreeItem()->isSystemLibrary() || isVisualizationView())) {
     painter->setBrush(Qt::NoBrush);
     painter->setPen(lightGrayPen);
@@ -3226,12 +3241,12 @@ void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
     }
     /* set the middle horizontal and vertical line gray */
     painter->setPen(grayPen);
-    painter->drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0));
-    painter->drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()));
+    painter->drawLine(QPointF(rect.left(), extentRectangle.center().y()), QPointF(rect.right(), extentRectangle.center().y()));
+    painter->drawLine(QPointF(extentRectangle.center().x(), rect.top()), QPointF(extentRectangle.center().x(), rect.bottom()));
   }
   // draw scene rectangle
   painter->setPen(grayPen);
-  painter->drawRect(mMergedCoOrdinateSystem.getExtentRectangle());
+  painter->drawRect(extentRectangle);
 }
 
 //! Defines what happens when clicking in a GraphicsView.
@@ -3883,6 +3898,34 @@ void GraphicsView::resizeEvent(QResizeEvent *event)
  */
 void GraphicsView::wheelEvent(QWheelEvent *event)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  static QPoint angleDelta = QPoint(0, 0);
+  angleDelta += event->angleDelta();
+  QPoint numDegrees = angleDelta / 8;
+  QPoint numSteps = numDegrees / 15; // see QWheelEvent documentation
+  if (numSteps.x() != 0 || numSteps.y() != 0) {
+    angleDelta = QPoint(0, 0);
+    const bool horizontal = qAbs(event->angleDelta().x()) > qAbs(event->angleDelta().y());
+    bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
+    bool shiftModifier = event->modifiers().testFlag(Qt::ShiftModifier);
+    // If Ctrl key is pressed and user has scrolled vertically then Zoom In/Out based on the scroll distance.
+    if (!horizontal && numSteps.y() != 0 && controlModifier) {
+      if (numSteps.y() > 0) {
+        zoomIn();
+      } else {
+        zoomOut();
+      }
+    } else if (horizontal) { // If user has scrolled horizontally then scroll the horizontal scrollbars.
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() - event->angleDelta().x());
+    } else if (!horizontal && shiftModifier) { // If Shift key is pressed and user has scrolled vertically then scroll the horizontal scrollbars.
+      horizontalScrollBar()->setValue(horizontalScrollBar()->value() - event->angleDelta().y());
+    } else if (!horizontal) { // If user has scrolled vertically then scroll the vertical scrollbars.
+      verticalScrollBar()->setValue(verticalScrollBar()->value() - event->angleDelta().y());
+    } else {
+      QGraphicsView::wheelEvent(event);
+    }
+  }
+#else // QT_VERSION_CHECK
   int numDegrees = event->delta() / 8;
   int numSteps = numDegrees * 3;
   bool controlModifier = event->modifiers().testFlag(Qt::ControlModifier);
@@ -3904,6 +3947,7 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
   } else {
     QGraphicsView::wheelEvent(event);
   }
+#endif // QT_VERSION_CHECK
 }
 
 /*!
@@ -4068,25 +4112,30 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   setLayout(layout);
 }
 
+/*!
+ * \brief WelcomePageWidget::addRecentFilesListItems
+ * Adds the recent file list items to list view.
+ */
 void WelcomePageWidget::addRecentFilesListItems()
 {
   // remove list items first
   mpRecentItemsList->clear();
   QSettings *pSettings = Utilities::getApplicationSettings();
   QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
-  int numRecentFiles = qMin(files.size(), (int)MainWindow::instance()->MaxRecentFiles);
-  for (int i = 0; i < numRecentFiles; ++i)
-  {
+  int recentFilesSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
+  int numRecentFiles = qMin(files.size(), recentFilesSize);
+  for (int i = 0; i < numRecentFiles; ++i) {
     RecentFile recentFile = qvariant_cast<RecentFile>(files[i]);
     QListWidgetItem *listItem = new QListWidgetItem(mpRecentItemsList);
     listItem->setIcon(ResourceCache::getIcon(":/Resources/icons/next.svg"));
     listItem->setText(recentFile.fileName);
     listItem->setData(Qt::UserRole, recentFile.encoding);
   }
-  if (files.size() > 0)
+  if (numRecentFiles > 0) {
     mpNoRecentFileLabel->setVisible(false);
-  else
+  } else {
     mpNoRecentFileLabel->setVisible(true);
+  }
 }
 
 QFrame* WelcomePageWidget::getLatestNewsFrame()
@@ -4111,6 +4160,7 @@ void WelcomePageWidget::addLatestNewsListItems()
 
 void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
 {
+  int maxNewsSize = OptionsDialog::instance()->getGeneralSettingsPage()->getRecentFilesAndLatestNewsSizeSpinBox()->value();
   if (pNetworkReply->error() == QNetworkReply::HostNotFoundError) {
     mpNoLatestNewsLabel->setVisible(true);
     mpNoLatestNewsLabel->setText(tr("Sorry, no internet no news items."));
@@ -4132,7 +4182,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
               }
               if (xml.name() == "link") {
                 link = xml.readElementText();
-                if (count >= (int)MainWindow::instance()->MaxRecentFiles) {
+                if (count >= maxNewsSize) {
                   break;
                 }
                 count++;
@@ -4146,7 +4196,7 @@ void WelcomePageWidget::readLatestNewsXML(QNetworkReply *pNetworkReply)
           }
         }
       }
-      if (count >= (int)MainWindow::instance()->MaxRecentFiles) {
+      if (count >= maxNewsSize) {
         break;
       }
     }
@@ -5264,6 +5314,10 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
   }
   /* if user has changed the class contents then refresh it. */
   if (className.compare(mpLibraryTreeItem->getNameStructure()) == 0) {
+    /* before calling the updateChildClasses() which calls reDrawModelWidget()
+     * we need to remove the inherited classes connect signal/slot of all classes.
+     */
+    ModelWidget::removeInheritedClasses(mpLibraryTreeItem);
     mpLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(mpLibraryTreeItem->getNameStructure()));
     reDrawModelWidget();
     mpLibraryTreeItem->setClassText(modelicaText);
@@ -5271,10 +5325,6 @@ bool ModelWidget::modelicaEditorTextChanged(LibraryTreeItem **pLibraryTreeItem)
       pParentLibraryTreeItem->setClassText(stringToLoad);
       updateModelText();
     }
-    /* before calling the updateChildClasses() which calls reDrawModelWidget()
-     * we need to remove the inherited classes connect signal/slot of all classes.
-     */
-    ModelWidget::removeInheritedClasses(mpLibraryTreeItem);
     // update child classes
     updateChildClasses(mpLibraryTreeItem);
   } else {
@@ -5543,7 +5593,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         // get the submodel position
         double values[] = {0.0, 0.0, 0.0};
         QGenericMatrix<3, 1, double> cX_R_cG_cG(values);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList subModelPositionList = pSubModelComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (subModelPositionList.size() > 2) {
           cX_R_cG_cG(0, 0) = subModelPositionList.at(0).toDouble();
           cX_R_cG_cG(0, 1) = subModelPositionList.at(1).toDouble();
@@ -5551,7 +5605,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         }
         // get the submodel angle
         double subModelPhi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList subModelAngleList = pSubModelComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (subModelAngleList.size() > 2) {
           subModelPhi[0] = subModelAngleList.at(0).toDouble();
           subModelPhi[1] = subModelAngleList.at(1).toDouble();
@@ -5560,7 +5618,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         QGenericMatrix<3, 3, double> cX_A_cG = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(subModelPhi));
         // get the interface position
         QGenericMatrix<3, 1, double> ci_R_cX_cX(values);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList interfacePositionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (interfacePositionList.size() > 2) {
           ci_R_cX_cX(0, 0) = interfacePositionList.at(0).toDouble();
           ci_R_cX_cX(0, 1) = interfacePositionList.at(1).toDouble();
@@ -5568,7 +5630,11 @@ bool ModelWidget::writeCoSimulationResultFile(QString fileName)
         }
         // get the interface angle
         double interfacePhi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList interfaceAngleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (interfaceAngleList.size() > 2) {
           interfacePhi[0] = interfaceAngleList.at(0).toDouble();
           interfacePhi[1] = interfaceAngleList.at(1).toDouble();
@@ -5992,7 +6058,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         //              (pConnectionLineAnnotation->getEndComponentName().compare(name) == 0)) {
         // get the angle
         double phi[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList angleList = pInterfaceComponent->getComponentInfo()->getAngle321().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (angleList.size() > 2) {
           phi[0] = -angleList.at(0).toDouble();
           phi[1] = -angleList.at(1).toDouble();
@@ -6001,7 +6071,11 @@ bool ModelWidget::writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFil
         QGenericMatrix<3, 3, double> T = Utilities::getRotationMatrix(QGenericMatrix<3, 1, double>(phi));
         // get the position
         double position[3] = {0.0, 0.0, 0.0};
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+        QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", Qt::SkipEmptyParts);
+#else // QT_VERSION_CHECK
         QStringList positionList = pInterfaceComponent->getComponentInfo()->getPosition().split(",", QString::SkipEmptyParts);
+#endif // QT_VERSION_CHECK
         if (positionList.size() > 2) {
           position[0] = positionList.at(0).toDouble();
           position[1] = positionList.at(1).toDouble();
@@ -6273,8 +6347,10 @@ QList<QVariant> ModelWidget::toOMSensData()
  * \brief ModelWidget::createOMSimulatorUndoCommand
  * Creates OMSimulatorUndoCommand and pushes it to the undo stack.
  * \param commandText
+ * \param doSnapShot
+ * \param switchToEdited
  */
-void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot)
+void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot, const bool switchToEdited, const QString oldEditedCref, const QString newEditedCref)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
@@ -6285,7 +6361,32 @@ void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const
   QString newSnapshot;
   OMSProxy::instance()->list(pModelLibraryTreeItem->getNameStructure(), &newSnapshot);
   mpUndoStack->push(new OMSimulatorUndoCommand(pModelLibraryTreeItem->getNameStructure(), oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(),
-                                               doSnapShot, "OMSimulator " + commandText));
+                                               doSnapShot, switchToEdited, oldEditedCref, newEditedCref, "OMSimulator " + commandText));
+}
+
+/*!
+ * \brief ModelWidget::createOMSimulatorRenameModelUndoCommand
+ * Creates OMSimulatorUndoCommand and pushes it to the undo stack.
+ * Used only for renaming of models.
+ * \param commandText
+ * \param cref
+ * \param newCref
+ */
+void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref)
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+  if (!pModelLibraryTreeItem->getModelWidget()) {
+    pLibraryTreeModel->showModelWidget(pModelLibraryTreeItem, false);
+  }
+  QString oldSnapshot = pModelLibraryTreeItem->getClassText(pLibraryTreeModel);
+  if (OMSProxy::instance()->rename(cref, newCref)) {
+    pModelLibraryTreeItem->setName(newCref);
+    pModelLibraryTreeItem->setNameStructure(newCref);
+    QString newSnapshot;
+    OMSProxy::instance()->list(newCref, &newSnapshot);
+    mpUndoStack->push(new OMSimulatorUndoCommand(newCref, oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(), true, true, "", "", "OMSimulator " + commandText));
+  }
 }
 
 /*!
@@ -6329,8 +6430,9 @@ void ModelWidget::handleCanUndoRedoChanged()
 {
   if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
-    assert(pModelWidget);
-    pModelWidget->updateUndoRedoActions();
+    if (pModelWidget) {
+      pModelWidget->updateUndoRedoActions();
+    }
   } else {
     updateUndoRedoActions();
   }
@@ -7533,6 +7635,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   setDocumentMode(true);
 #if QT_VERSION >= 0x040800
   setTabsClosable(true);
+  setTabsMovable(true);
 #endif
   if (OptionsDialog::instance()->getGraphicalViewsPage()->getModelingViewMode().compare(Helper::subWindow) == 0) {
     setViewMode(QMdiArea::SubWindowView);
@@ -7562,6 +7665,7 @@ ModelWidgetContainer::ModelWidgetContainer(QWidget *pParent)
   connect(MainWindow::instance()->getSaveAsAction(), SIGNAL(triggered()), SLOT(saveAsModelWidget()));
   connect(MainWindow::instance()->getSaveTotalAction(), SIGNAL(triggered()), SLOT(saveTotalModelWidget()));
   connect(MainWindow::instance()->getPrintModelAction(), SIGNAL(triggered()), SLOT(printModel()));
+  connect(MainWindow::instance()->getFitToDiagramAction(), SIGNAL(triggered()), SLOT(fitToDiagram()));
   connect(MainWindow::instance()->getSimulationParamsAction(), SIGNAL(triggered()), SLOT(showSimulationParams()));
   connect(MainWindow::instance()->getAlignInterfacesAction(), SIGNAL(triggered()), SLOT(alignInterfaces()));
   connect(MainWindow::instance()->getAddSystemAction(), SIGNAL(triggered()), SLOT(addSystem()));
@@ -7801,13 +7905,15 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
             QList<QMdiSubWindow*> subWindowsList = subWindowList(QMdiArea::ActivationHistoryOrder);
             for (int i = subWindowsList.size() - 1 ; i >= 0 ; i--) {
               ModelWidget *pModelWidget = qobject_cast<ModelWidget*>(subWindowsList.at(i)->widget());
-              QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
-              if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
-                listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
-              } else {
-                listItem->setText(pModelWidget->getLibraryTreeItem()->getName());
+              if (pModelWidget && pModelWidget->getLibraryTreeItem()) {
+                QListWidgetItem *listItem = new QListWidgetItem(mpRecentModelsList);
+                if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
+                  listItem->setText(pModelWidget->getLibraryTreeItem()->getNameStructure());
+                } else {
+                  listItem->setText(pModelWidget->getLibraryTreeItem()->getName());
+                }
+                listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeItem()->getNameStructure());
               }
-              listItem->setData(Qt::UserRole, pModelWidget->getLibraryTreeItem()->getNameStructure());
             }
           } else {
             if (!mpRecentModelsList->selectedItems().isEmpty()) {
@@ -8135,11 +8241,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     zoomEnabled = true;
     plottingDiagram = true;
   }
-  bool isOMSModelInstantiated = false;
-  if (pLibraryTreeItem) {
-    LibraryTreeItem *pTopLevelLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pLibraryTreeItem);
-    isOMSModelInstantiated = pTopLevelLibraryTreeItem && pTopLevelLibraryTreeItem->isOMSModelInstantiated();
-  }
   // update the actions of the menu and toolbars
   MainWindow::instance()->getSaveAction()->setEnabled(enabled);
   MainWindow::instance()->getSaveAsAction()->setEnabled(enabled);
@@ -8149,6 +8250,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getResetZoomAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
   MainWindow::instance()->getZoomInAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
   MainWindow::instance()->getZoomOutAction()->setEnabled(zoomEnabled && (modelica || compositeModel || oms || plottingDiagram));
+  MainWindow::instance()->getFitToDiagramAction()->setEnabled(zoomEnabled && (modelica));
   MainWindow::instance()->getLineShapeAction()->setEnabled(enabled && modelica && !textView);
   MainWindow::instance()->getPolygonShapeAction()->setEnabled(enabled && modelica && !textView);
   MainWindow::instance()->getRectangleShapeAction()->setEnabled(enabled && modelica && !textView);
@@ -8163,16 +8265,7 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
 #if !defined(WITHOUT_OSG)
   MainWindow::instance()->getSimulateWithAnimationAction()->setEnabled(enabled && modelica && pLibraryTreeItem->isSimulationAllowed());
 #endif
-  MainWindow::instance()->getSimulationSetupAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms && !isOMSModelInstantiated)));
-  MainWindow::instance()->getOMSInstantiateModelAction()->setEnabled(enabled && (omsModel || omsSystem || omsSubmodel));
-  MainWindow::instance()->getOMSInstantiateModelAction()->setChecked(isOMSModelInstantiated);
-  if (isOMSModelInstantiated) {
-    MainWindow::instance()->getOMSInstantiateModelAction()->setText(Helper::terminateInstantiation);
-    MainWindow::instance()->getOMSInstantiateModelAction()->setText(Helper::terminateInstantiationTip);
-  } else {
-    MainWindow::instance()->getOMSInstantiateModelAction()->setText(Helper::instantiateModel);
-    MainWindow::instance()->getOMSInstantiateModelAction()->setText(Helper::instantiateOMSModelTip);
-  }
+  MainWindow::instance()->getSimulationSetupAction()->setEnabled(enabled && ((modelica && pLibraryTreeItem->isSimulationAllowed()) || (oms)));
   bool accessAnnotation = false;
   if (pLibraryTreeItem && (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
                            || ((pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageText
@@ -8198,13 +8291,13 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
   MainWindow::instance()->getFetchInterfaceDataAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getAlignInterfacesAction()->setEnabled(enabled && compositeModel);
   MainWindow::instance()->getTLMSimulationAction()->setEnabled(enabled && compositeModel);
-  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel) && !isOMSModelInstantiated);
-  MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem && (!pLibraryTreeItem->isTLMSystem())) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())) && !isOMSModelInstantiated);
-  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem && !isOMSModelInstantiated);
+  MainWindow::instance()->getAddSystemAction()->setEnabled(enabled && !iconGraphicsView && !textView && (omsModel || (omsSystem && (!pLibraryTreeItem->isSCSystem()))));
+  MainWindow::instance()->getAddOrEditIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getDeleteIconAction()->setEnabled(enabled && !diagramGraphicsView && !textView && (omsSystem || omsSubmodel));
+  MainWindow::instance()->getAddConnectorAction()->setEnabled(enabled && !textView && (omsSystem && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddTLMBusAction()->setEnabled(enabled && !textView && ((omsSystem || omsSubmodel)  && (!pLibraryTreeItem->isTLMSystem())));
+  MainWindow::instance()->getAddSubModelAction()->setEnabled(enabled && !iconGraphicsView && !textView && omsSystem);
   MainWindow::instance()->getLogCurrentFileAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getStageCurrentFileForCommitAction()->setEnabled(enabled && gitWorkingDirectory);
   MainWindow::instance()->getUnstageCurrentFileFromCommitAction()->setEnabled(enabled && gitWorkingDirectory);
@@ -8231,7 +8324,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
      * Show the relevant toolbars if we are in a Modeling perspective
      */
     if (MainWindow::instance()->isModelingPerspectiveActive()) {
-      MainWindow::instance()->getOMSInstantiateModelAction()->setVisible(false);
       if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica) {
         MainWindow::instance()->getShapesToolBar()->setVisible(true);
         MainWindow::instance()->getCheckToolBar()->setVisible(true);
@@ -8251,7 +8343,6 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
           MainWindow::instance()->getOMSimulatorToobar()->setVisible(false);
         } else if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
           MainWindow::instance()->getSimulationToolBar()->setVisible(true);
-          MainWindow::instance()->getOMSInstantiateModelAction()->setVisible(true);
           MainWindow::instance()->getTLMSimulationToolbar()->setVisible(false);
           MainWindow::instance()->getOMSimulatorToobar()->setVisible(true);
         } else {
@@ -8271,15 +8362,20 @@ void ModelWidgetContainer::currentModelWidgetChanged(QMdiSubWindow *pSubWindow)
     MainWindow::instance()->getUndoAction()->setEnabled(false);
     MainWindow::instance()->getRedoAction()->setEnabled(false);
   }
-  /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
-   * Provided that the Documentation Browser is already visible.
-   */
-  if (mpLastActiveSubWindow == pSubWindow) {
+  if (!pSubWindow || mpLastActiveSubWindow == pSubWindow) {
     return;
   }
   mpLastActiveSubWindow = pSubWindow;
+  /* ticket:4983 Update the documentation browser when a new ModelWidget is selected.
+   * Provided that the Documentation Browser is already visible.
+   */
   if (pModelWidget && pModelWidget->getLibraryTreeItem() && MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
     MainWindow::instance()->getDocumentationWidget()->showDocumentation(pModelWidget->getLibraryTreeItem());
+  }
+  // Update the LibraryTreeView to mark the active model
+  MainWindow::instance()->getLibraryWidget()->getLibraryTreeView()->viewport()->update();
+  if (OptionsDialog::instance()->getGeneralSettingsPage()->getSynchronizeWithModelWidgetCheckBox()->isChecked()) {
+    MainWindow::instance()->getLibraryWidget()->scrollToActiveLibraryTreeItem();
   }
 }
 
@@ -8401,6 +8497,79 @@ void ModelWidgetContainer::printModel()
     delete pPrintDialog;
   }
 #endif
+}
+
+/*!
+ * \brief ModelWidgetContainer::fitToDiagram
+ * Fits the active ModelWidget to its diagram.
+ */
+void ModelWidgetContainer::fitToDiagram()
+{
+  ModelWidget *pModelWidget = getCurrentModelWidget();
+  if (pModelWidget) {
+    // show the progressbar and set the message in status bar
+    MainWindow::instance()->getProgressBar()->setRange(0, 0);
+    MainWindow::instance()->showProgressBar();
+    MainWindow::instance()->getStatusBar()->showMessage(tr("Adapting extent to diagram"));
+    GraphicsView *pGraphicsView;
+    if (pModelWidget->getIconGraphicsView()->isVisible()) {
+      pGraphicsView = pModelWidget->getIconGraphicsView();
+    } else {
+      pGraphicsView = pModelWidget->getDiagramGraphicsView();
+    }
+    QRect diagramRect = pGraphicsView->itemsBoundingRect().toAlignedRect();
+    diagramRect = pGraphicsView->mapToScene(diagramRect).boundingRect().toRect();
+    // invert the rectangle as the drawing area has scale(1.0, -1.0);
+    const int top = diagramRect.top();
+    diagramRect.setTop(diagramRect.bottom());
+    diagramRect.setBottom(top);
+    // Make the extent values interval of 10 based on grid size
+    const int xInterval = qRound(pGraphicsView->mMergedCoOrdinateSystem.getHorizontalGridStep()) * 10;
+    const int yInterval = qRound(pGraphicsView->mMergedCoOrdinateSystem.getVerticalGridStep()) * 10;
+    const int left = qRound((double)diagramRect.left() / xInterval) * xInterval;
+    const int bottom = qRound((double)diagramRect.bottom() / yInterval) * yInterval;
+    const int right = qRound((double)diagramRect.right() / xInterval) * xInterval;
+    const int top_ = qRound((double)diagramRect.top() / yInterval) * yInterval;
+    QRectF adaptedRect(left, bottom, qAbs(left - right), qAbs(bottom - top_));
+    // For read-only system libraries we just set the zoom and for writeable models we modify the extent.
+    if (pModelWidget->getLibraryTreeItem()->isSystemLibrary()) {
+      pGraphicsView->setIsCustomScale(true);
+      pGraphicsView->fitInView(diagramRect, Qt::KeepAspectRatio);
+    } else {
+      // avoid putting unnecessary commands on the stack
+      if (adaptedRect.width() != 0 && adaptedRect.height() != 0 && adaptedRect != pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle()) {
+        // CoOrdinateSystem
+        CoOrdinateSystem oldCoOrdinateSystem = pGraphicsView->getCoOrdinateSystem();
+        // version
+        QString oldVersion = pModelWidget->getLibraryTreeItem()->mClassInformation.version;
+        // uses annotation
+        OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+        QList<QList<QString> > usesAnnotation = pOMCProxy->getUses(pModelWidget->getLibraryTreeItem()->getNameStructure());
+        QStringList oldUsesAnnotation;
+        for (int i = 0 ; i < usesAnnotation.size() ; i++) {
+          oldUsesAnnotation.append(QString("%1(version=\"%2\")").arg(usesAnnotation.at(i).at(0)).arg(usesAnnotation.at(i).at(1)));
+        }
+        QString oldUsesAnnotationString = QString("annotate=$annotation(uses(%1))").arg(oldUsesAnnotation.join(","));
+        // construct a new CoOrdinateSystem
+        CoOrdinateSystem newCoOrdinateSystem = oldCoOrdinateSystem;
+        newCoOrdinateSystem.setLeft(adaptedRect.left());
+        newCoOrdinateSystem.setBottom(adaptedRect.bottom());
+        newCoOrdinateSystem.setRight(adaptedRect.right());
+        newCoOrdinateSystem.setTop(adaptedRect.top());
+        // push the CoOrdinateSystem change to undo stack
+        UpdateCoOrdinateSystemCommand *pUpdateCoOrdinateSystemCommand = new UpdateCoOrdinateSystemCommand(pGraphicsView, oldCoOrdinateSystem, newCoOrdinateSystem, false,
+                                                                                                          oldVersion, oldVersion, oldUsesAnnotationString, oldUsesAnnotationString);
+        pModelWidget->getUndoStack()->push(pUpdateCoOrdinateSystemCommand);
+        pModelWidget->updateModelText();
+      }
+    }
+    // hide the progressbar and clear the message in status bar
+    MainWindow::instance()->getStatusBar()->clearMessage();
+    MainWindow::instance()->hideProgressBar();
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN)
+                                                          .arg(tr("adapting extent to diagram")), Helper::scriptingKind, Helper::notificationLevel));
+  }
 }
 
 /*!

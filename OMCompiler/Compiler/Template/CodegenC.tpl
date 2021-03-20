@@ -123,6 +123,7 @@ end translateModel;
     #include "simulation/solver/linearSystem.h"
     #include "simulation/solver/nonlinearSystem.h"
     #include "simulation/solver/mixedSystem.h"
+    #include "simulation/solver/spatialDistribution.h"
 
     #if defined(__cplusplus)
     extern "C" {
@@ -149,6 +150,8 @@ end translateModel;
     #endif
     extern int <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>(DATA *data, threadData_t *threadData);
+    extern int <%symbolName(modelNamePrefixStr,"function_storeSpatialDistribution")%>(DATA *data, threadData_t *threadData);
+    extern int <%symbolName(modelNamePrefixStr,"function_initSpatialDistribution")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData);
@@ -181,8 +184,8 @@ end translateModel;
     extern int <%symbolName(modelNamePrefixStr,"setInputData")%>(DATA *data, const modelica_boolean file);
     extern int <%symbolName(modelNamePrefixStr,"getTimeGrid")%>(DATA *data, modelica_integer * nsi, modelica_real**t);
     extern void <%symbolName(modelNamePrefixStr,"function_initSynchronous")%>(DATA * data, threadData_t *threadData);
-    extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long i);
-    extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long i);
+    extern void <%symbolName(modelNamePrefixStr,"function_updateSynchronous")%>(DATA * data, threadData_t *threadData, long clockIndex);
+    extern int <%symbolName(modelNamePrefixStr,"function_equationsSynchronous")%>(DATA * data, threadData_t *threadData, long clockIndex);
     extern void <%symbolName(modelNamePrefixStr,"read_input_fmu")%>(MODEL_DATA* modelData, SIMULATION_INFO* simulationData);
     extern void <%symbolName(modelNamePrefixStr,"function_savePreSynchronous")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"inputNames")%>(DATA* data, char ** names);
@@ -372,15 +375,15 @@ template functionUpdateSynchronous(list<ClockedPartition> clockedPartitions, Str
   <<
   <%auxFunction%>
   /* Update the base clock. */
-  void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long i)
+  void <%symbolName(modelNamePrefix,"function_updateSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
   {
     TRACE_PUSH
     <%varDecls%>
     modelica_boolean ret;
-    switch (i) {
+    switch (clockIndex) {
       <%body%>
       default:
-        throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", i);
+        throwStreamPrint(NULL, "Internal Error: unknown base partition %ld", clockIndex);
         break;
     }
     TRACE_POP
@@ -397,10 +400,10 @@ match baseClock
     let si = daeExp(startInterval, contextOther, &preExp, &varDecls, &auxFunction)
     <<
     <%preExp%>
-    if (data->simulationInfo->clocksData[i].cnt > 0)
-      data->simulationInfo->clocksData[i].interval = data->localData[0]->timeValue - data->simulationInfo->clocksData[i].timepoint;
+    if (data->simulationInfo->clocksData[clockIndex].cnt > 0)
+      data->simulationInfo->clocksData[clockIndex].interval = data->localData[0]->timeValue - data->simulationInfo->clocksData[clockIndex].timepoint;
     else
-      data->simulationInfo->clocksData[i].interval = <%si%>;
+      data->simulationInfo->clocksData[clockIndex].interval = <%si%>;
     >>
   else
     let &preExp = buffer ""
@@ -412,10 +415,10 @@ match baseClock
       else "unspecified"
       let interval = match intvl case "unspecified" then '1.0' else intvl
       let warning = match intvl case "unspecified" then
-        'ModelicaMessage("Using default Clock(1.0)!");'
+        'warningStreamPrint(LOG_STDOUT, 0, "Using default Clock(1.0)!");'
     <<
     <%preExp%>
-    data->simulationInfo->clocksData[i].interval = <%interval%>;
+    data->simulationInfo->clocksData[clockIndex].interval = <%interval%>;
     <%warning%>
     >>
 end updatePartition;
@@ -438,16 +441,16 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
 
   <%systs%>
 
-  /*Clocked systems equations */
-  int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long i)
+  /* Clocked systems equations */
+  int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
   {
     TRACE_PUSH
     int ret;
 
-    switch (i) {
+    switch (clockIndex) {
       <%cases%>
       default:
-        throwStreamPrint(NULL, "Internal Error: unknown sub partition %ld", i);
+        throwStreamPrint(NULL, "Internal Error: unknown sub partition %ld", clockIndex);
         ret = 1;
         break;
     }
@@ -514,7 +517,7 @@ template simulationFile_nls(SimCode simCode)
     #if defined(__cplusplus)
     extern "C" {
     #endif
-    <%functionNonLinearResiduals(nonLinearSystems, modelNamePrefixStr)%>
+    <%functionNonLinearResidualsMultiFile(nonLinearSystems, Flags.getConfigInt(Flags.EQUATIONS_PER_FILE), simCode.fullPathPrefix, simCode.fileNamePrefix, "02nls", modelNamePrefixStr)%>
 
     <%if intGt(varInfo.numNonLinearSystems, 0) then functionInitialNonLinearSystems(nonLinearSystems, modelNamePrefixStr)%>
 
@@ -656,6 +659,31 @@ template simulationFile_dly(SimCode simCode)
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
 end simulationFile_dly;
+
+template simulationFile_spd(SimCode simCode)
+"SpatialDistribution"
+::=
+  match simCode
+    case simCode as SIMCODE(__) then
+    <<
+    /* spatialDistribution */
+    <%simulationFileHeader(simCode.fileNamePrefix)%>
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
+
+    <%functionStoreSpatialDistribution(spatialInfo, modelNamePrefix(simCode))%>
+
+    <%functionInitSpatialDistribution(spatialInfo, modelNamePrefix(simCode))%>
+
+    #if defined(__cplusplus)
+    }
+    #endif
+    <%\n%>
+    >>
+    /* adrpo: leave a newline at the end of file to get rid of the warning */
+  end match
+end simulationFile_spd;
 
 template simulationFile_bnd(SimCode simCode)
 "update bound parameters and variable attributes (start, nominal, min, max)"
@@ -1103,18 +1131,18 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
     #include "<%simCode.fileNamePrefix%>_13opt.h"
 
     struct OpenModelicaGeneratedFunctionCallbacks <%symbolName(modelNamePrefixStr,"callback")%> = {
-       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,
-       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,
-       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,
-       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,
-       <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,
-       <%if intEq(varInfo.numLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialLinearSystem")%>,
-       <%if intEq(varInfo.numMixedSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialMixedSystem")%>,
+       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performSimulation")%>'%>,    /* performSimulation */
+       <% if isModelExchangeFMU then "NULL" else '(int (*)(DATA *, threadData_t *, void *)) <%symbolName(modelNamePrefixStr,"performQSSSimulation")%>'%>,    /* performQSSSimulation */
+       <% if isModelExchangeFMU then "NULL" else '<%symbolName(modelNamePrefixStr,"updateContinuousSystem")%>'%>,    /* updateContinuousSystem */
+       <%symbolName(modelNamePrefixStr,"callExternalObjectDestructors")%>,    /* callExternalObjectDestructors */
+       <%if intEq(varInfo.numNonLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialNonLinearSystem")%>,    /* initialNonLinearSystem */
+       <%if intEq(varInfo.numLinearSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialLinearSystem")%>,    /* initialLinearSystem */
+       <%if intEq(varInfo.numMixedSystems,0) then "NULL" else symbolName(modelNamePrefixStr,"initialMixedSystem")%>,    /* initialMixedSystem */
        #if !defined(OMC_NO_STATESELECTION)
        <%symbolName(modelNamePrefixStr,"initializeStateSets")%>,
        #else
        NULL,
-       #endif
+       #endif    /* initializeStateSets */
        <%symbolName(modelNamePrefixStr,"initializeDAEmodeData")%>,
        <%symbolName(modelNamePrefixStr,"functionODE")%>,
        <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>,
@@ -1127,10 +1155,12 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"setc_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
+       <%symbolName(modelNamePrefixStr,"function_storeSpatialDistribution")%>,
+       <%symbolName(modelNamePrefixStr,"function_initSpatialDistribution")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%if Config.adaptiveHomotopy() then (if Config.globalHomotopy() then '2' else '3') else (if Config.globalHomotopy() then '1' else '0')%>, /* useHomotopy - 0: local homotopy (equidistant lambda), 1: global homotopy (equidistant lambda), 2: new global homotopy approach (adaptive lambda), 3: new local homotopy approach (adaptive lambda)*/
-       <%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>,
+       <%if intEq(listLength(initialEquations_lambda0), 0) then "NULL" else '<%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>'%>,
        <%symbolName(modelNamePrefixStr,"functionRemovedInitialEquations")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundParameters")%>,
        <%symbolName(modelNamePrefixStr,"checkForAsserts")%>,
@@ -1341,6 +1371,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
 
     data->modelData->nClocks = <%nClocks%>;
     data->modelData->nSubClocks = <%nSubClocks%>;
+
+    data->modelData->nSpatialDistributions = <%nSpatialDistributions%>;
 
     data->modelData->nSensitivityVars = <%listLength(vars.sensitivityVars)%>;
     data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
@@ -2670,13 +2702,61 @@ template createLocalConstraints(SimEqSystem eq)
    end match
 end createLocalConstraints;
 
-template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String modelNamePrefix)
+template functionNonLinearResidualsMultiFile(list<SimEqSystem> nonlinearSystems, Integer equationsPerFile, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix)
+  "Generates functions in simulation file."
+::=
+  functionNonLinearResidualsMultiFile2(SimCodeUtil.unbalancedEqSystemPartition(selectNLEqSys(nonlinearSystems), equationsPerFile), fullPathPrefix, fileNamePrefix, partName, modelNamePrefix)
+end functionNonLinearResidualsMultiFile;
+
+template functionNonLinearResidualsMultiFile2(list<list<SimEqSystem>> nonlinearSystems, String fullPathPrefix, String fileNamePrefix, String partName, String modelNamePrefix)
+  "Generates functions in simulation file."
+::=
+  match nonlinearSystems
+  case {} then ""
+  case {eqs} then
+    let &prototypes = buffer ""
+    functionNonLinearResiduals(eqs, modelNamePrefix, &prototypes)
+  else
+    let &prototypes = buffer ""
+    let &file = buffer ""
+    let &file +=
+    (nonlinearSystems |> eqs =>
+      let fileName = addFunctionIndex('<%fileNamePrefix%>_<%partName%>_part', ".c")
+      redirectToFile(fullPathPrefix + fileName) +
+      <<
+      /* Non Linear Systems <%fullPathPrefix + fileName%> */
+      <%simulationFileHeader(fileNamePrefix)%>
+      #include "<%fileNamePrefix%>_12jac.h"
+      #if defined(__cplusplus)
+      extern "C" {
+      #endif
+      <%functionNonLinearResiduals(eqs, modelNamePrefix, &prototypes)%>
+      #if defined(__cplusplus)
+      }
+      #endif
+      <%\n%>
+      >>
+      + closeFile()
+    )
+    prototypes + file
+end functionNonLinearResidualsMultiFile2;
+
+template getNLSPrototypes(Integer index)
+::=
+  <<
+  void residualFunc<%index%>(void** dataIn, const double* xloc, double* res, const int* iflag);
+  void initializeStaticDataNLS<%index%>(void *inData, threadData_t *threadData, void *inSystemData);
+  void getIterationVarsNLS<%index%>(struct DATA *inData, double *array);
+  >>
+end getNLSPrototypes;
+
+template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String modelNamePrefix, Text &prototypes)
   "Generates functions in simulation file."
 ::=
   (nonlinearSystems |> eqn => (
     let () = tmpTickReset(0)
     match eqn
-    case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix)
+    case eq as SES_MIXED(__) then functionNonLinearResiduals(fill(eq.cont,1),modelNamePrefix,prototypes)
     // no dynamic tearing
     case eq as SES_NONLINEAR(nlSystem=nls as NONLINEARSYSTEM(
         jacobianMatrix=SOME(JAC_MATRIX(sparsity=sparsePattern,coloredCols=colorList,maxColorCols=maxColor))),
@@ -2686,6 +2766,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let sparseData = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
+      let &prototypes += getNLSPrototypes(nls.index)
       <<
       <%residualFunction%>
       <%sparseData%>
@@ -2698,6 +2779,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let sparseData = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticData = generateStaticInitialData(nls.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVars = getIterationVars(nls.crefs, indexName)
+      let &prototypes += getNLSPrototypes(nls.index)
       <<
       <%residualFunction%>
       <%sparseData%>
@@ -2722,6 +2804,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let sparseDataCasual = generateStaticSparseData(indexName, 'NONLINEAR_SYSTEM_DATA', sparsePattern, colorList, maxColor)
       let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
+      let &prototypes += getNLSPrototypes(nls.index)
       <<
       /* start residuals for dynamic tearing sets */
       /* strict tearing set */
@@ -2751,6 +2834,7 @@ template functionNonLinearResiduals(list<SimEqSystem> nonlinearSystems, String m
       let sparseDataCasual = generateStaticEmptySparseData(indexName, 'NONLINEAR_SYSTEM_DATA')
       let bodyStaticDataCasual = generateStaticInitialData(at.crefs, indexName, 'NONLINEAR_SYSTEM_DATA')
       let updateIterationVarsCasual = getIterationVars(at.crefs, indexName)
+      let &prototypes += getNLSPrototypes(nls.index)
       <<
       /* start residuals for dynamic tearing sets */
       /* strict tearing set */
@@ -2779,7 +2863,8 @@ match system
   case nls as NONLINEARSYSTEM(__) then
     let &varDecls = buffer ""
     let &innerEqns = buffer ""
-    let innerNLSSystems = functionNonLinearResiduals(nls.eqs,modelNamePrefix)
+    let &dummyPrototypes = buffer ""
+    let innerNLSSystems = functionNonLinearResiduals(nls.eqs, modelNamePrefix, dummyPrototypes)
     let backupOutputs = match nls.eqs
       case (alg as SES_INVERSE_ALGORITHM(__))::{} then
         let body = (alg.knownOutputCrefs |> cr hasindex i0 =>
@@ -2901,6 +2986,8 @@ template generateStaticSparseData(String indexName, String systemType, SparsityP
       let rowIndex = genSPCRSRows(lengthListElements(unzipSecond(sparsepattern)), sparsepattern, "rowIndex")
       let colorString = genSPColors(colorList, "inSysData->sparsePattern->colorCols")
       <<
+
+      OMC_DISABLE_OPT
       void initializeSparsePattern<%indexName%>(<%systemType%>* inSysData)
       {
         int i=0;
@@ -2943,6 +3030,8 @@ template generateStaticInitialData(list<ComponentRef> crefs, String indexName, S
     >>
   ;separator="\n")
   <<
+
+  OMC_DISABLE_OPT
   void initializeStaticData<%indexName%>(void *inData, threadData_t *threadData, void *inSystemData)
   {
     DATA* data = (DATA*) inData;
@@ -2963,6 +3052,7 @@ template getIterationVars(list<ComponentRef> crefs, String indexName)
   ;separator="\n")
   <<
 
+  OMC_DISABLE_OPT
   void getIterationVars<%indexName%>(struct DATA *inData, double *array)
   {
     DATA* data = (DATA*) inData;
@@ -3202,28 +3292,37 @@ end functionInitialEquations;
 template functionInitialEquations_lambda0(list<SimEqSystem> initalEquations_lambda0, String modelNamePrefix)
   "Generates function in simulation file."
 ::=
-  let () = System.tmpTickReset(0)
-  let nrfuncs = listLength(initalEquations_lambda0)
-  let &eqfuncs = buffer ""
-  let fncalls =
-              let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 => equation_impl(-1, eq, contextSimulationDiscrete,
-                  modelNamePrefix, true) ;separator="\n")
-              (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
-  <<
-  <%eqfuncs%>
+  match initalEquations_lambda0
+  case {} then
+    <<
 
-  int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
-  {
-    TRACE_PUSH
+    /* No <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%> function */
 
-    data->simulationInfo->discreteCall = 1;
-    <%fncalls %>
-    data->simulationInfo->discreteCall = 0;
+    >>
+  else
+    let () = System.tmpTickReset(0)
+    let nrfuncs = listLength(initalEquations_lambda0)
+    let &eqfuncs = buffer ""
+    let fncalls =
+                let &eqfuncs += (initalEquations_lambda0 |> eq hasindex i0 => equation_impl(-1, eq, contextSimulationDiscrete,
+                    modelNamePrefix, true) ;separator="\n")
+                (initalEquations_lambda0 |> eq hasindex i0 => equation_call(eq, modelNamePrefix) ;separator="\n")
+    <<
+    <%eqfuncs%>
 
-    TRACE_POP
-    return 0;
-  }
-  >>
+    int <%symbolName(modelNamePrefix,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData)
+    {
+      TRACE_PUSH
+
+      data->simulationInfo->discreteCall = 1;
+      <%fncalls %>
+      data->simulationInfo->discreteCall = 0;
+
+      TRACE_POP
+      return 0;
+    }
+    >>
+  end match
 end functionInitialEquations_lambda0;
 
 template functionRemovedInitialEquationsBody(SimEqSystem eq, Text &varDecls, Text &eqs, String modelNamePrefix)
@@ -3292,6 +3391,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
       let delayExp = daeExp(d, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       <<
+      equationIndexes[1] = <%id%>;
       <%preExp%>
       storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, data->localData[0]->timeValue, <%delayExp%>, <%delayExpMax%>);<%\n%>
       >>
@@ -3302,6 +3402,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   {
     TRACE_PUSH
 
+    int equationIndexes[2] = {1,-1};
     <%varDecls%>
     <%storePart%>
 
@@ -3311,6 +3412,65 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   >>
 end functionStoreDelayed;
 
+template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer ""
+  let &auxFunction = buffer ""
+  let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, in0=in0, in1=in1, pos=pos, dir=dir) =>
+      let &preExp = buffer ""
+      let in0T = daeExp(in0, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let in1T = daeExp(in1, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let posT = daeExp(pos, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let dirT = daeExp(dir, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      // TODO @kabdelhak Use index of equation here, not the index of the spatial distribution
+      <<
+      equationIndexes[1] = <%index%>;
+      <%preExp%>
+      storeSpatialDistribution(data, threadData, <%index%>, <%in0T%>, <%in1T%>, <%posT%>, <%dirT%>);<%\n%>
+      >>
+    ))
+  <<
+  <%auxFunction%>
+  int <%symbolName(modelNamePrefix,"function_storeSpatialDistribution")%>(DATA *data, threadData_t *threadData)
+  {
+    int equationIndexes[2] = {1,-1};
+    <%varDecls%>
+    <%storePart%>
+
+    TRACE_POP
+    return 0;
+  }
+  >>
+end functionStoreSpatialDistribution;
+
+template functionInitSpatialDistribution(SpatialDistributionInfo spatialInfo, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer ""
+  let &auxFunction = buffer ""
+  let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, initPnts=initPnts, initVals=initVals, initSize=initSize) =>
+      let &preExp = buffer ""
+      let initPntsT = daeExp(initPnts, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let initValsT = daeExp(initVals, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      <<
+      <%preExp%>
+      initSpatialDistribution(data, threadData, <%index%>, &<%initPntsT%>, &<%initValsT%>, <%initSize%>);<%\n%>
+      >>
+    ))
+  <<
+  <%auxFunction%>
+  int <%symbolName(modelNamePrefix,"function_initSpatialDistribution")%>(DATA *data, threadData_t *threadData)
+  {
+
+    <%varDecls%>
+    <%storePart%>
+
+    TRACE_POP
+    return 0;
+  }
+  >>
+end functionInitSpatialDistribution;
 
 //------------------------------------
 // Begin: Modified functions for HpcOm
@@ -6149,7 +6309,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%extraFiles |> extraFile => ' <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => ' <%extraFile%>'%>
 
   OFILES=$(CFILES:.c=.obj)
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.h $(FILEPREFIX).makefile $(CFILES)
@@ -6189,13 +6349,18 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-O0" else "-Os"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
+  # define OMC_CFLAGS_OPTIMIZATION env variable to your desired optimization level to override this
+  OMC_CFLAGS_OPTIMIZATION=-Os
+  DEBUG_FLAGS=<% if boolOr(Testsuite.isRunning(), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-O0" else "$(OMC_CFLAGS_OPTIMIZATION)"%><% if Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then " -g" %>
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) $(DEBUG_FLAGS) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then '<%s.cflags%> ' /* From the simulate() command */%>
   <% if stringEq(Config.simCodeTarget(),"JavaScript") then 'OMC_EMCC_PRE_JS=<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc/pre.js<%\n%>'
   %>CPPFLAGS=<%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I. -DOPENMODELICA_XML_FROM_FILE_AT_RUNTIME<% if stringEq(Config.simCodeTarget(),"JavaScript") then " -DOMC_EMCC"%><% if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"%> -DOMC_MODEL_PREFIX=<%modelNamePrefix(simCode)%> -DOMC_NUM_MIXED_SYSTEMS=<%varInfo.numMixedSystems%> -DOMC_NUM_LINEAR_SYSTEMS=<%varInfo.numLinearSystems%> -DOMC_NUM_NONLINEAR_SYSTEMS=<%varInfo.numNonLinearSystems%> -DOMC_NDELAY_EXPRESSIONS=<%maxDelayedIndex%> -DOMC_NVAR_STRING=<%varInfo.numStringAlgVars%>
+  # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
+  OMC_LDFLAGS_LINK_TYPE=dynamic
+  RUNTIME_LIBS=<%makefileParams.runtimelibs%>
   LDFLAGS=<%
   if stringEq(Config.simCodeTarget(),"JavaScript") then <<-L'<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc/emcc' -lblas -llapack -lexpat -lSimulationRuntimeC -s TOTAL_MEMORY=805306368 -s OUTLINING_LIMIT=20000 --pre-js $(OMC_EMCC_PRE_JS)>>
-  else <<-L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%> >>
+  else <<-L"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -L"<%makefileParams.omhome%>/lib" -Wl,<%ExtraStack%>-rpath,"<%makefileParams.omhome%>/lib/<%Autoconf.triple%>/omc" -Wl,-rpath,"<%makefileParams.omhome%>/lib" <%ParModelicaExpLibs%> <%makefileParams.ldflags%> $(RUNTIME_LIBS) >>
   %>
   DIREXTRA=<%stringReplace(dirExtra,"#","\\#") /* make strips everything after # */%>
   MAINFILE=<%fileNamePrefix%>.c
@@ -6203,7 +6368,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%extraFiles |> extraFile => ' \<%\n%>  <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => ' \<%\n%>  <%extraFile%>'%>
 
   OFILES=$(CFILES:.c=.o)
   GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)

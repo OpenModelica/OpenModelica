@@ -33,7 +33,7 @@
 
 #include "omc_config.h"
 
-#ifdef WITH_UMFPACK
+#ifdef WITH_SUITESPARSE
 #ifndef _LINEARSOLVERKLU_H_
 #define _LINEARSOLVERKLU_H_
 

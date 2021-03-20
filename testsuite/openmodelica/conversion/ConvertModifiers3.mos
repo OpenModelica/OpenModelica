@@ -1,0 +1,39 @@
+// name:   ConvertModifiers3
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertModifiers3
+    model M
+      Modelica.Mechanics.MultiBody.Forces.Force force(forceDiameter = 1);
+    end M;
+
+    model M2
+      extends Modelica.Mechanics.MultiBody.Forces.Force(forceDiameter = 2, force = ones(3));
+    end M2;
+
+    model M3 = Modelica.Mechanics.MultiBody.Forces.Force(forceDiameter = 3);
+  end ConvertModifiers3;
+");
+
+convertPackage(ConvertModifiers3, "scripts/ConvertModifiers3.mos");
+getErrorString();
+list(ConvertModifiers3);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertModifiers3
+//   model M
+//     Modelica.Mechanics.MultiBody.Forces.Force force(connectionLineDiameter = 1);
+//   end M;
+//
+//   model M2
+//     extends Modelica.Mechanics.MultiBody.Forces.Force(connectionLineDiameter = 2, force = ones(3));
+//   end M2;
+//
+//   model M3 = Modelica.Mechanics.MultiBody.Forces.Force(connectionLineDiameter = 3);
+// end ConvertModifiers3;"
+// endResult

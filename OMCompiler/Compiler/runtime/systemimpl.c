@@ -79,6 +79,7 @@ typedef void* iconv_t;
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #include <rpc.h>
+#include <psapi.h>
 #define getFunctionPointerFromDLL  GetProcAddress
 #define FreeLibraryFromHandle !FreeLibrary
 
@@ -973,7 +974,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
     return 0;
   }
 
-  while ( n = fread(buf, 1, 8192, source) ) {
+  while (( n = fread(buf, 1, 8192, source) )) {
     if (n != fwrite(buf, 1, n, target)) {
       rv = 0;
       break;
@@ -1325,8 +1326,8 @@ static const char* SystemImpl__getUUIDStr(void)
 {
   static char uuidStr[37] = "8c4e810f-3df3-4a00-8276-176fa3c9f9e0";
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  unsigned char *tmp;
-  UUID uuid;
+  unsigned char *tmp = NULL;
+  UUID uuid = {0};
   if (UuidCreate(&uuid) == RPC_S_OK)
     UuidToString(&uuid, &tmp);
   tmp[36] = '\0';
@@ -1343,7 +1344,7 @@ static const char* SystemImpl__getUUIDStr(void)
 typedef void (*mmc_GC_function_set_gc_state)(mmc_GC_state_type*);
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
-int SystemImpl__loadLibrary(const char *str, int printDebug)
+int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
 {
   char libname[MAXPATHLEN];
   char currentDirectory[MAXPATHLEN];
@@ -1353,15 +1354,31 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   HMODULE h;
   const char* ctokens[2];
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
-  /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
-  GetCurrentDirectory(bufLen,currentDirectory);
-#if defined(_MSC_VER)
-  _snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
-#else
-  snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
-#endif
 
-  h = LoadLibrary(libname);
+  if (str[0] != '\0') {
+    /* adrpo: use BACKSLASH here as specified here: http://msdn.microsoft.com/en-us/library/ms684175(VS.85).aspx */
+    if (relativePath) {
+      GetCurrentDirectory(bufLen,currentDirectory);
+#if defined(_MSC_VER)
+      _snprintf(libname, MAXPATHLEN, "%s\\%s", currentDirectory, str);
+#else
+      snprintf(libname, MAXPATHLEN, "%s\\%s", currentDirectory, str);
+#endif
+    } else {
+#if defined(_MSC_VER)
+      _snprintf(libname, MAXPATHLEN, "%s", str);
+#else
+      snprintf(libname, MAXPATHLEN, "%s", str);
+#endif
+    }
+
+    h = LoadLibrary(libname);
+  } else { /* no library name, fetch current module handle */
+    /* set the libname */
+    strcpy(libname, "[own process]");
+    h = GetModuleHandle(0);
+  }
+
   if (h == NULL) {
     LPVOID lpMsgBuf;
     FormatMessage(
@@ -1380,16 +1397,6 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
     return -1;
   }
 
-  /* adrpo, pass the mmc_GC_state pointer from the current process!
-  mmc_GC_set_state_lib_function = (mmc_GC_function_set_gc_state)getFunctionPointerFromDLL(h, "mmc_GC_set_state");
-  if (mmc_GC_set_state_lib_function == NULL) {
-    fprintf(stderr, "Unable to get pointer for mmc_GC_set_state in  %s!\n", libname);
-    fflush(stderr);
-    return -1;
-  }
-  mmc_GC_set_state_lib_function(mmc_GC_state);
-  */
-
   libIndex = alloc_ptr();
   if (libIndex < 0) {
     //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
@@ -1404,7 +1411,7 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
 }
 
 #else
-int SystemImpl__loadLibrary(const char *str, int printDebug)
+int SystemImpl__loadLibrary(const char *str, int relativePath, int printDebug)
 {
   char libname[MAXPATHLEN];
   modelica_ptr_t lib = NULL;
@@ -1412,28 +1419,29 @@ int SystemImpl__loadLibrary(const char *str, int printDebug)
   void *h = NULL;
   mmc_GC_function_set_gc_state mmc_GC_set_state_lib_function = NULL;
   const char* ctokens[2];
-  snprintf(libname, MAXPATHLEN, "./%s" CONFIG_DLL_EXT, str);
 #if defined(RTLD_DEEPBIND)
-  h = dlopen(libname, RTLD_LOCAL | RTLD_NOW | RTLD_DEEPBIND);
+  int flags = RTLD_LOCAL | RTLD_NOW | RTLD_DEEPBIND;
 #else
-  h = dlopen(libname, RTLD_LOCAL | RTLD_NOW);
+  int flags = RTLD_LOCAL | RTLD_NOW;
 #endif
+
+  if (str[0] != '\0') {
+    if (relativePath) {
+      snprintf(libname, MAXPATHLEN, "./%s", str);
+    } else {
+      snprintf(libname, MAXPATHLEN, "%s", str);
+    }
+    h = dlopen(libname, flags);
+  } else {
+    h = dlopen(NULL, flags);
+  }
+
   if (h == NULL) {
     ctokens[0] = dlerror();
     ctokens[1] = libname;
     c_add_message(NULL,-1, ErrorType_runtime,ErrorLevel_error, gettext("OMC unable to load `%s': %s.\n"), ctokens, 2);
     return -1;
   }
-
-  /* adrpo, pass the mmc_GC_state pointer from the current process!
-  mmc_GC_set_state_lib_function = (mmc_GC_function_set_gc_state)getFunctionPointerFromDLL(h, "mmc_GC_set_state");
-  if (mmc_GC_set_state_lib_function == NULL) {
-    fprintf(stderr, "Unable to get pointer for mmc_GC_set_state in  %s!\n", libname);
-    fflush(stderr);
-    return -1;
-  }
-  mmc_GC_set_state_lib_function(mmc_GC_state);
-  */
 
   libIndex = alloc_ptr();
   if (libIndex < 0) {
@@ -1510,6 +1518,7 @@ int SystemImpl__lookupFunction(int libIndex, const char *str)
   modelica_ptr_t lib = NULL, func = NULL;
   function_t funcptr;
   int funcIndex;
+  long lastError = 0;
 
   lib = lookup_ptr(libIndex);
 
@@ -1517,9 +1526,58 @@ int SystemImpl__lookupFunction(int libIndex, const char *str)
     return -1;
 
   funcptr =  (int (*)(threadData_t*, type_description*, type_description*)) getFunctionPointerFromDLL(lib->data.lib, str);
+  lastError = GetLastError();
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  /* windows is special :)
+   * if we didn't find the function, search it in all the loaded DLLs as Linux does
+   */
+  if (funcptr == NULL) {
+    HMODULE hMods[1024];
+    HMODULE hProcess = GetCurrentProcess();
+    DWORD cbNeeded;
+    unsigned int i;
+    char szModName[MAX_PATH];
+
+    /* see if the GetModuleHandle(0) is in the current process and an executable */
+    if ( GetModuleFileNameEx( hProcess, lib->data.lib, szModName, sizeof(szModName) / sizeof(char)) )
+    {
+      // if strcmp(szModName[strlen(szModName)-4], ".exe")
+      if ( EnumProcessModules(hProcess, hMods, sizeof(hMods), &cbNeeded) )
+      {
+        for ( i = 0; i < (cbNeeded / sizeof(modelica_integer)); i++ )
+        {
+          funcptr = (int (*)(threadData_t*, type_description*, type_description*)) getFunctionPointerFromDLL(hMods[i], str);
+          if (funcptr != NULL)
+          {
+            break;
+          }
+
+          /* // uncomment for debugging
+          {
+            if ( GetModuleFileNameEx( hProcess, hMods[i], szModName, sizeof(szModName) / sizeof(char)) )
+            {
+              fprintf(stderr, "function %s in %s handle:[%p][%d] funcptr[%p] GetLastError:%d\n", str, szModName, hMods[i], i, funcptr, GetLastError()); fflush(NULL);
+            }
+          }
+          */
+        }
+      }
+    }
+  }
+#endif
 
   if (funcptr == NULL) {
-    fprintf(stderr, "Unable to find `%s': %lu.\n", str, GetLastError());
+    const char* err_toks[2];
+    char id_buf[11];
+    snprintf(id_buf, 11, "%lu", lastError);
+#if defined(__MINGW32__) || defined(_MSC_VER)
+    err_toks[0] = id_buf;
+#else
+    err_toks[0] = dlerror();
+#endif
+    err_toks[1] = str;
+    c_add_message(NULL, -1, ErrorType_runtime, ErrorLevel_error, gettext("Unable to find `%s': %s.\n"), err_toks, 2);
     return -1;
   }
 
@@ -2218,6 +2276,18 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
   for (i=0; i<numEntries; i++) {
     /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
     fprintf(stderr, "is %ld.%ld.%ld.%ld %s\n", entries[i].version[0], entries[i].version[1], entries[i].version[2], entries[i].version[3], entries[i].versionExtra); */
+    if (version[0]==0 && version[1]==0 && version[2]==0) {
+      const char *entryVersionExtra = entries[i].versionExtra;
+      if (entryVersionExtra[0] == '-' && versionExtra[0] != '-') {
+        entryVersionExtra = entryVersionExtra+1;
+      }
+      if (0==strncmp(entryVersionExtra,versionExtra,strlen(versionExtra))) {
+        *outDir = entries[i].dir;
+        *outName = entries[i].file;
+        *isDir = entries[i].fileIsDir;
+        return 0;
+      }
+    }
     if (modelicaPathEntryVersionEqual(entries[i].version,version,MODELICAPATH_LEVELS) && 0==strncmp(entries[i].versionExtra,versionExtra,strlen(versionExtra))) {
       *outDir = entries[i].dir;
       *outName = entries[i].file;

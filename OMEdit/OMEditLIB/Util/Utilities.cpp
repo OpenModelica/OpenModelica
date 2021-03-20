@@ -40,7 +40,11 @@
 #include "Editors/BaseEditor.h"
 
 #include <QApplication>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#include <QScreen>
+#else // QT_VERSION_CHECK
 #include <QDesktopWidget>
+#endif // QT_VERSION_CHECK
 #include <QGridLayout>
 #include <QStylePainter>
 #include <QPainter>
@@ -69,12 +73,31 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   // filter timer
   mpFilterTimer = new QTimer;
   mpFilterTimer->setSingleShot(true);
+  mpScrollToActiveButton = new QToolButton;
+  QString scrollToActiveButtonText = tr("Scroll to Active");
+  mpScrollToActiveButton->setText(scrollToActiveButtonText);
+  mpScrollToActiveButton->setIcon(QIcon(":/Resources/icons/step-into.svg"));
+  mpScrollToActiveButton->setToolTip(scrollToActiveButtonText);
+  mpScrollToActiveButton->setAutoRaise(true);
+  mpScrollToActiveButton->hide();
+  // expand all button
+  mpExpandAllButton = new QToolButton;
+  mpExpandAllButton->setText(Helper::expandAll);
+  mpExpandAllButton->setIcon(QIcon(":/Resources/icons/bottom.svg"));
+  mpExpandAllButton->setToolTip(Helper::expandAll);
+  mpExpandAllButton->setAutoRaise(true);
+  // collapse all button
+  mpCollapseAllButton = new QToolButton;
+  mpCollapseAllButton->setText(Helper::collapseAll);
+  mpCollapseAllButton->setIcon(QIcon(":/Resources/icons/top.svg"));
+  mpCollapseAllButton->setToolTip(Helper::collapseAll);
+  mpCollapseAllButton->setAutoRaise(true);
   // show hide button
   mpShowHideButton = new QToolButton;
-  QString text = tr("Show/hide filters");
-  mpShowHideButton->setText(text);
+  QString showHideButtonText = tr("Show/hide filters");
+  mpShowHideButton->setText(showHideButtonText);
   mpShowHideButton->setIcon(QIcon(":/Resources/icons/down.svg"));
-  mpShowHideButton->setToolTip(text);
+  mpShowHideButton->setToolTip(showHideButtonText);
   mpShowHideButton->setAutoRaise(true);
   mpShowHideButton->setCheckable(true);
   connect(mpShowHideButton, SIGNAL(toggled(bool)), SLOT(showHideFilters(bool)));
@@ -90,29 +113,25 @@ TreeSearchFilters::TreeSearchFilters(QWidget *pParent)
   mpSyntaxComboBox->setItemData(1, tr("A simple pattern matching syntax similar to that used by shells (command interpreters) for \"file globbing\"."), Qt::ToolTipRole);
   mpSyntaxComboBox->addItem(tr("Fixed String"), QRegExp::FixedString);
   mpSyntaxComboBox->setItemData(2, tr("Fixed string matching."), Qt::ToolTipRole);
-  // expand all button
-  mpExpandAllButton = new QPushButton(Helper::expandAll);
-  mpExpandAllButton->setAutoDefault(false);
-  // collapse all button
-  mpCollapseAllButton = new QPushButton(Helper::collapseAll);
-  mpCollapseAllButton->setAutoDefault(false);
   // create the layout
   QGridLayout *pFiltersWidgetLayout = new QGridLayout;
   pFiltersWidgetLayout->setContentsMargins(0, 0, 0, 0);
   pFiltersWidgetLayout->setAlignment(Qt::AlignTop);
   pFiltersWidgetLayout->addWidget(mpCaseSensitiveCheckBox, 0, 0);
   pFiltersWidgetLayout->addWidget(mpSyntaxComboBox, 0, 1);
-  pFiltersWidgetLayout->addWidget(mpExpandAllButton, 1, 0);
-  pFiltersWidgetLayout->addWidget(mpCollapseAllButton, 1, 1);
   mpFiltersWidget->setLayout(pFiltersWidgetLayout);
   mpFiltersWidget->hide();
   // create the layout
   QGridLayout *pMainLayout = new QGridLayout;
   pMainLayout->setContentsMargins(0, 0, 0, 0);
+  pMainLayout->setSpacing(0);
   pMainLayout->setAlignment(Qt::AlignTop);
   pMainLayout->addWidget(mpFilterTextBox, 0, 0);
-  pMainLayout->addWidget(mpShowHideButton, 0, 1);
-  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 2);
+  pMainLayout->addWidget(mpScrollToActiveButton, 0, 1);
+  pMainLayout->addWidget(mpExpandAllButton, 0, 2);
+  pMainLayout->addWidget(mpCollapseAllButton, 0, 3);
+  pMainLayout->addWidget(mpShowHideButton, 0, 4);
+  pMainLayout->addWidget(mpFiltersWidget, 1, 0, 1, 5);
   setLayout(pMainLayout);
 }
 
@@ -226,20 +245,37 @@ Label::Label(const QString &text, QWidget *parent, Qt::WindowFlags flags)
 
 QSize Label::minimumSizeHint() const
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+  if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
+#else // QT_VERSION_CHECK
   if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
+#endif // QT_VERSION_CHECK
     return QLabel::minimumSizeHint();
   }
   const QFontMetrics &fm = fontMetrics();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+  QSize size(fm.horizontalAdvance("..."), fm.height()+5);
+#else // QT_VERSION_CHECK
   QSize size(fm.width("..."), fm.height()+5);
+#endif // QT_VERSION_CHECK
   return size;
 }
 
 QSize Label::sizeHint() const
 {
-  if (pixmap() != NULL || mElideMode == Qt::ElideNone)
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 15, 0))
+  if (!pixmap(Qt::ReturnByValue).isNull() || mElideMode == Qt::ElideNone) {
+#else // QT_VERSION_CHECK
+  if (pixmap() != NULL || mElideMode == Qt::ElideNone) {
+#endif // QT_VERSION_CHECK
     return QLabel::sizeHint();
+  }
   const QFontMetrics& fm = fontMetrics();
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+  QSize size(fm.horizontalAdvance(mText), fm.height()+5);
+#else // QT_VERSION_CHECK
   QSize size(fm.width(mText), fm.height()+5);
+#endif // QT_VERSION_CHECK
   return size;
 }
 
@@ -393,7 +429,11 @@ CodeColorsWidget::CodeColorsWidget(QWidget *pParent)
   // preview textbox
   mpPreviewLabel = new Label(tr("Preview:"));
   mpPreviewPlainTextEdit = new PreviewPlainTextEdit;
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+  mpPreviewPlainTextEdit->setTabStopDistance((qreal)Helper::tabWidth);
+#else // QT_VERSION_CHECK
   mpPreviewPlainTextEdit->setTabStopWidth(Helper::tabWidth);
+#endif // QT_VERSION_CHECK
   // set colors groupbox layout
   QGridLayout *pColorsGroupBoxLayout = new QGridLayout;
   pColorsGroupBoxLayout->addWidget(mpItemsLabel, 1, 0);
@@ -429,6 +469,36 @@ void CodeColorsWidget::pickColor()
   pListWidgetItem->setColor(color);
   pListWidgetItem->setForeground(color);
   emit colorUpdated();
+}
+
+/*!
+ * \brief QDetachableProcess::QDetachableProcess
+ * Implementation from https://stackoverflow.com/questions/42051405/qprocess-with-cmd-command-does-not-result-in-command-line-window
+ * \param pParent
+ */
+QDetachableProcess::QDetachableProcess(QObject *pParent)
+  : QProcess(pParent)
+{
+#ifdef Q_OS_WIN
+  setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
+    args->flags |= CREATE_NEW_CONSOLE;
+    args->startupInfo->dwFlags &=~ STARTF_USESTDHANDLES;
+  });
+#endif
+}
+
+/*!
+ * \brief QDetachableProcess::start
+ * Starts a process and detaches from it.
+ * \param program
+ * \param arguments
+ * \param mode
+ */
+void QDetachableProcess::start(const QString &program, const QStringList &arguments, QIODevice::OpenMode mode)
+{
+  QProcess::start(program, arguments, mode);
+  waitForStarted();
+  setProcessState(QProcess::NotRunning);
 }
 
 QString Utilities::escapeForHtmlNonSecure(const QString &str)
@@ -731,6 +801,23 @@ qint64 Utilities::getProcessId(QProcess *pProcess)
   return processId;
 }
 
+/*!
+ * \brief Utilities::formatExitCode
+ * Returns the given process exit code as a string in an OS appropriate format.
+ * \param code
+ * \return
+ */
+QString Utilities::formatExitCode(int code)
+{
+#ifdef WIN32
+  // Use 0xXXXXXXXX format on Windows.
+  return QStringLiteral("0x%1").arg(code, 8, 16, QChar('0'));
+#else
+  // Use normal decimal on other OS.
+  return QString::number(code);
+#endif
+}
+
 #ifdef WIN32
 /* adrpo: found this on http://stackoverflow.com/questions/1173342/terminate-a-process-tree-c-for-windows
  * thanks go to: mjmarsh & Firas Assaad
@@ -816,39 +903,6 @@ bool Utilities::isModelicaFile(QString extension)
     return true;
   } else {
     return false;
-  }
-}
-
-/*!
- * \brief Utilities::insertText
- * Inserts the text to QPlainTextEdit.
- * \param pPlainTextEdit
- * \param text
- * \param color
- */
-void Utilities::insertText(QPlainTextEdit *pPlainTextEdit, QString text, QTextCharFormat format)
-{
-  // move the cursor down before adding to the logger.
-  QTextCursor textCursor = pPlainTextEdit->textCursor();
-  const bool atBottom = pPlainTextEdit->verticalScrollBar()->value() == pPlainTextEdit->verticalScrollBar()->maximum();
-  if (!textCursor.atEnd()) {
-    textCursor.movePosition(QTextCursor::End);
-  }
-  // insert the text
-  textCursor.beginEditBlock();
-  if (format.isValid()) {
-    textCursor.insertText(text, format);
-  } else {
-    textCursor.insertText(text);
-  }
-  textCursor.endEditBlock();
-  // move the cursor
-  if (atBottom) {
-    pPlainTextEdit->verticalScrollBar()->setValue(pPlainTextEdit->verticalScrollBar()->maximum());
-    // QPlainTextEdit destroys the first calls value in case of multiline
-    // text, so make sure that the scroll bar actually gets the value set.
-    // Is a noop if the first call succeeded.
-    pPlainTextEdit->verticalScrollBar()->setValue(pPlainTextEdit->verticalScrollBar()->maximum());
   }
 }
 
@@ -974,7 +1028,11 @@ bool Utilities::containsWord(QString text, int index, QString keyword, bool chec
  */
 qreal Utilities::convertMMToPixel(qreal value)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+  return (QApplication::primaryScreen()->logicalDotsPerInchX() * value) / 25.4;
+#else // QT_VERSION_CHECK
   return (QApplication::desktop()->screen()->logicalDpiX() * value) / 25.4;
+#endif // QT_VERSION_CHECK
 }
 
 /*!
@@ -1091,8 +1149,7 @@ void Utilities::removeDirectoryRecursivly(QString path)
   QFileInfo fileInfo(path);
   if (fileInfo.isDir()) {
     QDir dir(path);
-    QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks |
-                                          QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
+    QStringList filesList = dir.entryList(QDir::AllDirs | QDir::Files | QDir::NoSymLinks | QDir::NoDotAndDotDot | QDir::Writable | QDir::CaseSensitive);
     for (int i = 0 ; i < filesList.count() ; ++i) {
       removeDirectoryRecursivly(QString("%1/%2").arg(path, filesList.at(i)));
     }

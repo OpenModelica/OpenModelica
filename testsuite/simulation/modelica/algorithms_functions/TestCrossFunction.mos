@@ -1,7 +1,7 @@
 // status: correct
 // cflags: -d=-newInst
 
-loadModel(Modelica);getErrorString();
+loadModel(Modelica, {"3.2.3"});getErrorString();
 loadString("model TestCrossFunction
   import Modelica.Mechanics.MultiBody.Frames;
   Frames.Orientation R = Frames.nullRotation();
