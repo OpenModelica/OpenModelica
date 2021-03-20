@@ -62,6 +62,7 @@ protected
   import NBVariable.VariablePointers;
 
   // Util imports
+  import MetaModelica.Dangerous;
   import StringUtil;
   import UnorderedMap;
   import UnorderedSet;
@@ -452,20 +453,20 @@ protected
 
           // try to append the shorter to the longer lists
           if listLength(set1.simple_equations) > listLength(set2.simple_equations) then
-            set.simple_equations := Pointer.create(eq) :: listAppend(set2.simple_equations, set1.simple_equations);
+            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set2.simple_equations, set1.simple_equations);
           else
-            set.simple_equations := Pointer.create(eq) :: listAppend(set1.simple_equations, set2.simple_equations);
+            set.simple_equations := Pointer.create(eq) :: Dangerous.listAppendDestroy(set1.simple_equations, set2.simple_equations);
           end if;
 
           // try to change as few pointer entries as possible
           if listLength(set1.simple_variables) > listLength(set2.simple_variables) then
-            set.simple_variables := listAppend(set2.simple_variables, set1.simple_variables);
+            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
             Pointer.update(set1_ptr, set);
             for var_ptr in set2.simple_variables loop
               UnorderedMap.add(BVariable.getVarName(var_ptr), set1_ptr, map);
             end for;
           else
-            set.simple_variables := listAppend(set2.simple_variables, set1.simple_variables);
+            set.simple_variables := Dangerous.listAppendDestroy(set2.simple_variables, set1.simple_variables);
             Pointer.update(set2_ptr, set);
             for var_ptr in set1.simple_variables loop
               UnorderedMap.add(BVariable.getVarName(var_ptr), set2_ptr, map);

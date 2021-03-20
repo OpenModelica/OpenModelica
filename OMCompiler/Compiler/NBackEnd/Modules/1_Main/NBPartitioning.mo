@@ -54,6 +54,7 @@ protected
   import NBVariable.VariablePointers;
 
   // Util
+  import MetaModelica.Dangerous;
   import DoubleEnded;
   import UnorderedMap;
   import UnorderedSet;
@@ -182,16 +183,16 @@ protected
 
       // find the smaller list to append
       if c1v > c2v then
-        variables := listAppend(c2.variables, c1.variables);
+        variables := Dangerous.listAppendDestroy(c2.variables, c1.variables);
       else
-        variables := listAppend(c1.variables, c2.variables);
+        variables := Dangerous.listAppendDestroy(c1.variables, c2.variables);
       end if;
 
       // find the smaller list to append
       if c1e > c2e then
-        eqn_idnts := listAppend(c2.eqn_idnts, c1.eqn_idnts);
+        eqn_idnts := Dangerous.listAppendDestroy(c2.eqn_idnts, c1.eqn_idnts);
       else
-        eqn_idnts := listAppend(c1.eqn_idnts, c2.eqn_idnts);
+        eqn_idnts := Dangerous.listAppendDestroy(c1.eqn_idnts, c2.eqn_idnts);
       end if;
 
       // find the lowest number of pointers needed to be changed
