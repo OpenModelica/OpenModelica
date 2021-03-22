@@ -46,8 +46,6 @@
 #include "Simulation/SimulationOutputWidget.h"
 #include "TransformationalDebugger/TransformationsWidget.h"
 
-#include <qjson/parser.h>
-
 #include <QObject>
 
 using namespace OMPlot;
@@ -588,7 +586,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     initFileName = QString("%1_init.xml").arg(text);
     infoFileName = QString("%1_info.json").arg(text);
   }
-  QFile initFile(QString(filePath).append(QDir::separator()).append(initFileName));
+  QFile initFile(QString("%1%2%3").arg(filePath, QDir::separator(), initFileName));
   if (initFile.exists()) {
     if (initFile.open(QIODevice::ReadOnly)) {
       QXmlStreamReader initXmlReader(&initFile);
@@ -599,43 +597,14 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
                                                             .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
     }
   }
-  QFile infoFile(QString(filePath).append(QDir::separator()).append(infoFileName));
 
   QMap<QString,QSet<QString>> usedInitialVars;
   QMap<QString,QSet<QString>> usedVars;
   QMap<QString,QList<IntStringPair>> definedIn;
 
-  if (infoFile.exists()) {
-    if (MainWindow::instance()->isDebug()) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Opening json file " + infoFile.fileName(), Helper::scriptingKind, Helper::errorLevel));
-      if (infoFile.open(QIODevice::ReadOnly)) {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Reading json file " + infoFile.fileName(), Helper::scriptingKind, Helper::errorLevel));
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Json file contents are " + infoFile.readAll(), Helper::scriptingKind, Helper::errorLevel));
-        infoFile.close();
-      } else {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Unable to open the json file for reading " + infoFile.fileName(), Helper::scriptingKind, Helper::errorLevel));
-      }
-    }
-    QJson::Parser parser;
-    bool ok;
-    QVariantMap result;
-    if (MainWindow::instance()->isDebug()) {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Parsing json file " + infoFile.fileName(), Helper::scriptingKind, Helper::errorLevel));
-    }
-    result = parser.parse(&infoFile, &ok).toMap();
-    if (!ok) {
-      if (MainWindow::instance()->isDebug()) {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Failed to parse json file " + infoFile.fileName(), Helper::scriptingKind, Helper::errorLevel));
-      }
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(infoFile.fileName())
-                                                            .arg(parser.errorString()), Helper::scriptingKind, Helper::errorLevel));
-      MainWindow::instance()->printStandardOutAndErrorFilesMessages();
-    } else {
-      if (MainWindow::instance()->isDebug()) {
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Parsed json file " + infoFile.fileName(), Helper::scriptingKind, Helper::errorLevel));
-      }
-    }
-
+  JsonDocument jsonDocument;
+  if (jsonDocument.parse(QString("%1%2%3").arg(filePath, QDir::separator(), infoFileName))) {
+    QVariantMap result = jsonDocument.result.toMap();
     QVariantList eqs = result["equations"].toList();
     for (int i=0; i<eqs.size(); i++) {
       QVariantMap veq = eqs[i].toMap();
@@ -661,6 +630,9 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
         }
       }
     }
+  } else {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, jsonDocument.errorString, Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->printStandardOutAndErrorFilesMessages();
   }
   /* open the .mat file */
   ModelicaMatReader matReader;
