@@ -1470,26 +1470,6 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
 }
 
 /*!
- * \brief MainWindow::OMSSimulationFinished
- * Called by OMSSimulationOutputWidget when the simulation is finished.\n
- * Reads the result file and plots the result.
- * \param resultFilePath
- * \param resultFileLastModifiedDateTime
- */
-void MainWindow::OMSSimulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime)
-{
-  // read the result file
-  QFileInfo resultFileInfo(resultFilePath);
-  if (resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
-    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
-    MainWindow::instance()->switchToPlottingPerspectiveSlot();
-    QStringList list = MainWindow::instance()->getOMCProxy()->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-    pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-    MainWindow::instance()->getVariablesDockWidget()->show();
-  }
-}
-
-/*!
  * \brief MainWindow::showMessagesBrowser
  * Slot activated when MessagesWidget::MessageAdded signal is raised.\n
  * Shows the Messages Browser.
