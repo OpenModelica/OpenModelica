@@ -2609,12 +2609,11 @@ algorithm
 
         if isSome(eq.range) then
           SOME(e1) := eq.range;
-          e1 := typeIterator(eq.iterator, e1, context, structural = true);
         else
-          Error.assertion(false, getInstanceName() + ": missing support for implicit iteration range", sourceInfo());
-          fail();
+          e1 := deduceIterationRangeEq(eq, eq.iterator, info);
         end if;
 
+        e1 := typeIterator(eq.iterator, e1, context, structural = true);
         next_context := InstContext.set(context, NFInstContext.FOR);
         body := list(typeEquation(e, next_context) for e in eq.body);
       then
@@ -2847,12 +2846,11 @@ algorithm
 
         if isSome(st.range) then
           SOME(e1) := st.range;
-          e1 := typeIterator(st.iterator, e1, context, structural = false);
         else
-          Error.assertion(false, getInstanceName() + ": missing support for implicit iteration range", sourceInfo());
-          fail();
+          e1 := deduceIterationRangeStmt(st, st.iterator, info);
         end if;
 
+        e1 := typeIterator(st.iterator, e1, context, structural = false);
         next_context := InstContext.set(context, NFInstContext.FOR);
         body := typeStatements(st.body, next_context);
       then
@@ -3269,6 +3267,154 @@ algorithm
     fail();
   end if;
 end typeReinit;
+
+function deduceIterationRangeEq
+  input Equation eq;
+  input InstNode iterator;
+  input SourceInfo info;
+  output Expression iterationRange;
+protected
+  list<tuple<ComponentRef, Integer>> crefs;
+algorithm
+  crefs := Equation.foldExp(eq, function collectIteratorCrefs(iterator = iterator), {});
+  iterationRange := deduceIterationRange(crefs, iterator, info);
+end deduceIterationRangeEq;
+
+function deduceIterationRangeStmt
+  input Statement stmt;
+  input InstNode iterator;
+  input SourceInfo info;
+  output Expression iterationRange;
+protected
+  list<tuple<ComponentRef, Integer>> crefs;
+algorithm
+  crefs := Statement.foldExp(stmt, function collectIteratorCrefs(iterator = iterator), {});
+  iterationRange := deduceIterationRange(crefs, iterator, info);
+end deduceIterationRangeStmt;
+
+function deduceIterationRangeExp
+  input Expression exp;
+  input InstNode iterator;
+  input SourceInfo info;
+  output Expression iterationRange;
+protected
+  list<tuple<ComponentRef, Integer>> crefs;
+algorithm
+  crefs := Expression.fold(exp, function collectIteratorCrefs2(iterator = iterator), {});
+  iterationRange := deduceIterationRange(crefs, iterator, info);
+end deduceIterationRangeExp;
+
+function deduceIterationRange
+  "Deduces the range of an iterator given a list of crefs and dimension indices
+   that the iterator was used to index."
+  input list<tuple<ComponentRef, Integer>> crefs;
+  input InstNode iterator;
+  input SourceInfo info;
+  output Expression iterationRange;
+protected
+  tuple<ComponentRef, Integer> range_cr;
+  ComponentRef cr;
+  Integer dim_index;
+  Dimension dim;
+  Expression start_exp, stop_exp;
+algorithm
+  // The iterator needs to be used in a subscript somewhere to be able to deduce it.
+  if listEmpty(crefs) then
+    Error.addSourceMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,
+      {InstNode.name(iterator)}, info);
+    fail();
+  end if;
+
+  // Check that the dimensions are all the same.
+  range_cr := List.reduce(crefs, function deduceIterationRange2(info = info));
+  (cr, dim_index) := range_cr;
+
+  // Deduced iteration range is 1:size(cr, dim_index)
+  dim := Type.nthDimension(InstNode.getType(ComponentRef.node(cr)), dim_index);
+  start_exp := Dimension.lowerBoundExp(dim);
+  stop_exp := Dimension.endExp(dim, cr, dim_index);
+  iterationRange := Expression.RANGE(Type.UNKNOWN(), start_exp, NONE(), stop_exp);
+end deduceIterationRange;
+
+function collectIteratorCrefs
+  "Traverses an expression and return a list of crefs that the given iterator
+   was used as a subscript in, as well as the index of the dimension that the
+   subscripts are indexing."
+  input Expression exp;
+  input InstNode iterator;
+  input output list<tuple<ComponentRef, Integer>> crefs;
+algorithm
+  crefs := Expression.fold(exp, function collectIteratorCrefs2(iterator = iterator), crefs);
+end collectIteratorCrefs;
+
+function collectIteratorCrefs2
+  "Helper function to collectIteratorCrefs, collects the iterator crefs in an
+   expression."
+  input Expression exp;
+  input InstNode iterator;
+  input output list<tuple<ComponentRef, Integer>> crefs;
+protected
+  ComponentRef cref;
+  Integer index;
+  list<Subscript> subs;
+algorithm
+  () := match exp
+    case Expression.CREF(cref = cref)
+      algorithm
+        while ComponentRef.isCref(cref) loop
+          (cref, subs) := ComponentRef.stripSubscripts(cref);
+          index := 1;
+
+          for sub in subs loop
+            if Subscript.isIterator(sub, iterator) then
+              crefs := (cref, index) :: crefs;
+            end if;
+
+            index := index + 1;
+          end for;
+
+          cref := ComponentRef.rest(cref);
+        end while;
+      then
+        ();
+
+    else ();
+  end match;
+end collectIteratorCrefs2;
+
+function deduceIterationRange2
+  "Helper function to deduceIterationRange, check that two dimensions are the same."
+  input tuple<ComponentRef, Integer> range1;
+  input tuple<ComponentRef, Integer> range2;
+  input SourceInfo info;
+  output tuple<ComponentRef, Integer> range = range2;
+protected
+  ComponentRef cref1, cref2;
+  Integer index1, index2;
+  InstNode node1, node2;
+  Dimension dim1, dim2;
+algorithm
+  (cref1, index1) := range1;
+  (cref2, index2) := range2;
+  node1 := ComponentRef.node(cref1);
+  node2 := ComponentRef.node(cref2);
+
+  // Skip the check if they refer to the same dimension.
+  if index1 == index2 and InstNode.refEqual(node1, node2) then
+    return;
+  end if;
+
+  // The crefs are probably untyped here, so use the type of the instance nodes instead.
+  dim1 := Type.nthDimension(InstNode.getType(node1), index1);
+  dim2 := Type.nthDimension(InstNode.getType(node2), index2);
+
+  if not Dimension.isEqualKnown(dim1, dim2) then
+    Error.addSourceMessage(Error.INCOMPATIBLE_IMPLICIT_RANGES,
+      {String(index1), ComponentRef.toString(cref1),
+       String(index2), ComponentRef.toString(cref2)}, info);
+    fail();
+  end if;
+end deduceIterationRange2;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFTyping;
