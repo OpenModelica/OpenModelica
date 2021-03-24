@@ -86,6 +86,7 @@ public
       local
         Integer istart, istep, istop;
         Real rstart, rstep, rstop;
+        Boolean bstart, bstop;
         Type ty;
         list<String> literals;
         Absyn.Path path;
@@ -112,6 +113,10 @@ public
                             step = NONE(),
                             stop = Expression.REAL(rstop))
         then REAL_RANGE(rstart, 1.0, 0, Util.realRangeSize(rstart, 1.0, rstop));
+
+      case Expression.RANGE(start = Expression.BOOLEAN(bstart),
+                            stop = Expression.BOOLEAN(bstop))
+        then ARRAY_RANGE(list(Expression.BOOLEAN(b) for b in bstart:bstop));
 
       case Expression.RANGE(start = Expression.ENUM_LITERAL(ty = ty, index = istart),
                             step = NONE(),

@@ -1891,12 +1891,14 @@ protected
     InstNode iter;
   algorithm
     for i in inIters loop
-      if isNone(i.range) then
-        Error.assertion(false, getInstanceName() + ": missing support for implicit iteration range", sourceInfo());
-        fail();
+      if isSome(i.range) then
+        range := Inst.instExp(Util.getOption(i.range), outScope, context, info);
+      else
+        // Use an empty expression to indicate that the range is missing and
+        // needs to be deduced during typing.
+        range := Expression.EMPTY(Type.UNKNOWN());
       end if;
 
-      range := Inst.instExp(Util.getOption(i.range), outScope, context, info);
       (outScope, iter) := Inst.addIteratorToScope(i.name, outScope, info);
       outIters := (iter, range) :: outIters;
     end for;
@@ -1933,6 +1935,11 @@ protected
 
           for i in call.iters loop
             (iter, range) := i;
+
+            if Expression.isEmpty(range) then
+              range := Typing.deduceIterationRangeExp(Expression.CALL(call), iter, info);
+            end if;
+
             (range, iter_ty, iter_var, iter_pur) := Typing.typeIterator(iter, range, next_context, is_structural);
 
             if is_structural then
@@ -1992,6 +1999,11 @@ protected
 
           for i in call.iters loop
             (iter, range) := i;
+
+            if Expression.isEmpty(range) then
+              range := Typing.deduceIterationRangeExp(Expression.CALL(call), iter, info);
+            end if;
+
             (range, _, iter_var, iter_pur) := Typing.typeIterator(iter, range, context, structural = false);
             variability := Variability.variabilityMax(variability, iter_var);
             purity := Variability.purityMin(purity, iter_pur);
