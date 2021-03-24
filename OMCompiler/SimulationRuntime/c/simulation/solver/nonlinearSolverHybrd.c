@@ -117,6 +117,10 @@ int allocateHybrdData(size_t size, void** voiddata)
 int freeHybrdData(void **voiddata)
 {
   DATA_HYBRD* data = (DATA_HYBRD*) *voiddata;
+  if (data == NULL)
+  {
+    return -1;
+  }
 
   free(data->resScaling);
   free(data->fvecScaled);
@@ -1056,8 +1060,10 @@ int solveHybrd(DATA *data, threadData_t *threadData, int sysNumber)
       /* take the best approximation */
       memcpy(systemData->nlsx, solverData->x, solverData->n*(sizeof(double)));
 
-      giveUp = 1;
-      success = 0;
+      /* Setting giveUp to true and status to false is not enough to end the simulation... */
+      if(retries*retries2*retries3 > 100) {
+        omc_throw(threadData);
+      }
       break;
     }
   }
