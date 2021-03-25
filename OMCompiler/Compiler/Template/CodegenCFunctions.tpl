@@ -5128,6 +5128,7 @@ template subscriptToMStr(Subscript subscript)
   case INDEX(__) then
    match exp
     case ICONST(integer=i) then i
+    case BCONST(bool=i) then i
     case ENUM_LITERAL(index=i) then i
     else
       let &varDecls = buffer ""
@@ -7566,7 +7567,7 @@ template daeSubscriptExp(Exp exp, Context context, Text &preExp, Text &varDecls,
 ::=
   let res = daeExp(exp,context,&preExp,&varDecls,&auxFunction)
   match expTypeFromExpModelica(exp)
-    case "modelica_boolean" then '(<%res%>+1)'
+    case "modelica_boolean" then '(_index_t)(<%res%>+1)'
     else res
   end match
 end daeSubscriptExp;
