@@ -200,6 +200,7 @@ protected
             der_cref := BVariable.getDerCref(state_cref);
           else
             (der_cref, der_var) := BVariable.makeDerVar(state_cref);
+            state_var := BVariable.getVarPointer(state_cref);
             state_var := BVariable.makeStateVar(state_var, der_var);
             Pointer.update(acc_states, state_var :: Pointer.access(acc_states));
             Pointer.update(acc_derivatives, der_var :: Pointer.access(acc_derivatives));

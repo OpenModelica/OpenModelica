@@ -233,15 +233,27 @@ public
     output String str = "";
   protected
     list<tuple<ComponentRef, Expression>> entries;
+    String constStr="", aliasStr="", nonTrivialStr="";
     ComponentRef key;
     Expression value;
   algorithm
-    str := StringUtil.headline_2("[dumprepl] Replacements: " + str);
     entries := UnorderedMap.toList(replacements);
     for entry in entries loop
       (key, value) := entry;
-      str := str + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";
+      if Expression.isConstNumber(value) then
+        // constant alias
+        constStr := constStr + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";
+      elseif (not (Expression.isCref(value) or Expression.isCref(Expression.negate(value)))) and BVariable.checkExpMap(value, BVariable.isTimeDependent) then
+        // non trivial alias
+        nonTrivialStr := nonTrivialStr + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";
+      else
+        // trivial alias
+        aliasStr := aliasStr + "\t" + ComponentRef.toString(key) + "\t ==> \t" + Expression.toString(value) + "\n";
+      end if;
     end for;
+    str := str + StringUtil.headline_4("[dumprepl] Constant Replacements:") + constStr;
+    str := str + StringUtil.headline_4("[dumprepl] Trivial Alias Replacements:") + aliasStr;
+    str := str + StringUtil.headline_4("[dumprepl] Nontrivial Alias Replacements:") + nonTrivialStr;
   end simpleToString;
 
 /*

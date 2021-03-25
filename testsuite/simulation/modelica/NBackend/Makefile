@@ -6,6 +6,7 @@ helloWorld.mos \
 multary_simplification.mos \
 parameterSystem.mos \
 RSE.mos \
+RSE2.mos \
 StaticIR.mos \
 simpleNonlinearLoop.mos \
 implicitEquation.mos \

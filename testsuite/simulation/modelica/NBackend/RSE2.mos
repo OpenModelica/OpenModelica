@@ -1,4 +1,4 @@
-// name: RSE
+// name: RSE2
 // keywords: NewBackend
 // status: correct
 
@@ -8,12 +8,12 @@ loadString("
     Real x, z;          // regular simple
     Real a, b, c;       // constant simple
   equation
-    a = b;
-    b = c;
+    a = c;
     x = z;
     c = 3.0;
     y = time + c;
-    z = sin(time);
+    der(x) = cos(time);
+    der(z) = sin(time) + b;
   end RSE;
 "); getErrorString();
 
@@ -32,20 +32,18 @@ simulate(RSE); getErrorString();
 // ****************************************
 // 	<No Constant/Parameter Binding>
 // 	### Set Equations:
-// 	[SCAL] ($RES_SIM_3) x = z
+// 	[SCAL] ($RES_SIM_4) x = z
 //
 // Alias Set 2:
 // ****************************************
-// 	Constant/Parameter Binding: [SCAL] ($RES_SIM_2) c = 3.0
+// 	Constant/Parameter Binding: [SCAL] ($RES_SIM_3) c = 3.0
 // 	### Set Equations:
-// 	[SCAL] ($RES_SIM_1) y = time + c
-// 	[SCAL] ($RES_SIM_4) b = c
-// 	[SCAL] ($RES_SIM_5) a = b
+// 	[SCAL] ($RES_SIM_2) y = time + c
+// 	[SCAL] ($RES_SIM_5) a = c
 //
 // [dumprepl] Constant Replacements:
 // ****************************************
 // 	c	 ==> 	3.0
-// 	b	 ==> 	3.0
 // 	a	 ==> 	3.0
 // [dumprepl] Trivial Alias Replacements:
 // ****************************************
@@ -68,7 +66,8 @@ simulate(RSE); getErrorString();
 // record SimulationResult
 //     resultFile = "RSE_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'RSE', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//     messages = "stdout            | info    | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

@@ -128,6 +128,19 @@ public
     variable := Variable.VARIABLE(cref, ty, binding, vis, NFComponent.DEFAULT_ATTR, {}, {}, NONE(), info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
 
+  function makeVarPtrCyclic
+    "Needs a prepared variable and name cref and creates a cyclic dependency between
+    a pointer to the variable and its component reference."
+    input Variable var;
+    output Pointer<Variable> var_ptr;
+    input output ComponentRef name;
+  algorithm
+    var_ptr := Pointer.create(var);
+    name := BackendDAE.lowerComponentReferenceInstNode(name, var_ptr);
+    var.name := name;
+    Pointer.update(var_ptr, var);
+  end makeVarPtrCyclic;
+
   function getVar
     input ComponentRef cref;
     output Variable var;
@@ -143,7 +156,7 @@ public
     var := match cref
       local
         Pointer<Variable> varPointer;
-      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then setVarName(varPointer, cref);
+      case ComponentRef.CREF(node = InstNode.VAR_NODE(varPointer = varPointer)) then varPointer;
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref) +
         ", because of wrong InstNode (not VAR_NODE). Show lowering errors with -d=failtrace."});
@@ -158,7 +171,7 @@ public
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
-    name := BackendDAE.lowerComponentReferenceInstNode(var.name, var_ptr);
+    name := var.name;
   end getVarName;
 
   function setVarName
@@ -445,6 +458,14 @@ public
     end match;
   end isDummyVariable;
 
+  function createTimeVar
+    output Pointer<Variable> varPointer;
+  protected
+    Variable var = TIME_VARIABLE;
+  algorithm
+    (varPointer, _) := makeVarPtrCyclic(var, var.name);
+  end createTimeVar;
+
   function makeStateVar
     "Updates a variable pointer to be a state, requires the pointer to its derivative."
     input output Pointer<Variable> varPointer;
@@ -474,23 +495,23 @@ public
   function makeDerVar
     "Creates a derivative variable pointer from the state cref.
     e.g. height -> $DER.height"
-    input output ComponentRef cref    "old component reference to new component reference";
+    input ComponentRef cref           "old component reference";
+    output ComponentRef der_cref      "new component reference";
     output Pointer<Variable> var_ptr  "pointer to new variable";
   algorithm
     _ := match ComponentRef.node(cref)
       local
-        InstNode qual;
-        Pointer<Variable> state;
+        InstNode derNode;
+        Pointer<Variable> state, dummy_ptr = Pointer.create(DUMMY_VARIABLE);
         Variable var;
-      case qual as InstNode.VAR_NODE()
+      case InstNode.VAR_NODE()
         algorithm
           state := getVarPointer(cref);
-          qual.name := DERIVATIVE_STR;
-          cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
-          var := fromCref(cref);
+          derNode := InstNode.VAR_NODE(DERIVATIVE_STR, dummy_ptr);
+          der_cref := ComponentRef.append(cref, ComponentRef.fromNode(derNode, ComponentRef.nodeType(cref)));
+          var := fromCref(der_cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.STATE_DER(state, NONE()));
-          var_ptr := Pointer.create(var);
-          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+          (var_ptr, der_cref) := makeVarPtrCyclic(var, der_cref);
       then ();
 
       else algorithm
@@ -535,6 +556,19 @@ public
       then fail();
     end match;
   end getStateCref;
+
+  function getDerVar
+    input Pointer<Variable> state_var;
+    output Pointer<Variable> der_var;
+  algorithm
+    der_var := match Pointer.access(state_var)
+      case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.STATE(derivative = SOME(der_var))))
+      then der_var;
+      else algorithm
+          Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + pointerToString(state_var) + " because of wrong variable kind."});
+        then fail();
+    end match;
+  end getDerVar;
 
   function getDerCref
     "Returns the derivative variable component reference from a state component reference.
@@ -640,8 +674,7 @@ public
           cref := ComponentRef.append(cref, ComponentRef.fromNode(qual, ComponentRef.nodeType(cref)));
           var := fromCref(cref);
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.PREVIOUS(disc));
-          var_ptr := Pointer.create(var);
-          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
       then ();
 
       else algorithm
@@ -698,8 +731,7 @@ public
           // update the variable to be a seed and pass the pointer to the original variable
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.SEED_VAR(old_var_ptr));
           // create the new variable pointer and safe it to the component reference
-          var_ptr := Pointer.create(var);
-          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
       then ();
 
       else algorithm
@@ -733,8 +765,7 @@ public
           // ToDo: tmps will get JAC_DIFF_VAR !
           var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.JAC_VAR());
           // create the new variable pointer and safe it to the component reference
-          var_ptr := Pointer.create(var);
-          cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+          (var_ptr, cref) := makeVarPtrCyclic(var, cref);
       then ();
 
       else algorithm
@@ -797,9 +828,9 @@ public
     var := fromCref(cref);
     // update the variable to be a seed and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DAE_RESIDUAL_VAR(uniqueIndex));
+
     // create the new variable pointer and safe it to the component reference
-    var_ptr := Pointer.create(var);
-    cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+    (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeResidualVar;
 
   function makeEventVar
@@ -821,8 +852,7 @@ public
     // update the variable to be a seed and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.DISCRETE());
     // create the new variable pointer and safe it to the component reference
-    var_ptr := Pointer.create(var);
-    cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+    (var_ptr, cref) := makeVarPtrCyclic(var, cref);
   end makeEventVar;
 
   function makeAuxStateVar
@@ -852,8 +882,7 @@ public
     // update the variable to be a seed and pass the pointer to the original variable
     var.backendinfo := BackendExtension.BackendInfo.setVarKind(var.backendinfo, BackendExtension.ALGEBRAIC());
     // create the new variable pointer and safe it to the component reference
-    var_ptr := Pointer.create(var);
-    cref := BackendDAE.lowerComponentReferenceInstNode(cref, var_ptr);
+    (var_ptr, cref) := makeVarPtrCyclic(var, cref);
     (der_cref, der_var) := BVariable.makeDerVar(cref);
     var_ptr := BVariable.makeStateVar(var_ptr, der_var);
   end makeAuxStateVar;
@@ -948,8 +977,8 @@ public
   algorithm
     var := Pointer.access(var_ptr);
     binding := Expression.getBindingExp(Binding.getExp(var.binding));
-    b := checkExpMap(binding, isTimeDependent);
-    b := b and (not (Expression.isCref(binding) or Expression.isCref(Expression.negate(binding))));
+    b := not (Expression.isCref(binding) or Expression.isCref(Expression.negate(binding)));
+    b := b and checkExpMap(binding, isTimeDependent);
   end hasNonTrivialAliasBinding;
 
   function hasConstOrParamAliasBinding
@@ -1253,7 +1282,7 @@ public
       "Returns true if the variable is in the variable pointer array."
       input Pointer<Variable> var;
       input VariablePointers variables;
-      output Boolean b = UnorderedMap.contains(getVarName(var), variables.map);
+      output Boolean b = getVarIndex(getVarName(var), variables) > 0;
     end contains;
 
     function getVarNames

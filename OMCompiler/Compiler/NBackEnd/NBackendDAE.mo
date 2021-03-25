@@ -56,6 +56,7 @@ protected
   import InstNode = NFInstNode.InstNode;
   import NFFlatten.FunctionTree;
   import Prefixes = NFPrefixes;
+  import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
 
@@ -340,14 +341,14 @@ protected
     // create dummy and time var and add then
     // needed to make function BVariable.getVarPointer() more universally applicable
     dummy_ptr := Pointer.create(NBVariable.DUMMY_VARIABLE);
-    time_ptr := Pointer.create(NBVariable.TIME_VARIABLE);
+    time_ptr := BVariable.createTimeVar();
     variables := VariablePointers.add(dummy_ptr, variables);
     variables := VariablePointers.add(time_ptr, variables);
 
     // routine to prepare the lists for pointer arrays
     for var in listReverse(varList) loop
-      lowVar := lowerVariable(var);
-      lowVar_ptr := Pointer.create(lowVar);
+      lowVar_ptr := lowerVariable(var);
+      lowVar := Pointer.access(lowVar_ptr);
       variables := VariablePointers.add(lowVar_ptr, variables);
       _ := match lowVar.backendinfo.varKind
 
@@ -425,7 +426,8 @@ protected
   end lowerVariableData;
 
   function lowerVariable
-    input output Variable var;
+    input Variable var;
+    output Pointer<Variable> var_ptr;
   protected
     BackendExtension.VariableAttributes attributes;
     BackendExtension.VariableKind varKind;
@@ -436,11 +438,11 @@ protected
       (varKind, attributes) := lowerVariableKind(Variable.variability(var), attributes, var.ty);
       var.backendinfo := BackendExtension.BACKEND_INFO(varKind, attributes);
 
-      // This creates a cyclic dependency, be aware of that!
-      var.name := lowerComponentReferenceInstNode(var.name, Pointer.create(var));
-
       // Remove old type attribute information since it has been converted.
       var.typeAttributes := {};
+
+      // This creates a cyclic dependency, be aware of that!
+      (var_ptr, _) := BVariable.makeVarPtrCyclic(var, var.name);
     else
       Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + Variable.toString(var)});
       fail();
@@ -1032,10 +1034,13 @@ protected
     input VariablePointers variables;
   protected
     Pointer<Variable> var;
+    list<Subscript> subs;
   algorithm
     try
       var := VariablePointers.getVarSafe(ComponentRef.stripSubscriptsAll(cref), variables);
-      cref := lowerComponentReferenceInstNode(cref, var);
+      subs := ComponentRef.getSubscripts(cref);
+      cref := ComponentRef.setSubscripts(subs, BVariable.getVarName(var));
+      //cref := lowerComponentReferenceInstNode(cref, var);
     else
       if Flags.isSet(Flags.FAILTRACE) then
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for " + ComponentRef.toString(cref)});

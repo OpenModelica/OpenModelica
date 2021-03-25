@@ -26,6 +26,15 @@ simulate(underdetermined_init); getErrorString();
 // ################################################################################
 //
 // Not overdetermined.
+// Not underdetermined.
+//
+// (0) Unmatched equations:
+// ****************************************
+//
+// (0) Unmatched variables:
+// ****************************************
+//
+// Not overdetermined.
 // Stage 1 underdetermined.
 //
 // (0) Unmatched equations:
@@ -34,33 +43,6 @@ simulate(underdetermined_init); getErrorString();
 // (1) Unmatched variables:
 // ****************************************
 // 	[STAT] Real y (start = 2.0);
-//
-// Not overdetermined.
-// Not underdetermined.
-//
-// (0) Unmatched equations:
-// ****************************************
-//
-// (0) Unmatched variables:
-// ****************************************
-//
-// Not overdetermined.
-// Not underdetermined.
-//
-// (0) Unmatched equations:
-// ****************************************
-//
-// (0) Unmatched variables:
-// ****************************************
-//
-// Not overdetermined.
-// Not underdetermined.
-//
-// (0) Unmatched equations:
-// ****************************************
-//
-// (0) Unmatched variables:
-// ****************************************
 //
 // record SimulationResult
 //     resultFile = "underdetermined_init_res.mat",

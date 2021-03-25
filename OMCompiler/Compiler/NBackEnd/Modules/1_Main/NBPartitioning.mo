@@ -81,15 +81,11 @@ public
 
       case (System.SystemType.ODE, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(unknowns = variables), eqData = BEquation.EQ_DATA_SIM(simulation = equations)))
         algorithm
-          variables := VariablePointers.clone(variables);
-          equations := EquationPointers.clone(equations);
           bdae.ode := func(systemType, variables, equations);
         then bdae;
 
       case (System.SystemType.INI, BackendDAE.MAIN(varData = BVariable.VAR_DATA_SIM(initials = variables), eqData = BEquation.EQ_DATA_SIM(equations = equations)))
         algorithm
-          variables := VariablePointers.clone(variables);
-          equations := EquationPointers.clone(equations);
           // remove the when equations for initial systems
           equations := EquationPointers.mapRemovePtr(equations, Equation.isWhenEquation);
           bdae.init := func(systemType, variables, equations);
@@ -230,6 +226,8 @@ protected
       ComponentRef cref;
       ClusterPointer cluster_ptr;
       Cluster cluster;
+      Option<Pointer<Cluster>> err_cluster;
+      String errStr;
     algorithm
       entry_lst := UnorderedMap.toList(map);
       for entry in entry_lst loop
@@ -241,14 +239,40 @@ protected
             try
               UnorderedSet.addUnique(var, cref_marks);
             else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the cluster for variable " + ComponentRef.toString(var) + " was already added."});
+              errStr := getInstanceName()
+                + " failed while trying to add the cluster for " + ComponentRef.toString(cref)
+                + ", because the cluster for variable " + ComponentRef.toString(var) + " was already added.\n"
+                + StringUtil.headline_4("Conflicting cluster 1 (" + ComponentRef.toString(cref) + ")")
+                + Cluster.toString(cluster) + "\n"
+                + StringUtil.headline_4("Conflicting cluster 2 (" + ComponentRef.toString(var) + ")");
+              err_cluster := UnorderedMap.get(var, map);
+              if Util.isSome(err_cluster) then
+                errStr := errStr + Cluster.toString(Pointer.access(Util.getOption(err_cluster))) + "\n";
+              else
+                errStr := errStr + "<CLUSTER NOT FOUND>\n";
+              end if;
+              Error.addMessage(Error.INTERNAL_ERROR,{errStr});
+              fail();
             end try;
           end for;
           for var in cluster.eqn_idnts loop
             try
               UnorderedSet.addUnique(var, cref_marks);
             else
-              Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the cluster for equation " + ComponentRef.toString(var) + " was already added."});
+              errStr := getInstanceName()
+                + " failed while trying to add the cluster for " + ComponentRef.toString(cref)
+                + ", because the cluster for variable " + ComponentRef.toString(var) + " was already added.\n"
+                + StringUtil.headline_4("Conflicting cluster 1 (" + ComponentRef.toString(cref) + ")")
+                + Cluster.toString(cluster) + "\n"
+                + StringUtil.headline_4("Conflicting cluster 2 (" + ComponentRef.toString(var) + ")");
+              err_cluster := UnorderedMap.get(var, map);
+              if Util.isSome(err_cluster) then
+                errStr := errStr + Cluster.toString(Pointer.access(Util.getOption(err_cluster))) + "\n";
+              else
+                errStr := errStr + "<CLUSTER NOT FOUND>\n";
+              end if;
+              Error.addMessage(Error.INTERNAL_ERROR,{errStr});
+              fail();
             end try;
           end for;
         end if;
@@ -306,12 +330,16 @@ protected
   function partitioningNone extends Module.partitioningInterface;
   protected
     Boolean isInit = systemType == System.SystemType.INI;
+    VariablePointers clone_vars;
+    EquationPointers clone_eqns;
   algorithm
+    clone_vars := VariablePointers.clone(variables);
+    clone_eqns := EquationPointers.clone(equations);
     systems := {System.SYSTEM(
       systemType        = systemType,
-      unknowns          = if isInit then Initialization.sortInitVars(variables) else variables,
+      unknowns          = if isInit then Initialization.sortInitVars(clone_vars) else clone_vars,
       daeUnknowns       = NONE(),
-      equations         = if isInit then Initialization.sortInitEqns(equations) else equations,
+      equations         = if isInit then Initialization.sortInitEqns(clone_eqns) else clone_eqns,
       adjacencyMatrix   = NONE(),
       matching          = NONE(),
       strongComponents  = NONE(),
@@ -337,6 +365,7 @@ protected
     clusters := Cluster.getClusters(map, size);
     // create systems from clusters by filtering the variables for relevant ones
     systems := list(Cluster.toSystem(cluster, variables, equations, systemType, marked_vars_ptr) for cluster in clusters);
+
     single_vars := VariablePointers.getMarkedVars(variables, Pointer.access(marked_vars_ptr));
     if systemType <> System.SystemType.INI then
       if not listEmpty(single_vars) then
@@ -366,10 +395,6 @@ protected
         jacobian          = NONE()
       ) :: systems;
     end if;
-  /*
-    for system in systems loop
-      print(System.System.toString(system));
-    end for;*/
   end partitioningDefault;
 
   function collectPartitions
@@ -431,26 +456,19 @@ protected
 
         // neither equation nor variable already have a cluster
         case (NONE(), NONE()) algorithm
-          cluster1 := Pointer.create(CLUSTER({varCref}, {eqCref}));
-          UnorderedMap.add(varCref, cluster1, map);
-          UnorderedMap.add(eqCref, cluster1, map);
+          cluster1 := Pointer.create(CLUSTER({}, {}));
+          addCrefToMap(varCref, cluster1, map);
+          addCrefToMap(eqCref, cluster1, map);
         then ();
 
         // equation does not have a cluster, but variable has one
         case (NONE(), SOME(cluster2)) algorithm
-          c := Pointer.access(cluster2);
-          c.eqn_idnts := eqCref :: c.eqn_idnts;
-          Pointer.update(cluster2, c);
-          UnorderedMap.add(eqCref, cluster2, map);
+          addCrefToMap(eqCref, cluster2, map);
         then ();
 
         // variable does not have a cluster, but equation has one
         case (SOME(cluster1), NONE()) algorithm
-          c := Pointer.access(cluster1);
-          // these need to be filtered for relevant vars in the end
-          c.variables := varCref :: c.variables;
-          Pointer.update(cluster1, c);
-          UnorderedMap.add(varCref, cluster1, map);
+          addCrefToMap(varCref, cluster1, map);
         then ();
 
         // both already have a different cluster
@@ -464,6 +482,38 @@ protected
       end match;
     end if;
   end collectPartitionsCref;
+
+  function addCrefToMap
+    input ComponentRef cref;
+    input ClusterPointer clusterPointer;
+    input UnorderedMap<ComponentRef, ClusterPointer> map;
+  protected
+    Cluster cluster = Pointer.access(clusterPointer);
+    Pointer<Variable> var_ptr = BVariable.getVarPointer(cref);
+    ComponentRef cref2;
+    Boolean addSecond = false;
+  algorithm
+    if BVariable.isDAEResidual(var_ptr) then
+      cluster.eqn_idnts := cref :: cluster.eqn_idnts;
+    elseif BVariable.isState(var_ptr) then
+      cluster.variables := cref :: cluster.variables;
+      cref2 := BVariable.getDerCref(cref);
+      cluster.variables := cref2 :: cluster.variables;
+      addSecond := true;
+    elseif BVariable.isStateDerivative(var_ptr) then
+      cluster.variables := cref :: cluster.variables;
+      cref2 := BVariable.getStateCref(cref);
+      cluster.variables := cref2 :: cluster.variables;
+      addSecond := true;
+    else
+      cluster.variables := cref :: cluster.variables;
+    end if;
+    Pointer.update(clusterPointer, cluster);
+    UnorderedMap.add(cref, clusterPointer, map);
+    if addSecond then
+      UnorderedMap.add(cref2, clusterPointer, map);
+    end if;
+  end addCrefToMap;
 
 annotation(__OpenModelica_Interface="backend");
 end NBPartitioning;
