@@ -148,31 +148,21 @@ int freeNewtonData(void **voiddata)
   return 0;
 }
 
-/*! \fn solve system with Newton-Raphson
+/**
+ * @brief Solve system with Newton-Raphson.
  *
- *  \param [in]   [n] size of equation
- *                [eps] tolerance for x
- *                [h] tolerance for f'
- *                [k] maximum number of iterations
- *                [work] work array size of (n*X)
- *                [f] user provided function
- *                [data] userdata
- *                [info]
- *          [calculate_jacobian] flag which decides whether Jacobian is calculated
- *          (0)  once for the first calculation
- *          (i)  every i steps (=1 means original newton method)
- *          (-1) never, factorization has to be given in A
- *
+ * @param f             Residual function.
+ * @param solverData    Solver data for containing information for Newton solver.
+ * @param userdata      Void pointer containing user data for supplied function f and damping heuristics.
+ * @return int          Returns 0.
  */
 int _omc_newton(int(*f)(int*, double*, double*, void*, int), DATA_NEWTON* solverData, void* userdata)
 {
-  DATA_USER* uData = (DATA_USER*) userdata;
-  DATA* data = (DATA*) uData->data;
   int i, j, k = 0, l = 0, nrsh = 1;
-  int *n = &(solverData->n);
+  int *n = &(solverData->n);    /* size of equation */
   double *x = solverData->x;
   double *fvec = solverData->fvec;
-  double *eps = &(solverData->ftol);
+  double *eps = &(solverData->ftol);  /* tolerance for x */
   double *fdeps = &(solverData->epsfcn);
   int * maxfev = &(solverData->maxfev);
   double *fjac = solverData->fjac;
