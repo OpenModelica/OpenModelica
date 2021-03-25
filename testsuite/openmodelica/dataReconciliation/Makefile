@@ -15,6 +15,10 @@ Splitter1.mos\
 Splitter2.mos\
 Splitter3.mos\
 Splitter4.mos\
+Splitter5c.mos\
+Splitter5d.mos\
+Splitter5e.mos\
+Splitter5f.mos\
 FourFlows.mos\
 TSP_Pipe.mos\
 TSP_Pipe1.mos\
