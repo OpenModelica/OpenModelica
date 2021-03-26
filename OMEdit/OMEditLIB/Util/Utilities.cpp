@@ -53,8 +53,6 @@
 #include <QXmlSchemaValidator>
 #include <QDir>
 
-#include <qjson/parser.h>
-
 SplashScreen *SplashScreen::mpInstance = 0;
 
 SplashScreen *SplashScreen::instance()
@@ -514,7 +512,6 @@ bool JsonDocument::parse(const QString &fileName)
 {
   bool success = true;
   QFile file(fileName);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   if (file.exists()) {
     if (file.open(QIODevice::ReadOnly)) {
       QJsonParseError jsonParserError;
@@ -531,15 +528,6 @@ bool JsonDocument::parse(const QString &fileName)
       success = false;
     }
   }
-#else // QT_VERSION_CHECK
-  if (file.exists()) {
-    QJson::Parser parser;
-    result = parser.parse(&file, &success);
-    if (!success) {
-      errorString = GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(file.fileName(), parser.errorString());
-    }
-  }
-#endif // QT_VERSION_CHECK
   return success;
 }
 
@@ -547,7 +535,6 @@ bool JsonDocument::parse(const QByteArray &jsonData)
 {
   bool success = true;
   QString msg("Failed to parse json %1 with error %2");
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
   QJsonParseError jsonParserError;
   QJsonDocument doc = QJsonDocument::fromJson(jsonData, &jsonParserError);
   if (doc.isNull()) {
@@ -556,13 +543,6 @@ bool JsonDocument::parse(const QByteArray &jsonData)
   } else {
     result = doc.toVariant();
   }
-#else // QT_VERSION_CHECK
-  QJson::Parser parser;
-  result = parser.parse(jsonData, &success);
-  if (!success) {
-    errorString = QString(msg).arg(jsonData, parser.errorString());
-  }
-#endif // QT_VERSION_CHECK
   return success;
 }
 
