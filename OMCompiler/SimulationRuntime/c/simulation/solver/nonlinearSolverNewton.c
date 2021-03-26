@@ -177,17 +177,27 @@ int wrapper_fvec_newton(int* n, double* x, double* fvec, void* userdata, int fj)
   return *iflag;
 }
 
-/*! \fn solve non-linear system with newton method
+/**
+ * @brief Solve non-linear system with Newton method.
  *
- *  \param [in]  [data]
- *                [sysNumber] index of the corresponding non-linear system
- *
- *  \author wbraun
+ * @param data            Dynamic and static mdoel data, containing non-linear loops.
+ * @param threadData      For error handling.
+ * @param sysNumber       Number of non-linear system to be solved.
+ * @return int            Return 1 if a solution is found and 0 otherwise.
  */
 int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
 {
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo->nonlinearSystemData[sysNumber]);
   DATA_NEWTON* solverData = (DATA_NEWTON*)(systemData->solverData);
+
+  /* TODO: SolverData should never be NULL!
+   * See https://trac.openmodelica.org/OpenModelica/ticket/6436#ticket */
+  if (solverData==NULL)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "Fatal error in solveNewton: data->simulationInfo->nonlinearSystemData[sysNumber]->solverData is NULL. This is a known bug: https://trac.openmodelica.org/OpenModelica/ticket/6436#ticket.");
+  }
+  assert(solverData!=NULL);
+
   int eqSystemNumber = 0;
   int i;
   double xerror = -1, xerror_scaled = -1;
