@@ -566,11 +566,42 @@ bool JsonDocument::parse(const QByteArray &jsonData)
   return success;
 }
 
+VariableNode::VariableNode(const QVector<QVariant> &variableNodeData)
+{
+  mVariableNodeData = variableNodeData;
+  mEditable = false;
+  mVariability = "";
+  mChildren.clear();
+}
+
+VariableNode::~VariableNode()
+{
+  qDeleteAll(mChildren);
+  mChildren.clear();
+}
+
+VariableNode* VariableNode::findVariableNode(const QString &name, VariableNode *pParentVariableNode)
+{
+  VariableNode *pVariableNode = pParentVariableNode->mChildren.value(name, 0);
+  if (pVariableNode) {
+    return pVariableNode;
+  } else {
+    QHash<QString, VariableNode*>::const_iterator iterator = pParentVariableNode->mChildren.constBegin();
+    while (iterator != pParentVariableNode->mChildren.constEnd()) {
+      if (VariableNode *node = VariableNode::findVariableNode(name, iterator.value())) {
+        return node;
+      }
+      ++iterator;
+    }
+  }
+  return 0;
+}
+
 QString Utilities::escapeForHtmlNonSecure(const QString &str)
 {
   return QString(str)
-     .replace("& ", "&amp;") // should be the first replacement
-     .replace("< ", "&lt;");
+      .replace("& ", "&amp;") // should be the first replacement
+      .replace("< ", "&lt;");
 }
 
 /*!

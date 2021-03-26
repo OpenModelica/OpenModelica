@@ -460,6 +460,19 @@ public:
   QString errorString;
 };
 
+class VariableNode
+{
+public:
+  VariableNode(const QVector<QVariant> &variableNodeData);
+  ~VariableNode();
+  QVector<QVariant> mVariableNodeData;
+  bool mEditable;
+  QString mVariability;
+  QHash<QString, VariableNode*> mChildren;
+
+  static VariableNode* findVariableNode(const QString &name, VariableNode *pParentVariableNode);
+};
+
 namespace Utilities {
 
   enum LineEndingMode {
