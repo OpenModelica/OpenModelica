@@ -222,7 +222,7 @@ public:
   int askForExit();
   void beforeClosingMainWindow();
   void openDroppedFile(const QMimeData *pMimeData);
-  void openResultFiles(QStringList fileNames);
+  void openResultFile(const QString &fileName);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);

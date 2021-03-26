@@ -267,19 +267,4 @@ signals:
   void updateDynamicSelect(double time);
 };
 
-class VariableNode
-{
-public:
-  VariableNode(const QVector<QVariant> &variableNodeData);
-  ~VariableNode();
-  QVector<QVariant> mVariableNodeData;
-  bool mEditable;
-  QString mVariability;
-  QHash<QString, VariableNode*> mChildren;
-
-  static VariableNode* findVariableNode(const QString &name, VariableNode *pParentVariableNode);
-  void setEditable(bool editable) {mEditable = editable;}
-  void setVariability(const QString &variability) {mVariability = variability;}
-};
-
 #endif // VARIABLESWIDGET_H
