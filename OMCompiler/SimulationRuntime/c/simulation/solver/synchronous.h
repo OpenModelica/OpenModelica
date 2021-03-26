@@ -42,16 +42,6 @@
 extern "C" {
 #endif
 
-typedef enum SYNC_TIMER_TYPE {
-  SYNC_BASE_CLOCK, SYNC_SUB_CLOCK
-} SYNC_TIMER_TYPE;
-
-typedef struct SYNC_TIMER {
-  long idx;
-  SYNC_TIMER_TYPE type;
-  double activationTime;
-} SYNC_TIMER;
-
 
 void initSynchronous(DATA* data, threadData_t *threadData, modelica_real startTime);
 void freeSynchronous(DATA* data);

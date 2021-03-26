@@ -73,6 +73,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_15syn.c\" />
 //       <File name=\"testDID_16dae.c\" />
 //       <File name=\"testDID_17inl.c\" />
+//       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_FMU.c\" />
 //       <File name=\"./util/read_matlab4.c\" />
@@ -83,6 +84,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./util/base_array.c\" />
 //       <File name=\"./util/boolean_array.c\" />
 //       <File name=\"./util/division.c\" />
+//       <File name=\"./util/doubleEndedList.c\" />
 //       <File name=\"./util/generic_array.c\" />
 //       <File name=\"./util/index_spec.c\" />
 //       <File name=\"./util/integer_array.c\" />
@@ -114,6 +116,7 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./simulation/solver/fmi_events.c\" />
 //       <File name=\"./simulation/solver/model_help.c\" />
 //       <File name=\"./simulation/solver/omc_math.c\" />
+//       <File name=\"./simulation/solver/spatialDistribution.c\" />
 //       <File name=\"./simulation/solver/stateset.c\" />
 //       <File name=\"./simulation/solver/synchronous.c\" />
 //       <File name=\"./simulation/solver/initialization/initialization.c\" />

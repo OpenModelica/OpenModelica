@@ -1589,6 +1589,29 @@ bool StringHandler::naturalSort(const QString &s1, const QString &s2) {
   }
 }
 
+QString StringHandler::cleanResultVariable(const QString &variable)
+{
+  QString str = variable;
+  if (str.startsWith("der(")) {
+    str.chop((str.lastIndexOf("der(")/4)+1);
+    str = str.mid(str.lastIndexOf("der(") + 4);
+  } else if (str.startsWith("previous(")) {
+    str.chop((str.lastIndexOf("previous(")/9)+1);
+    str = str.mid(str.lastIndexOf("previous(") + 9);
+  } else {
+    // do nothing
+  }
+  return str;
+}
+
+bool StringHandler::naturalSortForResultVariables(const QString &s1, const QString &s2)
+{
+  QString s3 = StringHandler::cleanResultVariable(s1);
+  QString s4 = StringHandler::cleanResultVariable(s2);
+
+  return StringHandler::naturalSort(s3, s4);
+}
+
 #ifdef WIN32
 /*!
  * \brief StringHandler::simulationProcessEnvironment

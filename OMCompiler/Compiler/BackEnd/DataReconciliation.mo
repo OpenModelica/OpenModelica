@@ -89,7 +89,7 @@ protected
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
-  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations;
+  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
 
   list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
   BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
@@ -406,6 +406,16 @@ algorithm
   //BackendDump.dumpVariables(BackendVariable.listVar(setSVars),"Unknown variables in SET_S_checks ");
   BackendDump.dumpVariables(BackendVariable.listVar(paramVars),"Parameters in SET_S");
 
+  // write set-C equation to HTML file
+  auxillaryConditionsFilename := shared.info.fileNamePrefix + "_AuxiliaryConditions.html";
+  auxillaryEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setC_Eq), "Auxiliary conditions");
+  System.writeFile(auxillaryConditionsFilename, auxillaryEquations);
+
+  // write set-S equation to HTML file
+  intermediateEquationsFilename := shared.info.fileNamePrefix + "_IntermediateEquations.html";
+  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations");
+  System.writeFile(intermediateEquationsFilename, intermediateEquations);
+
   VerifyDataReconciliation(tempSetC, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq, shared);
 
   if debug then
@@ -451,11 +461,6 @@ algorithm
   modelicaOutput := dumpExtractedEquations(modelicaOutput, outOtherEqns, "remaining equations in Set-S");
   modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
   System.writeFile(modelicaFileName + ".mo", modelicaOutput);
-
-  // write set-C equation to HTML file
-  auxillaryConditionsFilename := shared.info.fileNamePrefix + "_AuxiliaryConditions.html";
-  auxillaryEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setC_Eq), "Auxiliary conditions");
-  System.writeFile(auxillaryConditionsFilename, auxillaryEquations);
 
   // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
   outDAE := BackendDAE.DAE({currentSystem}, shared);
@@ -651,11 +656,15 @@ protected function dumpExtractedEquationsToHTML
   input String comment;
   output String outstring="";
 algorithm
-  outstring := "<html>\n<body>\n<h2>" + comment + "</h2>\n<ol>";
-  for eq in BackendEquation.equationList(eqs) loop
-    outstring := outstring + "\n" + "  <li>" + BackendDump.equationString(eq) + " </li>";
-  end for;
-  outstring := outstring + "\n</ol>\n</body>\n</html>";
+  if listEmpty(BackendEquation.equationList(eqs)) then
+    outstring := "The set of " + comment + " is empty.";
+  else
+    outstring := "<html>\n<body>\n<h2>" + comment + "</h2>\n<ol>";
+    for eq in BackendEquation.equationList(eqs) loop
+      outstring := outstring + "\n" + "  <li>" + BackendDump.equationString(eq) + " </li>";
+    end for;
+    outstring := outstring + "\n</ol>\n</body>\n</html>";
+  end if;
 end dumpExtractedEquationsToHTML;
 
 public function setBoundaryConditionEquationsAndVars
@@ -1816,7 +1825,7 @@ protected
   list<Integer> tmplistvar1, tmplistvar2, tmplistvar3, sets_eqs, sets_vars, extractedeqs;
   Integer eqnumber, varnumber;
   list<tuple<Integer,list<Integer>>> var_dependencytree, eq_dependencytree;
-  String str, resstr, condition1, condition2, condition3, condition4, condition5;
+  String str, resstr, condition1, condition2, condition3, condition4, condition5, auxilliaryConditions, varsToReconcile;
   list<BackendDAE.Var> var, convar;
   Boolean rule2 = true;
   list<BackendDAE.Equation> condition1_eqs;
@@ -1827,6 +1836,9 @@ algorithm
   var := List.map1r(listReverse(knowns), BackendVariable.getVarAt, allVars);
   BackendDump.dumpVarList(var, "knownVariables:"+ dumplistInteger(listReverse(knowns)));
   print("-SET_C:"+ dumplistInteger(setc)+ "\n" + "-SET_S:" + dumplistInteger(sets) +"\n\n");
+
+  auxilliaryConditions := intString(listLength(setc));
+  varsToReconcile := intString(listLength(knowns));
 
   //Condition-1
   condition1 := "Condition-1 \"SET_C and SET_S must not have no equations in common\" ";
@@ -1840,7 +1852,7 @@ algorithm
     condition1_eqs := List.map1r(matchedeq, BackendEquation.get, allEqs);
     BackendDump.dumpEquationList(condition1_eqs, "Sets C and S have equations in common" + dumplistInteger(matchedeq));
     Error.addMessage(Error.INTERNAL_ERROR, {": Condition 1-Failed: SET_C and SET_S must not have no equations in common: The data reconciliation problem is ill-posed"});
-    generateCompileTimeHtmlReport(shared, "Condition 1-Failed: \"SET_C and SET_S must not have no equations in common\": The data reconciliation problem is ill-posed", condition1=("Sets C and S have equations in common", condition1_eqs));
+    generateCompileTimeHtmlReport(shared, "Internal Error: Condition 1-Failed: \"SET_C and SET_S must not have no equations in common\": The data reconciliation problem is ill-posed", auxilliaryConditions, varsToReconcile, condition1=("Sets C and S have equations in common", condition1_eqs));
     fail();
   end if;
 
@@ -1887,7 +1899,12 @@ algorithm
     resstr := "-Failed" + "\n" + "-" + condition3 + "\n\n";
     print(resstr);
     Error.addMessage(Error.INTERNAL_ERROR, {": Condition 3-Failed: The number of auxiliary conditions must be strictly less than the number of variables to be reconciled. The data reconciliation problem is ill-posed"});
-    generateCompileTimeHtmlReport(shared, "Condition 3-Failed: \"The number of auxiliary conditions must be strictly less than the number of variables to be reconciled.\": The data reconciliation problem is ill-posed", condition3 = condition3);
+    if listEmpty(setc) then
+      condition3 := "<b>User Error:</b> Condition 7 failed: \"The set of auxiliary conditions is empty.\" The data reconciliation problem is ill-posed";
+      generateCompileTimeHtmlReport(shared, "", auxilliaryConditions, varsToReconcile, condition3 = condition3);
+    else
+      generateCompileTimeHtmlReport(shared, "<b>User Error:</b> Condition 3-Failed: \"The number of auxiliary conditions must be strictly less than the number of variables to be reconciled.\": The data reconciliation problem is ill-posed",auxilliaryConditions, varsToReconcile, condition3 = condition3);
+    end if;
     fail();
   end if;
 
@@ -1908,7 +1925,7 @@ algorithm
     else
       BackendDump.dumpVarList(List.map1r(tmplistvar2, BackendVariable.getVarAt, allVars), "-SET_S does not have intermediate variables involved in SET_C:" + dumplistInteger(tmplistvar2));
       Error.addMessage(Error.INTERNAL_ERROR, {": Condition 4-Failed: SET_S should contain all intermediate variables involved in SET_C: The data reconciliation problem is ill-posed"});
-      generateCompileTimeHtmlReport(shared, "Condition 4-Failed: \"SET_S should contain all intermediate variables involved in SET_C\": The data reconciliation problem is ill-posed", condition4 = ("Set-S does not have intermediate variables involved in Set-C", List.map1r(tmplistvar2, BackendVariable.getVarAt, allVars)));
+      generateCompileTimeHtmlReport(shared, "<b>Internal Error:</b> Condition 4-Failed: \"SET_S should contain all intermediate variables involved in SET_C\": The data reconciliation problem is ill-posed", auxilliaryConditions, varsToReconcile, condition4 = ("Set-S does not have intermediate variables involved in Set-C", List.map1r(tmplistvar2, BackendVariable.getVarAt, allVars)));
       fail();
     end if;
   end if;
@@ -1927,7 +1944,7 @@ algorithm
       condition5 := "Set-S has " + intString(listLength(sets)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables";
       print("-Failed" + "\n "+ condition5 + "\n\n");
       Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed: Set_S should be square: The data reconciliation problem is ill-posed"});
-      generateCompileTimeHtmlReport(shared, "Condition 5-Failed: \"Set_S should be square\": The data reconciliation problem is ill-posed", condition5 = condition5);
+      generateCompileTimeHtmlReport(shared, "<b>Internal Error:</b> Condition 5-Failed: \"Set_S should be square\": The data reconciliation problem is ill-posed", auxilliaryConditions, varsToReconcile, condition5 = condition5);
       fail();
     end if;
   end if;
@@ -1937,6 +1954,8 @@ protected function generateCompileTimeHtmlReport
   "generate html report for internal errors reported during verification of extraction algorithm"
   input BackendDAE.Shared shared;
   input String conditions;
+  input String auxilliaryConditions;
+  input String varsToReconcile;
   input tuple<String, list<BackendDAE.Equation>> condition1 = ("", {});
   input tuple<String, list<BackendDAE.Var>> condition2 = ("", {});
   input String condition3 = "";
@@ -1954,7 +1973,12 @@ algorithm
     data := data + "<td>" + shared.info.fileNamePrefix + "</td>\n</tr>\n";
     data := data + "<tr> \n <th align=right> Generated: </th>\n";
     data := data + "<td>" + System.getCurrentTimeStr() + "<b> by OpenModelica " + Settings.getVersionNr() + "</b>" + "</td>\n</tr>\n <table>\n";
-    data := data + "<h3> Errors: </h3> " + "\n <p> <b> Internal error: </b>" + conditions + "</p>" + "\n";
+    data := data + "<h2> Analysis: </h2>\n<table>";
+    data := data + "<tr>\n <th align=right> Number of auxiliary conditions: </th> \n <td>" + auxilliaryConditions + "</td>\n</tr>\n";
+    data := data + "<tr>\n <th align=right> Number of variables to be reconciled: </th> \n <td>" + varsToReconcile + "</td>\n</tr>\n</table>";
+    data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_AuxiliaryConditions.html target=_blank> Auxiliary conditions </a> </h3>";
+    data := data + "<h3> <a href=" + shared.info.fileNamePrefix + "_IntermediateEquations.html target=_blank> Intermediate equations </a> </h3>";
+    data := data + "<h3> Errors: </h3> " + "\n <p>" + conditions + "</p>" + "\n";
 
     // condition-1
     (condition1_msg, condition1_eqs) := condition1;

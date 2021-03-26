@@ -75,9 +75,11 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_SOLVER_V",
   "LOG_SOLVER_CONTEXT",
   "LOG_SOTI",
+  "LOG_SPATIALDISTR",
   "LOG_STATS",
   "LOG_STATS_V",
   "LOG_SUCCESS",
+  "LOG_SYNCHRONOUS",
 #ifdef USE_DEBUG_TRACE
   "LOG_TRACE",
 #endif
@@ -124,9 +126,11 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "verbose information about the integration process",                          /* LOG_SOLVER_V */
   "context information during the solver process",                              /* LOG_SOLVER_CONTEXT" */
   "final solution of the initialization",                                       /* LOG_SOTI */
+  "logging of internal operations for spatialDistribution",                     /* LOG_SPATIALDISTR */
   "additional statistics about timer/events/solver",                            /* LOG_STATS */
   "additional statistics for LOG_STATS",                                        /* LOG_STATS_V */
   "this stream is always active, unless deactivated with -lv=-LOG_SUCCESS",     /* LOG_SUCCESS */
+  "log clocks and sub-clocks for synchronous features",                         /* LOG_SYNCHRONOUS */
 #ifdef USE_DEBUG_TRACE
   "enables additional output to trace call stack",                              /* LOG_TRACE */
 #endif

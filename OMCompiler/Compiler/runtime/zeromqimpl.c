@@ -37,6 +37,7 @@
 #include "util/modelica_string.h"
 
 #include "settingsimpl.h"
+#include "systemimpl.h"
 
 char* zeroMQFilePath = 0;
 
@@ -112,10 +113,11 @@ void ZeroMQ_sendReply(void *mmcZmqSocket, const char* reply)
   // send the reply
   //fprintf(stdout, "Sending message %s\n", reply);fflush(NULL);
   // Create an empty ZeroMQ message to hold the message part
+  const char *replyUnicode = SystemImpl__iconv(reply, "UTF-8", "UTF-8", 1);
   zmq_msg_t replyMsg;
-  zmq_msg_init_size(&replyMsg, strlen(reply));
+  zmq_msg_init_size(&replyMsg, strlen(replyUnicode));
   // copy the char* to zmq_msg_t
-  memcpy(zmq_msg_data(&replyMsg), reply, strlen(reply));
+  memcpy(zmq_msg_data(&replyMsg), replyUnicode, strlen(replyUnicode));
   // send the message
   zmq_msg_send(&replyMsg, (void*)zmqSocket, 0);
   // release the zmq_msg_t

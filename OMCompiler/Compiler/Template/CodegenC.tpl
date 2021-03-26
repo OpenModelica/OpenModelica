@@ -123,6 +123,7 @@ end translateModel;
     #include "simulation/solver/linearSystem.h"
     #include "simulation/solver/nonlinearSystem.h"
     #include "simulation/solver/mixedSystem.h"
+    #include "simulation/solver/spatialDistribution.h"
 
     #if defined(__cplusplus)
     extern "C" {
@@ -149,6 +150,8 @@ end translateModel;
     #endif
     extern int <%symbolName(modelNamePrefixStr,"functionAlgebraics")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>(DATA *data, threadData_t *threadData);
+    extern int <%symbolName(modelNamePrefixStr,"function_storeSpatialDistribution")%>(DATA *data, threadData_t *threadData);
+    extern int <%symbolName(modelNamePrefixStr,"function_initSpatialDistribution")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>(DATA *data, threadData_t *threadData);
     extern int <%symbolName(modelNamePrefixStr,"functionInitialEquations_lambda0")%>(DATA *data, threadData_t *threadData);
@@ -438,7 +441,7 @@ template functionSystemsSynchronous(list<SubPartition> subPartitions, String mod
 
   <%systs%>
 
-  /*Clocked systems equations */
+  /* Clocked systems equations */
   int <%symbolName(modelNamePrefix,"function_equationsSynchronous")%>(DATA *data, threadData_t *threadData, long clockIndex)
   {
     TRACE_PUSH
@@ -656,6 +659,31 @@ template simulationFile_dly(SimCode simCode)
     /* adrpo: leave a newline at the end of file to get rid of the warning */
   end match
 end simulationFile_dly;
+
+template simulationFile_spd(SimCode simCode)
+"SpatialDistribution"
+::=
+  match simCode
+    case simCode as SIMCODE(__) then
+    <<
+    /* spatialDistribution */
+    <%simulationFileHeader(simCode.fileNamePrefix)%>
+    #if defined(__cplusplus)
+    extern "C" {
+    #endif
+
+    <%functionStoreSpatialDistribution(spatialInfo, modelNamePrefix(simCode))%>
+
+    <%functionInitSpatialDistribution(spatialInfo, modelNamePrefix(simCode))%>
+
+    #if defined(__cplusplus)
+    }
+    #endif
+    <%\n%>
+    >>
+    /* adrpo: leave a newline at the end of file to get rid of the warning */
+  end match
+end simulationFile_spd;
 
 template simulationFile_bnd(SimCode simCode)
 "update bound parameters and variable attributes (start, nominal, min, max)"
@@ -1127,6 +1155,8 @@ template simulationFile(SimCode simCode, String guid, String isModelExchangeFMU)
        <%symbolName(modelNamePrefixStr,"output_function")%>,
        <%symbolName(modelNamePrefixStr,"setc_function")%>,
        <%symbolName(modelNamePrefixStr,"function_storeDelayed")%>,
+       <%symbolName(modelNamePrefixStr,"function_storeSpatialDistribution")%>,
+       <%symbolName(modelNamePrefixStr,"function_initSpatialDistribution")%>,
        <%symbolName(modelNamePrefixStr,"updateBoundVariableAttributes")%>,
        <%symbolName(modelNamePrefixStr,"functionInitialEquations")%>,
        <%if Config.adaptiveHomotopy() then (if Config.globalHomotopy() then '2' else '3') else (if Config.globalHomotopy() then '1' else '0')%>, /* useHomotopy - 0: local homotopy (equidistant lambda), 1: global homotopy (equidistant lambda), 2: new global homotopy approach (adaptive lambda), 3: new local homotopy approach (adaptive lambda)*/
@@ -1341,6 +1371,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
 
     data->modelData->nClocks = <%nClocks%>;
     data->modelData->nSubClocks = <%nSubClocks%>;
+
+    data->modelData->nSpatialDistributions = <%nSpatialDistributions%>;
 
     data->modelData->nSensitivityVars = <%listLength(vars.sensitivityVars)%>;
     data->modelData->nSensitivityParamVars = <%varInfo.numSensitivityParameters%>;
@@ -3360,6 +3392,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
       let delayExp = daeExp(d, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
       <<
+      equationIndexes[1] = <%id%>;
       <%preExp%>
       storeDelayedExpression(data, threadData, <%id%>, <%eRes%>, data->localData[0]->timeValue, <%delayExp%>, <%delayExpMax%>);<%\n%>
       >>
@@ -3370,6 +3403,7 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   {
     TRACE_PUSH
 
+    int equationIndexes[2] = {1,-1};
     <%varDecls%>
     <%storePart%>
 
@@ -3379,6 +3413,65 @@ template functionStoreDelayed(DelayedExpression delayed, String modelNamePrefix)
   >>
 end functionStoreDelayed;
 
+template functionStoreSpatialDistribution(SpatialDistributionInfo spatialInfo, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer ""
+  let &auxFunction = buffer ""
+  let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, in0=in0, in1=in1, pos=pos, dir=dir) =>
+      let &preExp = buffer ""
+      let in0T = daeExp(in0, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let in1T = daeExp(in1, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let posT = daeExp(pos, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let dirT = daeExp(dir, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      // TODO @kabdelhak Use index of equation here, not the index of the spatial distribution
+      <<
+      equationIndexes[1] = <%index%>;
+      <%preExp%>
+      storeSpatialDistribution(data, threadData, <%index%>, <%in0T%>, <%in1T%>, <%posT%>, <%dirT%>);<%\n%>
+      >>
+    ))
+  <<
+  <%auxFunction%>
+  int <%symbolName(modelNamePrefix,"function_storeSpatialDistribution")%>(DATA *data, threadData_t *threadData)
+  {
+    int equationIndexes[2] = {1,-1};
+    <%varDecls%>
+    <%storePart%>
+
+    TRACE_POP
+    return 0;
+  }
+  >>
+end functionStoreSpatialDistribution;
+
+template functionInitSpatialDistribution(SpatialDistributionInfo spatialInfo, String modelNamePrefix)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer ""
+  let &auxFunction = buffer ""
+  let storePart = (match spatialInfo case SPATIAL_DISTRIBUTION_INFO(__) then (spatialDistributions |> SPATIAL_DISTRIBUTION(index=index, initPnts=initPnts, initVals=initVals, initSize=initSize) =>
+      let &preExp = buffer ""
+      let initPntsT = daeExp(initPnts, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      let initValsT = daeExp(initVals, contextSimulationNonDiscrete, &preExp, &varDecls, &auxFunction)
+      <<
+      <%preExp%>
+      initSpatialDistribution(data, threadData, <%index%>, &<%initPntsT%>, &<%initValsT%>, <%initSize%>);<%\n%>
+      >>
+    ))
+  <<
+  <%auxFunction%>
+  int <%symbolName(modelNamePrefix,"function_initSpatialDistribution")%>(DATA *data, threadData_t *threadData)
+  {
+
+    <%varDecls%>
+    <%storePart%>
+
+    TRACE_POP
+    return 0;
+  }
+  >>
+end functionInitSpatialDistribution;
 
 //------------------------------------
 // Begin: Modified functions for HpcOm
@@ -6217,7 +6310,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%extraFiles |> extraFile => ' <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => ' <%extraFile%>'%>
 
   OFILES=$(CFILES:.c=.obj)
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.h $(FILEPREFIX).makefile $(CFILES)
@@ -6276,7 +6369,7 @@ case SIMCODE(modelInfo=MODELINFO(varInfo=varInfo as VARINFO(__)), delayedExps=DE
   CFILES=<%fileNamePrefix%>_functions.c <%fileNamePrefix%>_records.c \
   <%fileNamePrefix%>_01exo.c <%fileNamePrefix%>_02nls.c <%fileNamePrefix%>_03lsy.c <%fileNamePrefix%>_04set.c <%fileNamePrefix%>_05evt.c <%fileNamePrefix%>_06inz.c <%fileNamePrefix%>_07dly.c \
   <%fileNamePrefix%>_08bnd.c <%fileNamePrefix%>_09alg.c <%fileNamePrefix%>_10asr.c <%fileNamePrefix%>_11mix.c <%fileNamePrefix%>_12jac.c <%fileNamePrefix%>_13opt.c <%fileNamePrefix%>_14lnz.c \
-  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%extraFiles |> extraFile => ' \<%\n%>  <%extraFile%>'%>
+  <%fileNamePrefix%>_15syn.c <%fileNamePrefix%>_16dae.c <%fileNamePrefix%>_17inl.c <%fileNamePrefix%>_18spd.c <%extraFiles |> extraFile => ' \<%\n%>  <%extraFile%>'%>
 
   OFILES=$(CFILES:.c=.o)
   GENERATEDFILES=$(MAINFILE) <%fileNamePrefix%>.makefile <%fileNamePrefix%>_literals.h <%fileNamePrefix%>_functions.h $(CFILES)

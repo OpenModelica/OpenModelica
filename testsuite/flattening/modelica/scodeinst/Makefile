@@ -417,6 +417,7 @@ ExternalObject1.mo \
 ExternalObject2.mo \
 ExternalObject3.mo \
 ExternalObject4.mo \
+ExternalObject5.mo \
 ExternalObjectInvalidElement1.mo \
 ExternalObjectInvalidStructor1.mo \
 ExternalObjectMissingStructor1.mo \
@@ -527,6 +528,7 @@ FuncStringInvalid1.mo \
 FuncStringInvalid2.mo \
 FuncUnknownDim1.mo \
 FuncUnknownDim2.mo \
+FuncUnknownDim3.mo \
 FuncVariability.mo \
 FuncViaComp.mo \
 FuncViaComp2.mo \
@@ -590,6 +592,18 @@ IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
 ih3.mo \
+ImplicitRangeAlg1.mo \
+ImplicitRangeAlg2.mo \
+ImplicitRangeEq1.mo \
+ImplicitRangeEq2.mo \
+ImplicitRangeEq3.mo \
+ImplicitRangeExp1.mo \
+ImplicitRangeExp2.mo \
+ImplicitRangeInvalid1.mo \
+ImplicitRangeInvalid2.mo \
+ImplicitRangeInvalid3.mo \
+ImplicitRangeType1.mo \
+ImplicitRangeType2.mo \
 ImportComponent1.mo \
 ImportConflict1.mo \
 ImportConflict2.mo \

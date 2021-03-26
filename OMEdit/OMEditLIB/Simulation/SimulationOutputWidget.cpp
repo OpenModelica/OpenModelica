@@ -348,6 +348,8 @@ SimulationOutputWidget::SimulationOutputWidget(SimulationOptions simulationOptio
                         << "%1_16dae.h"
                         << "%1_17inl.c"
                         << "%1_17inl.o"
+                        << "%1_18spd.c"
+                        << "%1_18spd.o"
                         << "%1_functions.c"
                         << "%1_functions.o"
                         << "%1_functions.h"
@@ -721,7 +723,7 @@ void SimulationOutputWidget::simulationProcessFinishedHelper()
 
   int exitCode = mpSimulationProcess->exitCode();
   QProcess::ExitStatus exitStatus = mpSimulationProcess->exitStatus();
-  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
+  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     /* Ticket:4486
      * Don't print the success message since omc now outputs the success information.
@@ -931,7 +933,7 @@ void SimulationOutputWidget::compilationProcessError(QProcess::ProcessError erro
 void SimulationOutputWidget::compilationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsCompilationProcessRunning = false;
-  QString exitCodeStr = tr("Compilation process failed. Exited with code %1.").arg(exitCode);
+  QString exitCodeStr = tr("Compilation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     writeCompilationOutput(tr("Compilation process finished successfully."), Qt::blue);
     compilationProcessFinishedHelper(exitCode, exitStatus);

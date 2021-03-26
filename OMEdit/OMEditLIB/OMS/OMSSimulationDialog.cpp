@@ -211,7 +211,6 @@ void OMSSimulationDialog::simulationFinished(const QString &resultFilePath, QDat
     QStringList list = pOMCProxy->readSimulationResultVars(resultFileInfo.absoluteFilePath());
     MainWindow::instance()->switchToPlottingPerspectiveSlot();
     pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-    MainWindow::instance()->getVariablesDockWidget()->show();
   }
 }
 

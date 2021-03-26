@@ -78,7 +78,6 @@
 #include "omc_config.h"
 #include "Util/NetworkAccessManager.h"
 
-#include <qjson/parser.h>
 #include <QtSvg/QSvgGenerator>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -686,36 +685,33 @@ void MainWindow::openDroppedFile(const QMimeData *pMimeData)
   //retrieves the filenames of all the dragged files in list and opens the valid files.
   foreach (QUrl fileUrl, pMimeData->urls()) {
     QFileInfo fileInfo(fileUrl.toLocalFile());
-    // show file loading message
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
     mpProgressBar->setValue(++progressValue);
     // check the file extension
     QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
     if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
-      openResultFiles(QStringList(fileInfo.absoluteFilePath()));
+      openResultFile(fileInfo.absoluteFilePath());
     } else {
       mpLibraryWidget->openFile(fileInfo.absoluteFilePath(), Helper::utf8, false);
     }
   }
-  mpStatusBar->clearMessage();
   hideProgressBar();
 }
 
 /*!
- * \brief MainWindow::openResultFiles
- * Opens the result file(s).
- * \param fileNames
+ * \brief MainWindow::openResultFile
+ * Opens the result file.
+ * \param fileName
  */
-void MainWindow::openResultFiles(QStringList fileNames)
+void MainWindow::openResultFile(const QString &fileName)
 {
-  foreach (QString fileName, fileNames) {
-    QFileInfo fileInfo(fileName);
-    QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
-    if (list.size() > 0) {
-      switchToPlottingPerspectiveSlot();
-      mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-    }
+  mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
+  QFileInfo fileInfo(fileName);
+  QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
+  if (list.size() > 0) {
+    switchToPlottingPerspectiveSlot();
+    mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
   }
+  mpStatusBar->clearMessage();
 }
 
 void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
@@ -1355,8 +1351,7 @@ void MainWindow::printStandardOutAndErrorFilesMessages()
       QString outputFileData = outputFile.readAll();
       if (!outputFileData.isEmpty()) {
         outputFilePosition = outputFile.pos();
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, outputFileData,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, outputFileData, Helper::scriptingKind, Helper::notificationLevel));
       }
     }
     outputFile.close();
@@ -1385,7 +1380,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
   MainWindow *pMainWindow = (MainWindow*)p;
   if (pMainWindow) {
     QFileInfo fileInfo(filename);
-    pMainWindow->openResultFiles(QStringList() << filename);
+    pMainWindow->openResultFile(filename);
     if (!fileInfo.exists()) return;
     OMPlot::PlotWindow *pPlotWindow = pMainWindow->getPlotWindowContainer()->getCurrentWindow();
     if (pPlotWindow && !externalWindow) {
@@ -1468,26 +1463,6 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       }
     }
     pVariablesTreeModel->blockSignals(state);
-  }
-}
-
-/*!
- * \brief MainWindow::OMSSimulationFinished
- * Called by OMSSimulationOutputWidget when the simulation is finished.\n
- * Reads the result file and plots the result.
- * \param resultFilePath
- * \param resultFileLastModifiedDateTime
- */
-void MainWindow::OMSSimulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime)
-{
-  // read the result file
-  QFileInfo resultFileInfo(resultFilePath);
-  if (resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
-    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
-    MainWindow::instance()->switchToPlottingPerspectiveSlot();
-    QStringList list = MainWindow::instance()->getOMCProxy()->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-    pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-    MainWindow::instance()->getVariablesDockWidget()->show();
   }
 }
 
@@ -1688,12 +1663,19 @@ void MainWindow::loadEncryptedLibrary()
  */
 void MainWindow::showOpenResultFileDialog()
 {
-  QStringList fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
-                                                          NULL, Helper::omResultFileTypes, NULL);
+  QStringList fileNames = StringHandler::getOpenFileNames(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFiles), NULL, Helper::omResultFileTypes, NULL);
   if (fileNames.isEmpty()) {
     return;
   }
-  openResultFiles(fileNames);
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString fileName, fileNames) {
+    mpProgressBar->setValue(++progressValue);
+    openResultFile(fileName);
+  }
+  hideProgressBar();
+
 }
 
 /*!
@@ -1703,12 +1685,15 @@ void MainWindow::showOpenResultFileDialog()
  */
 void MainWindow::showOpenTransformationFileDialog()
 {
-  QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                    NULL, Helper::infoXmlFileTypes, NULL);
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::infoXmlFileTypes, NULL);
   if (fileName.isEmpty()) {
     return;
   }
+  mpProgressBar->setRange(0, 0);
+  mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
   showTransformationsWidget(fileName);
+  mpStatusBar->clearMessage();
+  hideProgressBar();
 }
 
 /*!
@@ -2399,6 +2384,7 @@ void MainWindow::exportModelFigaro()
   }
 }
 
+#ifdef Q_OS_WIN
 /*!
  * \brief MainWindow::showOpenModelicaCommandPrompt
  * Opens the command prompt to compile OpenModelica generated code with MinGW and run it.
@@ -2409,12 +2395,15 @@ void MainWindow::showOpenModelicaCommandPrompt()
   QString promptBatch = QString("%1/share/omc/scripts/Prompt.bat").arg(Helper::OpenModelicaHome);
   QStringList args;
   args << "/K" << promptBatch;
-  if (!QProcess::startDetached(commandPrompt, args, OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory())) {
-    QString errorString = tr("Unable to run command <b>%1</b> with arguments <b>%2</b>.").arg(commandPrompt).arg(args.join(" "));
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind,
-                                                          Helper::errorLevel));
+  QDetachableProcess process;
+  process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  process.start(commandPrompt, args);
+  if (process.error() == QProcess::FailedToStart) {
+    QString errorString = tr("Unable to run command <b>%1</b> with arguments <b>%2</b>. Process failed with error <b>%3</b>").arg(commandPrompt, args.join(" "), process.errorString());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
 }
+#endif
 
 //! Imports the model from FMU
 void MainWindow::importModelFMU()
@@ -2665,16 +2654,18 @@ void MainWindow::openTerminal()
   QString terminalCommand = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommand();
   if (terminalCommand.isEmpty()) {
     QString message = GUIMessages::getMessage(GUIMessages::TERMINAL_COMMAND_NOT_SET).arg(Helper::toolsOptionsPath);
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, message, Helper::scriptingKind,
-                                                Helper::errorLevel));
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, message, Helper::scriptingKind, Helper::errorLevel));
     return;
   }
   QString arguments = OptionsDialog::instance()->getGeneralSettingsPage()->getTerminalCommandArguments();
   QStringList args = arguments.split(" ");
-  if (!QProcess::startDetached(terminalCommand, args, OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory())) {
-    QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>.").arg(terminalCommand).arg(arguments);
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind,
-                                                Helper::errorLevel));
+  QDetachableProcess process;
+  process.setWorkingDirectory(OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory());
+  process.start(terminalCommand, args);
+  if (process.error() == QProcess::FailedToStart) {
+    QString errorString = tr("Unable to run terminal command <b>%1</b> with arguments <b>%2</b>. Process failed with error <b>%3</b>")
+                          .arg(terminalCommand, args.join(" "), process.errorString());
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, errorString, Helper::scriptingKind, Helper::errorLevel));
   }
 }
 
@@ -3551,10 +3542,12 @@ void MainWindow::createActions()
   mpShowOMCLoggerWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), Helper::OpenModelicaCompilerCLI, this);
   mpShowOMCLoggerWidgetAction->setStatusTip(tr("Shows OpenModelica Compiler CLI"));
   connect(mpShowOMCLoggerWidgetAction, SIGNAL(triggered()), mpOMCProxy, SLOT(openOMCLoggerWidget()));
+#ifdef Q_OS_WIN
   // show OpenModelica command prompt action
   mpShowOpenModelicaCommandPromptAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Command Prompt"), this);
-  mpShowOpenModelicaCommandPromptAction->setStatusTip(tr("Shows OpenModelica Compiler CLI"));
+  mpShowOpenModelicaCommandPromptAction->setStatusTip(tr("Open OpenModelica command prompt"));
   connect(mpShowOpenModelicaCommandPromptAction, SIGNAL(triggered()), SLOT(showOpenModelicaCommandPrompt()));
+#endif
   // show OMC Diff widget action
   if (isDebug()) {
     mpShowOMCDiffWidgetAction = new QAction(QIcon(":/Resources/icons/console.svg"), tr("OpenModelica Compiler Diff"), this);
@@ -4567,15 +4560,15 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
  */
 void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
 {
-  QJson::Parser parser;
-  bool ok;
   QList<QVariant> result;
   const QByteArray jsonData = pNetworkReply->readAll();
-  result = parser.parse(jsonData, &ok).toList();
-  if (!ok) {
+  JsonDocument jsonDocument;
+  if (!jsonDocument.parse(jsonData)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Failed to parse json of github contributors.", Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->printStandardOutAndErrorFilesMessages();
+  } else {
+    result = jsonDocument.result.toList();
   }
-
   QString contributors;
   foreach (QVariant variant, result) {
     QVariantMap map = variant.toMap();
@@ -4608,7 +4601,7 @@ MSLVersionDialog::MSLVersionDialog(QWidget *parent)
   // Information
   const QString info = QString("OpenModelica 1.17.x supports both Modelica Standard Library (MSL) v3.2.3 and v4.0.0. Please note that synchronous components in Modelica.Clocked are still not fully reliable, while most other models work fine in both versions.<br /><br />"
                                "MSL v3.2.3 and v4.0.0 are mutually incompatible, because of changes of class names and paths; for example, Modelica.SIunits became Modelica.Units.SI in v4.0.0 (​<a href=\"https://github.com/modelica/ModelicaStandardLibrary/releases/tag/v4.0.0\">further information</a>). Please note that conversion scripts are not yet available in OpenModelica 1.17.x, so you need to use other Modelica tools to upgrade existing libraries to use MSL v4.0.0. Conversion script support is planned in OpenModelica 1.18.0.<br /><br />"
-                               "On Windows, both versions of the MSL are installed automatically by the installer. On Linux, follow the instructions on the <a href=\"https://openmodelica.org/download/download-linux\">OpenModelica download page</a>.<br /><br />"
+                               "On Windows, both versions of the MSL are installed automatically by the installer. On Linux, you need to install them manually, by following the instructions on the <a href=\"https://openmodelica.org/download/download-linux\">OpenModelica download page</a>. We suggest you do it immediately, otherwise OMEdit won't work correctly.<br /><br />"
                                "You have three startup options:"
                                "<ol>"
                                "<li>Automatically load MSL v3.2.3. You can then load other models or packages that use MSL v3.2.3, or start new ones that will use it. If you then open a model or package that uses MSL v4.0.0, errors will occur. This option is recommended if you are not interested in MSL v4.0.0 and you would like to get the same behaviour as in OpenModelica 1.16.x.</li>"
@@ -4653,7 +4646,14 @@ MSLVersionDialog::MSLVersionDialog(QWidget *parent)
   pMainGridLayout->addLayout(pRadioButtonsLayout, 3, 0);
   pMainGridLayout->addWidget(pPostInfoLabel, 4, 0);
   pMainGridLayout->addWidget(pOkButton, 5, 0, Qt::AlignRight);
-  setLayout(pMainGridLayout);
+  mpWidget = new QWidget;
+  mpWidget->setLayout(pMainGridLayout);
+  QScrollArea *pScrollArea = new QScrollArea;
+  pScrollArea->setWidgetResizable(true);
+  pScrollArea->setWidget(mpWidget);
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->addWidget(pScrollArea);
+  setLayout(pMainLayout);
 }
 
 /*!
@@ -4695,4 +4695,16 @@ void MSLVersionDialog::setMSLVersion()
 void MSLVersionDialog::reject()
 {
   // do nothing here.
+}
+
+/*!
+ * \brief MSLVersionDialog::sizeHint
+ * \return
+ */
+QSize MSLVersionDialog::sizeHint() const
+{
+  QSize size = QWidget::sizeHint();
+  size.rwidth() = mpWidget->width();
+  size.rheight() = mpWidget->height() + 50; // add 50 for dialog frame and title bar
+  return size;
 }

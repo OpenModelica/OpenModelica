@@ -295,7 +295,7 @@ class_specifier returns [void* ast, void* name]
       {
         modelicaParserAssert(!strcmp(s1,(char*)$s2.text->chars), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $name = mmc_mk_scon(s1);
-        $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mmc_mk_some_or_none(cmt), $comp.ast, $comp.ann);
+        $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mmc_mk_some_or_none(cmt), $comp.ast, listReverse($comp.ann));
       }
     )
     ;
@@ -311,15 +311,15 @@ class_specifier2 returns [void* ast, const char *s2]
       $s2 = (char*)$id.text->chars;
       if (lt != NULL) {
         modelicaParserAssert(metamodelica_enabled(),"Polymorphic classes are only available in MetaModelica", class_specifier2, $start->line, $start->charPosition+1, $gt->line, $gt->charPosition+2);
-        $ast = Absyn__PARTS(ids, mmc_mk_nil(), $c.ast, $c.ann, mmc_mk_some_or_none(cmtStr));
+        $ast = Absyn__PARTS(ids, mmc_mk_nil(), $c.ast, listReverse($c.ann), mmc_mk_some_or_none(cmtStr));
       } else {
-        $ast = Absyn__PARTS(mmc_mk_nil(), mmc_mk_nil(), $c.ast, $c.ann, mmc_mk_some_or_none(cmtStr));
+        $ast = Absyn__PARTS(mmc_mk_nil(), mmc_mk_nil(), $c.ast, listReverse($c.ann), mmc_mk_some_or_none(cmtStr));
       }
     }
 | (lp = LPAR na=named_arguments rp=RPAR) cmtStr=string_comment c=composition id=END_IDENT
     {
       modelicaParserAssert(optimica_enabled(),"Class attributes are currently allowed only for Optimica. Use -g=Optimica.", class_specifier2, $start->line, $start->charPosition+1, $lp->line, $lp->charPosition+2);
-      $ast = Absyn__PARTS(mmc_mk_nil(), na, $c.ast, $c.ann, mmc_mk_some_or_none(cmtStr));
+      $ast = Absyn__PARTS(mmc_mk_nil(), na, $c.ast, listReverse($c.ann), mmc_mk_some_or_none(cmtStr));
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
     {

@@ -223,7 +223,7 @@ public:
   int askForExit();
   void beforeClosingMainWindow();
   void openDroppedFile(const QMimeData *pMimeData);
-  void openResultFiles(QStringList fileNames);
+  void openResultFile(const QString &fileName);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
@@ -248,12 +248,9 @@ public:
   TransformationsWidget* showTransformationsWidget(QString fileName);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
-  static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid,
-                                   const char* plotType, const char* logX, const char* logY, const char* xLabel, const char* yLabel,
-                                   const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
-                                   const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
-                                   const char* variables);
-  static void OMSSimulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime);
+  static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
+                                   const char* logY, const char* xLabel, const char* yLabel, const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
+                                   const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale, const char* variables);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;
@@ -382,7 +379,9 @@ private:
   QAction *mpCleanWorkingDirectoryAction;
   // Tools Menu
   QAction *mpShowOMCLoggerWidgetAction;
+#ifdef Q_OS_WIN
   QAction *mpShowOpenModelicaCommandPromptAction;
+#endif
   QAction *mpShowOMCDiffWidgetAction;
   QAction *mpOpenTemporaryDirectoryAction;
   QAction *mpOpenWorkingDirectoryAction;
@@ -516,7 +515,9 @@ public slots:
   void exportReadonlyPackage();
   void exportModelXML();
   void exportModelFigaro();
+#ifdef Q_OS_WIN
   void showOpenModelicaCommandPrompt();
+#endif
   void runOMSensPlugin();
   void exportModelToOMNotebook();
   void importModelfromOMNotebook();
@@ -600,12 +601,17 @@ private:
   QRadioButton *mpMSL3RadioButton;
   QRadioButton *mpMSL4RadioButton;
   QRadioButton *mpNoMSLRadioButton;
+  QWidget *mpWidget;
 private slots:
   void setMSLVersion();
 
   // QDialog interface
 public slots:
   virtual void reject() override;
+
+  // QWidget interface
+public:
+  virtual QSize sizeHint() const override;
 };
 
 #endif // MAINWINDOW_H

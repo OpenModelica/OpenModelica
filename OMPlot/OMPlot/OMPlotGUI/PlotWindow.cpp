@@ -54,6 +54,10 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiv
   setPalette(p);
   // setup the main window widget
   setUpWidget();
+  // Use monospaced font for legend for better readability of toggled items sign.
+  QFont monospaceFont("Monospace");
+  monospaceFont.setStyleHint(QFont::TypeWriter);
+  setLegendFont(monospaceFont);
   // initialize plot by reading all parameters passed to it
   if (arguments.size() > 1)
   {
@@ -110,7 +114,6 @@ void PlotWindow::initializePlot(QStringList arguments)
   setYRange(QString(arguments[11]).toDouble(), QString(arguments[12]).toDouble());
   setCurveWidth(QString(arguments[13]).toDouble());
   setCurveStyle(QString(arguments[14]).toInt());
-  setLegendFont(QApplication::font());
   setLegendPosition(QString(arguments[15]));
   setFooter(QString(arguments[16]));
   if (QString(arguments[17]) == "true") {
@@ -1823,6 +1826,37 @@ void PlotWindow::setAutoScale(bool on)
   mpAutoScaleButton->blockSignals(state);
 }
 
+bool PlotWindow::toggleSign(PlotCurve *pPlotCurve, bool checked)
+{
+  bool toggleSign = false;
+  bool previousToggle = pPlotCurve->getToggleSign();
+  pPlotCurve->setToggleSign(checked);
+  if ((!previousToggle && pPlotCurve->getToggleSign()) || (previousToggle && !pPlotCurve->getToggleSign())) {
+    for (int i = 0 ; i < pPlotCurve->mYAxisVector.size() ; i++) {
+      pPlotCurve->updateYAxisValue(i, -pPlotCurve->mYAxisVector.at(i));
+    }
+    pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
+    toggleSign = true;
+  }
+  // Add - sign to variable curve text
+  QwtText text = pPlotCurve->title();
+  if (checked) {
+    if (text.text().startsWith("-")) {
+      text.setText(text.text());
+    } else {
+      text.setText(QString("-%1").arg(text.text()));
+    }
+  } else {
+    if (text.text().startsWith("-")) {
+      text.setText(text.text().remove(0, 1));
+    } else {
+      text.setText(text.text());
+    }
+  }
+  pPlotCurve->setTitle(text);
+  return toggleSign;
+}
+
 void PlotWindow::showSetupDialog()
 {
   SetupDialog *pSetupDialog = new SetupDialog(this);
@@ -1893,6 +1927,9 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   // hide
   mpHideCheckBox = new QCheckBox(tr("Hide"));
   mpHideCheckBox->setChecked(!mpPlotCurve->isVisible());
+  // toggle sign
+  mpToggleSignCheckBox = new QCheckBox(tr("Toggle Sign"));
+  mpToggleSignCheckBox->setChecked(mpPlotCurve->getToggleSign());
   // appearance layout
   QGridLayout *pAppearanceGroupBoxGridLayout = new QGridLayout;
   pAppearanceGroupBoxGridLayout->addWidget(mpColorLabel, 0, 0);
@@ -1903,6 +1940,7 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   pAppearanceGroupBoxGridLayout->addWidget(mpThicknessLabel, 2, 0);
   pAppearanceGroupBoxGridLayout->addWidget(mpThicknessSpinBox, 2, 1, 1, 2);
   pAppearanceGroupBoxGridLayout->addWidget(mpHideCheckBox, 3, 0, 1, 3);
+  pAppearanceGroupBoxGridLayout->addWidget(mpToggleSignCheckBox, 4, 0, 1, 3);
   mpAppearanceGroupBox->setLayout(pAppearanceGroupBoxGridLayout);
   // set layout
   QGridLayout *pMainLayout = new QGridLayout;
@@ -2148,10 +2186,11 @@ void SetupDialog::selectVariable(QString variable)
   }
 }
 
-void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
+bool SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
 {
-  if (!pVariablePageWidget)
-    return;
+  if (!pVariablePageWidget) {
+    return false;
+  }
 
   PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
 
@@ -2159,13 +2198,10 @@ void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
   pPlotCurve->setTitle(pVariablePageWidget->getLegendTextBox()->text());
   /* set the curve color title */
   pPlotCurve->setCustomColor(!pVariablePageWidget->getAutomaticColorCheckBox()->isChecked());
-  if (pVariablePageWidget->getAutomaticColorCheckBox()->isChecked())
-  {
+  if (pVariablePageWidget->getAutomaticColorCheckBox()->isChecked()) {
     pVariablePageWidget->setCurveColor(pPlotCurve->pen().color());
     pVariablePageWidget->setCurvePickColorButtonIcon();
-  }
-  else
-  {
+  } else {
     QPen pen = pPlotCurve->pen();
     pen.setColor(pVariablePageWidget->getCurveColor());
     pPlotCurve->setPen(pen);
@@ -2176,14 +2212,10 @@ void SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
   /* set the curve width */
   pPlotCurve->setCurveWidth(pVariablePageWidget->getThicknessSpinBox()->value());
   /* set the curve visibility */
-  pPlotCurve->setVisible(!pVariablePageWidget->getHideCheckBox()->isChecked());
-  QwtText text = pPlotCurve->title();
-  if (pPlotCurve->isVisible()) {
-    text.setColor(QColor(Qt::black));
-  } else {
-    text.setColor(QColor(Qt::gray));
-  }
-  pPlotCurve->setTitle(text);
+  pPlotCurve->toggleVisibility(!pVariablePageWidget->getHideCheckBox()->isChecked());
+  /* set the curve toggle sign */
+  bool toggleSign = mpPlotWindow->toggleSign(pPlotCurve, pVariablePageWidget->getToggleSignCheckBox()->isChecked());
+  return toggleSign;
 }
 
 void SetupDialog::variableSelected(QListWidgetItem *current, QListWidgetItem *previous)
@@ -2216,12 +2248,17 @@ void SetupDialog::saveSetup()
 void SetupDialog::applySetup()
 {
   // set the variables attributes
+  bool requiresFitInView = false;
   for (int i = 0 ; i < mpVariablePagesStackedWidget->count() ; i++) {
-    setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)));
+    // if any of the variable requires call to fitinview because of toggle sign.
+    if (setupPlotCurve(qobject_cast<VariablePageWidget*>(mpVariablePagesStackedWidget->widget(i)))) {
+      requiresFitInView = true;
+    }
   }
   // set the font sizes. Don't move this line. We should set the font sizes before calling setLegendPosition
   mpPlotWindow->getPlot()->setFontSizes(mpTitleFontSizeSpinBox->value(), mpVerticalAxisTitleFontSizeSpinBox->value(), mpVerticalAxisNumbersFontSizeSpinBox->value(),
-                                        mpHorizontalAxisTitleFontSizeSpinBox->value(), mpHorizontalAxisNumbersFontSizeSpinBox->value(), mpFooterFontSizeSpinBox->value(), mpLegendFontSizeSpinBox->value());
+                                        mpHorizontalAxisTitleFontSizeSpinBox->value(), mpHorizontalAxisNumbersFontSizeSpinBox->value(), mpFooterFontSizeSpinBox->value(),
+                                        mpLegendFontSizeSpinBox->value());
   // set the titles
   mpPlotWindow->getPlot()->setTitle(mpPlotTitleTextBox->text());
   mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::yLeft, mpVerticalAxisTextBox->text());
@@ -2241,6 +2278,9 @@ void SetupDialog::applySetup()
   }
   // replot
   mpPlotWindow->getPlot()->replot();
+  if (requiresFitInView) {
+    mpPlotWindow->fitInView();
+  }
 }
 
 #include "util/omc_file.c"

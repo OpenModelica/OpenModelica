@@ -134,6 +134,7 @@ uniontype SimCode
     ExtObjInfo extObjInfo;
     SimCodeFunction.MakefileParams makefileParams;
     DelayedExpression delayedExps;
+    SpatialDistributionInfo spatialInfo;
     list<JacobianMatrix> jacobianMatrixes;
     Option<SimulationSettings> simulationSettingsOpt;
     String fileNamePrefix, fullPathPrefix "Used in FMI where files are generated in a special directory";
@@ -208,6 +209,26 @@ uniontype DelayedExpression
   end DELAYED_EXPRESSIONS;
 end DelayedExpression;
 
+uniontype SpatialDistributionInfo
+  record SPATIAL_DISTRIBUTION_INFO
+    list<SpatialDistribution> spatialDistributions;
+    Integer maxIndex;
+  end SPATIAL_DISTRIBUTION_INFO;
+end SpatialDistributionInfo;
+
+uniontype SpatialDistribution
+  record SPATIAL_DISTRIBUTION
+    Integer index         "uniqueIndex";
+    DAE.Exp in0           "input 0";
+    DAE.Exp in1           "input 1";
+    DAE.Exp pos           "current pos";
+    DAE.Exp dir           "flow direction";
+    DAE.Exp initPnts      "initial grid points";
+    DAE.Exp initVals      "initial grid values";
+    Integer initSize      "number of initial points";
+  end SPATIAL_DISTRIBUTION;
+end SpatialDistribution;
+
 uniontype UnitDefinition "unitDefinitions for fmi modelDescription.xml"
   record UNITDEFINITION
     String name;
@@ -247,6 +268,7 @@ uniontype ModelInfo "Container for metadata about a Modelica model."
     //Files files "all the files from SourceInfo and DAE.ElementSource";
     Integer nClocks;
     Integer nSubClocks;
+    Integer nSpatialDistributions;
     Boolean hasLargeLinearEquationSystems; // True if model has large linear eq. systems that are crucial for performance.
     list<SimEqSystem> linearSystems;
     list<SimEqSystem> nonLinearSystems;

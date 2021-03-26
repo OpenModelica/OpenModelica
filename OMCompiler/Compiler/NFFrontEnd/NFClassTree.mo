@@ -1172,6 +1172,7 @@ public
         case EXPANDED_TREE() then arrayLength(tree.classes);
         case INSTANTIATED_TREE() then arrayLength(tree.classes);
         case FLAT_TREE() then arrayLength(tree.classes);
+        else 0;
       end match;
     end classCount;
 
@@ -1184,6 +1185,7 @@ public
         case EXPANDED_TREE() then arrayLength(tree.components) - arrayLength(tree.exts);
         case INSTANTIATED_TREE() then arrayLength(tree.components);
         case FLAT_TREE() then arrayLength(tree.components);
+        else 0;
       end match;
     end componentCount;
 
@@ -1191,6 +1193,17 @@ public
       input ClassTree tree;
       output Integer count = arrayLength(getExtends(tree));
     end extendsCount;
+
+    function recursiveElementCount
+      input ClassTree tree;
+      output Integer count;
+    algorithm
+      count := classCount(tree) + componentCount(tree);
+
+      for ext in getExtends(tree) loop
+        count := count + ClassTree.recursiveElementCount(Class.classTree(InstNode.getClass(ext)));
+      end for;
+    end recursiveElementCount;
 
     function checkDuplicates
       input ClassTree tree;
@@ -1316,6 +1329,7 @@ public
         case PARTIAL_TREE() then tree.exts;
         case EXPANDED_TREE() then tree.exts;
         case INSTANTIATED_TREE() then tree.exts;
+        else listArray({});
       end match;
     end getExtends;
 

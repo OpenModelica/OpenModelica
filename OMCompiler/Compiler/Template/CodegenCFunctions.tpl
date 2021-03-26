@@ -5128,6 +5128,7 @@ template subscriptToMStr(Subscript subscript)
   case INDEX(__) then
    match exp
     case ICONST(integer=i) then i
+    case BCONST(bool=i) then i
     case ENUM_LITERAL(index=i) then i
     else
       let &varDecls = buffer ""
@@ -6533,6 +6534,11 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
         'data->simulationInfo->samples[<%intSub(index, 1)%>]'
     end match
 
+  case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
+    let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &auxFunction)
+    let dir_T = daeExp(dir, context, &preExp, &varDecls, &auxFunction)
+    'spatialDistributionZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%xPos_T%>, <%dir_T%>)'
+
   case CALL(path=IDENT(name="anyString"), expLst={e1}) then
     'mmc_anyString(<%daeExp(e1, context, &preExp, &varDecls, &auxFunction)%>)'
 
@@ -6609,6 +6615,17 @@ end daeExpCall;
 template daeExpCallTuple(Exp call, Text additionalOutputs /* arguments 2..N */, Context context, Text &preExp, Text &varDecls, Text &auxFunction)
 ::=
   match call
+
+  case CALL(path=IDENT(name="spatialDistribution"), expLst={ICONST(integer=index), in0, in1, posX, dir, _, _}) then
+    let tvar = tempDecl("modelica_real", &varDecls)
+
+    let var1 = daeExp(in0, context, &preExp, &varDecls, &auxFunction)
+    let var2 = daeExp(in1, context, &preExp, &varDecls, &auxFunction)
+    let var3 = daeExp(posX, context, &preExp, &varDecls, &auxFunction)
+    let var4 = daeExp(dir, context, &preExp, &varDecls, &auxFunction)
+    let &preExp += '<%tvar%> = spatialDistribution(data, threadData, <%index%> /* index */, <%var1%>, <%var2%>, <%var3%>, <%var4%><%additionalOutputs%>);<%\n%>'
+    tvar
+
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
     let argStr = if boolOr(attr.builtin,isParallelFunctionContext(context))
                    then (expLst |> exp => '<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>' ;separator=", ")
@@ -7550,7 +7567,7 @@ template daeSubscriptExp(Exp exp, Context context, Text &preExp, Text &varDecls,
 ::=
   let res = daeExp(exp,context,&preExp,&varDecls,&auxFunction)
   match expTypeFromExpModelica(exp)
-    case "modelica_boolean" then '(<%res%>+1)'
+    case "modelica_boolean" then '(_index_t)(<%res%>+1)'
     else res
   end match
 end daeSubscriptExp;

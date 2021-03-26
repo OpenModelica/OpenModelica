@@ -423,7 +423,21 @@ void boxptr_listSetFirst(threadData_t *threadData, modelica_metatype cellToDestr
   MMC_CAR(cellToDestroy) = newContent;
 }
 
-modelica_metatype listAppend(modelica_metatype l1,modelica_metatype l2)
+modelica_metatype listAppendDestroy(modelica_metatype lstFirstDestroyed, modelica_metatype listSecondKept)
+{
+  modelica_metatype lst = lstFirstDestroyed;
+  if (MMC_NILTEST(lstFirstDestroyed)) {
+    return listSecondKept;
+  }
+  while (!MMC_NILTEST(MMC_CDR(lst))) {
+    lst = MMC_CDR(lst);
+  }
+  /* reached the end, set the element */
+  MMC_CDR(lst) = listSecondKept;
+  return lstFirstDestroyed;
+}
+
+modelica_metatype listAppend(modelica_metatype l1, modelica_metatype l2)
 {
   int length = 0, i = 0;
   struct mmc_cons_struct *res = NULL;

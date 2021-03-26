@@ -1901,7 +1901,7 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsDialog *pOptionsDialog)
 #elif defined(Q_OS_MAC)
   mpTerminalCommandTextBox->setText("");
 #else
-  mpTerminalCommandTextBox->setText("");
+  mpTerminalCommandTextBox->setText("x-terminal-emulator");
 #endif
   mpTerminalCommandBrowseButton = new QPushButton(Helper::browse);
   mpTerminalCommandBrowseButton->setAutoDefault(false);

@@ -476,7 +476,7 @@ void OMSSimulationOutputWidget::simulationReply(const QString &reply)
 void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus)
 {
   mIsSimulationProcessRunning = false;
-  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(QString::number(exitCode));
+  QString exitCodeStr = tr("Simulation process failed. Exited with code %1.").arg(Utilities::formatExitCode(exitCode));
   if (exitStatus == QProcess::NormalExit && exitCode == 0) {
     writeSimulationOutput(tr("Simulation process finished successfully."), StringHandler::OMEditInfo);
   } else if (mpSimulationProcess->error() == QProcess::UnknownError) {

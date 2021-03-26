@@ -348,7 +348,10 @@ algorithm
   (tokens, tree, b) := scanOpt(tokens, tree, TokenId.EXTERNAL);
   if b then
     (tokens, tree) := scanOpt(tokens, tree, TokenId.STRING); // language
-    (tokens, tree) := external_function_call(tokens, tree);
+    (tokens, tree, id) := peek(tokens, tree);
+    if not (id==TokenId.ANNOTATION or id==TokenId.SEMICOLON) then
+      (tokens, tree) := external_function_call(tokens, tree);
+    end if;
     (tokens, tree, b) := LA1(tokens, tree, First._annotation);
     if b then
       (tokens, tree) := _annotation(tokens, tree);
@@ -381,9 +384,7 @@ algorithm
     (tokens, tree) := scan(tokens, tree, TokenId.EQUALS);
   end if;
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
-  (tokens, tree) := scan(tokens, tree, TokenId.LPAR);
-  (tokens, tree) := expression_list(tokens, tree);
-  (tokens, tree) := scan(tokens, tree, TokenId.RPAR);
+  (tokens, tree) := output_expression_list(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end external_function_call;
 
@@ -603,7 +604,7 @@ function element_list
   extends partialParser;
 protected
   TokenId id;
-  Boolean b;
+  Boolean b, isAnnotation;
 algorithm
   outTree := {};
   while true loop
@@ -611,17 +612,20 @@ algorithm
     if not b then
       break;
     end if;
-    (tokens, tree) := element(tokens, tree);
+    (tokens, tree, isAnnotation) := element(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
-    outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$element")))::outTree;
-    tree := {};
+    if not isAnnotation then
+      outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$element")))::outTree;
+      tree := {};
+    end if;
   end while;
   outTree := listAppend(tree, listAppend(outTree, inTree));
 end element_list;
 
 function element
   extends partialParser;
+  output Boolean isAnnotation = false;
 protected
   TokenId id;
   Boolean b,b1;
@@ -635,6 +639,11 @@ algorithm
     case TokenId.EXTENDS
       algorithm
         (tokens, tree) := extends_clause(tokens, tree);
+      then ();
+    case TokenId.ANNOTATION
+      algorithm
+        (tokens, tree) := _annotation(tokens, tree);
+        isAnnotation := true;
       then ();
     else
       algorithm
@@ -724,6 +733,7 @@ algorithm
       end if;
     end if;
   end if;
+  (tokens, tree) := comment(tokens, tree);
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end import_clause;
 
@@ -873,7 +883,7 @@ algorithm
   end if;
   (tokens, tree, b) := LA1(tokens, tree, First._annotation);
   if b then
-    // (tokens, tree) := _annotation(tokens, tree);
+    (tokens, tree) := _annotation(tokens, tree);
   end if;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end extends_clause;
@@ -1246,6 +1256,8 @@ algorithm
   (tokens, tree, id) := peek(tokens, tree);
   if id==TokenId.LPAR then
     (tokens, tree) := output_expression_list(tokens, tree);
+    // outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "parenthesis")))::inTree;
+    // return;
   elseif id==TokenId.LBRACE then
     (tokens, tree) := scan(tokens, tree, TokenId.LBRACE);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.RBRACE}); // Easier than checking First(expression), etc
@@ -1270,7 +1282,11 @@ algorithm
     if b then
       (tokens, tree) := function_call_args(tokens, tree);
     end if;
-  elseif listMember(id, {TokenId.DOT, TokenId.IDENT}) then
+  elseif listMember(id, {TokenId.DOT, TokenId.IDENT, TokenId.FUNCTION}) then
+    if id == TokenId.FUNCTION then
+      // Function partial applications sort of looks like a normal call
+      (tokens, tree) := consume(tokens, tree);
+    end if;
     (tokens, tree) := component_reference(tokens, tree);
     (tokens, tree, b) := LA1(tokens, tree, {TokenId.LPAR});
     if b then
@@ -1464,10 +1480,11 @@ algorithm
   (tokens, tree) := scanOpt(tokens, tree, TokenId.DOT);
   (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
   while true loop
-    (tokens, tree, b) := scanOpt(tokens, tree, TokenId.DOT);
+    (tokens, tree, b) := LAk(tokens, tree, {{TokenId.DOT}, {TokenId.IDENT}});
     if not b then
       break;
     end if;
+    (tokens, tree) := scan(tokens, tree, TokenId.DOT);
     (tokens, tree) := scan(tokens, tree, TokenId.IDENT);
   end while;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
@@ -2014,7 +2031,7 @@ algorithm
     print("all t1="+parseTreeStr(t1)+"\n");
     print("all t2="+parseTreeStr(t2)+"\n");
   end if;
-  res := diff(t1, t2, compare, parseTreeIsWhitespace, parseTreeNodeStr);
+  res := diff(t1, t2, compare, parseTreeIsWhitespace, parseTreeIsWhitespaceNotComment, parseTreeNodeStr);
   (nadd, ndel) := countDiffAddDelete(res);
   if nadd > 1 then
     res := fixMoveOperations(res, compare);
@@ -2150,7 +2167,7 @@ protected
   list<tuple<Diff,list<ParseTree>>> diffLocal=inDiff;
   tuple<Diff,list<ParseTree>> diff1;
   Boolean firstIter, lastTokenNewline, hasAddedWS;
-  list<ParseTree> tree, treeLocal, tree1, tree2;
+  list<ParseTree> tree, treeLocal, tree1, tree2, tree3;
   Integer length, level;
   list<Integer> indentation;
   list<Token> tokens;
@@ -2162,6 +2179,15 @@ algorithm
   firstIter := true;
   while not listEmpty(diffLocal) loop
     diffLocal := match diffLocal
+      // ( ... ) is similar to whitespace, and there are some edge cases we can handle here...
+      case ((Diff.Equal,tree1) :: (Diff.Delete, tree2) :: (Diff.Equal,tree3) :: diffLocal)
+        guard min(parseTreeIsWhitespaceOrPar(t) for t in tree1) and
+              min(parseTreeIsWhitespaceOrPar(t) for t in tree3) and
+              1==sum(if parseTreeIsLPar(t) then 1 else 0 for t in tree1) and
+              1==sum(if parseTreeIsRPar(t) then 1 else 0 for t in tree3)
+        algorithm
+          diff := (Diff.Delete, listAppend(tree1, listAppend(tree2, tree3)))::diff;
+        then diffLocal;
       // Do not delete whitespace in-between two tokens
       case ((Diff.Delete, tree)::(diffLocal as ((Diff.Equal,_)::_)))
         guard if firstIter then min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree) else false
@@ -2177,7 +2203,7 @@ algorithm
         guard min(parseTreeIsWhitespaceOrParNotComment(t) for t in tree)
         algorithm
           diff := (Diff.Equal, tree)::diff1::diff;
-        then diffLocal;
+        then {};
       case ((diff1 as (Diff.Equal,tree1 as (_::_)))::(Diff.Delete, tree)::(diffLocal as ((Diff.Equal,tree2 as (_::_))::_)))
         guard needsWhitespaceBetweenTokens(lastToken(List.last(tree1)), firstTokenInTree(listGet(tree2, 1)))
         algorithm
@@ -2773,6 +2799,7 @@ algorithm
   for diff in diffs loop
     (d,l) := diff;
     if d == Diff.Add then
+      // We treat parenthesis similar to whitespace because we need to keep them as before since unparsing adds or removes parentheses
       nadd := nadd+sum(if parseTreeIsWhitespaceOrPar(t) then 0 else 1 for t in l);
     elseif d == Diff.Delete then
       ndel := ndel+sum(if parseTreeIsWhitespaceOrPar(t) then 0 else 1 for t in l);
@@ -2828,6 +2855,30 @@ algorithm
   end match;
 end parseTreeIsNewLine;
 
+function parseTreeIsLPar
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.LPAR;
+    else false;
+  end match;
+end parseTreeIsLPar;
+
+function parseTreeIsRPar
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then t1.token.id == TokenId.RPAR;
+    else false;
+  end match;
+end parseTreeIsRPar;
+
 function parseTreeIsWhitespaceOrPar
   input ParseTree t1;
   output Boolean b;
@@ -2851,6 +2902,18 @@ algorithm
     else false;
   end match;
 end parseTreeIsWhitespaceOrParNotComment;
+
+function parseTreeIsWhitespaceNotComment
+  input ParseTree t1;
+  output Boolean b;
+protected
+  TokenId id;
+algorithm
+  b := match t1
+    case LEAF() then listMember(t1.token.id, whiteSpaceTokenIdsNotComment);
+    else false;
+  end match;
+end parseTreeIsWhitespaceNotComment;
 
 function parseTreeIsComment
   input ParseTree t1;
@@ -3232,6 +3295,7 @@ package First "First token possible for a given non-terminal in the Modelica 3 g
   };
   constant list<TokenId> component_clause = listAppend(type_prefix,name);
   constant list<TokenId> element = listAppend(component_clause, listAppend(class_definition, {
+    TokenId.ANNOTATION,
     TokenId.IMPORT,
     TokenId.EXTENDS,
     TokenId.REDECLARE,

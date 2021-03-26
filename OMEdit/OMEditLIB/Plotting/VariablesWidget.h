@@ -44,9 +44,10 @@
 class OMCProxy;
 class TreeSearchFilters;
 class Label;
+class VariableNode;
 
 typedef QPair<int,QString> IntStringPair;
-Q_DECLARE_METATYPE(IntStringPair);
+Q_DECLARE_METATYPE(IntStringPair)
 
 class VariablesTreeItem
 {
@@ -59,6 +60,7 @@ public:
   QString getFileName() {return mFileName;}
   QString getPlotVariable();
   QString getVariableName() {return mVariableName;}
+  bool isString() const;
   bool isValueChanged() {return mValueChanged;}
   QString getUnit() {return mUnit;}
   QString getDisplayUnit() {return mDisplayUnit;}
@@ -100,6 +102,7 @@ private:
   QString mFileName;
   QString mVariableName;
   QString mDisplayVariableName;
+  QString mType;
   QString mValue;
   bool mValueChanged;
   QString mUnit;
@@ -147,12 +150,10 @@ public:
   bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
-  VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *root) const;
+  VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
-  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem,
-                                           const QModelIndex &parentIndex) const;
-  void parseInitXml(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
+  void parseInitXml(QXmlStreamReader &xmlReader, QStringList *variablesList);
   bool removeVariableTreeItem(QString variable);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
   void plotAllVariables(VariablesTreeItem *pVariablesTreeItem, OMPlot::PlotWindow *pPlotWindow);
@@ -161,8 +162,10 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
+  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
+  void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
-  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *variability,
+  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
 signals:
   void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle);
@@ -243,8 +246,7 @@ private:
   void openResultFile();
   void updateVisualization();
 public slots:
-  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle,
-                     OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
+  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
   void simulationTimeChanged(int timePercent);
   void valueEntered(const QModelIndex &index);

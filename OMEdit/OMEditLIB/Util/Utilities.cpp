@@ -53,6 +53,8 @@
 #include <QXmlSchemaValidator>
 #include <QDir>
 
+#include <qjson/parser.h>
+
 SplashScreen *SplashScreen::mpInstance = 0;
 
 SplashScreen *SplashScreen::instance()
@@ -471,11 +473,135 @@ void CodeColorsWidget::pickColor()
   emit colorUpdated();
 }
 
+/*!
+ * \brief QDetachableProcess::QDetachableProcess
+ * Implementation from https://stackoverflow.com/questions/42051405/qprocess-with-cmd-command-does-not-result-in-command-line-window
+ * \param pParent
+ */
+QDetachableProcess::QDetachableProcess(QObject *pParent)
+  : QProcess(pParent)
+{
+#ifdef Q_OS_WIN
+  setCreateProcessArgumentsModifier([](QProcess::CreateProcessArguments *args) {
+    args->flags |= CREATE_NEW_CONSOLE;
+    args->startupInfo->dwFlags &=~ STARTF_USESTDHANDLES;
+  });
+#endif
+}
+
+/*!
+ * \brief QDetachableProcess::start
+ * Starts a process and detaches from it.
+ * \param program
+ * \param arguments
+ * \param mode
+ */
+void QDetachableProcess::start(const QString &program, const QStringList &arguments, QIODevice::OpenMode mode)
+{
+  QProcess::start(program, arguments, mode);
+  waitForStarted();
+  setProcessState(QProcess::NotRunning);
+}
+
+JsonDocument::JsonDocument(QObject *pParent)
+  : QObject(pParent)
+{
+  result.clear();
+  errorString = "";
+}
+
+bool JsonDocument::parse(const QString &fileName)
+{
+  bool success = true;
+  QFile file(fileName);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  if (file.exists()) {
+    if (file.open(QIODevice::ReadOnly)) {
+      QJsonParseError jsonParserError;
+      QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &jsonParserError);
+      if (doc.isNull()) {
+        errorString = QString("Failed to parse file %1 with error %2").arg(file.fileName(), jsonParserError.errorString());
+        success = false;
+      } else {
+        result = doc.toVariant();
+      }
+      file.close();
+    } else {
+      errorString = GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(file.fileName(), file.errorString());
+      success = false;
+    }
+  }
+#else // QT_VERSION_CHECK
+  if (file.exists()) {
+    QJson::Parser parser;
+    result = parser.parse(&file, &success);
+    if (!success) {
+      errorString = GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(file.fileName(), parser.errorString());
+    }
+  }
+#endif // QT_VERSION_CHECK
+  return success;
+}
+
+bool JsonDocument::parse(const QByteArray &jsonData)
+{
+  bool success = true;
+  QString msg("Failed to parse json %1 with error %2");
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+  QJsonParseError jsonParserError;
+  QJsonDocument doc = QJsonDocument::fromJson(jsonData, &jsonParserError);
+  if (doc.isNull()) {
+    errorString = QString(msg).arg(jsonData, jsonParserError.errorString());
+    success = false;
+  } else {
+    result = doc.toVariant();
+  }
+#else // QT_VERSION_CHECK
+  QJson::Parser parser;
+  result = parser.parse(jsonData, &success);
+  if (!success) {
+    errorString = QString(msg).arg(jsonData, parser.errorString());
+  }
+#endif // QT_VERSION_CHECK
+  return success;
+}
+
+VariableNode::VariableNode(const QVector<QVariant> &variableNodeData)
+{
+  mVariableNodeData = variableNodeData;
+  mEditable = false;
+  mVariability = "";
+  mChildren.clear();
+}
+
+VariableNode::~VariableNode()
+{
+  qDeleteAll(mChildren);
+  mChildren.clear();
+}
+
+VariableNode* VariableNode::findVariableNode(const QString &name, VariableNode *pParentVariableNode)
+{
+  VariableNode *pVariableNode = pParentVariableNode->mChildren.value(name, 0);
+  if (pVariableNode) {
+    return pVariableNode;
+  } else {
+    QHash<QString, VariableNode*>::const_iterator iterator = pParentVariableNode->mChildren.constBegin();
+    while (iterator != pParentVariableNode->mChildren.constEnd()) {
+      if (VariableNode *node = VariableNode::findVariableNode(name, iterator.value())) {
+        return node;
+      }
+      ++iterator;
+    }
+  }
+  return 0;
+}
+
 QString Utilities::escapeForHtmlNonSecure(const QString &str)
 {
   return QString(str)
-     .replace("& ", "&amp;") // should be the first replacement
-     .replace("< ", "&lt;");
+      .replace("& ", "&amp;") // should be the first replacement
+      .replace("< ", "&lt;");
 }
 
 /*!
@@ -769,6 +895,23 @@ qint64 Utilities::getProcessId(QProcess *pProcess)
 #endif /* WIN32 */
 #endif /* QT_VERSION */
   return processId;
+}
+
+/*!
+ * \brief Utilities::formatExitCode
+ * Returns the given process exit code as a string in an OS appropriate format.
+ * \param code
+ * \return
+ */
+QString Utilities::formatExitCode(int code)
+{
+#ifdef WIN32
+  // Use 0xXXXXXXXX format on Windows.
+  return QStringLiteral("0x%1").arg(code, 8, 16, QChar('0'));
+#else
+  // Use normal decimal on other OS.
+  return QString::number(code);
+#endif
 }
 
 #ifdef WIN32

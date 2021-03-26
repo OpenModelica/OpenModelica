@@ -178,6 +178,7 @@ public slots:
   void setLogX(bool on);
   void setLogY(bool on);
   void setAutoScale(bool on);
+  bool toggleSign(PlotCurve *pPlotCurve, bool checked);
   void showSetupDialog();
   void showSetupDialog(QString variable);
 };
@@ -224,6 +225,7 @@ private:
   QLabel *mpThicknessLabel;
   QDoubleSpinBox *mpThicknessSpinBox;
   QCheckBox *mpHideCheckBox;
+  QCheckBox *mpToggleSignCheckBox;
 public:
   VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetupDialog);
   void setCurvePickColorButtonIcon();
@@ -235,6 +237,7 @@ public:
   QComboBox* getPatternComboBox() {return mpPatternComboBox;}
   QDoubleSpinBox* getThicknessSpinBox() {return mpThicknessSpinBox;}
   QCheckBox* getHideCheckBox() {return mpHideCheckBox;}
+  QCheckBox* getToggleSignCheckBox() const {return mpToggleSignCheckBox;}
 public slots:
   void resetLabel();
   void pickColor();
@@ -300,7 +303,7 @@ private:
 public:
   SetupDialog(PlotWindow *pPlotWindow);
   void selectVariable(QString variable);
-  void setupPlotCurve(VariablePageWidget *pVariablePageWidget);
+  bool setupPlotCurve(VariablePageWidget *pVariablePageWidget);
 public slots:
   void variableSelected(QListWidgetItem *current, QListWidgetItem *previous);
   void autoScaleChecked(bool checked);

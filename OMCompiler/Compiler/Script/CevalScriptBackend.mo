@@ -655,7 +655,7 @@ algorithm
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str, curveWidthStr, curveStyleStr, legendPosition, footer, autoScaleStr,scriptFile,logFile, simflags2, outputFile,
-             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname, modeldescriptionfilename, tmpDir, tmpFile;
+             systemPath, gccVersion, gd, strlinearizeTime, suffix,cname, modeldescriptionfilename, tmpDir, tmpFile, bom;
       list<DAE.Exp> simOptions;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className,baseClassPath;
@@ -1098,6 +1098,7 @@ algorithm
       algorithm
         ExecStat.execStatReset();
 
+        (s1, bom) := StringUtil.stripBOM(s1);
         (tokens1, errorTokens) := scanString(s1);
         reportErrors(errorTokens);
 
@@ -1121,7 +1122,8 @@ algorithm
           fail();
         end if;
 
-        tokens2 := scanString(s2);
+        (s2, bom) := StringUtil.stripBOM(s2);
+        (tokens2, errorTokens) := scanString(s2);
         reportErrors(errorTokens);
         ExecStat.execStat("diffModelicaFileListings scan string 2");
         (_,parseTree2) := SimpleModelicaParser.stored_definition(tokens2, {});
@@ -1186,7 +1188,7 @@ algorithm
               Error.addInternalError("Unknown diffModelicaFileListings choice", sourceInfo());
             then fail();
         end matchcontinue;
-      then (cache,Values.STRING(str));
+      then (cache,Values.STRING(bom + str));
 
     case (cache,_,"diffModelicaFileListings",_,_) then (cache,Values.STRING(""));
 

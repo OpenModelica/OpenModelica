@@ -84,6 +84,7 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
   data->callback->output_function(data, threadData);
   data->callback->setc_function(data, threadData);
   data->callback->function_storeDelayed(data, threadData);
+  data->callback->function_storeSpatialDistribution(data, threadData);
   storePreValues(data);
 
   TRACE_POP
@@ -91,6 +92,7 @@ static void prefixedName_updateContinuousSystem(DATA *data, threadData_t *thread
 
 static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* solverInfo)
 {
+  int foundEvent = 0;
   prefixedName_updateContinuousSystem(data, threadData);
 
   if (solverInfo->solverMethod == S_SYM_SOLVER_SSC) {
@@ -110,6 +112,7 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
     int eventType = checkEvents(data, threadData, solverInfo->eventLst, !solverInfo->solverRootFinding, /*out*/ &solverInfo->currentTime);
     if(eventType > 0 || syncRet == 2) /* event */
     {
+      foundEvent = 1;
       threadData->currentErrorStage = ERROR_EVENTHANDLING;
       infoStreamPrint(LOG_EVENTS, 1, "%s event at time=%.12g", eventType == 1 ? "time" : "state", solverInfo->currentTime);
       /* prevent emit if noEventEmit flag is used */
@@ -152,6 +155,11 @@ static int simulationUpdate(DATA* data, threadData_t *threadData, SOLVER_INFO* s
     syncRet1 = handleTimers(data, threadData, solverInfo);
     syncRet = syncRet1 == 0 ? syncRet : syncRet1;
   } while (syncRet1);
+
+  /* Add event to spatialDistribution */
+  if (foundEvent==1) {
+    data->callback->function_storeSpatialDistribution(data, threadData);
+  }
   return syncRet;
 }
 

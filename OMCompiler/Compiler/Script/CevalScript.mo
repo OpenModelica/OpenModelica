@@ -324,7 +324,7 @@ algorithm
     // see https://trac.openmodelica.org/OpenModelica/ticket/2422
     // prio = if_(stringEq(prio,""), "default", prio);
     mp := System.realpath(dir + "/../") + Autoconf.groupDelimiter + Settings.getModelicaPath(Testsuite.isRunning());
-    (outProgram,true) := loadModel((Absyn.IDENT(cname),"loadFile automatically converted to loadModel",{prio},true)::{}, mp, p, true, notifyLoad, checkUses, requireExactVersion, filename == "package.moc");
+    (outProgram,true) := loadModel((Absyn.IDENT(cname),"loadFile automatically converted to loadModel",{prio},true)::{}, mp, p, true, notifyLoad, checkUses, requireExactVersion, filename == "package.moc", pathToFile=System.realpath(name));
     return;
   end if;
   outProgram := Parser.parse(name,encoding);
@@ -359,17 +359,19 @@ public function loadModel
   input Boolean checkUses;
   input Boolean requireExactVersion;
   input Boolean encrypted = false;
+  input String pathToFile = "";
   output Absyn.Program pnew;
   output Boolean success;
 protected
   LoadModelFoldArg arg = (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted);
 algorithm
-  (pnew, success) := List.fold1(imodelsToLoad, loadModel1, arg, (ip, true));
+  (pnew, success) := List.fold2(imodelsToLoad, loadModel1, arg, pathToFile, (ip, true));
 end loadModel;
 
 protected function loadModel1
   input tuple<Absyn.Path,String,list<String>,Boolean> modelToLoad;
   input LoadModelFoldArg inArg;
+  input String pathToFile;
   input tuple<Absyn.Program, Boolean> inTpl;
   output tuple<Absyn.Program, Boolean> outTpl;
 protected
@@ -377,7 +379,7 @@ protected
   Boolean b, b1, success, forceLoad, notifyLoad, checkUses, requireExactVersion, onlyCheckFirstModelicaPath, encrypted;
   Absyn.Path path;
   list<String> versionsLst;
-  String pathStr, versions, className, version, modelicaPath, thisModelicaPath;
+  String pathStr, versions, className, version, modelicaPath, thisModelicaPath, dir;
   Absyn.Program p, pnew;
   ErrorTypes.MessageTokens msgTokens;
 algorithm
@@ -395,7 +397,13 @@ algorithm
       pnew := Absyn.PROGRAM({}, Absyn.TOP());
       version := "";
     else
-      pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
+      if pathToFile=="" then
+        pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
+      else
+        pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
+        dir := System.dirname(pathToFile);
+        pnew := Absyn.PROGRAM({ClassLoader.loadClassFromMp(AbsynUtil.pathFirstIdent(path), System.dirname(dir), System.basename(dir), true, NONE(), encrypted)}, Absyn.TOP());
+      end if;
       version := getPackageVersion(path, pnew);
       b := not notifyLoad or forceLoad;
       msgTokens := {AbsynUtil.pathString(path), version};
