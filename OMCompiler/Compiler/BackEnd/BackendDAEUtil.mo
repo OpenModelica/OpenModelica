@@ -8124,7 +8124,7 @@ protected
   list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqs = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
   list<tuple<BackendDAE.Var, Integer>> loopVars = {};
   BackendDAE.Equation tmp_eq;
-  BackendDAE.LinearIntegerJacobian linIntJac;
+  SymbolicJacobian.LinearRealJacobian linJac;
 algorithm
   if listLength(comp) > 1 then
     /* collect eqs and vars from strong component */
@@ -8146,24 +8146,24 @@ algorithm
     if listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC) then
       try
         /* generate linear integer sub jacobian from system */
-        linIntJac := SymbolicJacobian.generateLinearIntegerJacobian(loopEqs, loopVars, ass1);
+        linJac := SymbolicJacobian.generateLinearRealJacobian(loopEqs, loopVars, ass1);
 
-        if not SymbolicJacobian.emptyOrSingleLinearIntegerJacobian(linIntJac) then
+        if not SymbolicJacobian.emptyOrSingleLinearRealJacobian(linJac) then
           if Flags.isSet(Flags.DUMP_ASSC) then
-            BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Original");
+            SymbolicJacobian.LinearRealJacobian.dumpLinearRealJacobianSparse(linJac, "Original");
           end if;
 
           /* solve jacobian with gaussian elimination */
-          linIntJac := SymbolicJacobian.solveLinearIntegerJacobian(linIntJac);
+          linJac := SymbolicJacobian.solveLinearRealJacobian(linJac);
           if Flags.isSet(Flags.DUMP_ASSC) then
-            BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Solved");
+            SymbolicJacobian.LinearRealJacobian.dumpLinearRealJacobianSparse(linJac, "Solved");
           end if;
 
           /* set changed to true if it was true before, or any row changed in the jacobian */
-          changed := changed or SymbolicJacobian.anyRowChanged(linIntJac);
+          changed := changed or SymbolicJacobian.anyChanges(linJac);
 
           /* resolve zero rows to new equations and update assignments / adjacency matrix */
-          (ass1, ass2, syst) := SymbolicJacobian.resolveAnalyticalSingularities(linIntJac, ass1, ass2, syst);
+          (ass1, ass2, syst) := SymbolicJacobian.resolveASSC(linJac, ass1, ass2, syst);
         end if;
       else
         /* possibly fails if jacobian is empty --- nothing to do */

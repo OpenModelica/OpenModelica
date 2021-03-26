@@ -34,7 +34,6 @@ encapsulated package BackendDAE
   package:     BackendDAE
   description: BackendDAE contains the data-types used by the back end.
 "
-
 import Absyn;
 import AvlSetPath;
 import DAE;

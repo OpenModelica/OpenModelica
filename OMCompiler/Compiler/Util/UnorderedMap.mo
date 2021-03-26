@@ -304,6 +304,20 @@ public
     value := Vector.get(map.values, 1);
   end first;
 
+  function firstKey
+    "Returns the 'first' key in the map, or fails if the map is empty."
+    input UnorderedMap<K, V> map;
+    output K key;
+  algorithm
+    key := Vector.get(map.keys, 1);
+  end firstKey;
+
+  function toList
+    "Returns a tuple list (key, value)."
+    input UnorderedMap<K, V> map;
+    output list<tuple<K, V>> entries = List.zip(keyList(map), valueList(map));
+  end toList;
+
   function keyList
     "Returns the keys as a list."
     input UnorderedMap<K, V> map;

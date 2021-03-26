@@ -7990,6 +7990,20 @@ algorithm
   end match;
 end getEvaluatedConstInteger;
 
+public function getEvaluatedConstReal
+"Returns the constant real value, fails for incorrect types."
+  input DAE.Exp inExp;
+  output Real val;
+algorithm
+  val := match inExp
+    local
+      Real integer;
+    case DAE.RCONST() then inExp.real;
+    case DAE.ICONST() then intReal(inExp.integer);
+    else fail();
+  end match;
+end getEvaluatedConstReal;
+
 protected function isConstWork
 "Returns true if an expression is constant"
   input DAE.Exp inExp;
