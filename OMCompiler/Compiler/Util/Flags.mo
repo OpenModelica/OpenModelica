@@ -1182,7 +1182,7 @@ constant ConfigFlag GRAPHICS_EXP_MODE = CONFIG_FLAG(107,
   "graphicsExpMode", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
   Gettext.gettext("Sets whether we are in graphics exp mode (evaluating icons)."));
 constant ConfigFlag TEARING_STRICTNESS = CONFIG_FLAG(108, "tearingStrictness",
-  NONE(), EXTERNAL(), STRING_FLAG("strict"),SOME(
+  NONE(), EXTERNAL(), STRING_FLAG("veryStrict"),SOME(
     STRING_DESC_OPTION({
     ("casual", Gettext.gettext("Loose tearing rules using ExpressionSolve to determine the solvability instead of considering the partial derivative. Allows to solve for everything that is analytically possible. This could lead to singularities during simulation.")),
     ("strict", Gettext.gettext("Robust tearing rules by consideration of the partial derivative. Allows to divide by parameters that are not equal to or close to zero.")),
