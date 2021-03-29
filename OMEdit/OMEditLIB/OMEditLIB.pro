@@ -89,8 +89,7 @@ INCLUDEPATH += . ../ \
   $$OPENMODELICAHOME/include/omc/scripting-API \
   $$OPENMODELICAHOME/include/omc/c \
   $$OPENMODELICAHOME/include/omc/c/util \
-  $$OPENMODELICAHOME/include/omc/fmil \
-  ../qjson/build/include
+  $$OPENMODELICAHOME/include/omc/fmil
 
 # Don't show the warnings from included headers.
 # Don't add a space between for and open parenthesis below. Qt4 complains about it.
