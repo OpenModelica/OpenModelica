@@ -61,7 +61,7 @@ readFile("directionalDerivatives_systemCall.log");
 // info:    Initialization
 // info:    system1.C1.v: 0.0
 // info:    Simulation
-// info:    system1.C1.v: 6.2188841112434e-26
+// info:    system1.C1.v: 0.0
 // info:    Final Statistics for 'test.root':
 //          NumSteps = 12 NumRhsEvals  = 13 NumLinSolvSetups = 3
 //          NumNonlinSolvIters = 12 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
