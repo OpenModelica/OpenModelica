@@ -8143,7 +8143,7 @@ algorithm
       loopVars := (BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]), ass1[eqnIndex]) :: loopVars;
     end for;
 
-    if listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC) then
+    if not listEmpty(loopEqs) and (listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC)) then
       try
         /* generate linear integer sub jacobian from system */
         linJac := SymbolicJacobian.generateLinearRealJacobian(loopEqs, loopVars, ass1);

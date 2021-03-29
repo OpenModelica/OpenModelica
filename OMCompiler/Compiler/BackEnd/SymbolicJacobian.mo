@@ -4203,10 +4203,6 @@ protected
   Real constReal;
   LinearRealJacobianRow row;
   list<LinearRealJacobianRow> tmp_mat = {};
-  array<LinearRealJacobianRow> rowArr;
-  LinearRealJacobianRhs rhsArr;
-  LinearRealJacobianInd idxArr;
-  array<Boolean> boolArr;
   list<DAE.Exp> tmp_rhs = {};
   list<tuple<Integer, Integer>> tmp_idx = {};
   BackendDAE.Equation eqn;
@@ -4265,11 +4261,12 @@ algorithm
     end try;
   end for;
   /* convert and store all data */
-  rowArr := listArray(tmp_mat);
-  rhsArr := listArray(tmp_rhs);
-  idxArr := listArray(tmp_idx);
-  boolArr := arrayCreate(arrayLength(rowArr), false);
-  linJac := LINEAR_REAL_JACOBIAN(rowArr, rhsArr, idxArr, boolArr);
+  linJac := LINEAR_REAL_JACOBIAN(
+    rows      = listArray(tmp_mat),
+    rhs       = listArray(tmp_rhs),
+    ind       = listArray(tmp_idx),
+    eq_marks  = arrayCreate(listLength(tmp_mat), false)
+  );
 end generateLinearRealJacobian;
 
 public function emptyOrSingleLinearRealJacobian
@@ -4311,21 +4308,19 @@ algorithm
         jump over all manipulations, nothing to do
       */
       (col_index, piv_value) := getPivot(linJac.rows[i]);
+      updatePivotRow(linJac.rows[i], piv_value);
       for j in i+1:arrayLength(linJac.rows) loop
         row_value := getElementValue(linJac.rows[j], col_index);
         if not realEq(row_value, 0.0) then
           // set row to processed and perform pivot step
           linJac.eq_marks[j] := true;
-          linJac.rows[j] := solveLinearRealJacobianRow(linJac.rows[i], linJac.rows[j], piv_value, row_value);
+          solveLinearRealJacobianRow(linJac.rows[i], linJac.rows[j], 1.0, row_value);
           //perform multiplication inside? use simplification of multiplication afterwards?
           linJac.rhs[j] := DAE.BINARY(
                                 DAE.BINARY(linJac.rhs[j], DAE.MUL(DAE.T_REAL_DEFAULT), DAE.RCONST(piv_value)),       // row_rhs * piv_elem
                                 DAE.SUB(DAE.T_REAL_DEFAULT),                                                    // -
                                 DAE.BINARY(linJac.rhs[i], DAE.MUL(DAE.T_REAL_DEFAULT), DAE.RCONST(row_value))   // piv_rhs * row_elem
                             );
-          // Is it better to simplify once at the end or every time? Is traverser needed?
-          //rhsArr[j] := Expression.traverseExpBottomUp(rhsArr[j], ExpressionSimplify.simplifyTraverseHelper, "");
-          //rhsArr[j] := ExpressionSimplify.simplify(rhsArr[j]);
         end if;
       end for;
     else
@@ -4334,12 +4329,25 @@ algorithm
   end for;
 end solveLinearRealJacobian;
 
+public function updatePivotRow
+"author: kabdelhak FHB 03-2021
+ updates the pivot row by deviding everything by its pivot value"
+  input LinearRealJacobianRow pivot_row;
+  input Real piv_value;
+protected
+  Real value;
+algorithm
+  for idx in UnorderedMap.keyList(pivot_row) loop
+    SOME(value) := UnorderedMap.get(idx, pivot_row);
+    UnorderedMap.add(idx, value/piv_value, pivot_row);
+  end for;
+end updatePivotRow;
+
 public function solveLinearRealJacobianRow
 "author: kabdelhak FHB 03-2021
- Helper function for solveLinearRealJacobianRow, performs one single row update.
- new_row = old_row * pivot_element - pivot_row * row_element"
+ performs one single row update : new_row = old_row * pivot_element - pivot_row * row_element"
   input LinearRealJacobianRow pivot_row;
-  input output LinearRealJacobianRow row;
+  input LinearRealJacobianRow row;
   input Real piv_value;
   input Real row_value;
 protected

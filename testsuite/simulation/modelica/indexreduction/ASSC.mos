@@ -20,20 +20,20 @@ simulate(ASSC); getErrorString();
 //  LinearIntegerJacobian sparsity pattern: Original
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
-// (5|5|false):	[2|1] [3|1] [1|1] 	|| RHS: 0
-// (4|4|false):	[2|1] [3|1] 	|| RHS: 5.0 - y
-// (3|3|false):	[2|2] [3|2] [1|1] 	|| RHS: 10.0 - x
+// (5|5|false):    [1|1.0] [3|1.0] [2|1.0]     || RHS: 0
+// (4|4|false):    [3|1.0] [2|1.0]     || RHS: 5.0 - y
+// (3|3|false):    [1|1.0] [3|2.0] [2|2.0]     || RHS: 10.0 - x
 //
 // ######################################################
 //  LinearIntegerJacobian sparsity pattern: Solved
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
-// (5|5|false):	[2|1] [3|1] [1|1] 	|| RHS: 0
-// (4|4|true):	[1|-1] 	|| RHS: 5.0 - y
-// (3|3|true):	EMPTY ROW 		|| RHS: -5.0 + x - y
+// (5|5|false):    [1|1.0] [3|1.0] [2|1.0]     || RHS: 0
+// (4|4|false):    [3|1.0] [2|1.0]     || RHS: 5.0 - y
+// (3|3|true):    EMPTY ROW         || RHS: ((10.0 - x) * 1.0 - 0 * 1.0) * 1.0 - (5.0 - y) * 1.0
 //
 // [ASSC] The equation: 2.0 * (a + b) + c + x = 10.0
-// [ASSC] Gets replaced by equation: 0.0 = -5.0 + x - y
+// [ASSC] Gets replaced by equation: 0.0 = 5.0 + y - x
 // unmatched equations: 3
 //
 // Index Reduction neccessary!
@@ -45,9 +45,9 @@ simulate(ASSC); getErrorString();
 //
 // ------------------3------------------
 // Constraint equation to be differentiated:
-// 0.0 = -5.0 + x - y
+// 0.0 = 5.0 + y - x
 // Differentiated equation:
-// 0.0 = der(x) - der(y)
+// 0.0 = der(y) - der(x)
 //
 // Update Adjacency Matrix: 3
 //
@@ -64,12 +64,12 @@ simulate(ASSC); getErrorString();
 //
 // Constraint equations: (1)
 // ========================================
-// 1/1 (1): 0.0 = -5.0 + x - y   [unknown |0|0|0|0|]
+// 1/1 (1): 0.0 = 5.0 + y - x   [unknown |0|0|0|0|]
 //
 // Adjacency Matrix Enhanced (row == equation)
 // ====================================
 // number of rows: 1
-// 1:(-2,constone) (-1,constone)
+// 1:(-1,constone) (-2,constone)
 //
 // Transpose Adjacency Matrix Enhanced (row == var)
 // =====================================
