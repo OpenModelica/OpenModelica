@@ -13548,13 +13548,13 @@ algorithm
     // check for param Vars, as we are only interested in causality = calculatedParameters
     if BackendVariable.isParam(var) then
       lhs := BackendVariable.varExp(var);
-      rhs := BackendVariable.varBindExp(var);
+      rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       BackendEquation.add(eqn, currentSystem.orderedEqs);
       //var := BackendVariable.setBindExp(var,NONE());
       //var := BackendVariable.setVarFixed(var,false);
       //var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-      currentSystem := BackendVariable.addVarDAE(var,currentSystem);
+      currentSystem := BackendVariable.addVarDAE(var, currentSystem);
     else
       shared := BackendVariable.addGlobalKnownVarDAE(var, shared);
     end if;

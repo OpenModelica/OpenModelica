@@ -76,6 +76,10 @@ readFile("fmi_attributes_08.xml"); getErrorString();
 //     <Derivatives>
 //       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
 //     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"4\" dependenciesKind=\"dependent\" />
+//     </InitialUnknowns>
 //   </ModelStructure>
 // "
 // ""
