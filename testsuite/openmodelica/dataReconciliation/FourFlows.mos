@@ -29,61 +29,7 @@ getErrorString();
 // ==========================================================================
 //
 //
-// OrderedVariables (4)
-// ========================================
-// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
-// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
-// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
-// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
-//
-//
-// OrderedEquation (4, 4)
-// ========================================
-// 1/1 (1): Q1 = q0   [dynamic |0|0|0|0|]
-// 2/2 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
-// 3/3 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
-// 4/4 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
-//
-//
-// OverDetermined-System-Equations (9, 9)
-// ========================================
-// 1/1 (1): Q1 = 0.0   [initial |0|0|0|0|]
-// 2/2 (1): Q2 = 0.0   [initial |0|0|0|0|]
-// 3/3 (1): Q3 = 0.0   [initial |0|0|0|0|]
-// 4/4 (1): Q4 = 0.0   [initial |0|0|0|0|]
-// 5/5 (1): q0 = 100.0   [binding |0|0|0|0|]
-// 6/6 (1): Q1 = q0   [dynamic |0|0|0|0|]
-// 7/7 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
-// 8/8 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
-// 9/9 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
-//
-// Matching
-// ========================================
-// 5 variables and equations
-// var 1 is solved in eqn 4
-// var 2 is solved in eqn 3
-// var 3 is solved in eqn 2
-// var 4 is solved in eqn 1
-// var 5 is solved in eqn 5
-//
-// E-BLT-Equations {6, 7, 8, 9} (4)
-// ========================================
-// 1/1 (1): Q1 = q0   [dynamic |0|0|0|0|]
-// 2/2 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
-// 3/3 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
-// 4/4 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
-//
-//
-// reOrdered-Equations-after-removal (5, 5)
-// ========================================
-// 1/1 (1): Q1 = 0.0   [initial |0|0|0|0|]
-// 2/2 (1): Q2 = 0.0   [initial |0|0|0|0|]
-// 3/3 (1): Q3 = 0.0   [initial |0|0|0|0|]
-// 4/4 (1): Q4 = 0.0   [initial |0|0|0|0|]
-// 5/5 (1): q0 = 100.0   [binding |0|0|0|0|]
-//
-//
-// reOrderedVariables (5)
+// OrderedVariables (5)
 // ========================================
 // 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
 // 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
@@ -91,46 +37,163 @@ getErrorString();
 // 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
 // 5: q0:VARIABLE()  type: Real
 //
+//
+// OrderedEquation (5, 5)
+// ========================================
+// 1/1 (1): q0 = 100.0   [binding |0|0|0|0|]
+// 2/2 (1): Q1 = q0   [dynamic |0|0|0|0|]
+// 3/3 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
+// 4/4 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 5/5 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
 // Matching
 // ========================================
 // 5 variables and equations
-// var 1 is solved in eqn 4
-// var 2 is solved in eqn 3
-// var 3 is solved in eqn 2
-// var 4 is solved in eqn 1
-// var 5 is solved in eqn 5
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 4
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 2
+// var 5 is solved in eqn 1
 //
-// BLT_BLOCKS:
-// ==========================================================================
-// {{4},{3},{2},{1},{5},{-1},{-2},{-3},{-4}}
+// Standard BLT of the original model:(5)
+// ============================================================
+//
+// 5: q0: (1/1): (1): q0 = 100.0
+// 4: Q1: (2/2): (1): Q1 = q0
+// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// 1: Q4: (5/5): (1): Q4 = Q2 + Q3
 //
 //
-// Targets of blocks without predecessors:
+// Variables of interest (4)
 // ========================================
-//
-// Targets of Blue blocks (4)
-// ==============================
-//
-// Block :{4} || blockTargetsInfo :{({4}, 1), ({-4}, -4)} || KnownBlocks :{4} || constantBlocks :{}
-// Block :{3} || blockTargetsInfo :{({3}, 2), ({-3}, -3)} || KnownBlocks :{3} || constantBlocks :{}
-// Block :{2} || blockTargetsInfo :{({2}, 3), ({-2}, -2)} || KnownBlocks :{2} || constantBlocks :{}
-// Block :{1} || blockTargetsInfo :{({1}, 4), ({-1}, -1)} || KnownBlocks :{1} || constantBlocks :{}
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
 //
 //
-// Targets of Red blocks (1)
-// ==============================
-//
-// Block :{5} || blockTargetsInfo :{({5}, 5), ({-1}, -1)} || KnownBlocks :{} || constantBlocks :{}
-//
-//
-// Targets of Brown blocks (0)
-// ==============================
+// Boundary conditions (1)
+// ========================================
+// 1: q0:VARIABLE()  type: Real
 //
 //
+// Binding equations:(1)
+// ============================================================
 //
-// FINAL SET OF EQUATIONS After Reconciliation
+// 5: q0: (1/1): (1): q0 = 100.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(4)
+// ============================================================
+//
+// 1: Q4: (5/5): (1): Q4 = Q2 + Q3
+// 2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 4: Q1: (2/2): (1): Q1 = q0
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// SET_C: {-4, -3, -2}
+// >>>1: Q4: (5/5): (1): Q4 = Q2 + Q3
+// Procedure success
+//
+// >>>2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// Procedure success
+//
+// >>>3: Q2: (3/3): (1): Q2 = a * Q1
+// Procedure success
+//
+// >>>4: Q1: (2/2): (1): Q1 = q0
+// q0 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (5)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+// 5: q0:VARIABLE()  type: Real
+//
+//
+// OrderedEquation (5, 5)
+// ========================================
+// 1/1 (1): Q1 = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): q0 = 100.0   [binding |0|0|0|0|]
+// 3/3 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
+// 4/4 (1): Q1 = Q2 + Q3   [dynamic |0|0|0|0|]
+// 5/5 (1): Q4 = Q2 + Q3   [dynamic |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 5 variables and equations
+// var 1 is solved in eqn 5
+// var 2 is solved in eqn 4
+// var 3 is solved in eqn 3
+// var 4 is solved in eqn 1
+// var 5 is solved in eqn 2
+//
+// Standard BLT of the original model:(5)
+// ============================================================
+//
+// 5: q0: (2/2): (1): q0 = 100.0
+// 4: Q1: (1/1): (1): Q1 = 0.0
+// 3: Q2: (3/3): (1): Q2 = a * Q1
+// 2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// 1: Q4: (5/5): (1): Q4 = Q2 + Q3
+//
+//
+// Variables of interest (4)
+// ========================================
+// 1: Q4:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 0.95 uncertain=Uncertainty.refine)  type: Real
+// 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
+// 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (1)
+// ========================================
+// 1: q0:VARIABLE()  type: Real
+//
+//
+// Binding equations:(2)
+// ============================================================
+//
+// 5: q0: (2/2): (1): q0 = 100.0
+// 4: Q1: (1/1): (1): Q1 = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(3)
+// ============================================================
+//
+// 1: Q4: (5/5): (1): Q4 = Q2 + Q3
+// 2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// 3: Q2: (3/3): (1): Q2 = a * Q1
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>1: Q4: (5/5): (1): Q4 = Q2 + Q3
+// Procedure success
+//
+// >>>2: Q3: (4/4): (1): Q1 = Q2 + Q3
+// Procedure success
+//
+// >>>3: Q2: (3/3): (1): Q2 = a * Q1
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {5, 4, 3}
 // SET_S: {}
 //
 //
@@ -141,11 +204,7 @@ getErrorString();
 // 3/3 (1): Q2 = a * Q1   [dynamic |0|0|0|0|]
 //
 //
-// SET_S_After_Minimal_Extraction (0, 0)
-// ==========================================================================
-//
-//
-// Unknown variables in SET_S  (0)
+// Unknown variables in SET_S (0)
 // ========================================
 //
 //
@@ -161,7 +220,7 @@ getErrorString();
 // 3: Q2:VARIABLE(start = 1.1 uncertain=Uncertainty.refine)  type: Real
 // 4: Q1:VARIABLE(start = 2.1 uncertain=Uncertainty.refine)  type: Real
 //
-// -SET_C:{-4, -3, -2}
+// -SET_C:{5, 4, 3}
 // -SET_S:{}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"

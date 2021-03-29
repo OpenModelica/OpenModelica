@@ -62,6 +62,487 @@ protected type ExtAdjacencyMatrix = list<ExtAdjacencyMatrixRow>;
 
 public constant String UNDERLINE = "==========================================================================";
 
+public function newExtractionAlgorithm
+  "runs the new simplified version of the extraction algorithm
+  which returns SET-C and SET-S "
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystem currentSystem;
+  BackendDAE.EquationArray newOrderedEquationArray, outOtherEqns, outResidualEqns;
+  list<BackendDAE.Equation> newEqnsLst, setC_Eq, setS_Eq, residualEquations, complexEquationList, swappedEquationList;
+  BackendDAE.AdjacencyMatrix adjacencyMatrix;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn, match1, match2;
+  list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  Integer varCount, eqCount;
+  list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations;
+  ExtAdjacencyMatrix sBltAdjacencyMatrix;
+  list<BackendDAE.Var> paramVars, setSVars, residualVars;
+  list<DAE.ComponentRef> cr_lst;
+  BackendDAE.Jacobian simCodeJacobian;
+  BackendDAE.Shared shared;
+  String str, modelicaOutput, modelicaFileName, auxillaryConditionsFilename, auxillaryEquations, intermediateEquationsFilename, intermediateEquations;
+  list<tuple<Integer, list<Integer>>> mappedEbltSetS;
+
+  list<Integer> allVarsList, knowns, unknowns, boundaryConditionVars, exactEquationVars, extractedVarsfromSetS, constantVars, knownVariablesWithEquationBinding, boundaryConditionTaggedEquationSolvedVars, unknownVarsInSetC;
+  BackendDAE.Variables inputVars, outDiffVars, outOtherVars, outResidualVars;
+  Integer procedureCount;
+  Boolean debug = false, status = false;
+
+algorithm
+
+  if Flags.isSet(Flags.DUMP_DATARECONCILIATION) then
+    debug := true;
+  end if ;
+
+  {currentSystem} := inDAE.eqs;
+  shared := inDAE.shared;
+
+  print("\nModelInfo: " + shared.info.fileNamePrefix + "\n" + UNDERLINE + "\n\n");
+
+  (currentSystem, shared) := setBoundaryConditionEquationsAndVars(currentSystem, inDAE.shared, debug);
+
+  // run the recursive procedure until status = true
+  procedureCount := 1;
+  while (not status) loop
+    BackendDump.dumpVariables(currentSystem.orderedVars, "OrderedVariables");
+    BackendDump.dumpEquationArray(currentSystem.orderedEqs, "OrderedEquation");
+    //BackendDump.dumpVariables(shared.globalKnownVars, "GlobalKnownVars");
+
+    allVarsList := List.intRange(BackendVariable.varsSize(currentSystem.orderedVars));
+    varCount := currentSystem.orderedVars.numberOfVars;
+    eqCount := BackendEquation.equationArraySize(currentSystem.orderedEqs);
+
+    // get the adjacency matrix with the current square system
+    (adjacencyMatrix, _, mapEqnIncRow, mapIncRowEqn) := BackendDAEUtil.adjacencyMatrixScalar(currentSystem, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(shared));
+
+    // get adjacency matrix with equations and list of variables present (e.g) {(1,{2,3,4}),(2,{4,5,6})}
+    sBltAdjacencyMatrix := getSBLTAdjacencyMatrix(adjacencyMatrix);
+
+    // Perform standard matching on the square system
+    (match1, match2, _, _, _) := Matching.RegularMatching(adjacencyMatrix, varCount, eqCount);
+
+    BackendDump.dumpMatching(match1);
+
+    // get list of solved Vars and equations
+    (solvedEqsAndVarsInfo, matchedEqsLst) := getSolvedEquationAndVarsInfo(match1);
+
+    // get the binding equation list and vars
+    bindingEquations := getBindingEquation(currentSystem, mapIncRowEqn);
+    bindingEquations := List.flatten(List.map1r(bindingEquations, listGet, arrayList(mapEqnIncRow)));
+
+    // Extract equations tagged as annotation(__OpenModelica_BoundaryCondition = true) and annotation(__OpenModelica_ApproximatedEquation = true)
+    (approximatedEquations, boundaryConditionEquations) := getEquationsTaggedApproximatedOrBoundaryCondition(BackendEquation.equationList(currentSystem.orderedEqs), 1);
+
+    if debug then
+      BackendDump.dumpEquationList(List.map1r(approximatedEquations, BackendEquation.get, currentSystem.orderedEqs), "ApproximatedEquations");
+      BackendDump.dumpEquationList(List.map1r(boundaryConditionEquations, BackendEquation.get, currentSystem.orderedEqs), "boundaryConditionEquations");
+    end if;
+
+    // get the Index mapping for approximated and constant equations
+    approximatedEquations := List.flatten(List.map1r(approximatedEquations, listGet, arrayList(mapEqnIncRow)));
+    boundaryConditionEquations := List.flatten(List.map1r(boundaryConditionEquations, listGet, arrayList(mapEqnIncRow)));
+
+    // extract boundaryConditionTaggedEquations Variables
+    boundaryConditionTaggedEquationSolvedVars := getBoundaryConditionVariables(boundaryConditionEquations, solvedEqsAndVarsInfo);
+
+    if debug then
+      print("\nApproximated and BoundaryCondition Equation Indexes :\n===========================================");
+      print("\nApproximatedEquationIndexes      :" + dumplistInteger(approximatedEquations));
+      print("\nBoundayConditionEquationIndexes  :" + dumplistInteger(boundaryConditionEquations));
+      print("\n");
+    end if;
+
+
+    // extract knowns, BoundaryConditions and exactEquationVars
+    (knowns, boundaryConditionVars, exactEquationVars) := getVariablesBlockCategories(currentSystem.orderedVars, allVarsList);
+    // update the boundaryCondtions vars
+    boundaryConditionVars := listAppend(boundaryConditionVars, boundaryConditionTaggedEquationSolvedVars) annotation(__OpenModelica_DisableListAppendWarning=true);
+
+    if debug then
+      print("\nVariablesCategories\n=============================");
+      print("\nknownVars                    :" + dumplistInteger(knowns));
+      print("\nboundaryConditionVars        :" + dumplistInteger(boundaryConditionVars));
+      print("\nexactEquationVars            :" + dumplistInteger(exactEquationVars));
+      print("\nadjacencyMatrix              :" + anyString(adjacencyMatrix) + "\n");
+    end if;
+
+    // dump the information
+    dumpSetSVarsSolvedInfo(matchedEqsLst, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Standard BLT of the original model");
+    BackendDump.dumpVarList(List.map1r(listReverse(knowns), BackendVariable.getVarAt, currentSystem.orderedVars),"Variables of interest");
+    BackendDump.dumpVarList(List.map1r(listReverse(boundaryConditionVars), BackendVariable.getVarAt, currentSystem.orderedVars),"Boundary conditions");
+    dumpSetSVarsSolvedInfo(bindingEquations, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Binding equations");
+    BackendDump.dumpEquationList(List.map1r(approximatedEquations, BackendEquation.get, currentSystem.orderedEqs), "Approximated equations");
+    BackendDump.dumpEquationList(List.map1r(boundaryConditionEquations, BackendEquation.get, currentSystem.orderedEqs), "boundary condition equations");
+
+    // get E-BLT Blocks
+    ebltEqsLst := getEBLTEquations(knowns, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem);
+    // remove binding equations from E-BLT
+    ebltEqsLst := List.setDifferenceOnTrue(ebltEqsLst, bindingEquations, intEq);
+
+    // dump EBLT Equations which computes variables of interest
+    dumpSetSVarsSolvedInfo(ebltEqsLst, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "E-BLT: equations that compute the variables of interest");
+
+    (currentSystem, tempSetS, mappedEbltSetS, status) := traverseEBLTAndExtractSetCAndSetS(currentSystem, ebltEqsLst, sBltAdjacencyMatrix, knowns, boundaryConditionVars, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, solvedEqsAndVarsInfo, debug);
+
+    if not status then
+      print("\nExtraction procedure failed for iteration count: " + intString(procedureCount) + ", re-running with modified model\n" + UNDERLINE + "\n");
+    end if;
+
+    procedureCount := procedureCount + 1;
+
+  end while;
+
+  print("\nExtraction procedure is successfully completed in iteration count: " + intString(procedureCount-1) + "\n" + UNDERLINE + "\n");
+
+  // remove approximated equations from Set-C and Set-S
+  ebltEqsLst := List.setDifferenceOnTrue(ebltEqsLst, approximatedEquations, intEq);
+  tempSetS := List.setDifferenceOnTrue(tempSetS, approximatedEquations, intEq);
+
+  // temporary work around for condition-1 failing, basically complex equations or array equations should not be present in Set-C and should be swaped another equation Set-S
+  (ebltEqsLst, tempSetS, complexEquationList, swappedEquationList) := swapComplexEquationsInSetC(ebltEqsLst, tempSetS, mappedEbltSetS, currentSystem, mapIncRowEqn);
+
+  if debug then
+    dumpSetSVarsSolvedInfo(tempSetS, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Set-S Solved-Variables Information");
+  end if;
+
+  //print("\nUnmapped set of equations after extraction algorithm \n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(ebltEqsLst)+"\n" +"SET_S: "+ dumplistInteger(tempSetS)+ "\n\n" );
+  extractedVarsfromSetS := getVariablesAfterExtraction({}, tempSetS, sBltAdjacencyMatrix);
+  extractedVarsfromSetS := List.setDifferenceOnTrue(extractedVarsfromSetS, knowns, intEq);
+
+  setC := List.unique(getAbsoluteIndexHelper(ebltEqsLst, mapIncRowEqn));
+  setS := List.unique(getAbsoluteIndexHelper(tempSetS, mapIncRowEqn));
+  //setC := List.setDifferenceOnTrue(setC, setS, intEq);
+
+  setC_Eq := getEquationsFromSBLTAndEBLT(setC, currentSystem.orderedEqs, {});
+  setS_Eq := getEquationsFromSBLTAndEBLT(setS, currentSystem.orderedEqs, {});
+
+  print("\nFinal set of equations after extraction algorithm \n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(setC)+"\n" +"SET_S: "+ dumplistInteger(setS)+ "\n\n" );
+
+  BackendDump.dumpEquationArray(BackendEquation.listEquation(setC_Eq), "SET_C");
+  BackendDump.dumpEquationArray(BackendEquation.listEquation(setS_Eq), "SET_S");
+
+
+  // prepare outdiff vars (i.e) variables of interest
+  outDiffVars := BackendVariable.listVar(List.map1r(knowns, BackendVariable.getVarAt, currentSystem.orderedVars));
+  // set uncertain variables unreplaceable attributes to be true
+  outDiffVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarUnreplaceable, true));
+
+  // prepare set-c residual equations and residual vars
+  (_, residualEquations) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(setC_Eq), BackendEquation.traverseEquationToScalarResidualForm, (shared.functionTree, {}));
+  (residualEquations, residualVars) := BackendEquation.convertResidualsIntoSolvedEquations(listReverse(residualEquations), "$res_F_", BackendVariable.makeVar(DAE.emptyCref), 1);
+  outResidualVars := BackendVariable.listVar(listReverse(residualVars));
+  outResidualEqns := BackendEquation.listEquation(residualEquations);
+
+  // prepare set-s other equations
+  outOtherEqns := BackendEquation.listEquation(setS_Eq);
+  // extract parameters from set-s equations
+  paramVars := BackendEquation.equationsVars(outOtherEqns, shared.globalKnownVars);
+  //setSVars  := BackendEquation.equationsVars(outOtherEqns, currentSystem.orderedVars);
+
+  // prepare variables stucture from list of extracted equations
+  outOtherVars := BackendVariable.listVar(List.map1r(extractedVarsfromSetS, BackendVariable.getVarAt, currentSystem.orderedVars));
+
+  dumpSetSVars(outOtherVars, "Unknown variables in SET_S");
+  //BackendDump.dumpVariables(BackendVariable.listVar(setSVars),"Unknown variables in SET_S_checks ");
+  BackendDump.dumpVariables(BackendVariable.listVar(paramVars),"Parameters in SET_S");
+
+  // write set-C equation to HTML file
+  auxillaryConditionsFilename := shared.info.fileNamePrefix + "_AuxiliaryConditions.html";
+  auxillaryEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setC_Eq), "Auxiliary conditions" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setC_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setC_Eq))) + ")");
+  System.writeFile(auxillaryConditionsFilename, auxillaryEquations);
+
+  // write set-S equation to HTML file
+  intermediateEquationsFilename := shared.info.fileNamePrefix + "_IntermediateEquations.html";
+
+  intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(BackendEquation.listEquation(setS_Eq))) + ", " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(setS_Eq))) + ")");
+  System.writeFile(intermediateEquationsFilename, intermediateEquations);
+
+  VerifyDataReconciliation(ebltEqsLst, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq, shared, setC, setS);
+
+  if debug then
+    BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
+    BackendDump.dumpVariables(outResidualVars, "Jacobian_outResidualVars");
+    BackendDump.dumpVariables(outOtherVars, "Jacobian_outOtherVars");
+    BackendDump.dumpEquationArray(outResidualEqns, "Jacobian_ResidualEquation");
+    BackendDump.dumpEquationArray(outOtherEqns, "Jacobian_other_Equation");
+  end if;
+
+  // generate symbolicJacobian matrix F
+  (simCodeJacobian, shared) := SymbolicJacobian.getSymbolicJacobian(outDiffVars, outResidualEqns, outResidualVars, outOtherEqns, outOtherVars, shared, outOtherVars, "F", false);
+
+  // put the jacobian also into shared object
+  shared.dataReconciliationData := SOME(BackendDAE.DATA_RECON(symbolicJacobian=simCodeJacobian, setcVars=outResidualVars, datareconinputs=outDiffVars));
+
+  // Prepare the final DAE System with Set-C equations as residual equations
+  currentSystem := BackendDAEUtil.setEqSystVars(currentSystem, BackendVariable.mergeVariables(outResidualVars, outOtherVars));
+  currentSystem := BackendDAEUtil.setEqSystEqs(currentSystem, BackendEquation.merge(outResidualEqns, outOtherEqns));
+
+  inputVars := BackendVariable.listVar(List.map1(BackendVariable.varList(outDiffVars), BackendVariable.setVarDirection, DAE.INPUT()));
+  shared := BackendDAEUtil.setSharedGlobalKnownVars(shared, BackendVariable.mergeVariables(shared.globalKnownVars, inputVars));
+
+  // write the list of known variables to the csv file with the headers
+  if not System.regularFileExists(inDAE.shared.info.fileNamePrefix + "_Inputs.csv") then
+    str := "Variable Names,Measured Value-x,HalfWidthConfidenceInterval,xi,xk,rx_ik\n";
+    str := dumpToCsv(str, BackendVariable.varList(outDiffVars));
+    System.writeFile(shared.info.fileNamePrefix + "_Inputs.csv", str);
+  end if;
+
+  // write the new Reconciled vars and equations to .mo File
+  modelicaFileName := "Reconciled_"+ System.stringReplace(shared.info.fileNamePrefix, ".","_");
+  modelicaOutput := "/* This is not Complete ThermoSysPro variables and functions needs to be corrected manually */\n";
+  modelicaOutput := modelicaOutput + "model " + modelicaFileName ;
+  // Variables Declaration section
+  modelicaOutput := dumpExtractedVars(modelicaOutput, BackendVariable.varList(outDiffVars), "Variables of Interest");
+  modelicaOutput := dumpExtractedVars(modelicaOutput, paramVars, "parameters in SET-S");
+  modelicaOutput := dumpResidualVars(modelicaOutput, BackendVariable.varList(outResidualVars), "residualVars");
+  modelicaOutput := dumpExtractedVars(modelicaOutput, BackendVariable.varList(outOtherVars), "remaining variables in setS");
+  // Equation Declaration section
+  modelicaOutput := modelicaOutput + "\nequation";
+  modelicaOutput := dumpExtractedEquations(modelicaOutput, outResidualEqns, "set-C Canonical form");
+  modelicaOutput := dumpExtractedEquations(modelicaOutput, outOtherEqns, "remaining equations in Set-S");
+  modelicaOutput := modelicaOutput + "\nend " + modelicaFileName + ";";
+  System.writeFile(modelicaFileName + ".mo", modelicaOutput);
+
+  // update the DAE with new system of equations and vars computed by the dataReconciliation extraction algorithm
+  outDAE := BackendDAE.DAE({currentSystem}, shared);
+
+end newExtractionAlgorithm;
+
+protected function getEBLTEquations
+  "returns the E-BLT equations which is basically set-C for the new extraction algorithm"
+  input list<Integer> knowns;
+  input list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  input array<Integer> mapIncRowEqn;
+  input BackendDAE.EqSystem currentSystem;
+  output list<Integer> ebltequations = {};
+protected
+  Integer eq, var;
+algorithm
+  for v in solvedEqsAndVarsInfo loop
+    (eq, var) := v;
+    if listMember(var, knowns) then
+      ebltequations := eq :: ebltequations;
+    end if;
+  end for;
+end getEBLTEquations;
+
+protected function getBindingEquation
+  "returns the binding equations"
+  input BackendDAE.EqSystem currentSystem;
+  input array<Integer> mapIncRowEqn;
+  output list<Integer> bindingEquations = {};
+protected
+  Integer index = 1;
+algorithm
+  for eq in BackendEquation.equationList(currentSystem.orderedEqs) loop
+    if (BackendEquation.isBindingEquation(eq)) then
+      bindingEquations := index :: bindingEquations;
+    end if;
+    index := index + 1;
+  end for;
+end getBindingEquation;
+
+protected function swapComplexEquationsInSetC
+  "work around for condition-1 failed, because complex equations are detected
+  in Set-C and it should be swapped with any simple equation in Set-S with procedure = success"
+  input output list<Integer> ebltEqsLst;
+  input output list<Integer> tempSetS;
+  input list<tuple<Integer, list<Integer>>> mappedEbltSetS;
+  input BackendDAE.EqSystem currentSystem;
+  input array<Integer> mapIncRowEqn;
+  output list<BackendDAE.Equation> complexEquationList;
+  output list<BackendDAE.Equation> swappedEquationList;
+protected
+  Integer eqIndex;
+  list<Integer> matchedEqsLst;
+  BackendDAE.Equation eq, swapEq;
+algorithm
+  complexEquationList := {};
+  swappedEquationList := {};
+  for item in mappedEbltSetS loop
+    (eqIndex, matchedEqsLst) := item;
+    eq := BackendEquation.get(currentSystem.orderedEqs, listGet(arrayList(mapIncRowEqn), eqIndex));
+    if BackendEquation.isComplexEquation(eq) then
+      complexEquationList := eq :: complexEquationList;
+      // swap complex equation in Set-C with simple equation in Set-S with procedure succeeded
+      for index in matchedEqsLst loop
+        swapEq := BackendEquation.get(currentSystem.orderedEqs, listGet(arrayList(mapIncRowEqn), index));
+        if not BackendEquation.isComplexEquation(swapEq) then
+          ebltEqsLst := List.removeOnTrue(eqIndex, intEq, ebltEqsLst); // remove the complex equation from set-C
+          tempSetS := List.removeOnTrue(index, intEq, tempSetS); // remove the simple equation from set-S
+          // swap the equations
+          tempSetS := eqIndex :: tempSetS; // add the complex equation to set-S
+          ebltEqsLst := index :: ebltEqsLst; // add the simple equation to set-C
+          swappedEquationList := swapEq :: swappedEquationList;
+          break;
+        end if;
+      end for;
+    end if;
+  end for;
+
+  if not listEmpty(complexEquationList) then
+    BackendDump.dumpEquationArray(BackendEquation.listEquation(listReverse(complexEquationList)), "Warning complex equation detected in Set-C");
+    BackendDump.dumpEquationArray(BackendEquation.listEquation(listReverse(swappedEquationList)), "Swapping Equations from Set-S");
+  end if;
+end swapComplexEquationsInSetC;
+
+protected function traverseEBLTAndExtractSetCAndSetS
+  input output BackendDAE.EqSystem currentSystem;
+  input list<Integer> ebltEquations;
+  input ExtAdjacencyMatrix sBltAdjacencyMatrix;
+  input list<Integer> knownVars;
+  input list<Integer> boundaryConditionVars;
+  input BackendDAE.Variables orderedVars;
+  input BackendDAE.EquationArray orderedEqs;
+  input array<Integer> mapIncRowEqn;
+  input list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  input Boolean debug;
+  output list<Integer> finalSetS;
+  output list<tuple<Integer, list<Integer>>> mappedEbltSetS "eg. {(set-C eq, {Set-S equations})}";
+  output Boolean outStatus = false;
+protected
+  list<Integer> intermediateVars, minimalSetS, visitedVars, eqlistToRemove;
+  Boolean status;
+  list<tuple<Integer, Integer>> setB;
+  Integer varnumber, eqnumber;
+  BackendDAE.Var var;
+  DAE.Exp lhs, rhs;
+  BackendDAE.Equation eqn;
+  list<BackendDAE.Equation> newEqnLst;
+algorithm
+  print("\nExtracting SET-C and SET-S from E-BLT\nProcedure is applied on each equation in the E-BLT\n" + UNDERLINE);
+  setB := {};
+  eqlistToRemove := {};
+  finalSetS := {};
+  mappedEbltSetS := {};
+  for eq in ebltEquations loop
+    intermediateVars := getVariablesAfterExtraction({eq}, {}, sBltAdjacencyMatrix);
+    intermediateVars := listReverse(List.setDifferenceOnTrue(intermediateVars, knownVars, intEq));
+    dumpSetSTargetEquations(eq, solvedEqsAndVarsInfo, mapIncRowEqn, orderedEqs, orderedVars, ">>>");
+    minimalSetS := {};
+    visitedVars := {};
+    status := true;
+    (_, minimalSetS, visitedVars, status) := extractNewMinimalSetS(intermediateVars, sBltAdjacencyMatrix, knownVars, boundaryConditionVars, orderedVars, orderedEqs, mapIncRowEqn, minimalSetS, visitedVars, solvedEqsAndVarsInfo, status, debug);
+    print("\nProcedure " + boolSuccessOrFailed(status) + "\n");
+    // mapped Set-S equations for each individual E-BLt Blocks (e.g) {(1, {2, 3, 4})}
+    mappedEbltSetS := (eq, listReverse(minimalSetS)) :: mappedEbltSetS;
+
+    // add the equations to final Set-S
+    for index in minimalSetS loop
+      if not listMember(index, finalSetS) then
+        finalSetS := index :: finalSetS;
+      end if;
+    end for;
+
+    // if status == false, prepare setB = {(var, equation to be removed)}
+    if not status then
+      (_, varnumber) := getSolvedVariableNumber(eq, solvedEqsAndVarsInfo);
+      if listEmpty(minimalSetS) then
+        minimalSetS := {eq}; // first equation is detected as boundary condition equation
+      end if;
+      if not listMember(List.last(listReverse(minimalSetS)), eqlistToRemove) then
+        eqlistToRemove := List.last(listReverse(minimalSetS)) :: eqlistToRemove;
+        setB := (varnumber, List.last(listReverse(minimalSetS))) :: setB;
+      end if;
+    end if;
+  end for;
+
+  if not listEmpty(setB) then
+    newEqnLst := {};
+    for item in listReverse(setB) loop
+      (varnumber, eqnumber) := item;
+      var := BackendVariable.getVarAt(orderedVars, varnumber);
+      lhs := BackendVariable.varExp(var);
+      rhs := DAE.Exp.RCONST(real = 0);
+      eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
+      newEqnLst := eqn :: newEqnLst;
+    end for;
+
+    if debug then
+      print("\nGenerate Modified Model, For each failed procedure, the equation involving the boundary condition that failed the procedure is replaced by x = 0 where x is the variable of interest of the procedure.\n");
+      dumpSetSVarsSolvedInfo(eqlistToRemove, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Equations to remove");
+      BackendDump.dumpEquationList(newEqnLst,"Equations to add");
+    end if;
+
+    eqlistToRemove := List.unique(List.map1r(eqlistToRemove, listGet, arrayList(mapIncRowEqn)));
+    currentSystem := deleteEquationsFromEqSyst(currentSystem, eqlistToRemove);
+    currentSystem.orderedEqs := BackendEquation.merge(currentSystem.orderedEqs, BackendEquation.listEquation(listReverse(newEqnLst)));
+  else
+    outStatus := true;
+    finalSetS := listReverse(finalSetS);
+    mappedEbltSetS := listReverse(mappedEbltSetS);
+  end if;
+
+end traverseEBLTAndExtractSetCAndSetS;
+
+protected function boolSuccessOrFailed
+  "return success or failed"
+  input Boolean status;
+  output String outString;
+algorithm
+  outString := if status then "success" else "failed";
+end boolSuccessOrFailed;
+
+protected function extractNewMinimalSetS
+  "construct a minimal set-S using recursive algorithm, which are needed to solve intermediate
+  variables in set-c and also avoid complication when calculating jacobians"
+  input output list<Integer> unknownsInSetC;
+  input ExtAdjacencyMatrix sBltAdjacencyMatrix;
+  input list<Integer> knownVars;
+  input list<Integer> boundaryConditionVars;
+  input BackendDAE.Variables orderedVars;
+  input BackendDAE.EquationArray orderedEqs;
+  input array<Integer> mapIncRowEqn;
+  input output list<Integer> minimalSetS;
+  input output list<Integer> visitedVars;
+  input list<tuple<Integer,Integer>> solvedEqsAndVarsInfo;
+  input output Boolean status;
+  input Boolean debug;
+protected
+  Integer firstMatchedEquation, mappedEq, varIndex;
+  BackendDAE.Var var;
+  BackendDAE.Equation tmpEq;
+  list<Integer> rest, vars, intermediateVars, V_EQ, intermediateVarsInMatchedEquation;
+algorithm
+  while not listEmpty(unknownsInSetC) loop
+    varIndex :: rest := unknownsInSetC;
+    visitedVars := varIndex :: visitedVars;
+    var := BackendVariable.getVarAt(orderedVars, varIndex);
+
+    // break the loop, when boundary condition detected
+    if listMember(varIndex, boundaryConditionVars) then
+      print("\n"+ ComponentReference.printComponentRefStr(var.varName) + " is a boundary condition ---> exit procedure");
+      status := false;
+      break;
+    end if;
+
+    (mappedEq, _) := getSolvedEquationNumber(varIndex, solvedEqsAndVarsInfo);
+    minimalSetS := mappedEq :: minimalSetS;
+
+    // get intermediate vars in matched equations
+    vars := getVariablesAfterExtraction({mappedEq}, {}, sBltAdjacencyMatrix);
+
+    // remove knownVars, already visited vars from intermediate var list
+    intermediateVarsInMatchedEquation := List.setDifferenceOnTrue(vars, knownVars, intEq);
+    intermediateVars := List.setDifferenceOnTrue(intermediateVarsInMatchedEquation, {varIndex}, intEq);
+    intermediateVars := List.setDifferenceOnTrue(intermediateVars, visitedVars, intEq);
+
+    dumpSetSTargetEquations(mappedEq, solvedEqsAndVarsInfo, mapIncRowEqn, orderedEqs, orderedVars, "");
+
+    rest := List.setDifferenceOnTrue(rest, visitedVars, intEq);
+
+    // update the intermediate varlist in the loop
+    unknownsInSetC := List.unique(listAppend(intermediateVars, rest));
+
+    if debug then
+      dumpMininimalExtraction(varIndex, var, mappedEq, mapIncRowEqn, orderedEqs, minimalSetS, intermediateVarsInMatchedEquation, rest, unknownsInSetC, false, visitedVars=visitedVars);
+    end if;
+
+  end while;
+end extractNewMinimalSetS;
+
 public function extractionAlgorithm
   "runs the extraction Algorithm for dataReconciliation
   Which return two sets of equations namely SET-C and SET-S"
@@ -326,7 +807,7 @@ algorithm
 
   print("\nFINAL SET OF EQUATIONS After Reconciliation \n" + UNDERLINE + "\n" +"SET_C: "+dumplistInteger(tempSetC)+"\n" +"SET_S: "+ dumplistInteger(tempSetS)+ "\n\n" );
   if debug then
-    dumpSetSVarsSolvedInfo(tempSetS, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars);
+    dumpSetSVarsSolvedInfo(tempSetS, solvedEqsAndVarsInfo, mapIncRowEqn, currentSystem.orderedEqs, currentSystem.orderedVars, "Set-S Solved-Variables Information");
   end if;
 
   //extractedVarsfromSetS := getVariablesAfterExtraction({}, tempSetS, sBltAdjacencyMatrix);
@@ -416,7 +897,7 @@ algorithm
   intermediateEquations := dumpExtractedEquationsToHTML(BackendEquation.listEquation(setS_Eq), "Intermediate equations");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
-  VerifyDataReconciliation(tempSetC, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq, shared);
+  VerifyDataReconciliation(tempSetC, tempSetS, knowns, boundaryConditionVars, sBltAdjacencyMatrix, solvedEqsAndVarsInfo, exactEquationVars, approximatedEquations, currentSystem.orderedVars, currentSystem.orderedEqs, mapIncRowEqn, outOtherVars, setS_Eq, shared, setC, setS);
 
   if debug then
     BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
@@ -542,6 +1023,7 @@ protected function dumpMininimalExtraction
   input list<Integer> rest;
   input list<Integer> V_EQ;
   input Boolean falseBlock;
+  input list<Integer> visitedVars = {};
 protected
   Integer mappedEq;
   BackendDAE.Equation tmpEq;
@@ -562,6 +1044,7 @@ algorithm
     print("\nMatched Equation             : " + BackendDump.equationString(tmpEq));
     print("\nS'                           : " + dumplistInteger(minimalSetS));
     print("\nUnknowns in matchedEquation  : " + dumplistInteger(intermediateVars));
+    print("\nVisited vars                 : " + dumplistInteger(visitedVars));
     print("\nRemaining Vars               : " + dumplistInteger(rest));
     print("\nV_EQ                         : " + dumplistInteger(V_EQ) + "\n");
   end if;
@@ -661,7 +1144,7 @@ algorithm
   else
     outstring := "<html>\n<body>\n<h2>" + comment + "</h2>\n<ol>";
     for eq in BackendEquation.equationList(eqs) loop
-      outstring := outstring + "\n" + "  <li>" + BackendDump.equationString(eq) + " </li>";
+      outstring := outstring + "\n" + "  <li>" + "(" +  intString(BackendEquation.equationSize(eq)) + "): " + BackendDump.equationString(eq) + " </li>";
     end for;
     outstring := outstring + "\n</ol>\n</body>\n</html>";
   end if;
@@ -687,7 +1170,7 @@ algorithm
     if BackendVariable.isRealParam(var) and BackendVariable.hasOpenModelicaBoundaryConditionAnnotation(var) then
       //print("\n knownsVars :" + anyString(var.bindExp));
       lhs := BackendVariable.varExp(var);
-      rhs := BackendVariable.varBindExp(var);
+      rhs := BackendVariable.varBindExpStartValueNoFail(var);
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
       eqnLst := eqn :: eqnLst;
       var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
@@ -850,6 +1333,27 @@ algorithm
   outList := listReverse(outList);
 end getAbsoluteIndexHelper;
 
+protected function dumpSetSTargetEquations
+  "dumps set-S equations solved var info along with equations"
+  input Integer eq;
+  input list<tuple<Integer, Integer>> solvedEqsVarInfo;
+  input array<Integer> mapIncRowEqn;
+  input BackendDAE.EquationArray orderedEqs;
+  input BackendDAE.Variables orderedVars;
+  input String heading;
+protected
+  Integer count = 1, varNumber, mappedEq;
+  BackendDAE.Var var;
+  BackendDAE.Equation tmpEq;
+algorithm
+  (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
+  var := BackendVariable.getVarAt(orderedVars, varNumber);
+  mappedEq := listGet(arrayList(mapIncRowEqn), eq);
+  tmpEq := BackendEquation.get(orderedEqs, mappedEq);
+  print("\n" + heading + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): " + BackendDump.equationString(tmpEq));
+  count := count + 1;
+end dumpSetSTargetEquations;
+
 protected function dumpSetSVarsSolvedInfo
   "dumps set-S equations solved var info along with equations"
   input list<Integer> tempSetS;
@@ -857,19 +1361,21 @@ protected function dumpSetSVarsSolvedInfo
   input array<Integer> mapIncRowEqn;
   input BackendDAE.EquationArray orderedEqs;
   input BackendDAE.Variables orderedVars;
+  input String heading;
 protected
   Integer count = 1, varNumber, mappedEq;
   BackendDAE.Var var;
   BackendDAE.Equation tmpEq;
 algorithm
-  print("\nSet-S Solved-Variables Information :" + "(" + intString(listLength(tempSetS))  + ")" + "\n==========================================\n");
+  if not stringEmpty(heading) then
+    print("\n" + heading + ":" + "(" + intString(listLength(tempSetS))  + ")" + "\n============================================================\n");
+  end if;
   for eq in tempSetS loop
     (_, varNumber) := getSolvedVariableNumber(eq, solvedEqsVarInfo);
     var := BackendVariable.getVarAt(orderedVars, varNumber);
     mappedEq := listGet(arrayList(mapIncRowEqn), eq);
     tmpEq := BackendEquation.get(orderedEqs, mappedEq);
-    print("\n" + intString(count) + ": "  + "eqn " + intString(eq)  + " solves var " + intString(varNumber) + " => " + ComponentReference.printComponentRefStr(var.varName));
-    print("\n" + "   ("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + BackendDump.equationString(tmpEq) + "\n");
+    print("\n" + intString(varNumber) + ": "  + ComponentReference.printComponentRefStr(var.varName) + ": " + "("  + intString(mappedEq) + "/"  + intString(eq)  + "): " + "(" +  intString(BackendEquation.equationSize(tmpEq)) + "): "  + BackendDump.equationString(tmpEq));
     count := count + 1;
   end for;
   print("\n\n");
@@ -1819,6 +2325,8 @@ public function VerifyDataReconciliation
   input BackendDAE.Variables outsetS_vars;
   input list<BackendDAE.Equation> outsetS_eq;
   input BackendDAE.Shared shared;
+  input list<Integer> mappedSetC = {};
+  input list<Integer> mappedSetS = {};
 protected
   list<Integer> matchedeq, matchedknownssetc, matchedunknownssetc, matchedknownssets, matchedunknownssets;
   list<Integer> tmpunknowns, tmpknowns, tmplist1, tmplist2, tmplist3, tmplist1sets, setstmp;
@@ -1835,15 +2343,15 @@ algorithm
 
   var := List.map1r(listReverse(knowns), BackendVariable.getVarAt, allVars);
   BackendDump.dumpVarList(var, "knownVariables:"+ dumplistInteger(listReverse(knowns)));
-  print("-SET_C:"+ dumplistInteger(setc)+ "\n" + "-SET_S:" + dumplistInteger(sets) +"\n\n");
+  print("-SET_C:"+ dumplistInteger(mappedSetC)+ "\n" + "-SET_S:" + dumplistInteger(mappedSetS) +"\n\n");
 
-  auxilliaryConditions := intString(listLength(setc));
+  auxilliaryConditions := intString(listLength(mappedSetC));
   varsToReconcile := intString(listLength(knowns));
 
   //Condition-1
   condition1 := "Condition-1 \"SET_C and SET_S must not have no equations in common\" ";
   print(condition1 + "\n" + UNDERLINE + "\n");
-  matchedeq := List.intersectionOnTrue(setc, sets, intEq);
+  matchedeq := List.intersectionOnTrue(mappedSetC, mappedSetS, intEq);
 
   if listEmpty(matchedeq) then
     print("-Passed\n\n");
@@ -1934,14 +2442,16 @@ algorithm
   condition5 := "Condition-5 \"SET_S should be square\" ";
   print(condition5 + "\n" + UNDERLINE + "\n");
 
-  if(listEmpty(sets)) then
+  if(listEmpty(outsetS_eq)) then
     print("-Passed"+"\n"+"-SET_S contains 0 intermediate variables and 0 equations \n\n");
     return;
   else
-    if(listLength(sets)==listLength(BackendVariable.varList(outsetS_vars))) then
+    //BackendEquation.equationArraySize(inEqns)
+    //BackendEquation.equationArraySize(BackendEquation.listEquation(outsetS_eq));
+    if(BackendEquation.equationArraySize(BackendEquation.listEquation(outsetS_eq)) == listLength(BackendVariable.varList(outsetS_vars))) then
       print("-Passed" + "\n "+ "Set_S has " + intString(listLength(sets)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables\n\n");
     else
-      condition5 := "Set-S has " + intString(listLength(sets)) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables";
+      condition5 := "Set-S has " + intString(BackendEquation.equationArraySize(BackendEquation.listEquation(outsetS_eq))) + " equations and " + intString(listLength(BackendVariable.varList(outsetS_vars))) + " variables";
       print("-Failed" + "\n "+ condition5 + "\n\n");
       Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed: Set_S should be square: The data reconciliation problem is ill-posed"});
       generateCompileTimeHtmlReport(shared, "<b>Internal Error:</b> Condition 5-Failed: \"Set_S should be square\": The data reconciliation problem is ill-posed", auxilliaryConditions, varsToReconcile, condition5 = condition5);
