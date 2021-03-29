@@ -1721,7 +1721,7 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
     qreal bottom = pGraphicsView->mMergedCoOrdinateSystem.getBottom();
     qreal right = pGraphicsView->mMergedCoOrdinateSystem.getRight();
     qreal top = pGraphicsView->mMergedCoOrdinateSystem.getTop();
-    QRectF rectangle = QRectF(left, bottom, qFabs(left - right), qFabs(bottom - top));
+    QRectF rectangle = QRectF(qMin(left, right), qMin(bottom, top), qFabs(left - right), qFabs(bottom - top));
     if (rectangle.width() < 1) {
       rectangle = QRectF(-100.0, -100.0, 200.0, 200.0);
     }
