@@ -8015,7 +8015,7 @@ algorithm
   dae := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
+  dae := causalizeDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), matchingAlgorithm, daeHandler, true);
   execStat("causalizeDAE (first run)");
   //fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump", dae));
 
