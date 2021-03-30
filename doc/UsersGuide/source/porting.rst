@@ -2,7 +2,7 @@ Porting Modelica libraries to OpenModelica
 ===========
 
 One of the goals of OpenModelica is to provide a full, no-compromise implementation
-of the latest version of the 
+of the latest version of the
 `Modelica Language Specification <https://specification.modelica.org>`_,
 released by the non-profit `Modelica Association <https://www.modelica.org>`_.
 This means that a main requirement for a Modelica library to work in
@@ -54,7 +54,7 @@ possibly followed by a space and by the version number (e.g. *Modelica 3.2.3*).
 
 Modifiers for arrays
 -------
-According to the rules set forth in `Section 7.2.5 <https://specification.modelica.org/maint/3.5/inheritance-modification-and-redeclaration.html#modifiers-for-array-elements>`_ 
+According to the rules set forth in `Section 7.2.5 <https://specification.modelica.org/maint/3.5/inheritance-modification-and-redeclaration.html#modifiers-for-array-elements>`_
 of the language specification, when instantiating arrays of components, modifier
 values should be arrays of the same size of the component array, unless the *each*
 prefix is introduced, in which case the scalar modifier values is applied to
@@ -109,7 +109,7 @@ conditional input connectors, one can use the following patterns:
   end M;
 
 where conditional components are only used in connect equations. The following
-patterns instead are not legal: 
+patterns instead are not legal:
 
 .. code-block:: modelica
 
@@ -248,7 +248,7 @@ declaration is not valid:
     input Real x;
     output Real y;
     Real z;
-  algorithm 
+  algorithm
     z := 2;
     y := x+z;
   end f;
@@ -262,7 +262,7 @@ and should be fixed by putting the variable *z* in the protected section:
     output Real y;
   protected
     Real z;
-  algorithm 
+  algorithm
     z := 2;
     y := x+z;
   end f;
@@ -351,7 +351,7 @@ for example the following model:
     z = 10*x + 1;
   end M;
 
-This model has one state variable *x*, no variables with *fixed = true* 
+This model has one state variable *x*, no variables with *fixed = true*
 attributes and no initial equation, so there is one missing initial condition.
 One tool could choose to add the *fixed = true* attribute to the state variable
 *x*, fixing it to the default value of zero of its *start* attribute. Or, it

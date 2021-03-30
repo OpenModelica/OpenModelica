@@ -1,0 +1,36 @@
+// name: solveSingleEquations
+// keywords: NewBackend
+// status: correct
+
+
+loadString("
+model singleEquations
+  Real x(start=3);
+  Real y;
+  Real z;
+equation
+  sin(x) - time = 0;        // Solution: x=2*pi*n + sin^-1(time), n Integer
+                            // Only defined in [-1,1]
+  time = exp(y)*atan(y);    // No explicit form (I guess?)
+  z = 0.5*cos(time) + 2*z;  // z = -0.5*cos(time)
+end singleEquations;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend"); getErrorString();
+
+simulate(singleEquations); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// record SimulationResult
+//     resultFile = "singleEquations_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simpleForLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

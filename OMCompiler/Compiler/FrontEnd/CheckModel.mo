@@ -321,7 +321,7 @@ algorithm
     // the algorithm came from a component that is member of an array or not
     case (_, DAE.SOURCE(), _)
       then
-        if PrefixUtil.haveSubs(inSource.instance)
+        if PrefixUtil.hasSubs(inSource.instance)
         then algorithmOutputs(inAlgorithm, DAE.NOT_EXPAND())
         else algorithmOutputs(inAlgorithm, inCrefExpansionRule);
 

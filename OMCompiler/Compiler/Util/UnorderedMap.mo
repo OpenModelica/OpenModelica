@@ -38,6 +38,7 @@ encapsulated uniontype UnorderedMap<K, V>
   import Vector;
 
 protected
+  import Error;
   import List;
   import MetaModelica.Dangerous.*;
   import Util;
@@ -254,6 +255,21 @@ public
     value := if index > 0 then SOME(Vector.getNoBounds(map.values, index)) else NONE();
   end get;
 
+  function getSafe
+    "Returns value if the given key has an associated value in the map,
+     otherwise fails."
+    input K key;
+    input UnorderedMap<K, V> map;
+    output V value;
+  algorithm
+    if contains(key, map) then
+      SOME(value) := get(key, map);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because the key did not exist."});
+      fail();
+    end if;
+  end getSafe;
+
   function getOrFail
     "Return the value associated with the given key, or fails if no such value exists."
     input K key;
@@ -303,6 +319,22 @@ public
   algorithm
     value := Vector.get(map.values, 1);
   end first;
+
+  function toList
+    "Returns the keys and values as a list of tuples."
+    input UnorderedMap<K, V> map;
+    output list<tuple<K, V>> lst;
+  protected
+    list<K> keys = keyList(map);
+    list<V> values = valueList(map);
+  algorithm
+    if listLength(keys) == listLength(values) then
+      lst := List.zip(keys, values);
+    else
+      Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because there is an unequal number of keys ("
+        + intString(listLength(keys)) + ") and values (" + intString(listLength(values)) + ")."});
+    end if;
+  end toList;
 
   function keyList
     "Returns the keys as a list."
@@ -540,15 +572,16 @@ protected
     KeyEq eqfn = map.eqFn;
     list<Integer> bucket;
   algorithm
-    hash := hashfn(key, Vector.size(map.buckets));
-    bucket := Vector.get(map.buckets, hash + 1);
-
-    for i in bucket loop
-      if eqfn(key, Vector.getNoBounds(map.keys, i)) then
-        index := i;
-        break;
-      end if;
-    end for;
+    if Vector.size(map.buckets) > 0 then
+      hash := hashfn(key, Vector.size(map.buckets));
+      bucket := Vector.get(map.buckets, hash + 1);
+      for i in bucket loop
+        if eqfn(key, Vector.getNoBounds(map.keys, i)) then
+          index := i;
+          break;
+        end if;
+      end for;
+    end if;
   end find;
 
   function addEntry

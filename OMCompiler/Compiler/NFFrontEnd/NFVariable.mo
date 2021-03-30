@@ -39,6 +39,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Variability;
   import NFPrefixes.ConnectorType;
   import Type = NFType;
+  import BackendInfo = NFBackendExtension.BackendInfo;
 
 protected
   import ExpandExp = NFExpandExp;
@@ -58,6 +59,7 @@ public
     list<Variable> children;
     Option<SCode.Comment> comment;
     SourceInfo info;
+    BackendInfo backendinfo "NFBackendExtension.DUMMY_BACKEND_INFO for all of frontend. Only used in Backend.";
   end VARIABLE;
 
   function fromCref
@@ -82,8 +84,22 @@ public
     attr := Component.getAttributes(comp);
     cmt := Component.comment(comp);
     info := InstNode.info(node);
-    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info);
+    // kabdelhak: add dummy backend info, will be changed to actual value in
+    // conversion to backend process. NBackendDAE.lower
+    variable := VARIABLE(cref, ty, binding, vis, attr, {}, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO);
   end fromCref;
+
+  function hash
+    input Variable var;
+    input Integer mod;
+    output Integer i = ComponentRef.hash(var.name, mod);
+  end hash;
+
+  function equalName
+    input Variable var1;
+    input Variable var2;
+    output Boolean b = ComponentRef.isEqual(var1.name, var2.name);
+  end equalName;
 
   function expand
     "Expands an array variable into its scalar elements."

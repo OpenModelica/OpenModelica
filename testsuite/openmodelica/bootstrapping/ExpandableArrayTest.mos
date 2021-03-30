@@ -11,25 +11,25 @@ package ExpandableArrayTest
     ExpandableArray<Integer> exarray;
   algorithm
     exarray := ExpandableArray.new(2, 1);
-    ExpandableArray.dump(exarray, \"new(2)\", intString);
+    print(ExpandableArray.toString(exarray, \"new(2)\", intString));
 
     exarray := ExpandableArray.set(2, 2, exarray);
-    ExpandableArray.dump(exarray, \"set(2, 2)\", intString);
+    print(ExpandableArray.toString(exarray, \"set(2, 2)\", intString));
 
     exarray := ExpandableArray.add(1, exarray);
-    ExpandableArray.dump(exarray, \"add(1)\", intString);
+    print(ExpandableArray.toString(exarray, \"add(1)\", intString));
 
     exarray := ExpandableArray.add(3, exarray);
-    ExpandableArray.dump(exarray, \"add(3)\", intString);
+    print(ExpandableArray.toString(exarray, \"add(3)\", intString));
 
     exarray := ExpandableArray.set(5, 6, exarray);
-    ExpandableArray.dump(exarray, \"set(5, 6)\", intString);
+    print(ExpandableArray.toString(exarray, \"set(5, 6)\", intString));
 
     exarray := ExpandableArray.update(5, 5, exarray);
-    ExpandableArray.dump(exarray, \"update(5, 5)\", intString);
+    print(ExpandableArray.toString(exarray, \"update(5, 5)\", intString));
 
     exarray := ExpandableArray.shrink(exarray);
-    ExpandableArray.dump(exarray, \"shrink()\", intString);
+    print(ExpandableArray.toString(exarray, \"shrink()\", intString));
 
     exarray := matchcontinue(exarray)
       local
@@ -42,27 +42,27 @@ package ExpandableArrayTest
       then ea;
 
       else equation
-        ExpandableArray.dump(exarray, \"set(6, 6)\", intString);
+        print(ExpandableArray.toString(exarray, \"set(6, 6)\", intString));
       then exarray;
     end matchcontinue;
 
     exarray := ExpandableArray.clear(exarray);
-    ExpandableArray.dump(exarray, \"clear()\", intString);
+    print(ExpandableArray.toString(exarray, \"clear()\", intString));
 
     exarray := ExpandableArray.shrink(exarray);
-    ExpandableArray.dump(exarray, \"shrink()\", intString);
+    print(ExpandableArray.toString(exarray, \"shrink()\", intString));
 
     exarray := ExpandableArray.shrink(exarray);
-    ExpandableArray.dump(exarray, \"shrink()\", intString);
+    print(ExpandableArray.toString(exarray, \"shrink()\", intString));
 
     exarray := ExpandableArray.set(7, 1, exarray);
-    ExpandableArray.dump(exarray, \"set(7, 1)\", intString);
+    print(ExpandableArray.toString(exarray, \"set(7, 1)\", intString));
 
     exarray := ExpandableArray.delete(7, exarray);
-    ExpandableArray.dump(exarray, \"delete(7)\", intString);
+    print(ExpandableArray.toString(exarray, \"delete(7)\", intString));
 
     exarray := ExpandableArray.shrink(exarray);
-    ExpandableArray.dump(exarray, \"shrink()\", intString);
+    print(ExpandableArray.toString(exarray, \"shrink()\", intString));
   end Test;
 end ExpandableArrayTest;
 "); getErrorString();

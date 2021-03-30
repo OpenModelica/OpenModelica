@@ -1843,8 +1843,7 @@ template functionInitSample(list<BackendDAE.TimeEvent> timeEvents, String modelN
           /* sample <%index%> */
           data->modelData->samplesInfo[i].index = <%index%>;
           data->modelData->samplesInfo[i].start = <%e1%>;
-          data->modelData->samplesInfo[i].interval = <%e2%>;
-          assertStreamPrint(threadData,data->modelData->samplesInfo[i].interval > 0.0, "sample-interval <= 0.0");
+          data->modelData->samplesInfo[i].interval = <%e2%> /* (max int for single time events) */;
           i++;
           >>
         else '')

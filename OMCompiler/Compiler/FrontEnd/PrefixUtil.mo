@@ -1468,17 +1468,17 @@ algorithm
   end match;
 end writeComponentPrefix;
 
-public function haveSubs "Function: crefHaveSubs
+public function hasSubs "Function: crefHaveSubs
   Checks whether Prefix has any subscripts, recursive "
   input DAE.ComponentPrefix pre;
   output Boolean ob;
 algorithm
   ob := match pre
-    case DAE.PRE(subscripts = {}) then haveSubs(pre.next);
+    case DAE.PRE(subscripts = {}) then hasSubs(pre.next);
     case DAE.PRE() then true;
     else false;
   end match;
-end haveSubs;
+end hasSubs;
 
 function removeCompPrefixFromExps
   input DAE.Exp inExp;

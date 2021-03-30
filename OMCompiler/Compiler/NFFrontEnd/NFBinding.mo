@@ -726,6 +726,69 @@ public
     end match;
   end containsExp;
 
+  function update
+    input output Binding binding;
+    input Expression exp;
+  algorithm
+    binding := match binding
+
+      case UNBOUND()
+      then TYPED_BINDING(
+          bindingExp  = makeBindingExp(exp),
+          bindingType = Expression.typeOf(exp),
+          variability = Expression.variability(exp),
+          eachType    = EachType.NOT_EACH,
+          evalState   = if Expression.isConstNumber(exp)
+                        then Mutable.create(EvalState.EVALUATED)
+                        else Mutable.create(EvalState.NOT_EVALUATED),
+          isFlattened = true,
+          info        = binding.info
+        );
+
+      case UNTYPED_BINDING() algorithm
+        binding.bindingExp := makeBindingExp(exp);
+      then binding;
+
+      case TYPED_BINDING() algorithm
+        binding.bindingExp := makeBindingExp(exp);
+      then binding;
+
+      case FLAT_BINDING() algorithm
+        binding.bindingExp := makeBindingExp(exp);
+      then binding;
+
+      case CEVAL_BINDING() algorithm
+        binding.bindingExp := makeBindingExp(exp);
+      then binding;
+
+      case INVALID_BINDING() algorithm
+        binding.binding := update(binding.binding, exp);
+      then binding;
+
+      case RAW_BINDING() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because a raw binding cannot be updated."});
+      then fail();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+
+    end match;
+  end update;
+
+  function makeBindingExp
+    input Expression exp;
+    output Expression bindingExp;
+  algorithm
+    bindingExp := Expression.BINDING_EXP(
+      exp         = exp,
+      expType     = Expression.typeOf(exp),
+      bindingType = Expression.typeOf(exp), // ToDo: are these different?
+      parents     = {},
+      isEach      = false
+    );
+  end makeBindingExp;
+
   function setAttr
     "sets a specific attribute value and adds it if it does not exist"
     input output list<tuple<String, Binding>> ty_attr;
@@ -742,7 +805,6 @@ public
       case {}                                           then {(attr_name, attr_value)};
     end match;
   end setAttr;
-
 
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;

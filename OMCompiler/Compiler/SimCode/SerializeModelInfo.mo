@@ -169,7 +169,7 @@ algorithm
   case (var::rest)
     equation
       serializeVar(file,var,withOperations,not inFirst);
-      min(serializeVar(file,v,withOperations) for v in List.restOrEmpty(rest));
+      min(serializeVar(file,v,withOperations) for v in rest);
    then true;
 
   end match;
@@ -1155,6 +1155,10 @@ algorithm
     case BackendDAE.ALG_STATE_OLD()
       equation
         File.write(file,"helper variable transform ode for symSolver");
+      then ();
+    case BackendDAE.LOOP_ITERATION()
+      equation
+        File.write(file,"iteration variable for solving an algebraic loop");
       then ();
     else
       equation

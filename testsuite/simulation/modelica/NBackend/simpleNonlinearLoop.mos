@@ -1,0 +1,196 @@
+// name: simpleNonlinearLoop
+// keywords: NewBackend
+// status: correct
+
+loadString("
+model simpleNonlinearLoop
+  Real x(start=1.0, nominal=1.0),y(start=1.0, nominal=1.0);
+equation
+  x = y^2 + sin(time);
+  y = sin(x);
+end simpleNonlinearLoop;
+"); getErrorString();
+
+setCommandLineOptions("--newBackend -d=bltdump");
+simulate(simpleNonlinearLoop); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Algebraic Loop (Mixed = false)
+// ----------------------------------------
+// ### Variables:
+// 	Real y
+// 	Real x
+//
+// ### Equations:
+// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
+// 	[SCAL] ($RES_SIM_0) y = sin(x)
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 1
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 2
+// 	eqn 2 --> var 1
+//
+//
+// ################################################################################
+//
+// 	[ODE] Differential-Algebraic: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS ODE System
+// ========================================
+//
+// BLOCK 1: Algebraic Loop (Mixed = false)
+// ----------------------------------------
+// ### Variables:
+// 	Real y
+// 	Real x
+//
+// ### Equations:
+// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
+// 	[SCAL] ($RES_SIM_0) y = sin(x)
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 1
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 2
+// 	eqn 2 --> var 1
+//
+//
+// ################################################################################
+//
+// 	[INI] Initialization: (Causalize)
+//
+// ################################################################################
+//
+// ========================================
+// CONTINUOUS INI System
+// ========================================
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Empty Adjacency Matrix
+// ****************************************
+//
+//
+// ========================================
+// Empty Matching
+// ========================================
+//
+//
+// ========================================
+// CONTINUOUS INI System
+// ========================================
+//
+// BLOCK 1: Algebraic Loop (Mixed = false)
+// ----------------------------------------
+// ### Variables:
+// 	Real y
+// 	Real x
+//
+// ### Equations:
+// 	[SCAL] ($RES_SIM_0) y = sin(x)
+// 	[SCAL] ($RES_SIM_1) x = y ^ 2.0 + sin(time)
+//
+// ========================================
+// AdjacencyMatrix
+// ========================================
+//
+// Normal Adjacency Matrix (row = equation)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+// Transposed Adjacency Matrix (row = variable)
+// ****************************************
+// 	(1)	{2, 1}
+// 	(2)	{2, 1}
+//
+//
+// ========================================
+// Scalar Matching
+// ========================================
+//
+// variable to equation
+// ****************************************
+// 	var 1 --> eqn 2
+// 	var 2 --> eqn 1
+//
+// equation to variable
+// ****************************************
+// 	eqn 1 --> var 2
+// 	eqn 2 --> var 1
+//
+//
+// record SimulationResult
+//     resultFile = "simpleNonlinearLoop_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'simpleNonlinearLoop', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult

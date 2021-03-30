@@ -220,18 +220,19 @@ end update;
 
 function toList
   input ExpandableArray<T> exarray;
-  output list<T> listT;
+  output list<T> listT = {};
 protected
   Integer numberOfElements = Dangerous.arrayGetNoBoundsChecking(exarray.numberOfElements, 1);
-  Integer capacity = Dangerous.arrayGetNoBoundsChecking(exarray.capacity, 1);
+  Integer lastUsedIndex = Dangerous.arrayGetNoBoundsChecking(exarray.lastUsedIndex, 1);
   array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
+  T dummy;
 algorithm
   if numberOfElements == 0 then
     listT := {};
-  elseif capacity == 1 then
+  elseif lastUsedIndex == 1 then
     listT := {Util.getOption(data[1])};
   else
-    listT :=  list(Util.getOption(data[i]) for i guard isSome(data[i]) in 1:capacity);
+    listT :=  list(Util.getOption(data[i]) for i guard Util.isSome(data[i]) in 1:lastUsedIndex);
   end if;
 end toList;
 
@@ -278,11 +279,13 @@ algorithm
   Dangerous.arrayUpdateNoBoundsChecking(exarray.data, 1, newData);
 end shrink;
 
-function dump "O(n)
+function toString "O(n)
   Dumps all elements with the given print function."
   input ExpandableArray<T> exarray;
   input String header;
   input PrintFunction func;
+  input Boolean debug = true;
+  output String str;
 
   partial function PrintFunction
     input T t;
@@ -294,24 +297,29 @@ protected
   T value;
   array<Option<T>> data = Dangerous.arrayGetNoBoundsChecking(exarray.data, 1);
 algorithm
-  print(header + " (" + intString(numberOfElements) + "/" + intString(capacity) + ")\n");
-  print("========================================\n");
+  if debug then
+    str := header + " (" + intString(numberOfElements) +  "/" + intString(capacity) + ")\n";
+  else
+    str := header + " (" + intString(numberOfElements) + ")\n";
+  end if;
+
+  str := str + "========================================\n";
 
   if numberOfElements == 0 then
-    print("<empty>\n");
+    str := str + "<empty>\n";
   else
     for i in 1:capacity loop
       if isSome(Dangerous.arrayGetNoBoundsChecking(data, i)) then
         SOME(value) := Dangerous.arrayGetNoBoundsChecking(data, i);
         numberOfElements := numberOfElements-1;
-        print(intString(i) + ": " + func(value) + "\n");
+        str := str + intString(i) + ": " + func(value) + "\n";
         if numberOfElements == 0 then
           return;
         end if;
       end if;
     end for;
   end if;
-end dump;
+end toString;
 
 function getNumberOfElements
   input ExpandableArray<T> exarray;

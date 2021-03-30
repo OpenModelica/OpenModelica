@@ -495,7 +495,9 @@ algorithm
     ty_attrs := Binding.setAttr(ty_attrs, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
   end if;
 
-  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info) :: vars;
+  // kabdelhak: add dummy backend info, will be changed to actual value in
+  // conversion to backend process. NBackendDAE.lower
+  vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
 end flattenSimpleComponent;
 
 function flattenTypeAttribute
@@ -806,8 +808,7 @@ algorithm
           stmt := Statement.FOR(iter, SOME(range), body, alg.source);
         end while;
       then
-        Algorithm.ALGORITHM({stmt}, alg.source);
-
+        Algorithm.ALGORITHM({Statement.FOR(iter, SOME(range), body, alg.source)}, alg.inputs, alg.outputs, alg.source); // ToDo: update inputs, outputs?
   end match;
 end vectorizeAlgorithm;
 

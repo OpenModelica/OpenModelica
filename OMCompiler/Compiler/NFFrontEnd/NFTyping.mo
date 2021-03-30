@@ -335,16 +335,17 @@ function makeRecordType
 protected
   CachedData cache;
   Function fn;
-  list<Record.Field> fields;
+  array<Record.Field> fields;
+  UnorderedMap<String, Integer> indexMap;
 algorithm
   cache := InstNode.getFuncCache(constructor);
 
   recordTy := match cache
     case CachedData.FUNCTION(funcs = fn :: _)
       algorithm
-        fields := Record.collectRecordFields(fn.node);
+        (fields, indexMap) := Record.collectRecordFields(fn.node);
       then
-        ComplexType.RECORD(constructor, fields);
+        ComplexType.RECORD(constructor, fields, indexMap);
 
     else
       algorithm

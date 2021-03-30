@@ -38,6 +38,8 @@ encapsulated package ClockIndexes
 
 "
 
+public constant Integer RT_NO_CLOCK = -1;
+
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
 public constant Integer RT_CLOCK_BUILD_MODEL = 10;
@@ -57,7 +59,42 @@ public constant Integer RT_CLOCK_USER_RESERVED = 23;
 public constant Integer RT_CLOCK_EXECSTAT_HPCOM_MODULES = 24;
 public constant Integer RT_CLOCK_SHOW_STATEMENT = 25;
 public constant Integer RT_CLOCK_FINST = 26;
+
+public constant Integer RT_CLOCK_NEW_BACKEND_MODULE = 29;
+public constant Integer RT_CLOCK_NEW_BACKEND_INITIALIZATION = 30;
+
 public constant list<Integer> buildModelClocks = {RT_CLOCK_BUILD_MODEL,RT_CLOCK_SIMULATE_TOTAL,RT_CLOCK_TEMPLATES,RT_CLOCK_LINEARIZE,RT_CLOCK_SIMCODE,RT_CLOCK_BACKEND,RT_CLOCK_FRONTEND};
+
+function toString
+  input Integer clockIndex;
+  output String str;
+algorithm
+  str := match clockIndex
+    case RT_NO_CLOCK                          then "NON";
+    case RT_CLOCK_SIMULATE_TOTAL              then "STO";
+    case RT_CLOCK_SIMULATE_SIMULATION         then "SSI";
+    case RT_CLOCK_BUILD_MODEL                 then "BLD";
+    case RT_CLOCK_EXECSTAT                    then "EXS";
+    case RT_CLOCK_EXECSTAT_CUMULATIVE         then "EXC";
+    case RT_CLOCK_FRONTEND                    then "FRT";
+    case RT_CLOCK_BACKEND                     then "BCK";
+    case RT_CLOCK_SIMCODE                     then "SCD";
+    case RT_CLOCK_LINEARIZE                   then "LIN";
+    case RT_CLOCK_TEMPLATES                   then "TMP";
+    case RT_CLOCK_UNCERTAINTIES               then "UNC";
+    case RT_PROFILER0                         then "PR0";
+    case RT_PROFILER1                         then "PR1";
+    case RT_PROFILER2                         then "PR2";
+    case RT_CLOCK_EXECSTAT_JACOBIANS          then "JAC";
+    case RT_CLOCK_USER_RESERVED               then "RES";
+    case RT_CLOCK_EXECSTAT_HPCOM_MODULES      then "HPC";
+    case RT_CLOCK_SHOW_STATEMENT              then "STM";
+    case RT_CLOCK_FINST                       then "FIN";
+    case RT_CLOCK_NEW_BACKEND_MODULE          then "SIM";
+    case RT_CLOCK_NEW_BACKEND_INITIALIZATION  then "INI";
+    else "ERR";
+  end match;
+end toString;
 
 annotation(__OpenModelica_Interface="util");
 end ClockIndexes;

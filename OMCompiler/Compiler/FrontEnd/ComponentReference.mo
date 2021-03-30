@@ -4054,5 +4054,15 @@ algorithm
   if debug then print("outCref: " + printComponentRefStr(outCref) + "\n"); end if;
 end createDifferentiatedCrefName;
 
+public function isTime
+  input DAE.ComponentRef cref;
+  output Boolean b;
+algorithm
+  b := match cref
+    case DAE.CREF_IDENT(ident = "time") then true;
+    else false;
+  end match;
+end isTime;
+
 annotation(__OpenModelica_Interface="frontend");
 end ComponentReference;

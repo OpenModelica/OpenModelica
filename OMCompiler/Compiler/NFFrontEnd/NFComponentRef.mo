@@ -136,7 +136,7 @@ public
 
   function makeIterator
     input InstNode node;
-    input Type ty;
+    input Type ty = InstNode.getType(node);
     output ComponentRef cref = CREF(node, {}, ty, Origin.ITERATOR, EMPTY());
   end makeIterator;
 
@@ -734,11 +734,10 @@ public
     end if;
 
     isEqual := match (cref1, cref2)
-      case (CREF(), CREF())
+      case (CREF(), CREF()) algorithm
         then InstNode.name(cref1.node) == InstNode.name(cref2.node) and
-             Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
-             isEqual(cref1.restCref, cref2.restCref);
-
+          Subscript.isEqualList(cref1.subscripts, cref2.subscripts) and
+          isEqual(cref1.restCref, cref2.restCref);
       case (EMPTY(), EMPTY()) then true;
       case (WILD(), WILD()) then true;
       else false;
@@ -1002,6 +1001,25 @@ public
       else cref;
     end match;
   end stripSubscriptsAll;
+
+  function stripSubscriptsExceptModel
+  "Removes all subscript of a componentref expcept for model subscripts"
+    input output ComponentRef cref;
+  algorithm
+    cref := match cref
+      local
+        InstNode node;
+        ComponentRef restCref;
+
+      case CREF(node = node, restCref = restCref) guard(InstNode.isModel(node))
+      then CREF(cref.node, cref.subscripts, cref.ty, cref.origin, stripSubscriptsExceptModel(restCref));
+
+      case CREF(restCref = restCref)
+      then CREF(cref.node, {}, cref.ty, cref.origin, stripSubscriptsExceptModel(restCref));
+
+      else cref;
+    end match;
+  end stripSubscriptsExceptModel;
 
   function simplifySubscripts
     input output ComponentRef cref;
@@ -1338,6 +1356,38 @@ public
       else cref;
     end match;
   end mapFoldExpShallow;
+
+  function isTime
+    input ComponentRef cref;
+    output Boolean b = firstName(cref) == "time";
+  end isTime;
+
+  function isTopLevel
+    input ComponentRef cref;
+    output Boolean b;
+  algorithm
+    b := match cref
+      case CREF(restCref = EMPTY()) then true;
+      else false;
+    end match;
+  end isTopLevel;
+  /* ========================================
+      Backend Extension functions
+  ========================================= */
+
+  function listHasDiscrete
+    "kabdelhak: Returns true if any component reference in the list has a
+    discrete type. Used to analyze algorithm outputs."
+    input list<ComponentRef> cref_lst;
+    output Boolean result = false;
+  algorithm
+    for cref in cref_lst loop
+      if Type.isDiscrete(nodeType(cref)) then
+        result := true;
+        return;
+      end if;
+    end for;
+  end listHasDiscrete;
 
   function removeOuterCrefPrefix
     input output ComponentRef cref;
