@@ -4186,7 +4186,7 @@ uniontype LinearRealJacobian
         print("[" + intString(index) + "|" + realString(value) + "] ");
       end for;
     end if;
-    print("    || RHS: " + ExpressionDump.printExpStr(rhs) + "\n");
+    print("    || RHS: " + ExpressionDump.printExpStr(ExpressionSimplify.simplify(rhs)) + "\n");
   end dumpLinearRealJacobianSparseRow;
 end LinearRealJacobian;
 
@@ -4337,10 +4337,12 @@ public function updatePivotRow
 protected
   Real value;
 algorithm
-  for idx in UnorderedMap.keyList(pivot_row) loop
-    SOME(value) := UnorderedMap.get(idx, pivot_row);
-    UnorderedMap.add(idx, value/piv_value, pivot_row);
-  end for;
+  if not realEq(piv_value, 1.0) then
+    for idx in UnorderedMap.keyList(pivot_row) loop
+      SOME(value) := UnorderedMap.get(idx, pivot_row);
+      UnorderedMap.add(idx, value/piv_value, pivot_row);
+    end for;
+  end if;
 end updatePivotRow;
 
 public function solveLinearRealJacobianRow
@@ -4360,7 +4362,7 @@ algorithm
       // row to be updated has and element at this position
       case (SOME(val), SOME(diag_val)) algorithm
         val := val * piv_value - diag_val * row_value;
-        if realEq(val, 0.0) then
+        if realAbs(val) < 1e-12 then
           /* delete element if zero */
           UnorderedMap.remove(idx, row);
         else
