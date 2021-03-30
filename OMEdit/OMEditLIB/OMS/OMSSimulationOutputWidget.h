@@ -60,9 +60,9 @@ private:
   QString mErrorString;
   bool mSocketConnected;
 signals:
-  void simulationProgressJson(const QString &progressJson);
+  void simulationDataPublished(const QByteArray &data);
 public slots:
-  void readProgressJson();
+  void readSimulationData();
 };
 
 class SimulationRequestSocket;
@@ -134,6 +134,10 @@ private:
   SimulationSubscriberSocket *mpSimulationSubscriberSocket;
   SimulationRequestSocket *mpSimulationRequestSocket;
   QThread mSimulationSubscribeThread;
+
+  void parseSimulationProgress(const QVariant progress);
+  void parseSimulationVariables(const QVariant variables);
+  void parseSimulationVariables(const QVariantMap variableMap, QStringList *pVariablesList);
 signals:
   void sendRequest(const QString &request);
 public slots:
@@ -142,7 +146,7 @@ public slots:
   void readSimulationStandardError();
   void simulationProcessError(QProcess::ProcessError error);
   void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
-  void simulationProgressJson(const QString &progressJson);
+  void simulationDataPublished(const QByteArray &data);
   void simulationReply(const QString &reply);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();

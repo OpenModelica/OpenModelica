@@ -34,6 +34,7 @@
 #include "OMSSimulationOutputWidget.h"
 #include "Util/Helper.h"
 #include "MainWindow.h"
+#include "Plotting/VariablesWidget.h"
 #include "OMSSimulationDialog.h"
 #include "OMSProxy.h"
 #include "Modeling/LibraryTreeWidget.h"
@@ -82,10 +83,10 @@ SimulationSubscriberSocket::~SimulationSubscriberSocket()
 }
 
 /*!
- * \brief SimulationSubscriberSocket::readProgressJson
- * Reads the socket message in a infinite loop in a blocking mode.
+ * \brief SimulationSubscriberSocket::readSimulationData
+ * Reads the socket message in a infinite loop in a non-blocking mode.
  */
-void SimulationSubscriberSocket::readProgressJson()
+void SimulationSubscriberSocket::readSimulationData()
 {
   while (isSocketConnected()) {
     zmq_msg_t replyMsg;
@@ -96,7 +97,7 @@ void SimulationSubscriberSocket::readProgressJson()
       char *reply = (char*)malloc(size + 1);
       memcpy(reply, zmq_msg_data(&replyMsg), size);
       reply[size] = 0;
-      emit simulationProgressJson(QString(reply));
+      emit simulationDataPublished(QByteArray(reply));
     }
     // release the zmq_msg_t
     zmq_msg_close(&replyMsg);
@@ -300,11 +301,14 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   }
   if (!errorInitializingSockets) {
     mpSimulationSubscriberSocket->moveToThread(&mSimulationSubscribeThread);
-    connect(&mSimulationSubscribeThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readProgressJson()));
-    connect(mpSimulationSubscriberSocket, SIGNAL(simulationProgressJson(QString)), this, SLOT(simulationProgressJson(QString)));
+    connect(&mSimulationSubscribeThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readSimulationData()));
+    connect(mpSimulationSubscriberSocket, SIGNAL(simulationDataPublished(QByteArray)), this, SLOT(simulationDataPublished(QByteArray)));
+    mpSimulationSubscriberSocket->setSocketConnected(true);
+    mSimulationSubscribeThread.start();
     if (mpSimulationRequestSocket) {
       connect(this, SIGNAL(sendRequest(QString)), mpSimulationRequestSocket, SLOT(sendRequest(QString)));
       connect(mpSimulationRequestSocket, SIGNAL(simulationReply(QString)), SLOT(simulationReply(QString)));
+      mpSimulationRequestSocket->startReadReplyLoop();
     }
     // start the simulation process
     mpSimulationProcess = new QProcess;
@@ -379,6 +383,54 @@ OMSSimulationOutputWidget::~OMSSimulationOutputWidget()
 }
 
 /*!
+ * \brief OMSSimulationOutputWidget::parseSimulationProgress
+ * Parses the simulation progress json.
+ * {"progress": 0}
+ * {"progress": 50}
+ * {"progress": 100}
+ * \param progress
+ */
+void OMSSimulationOutputWidget::parseSimulationProgress(const QVariant progress)
+{
+  QVariantMap progressMap = progress.toMap();
+  bool ok;
+  int progressValue = progressMap.value("progress").toInt(&ok);
+  if (ok) {
+    mpProgressBar->setValue(progressValue);
+  }
+}
+
+/*!
+ * \brief OMSSimulationOutputWidget::parseSimulationVariables
+ * {"TestSimulation.Root.CauerLowPassSC.C1.v": {"type": "Real", "kind": "unknown"}, "TestSimulation.Root.CauerLowPassSC.Rp1.not1.y": {"type": "Bool", "kind": "unknown"}}
+ * \param variables
+ */
+void OMSSimulationOutputWidget::parseSimulationVariables(const QVariant variables)
+{
+  QStringList variablesList;
+  //parseSimulationVariables(variables.toMap(), &variablesList);
+  QVariantMap variableMap = variables.toMap();
+
+  QVariantMap::const_iterator iterator = variableMap.constBegin();
+  while (iterator != variableMap.constEnd()) {
+    variablesList.append(iterator.key());
+    ++iterator;
+  }
+
+  MainWindow::instance()->getVariablesWidget()->insertVariablesItemsToTree(mCref, OptionsDialog::instance()->getGeneralSettingsPage()->getWorkingDirectory(), variablesList, SimulationOptions());
+}
+
+void OMSSimulationOutputWidget::parseSimulationVariables(const QVariantMap variableMap, QStringList *pVariablesList)
+{
+  QVariantMap::const_iterator iterator = variableMap.constBegin();
+  while (iterator != variableMap.constEnd()) {
+    pVariablesList->append(iterator.key());
+    parseSimulationVariables(iterator.value().toMap(), pVariablesList);
+    ++iterator;
+  }
+}
+
+/*!
  * \brief OMSSimulationOutputWidget::simulationProcessStarted
  * Updates the simulation output window when the simulation has started.
  */
@@ -390,11 +442,6 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpProgressBar->setTextVisible(true);
   mpCancelSimulationButton->setEnabled(true);
   mpArchivedSimulationItem->setStatus(Helper::running);
-  mpSimulationSubscriberSocket->setSocketConnected(true);
-  mSimulationSubscribeThread.start();
-  if (mpSimulationRequestSocket) {
-    mpSimulationRequestSocket->startReadReplyLoop();
-  }
 }
 
 /*!
@@ -428,6 +475,9 @@ void OMSSimulationOutputWidget::simulationProcessError(QProcess::ProcessError er
   if (!isSimulationProcessKilled()) {
     writeSimulationOutput(mpSimulationProcess->errorString(), StringHandler::Error);
   }
+  if (error == QProcess::FailedToStart) {
+    simulationProcessFinished(0, QProcess::NormalExit);
+  }
 }
 
 /*!
@@ -444,20 +494,34 @@ void OMSSimulationOutputWidget::writeSimulationOutput(const QString &output, Str
 }
 
 /*!
- * \brief OMSSimulationOutputWidget::simulationProgressJson
- * Reads the simulation progress json and updates the progress bar.
- * \param progressJson
+ * \brief OMSSimulationOutputWidget::simulationDataPublished
+ * Reads the simulation published data.
+ * Expected data,
+ * status {"progress": 0}
+ * signals {"TestSimulation.Root.CauerLowPassSC.C1.v": {"type": "Real", "kind": "unknown"}, "TestSimulation.Root.CauerLowPassSC.Rp1.not1.y": {"type": "Bool", "kind": "unknown"}}
+ * \param data
  */
-void OMSSimulationOutputWidget::simulationProgressJson(const QString &progressJson)
+void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
 {
-  int colonIndex = progressJson.indexOf(":");
-  if (colonIndex != -1) {
-    QString progressStr = progressJson.mid(colonIndex + 1);
-    progressStr.chop(1);
-    bool ok;
-    int progress = progressStr.toInt(&ok);
-    if (ok) {
-      mpProgressBar->setValue(progress);
+  // qDebug() << "QByteArray" << data;
+  QByteArray jsonData;
+  if (data.startsWith("status")) {
+    jsonData = data.mid(QString("status").length());
+  } else if (data.startsWith("signals")) {
+    jsonData = data.mid(QString("signals").length());
+  } else {
+    writeSimulationOutput(QString("Unknown simulation data %1.\n").arg(QString(data)), StringHandler::Error);
+    return;
+  }
+  JsonDocument jsonDocument;
+  if (!jsonDocument.parse(jsonData)) {
+    writeSimulationOutput(QString("Failed to parse json data %1.\n").arg(QString(jsonData)), StringHandler::OMEditInfo);
+    return;
+  } else {
+    if (data.startsWith("status")) {
+      parseSimulationProgress(jsonDocument.result);
+    } else if (data.startsWith("signals")) {
+      parseSimulationVariables(jsonDocument.result);
     }
   }
 }
@@ -489,7 +553,9 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelSimulationButton->setEnabled(false);
   // simulation finished show the results
-  MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
+  if (!mpSimulationRequestSocket) {
+    MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
+  }
   mpArchivedSimulationItem->setStatus(Helper::finished);
   mpSimulationSubscriberSocket->setSocketConnected(false);
   mSimulationSubscribeThread.exit();
