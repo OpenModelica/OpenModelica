@@ -7,7 +7,7 @@ loadFile("tearingSelect2.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC3 --preOptModules-=comSubExp"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 --preOptModules-=comSubExp  --maxSizeLinearTearing=200"); getErrorString();
 simulate(tearingSelect2); getErrorString();
 
 // Result:

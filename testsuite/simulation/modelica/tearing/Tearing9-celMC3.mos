@@ -7,7 +7,7 @@ loadFile("Tearing9.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("cellier"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC3"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 --maxSizeLinearTearing=200"); getErrorString();
 simulate(Tearing9); getErrorString();
 
 val(x1,0.0); getErrorString();

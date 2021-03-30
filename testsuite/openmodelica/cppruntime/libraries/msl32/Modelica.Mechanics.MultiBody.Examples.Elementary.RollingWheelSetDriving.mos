@@ -27,6 +27,11 @@ getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.RollingWheelSetDriving_res.mat
 // Files Equal!
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Parts.mo:2805:5-2808:55:writable] Warning: Variable $DER.wheelSet.der_theta1 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Parts.mo:2809:5-2812:55:writable] Warning: Variable $DER.wheelSet.der_theta2 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Parts.mo:2805:5-2808:55:writable] Warning: Variable $DER.wheelSet.der_theta1 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.2.1+maint.om/Mechanics/MultiBody/Parts.mo:2809:5-2812:55:writable] Warning: Variable $DER.wheelSet.der_theta2 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+//
 // "true
 // "
 // ""

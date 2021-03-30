@@ -7,7 +7,7 @@ loadFile("tearingSelect.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("minimalTearing"); getErrorString();
-setCommandLineOptions("+tearingHeuristic=MC3 +preferTVarsWithStartValue=true"); getErrorString();
+setCommandLineOptions("+tearingHeuristic=MC3 +preferTVarsWithStartValue=true --maxSizeLinearTearing=200"); getErrorString();
 simulate(tearingSelect); getErrorString();
 
 val(u1,0.0); getErrorString();

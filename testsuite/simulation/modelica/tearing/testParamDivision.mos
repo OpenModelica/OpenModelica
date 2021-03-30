@@ -29,12 +29,14 @@ equation
 end testParamDivision2;
 "); getErrorString();
 
-
+setCommandLineOptions("--maxSizeLinearTearing=200"); getErrorString();
 simulate(testParamDivision1, simflags="-ls=lapack -override b=0"); getErrorString();
 simulate(testParamDivision2, simflags="-ls=lapack -override b=0"); getErrorString();
 
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

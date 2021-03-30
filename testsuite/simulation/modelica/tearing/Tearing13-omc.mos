@@ -9,6 +9,7 @@ loadFile("Tearing13.mo"); getErrorString();
 
 setDebugFlags("backenddaeinfo"); getErrorString();
 setTearingMethod("omcTearing"); getErrorString();
+setCommandLineOptions("--maxSizeLinearTearing=200"); getErrorString();
 simulate(Tearing13.FluidExample); getErrorString();
 
 val(pb,0.0); getErrorString();
@@ -18,6 +19,8 @@ val(rho2,0.0); getErrorString();
 val(w,0.0); getErrorString();
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true

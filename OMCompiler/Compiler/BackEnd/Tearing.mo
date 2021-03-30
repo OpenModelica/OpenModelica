@@ -307,6 +307,7 @@ protected function traverseComponents1 "author: Frenkel TUD 2012-05"
   output Boolean outRunMatching;
   output Integer strongComponentIndexOut=strongComponentIndexIn;
 protected
+  TearingMethod method = inMethod;
   constant Boolean debug = false;
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
 algorithm
@@ -319,7 +320,7 @@ algorithm
     else strongComponentIndexOut;
   end match;
 
-  (oComp, outRunMatching) := match (inComp, isyst, ishared, inMethod)
+  (oComp, outRunMatching) := match (inComp, isyst, ishared, method)
     local
       list<Integer> eindex, vindx;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
@@ -337,7 +338,12 @@ algorithm
         maxSize := Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
       end if;
 
-      useTearing := checkTearingSettings(maxSize, isLinear, strongComponentIndexOut, listLength(vindx));
+      // Use minimal tearing for linear components if linear tearing is disabled
+      if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) == 0 and isLinear) then
+        method := MINIMAL_TEARING();
+      end if;
+
+      useTearing := checkTearingSettings(method, maxSize, isLinear, strongComponentIndexOut, listLength(vindx));
       if useTearing then
         if debugFlag then
           print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n" +
@@ -350,7 +356,7 @@ algorithm
           execStat("Tearing.traverseComponents1 " + (if isLinear then "LS" else "NLS") + " start");
         end if;
         try
-          oComp := callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
+          oComp := callTearingMethod(method, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
           outRunMatching := true;
         else
           oComp := inComp;
@@ -363,7 +369,7 @@ algorithm
     then(oComp, outRunMatching);
 
     // no component for tearing
-    else then(inComp, false);
+    else(inComp, false);
   end match;
 end traverseComponents1;
 
@@ -371,6 +377,7 @@ end traverseComponents1;
 protected function checkTearingSettings
 "Checks if we want to do tearing for the current component.
  It will also issue optional maesages if not."
+  input TearingMethod inMethod;
   input Integer maxSize;
   input Boolean isLinear;
   input Integer strongComponentIndex;
@@ -378,10 +385,18 @@ protected function checkTearingSettings
   output Boolean activateTearing=false;
 protected
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
+  Boolean isMinimalTearing;
   Boolean forcedTearing;
   Boolean isCpp;
   Boolean isDense;
 algorithm
+
+  // Always tear if minimalTearing is enabled
+  isMinimalTearing := match(inMethod) case MINIMAL_TEARING() then(true); else(false); end match;
+  if isMinimalTearing then
+    activateTearing := true;
+    return;
+  end if;
 
   // Check if tearing is disabled (maxSize=0)
   if maxSize == 0 then

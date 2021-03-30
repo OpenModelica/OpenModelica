@@ -37,4 +37,9 @@ res := OpenModelica.Scripting.compareSimulationResults("Modelica.Mechanics.Multi
 //     messages = ""
 // end SimulationResult;
 // "Files Equal!"
+// [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:2525:7-2526:30:writable] Warning: Variable $DER.wheelSet.der_theta2 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:2523:7-2524:30:writable] Warning: Variable $DER.wheelSet.der_theta1 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:2525:7-2526:30:writable] Warning: Variable $DER.wheelSet.der_theta2 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+// [Modelica 3.1.0+maint.om/Mechanics/MultiBody/Parts.mo:2523:7-2524:30:writable] Warning: Variable $DER.wheelSet.der_theta1 has attribute stateSelect=StateSelect.always, but can't be selected as a state.
+//
 // endResult
