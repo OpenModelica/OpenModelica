@@ -76,18 +76,10 @@ namespace VariableItemData {
  * \brief Contains the information about the result variable.
  */
 /*!
- * \param variableItemData - a list of items.\n
- * 0 -> filePath\n
- * 1 -> fileName\n
- * 2 -> name\n
- * 3 -> displayName\n
- * 4 -> value\n
- * 5 -> unit\n
- * 6 -> displayUnit\n
- * 7 -> displayUnits (QStringList)\n
- * 8 -> description\n
- * 9 -> tooltip\n
- * 10 -> isMainArray
+ * \brief VariablesTreeItem::VariablesTreeItem
+ * \param variableItemData see VariableItemData::VariableItemData
+ * \param pParent
+ * \param isRootItem
  */
 VariablesTreeItem::VariablesTreeItem(const QVector<QVariant> &variableItemData, VariablesTreeItem *pParent, bool isRootItem)
 {
@@ -605,10 +597,10 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   QRegExp resultTypeRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)");
   QString text = QString(fileName).remove(resultTypeRegExp);
   QModelIndex index = variablesTreeItemIndex(mpRootVariablesTreeItem);
-  QVector<QVariant> Variabledata;
-  Variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json";
+  QVector<QVariant> variabledata;
+  variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json";
 
-  VariablesTreeItem *pTopVariablesTreeItem = new VariablesTreeItem(Variabledata, mpRootVariablesTreeItem, true);
+  VariablesTreeItem *pTopVariablesTreeItem = new VariablesTreeItem(variabledata, mpRootVariablesTreeItem, true);
   pTopVariablesTreeItem->setSimulationOptions(simulationOptions);
   int row = rowCount();
   beginInsertRows(index, row, row);
@@ -689,7 +681,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     }
   }
   // create hash based VariableNode
-  VariableNode *pTopVariableNode = new VariableNode(Variabledata);
+  VariableNode *pTopVariableNode = new VariableNode(variabledata);
   // sort the variables using natural sort
   std::sort(variablesList.begin(), variablesList.end(), StringHandler::naturalSortForResultVariables);
   // remove time from variables list
@@ -807,7 +799,7 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
             qreal realValue = variableData.at(VariableItemData::VALUE).toDouble(&ok);
             if (ok) {
               realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
-              variableData[VariableItemData::DISPLAYUNIT] = StringHandler::number(realValue);
+              variableData[VariableItemData::VALUE] = StringHandler::number(realValue);
             }
           }
         } else { /* use unit as displayUnit */
@@ -860,8 +852,8 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variableData << infoFileName;
 
       VariableNode *pVariableNode = new VariableNode(variableData);
-      pVariableNode->setEditable(changeAble);
-      pVariableNode->setVariability(variability);
+      pVariableNode->mEditable = changeAble;
+      pVariableNode->mVariability = variability;
       pParentVariableNode->mChildren.insert(variableData.at(VariableItemData::NAME).toString(), pVariableNode);
       pParentVariableNode = pVariableNode;
       QString addVar = "";
@@ -910,23 +902,23 @@ void VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
  */
 void VariablesTreeModel::insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem)
 {
-  QModelIndex index = variablesTreeItemIndex(pParentVariablesTreeItem);
-  int row = rowCount(index);
-  beginInsertRows(index, row, pParentVariableNode->mChildren.size());
-  QHash<QString, VariableNode*>::const_iterator iterator = pParentVariableNode->mChildren.constBegin();
-  while (iterator != pParentVariableNode->mChildren.constEnd()) {
-    VariableNode *pVariableNode = iterator.value();
-    VariablesTreeItem *pVariablesTreeItem = new VariablesTreeItem(pVariableNode->mVariableNodeData, pParentVariablesTreeItem);
-    pVariablesTreeItem->setEditable(pVariableNode->mEditable);
-    pVariablesTreeItem->setVariability(pVariableNode->mVariability);
-    pParentVariablesTreeItem->insertChild(row++, pVariablesTreeItem);
-    ++iterator;
-  }
-  endInsertRows();
+  if (pParentVariableNode && !pParentVariableNode->mChildren.isEmpty()) {
+    QModelIndex index = variablesTreeItemIndex(pParentVariablesTreeItem);
+    int row = rowCount(index);
+    beginInsertRows(index, row, pParentVariableNode->mChildren.size() - 1);
+    QHash<QString, VariableNode*>::const_iterator iterator = pParentVariableNode->mChildren.constBegin();
+    while (iterator != pParentVariableNode->mChildren.constEnd()) {
+      VariableNode *pVariableNode = iterator.value();
+      VariablesTreeItem *pVariablesTreeItem = new VariablesTreeItem(pVariableNode->mVariableNodeData, pParentVariablesTreeItem);
+      pVariablesTreeItem->setEditable(pVariableNode->mEditable);
+      pVariablesTreeItem->setVariability(pVariableNode->mVariability);
+      pParentVariablesTreeItem->insertChild(row++, pVariablesTreeItem);
+      ++iterator;
+    }
+    endInsertRows();
 
-  foreach (VariablesTreeItem *pVariablesTreeItem, pParentVariablesTreeItem->getChildren()) {
-    VariableNode *pVariableNode = pParentVariableNode->mChildren.value(pVariablesTreeItem->getVariableName());
-    if (pVariableNode && !pVariableNode->mChildren.isEmpty()) {
+    foreach (VariablesTreeItem *pVariablesTreeItem, pParentVariablesTreeItem->getChildren()) {
+      VariableNode *pVariableNode = pParentVariableNode->mChildren.value(pVariablesTreeItem->getVariableName());
       insertVariablesItems(pVariableNode, pVariablesTreeItem);
     }
   }
@@ -2607,35 +2599,4 @@ void VariablesWidget::incrementVisualization()
       }
     }
   }
-}
-
-VariableNode::VariableNode(const QVector<QVariant> &variableNodeData)
-{
-  mVariableNodeData = variableNodeData;
-  mEditable = false;
-  mVariability = "";
-  mChildren.clear();
-}
-
-VariableNode::~VariableNode()
-{
-  qDeleteAll(mChildren);
-  mChildren.clear();
-}
-
-VariableNode* VariableNode::findVariableNode(const QString &name, VariableNode *pParentVariableNode)
-{
-  VariableNode *pVariableNode = pParentVariableNode->mChildren.value(name, 0);
-  if (pVariableNode) {
-    return pVariableNode;
-  } else {
-    QHash<QString, VariableNode*>::const_iterator iterator = pParentVariableNode->mChildren.constBegin();
-    while (iterator != pParentVariableNode->mChildren.constEnd()) {
-      if (VariableNode *node = VariableNode::findVariableNode(name, iterator.value())) {
-        return node;
-      }
-      ++iterator;
-    }
-  }
-  return 0;
 }

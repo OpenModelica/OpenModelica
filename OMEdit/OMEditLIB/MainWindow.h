@@ -44,8 +44,8 @@ extern "C" {
 }
 
 #include <QtGlobal>
-#if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
-#error "OMEdit requires Qt 4.6.0 or newer"
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+#error "OMEdit requires Qt 5.0.0 or newer"
 #endif
 
 #include <QMainWindow>
@@ -222,7 +222,7 @@ public:
   int askForExit();
   void beforeClosingMainWindow();
   void openDroppedFile(const QMimeData *pMimeData);
-  void openResultFiles(QStringList fileNames);
+  void openResultFile(const QString &fileName);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);

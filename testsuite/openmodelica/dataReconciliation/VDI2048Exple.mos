@@ -55,59 +55,36 @@ getErrorString();
 // 9/9 (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0   [dynamic |0|0|0|0|]
 // 10/10 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
 //
-//
-// OverDetermined-System-Equations (13, 13)
-// ========================================
-// 1/1 (1): mV = 0.0   [initial |0|0|0|0|]
-// 2/2 (1): mA5 = 0.0   [initial |0|0|0|0|]
-// 3/3 (1): mHDNK = 0.0   [initial |0|0|0|0|]
-// 4/4 (1): mFDKEL = 46.241   [binding |0|0|0|0|]
-// 5/5 (1): mFDKELL = 45.668   [binding |0|0|0|0|]
-// 6/6 (1): mSPL = 44.575   [binding |0|0|0|0|]
-// 7/7 (1): mSPLL = 44.319   [binding |0|0|0|0|]
-// 8/8 (1): mHK = 69.97799999999999   [binding |0|0|0|0|]
-// 9/9 (1): mA7 = 10.364   [binding |0|0|0|0|]
-// 10/10 (1): mA6 = 3.744   [binding |0|0|0|0|]
-// 11/11 (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0   [dynamic |0|0|0|0|]
-// 12/12 (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0   [dynamic |0|0|0|0|]
-// 13/13 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
-//
 // Matching
 // ========================================
 // 10 variables and equations
-// var 1 is solved in eqn 3
-// var 2 is solved in eqn 2
-// var 3 is solved in eqn 10
-// var 4 is solved in eqn 9
-// var 5 is solved in eqn 8
-// var 6 is solved in eqn 1
-// var 7 is solved in eqn 7
-// var 8 is solved in eqn 6
-// var 9 is solved in eqn 5
-// var 10 is solved in eqn 4
+// var 1 is solved in eqn 10
+// var 2 is solved in eqn 9
+// var 3 is solved in eqn 7
+// var 4 is solved in eqn 6
+// var 5 is solved in eqn 5
+// var 6 is solved in eqn 8
+// var 7 is solved in eqn 4
+// var 8 is solved in eqn 3
+// var 9 is solved in eqn 2
+// var 10 is solved in eqn 1
 //
-// E-BLT-Equations {11, 12, 13} (3)
-// ========================================
-// 1/1 (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0   [dynamic |0|0|0|0|]
-// 2/2 (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): mA7 + mA6 + mA5 - mHDNK = 0.0   [dynamic |0|0|0|0|]
+// Standard BLT of the original model:(10)
+// ============================================================
 //
-//
-// reOrdered-Equations-after-removal (10, 10)
-// ========================================
-// 1/1 (1): mV = 0.0   [initial |0|0|0|0|]
-// 2/2 (1): mA5 = 0.0   [initial |0|0|0|0|]
-// 3/3 (1): mHDNK = 0.0   [initial |0|0|0|0|]
-// 4/4 (1): mFDKEL = 46.241   [binding |0|0|0|0|]
-// 5/5 (1): mFDKELL = 45.668   [binding |0|0|0|0|]
-// 6/6 (1): mSPL = 44.575   [binding |0|0|0|0|]
-// 7/7 (1): mSPLL = 44.319   [binding |0|0|0|0|]
-// 8/8 (1): mHK = 69.97799999999999   [binding |0|0|0|0|]
-// 9/9 (1): mA7 = 10.364   [binding |0|0|0|0|]
-// 10/10 (1): mA6 = 3.744   [binding |0|0|0|0|]
+// 10: mFDKEL: (1/1): (1): mFDKEL = 46.241
+// 9: mFDKELL: (2/2): (1): mFDKELL = 45.668
+// 8: mSPL: (3/3): (1): mSPL = 44.575
+// 7: mSPLL: (4/4): (1): mSPLL = 44.319
+// 6: mV: (8/8): (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0
+// 5: mHK: (5/5): (1): mHK = 69.97799999999999
+// 4: mA7: (6/6): (1): mA7 = 10.364
+// 3: mA6: (7/7): (1): mA6 = 3.744
+// 2: mA5: (9/9): (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0
+// 1: mHDNK: (10/10): (1): mA7 + mA6 + mA5 - mHDNK = 0.0
 //
 //
-// reOrderedVariables (10)
+// Variables of interest (10)
 // ========================================
 // 1: mHDNK:VARIABLE(start = 18.498 uncertain=Uncertainty.refine)  type: Real
 // 2: mA5:VARIABLE(start = 4.391 uncertain=Uncertainty.refine)  type: Real
@@ -120,56 +97,49 @@ getErrorString();
 // 9: mFDKELL:VARIABLE(start = 45.668 uncertain=Uncertainty.refine)  type: Real
 // 10: mFDKEL:VARIABLE(start = 46.241 uncertain=Uncertainty.refine)  type: Real
 //
-// Matching
-// ========================================
-// 10 variables and equations
-// var 1 is solved in eqn 3
-// var 2 is solved in eqn 2
-// var 3 is solved in eqn 10
-// var 4 is solved in eqn 9
-// var 5 is solved in eqn 8
-// var 6 is solved in eqn 1
-// var 7 is solved in eqn 7
-// var 8 is solved in eqn 6
-// var 9 is solved in eqn 5
-// var 10 is solved in eqn 4
 //
-// BLT_BLOCKS:
-// ==========================================================================
-// {{3},{2},{10},{9},{8},{1},{7},{6},{5},{4},{-1},{-2},{-3}}
-//
-//
-// Targets of blocks without predecessors:
+// Boundary conditions (0)
 // ========================================
 //
-// Targets of Blue blocks (10)
-// ==============================
 //
-// Block :{3} || blockTargetsInfo :{({3}, 1), ({-3}, -3)} || KnownBlocks :{3} || constantBlocks :{}
-// Block :{2} || blockTargetsInfo :{({2}, 2), ({-2}, -2)} || KnownBlocks :{2} || constantBlocks :{}
-// Block :{10} || blockTargetsInfo :{({10}, 3), ({-2}, -2)} || KnownBlocks :{10} || constantBlocks :{}
-// Block :{9} || blockTargetsInfo :{({9}, 4), ({-2}, -2)} || KnownBlocks :{9} || constantBlocks :{}
-// Block :{8} || blockTargetsInfo :{({8}, 5), ({-2}, -2)} || KnownBlocks :{8} || constantBlocks :{}
-// Block :{1} || blockTargetsInfo :{({1}, 6), ({-1}, -1)} || KnownBlocks :{1} || constantBlocks :{}
-// Block :{7} || blockTargetsInfo :{({7}, 7), ({-1}, -1)} || KnownBlocks :{7} || constantBlocks :{}
-// Block :{6} || blockTargetsInfo :{({6}, 8), ({-1}, -1)} || KnownBlocks :{6} || constantBlocks :{}
-// Block :{5} || blockTargetsInfo :{({5}, 9), ({-1}, -1)} || KnownBlocks :{5} || constantBlocks :{}
-// Block :{4} || blockTargetsInfo :{({4}, 10), ({-1}, -1)} || KnownBlocks :{4} || constantBlocks :{}
+// Binding equations:(7)
+// ============================================================
+//
+// 3: mA6: (7/7): (1): mA6 = 3.744
+// 4: mA7: (6/6): (1): mA7 = 10.364
+// 5: mHK: (5/5): (1): mHK = 69.97799999999999
+// 7: mSPLL: (4/4): (1): mSPLL = 44.319
+// 8: mSPL: (3/3): (1): mSPL = 44.575
+// 9: mFDKELL: (2/2): (1): mFDKELL = 45.668
+// 10: mFDKEL: (1/1): (1): mFDKEL = 46.241
 //
 //
-// Targets of Red blocks (0)
-// ==============================
+// E-BLT: equations that compute the variables of interest:(3)
+// ============================================================
+//
+// 1: mHDNK: (10/10): (1): mA7 + mA6 + mA5 - mHDNK = 0.0
+// 2: mA5: (9/9): (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0
+// 6: mV: (8/8): (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0
 //
 //
-//
-// Targets of Brown blocks (0)
-// ==============================
-//
-//
-//
-// FINAL SET OF EQUATIONS After Reconciliation
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// SET_C: {-3, -2, -1}
+// >>>1: mHDNK: (10/10): (1): mA7 + mA6 + mA5 - mHDNK = 0.0
+// Procedure success
+//
+// >>>2: mA5: (9/9): (1): mSPL + mSPLL + (-mA5) - mHK - mA7 - mV - mA6 = 0.0
+// Procedure success
+//
+// >>>6: mV: (8/8): (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 1
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {10, 9, 8}
 // SET_S: {}
 //
 //
@@ -180,11 +150,7 @@ getErrorString();
 // 3/3 (1): mFDKEL + mFDKELL + 0.4 * mV + (-mSPLL) - mSPL = 0.0   [dynamic |0|0|0|0|]
 //
 //
-// SET_S_After_Minimal_Extraction (0, 0)
-// ==========================================================================
-//
-//
-// Unknown variables in SET_S  (0)
+// Unknown variables in SET_S (0)
 // ========================================
 //
 //
@@ -206,7 +172,7 @@ getErrorString();
 // 9: mFDKELL:VARIABLE(start = 45.668 uncertain=Uncertainty.refine)  type: Real
 // 10: mFDKEL:VARIABLE(start = 46.241 uncertain=Uncertainty.refine)  type: Real
 //
-// -SET_C:{-3, -2, -1}
+// -SET_C:{10, 9, 8}
 // -SET_S:{}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"

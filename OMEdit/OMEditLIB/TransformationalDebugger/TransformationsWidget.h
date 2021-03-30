@@ -47,6 +47,7 @@ class TransformationsWidget;
 class TVariablesTreeView;
 class TreeSearchFilters;
 class Label;
+class VariableNode;
 
 class TVariablesTreeItem
 {
@@ -91,14 +92,15 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const;
   TVariablesTreeItem* findTVariablesTreeItem(const QString &name, TVariablesTreeItem *root) const;
   QModelIndex tVariablesTreeItemIndex(const TVariablesTreeItem *pTVariablesTreeItem) const;
-  QModelIndex tVariablesTreeItemIndexHelper(const TVariablesTreeItem *pTVariablesTreeItem, const TVariablesTreeItem *pParentTVariablesTreeItem,
-                                           const QModelIndex &parentIndex) const;
   void insertTVariablesItems(QHashIterator<QString, OMVariable> variables);
   void clearTVariablesTreeItems();
 private:
   TVariablesTreeView *mpTVariablesTreeView;
   TVariablesTreeItem *mpRootTVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesList;
+
+  QModelIndex tVariablesTreeItemIndexHelper(const TVariablesTreeItem *pTVariablesTreeItem, const TVariablesTreeItem *pParentTVariablesTreeItem, const QModelIndex &parentIndex) const;
+  void insertVariablesItems(VariableNode *pParentVariableNode, TVariablesTreeItem *pParentTVariablesTreeItem);
 };
 
 class TVariableTreeProxyModel : public QSortFilterProxyModel
@@ -107,7 +109,8 @@ class TVariableTreeProxyModel : public QSortFilterProxyModel
 public:
   TVariableTreeProxyModel(QObject *parent = 0);
 protected:
-  bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+  virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
+  virtual bool lessThan(const QModelIndex &left, const QModelIndex &right) const override;
 };
 
 class IntegerTreeWidgetItem : public QTreeWidgetItem

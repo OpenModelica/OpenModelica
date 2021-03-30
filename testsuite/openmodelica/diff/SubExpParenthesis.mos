@@ -1,0 +1,26 @@
+// status: correct
+
+echo(false);
+a := "
+model M
+equation
+  a =  0/(1+A(x));
+end M;";
+b := "
+model M
+equation
+  a = 0 / (1+B(x));
+end M;";
+echo(true);
+
+diffModelicaFileListings(a, b, OpenModelica.Scripting.DiffFormat.color);getErrorString();
+
+// Result:
+// true
+// "
+// model M
+// equation
+//   a =  0/[9;31m(1+A(x))[0m[4;32m(1+B(x))[0m;
+// end M;"
+// ""
+// endResult

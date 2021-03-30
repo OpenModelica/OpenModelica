@@ -1815,6 +1815,23 @@ algorithm
   end match;
 end isDynamicEqKind;
 
+public function isBindingEquation
+  input BackendDAE.Equation inEquation;
+  output Boolean outBool;
+algorithm
+  outBool := isBindingEqKind(equationKind(inEquation));
+end isBindingEquation;
+
+public function isBindingEqKind
+  input BackendDAE.EquationKind inEqKind;
+  output Boolean outBool;
+algorithm
+  outBool := match (inEqKind)
+    case (BackendDAE.BINDING_EQUATION()) then true;
+    else false;
+  end match;
+end isBindingEqKind;
+
 public function isDiscreteEquation
   input BackendDAE.Equation inEquation;
   output Boolean outBool;

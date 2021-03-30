@@ -64,4 +64,4 @@ LIBS += -L$$OMEDIT_ROOT/OMEditLIB/Debugger/Parser -lGDBMIParser \
   -L$$(OMBUILDDIR)/lib/omc -lomcparserantlr4 -lomantlr3 -lOMPlot -lomqwt -lomopcua -lzmq \
   -lOpenModelicaCompiler -lomcruntime -lOpenModelicaRuntimeC -lfmilib -lModelicaExternalC -lomcgc -lpthread -lshlwapi \
   -lws2_32 \
-  -L$$(OMBUILDDIR)/bin -lOMSimulator -lqjson
+  -L$$(OMBUILDDIR)/bin -lOMSimulator
