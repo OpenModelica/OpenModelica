@@ -61,7 +61,6 @@ protected
   import SBGraphUtil = NFSBGraphUtil;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
-  import System;
   import Type = NFType;
   import Variable = NFVariable;
 

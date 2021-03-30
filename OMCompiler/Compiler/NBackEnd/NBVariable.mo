@@ -67,7 +67,6 @@ public
   import Array;
   import BaseHashTable;
   import ExpandableArray;
-  import Flags;
   import StringUtil;
   import UnorderedMap;
   import Util;
