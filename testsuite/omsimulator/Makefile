@@ -15,13 +15,13 @@ outputState.mos \
 reset_omc.mos \
 reset.mos \
 resetWithLoops.mos \
-test03.mos \
 testDirectionalDerivatives.mos \
 testLoopsOverFMUs.mos \
 testSynchronousFMU_01.mos \
 testSynchronousFMU_02.mos
 
 FAILINGTESTFILES = \
+test03.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.

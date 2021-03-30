@@ -54,60 +54,34 @@ getErrorString();
 // 8/8 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
 // 9/9 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
 //
-//
-// OverDetermined-System-Equations (14, 14)
-// ========================================
-// 1/1 (1): D = 0.0   [initial |0|0|0|0|]
-// 2/2 (1): xF1 = 0.0   [initial |0|0|0|0|]
-// 3/3 (1): xF2 = 0.0   [initial |0|0|0|0|]
-// 4/4 (1): xB2 = 0.0   [initial |0|0|0|0|]
-// 5/5 (1): xD2 = 0.0   [initial |0|0|0|0|]
-// 6/6 (1): F = 1095.47   [binding |0|0|0|0|]
-// 7/7 (1): B = 488.23   [binding |0|0|0|0|]
-// 8/8 (1): xB1 = 1.97   [binding |0|0|0|0|]
-// 9/9 (1): xD1 = 94.09999999999999   [binding |0|0|0|0|]
-// 10/10 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
-// 11/11 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
-// 12/12 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
-// 13/13 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
-// 14/14 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
-//
 // Matching
 // ========================================
 // 9 variables and equations
-// var 1 is solved in eqn 5
-// var 2 is solved in eqn 9
-// var 3 is solved in eqn 4
-// var 4 is solved in eqn 8
-// var 5 is solved in eqn 3
-// var 6 is solved in eqn 2
-// var 7 is solved in eqn 1
-// var 8 is solved in eqn 7
-// var 9 is solved in eqn 6
+// var 1 is solved in eqn 9
+// var 2 is solved in eqn 4
+// var 3 is solved in eqn 8
+// var 4 is solved in eqn 3
+// var 5 is solved in eqn 6
+// var 6 is solved in eqn 7
+// var 7 is solved in eqn 5
+// var 8 is solved in eqn 2
+// var 9 is solved in eqn 1
 //
-// E-BLT-Equations {10, 11, 12, 13, 14} (5)
-// ========================================
-// 1/1 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
-// 2/2 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
-// 3/3 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
-// 4/4 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
-// 5/5 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
+// Standard BLT of the original model:(9)
+// ============================================================
 //
-//
-// reOrdered-Equations-after-removal (9, 9)
-// ========================================
-// 1/1 (1): D = 0.0   [initial |0|0|0|0|]
-// 2/2 (1): xF1 = 0.0   [initial |0|0|0|0|]
-// 3/3 (1): xF2 = 0.0   [initial |0|0|0|0|]
-// 4/4 (1): xB2 = 0.0   [initial |0|0|0|0|]
-// 5/5 (1): xD2 = 0.0   [initial |0|0|0|0|]
-// 6/6 (1): F = 1095.47   [binding |0|0|0|0|]
-// 7/7 (1): B = 488.23   [binding |0|0|0|0|]
-// 8/8 (1): xB1 = 1.97   [binding |0|0|0|0|]
-// 9/9 (1): xD1 = 94.09999999999999   [binding |0|0|0|0|]
+// 9: F: (1/1): (1): F = 1095.47
+// 8: B: (2/2): (1): B = 488.23
+// 7: D: (5/5): (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0
+// 6: xF1: (7/7): (1): xF1 + xF2 = 100.0
+// 5: xF2: (6/6): (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0
+// 4: xB1: (3/3): (1): xB1 = 1.97
+// 3: xB2: (8/8): (1): xB1 + xB2 = 100.0
+// 2: xD1: (4/4): (1): xD1 = 94.09999999999999
+// 1: xD2: (9/9): (1): xD1 + xD2 = 100.0
 //
 //
-// reOrderedVariables (9)
+// Variables of interest (9)
 // ========================================
 // 1: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
 // 2: xD1:VARIABLE(start = 94.09999999999999 uncertain=Uncertainty.refine)  type: Real
@@ -119,68 +93,67 @@ getErrorString();
 // 8: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
 // 9: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
 //
-// Matching
-// ========================================
-// 9 variables and equations
-// var 1 is solved in eqn 5
-// var 2 is solved in eqn 9
-// var 3 is solved in eqn 4
-// var 4 is solved in eqn 8
-// var 5 is solved in eqn 3
-// var 6 is solved in eqn 2
-// var 7 is solved in eqn 1
-// var 8 is solved in eqn 7
-// var 9 is solved in eqn 6
 //
-// BLT_BLOCKS:
-// ==========================================================================
-// {{5},{9},{4},{8},{3},{2},{1},{7},{6},{-1},{-2},{-3},{-4},{-5}}
-//
-//
-// Targets of blocks without predecessors:
+// Boundary conditions (0)
 // ========================================
 //
-// Targets of Blue blocks (9)
-// ==============================
 //
-// Block :{5} || blockTargetsInfo :{({5}, 1), ({-2}, -2)} || KnownBlocks :{5} || constantBlocks :{}
-// Block :{9} || blockTargetsInfo :{({9}, 2), ({-1}, -1)} || KnownBlocks :{9} || constantBlocks :{}
-// Block :{4} || blockTargetsInfo :{({4}, 3), ({-2}, -2)} || KnownBlocks :{4} || constantBlocks :{}
-// Block :{8} || blockTargetsInfo :{({8}, 4), ({-1}, -1)} || KnownBlocks :{8} || constantBlocks :{}
-// Block :{3} || blockTargetsInfo :{({3}, 5), ({-2}, -2)} || KnownBlocks :{3} || constantBlocks :{}
-// Block :{2} || blockTargetsInfo :{({2}, 6), ({-1}, -1)} || KnownBlocks :{2} || constantBlocks :{}
-// Block :{1} || blockTargetsInfo :{({1}, 7), ({-1}, -1)} || KnownBlocks :{1} || constantBlocks :{}
-// Block :{7} || blockTargetsInfo :{({7}, 8), ({-1}, -1)} || KnownBlocks :{7} || constantBlocks :{}
-// Block :{6} || blockTargetsInfo :{({6}, 9), ({-1}, -1)} || KnownBlocks :{6} || constantBlocks :{}
+// Binding equations:(4)
+// ============================================================
+//
+// 2: xD1: (4/4): (1): xD1 = 94.09999999999999
+// 4: xB1: (3/3): (1): xB1 = 1.97
+// 8: B: (2/2): (1): B = 488.23
+// 9: F: (1/1): (1): F = 1095.47
 //
 //
-// Targets of Red blocks (0)
-// ==============================
+// E-BLT: equations that compute the variables of interest:(5)
+// ============================================================
+//
+// 1: xD2: (9/9): (1): xD1 + xD2 = 100.0
+// 3: xB2: (8/8): (1): xB1 + xB2 = 100.0
+// 5: xF2: (6/6): (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0
+// 6: xF1: (7/7): (1): xF1 + xF2 = 100.0
+// 7: D: (5/5): (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0
 //
 //
-//
-// Targets of Brown blocks (0)
-// ==============================
-//
-//
-//
-// FINAL SET OF EQUATIONS After Reconciliation
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
 // ==========================================================================
-// SET_C: {-2, -1}
+// >>>1: xD2: (9/9): (1): xD1 + xD2 = 100.0
+// Procedure success
+//
+// >>>3: xB2: (8/8): (1): xB1 + xB2 = 100.0
+// Procedure success
+//
+// >>>5: xF2: (6/6): (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0
+// Procedure success
+//
+// >>>6: xF1: (7/7): (1): xF1 + xF2 = 100.0
+// Procedure success
+//
+// >>>7: D: (5/5): (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 1
+// ==========================================================================
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+// SET_C: {9, 8, 6, 7, 5}
 // SET_S: {}
 //
 //
-// SET_C (2, 2)
+// SET_C (5, 5)
 // ========================================
-// 1/1 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
-// 2/2 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
+// 1/1 (1): xD1 + xD2 = 100.0   [dynamic |0|0|0|0|]
+// 2/2 (1): xB1 + xB2 = 100.0   [dynamic |0|0|0|0|]
+// 3/3 (1): F * xF2 + (-B) * xB2 - D * xD2 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): xF1 + xF2 = 100.0   [dynamic |0|0|0|0|]
+// 5/5 (1): F * xF1 + (-B) * xB1 - D * xD1 = 0.0   [dynamic |0|0|0|0|]
 //
 //
-// SET_S_After_Minimal_Extraction (0, 0)
-// ==========================================================================
-//
-//
-// Unknown variables in SET_S  (0)
+// Unknown variables in SET_S (0)
 // ========================================
 //
 //
@@ -201,7 +174,7 @@ getErrorString();
 // 8: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
 // 9: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
 //
-// -SET_C:{-2, -1}
+// -SET_C:{9, 8, 6, 7, 5}
 // -SET_S:{}
 //
 // Condition-1 "SET_C and SET_S must not have no equations in common"
@@ -212,7 +185,7 @@ getErrorString();
 // ==========================================================================
 // -Passed
 //
-// -SET_C has all known variables:{2, 4, 6, 7, 8, 9, 1, 3, 5} (9)
+// -SET_C has all known variables:{2, 4, 6, 7, 8, 9, 5, 1, 3} (9)
 // ========================================
 // 1: xD1:VARIABLE(start = 94.09999999999999 uncertain=Uncertainty.refine)  type: Real
 // 2: xB1:VARIABLE(start = 1.97 uncertain=Uncertainty.refine)  type: Real
@@ -220,14 +193,14 @@ getErrorString();
 // 4: D:VARIABLE(start = 478.4 uncertain=Uncertainty.refine)  type: Real
 // 5: B:VARIABLE(start = 488.23 uncertain=Uncertainty.refine)  type: Real
 // 6: F:VARIABLE(start = 1095.47 uncertain=Uncertainty.refine)  type: Real
-// 7: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
-// 8: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
-// 9: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 7: xF2:VARIABLE(start = 51.7 uncertain=Uncertainty.refine)  type: Real
+// 8: xD2:VARIABLE(start = 5.01 uncertain=Uncertainty.refine)  type: Real
+// 9: xB2:VARIABLE(start = 97.48 uncertain=Uncertainty.refine)  type: Real
 //
 // Condition-3 "SET_C equations must be strictly less than Variable of Interest"
 // ==========================================================================
 // -Passed
-// -SET_C contains:2 equations < 9 known variables
+// -SET_C contains:5 equations < 9 known variables
 //
 // Condition-4 "SET_S should contain all intermediate variables involved in SET_C"
 // ==========================================================================

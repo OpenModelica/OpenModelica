@@ -20,7 +20,7 @@ OMEditLIB/Resources/nls/qm.stamp: OMEditLIB/OMEditLIB.pro OMEditLIB/Resources/nl
 	$(LRELEASE) $<
 	@touch $@
 
-$(NAME): parsergen qjson-build Makefile omc_config.h
+$(NAME): parsergen Makefile omc_config.h
 	$(MAKE) -f Makefile
 
 build: $(NAME)
@@ -44,8 +44,6 @@ mkbuilddirs:
 omedit: mkbuilddirs install
 
 clean:
-	test ! -f qjson/build/Makefile || $(MAKE) -C qjson/build clean
-	rm -rf qjson/build
 	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.unix clean
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	rm -f bin/OMEdit$(APP) bin/$(LIB)$(LIBEXE)
@@ -58,12 +56,3 @@ config.status: configure
 	./config.status -recheck
 configure: configure.ac common/m4/corba.m4 common/m4/omhome.m4 common/m4/qmake.m4
 	autoconf
-
-qjson-build:
-	test -d qjson
-	mkdir -p qjson/build/include/qjson
-	(cd qjson/build && test -f Makefile || CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" $(CMAKE) .. @QT4BUILD@ -G $(CMAKE_TARGET))
-	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libqjson.0.dylib qjson/build/lib/libqjson.0.dylib
-	cp -a qjson/build/lib/libqjson*$(SHREXT)* @OMBUILDDIR@/lib/@host_short@/omc/
-	cp -a qjson/src/*.h qjson/build/include/qjson
