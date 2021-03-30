@@ -364,6 +364,17 @@ public
     end match;
   end sizeExp;
 
+  function lowerBoundExp
+    input Dimension dim;
+    output Expression exp;
+  algorithm
+    exp := match dim
+      case BOOLEAN() then Expression.BOOLEAN(false);
+      case ENUM() then Expression.makeEnumLiteral(dim.enumType, 1);
+      else Expression.INTEGER(1);
+    end match;
+  end lowerBoundExp;
+
   function expIsLowerBound
     "Returns true if the expression represents the lower bound of a dimension."
     input Expression exp;
@@ -376,6 +387,22 @@ public
       else false;
     end match;
   end expIsLowerBound;
+
+  function upperBoundExp
+    input Dimension dim;
+    output Expression exp;
+  algorithm
+    exp := match dim
+      local
+        Type ty;
+
+      case INTEGER() then Expression.INTEGER(dim.size);
+      case BOOLEAN() then Expression.BOOLEAN(true);
+      case ENUM(enumType = ty as Type.ENUMERATION())
+        then Expression.makeEnumLiteral(ty, listLength(ty.literals));
+      case EXP() then dim.exp;
+    end match;
+  end upperBoundExp;
 
   function expIsUpperBound
     "Returns true if the expression represents the upper bound of the given dimension."

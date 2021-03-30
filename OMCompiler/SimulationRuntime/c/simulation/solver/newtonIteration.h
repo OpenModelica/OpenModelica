@@ -41,15 +41,18 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Struct containing information about equation system to be solved with Newton-Raphson method.
+ */
 typedef struct DATA_NEWTON
 {
-  int initialized; /* 1 = initialized, else = 0*/
+  int initialized; /**< 1 = initialized, else = 0*/
   double* resScaling;
   double* fvecScaled;
 
   int newtonStrategy;
 
-  int n;
+  int n;              /**< size of equation */
   double* x;
   double* fvec;
   double xtol;
@@ -63,8 +66,8 @@ typedef struct DATA_NEWTON
   int* iwork;
   int calculate_jacobian;
   int factorization;
-  int numberOfIterations; /* over the whole simulation time */
-  int numberOfFunctionEvaluations; /* over the whole simulation time */
+  int numberOfIterations;           /**< over the whole simulation time */
+  int numberOfFunctionEvaluations;  /**< over the whole simulation time */
 
   /* damped newton */
   double* x_new;

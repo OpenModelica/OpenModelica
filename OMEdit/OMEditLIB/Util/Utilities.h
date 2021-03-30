@@ -448,6 +448,31 @@ public:
   void start(const QString &program, const QStringList &arguments, OpenMode mode = ReadWrite);
 };
 
+class JsonDocument : public QObject
+{
+  Q_OBJECT
+public:
+  JsonDocument(QObject *pParent = 0);
+  bool parse(const QString &fileName);
+  bool parse(const QByteArray &jsonData);
+
+  QVariant result;
+  QString errorString;
+};
+
+class VariableNode
+{
+public:
+  VariableNode(const QVector<QVariant> &variableNodeData);
+  ~VariableNode();
+  QVector<QVariant> mVariableNodeData;
+  bool mEditable;
+  QString mVariability;
+  QHash<QString, VariableNode*> mChildren;
+
+  static VariableNode* findVariableNode(const QString &name, VariableNode *pParentVariableNode);
+};
+
 namespace Utilities {
 
   enum LineEndingMode {

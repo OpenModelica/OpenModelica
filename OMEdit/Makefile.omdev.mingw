@@ -58,7 +58,7 @@ $(NAME): Makefile
 parsergen:
 	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.omdev.mingw
 
-Makefile: parsergen qjson-build OMEdit.pro
+Makefile: parsergen OMEdit.pro
 	$(QMAKE) -r "CONFIG+=release"
 MakefileClean: OMEdit.pro
 	$(QMAKE) -r "CONFIG+=release"
@@ -80,19 +80,7 @@ omc_config.h:
 	fi;
 
 clean: MakefileClean
-	cd qjson && rm -rf build
 	$(MAKE) -C OMEditLIB/Debugger/Parser -f Makefile.lib.omdev.mingw clean
 	test ! -f Makefile || $(MAKE) -f Makefile clean
 	rm -f bin/$(NAME)$(EXE) bin/$(LIB)$(LIBEXE)
 	rm -rf omc_config.h Makefile OMEditLIB/debug OMEditLIB/release OMEditLIB/generatedfiles OMEditLIB/Makefile OMEditLIB/Makefile.Debug OMEditLIB/Makefile.Release OMEditLIB/object_script.* OMEditGUI/debug OMEditGUI/release OMEditGUI/Makefile OMEditGUI/Makefile.Debug OMEditGUI/Makefile.Release
-
-qjson-build:
-	test -d qjson
-	mkdir -p qjson/build/include/qjson
-	(cd qjson/build && test -f Makefile || CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" $(CMAKE) -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON -D CMAKE_AR:String="$(AR)" .. -DQT4_BUILD:Boolean=OFF -G $(CMAKE_TARGET) -DCMAKE_INSTALL_PREFIX:PATH=`pwd`)
-	test -f qjson/build/lib/libqjson$(SHREXT) || $(MAKE) -C qjson/build install
-	cp -a qjson/build/lib/libqjson*$(SHREXT)* $(OMBUILDDIR)/lib/omc/
-	cp -a qjson/build/bin/libqjson*$(SHREXT)* $(OMBUILDDIR)/lib/omc/
-	cp -a qjson/build/lib/libqjson*$(SHREXT)* $(OMBUILDDIR)/bin/
-	cp -a qjson/build/bin/libqjson*$(SHREXT)* $(OMBUILDDIR)/bin/
-	cp -a qjson/src/*.h qjson/build/include/qjson

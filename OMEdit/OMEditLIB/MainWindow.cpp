@@ -78,7 +78,6 @@
 #include "omc_config.h"
 #include "Util/NetworkAccessManager.h"
 
-#include <qjson/parser.h>
 #include <QtSvg/QSvgGenerator>
 
 MainWindow::MainWindow(QWidget *parent)
@@ -686,36 +685,33 @@ void MainWindow::openDroppedFile(const QMimeData *pMimeData)
   //retrieves the filenames of all the dragged files in list and opens the valid files.
   foreach (QUrl fileUrl, pMimeData->urls()) {
     QFileInfo fileInfo(fileUrl.toLocalFile());
-    // show file loading message
-    mpStatusBar->showMessage(QString(Helper::loading).append(": ").append(fileInfo.absoluteFilePath()));
     mpProgressBar->setValue(++progressValue);
     // check the file extension
     QRegExp resultFilesRegExp(Helper::omResultFileTypesRegExp);
     if (resultFilesRegExp.indexIn(fileInfo.suffix()) != -1) {
-      openResultFiles(QStringList(fileInfo.absoluteFilePath()));
+      openResultFile(fileInfo.absoluteFilePath());
     } else {
       mpLibraryWidget->openFile(fileInfo.absoluteFilePath(), Helper::utf8, false);
     }
   }
-  mpStatusBar->clearMessage();
   hideProgressBar();
 }
 
 /*!
- * \brief MainWindow::openResultFiles
- * Opens the result file(s).
- * \param fileNames
+ * \brief MainWindow::openResultFile
+ * Opens the result file.
+ * \param fileName
  */
-void MainWindow::openResultFiles(QStringList fileNames)
+void MainWindow::openResultFile(const QString &fileName)
 {
-  foreach (QString fileName, fileNames) {
-    QFileInfo fileInfo(fileName);
-    QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
-    if (list.size() > 0) {
-      switchToPlottingPerspectiveSlot();
-      mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-    }
+  mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
+  QFileInfo fileInfo(fileName);
+  QStringList list = mpOMCProxy->readSimulationResultVars(fileInfo.absoluteFilePath());
+  if (list.size() > 0) {
+    switchToPlottingPerspectiveSlot();
+    mpVariablesWidget->insertVariablesItemsToTree(fileInfo.fileName(), fileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
   }
+  mpStatusBar->clearMessage();
 }
 
 void MainWindow::simulate(LibraryTreeItem *pLibraryTreeItem)
@@ -1355,8 +1351,7 @@ void MainWindow::printStandardOutAndErrorFilesMessages()
       QString outputFileData = outputFile.readAll();
       if (!outputFileData.isEmpty()) {
         outputFilePosition = outputFile.pos();
-        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, outputFileData,
-                                                              Helper::scriptingKind, Helper::notificationLevel));
+        MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, outputFileData, Helper::scriptingKind, Helper::notificationLevel));
       }
     }
     outputFile.close();
@@ -1385,7 +1380,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
   MainWindow *pMainWindow = (MainWindow*)p;
   if (pMainWindow) {
     QFileInfo fileInfo(filename);
-    pMainWindow->openResultFiles(QStringList() << filename);
+    pMainWindow->openResultFile(filename);
     if (!fileInfo.exists()) return;
     OMPlot::PlotWindow *pPlotWindow = pMainWindow->getPlotWindowContainer()->getCurrentWindow();
     if (pPlotWindow && !externalWindow) {
@@ -1468,26 +1463,6 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
       }
     }
     pVariablesTreeModel->blockSignals(state);
-  }
-}
-
-/*!
- * \brief MainWindow::OMSSimulationFinished
- * Called by OMSSimulationOutputWidget when the simulation is finished.\n
- * Reads the result file and plots the result.
- * \param resultFilePath
- * \param resultFileLastModifiedDateTime
- */
-void MainWindow::OMSSimulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime)
-{
-  // read the result file
-  QFileInfo resultFileInfo(resultFilePath);
-  if (resultFileInfo.exists() && resultFileLastModifiedDateTime <= resultFileInfo.lastModified()) {
-    VariablesWidget *pVariablesWidget = MainWindow::instance()->getVariablesWidget();
-    MainWindow::instance()->switchToPlottingPerspectiveSlot();
-    QStringList list = MainWindow::instance()->getOMCProxy()->readSimulationResultVars(resultFileInfo.absoluteFilePath());
-    pVariablesWidget->insertVariablesItemsToTree(resultFileInfo.fileName(), resultFileInfo.absoluteDir().absolutePath(), list, SimulationOptions());
-    MainWindow::instance()->getVariablesDockWidget()->show();
   }
 }
 
@@ -1688,12 +1663,19 @@ void MainWindow::loadEncryptedLibrary()
  */
 void MainWindow::showOpenResultFileDialog()
 {
-  QStringList fileNames = StringHandler::getOpenFileNames(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFiles),
-                                                          NULL, Helper::omResultFileTypes, NULL);
+  QStringList fileNames = StringHandler::getOpenFileNames(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFiles), NULL, Helper::omResultFileTypes, NULL);
   if (fileNames.isEmpty()) {
     return;
   }
-  openResultFiles(fileNames);
+  int progressValue = 0;
+  mpProgressBar->setRange(0, fileNames.size());
+  showProgressBar();
+  foreach (QString fileName, fileNames) {
+    mpProgressBar->setValue(++progressValue);
+    openResultFile(fileName);
+  }
+  hideProgressBar();
+
 }
 
 /*!
@@ -1703,12 +1685,15 @@ void MainWindow::showOpenResultFileDialog()
  */
 void MainWindow::showOpenTransformationFileDialog()
 {
-  QString fileName = StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                    NULL, Helper::infoXmlFileTypes, NULL);
+  QString fileName = StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::infoXmlFileTypes, NULL);
   if (fileName.isEmpty()) {
     return;
   }
+  mpProgressBar->setRange(0, 0);
+  mpStatusBar->showMessage(QString("%1: %2").arg(Helper::loading, fileName));
   showTransformationsWidget(fileName);
+  mpStatusBar->clearMessage();
+  hideProgressBar();
 }
 
 /*!
@@ -4551,15 +4536,15 @@ AboutOMEditDialog::AboutOMEditDialog(MainWindow *pMainWindow)
  */
 void AboutOMEditDialog::readOMContributors(QNetworkReply *pNetworkReply)
 {
-  QJson::Parser parser;
-  bool ok;
   QList<QVariant> result;
   const QByteArray jsonData = pNetworkReply->readAll();
-  result = parser.parse(jsonData, &ok).toList();
-  if (!ok) {
+  JsonDocument jsonDocument;
+  if (!jsonDocument.parse(jsonData)) {
     MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "Failed to parse json of github contributors.", Helper::scriptingKind, Helper::errorLevel));
+    MainWindow::instance()->printStandardOutAndErrorFilesMessages();
+  } else {
+    result = jsonDocument.result.toList();
   }
-
   QString contributors;
   foreach (QVariant variant, result) {
     QVariantMap map = variant.toMap();

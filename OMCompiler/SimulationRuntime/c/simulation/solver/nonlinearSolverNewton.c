@@ -203,20 +203,13 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
   modelica_boolean *relationsPreBackup = NULL;
   int casualTearingSet = data->simulationInfo->nonlinearSystemData[sysNumber].strictTearingFunctionCall != NULL;
 
-  DATA_USER* userdata = (DATA_USER*)malloc(sizeof(DATA_USER));
-  assert(userdata != NULL);
-
-  userdata->data = (void*)data;
-  userdata->threadData = threadData;
-  userdata->sysNumber = sysNumber;
+  DATA_USER userdata = {.data = (void*)data, .threadData = threadData, .sysNumber = sysNumber};
 
   /*
    * We are given the number of the non-linear system.
    * We want to look it up among all equations.
    */
   eqSystemNumber = systemData->equationIndex;
-
-  local_tol = solverData->ftol;
 
   relationsPreBackup = (modelica_boolean*) malloc(data->modelData->nRelations*sizeof(modelica_boolean));
 
@@ -264,7 +257,7 @@ int solveNewton(DATA *data, threadData_t *threadData, int sysNumber)
 
     giveUp = 1;
     solverData->newtonStrategy = data->simulationInfo->newtonStrategy;
-    _omc_newton(wrapper_fvec_newton, solverData, (void*)userdata);
+    _omc_newton(wrapper_fvec_newton, solverData, &userdata);
 
     /* check for proper inputs */
     if(solverData->info == 0)

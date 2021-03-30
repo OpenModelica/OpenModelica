@@ -501,11 +501,87 @@ void QDetachableProcess::start(const QString &program, const QStringList &argume
   setProcessState(QProcess::NotRunning);
 }
 
+JsonDocument::JsonDocument(QObject *pParent)
+  : QObject(pParent)
+{
+  result.clear();
+  errorString = "";
+}
+
+bool JsonDocument::parse(const QString &fileName)
+{
+  bool success = true;
+  QFile file(fileName);
+  if (file.exists()) {
+    if (file.open(QIODevice::ReadOnly)) {
+      QJsonParseError jsonParserError;
+      QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &jsonParserError);
+      if (doc.isNull()) {
+        errorString = QString("Failed to parse file %1 with error %2").arg(file.fileName(), jsonParserError.errorString());
+        success = false;
+      } else {
+        result = doc.toVariant();
+      }
+      file.close();
+    } else {
+      errorString = GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(file.fileName(), file.errorString());
+      success = false;
+    }
+  }
+  return success;
+}
+
+bool JsonDocument::parse(const QByteArray &jsonData)
+{
+  bool success = true;
+  QString msg("Failed to parse json %1 with error %2");
+  QJsonParseError jsonParserError;
+  QJsonDocument doc = QJsonDocument::fromJson(jsonData, &jsonParserError);
+  if (doc.isNull()) {
+    errorString = QString(msg).arg(jsonData, jsonParserError.errorString());
+    success = false;
+  } else {
+    result = doc.toVariant();
+  }
+  return success;
+}
+
+VariableNode::VariableNode(const QVector<QVariant> &variableNodeData)
+{
+  mVariableNodeData = variableNodeData;
+  mEditable = false;
+  mVariability = "";
+  mChildren.clear();
+}
+
+VariableNode::~VariableNode()
+{
+  qDeleteAll(mChildren);
+  mChildren.clear();
+}
+
+VariableNode* VariableNode::findVariableNode(const QString &name, VariableNode *pParentVariableNode)
+{
+  VariableNode *pVariableNode = pParentVariableNode->mChildren.value(name, 0);
+  if (pVariableNode) {
+    return pVariableNode;
+  } else {
+    QHash<QString, VariableNode*>::const_iterator iterator = pParentVariableNode->mChildren.constBegin();
+    while (iterator != pParentVariableNode->mChildren.constEnd()) {
+      if (VariableNode *node = VariableNode::findVariableNode(name, iterator.value())) {
+        return node;
+      }
+      ++iterator;
+    }
+  }
+  return 0;
+}
+
 QString Utilities::escapeForHtmlNonSecure(const QString &str)
 {
   return QString(str)
-     .replace("& ", "&amp;") // should be the first replacement
-     .replace("< ", "&lt;");
+      .replace("& ", "&amp;") // should be the first replacement
+      .replace("< ", "&lt;");
 }
 
 /*!

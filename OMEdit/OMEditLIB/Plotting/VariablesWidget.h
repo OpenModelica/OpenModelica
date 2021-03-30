@@ -60,6 +60,7 @@ public:
   QString getFileName() {return mFileName;}
   QString getPlotVariable();
   QString getVariableName() {return mVariableName;}
+  bool isString() const;
   bool isValueChanged() {return mValueChanged;}
   QString getUnit() {return mUnit;}
   QString getDisplayUnit() {return mDisplayUnit;}
@@ -101,6 +102,7 @@ private:
   QString mFileName;
   QString mVariableName;
   QString mDisplayVariableName;
+  QString mType;
   QString mValue;
   bool mValueChanged;
   QString mUnit;
@@ -150,9 +152,8 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
-  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
-  void parseInitXml(QXmlStreamReader &xmlReader);
   void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
+  void parseInitXml(QXmlStreamReader &xmlReader, QStringList *variablesList);
   bool removeVariableTreeItem(QString variable);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
   void plotAllVariables(VariablesTreeItem *pVariablesTreeItem, OMPlot::PlotWindow *pPlotWindow);
@@ -161,9 +162,10 @@ private:
   VariablesTreeItem *mpRootVariablesTreeItem;
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
+  QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
-  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *value, bool *changeAble, QString *variability,
+  void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
 signals:
   void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle);
@@ -244,8 +246,7 @@ private:
   void openResultFile();
   void updateVisualization();
 public slots:
-  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle,
-                     OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
+  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
   void simulationTimeChanged(int timePercent);
   void valueEntered(const QModelIndex &index);
@@ -264,21 +265,6 @@ private slots:
   void incrementVisualization();
 signals:
   void updateDynamicSelect(double time);
-};
-
-class VariableNode
-{
-public:
-  VariableNode(const QVector<QVariant> &variableNodeData);
-  ~VariableNode();
-  QVector<QVariant> mVariableNodeData;
-  bool mEditable;
-  QString mVariability;
-  QHash<QString, VariableNode*> mChildren;
-
-  static VariableNode* findVariableNode(const QString &name, VariableNode *pParentVariableNode);
-  void setEditable(bool editable) {mEditable = editable;}
-  void setVariability(const QString &variability) {mVariability = variability;}
 };
 
 #endif // VARIABLESWIDGET_H

@@ -44,8 +44,8 @@ extern "C" {
 }
 
 #include <QtGlobal>
-#if (QT_VERSION < QT_VERSION_CHECK(4, 6, 0))
-#error "OMEdit requires Qt 4.6.0 or newer"
+#if (QT_VERSION < QT_VERSION_CHECK(5, 0, 0))
+#error "OMEdit requires Qt 5.0.0 or newer"
 #endif
 
 #include <QMainWindow>
@@ -222,7 +222,7 @@ public:
   int askForExit();
   void beforeClosingMainWindow();
   void openDroppedFile(const QMimeData *pMimeData);
-  void openResultFiles(QStringList fileNames);
+  void openResultFile(const QString &fileName);
   void simulate(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithTransformationalDebugger(LibraryTreeItem *pLibraryTreeItem);
   void simulateWithAlgorithmicDebugger(LibraryTreeItem *pLibraryTreeItem);
@@ -247,12 +247,9 @@ public:
   TransformationsWidget* showTransformationsWidget(QString fileName);
   void findFileAndGoToLine(QString fileName, QString lineNumber);
   void printStandardOutAndErrorFilesMessages();
-  static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid,
-                                   const char* plotType, const char* logX, const char* logY, const char* xLabel, const char* yLabel,
-                                   const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
-                                   const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale,
-                                   const char* variables);
-  static void OMSSimulationFinished(const QString &resultFilePath, QDateTime resultFileLastModifiedDateTime);
+  static void PlotCallbackFunction(void *p, int externalWindow, const char* filename, const char* title, const char* grid, const char* plotType, const char* logX,
+                                   const char* logY, const char* xLabel, const char* yLabel, const char* x1, const char* x2, const char* y1, const char* y2, const char* curveWidth,
+                                   const char* curveStyle, const char* legendPosition, const char* footer, const char* autoScale, const char* variables);
 
   QList<QString> mFMUDirectoriesList;
   QList<QString> mMOLDirectoriesList;

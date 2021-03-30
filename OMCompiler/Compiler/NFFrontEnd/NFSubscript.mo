@@ -49,6 +49,8 @@ public
   import Dimension = NFDimension;
   import NFPrefixes.{Variability, Purity};
   import NFCeval.EvalTarget;
+  import NFInstNode.InstNode;
+  import ComponentRef = NFComponentRef;
 
   import Subscript = NFSubscript;
 
@@ -180,6 +182,24 @@ public
       else false;
     end match;
   end isScalarLiteral;
+
+  function isIterator
+    input Subscript sub;
+    input InstNode iterator;
+    output Boolean res;
+  protected
+    ComponentRef cref;
+  algorithm
+    res := match sub
+      case UNTYPED(exp = Expression.CREF(cref = cref))
+        then InstNode.refEqual(iterator, ComponentRef.node(cref));
+
+      case INDEX(index = Expression.CREF(cref = cref))
+        then InstNode.refEqual(iterator, ComponentRef.node(cref));
+
+      else false;
+    end match;
+  end isIterator;
 
   function isEqual
     input Subscript subscript1;

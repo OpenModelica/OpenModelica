@@ -379,22 +379,6 @@ pipeline {
           }
         }
 
-        stage('build-gui-gcc-qt4') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
-              label 'linux'
-              alwaysPull true
-            }
-          }
-          environment {
-            QTDIR = "/usr/lib/qt4"
-          }
-          steps {
-            script { common.buildGUI('omc-gcc', false) }
-          }
-        }
-
         stage('build-usersguide') {
           agent {
             dockerfile {

@@ -54,5 +54,5 @@ algorithm
   print("  seq1={" + stringDelimitList(list(toString(e) for e in seq1), ", ") + "},\n");
   print("  seq2={" + stringDelimitList(list(toString(e) for e in seq2), ", ") + "}\n");
   print(")\n");
-  out := DiffAlgorithm.diff(seq1, seq2, equals, isWhitespace, toString);
+  out := DiffAlgorithm.diff(seq1, seq2, equals, isWhitespace, isWhitespace, toString);
 end debug_diff;

@@ -8319,7 +8319,7 @@ public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
-    (DataReconciliation.extractionAlgorithm, "dataReconciliation"),
+    (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (EvaluateParameter.evaluateParameters, "evaluateParameters"),

@@ -58,7 +58,7 @@ function diff<T>
   input list<T> seq1;
   input list<T> seq2;
   input FunEquals equals;
-  input FunWhitespace isWhitespace;
+  input FunWhitespace isWhitespace, isWhitespaceNotComment;
   input ToString toString;
   output list<tuple<Diff,list<T>>> out;
   partial function FunEquals
@@ -83,7 +83,7 @@ algorithm
   start2 := 1;
   end1 := arrayLength(arr1);
   end2 := arrayLength(arr2);
-  out := diffSeq(arr1, arr2, equals, isWhitespace, toString, start1, end1, start2, end2);
+  out := diffSeq(arr1, arr2, equals, isWhitespace, isWhitespaceNotComment, toString, start1, end1, start2, end2);
 end diff;
 
 partial function partialPrintDiff<T>
@@ -176,6 +176,7 @@ function diffSeq<T>
   input array<T> arr2;
   input FunEquals equals;
   input FunWhitespace isWhitespace;
+  input FunWhitespace isWhitespaceNotComment;
   input ToString toString;
   input Integer inStart1, inEnd1, inStart2, inEnd2;
   input list<tuple<Diff,list<T>>> inPrefixes = {}, inSuffixes = {};
@@ -215,19 +216,18 @@ algorithm
   end if;
   // Note the horrible syntax for short-circuit evaluation
   // Check if the sequences are equal. Trivial diff.
-  if if len1==len2 then min(equals(e1,e2) threaded for e1 in arr1, e2 in arr2) else false then
+  if if len1==len2 then min(equals(arr1[e+start1-1],arr2[e+start2-1]) threaded for e in 1:len1) else false then
     out := {(Diff.Equal, list(arr1[e] for e in start1:end1))};
     return;
   end if;
 
   // trim off common prefix; guaranteed to be a good solution
-  (prefixes, start1, start2) := trimCommonPrefix(arr1, start1, end1, arr2, start2, end2, equals, prefixes);
+  (prefixes, start1, start2) := trimCommonPrefix(arr1, start1, end1, arr2, start2, end2, equals, prefixes, isWhitespaceNotComment, toString);
   // trim off common suffix; guaranteed to be a good solution
-  (suffixes, end1, end2) := trimCommonSuffix(arr1, start1, end1, arr2, start2, end2, equals, suffixes);
-
+  (suffixes, end1, end2) := trimCommonSuffix(arr1, start1, end1, arr2, start2, end2, equals, suffixes, isWhitespaceNotComment);
   // Check if anything changed and iterate. A sequence could now be empty.
   if start1<>inStart1 or start2<>inStart2 or end1<>inEnd1 or end2<>inEnd2 then
-    out := diffSeq(arr1,arr2,equals,isWhitespace,toString,start1,end1,start2,end2,inPrefixes=prefixes,inSuffixes=suffixes);
+    out := diffSeq(arr1,arr2,equals,isWhitespace,isWhitespaceNotComment,toString,start1,end1,start2,end2,inPrefixes=prefixes,inSuffixes=suffixes);
     return;
   else
     out := matchcontinue ()
@@ -524,19 +524,38 @@ function trimCommonPrefix<T>
   input Integer end2;
   input FunEquals equals;
   input list<tuple<Diff,list<T>>> acc;
+  input FunWhitespace isWhitespaceNotComment;
+  input ToString toString;
   output list<tuple<Diff,list<T>>> prefixes = acc;
   output Integer start1=inStart1, start2=inStart2;
+  partial function ToString
+    input T t;
+    output String o;
+  end ToString;
   partial function FunEquals
     input T t1,t2;
     output Boolean b;
   end FunEquals;
+  partial function FunWhitespace
+    input T t;
+    output Boolean b;
+  end FunWhitespace;
 protected
   list<T> lst = {};
 algorithm
-  while if start1<=end1 and start2<=end2 then equals(arr1[start1], arr2[start2]) else false loop
-    lst := arr1[start1]::lst;
-    start1 := start1 + 1;
-    start2 := start2 + 1;
+  while start1<=end1 and start2<=end2 loop
+    if equals(arr1[start1], arr2[start2]) then
+      lst := arr1[start1]::lst;
+      start1 := start1 + 1;
+      start2 := start2 + 1;
+    elseif start2+1 <= end2 and isWhitespaceNotComment(arr2[start2]) then
+      if not equals(arr1[start1], arr2[start2+1]) then
+        break;
+      end if;
+      start2 := start2 + 1;
+    else
+      break;
+    end if;
   end while;
   if not listEmpty(lst) then
     prefixes := (Diff.Equal,listReverse(lst))::prefixes;
@@ -552,24 +571,52 @@ function trimCommonSuffix<T>
   input Integer inEnd2;
   input FunEquals equals;
   input list<tuple<Diff,list<T>>> acc;
+  input FunWhitespace isWhitespaceNotComment;
   output list<tuple<Diff,list<T>>> suffixes = acc;
   output Integer end1=inEnd1, end2=inEnd2;
   partial function FunEquals
     input T t1,t2;
     output Boolean b;
   end FunEquals;
+  partial function FunWhitespace
+    input T t;
+    output Boolean b;
+  end FunWhitespace;
 protected
   list<T> lst = {};
 algorithm
-  while if start1<=end1 and start2<=end2 then equals(arr1[end1], arr2[end2]) else false loop
-    lst := arr1[end1]::lst;
-    end1 := end1 - 1;
-    end2 := end2 - 1;
+  while start1<=end1 and start2<=end2 loop
+    if equals(arr1[end1], arr2[end2]) then
+      lst := arr1[end1]::lst;
+      end1 := end1 - 1;
+      end2 := end2 - 1;
+    elseif start2 <= end2-1 and isWhitespaceNotComment(arr2[end2]) then
+      if not equals(arr1[end1], arr2[end2-1]) then
+        break;
+      end if;
+      end2 := end2 - 1;
+    else
+      break;
+    end if;
   end while;
+
   if not listEmpty(lst) then
     suffixes := (Diff.Equal,lst)::suffixes;
   end if;
 end trimCommonSuffix;
+
+function printStartToEnd<T>
+  input array<T> arr;
+  input Integer startIndex, endIndex;
+  input ToString toString;
+  partial function ToString
+    input T t;
+    output String o;
+  end ToString;
+  output String res;
+algorithm
+  res := stringAppendList(list(toString(arrayGet(arr, index)) for index in startIndex:endIndex));
+end printStartToEnd;
 
 annotation(__OpenModelica_Interface="util");
 end DiffAlgorithm;
