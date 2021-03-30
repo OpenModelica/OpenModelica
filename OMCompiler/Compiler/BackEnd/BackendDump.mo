@@ -2460,47 +2460,6 @@ algorithm
   end match;
 end symJacString;
 
-public function dumpLinearIntegerJacobianSparse
-  input BackendDAE.LinearIntegerJacobian linIntJac;
-  input String heading = "";
-protected
-  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
-  BackendDAE.LinearIntegerJacobianRhs rhsArr;
-  BackendDAE.LinearIntegerJacobianIndices idxArr;
-  array<Boolean> boolArr, matchedVarsArr;
-algorithm
-  (rowArr, rhsArr, idxArr, boolArr, matchedVarsArr) := linIntJac;
-  print("######################################################\n" +
-        " LinearIntegerJacobian sparsity pattern: " + heading + "\n" +
-        "######################################################\n" +
-        "(scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION\n");
-  for idx in 1:arrayLength(rowArr) loop
-    dumpLinearIntegerJacobianSparseRow(rowArr[idx], rhsArr[idx], idxArr[idx], boolArr[idx]);
-  end for;
-  print("\n");
-end dumpLinearIntegerJacobianSparse;
-
-protected function dumpLinearIntegerJacobianSparseRow
-  input BackendDAE.LinearIntegerJacobianRow linIntJacRow;
-  input DAE.Exp rhs;
-  input tuple<Integer, Integer> indices;
-  input Boolean changed;
-protected
-  Integer i_arr, i_scal, index, value;
-algorithm
-  (i_arr, i_scal) := indices;
-  print("(" + intString(i_arr) + "|" + intString(i_scal) + "|" + boolString(changed) +"):    ");
-  if listLength(linIntJacRow) < 1 then
-    print("EMPTY ROW     ");
-  else
-    for element in linIntJacRow loop
-      (index, value) := element;
-      print("[" + intString(index) + "|" + intString(value) + "] ");
-    end for;
-  end if;
-  print("    || RHS: " + ExpressionDump.printExpStr(rhs) + "\n");
-end dumpLinearIntegerJacobianSparseRow;
-
 public function dumpEqnsStr
 "Helper function to dump."
   input list<BackendDAE.Equation> eqns;

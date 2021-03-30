@@ -17,7 +17,7 @@ simulate(ASSC); getErrorString();
 // ""
 // true
 // ######################################################
-//  LinearIntegerJacobian sparsity pattern: Original
+//  LinearJacobian sparsity pattern: Original
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
 // (5|5|false):    [1|1.0] [3|1.0] [2|1.0]     || RHS: 0
@@ -25,7 +25,7 @@ simulate(ASSC); getErrorString();
 // (3|3|false):    [1|1.0] [3|2.0] [2|2.0]     || RHS: 10.0 - x
 //
 // ######################################################
-//  LinearIntegerJacobian sparsity pattern: Solved
+//  LinearJacobian sparsity pattern: Solved
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
 // (5|5|false):    [1|1.0] [3|1.0] [2|1.0]     || RHS: 0
