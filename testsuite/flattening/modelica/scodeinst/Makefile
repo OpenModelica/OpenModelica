@@ -572,6 +572,11 @@ FunctionRecordArg1.mo \
 FunctionRecordArg2.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
+FunctionSections1.mo \
+FunctionSections2.mo \
+FunctionSections3.mo \
+FunctionSections4.mo \
+FunctionSections5.mo \
 FunctionStreamPrefix.mo \
 IfConnect1.mo \
 IfConnect2.mo \
