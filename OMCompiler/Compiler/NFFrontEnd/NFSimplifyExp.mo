@@ -174,7 +174,6 @@ algorithm
           if is_pure and List.all(args, Expression.isLiteral) then
             try
               callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
-              callExp := Expression.stripBindingInfo(callExp);
             else
               callExp := Expression.CALL(call);
             end try;
@@ -215,7 +214,6 @@ algorithm
 
   try
     outExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
-    outExp := Expression.stripBindingInfo(outExp);
     ErrorExt.delCheckpoint(getInstanceName());
   else
     if Flags.isSet(Flags.FAILTRACE) then
@@ -553,7 +551,6 @@ function simplifyBinaryOp
 algorithm
   if Expression.isLiteral(exp1) and Expression.isLiteral(exp2) then
     outExp := Ceval.evalBinaryOp(ExpandExp.expand(exp1), op, ExpandExp.expand(exp2));
-    outExp := Expression.stripBindingInfo(outExp);
   else
     outExp := match op.op
       case Op.ADD then simplifyBinaryAdd(exp1, op, exp2);
@@ -682,7 +679,6 @@ function simplifyUnaryOp
 algorithm
   if Expression.isLiteral(exp) then
     outExp := Ceval.evalUnaryOp(exp, op);
-    outExp := Expression.stripBindingInfo(outExp);
   else
     outExp := Expression.UNARY(op, exp);
   end if;
@@ -779,7 +775,6 @@ algorithm
 
   if Expression.isLiteral(se) then
     unaryExp := Ceval.evalLogicUnaryOp(se, op);
-    unaryExp := Expression.stripBindingInfo(unaryExp);
   elseif not referenceEq(e, se) then
     unaryExp := Expression.LUNARY(op, se);
   end if;
@@ -797,7 +792,6 @@ algorithm
 
   if Expression.isLiteral(se1) and Expression.isLiteral(se2) then
     relationExp := Ceval.evalRelationOp(se1, op, se2);
-    relationExp := Expression.stripBindingInfo(relationExp);
   elseif not (referenceEq(e1, se1) and referenceEq(e2, se2)) then
     relationExp := Expression.RELATION(se1, op, se2);
   end if;
@@ -869,11 +863,17 @@ protected
   Expression e;
   list<Subscript> subs;
   Type ty;
+  Boolean split;
 algorithm
-  Expression.SUBSCRIPTED_EXP(e, subs, ty) := subscriptedExp;
+  Expression.SUBSCRIPTED_EXP(e, subs, ty, split) := subscriptedExp;
   subscriptedExp := simplify(e);
   subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
-  subscriptedExp := Expression.applySubscripts(subs, subscriptedExp);
+
+  if split then
+    subscriptedExp := Expression.SUBSCRIPTED_EXP(subscriptedExp, subs, ty, split);
+  else
+    subscriptedExp := Expression.applySubscripts(subs, subscriptedExp);
+  end if;
 end simplifySubscriptedExp;
 
 function simplifyTupleElement

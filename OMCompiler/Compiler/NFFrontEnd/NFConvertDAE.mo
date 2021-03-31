@@ -444,7 +444,7 @@ function convertStateSelectAttribute
 protected
   InstNode node;
   String name;
-  Expression exp = Expression.getBindingExp(Binding.getTypedExp(binding));
+  Expression exp = Binding.getTypedExp(binding);
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
@@ -484,7 +484,7 @@ function convertUncertaintyAttribute
 protected
   InstNode node;
   String name;
-  Expression exp = Expression.getBindingExp(Binding.getTypedExp(binding));
+  Expression exp = Binding.getTypedExp(binding);
 algorithm
   name := match exp
     case Expression.ENUM_LITERAL() then exp.name;
@@ -1222,7 +1222,7 @@ algorithm
 
   binding := Component.getBinding(comp);
   binding := Binding.mapExp(binding, stripScopePrefixExp);
-  bind_from_outside := Binding.parentCount(binding) > 1;
+  bind_from_outside := Binding.source(binding) == NFBinding.Source.MODIFIER;
 
   ty := Component.getType(comp);
   ty := Type.mapDims(ty, stripScopePrefixFromDim);

@@ -1045,8 +1045,7 @@ protected
         end if;
 
         Structural.markExp(arg);
-        arg := Ceval.evalExpBinding(arg);
-        arg := Expression.getScalarBindingExp(arg);
+        arg := Ceval.evalExp(arg);
         arg_ty := Expression.typeOf(arg);
       else
         evaluated := false;

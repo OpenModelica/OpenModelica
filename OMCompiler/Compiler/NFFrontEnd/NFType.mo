@@ -663,6 +663,16 @@ public
     end match;
   end elementType;
 
+  function copyElementType
+    "Sets the element type of the destination type to the element type of the
+     source type."
+    input Type srcType;
+    input Type dstType;
+    output Type ty;
+  algorithm
+    ty := setArrayElementType(dstType, arrayElementType(srcType));
+  end copyElementType;
+
   function arrayDims
     input Type ty;
     output list<Dimension> dims;
@@ -1042,6 +1052,7 @@ public
     "Reduces a type's dimensions based on the given list of subscripts."
     input output Type ty;
     input list<Subscript> subs;
+    input Boolean failOnError = true;
   protected
     Dimension dim;
     list<Dimension> dims, subbed_dims = {};
@@ -1061,6 +1072,7 @@ public
               case Subscript.INDEX() then subbed_dims;
               case Subscript.SLICE() then Subscript.toDimension(sub) :: subbed_dims;
               case Subscript.WHOLE() then dim :: subbed_dims;
+              case Subscript.SPLIT_INDEX() then subbed_dims;
             end match;
           end for;
 
@@ -1081,10 +1093,13 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() +
-            " got unsubscriptable type " + toString(ty) + "\n", sourceInfo());
+          if failOnError then
+            Error.assertion(false, getInstanceName() +
+              " got unsubscriptable type " + toString(ty) + "\n", sourceInfo());
+            fail();
+          end if;
         then
-          fail();
+          ty;
 
     end match;
   end subscript;

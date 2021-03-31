@@ -297,7 +297,7 @@ algorithm
   binding := Component.getBinding(comp);
 
   if Binding.isBound(binding) then
-    bindingExp := Expression.getBindingExp(Binding.getExp(binding));
+    bindingExp := Binding.getExp(binding);
   else
     bindingExp := buildBinding(node, map, mutableParams, buildArrayBinding);
   end if;
@@ -429,7 +429,7 @@ protected
   InstNode parent, node;
 algorithm
   // Explode the cref into a list of parts in reverse order.
-  cref_parts := ComponentRef.toListReverse(cref);
+  cref_parts := ComponentRef.toListReverse(cref, includeScope = false);
 
   // If the list is empty it's probably an iterator or _, which shouldn't be replaced.
   if listEmpty(cref_parts) then

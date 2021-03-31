@@ -69,6 +69,7 @@ BuiltinAttribute17.mo \
 BuiltinAttribute18.mo \
 BuiltinAttribute19.mo \
 BuiltinAttribute20.mo \
+BuiltinAttribute21.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -98,6 +99,10 @@ CevalArrayConstructor2.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
+CevalBinding1.mo \
+CevalBinding2.mo \
+CevalBinding3.mo \
+CevalBinding4.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -200,6 +205,7 @@ ClassExtendsBuiltin1.mo \
 ClassExtendsBuiltin2.mo \
 ClassExtendsBuiltin3.mo \
 ClassExtendsMod1.mo \
+ClassExtendsMod2.mo \
 ClassExtendsMissing1.mo \
 ClassMod1.mo \
 ClassMod2.mo \
@@ -328,6 +334,7 @@ Each2.mo \
 Each3.mo \
 Each4.mo \
 Each5.mo \
+Each6.mo \
 EmptyArray1.mo \
 Encapsulated1.mo \
 Encapsulated2.mo \

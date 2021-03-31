@@ -184,7 +184,7 @@ algorithm
           exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
           (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
           // exp := NFCeval.evalExp(exp);
-          exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
+          exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
         then
           stringAppendList({annName, "=", str});
@@ -208,7 +208,7 @@ algorithm
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(stripped_mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, NFInstContext.NO_CONTEXT);
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, NFInstContext.NO_CONTEXT);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after
@@ -232,7 +232,7 @@ algorithm
               else
                 exp := save;
               end try;
-              exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
+              exp := SimplifyExp.simplify(exp);
               str := str + ", " + Expression.toString(exp);
             else
               // just don't fail!
@@ -396,7 +396,7 @@ algorithm
           exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
           (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
           // exp := NFCeval.evalExp(exp);
-          exp := SimplifyExp.simplify(Expression.stripBindingInfo(exp));
+          exp := SimplifyExp.simplify(exp);
           str := Expression.toString(exp);
         then
           stringAppendList({annName, "=", str});
@@ -418,7 +418,7 @@ algorithm
           smod := AbsynToSCode.translateMod(SOME(Absyn.CLASSMOD(mod, Absyn.NOMOD())), SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
           anncls := Lookup.lookupClassName(Absyn.IDENT(annName), inst_cls, NFInstContext.RELAXED, AbsynUtil.dummyInfo, checkAccessViolations = false);
           inst_anncls := NFInst.expand(anncls);
-          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), {inst_cls, inst_anncls}, inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, NFInstContext.NO_CONTEXT);
+          inst_anncls := NFInst.instClass(inst_anncls, Modifier.create(smod, annName, ModifierScope.CLASS(annName), inst_cls), NFComponent.DEFAULT_ATTR, true, 0, inst_cls, NFInstContext.NO_CONTEXT);
 
           // Instantiate expressions (i.e. anything that can contains crefs, like
           // bindings, dimensions, etc). This is done as a separate step after

@@ -447,6 +447,19 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     end match;
   end getDimensions;
 
+  function dimensionCount
+    input Class cls;
+    output Integer count;
+  algorithm
+    count := match cls
+      case EXPANDED_DERIVED() then arrayLength(cls.dims);
+      case INSTANCED_CLASS() then Type.dimensionCount(cls.ty);
+      case INSTANCED_BUILTIN() then Type.dimensionCount(cls.ty);
+      case TYPED_DERIVED() then Type.dimensionCount(cls.ty);
+      else 0;
+    end match;
+  end dimensionCount;
+
   function getAttributes
     input Class cls;
     output Component.Attributes attr;
