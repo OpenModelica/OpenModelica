@@ -34,7 +34,6 @@ encapsulated package BackendDAE
   package:     BackendDAE
   description: BackendDAE contains the data-types used by the back end.
 "
-
 import Absyn;
 import AvlSetPath;
 import DAE;
@@ -807,20 +806,6 @@ constant SparsePattern emptySparsePattern = ({},{},({},{}),0);
 
 public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // colouring
-
-/*
-  Type only for transformation from analytical to structural singularity.
-*/
-type LinearIntegerJacobianRow = list<tuple<Integer, Integer>>;        // Actual jacobian entries sparse, <column, value>
-type LinearIntegerJacobianRhs = array<.DAE.Exp>;                      // RHS-Exp for full pivot algorithm. Replacement for eliminated equation.
-type LinearIntegerJacobianIndices = array<tuple<Integer, Integer>>;   // Index tuple <array, scalar> for equations
-
-/*
-  The full linear integer matrix
-  - additional boolean array to track which rows have been changed
-  - additional boolean array to track which variables are matched to the equations
-*/
-type LinearIntegerJacobian = tuple<array<LinearIntegerJacobianRow>, LinearIntegerJacobianRhs, LinearIntegerJacobianIndices, array<Boolean>, array<Boolean>>;
 
 public
 uniontype DifferentiateInputData

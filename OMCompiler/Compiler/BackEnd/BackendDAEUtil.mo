@@ -8015,7 +8015,7 @@ algorithm
   dae := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
+  dae := causalizeDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), matchingAlgorithm, daeHandler, true);
   execStat("causalizeDAE (first run)");
   //fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump", dae));
 
@@ -8124,7 +8124,7 @@ protected
   list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqs = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
   list<tuple<BackendDAE.Var, Integer>> loopVars = {};
   BackendDAE.Equation tmp_eq;
-  BackendDAE.LinearIntegerJacobian linIntJac;
+  SymbolicJacobian.LinearJacobian linJac;
 algorithm
   if listLength(comp) > 1 then
     /* collect eqs and vars from strong component */
@@ -8143,27 +8143,27 @@ algorithm
       loopVars := (BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]), ass1[eqnIndex]) :: loopVars;
     end for;
 
-    if listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC) then
+    if not listEmpty(loopEqs) and (listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC)) then
       try
         /* generate linear integer sub jacobian from system */
-        linIntJac := SymbolicJacobian.generateLinearIntegerJacobian(loopEqs, loopVars, ass1);
+        linJac := SymbolicJacobian.LinearJacobian.generate(loopEqs, loopVars, ass1);
 
-        if not SymbolicJacobian.emptyOrSingleLinearIntegerJacobian(linIntJac) then
+        if not SymbolicJacobian.LinearJacobian.emptyOrSingle(linJac) then
           if Flags.isSet(Flags.DUMP_ASSC) then
-            BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Original");
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Original"));
           end if;
 
           /* solve jacobian with gaussian elimination */
-          linIntJac := SymbolicJacobian.solveLinearIntegerJacobian(linIntJac);
+          linJac := SymbolicJacobian.LinearJacobian.solve(linJac);
           if Flags.isSet(Flags.DUMP_ASSC) then
-            BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Solved");
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Solved"));
           end if;
 
           /* set changed to true if it was true before, or any row changed in the jacobian */
-          changed := changed or SymbolicJacobian.anyRowChanged(linIntJac);
+          changed := changed or SymbolicJacobian.LinearJacobian.anyChanges(linJac);
 
           /* resolve zero rows to new equations and update assignments / adjacency matrix */
-          (ass1, ass2, syst) := SymbolicJacobian.resolveAnalyticalSingularities(linIntJac, ass1, ass2, syst);
+          (ass1, ass2, syst) := SymbolicJacobian.LinearJacobian.resolveASSC(linJac, ass1, ass2, syst);
         end if;
       else
         /* possibly fails if jacobian is empty --- nothing to do */
@@ -8319,7 +8319,7 @@ public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
-    (DataReconciliation.extractionAlgorithm, "dataReconciliation"),
+    (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (EvaluateParameter.evaluateParameters, "evaluateParameters"),
