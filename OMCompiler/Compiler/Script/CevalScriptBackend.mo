@@ -1094,7 +1094,7 @@ algorithm
       then
         (cache,Values.BOOL(false));
 
-    case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},_)
+    case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path),Values.BOOL(b)},_)
       algorithm
         ExecStat.execStatReset();
 
@@ -1157,7 +1157,12 @@ algorithm
             fail();
           end try;
           if not StringUtil.equalIgnoreSpace(s3, s4) then
-            Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+            if b then
+              Error.addInternalError("After merging the strings, the semantics changed for some reason. Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
+              fail();
+            else
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+            end if;
             sanityCheckFailed := true;
           end if;
         end if;

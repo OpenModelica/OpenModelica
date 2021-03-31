@@ -2342,8 +2342,10 @@ end listFile;
 type DiffFormat = enumeration(plain "no deletions, no markup", color "terminal escape sequences", xml "XML tags");
 
 function diffModelicaFileListings "Creates diffs of two strings corresponding to Modelica files"
-  input String before, after;
+  input String before;
+  input String after;
   input DiffFormat diffFormat = DiffFormat.color;
+  input Boolean failOnSemanticsChange = false "Defaults to returning after instead of hard fail";
   output String result;
 external "builtin";
 annotation(Documentation(info="<html>
