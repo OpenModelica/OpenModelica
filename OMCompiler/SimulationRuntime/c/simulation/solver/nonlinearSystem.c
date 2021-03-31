@@ -819,19 +819,43 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
   case NLS_HYBRID:
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->ordinaryData;
+    /* try */
+    #ifndef OMC_EMCC
+      MMC_TRY_INTERNAL(simulationJumpBuffer)
+    #endif
     success = solveHybrd(data, threadData, sysNumber);
+    /*catch */
+    #ifndef OMC_EMCC
+      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    #endif
     nonlinsys->solverData = solverData;
     break;
   case NLS_KINSOL:
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->ordinaryData;
+    /* try */
+    #ifndef OMC_EMCC
+      MMC_TRY_INTERNAL(simulationJumpBuffer)
+    #endif
     success = nlsKinsolSolve(data, threadData, sysNumber);
+    /*catch */
+    #ifndef OMC_EMCC
+      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    #endif
     nonlinsys->solverData = solverData;
     break;
   case NLS_NEWTON:
     solverData = nonlinsys->solverData;
     nonlinsys->solverData = solverData->ordinaryData;
+    /* try */
+    #ifndef OMC_EMCC
+      MMC_TRY_INTERNAL(simulationJumpBuffer)
+    #endif
     success = solveNewton(data, threadData, sysNumber);
+    /*catch */
+    #ifndef OMC_EMCC
+      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    #endif
     /* check if solution process was successful, if not use alternative tearing set if available (dynamic tearing)*/
     if (!success && casualTearingSet){
       debugString(LOG_DT, "Solving the casual tearing set failed! Now the strict tearing set is used.");
@@ -849,6 +873,10 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
     mixedSolverData = nonlinsys->solverData;
     nonlinsys->solverData = mixedSolverData->newtonHomotopyData;
 
+    /* try */
+    #ifndef OMC_EMCC
+      MMC_TRY_INTERNAL(simulationJumpBuffer)
+    #endif
     /* try to solve the system if it is the strict set, only try to solve the casual set if the constraints are satisfied */
     if ((!casualTearingSet) || constraintsSatisfied)
       success = solveHomotopy(data, threadData, sysNumber);
@@ -872,6 +900,10 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
       nonlinsys->getIterationVars(data, nonlinsys->nlsx);
     }
 
+    /*catch */
+    #ifndef OMC_EMCC
+      MMC_CATCH_INTERNAL(simulationJumpBuffer)
+    #endif
     nonlinsys->solverData = mixedSolverData;
     break;
 #endif
