@@ -2837,14 +2837,24 @@ algorithm
       InstContext.Type icontext;
 
     case (_, Sections.EXTERNAL())
+      guard SCodeUtil.classDefHasSections(parts, checkExternal = true)
       algorithm
+        // Class with inherited external section that also contains other sections.
         Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
           {InstNode.name(scope)}, InstNode.info(scope));
       then
         fail();
 
     case (SCode.PARTS(externalDecl = SOME(ext_decl)), _)
-      then instExternalDecl(ext_decl, scope, context);
+      algorithm
+        if SCodeUtil.classDefHasSections(parts, checkExternal = false) then
+          // Class with external section that also contains other sections.
+          Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
+            {InstNode.name(scope)}, InstNode.info(scope));
+          fail();
+        end if;
+      then
+        instExternalDecl(ext_decl, scope, context);
 
     case (SCode.PARTS(), _)
       algorithm
