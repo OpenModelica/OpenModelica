@@ -212,15 +212,17 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpProgressLabel, 0, 0);
   pMainLayout->addWidget(mpProgressBar, 0, 1);
-  QPushButton *pPauseButton = new QPushButton("Pause");
-  connect(pPauseButton, SIGNAL(clicked()), SLOT(pauseSimulation()));
-  pMainLayout->addWidget(pPauseButton, 0, 2);
-  QPushButton *pContinueButton = new QPushButton("Continue");
-  connect(pContinueButton, SIGNAL(clicked()), SLOT(continueSimulation()));
-  pMainLayout->addWidget(pContinueButton, 0, 3);
-  QPushButton *pEndButton = new QPushButton("End");
-  connect(pEndButton, SIGNAL(clicked()), SLOT(endSimulation()));
-  //pMainLayout->addWidget(pEndButton, 0, 4);
+  if (interactive) {
+    QPushButton *pPauseButton = new QPushButton("Pause");
+    connect(pPauseButton, SIGNAL(clicked()), SLOT(pauseSimulation()));
+    pMainLayout->addWidget(pPauseButton, 0, 2);
+    QPushButton *pContinueButton = new QPushButton("Continue");
+    connect(pContinueButton, SIGNAL(clicked()), SLOT(continueSimulation()));
+    pMainLayout->addWidget(pContinueButton, 0, 3);
+    QPushButton *pEndButton = new QPushButton("End");
+    connect(pEndButton, SIGNAL(clicked()), SLOT(endSimulation()));
+    //pMainLayout->addWidget(pEndButton, 0, 4);
+  }
   pMainLayout->addWidget(mpCancelSimulationButton, 0, 5);
   pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 1, 0, 1, 6);
   setLayout(pMainLayout);
