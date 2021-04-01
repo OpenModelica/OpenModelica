@@ -950,8 +950,7 @@ public
       case UNTYPED() then Expression.variability(subscript.exp);
       case INDEX() then Expression.variability(subscript.index);
       case SLICE() then Expression.variability(subscript.slice);
-      case WHOLE() then Variability.CONSTANT;
-      case SPLIT_INDEX() then Variability.CONSTANT;
+      else Variability.CONSTANT;
     end match;
   end variability;
 
@@ -972,8 +971,7 @@ public
       case UNTYPED() then Expression.purity(subscript.exp);
       case INDEX() then Expression.purity(subscript.index);
       case SLICE() then Expression.purity(subscript.slice);
-      case WHOLE() then Purity.IMPURE;
-      case SPLIT_INDEX() then Purity.IMPURE;
+      else Purity.IMPURE;
     end match;
   end purity;
 
