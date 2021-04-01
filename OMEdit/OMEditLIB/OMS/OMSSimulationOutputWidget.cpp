@@ -45,6 +45,8 @@
 
 #include <QGridLayout>
 
+const long timeout = 500;
+
 /*!
  * \class SimulationSubscriberSocket
  * \brief Reads the simulation progress in a loop.
@@ -99,69 +101,8 @@ void SimulationSubscriberSocket::readSimulationData()
       reply[size] = 0;
       emit simulationDataPublished(QByteArray(reply));
     }
-    // release the zmq_msg_t
     zmq_msg_close(&replyMsg);
   }
-}
-
-/*!
- * \class SimulationReply
- * \brief Request socket for simulation.
- */
-/*!
- * \brief SimulationReply::SimulationReply
- * \param pSimulationRequestSocket
- */
-SimulationReply::SimulationReply(SimulationRequestSocket *pSimulationRequestSocket)
-{
-  mpSimulationRequestSocket = pSimulationRequestSocket;
-}
-
-/*!
- * \brief SimulationReply::readSimulationReply
- */
-void SimulationReply::readSimulationReply()
-{
-  while (mpSimulationRequestSocket->isSocketConnected()) {
-    zmq_msg_t replyMsg;
-    zmq_msg_init(&replyMsg);
-    int size = zmq_msg_recv(&replyMsg, mpSimulationRequestSocket->getSocket(), ZMQ_DONTWAIT);
-    if (size > -1) {
-      // copy the zmq_msg_t to char*
-      char *reply = (char*)malloc(size + 1);
-      memcpy(reply, zmq_msg_data(&replyMsg), size);
-      reply[size] = 0;
-      emit simulationReply(QByteArray(reply));
-    }
-    // release the zmq_msg_t
-    zmq_msg_close(&replyMsg);
-  }
-}
-
-/*!
- * \brief SimulationRequest::SimulationRequest
- * \param pSimulationRequestSocket
- */
-SimulationRequest::SimulationRequest(SimulationRequestSocket *pSimulationRequestSocket)
-{
-  mpSimulationRequestSocket = pSimulationRequestSocket;
-}
-
-/*!
- * \brief SimulationRequest::sendRequest
- * Sends the request to server.
- * \param request
- */
-void SimulationRequest::sendRequest(const QString &request)
-{
-  const char* request_ = request.toUtf8().constData();
-  // send request
-  zmq_msg_t requestMsg;
-  zmq_msg_init_size(&requestMsg, strlen(request_));
-  // copy the char* to zmq_msg_t
-  memcpy(zmq_msg_data(&requestMsg), request_, strlen(request_));
-  zmq_msg_send(&requestMsg, mpSimulationRequestSocket->getSocket(), 0);
-  zmq_msg_close(&requestMsg);
 }
 
 /*!
@@ -184,15 +125,9 @@ SimulationRequestSocket::SimulationRequestSocket()
     zmq_getsockopt(mpSocket, ZMQ_LAST_ENDPOINT, &endPoint, (size_t *)&endPointSize);
     mEndPoint = QString(endPoint);
     mErrorString = "";
-    mpSimulationRequest = new SimulationRequest(this);
-    connect(this, SIGNAL(sendRequest(QString)), mpSimulationRequest, SLOT(sendRequest(QString)));
-    mpSimulationReply = new SimulationReply(this);
-    connect(&mSimulationReplyThread, SIGNAL(started()), mpSimulationReply, SLOT(readSimulationReply()));
-    connect(mpSimulationReply, SIGNAL(simulationReply(QByteArray)), this, SIGNAL(simulationReply(QByteArray)));
   } else {
     mEndPoint = "";
     mErrorString = QString("Error creating ZeroMQ request socket. zmq_bind failed: %1\n").arg(strerror(errno));
-    mpSimulationReply = 0;
   }
   mSocketConnected = false;
 }
@@ -204,37 +139,43 @@ SimulationRequestSocket::~SimulationRequestSocket()
 {
   zmq_close(mpSocket);
   zmq_ctx_destroy(mpContext);
-  if (mpSimulationReply) {
-    mpSimulationReply->deleteLater();
-  }
 }
 
 /*!
- * \brief SimulationRequestSocket::startReadReplyLoop
+ * \brief SimulationRequestSocket::sendRequest
+ * * Send request in json form,
+ * {"fcn": "simulation", "arg": "pause"}"
+ * \param function
+ * \param argument
  */
-void SimulationRequestSocket::startReadReplyLoop()
+void SimulationRequestSocket::sendRequest(const QString &function, const QString &argument)
 {
-  if (mpSimulationRequest) {
-    mpSimulationRequest->moveToThread(&mSimulationRequestThread);
-    mSimulationRequestThread.start();
-  }
-  if (mpSimulationReply) {
-    mSocketConnected = true;
-    mpSimulationReply->moveToThread(&mSimulationReplyThread);
-    mSimulationReplyThread.start();
-  }
-}
+  // send request
+  QJsonObject jsonObject;
+  jsonObject.insert(QStringLiteral("fcn"), QJsonValue::fromVariant(function));
+  jsonObject.insert(QStringLiteral("arg"), QJsonValue::fromVariant(argument));
+  QJsonDocument doc(jsonObject);
+  QByteArray request = doc.toJson(QJsonDocument::Compact);
+  const char* request_ = request.constData();
+  zmq_msg_t requestMsg;
+  zmq_msg_init_size(&requestMsg, strlen(request_));
+  // copy the char* to zmq_msg_t
+  memcpy(zmq_msg_data(&requestMsg), request_, strlen(request_));
+  zmq_msg_send(&requestMsg, mpSocket, 0);
+  zmq_msg_close(&requestMsg);
 
-/*!
- * \brief SimulationRequestSocket::stopReadReplyLoop
- */
-void SimulationRequestSocket::stopReadReplyLoop()
-{
-  mSimulationRequestThread.exit();
-  mSimulationRequestThread.wait();
-  mSocketConnected = false;
-  mSimulationReplyThread.exit();
-  mSimulationReplyThread.wait();
+  // read reply
+  zmq_msg_t replyMsg;
+  zmq_msg_init(&replyMsg);
+  int size = zmq_msg_recv(&replyMsg, mpSocket, 0);
+  if (size > -1) {
+    // copy the zmq_msg_t to char*
+    char *reply = (char*)malloc(size + 1);
+    memcpy(reply, zmq_msg_data(&replyMsg), size);
+    reply[size] = 0;
+    emit simulationReply(QByteArray(reply), function, argument);
+  }
+  zmq_msg_close(&replyMsg);
 }
 
 /*!
@@ -322,8 +263,9 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     connect(&mSimulationSubscribeThread, SIGNAL(started()), mpSimulationSubscriberSocket, SLOT(readSimulationData()));
     connect(mpSimulationSubscriberSocket, SIGNAL(simulationDataPublished(QByteArray)), this, SLOT(simulationDataPublished(QByteArray)));
     if (mpSimulationRequestSocket) {
-      connect(this, SIGNAL(sendRequest(QString)), mpSimulationRequestSocket, SIGNAL(sendRequest(QString)));
-      connect(mpSimulationRequestSocket, SIGNAL(simulationReply(QByteArray)), SLOT(simulationReply(QByteArray)));
+      mpSimulationRequestSocket->moveToThread(&mSimulationRequestThread);
+      connect(this, SIGNAL(sendRequest(QString,QString)), mpSimulationRequestSocket, SLOT(sendRequest(QString,QString)));
+      connect(mpSimulationRequestSocket, SIGNAL(simulationReply(QByteArray,QString,QString)), SLOT(simulationReply(QByteArray,QString,QString)));
     }
     // start the simulation process
     mpSimulationProcess = new QProcess;
@@ -382,12 +324,16 @@ OMSSimulationOutputWidget::~OMSSimulationOutputWidget()
   if (mpSimulationSubscriberSocket->isSocketConnected()) {
     mpSimulationSubscriberSocket->setSocketConnected(false);
     mSimulationSubscribeThread.exit();
-    mSimulationSubscribeThread.wait();
+    mSimulationSubscribeThread.wait(timeout);
   }
   delete mpSimulationSubscriberSocket;
   // simulation request socket
   if (mpSimulationRequestSocket) {
-    mpSimulationRequestSocket->stopReadReplyLoop();
+    if (mpSimulationRequestSocket->isSocketConnected()) {
+      mpSimulationRequestSocket->setSocketConnected(false);
+      mSimulationRequestThread.exit();
+      mSimulationRequestThread.wait(timeout);
+    }
     delete mpSimulationRequestSocket;
   }
   // simulation process
@@ -449,8 +395,9 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   mpSimulationSubscriberSocket->setSocketConnected(true);
   mSimulationSubscribeThread.start();
   if (mpSimulationRequestSocket) {
-    mpSimulationRequestSocket->startReadReplyLoop();
-    emit sendRequest("{\"fcn\": \"simulation\", \"arg\": \"start\"}");
+    mpSimulationRequestSocket->setSocketConnected(true);
+    mSimulationRequestThread.start();
+    emit sendRequest("signals", "available");
   }
 }
 
@@ -508,7 +455,6 @@ void OMSSimulationOutputWidget::writeSimulationOutput(const QString &output, Str
  * Reads the simulation published data.
  * Expected data,
  * status {"progress": 0}
- * signals {"TestSimulation.Root.CauerLowPassSC.C1.v": {"type": "Real", "kind": "unknown"}, "TestSimulation.Root.CauerLowPassSC.Rp1.not1.y": {"type": "Bool", "kind": "unknown"}}
  * \param data
  */
 void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
@@ -518,8 +464,6 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
   QByteArray jsonData;
   if (data.startsWith("status")) {
     jsonData = data.mid(QString("status").length());
-  } else if (data.startsWith("signals")) {
-    jsonData = data.mid(QString("signals").length());
   } else {
     writeSimulationOutput(QString("Unknown simulation data %1.\n").arg(QString(data)), StringHandler::Error);
     return;
@@ -531,23 +475,33 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
   } else {
     if (data.startsWith("status")) {
       parseSimulationProgress(jsonDocument.result);
-    } else if (data.startsWith("signals")) {
-      parseSimulationVariables(jsonDocument.result);
     }
   }
 }
 
-void OMSSimulationOutputWidget::simulationReply(const QByteArray &reply)
+/*!
+ * \brief OMSSimulationOutputWidget::simulationReply
+ * Expected data,
+ * {'status': 'ack', 'result', self._signals}
+ * {'status': 'nack', 'error'}
+ * \param reply
+ */
+void OMSSimulationOutputWidget::simulationReply(const QByteArray &reply, const QString &function, const QString &argument)
 {
 //  writeSimulationOutput(reply + "\n", StringHandler::Info);
-//  JsonDocument jsonDocument;
-//  if (jsonDocument.parse(reply)) {
-//    qDebug() << jsonDocument.result;
-//    QVariantMap resultMap = jsonDocument.result.toMap();
-//    qDebug() << resultMap;
-//  } else {
-//    writeSimulationOutput(QString("Failed to parse json data %1.\n").arg(QString(reply)), StringHandler::Error);
-//  }
+  JsonDocument jsonDocument;
+  if (jsonDocument.parse(reply)) {
+    QVariantMap resultMap = jsonDocument.result.toMap();
+    if (resultMap.value("status").toString().compare(QStringLiteral("nack")) == 0) {
+      writeSimulationOutput(QString("Failed to parse json data %1.\n").arg(QString(reply)), StringHandler::Error);
+    } else if (resultMap.value("status").toString().compare(QStringLiteral("ack")) == 0) {
+      if ((function.compare(QStringLiteral("signals")) == 0) && (argument.compare(QStringLiteral("available")) == 0)) {
+        parseSimulationVariables(resultMap.value("result"));
+      }
+    }
+  } else {
+    writeSimulationOutput(QString("Failed to parse json data %1.\n").arg(QString(reply)), StringHandler::Error);
+  }
 }
 
 /*!
@@ -578,9 +532,11 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   mpArchivedSimulationItem->setStatus(Helper::finished);
   mpSimulationSubscriberSocket->setSocketConnected(false);
   mSimulationSubscribeThread.exit();
-  mSimulationSubscribeThread.wait();
+  mSimulationSubscribeThread.wait(timeout);
   if (mpSimulationRequestSocket) {
-    mpSimulationRequestSocket->stopReadReplyLoop();
+    mpSimulationRequestSocket->setSocketConnected(false);
+    mSimulationRequestThread.exit();
+    mSimulationRequestThread.wait(timeout);
   }
 }
 
@@ -604,20 +560,20 @@ void OMSSimulationOutputWidget::cancelSimulation()
 void OMSSimulationOutputWidget::pauseSimulation()
 {
   if (mpSimulationRequestSocket) {
-    emit sendRequest("{\"fcn\": \"simulation\", \"arg\": \"pause\"}");
+    emit sendRequest("simulation", "pause");
   }
 }
 
 void OMSSimulationOutputWidget::continueSimulation()
 {
   if (mpSimulationRequestSocket) {
-    emit sendRequest("{\"fcn\": \"simulation\", \"arg\": \"continue\"}");
+    emit sendRequest("simulation", "continue");
   }
 }
 
 void OMSSimulationOutputWidget::endSimulation()
 {
   if (mpSimulationRequestSocket) {
-    emit sendRequest("{\"fcn\": \"simulation\", \"arg\": \"end\"}");
+    emit sendRequest("simulation", "end");
   }
 }

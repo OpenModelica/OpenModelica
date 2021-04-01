@@ -51,8 +51,8 @@ public:
   ~SimulationSubscriberSocket();
   QString getEndPoint() const {return mEndPoint;}
   QString getErrorString() const {return mErrorString;}
-  bool isSocketConnected() const {return mSocketConnected;}
   void setSocketConnected(bool socketConnected) {mSocketConnected = socketConnected;}
+  bool isSocketConnected() const {return mSocketConnected;}
 private:
   void *mpContext;
   void *mpSocket;
@@ -65,58 +65,26 @@ public slots:
   void readSimulationData();
 };
 
-class SimulationRequestSocket;
-
-class SimulationReply : public QObject
-{
-  Q_OBJECT
-public:
-  SimulationReply(SimulationRequestSocket *pSimulationRequestSocket);
-private:
-  SimulationRequestSocket *mpSimulationRequestSocket;
-signals:
-  void simulationReply(const QByteArray &reply);
-public slots:
-  void readSimulationReply();
-};
-
-class SimulationRequest : public QObject
-{
-  Q_OBJECT
-public:
-  SimulationRequest(SimulationRequestSocket *pSimulationRequestSocket);
-private:
-  SimulationRequestSocket *mpSimulationRequestSocket;
-public slots:
-  void sendRequest(const QString &request);
-};
-
 class SimulationRequestSocket : public QObject
 {
   Q_OBJECT
 public:
   SimulationRequestSocket();
   ~SimulationRequestSocket();
-  void* getSocket() const {return mpSocket;}
   QString getEndPoint() const {return mEndPoint;}
   QString getErrorString() const {return mErrorString;}
+  void setSocketConnected(bool socketConnected) {mSocketConnected = socketConnected;}
   bool isSocketConnected() const {return mSocketConnected;}
-
-  void startReadReplyLoop();
-  void stopReadReplyLoop();
 private:
   void *mpContext;
   void *mpSocket;
   QString mEndPoint;
   QString mErrorString;
   bool mSocketConnected;
-  SimulationRequest *mpSimulationRequest;
-  SimulationReply *mpSimulationReply;
-  QThread mSimulationRequestThread;
-  QThread mSimulationReplyThread;
 signals:
-  void simulationReply(const QByteArray &reply);
-  void sendRequest(const QString &request);
+  void simulationReply(const QByteArray &reply, const QString &function, const QString &argument);
+public slots:
+  void sendRequest(const QString &function, const QString &argument);
 };
 
 class ArchivedSimulationItem;
@@ -147,11 +115,12 @@ private:
   SimulationSubscriberSocket *mpSimulationSubscriberSocket;
   SimulationRequestSocket *mpSimulationRequestSocket;
   QThread mSimulationSubscribeThread;
+  QThread mSimulationRequestThread;
 
   void parseSimulationProgress(const QVariant progress);
   void parseSimulationVariables(const QVariant variables);
 signals:
-  void sendRequest(const QString &request);
+  void sendRequest(const QString &function, const QString &argument);
 public slots:
   void simulationProcessStarted();
   void readSimulationStandardOutput();
@@ -159,7 +128,7 @@ public slots:
   void simulationProcessError(QProcess::ProcessError error);
   void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
   void simulationDataPublished(const QByteArray &data);
-  void simulationReply(const QByteArray &reply);
+  void simulationReply(const QByteArray &reply, const QString &function, const QString &argument);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
   void pauseSimulation();
