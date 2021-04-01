@@ -1222,6 +1222,7 @@ algorithm
 
   binding := Component.getBinding(comp);
   binding := Binding.mapExp(binding, stripScopePrefixExp);
+  binding := Binding.mapExpShallow(binding, Expression.expandSplitIndices);
   bind_from_outside := Binding.source(binding) == NFBinding.Source.MODIFIER;
 
   ty := Component.getType(comp);
