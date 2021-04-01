@@ -86,6 +86,13 @@ baseline:
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(BASELINE) $(TESTFILES)
 
+failtestbaseline:
+	@echo
+	@echo Running baseline for failing tests...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(BASELINE) $(FAILINGTESTFILES)
+
 # Cleans all files that are not listed as dependencies
 clean :
 	@echo $(DEPENDENCIES) | sed 's/ /\\|/g' > deps.tmp
