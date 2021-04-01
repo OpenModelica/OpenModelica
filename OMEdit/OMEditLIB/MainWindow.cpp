@@ -3917,7 +3917,7 @@ void MainWindow::createMenus()
 #if !defined(WITHOUT_OSG)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
-  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
+//  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
   pSimulationMenu->addSeparator();
   pSimulationMenu->addAction(mpArchivedSimulationsAction);
   // add Simulation menu to menu bar
@@ -4365,7 +4365,7 @@ void MainWindow::createToolbars()
 #if !defined(WITHOUT_OSG)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
-  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
+//  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");
