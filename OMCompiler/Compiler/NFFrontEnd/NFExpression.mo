@@ -1172,6 +1172,7 @@ public
           makeArray(ty, expl, literal);
 
       case Subscript.SPLIT_INDEX() then makeSubscriptedExp(subscript :: restSubscripts, exp);
+
     end match;
   end applySubscriptArray;
 
@@ -4809,10 +4810,15 @@ public
 
   function mapSplitExpressions3
     input output Expression exp;
+  protected
+    list<Subscript> subs;
   algorithm
     exp := match exp
-      case Expression.SUBSCRIPTED_EXP()
-        then Expression.applySubscripts(list(Subscript.eval(s) for s in exp.subscripts), exp.exp);
+      case Expression.MUTABLE() then Mutable.access(exp.exp);
+
+      case Expression.SUBSCRIPTED_EXP(subscripts = subs)
+        then Expression.applySubscripts(subs, exp.exp);
+
       else exp;
     end match;
   end mapSplitExpressions3;

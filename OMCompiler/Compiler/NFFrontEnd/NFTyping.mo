@@ -554,11 +554,7 @@ algorithm
           end if;
         end if;
 
-        if Expression.isArray(exp) and Expression.arrayAllEqual(exp) then
-          exp := Expression.arrayFirstScalar(exp);
-        end if;
-
-        dim := Dimension.fromExp(exp, var);
+        dim := Dimension.fromExp(simplifyDimExp(exp), var);
         arrayUpdate(dimensions, index, dim);
       then
         dim;
@@ -646,7 +642,7 @@ algorithm
               Structural.markExp(exp);
               exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
             then
-              Dimension.fromExp(exp, dim.var);
+              Dimension.fromExp(simplifyDimExp(exp), dim.var);
 
           case Dimension.UNKNOWN()
             algorithm
@@ -667,6 +663,24 @@ algorithm
 
   verifyDimension(dimension, component, info);
 end typeDimension;
+
+function simplifyDimExp
+  input output Expression dimExp;
+protected
+  Expression exp;
+algorithm
+  dimExp := match dimExp
+    case Expression.ARRAY()
+      guard Expression.arrayAllEqual(dimExp)
+      then Expression.arrayFirstScalar(dimExp);
+
+    case Expression.SUBSCRIPTED_EXP(split = true)
+      guard Expression.isArray(dimExp.exp) and Expression.arrayAllEqual(dimExp.exp)
+      then Expression.arrayFirstScalar(dimExp.exp);
+
+    else dimExp;
+  end match;
+end simplifyDimExp;
 
 function verifyDimension
   input Dimension dimension;

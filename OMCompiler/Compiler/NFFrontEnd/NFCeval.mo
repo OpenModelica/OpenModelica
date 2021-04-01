@@ -457,26 +457,50 @@ function subscriptBinding
   input ComponentRef cref;
   input Boolean evalSubscripts;
 protected
+  list<Subscript> subs;
+algorithm
+  exp := Expression.mapFold(exp,
+    function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts), NONE());
+
+  subs := ComponentRef.getSubscripts(cref);
+
+  if evalSubscripts then
+    subs := list(Subscript.eval(s) for s in subs);
+  end if;
+
+  exp := Expression.applySubscripts(subs, exp);
+end subscriptBinding;
+
+function subscriptBinding2
+  input output Expression exp;
+  input ComponentRef cref;
+  input Boolean evalSubscripts;
+  input output Option<UnorderedMap<InstNode, list<Subscript>>> subMap;
+protected
   type SubscriptList = list<Subscript>;
-  UnorderedMap<InstNode, SubscriptList> subs_map;
-  SubscriptList subs;
-  Boolean inc_scope;
+  UnorderedMap<InstNode, list<Subscript>> sub_map;
+  list<Subscript> subs;
 algorithm
   exp := match exp
-    // A subscripted expression, replace subscripts with the subscripts from the cref.
     case Expression.SUBSCRIPTED_EXP(subscripts = subs)
       algorithm
-        // Create a map that maps each part of the cref to the subscripts on that part.
-        subs_map := UnorderedMap.new<SubscriptList>(InstNode.hash, InstNode.refEqual);
+        if isSome(subMap) then
+          SOME(sub_map) := subMap;
+        else
+          // Create a map that maps each part of the cref to the subscripts on that part.
+          sub_map := UnorderedMap.new<SubscriptList>(InstNode.hash, InstNode.refEqual);
 
-        for cr in ComponentRef.toListReverse(cref) loop
-          if ComponentRef.hasSubscripts(cr) then
-            UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), subs_map);
-          end if;
-        end for;
+          for cr in ComponentRef.toListReverse(cref) loop
+            if ComponentRef.hasSubscripts(cr) then
+              UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), sub_map);
+            end if;
+          end for;
+
+          subMap := SOME(sub_map);
+        end if;
 
         // Replace the split subscripts with the corresponding subscripts from the cref.
-        subs := list(subscriptBinding2(s, subs_map) for s in subs);
+        subs := list(subscriptBinding3(s, sub_map) for s in subs);
 
         // Evaluate the subscripts if it was requested.
         if evalSubscripts then
@@ -485,21 +509,11 @@ algorithm
       then
         Expression.applySubscripts(subs, exp.exp);
 
-    // A normal expression, just apply the first subscripts from the cref.
-    else
-      algorithm
-        subs := ComponentRef.getSubscripts(cref);
-
-        if evalSubscripts then
-          subs := list(Subscript.eval(s) for s in subs);
-        end if;
-      then
-        Expression.applySubscripts(subs, exp);
-
+    else exp;
   end match;
-end subscriptBinding;
+end subscriptBinding2;
 
-function subscriptBinding2
+function subscriptBinding3
   input Subscript subscript;
   input UnorderedMap<InstNode, list<Subscript>> subMap;
   output Subscript outSubscript;
@@ -528,7 +542,7 @@ algorithm
 
     else subscript;
   end match;
-end subscriptBinding2;
+end subscriptBinding3;
 
 function evalComponentStartBinding
   "Tries to evaluate the given component's start value. NONE() is returned if
