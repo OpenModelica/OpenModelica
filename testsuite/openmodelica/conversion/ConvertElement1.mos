@@ -1,0 +1,25 @@
+// name:   ConvertElement1
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  model ConvertElement1
+    extends Modelica.Media.IdealGases.Common.MixtureGasNasa(
+      data = {Modelica.Media.IdealGases.Common.SingleGasesData.N2}
+    );
+  end ConvertElement1;
+");
+
+convertPackage(ConvertElement1, "scripts/ConvertElement1.mos");
+getErrorString();
+list(ConvertElement1);
+
+// Result:
+// true
+// true
+// ""
+// "model ConvertElement1
+//   extends Modelica.Media.IdealGases.Common.MixtureGasNasa(data = {Modelica.Media.IdealGases.Common.SingleGasesData.N2});
+// end ConvertElement1;"
+// endResult
