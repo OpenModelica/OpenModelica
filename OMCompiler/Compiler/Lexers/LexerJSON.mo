@@ -236,10 +236,10 @@ function lex "Scan starts the lexical analysis, load the tables and consume the 
   output list<Token> tokens "return list of tokens";
   output list<Token> errorTokens={};
 protected
-  Integer startSt,numStates,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
+  Integer startSt,i,r,cTok,cTok2,currSt,pos,sPos,ePos,linenr,contentLen,numBacktrack,buffer,lineNrStart;
   list<Integer> cProg,cProg2;
   list<String> chars;
-  array<Integer> states;
+  list<Integer> states;
   String s1,s2;
   import MetaModelica.Dangerous.listReverseInPlace;
   import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
@@ -256,8 +256,7 @@ algorithm
   lineNrStart := 1;
   buffer := 0;
 
-  states := arrayCreate(128,1);
-  numStates := 1;
+  states := {};
 
   if (debug==true) then
      print("\nLexer analyzer LexerCode..." + fileName + "\n");
@@ -273,7 +272,7 @@ algorithm
   i := 1;
   while i <= contentLen loop
      cTok := stringGet(contents,i);
-     (tokens,numBacktrack,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,numStates,errorTokens) := consume(cTok,tokens,contents,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,numStates,fileName,errorTokens);
+     (tokens,numBacktrack,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,errorTokens) := consume(cTok,tokens,contents,startSt,currSt,pos,sPos,ePos,linenr,lineNrStart,buffer,states,fileName,errorTokens);
      i := i - numBacktrack + 1;
   end while;
   tokens := listReverseInPlace(tokens);
@@ -287,8 +286,7 @@ function consume
   input Integer startSt;
   input Integer currSt,pos,sPos,ePos,linenr,inLineNrStart;
   input Integer inBuffer;
-  input array<Integer> inStates;
-  input Integer inNumStates;
+  input list<Integer> inStates;
   input String fileName;
   input list<Token> inErrorTokens;
   output list<Token> resToken;
@@ -296,8 +294,7 @@ function consume
   output Integer mm_startSt;
   output Integer mm_currSt,mm_pos,mm_sPos,mm_ePos,mm_linenr,lineNrStart;
   output Integer buffer;
-  output array<Integer> states;
-  output Integer numStates;
+  output list<Integer> states;
   output list<Token> errorTokens=inErrorTokens;
 protected
   Token tok;
@@ -313,7 +310,6 @@ algorithm
   lineNrStart := inLineNrStart;
   buffer := inBuffer;
   states := inStates;
-  numStates := inNumStates;
 
   baseCond := LexTable.yy_base[mm_currSt];
   if (debug==true) then
@@ -351,8 +347,7 @@ algorithm
   else
     mm_currSt := LexTable.yy_nxt[c];
   end if;
-  numStates := numStates+1; // TODO: BAD BAD BAD. At least arrayUpdate should be a safe operation... We need to grow the number of states on demand though.
-  arrayUpdate(states,numStates,mm_currSt);
+  states := mm_currSt::states;
 
   baseCond := LexTable.yy_base[mm_currSt];
   if (baseCond==LexTable.yy_finish) then
@@ -360,7 +355,7 @@ algorithm
       print("\n[RESTORE=" + intString(LexTable.yy_accept[mm_currSt]) + "]");
     end if;
 
-    (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
+    (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states);
 
     if (debug==true) then
       print("\nFound rule: " + String(act));
@@ -373,8 +368,7 @@ algorithm
     end if;
 
     mm_currSt := mm_startSt;
-    arrayUpdate(states,1,mm_startSt);
-    numStates := 1;
+    states := {};
 
     /* Either a token was output (get new positions for next token). Or a whitespace was emitted. */
     if buffer <> buffer2 then
@@ -407,8 +401,7 @@ function findRule
   input Integer linenr;
   input Integer inBuffer;
   input Integer inBkBuffer;
-  input array<Integer> inStates;
-  input Integer inNumStates;
+  input list<Integer> inStates;
   output Integer action;
   output Integer mm_currSt;
   output Integer mm_pos;
@@ -416,11 +409,10 @@ function findRule
   output Integer mm_linenr;
   output Integer buffer;
   output Integer bkBuffer;
-  output array<Integer> states;
-  output Integer numStates;
+  output list<Integer> states;
 protected
   array<Integer> mm_accept,mm_ec,mm_meta,mm_base,mm_def,mm_nxt,mm_chk,mm_acclist;
-  Integer lp,lp1,stCmp;
+  Integer lp,lp1,stCmp,cp;
   Boolean st;
   import arrayGet = MetaModelica.Dangerous.arrayGetNoBoundsChecking; // Bounds checked with debug=true
   import stringGet = MetaModelica.Dangerous.stringGetNoBoundsChecking;
@@ -432,46 +424,32 @@ algorithm
   buffer := inBuffer;
   bkBuffer := inBkBuffer;
   states := inStates;
-  numStates := inNumStates;
 
-  stCmp := arrayGet(states,numStates);
+  stCmp := listGet(states, 1);
   lp := LexTable.yy_accept[stCmp];
   lp1 := LexTable.yy_accept[stCmp+1];
 
   st := intGt(lp,0) and intLt(lp,lp1);
-  (action, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := match(numStates,st)
-    local
-      Integer act,cp;
-      list<Integer> restBuff;
-    case (_,true)
-      algorithm
-        if debug then
-          checkArrayModelica(LexTable.yy_accept,stCmp,sourceInfo());
-          checkArrayModelica(LexTable.yy_acclist,lp,sourceInfo());
-        end if;
-        lp := LexTable.yy_accept[stCmp];
-        act := LexTable.yy_acclist[lp];
-      then (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates);
-    case (_,false)
-      algorithm
-        cp := stringGet(fileContents,mm_pos-1);
-        buffer := buffer-1;
-        bkBuffer := bkBuffer+1;
-        mm_pos := mm_pos - 1;
-        mm_sPos := mm_sPos -1;
-        if (cp==10) then
-          mm_sPos := mm_ePos;
-          mm_linenr := mm_linenr-1;
-        end if;
-        if debug then
-          checkArray(states,numStates,sourceInfo());
-        end if;
-        mm_currSt := arrayGet(states,numStates);
-        numStates := numStates - 1;
-        (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states, numStates);
-      then (act, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states, numStates);
-
-  end match;
+  if st then
+    if debug then
+      checkArrayModelica(LexTable.yy_accept,stCmp,sourceInfo());
+      checkArrayModelica(LexTable.yy_acclist,lp,sourceInfo());
+    end if;
+    lp := LexTable.yy_accept[stCmp];
+    action := LexTable.yy_acclist[lp];
+  else
+    cp := stringGet(fileContents,mm_pos-1);
+    buffer := buffer-1;
+    bkBuffer := bkBuffer+1;
+    mm_pos := mm_pos - 1;
+    mm_sPos := mm_sPos -1;
+    if (cp==10) then
+      mm_sPos := mm_ePos;
+      mm_linenr := mm_linenr-1;
+    end if;
+    mm_currSt::states := states;
+    (action, mm_currSt, mm_pos, mm_sPos, mm_linenr, buffer, bkBuffer, states) := findRule(fileContents, mm_currSt, mm_pos, mm_sPos, mm_ePos, mm_linenr, buffer, bkBuffer, states);
+  end if;
 end findRule;
 
 function evalState
