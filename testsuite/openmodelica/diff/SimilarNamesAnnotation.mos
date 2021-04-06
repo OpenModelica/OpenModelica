@@ -1,3 +1,5 @@
+// depends: SimilarNamesAnnotationWrongOrder.mo
+// depends: SimilarNamesAnnotationFixedOrder.mo
 // status: correct
 
 echo(false);
