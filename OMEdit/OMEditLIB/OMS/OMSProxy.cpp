@@ -1065,10 +1065,8 @@ bool OMSProxy::importSnapshot(QString cref, QString snapshot, QString* pNewCref)
   LOG_COMMAND(command, args);
   char* new_cref = NULL;
   oms_status_enu_t status = oms_importSnapshot(cref_.toUtf8().constData(), snapshot.toUtf8().constData(), &new_cref);
-  if (new_cref) {
+  if (new_cref)
     *pNewCref = QString(new_cref);
-    free(new_cref);
-  }
   else
     *pNewCref = cref;
   logResponse(command, status, &commandTime);
