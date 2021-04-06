@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -45,8 +45,6 @@ protected
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import HashSet = NFHashSet;
-  import HashTableCrToExp = NFHashTableCrToExp;
   import Operator = NFOperator;
   import Variable = NFVariable;
 

@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -49,7 +49,6 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFlatten.FunctionTreeImpl;
-  import HashSet = NFHashSet;
   import HashTableCrToExp = NFHashTableCrToExp;
   import HashTableCrToLst = NFHashTable3;
   import SimplifyExp = NFSimplifyExp;
@@ -57,14 +56,10 @@ protected
 
   // Backend imports
   import BVariable = NBVariable;
-  import EqData = NBEquation.EqData;
-  import Equation = NBEquation.Equation;
-  import EquationPointers = NBEquation.EquationPointers;
-  import HashTableCrToCrEqLst = NBHashTableCrToCrEqLst;
+  import NBEquation.{EqData, Equation, EquationPointers};
   import Solve = NBSolve;
   import StrongComponent = NBStrongComponent;
-  import VarData = NBVariable.VarData;
-  import VariablePointers = NBVariable.VariablePointers;
+  import NBVariable.{VarData, VariablePointers};
 
   // Util imports
   import BaseHashTable;
@@ -257,63 +252,6 @@ public
   end simpleToString;
 
 /*
-
-  function empty
-    "Returns an empty set of replacement rules"
-    input Integer size = BaseHashTable.defaultBucketSize;
-    input Boolean simple = false;
-    output Replacements variableReplacements;
-  protected
-    HashTableCrToExp.HashTable replacements;
-    HashTableCrToCrEqLst.HashTable groups;
-  algorithm
-    // ToDo: remove all those sized calls, they are just duplicate functions
-    replacements := HashTableCrToExp.emptyHashTableSized(size);
-    groups := HashTableCrToCrEqLst.emptyHashTableSized(size);
-    variableReplacements := SIMPLE_REPLACEMENTS(replacements, groups);
-  end empty;
-
-  function add
-    input output Replacements replacements;
-    input Expression src                    "for simple replacements src and dst are not yet determined";
-    input Expression dst;
-    input Equation eqn;
-  algorithm
-    // new (a -> b), existing (b -> c)
-    // new (a -> b), existing (a -> c) (FAIL or REPLACE?)
-    // new (a -> b), existing (c -> a) (how to detect for f(.., a, ...)?)
-    replacements := match replacements
-      case SIMPLE_REPLACEMENTS() algorithm
-      then replacements;
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed adding replacement for expressions: "
-        + "\n\t 1. " + Expression.toString(src) + "\n\t 2. " + Expression.toString(dst) + "\n In equation: \n\t"
-        + Equation.toString(eqn)});
-      then fail();
-    end match;
-  end add;
-
-  function addStatic
-    input output Replacements repl;
-    input ComponentRef src;
-    input Expression dst;
-    input Equation eqn;
-  algorithm
-    repl := match repl
-      case SIMPLE_REPLACEMENTS() guard(not BaseHashTable.hasKey(src, repl.replacements)) algorithm
-        repl.replacements := BaseHashTable.add((src, dst), repl.replacements);
-      then repl;
-
-      // need forward replacement
-
-      else algorithm
-        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed adding replacement for componentRef: "
-        + "\n\t - " + ComponentRef.toString(src) + "\n In equation: \n\t" + Equation.toString(eqn)});
-      then fail();
-    end match;
-
-  end addStatic;
 
   function empty
     "Returns an empty set of replacement rules"
