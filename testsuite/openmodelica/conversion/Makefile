@@ -8,6 +8,7 @@ ConvertClass4.mos \
 ConvertClassVectorize1.mos \
 ConvertClassVectorize2.mos \
 ConvertClassVectorize3.mos \
+ConvertElement1.mos \
 ConvertModifiers1.mos \
 ConvertModifiers2.mos \
 ConvertModifiers3.mos \

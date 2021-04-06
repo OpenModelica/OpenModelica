@@ -1971,7 +1971,8 @@ protected
               true;
 
           case ConversionRule.ELEMENT()
-            guard AbsynUtil.pathNthIdent(path, arrayLength(rule.oldPath) + 1) == rule.oldName
+            guard path_len > arrayLength(rule.oldPath) and
+                  AbsynUtil.pathNthIdent(path, arrayLength(rule.oldPath) + 1) == rule.oldName
             algorithm
               if path_len == arrayLength(rule.oldPath) - 1 then
                 // convertElement(A.B.C, X, Y) on A.B.C.X => A.B.C.Y
