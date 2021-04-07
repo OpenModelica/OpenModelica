@@ -172,6 +172,7 @@ void Plot::addPlotCurve(PlotCurve *pCurve)
 void Plot::removeCurve(PlotCurve *pCurve)
 {
   mPlotCurvesList.removeOne(pCurve);
+  pCurve->getPointMarker()->setVisible(false);
 }
 
 QColor Plot::getUniqueColor(int index, int total)
