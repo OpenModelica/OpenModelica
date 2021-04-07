@@ -866,7 +866,7 @@ algorithm
     //FIXME: Add continuous clocked systems support
     (_, _, equations, _, ouniqueEqIndex, clockedVars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping) :=
         createEquationsForSystem(stateeqnsmark, zceqnsmarks, syst, inShared, comps, ouniqueEqIndex, {},
-                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, true, true);
+                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, true);
     sccOffset := listLength(comps) + sccOffset;
     //otempvars := listAppend(clockedVars, otempvars);
     GC.free(stateeqnsmark);
@@ -1449,7 +1449,7 @@ tuple<Integer /*uniqueEqIndex*/,
       list<tuple<Integer,Integer>> /*eqBackendSimCodeMapping*/,
       SimCode.BackendMapping  /*backendSimCodeMapping*/,
       Integer  /*sccOffset*/>;
-protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean, Boolean>;
+protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean>;
 
 protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
@@ -1476,13 +1476,9 @@ protected
   CreateEquationsForSystemsArg arg;
 algorithm
   try
-    arg := (shared, inAllZeroCrossings, true, false);
+    arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
     foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
     foldArg := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
-    if createAlgebraicEquations then
-      arg := (shared, inAllZeroCrossings, false, true);
-      foldArg := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
-    end if;
     (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
     oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := foldArg;
     oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
@@ -1516,14 +1512,14 @@ algorithm
       SimCode.BackendMapping backendMapping;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       BackendDAE.Shared shared;
-      Boolean createAlgebraicEquations, createDynamicEquations;
+      Boolean createAlgebraicEquations;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
       equation
         if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
           BackendDump.dumpEqSystemBLTmatrixHTML(inSyst);
         end if;
 
-        (shared, zeroCrossings, createDynamicEquations, createAlgebraicEquations) = inArg;
+        (shared, zeroCrossings, createAlgebraicEquations) = inArg;
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) = inFold;
 
@@ -1539,7 +1535,7 @@ algorithm
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping) =
             createEquationsForSystem(
                 stateeqnsmark, zceqnsmarks, syst, shared, comps, uniqueEqIndex, tempvars,
-                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping, createDynamicEquations, createAlgebraicEquations);
+                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping, createAlgebraicEquations);
         GC.free(stateeqnsmark);
         GC.free(zceqnsmarks);
 
@@ -1568,7 +1564,7 @@ tuple<Integer /*uniqueEqIndex*/,
       Integer /*sccOffset*/>;
 protected type CreateEquationsForSystemArg =
 tuple<array<Integer> /*stateeqnsmark*/, array<Integer> /*zceqnsmark*/,
-      BackendDAE.EqSystem /*syst*/, BackendDAE.Shared /*shared*/, Boolean, Boolean>;
+      BackendDAE.EqSystem /*syst*/, BackendDAE.Shared /*shared*/, Boolean>;
 
 protected function createEquationsForSystem
   input array<Integer> stateeqnsmark;
@@ -1582,7 +1578,6 @@ protected function createEquationsForSystem
   input list<tuple<Integer,Integer>> ieqSccMapping;
   input list<tuple<Integer,Integer>> ieqBackendSimCodeMapping;
   input SimCode.BackendMapping iBackendMapping;
-  input Boolean createDynamicEquations;
   input Boolean createAlgebraicEquations;
   output list<SimCode.SimEqSystem> outOdeEquations;
   output list<SimCode.SimEqSystem> outAlgebraicEquations;
@@ -1598,7 +1593,7 @@ protected
   CreateEquationsForSystemArg arg;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings;
 algorithm
-  arg := (stateeqnsmark, zceqnsmark, syst, shared, createDynamicEquations, createAlgebraicEquations);
+  arg := (stateeqnsmark, zceqnsmark, syst, shared, createAlgebraicEquations);
   foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, ieqSccMapping, ieqBackendSimCodeMapping, iBackendMapping, iSccIndex);
   foldArg := List.fold2(comps, createEquationsForSystem1, arg, partitionKindToClockIndex(syst.partitionKind), foldArg);
   (ouniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
@@ -1618,7 +1613,6 @@ protected function addEquationsToLists
   input list<list<SimCode.SimEqSystem>> inAlgebraicEquations;
   input list<list<SimCode.SimEqSystem>> inAllEquations;
   input list<list<SimCode.SimEqSystem>> inEquationsforZeroCrossings;
-  input Boolean createDynamicEquations;
   output list<list<SimCode.SimEqSystem>> outOdeEquations;
   output list<list<SimCode.SimEqSystem>> outAlgebraicEquations;
   output list<list<SimCode.SimEqSystem>> outAllEquations;
@@ -1629,16 +1623,10 @@ protected
 algorithm
   bdynamic := BackendDAEUtil.blockIsDynamic(eqsIdx, stateeqnsmark);
   bzceqns := BackendDAEUtil.blockIsDynamic(eqsIdx, zceqnsmark);
-  if createDynamicEquations then
-    outOdeEquations := if bdynamic then inEq::inOdeEquations else inOdeEquations;
-    outAllEquations := inEq::inAllEquations;
-    outEquationsforZeroCrossings := if bzceqns then inEq::inEquationsforZeroCrossings else inEquationsforZeroCrossings;
-  else
-    outOdeEquations := inOdeEquations;
-    outAllEquations := if not bdynamic then inEq::inAllEquations else inAllEquations;
-    outEquationsforZeroCrossings := inEquationsforZeroCrossings;
-  end if;
+  outOdeEquations := if bdynamic then inEq::inOdeEquations else inOdeEquations;
   outAlgebraicEquations := if not bdynamic then inEq::inAlgebraicEquations else inAlgebraicEquations;
+  outAllEquations := inEq::inAllEquations;
+  outEquationsforZeroCrossings := if bzceqns then inEq::inEquationsforZeroCrossings else inEquationsforZeroCrossings;
 end addEquationsToLists;
 
 protected function createEquationsForSystem1
@@ -1660,10 +1648,10 @@ protected
   list<Integer> eqsIdx,varIdx;
   list<BackendDAE.Var> varlst;
   list<BackendDAE.Equation> eqnlst;
-  Boolean createDynamicEquations, createAlgebraicEquations, bdynamic, skip;
+  Boolean createAlgebraicEquations, bdynamic, skip;
   Boolean debug = false;
 algorithm
-  (stateeqnsmark, zceqnsmark, syst, shared, createDynamicEquations, createAlgebraicEquations) := inArg;
+  (stateeqnsmark, zceqnsmark, syst, shared, createAlgebraicEquations) := inArg;
   (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
   tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex) := inFold;
   (varlst,varIdx,eqnlst,eqsIdx) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
@@ -1711,7 +1699,7 @@ algorithm
         else
           (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
               addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {index}, odeEquations,
-                             algebraicEquations, allEquations, equationsforZeroCrossings, createDynamicEquations);
+                             algebraicEquations, allEquations, equationsforZeroCrossings);
         end if;
       then (uniqueEqIndex1, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
             tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex + 1);
@@ -1729,7 +1717,7 @@ algorithm
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {e}, odeEquations,
-                           algebraicEquations, allEquations, equationsforZeroCrossings, createDynamicEquations);
+                           algebraicEquations, allEquations, equationsforZeroCrossings);
       then
         (uniqueEqIndex1, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex + 1);
@@ -1746,7 +1734,7 @@ algorithm
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {e}, odeEquations,
-                           algebraicEquations, allEquations, equationsforZeroCrossings, createDynamicEquations);
+                           algebraicEquations, allEquations, equationsforZeroCrossings);
       then
         (uniqueEqIndex1, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex + 1);
@@ -1764,7 +1752,7 @@ algorithm
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {e}, odeEquations,
-                           algebraicEquations, allEquations, equationsforZeroCrossings, createDynamicEquations);
+                           algebraicEquations, allEquations, equationsforZeroCrossings);
       then
         (uniqueEqIndex1, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex + 1);
@@ -1799,7 +1787,7 @@ algorithm
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {e}, odeEquations,
-                           algebraicEquations, allEquations, equationsforZeroCrossings, createDynamicEquations);
+                           algebraicEquations, allEquations, equationsforZeroCrossings);
       then
         (uniqueEqIndex1, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex + 1);
@@ -1820,7 +1808,7 @@ algorithm
         else
           (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
               addEquationsToLists(equations1, stateeqnsmark, zceqnsmark, {index}, odeEquations,
-                             algebraicEquations, allEquations, equationsforZeroCrossings, createDynamicEquations);
+                             algebraicEquations, allEquations, equationsforZeroCrossings);
         end if;
       then
         (uniqueEqIndex1, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, tempvars,
@@ -1838,7 +1826,7 @@ algorithm
 
         (odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings) =
             addEquationsToLists(noDiscEquations1, stateeqnsmark, zceqnsmark, eqnslst, odeEquations,
-                           algebraicEquations, allEquations, equationsforZeroCrossings, createDynamicEquations);
+                           algebraicEquations, allEquations, equationsforZeroCrossings);
       then
         (uniqueEqIndex1, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings, tempvars,
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex + 1);
