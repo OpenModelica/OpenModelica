@@ -1012,7 +1012,7 @@ template simulationFile_inl(SimCode simCode)
     case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(__)),inlineEquations=inlineEquations) then
       let modelNamePrefixStr = modelNamePrefix(simCode)
 
-      let funcNames = (inlineEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr); separator="\n")
+      let funcNames = (inlineEquations |> eq => equationNames_(eq,contextSimulationNonDiscrete,modelNamePrefixStr))
       <<
       /* Inline equation file */
       <%simulationFileHeader(fileNamePrefix(simCode))%>
@@ -5612,8 +5612,9 @@ template equationNames_(SimEqSystem eq, Context context, String modelNamePrefixS
   <% if profileAll() then 'SIM_PROF_TICK_EQ(<%ix%>);' %>
   <% match simEqAttrEval case "" then '' else '<%simEqAttrEval%>' %>
   <% match simEqAttrEval case "" then '' else 'if ((evalStages & currentEvalStage) && !((currentEvalStage!=EVAL_DISCRETE)?(<%simEqAttrIsDiscreteKind%>):0))' %>
-    <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
+  <%symbolName(modelNamePrefixStr,"eqFunction")%>_<%ix%>(data, threadData);
   <% if profileAll() then 'SIM_PROF_ACC_EQ(<%ix%>);' %>
+  threadData->lastEquationSolved = <%ix%>;
   >>
 end equationNames_;
 

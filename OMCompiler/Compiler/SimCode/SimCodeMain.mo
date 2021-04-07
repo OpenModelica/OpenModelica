@@ -37,8 +37,6 @@ encapsulated package SimCodeMain
   The entry points to this module are the translateModel function and the
   translateFunctions function."
 
-
-// public imports
 public
 import Absyn;
 import BackendDAE;
@@ -51,7 +49,6 @@ import Tpl;
 import Values;
 import SimCode;
 
-// protected imports
 protected
 import Autoconf;
 import AvlSetString;
