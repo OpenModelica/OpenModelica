@@ -933,6 +933,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   idx = mpVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel()->mapFromSource(idx);
   mpVariablesTreeView->expand(idx);
   mpVariablesTreeView->setCurrentIndex(idx);
+  mpVariablesTreeView->setFocus(Qt::ActiveWindowFocusReason);
   MainWindow::instance()->enableReSimulationToolbar(MainWindow::instance()->getVariablesDockWidget()->isVisible());
 
   return existingTopVariableTreeItem;
@@ -1097,6 +1098,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
  * Returns the variable information like value, unit, displayunit and description.
  * \param pMatReader
  * \param variableToFind
+ * \param type
  * \param value
  * \param changeAble
  * \param variability
@@ -1114,7 +1116,7 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
     *variability = hash.value("variability");
     if (*changeAble) {
       *value = hash.value("start");
-    } else { /* if the variable is not a tunable parameter then read the final value of the variable. Only mat result files are supported. */
+    } else { /* Read the final value of the variable. Only mat result files are supported. */
       if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
         *value = "";
         ModelicaMatVariable_t *var;
@@ -1469,8 +1471,8 @@ void VariablesWidget::enableVisualizationControls(bool enable)
  */
 void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions)
 {
-  QElapsedTimer timer;
-  timer.start();
+  MainWindow::instance()->showProgressBar();
+  MainWindow::instance()->getStatusBar()->showMessage(tr("Loading simulation result variables"));
   // In order to improve the response time of insertVariablesItems function we should disbale sorting and clear the filter.
   mpVariablesTreeView->setSortingEnabled(false);
   mpVariableTreeProxyModel->setFilterRegExp(QRegExp(""));
@@ -1486,9 +1488,10 @@ void VariablesWidget::insertVariablesItemsToTree(QString fileName, QString fileP
   }
   mpVariablesTreeView->setSortingEnabled(true);
   mpVariablesTreeView->sortByColumn(0, Qt::AscendingOrder);
-  /* since we cleared the filter above so we need to apply it back. */
+  // since we cleared the filter above so we need to apply it back.
   findVariables();
-  qDebug() << (double)timer.elapsed() / 1000.0;
+  MainWindow::instance()->getStatusBar()->clearMessage();
+  MainWindow::instance()->hideProgressBar();
 }
 
 /*!
