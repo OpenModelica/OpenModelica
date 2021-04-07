@@ -177,8 +177,7 @@ protected
 
 function class_definition
   extends partialParser;
-protected
-  ParseTree nodeName;
+  output ParseTree nodeName;
 algorithm
   tree := {};
   (tokens, tree) := scanOpt(tokens, tree, TokenId.ENCAPSULATED);
@@ -605,6 +604,7 @@ function element_list
 protected
   TokenId id;
   Boolean b, isAnnotation;
+  ParseTree nodeName;
 algorithm
   outTree := {};
   while true loop
@@ -612,11 +612,11 @@ algorithm
     if not b then
       break;
     end if;
-    (tokens, tree, isAnnotation) := element(tokens, tree);
+    (tokens, tree, nodeName, isAnnotation) := element(tokens, tree);
     (tokens, tree) := scan(tokens, tree, TokenId.SEMICOLON);
 
     if not isAnnotation then
-      outTree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$element")))::outTree;
+      outTree := makeNode(listReverse(tree), label=nodeName)::outTree;
       tree := {};
     end if;
   end while;
@@ -625,26 +625,27 @@ end element_list;
 
 function element
   extends partialParser;
+  output ParseTree nodeName = LEAF(makeToken(TokenId.IDENT, "$element"));
   output Boolean isAnnotation = false;
 protected
   TokenId id;
   Boolean b,b1;
 algorithm
   (tokens, tree, id) := peek(tokens, tree);
-  _ := match id
+  nodeName := match id
     case TokenId.IMPORT
       algorithm
         (tokens, tree) := import_clause(tokens, tree);
-      then ();
+      then LEAF(makeToken(TokenId.IDENT, "$import"));
     case TokenId.EXTENDS
       algorithm
         (tokens, tree) := extends_clause(tokens, tree);
-      then ();
+      then LEAF(makeToken(TokenId.IDENT, "$extends"));
     case TokenId.ANNOTATION
       algorithm
         (tokens, tree) := _annotation(tokens, tree);
         isAnnotation := true;
-      then ();
+      then LEAF(makeToken(TokenId.IDENT, "$annotation"));
     else
       algorithm
         (tokens, tree) := scanOpt(tokens, tree, TokenId.REDECLARE);
@@ -654,9 +655,9 @@ algorithm
         (tokens, tree, b1) := scanOpt(tokens, tree, TokenId.REPLACEABLE);
         (tokens, tree, b) := LA1(tokens, tree, First.class_definition);
         if b then
-          (tokens, tree) := class_definition(tokens, tree);
+          (tokens, tree, nodeName) := class_definition(tokens, tree);
         else
-          (tokens, tree) := component_clause(tokens, tree);
+          (tokens, tree, nodeName) := component_clause(tokens, tree);
         end if;
         if b1 then
           (tokens, tree, b) := LA1(tokens, tree, {TokenId.CONSTRAINEDBY});
@@ -665,7 +666,7 @@ algorithm
             (tokens, tree) := comment(tokens, tree);
           end if;
         end if;
-      then ();
+      then nodeName;
   end match;
   outTree := makeNodePrependTree(listReverse(tree), inTree);
 end element;
@@ -687,6 +688,7 @@ end constraining_clause;
 
 function component_clause
   extends partialParser;
+  output ParseTree nodeName;
 protected
   TokenId id;
   Boolean b;
@@ -699,7 +701,8 @@ algorithm
   end if;
   tree := makeNode(listReverse(tree), label=LEAF(makeToken(TokenId.IDENT, "$type_specifier")))::{};
   (tokens, tree) := component_list(tokens, tree);
-  outTree := makeNodePrependTree(listReverse(tree), inTree, label=LEAF(makeToken(TokenId.IDENT, "$component")));
+  nodeName := LEAF(makeToken(TokenId.IDENT, "$component"));
+  outTree := makeNodePrependTree(listReverse(tree), inTree, label=nodeName);
 end component_clause;
 
 function import_clause
@@ -2004,6 +2007,7 @@ protected
   ParseTree addedTree, deletedTree, addedLabel, deletedLabel, deleted;
   Boolean addedBeforeDeleted, joinTrees;
   tuple<Diff,list<ParseTree>> diff1;
+  String debugString1="", debugString2="";
 algorithm
   // Speed-up. No deep compare for single nodes...
   _ := match (t1, t2)
@@ -2128,9 +2132,15 @@ algorithm
       try
         (deleted, deletedTrees) := List.findAndRemove1(deletedTrees, function compareNodeLabels(compare=compare), added);
         resLocal := treeDiffWork(getNodes(deleted), getNodes(added), depth+1, compare);
+        if debug then
+          debugString1:=DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr);
+        end if;
         res := replaceLabeledDiff(res, resLocal, nodeLabel(added), compare);
         if debug then
-          print("replaced labeled diff: " + DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr) + "\n");
+          debugString2:=DiffAlgorithm.printDiffTerminalColor(res, parseTreeNodeStr);
+          print("replaceLabeledDiff change for label:" + parseTreeNodeStr(nodeLabel(added)) + "\n");
+          print("before replaceLabeledDiff: " + debugString1 + "\n");
+          print("after replaceLabeledDiff: " + debugString2 + "\n");
         end if;
       else
       end try;

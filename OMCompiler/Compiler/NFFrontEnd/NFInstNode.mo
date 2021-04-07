@@ -1694,6 +1694,17 @@ uniontype InstNode
     input Integer mod;
     output Integer hash = stringHashDjb2Mod(name(node), mod);
   end hash;
+
+  function dimensionCount
+    input InstNode node;
+    output Integer count;
+  algorithm
+    count := match node
+      case COMPONENT_NODE() then Component.dimensionCount(Pointer.access(node.component));
+      case CLASS_NODE() then Class.dimensionCount(Pointer.access(node.cls));
+      else 0;
+    end match;
+  end dimensionCount;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

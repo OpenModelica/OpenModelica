@@ -44,6 +44,7 @@ import Expression = NFExpression;
 import NFInstNode.InstNode;
 import Binding = NFBinding;
 import NFPrefixes.{Variability, Purity};
+import Subscript = NFSubscript;
 
 protected
 import Config;
@@ -2378,15 +2379,20 @@ algorithm
           matchKind := MatchKind.NOT_COMPATIBLE;
         else
           for i in 1:arrayLength(comps1) loop
-            e :: elements := elements;
-            (e, _, mk) := matchTypes(InstNode.getType(comps1[i]), InstNode.getType(comps2[i]), e, allowUnknown);
-            matched_elements := e :: matched_elements;
+            comp2 := InstNode.component(comps2[i]);
 
-            if mk == MatchKind.CAST then
-              matchKind := mk;
-            elseif not isValidPlugCompatibleMatch(mk) then
-              matchKind := MatchKind.NOT_COMPATIBLE;
-              break;
+            if Component.isTyped(comp2) then
+              e :: elements := elements;
+              comp1 := InstNode.component(comps1[i]);
+              (e, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), e, allowUnknown);
+              matched_elements := e :: matched_elements;
+
+              if mk == MatchKind.CAST then
+                matchKind := mk;
+              elseif not isValidPlugCompatibleMatch(mk) then
+                matchKind := MatchKind.NOT_COMPATIBLE;
+                break;
+              end if;
             end if;
           end for;
 
@@ -2428,10 +2434,10 @@ algorithm
           matchKind := MatchKind.NOT_COMPATIBLE;
         else
           for i in 1:arrayLength(comps1) loop
-            comp1 := InstNode.component(comps1[i]);
             comp2 := InstNode.component(comps2[i]);
 
             if Component.isTyped(comp2) then
+              comp1 := InstNode.component(comps1[i]);
               (_, _, mk) := matchTypes(Component.getType(comp1), Component.getType(comp2), expression, allowUnknown);
 
               if not isValidPlugCompatibleMatch(mk) then
@@ -3225,29 +3231,21 @@ algorithm
     local
       MatchKind ty_match;
       Expression exp;
-      Type ty, exp_ty, comp_ty;
+      Type ty, bind_ty, comp_ty;
       list<list<Dimension>> dims;
 
     case Binding.TYPED_BINDING(bindingExp = exp)
       algorithm
-        (exp_ty, comp_ty) := match exp
-          case Expression.BINDING_EXP() guard binding.eachType == NFBinding.EachType.NOT_EACH
-            algorithm
-              dims := list(Type.arrayDims(InstNode.getType(p)) for p in listRest(exp.parents));
-            then
-              (exp.expType, Type.liftArrayLeftList(componentType, List.flattenReverse(dims)));
-
-          else (binding.bindingType, componentType);
-        end match;
-
-        (exp, ty, ty_match) := matchTypes(exp_ty, comp_ty, exp, true);
+        (bind_ty, comp_ty) := elaborateBindingType(exp, binding.bindingType, componentType);
+        (exp, ty, ty_match) := matchTypes(bind_ty, comp_ty, exp, true);
 
         if not isValidAssignmentMatch(ty_match) then
-          printBindingTypeError(name, binding, comp_ty, exp_ty, component);
+          binding.bindingExp := Expression.expandSplitIndices(exp);
+          printBindingTypeError(name, binding, comp_ty, bind_ty, component);
           fail();
         elseif isCastMatch(ty_match) then
           binding := Binding.TYPED_BINDING(exp, ty, binding.variability, binding.eachType,
-            binding.evalState, binding.isFlattened, binding.info);
+            binding.evalState, binding.isFlattened, binding.source, binding.info);
         end if;
       then
         ();
@@ -3261,6 +3259,48 @@ algorithm
         fail();
   end match;
 end matchBinding;
+
+function elaborateBindingType
+  "If the binding expression comes from a modifier, returns the type of the
+   actual binding expression and adds dimensions to the component type to match.
+   This is done so that modifiers are type checked properly, i.e.:
+
+    model A
+      Real x;
+    end A;
+
+    model B
+      A a[3](x = {1, 2});
+    end B;
+
+   means the bindingExp will be {1, 2}[<x, 1>] and result in [2] being added to
+   the binding type and [3] to the component type such that the type mismatch is
+   detected."
+  input Expression bindingExp;
+  input output Type bindingType;
+  input output Type componentType;
+protected
+  list<Dimension> dims;
+algorithm
+  () := match bindingExp
+    case Expression.SUBSCRIPTED_EXP()
+      algorithm
+        bindingType := Expression.typeOf(bindingExp.exp);
+
+        dims := list(
+            match s
+              case Subscript.SPLIT_INDEX() then Type.nthDimension(InstNode.getType(s.node), s.dimIndex);
+              else Dimension.UNKNOWN();
+            end match
+          for s in bindingExp.subscripts);
+
+        componentType := Type.liftArrayLeftList(componentType, dims);
+      then
+        ();
+
+    else ();
+  end match;
+end elaborateBindingType;
 
 function printBindingTypeError
   input String name;

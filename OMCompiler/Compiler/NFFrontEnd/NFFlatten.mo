@@ -345,7 +345,7 @@ algorithm
     //cond := flattenBinding(condition, prefix);
     exp := Binding.getTypedExp(cond);
     exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(Binding.getInfo(cond)));
-    exp := Expression.stripBindingInfo(exp);
+    exp := Expression.expandSplitIndices(exp);
 
     // Hack to make arrays work when all elements have the same value.
     if Expression.arrayAllEqual(exp) then
@@ -492,7 +492,8 @@ algorithm
   // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
   if unfix then
-    ty_attrs := Binding.setAttr(ty_attrs, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
+    ty_attrs := Binding.setAttr(ty_attrs, "fixed",
+      Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT, NFBinding.Source.GENERATED));
   end if;
 
   vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info) :: vars;
@@ -528,9 +529,11 @@ function getRecordBindings
 protected
   Expression binding_exp;
   Variability var;
+  Binding.Source bind_src;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
+  bind_src := Binding.source(binding);
 
   // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
@@ -540,7 +543,7 @@ algorithm
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
              else
-               Binding.FLAT_BINDING(e, var)
+               Binding.FLAT_BINDING(e, var, bind_src)
            for e in binding_exp.elements);
 
     else
@@ -561,7 +564,7 @@ function flattenComplexComponent
   input InstNode node;
   input Component comp;
   input Class cls;
-  input Type ty;
+  input Type nodeTy;
   input Visibility visibility;
   input Option<Binding> outerBinding;
   input ComponentRef prefix;
@@ -577,7 +580,9 @@ protected
   Equation eq;
   list<Expression> bindings;
   Variability comp_var, binding_var;
+  Type ty;
 algorithm
+  ty := flattenType(nodeTy, prefix);
   dims := Type.arrayDims(ty);
   binding := if isSome(outerBinding) then Util.getOption(outerBinding) else Component.getBinding(comp);
 
@@ -589,7 +594,7 @@ algorithm
 
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
-      binding_exp := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
+      binding_exp := Ceval.evalExp(binding_exp);
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.
       try
@@ -600,7 +605,7 @@ algorithm
       // If inlining fails, try to evaluate the binding instead.
       if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
         try
-          binding_exp_eval := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
+          binding_exp_eval := Ceval.evalExp(binding_exp);
 
           // Throw away the evaluated binding if the number of dimensions no
           // longer match after evaluation, in case Ceval fails to apply the
@@ -674,6 +679,7 @@ algorithm
       subscriptBindingOpt(subs, binding), vars, sections, settings);
   else
     dim :: rest_dims := dimensions;
+    dim := flattenDimension(dim, prefix);
     range_iter := RangeIterator.fromDim(dim);
 
     while RangeIterator.hasNext(range_iter) loop
@@ -922,7 +928,7 @@ algorithm
           return;
         end if;
 
-        binding.bindingExp := flattenBindingExp(binding.bindingExp, prefix, isTypeAttribute);
+        binding.bindingExp := flattenExp(binding.bindingExp, prefix);
         binding.bindingType := flattenType(binding.bindingType, prefix);
         binding.isFlattened := true;
       then
@@ -948,82 +954,7 @@ algorithm
   end match;
 end flattenBinding;
 
-function flattenBindingExp
-  input Expression exp;
-  input ComponentRef prefix;
-  input Boolean isTypeAttribute = false;
-  output Expression outExp;
-protected
-  list<Subscript> subs, accum_subs;
-  Integer binding_level;
-  list<InstNode> parents;
-  ComponentRef pre;
-  InstNode cr_node, par;
-algorithm
-  outExp := match exp
-    case Expression.BINDING_EXP(exp = outExp)
-      algorithm
-        outExp := flattenExp(outExp, prefix);
-        parents := listRest(exp.parents);
-
-        if not exp.isEach then
-          if isTypeAttribute and not listEmpty(parents) then
-            parents := listRest(parents);
-          end if;
-
-          if not listEmpty(parents) then
-            outExp := flattenBindingExp2(outExp, prefix, parents);
-          end if;
-        end if;
-      then
-        outExp;
-
-    else exp;
-  end match;
-end flattenBindingExp;
-
-function flattenBindingExp2
-  input Expression exp;
-  input ComponentRef prefix;
-  input list<InstNode> parents;
-  output Expression outExp = exp;
-protected
-  Integer binding_level = 0;
-  list<Subscript> subs;
-  ComponentRef pre = prefix;
-  InstNode pre_node, par;
-algorithm
-  par := listHead(parents);
-
-  if InstNode.isComponent(par) and not ComponentRef.isEmpty(pre) then
-    pre_node := ComponentRef.node(pre);
-
-    while not InstNode.refEqual(pre_node, par) loop
-      pre := ComponentRef.rest(pre);
-
-      if ComponentRef.isEmpty(pre) then
-        return;
-      end if;
-
-      pre_node := ComponentRef.node(pre);
-    end while;
-  end if;
-
-  for parent in parents loop
-    binding_level := binding_level + Type.dimensionCount(InstNode.getType(parent));
-  end for;
-
-  if binding_level > 0 then
-    // TODO: Optimize this, making a list of all subscripts in the prefix when
-    //       only a few are needed is unnecessary.
-    subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(pre));
-    binding_level := min(binding_level, listLength(subs));
-    subs := List.firstN_reverse(subs, binding_level);
-    outExp := Expression.applySubscripts(subs, exp);
-  end if;
-end flattenBindingExp2;
-
-function flattenExp
+public function flattenExp
   input output Expression exp;
   input ComponentRef prefix;
 algorithm
@@ -1038,16 +969,60 @@ algorithm
     case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
         exp.cref := flattenCref(exp.cref, prefix);
+        exp.ty := flattenType(exp.ty, prefix);
       then
         exp;
 
-    case Expression.BINDING_EXP() then flattenBindingExp(exp, prefix);
+    case Expression.SUBSCRIPTED_EXP()
+      then replaceSplitIndices(exp.exp, exp.subscripts, prefix);
+
     case Expression.IF(ty = Type.CONDITIONAL_ARRAY()) then flattenConditionalArrayIfExp(exp);
     else exp;
   end match;
 
   exp := flattenExpType(exp, prefix);
 end flattenExp_traverse;
+
+function replaceSplitIndices
+  input output Expression exp;
+  input list<Subscript> subscripts;
+  input ComponentRef prefix;
+protected
+  list<Subscript> subs = subscripts, cr_subs;
+  Integer index;
+  InstNode cr_node;
+algorithm
+  for cr in ComponentRef.toListReverse(prefix) loop
+    cr_subs := ComponentRef.getSubscripts(cr);
+
+    if not listEmpty(cr_subs) then
+      index := 1;
+      cr_node := ComponentRef.node(cr);
+
+      for s in cr_subs loop
+        subs := List.replaceOnTrue(s, subs,
+          function replaceSplitIndices2(node = cr_node, index = index));
+        index := index + 1;
+      end for;
+    end if;
+  end for;
+
+  subs := Subscript.expandSplitIndices(subs);
+  exp := Expression.applySubscripts(subs, exp);
+end replaceSplitIndices;
+
+function replaceSplitIndices2
+  input Subscript sub;
+  input InstNode node;
+  input Integer index;
+  output Boolean replace;
+algorithm
+  replace := match sub
+    case Subscript.SPLIT_INDEX()
+      then sub.dimIndex == index and InstNode.refEqual(sub.node, node);
+    else false;
+  end match;
+end replaceSplitIndices2;
 
 function flattenCref
   input output ComponentRef cref;
@@ -1056,12 +1031,7 @@ protected
   Type ty, ty2;
 algorithm
   cref := ComponentRef.transferSubscripts(prefix, cref);
-  ty := ComponentRef.nodeType(cref);
-  ty2 := flattenType(ty, prefix);
-
-  if not referenceEq(ty, ty2) then
-    cref := ComponentRef.setNodeType(ty2, cref);
-  end if;
+  cref := ComponentRef.mapTypes(cref, function flattenType(prefix = prefix));
 end flattenCref;
 
 function flattenConditionalArrayIfExp
@@ -1367,7 +1337,6 @@ algorithm
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
   range := flattenExp(range, prefix);
   range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(forLoop)));
-  range := Expression.stripBindingInfo(range);
   range_iter := RangeIterator.fromExp(range);
 
   while RangeIterator.hasNext(range_iter) loop
@@ -1952,6 +1921,7 @@ protected
   Function fn = func;
 algorithm
   if not Function.isCollected(fn) then
+    fn := Function.mapExp(fn, Expression.expandSplitIndices);
     fn := EvalConstants.evaluateFunction(fn);
     SimplifyModel.simplifyFunction(fn);
     Function.collect(fn);

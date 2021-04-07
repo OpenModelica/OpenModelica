@@ -87,5 +87,5 @@ package NewDataReconciliationSimpleTests
             fillPattern =                                                                                                    FillPattern.Solid, extent={{-39.4379,-29.2276},{39.4379,29.2276}}, textString
           =                                                                                                      "Data reconciliation", fontName="Arial"),Bitmap(visible=true, origin={23.1899,-65.9119}, fileName="logoModelica.png",
             imageSource =                                                                                                    "", extent={{-53.1899,-18.4552},{53.1899,18.4552}})}), Diagram(coordinateSystem(extent={{-148.5,-105.0},{148.5,105.0}}, preserveAspectRatio=true, initialScale=0.1, grid={10,10})),
-    uses(Modelica(version="3.2.3"), ThermoSysPro(version="default")));
+    uses(Modelica(version="3.2.3"), ThermoSysPro(version="3.2")));
 end NewDataReconciliationSimpleTests;

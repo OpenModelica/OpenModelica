@@ -155,7 +155,7 @@ algorithm
         if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
-          outExp := Expression.stripBindingInfo(outExp);
+          outExp := Expression.expandSplitIndices(outExp);
           outChanged := true;
         elseif outChanged then
           ty := ComponentRef.getSubscriptedType(cref);
@@ -557,7 +557,6 @@ algorithm
       algorithm
         if not isLocalFunctionVariable(e.cref, fnNode) then
           outExp := Ceval.evalCref(e.cref, e, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
-          outExp := Expression.stripBindingInfo(outExp);
           outChanged := true;
         elseif outChanged then
           // If the cref's subscripts changed, recalculate its type.

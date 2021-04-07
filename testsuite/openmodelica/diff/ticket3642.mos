@@ -18,8 +18,8 @@ end P;";
 loadString(s1, "P.mo");
 deleteClass(P.Inner);
 answer := "package P
-  model M
-  end M;
+  model
+M    end M;
 
 end P;";
 s2 := listFile(P);

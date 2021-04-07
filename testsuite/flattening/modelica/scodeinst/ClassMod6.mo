@@ -23,7 +23,7 @@ end B;
 
 model ClassMod6
   B b[3](a(T(x = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}})));
-  B b2(a2(each T(x = {1, 2, 3})));
+  B b2(a2(T(x = {1, 2, 3})));
 end ClassMod6;
 
 // Result:

@@ -51,8 +51,8 @@ public:
   ~SimulationSubscriberSocket();
   QString getEndPoint() const {return mEndPoint;}
   QString getErrorString() const {return mErrorString;}
-  bool isSocketConnected() const {return mSocketConnected;}
   void setSocketConnected(bool socketConnected) {mSocketConnected = socketConnected;}
+  bool isSocketConnected() const {return mSocketConnected;}
 private:
   void *mpContext;
   void *mpSocket;
@@ -60,9 +60,31 @@ private:
   QString mErrorString;
   bool mSocketConnected;
 signals:
-  void simulationProgressJson(const QString &progressJson);
+  void simulationDataPublished(const QByteArray &data);
 public slots:
-  void readProgressJson();
+  void readSimulationData();
+};
+
+class SimulationRequestSocket : public QObject
+{
+  Q_OBJECT
+public:
+  SimulationRequestSocket();
+  ~SimulationRequestSocket();
+  QString getEndPoint() const {return mEndPoint;}
+  QString getErrorString() const {return mErrorString;}
+  void setSocketConnected(bool socketConnected) {mSocketConnected = socketConnected;}
+  bool isSocketConnected() const {return mSocketConnected;}
+private:
+  void *mpContext;
+  void *mpSocket;
+  QString mEndPoint;
+  QString mErrorString;
+  bool mSocketConnected;
+signals:
+  void simulationReply(const QByteArray &reply, const QString &function, const QString &argument);
+public slots:
+  void sendRequest(const QString &function, const QString &argument);
 };
 
 class ArchivedSimulationItem;
@@ -71,7 +93,7 @@ class OMSSimulationOutputWidget : public QWidget
 {
   Q_OBJECT
 public:
-  OMSSimulationOutputWidget(const QString &cref, const QString &fileName, QWidget *pParent = 0);
+  OMSSimulationOutputWidget(const QString &cref, const QString &fileName, bool interactive, QWidget *pParent = 0);
   ~OMSSimulationOutputWidget();
   QProcess* getSimulationProcess() {return mpSimulationProcess;}
   bool isSimulationProcessKilled() {return mIsSimulationProcessKilled;}
@@ -91,16 +113,27 @@ private:
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
   SimulationSubscriberSocket *mpSimulationSubscriberSocket;
-  QThread mProgressThread;
+  SimulationRequestSocket *mpSimulationRequestSocket;
+  QThread mSimulationSubscribeThread;
+  QThread mSimulationRequestThread;
+
+  void parseSimulationProgress(const QVariant progress);
+  void parseSimulationVariables(const QVariant variables);
+signals:
+  void sendRequest(const QString &function, const QString &argument);
 public slots:
   void simulationProcessStarted();
   void readSimulationStandardOutput();
   void readSimulationStandardError();
   void simulationProcessError(QProcess::ProcessError error);
   void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
-  void simulationProgressJson(const QString &progressJson);
+  void simulationDataPublished(const QByteArray &data);
+  void simulationReply(const QByteArray &reply, const QString &function, const QString &argument);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
+  void pauseSimulation();
+  void continueSimulation();
+  void endSimulation();
 };
 
 #endif // OMSSIMULATIONOUTPUTWIDGET_H
