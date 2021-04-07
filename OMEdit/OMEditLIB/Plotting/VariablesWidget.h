@@ -54,7 +54,7 @@ class VariablesTreeItem
 public:
   VariablesTreeItem(const QVector<QVariant> &variableItemData, VariablesTreeItem *pParent = 0, bool isRootItem = false);
   ~VariablesTreeItem();
-  QList<VariablesTreeItem*> getChildren() const {return mChildren;}
+  void setVariableItemData(const QVector<QVariant> &variableItemData);
   bool isRootItem() {return mIsRootItem;}
   QString getFilePath() {return mFilePath;}
   QString getFileName() {return mFileName;}
@@ -94,8 +94,9 @@ public:
   VariablesTreeItem* parent() const {return mpParentVariablesTreeItem;}
   VariablesTreeItem* rootParent();
   QVariant getValue(QString fromUnit, QString toUnit);
-private:
+
   QList<VariablesTreeItem*> mChildren;
+private:
   VariablesTreeItem *mpParentVariablesTreeItem;
   bool mIsRootItem;
   QString mFilePath;
@@ -151,8 +152,9 @@ public:
   QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  VariablesTreeItem* findVariablesTreeItemOneLevel(const QString &name, VariablesTreeItem *pVariablesTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
-  void insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
+  bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void parseInitXml(QXmlStreamReader &xmlReader, QStringList *variablesList);
   bool removeVariableTreeItem(QString variable);
   void unCheckVariables(VariablesTreeItem *pVariablesTreeItem);
@@ -163,6 +165,7 @@ private:
   VariablesTreeItem *mpActiveVariablesTreeItem;
   QHash<QString, QHash<QString,QString> > mScalarVariablesHash;
   QModelIndex variablesTreeItemIndexHelper(const VariablesTreeItem *pVariablesTreeItem, const VariablesTreeItem *pParentVariablesTreeItem, const QModelIndex &parentIndex) const;
+  void filterVariableTreeItem(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   void insertVariablesItems(VariableNode *pParentVariableNode, VariablesTreeItem *pParentVariablesTreeItem);
   QHash<QString, QString> parseScalarVariable(QXmlStreamReader &xmlReader);
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,

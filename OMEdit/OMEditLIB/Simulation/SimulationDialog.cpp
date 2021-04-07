@@ -1958,7 +1958,7 @@ void SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions)
     // insert them into the tree structure
     pVariablesWidget->insertVariablesItemsToTree(simulationOptions.getClassName(), simulationOptions.getWorkingDirectory(), list, simulationOptions);
     // remember the variablestreeitem root pointer
-    foreach (VariablesTreeItem *pVariablesTreeItem, pVariablesWidget->getVariablesTreeModel()->getRootVariablesTreeItem()->getChildren()) {
+    foreach (VariablesTreeItem *pVariablesTreeItem, pVariablesWidget->getVariablesTreeModel()->getRootVariablesTreeItem()->mChildren) {
       if (pVariablesTreeItem->getFileName() == simulationOptions.getClassName()) {
         pOpcUaWorker->setVariablesTreeItemRoot(pVariablesTreeItem);
       }
