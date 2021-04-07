@@ -880,6 +880,7 @@ algorithm
 
         if Binding.isTyped(c.binding) then
           c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node);
+          checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
         end if;
 
         if Binding.isBound(c.condition) then
