@@ -805,7 +805,7 @@ int LibraryTreeItem::row() const
  */
 bool LibraryTreeItem::isTopLevel() const
 {
-  if (parent()->isRootItem()) {
+  if (mpParentLibraryTreeItem && mpParentLibraryTreeItem->isRootItem()) {
     return true;
   } else {
     return false;
