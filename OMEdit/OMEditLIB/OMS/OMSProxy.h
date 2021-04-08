@@ -110,7 +110,7 @@ public:
   bool getVariableStepSize(QString cref, double* initialStepSize, double* minimumStepSize, double* maximumStepSize);
   bool instantiate(QString cref);
   bool initialize(QString cref);
-  bool list(QString cref, QString *pContents);
+  bool exportSnapshot(QString cref, QString *pContents);
   bool loadModel(QString filename, QString* pModelName);
   bool importSnapshot(QString cref, QString snapshot, QString* pNewCref);
   bool newModel(QString cref);

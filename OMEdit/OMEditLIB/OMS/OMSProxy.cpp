@@ -1004,14 +1004,14 @@ bool OMSProxy::initialize(QString cref)
 }
 
 /*!
- * \brief OMSProxy::list
+ * \brief OMSProxy::exportSnapshot
  * Lists the contents of a model.
  * Since memory is allocated so we need to call free.
  * \param cref
  * \param pContents
  * \return
  */
-bool OMSProxy::list(QString cref, QString *pContents)
+bool OMSProxy::exportSnapshot(QString cref, QString *pContents)
 {
   QString command = "oms_exportSnapshot";
   QString cref_ = cref + ":SystemStructure.ssd";
@@ -1060,11 +1060,10 @@ bool OMSProxy::importSnapshot(QString cref, QString snapshot, QString* pNewCref)
 {
   QString command = "oms_importSnapshot";
   QStringList args;
-  QString cref_ = cref + ":SystemStructure.ssd";
-  args << "\"" + cref_ + "\"" << "\"" + snapshot + "\"";
+  args << "\"" + cref + "\"" << "\"" + snapshot + "\"";
   LOG_COMMAND(command, args);
   char* new_cref = NULL;
-  oms_status_enu_t status = oms_importSnapshot(cref_.toUtf8().constData(), snapshot.toUtf8().constData(), &new_cref);
+  oms_status_enu_t status = oms_importSnapshot(cref.toUtf8().constData(), snapshot.toUtf8().constData(), &new_cref);
   if (new_cref)
     *pNewCref = QString(new_cref);
   else

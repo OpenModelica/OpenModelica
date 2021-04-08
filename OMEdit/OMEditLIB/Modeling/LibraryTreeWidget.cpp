@@ -1637,7 +1637,7 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
 {
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     QString contents;
-    if (OMSProxy::instance()->list(pLibraryTreeItem->getNameStructure(), &contents)) {
+    if (OMSProxy::instance()->exportSnapshot(pLibraryTreeItem->getNameStructure(), &contents)) {
       pLibraryTreeItem->setClassText(contents);
     }
   } else {
@@ -2079,7 +2079,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
       pEditedModelWidget->setWindowTitle(QString("%1*").arg(pNewEditedLibraryTreeItem->getName()));
       pEditedModelWidget->reDrawModelWidget();
       QString contents;
-      if (OMSProxy::instance()->list(pNewEditedLibraryTreeItem->getNameStructure(), &contents)) {
+      if (OMSProxy::instance()->exportSnapshot(pNewEditedLibraryTreeItem->getNameStructure(), &contents)) {
         pNewEditedLibraryTreeItem->setClassText(contents);
       }
     }
