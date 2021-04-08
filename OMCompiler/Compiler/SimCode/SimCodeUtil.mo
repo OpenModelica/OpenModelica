@@ -1655,7 +1655,7 @@ protected
   list<BackendDAE.Var> varlst;
   list<BackendDAE.Equation> eqnlst;
   OutputSystems outputSystemsKind;
-  Boolean createAlgebraicEquations, bdynamic, skip;
+  Boolean createAlgebraicEquations, bdynamic, bzc, skip;
   constant Boolean debug = false;
 algorithm
   (stateeqnsmark, zceqnsmark, syst, shared, outputSystemsKind, createAlgebraicEquations) := inArg;
@@ -1663,8 +1663,9 @@ algorithm
   tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex) := inFold;
   (varlst, varIdx, eqnlst, eqsIdx) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
   bdynamic := BackendDAEUtil.blockIsDynamic(eqsIdx, stateeqnsmark);
+  bzc := BackendDAEUtil.blockIsDynamic(eqsIdx, zceqnsmark);
 
-  if outputSystemsKind==OutputSystems.Both or (if outputSystemsKind==OutputSystems.States then bdynamic else not bdynamic) then
+  if outputSystemsKind==OutputSystems.Both or (if outputSystemsKind==OutputSystems.States then (bdynamic or not bzc) else not (bdynamic or not bzc)) then
     outFold := inFold;
     return;
   end if;
