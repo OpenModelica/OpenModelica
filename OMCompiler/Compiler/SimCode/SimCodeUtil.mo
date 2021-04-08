@@ -454,7 +454,10 @@ algorithm
 
     // append removed equation to all equations, since these are actually
     // just the algorithms without outputs
-    algebraicEquations := List.appendElt(removedEquations, algebraicEquations);
+    // TODO: Should removedEquations really be solved in EVERY iteration?
+    // TODO: They include some things that look like aliases and equations depending only on parameters...
+    // TODO: That might actually be a problem for the CSE module though...
+    algebraicEquations := List.appendElt(listReverse(removedEquations), listReverse(algebraicEquations));
     allEquations := List.append_reverse(allEquations, removedEquations);
 
     // create inline equations if present
@@ -1475,8 +1478,9 @@ algorithm
   try
     arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
     foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
+    foldArg := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
     (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
-    oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
+    oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := foldArg;
     oequationsForZeroCrossings := Dangerous.listReverseInPlace(oequationsForZeroCrossings);
     ((ouniqueEqIndex, olocalKnownVars)) := BackendVariable.traverseBackendDAEVars(shared.localKnownVars, traverseKnVarsToSimEqSystem, (ouniqueEqIndex, {}));
   else
@@ -1531,7 +1535,7 @@ algorithm
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping) =
             createEquationsForSystem(
                 stateeqnsmark, zceqnsmarks, syst, shared, comps, uniqueEqIndex, tempvars,
-                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping,createAlgebraicEquations);
+                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping, createAlgebraicEquations);
         GC.free(stateeqnsmark);
         GC.free(zceqnsmarks);
 
