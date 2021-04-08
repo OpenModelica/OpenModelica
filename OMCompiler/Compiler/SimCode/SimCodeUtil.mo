@@ -866,7 +866,7 @@ algorithm
     //FIXME: Add continuous clocked systems support
     (_, _, equations, _, ouniqueEqIndex, clockedVars, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping) :=
         createEquationsForSystem(stateeqnsmark, zceqnsmarks, syst, inShared, comps, ouniqueEqIndex, {},
-                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, true);
+                                 sccOffset, oeqSccMapping, oeqBackendSimCodeMapping, oBackendMapping, OutputSystems.Both, true);
     sccOffset := listLength(comps) + sccOffset;
     //otempvars := listAppend(clockedVars, otempvars);
     GC.free(stateeqnsmark);
@@ -1437,6 +1437,7 @@ end rewriteJacPartIdx;
 //
 // =============================================================================
 
+protected type OutputSystems = enumeration(States, NonStates, Both);
 
 protected type CreateEquationsForSystemsFold =
 tuple<Integer /*uniqueEqIndex*/,
@@ -1449,7 +1450,7 @@ tuple<Integer /*uniqueEqIndex*/,
       list<tuple<Integer,Integer>> /*eqBackendSimCodeMapping*/,
       SimCode.BackendMapping  /*backendSimCodeMapping*/,
       Integer  /*sccOffset*/>;
-protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, Boolean>;
+protected type CreateEquationsForSystemsArg = tuple<BackendDAE.Shared, list<BackendDAE.ZeroCrossing>, OutputSystems, Boolean>;
 
 protected function createEquationsForSystems "Some kind of comments would be very helpful!"
   input BackendDAE.EqSystems inSysts;
@@ -1476,8 +1477,10 @@ protected
   CreateEquationsForSystemsArg arg;
 algorithm
   try
-    arg := (shared, inAllZeroCrossings, createAlgebraicEquations);
+    arg := (shared, inAllZeroCrossings, OutputSystems.States, createAlgebraicEquations);
     foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, {}, {}, iBackendMapping, iSccOffset);
+    foldArg := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
+    arg := (shared, inAllZeroCrossings, OutputSystems.NonStates, createAlgebraicEquations);
     foldArg := List.fold1(inSysts, createEquationsForSystems1, arg, foldArg);
     (ouniqueEqIndex, oodeEquations, oalgebraicEquations, oallEquations, oequationsForZeroCrossings, otempvars,
     oeqSccMapping, oeqBackendSimCodeMapping, obackendMapping, oSccOffset) := foldArg;
@@ -1494,11 +1497,17 @@ protected function createEquationsForSystems1
   input CreateEquationsForSystemsArg inArg;
   input CreateEquationsForSystemsFold inFold;
   output CreateEquationsForSystemsFold outFold;
+protected
+  BackendDAE.StrongComponents compsStates, compsNonStates, comps;
+  list<BackendDAE.ZeroCrossing> zeroCrossings;
+  BackendDAE.Shared shared;
+  Boolean createAlgebraicEquations;
+  OutputSystems outputSystemsKind;
 algorithm
+  (shared, zeroCrossings, outputSystemsKind, createAlgebraicEquations) := inArg;
   outFold := match inSyst.matching
     local
       list<SimCode.SimEqSystem> odeEquations1, algebraicEquations1, allEquations1;
-      BackendDAE.StrongComponents comps;
       BackendDAE.EqSystem syst;
       list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations;
       list<SimCode.SimEqSystem> allEquations;
@@ -1510,16 +1519,12 @@ algorithm
       DAE.FunctionTree funcs;
       list<tuple<Integer,Integer>> eqSccMapping, eqBackendSimCodeMapping;
       SimCode.BackendMapping backendMapping;
-      list<BackendDAE.ZeroCrossing> zeroCrossings;
-      BackendDAE.Shared shared;
-      Boolean createAlgebraicEquations;
     case BackendDAE.MATCHING(ass1=ass1, comps=comps)
       equation
         if Flags.isSet(Flags.BLT_MATRIX_DUMP) then
           BackendDump.dumpEqSystemBLTmatrixHTML(inSyst);
         end if;
 
-        (shared, zeroCrossings, createAlgebraicEquations) = inArg;
         (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsForZeroCrossings, tempvars,
          eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccOffset) = inFold;
 
@@ -1535,7 +1540,7 @@ algorithm
          tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping) =
             createEquationsForSystem(
                 stateeqnsmark, zceqnsmarks, syst, shared, comps, uniqueEqIndex, tempvars,
-                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping, createAlgebraicEquations);
+                sccOffset, eqSccMapping, eqBackendSimCodeMapping, backendMapping, outputSystemsKind, createAlgebraicEquations);
         GC.free(stateeqnsmark);
         GC.free(zceqnsmarks);
 
@@ -1564,7 +1569,7 @@ tuple<Integer /*uniqueEqIndex*/,
       Integer /*sccOffset*/>;
 protected type CreateEquationsForSystemArg =
 tuple<array<Integer> /*stateeqnsmark*/, array<Integer> /*zceqnsmark*/,
-      BackendDAE.EqSystem /*syst*/, BackendDAE.Shared /*shared*/, Boolean>;
+      BackendDAE.EqSystem /*syst*/, BackendDAE.Shared /*shared*/, OutputSystems, Boolean>;
 
 protected function createEquationsForSystem
   input array<Integer> stateeqnsmark;
@@ -1578,6 +1583,7 @@ protected function createEquationsForSystem
   input list<tuple<Integer,Integer>> ieqSccMapping;
   input list<tuple<Integer,Integer>> ieqBackendSimCodeMapping;
   input SimCode.BackendMapping iBackendMapping;
+  input OutputSystems outputSystemsKind;
   input Boolean createAlgebraicEquations;
   output list<SimCode.SimEqSystem> outOdeEquations;
   output list<SimCode.SimEqSystem> outAlgebraicEquations;
@@ -1593,7 +1599,7 @@ protected
   CreateEquationsForSystemArg arg;
   list<list<SimCode.SimEqSystem>> odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings;
 algorithm
-  arg := (stateeqnsmark, zceqnsmark, syst, shared, createAlgebraicEquations);
+  arg := (stateeqnsmark, zceqnsmark, syst, shared, outputSystemsKind, createAlgebraicEquations);
   foldArg := (iuniqueEqIndex, {}, {}, {}, {}, itempvars, ieqSccMapping, ieqBackendSimCodeMapping, iBackendMapping, iSccIndex);
   foldArg := List.fold2(comps, createEquationsForSystem1, arg, partitionKindToClockIndex(syst.partitionKind), foldArg);
   (ouniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
@@ -1648,14 +1654,20 @@ protected
   list<Integer> eqsIdx,varIdx;
   list<BackendDAE.Var> varlst;
   list<BackendDAE.Equation> eqnlst;
+  OutputSystems outputSystemsKind;
   Boolean createAlgebraicEquations, bdynamic, skip;
-  Boolean debug = false;
+  constant Boolean debug = false;
 algorithm
-  (stateeqnsmark, zceqnsmark, syst, shared, createAlgebraicEquations) := inArg;
+  (stateeqnsmark, zceqnsmark, syst, shared, outputSystemsKind, createAlgebraicEquations) := inArg;
   (uniqueEqIndex, odeEquations, algebraicEquations, allEquations, equationsforZeroCrossings,
   tempvars, eqSccMapping, eqBackendSimCodeMapping, backendMapping, sccIndex) := inFold;
-  (varlst,varIdx,eqnlst,eqsIdx) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
+  (varlst, varIdx, eqnlst, eqsIdx) := BackendDAEUtil.getStrongComponentVarsAndEquations(comp, syst.orderedVars, syst.orderedEqs);
   bdynamic := BackendDAEUtil.blockIsDynamic(eqsIdx, stateeqnsmark);
+
+  if outputSystemsKind==OutputSystems.Both or (if outputSystemsKind==OutputSystems.States then bdynamic else not bdynamic) then
+    outFold := inFold;
+    return;
+  end if;
 
   skip := false;
 
