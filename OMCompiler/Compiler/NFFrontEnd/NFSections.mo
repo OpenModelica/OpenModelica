@@ -57,6 +57,7 @@ public
     String language;
     Option<Annotation> ann;
     Boolean explicit;
+    SourceInfo info;
   end EXTERNAL;
 
   record EMPTY end EMPTY;

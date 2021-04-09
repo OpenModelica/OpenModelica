@@ -2840,8 +2840,8 @@ algorithm
       guard SCodeUtil.classDefHasSections(parts, checkExternal = true)
       algorithm
         // Class with inherited external section that also contains other sections.
-        Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
-          {InstNode.name(scope)}, InstNode.info(scope));
+        Error.addMultiSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
+          {InstNode.name(scope)}, {sections.info, InstNode.info(scope)});
       then
         fail();
 
@@ -2898,7 +2898,7 @@ algorithm
           ret_cref := ComponentRef.EMPTY();
         end if;
       then
-        Sections.EXTERNAL(name, args, ret_cref, lang, extDecl.annotation_, isSome(extDecl.funcName));
+        Sections.EXTERNAL(name, args, ret_cref, lang, extDecl.annotation_, isSome(extDecl.funcName), info);
 
   end match;
 end instExternalDecl;

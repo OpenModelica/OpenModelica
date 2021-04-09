@@ -1,4 +1,4 @@
-// name: ExtendsInherited1
+// name: ExtendInherited1
 // keywords:
 // status: incorrect
 // cflags: -d=newInst
@@ -12,9 +12,9 @@ model A
   end A;
 end A;
 
-model ExtendsInherited1
+model ExtendInherited1
   extends A;
-end ExtendsInherited1;
+end ExtendInherited1;
 
 // Result:
 // Error processing file: ExtendInherited1.mo
