@@ -202,6 +202,7 @@ ClassExtends5.mo \
 ClassExtends6.mo \
 ClassExtends7.mo \
 ClassExtends8.mo \
+ClassExtends9.mo \
 ClassExtendsBuiltin1.mo \
 ClassExtendsBuiltin2.mo \
 ClassExtendsBuiltin3.mo \

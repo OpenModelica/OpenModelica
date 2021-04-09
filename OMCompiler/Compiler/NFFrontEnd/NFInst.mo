@@ -1321,20 +1321,13 @@ algorithm
         then
           Class.setPrefixes(prefs, orig_cls);
 
-      // Class extends of a long class declaration.
-      case (Class.EXPANDED_CLASS(), Class.PARTIAL_CLASS())
+      // Class extends of a normal class.
+      case (_, Class.PARTIAL_CLASS())
         algorithm
           node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node));
           orig_node := InstNode.setNodeType(node_ty, orig_node);
           rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
           rdcl_cls.modifier := Modifier.merge(outerMod, rdcl_cls.modifier);
-          rdcl_cls.prefixes := prefs;
-        then
-          rdcl_cls;
-
-      // Class extends of a short class declaration.
-      case (Class.EXPANDED_DERIVED(), Class.PARTIAL_CLASS())
-        algorithm
           rdcl_cls.prefixes := prefs;
         then
           rdcl_cls;
