@@ -3578,9 +3578,12 @@ protected function calculateJacobianRowLst "author: Frenkel TUD 2012-06
   input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst = iAcc;
   output BackendDAE.Shared oShared = iShared;
+protected
+  Integer eqn_indx_arr = eqn_indx;
 algorithm
   for e in inExps loop
-    (outLst, oShared) := calculateJacobianRow2(e,vars,eqn_indx,inIntegerLst,differentiateIfExp,oShared,source,outLst);
+    (outLst, oShared) := calculateJacobianRow2(e,vars,eqn_indx_arr,inIntegerLst,differentiateIfExp,oShared,source,outLst);
+    eqn_indx_arr := eqn_indx_arr + 1;
   end for;
 end calculateJacobianRowLst;
 
