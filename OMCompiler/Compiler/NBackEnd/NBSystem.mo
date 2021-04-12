@@ -60,7 +60,7 @@ public
       VariablePointers unknowns                       "Variable array of unknowns, subset of full variable array";
       Option<VariablePointers> daeUnknowns            "Variable array of unknowns in the case of dae mode";
       EquationPointers equations                      "Equations array, subset of the full equation array";
-      Option<Adjacency.Matrix> adjacencyMatrix         "Adjacency matrix with all additional information";
+      Option<Adjacency.Matrix> adjacencyMatrix        "Adjacency matrix with all additional information";
       Option<Matching> matching                       "Matching (see 2.5)";
       Option<array<StrongComponent>> strongComponents "Strong Components";
       PartitionKind partitionKind                     "Clocked/Continuous partition kind";

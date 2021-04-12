@@ -597,11 +597,29 @@ public
       ty := Expression.typeOf(lhs);
       eqn := match ty
         case Type.ARRAY() then ARRAY_EQUATION(ty, lhs, rhs, source, attr, NONE());
-        else SCALAR_EQUATION(ty, lhs, rhs, source, attr);
+                          else SCALAR_EQUATION(ty, lhs, rhs, source, attr);
       end match;
       eqn_ptr := Pointer.create(eqn);
       Equation.createName(eqn_ptr, idx, context);
     end fromLHSandRHS;
+
+    function updateLHSandRHS
+      input Pointer<Equation> eqn_ptr;
+      input Expression lhs;
+      input Expression rhs;
+    protected
+      Type ty;
+      Equation eqn = Pointer.access(eqn_ptr);
+      EquationAttributes attr = getAttributes(eqn);
+      DAE.ElementSource src = source(eqn);
+    algorithm
+      ty := Expression.typeOf(lhs);
+      eqn := match ty
+        case Type.ARRAY() then ARRAY_EQUATION(ty, lhs, rhs, src, attr, NONE());
+                          else SCALAR_EQUATION(ty, lhs, rhs, src, attr);
+      end match;
+      Pointer.update(eqn_ptr, eqn);
+    end updateLHSandRHS;
 
     function swapLHSandRHS
       input output Equation eqn;
@@ -1679,6 +1697,18 @@ public
         then fail();
       end match;
     end getEqnByName;
+
+    function getEqnIndex
+      "Returns -1 if cref was deleted or cannot be found."
+      input EquationPointers equations;
+      input ComponentRef name;
+      output Integer index;
+    algorithm
+      index := match UnorderedMap.get(name, equations.map)
+        case SOME(index) then index;
+        case NONE() then -1;
+      end match;
+    end getEqnIndex;
 
     function compress "O(n)
       Reorders the elements in order to remove all the gaps.

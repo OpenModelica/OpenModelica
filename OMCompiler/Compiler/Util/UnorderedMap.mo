@@ -320,6 +320,14 @@ public
     value := Vector.get(map.values, 1);
   end first;
 
+  function firstKey
+    "Returns the 'first' key in the map, or fails if the map is empty."
+    input UnorderedMap<K, V> map;
+    output K key;
+  algorithm
+    key := Vector.get(map.keys, 1);
+  end firstKey;
+
   function toList
     "Returns the keys and values as a list of tuples."
     input UnorderedMap<K, V> map;

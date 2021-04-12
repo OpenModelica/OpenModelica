@@ -1037,7 +1037,7 @@ protected
     list<Subscript> subs;
   algorithm
     try
-      var := VariablePointers.getVarSafe(ComponentRef.stripSubscriptsAll(cref), variables);
+      var := VariablePointers.getVarSafe(variables, ComponentRef.stripSubscriptsAll(cref));
       subs := ComponentRef.getSubscripts(cref);
       cref := ComponentRef.setSubscripts(subs, BVariable.getVarName(var));
       //cref := lowerComponentReferenceInstNode(cref, var);

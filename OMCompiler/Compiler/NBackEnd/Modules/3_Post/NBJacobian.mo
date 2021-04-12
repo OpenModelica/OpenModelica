@@ -43,23 +43,30 @@ public
 protected
   // NF imports
   import ComponentRef = NFComponentRef;
+  import Expression = NFExpression;
   import NFFlatten.FunctionTree;
+  import Operator = NFOperator;
+  import SimplifyExp = NFSimplifyExp;
+  import Type = NFType;
   import Variable = NFVariable;
 
   // Backend imports
+  import Adjacency = NBAdjacency;
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
-  import NBEquation.EqData;
-  import NBEquation.Equation;
-  import NBEquation.EquationPointers;
+  import NBDifferentiate.{DifferentiationArguments, DifferentiationType};
+  import NBEquation.{Equation, EquationPointers, EqData};
   import HashTableCrToCr = NBHashTableCrToCr;
   import HashTableCrToCrLst = NBHashTableCrToCrLst;
   import Jacobian = NBackendDAE.BackendDAE;
+  import Matching = NBMatching;
+  import Replacements = NBReplacements;
+  import Sorting = NBSorting;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
-  import NBVariable.VarData;
-  import NBVariable.VariablePointers;
+  import NFOperator.{MathClassification, SizeClassification};
+  import NBVariable.{VariablePointers, VarData};
 
   // Util imports
   import AvlSetPath;
@@ -255,11 +262,11 @@ public
     );
 
     jacobian := BackendDAE.JACOBIAN(
-      name = name,
-      varData = varData,
-      eqData = eqData,
-      sparsityPattern = sparsityPattern,
-      sparsityColoring = sparsityColoring
+      name              = name,
+      varData           = varData,
+      eqData            = eqData,
+      sparsityPattern   = sparsityPattern,
+      sparsityColoring  = sparsityColoring
     );
   end combine;
 
@@ -433,6 +440,443 @@ public
   constant SparsityPattern EMPTY_SPARSITY_PATTERN = SPARSITY_PATTERN({}, {}, {}, {}, 0);
 
   type SparsityColoring = list<list<ComponentRef>>  "list of independent variable groups belonging to the same color";
+
+  type LinearJacobianRow = UnorderedMap<Integer, Real>;
+  type LinearJacobianRhs = array<Expression>;
+  type LinearJacobianInd = array<Integer>;
+
+  uniontype LinearJacobian
+    record LINEAR_JACOBIAN
+      array<LinearJacobianRow> rows   "all loop variables entries";
+      LinearJacobianRhs rhs           "the expression containing all non loop variable entries";
+      LinearJacobianInd ind           "equation indices  <array, scalar>";
+      array<Boolean> eq_marks         "changed equations";
+    end LINEAR_JACOBIAN;
+
+    public function toString
+      input LinearJacobian linJac;
+      input String heading = "";
+      output String str;
+    algorithm
+      str := "######################################################\n" +
+          " LinearJacobian sparsity pattern: " + heading + "\n" +
+          "######################################################\n" +
+          "(scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION\n";
+      for idx in 1:arrayLength(linJac.rows) loop
+        str := str + rowToString(linJac.rows[idx], linJac.rhs[idx], linJac.ind[idx], linJac.eq_marks[idx]);
+      end for;
+      str := str + "\n";
+    end toString;
+
+    function rowToString
+      input LinearJacobianRow row;
+      input Expression rhs;
+      input Integer eqn_index;
+      input Boolean changed;
+      output String str;
+    protected
+      Integer var_index;
+      Real value;
+      list<tuple<Integer, Real>> row_lst = UnorderedMap.toList(row);
+    algorithm
+      str := "(" + intString(eqn_index) + "|" + boolString(changed) +"):    ";
+      if listEmpty(row_lst) then
+        str := str + "EMPTY ROW     ";
+      else
+        for element in row_lst loop
+          (var_index, value) := element;
+          str := str + "[" + intString(var_index) + "|" + realString(value) + "] ";
+        end for;
+      end if;
+      str := str + "    || RHS: " + Expression.toString(SimplifyExp.simplify(rhs)) + "\n";
+    end rowToString;
+
+    function ASSC
+      input output Adjacency.Matrix adj;
+      input output Matching matching;
+      input VariablePointers vars;
+      input EquationPointers eqns;
+    protected
+      list<StrongComponent> comps;
+      list<tuple<Pointer<Variable>, Integer>> loopVars;
+      list<tuple<Pointer<Equation>, Integer>> loopEqns;
+      LinearJacobian linJac;
+    algorithm
+      comps := Sorting.tarjan(adj, matching, vars, eqns);
+      for comp in comps loop
+        _ := match comp
+          case StrongComponent.ALGEBRAIC_LOOP() algorithm
+            loopVars := list((var, VariablePointers.getVarIndex(vars, BVariable.getVarName(var))) for var in comp.vars);
+            loopEqns := list((eqn, EquationPointers.getEqnIndex(eqns, Equation.getEqnName(eqn))) for eqn in comp.eqns);
+            linJac := generate(loopVars, loopEqns);
+            if not emptyOrSingle(linJac) then
+              linJac := solve(linJac);
+              (adj, matching) := resolveASSC(linJac, adj, matching, vars, eqns);
+            end if;
+          then ();
+          else ();
+        end match;
+      end for;
+    end ASSC;
+
+    function generate
+      "author: kabdelhak FHB 03-2021
+       Generates a jacobian from algebraic loop equations which are linear
+       w.r.t. all loopVars. Fails if these criteria are not met."
+      input list<tuple<Pointer<Variable>, Integer>> loopVars;
+      input list<tuple<Pointer<Equation>, Integer>> loopEqns;
+      output LinearJacobian linJac;
+    protected
+      Integer eqn_index = 1, var_index;
+      Real constReal;
+      LinearJacobianRow row;
+      list<LinearJacobianRow> tmp_mat = {};
+      list<Expression> tmp_rhs = {};
+      list<Integer> tmp_idx = {};
+      Pointer<Variable> var;
+      Pointer<Equation> eqn;
+      Integer index;
+      Expression res, pDer, constZero = Expression.INTEGER(0);
+      UnorderedMap<ComponentRef, Expression> varRep = UnorderedMap.new<Expression>(ComponentRef.hash, ComponentRef.isEqual);
+      DifferentiationArguments diffArgs = DifferentiationArguments.default(DifferentiationType.SIMPLE);
+    algorithm
+      /* Add a replacement rule var->0 for each loopVar, so that the RHS can be determined afterwards */
+      for loopVar in loopVars loop
+        (var, _) := loopVar;
+        UnorderedMap.add(BVariable.getVarName(var), constZero, varRep);
+      end for;
+
+      /* Loop over all equations and create residual expression. */
+      for loopEq in loopEqns loop
+        row := UnorderedMap.new<Real>(intMod, intEq);
+        (eqn, index) := loopEq;
+        res := Equation.getResidualExp(Pointer.access(eqn));
+        /* Loop over all variables and differentiate residual expression for each. */
+        try
+          for loopVar in loopVars loop
+            (var, var_index) := loopVar;
+            diffArgs.diffCref := BVariable.getVarName(var);
+            (pDer, _) := Differentiate.differentiateExpression(res, diffArgs);
+            pDer := SimplifyExp.simplify(pDer);
+            constReal := Expression.realValue(pDer);
+            if not realEq(constReal, 0.0) then
+              UnorderedMap.add(var_index, constReal, row);
+            end if;
+          end for;
+          /*
+            Save the full row.
+              - row entries
+              - rhs
+              - equation index
+            Perform var replacements, multiply by -1 and simplify for rhs.
+            NOTE: Multiplication with -1 is not really necessary for the
+                  conversion of analytical to structural singularity, but
+                  would be necessary if used for anything else.
+          */
+          res := Replacements.applySimpleExp(res, varRep);
+          tmp_mat := row :: tmp_mat;
+          tmp_rhs := SimplifyExp.simplify(Expression.MULTARY(
+              arguments     = {Expression.REAL(-1.0), res},
+              inv_arguments = {},
+              operator      = Operator.fromClassification((MathClassification.MULTIPLICATION, SizeClassification.SCALAR), Type.REAL()))
+            ) :: tmp_rhs;
+          tmp_idx := index :: tmp_idx;
+
+          /* set var as matched so that it can be chosen as pivot element for gaussian elimination */
+          eqn_index := eqn_index + 1;
+        else
+          /*
+            Differentiation not possible or not convertible to a real.
+            Purposely fails.
+          */
+        end try;
+      end for;
+      /* convert and store all data */
+      linJac := LINEAR_JACOBIAN(
+        rows      = listArray(tmp_mat),
+        rhs       = listArray(tmp_rhs),
+        ind       = listArray(tmp_idx),
+        eq_marks  = arrayCreate(listLength(tmp_mat), false)
+      );
+    end generate;
+
+    public function emptyOrSingle
+      "author: kabdelhak FHB 03-2021
+       Returns true if the linear real jacobian is empty or has only one single row."
+      input LinearJacobian linJac;
+      output Boolean empty = (arrayLength(linJac.rows) < 2)
+                         and (arrayLength(linJac.rhs) < 2)
+                         and (arrayLength(linJac.ind) < 2)
+                         and (arrayLength(linJac.eq_marks) < 2);
+    end emptyOrSingle;
+
+    public function solve
+      "author: kabdelhak FHB 03-2021
+       Performs a gaussian elimination algorithm on the jacobian without reducing the
+       pivot elements to one to maintain the integer structure. This guarantees that
+       no numerical errors can occur and analytical singularities will be detected.
+       Also keeps track of the RHS for later equation replacement.
+
+      Performs gaussian elimination for one pivot row and all following rows to reduce.
+      new_row = old_row * pivot_element - pivot_row * row_element
+      Example:
+        pivot idx: 2, because the first is zero
+        pivot row:     |  0 -1 -4 |
+        row-to change: | -3  2  3 |
+        new_row:       |  3  0  5 |"
+      input output LinearJacobian linJac;
+    protected
+      Integer col_index;
+      Real piv_value, row_value;
+    algorithm
+      /*
+        Gaussian Algorithm without rearranging rows.
+      */
+      for i in 1:arrayLength(linJac.rows) loop
+        try
+          /*
+            no pivot element can be chosen?
+            jump over all manipulations, nothing to do
+          */
+          (col_index, piv_value) := getPivot(linJac.rows[i]);
+          linJac.rhs[i] := updatePivotRow(linJac.rows[i], linJac.rhs[i], piv_value);
+          for j in i+1:arrayLength(linJac.rows) loop
+            row_value := getElementValue(linJac.rows[j], col_index);
+            if not realEq(row_value, 0.0) then
+              // set row to processed and perform pivot step
+              linJac.eq_marks[j] := true;
+              solveRow(linJac.rows[i], linJac.rows[j], 1.0, row_value);
+              // pivot row is already normalized to pivot element = 1
+              // rhs <- rhs - piv_rhs * row_val
+              linJac.rhs[j] := Expression.MULTARY(
+                arguments     = {linJac.rhs[j]},
+                inv_arguments = {Expression.MULTARY(
+                                  arguments     = {linJac.rhs[i]},
+                                  inv_arguments = {Expression.REAL(row_value)},
+                                  operator      = Operator.makeMul(Expression.typeOf(linJac.rhs[i]))
+                                )},
+                operator      = Operator.makeAdd(Expression.typeOf(linJac.rhs[j]))
+              );
+            end if;
+          end for;
+        else
+          /* no pivot element, nothing to do */
+        end try;
+      end for;
+    end solve;
+
+    public function solveRow
+    "author: kabdelhak FHB 03-2021
+     performs one single row update : new_row = old_row * pivot_element - pivot_row * row_element"
+      input LinearJacobianRow pivot_row;
+      input LinearJacobianRow row;
+      input Real piv_value;
+      input Real row_value;
+    protected
+      Integer idx;
+      Real val, diag_val;
+    algorithm
+      for idx in UnorderedMap.keyList(pivot_row) loop
+        _ := match (UnorderedMap.get(idx, row), UnorderedMap.get(idx, pivot_row))
+
+          // row to be updated has and element at this position
+          case (SOME(val), SOME(diag_val)) algorithm
+            val := val * piv_value - diag_val * row_value;
+            if realAbs(val) < 1e-12 then
+              /* delete element if zero */
+              UnorderedMap.remove(idx, row);
+            else
+              UnorderedMap.add(idx, val, row);
+            end if;
+          then ();
+
+          // row to be updated does not have an element at this position
+          case (NONE(), SOME(diag_val)) algorithm
+            UnorderedMap.add(idx, -diag_val * row_value, row);
+          then ();
+
+          else algorithm
+            Error.assertion(false, getInstanceName() + " key does not have an element in pivot row.", sourceInfo());
+          then ();
+         end match;
+      end for;
+    end solveRow;
+
+    public function updatePivotRow
+    "author: kabdelhak FHB 03-2021
+     updates the pivot row by deviding everything by its pivot value"
+      input LinearJacobianRow pivot_row;
+      input output Expression rhs;
+      input Real piv_value;
+    protected
+      Real value;
+    algorithm
+      if not realEq(piv_value, 1.0) then
+        for idx in UnorderedMap.keyList(pivot_row) loop
+          SOME(value) := UnorderedMap.get(idx, pivot_row);
+          UnorderedMap.add(idx, value/piv_value, pivot_row);
+        end for;
+      end if;
+      // also update rhs expression
+      rhs := Expression.MULTARY(
+        arguments     = {rhs},
+        inv_arguments = {Expression.REAL(piv_value)},
+        operator      = Operator.makeMul(Expression.typeOf(rhs))
+      );
+    end updatePivotRow;
+
+    protected function getPivot
+    "author: kabdelhak FHB 03-2021
+     Returns the first element that can be chosen as pivot, fails if none can be chosen."
+      input LinearJacobianRow pivot_row;
+      output tuple<Integer, Real> pivot_elem;
+    protected
+      Integer idx;
+    algorithm
+      if Vector.isEmpty(pivot_row.keys) then
+        /* singular row */
+        fail();
+      else
+        idx := UnorderedMap.firstKey(pivot_row);
+        pivot_elem := (idx, Util.getOption(UnorderedMap.get(idx, pivot_row)));
+      end if;
+    end getPivot;
+
+    protected function getElementValue
+    "author: kabdelhak FHB 03-2021
+     Returns the value at given column and zero if it does not exist in sparse structure."
+      input LinearJacobianRow row;
+      input Integer col_index;
+      output Real value;
+    algorithm
+      value := match UnorderedMap.get(col_index, row)
+        case SOME(value) then value;
+        else 0.0;
+      end match;
+    end getElementValue;
+
+    public function resolveASSC
+    "author: kabdelhak FHB 03-2021
+     Resolves analytical singularities by replacing the equations with
+     zero rows in the jacobian with new equations. Needs preceeding
+     solving of the linear real jacobian."
+      input LinearJacobian linJac;
+      input output Adjacency.Matrix adj;
+      input output Matching matching;
+      input VariablePointers vars;
+      input EquationPointers eqns;
+    protected
+      Expression lhs;
+      Pointer<Equation> eqn;
+      list<Integer> updates = {};
+    algorithm
+      _ := match matching
+        case Matching.SCALAR_MATCHING() algorithm
+          for r in 1:arrayLength(linJac.rows) loop
+            /*
+              check if row has been changed
+              for now also only resolve singularities and not replace full loop
+              otherwise it sometimes leads to mixed determined systems
+            */
+            if linJac.eq_marks[r] and (UnorderedMap.isEmpty(linJac.rows[r]) or Flags.getConfigBool(Flags.FULL_ASSC)) then
+              /* remove assignments */
+              matching.eqn_to_var[matching.var_to_eqn[linJac.ind[r]]] := -1;
+              matching.var_to_eqn[linJac.ind[r]] := -1;
+
+              /* replace equation */
+              lhs := generateLHSfromList(
+                row_indices     = UnorderedMap.keyArray(linJac.rows[r]),
+                row_values      = UnorderedMap.valueArray(linJac.rows[r]),
+                vars            = vars
+              );
+
+              eqn := EquationPointers.getEqnAt(eqns, linJac.ind[r]);
+              /* dump replacements */
+              if Flags.isSet(Flags.DUMP_ASSC) or (Flags.isSet(Flags.BLT_DUMP) and UnorderedMap.isEmpty(linJac.rows[r])) then
+                print("[ASSC] The equation: " + Equation.toString(Pointer.access(eqn)) + "\n");
+              end if;
+
+              Equation.updateLHSandRHS(eqn, lhs, SimplifyExp.simplify(linJac.rhs[r]));
+
+              if Flags.isSet(Flags.DUMP_ASSC) or (Flags.isSet(Flags.BLT_DUMP) and UnorderedMap.isEmpty(linJac.rows[r])) then
+                print("[ASSC] Gets replaced by equation: " + Equation.toString(Pointer.access(eqn)) + "\n");
+              end if;
+
+              updates := linJac.ind[r] :: updates;
+            end if;
+          end for;
+          /*
+            update adjacency matrix and transposed adjacency matrix
+            isInitial should always be false
+          */
+          if not listEmpty(updates) then
+            (adj, _) := Adjacency.Matrix.update(adj, vars, eqns, updates, NONE());
+          end if;
+
+          if not listEmpty(updates) and not Flags.isSet(Flags.DUMP_ASSC) and Flags.isSet(Flags.BLT_DUMP) then
+            print("--- Some equations have been changed, for more information please use -d=dumpASSC.---\n\n");
+          end if;
+        then ();
+        else algorithm
+          Error.assertion(false, getInstanceName() + "ASSC not yet supported for SBGraphs.", sourceInfo());
+        then fail();
+      end match;
+    end resolveASSC;
+
+    protected function generateLHSfromList
+    "author: kabdelhak FHB 03-2021
+     Generates the LHS expression from a flattened linear real jacobian row.
+     Only used for full replacement of causalized loop."
+      input array<Integer> row_indices;
+      input array<Real> row_values;
+      input VariablePointers vars;
+      output Expression lhs;
+    protected
+      Integer length = arrayLength(row_indices);
+      list<Expression> arguments = {};
+      list<Expression> inv_arguments = {};
+      Expression var_tmp, arg_tmp;
+      Real value;
+    algorithm
+      if length == 0 then
+        lhs := Expression.REAL(0.0);
+      else
+        for i in 1:length loop
+          var_tmp := BVariable.toExpression(VariablePointers.getVarAt(vars, i));
+          arg_tmp := Expression.MULTARY(
+                        arguments     = {Expression.REAL(realAbs(row_values[i])), var_tmp},
+                        inv_arguments = {},
+                        operator      = Operator.makeMul(Expression.typeOf(var_tmp))
+                     );
+          // add element to inverse elements if value was negative (now absolute value)
+          if row_values[i] > 0 then
+            arguments := arg_tmp :: arguments;
+          else
+            inv_arguments := arg_tmp :: inv_arguments;
+          end if;
+        end for;
+        lhs := Expression.MULTARY(
+          arguments     = arguments,
+          inv_arguments = inv_arguments,
+          operator      = Operator.makeAdd(Expression.typeOf(var_tmp))
+        );
+      end if;
+    end generateLHSfromList;
+
+    public function anyChanges
+    "author: kabdelhak FHB 03-2021
+     Returns true if any row of the jacobian got changed during gaussian elimination."
+      input LinearJacobian linJac;
+      output Boolean changed = false;
+    algorithm
+      for i in 1:arrayLength(linJac.eq_marks) loop
+        if linJac.eq_marks[i] then
+          changed := true;
+          return;
+        end if;
+      end for;
+    end anyChanges;
+  end LinearJacobian;
 
 protected
   function jacobianSymbolic extends Module.jacobianInterface;

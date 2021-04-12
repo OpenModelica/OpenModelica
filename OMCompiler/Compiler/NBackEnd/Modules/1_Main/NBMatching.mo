@@ -146,7 +146,7 @@ public
     algorithm:
       - apply pantelides but carry list of singular markings (eqs)
       - whenever singular - add all current marks to singular markings
-      - if done and list is not empty -> index reduction
+      - if done and list is not empty -> index reduction / balance initialization
     "
     output Matching matching;
     input Adjacency.Matrix adj;
@@ -157,9 +157,7 @@ public
     input output VarData varData;
     input output EqData eqData;
     input Boolean transposed = false        "transpose matching if true";
-    input Boolean partially = false         "do not fail on singular systems and return partial matching if true";
-  protected
-    Module.resolveSingularitiesInterface resolveFunc;
+    input Boolean partially = false         "do not resolve singular systems and return partial matching if true";
   algorithm
     matching := match adj
       local

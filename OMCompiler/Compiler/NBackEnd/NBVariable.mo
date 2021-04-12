@@ -167,9 +167,8 @@ public
     input Pointer<Variable> var_ptr;
     output ComponentRef name;
   protected
-    Variable var;
+    Variable var = Pointer.access(var_ptr);
   algorithm
-    var := Pointer.access(var_ptr);
     name := var.name;
   end getVarName;
 
@@ -182,6 +181,11 @@ public
     var.name := name;
     Pointer.update(var_ptr, var);
   end setVarName;
+
+  function toExpression
+    input Pointer<Variable> var_ptr;
+    output Expression exp = Expression.fromCref(getVarName(var_ptr));
+  end toExpression;
 
   function getDimensions
     input Pointer<Variable> var_ptr;
@@ -1251,8 +1255,8 @@ public
     function getVarSafe
       "Use only for lowering purposes! Otherwise use the InstNode in the
       ComponentRef. Fails if the component ref cannot be found."
-      input ComponentRef cref;
       input VariablePointers variables;
+      input ComponentRef cref;
       output Pointer<Variable> var_ptr;
     protected
       Integer index;
@@ -1267,8 +1271,8 @@ public
 
     function getVarIndex
       "Returns -1 if cref was deleted or cannot be found."
-      input ComponentRef cref;
       input VariablePointers variables;
+      input ComponentRef cref;
       output Integer index;
     algorithm
       index := match UnorderedMap.get(cref, variables.map)
@@ -1281,7 +1285,7 @@ public
       "Returns true if the variable is in the variable pointer array."
       input Pointer<Variable> var;
       input VariablePointers variables;
-      output Boolean b = getVarIndex(getVarName(var), variables) > 0;
+      output Boolean b = getVarIndex(variables, getVarName(var)) > 0;
     end contains;
 
     function getVarNames

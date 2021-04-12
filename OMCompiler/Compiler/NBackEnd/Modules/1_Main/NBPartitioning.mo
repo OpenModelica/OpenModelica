@@ -296,7 +296,7 @@ protected
       Integer var_idx;
     algorithm
       for cref in cluster.variables loop
-        var_idx := VariablePointers.getVarIndex(cref, variables);
+        var_idx := VariablePointers.getVarIndex(variables, cref);
         if var_idx > 0 then
           marked_vars[var_idx] := false;
         end if;

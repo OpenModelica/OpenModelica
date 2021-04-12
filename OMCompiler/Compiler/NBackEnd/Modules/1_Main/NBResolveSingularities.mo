@@ -142,7 +142,7 @@ public
     end if;
 
     // Build differentiation argument structure
-    diffArguments := Differentiate.DifferentiationArguments.timeDiffArgs(funcTree);
+    diffArguments := Differentiate.DifferentiationArguments.default(NBDifferentiate.DifferentiationType.TIME, funcTree);
     diffArguments_ptr := Pointer.create(diffArguments);
 
     if Flags.isSet(Flags.DUMMY_SELECT) then

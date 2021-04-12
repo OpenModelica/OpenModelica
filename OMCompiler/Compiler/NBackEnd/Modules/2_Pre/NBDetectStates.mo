@@ -156,7 +156,7 @@ protected
     Pointer<list<Pointer<Variable>>> acc_derivatives = Pointer.create({});
     Pointer<list<Pointer<Equation>>> acc_aux_equations = Pointer.create({});
     Pointer<Integer> uniqueIndex = Pointer.create(0);
-    Differentiate.DifferentiationArguments diffArgs = Differentiate.DifferentiationArguments.timeDiffArgs();
+    Differentiate.DifferentiationArguments diffArgs = Differentiate.DifferentiationArguments.default();
   algorithm
     EquationPointers.mapExp(equations, function collectStatesAndDerivatives(acc_states = acc_states, acc_derivatives = acc_derivatives));
     EquationPointers.mapExp(equations, function resolveGeneralDer(acc_states = acc_states, acc_derivatives = acc_derivatives, acc_aux_equations = acc_aux_equations, uniqueIndex = uniqueIndex, diffArgs = diffArgs));

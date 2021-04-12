@@ -79,17 +79,18 @@ public
       AvlSetPath.Tree diffedFunctions               "current functions, to prevent recursive differentiation";
     end DIFFERENTIATION_ARGUMENTS;
 
-    function timeDiffArgs
+    function default
+      input DifferentiationType ty = DifferentiationType.TIME;
       input FunctionTree funcTree = FunctionTreeImpl.EMPTY();
       output DifferentiationArguments diffArgs = DIFFERENTIATION_ARGUMENTS(
         diffCref        = ComponentRef.EMPTY(),
         new_vars        = {},
         jacobianHT      = NONE(),
-        diffType        = DifferentiationType.TIME,
+        diffType        = ty,
         funcTree        = funcTree,
         diffedFunctions = AvlSetPath.new()
       );
-    end timeDiffArgs;
+    end default;
 
   end DifferentiationArguments;
 
