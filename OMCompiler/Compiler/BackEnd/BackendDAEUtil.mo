@@ -117,6 +117,7 @@ import SynchronousFeatures;
 import System;
 import Tearing;
 import Types;
+import UnorderedMap;
 import DataReconciliation;
 import Values;
 import XMLDump;
@@ -8117,36 +8118,20 @@ public function analyticalToStructuralSingularity
   input output array<Integer> ass2;
   input output BackendDAE.EqSystem syst;
   input output Boolean changed;
+  input Boolean mixed;
 protected
-  array<list<Integer>> mapArrayToScalar;
-  array<Integer> mapScalarToArray;
-  list<Integer> eqnIndex_lst;
-  list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqs = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
+  list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqns = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
   list<tuple<BackendDAE.Var, Integer>> loopVars = {};
-  BackendDAE.Equation tmp_eq;
   SymbolicJacobian.LinearJacobian linJac;
 algorithm
   if listLength(comp) > 1 then
     /* collect eqs and vars from strong component */
-    SOME((mapArrayToScalar, mapScalarToArray, _, _, _)) := syst.mapping;
-    for eqnIndex in comp loop
-      /* ignore multidimensional equations for now */
-      if listLength(mapArrayToScalar[mapScalarToArray[eqnIndex]]) == 1 then
-        tmp_eq := BackendEquation.get(syst.orderedEqs, mapScalarToArray[eqnIndex]);
-        loopEqs := (tmp_eq, (mapScalarToArray[eqnIndex], eqnIndex)) :: loopEqs;
-      else
-        /*
-        tmp_eq := BackendEquation.get(syst.orderedEqs, mapScalarToArray[eqnIndex]);
-        BackendDump.dumpEquationList({tmp_eq}, "ignored array eqs index: " + intString(eqnIndex));
-        */
-      end if;
-      loopVars := (BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]), ass1[eqnIndex]) :: loopVars;
-    end for;
+    (loopVars, loopEqns) := getASSCVarsAndEqns(comp, ass1, ass2, syst, mixed);
 
-    if not listEmpty(loopEqs) and (listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC)) then
+    if not listEmpty(loopEqns) and (listLength(loopEqns) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC)) then
       try
         /* generate linear integer sub jacobian from system */
-        linJac := SymbolicJacobian.LinearJacobian.generate(loopEqs, loopVars, ass1);
+        linJac := SymbolicJacobian.LinearJacobian.generate(loopEqns, loopVars, ass1);
 
         if not SymbolicJacobian.LinearJacobian.emptyOrSingle(linJac) then
           if Flags.isSet(Flags.DUMP_ASSC) then
@@ -8172,7 +8157,95 @@ algorithm
   end if;
 end analyticalToStructuralSingularity;
 
+function getASSCVarsAndEqns
+  "returns all variables and equations necessary for the ASSC algorithm
+   for strong component analysis the equation index list + matching
+   suffices, but for structural singular sets the variables have to be
+   collect (ToDo: use markings from pantelides instead?)"
+  input list<Integer> comp;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input BackendDAE.EqSystem syst;
+  input Boolean mixed;
+  output list<tuple<BackendDAE.Var, Integer>> loopVars = {};
+  output list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqns = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
+protected
+  array<list<Integer>> mapArrayToScalar;
+  array<Integer> mapScalarToArray;
+  BackendDAE.Equation tmp_eq;
+  UnorderedMap<BackendDAE.Var, Integer> map;
+algorithm
+  SOME((mapArrayToScalar, mapScalarToArray, _, _, _)) := syst.mapping;
+  if not mixed then
+    // regular algebraic loops
+    // use equation list + matching
+    for eqnIndex in comp loop
+      /* ignore multidimensional equations for now */
+      if listLength(mapArrayToScalar[mapScalarToArray[eqnIndex]]) == 1 then
+        tmp_eq := BackendEquation.get(syst.orderedEqs, mapScalarToArray[eqnIndex]);
+        loopEqns := (tmp_eq, (mapScalarToArray[eqnIndex], eqnIndex)) :: loopEqns;
+      end if;
+      loopVars := (BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]), ass1[eqnIndex]) :: loopVars;
+    end for;
+  else
+    // mixed singular systems (already structurally singular)
+    // collect variables from equation bodies
+    map := UnorderedMap.new<Integer>(BackendVariable.varHash, BackendVariable.varEqual);
+    for eqnIndex in comp loop
+      /* ignore multidimensional equations for now */
+      if listLength(mapArrayToScalar[mapScalarToArray[eqnIndex]]) == 1 then
+        tmp_eq := BackendEquation.get(syst.orderedEqs, mapScalarToArray[eqnIndex]);
+        loopEqns := (tmp_eq, (mapScalarToArray[eqnIndex], eqnIndex)) :: loopEqns;
+        (_, _) := Expression.traverseExpTopDown(BackendEquation.createResidualExp(tmp_eq), function collectASSCVars(map = map), syst.orderedVars);
+      end if;
+    end for;
+    loopVars := UnorderedMap.toList(map);
+  end if;
+end getASSCVarsAndEqns;
 
+function collectASSCVars
+  "collects all non state continuous variables in an expression
+   Needs Expression.traverseTopDown!"
+  input output DAE.Exp exp;
+  output Boolean cont = true;
+  input output BackendDAE.Variables vars;
+  input UnorderedMap<BackendDAE.Var, Integer> map;
+algorithm
+  _ := match exp
+    local
+      list<BackendDAE.Var> var_lst;
+      list<Integer> idx_lst;
+    case DAE.CREF() algorithm
+      try
+        (var_lst, idx_lst) := BackendVariable.getVar(exp.componentRef, vars);
+        collectASSCVar(var_lst, idx_lst, map);
+      else
+      end try;
+    then ();
+    else ();
+  end match;
+end collectASSCVars;
+
+function collectASSCVar
+  input list<BackendDAE.Var> vars;
+  input list<Integer> indices;
+  input UnorderedMap<BackendDAE.Var, Integer> map;
+algorithm
+  _ := match (vars, indices)
+    local
+      BackendDAE.Var var;
+      list<BackendDAE.Var> rest_vars;
+      Integer index;
+      list<Integer> rest_indices;
+    case (var :: rest_vars, index :: rest_indices) algorithm
+      if BackendVariable.isNonStateContinuous(var) then
+        UnorderedMap.add(var, index, map);
+      end if;
+      collectASSCVar(rest_vars, rest_indices, map);
+    then ();
+    else ();
+  end match;
+end collectASSCVar;
 /*************************************************
  * index reduction method Selection
  ************************************************/

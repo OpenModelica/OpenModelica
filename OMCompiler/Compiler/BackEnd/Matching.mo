@@ -5641,12 +5641,24 @@ algorithm
           /* set the system to processed so that it gets analyzed only once */
           syst := BackendDAEUtil.setAnalyticalToStructuralProcessed(syst, true);
 
-          /* create NORMAL() adjacency matrix for sorting first */
+          // ###### PHASE I:
+          //  analyze the structural singular subset for additional
+          //  analytical singularities and apply ASSC
+          unmatched_eqs := getUnassigned(ne, ass1_1, {});
+          meqns1 := getEqnsforIndexReduction(unmatched_eqs,ne,m,mt,ass1_1,ass2_1,inArg);
+
+          for set in meqns1 loop
+            (ass1_1, ass2_1, syst, changed) := BackendDAEUtil.analyticalToStructuralSingularity(set, ass1_1, ass2_1, syst, changed, true);
+          end for;
+
+          // ###### PHASE II:
+          //  analyze the strong components for
+          //  analytical singularities and apply ASSC
           (_, m1, _, _, _) := BackendDAEUtil.getAdjacencyMatrixScalar(isyst, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
           comps := Sorting.Tarjan(m1, ass2_1);
 
           for comp in comps loop
-            (ass1_1, ass2_1, syst, changed) := BackendDAEUtil.analyticalToStructuralSingularity(comp, ass1_1, ass2_1, syst, changed);
+            (ass1_1, ass2_1, syst, changed) := BackendDAEUtil.analyticalToStructuralSingularity(comp, ass1_1, ass2_1, syst, changed, false);
           end for;
 
           /* only do matching again if anything has changed */
@@ -5658,9 +5670,7 @@ algorithm
             BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,0);
             BackendDAEEXT.getAssignment(ass1_1,ass2_1);
           end if;
-
         end if;
-
 
         /* get unmatched equations for index reduction */
         unmatched_eqs := getUnassigned(ne, ass1_1, {});

@@ -727,6 +727,20 @@ algorithm
   end match;
 end isStateVar;
 
+public function isNonStateContinuous
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varKind = BackendDAE.VARIABLE())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.ALG_STATE())) then true;
+    else false;
+  end match;
+end isNonStateContinuous;
+
 public function isState
   input DAE.ComponentRef inCref;
   input BackendDAE.Variables inVars;
@@ -2776,6 +2790,12 @@ public function removeAliasVars "remove alias Vars"
 algorithm
   outShared := BackendDAEUtil.setSharedAliasVars(inShared, emptyVars());
 end removeAliasVars;
+
+public function varHash
+  input BackendDAE.Var var;
+  input Integer buckets;
+  output Integer hash = ComponentReference.hashComponentRefMod(var.varName, buckets);
+end varHash;
 
 public function removeVar
   "Removes a var from the vararray but does not scaling down the array"

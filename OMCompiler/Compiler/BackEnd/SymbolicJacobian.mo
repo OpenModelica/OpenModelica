@@ -4318,7 +4318,7 @@ uniontype LinearJacobian
             solveRow(linJac.rows[i], linJac.rows[j], 1.0, row_value);
             //perform multiplication inside? use simplification of multiplication afterwards?
             linJac.rhs[j] := DAE.BINARY(
-                                  DAE.BINARY(linJac.rhs[j], DAE.MUL(DAE.T_REAL_DEFAULT), DAE.RCONST(piv_value)),       // row_rhs * piv_elem
+                                  DAE.BINARY(linJac.rhs[j], DAE.MUL(DAE.T_REAL_DEFAULT), DAE.RCONST(piv_value)),  // row_rhs
                                   DAE.SUB(DAE.T_REAL_DEFAULT),                                                    // -
                                   DAE.BINARY(linJac.rhs[i], DAE.MUL(DAE.T_REAL_DEFAULT), DAE.RCONST(row_value))   // piv_rhs * row_elem
                               );
@@ -4440,8 +4440,10 @@ uniontype LinearJacobian
       if linJac.eq_marks[r] and (UnorderedMap.isEmpty(linJac.rows[r]) or Flags.getConfigBool(Flags.FULL_ASSC)) then
         (i_arr, i_scal) := linJac.ind[r];
         /* remove assignments */
-        ass2[ass1[i_scal]] := -1;
-        ass1[i_scal] := -1;
+        if ass1[i_scal] <> -1 then
+          ass2[ass1[i_scal]] := -1;
+          ass1[i_scal] := -1;
+        end if;
 
         /* replace equation */
         lhs := generateLHSfromList(
