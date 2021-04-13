@@ -84,7 +84,7 @@ bool Legend::eventFilter(QObject *object, QEvent *event)
     pPlotCurve = dynamic_cast<PlotCurve*>(find(childAt(pMouseEvent->pos())));
 #endif
     if (pPlotCurve) {
-      QString toolTip = tr("Name: <b>%1</b><br />Filename: <b>%2</b>").arg(pPlotCurve->getName()).arg(pPlotCurve->getFileName());
+      QString toolTip = tr("Name: <b>%1</b><br />Filename: <b>%2</b>").arg(pPlotCurve->title().text()).arg(pPlotCurve->getFileName());
       QToolTip::showText(pMouseEvent->globalPos(), toolTip, this);
     } else {
       QToolTip::hideText();

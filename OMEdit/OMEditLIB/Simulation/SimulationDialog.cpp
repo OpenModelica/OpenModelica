@@ -2173,7 +2173,7 @@ void SimulationDialog::buildOnly(bool checked)
 /*!
  * \brief SimulationDialog::interactiveSimulation
  * Slot activated when mpInteractiveSimulationGroupBox is checked.\n
- * Makes sure that interactive simulation can not be started with bad options. \n
+ * Makes sure that interactive simulation cannot be started with bad options. \n
  * \param checked
  */
 void SimulationDialog::interactiveSimulation(bool checked)

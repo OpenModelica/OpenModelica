@@ -688,6 +688,12 @@ windows by clicking on the New Plot Parametric toolbar button (|parametric-plot-
 
 .. _array-plot :
 
+Select the x-axis variable while holding down the shift key, release the shift key and then select
+y-axis variables. One or many y-axis variables can be selected against one x-axis variable. To select
+a new x-axis variable press and hold the shift key again.
+
+Unchecking the x-axis variable will uncheck all y-axis variables linked to it.
+
 Array Plot
 ^^^^^^^^^^
 

@@ -153,6 +153,7 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override;
   VariablesTreeItem* findVariablesTreeItem(const QString &name, VariablesTreeItem *pVariablesTreeItem, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   VariablesTreeItem* findVariablesTreeItemOneLevel(const QString &name, VariablesTreeItem *pVariablesTreeItem = 0, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  void updateVariablesTreeItem(VariablesTreeItem *pVariablesTreeItem);
   QModelIndex variablesTreeItemIndex(const VariablesTreeItem *pVariablesTreeItem) const;
   bool insertVariablesItems(QString fileName, QString filePath, QStringList variablesList, SimulationOptions simulationOptions);
   void parseInitXml(QXmlStreamReader &xmlReader, QStringList *variablesList);
@@ -171,7 +172,7 @@ private:
   void getVariableInformation(ModelicaMatReader *pMatReader, QString variableToFind, QString *type, QString *value, bool *changeAble, QString *variability,
                               QString *unit, QString *displayUnit, QString *description);
 signals:
-  void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle);
+  void itemChecked(const QModelIndex &index, qreal curveThickness, int curveStyle, bool shiftKey);
   void unitChanged(const QModelIndex &index);
   void valueEntered(const QModelIndex &index);
   void variableTreeItemRemoved(QString variable);
@@ -195,6 +196,18 @@ protected:
   virtual void mouseReleaseEvent(QMouseEvent *event) override;
   virtual void keyPressEvent(QKeyEvent *event) override;
 };
+
+typedef struct {
+  QString fileName;
+  QString variableName;
+  QString unit;
+  QString displayUnit;
+} PlotParametricVariable;
+
+typedef struct {
+  PlotParametricVariable xVariable;
+  QVector<PlotParametricVariable> yVariables;
+} PlotParametricCurve;
 
 class VariablesWidget : public QWidget
 {
@@ -238,9 +251,8 @@ private:
   VariableTreeProxyModel *mpVariableTreeProxyModel;
   VariablesTreeModel *mpVariablesTreeModel;
   VariablesTreeView *mpVariablesTreeView;
-  QList<QStringList> mPlotParametricVariables;
+  QVector<PlotParametricCurve> mPlotParametricCurves;
   QHash<QString, QList<QString>> mSelectedInteractiveVariables;
-  QString mFileName;
   QMdiSubWindow *mpLastActiveSubWindow;
   ModelicaMatReader mModelicaMatReader;
   csv_data *mpCSVData;
@@ -248,8 +260,10 @@ private:
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile();
   void updateVisualization();
+  void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
+  void unCheckCurveVariable(const QString &variable);
 public slots:
-  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
+  void plotVariables(const QModelIndex &index, qreal curveThickness, int curveStyle, bool shiftKey, OMPlot::PlotCurve *pPlotCurve = 0, OMPlot::PlotWindow *pPlotWindow = 0);
   void unitChanged(const QModelIndex &index);
   void simulationTimeChanged(int timePercent);
   void valueEntered(const QModelIndex &index);

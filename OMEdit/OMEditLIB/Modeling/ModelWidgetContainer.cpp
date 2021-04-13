@@ -6475,7 +6475,7 @@ void ModelWidget::getModelInheritedClasses()
   int index = 1;
   foreach (QString inheritedClass, inheritedClasses) {
     /* If the inherited class is one of the builtin type such as Real we can
-     * stop here, because the class can not contain any classes, etc.
+     * stop here, because the class cannot contain any classes, etc.
      * Also check for cyclic loops.
      */
     if (!(pMainWindow->getOMCProxy()->isBuiltinType(inheritedClass) || inheritedClass.compare(mpLibraryTreeItem->getNameStructure()) == 0)) {

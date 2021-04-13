@@ -41,21 +41,22 @@
 
 using namespace OMPlot;
 
-PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &name, const QString &xVariableName, const QString &yVariableName,
-                     const QString &unit, const QString &displayUnit, Plot *pParent)
+PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &xVariableName, const QString &xUnit, const QString &xDisplayUnit,
+                     const QString &yVariableName, const QString &yUnit, const QString &yDisplayUnit, Plot *pParent)
   : mCustomColor(false)
 {
-  mName = name;
+  mpParentPlot = pParent;
   mXVariable = xVariableName;
   mYVariable = yVariableName;
-  mNameStructure = fileName + "." + name;
+  mNameStructure = fileName + "." + yVariableName;
   mFileName = fileName;
   mAbsoluteFilePath = absoluteFilePath;
   mCustomColor = false;
-  setUnit(unit);
-  setDisplayUnit(displayUnit);
+  setXUnit(xUnit);
+  setXDisplayUnit(xDisplayUnit);
+  setYUnit(yUnit);
+  setYDisplayUnit(yDisplayUnit);
   setTitleLocal();
-  mpParentPlot = pParent;
   /* set curve width and style */
   setCurveWidth(mpParentPlot->getParentPlotWindow()->getCurveWidth());
   setCurveStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle());
@@ -73,11 +74,21 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
 
 void PlotCurve::setTitleLocal()
 {
-  if (getDisplayUnit().isEmpty()) {
-    QwtPlotItem::setTitle(getName());
-  } else {
-    QwtPlotItem::setTitle(QString("%1 (%2)").arg(getName(), getDisplayUnit()));
+  QString titleStr = getYVariable();
+  if (!getYDisplayUnit().isEmpty()) {
+    titleStr += QString(" (%1)").arg(getYDisplayUnit());
   }
+
+  if (mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
+    QString xVariable = getXVariable();
+    if (!getXDisplayUnit().isEmpty()) {
+      xVariable += QString(" (%1)").arg(getXDisplayUnit());
+    }
+    if (!xVariable.isEmpty()) {
+      titleStr += QString(" vs %1").arg(xVariable);
+    }
+  }
+  QwtPlotItem::setTitle(titleStr);
 }
 
 Qt::PenStyle PlotCurve::getPenStyle(int style)
