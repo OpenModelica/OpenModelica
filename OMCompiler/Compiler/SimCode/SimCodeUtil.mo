@@ -3184,9 +3184,7 @@ algorithm
     case((DAE.CREF(cr, _), e))
       then (cr,e);
     case((DAE.UNARY(DAE.UMINUS(_), DAE.CREF(cr, _)), e))
-      algorithm
-        e := Expression.negate(e);
-      then (cr,Expression.negate(e));
+      then (cr,Expression.negate(e)); // PHI: does this ever happen?
     else
       algorithm
         msg := "SimCodeUtil.makeSES_SIMPLE_ASSIGN failed for: " + ExpressionDump.printExpStr(Util.tuple21(inTpl))+" = "+ExpressionDump.printExpStr(Util.tuple22(inTpl))+"\n";
