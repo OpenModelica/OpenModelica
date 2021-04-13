@@ -79,8 +79,10 @@ private:
   QStringList mVariablesList;
   PlotType mPlotType;
   QString mGridType;
-  QString mUnit;
-  QString mDisplayUnit;
+  QString mXUnit;
+  QString mXDisplayUnit;
+  QString mYUnit;
+  QString mYDisplayUnit;
   QString mTimeUnit;
   QString mXRangeMin;
   QString mXRangeMax;
@@ -133,10 +135,14 @@ public:
   QComboBox* getSimulationSpeedBox() {return mpSimulationSpeedComboBox;}
   void setXLabel(QString label);
   void setYLabel(QString label);
-  void setUnit(QString unit) {mUnit = unit;}
-  QString getUnit() {return mUnit;}
-  void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
-  QString getDisplayUnit() {return mDisplayUnit;}
+  void setXUnit(QString xUnit) {mXUnit = xUnit;}
+  QString getXUnit() {return mXUnit;}
+  void setXDisplayUnit(QString xDisplayUnit) {mXDisplayUnit = xDisplayUnit;}
+  QString getXDisplayUnit() {return mXDisplayUnit;}
+  void setYUnit(QString yUnit) {mYUnit = yUnit;}
+  QString getYUnit() {return mYUnit;}
+  void setYDisplayUnit(QString yDisplayUnit) {mYDisplayUnit = yDisplayUnit;}
+  QString getYDisplayUnit() {return mYDisplayUnit;}
   void setTimeUnit(QString timeUnit) {mTimeUnit = timeUnit;}
   QString getTimeUnit() {return mTimeUnit;}
   void setXRange(double min, double max);

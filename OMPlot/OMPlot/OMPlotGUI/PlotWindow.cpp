@@ -108,8 +108,10 @@ void PlotWindow::initializePlot(QStringList arguments)
     throw PlotException("Invalid input" + arguments[7]);
   setXLabel(QString(arguments[7]));
   setYLabel(QString(arguments[8]));
-  setUnit("");
-  setDisplayUnit("");
+  setXUnit("");
+  setXDisplayUnit("");
+  setYUnit("");
+  setYDisplayUnit("");
   setXRange(QString(arguments[9]).toDouble(), QString(arguments[10]).toDouble());
   setYRange(QString(arguments[11]).toDouble(), QString(arguments[12]).toDouble());
   setCurveWidth(QString(arguments[13]).toDouble());
@@ -409,7 +411,8 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         {
           variablesPlotted.append(currentVariable);
           if (!editCase) {
-            pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), currentVariable, "time", currentVariable, getUnit(), getDisplayUnit(), mpPlot);
+            QFileInfo fileInfo(mFile);
+            pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), "time", getXUnit(), getXDisplayUnit(), currentVariable, getYUnit(), getYDisplayUnit(), mpPlot);
             mpPlot->addPlotCurve(pPlotCurve);
           }
           // clear previous curve data
@@ -477,7 +480,8 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         }
 
         if (!editCase) {
-          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), csvReader->variables[i], "time", csvReader->variables[i], getUnit(), getDisplayUnit(), mpPlot);
+          QFileInfo fileInfo(mFile);
+          pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), "time", getXUnit(), getXDisplayUnit(), csvReader->variables[i], getYUnit(), getYDisplayUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
         // clear previous curve data
@@ -529,7 +533,8 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
         variablesPlotted.append(reader.allInfo[i].name);
         // create the plot curve for variable
         if (!editCase) {
-          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), reader.allInfo[i].name, "time", reader.allInfo[i].name, getUnit(), getDisplayUnit(), mpPlot);
+          QFileInfo fileInfo(mFile);
+          pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), "time", getXUnit(), getXDisplayUnit(), reader.allInfo[i].name, getYUnit(), getYDisplayUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
         // read the variable values
@@ -567,8 +572,7 @@ void PlotWindow::plot(PlotCurve *pPlotCurve)
           pPlotCurve->addYAxisValue(val);
           pPlotCurve->addXAxisValue(stopTime);
           pPlotCurve->addYAxisValue(val);
-          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(),
-                              pPlotCurve->getSize());
+          pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
           pPlotCurve->attach(mpPlot);
           mpPlot->replot();
         }
@@ -648,9 +652,8 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
             if (variablesPlotted.size() == 1)
             {
               if (!editCase) {
-                pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
-                pPlotCurve->setXVariable(xVariable);
-                pPlotCurve->setYVariable(yVariable);
+                QFileInfo fileInfo(mFile);
+                pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
                 mpPlot->addPlotCurve(pPlotCurve);
               }
               // clear previous curve data
@@ -722,9 +725,8 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
       }
 
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
-        pPlotCurve->setXVariable(xVariable);
-        pPlotCurve->setYVariable(yVariable);
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       // clear previous curve data
@@ -756,9 +758,8 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
         throw PlotException(msg);
 
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
-        pPlotCurve->setXVariable(xVariable);
-        pPlotCurve->setYVariable(yVariable);
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       //Fill variable x with data
@@ -789,7 +790,7 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
           omc_free_matlab4_reader(&reader);
           throw NoVariableException(QString("Parameter doesn't have a value : ").append(xVariable).toStdString().c_str());
         }
-        pPlotCurve->addYAxisValue(xval);
+        pPlotCurve->addXAxisValue(xval);
       }
       //Fill variable y with data
       var = omc_matlab4_find_var(&reader, yVariable.toStdString().c_str());
@@ -965,7 +966,8 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
         pPlotCurve->clearXAxisVector();
         pPlotCurve->clearYAxisVector();
       } else {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), currentVariable, "array index", currentVariable, getUnit(), getDisplayUnit(), mpPlot);
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), "array index", getXUnit(), getXDisplayUnit(), currentVariable, getYUnit(), getYDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       QList<double> arrLst;
@@ -1006,7 +1008,8 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
     QStringList::Iterator itVarList;
     for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), *itVarList, "array index", *itVarList, getUnit(), getDisplayUnit(), mpPlot);
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), "array index", getXUnit(), getXDisplayUnit(), *itVarList, getYUnit(), getYDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       QList<double> res;
@@ -1069,7 +1072,8 @@ void PlotWindow::plotArray(double time, PlotCurve *pPlotCurve)
       QStringList::Iterator itVarList;
       for (itVarList = mVariablesList.begin(); itVarList != mVariablesList.end(); itVarList++){
         if (!editCase) {
-          pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), *itVarList, "array index", *itVarList, getUnit(), getDisplayUnit(), mpPlot);
+          QFileInfo fileInfo(mFile);
+          pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), "array index", getXUnit(), getXDisplayUnit(), *itVarList, getYUnit(), getYDisplayUnit(), mpPlot);
           mpPlot->addPlotCurve(pPlotCurve);
         }
         int i = 1;
@@ -1179,9 +1183,8 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         pPlotCurve->clearXAxisVector();
         pPlotCurve->clearYAxisVector();
       } else {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
-        pPlotCurve->setXVariable(xVariable);
-        pPlotCurve->setYVariable(yVariable);
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       //Read the values
@@ -1225,9 +1228,8 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         throw PlotException("Time out of bounds.");
       }
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
-        pPlotCurve->setXVariable(xVariable);
-        pPlotCurve->setYVariable(yVariable);
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       pPlotCurve->clearXAxisVector();
@@ -1286,9 +1288,8 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
         throw PlotException(msg);
 
       if (!editCase) {
-        pPlotCurve = new PlotCurve(QFileInfo(mFile).fileName(), QFileInfo(mFile).absoluteFilePath(), yVariable + " vs " + xVariable, xVariable, yVariable, getUnit(), getDisplayUnit(), mpPlot);
-        pPlotCurve->setXVariable(xVariable);
-        pPlotCurve->setYVariable(yVariable);
+        QFileInfo fileInfo(mFile);
+        pPlotCurve = new PlotCurve(fileInfo.fileName(), fileInfo.absoluteFilePath(), xVariable, getXUnit(), getXDisplayUnit(), yVariable, getYUnit(), getYDisplayUnit(), mpPlot);
         mpPlot->addPlotCurve(pPlotCurve);
       }
       //calculate time
@@ -1357,7 +1358,7 @@ QPair<QVector<double>*, QVector<double>*> PlotWindow::plotInteractive(PlotCurve 
     throw NoVariableException(QString(tr("Could not determine the variable name!")).toStdString().c_str());
   }
   QString variableName = mVariablesList.at(0);
-  pPlotCurve = new PlotCurve(mInteractiveModelName, "", variableName, "time", variableName, getUnit(), getDisplayUnit(), mpPlot);
+  pPlotCurve = new PlotCurve(mInteractiveModelName, "", "time", getXUnit(), getXDisplayUnit(), variableName, getYUnit(), getYDisplayUnit(), mpPlot);
   // clear previous curve data
   pPlotCurve->clearXAxisVector();
   pPlotCurve->clearYAxisVector();
@@ -1959,12 +1960,8 @@ void VariablePageWidget::setCurvePickColorButtonIcon()
 
 void VariablePageWidget::resetLabel()
 {
-  if (mpPlotCurve->getDisplayUnit().isEmpty()) {
-    mpLegendTextBox->setText(mpPlotCurve->getName());
-  } else {
-    mpLegendTextBox->setText(mpPlotCurve->getName() + " [" + mpPlotCurve->getDisplayUnit() + "]");
-  }
-
+  mpPlotCurve->setTitleLocal();
+  mpLegendTextBox->setText(mpPlotCurve->title().text());
 }
 
 void VariablePageWidget::pickColor()
@@ -2003,7 +2000,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   foreach (PlotCurve *pPlotCurve, plotCurves) {
     mpVariablePagesStackedWidget->addWidget(new VariablePageWidget(pPlotCurve, this));
     QListWidgetItem *pListItem = new QListWidgetItem(mpVariablesListWidget);
-    pListItem->setText(pPlotCurve->getName());
+    pListItem->setText(pPlotCurve->getYVariable());
     pListItem->setData(Qt::UserRole, pPlotCurve->getNameStructure());
   }
   connect(mpVariablesListWidget, SIGNAL(currentItemChanged(QListWidgetItem*,QListWidgetItem*)), SLOT(variableSelected(QListWidgetItem*,QListWidgetItem*)));

@@ -115,11 +115,15 @@ QList<PlotCurve*> PlotPicker::curvesAtPosition(const QPoint pos, QList<int> *ind
         int index1, previousIndex, nextIndex;
         if (index == 0) {
           index1 = 1;
-        } else if (index == pPlotCurve->mXAxisVector.size()) {
+        } else if (index == pPlotCurve->mXAxisVector.size() - 1 || index == pPlotCurve->mYAxisVector.size() - 1) {
           index1 = index - 1;
         } else {
           previousIndex = index - 1;
           nextIndex = index + 1;
+          if (pPlotCurve->mXAxisVector.size() <= previousIndex || pPlotCurve->mYAxisVector.size() <= previousIndex
+              || pPlotCurve->mXAxisVector.size() <= nextIndex || pPlotCurve->mYAxisVector.size() <= nextIndex) {
+            continue;
+          }
           QPointF previousCurvePoint(pPlotCurve->mXAxisVector.at(previousIndex), pPlotCurve->mYAxisVector.at(previousIndex));
           QPointF nextCurvePoint(pPlotCurve->mXAxisVector.at(nextIndex), pPlotCurve->mYAxisVector.at(nextIndex));
           // find which point is closest to mouse point.
@@ -136,6 +140,10 @@ QList<PlotCurve*> PlotPicker::curvesAtPosition(const QPoint pos, QList<int> *ind
         if (xMajorTicks.size() > 1 && yMajorTicks.size() > 1) {
           double x = (xMajorTicks[1] - xMajorTicks[0]) / mpPlot->axisMaxMinor(QwtPlot::xBottom);
           double y = (yMajorTicks[1] - yMajorTicks[0]) / mpPlot->axisMaxMinor(QwtPlot::yLeft);
+          if (pPlotCurve->mXAxisVector.size() <= index || pPlotCurve->mYAxisVector.size() <= index
+              || pPlotCurve->mXAxisVector.size() <= index1 || pPlotCurve->mYAxisVector.size() <= index1) {
+            continue;
+          }
           QPointF curvePointA(pPlotCurve->mXAxisVector.at(index), pPlotCurve->mYAxisVector.at(index));
           QPointF curvePointB(pPlotCurve->mXAxisVector.at(index1), pPlotCurve->mYAxisVector.at(index1));
           if (containsPoint(posF, curvePointA, curvePointB, x, y)) {
@@ -162,7 +170,9 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
   QList<PlotCurve*> plotCurves = curvesAtPosition(pos, &indexes);
   if (!plotCurves.isEmpty()) {
     QString timeUnit = "";
-    if (!mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
+    if (mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTPARAMETRIC
+        && mpPlot->getParentPlotWindow()->getPlotType() != PlotWindow::PLOTARRAYPARAMETRIC
+        && !mpPlot->getParentPlotWindow()->getTimeUnit().isEmpty()) {
       timeUnit = QString("%1").arg(mpPlot->getParentPlotWindow()->getTimeUnit());
     }
     QString toolTip;
@@ -175,8 +185,8 @@ QwtText PlotPicker::trackerText(const QPoint &pos) const
       if (i > 0) {
         toolTip += QString("<br /><br />");
       }
-      toolTip += QString("Name: <b>%1</b> %2<br />Value: <b>%3</b> at <b>%4</b> %5<br />Filename: <b>%6</b>")
-                 .arg(pPlotCurve->getName()).arg(pPlotCurve->getDisplayUnit())
+      toolTip += QString("Name: <b>%1</b><br />Value: <b>%2</b> at <b>%3</b> %4<br />Filename: <b>%5</b>")
+                 .arg(pPlotCurve->title().text())
                  .arg(pPlotCurve->mYAxisVector.at(index))
                  .arg(pPlotCurve->mXAxisVector.at(index))
                  .arg(timeUnit)
