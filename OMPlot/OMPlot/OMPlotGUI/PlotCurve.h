@@ -42,15 +42,16 @@ namespace OMPlot
 class PlotCurve : public QwtPlotCurve
 {
 private:
-  QString mName;
   QString mNameStructure;
   QString mFileName;
   QString mAbsoluteFilePath;
   QString mXVariable;
   QString mYVariable;
   bool mCustomColor;
-  QString mUnit;
-  QString mDisplayUnit;
+  QString mXUnit;
+  QString mXDisplayUnit;
+  QString mYUnit;
+  QString mYDisplayUnit;
   qreal mWidth;
   int mStyle;
   bool mToggleSign;
@@ -59,8 +60,8 @@ private:
   QwtPlotDirectPainter *mpPlotDirectPainter;
   QwtPlotMarker *mpPointMarker;
 public:
-  PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &name, const QString &xVariableName, const QString &yVariableName,
-            const QString &unit, const QString &displayUnit, Plot *pParent);
+  PlotCurve(const QString &fileName, const QString &absoluteFilePath, const QString &xVariableName, const QString &xUnit, const QString &xDisplayUnit,
+            const QString &yVariableName, const QString &yUnit, const QString &yDisplayUnit, Plot *pParent);
 
   QwtArray<double> mXAxisVector;
   QwtArray<double> mYAxisVector;
@@ -68,10 +69,14 @@ public:
   void setTitleLocal();
   Qt::PenStyle getPenStyle(int style);
   QwtPlotCurve::CurveStyle getCurveStyle(int style);
-  void setUnit(QString unit) {mUnit = unit;}
-  QString getUnit() {return mUnit;}
-  void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
-  QString getDisplayUnit() {return mDisplayUnit;}
+  void setXUnit(QString xUnit) {mXUnit = xUnit;}
+  QString getXUnit() {return mXUnit;}
+  void setXDisplayUnit(QString xDisplayUnit) {mXDisplayUnit = xDisplayUnit;}
+  QString getXDisplayUnit() {return mXDisplayUnit;}
+  void setYUnit(QString yUnit) {mYUnit = yUnit;}
+  QString getYUnit() {return mYUnit;}
+  void setYDisplayUnit(QString yDisplayUnit) {mYDisplayUnit = yDisplayUnit;}
+  QString getYDisplayUnit() {return mYDisplayUnit;}
   void setCurveWidth(qreal width);
   qreal getCurveWidth() {return mWidth;}
   void setCurveStyle(int style);
@@ -90,7 +95,6 @@ public:
   const double* getYAxisVector() const;
   void clearYAxisVector() {mYAxisVector.clear();}
   int getSize();
-  QString getName() {return mName;}
   void setFileName(QString fileName);
   QString getFileName() const;
   QString getAbsoluteFilePath() const;

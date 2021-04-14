@@ -1790,7 +1790,7 @@ void OptionsDialog::reject()
 void OptionsDialog::reset()
 {
   const QString title = tr("Reset to default");
-  const QString text0 = tr("Are you sure that you want to reset OMEdit? This operation can not be undone. ");
+  const QString text0 = tr("Are you sure that you want to reset OMEdit? This operation cannot be undone. ");
   const QString textWithLink = tr(("Please back up your settings "
                                    + QString("<a href='%1'>file</a>").arg(mpSettings->fileName())
                                    + " before proceeding, restart to have the changes take effect.").toUtf8().constData());
