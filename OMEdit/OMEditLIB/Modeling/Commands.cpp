@@ -1626,7 +1626,7 @@ void OMSimulatorUndoCommand::redoInternal()
   MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsOfOMSimulatorModel(mModelName, &mOpenedModelWidgetsList);
   // load the new snapshot
   if (mDoSnapShot) {
-    OMSProxy::instance()->loadSnapshot(mModelName, mNewSnapshot);
+    OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, &mModelName);
   }
   // reload/redraw the OMSimulator model
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mNewSnapshot, mOldEditedCref, mNewEditedCref);
@@ -1652,7 +1652,7 @@ void OMSimulatorUndoCommand::undo()
 {
   // load the old snapshot
   if (mDoSnapShot) {
-    OMSProxy::instance()->loadSnapshot(mModelName, mOldSnapshot);
+    OMSProxy::instance()->importSnapshot(mModelName, mOldSnapshot, &mModelName);
   }
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mOldSnapshot, mNewEditedCref, mOldEditedCref);
   // Get the new model LibraryTreeItem

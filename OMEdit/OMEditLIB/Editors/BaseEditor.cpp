@@ -2070,7 +2070,7 @@ QString BaseEditor::wordUnderCursor()
 
 bool BaseEditor::isModelicaModelInPackageOneFile()
 {
-  return (mpModelWidget &&
+  return (mpModelWidget && mpModelWidget->getLibraryTreeItem() &&
           mpModelWidget->getLibraryTreeItem()->isInPackageOneFile() &&
           mpModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::Modelica);
 }

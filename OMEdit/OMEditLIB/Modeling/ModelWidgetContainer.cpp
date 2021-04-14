@@ -4965,9 +4965,6 @@ void ModelWidget::createModelWidgetComponents()
         pViewButtonsHorizontalLayout->addWidget(mpTextViewToolButton);
         // create an editor
         mpEditor = new OMSimulatorEditor(this);
-        if (!mpLibraryTreeItem->isTopLevel() || mpLibraryTreeItem->isSystemLibrary()) {
-          mpEditor->getPlainTextEdit()->setReadOnly(true);
-        }
         OMSimulatorEditor *pOMSimulatorEditor = dynamic_cast<OMSimulatorEditor*>(mpEditor);
         pOMSimulatorEditor->setPlainText(mpLibraryTreeItem->getClassText(pMainWindow->getLibraryWidget()->getLibraryTreeModel()), false);
         OMSimulatorHighlighter *pOMSimulatorHighlighter = new OMSimulatorHighlighter(OptionsDialog::instance()->getOMSimulatorEditorPage(), mpEditor->getPlainTextEdit());
@@ -5182,10 +5179,6 @@ void ModelWidget::reDrawModelWidget()
     drawOMSModelIconElements();
     drawOMSModelDiagramElements();
     drawOMSModelConnections();
-    if (mpEditor && mpLibraryTreeItem->isTopLevel()) {
-      mpEditor->getPlainTextEdit()->setReadOnly(mpLibraryTreeItem->isSystemLibrary());
-      mpEditor->getPlainTextEdit()->setReadOnlyStyleSheet();
-    }
   } else {
     // Draw icon view
     mExtendsModifiersLoaded = false;
@@ -5415,12 +5408,22 @@ void ModelWidget::updateChildClasses(LibraryTreeItem *pLibraryTreeItem)
  */
 bool ModelWidget::omsimulatorEditorTextChanged()
 {
-  if (OMSProxy::instance()->loadSnapshot(mpLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText())) {
-    createOMSimulatorUndoCommand("Text edited");
-    return true;
+  QString newCref;
+  if (mpLibraryTreeItem->isTopLevel()) {
+    if (OMSProxy::instance()->importSnapshot(mpLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), &newCref)) {
+      createOMSimulatorUndoCommand("Text edited", true, false, mpLibraryTreeItem->getNameStructure(), newCref);
+      return true;
+    }
   } else {
-    return false;
+    LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+    LibraryTreeItem *pModelLibraryTreeItem = pLibraryTreeModel->getTopLevelLibraryTreeItem(mpLibraryTreeItem);
+    if (pModelLibraryTreeItem && OMSProxy::instance()->importSnapshot(pModelLibraryTreeItem->getNameStructure(), mpEditor->getPlainTextEdit()->toPlainText(), &newCref)) {
+      QString newEditedCref = QString("%1.%2").arg(mpLibraryTreeItem->parent()->getNameStructure(), newCref);
+      createOMSimulatorUndoCommand("Text edited", true, false, mpLibraryTreeItem->getNameStructure(), newEditedCref);
+      return true;
+    }
   }
+  return false;
 }
 
 /*!
@@ -6359,7 +6362,7 @@ void ModelWidget::createOMSimulatorUndoCommand(const QString &commandText, const
   }
   QString oldSnapshot = pModelLibraryTreeItem->getClassText(pLibraryTreeModel);
   QString newSnapshot;
-  OMSProxy::instance()->list(pModelLibraryTreeItem->getNameStructure(), &newSnapshot);
+  OMSProxy::instance()->exportSnapshot(pModelLibraryTreeItem->getNameStructure(), &newSnapshot);
   mpUndoStack->push(new OMSimulatorUndoCommand(pModelLibraryTreeItem->getNameStructure(), oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(),
                                                doSnapShot, switchToEdited, oldEditedCref, newEditedCref, "OMSimulator " + commandText));
 }
@@ -6384,7 +6387,7 @@ void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &command
     pModelLibraryTreeItem->setName(newCref);
     pModelLibraryTreeItem->setNameStructure(newCref);
     QString newSnapshot;
-    OMSProxy::instance()->list(newCref, &newSnapshot);
+    OMSProxy::instance()->exportSnapshot(newCref, &newSnapshot);
     mpUndoStack->push(new OMSimulatorUndoCommand(newCref, oldSnapshot, newSnapshot, mpLibraryTreeItem->getNameStructure(), true, true, "", "", "OMSimulator " + commandText));
   }
 }
