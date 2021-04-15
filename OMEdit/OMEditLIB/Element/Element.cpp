@@ -171,6 +171,9 @@ void ElementInfo::parseComponentInfoString(QString value)
   // read the class name
   if (list.size() > 0) {
     mClassName = list.at(0);
+    if (mClassName.startsWith(".")) {
+      mClassName.remove(0, 1);
+    }
   } else {
     return;
   }
@@ -295,6 +298,9 @@ void ElementInfo::parseElementInfoString(QString value)
   // read the class name, i.e. type name
   if (list.size() > 2) {
     mClassName = list.at(2);
+    if (mClassName.startsWith(".")) {
+      mClassName.remove(0, 1);
+    }
   } else {
     return;
   }
