@@ -67,6 +67,7 @@ import ElementSource;
 import Flags;
 import Prefixes = NFPrefixes;
 import UnorderedMap;
+import ErrorExt;
 
 public
 uniontype EvalTarget
@@ -149,6 +150,19 @@ uniontype EvalTarget
     end match;
   end getInfo;
 end EvalTarget;
+
+function tryEvalExp
+  input output Expression exp;
+algorithm
+  ErrorExt.setCheckpoint(getInstanceName());
+
+  try
+    exp := evalExp(exp);
+  else
+  end try;
+
+  ErrorExt.rollBack(getInstanceName());
+end tryEvalExp;
 
 function evalExp
   input output Expression exp;

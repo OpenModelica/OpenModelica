@@ -225,7 +225,7 @@ public
     input output ComponentRef cref;
   algorithm
     () := match cref
-      case CREF()
+      case CREF() guard InstNode.isComponent(cref.node)
         algorithm
           cref.ty := InstNode.getType(cref.node);
         then

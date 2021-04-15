@@ -435,7 +435,7 @@ public
         algorithm
           e2 := Expression.map(e1, func);
         then
-          if referenceEq(e1, e2) then dim else EXP(e2, dim.var);
+          if referenceEq(e1, e2) then dim else fromExp(e2, dim.var);
 
       else dim;
     end match;

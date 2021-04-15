@@ -194,8 +194,8 @@ public
 
   function map
     input output Sections sections;
-    input EquationFn eqFn;
-    input AlgorithmFn algFn;
+    input EquationFn eqFn = eqId;
+    input AlgorithmFn algFn = algId;
     input EquationFn ieqFn = eqFn;
     input AlgorithmFn ialgFn = algFn;
 
@@ -206,6 +206,14 @@ public
     partial function AlgorithmFn
       input output Algorithm alg;
     end AlgorithmFn;
+
+    function eqId
+      input output Equation eq;
+    end eqId;
+
+    function algId
+      input output Algorithm alg;
+    end algId;
   protected
     list<Equation> eq, ieq;
     list<Algorithm> alg, ialg;

@@ -550,7 +550,7 @@ algorithm
         else
           // For functions, only evaluate constant and structural parameter expressions.
           if var <= Variability.STRUCTURAL_PARAMETER then
-            exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
+            exp := Ceval.tryEvalExp(exp);
           end if;
         end if;
 

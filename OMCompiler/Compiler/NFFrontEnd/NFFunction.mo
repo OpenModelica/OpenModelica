@@ -1907,6 +1907,23 @@ uniontype Function
     end if;
   end mapExpParameter;
 
+  function mapBody
+    input output Function fn;
+    input MapFn mapFn;
+
+    partial function MapFn
+      input output Algorithm alg;
+    end MapFn;
+  protected
+    Class cls;
+    Sections sections;
+  algorithm
+    cls := InstNode.getClass(fn.node);
+    sections := Sections.map(Class.getSections(cls), algFn = mapFn);
+    cls := cls.setSections(sections, cls);
+    InstNode.updateClass(cls, fn.node);
+  end mapBody;
+
   function foldExp<ArgT>
     input Function fn;
     input FoldFunc foldFn;
