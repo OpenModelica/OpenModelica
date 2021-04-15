@@ -12251,12 +12251,7 @@ algorithm
         expl := List.mapFlat(expl, function expandExpression(expandRecord = expandRecord));
       then expl;
 
-    else
-     algorithm
-        msg := "- Expression.expandExpression failed for " + ExpressionDump.printExpStr(inExp);
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
-      then
-        fail();
+    else {inExp};
   end match;
 
 end expandExpression;

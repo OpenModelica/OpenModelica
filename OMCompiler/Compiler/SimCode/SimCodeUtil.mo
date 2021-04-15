@@ -339,11 +339,16 @@ algorithm
            createAllEquationOMSI(inInitDAE.eqs, dlow.shared, {}, uniqueEqIndex);
     end if;
 
-    shared as BackendDAE.SHARED(globalKnownVars=globalKnownVars,
-                                constraints=constraints,
-                                classAttrs=classAttributes,
-                                symjacs=symJacs,
-                                eventInfo=eventInfo) := dlow.shared;
+    shared := dlow.shared;
+    shared.globalKnownVars := scalarizeGlobalKnownVars(shared.globalKnownVars);
+    dlow.shared := shared;
+    BackendDAE.SHARED(
+      globalKnownVars = globalKnownVars,
+      constraints     = constraints,
+      classAttrs      = classAttributes,
+      symjacs         = symJacs,
+      eventInfo       = eventInfo
+    ) := shared;
 
     removedEqs := BackendDAEUtil.collapseRemovedEqs(dlow);
 
@@ -7065,6 +7070,25 @@ algorithm
   outParameterEquations := listReverse(outParameterEquations);
 end createParameterEquations;
 
+protected function scalarizeGlobalKnownVars
+  input output BackendDAE.Variables vars;
+protected
+  BackendDAE.Var globalKnownVar;
+  list<BackendDAE.Var> var_lst, acc_vars = {};
+algorithm
+  for i in 1:BackendVariable.varsSize(vars) loop
+    try
+      globalKnownVar := BackendVariable.getVarAt(vars, i);
+      if Types.isArray(globalKnownVar.varType) then
+        var_lst := BackendVariable.generateArrayVar(globalKnownVar.varName, globalKnownVar.varKind, globalKnownVar.varType, globalKnownVar.values);
+        acc_vars := listAppend(var_lst, acc_vars);
+        vars := BackendVariable.deleteVar(globalKnownVar.varName, vars);
+      end if;
+    else
+    end try;
+  end for;
+  vars := BackendVariable.addVars(acc_vars, vars);
+end scalarizeGlobalKnownVars;
 
 protected function createSimEqsForGlobalKnownVars
 "Decides if a simEq is generated from the globalKnownVar and creates it.
@@ -7073,6 +7097,7 @@ protected function createSimEqsForGlobalKnownVars
   input tuple<Integer, list<SimCode.SimEqSystem>, list<DAE.Algorithm>, Integer, HashSetExp.HashSet> inTuple;
   output tuple<Integer, list<SimCode.SimEqSystem>, list<DAE.Algorithm>, Integer, HashSetExp.HashSet> outTuple;
 protected
+  list<BackendDAE.Var> var_lst;
   Integer uniqueEqIndex, nFixedParameters;
   SimCode.SimEqSystem simEq;
   list<SimCode.SimEqSystem> parameterEquations;
@@ -8061,14 +8086,12 @@ protected function extractVarFromVar
 protected
   list<DAE.ComponentRef> scalar_crefs;
   BackendDAE.Var scalarVar;
+  list<BackendDAE.Var> scalar_vars;
 algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
   if BackendVariable.isParam(dlowVar) and Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
-    scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
-    for cref in scalar_crefs loop
-      // extract the sim var
-      scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
-      scalarVar.varType := ComponentReference.crefTypeFull(cref);
+    scalar_vars := BackendVariable.generateArrayVar(dlowVar.varName, dlowVar.varKind, dlowVar.varType, dlowVar.values);
+    for scalarVar in scalar_vars loop
       extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, iterationVars);
     end for;
   else
