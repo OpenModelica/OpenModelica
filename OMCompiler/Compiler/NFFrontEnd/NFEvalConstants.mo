@@ -133,6 +133,19 @@ algorithm
   outExp := evaluateExpTraverser(exp, info);
 end evaluateExp;
 
+function evaluateExpOpt
+  input Option<Expression> exp;
+  input SourceInfo info;
+  output Option<Expression> outExp;
+protected
+  Expression e;
+algorithm
+  outExp := match exp
+    case SOME(e) then SOME(evaluateExp(e, info));
+    else exp;
+  end match;
+end evaluateExpOpt;
+
 function evaluateExpTraverser
   input Expression exp;
   input SourceInfo info;
@@ -184,6 +197,9 @@ algorithm
       then
         outExp;
 
+    case Expression.SIZE()
+      then Expression.SIZE(exp.exp, evaluateExpOpt(exp.dimIndex, info));
+
     else
       algorithm
         (outExp, outChanged) := Expression.mapFoldShallow(exp,
@@ -227,12 +243,7 @@ algorithm
 
     case Dimension.EXP()
       algorithm
-        if dim.var <= Variability.STRUCTURAL_PARAMETER and not
-           Expression.containsAnyIterator(dim.exp, NFInstContext.FOR) then
-          e := Ceval.evalExp(dim.exp, Ceval.EvalTarget.GENERIC(info));
-        else
-          e := evaluateExp(dim.exp, info);
-        end if;
+        e := evaluateExp(dim.exp, info);
       then
         if referenceEq(e, dim.exp) then dim else Dimension.fromExp(e, dim.var);
 
@@ -522,7 +533,11 @@ protected
 algorithm
   if not Function.isEvaluated(func) then
     Function.markEvaluated(func);
-    func := Function.mapExp(func, function evaluateFuncExp(fnNode = func.node));
+
+    func := Function.mapExp(func, function evaluateFuncExp(fnNode = func.node),
+      mapBody = Function.isExternal(func));
+
+    func := Function.mapBody(func, evaluateAlgorithm);
 
     for fn_der in func.derivatives loop
       for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
