@@ -553,7 +553,6 @@ public:
   void clearSelection();
   void updateClassAnnotationIfNeeded();
   void updateModelText();
-  void updateModelicaTextManually(QString contents);
   void updateUndoRedoActions();
   bool writeCoSimulationResultFile(QString fileName);
   bool writeVisualXMLFile(QString fileName, bool canWriteVisualXMLFile = false);
@@ -604,6 +603,7 @@ private:
   QMap<int, IconDiagramMap> mInheritedClassesDiagramMap;
   QList<ElementInfo*> mElementsList;
   QStringList mElementsAnnotationsList;
+  QTimer mUpdateModelTimer;
 
   void createUndoStack();
   void handleCanUndoRedoChanged();
@@ -637,6 +637,7 @@ private slots:
   void showIconView(bool checked);
   void showDiagramView(bool checked);
   void showTextView(bool checked);
+  void updateModel();
 public slots:
   void makeFileWritAble();
   void showDocumentationView();

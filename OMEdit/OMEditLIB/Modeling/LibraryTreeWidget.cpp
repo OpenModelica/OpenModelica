@@ -1578,36 +1578,6 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
 }
 
 /*!
- * \brief LibraryTreeModel::updateLibraryTreeItemClassTextManually
- * Updates the Parent Modelica class text after user has made changes manually in the text view.
- * \param pLibraryTreeItem
- * \param contents
- */
-void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *pLibraryTreeItem, QString contents)
-{
-  // set the library node not saved.
-  pLibraryTreeItem->setIsSaved(false);
-  updateLibraryTreeItem(pLibraryTreeItem);
-  // update the containing parent LibraryTreeItem class text.
-  LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
-  // we also mark the containing parent class unsaved because it is very important for saving of single file packages.
-  pParentLibraryTreeItem->setIsSaved(false);
-  updateLibraryTreeItem(pParentLibraryTreeItem);
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  pParentLibraryTreeItem->setClassText(contents);
-  if (pParentLibraryTreeItem->getModelWidget()) {
-    pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
-  }
-  // if we first updated the parent class then the child classes needs to be updated as well.
-  if (pParentLibraryTreeItem != pLibraryTreeItem) {
-    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8,
-                          pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure, false);
-    updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
-    pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
-  }
-}
-
-/*!
  * \brief LibraryTreeModel::updateChildLibraryTreeItemClassText
  * Updates the class text of child LibraryTreeItems
  * \param pLibraryTreeItem
@@ -1621,9 +1591,7 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getFileName().compare(fileName) == 0) {
       pChildLibraryTreeItem->setClassInformation(MainWindow::instance()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
       readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents);
-      if (pChildLibraryTreeItem->childrenSize() > 0) {
-        updateChildLibraryTreeItemClassText(pChildLibraryTreeItem, contents, fileName);
-      }
+      updateChildLibraryTreeItemClassText(pChildLibraryTreeItem, contents, fileName);
     }
   }
 }

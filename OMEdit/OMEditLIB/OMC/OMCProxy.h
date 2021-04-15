@@ -172,7 +172,7 @@ public:
   bool saveTotalModel(QString fileName, QString className);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
-  QString diffModelicaFileListings(QString before, QString after);
+  QString diffModelicaFileListings(const QString &before, const QString &after);
   QString instantiateModel(QString className);
   bool addClassAnnotation(QString className, QString annotation);
   QString getDefaultComponentName(QString className);

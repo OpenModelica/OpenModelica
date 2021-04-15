@@ -1008,8 +1008,7 @@ void DuplicateClassDialog::syncDuplicatedModelWithOMC(LibraryTreeItem *pLibraryT
  * \param pSourceLibraryTreeItem
  * \param classText
  */
-void DuplicateClassDialog::folderToOneFilePackage(LibraryTreeItem *pDestinationLibraryTreeItem, LibraryTreeItem *pSourceLibraryTreeItem,
-                                                  QString *classText)
+void DuplicateClassDialog::folderToOneFilePackage(LibraryTreeItem *pDestinationLibraryTreeItem, LibraryTreeItem *pSourceLibraryTreeItem, QString *classText)
 {
   LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
   for (int i = 0 ; i < pSourceLibraryTreeItem->childrenSize() ; i++) {
@@ -1022,8 +1021,7 @@ void DuplicateClassDialog::folderToOneFilePackage(LibraryTreeItem *pDestinationL
       QString lineToRemove = QString("within %1;").arg(pDestinationLibraryTreeItem->getNameStructure());
       *classText += StringHandler::removeLine(diffClassText, lineToRemove) + "\n";
     } else {
-      QString afterChildClassText = MainWindow::instance()->getOMCProxy()->listFile(pDestinationChildLibraryTreeItem->getNameStructure(),
-                                                                                    false);
+      QString afterChildClassText = MainWindow::instance()->getOMCProxy()->listFile(pDestinationChildLibraryTreeItem->getNameStructure(), false);
       QString beforeChildClassText = pSourceChildLibraryTreeItem->getClassText(pLibraryTreeModel);
       QString parentClassText = MainWindow::instance()->getOMCProxy()->diffModelicaFileListings(beforeChildClassText, afterChildClassText);
       QString lineToRemove = QString("within %1;").arg(pDestinationLibraryTreeItem->getNameStructure());
