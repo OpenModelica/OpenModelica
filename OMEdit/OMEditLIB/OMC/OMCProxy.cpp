@@ -394,8 +394,8 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed)
   if (isLoggingEnabled()) {
     QString firstLine("");
     for (int i = 0; i < command.length(); i++) {
-      if (command[i] != '\n') {
-        firstLine.append(command[i]);
+      if (command.at(i) != '\n') {
+        firstLine.append(command.at(i));
       } else {
         break;
       }
@@ -1853,7 +1853,7 @@ QString OMCProxy::listFile(QString className, bool nestedClasses)
  * \param after
  * \return
  */
-QString OMCProxy::diffModelicaFileListings(QString before, QString after)
+QString OMCProxy::diffModelicaFileListings(const QString &before, const QString &after)
 {
   QString result = "";
   // check if both strings are same
@@ -1861,7 +1861,7 @@ QString OMCProxy::diffModelicaFileListings(QString before, QString after)
   if (before.compare(after) != 0 && OptionsDialog::instance()->getModelicaEditorPage()->getPreserveTextIndentationCheckBox()->isChecked()) {
     QString escapedBefore = StringHandler::escapeString(before);
     QString escapedAfter = StringHandler::escapeString(after);
-    sendCommand("diffModelicaFileListings(\"" + escapedBefore + "\", \"" + escapedAfter + "\", OpenModelica.Scripting.DiffFormat.plain)");
+    sendCommand(QString("diffModelicaFileListings(\"%1\", \"%2\", OpenModelica.Scripting.DiffFormat.plain)").arg(escapedBefore, escapedAfter));
     result = StringHandler::unparse(getResult());
     /* ticket:5413 Don't show the error of diffModelicaFileListings
      * Instead show the following warning. The developers can read the actual error message from the log file.

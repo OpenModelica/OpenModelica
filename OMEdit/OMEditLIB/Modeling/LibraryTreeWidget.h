@@ -297,7 +297,6 @@ public:
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
-  void updateLibraryTreeItemClassTextManually(LibraryTreeItem *pLibraryTreeItem, QString contents);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);

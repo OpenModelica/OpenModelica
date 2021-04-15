@@ -4294,6 +4294,15 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
     //    drawModelInheritedClassComponents(this, StringHandler::Icon);
     //    getModelComponents();
     //    drawModelIconComponents();
+    /* Ticket:5620
+     * Hack to make the operations like moving objects with keys faster.
+     * We don't update the model directly instead we start a timer.
+     * Update the model on the timer timeout function. The timer is singleshot and ensures atleast one time run of updateModel().
+     * Bundles the several operations together by calling timer start function before the timer is timed out.
+     */
+    mUpdateModelTimer.setSingleShot(true);
+    mUpdateModelTimer.setInterval(2000);
+    connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // icon graphics framework
     if (mpLibraryTreeItem->isSystemElement() || mpLibraryTreeItem->isComponentElement()) {
@@ -5480,7 +5489,7 @@ void ModelWidget::updateModelText()
     }
   } else {
     setWindowTitle(QString("%1*").arg(mpLibraryTreeItem->getName()));
-    pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
+    mUpdateModelTimer.start();
   }
 #if !defined(WITHOUT_OSG)
   // update the ThreeDViewer Browser
@@ -5488,18 +5497,6 @@ void ModelWidget::updateModelText()
     MainWindow::instance()->getModelWidgetContainer()->updateThreeDViewer(this);
   }
 #endif
-}
-
-/*!
- * \brief ModelWidget::updateModelicaTextManually
- * Updates the Parent Modelica class text after user has made changes manually in the text view.
- * \param contents
- */
-void ModelWidget::updateModelicaTextManually(QString contents)
-{
-  setWindowTitle(QString(mpLibraryTreeItem->getName()).append("*"));
-  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
-  pLibraryTreeModel->updateLibraryTreeItemClassTextManually(mpLibraryTreeItem, contents);
 }
 
 /*!
@@ -7532,6 +7529,16 @@ void ModelWidget::showTextView(bool checked)
   }
   mpModelWidgetContainer->setPreviousViewType(StringHandler::ModelicaText);
   updateUndoRedoActions();
+}
+
+/*!
+ * \brief ModelWidget::updateModel
+ * Slot activated when mUpdateModelTimer timeout SIGNAL is raised.
+ */
+void ModelWidget::updateModel()
+{
+  LibraryTreeModel *pLibraryTreeModel = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel();
+  pLibraryTreeModel->updateLibraryTreeItemClassText(mpLibraryTreeItem);
 }
 
 void ModelWidget::makeFileWritAble()
