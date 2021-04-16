@@ -257,6 +257,18 @@ public
     end match;
   end getExp;
 
+  function getExpOpt
+    input Binding binding;
+    output Option<Expression> exp;
+  algorithm
+    exp := match binding
+      case UNTYPED_BINDING() then SOME(binding.bindingExp);
+      case TYPED_BINDING() then SOME(binding.bindingExp);
+      case FLAT_BINDING() then SOME(binding.bindingExp);
+      else NONE();
+    end match;
+  end getExpOpt;
+
   function setExp
     input Expression exp;
     input output Binding binding;

@@ -1218,6 +1218,7 @@ algorithm
         (exp, ty, variability, purity);
 
     case Expression.IF() then typeIfExpression(exp, context, info);
+    case Expression.RECORD() then typeRecordExp(exp, context, info);
 
     case Expression.CALL()
       algorithm
@@ -1285,6 +1286,33 @@ algorithm
     varl := var :: varl;
   end for;
 end typeExpl;
+
+function typeRecordExp
+  input output Expression exp;
+  input InstContext.Type context;
+  input SourceInfo info;
+        output Type ty;
+        output Variability variability = Variability.CONSTANT;
+        output Purity purity = Purity.PURE;
+protected
+  Absyn.Path path;
+  list<Expression> elems, ty_elems = {};
+  Variability var;
+  Purity pur;
+  InstContext.Type next_context;
+algorithm
+  Expression.RECORD(path, ty, elems) := exp;
+  next_context := InstContext.set(context, NFInstContext.SUBEXPRESSION);
+
+  for e in elems loop
+    (e, _, var, pur) := typeExp(e, context, info);
+    variability := Prefixes.variabilityMax(var, variability);
+    purity := Prefixes.purityMin(pur, purity);
+    ty_elems := e :: ty_elems;
+  end for;
+
+  exp := Expression.makeRecord(path, ty, listReverseInPlace(ty_elems));
+end typeRecordExp;
 
 function typeSubscriptedExp
   input output Expression exp;

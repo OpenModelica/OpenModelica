@@ -125,6 +125,7 @@ algorithm
     ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
   end try;
 
+  ctor_node := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(InstNode.parent(node)), ctor_node);
   ctor_node := Inst.instantiate(ctor_node, context = context, instPartial = true);
   Inst.instExpressions(ctor_node, context = context);
 
