@@ -85,7 +85,7 @@ void PlotCurve::setTitleLocal()
       xVariable += QString(" (%1)").arg(getXDisplayUnit());
     }
     if (!xVariable.isEmpty()) {
-      titleStr += QString(" vs %1").arg(xVariable);
+      titleStr += QString(" <i>vs</i> %1").arg(xVariable);
     }
   }
   QwtPlotItem::setTitle(titleStr);
