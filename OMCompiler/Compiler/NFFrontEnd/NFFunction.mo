@@ -1006,6 +1006,9 @@ uniontype Function
     outArg := match slot.evalStatus
       local
         Expression exp;
+        Type ty;
+        Variability var;
+        Purity pur;
 
       // An already evaluated slot, return its binding.
       case SlotEvalStatus.EVALUATED
@@ -1025,8 +1028,8 @@ uniontype Function
           arrayUpdate(slots, slot.index, slot);
 
           exp := evaluateSlotExp(Util.getOption(slot.default), slots, info);
-          outArg := TypedArg.TYPED_ARG(NONE(), exp, Expression.typeOf(exp),
-            Expression.variability(exp), Expression.purity(exp));
+          (exp, ty, var, pur) := Typing.typeExp(exp, NFInstContext.FUNCTION, info);
+          outArg := TypedArg.TYPED_ARG(NONE(), exp, ty, var, pur);
 
           slot.arg := SOME(outArg);
           slot.evalStatus := SlotEvalStatus.EVALUATED;
@@ -1054,27 +1057,48 @@ uniontype Function
     output Expression outExp;
   algorithm
     outExp := match exp
-      local
-        ComponentRef cref;
-        Option<Slot> slot;
-        TypedArg arg;
-
-      case Expression.CREF(cref = cref as ComponentRef.CREF(restCref = ComponentRef.EMPTY()))
-        algorithm
-          slot := lookupSlotInArray(ComponentRef.firstName(cref), slots);
-
-          if isSome(slot) then
-            arg := fillDefaultSlot(Util.getOption(slot), slots, info);
-            outExp := arg.value;
-          else
-            outExp := exp;
-          end if;
-        then
-          outExp;
-
+      case Expression.CREF() then evaluateSlotCref(exp, slots, info);
       else exp;
     end match;
   end evaluateSlotExp_traverser;
+
+  function evaluateSlotCref
+    input output Expression crefExp;
+    input array<Slot> slots;
+    input SourceInfo info;
+  protected
+    ComponentRef cref;
+    Type cref_ty;
+    list<ComponentRef> cref_parts;
+    String name;
+    Option<Slot> slot;
+    TypedArg arg;
+  algorithm
+    Expression.CREF(cref = cref, ty = cref_ty) := crefExp;
+
+    if not ComponentRef.isCref(cref) then
+      return;
+    end if;
+
+    cref :: cref_parts := ComponentRef.toListReverse(cref);
+    name := ComponentRef.firstName(cref);
+    slot := lookupSlotInArray(name, slots);
+
+    if isSome(slot) then
+      arg := fillDefaultSlot(Util.getOption(slot), slots, info);
+      crefExp := arg.value;
+      crefExp := Expression.applySubscripts(ComponentRef.getSubscripts(cref), crefExp);
+
+      for cr in cref_parts loop
+        crefExp := Expression.recordElement(ComponentRef.firstName(cr), crefExp);
+        crefExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), crefExp);
+      end for;
+
+      if Type.isKnown(cref_ty) then
+        crefExp := TypeCheck.matchTypes(Expression.typeOf(crefExp), cref_ty, crefExp);
+      end if;
+    end if;
+  end evaluateSlotCref;
 
   function lookupSlotInArray
     input String slotName;
@@ -1353,7 +1377,7 @@ uniontype Function
   end typeFunction;
 
   function typeFunctionSignature
-    "Types a function's parameters, local components and default arguments."
+    "Types a function's parameters and local components."
     input output Function fn;
   protected
     DAE.FunctionAttributes attr;
@@ -1368,14 +1392,6 @@ uniontype Function
         ClassTree.applyComponents(Class.classTree(InstNode.getClass(node)), boxFunctionParameter);
       end if;
 
-      // Type the bindings of the inputs only. This is done because they are
-      // needed when type checking a function call. The outputs are not needed
-      // for that and can contain recursive calls to the function, so we leave
-      // them for later.
-      for c in fn.inputs loop
-        Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
-      end for;
-
       // Make the slots and return type for the function.
       fn.slots := makeSlots(fn.inputs);
       checkParamTypes(fn);
@@ -1384,14 +1400,17 @@ uniontype Function
   end typeFunctionSignature;
 
   function typeFunctionBody
-    "Types the body of a function, along with any bindings of local variables
-     and outputs."
+    "Types the body of a function, along with any component bindings."
     input output Function fn;
   protected
     Boolean pure;
     DAE.FunctionAttributes attr;
   algorithm
-    // Type the bindings of the outputs and local variables.
+    // Type the bindings of components in the function.
+    for c in fn.inputs loop
+      Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
+    end for;
+
     for c in fn.outputs loop
       Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
     end for;
@@ -2120,7 +2139,7 @@ protected
   algorithm
     try
       comp := InstNode.component(component);
-      default := Binding.typedExp(Component.getImplicitBinding(comp));
+      default := Binding.getExpOpt(Component.getImplicitBinding(comp));
       name := InstNode.name(component);
 
       // Remove $in_ for OM input output arguments.
