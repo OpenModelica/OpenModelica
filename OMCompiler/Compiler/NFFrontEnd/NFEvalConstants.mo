@@ -534,10 +534,7 @@ algorithm
   if not Function.isEvaluated(func) then
     Function.markEvaluated(func);
 
-    func := Function.mapExp(func, function evaluateFuncExp(fnNode = func.node),
-      mapBody = Function.isExternal(func));
-
-    func := Function.mapBody(func, evaluateAlgorithm);
+    func := Function.mapExp(func, function evaluateFuncExp(fnNode = func.node));
 
     for fn_der in func.derivatives loop
       for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
