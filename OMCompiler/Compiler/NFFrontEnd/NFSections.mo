@@ -436,6 +436,7 @@ public
           end if;
           s := IOStream.append(s, ";\n");
         then ();
+      else ();
     end match;
   end toFlatStream;
 
