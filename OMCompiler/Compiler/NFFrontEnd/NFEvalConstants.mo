@@ -56,6 +56,7 @@ import NFPrefixes.Variability;
 import Ceval = NFCeval;
 import Package = NFPackage;
 import SimplifyExp = NFSimplifyExp;
+import ErrorExt;
 
 public
 function evaluate
@@ -568,7 +569,13 @@ algorithm
     case Expression.CREF()
       algorithm
         if not isLocalFunctionVariable(e.cref, fnNode) then
-          outExp := Ceval.evalCref(e.cref, e, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
+          ErrorExt.setCheckpoint(getInstanceName());
+          try
+            outExp := Ceval.evalCref(e.cref, e, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
+          else
+            outExp := e;
+          end try;
+          ErrorExt.rollBack(getInstanceName());
           outChanged := true;
         elseif outChanged then
           // If the cref's subscripts changed, recalculate its type.
@@ -591,12 +598,26 @@ function isLocalFunctionVariable
   output Boolean res;
 protected
   InstNode node;
+  list<Function> fnl;
+  Function fn;
 algorithm
   if ComponentRef.isPackageConstant(cref) then
     res := false;
-  elseif ComponentRef.nodeVariability(cref) <= Variability.PARAMETER then
-    node := InstNode.derivedParent(ComponentRef.node(ComponentRef.firstNonScope(cref)));
-    res := InstNode.refEqual(fnNode, node);
+  elseif ComponentRef.nodeVariability(cref) <= Variability.PARAMETER and ComponentRef.isCref(cref) then
+    node := InstNode.derivedParent(ComponentRef.node(ComponentRef.last(cref)));
+
+    if InstNode.isClass(node) then
+      fnl := Function.getCachedFuncs(node);
+
+      if listEmpty(fnl) then
+        res := false;
+      else
+        fn := listHead(fnl);
+        res := InstNode.refEqual(fnNode, fn.node);
+      end if;
+    else
+      res := false;
+    end if;
   else
     res := true;
   end if;

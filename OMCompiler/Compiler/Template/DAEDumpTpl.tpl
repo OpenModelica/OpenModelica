@@ -161,6 +161,7 @@ end dumpRecordVar;
 template dumpRecordConstructorInputAttr(DAE.Attributes attr)
 ::=
 match attr
+  case DAE.ATTR(direction = Absyn.INPUT()) then 'input '
   case DAE.ATTR(visibility = SCode.PROTECTED()) then 'protected '
   case DAE.ATTR(variability = SCode.CONST()) then 'constant '
   else 'input '

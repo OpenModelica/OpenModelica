@@ -1099,8 +1099,9 @@ algorithm
           parent := InstNode.parent(component);
           binding := TypeCheck.matchBinding(binding, attrType, name, parent);
 
-          // Check the variability. All builtin attributes have parameter variability.
-          if Binding.variability(binding) > Variability.PARAMETER then
+          // Check the variability. All builtin attributes have parameter variability,
+          // unless we're in a function in which case we don't care.
+          if Binding.variability(binding) > Variability.PARAMETER and not InstContext.inFunction(context) then
             Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
               {name, Prefixes.variabilityString(Variability.PARAMETER),
                "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},

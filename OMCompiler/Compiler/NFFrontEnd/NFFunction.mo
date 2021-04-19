@@ -505,7 +505,7 @@ uniontype Function
     cache := InstNode.getFuncCache(InstNode.classScope(inNode));
     outFuncs := match cache
       case CachedData.FUNCTION() then cache.funcs;
-      else fail();
+      else {};
     end match;
   end getCachedFuncs;
 

@@ -250,27 +250,29 @@ algorithm
     return;
   end if;
 
-  stripConstructorAttributes(comp_node);
   comp := InstNode.component(comp_node);
 
-  if Component.isConst(comp) and Component.hasBinding(comp) then
-    locals := comp_node :: locals;
-  else
+  if Component.isModifiable(comp) then
+    setFieldDirection(comp_node, Direction.INPUT);
     inputs := comp_node :: inputs;
+  else
+    setFieldDirection(comp_node, Direction.NONE);
+    locals := comp_node :: locals;
   end if;
 end collectRecordParam;
 
-function stripConstructorAttributes
+function setFieldDirection
   input InstNode field;
+  input Direction direction;
 protected
   Component comp = InstNode.component(field);
   Component.Attributes attr;
 algorithm
   attr := Component.getAttributes(comp);
-  attr.direction := Direction.NONE;
+  attr.direction := direction;
   comp := Component.setAttributes(attr, comp);
   InstNode.updateComponent(comp, field);
-end stripConstructorAttributes;
+end setFieldDirection;
 
 function collectRecordFields
   input InstNode recNode;
@@ -295,7 +297,7 @@ algorithm
   else
     comp := InstNode.component(comp_node);
 
-    if Component.isConst(comp) and Component.hasBinding(comp) then
+    if not Component.isModifiable(comp) then
       fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
     elseif not Component.isOutput(comp) then
       fields := Field.INPUT(InstNode.name(comp_node)) :: fields;
