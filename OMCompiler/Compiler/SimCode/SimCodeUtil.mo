@@ -220,7 +220,7 @@ protected
   BackendDAE.Shared shared;
   BackendDAE.SymbolicJacobians symJacs;
   BackendDAE.Variables globalKnownVars;
-  Boolean ifcpp;
+  Boolean ifcpp = stringEqual(Config.simCodeTarget(), "Cpp");
   HashTableCrIListArray.HashTable varToArrayIndexMapping "maps each array-variable to a array of positions";
   HashTableCrILst.HashTable varToIndexMapping "maps each variable to an array position";
   Integer maxDelayedExpIndex, uniqueEqIndex, numberofEqns, numStateSets, numberOfJacobians, sccOffset;
@@ -298,7 +298,6 @@ algorithm
     dlow := inBackendDAE;
     System.tmpTickReset(0);
     uniqueEqIndex := 1;
-    ifcpp := (stringEqual(Config.simCodeTarget(), "Cpp"));
 
     backendMapping := setUpBackendMapping(inBackendDAE);
     if Flags.isSet(Flags.VISUAL_XML) then
@@ -340,8 +339,10 @@ algorithm
     end if;
 
     shared := dlow.shared;
-    shared.globalKnownVars := scalarizeGlobalKnownVars(shared.globalKnownVars);
-    dlow.shared := shared;
+    if not ifcpp then
+      shared.globalKnownVars := scalarizeGlobalKnownVars(shared.globalKnownVars);
+      dlow.shared := shared;
+    end if;
     BackendDAE.SHARED(
       globalKnownVars = globalKnownVars,
       constraints     = constraints,
@@ -370,7 +371,6 @@ algorithm
       SymEuler_help := Flags.getConfigEnum(Flags.SYM_SOLVER);
       FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, 0);
     end if;
-
 
     if not ((Config.simCodeTarget() == "omsic")/*or (Config.simCodeTarget() ==  "omsicpp")*/)
     then
@@ -409,7 +409,6 @@ algorithm
         end match;
       end if;
     end if;
-
 
     if (SymEuler_help > 0) then
       FlagsUtil.setConfigEnum(Flags.SYM_SOLVER, SymEuler_help);
