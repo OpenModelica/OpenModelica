@@ -1787,7 +1787,6 @@ algorithm
       list<Integer> ilst;
       DAE.InstDims subs;
       DAE.Type tp;
-      list<Option<DAE.VariableAttributes>> attr_lst;
     case (_,_,DAE.T_ARRAY(ty=tp,dims=dims),_)
       equation
         crlst = ComponentReference.expandCref(name,false);
@@ -1800,9 +1799,7 @@ algorithm
         subs = Expression.intSubscripts(ilst);
         */
         // the rest not
-        attr_lst = DAEUtil.scalarizeVariableAttributes(attr, Types.getDimensionProduct(varType));
         vars = List.map4(crlst,generateVar,varKind,tp,dims,NONE());
-        vars = List.threadMap(vars, attr_lst, setVarAttributes);
       then
         vars;
     case (_,_,_,_)
