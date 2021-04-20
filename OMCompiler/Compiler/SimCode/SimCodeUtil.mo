@@ -338,18 +338,13 @@ algorithm
            createAllEquationOMSI(inInitDAE.eqs, dlow.shared, {}, uniqueEqIndex);
     end if;
 
-    shared := dlow.shared;
-    if not ifcpp then
-      shared.globalKnownVars := scalarizeGlobalKnownVars(shared.globalKnownVars);
-      dlow.shared := shared;
-    end if;
-    BackendDAE.SHARED(
+    shared as BackendDAE.SHARED(
       globalKnownVars = globalKnownVars,
       constraints     = constraints,
       classAttrs      = classAttributes,
       symjacs         = symJacs,
       eventInfo       = eventInfo
-    ) := shared;
+    ):= dlow.shared;
 
     removedEqs := BackendDAEUtil.collapseRemovedEqs(dlow);
 
@@ -434,18 +429,22 @@ algorithm
     // create parameter equations
     ((uniqueEqIndex, startValueEquations, _)) := BackendDAEUtil.foldEqSystem(dlow, createStartValueEquations, (uniqueEqIndex, {}, globalKnownVars));
     if debug then execStat("simCode: createStartValueEquations"); end if;
+    (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, {}, globalKnownVars);
+    if debug then execStat("simCode: createParameterEquations"); end if;
+    // after start and parameter equations have been created the global known vars can be scalarized
+    if not ifcpp then
+      globalKnownVars := scalarizeGlobalKnownVars(globalKnownVars);
+      shared.globalKnownVars := globalKnownVars;
+      dlow.shared := shared;
+    end if;
     ((uniqueEqIndex, nominalValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createNominalValueEquations, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createNominalValueEquations"); end if;
     ((uniqueEqIndex, minValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMinValueEquations, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createMinValueEquations"); end if;
     ((uniqueEqIndex, maxValueEquations)) := BackendDAEUtil.foldEqSystem(dlow, createMaxValueEquations, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createMaxValueEquations"); end if;
-    ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
+    ((uniqueEqIndex, parameterEquations)) := BackendDAEUtil.foldEqSystem(dlow, createVarNominalAssertFromVars, (uniqueEqIndex, parameterEquations));
     if debug then execStat("simCode: createVarNominalAssertFromVars"); end if;
-    (uniqueEqIndex, parameterEquations, numberofFixedParameters) := createParameterEquations(uniqueEqIndex, parameterEquations, globalKnownVars);
-    if debug then execStat("simCode: createParameterEquations"); end if;
-    //((uniqueEqIndex, paramAssertSimEqs)) := BackendEquation.traverseEquationArray(BackendEquation.listEquation(paramAsserts), traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-    //parameterEquations := listAppend(parameterEquations, paramAssertSimEqs);
 
     ((uniqueEqIndex, algorithmAndEquationAsserts)) := BackendDAEUtil.foldEqSystem(dlow, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
     if debug then execStat("simCode: createAlgorithmAndEquationAsserts"); end if;
