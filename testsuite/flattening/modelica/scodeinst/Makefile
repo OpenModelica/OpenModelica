@@ -560,6 +560,7 @@ FunctionalArgBinary1.mo \
 FunctionalArgInvalidType1.mo \
 FunctionCompOrder1.mo \
 FunctionCompOrder2.mo \
+FunctionCompOrder3.mo \
 FunctionDerivative1.mo \
 FunctionDerivativeInvalidInput1.mo \
 FunctionDerivativeInvalidOrder1.mo \

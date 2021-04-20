@@ -2462,23 +2462,38 @@ protected
   function getLocalDependencies
     input InstNode node;
     input UnorderedSet<InstNode> locals;
-    output list<InstNode> dependencies = {};
+    output list<InstNode> dependencies;
   protected
+    Component comp;
     Binding binding;
     UnorderedSet<InstNode> deps;
   algorithm
-    binding := Component.getBinding(InstNode.component(node));
+    // Use a set to store the dependencies to avoid duplicates.
+    deps := UnorderedSet.new(InstNode.hash, InstNode.refEqual, 1);
+
+    comp := InstNode.component(node);
+    binding := Component.getBinding(comp);
 
     if Binding.hasExp(binding) then
-      // Use a set to store the dependencies to avoid duplicates.
-      deps := UnorderedSet.new(InstNode.hash, InstNode.refEqual, 1);
-      deps := Expression.fold(Binding.getExp(binding),
-        function getLocalDependencies2(locals = locals), deps);
-      dependencies := UnorderedSet.toList(deps);
+      deps := getLocalDependenciesExp(Binding.getExp(binding), locals, deps);
     end if;
+
+    deps := Type.foldDims(Component.getType(comp),
+      function getLocalDependenciesDim(locals = locals), deps);
+
+    dependencies := UnorderedSet.toList(deps);
   end getLocalDependencies;
 
-  function getLocalDependencies2
+  function getLocalDependenciesExp
+    input Expression exp;
+    input UnorderedSet<InstNode> locals;
+    input output UnorderedSet<InstNode> deps;
+  algorithm
+    deps := Expression.fold(exp,
+      function getLocalDependenciesExp2(locals = locals), deps);
+  end getLocalDependenciesExp;
+
+  function getLocalDependenciesExp2
     input Expression exp;
     input UnorderedSet<InstNode> locals;
     input output UnorderedSet<InstNode> deps;
@@ -2509,7 +2524,16 @@ protected
 
       else ();
     end match;
-  end getLocalDependencies2;
+  end getLocalDependenciesExp2;
+
+  function getLocalDependenciesDim
+    input Dimension dim;
+    input UnorderedSet<InstNode> locals;
+    input output UnorderedSet<InstNode> deps;
+  algorithm
+    deps := Dimension.foldExp(dim,
+      function getLocalDependenciesExp(locals = locals), deps);
+  end getLocalDependenciesDim;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");
