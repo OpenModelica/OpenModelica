@@ -94,20 +94,24 @@ void PlotWindow::initializePlot(QStringList arguments)
   setTitle(QString(arguments[2]));
   setGrid(QString(arguments[3]));
   QString plotType = arguments[4];
-  if(QString(arguments[5]) == "true")
+  if (QString(arguments[5]) == "true") {
     setLogX(true);
-  else if(QString(arguments[5]) == "false")
+  } else if (QString(arguments[5]) == "false") {
     setLogX(false);
-  else
-    throw PlotException("Invalid input" + arguments[6]);
-  if(QString(arguments[6]) == "true")
+  } else {
+    throw PlotException("Invalid input" + arguments[5]);
+  }
+  if (QString(arguments[6]) == "true") {
     setLogY(true);
-  else if(QString(arguments[6]) == "false")
+  } else if (QString(arguments[6]) == "false") {
     setLogY(false);
-  else
-    throw PlotException("Invalid input" + arguments[7]);
+  } else {
+    throw PlotException("Invalid input" + arguments[6]);
+  }
   setXLabel(QString(arguments[7]));
   setYLabel(QString(arguments[8]));
+  setXCustomLabel(getXLabel());
+  setYCustomLabel(getYLabel());
   setXUnit("");
   setXDisplayUnit("");
   setYUnit("");
@@ -126,6 +130,7 @@ void PlotWindow::initializePlot(QStringList arguments)
     throw PlotException("Invalid input" + arguments[17]);
   }
   setTimeUnit("");
+  setPrefixAxes(false);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 18; i < arguments.length(); i++)
@@ -602,21 +607,16 @@ void PlotWindow::plotParametric(PlotCurve *pPlotCurve)
   {
     xVariable = mVariablesList.at(pair);
     yVariable = mVariablesList.at(pair+1);
-    //    if (!editCase)
-    //    {
-    if (pair==0)
-    {
+
+    if (pair==0) {
       xTitle = xVariable;
       yTitle = yVariable;
-    }
-    else
-    {
+    } else {
       xTitle += ", "+xVariable;
       yTitle += ", "+yVariable;
     }
     setXLabel(xTitle);
     setYLabel(yTitle);
-    //    }
 
     //PLOT PLT
     if (mFile.fileName().endsWith("plt"))
@@ -1129,21 +1129,16 @@ void PlotWindow::plotArrayParametric(double time, PlotCurve *pPlotCurve)
   {
     xVariable = mVariablesList.at(pair);
     yVariable = mVariablesList.at(pair+1);
-    //    if (!editCase)
-    //    {
-    if (pair==0)
-    {
+
+    if (pair==0) {
       xTitle = xVariable;
       yTitle = yVariable;
-    }
-    else
-    {
+    } else {
       xTitle += ", "+xVariable;
       yTitle += ", "+yVariable;
     }
     setXLabel(xTitle);
     setYLabel(yTitle);
-    //    }
 
     //PLOT PLT
     //we presume time is the first dataset and array elements datasets are consequent
@@ -1442,16 +1437,6 @@ QCheckBox* PlotWindow::getLogYCheckBox()
   return mpLogYCheckBox;
 }
 
-void PlotWindow::setXLabel(QString label)
-{
-  mpPlot->setAxisTitle(QwtPlot::xBottom, label);
-}
-
-void PlotWindow::setYLabel(QString label)
-{
-  mpPlot->setAxisTitle(QwtPlot::yLeft, label);
-}
-
 void PlotWindow::setXRange(double min, double max)
 {
   if (!(max == 0 && min == 0)) {
@@ -1597,6 +1582,16 @@ QString PlotWindow::getFooter()
 #else
   return "";
 #endif
+}
+
+bool PlotWindow::getPrefixAxes() const
+{
+  return mPrefixAxes;
+}
+
+void PlotWindow::setPrefixAxes(bool prefixAxes)
+{
+  mPrefixAxes = prefixAxes;
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
@@ -2021,7 +2016,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpTitleFontSizeSpinBox->setValue(mpPlotWindow->getPlot()->titleLabel()->font().pointSizeF());
   mpTitleFontSizeSpinBox->setSingleStep(1);
   mpVerticalAxisLabel = new QLabel(tr("Vertical Axis Title"));
-  mpVerticalAxisTextBox = new QLineEdit(mpPlotWindow->getPlot()->axisTitle(QwtPlot::yLeft).text());
+  mpVerticalAxisTextBox = new QLineEdit(mpPlotWindow->getYCustomLabel());
   mpVerticalAxisTitleFontSizeLabel = new QLabel("Vertical Axis Title Font Size");
   mpVerticalAxisTitleFontSizeSpinBox = new QDoubleSpinBox;
   mpVerticalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
@@ -2033,7 +2028,7 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpVerticalAxisNumbersFontSizeSpinBox->setValue(mpPlotWindow->getPlot()->axisWidget(QwtPlot::yLeft)->font().pointSizeF());
   mpVerticalAxisNumbersFontSizeSpinBox->setSingleStep(1);
   mpHorizontalAxisLabel = new QLabel(tr("Horizontal Axis Title"));
-  mpHorizontalAxisTextBox = new QLineEdit(mpPlotWindow->getPlot()->axisTitle(QwtPlot::xBottom).text());
+  mpHorizontalAxisTextBox = new QLineEdit(mpPlotWindow->getXCustomLabel());
   mpHorizontalAxisTitleFontSizeLabel = new QLabel("Horizontal Axis Title Font Size");
   mpHorizontalAxisTitleFontSizeSpinBox = new QDoubleSpinBox;
   mpHorizontalAxisTitleFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
@@ -2134,12 +2129,15 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpXMaximumTextBox->setValidator(pDoubleValidator);
   mpYMinimumTextBox->setValidator(pDoubleValidator);
   mpXMaximumTextBox->setValidator(pDoubleValidator);
+  mpPrefixAxesCheckbox = new QCheckBox(tr("Prefix Axes"));
+  mpPrefixAxesCheckbox->setChecked(mpPlotWindow->getPrefixAxes());
   // range tab layout
   QVBoxLayout *pRangeTabVerticalLayout = new QVBoxLayout;
   pRangeTabVerticalLayout->setAlignment(Qt::AlignTop);
   pRangeTabVerticalLayout->addWidget(mpAutoScaleCheckbox);
   pRangeTabVerticalLayout->addWidget(mpXAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpYAxisGroupBox);
+  pRangeTabVerticalLayout->addWidget(mpPrefixAxesCheckbox);
   mpRangeTab->setLayout(pRangeTabVerticalLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
@@ -2258,11 +2256,13 @@ void SetupDialog::applySetup()
                                         mpLegendFontSizeSpinBox->value());
   // set the titles
   mpPlotWindow->getPlot()->setTitle(mpPlotTitleTextBox->text());
-  mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::yLeft, mpVerticalAxisTextBox->text());
-  mpPlotWindow->getPlot()->setAxisTitle(QwtPlot::xBottom, mpHorizontalAxisTextBox->text());
+  mpPlotWindow->setYCustomLabel(mpVerticalAxisTextBox->text());
+  mpPlotWindow->setXCustomLabel(mpHorizontalAxisTextBox->text());
   mpPlotWindow->setFooter(mpPlotFooterTextBox->text());
   // set the legend
   mpPlotWindow->setLegendPosition(mpLegendPositionComboBox->itemData(mpLegendPositionComboBox->currentIndex()).toString());
+  // set the prefix axes
+  mpPlotWindow->setPrefixAxes(mpPrefixAxesCheckbox->isChecked());
   // set the auto scale
   mpPlotWindow->setAutoScale(mpAutoScaleCheckbox->isChecked());
   // set the range
@@ -2274,6 +2274,9 @@ void SetupDialog::applySetup()
     mpPlotWindow->setYRange(mpYMinimumTextBox->text().toDouble(), mpYMaximumTextBox->text().toDouble());
   }
   // replot
+  mpPlotWindow->getPlot()->getXScaleDraw()->invalidateCache();
+  mpPlotWindow->getPlot()->getYScaleDraw()->invalidateCache();
+  mpPlotWindow->getPlot()->updateLayout();
   mpPlotWindow->getPlot()->replot();
   if (requiresFitInView) {
     mpPlotWindow->fitInView();

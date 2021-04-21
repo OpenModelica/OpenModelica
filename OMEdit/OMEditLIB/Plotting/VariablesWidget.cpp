@@ -2112,29 +2112,6 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           }
         }
       }
-      // Set the plot labels if there is only on parametric plot curve.
-      if (pPlotWindow->getPlot()->getPlotCurvesList().size() == 1) {
-        PlotCurve *pLastPlotCurve = pPlotWindow->getPlot()->getPlotCurvesList().last();
-        // x label
-        QString xVariable = pLastPlotCurve->getXVariable();
-        QString xUnit = pLastPlotCurve->getXDisplayUnit();
-        if (xUnit.isEmpty()) {
-          pPlotWindow->setXLabel(xVariable);
-        } else {
-          pPlotWindow->setXLabel(xVariable + " (" + xUnit + ")");
-        }
-        // y label
-        QString yVariable = pLastPlotCurve->getYVariable();
-        QString yUnit = pLastPlotCurve->getYDisplayUnit();
-        if (yUnit.isEmpty()) {
-          pPlotWindow->setYLabel(yVariable);
-        } else {
-          pPlotWindow->setYLabel(yVariable + " (" + yUnit + ")");
-        }
-      } else {
-        pPlotWindow->setXLabel("");
-        pPlotWindow->setYLabel("");
-      }
     } else { // if plottype is INTERACTIVE then
       VariablesTreeItem *pVariablesTreeRootItem = pVariablesTreeItem;
       if (!pVariablesTreeItem->isRootItem()) {
@@ -2481,6 +2458,7 @@ void VariablesWidget::timeUnitChanged(QString unit)
     } else if (pPlotWindow->getPlotType() == PlotWindow::PLOT ||
                pPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE) {
       OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotWindow->getTimeUnit(), unit);
+      pPlotWindow->setTimeUnit(unit);
       if (convertUnit.unitsCompatible) {
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
           for (int i = 0 ; i < pPlotCurve->mXAxisVector.size() ; i++) {
@@ -2488,8 +2466,6 @@ void VariablesWidget::timeUnitChanged(QString unit)
           }
           pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
         }
-        pPlotWindow->setXLabel(QString("time (%1)").arg(unit));
-        pPlotWindow->setTimeUnit(unit);
         pPlotWindow->getPlot()->replot();
       }
     }

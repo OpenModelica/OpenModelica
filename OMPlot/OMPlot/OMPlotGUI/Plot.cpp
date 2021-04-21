@@ -32,7 +32,6 @@
  */
 
 #include "PlotWindow.h"
-#include "ScaleDraw.h"
 #include "qwt_plot_canvas.h"
 #include "qwt_plot_layout.h"
 #include "qwt_scale_widget.h"
@@ -53,6 +52,10 @@ Plot::Plot(PlotWindow *pParent)
   insertLegend(mpLegend, QwtPlot::TopLegend);
   // create an instance of grid
   mpPlotGrid = new PlotGrid(this);
+  mpXScaleDraw = new ScaleDraw(this);
+  setAxisScaleDraw(QwtPlot::xBottom, mpXScaleDraw);
+  mpYScaleDraw = new ScaleDraw(this);
+  setAxisScaleDraw(QwtPlot::yLeft, mpYScaleDraw);
   // create an instance of zoomer
   mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
   // create an instance of panner
@@ -66,8 +69,6 @@ Plot::Plot(PlotWindow *pParent)
   pPlotCanvas->setFrameStyle(QFrame::NoFrame);  /* Ticket #2679 point 6. Remove the default frame from the canvas. */
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
-  setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);
-  setAxisScaleDraw(QwtPlot::xBottom, new ScaleDraw);
 #if QWT_VERSION >= 0x060000
   /* Ticket #2679 point 2. */
   for (int i = 0; i < QwtPlot::axisCnt; i++) {
@@ -78,15 +79,16 @@ Plot::Plot(PlotWindow *pParent)
   }
   plotLayout()->setAlignCanvasToScales(true);
 #endif
+  // Use monospaced font for better readability.
+  QFont monospaceFont("Monospace");
+  monospaceFont.setStyleHint(QFont::TypeWriter);
   // set the bottom axis title font size small.
   QwtText bottomTitle = axisTitle(QwtPlot::xBottom);
-  QFont font = bottomTitle.font();
-  bottomTitle.setFont(QFont(font.family(), 11));
+  bottomTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::xBottom, bottomTitle);
   // set the left axis title font size small.
   QwtText leftTitle = axisTitle(QwtPlot::yLeft);
-  font = leftTitle.font();
-  leftTitle.setFont(QFont(font.family(), 11));
+  leftTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::yLeft, leftTitle);
   // fill colors list
   fillColorsList();
@@ -129,7 +131,7 @@ Legend* Plot::getLegend()
   return mpLegend;
 }
 
-QwtPlotPicker* Plot::getPlotPicker()
+PlotPicker* Plot::getPlotPicker()
 {
   return mpPlotPicker;
 }
@@ -223,15 +225,45 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
 // just overloaded this function to get colors for curves.
 void Plot::replot()
 {
-  for (int i = 0 ; i < mPlotCurvesList.length() ; i++)
-  {
+  for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
-    if (!mPlotCurvesList[i]->hasCustomColor())
-    {
+    if (!mPlotCurvesList[i]->hasCustomColor()) {
       QPen pen = mPlotCurvesList[i]->pen();
       pen.setColor(getUniqueColor(i, mPlotCurvesList.length()));
       mPlotCurvesList[i]->setPen(pen);
     }
+  }
+
+  if (mpParentPlotWindow->getXCustomLabel().isEmpty()) {
+    QString timeUnit = mpParentPlotWindow->getTimeUnit();
+    if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOT
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTALL
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+      if (mpXScaleDraw->getAxesPrefix().isEmpty()) {
+        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
+      } else {
+        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getAxesPrefix(), timeUnit));
+      }
+    } else {
+      if (mpXScaleDraw->getAxesPrefix().isEmpty()) {
+        setAxisTitle(QwtPlot::xBottom, "");
+      } else {
+        setAxisTitle(QwtPlot::xBottom, QString("(%1)").arg(mpXScaleDraw->getAxesPrefix()));
+      }
+    }
+  } else {
+    setAxisTitle(QwtPlot::xBottom, mpParentPlotWindow->getXCustomLabel());
+  }
+
+  if (mpParentPlotWindow->getYCustomLabel().isEmpty()) {
+    if (mpYScaleDraw->getAxesPrefix().isEmpty()) {
+      setAxisTitle(QwtPlot::yLeft, "");
+    } else {
+      setAxisTitle(QwtPlot::yLeft, QString("(%1)").arg(mpYScaleDraw->getAxesPrefix()));
+    }
+  } else {
+    setAxisTitle(QwtPlot::yLeft, mpParentPlotWindow->getYCustomLabel());
   }
 
   QwtPlot::replot();

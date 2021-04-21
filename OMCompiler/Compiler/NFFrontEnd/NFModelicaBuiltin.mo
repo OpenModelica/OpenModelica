@@ -3107,7 +3107,7 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
+  input String xLabel = "" "This text will be used as the horizontal label in the diagram.";
   input String yLabel = "" "This text will be used as the vertical label in the diagram.";
   input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";

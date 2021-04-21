@@ -36,82 +36,79 @@
 using namespace OMPlot;
 
 PlotMainWindow::PlotMainWindow(QWidget *pParent)
-    : QMainWindow(pParent)
+  : QMainWindow(pParent)
 {
-    mpPlotWindowContainer = new PlotWindowContainer(this);
+  mpPlotWindowContainer = new PlotWindowContainer(this);
 
-    setWindowTitle(tr("OMPlot - OpenModelica Plot"));
-    setWindowIcon(QIcon(":/Resources/icons/omplot.png"));
+  setWindowTitle(tr("OMPlot - OpenModelica Plot"));
+  setWindowIcon(QIcon(":/Resources/icons/omplot.png"));
 
-    createActions();
-    createMenus();
+  createActions();
+  createMenus();
 
-    //Create the Statusbar
-    mpStatusBar = new QStatusBar();
-    mpStatusBar->setObjectName("statusBar");
-    setStatusBar(mpStatusBar);
-    // set plotwindowcontainer as central widget
-    setCentralWidget(mpPlotWindowContainer);
+  //Create the Statusbar
+  mpStatusBar = new QStatusBar();
+  mpStatusBar->setObjectName("statusBar");
+  setStatusBar(mpStatusBar);
+  // set plotwindowcontainer as central widget
+  setCentralWidget(mpPlotWindowContainer);
 }
 
 PlotWindowContainer* PlotMainWindow::getPlotWindowContainer()
 {
-    return mpPlotWindowContainer;
+  return mpPlotWindowContainer;
 }
 
 void PlotMainWindow::addPlotWindow(QStringList arguments)
 {
-    mpPlotWindowContainer->addPlotWindow(arguments);
+  mpPlotWindowContainer->addPlotWindow(arguments);
 }
 
 void PlotMainWindow::createActions()
 {
-    mpCloseAction = new QAction(tr("Close"), this);
-    mpCloseAction->setShortcut(QKeySequence("Ctrl+q"));
-    connect(mpCloseAction, SIGNAL(triggered()), SLOT(close()));
+  mpCloseAction = new QAction(tr("Close"), this);
+  mpCloseAction->setShortcut(QKeySequence("Ctrl+q"));
+  connect(mpCloseAction, SIGNAL(triggered()), SLOT(close()));
 
-    mpTabViewAction = new QAction(tr("Tab View"), this);
-    mpTabViewAction->setCheckable(true);
-    mpTabViewAction->setChecked(true);
-    connect(mpTabViewAction, SIGNAL(triggered(bool)), SLOT(switchWindowsView(bool)));
+  mpTabViewAction = new QAction(tr("Tab View"), this);
+  mpTabViewAction->setCheckable(true);
+  mpTabViewAction->setChecked(true);
+  connect(mpTabViewAction, SIGNAL(triggered(bool)), SLOT(switchWindowsView(bool)));
 }
 
 void PlotMainWindow::createMenus()
 {
-    //Create the menubar
-    mpMenuBar = new QMenuBar();
-    mpMenuBar->setGeometry(QRect(0,0,800,25));
-    mpMenuBar->setObjectName("menubar");
+  //Create the menubar
+  mpMenuBar = new QMenuBar();
+  mpMenuBar->setGeometry(QRect(0,0,800,25));
+  mpMenuBar->setObjectName("menubar");
 
-    //Create the File menu
-    mpMenuFile = new QMenu(mpMenuBar);
-    mpMenuFile->setObjectName("menuFile");
-    mpMenuFile->setTitle(tr("&File"));
-    //Add the actions to file menu
-    mpMenuFile->addAction(mpCloseAction);
-    // add file menu to menubar
-    mpMenuBar->addAction(mpMenuFile->menuAction());
-    //Create the Options menu
-    mpMenuOptions = new QMenu(mpMenuBar);
-    mpMenuOptions->setObjectName("menuFile");
-    mpMenuOptions->setTitle(tr("&Options"));
-    //Add the actions to Options menu
-    mpMenuOptions->addAction(mpTabViewAction);
-    // add options menu to menubar
-    mpMenuBar->addAction(mpMenuOptions->menuAction());
-    // add menubar to mainwindow
-    setMenuBar(mpMenuBar);
+  //Create the File menu
+  mpMenuFile = new QMenu(mpMenuBar);
+  mpMenuFile->setObjectName("menuFile");
+  mpMenuFile->setTitle(tr("&File"));
+  //Add the actions to file menu
+  mpMenuFile->addAction(mpCloseAction);
+  // add file menu to menubar
+  mpMenuBar->addAction(mpMenuFile->menuAction());
+  //Create the Options menu
+  mpMenuOptions = new QMenu(mpMenuBar);
+  mpMenuOptions->setObjectName("menuFile");
+  mpMenuOptions->setTitle(tr("&Options"));
+  //Add the actions to Options menu
+  mpMenuOptions->addAction(mpTabViewAction);
+  // add options menu to menubar
+  mpMenuBar->addAction(mpMenuOptions->menuAction());
+  // add menubar to mainwindow
+  setMenuBar(mpMenuBar);
 }
 
 void PlotMainWindow::switchWindowsView(bool mode)
 {
-    if (mode)
-    {
-        getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
-    }
-    else
-    {
-        getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
-        getPlotWindowContainer()->getCurrentWindow()->show();
-    }
+  if (mode) {
+    getPlotWindowContainer()->setViewMode(QMdiArea::TabbedView);
+  } else {
+    getPlotWindowContainer()->setViewMode(QMdiArea::SubWindowView);
+    getPlotWindowContainer()->getCurrentWindow()->show();
+  }
 }
