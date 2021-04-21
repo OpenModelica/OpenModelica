@@ -49,8 +49,6 @@ protected
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
   import NFFlatten.FunctionTreeImpl;
-  import HashTableCrToExp = NFHashTableCrToExp;
-  import HashTableCrToLst = NFHashTable3;
   import SimplifyExp = NFSimplifyExp;
   import Variable = NFVariable;
 
@@ -61,32 +59,24 @@ protected
   import StrongComponent = NBStrongComponent;
   import NBVariable.{VarData, VariablePointers};
 
-  // Util imports
-  import BaseHashTable;
-
 public
-
-  record REPLACEMENTS
-    HashTableCrToExp.HashTable hashTable        "src -> dst, used for replacing. src is variable, dst is expression.";
-    HashTableCrToLst.HashTable invHashTable     "dst -> list of sources. dst is a variable, sources are variables.";
-  end REPLACEMENTS;
 
   function single
     "performs a single replacement"
     input output Expression exp   "Replacement happens inside this expression";
     input Expression old          "Replaced by new";
     input Expression new          "Replaces old";
+  protected
+    function traverse
+      input output Expression exp;
+      input Expression old;
+      input Expression new;
+    algorithm
+      exp := if Expression.isEqual(exp, old) then new else exp;
+    end traverse;
   algorithm
-    exp := Expression.map(exp, function singleTraverse(old = old, new = new));
+    exp := Expression.map(exp, function traverse(old = old, new = new));
   end single;
-
-  function singleTraverse
-    input output Expression exp   "Replacement happens inside this expression";
-    input Expression old          "Replaced by new";
-    input Expression new          "Replaces old";
-  algorithm
-    exp := if Expression.isEqual(exp, old) then new else exp;
-  end singleTraverse;
 
   function simple
     "creates simple replacement rules for removeSimpleEquations"
@@ -250,146 +240,6 @@ public
     str := str + StringUtil.headline_4("[dumprepl] Trivial Alias Replacements:") + aliasStr;
     str := str + StringUtil.headline_4("[dumprepl] Nontrivial Alias Replacements:") + nonTrivialStr;
   end simpleToString;
-
-/*
-
-  function empty
-    "Returns an empty set of replacement rules"
-    output Replacements variableReplacements;
-    input Integer size = BaseHashTable.defaultBucketSize;
-  protected
-    HashTableCrToExp.HashTable hashTable;
-    HashTableCrToLst.HashTable invHashTable;
-  algorithm
-    // ToDo: remove all those sized calls, they are just duplicate functions
-    hashTable := HashTableCrToExp.emptyHashTableSized(size);
-    invHashTable := HashTableCrToLst.emptyHashTableSized(size);
-    variableReplacements := REPLACEMENTS(hashTable, invHashTable);
-  end empty;
-
-  function add
-    input output Replacements replacements;
-    input ComponentRef src;
-    input Expression dst;
-  algorithm
-    // new (a -> b), existing (b -> c)
-    // new (a -> b), existing (a -> c) (FAIL or REPLACE?)
-    // new (a -> b), existing (c -> a) (how to detect for f(.., a, ...)?)
-    if BaseHashTable.hasKey(src, replacements.hashTable) then
-      // fail if there is already a replacement rule for this expression
-      fail();
-    else
-      //replacements := makeTransitiveBackwards(replacements, src, dst);
-      replacements.hashTable := BaseHashTable.add((src, dst), replacements.hashTable);
-    end if;
-    //replacements.invHashTable := BaseHashTable.add((src, dst), replacements.invHashTable);
-
-  end add;
-
-  function addList
-    input output Replacements replacements;
-    input list<tuple<ComponentRef, Expression>> tpl_lst;
-  protected
-    ComponentRef src;
-    Expression dst;
-  algorithm
-    for tpl in tpl_lst loop
-      (src, dst) := tpl;
-      replacements := add(replacements, src, dst);
-    end for;
-  end addList;
-
-  public function add
-    "Adds a replacement rule to the set of replacement rules given as argument.
-    If a replacement rule a->b already exists and we add a new rule b->c then
-    the rule a->b is updated to a->c. This is done using the make_transitive
-    function."
-    input Replacements replacements;
-    input ComponentRef src;
-    input Expression dst;
-    //input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
-    output Replacements outRepl;
-  algorithm
-    outRepl:= match (repl,inSrc,inDst,inFuncTypeExpExpToBooleanOption)
-      local
-        DAE.ComponentRef src,src_1;
-        DAE.Exp dst,dst_1;
-        HashTable2.HashTable ht,ht_1,eht,eht_1;
-        HashTable3.HashTable invHt,invHt_1;
-        list<DAE.Ident> iv;
-        String s;
-        Option<HashTable2.HashTable> derConst;
-
-      case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
-        algorithm
-          olddst = BaseHashTable.get(src, ht) "if rule a->b exists, fail";
-       then fail();
-
-      case (_,src,dst,_)
-        equation
-          (REPLACEMENTS(ht,invHt,eht,iv,derConst),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
-          ht_1 = BaseHashTable.add((src_1, dst_1),ht);
-          invHt_1 = addReplacementInv(invHt, src_1, dst_1);
-          eht_1 = addExtendReplacement(eht,src_1,NONE());
-        then
-          REPLACEMENTS(ht_1,invHt_1,eht_1,iv,derConst);
-      case (_,_,_,_)
-        equation
-          s = ComponentReference.printComponentRefStr(inSrc);
-          print("-BackendVarTransform.addReplacement failed for " + s);
-        then
-          fail();
-    end match;
-  end add;
-
-  function remove
-    "removes the replacement for a given key using BaseHashTable.delete
-    the extendhashSet is not updated"
-    input Replacements replacements   "replacements object";
-    input ComponentRef src                    "cref to remove";
-  algorithm
-    _ := match replacements
-      local
-        Expression dst;
-        HashTableCrToExp.HashTable hashTable;
-        HashTableCrToLst.HashTable invHashTable;
-      case REPLACEMENTS(hashTable = hashTable, invHashTable = invHashTable)
-        algorithm
-          if BaseHashTable.hasKey(src, hashTable) then
-            dst := BaseHashTable.get(src, hashTable);
-            BaseHashTable.delete(src, hashTable);
-            removeInv(invHashTable, dst);
-          end if;
-      then ();
-
-      else algorithm
-        Error.addInternalError(getInstanceName() + " failed for " + ComponentRef.toString(src) +"\n", sourceInfo());
-      then fail();
-    end match;
-  end remove;
-
-  function removeList
-    input Replacements replacements "replacements object";
-    input list<ComponentRef> src_lst        "cref list to remove";
-  algorithm
-    for src in src_lst loop
-      remove(replacements, src);
-    end for;
-  end removeList;
-
-protected
-  function removeInv
-    "Helper function to remove
-    removes the inverse rule of a replacement in the second binary tree
-    of Replacements."
-    input HashTableCrToLst.HashTable invHashTable;
-    input Expression dst;
-  algorithm
-    for exp in Expression.extract(dst, Expression.isCref) loop
-      BaseHashTable.delete(Expression.toCref(exp), invHashTable);
-    end for;
-  end removeInv;
-*/
 
   annotation(__OpenModelica_Interface="backend");
 end NBReplacements;

@@ -120,6 +120,7 @@ public
     end match;
   end getModule;
 
+protected
   uniontype SimpleSet "gets accumulated to find sets of simple equations and solve them"
     record SIMPLE_SET
       list<Pointer<Variable>> simple_variables    "list of all variables in this set";
@@ -150,7 +151,6 @@ public
 
   constant SimpleSet EMPTY_SIMPLE_SET = SIMPLE_SET({}, {}, NONE());
 
-protected
   // needed for unordered map
   type SetPtr = Pointer<SimpleSet>;
 

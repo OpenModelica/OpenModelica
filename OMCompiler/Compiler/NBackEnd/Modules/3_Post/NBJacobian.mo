@@ -50,16 +50,11 @@ protected
   import BEquation = NBEquation;
   import BVariable = NBVariable;
   import Differentiate = NBDifferentiate;
-  import NBEquation.EqData;
-  import NBEquation.Equation;
-  import NBEquation.EquationPointers;
-  import HashTableCrToCr = NBHashTableCrToCr;
-  import HashTableCrToCrLst = NBHashTableCrToCrLst;
+  import NBEquation.{EqData,Equation,EquationPointers};
   import Jacobian = NBackendDAE.BackendDAE;
   import StrongComponent = NBStrongComponent;
   import System = NBSystem;
-  import NBVariable.VarData;
-  import NBVariable.VariablePointers;
+  import NBVariable.{VarData,VariablePointers};
 
   // Util imports
   import AvlSetPath;
@@ -440,8 +435,8 @@ protected
     VariablePointers seedCandidates, partialCandidates, residuals;
     Pointer<list<Pointer<Variable>>> seed_vars_ptr = Pointer.create({});
     Pointer<list<Pointer<Variable>>> pDer_vars_ptr = Pointer.create({});
-    Pointer<HashTableCrToCr.HashTable> jacobianHT = Pointer.create(HashTableCrToCr.empty());
-    Option<HashTableCrToCr.HashTable> optHT;
+    Pointer<UnorderedMap<ComponentRef,ComponentRef>> jacobianHT = Pointer.create(UnorderedMap.new<ComponentRef>(ComponentRef.hash, ComponentRef.isEqual));
+    Option<UnorderedMap<ComponentRef,ComponentRef>> optHT;
     Differentiate.DifferentiationArguments diffArguments;
 
     list<Pointer<Equation>> eqn_lst, diffed_eqn_lst;
@@ -567,7 +562,7 @@ protected
     input Pointer<Variable> var_ptr;
     input String name;
     input Pointer<list<Pointer<Variable>>> vars_ptr;
-    input Pointer<HashTableCrToCr.HashTable> ht;
+    input Pointer<UnorderedMap<ComponentRef,ComponentRef>> ht;
     input Func makeVar;
 
     partial function Func
@@ -586,7 +581,7 @@ protected
       // add $<new>.x variable pointer to the variables
       Pointer.update(vars_ptr, new_var_ptr :: Pointer.access(vars_ptr));
       // add x -> $<new>.x to the hashTable for later lookup
-      Pointer.update(ht, BaseHashTable.add((var.name, cref), Pointer.access(ht)));
+      UnorderedMap.add(var.name, cref, Pointer.access(ht)); // PHI: Pointer.update ?
     end if;
   end makeVarTraverse;
 

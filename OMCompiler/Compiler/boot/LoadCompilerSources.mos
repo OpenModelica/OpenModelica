@@ -312,8 +312,6 @@ if true then /* Suppress output */
   // "NBackend Util"
     "../NBackEnd/Util/NBBackendUtil.mo",
     "../NBackEnd/Util/NBGraphUtil.mo",
-    "../NBackEnd/Util/NBHashTableCrToCr.mo",
-    "../NBackEnd/Util/NBHashTableCrToCrLst.mo",
 
   // "NSimCode"
     "../NSimCode/HashTableSimCode.mo",
