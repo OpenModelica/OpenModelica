@@ -1190,7 +1190,6 @@ void UnitParser::initSIUnits() {
   addDerived("pressure", "millimeter of mercury", "mmHg", "Pa", Rational(0),
       Rational(133322387415, 1000000000), Rational(0), true);
 
-  addDerived("time", "millisecond", "ms", "s", Rational(-3), Rational(1), Rational(0), true);
   addDerived("time", "minute", "min", "s", Rational(0), Rational(60), Rational(0), true);
   addDerived("time", "hour", "h", "s", Rational(0), Rational(60 * 60), Rational(0), true);
   addDerived("time", "day", "d", "s", Rational(0), Rational(60 * 60 * 24), Rational(0), true);

@@ -743,6 +743,8 @@ Plot Window
 A plot window shows the plot curve of instance variables. Several plot curves can be plotted in the
 same plot window. See :numref:`omedit-plotting-perspective`.
 
+.. _omedit-plot-window-menu :
+
 Plot Window Menu
 ^^^^^^^^^^^^^^^^
 
@@ -769,6 +771,14 @@ Plot Window Menu
     -  *Titles* - Plot, axes and footer titles settings.
     -  *Legend* - Sets legend position and font.
     -  *Range* - Automatic or manual axes range.
+      -  *Auto Scale* - Automatically scales the horizontal and vertical axes.
+      -  *X-Axis*
+        -  *Minimum* - Minimum value for x-axis.
+        -  *Maximum* - Maximum value for x-axis.
+      -  *Y-Axis*
+        -  *Minimum* - Minimum value for y-axis.
+        -  *Maximum* - Maximum value for y-axis.
+    -  *Prefix Axes* - Automatically pick the right prefix for axes values.
 
 Re-simulating a Model
 ---------------------
@@ -1450,7 +1460,9 @@ Plotting
 
 -  General
 
-  -  *Auto Scale* – sets whether to auto scale the plots or not.
+  -  *Auto Scale* – Sets whether to auto scale the plots or not.
+  -  *Prefix Axes* – Automatically pick the right prefix for axes values for the new plot windows.
+     For existing plot windows use the :ref:`omedit-plot-window-menu`.
 
 -  Plotting View Mode
 

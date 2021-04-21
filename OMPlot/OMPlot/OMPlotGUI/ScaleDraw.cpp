@@ -33,22 +33,101 @@
 
 #include "ScaleDraw.h"
 
+#include <QtMath>
+
 using namespace OMPlot;
 
-ScaleDraw::ScaleDraw()
+ScaleDraw::ScaleDraw(Plot *pParent)
   : QwtScaleDraw()
 {
+  mpParentPlot = pParent;
+  mAxesPrefix = "";
+}
 
+QString ScaleDraw::getAxesPrefix() const
+{
+  return mAxesPrefix;
+}
+
+void ScaleDraw::setAxesPrefix(const QString &axesPrefix)
+{
+  mAxesPrefix = axesPrefix;
+}
+
+void ScaleDraw::invalidateCache()
+{
+  QwtAbstractScaleDraw::invalidateCache();
 }
 
 /*!
  * \brief ScaleDraw::label
  * Override QwtAbstractScaleDraw::label since the default implementation uses 6 as precision value.
- * Partially fixes Ticket #2696.
+ * Fixes Tickets #2696 and #5447.
  * \param value -  the actual value.
  * \return the display representation of the value.
  */
 QwtText ScaleDraw::label(double value) const
 {
-  return QLocale().toString(value, 'g', 4);
+  char format = 'g';
+  int precision = 4;
+  mAxesPrefix = "";
+
+  if (mpParentPlot->getParentPlotWindow()->getPrefixAxes()) {
+    QString lowerBound = QLocale().toString(scaleDiv().lowerBound(), format, precision);
+    int indexLowerBound = lowerBound.indexOf(QLatin1String("e"));
+    QString upperBound = QLocale().toString(scaleDiv().upperBound(), format, precision);
+    int indexUpperBound = upperBound.indexOf(QLatin1String("e"));
+
+    if (indexLowerBound > -1 || indexUpperBound > -1) {
+      QString bound = "";
+      int index = -1;
+      if (indexLowerBound > -1) {
+        bound = lowerBound;
+        index = indexLowerBound;
+      } else if (indexUpperBound) {
+        bound = upperBound;
+        index = indexUpperBound;
+      }
+      if (index > -1) {
+        QString sign = bound.mid(index + 1, 1);
+        if (sign.compare(QLatin1String("+")) == 0) {
+          int exponent = bound.mid(index + 2).toInt();
+          if (exponent >= 3 && exponent < 6) {
+            mAxesPrefix = "kilo";
+            exponent = 3;
+          } else if (exponent >= 6 && exponent < 9) {
+            mAxesPrefix = "mega";
+            exponent = 6;
+          } else if (exponent >= 9) {
+            mAxesPrefix = "giga";
+            exponent = 9;
+          } else {
+            mAxesPrefix = "";
+          }
+          if (!mAxesPrefix.isEmpty()) {
+            value = value / qPow(10, exponent);
+          }
+        } else if (sign.compare(QLatin1String("-")) == 0) {
+          int exponent = bound.mid(index + 2).toInt();
+          if (exponent >= 3 && exponent < 6) {
+            mAxesPrefix = "milli";
+            exponent = 3;
+          } else if (exponent >= 6 && exponent < 9) {
+            mAxesPrefix = "micro";
+            exponent = 6;
+          } else if (exponent >= 9) {
+            mAxesPrefix = "nano";
+            exponent = 9;
+          } else {
+            mAxesPrefix = "";
+          }
+          if (!mAxesPrefix.isEmpty()) {
+            value = value * qPow(10, exponent);
+          }
+        }
+      }
+    }
+  }
+
+  return QLocale().toString(value, format, precision);
 }

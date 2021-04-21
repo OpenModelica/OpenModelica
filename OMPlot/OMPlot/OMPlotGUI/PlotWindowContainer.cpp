@@ -36,69 +36,71 @@
 using namespace OMPlot;
 
 PlotWindowContainer::PlotWindowContainer(PlotMainWindow *pParent)
-    : QMdiArea(pParent)
+  : QMdiArea(pParent)
 {
-    mpPlotMainWindow = pParent;
-    setActivationOrder(QMdiArea::CreationOrder);
-    setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
-    setViewMode(QMdiArea::TabbedView);
+  mpPlotMainWindow = pParent;
+  setActivationOrder(QMdiArea::CreationOrder);
+  setHorizontalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setVerticalScrollBarPolicy(Qt::ScrollBarAsNeeded);
+  setViewMode(QMdiArea::TabbedView);
 }
 
 PlotMainWindow* PlotWindowContainer::getPlotMainWindow()
 {
-    return mpPlotMainWindow;
+  return mpPlotMainWindow;
 }
 
 QString PlotWindowContainer::getUniqueName(QString name, int number)
 {
-    QString newName;
-    newName = name + QString::number(number);
+  QString newName;
+  newName = name + QString::number(number);
 
-    foreach (QMdiSubWindow *pWindow, subWindowList())
-    {
-        PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pWindow->widget());
-        if (pPlotWindow->windowTitle().compare(newName) == 0)
-        {
-            newName = getUniqueName(name, ++number);
-            break;
-        }
+  foreach (QMdiSubWindow *pWindow, subWindowList()) {
+    PlotWindow *pPlotWindow = qobject_cast<PlotWindow*>(pWindow->widget());
+    if (pPlotWindow->windowTitle().compare(newName) == 0) {
+      newName = getUniqueName(name, ++number);
+      break;
     }
-    return newName;
+  }
+  return newName;
 }
 
 PlotWindow* PlotWindowContainer::getCurrentWindow()
 {
-    if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0)
-        return 0;
-    else
-        return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+  if (subWindowList(QMdiArea::ActivationHistoryOrder).size() == 0) {
+    return 0;
+  } else {
+    return qobject_cast<PlotWindow*>(subWindowList(QMdiArea::ActivationHistoryOrder).last()->widget());
+  }
 }
 
 void PlotWindowContainer::addPlotWindow(QStringList arguments)
 {
-    PlotWindow *pPlotWindow = new PlotWindow(arguments, this);
-    if (pPlotWindow->getPlotType() == PlotWindow::PLOT or pPlotWindow->getPlotType() == PlotWindow::PLOTALL)
-        pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(t)"));
-    else
-        pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(y)"));
-    connect(pPlotWindow, SIGNAL(closingDown()), SLOT(checkSubWindows()));
-    setActiveSubWindow(addSubWindow(pPlotWindow));
-    if (viewMode() == QMdiArea::TabbedView)
-        pPlotWindow->showMaximized();
-    else
-        pPlotWindow->show();
-    getPlotMainWindow()->activateWindow();
+  PlotWindow *pPlotWindow = new PlotWindow(arguments, this);
+  if (pPlotWindow->getPlotType() == PlotWindow::PLOT or pPlotWindow->getPlotType() == PlotWindow::PLOTALL) {
+    pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(t)"));
+  } else {
+    pPlotWindow->setWindowTitle(QString(getUniqueName()).append(" - x(y)"));
+  }
+  connect(pPlotWindow, SIGNAL(closingDown()), SLOT(checkSubWindows()));
+  setActiveSubWindow(addSubWindow(pPlotWindow));
+  if (viewMode() == QMdiArea::TabbedView) {
+    pPlotWindow->showMaximized();
+  } else {
+    pPlotWindow->show();
+  }
+  getPlotMainWindow()->activateWindow();
 }
 
 void PlotWindowContainer::updateCurrentWindow(QStringList arguments)
 {
-    getCurrentWindow()->receiveMessage(arguments);
-    getPlotMainWindow()->activateWindow();
+  getCurrentWindow()->receiveMessage(arguments);
+  getPlotMainWindow()->activateWindow();
 }
 
 void PlotWindowContainer::checkSubWindows()
 {
-    if (subWindowList().size() < 2)
-        getPlotMainWindow()->close();
+  if (subWindowList().size() < 2) {
+    getPlotMainWindow()->close();
+  }
 }

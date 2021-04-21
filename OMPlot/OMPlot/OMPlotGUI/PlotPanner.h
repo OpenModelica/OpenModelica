@@ -47,14 +47,14 @@ public:
 #else
   PlotPanner(QwtPlotCanvas *pCanvas, Plot *pParent);
 #endif
-    ~PlotPanner();
+  ~PlotPanner();
 public Q_SLOTS:
-    void updateView(int, int);
+  void updateView(int, int);
 private:
-    Plot *mpParentPlot;
+  Plot *mpParentPlot;
 protected:
-    virtual void widgetMousePressEvent(QMouseEvent *event);
-    virtual void widgetMouseReleaseEvent(QMouseEvent *event);
+  virtual void widgetMousePressEvent(QMouseEvent *event);
+  virtual void widgetMouseReleaseEvent(QMouseEvent *event);
 };
 }
 

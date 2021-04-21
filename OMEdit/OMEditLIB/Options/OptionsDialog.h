@@ -800,6 +800,7 @@ public:
   void setPlottingViewMode(QString value);
   QString getPlottingViewMode();
   QCheckBox* getAutoScaleCheckBox() {return mpAutoScaleCheckBox;}
+  QCheckBox* getPrefixAxesCheckbox() {return mpPrefixAxesCheckbox;}
   void setCurvePattern(int pattern);
   int getCurvePattern();
   void setCurveThickness(qreal thickness);
@@ -816,6 +817,7 @@ private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
   QCheckBox *mpAutoScaleCheckBox;
+  QCheckBox *mpPrefixAxesCheckbox;
   QGroupBox *mpPlottingViewModeGroupBox;
   QRadioButton *mpPlottingTabbedViewRadioButton;
   QRadioButton *mpPlottingSubWindowViewRadioButton;

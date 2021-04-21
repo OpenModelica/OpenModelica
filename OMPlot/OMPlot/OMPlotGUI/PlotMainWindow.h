@@ -49,28 +49,27 @@
 namespace OMPlot
 {
 class PlotWindowContainer;
-
 class PlotMainWindow : public QMainWindow
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    PlotMainWindow(QWidget *pParent = 0);
+  PlotMainWindow(QWidget *pParent = 0);
 
-    PlotWindowContainer* getPlotWindowContainer();
-    void addPlotWindow(QStringList arguments);
+  PlotWindowContainer* getPlotWindowContainer();
+  void addPlotWindow(QStringList arguments);
 private:
-    PlotWindowContainer *mpPlotWindowContainer;
-    QStatusBar *mpStatusBar;
-    QMenuBar *mpMenuBar;
-    QMenu *mpMenuFile;
-    QMenu *mpMenuOptions;
-    QAction *mpCloseAction;
-    QAction *mpTabViewAction;
+  PlotWindowContainer *mpPlotWindowContainer;
+  QStatusBar *mpStatusBar;
+  QMenuBar *mpMenuBar;
+  QMenu *mpMenuFile;
+  QMenu *mpMenuOptions;
+  QAction *mpCloseAction;
+  QAction *mpTabViewAction;
 
-    void createActions();
-    void createMenus();
+  void createActions();
+  void createMenus();
 public slots:
-    void switchWindowsView(bool mode);
+  void switchWindowsView(bool mode);
 };
 }
 

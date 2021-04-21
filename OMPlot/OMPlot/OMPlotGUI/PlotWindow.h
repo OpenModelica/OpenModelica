@@ -36,6 +36,7 @@
 #include <qwt_text.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_picker.h>
+#include <qwt_scale_draw.h>
 #include <qwt_picker_machine.h>
 #include <qwt_plot_grid.h>
 #include <qwt_curve_fitter.h>
@@ -79,6 +80,10 @@ private:
   QStringList mVariablesList;
   PlotType mPlotType;
   QString mGridType;
+  QString mXLabel;
+  QString mYLabel;
+  QString mXCustomLabel;
+  QString mYCustomLabel;
   QString mXUnit;
   QString mXDisplayUnit;
   QString mYUnit;
@@ -97,6 +102,7 @@ private:
   int mInteractivePort;
   QwtSeriesData<QPointF>* mpInteractiveData;
   QString mInteractiveModelName;
+  bool mPrefixAxes;
   QMdiSubWindow *mpSubWindow;
 public:
   PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
@@ -133,8 +139,14 @@ public:
   QToolButton* getStartSimulationButton() {return mpStartSimulationToolButton;}
   QToolButton* getPauseSimulationButton() {return mpPauseSimulationToolButton;}
   QComboBox* getSimulationSpeedBox() {return mpSimulationSpeedComboBox;}
-  void setXLabel(QString label);
-  void setYLabel(QString label);
+  void setXLabel(const QString &label) {mXLabel = label;}
+  QString getXLabel() const {return mXLabel;}
+  void setYLabel(const QString &label) {mYLabel = label;}
+  QString getYLabel() const {return mYLabel;}
+  void setXCustomLabel(const QString &label) {mXCustomLabel = label;}
+  QString getXCustomLabel() const {return mXCustomLabel;}
+  void setYCustomLabel(const QString &label) {mYCustomLabel = label;}
+  QString getYCustomLabel() const {return mYCustomLabel;}
   void setXUnit(QString xUnit) {mXUnit = xUnit;}
   QString getXUnit() {return mXUnit;}
   void setXDisplayUnit(QString xDisplayUnit) {mXDisplayUnit = xDisplayUnit;}
@@ -161,6 +173,8 @@ public:
   QString getLegendPosition();
   void setFooter(QString footer);
   QString getFooter();
+  bool getPrefixAxes() const;
+  void setPrefixAxes(bool prefixAxes);
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
@@ -301,6 +315,7 @@ private:
   QLineEdit *mpYMinimumTextBox;
   QLabel *mpYMaximumLabel;
   QLineEdit *mpYMaximumTextBox;
+  QCheckBox *mpPrefixAxesCheckbox;
   /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;
