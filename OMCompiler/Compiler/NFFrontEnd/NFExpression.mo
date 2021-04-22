@@ -1135,6 +1135,7 @@ public
     Type ty;
     Integer el_count;
     Boolean literal;
+    Expression first_e;
   algorithm
     sub := Subscript.expandSlice(subscript);
 
@@ -1149,11 +1150,7 @@ public
             ARRAY(ty = ty, elements = expl, literal = literal) := exp;
             s :: rest_subs := restSubscripts;
             expl := list(applySubscript(s, e, rest_subs) for e in expl);
-
-            el_count := listLength(expl);
-            ty := if el_count > 0 then typeOf(listHead(expl)) else
-                                       Type.subscript(Type.unliftArray(ty), restSubscripts);
-            ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
+            (ty, literal) := typeSubscriptedArray(expl, restSubscripts, ty, literal);
             outExp := makeArray(ty, expl, literal);
           end if;
         then
@@ -1163,11 +1160,7 @@ public
         algorithm
           ARRAY(ty = ty, literal = literal) := exp;
           expl := list(applyIndexSubscriptArray(exp, i, restSubscripts) for i in sub.indices);
-
-          el_count := listLength(expl);
-          ty := if el_count > 0 then typeOf(listHead(expl)) else
-                                     Type.subscript(Type.unliftArray(ty), restSubscripts);
-          ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
+          (ty, literal) := typeSubscriptedArray(expl, restSubscripts, ty, literal);
         then
           makeArray(ty, expl, literal);
 
@@ -1175,6 +1168,31 @@ public
 
     end match;
   end applySubscriptArray;
+
+  function typeSubscriptedArray
+    input list<Expression> elements;
+    input list<Subscript> subscripts;
+    input output Type ty;
+    input output Boolean literal;
+  protected
+    Integer count;
+    Expression e;
+  algorithm
+    count := listLength(elements);
+
+    if count > 0 then
+      // If the array isn't empty, use the type of the first element.
+      e := listHead(elements);
+      ty := typeOf(e);
+      // Non-literal subscripts might change an array from literal to non-literal.
+      literal := literal and isLiteral(e);
+    else
+      // If the array is empty, use the slower method of subscripting the type.
+      ty := Type.subscript(Type.unliftArray(ty), subscripts);
+    end if;
+
+    ty := Type.liftArrayLeft(ty, Dimension.fromInteger(count));
+  end typeSubscriptedArray;
 
   function applyIndexSubscriptArray
     input Expression exp;
