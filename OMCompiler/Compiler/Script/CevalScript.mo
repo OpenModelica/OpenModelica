@@ -700,7 +700,7 @@ algorithm
          {
            "heapsize_full",
            "free_bytes_full",
-           "unmapped_bytes: ",
+           "unmapped_bytes",
            "bytes_allocd_since_gc",
            "allocd_bytes_before_gc",
            "total_allocd_bytes",
