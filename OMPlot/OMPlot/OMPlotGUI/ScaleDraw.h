@@ -41,7 +41,7 @@ class ScaleDraw : public QwtScaleDraw
 {
 public:
   ScaleDraw(Plot *pParent);
-  QString getUnitPrefix() const;
+  QString getUnitPrefix() const {return mUnitPrefix;}
   void invalidateCache();
   virtual QwtText label(double value) const;
 

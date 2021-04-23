@@ -44,16 +44,6 @@ ScaleDraw::ScaleDraw(Plot *pParent)
   mUnitPrefix = "";
 }
 
-QString ScaleDraw::getUnitPrefix() const
-{
-  return mUnitPrefix;
-}
-
-void ScaleDraw::setAxesPrefix(const QString &axesPrefix)
-{
-  mUnitPrefix = axesPrefix;
-}
-
 void ScaleDraw::invalidateCache()
 {
   QwtAbstractScaleDraw::invalidateCache();
