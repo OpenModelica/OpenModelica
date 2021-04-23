@@ -55,6 +55,7 @@ PlotZoomer::PlotZoomer(int xAxis, int yAxis, QwtPlotCanvas *pParent)
   // Ctrl+RightButton: zoom out to full size
   setMousePattern(QwtEventPattern::MouseSelect2, Qt::RightButton, Qt::ControlModifier);
   setMousePattern(QwtEventPattern::MouseSelect3, Qt::RightButton);
+  connect(this, SIGNAL(zoomed(QRectF)), plot(), SLOT(replot()));
 }
 
 PlotZoomer::~PlotZoomer()

@@ -130,7 +130,7 @@ void PlotWindow::initializePlot(QStringList arguments)
     throw PlotException("Invalid input" + arguments[17]);
   }
   setTimeUnit("");
-  setPrefixAxes(false);
+  setPrefixUnits(false);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 18; i < arguments.length(); i++)
@@ -1584,14 +1584,14 @@ QString PlotWindow::getFooter()
 #endif
 }
 
-bool PlotWindow::getPrefixAxes() const
+bool PlotWindow::getPrefixUnits() const
 {
-  return mPrefixAxes;
+  return mPrefixUnits;
 }
 
-void PlotWindow::setPrefixAxes(bool prefixAxes)
+void PlotWindow::setPrefixUnits(bool prefixUnits)
 {
-  mPrefixAxes = prefixAxes;
+  mPrefixUnits = prefixUnits;
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
@@ -1877,7 +1877,7 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   // general group box
   mpGeneralGroupBox = new QGroupBox(tr("General"));
   mpLegendLabel = new QLabel(tr("Legend"));
-  mpLegendTextBox = new QLineEdit(mpPlotCurve->title().text());
+  mpLegendTextBox = new QLineEdit(mpPlotCurve->getCustomTitle().isEmpty() ? mpPlotCurve->title().text() : mpPlotCurve->getCustomTitle());
   mpResetLabelButton = new QPushButton(tr("Reset"));
   mpResetLabelButton->setAutoDefault(false);
   connect(mpResetLabelButton, SIGNAL(clicked()), SLOT(resetLabel()));
@@ -1955,6 +1955,7 @@ void VariablePageWidget::setCurvePickColorButtonIcon()
 
 void VariablePageWidget::resetLabel()
 {
+  mpPlotCurve->setCustomTitle("");
   mpPlotCurve->setTitleLocal();
   mpLegendTextBox->setText(mpPlotCurve->title().text());
 }
@@ -2129,15 +2130,15 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpXMaximumTextBox->setValidator(pDoubleValidator);
   mpYMinimumTextBox->setValidator(pDoubleValidator);
   mpXMaximumTextBox->setValidator(pDoubleValidator);
-  mpPrefixAxesCheckbox = new QCheckBox(tr("Prefix Axes"));
-  mpPrefixAxesCheckbox->setChecked(mpPlotWindow->getPrefixAxes());
+  mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
+  mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits());
   // range tab layout
   QVBoxLayout *pRangeTabVerticalLayout = new QVBoxLayout;
   pRangeTabVerticalLayout->setAlignment(Qt::AlignTop);
   pRangeTabVerticalLayout->addWidget(mpAutoScaleCheckbox);
   pRangeTabVerticalLayout->addWidget(mpXAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpYAxisGroupBox);
-  pRangeTabVerticalLayout->addWidget(mpPrefixAxesCheckbox);
+  pRangeTabVerticalLayout->addWidget(mpPrefixUnitsCheckbox);
   mpRangeTab->setLayout(pRangeTabVerticalLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
@@ -2190,7 +2191,11 @@ bool SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
   PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
 
   /* set the legend title */
-  pPlotCurve->setTitle(pVariablePageWidget->getLegendTextBox()->text());
+  if (pPlotCurve->title().text().compare(pVariablePageWidget->getLegendTextBox()->text()) == 0) {
+    pPlotCurve->setCustomTitle("");
+  } else {
+    pPlotCurve->setCustomTitle(pVariablePageWidget->getLegendTextBox()->text());
+  }
   /* set the curve color title */
   pPlotCurve->setCustomColor(!pVariablePageWidget->getAutomaticColorCheckBox()->isChecked());
   if (pVariablePageWidget->getAutomaticColorCheckBox()->isChecked()) {
@@ -2261,8 +2266,8 @@ void SetupDialog::applySetup()
   mpPlotWindow->setFooter(mpPlotFooterTextBox->text());
   // set the legend
   mpPlotWindow->setLegendPosition(mpLegendPositionComboBox->itemData(mpLegendPositionComboBox->currentIndex()).toString());
-  // set the prefix axes
-  mpPlotWindow->setPrefixAxes(mpPrefixAxesCheckbox->isChecked());
+  // set the prefix units
+  mpPlotWindow->setPrefixUnits(mpPrefixUnitsCheckbox->isChecked());
   // set the auto scale
   mpPlotWindow->setAutoScale(mpAutoScaleCheckbox->isChecked());
   // set the range

@@ -778,7 +778,7 @@ Plot Window Menu
       -  *Y-Axis*
         -  *Minimum* - Minimum value for y-axis.
         -  *Maximum* - Maximum value for y-axis.
-    -  *Prefix Axes* - Automatically pick the right prefix for axes values.
+    -  *Prefix Units* - Automatically pick the right prefix for units.
 
 Re-simulating a Model
 ---------------------
@@ -1461,7 +1461,7 @@ Plotting
 -  General
 
   -  *Auto Scale* – Sets whether to auto scale the plots or not.
-  -  *Prefix Axes* – Automatically pick the right prefix for axes values for the new plot windows.
+  -  *Prefix Units* – Automatically pick the right prefix for units for the new plot windows.
      For existing plot windows use the :ref:`omedit-plot-window-menu`.
 
 -  Plotting View Mode

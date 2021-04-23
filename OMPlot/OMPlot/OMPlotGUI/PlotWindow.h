@@ -102,7 +102,7 @@ private:
   int mInteractivePort;
   QwtSeriesData<QPointF>* mpInteractiveData;
   QString mInteractiveModelName;
-  bool mPrefixAxes;
+  bool mPrefixUnits;
   QMdiSubWindow *mpSubWindow;
 public:
   PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
@@ -173,8 +173,8 @@ public:
   QString getLegendPosition();
   void setFooter(QString footer);
   QString getFooter();
-  bool getPrefixAxes() const;
-  void setPrefixAxes(bool prefixAxes);
+  bool getPrefixUnits() const;
+  void setPrefixUnits(bool prefixUnits);
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
@@ -315,7 +315,7 @@ private:
   QLineEdit *mpYMinimumTextBox;
   QLabel *mpYMaximumLabel;
   QLineEdit *mpYMaximumTextBox;
-  QCheckBox *mpPrefixAxesCheckbox;
+  QCheckBox *mpPrefixUnitsCheckbox;
   /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;

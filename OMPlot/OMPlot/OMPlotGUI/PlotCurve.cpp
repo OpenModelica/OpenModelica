@@ -56,6 +56,7 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   setXDisplayUnit(xDisplayUnit);
   setYUnit(yUnit);
   setYDisplayUnit(yDisplayUnit);
+  mCustomTitle = "";
   setTitleLocal();
   /* set curve width and style */
   setCurveWidth(mpParentPlot->getParentPlotWindow()->getCurveWidth());
@@ -74,21 +75,25 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
 
 void PlotCurve::setTitleLocal()
 {
-  QString titleStr = getYVariable();
-  if (!getYDisplayUnit().isEmpty()) {
-    titleStr += QString(" (%1)").arg(getYDisplayUnit());
-  }
+  if (mCustomTitle.isEmpty()) {
+    QString titleStr = getYVariable();
+    if (!getYDisplayUnit().isEmpty() || !mpParentPlot->getYScaleDraw()->getUnitPrefix().isEmpty()) {
+      titleStr += QString(" (%1%2)").arg(mpParentPlot->getYScaleDraw()->getUnitPrefix(), getYDisplayUnit());
+    }
 
-  if (mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
-    QString xVariable = getXVariable();
-    if (!getXDisplayUnit().isEmpty()) {
-      xVariable += QString(" (%1)").arg(getXDisplayUnit());
+    if (mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
+      QString xVariable = getXVariable();
+      if (!getXDisplayUnit().isEmpty() || !mpParentPlot->getXScaleDraw()->getUnitPrefix().isEmpty()) {
+        xVariable += QString(" (%1%2)").arg(mpParentPlot->getXScaleDraw()->getUnitPrefix(), getXDisplayUnit());
+      }
+      if (!xVariable.isEmpty()) {
+        titleStr += QString(" <i>vs</i> %1").arg(xVariable);
+      }
     }
-    if (!xVariable.isEmpty()) {
-      titleStr += QString(" <i>vs</i> %1").arg(xVariable);
-    }
+    QwtPlotItem::setTitle(titleStr);
+  } else {
+    QwtPlotItem::setTitle(mCustomTitle);
   }
-  QwtPlotItem::setTitle(titleStr);
 }
 
 Qt::PenStyle PlotCurve::getPenStyle(int style)
