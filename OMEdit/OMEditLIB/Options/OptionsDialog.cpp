@@ -788,9 +788,9 @@ void OptionsDialog::readPlottingSettings()
   if (mpSettings->contains("plotting/autoScale")) {
     mpPlottingPage->getAutoScaleCheckBox()->setChecked(mpSettings->value("plotting/autoScale").toBool());
   }
-  // read the prefix axes
-  if (mpSettings->contains("plotting/prefixAxes")) {
-    mpPlottingPage->getPrefixAxesCheckbox()->setChecked(mpSettings->value("plotting/prefixAxes").toBool());
+  // read the prefix units
+  if (mpSettings->contains("plotting/prefixUnits")) {
+    mpPlottingPage->getPrefixUnitsCheckbox()->setChecked(mpSettings->value("plotting/prefixUnits").toBool());
   }
   // read the plotting view mode
   if (mpSettings->contains("plotting/viewmode")) {
@@ -1411,8 +1411,8 @@ void OptionsDialog::savePlottingSettings()
 {
   // save the auto scale
   mpSettings->setValue("plotting/autoScale", mpPlottingPage->getAutoScaleCheckBox()->isChecked());
-  // save the prefix axes
-  mpSettings->setValue("plotting/prefixAxes", mpPlottingPage->getPrefixAxesCheckbox()->isChecked());
+  // save the prefix units
+  mpSettings->setValue("plotting/prefixUnits", mpPlottingPage->getPrefixUnitsCheckbox()->isChecked());
   // save plotting view mode
   mpSettings->setValue("plotting/viewmode", mpPlottingPage->getPlottingViewMode());
   if (mpPlottingPage->getPlottingViewMode().compare(Helper::subWindow) == 0) {
@@ -4416,13 +4416,13 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   // auto scale
   mpAutoScaleCheckBox = new QCheckBox(tr("Auto Scale"));
   mpAutoScaleCheckBox->setToolTip(tr("Auto scale the plot to fit in view when variable is plotted."));
-  // prefix axes
-  mpPrefixAxesCheckbox = new QCheckBox(tr("Prefix Axes"));
-  mpPrefixAxesCheckbox->setToolTip(tr("Automatically pick the right prefix for axes values."));
+  // prefix units
+  mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
+  mpPrefixUnitsCheckbox->setToolTip(tr("Automatically pick the right prefix for units."));
   // set general groupbox layout
   QGridLayout *pGeneralGroupBoxLayout = new QGridLayout;
   pGeneralGroupBoxLayout->addWidget(mpAutoScaleCheckBox, 0, 0);
-  pGeneralGroupBoxLayout->addWidget(mpPrefixAxesCheckbox, 1, 0);
+  pGeneralGroupBoxLayout->addWidget(mpPrefixUnitsCheckbox, 1, 0);
   mpGeneralGroupBox->setLayout(pGeneralGroupBoxLayout);
   // Plotting View Mode
   mpPlottingViewModeGroupBox = new QGroupBox(tr("Default Plotting View Mode"));
