@@ -1940,6 +1940,7 @@ void Element::drawOMSElement()
       pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
       switch (mpLibraryTreeItem->getOMSConnector()->type) {
         case oms_signal_type_integer:
+        case oms_signal_type_enum:
           pInputPolygonAnnotation->setLineColor(QColor(255,127,0));
           pInputPolygonAnnotation->setFillColor(QColor(255,127,0));
           break;
@@ -1949,9 +1950,6 @@ void Element::drawOMSElement()
           break;
         case oms_signal_type_string:
           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "Element::drawOMSElement oms_signal_type_enum not implemented yet.";
           break;
         case oms_signal_type_bus:
           qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
@@ -1971,6 +1969,7 @@ void Element::drawOMSElement()
       pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
       switch (mpLibraryTreeItem->getOMSConnector()->type) {
         case oms_signal_type_integer:
+        case oms_signal_type_enum:
           pOutputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
           break;
@@ -1980,9 +1979,6 @@ void Element::drawOMSElement()
           break;
         case oms_signal_type_string:
           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "Element::drawOMSElement oms_signal_type_enum not implemented yet.";
           break;
         case oms_signal_type_bus:
           qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
