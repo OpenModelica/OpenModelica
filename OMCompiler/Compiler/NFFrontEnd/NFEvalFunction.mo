@@ -192,28 +192,22 @@ function evaluateRecordConstructor
   output Expression result;
 protected
   ArgumentMap arg_map;
-  Expression arg, repl_exp;
-  list<Record.Field> fields;
-  list<Expression> rest_args = args, expl = {};
-  list<InstNode> inputs = fn.inputs, locals = fn.locals;
-  InstNode node;
+  list<Expression> expl = {};
+  InstNode node, out_ty;
 algorithm
+  // Map the record fields to the arguments of the constructor.
   arg_map := createArgumentMap(fn.inputs, {}, fn.locals, args, mutableParams = false);
-  fields := Type.recordFields(ty);
 
-  // Fetch the new binding expressions for all the variables, both inputs and
-  // locals.
-  for f in fields loop
-    if Record.Field.isInput(f) then
-      node :: inputs := inputs;
-    else
-      node :: locals := locals;
-    end if;
+  // Use the node of the return type to determine the order of the variables,
+  // since they might be reordered in the record constructor.
+  Type.COMPLEX(cls = out_ty) := fn.returnType;
 
-    expl := UnorderedMap.getOrFail(node, arg_map) :: expl;
+  // Fetch the new binding expressions for all the variables, both inputs and locals.
+  for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(out_ty))) loop
+    expl := UnorderedMap.getOrFail(c, arg_map) :: expl;
   end for;
 
-  // Create a new record expression from the list of arguments.
+  // Create a new record expression from the mapped arguments.
   result := Expression.makeRecord(Function.name(fn), ty, listReverseInPlace(expl));
 
   // Constant evaluate the expression if requested.
