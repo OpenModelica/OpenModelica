@@ -1752,7 +1752,6 @@ case RECORD_CONSTRUCTOR(__) then
   let()= System.tmpTickReset(1)
   let &varDecls = buffer ""
   let &varInits = buffer ""
-  let &varFrees = buffer ""
   let &auxFunction = buffer ""
   let fname = underscorePath(name)
   let structType = '<%fname%>'
@@ -1766,8 +1765,8 @@ case RECORD_CONSTRUCTOR(__) then
   <%fname%> omc<%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then "impl"%>_<%fname%>(threadData_t *threadData<%funArgs |> VARIABLE(__) => ', <%expTypeArrayIf(ty)%> omc_<%crefStr(name)%>'%>)
   {
     <%varDecls%>
-    <%varInits%>
     <%funArgs |> VARIABLE(__) => '<%structVar%>._<%crefStr(name)%> = omc_<%crefStr(name)%>;' ;separator="\n"%>
+    <%varInits%>
     return <%structVar%>;
   }
   <%if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then 'omctd_<%fname%> omc_<%fname%> = omcimpl_<%fname%>;'%>
@@ -1785,16 +1784,16 @@ case var as VARIABLE(parallelism = NON_PARALLEL(__)) then
   let varName = '<%prefix%>._<%crefStr(var.name)%>'
   let initRecords = initRecordMembers(var, &varDecls, &varInits, &auxFunction)
   let &varInits += initRecords
-  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
+  let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, appendCurrentCrefPrefix(contextFunction, prefix + "."), &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
   if instDims then
     let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let defaultValue = varAllocDefaultValue(var, "", varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
+    let defaultValue = varAllocDefaultValue(var, appendCurrentCrefPrefix(contextFunction, prefix + "."), varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
     ""
   else
     (match var.value
     case SOME(exp) then
-      let defaultValue = '<%varName%> = <%daeExp(exp, contextFunction, &varInits, &varDecls, &auxFunction)%>;<%\n%>'
+      let defaultValue = '<%varName%> = <%daeExp(exp, appendCurrentCrefPrefix(contextFunction, prefix + "."), &varInits, &varDecls, &auxFunction)%>;<%\n%>'
       let &varInits += defaultValue
 
       " "
@@ -2136,7 +2135,7 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
   if instDims then
     let &varDecls += 'device_<%expTypeShort(var.ty)%>_array <%varName%>;<%\n%>'
     let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
+    let defaultValue = varAllocDefaultValue(var, contextFunction, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
 
     // let &varFrees += 'free_device_array(&<%varName%>);<%\n%>'
@@ -2160,7 +2159,7 @@ case var as VARIABLE(parallelism = PARLOCAL(__)) then
   if instDims then
     let &varDecls += 'device_local_<%expTypeShort(var.ty)%>_array <%varName%>;<%\n%>'
     let defaultAlloc = 'alloc_device_local_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
+    let defaultValue = varAllocDefaultValue(var, contextFunction, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
 
     // let &varFrees += 'free_device_array(&<%varName%>);<%\n%>'
@@ -2194,7 +2193,7 @@ case var as VARIABLE(__) then
   let instDimsInit = (instDims |> dim => '(_index_t)<%dimension(dim, contextFunction, &varInits, &varDecls, &auxFunction)%>' ;separator=", ")
   if instDims then
     let defaultAlloc = 'alloc_<%expTypeShort(var.ty)%>_array_c99_<%listLength(instDims)%>(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>, memory_state);<%\n%>'
-    let defaultValue = varAllocDefaultValue(var, outStruct, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
+    let defaultValue = varAllocDefaultValue(var, contextFunction, varName, defaultAlloc, &varDecls, &varInits, &auxFunction)
     let &varInits += defaultValue
     " "
   else
@@ -2212,22 +2211,22 @@ else
   error(sourceInfo(), 'varInitParallel:error Unknown local variable type')
 end varInitParallel;
 
-template varAllocDefaultValue(Variable var, String outStruct, String lhsVarName, Text allocNoDefault, Text &varDecls, Text &varInits, Text &auxFunction)
+template varAllocDefaultValue(Variable var, Context context, String lhsVarName, Text allocNoDefault, Text &varDecls, Text &varInits, Text &auxFunction)
 ::=
 match var
 case var as VARIABLE(__) then
   match value
   // TODO make me error and see what fails
   case SOME(CREF(componentRef = cr)) then
-    'copy_<%expTypeShort(var.ty)%>_array(<%contextCref(cr,contextFunction, &varInits, &varDecls, &auxFunction)%>, &<%lhsVarName%>);<%\n%>'
+    'copy_<%expTypeShort(var.ty)%>_array(<%contextCref(cr,context, &varInits, &varDecls, &auxFunction)%>, &<%lhsVarName%>);<%\n%>'
   case SOME(arr as ARRAY(ty = T_ARRAY(ty = T_COMPLEX(complexClassType = record_state)))) then
     let &varInits += allocNoDefault
-    let varName = contextCrefNoPrevExp(var.name, contextFunction, &auxFunction)
+    let varName = contextCrefNoPrevExp(var.name, context, &auxFunction)
     let rec_name = '<%underscorePath(ClassInf.getStateName(record_state))%>'
     let &preExp = buffer ""
     let params = (arr.array |> e hasindex i1 fromindex 1 =>
       let prefix = if arr.scalar then '(<%expTypeFromExpModelica(e)%>)' else '&'
-      '<%rec_name%>_array_get(<%varName%>, 1, <%i1%>) = <%prefix%><%daeExp(e, contextFunction, &preExp, &varDecls, &auxFunction)%>;'
+      '<%rec_name%>_array_get(<%varName%>, 1, <%i1%>) = <%prefix%><%daeExp(e, context, &preExp, &varDecls, &auxFunction)%>;'
     ;separator="\n")
     <<
     <%preExp%>
@@ -2238,10 +2237,10 @@ case var as VARIABLE(__) then
   // causing a segfault if such an array is then assigned to.
   case SOME(arr as SHARED_LITERAL(__))
   case SOME(arr as ARRAY(__)) then
-    let arrayExp = '<%daeExp(arr, contextFunction, &varInits, &varDecls, &auxFunction)%>'
+    let arrayExp = '<%daeExp(arr, context, &varInits, &varDecls, &auxFunction)%>'
     'copy_<%expTypeShort(var.ty)%>_array(<%arrayExp%>, &<%lhsVarName%>);<%\n%>'
   case SOME(exp) then
-    '<%lhsVarName%> = <%daeExp(exp, contextFunction, &varInits, &varDecls, &auxFunction)%>;<%\n%>'
+    '<%lhsVarName%> = <%daeExp(exp, context, &varInits, &varDecls, &auxFunction)%>;<%\n%>'
   else
     let &varInits += allocNoDefault
     ""
