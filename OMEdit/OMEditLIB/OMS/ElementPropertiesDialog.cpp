@@ -186,7 +186,7 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
           if ((status = OMSProxy::instance()->getReal(nameStructure, &value))) {
             pParameterLineEdit->setText(QString::number(value));
           }
-        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+        } else if (pInterfaces[i]->type == oms_signal_type_integer || pInterfaces[i]->type == oms_signal_type_enum) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pParameterLineEdit->setValidator(pIntValidator);
           int value;
@@ -202,8 +202,6 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
           }
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_string not implemented yet.";
-        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-          qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_enum not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_bus) {
           qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_bus not implemented yet.";
         } else {
@@ -256,7 +254,7 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
           if ((status = OMSProxy::instance()->getReal(nameStructure, &value))) {
             pInputLineEdit->setText(QString::number(value));
           }
-        } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+        } else if (pInterfaces[i]->type == oms_signal_type_integer || pInterfaces[i]->type == oms_signal_type_enum) {
           QIntValidator *pIntValidator = new QIntValidator(this);
           pInputLineEdit->setValidator(pIntValidator);
           int value;
@@ -272,8 +270,6 @@ ElementPropertiesDialog::ElementPropertiesDialog(Element *pComponent, QWidget *p
           }
         } else if (pInterfaces[i]->type == oms_signal_type_string) {
           qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_string not implemented yet.";
-        } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-          qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_enum not implemented yet.";
         } else if (pInterfaces[i]->type == oms_signal_type_bus) {
           qDebug() << "ElementPropertiesDialog::ElementPropertiesDialog() oms_signal_type_bus not implemented yet.";
         } else {
@@ -351,14 +347,12 @@ void ElementPropertiesDialog::updateProperties()
         } else {
           if (pInterfaces[i]->type == oms_signal_type_real) {
             OMSProxy::instance()->setReal(nameStructure, parameterValue.toDouble());
-          } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          } else if (pInterfaces[i]->type == oms_signal_type_integer || pInterfaces[i]->type == oms_signal_type_enum) {
             OMSProxy::instance()->setInteger(nameStructure, parameterValue.toInt());
           } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
             OMSProxy::instance()->setBoolean(nameStructure, parameterValue.toInt());
           } else if (pInterfaces[i]->type == oms_signal_type_string) {
             qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
-          } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_enum not implemented yet.";
           } else if (pInterfaces[i]->type == oms_signal_type_bus) {
             qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_bus not implemented yet.";
           } else {
@@ -374,14 +368,12 @@ void ElementPropertiesDialog::updateProperties()
         } else {
           if (pInterfaces[i]->type == oms_signal_type_real) {
             OMSProxy::instance()->setReal(nameStructure, inputValue.toDouble());
-          } else if (pInterfaces[i]->type == oms_signal_type_integer) {
+          } else if (pInterfaces[i]->type == oms_signal_type_integer || pInterfaces[i]->type == oms_signal_type_enum) {
             OMSProxy::instance()->setInteger(nameStructure, inputValue.toInt());
           } else if (pInterfaces[i]->type == oms_signal_type_boolean) {
             OMSProxy::instance()->setBoolean(nameStructure, inputValue.toInt());
           } else if (pInterfaces[i]->type == oms_signal_type_string) {
             qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_string not implemented yet.";
-          } else if (pInterfaces[i]->type == oms_signal_type_enum) {
-            qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_enum not implemented yet.";
           } else if (pInterfaces[i]->type == oms_signal_type_bus) {
             qDebug() << "ElementPropertiesDialog::updateProperties() oms_signal_type_bus not implemented yet.";
           } else {
