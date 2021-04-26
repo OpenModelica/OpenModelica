@@ -73,8 +73,8 @@ QwtText ScaleDraw::label(double value) const
       exponent = qFloor(std::log10(fabs(scaleDiv().upperBound())));
     }
 
-    // We don't do anything for exponent values between -2 and 2.
-    if ((exponent < -2) || (exponent > 2)) {
+    // We don't do anything for exponent values between -1 and 2.
+    if ((exponent < -1) || (exponent > 2)) {
       if (exponent > 2) {
         if (exponent >= 3 && exponent < 6) {
           mUnitPrefix = "k";
@@ -92,12 +92,12 @@ QwtText ScaleDraw::label(double value) const
           mUnitPrefix = "P";
           exponent = 15;
         }
-      } else if (exponent < -2) {
-        if (exponent <= -3 && exponent > -6) {
+      } else if (exponent < -1) {
+        if (exponent <= -2 && exponent > -6) {
           mUnitPrefix = "m";
           exponent = -3;
         } else if (exponent <= -6 && exponent > -9) {
-          mUnitPrefix = "μ";
+          mUnitPrefix = QChar(0x03BC);
           exponent = -6;
         } else if (exponent <= -9 && exponent > -12) {
           mUnitPrefix = "n";

@@ -54,8 +54,8 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiv
   setPalette(p);
   // setup the main window widget
   setUpWidget();
-  // Use monospaced font for legend for better readability of toggled items sign.
-  QFont monospaceFont("Monospace");
+  // Use monospaced font e.g., courier for legend for better readability of toggled items sign.
+  QFont monospaceFont("courier");
   monospaceFont.setStyleHint(QFont::TypeWriter);
   setLegendFont(monospaceFont);
   // initialize plot by reading all parameters passed to it
@@ -1834,22 +1834,6 @@ bool PlotWindow::toggleSign(PlotCurve *pPlotCurve, bool checked)
     pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
     toggleSign = true;
   }
-  // Add - sign to variable curve text
-  QwtText text = pPlotCurve->title();
-  if (checked) {
-    if (text.text().startsWith("-")) {
-      text.setText(text.text());
-    } else {
-      text.setText(QString("-%1").arg(text.text()));
-    }
-  } else {
-    if (text.text().startsWith("-")) {
-      text.setText(text.text().remove(0, 1));
-    } else {
-      text.setText(text.text());
-    }
-  }
-  pPlotCurve->setTitle(text);
   return toggleSign;
 }
 
