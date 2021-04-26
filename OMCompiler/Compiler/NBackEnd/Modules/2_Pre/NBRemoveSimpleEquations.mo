@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -45,8 +45,6 @@ protected
   import BackendExtension = NFBackendExtension;
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import HashSet = NFHashSet;
-  import HashTableCrToExp = NFHashTableCrToExp;
   import Operator = NFOperator;
   import Variable = NFVariable;
 
@@ -122,6 +120,7 @@ public
     end match;
   end getModule;
 
+protected
   uniontype SimpleSet "gets accumulated to find sets of simple equations and solve them"
     record SIMPLE_SET
       list<Pointer<Variable>> simple_variables    "list of all variables in this set";
@@ -152,7 +151,6 @@ public
 
   constant SimpleSet EMPTY_SIMPLE_SET = SIMPLE_SET({}, {}, NONE());
 
-protected
   // needed for unordered map
   type SetPtr = Pointer<SimpleSet>;
 

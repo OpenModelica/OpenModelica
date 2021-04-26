@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -45,18 +45,18 @@ public
 
   //NF Imports
   import BackendExtension = NFBackendExtension;
-  import BackendInfo = NFBackendExtension.BackendInfo;
-  import Binding = NFBinding.Binding;
+  import NFBackendExtension.BackendInfo;
+  import NFBinding.Binding;
   import Component = NFComponent;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
-  import InstNode = NFInstNode.InstNode;
+  import NFInstNode.InstNode;
   import Prefixes = NFPrefixes;
   import Subscript = NFSubscript;
   import Type = NFType;
   import Variable = NFVariable;
-  import VariableKind = NFBackendExtension.VariableKind;
+  import NFBackendExtension.VariableKind;
 
   // Backend Imports
   import BackendDAE = NBackendDAE;
@@ -1316,7 +1316,7 @@ public
       end if;
     end getMarkedVars;
 
-    function compress"O(n)
+    function compress "O(n)
       Reorders the elements in order to remove all the gaps.
       Be careful: This changes the indices of the elements.
       Cannot use ExpandableArray.compress since it needs to
@@ -1341,7 +1341,7 @@ public
           while isNone(MetaModelica.Dangerous.arrayGetNoBoundsChecking(data, lastUsedIndex)) loop
             lastUsedIndex := lastUsedIndex-1;
           end while;
-          // udpate HashTable element
+          // udpate hash table element
           UnorderedMap.add(getVarName(moved_var), i, vars.map);
         end if;
       end while;

@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -49,7 +49,6 @@ protected
   import BEquation = NBEquation;
   import NBEquation.Equation;
   import NBEquation.EquationAttributes;
-  import HashTableCrToCrLst = NBHashTableCrToCrLst;
   import Matching = NBMatching;
   import Tearing = NBTearing;
 
@@ -254,7 +253,7 @@ public
 
   function getDependentCrefs
     "Collects dependent crefs in current comp and saves them in the
-    HashTable. Saves both directions."
+     unordered map. Saves both directions."
     input StrongComponent comp                    "strong component to be analyzed";
     input UnorderedMap<ComponentRef, list<ComponentRef>> map "unordered map to save the dependencies";
     input Boolean jacobian = true                 "true if the analysis is for jacobian sparsity pattern";

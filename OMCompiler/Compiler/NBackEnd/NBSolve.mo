@@ -1,7 +1,7 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2020, Open Source Modelica Consortium (OSMC),
+* Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
 * c/o Linköpings universitet, Department of Computer and Information Science,
 * SE-58183 Linköping, Sweden.
 *
@@ -40,7 +40,7 @@ public
   // NF imports
   import ComponentRef = NFComponentRef;
   import Expression = NFExpression;
-  import FunctionTree = NFFlatten.FunctionTree;
+  import NFFlatten.FunctionTree;
   import Operator = NFOperator;
   import SimplifyExp = NFSimplifyExp;
   import Type = NFType;

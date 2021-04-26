@@ -62,7 +62,7 @@ public
 
   // Util imports
   import Error;
-  import HashTableCrToCr = NBHashTableCrToCr;
+  import UnorderedMap;
 
   // ================================
   //        TYPES AND UNIONTYPES
@@ -71,12 +71,12 @@ public
 
   uniontype DifferentiationArguments
     record DIFFERENTIATION_ARGUMENTS
-      ComponentRef diffCref                         "The input will be differentiated w.r.t. this cref (only SIMPLE).";
-      list<Pointer<Variable>> new_vars              "contains all new variables that need to be added to the system";
-      Option<HashTableCrToCr.HashTable> jacobianHT  "seed and temporary cref hashtable x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y";
-      DifferentiationType diffType                  "Differentiation use case (time, simple, function, jacobian)";
-      FunctionTree funcTree                         "Function tree containing all functions and their known derivatives";
-      AvlSetPath.Tree diffedFunctions               "current functions, to prevent recursive differentiation";
+      ComponentRef diffCref                                       "The input will be differentiated w.r.t. this cref (only SIMPLE).";
+      list<Pointer<Variable>> new_vars                            "contains all new variables that need to be added to the system";
+      Option<UnorderedMap<ComponentRef,ComponentRef>> jacobianHT  "seed and temporary cref hashtable x --> $SEED.MATRIX.x, y --> $pDer.MATRIX.y";
+      DifferentiationType diffType                                "Differentiation use case (time, simple, function, jacobian)";
+      FunctionTree funcTree                                       "Function tree containing all functions and their known derivatives";
+      AvlSetPath.Tree diffedFunctions                             "current functions, to prevent recursive differentiation";
     end DIFFERENTIATION_ARGUMENTS;
 
     function default
@@ -484,7 +484,7 @@ public
     (exp, diffArguments) := match (exp, diffArguments.diffType, diffArguments.jacobianHT)
       local
         Expression res;
-        HashTableCrToCr.HashTable jacobianHT;
+        UnorderedMap<ComponentRef,ComponentRef> jacobianHT;
 
       // Types: (TIME)
       // differentiate time cref => 1
@@ -573,10 +573,10 @@ public
       // -------------------------------------
 
       // Types: (JACOBIAN)
-      // cref in jacobianHT => get $SEED or $pDER variable from HashTable
+      // cref in jacobianHT => get $SEED or $pDER variable from hash table
       case (Expression.CREF(), DifferentiationType.JACOBIAN, SOME(jacobianHT))
-        guard(BaseHashTable.hasKey(exp.cref, jacobianHT))
-      then (Expression.fromCref(BaseHashTable.get(exp.cref, jacobianHT)), diffArguments);
+        guard(UnorderedMap.contains(exp.cref, jacobianHT))
+      then (Expression.fromCref(UnorderedMap.getOrFail(exp.cref, jacobianHT)), diffArguments);
 
       // Types: (JACOBIAN)
       // Everything that is not in jacobianHT gets differentiated to zero
@@ -1027,13 +1027,13 @@ public
     attr := match (attr, diffArguments)
       local
         Pointer<Variable> residualVar, diffedResidualVar;
-        HashTableCrToCr.HashTable jacobianHT;
+        UnorderedMap<ComponentRef,ComponentRef> jacobianHT;
 
       case (EquationAttributes.EQUATION_ATTRIBUTES(residualVar = SOME(residualVar)),
          DIFFERENTIATION_ARGUMENTS(jacobianHT = SOME(jacobianHT), diffType = DifferentiationType.JACOBIAN))
-        guard(BaseHashTable.hasKey(BVariable.getVarName(residualVar), jacobianHT))
+        guard(UnorderedMap.contains(BVariable.getVarName(residualVar), jacobianHT))
         algorithm
-          diffedResidualVar := BVariable.getVarPointer(BaseHashTable.get(BVariable.getVarName(residualVar), jacobianHT));
+          diffedResidualVar := BVariable.getVarPointer(UnorderedMap.getOrFail(BVariable.getVarName(residualVar), jacobianHT));
       then EquationAttributes.EQUATION_ATTRIBUTES(NONE(), attr.kind, attr.evalStages, SOME(diffedResidualVar));
 
       else attr;

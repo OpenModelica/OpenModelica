@@ -62,6 +62,7 @@ public
 
   // Util imports
   import BackendUtil = NBBackendUtil;
+  import BaseHashTable;
   import ExpandableArray;
   import StringUtil;
   import UnorderedMap;
