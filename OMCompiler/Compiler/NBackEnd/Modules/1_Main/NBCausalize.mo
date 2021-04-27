@@ -164,6 +164,7 @@ public
     (func) := match flag
       case "PFPlusExt"  then causalizeScalar;
       case "SBGraph"    then causalizeArray;
+      case "linear"     then causalizeLinear;
       /* ... New causalize modules have to be added here */
       else algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed for unknown option: " + flag});
@@ -211,6 +212,23 @@ protected
     adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.ARRAY, matrixStrictness);
     matching := Matching.regular(adj);
   end causalizeArray;
+
+  function causalizeLinear extends Module.causalizeInterface;
+  protected
+    VariablePointers variables;
+    EquationPointers equations;
+    Adjacency.Matrix adj;
+    Matching matching;
+    list<StrongComponent> comps;
+  algorithm
+    // compress the arrays to remove gaps
+    variables := VariablePointers.compress(system.unknowns);
+    equations := EquationPointers.compress(system.equations);
+
+    // create scalar adjacency matrix for now
+    adj := Adjacency.Matrix.create(variables, equations, NBAdjacency.MatrixType.SCALAR, matrixStrictness);
+    matching := Matching.linear(adj);
+  end causalizeLinear;
 
   function causalizeDAEMode extends Module.causalizeInterface;
   protected

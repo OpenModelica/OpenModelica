@@ -80,6 +80,12 @@ public
     array<Integer> eqn_to_var;
   end SCALAR_MATCHING;
 
+  record LINEAR_MATCHING
+    array<VertMark> F_marks;
+    array<VertMark> U_marks;
+    UnorderedMap<EdgeTpl, EdgeMark> E_marks;
+  end LINEAR_MATCHING;
+
   record EMPTY_MATCHING
   end EMPTY_MATCHING;
 
@@ -92,6 +98,12 @@ public
         str := StringUtil.headline_2(str + "Scalar Matching") + "\n";
         str := str + toStringSingle(matching.var_to_eqn, false) + "\n";
         str := str + toStringSingle(matching.eqn_to_var, true) + "\n";
+      then str;
+      case LINEAR_MATCHING() algorithm
+        str := StringUtil.headline_2(str + "Linear Matching") + "\n";
+        str := str + vertMarkArrString(matching.F_marks, "F", "EQN") + "\n";
+        str := str + vertMarkArrString(matching.U_marks, "U", "VAR") + "\n";
+        str := str + edgeMapString(matching.E_marks, arrayLength(matching.F_marks)) + "\n";
       then str;
       case ARRAY_MATCHING() algorithm
         Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed because array matching is not yet supported."});
@@ -165,7 +177,7 @@ public
         list<Pointer<Variable>> unmatched_vars;
         list<Pointer<Equation>> unmatched_eqns;
 
-      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX()  algorithm
+      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX() algorithm
         if transposed then
           (matching, marked_eqns) := scalarMatching(adj.mT, adj.m, transposed, partially);
         else
@@ -215,6 +227,28 @@ public
       then fail();
     end match;
   end singular;
+
+  function linear
+    input Adjacency.Matrix adj;
+    output Matching matching;
+  algorithm
+    matching := match adj
+
+      case Adjacency.Matrix.SCALAR_ADJACENCY_MATRIX()
+      then linearScalar(adj.m, adj.mT);
+
+      case Adjacency.Matrix.ARRAY_ADJACENCY_MATRIX() algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() +
+        " failed because array linear matching is not yet supported."});
+      then fail();
+
+      case Adjacency.Matrix.EMPTY_ADJACENCY_MATRIX() then EMPTY_MATCHING();
+
+      else algorithm
+        Error.addMessage(Error.INTERNAL_ERROR,{getInstanceName() + " failed."});
+      then fail();
+    end match;
+  end linear;
 
   function getMatches
     input Matching matching;
@@ -357,9 +391,75 @@ protected
     end for;
   end augmentPath;
 
+  // ######################################
+  //            LINEAR MATCHING
+  // ######################################
   type VertMark = enumeration(UNPROCESSED, VISITED, LOOP, LOOP_END, MATCHED, TRUE_LOOP);
   type EdgeMark = enumeration(UNPROCESSED, VISITED, LOOP, MATCHED, UNMATCHED, TRUE_LOOP);
   type EdgeTpl = tuple<Integer, Integer>;
+
+  function vertMarkString
+    input VertMark vm;
+    output String str;
+  algorithm
+    str := match vm
+      case VertMark.UNPROCESSED then "(0) UNPROCESSED";
+      case VertMark.VISITED     then "(1) VISITED";
+      case VertMark.LOOP        then "(2) LOOP";
+      case VertMark.LOOP_END    then "(2) LOOP_END";
+      case VertMark.MATCHED     then "(3) MATCHED";
+      case VertMark.TRUE_LOOP   then "(3) TRUE_LOOP";
+                                else "(-) UNKNOWN";
+    end match;
+  end vertMarkString;
+
+  function edgeMarkString
+    input EdgeMark em;
+    output String str;
+  algorithm
+    str := match em
+      case EdgeMark.UNPROCESSED then "(0) UNPROCESSED";
+      case EdgeMark.VISITED     then "(1) VISITED";
+      case EdgeMark.LOOP        then "(2) LOOP";
+      case EdgeMark.MATCHED     then "(3) MATCHED";
+      case EdgeMark.UNMATCHED   then "(3) UNMATCHED";
+      case EdgeMark.TRUE_LOOP   then "(3) TRUE_LOOP";
+                                else "(-) UNKNOWN";
+    end match;
+  end edgeMarkString;
+
+  function vertMarkArrString
+    input array<VertMark> vms;
+    input String head;
+    input String tp;
+    output String str = "";
+  protected
+    String tmp;
+  algorithm
+    str := StringUtil.headline_4(head + "-Vertices") + "\n";
+    for i in 1:arrayLength(vms) loop
+      tmp := "[" + tp + ":" + intString(i) + "] ";
+      str := str + tmp + StringUtil.repeat(".", 20 - stringLength(tmp)) + " " + vertMarkString(vms[i]) + "\n";
+    end for;
+  end vertMarkArrString;
+
+  function edgeTplString
+    input EdgeTpl et;
+    input Integer F_size;
+    output String str;
+  protected
+    Integer l, r;
+  algorithm
+    (l, r) := et;
+    str := "(" + intString(intMin(l,r)) + ", " + intString(intMax(l,r) - F_size) + ")";
+  end edgeTplString;
+
+  function edgeMapString
+    input UnorderedMap<EdgeTpl, EdgeMark> map;
+    input Integer F_size;
+    output String str = StringUtil.headline_4(str + "Edges") + "\n" +
+      UnorderedMap.toString(map, function edgeTplString(F_size = F_size), edgeMarkString);
+  end edgeMapString;
 
   function hashEdgeTpl
     "returns the hash value of an edge tpl
@@ -388,7 +488,11 @@ protected
     b := (intMin(l1,r1) == intMin(l2,r2)) and (intMax(l1,r1) == intMax(l2,r2));
   end eqEdgeTpl;
 
-  function linearMatching
+  function linearScalar
+    "linear with respect to the number of edges.
+    Performs a deep search, matching the disambigous parts first and causalizing the rest on the base
+    of it in backwards mode. Does not match the ambigous part, rather keeps it in bulk as an
+    algebraic loop. Implicitely also computes the Sorting."
     input array<list<Integer>> m;
     input array<list<Integer>> mT;
     output Matching matching;
@@ -401,11 +505,6 @@ protected
     array<list<Integer>> F_loop_ind = arrayCreate(F_size, {});
     array<list<Integer>> U_loop_ind = arrayCreate(U_size, {});
     Pointer<Integer> index_ptr = Pointer.create(0);
-    list<tuple<EdgeTpl, EdgeMark>> raw_matching;
-    array<Integer> var_to_eqn = arrayCreate(U_size, -1);
-    array<Integer> eqn_to_var = arrayCreate(F_size, -1);
-    Integer l, r, u, f;
-    EdgeMark edgeMark;
   algorithm
     // initialize edge marks
     for f in 1:F_size loop
@@ -425,18 +524,8 @@ protected
       end if;
     end for;
 
-    for tpl in UnorderedMap.toList(E_marks) loop
-      ((l ,r), edgeMark) := tpl;
-      if edgeMark == EdgeMark.MATCHED then
-        u := intMax(l, r) - F_size;
-        f := intMin(l, r);
-        var_to_eqn[u] := f;
-        eqn_to_var[f] := u;
-      end if;
-    end for;
-
-    matching := SCALAR_MATCHING(var_to_eqn, eqn_to_var);
-  end linearMatching;
+    matching := LINEAR_MATCHING(F_marks, U_marks, E_marks);
+  end linearScalar;
 
   function LMcluster
     "Matches one connected cluster by deep search.
