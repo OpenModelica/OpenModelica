@@ -1172,6 +1172,10 @@ algorithm
     case Class.INSTANCED_CLASS(restriction = Restriction.RECORD())
       then list(makeTypeRecordVar(c) for c in ClassTree.getComponents(cls.elements));
 
+    case Class.INSTANCED_CLASS(restriction = Restriction.RECORD_CONSTRUCTOR())
+      then list(makeTypeRecordVar(c) for c guard not InstNode.isOutput(c)
+             in ClassTree.getComponents(cls.elements));
+
     case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE())
       then list(makeTypeVar(c) for c guard not InstNode.isOnlyOuter(c)
              in ClassTree.getComponents(cls.elements));

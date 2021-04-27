@@ -41,14 +41,13 @@ class ScaleDraw : public QwtScaleDraw
 {
 public:
   ScaleDraw(Plot *pParent);
-  QString getAxesPrefix() const;
-  void setAxesPrefix(const QString &axesPrefix);
+  QString getUnitPrefix() const {return mUnitPrefix;}
   void invalidateCache();
   virtual QwtText label(double value) const;
 
 private:
   Plot *mpParentPlot;
-  mutable QString mAxesPrefix;
+  mutable QString mUnitPrefix;
 };
 }
 

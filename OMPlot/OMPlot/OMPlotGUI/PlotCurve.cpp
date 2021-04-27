@@ -56,11 +56,12 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
   setXDisplayUnit(xDisplayUnit);
   setYUnit(yUnit);
   setYDisplayUnit(yDisplayUnit);
+  mCustomTitle = "";
+  setToggleSign(false);
   setTitleLocal();
   /* set curve width and style */
   setCurveWidth(mpParentPlot->getParentPlotWindow()->getCurveWidth());
   setCurveStyle(mpParentPlot->getParentPlotWindow()->getCurveStyle());
-  setToggleSign(false);
 #if QWT_VERSION > 0x060000
   setLegendAttribute(QwtPlotCurve::LegendShowLine);
   setLegendIconSize(QSize(30, 30));
@@ -74,21 +75,37 @@ PlotCurve::PlotCurve(const QString &fileName, const QString &absoluteFilePath, c
 
 void PlotCurve::setTitleLocal()
 {
-  QString titleStr = getYVariable();
-  if (!getYDisplayUnit().isEmpty()) {
-    titleStr += QString(" (%1)").arg(getYDisplayUnit());
-  }
+  if (mCustomTitle.isEmpty()) {
+    QString titleStr = getYVariable();
+    if (!getYDisplayUnit().isEmpty() || !mpParentPlot->getYScaleDraw()->getUnitPrefix().isEmpty()) {
+      titleStr += QString(" (%1%2)").arg(mpParentPlot->getYScaleDraw()->getUnitPrefix(), getYDisplayUnit());
+    }
 
-  if (mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
-    QString xVariable = getXVariable();
-    if (!getXDisplayUnit().isEmpty()) {
-      xVariable += QString(" (%1)").arg(getXDisplayUnit());
+    if (mpParentPlot->getParentPlotWindow()->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
+      QString xVariable = getXVariable();
+      if (!getXDisplayUnit().isEmpty() || !mpParentPlot->getXScaleDraw()->getUnitPrefix().isEmpty()) {
+        xVariable += QString(" (%1%2)").arg(mpParentPlot->getXScaleDraw()->getUnitPrefix(), getXDisplayUnit());
+      }
+      if (!xVariable.isEmpty()) {
+        titleStr += QString(" <b>vs</b> %1").arg(xVariable);
+      }
     }
-    if (!xVariable.isEmpty()) {
-      titleStr += QString(" <i>vs</i> %1").arg(xVariable);
+    // Add - sign if curve is toggled
+    if (getToggleSign()) {
+      titleStr.prepend(QString("-"));
     }
+    setTitle(titleStr);
+    // visibility
+    QwtText text = title();
+    if (isVisible()) {
+      text.setColor(QColor(Qt::black));
+    } else {
+      text.setColor(QColor(Qt::gray));
+    }
+    setTitle(text);
+  } else {
+    setTitle(mCustomTitle);
   }
-  QwtPlotItem::setTitle(titleStr);
 }
 
 Qt::PenStyle PlotCurve::getPenStyle(int style)
@@ -247,13 +264,6 @@ bool PlotCurve::hasCustomColor()
 void PlotCurve::toggleVisibility(bool visibility)
 {
   setVisible(visibility);
-  QwtText text = title();
-  if (isVisible()) {
-    text.setColor(QColor(Qt::black));
-  } else {
-    text.setColor(QColor(Qt::gray));
-  }
-  setTitle(text);
 }
 
 void PlotCurve::setData(const double* xData, const double* yData, int size)
