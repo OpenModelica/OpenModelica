@@ -7501,6 +7501,11 @@ public function contains<T>
   input list<T> lst;
   input T elem;
   input equalityFunc eqFunc;
+  partial function equalityFunc
+    input T t1;
+    input T t2;
+    output Boolean res;
+  end equalityFunc;
   output Boolean res = false;
 algorithm
   for i in lst loop
@@ -7510,26 +7515,6 @@ algorithm
     end if;
   end for;
 end contains;
-
-public function emptyIntersection<T>
-  input list<T> lst1;
-  input list<T> lst2;
-  input equalityFunc eqFunc;
-  output Boolean res = true;
-algorithm
-  for i in lst2 loop
-    res := contains(lst1, i, eqFunc);
-    if not res then
-      return;
-    end if;
-  end for;
-end emptyIntersection;
-
-partial function equalityFunc<T>
-  input T t1;
-  input T t2;
-  output Boolean res;
-end equalityFunc;
 
 function minElement<T>
   "Returns the smallest element in the list, or fails if the list is empty."

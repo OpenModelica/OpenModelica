@@ -444,6 +444,8 @@ protected
     Every recursive call (LMcluster, LMtrueLoop, LMfalseLoop) swaps the
     objects with 1 or 2 suffixes to change from one side of the
     bipartite graph to the other side.
+    SUFFIX 1 -> use node as input
+    SUFFIX 2 -> use neighbor as input
     Tail recursive."
     input Integer node                              "head vertex of current stack (F or U)";
     input array<list<Integer>> m1                   "current adjacency matrix (takes node as input)";
@@ -460,7 +462,7 @@ protected
   protected
     list<Integer> stack = in_stack;                   // map input to new list so that we can manipulate it
     Boolean foundPath = false, foundLoop = false;
-    list<Integer> Omega1 = {}, Omega2 = {}, indices = {};
+    list<Integer> Alpha = {}, Omega = {}, indices = {};
     Integer neighbor, index;
   algorithm
     // check if there is an unprocessed path to go from here
@@ -490,14 +492,16 @@ protected
 
       if marks1[node] < VertMark.MATCHED then
         // check if it is a loop
-        (Omega1, Omega2) := LMgetLoopVertices(node, m1, shift1, shift2, marks2, E_marks);
-        foundLoop := listEmpty(Omega1) and listEmpty(Omega2);
+        (Alpha, Omega) := LMgetLoopVertices(node, m1, shift1, shift2, marks2, E_marks);
+        foundLoop := listEmpty(Alpha) and listEmpty(Omega);
       end if;
 
       if foundLoop then
-        // loop initiator
+        // suspected loop initiator
+
+        // create a unique index for each new created loop and collect the indices
         index := Pointer.access(index_ptr);
-        for recursion_node in Omega1 loop
+        for recursion_node in Alpha loop
           UnorderedMap.add((node + shift1, recursion_node + shift2), EdgeMark.LOOP, E_marks);
           arrayUpdate(marks2, recursion_node, VertMark.LOOP_END);
           arrayUpdate(loop_ind2, recursion_node, {index});
@@ -506,9 +510,10 @@ protected
         end for;
         Pointer.update(index_ptr, index);
 
-        for recursion_node in Omega2 loop
+        // collect all loop indices that are additionally connected
+        for recursion_node in Omega loop
           UnorderedMap.add((node + shift1, recursion_node + shift2), EdgeMark.LOOP, E_marks);
-          indices := listAppend(loop_ind2[recursion_node], indices); // not possible to use Dangerous.listAppendDestroy i believe
+          indices := listAppend(loop_ind2[recursion_node], indices);
         end for;
 
         arrayUpdate(marks1, node, VertMark.LOOP);
@@ -518,14 +523,22 @@ protected
       else
         // general backwards step
         _ := match (marks1[node], marks2[neighbor])
-          //
           case (VertMark.LOOP, VertMark.LOOP_END) algorithm
             // closed a loop
             // -> mark everything as true loop
-            LMtrueLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, loop_ind2[neighbor]);
+            if listLength(loop_ind2[neighbor]) == 1 then
+              index := List.first(loop_ind2[neighbor]);
+              indices := List.deleteMemberOnTrue(index, loop_ind1[node], intEq);
+              LMtrueLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, index);
+              // save indices so that it can be picked up later on
+              arrayUpdate(loop_ind2, neighbor, indices);
+            else
+              // should never happen -> remove once we are sure this cannot happen
+              Error.assertion(false, getInstanceName() + " failed. A LOOP_END vertex had more than one loop index.", sourceInfo());
+              fail();
+            end if;
           then ();
 
-          // **
           case (VertMark.LOOP, VertMark.LOOP) algorithm
             // carry a loop to a node that is already part of a loop
             // -> mark last edge LOOP and add the loop indices
@@ -533,14 +546,12 @@ protected
             arrayUpdate(loop_ind2, neighbor, listAppend(loop_ind2[neighbor], loop_ind1[node]));
           then ();
 
-          //
           case (VertMark.LOOP, VertMark.MATCHED) algorithm
             // carry a loop to a node that is already matched
             // -> go forward again and resolve the causalization
             LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.UNMATCHED);
           then ();
 
-          // **
           case (VertMark.LOOP, _) algorithm
             // temporary loop mode and no other paths open
             // -> mark last edge and node as LOOP and carry the loop indices
@@ -549,21 +560,28 @@ protected
             arrayUpdate(loop_ind2, neighbor, loop_ind1[node]);
           then ();
 
-          // **
+          case (VertMark.TRUE_LOOP, _) guard(not listEmpty(loop_ind1[node])) algorithm
+            // just closed a loop in the last step but there are still unresolved
+            // loops on the path saved as indices
+            // temporary loop mode and no other paths open
+            // -> mark last edge and node as LOOP and carry the loop indices
+            UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.LOOP, E_marks);
+            arrayUpdate(marks2, neighbor, VertMark.LOOP);
+            arrayUpdate(loop_ind2, neighbor, loop_ind1[node]);
+          then ();
+
           case (VertMark.TRUE_LOOP, _) algorithm
-            // just closed a loop in the last step
+            // just closed a loop in the last step and no unresolved loops left
             // -> normal matching mode starting with UNMATCHED
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.UNMATCHED, E_marks);
           then ();
 
-          // **
           case (VertMark.MATCHED , _) algorithm
             // just set an edge to MATCHED in the last step and no other paths open
             // -> normal matching mode starting with UNMATCHED
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.UNMATCHED, E_marks);
           then ();
 
-          // *
           case (_, VertMark.MATCHED) algorithm
             // trying to match a variable that is already matched
             // ERROR: -> more analysis needed to decide if index reduction case
@@ -571,7 +589,6 @@ protected
               Index reduction not yet implemented.", sourceInfo());
           then fail();
 
-          // *
           case (_, VertMark.TRUE_LOOP) algorithm
             // trying to match a variable that is already part of an algebraic loop
             // ERROR: -> more analysis needed to decide if index reduction case
@@ -579,7 +596,6 @@ protected
               Index reduction not yet implemented.", sourceInfo());
           then fail();
 
-          //
           case (_, VertMark.LOOP) algorithm
             // suspected loop is not a loop
             // -> break open due to new information causalizing it
@@ -589,7 +605,6 @@ protected
             LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.UNMATCHED);
           then ();
 
-          // **
           else algorithm
             // just set an edge to UNMATCHED in the last step and no other paths open
             // -> normal matching mode starting with MATCHED
@@ -608,14 +623,15 @@ protected
   end LMcluster;
 
   function LMgetLoopVertices
-    input Integer node;
-    input array<list<Integer>> m;
-    input Integer shift1;
-    input Integer shift2;
-    input array<VertMark> marks2;
-    input UnorderedMap<EdgeTpl, EdgeMark> E_marks;
-    output list<Integer> Omega1 = {};
-    output list<Integer> Omega2 = {};
+    "initiates suspected loop chains by collecting all edges that would close loops"
+    input Integer node                              "head vertex of current stack (F or U)";
+    input array<list<Integer>> m                    "current adjacency matrix (takes node as input)";
+    input Integer shift1                            "index shift for node";
+    input Integer shift2                            "index shift for neighbors of node";
+    input array<VertMark> marks2                    "vertex marks for neigbors of node";
+    input UnorderedMap<EdgeTpl, EdgeMark> E_marks   "edge marks";
+    output list<Integer> Alpha = {}                "list of neighbors that will be new loop ends";
+    output list<Integer> Omega = {}                "list of neighbors that already are part of a loop";
   algorithm
     for neighbor in m[node] loop
       _ := match UnorderedMap.get((node + shift1, neighbor + shift2), E_marks)
@@ -623,9 +639,9 @@ protected
           EdgeMark edgeMark;
         case SOME(edgeMark) guard(edgeMark == EdgeMark.UNPROCESSED) algorithm
           if marks2[neighbor] == VertMark.VISITED then
-            Omega1 := neighbor :: Omega1;
+            Alpha := neighbor :: Alpha;
           elseif marks2[neighbor] == VertMark.LOOP or marks2[neighbor] == VertMark.LOOP_END then
-            Omega2 := neighbor :: Omega2;
+            Omega := neighbor :: Omega;
           end if;
         then ();
         else (); // NONE() case should actually fail because the edge at least has to exist
@@ -634,47 +650,55 @@ protected
   end LMgetLoopVertices;
 
   function LMtrueLoop
-    input Integer node;
-    input array<list<Integer>> m1;
-    input array<list<Integer>> m2;
-    input Integer shift1;
-    input Integer shift2;
-    input array<VertMark> marks1;
-    input array<VertMark> marks2;
-    input UnorderedMap<EdgeTpl, EdgeMark> E_marks;
+    "Closes loops given by a list of indices starting at node. Marks
+    all nodes with any of these indices and connected to the start node
+    by LOOP edges with TRUE_LOOP."
+    input Integer node                              "node which is part of a loop";
+    input array<list<Integer>> m1                   "current adjacency matrix (takes node as input)";
+    input array<list<Integer>> m2                   "current transposed adjacency matrix (takes neighbors of node as input)";
+    input Integer shift1                            "index shift for node";
+    input Integer shift2                            "index shift for neighbors of node";
+    input array<VertMark> marks1                    "vertex marks for node side";
+    input array<VertMark> marks2                    "vertex marks for neigbors of node";
+    input UnorderedMap<EdgeTpl, EdgeMark> E_marks   "edge marks";
     input array<list<Integer>> loop_ind1            "loop indices for each vertex (node side)";
     input array<list<Integer>> loop_ind2            "loop indices for each vertex (neighbor of node side)";
-    input list<Integer> indices;
+    input Integer index                             "index of current loop that is resolved";
   protected
-    list<Integer> Omega = {};
+    Integer next;
   algorithm
     for neighbor in m1[node] loop
-      if not List.emptyIntersection(indices, loop_ind2[neighbor], intEq) then
-        UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.TRUE_LOOP, E_marks);
-        arrayUpdate(marks2, neighbor, VertMark.TRUE_LOOP);
-        arrayUpdate(loop_ind2, neighbor, {});
-        LMtrueLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, indices);
+      if List.contains(loop_ind2[neighbor], index, intEq) then
+        next := neighbor;
+        break; // there can only be one path to follow
       end if;
     end for;
+
+    UnorderedMap.add((node + shift1, next + shift2), EdgeMark.TRUE_LOOP, E_marks);
+    arrayUpdate(marks2, next, VertMark.TRUE_LOOP);
+    arrayUpdate(loop_ind2, next, {});
+    LMtrueLoop(next, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, index);
   end LMtrueLoop;
 
   function LMfalseLoop
-    input Integer node;
-    input array<list<Integer>> m1;
-    input array<list<Integer>> m2;
-    input Integer shift1;
-    input Integer shift2;
-    input array<VertMark> marks1;
-    input array<VertMark> marks2;
-    input UnorderedMap<EdgeTpl, EdgeMark> E_marks;
+    "Destroys a chain that was suspected to be a loop but was proven to not be an algebraic loop
+    Starts with node and UNMATCHED context, swaps back and forth until it is ambigous."
+    input Integer node                              "node which is suspected to not be part of a loop";
+    input array<list<Integer>> m1                   "current adjacency matrix (takes node as input)";
+    input array<list<Integer>> m2                   "current transposed adjacency matrix (takes neighbors of node as input)";
+    input Integer shift1                            "index shift for node";
+    input Integer shift2                            "index shift for neighbors of node";
+    input array<VertMark> marks1                    "vertex marks for node side";
+    input array<VertMark> marks2                    "vertex marks for neigbors of node";
+    input UnorderedMap<EdgeTpl, EdgeMark> E_marks   "edge marks";
     input array<list<Integer>> loop_ind1            "loop indices for each vertex (node side)";
     input array<list<Integer>> loop_ind2            "loop indices for each vertex (neighbor of node side)";
-    input EdgeMark e_mark;
+    input EdgeMark e_mark                           "edge mark to state the current context (matching or unmatching mode)";
   protected
     list<Integer> Omega = {};
     Integer neighbor;
   algorithm
-    // collect all adjacent loop edges
+    // collect all adjacent LOOP edges
     for neighbor in m1[node] loop
       _ := match UnorderedMap.get((node + shift1, neighbor + shift2), E_marks)
         local
@@ -691,18 +715,29 @@ protected
       // set all connected edges to unmatched and recurse for each of them
       for neighbor in Omega loop
         UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.UNMATCHED, E_marks);
-        LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.MATCHED);
+        // only go further if node is not known to be part of a loop
+        if marks2[neighbor] <> VertMark.TRUE_LOOP then
+          LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.MATCHED);
+        end if;
       end for;
     elseif e_mark == EdgeMark.MATCHED and listLength(Omega) == 1 then
       // matching mode
       // if there is exactly one loop edge match it
       neighbor := List.first(Omega);
-      UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.MATCHED, E_marks);
-      arrayUpdate(marks1, node, VertMark.MATCHED);
-      arrayUpdate(loop_ind1, node, {});
-      arrayUpdate(marks2, neighbor, VertMark.MATCHED);
-      arrayUpdate(loop_ind2, neighbor, {});
-      LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.UNMATCHED);
+      // if TRUE_LOOP node is trying to be matched it is a structurally singular system
+      if marks2[neighbor] <> VertMark.TRUE_LOOP then
+        UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.MATCHED, E_marks);
+        arrayUpdate(marks1, node, VertMark.MATCHED);
+        arrayUpdate(loop_ind1, node, {});
+        arrayUpdate(marks2, neighbor, VertMark.MATCHED);
+        arrayUpdate(loop_ind2, neighbor, {});
+        LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.UNMATCHED);
+      else
+        // trying to match a variable that is already part of an algebraic loop
+        // ERROR: -> more analysis needed to decide if index reduction case
+        Error.assertion(false, getInstanceName() + " failed. It was trying to match a node already assigned to an algebraic loop.
+          Index reduction not yet implemented.", sourceInfo());
+      end if;
     end if;
   end LMfalseLoop;
 
