@@ -44,6 +44,7 @@ public
   import Algorithm = NFAlgorithm;
   import Binding = NFBinding;
   import Call = NFCall;
+  import Class = NFClass;
   import ComponentRef = NFComponentRef;
   import Dimension = NFDimension;
   import Expression = NFExpression;
@@ -95,6 +96,7 @@ public
 
     record RECORD_EQUATION
       Type ty                         "equality type";
+      //Integer size                    "size of record";
       Expression lhs                  "left hand side expression";
       Expression rhs                  "right hand side expression";
       DAE.ElementSource source        "origin of equation";
@@ -110,8 +112,8 @@ public
     end ALGORITHM;
 
     record IF_EQUATION
-      Integer size;
-      IfEquationBody body;
+      Integer size                    "size of equation";
+      IfEquationBody body             "Actual equation body";
       DAE.ElementSource source        "origin of equation";
       EquationAttributes attr         "Additional Attributes";
     end IF_EQUATION;
@@ -812,6 +814,8 @@ public
       exp := match eqn
         local
           Operator operator;
+          InstNode cls_node;
+          Class cls;
 
         case Equation.SCALAR_EQUATION() algorithm
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
@@ -825,7 +829,17 @@ public
           operator := Operator.OPERATOR(ComponentRef.getComponentType(eqn.lhs), NFOperator.Op.ADD);
         then Expression.MULTARY({Expression.fromCref(eqn.rhs)},{Expression.fromCref(eqn.lhs)}, operator);
 
-        case Equation.RECORD_EQUATION() algorithm
+        case Equation.RECORD_EQUATION(ty = Type.COMPLEX(cls = cls_node)) algorithm
+          // check if additive inverses exist
+          cls := InstNode.getClass(cls_node);
+          for op in {"'+'", "'0'", "'-'"} loop
+            if not Class.hasOperator(op, cls) then
+              Error.addMessage(Error.INTERNAL_ERROR,
+                {"Trying to construct residual expression of type " + Type.toString(eqn.ty)
+                 + " for equation " + toString(eqn) + " but operator " + op + " is not defined."});
+              fail();
+            end if;
+          end for;
           operator := Operator.OPERATOR(Expression.typeOf(eqn.lhs), NFOperator.Op.ADD);
         then Expression.MULTARY({eqn.rhs}, {eqn.lhs}, operator);
 
