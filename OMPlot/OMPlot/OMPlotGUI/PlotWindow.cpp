@@ -41,6 +41,7 @@
 #include "qwt_scale_draw.h"
 #include "qwt_scale_widget.h"
 #include "qwt_text_label.h"
+#include "qwt_abstract_legend.h"
 
 using namespace OMPlot;
 
@@ -54,13 +55,10 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiv
   setPalette(p);
   // setup the main window widget
   setUpWidget();
-  // Use monospaced font e.g., courier for legend for better readability of toggled items sign.
-  QFont monospaceFont("courier");
-  monospaceFont.setStyleHint(QFont::TypeWriter);
-  setLegendFont(monospaceFont);
+  // Keep default legend font since greek-mu for micro is not displayed correctly with monospaced font.
+  setLegendFont(mpPlot->legend()->font());
   // initialize plot by reading all parameters passed to it
-  if (arguments.size() > 1)
-  {
+  if (arguments.size() > 1) {
     initializePlot(arguments);
     mpPlot->getPlotZoomer()->setZoomBase(false);
   }
@@ -2065,6 +2063,10 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpLegendPositionComboBox->addItem(tr("Right"), "right");
   mpLegendPositionComboBox->addItem(tr("Bottom"), "bottom");
   mpLegendPositionComboBox->addItem(tr("Left"), "left");
+  int index = mpLegendPositionComboBox->findData(mpPlotWindow->getLegendPosition());
+  if (index > -1) {
+    mpLegendPositionComboBox->setCurrentIndex(index);
+  }
   mpLegendFontSizeLabel = new QLabel(tr("Legend Font Size"));
   mpLegendFontSizeSpinBox = new QDoubleSpinBox;
   mpLegendFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
