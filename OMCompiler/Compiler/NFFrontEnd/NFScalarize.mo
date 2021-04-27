@@ -97,7 +97,6 @@ protected
   ExpressionIterator binding_iter;
   list<ComponentRef> crefs;
   Expression exp;
-  Variable v;
   list<String> ty_attr_names;
   array<ExpressionIterator> ty_attr_iters;
   Variability bind_var;

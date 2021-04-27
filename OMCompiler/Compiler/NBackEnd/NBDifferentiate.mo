@@ -494,7 +494,7 @@ public
 
       // Types: not (TIME)
       // differentiate time cref => 0
-      case (Expression.CREF(),  _, _)
+      case (Expression.CREF(), _, _)
         guard(ComponentRef.isTime(exp.cref))
       then (Expression.makeZero(exp.ty), diffArguments);
 
@@ -845,7 +845,7 @@ public
           (_, sizeClass) := Operator.classify(operator);
           mulOp := Operator.fromClassification((NFOperator.MathClassification.MULTIPLICATION, sizeClass), operator.ty);
       then (Expression.MULTARY(
-              {exp, expLog(exp1), diffExp2},    // r^x * ln(r) * x
+              {exp, expLog(exp1), diffExp2},    // r^x * ln(r) * x'
               {},
               mulOp                             //  *
             ),

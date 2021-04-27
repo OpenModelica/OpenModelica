@@ -1601,7 +1601,7 @@ algorithm
   // TODO: Fix NFBuiltin.TIME_CREF so that the compiler treats it like an actual
   //       constant, then maybe we can use referenceEq here instead.
   if InstContext.inFunction(context) and
-     ComponentRef.firstName(cref) == "time" then
+     ComponentRef.isTime(cref) then
     Error.addSourceMessage(Error.EXP_INVALID_IN_FUNCTION, {"time"}, info);
     fail();
   end if;
