@@ -220,9 +220,9 @@ bool VariablesTreeItem::setData(int column, const QVariant &value, int role)
     }
     return true;
   } else if (column == 3 && role == Qt::EditRole) {
-    if (mDisplayUnit.compare(value.toString()) != 0) {
+    if (mDisplayUnit.compare(Utilities::convertSymbolToUnit(value.toString())) != 0) {
       mPreviousUnit = mDisplayUnit;
-      mDisplayUnit = value.toString();
+      mDisplayUnit = Utilities::convertSymbolToUnit(value.toString());
     }
     return true;
   }
@@ -281,7 +281,7 @@ QVariant VariablesTreeItem::data(int column, int role) const
       switch (role) {
         case Qt::DisplayRole:
         case Qt::ToolTipRole:
-          return mUnit;
+          return Utilities::convertUnitToSymbol(mUnit);
         default:
           return QVariant();
       }
@@ -289,7 +289,7 @@ QVariant VariablesTreeItem::data(int column, int role) const
       switch (role) {
         case Qt::DisplayRole:
         case Qt::ToolTipRole:
-          return mDisplayUnit;
+          return Utilities::convertUnitToSymbol(mDisplayUnit);
         default:
           return QVariant();
       }
@@ -454,7 +454,7 @@ bool VariablesTreeModel::setData(const QModelIndex &index, const QVariant &value
       }
     }
   } else if (index.column() == 3) { // display unit
-    if (!signalsBlocked() && displayUnit.compare(value.toString()) != 0) {
+    if (!signalsBlocked() && displayUnit.compare(Utilities::convertSymbolToUnit(value.toString())) != 0) {
       emit unitChanged(index);
     }
   }
@@ -1907,8 +1907,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pPlotWindow->setCurveWidth(curveThickness);
         pPlotWindow->setCurveStyle(curveStyle);
         pPlotWindow->setVariablesList(QStringList(pVariablesTreeItem->getPlotVariable()));
-        pPlotWindow->setYUnit(pVariablesTreeItem->getUnit());
-        pPlotWindow->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
+        pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
+        pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
         if (pPlotWindow->getPlotType() == PlotWindow::PLOT) {
           pPlotWindow->plot(pPlotCurve);
         } else {/* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY)*/
@@ -2027,10 +2027,10 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setCurveWidth(curveThickness);
             pPlotWindow->setCurveStyle(curveStyle);
             pPlotWindow->setVariablesList(QStringList() << plotParametricCurve.xVariable.variableName << plotParametricVariable.variableName);
-            pPlotWindow->setXUnit(plotParametricCurve.xVariable.unit);
-            pPlotWindow->setXDisplayUnit(plotParametricCurve.xVariable.displayUnit);
-            pPlotWindow->setYUnit(plotParametricVariable.unit);
-            pPlotWindow->setYDisplayUnit(plotParametricVariable.displayUnit);
+            pPlotWindow->setXUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.unit));
+            pPlotWindow->setXDisplayUnit(Utilities::convertUnitToSymbol(plotParametricCurve.xVariable.displayUnit));
+            pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(plotParametricVariable.unit));
+            pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(plotParametricVariable.displayUnit));
             if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
               pPlotWindow->plotParametric(pPlotCurve);
             } else { /* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)*/
@@ -2133,8 +2133,8 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setCurveStyle(curveStyle);
             QString plotVariable = pVariablesTreeItem->getPlotVariable();
             pPlotWindow->setVariablesList(QStringList(plotVariable));
-            pPlotWindow->setYUnit(pVariablesTreeItem->getUnit());
-            pPlotWindow->setYDisplayUnit(pVariablesTreeItem->getDisplayUnit());
+            pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
+            pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
             pPlotWindow->setInteractiveModelName(pVariablesTreeItem->getFileName());
             OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
             if (pOpcUaClient) {
@@ -2202,8 +2202,7 @@ void VariablesWidget::unitChanged(const QModelIndex &index)
     if (!pPlotWindow) {
       return;
     }
-    OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getPreviousUnit(),
-                                                                                                     pVariablesTreeItem->getDisplayUnit());
+    OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pVariablesTreeItem->getPreviousUnit(), pVariablesTreeItem->getDisplayUnit());
     if (convertUnit.unitsCompatible) {
       /* update value */
       QVariant stringValue = pVariablesTreeItem->data(1, Qt::EditRole);

@@ -319,7 +319,9 @@ QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem
       // create the display units combobox
       QComboBox *pComboBox = new QComboBox(pParent);
       pComboBox->setEnabled(!pVariablesTreeItem->getDisplayUnits().isEmpty());
-      pComboBox->addItems(pVariablesTreeItem->getDisplayUnits());
+      foreach (QString unit, pVariablesTreeItem->getDisplayUnits()) {
+        pComboBox->addItem(Utilities::convertUnitToSymbol(unit), unit);
+      }
       connect(pComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
       return pComboBox;
     }
@@ -349,10 +351,16 @@ QWidget* ItemDelegate::createEditor(QWidget *pParent, const QStyleOptionViewItem
 void ItemDelegate::setEditorData(QWidget *editor, const QModelIndex &index) const
 {
   if (parent() && qobject_cast<VariablesTreeView*>(parent()) && index.column() == 3) {
-    QString value = index.model()->data(index, Qt::DisplayRole).toString();
+    VariablesTreeView *pVariablesTreeView = qobject_cast<VariablesTreeView*>(parent());
+    VariableTreeProxyModel *pVariableTreeProxyModel = pVariablesTreeView->getVariablesWidget()->getVariableTreeProxyModel();
+    QModelIndex sourceIndex = pVariableTreeProxyModel->mapToSource(index);
+    VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(sourceIndex.internalPointer());
     QComboBox* comboBox = static_cast<QComboBox*>(editor);
     //set the index of the combo box
-    comboBox->setCurrentIndex(comboBox->findText(value, Qt::MatchExactly));
+    int currentIndex = comboBox->findData(pVariablesTreeItem->getDisplayUnit());
+    if (currentIndex > -1) {
+      comboBox->setCurrentIndex(currentIndex);
+    }
   } else if (parent() && qobject_cast<ConnectorsTreeView*>(parent()) && index.column() == 1) {
     ConnectorItem *pConnectorItem = static_cast<ConnectorItem*>(index.internalPointer());
     QString value = index.model()->data(index, Qt::DisplayRole).toString();

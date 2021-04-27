@@ -559,6 +559,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
             mTextString.replace(pos, regExp.matchedLength(), textValue);
             pos += textValue.length();
           } else {
+            displaytUnit = Utilities::convertUnitToSymbol(displaytUnit);
             QString textValueWithDisplayUnit = QString("%1 %2").arg(textValue, displaytUnit);
             mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
             pos += textValueWithDisplayUnit.length();
