@@ -485,7 +485,7 @@ protected
   algorithm
     (l1,r1) := tpl1;
     (l2,r2) := tpl2;
-    b := (intMin(l1,r1) == intMin(l2,r2)) and (intMax(l1,r1) == intMax(l2,r2));
+    b := ((l1 == l2) and (r1 == r2)) or ((l1 == r2) and (r1 == l2));
   end eqEdgeTpl;
 
   function linearScalar
@@ -504,7 +504,6 @@ protected
     UnorderedMap<EdgeTpl, EdgeMark> E_marks = UnorderedMap.new<EdgeMark>(hashEdgeTpl, eqEdgeTpl);
     array<list<Integer>> F_loop_ind = arrayCreate(F_size, {});
     array<list<Integer>> U_loop_ind = arrayCreate(U_size, {});
-    Pointer<Integer> index_ptr = Pointer.create(0);
   algorithm
     // initialize edge marks
     for f in 1:F_size loop
@@ -520,7 +519,7 @@ protected
         F_marks[f] := VertMark.VISITED;
         // causalize the cluster containing f
         // output not needed, F_marks, U_marks and E_marks contain relevant information
-        LMcluster(f, m, mT, 0, F_size, F_marks, U_marks, E_marks, index_ptr, F_loop_ind, U_loop_ind, {});
+        LMcluster(f, m, mT, 0, F_size, F_marks, U_marks, E_marks, F_loop_ind, U_loop_ind, {});
       end if;
     end for;
 
@@ -544,7 +543,6 @@ protected
     input array<VertMark> marks1                    "vertex marks for node side";
     input array<VertMark> marks2                    "vertex marks for neigbors of node";
     input UnorderedMap<EdgeTpl, EdgeMark> E_marks   "edge marks";
-    input Pointer<Integer> index_ptr                "pointer to unique loop index in case of new loop";
     input array<list<Integer>> loop_ind1            "loop indices for each vertex (node side)";
     input array<list<Integer>> loop_ind2            "loop indices for each vertex (neighbor of node side)";
     input list<Integer> in_stack                    "current stack of vertices";
@@ -552,7 +550,7 @@ protected
     list<Integer> stack = in_stack;                   // map input to new list so that we can manipulate it
     Boolean foundPath = false, foundLoop = false;
     list<Integer> Alpha = {}, Omega = {}, indices = {};
-    Integer neighbor, index;
+    Integer neighbor;
   algorithm
     // check if there is an unprocessed path to go from here
     for neighbor in m1[node] loop
@@ -579,25 +577,21 @@ protected
       // take last node from stack
       neighbor :: stack := stack;
 
-      if marks1[node] < VertMark.MATCHED then
+      if marks1[node] < VertMark.MATCHED then // TRUE_LOOP mit loop_ind -> do it NO!
         // check if it is a loop
         (Alpha, Omega) := LMgetLoopVertices(node, m1, shift1, shift2, marks2, E_marks);
-        foundLoop := listEmpty(Alpha) and listEmpty(Omega);
+        foundLoop := not(listEmpty(Alpha) and listEmpty(Omega));
       end if;
 
       if foundLoop then
         // suspected loop initiator
 
         // create a unique index for each new created loop and collect the indices
-        index := Pointer.access(index_ptr);
         for recursion_node in Alpha loop
           UnorderedMap.add((node + shift1, recursion_node + shift2), EdgeMark.LOOP, E_marks);
           arrayUpdate(marks2, recursion_node, VertMark.LOOP_END);
-          arrayUpdate(loop_ind2, recursion_node, {index});
-          indices := index :: indices;
-          index := index + 1;
+          indices := recursion_node :: indices;
         end for;
-        Pointer.update(index_ptr, index);
 
         // collect all loop indices that are additionally connected
         for recursion_node in Omega loop
@@ -605,30 +599,42 @@ protected
           indices := listAppend(loop_ind2[recursion_node], indices);
         end for;
 
+        UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.LOOP, E_marks);
         arrayUpdate(marks1, node, VertMark.LOOP);
         arrayUpdate(loop_ind1, node, indices);
-        // restart on same node and walk backwards
-        neighbor := node;
+        arrayUpdate(marks2, neighbor, VertMark.LOOP);
+        arrayUpdate(loop_ind2, neighbor, indices);
       else
         // general backwards step
         _ := match (marks1[node], marks2[neighbor])
-          case (VertMark.LOOP, VertMark.LOOP_END) algorithm
+          case (VertMark.LOOP_END, _) algorithm
             // closed a loop
             // -> mark everything as true loop
-            if listLength(loop_ind2[neighbor]) == 1 then
-              index := List.first(loop_ind2[neighbor]);
-              indices := List.deleteMemberOnTrue(index, loop_ind1[node], intEq);
-              LMtrueLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, index);
-              // save indices so that it can be picked up later on
-              arrayUpdate(loop_ind2, neighbor, indices);
+            arrayUpdate(marks1, node, VertMark.TRUE_LOOP);
+            LMtrueLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, node);
+            if listEmpty(loop_ind1[node]) then
+              // just closed a loop in the last step and no unresolved loops left
+              // -> normal matching mode starting with UNMATCHED
+              UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.UNMATCHED, E_marks);
             else
-              // should never happen -> remove once we are sure this cannot happen
-              Error.assertion(false, getInstanceName() + " failed. A LOOP_END vertex had more than one loop index.", sourceInfo());
-              fail();
+              // just closed a loop in the last step but there are still unresolved
+              // loops on the path saved as indices
+              // temporary loop mode and no other paths open
+              // -> mark last edge and node as LOOP and carry the loop indices
+              UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.LOOP, E_marks);
+              arrayUpdate(marks2, neighbor, VertMark.LOOP);
+              arrayUpdate(loop_ind2, neighbor, loop_ind1[node]);
             end if;
           then ();
 
           case (VertMark.LOOP, VertMark.LOOP) algorithm
+            // carry a loop to a node that is already part of a loop
+            // -> mark last edge LOOP and add the loop indices
+            UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.LOOP, E_marks);
+            arrayUpdate(loop_ind2, neighbor, listAppend(loop_ind2[neighbor], loop_ind1[node]));
+          then ();
+
+          case (VertMark.LOOP, VertMark.LOOP_END) algorithm
             // carry a loop to a node that is already part of a loop
             // -> mark last edge LOOP and add the loop indices
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.LOOP, E_marks);
@@ -641,7 +647,7 @@ protected
             LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.UNMATCHED);
           then ();
 
-          case (VertMark.LOOP, _) algorithm
+          case (VertMark.LOOP, VertMark.VISITED) algorithm
             // temporary loop mode and no other paths open
             // -> mark last edge and node as LOOP and carry the loop indices
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.LOOP, E_marks);
@@ -649,23 +655,13 @@ protected
             arrayUpdate(loop_ind2, neighbor, loop_ind1[node]);
           then ();
 
-          case (VertMark.TRUE_LOOP, _) guard(not listEmpty(loop_ind1[node])) algorithm
-            // just closed a loop in the last step but there are still unresolved
-            // loops on the path saved as indices
-            // temporary loop mode and no other paths open
-            // -> mark last edge and node as LOOP and carry the loop indices
-            UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.LOOP, E_marks);
-            arrayUpdate(marks2, neighbor, VertMark.LOOP);
-            arrayUpdate(loop_ind2, neighbor, loop_ind1[node]);
-          then ();
-
-          case (VertMark.TRUE_LOOP, _) algorithm
-            // just closed a loop in the last step and no unresolved loops left
+          case (VertMark.MATCHED , VertMark.VISITED) algorithm
+            // just set an edge to MATCHED in the last step and no other paths open
             // -> normal matching mode starting with UNMATCHED
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.UNMATCHED, E_marks);
           then ();
 
-          case (VertMark.MATCHED , _) algorithm
+          case (VertMark.MATCHED , VertMark.LOOP_END) algorithm
             // just set an edge to MATCHED in the last step and no other paths open
             // -> normal matching mode starting with UNMATCHED
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.UNMATCHED, E_marks);
@@ -685,7 +681,7 @@ protected
               Index reduction not yet implemented.", sourceInfo());
           then fail();
 
-          case (_, VertMark.LOOP) algorithm
+          case (VertMark.VISITED, VertMark.LOOP) algorithm
             // suspected loop is not a loop
             // -> break open due to new information causalizing it
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.MATCHED, E_marks);
@@ -694,13 +690,28 @@ protected
             LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.UNMATCHED);
           then ();
 
-          else algorithm
+          case (VertMark.VISITED, VertMark.LOOP_END) algorithm
+            // suspected loop is not a loop
+            // -> break open due to new information causalizing it
+            UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.MATCHED, E_marks);
+            arrayUpdate(marks1, node, VertMark.MATCHED);
+            arrayUpdate(marks2, neighbor, VertMark.MATCHED);
+            LMfalseLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, EdgeMark.UNMATCHED);
+          then ();
+
+          case (VertMark.VISITED, VertMark.VISITED) algorithm
             // just set an edge to UNMATCHED in the last step and no other paths open
             // -> normal matching mode starting with MATCHED
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.MATCHED, E_marks);
             arrayUpdate(marks1, node, VertMark.MATCHED);
             arrayUpdate(marks2, neighbor, VertMark.MATCHED);
           then ();
+
+          else algorithm
+            Error.assertion(false, getInstanceName() + " failed. Unknown case of : ("
+              + vertMarkString(marks1[node]) + ", " + vertMarkString(marks2[neighbor]) + ")", sourceInfo());
+          then fail();
+
         end match;
       end if;
     end if;
@@ -708,7 +719,7 @@ protected
     // NEXT STEP
     // propagate the information, but swap all objects with 1 and 2 suffixes (from F to U and back)
     // no need to implement it twice, the only difference is for a singular case (index reduction)
-    LMcluster(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, index_ptr, loop_ind2, loop_ind1, stack);
+    LMcluster(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, stack);
   end LMcluster;
 
   function LMgetLoopVertices
@@ -787,6 +798,7 @@ protected
     list<Integer> Omega = {};
     Integer neighbor;
   algorithm
+    // GO DEEPER! destroy all who only have indices of the starting node
     // collect all adjacent LOOP edges
     for neighbor in m1[node] loop
       _ := match UnorderedMap.get((node + shift1, neighbor + shift2), E_marks)
