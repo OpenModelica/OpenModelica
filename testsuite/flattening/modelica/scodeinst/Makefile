@@ -577,6 +577,7 @@ FunctionNonInputOutputParameter.mo \
 FunctionRecordArg1.mo \
 FunctionRecordArg2.mo \
 FunctionRecordArg3.mo \
+FunctionRecordArg4.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \

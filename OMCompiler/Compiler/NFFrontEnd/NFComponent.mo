@@ -1089,5 +1089,12 @@ public
     end match;
   end isTypeAttribute;
 
+  function isModifiable
+    input Component component;
+    output Boolean isModifiable;
+  algorithm
+    isModifiable := not isFinal(component) and not (isConst(component) and hasBinding(component));
+  end isModifiable;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFComponent;

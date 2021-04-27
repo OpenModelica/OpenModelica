@@ -1,4 +1,4 @@
-// name: FunctionRecordArg3
+// name: FunctionRecordArg4
 // keywords:
 // status: correct
 // cflags:   -d=newInst
@@ -6,7 +6,7 @@
 
 record BaseR
   constant Integer n;
-  parameter Real x[n];
+  final parameter Real x[n] = ones(n);
 end BaseR;
 
 function f
@@ -16,23 +16,23 @@ algorithm
   x := r.x * r.x;
 end f;
 
-record R = BaseR(n = 2);
+record R = BaseR(final n = 2);
 
-model FunctionRecordArg3
-  R r(x = {1, 2});
+model FunctionRecordArg4
+  R r;
   Real x = f(r);
-end FunctionRecordArg3;
+end FunctionRecordArg4;
 
 // Result:
 // function BaseR "Automatically generated record constructor for BaseR"
 //   input Integer n;
-//   input Real[n] x;
+//   protected Real[n] x = fill(1.0, n);
 //   output BaseR res;
 // end BaseR;
 //
 // function R "Automatically generated record constructor for R"
 //   protected Integer n = 2;
-//   input Real[2] x;
+//   protected Real[2] x = fill(1.0, n);
 //   output R res;
 // end R;
 //
@@ -43,10 +43,10 @@ end FunctionRecordArg3;
 //   x := r.x * r.x;
 // end f;
 //
-// class FunctionRecordArg3
-//   constant Integer r.n = 2;
-//   parameter Real r.x[1] = 1.0;
-//   parameter Real r.x[2] = 2.0;
+// class FunctionRecordArg4
+//   final constant Integer r.n = 2;
+//   final parameter Real r.x[1] = 1.0;
+//   final parameter Real r.x[2] = 1.0;
 //   Real x = f(r);
-// end FunctionRecordArg3;
+// end FunctionRecordArg4;
 // endResult

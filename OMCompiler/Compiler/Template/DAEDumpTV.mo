@@ -158,6 +158,12 @@ package Absyn
       end FULLYQUALIFIED;
     end Path;
 
+  uniontype Direction
+    record INPUT end INPUT;
+    record OUTPUT end OUTPUT;
+    record BIDIR end BIDIR;
+    record INPUT_OUTPUT end INPUT_OUTPUT;
+  end Direction;
 end Absyn;
 
 package SCode
