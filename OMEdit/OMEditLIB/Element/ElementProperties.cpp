@@ -112,13 +112,13 @@ Parameter::Parameter(Element *pComponent, bool showStartAttribute, QString tab, 
   mPreviousUnit = mDisplayUnit;
   mpUnitComboBox = new QComboBox;
   if (!mUnit.isEmpty()) {
-    mpUnitComboBox->addItem(mUnit);
+    mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(mUnit), mUnit);
     if (mDisplayUnit.compare(mUnit) != 0) {
-      mpUnitComboBox->addItem(mDisplayUnit);
+      mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(mDisplayUnit), mDisplayUnit);
       mpUnitComboBox->setCurrentIndex(1);
     }
   }
-  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
+  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
   mpCommentLabel = new Label(mpComponent->getComponentInfo()->getComment());
 }
 
@@ -152,19 +152,19 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
   }
   if (Utilities::isValueLiteralConstant(value)) {
     // convert the value to display unit
-    if (!fromUnit.isEmpty() && mpUnitComboBox->currentText().compare(fromUnit) != 0) {
+    if (!fromUnit.isEmpty() && mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString().compare(fromUnit) != 0) {
       bool ok = true;
       qreal realValue = value.toDouble(&ok);
       // if the modifier is a literal constant
       if (ok) {
         OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->currentText());
+        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString());
         if (convertUnit.unitsCompatible) {
           realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
           value = StringHandler::number(realValue);
         }
       } else { // if expression
-        value = Utilities::arrayExpressionUnitConversion(MainWindow::instance()->getOMCProxy(), value, fromUnit, mpUnitComboBox->currentText());
+        value = Utilities::arrayExpressionUnitConversion(MainWindow::instance()->getOMCProxy(), value, fromUnit, mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString());
       }
     }
   }
@@ -423,10 +423,10 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
    */
   if (!literalConstant) {
     bool state = mpUnitComboBox->blockSignals(true);
-    int index = mpUnitComboBox->findText(literalConstant ? mDisplayUnit : mUnit, Qt::MatchExactly);
+    int index = mpUnitComboBox->findData(literalConstant ? mDisplayUnit : mUnit);
     if (index > -1 && index != mpUnitComboBox->currentIndex()) {
       mpUnitComboBox->setCurrentIndex(index);
-      mPreviousUnit = mpUnitComboBox->currentText();
+      mPreviousUnit = mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString();
     }
     mpUnitComboBox->blockSignals(state);
   }
@@ -473,11 +473,11 @@ void Parameter::fileSelectorButtonClicked()
 
 /*!
  * \brief Parameter::unitComboBoxChanged
- * SLOT activated when mpUnitComboBox currentIndexChanged(QString) SIGNAL is raised.\n
+ * SLOT activated when mpUnitComboBox currentIndexChanged(int) SIGNAL is raised.\n
  * Updates the value according to the unit selected.
  * \param text
  */
-void Parameter::unitComboBoxChanged(QString text)
+void Parameter::unitComboBoxChanged(int index)
 {
   if (!mDefaultValue.isEmpty()) {
     setValueWidget(mDefaultValue, true, mPreviousUnit, false, true, true);
@@ -486,7 +486,7 @@ void Parameter::unitComboBoxChanged(QString text)
   if (!value.isEmpty()) {
     setValueWidget(value, false, mPreviousUnit, true, true, true);
   }
-  mPreviousUnit = text;
+  mPreviousUnit = mpUnitComboBox->itemData(index).toString();
 }
 
 /*!
@@ -1108,13 +1108,13 @@ void ElementParameters::fetchComponentModifiers()
       }
       if (modifiersIterator.key().compare(parameterName + ".displayUnit") == 0) {
         QString displayUnit = StringHandler::removeFirstLastQuotes(modifiersIterator.value());
-        int index = pParameter->getUnitComboBox()->findText(displayUnit, Qt::MatchExactly);
+        int index = pParameter->getUnitComboBox()->findData(displayUnit);
         if (index < 0) {
           // add modifier as additional display unit if compatible
           index = pParameter->getUnitComboBox()->count() - 1;
           if (index > -1 &&
-              (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemText(0), displayUnit)).unitsCompatible) {
-            pParameter->getUnitComboBox()->addItem(displayUnit);
+              (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit)).unitsCompatible) {
+            pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
             index ++;
           }
         }
@@ -1169,13 +1169,13 @@ void ElementParameters::fetchExtendsModifiers()
           }
           if (extendsModifiersIterator.key().compare(parameterName + ".displayUnit") == 0) {
             QString displayUnit = StringHandler::removeFirstLastQuotes(extendsModifiersIterator.value());
-            int index = pParameter->getUnitComboBox()->findText(displayUnit, Qt::MatchExactly);
+            int index = pParameter->getUnitComboBox()->findData(displayUnit);
             if (index < 0) {
               // add extends modifier as additional display unit if compatible
               index = pParameter->getUnitComboBox()->count() - 1;
               if (index > -1 &&
-                  (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemText(0), displayUnit)).unitsCompatible) {
-                pParameter->getUnitComboBox()->addItem(displayUnit);
+                  (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit)).unitsCompatible) {
+                pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
                 index ++;
               }
             }
@@ -1261,18 +1261,18 @@ void ElementParameters::updateComponentParameters()
     QString componentModifierKey = pParameter->getNameLabel()->text();
     QString componentModifierValue = pParameter->getValue();
     // convert the value to display unit
-    if (!pParameter->getUnit().isEmpty() && pParameter->getUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
+    if (!pParameter->getUnit().isEmpty() && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
       bool ok = true;
       qreal componentModifierRealValue = componentModifierValue.toDouble(&ok);
       // if the modifier is a literal constant
       if (ok) {
-        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->currentText(), pParameter->getUnit());
+        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(), pParameter->getUnit());
         if (convertUnit.unitsCompatible) {
           componentModifierRealValue = Utilities::convertUnit(componentModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
           componentModifierValue = StringHandler::number(componentModifierRealValue);
         }
       } else { // if expression
-        componentModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, componentModifierValue, pParameter->getUnitComboBox()->currentText(), pParameter->getUnit());
+        componentModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, componentModifierValue, pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(), pParameter->getUnit());
       }
     }
     if (pParameter->isValueModified()) {
@@ -1305,14 +1305,14 @@ void ElementParameters::updateComponentParameters()
       }
     }
     // if displayUnit is changed
-    if (pParameter->getUnitComboBox()->isEnabled() && pParameter->getDisplayUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
+    if (pParameter->getUnitComboBox()->isEnabled() && pParameter->getDisplayUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
       valueChanged = true;
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
         newComponentExtendsModifiersMap.insert(mpComponent->getName() + "." + componentModifierKey + ".displayUnit",
-                                               "\"" + pParameter->getUnitComboBox()->currentText() + "\"");
+                                               "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
       } else {
-        newComponentModifiersMap.insert(componentModifierKey + ".displayUnit", "\"" + pParameter->getUnitComboBox()->currentText() + "\"");
+        newComponentModifiersMap.insert(componentModifierKey + ".displayUnit", "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
       }
     }
   }
