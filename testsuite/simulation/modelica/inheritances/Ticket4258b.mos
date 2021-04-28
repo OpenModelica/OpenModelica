@@ -21,20 +21,8 @@ buildModel(Eco); getErrorString();
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
 // ========================================
-// 1: FGchannel.mediums[1].Xi[1]
-// 2: FGchannel.mediums[1].Xi[2]
-// 3: FGchannel.mediums[1].Xi[3]
-// 4: FGchannel.mediums[1].Xi[4]
-// 5: FGchannel.mediums[1].Xi[5]
-// 6: FGchannel.mediums[1].Xi[6]
-// 7: FGchannel.mediums[1].T
-// 8: FGchannel.mediums[2].Xi[1]
-// 9: FGchannel.mediums[2].Xi[2]
-// 10: FGchannel.mediums[2].Xi[3]
-// 11: FGchannel.mediums[2].Xi[4]
-// 12: FGchannel.mediums[2].Xi[5]
-// 13: FGchannel.mediums[2].Xi[6]
-// 14: FGchannel.mediums[2].T
+// 1: FGchannel.mediums[1].T
+// 2: FGchannel.mediums[2].T
 // Please use -d=bltdump for more information.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "

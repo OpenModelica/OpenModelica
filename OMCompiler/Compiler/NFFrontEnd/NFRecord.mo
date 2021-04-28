@@ -138,12 +138,9 @@ algorithm
   //       But the code generation uses the type of the record constructor both
   //       for generating the record struct and the record constructor, so we
   //       can't currently reorder variables here without also messing up the
-  //       order of the record itself. Not sorting them is not an option since
-  //       that would lead to code that compiles but with undefined behaviour,
-  //       so instead we sort them and give an error if the ordering changed.
+  //       order of the record itself.
   //sorted_locals := Function.sortLocals(locals, info);
   //all_params := listAppend(inputs, sorted_locals);
-  checkLocalFieldOrder(locals, ctor_node, info);
 
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),

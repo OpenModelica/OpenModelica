@@ -32,7 +32,7 @@ end FunctionRecordArg4;
 //
 // function R "Automatically generated record constructor for R"
 //   protected Integer n = 2;
-//   protected Real[2] x = fill(1.0, n);
+//   protected Real[2] x = {1.0, 1.0};
 //   output R res;
 // end R;
 //

@@ -1787,6 +1787,9 @@ algorithm
       then
         expLst;
     case(DAE.RECORD(exps=expLst))
+      equation
+         expLstLst = List.map(expLst,getComplexContentsInCall);
+         expLst = List.flatten(expLstLst);
       then
         expLst;
     case(DAE.ARRAY())
@@ -3538,6 +3541,7 @@ algorithm
       list<DAE.Exp> explst;
       Boolean b;
       DAE.CallAttributes attr;
+      list<String> fields;
 
     case DAE.CREF(componentRef=DAE.WILD()) then inExp;
 
@@ -3552,6 +3556,12 @@ algorithm
         explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);
       then
         DAE.CALL(p1,explst,attr);
+
+    case DAE.RECORD(p1, explst, fields, ty)
+      equation
+        explst = List.map1(explst, generateCrefsExpFromExp, inCrefPrefix);
+      then
+        DAE.RECORD(p1, explst, fields, ty);
 
     case DAE.CREF(componentRef=cr,ty=ty)
       equation
@@ -3596,6 +3606,9 @@ algorithm
 
     case (DAE.CALL(path=p1,expLst=explst,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
       guard AbsynUtil.pathEqual(p1,p2) "is record constructor"
+      then List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
+
+    case (DAE.RECORD(path=p1,exps=explst),_)
       then List.flatten(List.map1(explst, generateCrefsExpLstFromExp, inCrefPrefix));
 
     case(DAE.CALL(path = Absyn.IDENT("der"),expLst = {DAE.CREF(componentRef = incref)}), _)
@@ -9584,7 +9597,7 @@ algorithm
     case (DAE.ENUM_LITERAL(), _) then false;
 
     case (DAE.ARRAY(array=expLst), _) equation
-      res = List.map1BoolOr(expLst, expContains, inExp2);
+      res = List.isMemberOnTrue(inExp2, expLst, expContains);
     then res;
 
     case (DAE.MATRIX(matrix=expl), _) equation
@@ -9595,7 +9608,7 @@ algorithm
       res = ComponentReference.crefEqual(cr1, cr2);
       if not res then
         expLst = List.map(ComponentReference.crefSubs(cr1), getSubscriptExp);
-        res = List.map1BoolOr(expLst, expContains, inExp2);
+        res = List.isMemberOnTrue(inExp2, expLst, expContains);
       end if;
     then res;
 
@@ -9645,17 +9658,16 @@ algorithm
 
     // general case for arguments
     case (DAE.CALL(expLst=expLst), _) equation
-      res = List.map1BoolOr(expLst, expContains, inExp2);
+      res = List.isMemberOnTrue(inExp2, expLst, expContains);
+    then res;
+
+    case (DAE.RECORD(exps=expLst), _) equation
+      res = List.isMemberOnTrue(inExp2, expLst, expContains);
     then res;
 
     case (DAE.PARTEVALFUNCTION(expList=expLst), DAE.CREF()) equation
-      res = List.map1BoolOr(expLst, expContains, inExp2);
+      res = List.isMemberOnTrue(inExp2, expLst, expContains);
     then res;
-
-    /* record constructors
-    case (DAE.RECORD(exps=expLst), DAE.CREF()) equation
-      res = List.map1BoolOr(expLst, expContains, inExp2);
-    then res; */
 
     case (DAE.CAST(ty=DAE.T_REAL(), exp=DAE.ICONST()), _)
     then false;
@@ -9665,7 +9677,7 @@ algorithm
     then res;
 
     case (DAE.ASUB(exp=e, sub=expLst), _) equation
-      res = List.map1BoolOr(expLst, expContains, inExp2);
+      res = List.isMemberOnTrue(inExp2, expLst, expContains);
       res = if res then true else expContains(e, inExp2);
     then res;
 
@@ -12304,6 +12316,7 @@ algorithm
       list<DAE.Var> varLst;
       Absyn.Path name;
       list<list<DAE.Exp>> mat;
+      list<String> field_names;
 
     // CASE for Matrix
     case DAE.CREF(ty=ty as DAE.T_ARRAY(dims={id, jd}))
@@ -12330,7 +12343,9 @@ algorithm
         expl = List.map1(varLst, generateCrefsExpFromExpVar, cr);
         i = listLength(expl);
         true = intGt(i, 0);
-        e = DAE.CALL(name, expl, DAE.CALL_ATTR(ty, false, false, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
+        field_names = list(v.name for v in varLst);
+        e = DAE.RECORD(name, expl, field_names, ty);
+        //e = DAE.CALL(name, expl, DAE.CALL_ATTR(ty, false, false, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
         (e, _) = traverseExpBottomUp(e, traversingextendArrExp, true);
       then
         (e, true);

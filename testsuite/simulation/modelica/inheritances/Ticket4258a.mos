@@ -33,10 +33,6 @@ simulate(simple_BasicHX_water_gas); getErrorString();
 // 4: WT_Nachreformer.pipe_1.mediums[3].T
 // 5: WT_Nachreformer.pipe_1.mediums[4].T
 // Please use -d=bltdump for more information.
-// Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
-// ========================================
-// 1: WT_Nachreformer.pipe_2.flowModel.m_flows[5]
-// Please use -d=bltdump for more information.
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // endResult

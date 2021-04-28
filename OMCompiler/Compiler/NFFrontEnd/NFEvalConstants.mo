@@ -57,6 +57,7 @@ import Ceval = NFCeval;
 import Package = NFPackage;
 import SimplifyExp = NFSimplifyExp;
 import ErrorExt;
+import Record = NFRecord;
 
 public
 function evaluate
@@ -531,11 +532,18 @@ protected
   Class cls;
   Algorithm fn_body;
   Sections sections;
+  Boolean is_con;
 algorithm
   if not Function.isEvaluated(func) then
     Function.markEvaluated(func);
+    is_con := Function.isDefaultRecordConstructor(func);
 
-    func := Function.mapExp(func, function evaluateFuncExp(fnNode = func.node));
+    func := Function.mapExp(func,
+      function evaluateFuncExp(fnNode = func.node, evaluateAll = is_con));
+
+    if is_con then
+      Record.checkLocalFieldOrder(func.locals, func.node, InstNode.info(func.node));
+    end if;
 
     for fn_der in func.derivatives loop
       for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
@@ -548,14 +556,16 @@ end evaluateFunction;
 function evaluateFuncExp
   input Expression exp;
   input InstNode fnNode;
+  input Boolean evaluateAll;
   output Expression outExp;
 algorithm
-  outExp := evaluateFuncExpTraverser(exp, fnNode, false);
+  outExp := evaluateFuncExpTraverser(exp, fnNode, evaluateAll, false);
 end evaluateFuncExp;
 
 function evaluateFuncExpTraverser
   input Expression exp;
   input InstNode fnNode;
+  input Boolean evaluateAll;
   input Boolean changed;
   output Expression outExp;
   output Boolean outChanged;
@@ -563,12 +573,12 @@ protected
   Expression e;
 algorithm
   (e, outChanged) := Expression.mapFoldShallow(exp,
-    function evaluateFuncExpTraverser(fnNode = fnNode), false);
+    function evaluateFuncExpTraverser(fnNode = fnNode, evaluateAll = evaluateAll), false);
 
   outExp := match e
     case Expression.CREF()
       algorithm
-        if not isLocalFunctionVariable(e.cref, fnNode) then
+        if evaluateAll or not isLocalFunctionVariable(e.cref, fnNode) then
           ErrorExt.setCheckpoint(getInstanceName());
           try
             outExp := Ceval.evalCref(e.cref, e, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
