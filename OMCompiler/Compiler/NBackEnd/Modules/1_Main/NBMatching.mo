@@ -611,7 +611,7 @@ protected
             // closed a loop
             // -> mark everything as true loop
             arrayUpdate(marks1, node, VertMark.TRUE_LOOP);
-            LMtrueLoop(neighbor, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, node);
+            LMtrueLoop(node, m1, m2, shift1, shift2, marks1, marks2, E_marks, loop_ind1, loop_ind2, node);
             if listEmpty(loop_ind1[node]) then
               // just closed a loop in the last step and no unresolved loops left
               // -> normal matching mode starting with UNMATCHED
@@ -662,6 +662,12 @@ protected
           then ();
 
           case (VertMark.MATCHED , VertMark.LOOP_END) algorithm
+            // just set an edge to MATCHED in the last step and no other paths open
+            // -> normal matching mode starting with UNMATCHED
+            UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.UNMATCHED, E_marks);
+          then ();
+
+          case (VertMark.MATCHED , VertMark.MATCHED) algorithm
             // just set an edge to MATCHED in the last step and no other paths open
             // -> normal matching mode starting with UNMATCHED
             UnorderedMap.add((node + shift1, neighbor + shift2), EdgeMark.UNMATCHED, E_marks);
@@ -764,20 +770,16 @@ protected
     input array<list<Integer>> loop_ind1            "loop indices for each vertex (node side)";
     input array<list<Integer>> loop_ind2            "loop indices for each vertex (neighbor of node side)";
     input Integer index                             "index of current loop that is resolved";
-  protected
-    Integer next;
   algorithm
-    for neighbor in m1[node] loop
-      if List.contains(loop_ind2[neighbor], index, intEq) then
-        next := neighbor;
-        break; // there can only be one path to follow
+    for next in m1[node] loop
+      if List.contains(loop_ind2[next], index, intEq) then
+        UnorderedMap.add((node + shift1, next + shift2), EdgeMark.TRUE_LOOP, E_marks);
+        arrayUpdate(marks2, next, VertMark.TRUE_LOOP);
+        arrayUpdate(loop_ind2, next, {});
+        LMtrueLoop(next, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, index);
       end if;
     end for;
 
-    UnorderedMap.add((node + shift1, next + shift2), EdgeMark.TRUE_LOOP, E_marks);
-    arrayUpdate(marks2, next, VertMark.TRUE_LOOP);
-    arrayUpdate(loop_ind2, next, {});
-    LMtrueLoop(next, m2, m1, shift2, shift1, marks2, marks1, E_marks, loop_ind2, loop_ind1, index);
   end LMtrueLoop;
 
   function LMfalseLoop
