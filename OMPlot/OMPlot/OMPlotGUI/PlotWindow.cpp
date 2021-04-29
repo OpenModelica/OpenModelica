@@ -1403,6 +1403,19 @@ void PlotWindow::updateYAxis(QPair<double, double> minMaxValues)
   }
 }
 
+/*!
+ * \brief PlotWindow::updatePlot
+ * This function is called by OMEdit when auto scale is false.
+ * Updates the plot manually.
+ */
+void PlotWindow::updatePlot()
+{
+  mpPlot->updateLayout();
+  mpPlot->replot();
+  if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
+    mpPlot->getPlotZoomer()->setZoomBase(false);
+  }
+}
 
 void PlotWindow::setGrid(QString grid)
 {

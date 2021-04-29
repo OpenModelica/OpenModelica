@@ -4415,6 +4415,7 @@ PlottingPage::PlottingPage(OptionsDialog *pOptionsDialog)
   mpGeneralGroupBox = new QGroupBox(Helper::general);
   // auto scale
   mpAutoScaleCheckBox = new QCheckBox(tr("Auto Scale"));
+  mpAutoScaleCheckBox->setChecked(true);
   mpAutoScaleCheckBox->setToolTip(tr("Auto scale the plot to fit in view when variable is plotted."));
   // prefix units
   mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));

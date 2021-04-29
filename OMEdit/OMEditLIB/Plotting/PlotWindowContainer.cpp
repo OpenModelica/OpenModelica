@@ -619,7 +619,7 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
           if (pPlotWindow->getAutoScaleButton()->isChecked()) {
             pPlotWindow->fitInView();
           } else {
-            pPlotWindow->getPlot()->replot();
+            pPlotWindow->updatePlot();
           }
         }
       }

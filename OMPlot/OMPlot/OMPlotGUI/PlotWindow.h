@@ -184,6 +184,7 @@ public:
   void updateTimeText(QString unit);
   void updateCurves();
   void updateYAxis(QPair<double, double> minMaxValues);
+  void updatePlot();
 signals:
   void closingDown();
 public slots:
