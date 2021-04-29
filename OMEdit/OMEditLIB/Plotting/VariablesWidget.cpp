@@ -1555,7 +1555,7 @@ void VariablesWidget::variablesUpdated()
       if (pPlotWindow->getAutoScaleButton()->isChecked()) {
         pPlotWindow->fitInView();
       } else {
-        pPlotWindow->getPlot()->replot();
+        pPlotWindow->updatePlot();
       }
     }
   }
@@ -1956,10 +1956,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         if (pPlotWindow->getAutoScaleButton()->isChecked()) {
           pPlotWindow->fitInView();
         } else {
-          pPlotWindow->getPlot()->replot();
-          if (pPlotWindow->getPlot()->getPlotZoomer()->zoomStack().size() == 1) {
-            pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-          }
+          pPlotWindow->updatePlot();
         }
       } else if (!pVariablesTreeItem->isChecked()) {  // if user unchecks the variable then remove it from the plot
         foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
@@ -1970,7 +1967,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             if (pPlotWindow->getAutoScaleButton()->isChecked()) {
               pPlotWindow->fitInView();
             } else {
-              pPlotWindow->getPlot()->replot();
+              pPlotWindow->updatePlot();
             }
             break;
           }
@@ -2041,10 +2038,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             if (pPlotWindow->getAutoScaleButton()->isChecked()) {
               pPlotWindow->fitInView();
             } else {
-              pPlotWindow->getPlot()->replot();
-              if (pPlotWindow->getPlot()->getPlotZoomer()->zoomStack().size() == 1) {
-                pPlotWindow->getPlot()->getPlotZoomer()->setZoomBase(false);
-              }
+              pPlotWindow->updatePlot();
             }
           }
         }
@@ -2108,7 +2102,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           if (pPlotWindow->getAutoScaleButton()->isChecked()) {
             pPlotWindow->fitInView();
           } else {
-            pPlotWindow->getPlot()->replot();
+            pPlotWindow->updatePlot();
           }
         }
       }
@@ -2164,7 +2158,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             if (pPlotWindow->getAutoScaleButton()->isChecked()) {
               pPlotWindow->fitInView();
             } else {
-              pPlotWindow->getPlot()->replot();
+              pPlotWindow->updatePlot();
             }
             break;
           }
