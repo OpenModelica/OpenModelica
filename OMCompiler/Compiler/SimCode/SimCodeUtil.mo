@@ -2547,9 +2547,55 @@ algorithm
       tempvars = createTempVars(varLst, cr, itempvars);
     then (eqSystlst, uniqueEqIndex, tempvars);
 
+    /* Record() = f() */
+    case (DAE.RECORD(path=path, exps=e2lst, ty= tp as DAE.T_COMPLEX(varLst=varLst)), _) equation
+      (e2_1, _) = Expression.extendArrExp(inExp1, false);
+      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+      // tmp = f()
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+      e1_1 = Expression.crefToExp(cr);
+      stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqAttr);
+      uniqueEqIndex = iuniqueEqIndex + 1;
+
+      // Record()-tmp = 0
+      /* Expand the tmp record and any arrays */
+      e1lst = Expression.expandExpression(e1_1, expandRecord = true);
+      /* Expand the varLst. Each var might be an array or record. */
+      e2lst = List.mapFlat(e2lst, function Expression.expandExpression(expandRecord = true));
+      /* pair each of the expanded expressions to coressponding one*/
+      exptl = List.zip(e1lst, e2lst);
+      /* Create residual equations for each pair*/
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
+      eqSystlst = simeqn_complex::eqSystlst;
+
+      tempvars = createTempVars(varLst, cr, itempvars);
+
+    then (eqSystlst, uniqueEqIndex, tempvars);
+
     /* f() = Record() */
     case (_, DAE.CALL(path=path, expLst=e2lst, attr=DAE.CALL_ATTR(ty=tp as DAE.T_COMPLEX(varLst=varLst, complexClassType=ClassInf.RECORD(rpath))))) equation
       true = AbsynUtil.pathEqual(path, rpath);
+      (e1_1, _) = Expression.extendArrExp(inExp1, false);
+      // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+      // tmp = f()
+      ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+      cr = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+      e2_1 = Expression.crefExp(cr);
+      stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
+      simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqAttr);
+      uniqueEqIndex = iuniqueEqIndex + 1;
+      // Record()-tmp = 0
+      e1lst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr);
+      exptl = List.zip(e1lst, e2lst);
+      (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_RESIDUAL1, source, eqAttr, uniqueEqIndex);
+      eqSystlst = simeqn_complex::eqSystlst;
+      tempvars = createTempVars(varLst, cr, itempvars);
+    then (eqSystlst, uniqueEqIndex, tempvars);
+
+    /* f() = Record() */
+    case (_, DAE.RECORD(path=path, exps=e2lst, ty=tp as DAE.T_COMPLEX(varLst=varLst))) equation
       (e1_1, _) = Expression.extendArrExp(inExp1, false);
       // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
       // tmp = f()
@@ -6295,10 +6341,66 @@ algorithm
       then
         (eqSystlst, uniqueEqIndex, tempvars);
 
+    /* Record() = f()  */
+    case (_, DAE.RECORD(path=path, exps=expLst, ty= tp as DAE.T_COMPLEX(varLst=varLst)), e2, _, _, _)
+      equation
+        // check all crefs are on the lhs
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(crefs, BaseHashSet.add, ht);
+        expLst = Expression.traverseExpList(expLst, function Expression.expandCrefs(expandRecord=true), 0) "The routines generate bad code for arrays inside the record unless we expand them";
+        List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
+        (e2_1, _) = Expression.extendArrExp(e2, false);
+
+        // tmp = somexp
+        ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+        cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+        e1_1 = Expression.crefToExp(cr1);
+        stms = DAE.STMT_ASSIGN(tp, e1_1, e2_1, source);
+        simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind);
+        uniqueEqIndex = iuniqueEqIndex + 1;
+
+        /* Expand the varLst. Each var might be an array or record. */
+        crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
+        /* pair each of the expanded expressions to coressponding one*/
+        exptl = List.zip(expLst, crexplst);
+        /* Create residual equations for each pair*/
+        (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
+        eqSystlst = simeqn_complex::eqSystlst;
+
+        tempvars = createTempVars(varLst, cr1, itempvars);
+      then
+        (eqSystlst, uniqueEqIndex, tempvars);
+
     /* f() = Record()  */
     case (_, e1, DAE.CALL(path=path, expLst=expLst, attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path=rpath), varLst=varLst))), _, _, _)
       equation
         true = AbsynUtil.pathEqual(path, rpath);
+        // check all crefs are on the rhs => turn
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(crefs, BaseHashSet.add, ht);
+        expLst = Expression.traverseExpList(expLst, function Expression.expandCrefs(expandRecord=true), 0) "The routines generate bad code for arrays inside the record unless we expand them";
+        List.foldAllValue(expLst, createSingleComplexEqnCode3, true, ht);
+        (e1_1, _) = Expression.extendArrExp(e1, false);
+        // true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
+        // tmp = f()
+        ident = AbsynUtil.pathStringUnquoteReplaceDot(path, "_");
+        cr1 = ComponentReference.makeCrefIdent("$TMP_" + ident + intString(iuniqueEqIndex), tp, {});
+        e2_1 = Expression.crefExp(cr1);
+        stms = DAE.STMT_ASSIGN(tp, e2_1, e1_1, source);
+        simeqn_complex = SimCode.SES_ALGORITHM(iuniqueEqIndex, {stms}, eqKind);
+        uniqueEqIndex = iuniqueEqIndex + 1;
+        // Record()=tmp
+        crexplst = List.map1(varLst, Expression.generateCrefsExpFromExpVar, cr1);
+        exptl = List.zip(expLst, crexplst);
+        (eqSystlst, uniqueEqIndex) = List.map2Fold(exptl, makeSES_SIMPLE_ASSIGN, source, eqKind, uniqueEqIndex);
+        eqSystlst = simeqn_complex::eqSystlst;
+        tempvars = createTempVars(varLst, cr1, itempvars);
+      then
+        (eqSystlst, uniqueEqIndex, tempvars);
+
+    /* f() = Record()  */
+    case (_, e1, DAE.RECORD(path=path, exps=expLst, ty= tp as DAE.T_COMPLEX(varLst=varLst)), _, _, _)
+      equation
         // check all crefs are on the rhs => turn
         ht = HashSet.emptyHashSet();
         ht = List.fold(crefs, BaseHashSet.add, ht);
@@ -6429,6 +6531,9 @@ algorithm
     case (DAE.CREF(componentRef=DAE.WILD()), _) then (true, iht);
     /* Consider also record constructor */
     case (DAE.CALL(expLst=expLst),_) equation
+      List.foldAllValue(expLst, createSingleComplexEqnCode3, true, iht);
+    then (true, iht);
+    case (DAE.RECORD(exps=expLst),_) equation
       List.foldAllValue(expLst, createSingleComplexEqnCode3, true, iht);
     then (true, iht);
     /* consider also array type */

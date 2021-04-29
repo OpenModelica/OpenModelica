@@ -344,6 +344,14 @@ algorithm
       then
         s_2;
 
+    case (DAE.RECORD(path = fcn,exps = args),_,_)
+      equation
+        fs = AbsynUtil.pathString(fcn);
+        argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");
+        s_2 = "FunctionCall[\""+ fs +"\"]["+argstr+"]";
+      then
+        s_2;
+
     case (DAE.ARRAY(array = es),_,_)
       equation
         s = stringDelimitList(List.map2(es, printExpMmaStr,vars,knvars),",");

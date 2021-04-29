@@ -497,7 +497,7 @@ algorithm
 
         // get the input exps from the call
         exps = List.map2(exps0, evaluateConstantFunctionCallExp, funcsIn, evalConstArgsOnly);
-        scalarExp = List.map1(exps, expandComplexEpressions, funcsIn);
+        scalarExp = List.map1(exps, expandComplexExpressions, funcsIn);
         allInputExps = List.flatten(scalarExp);
           //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
 
@@ -749,7 +749,7 @@ algorithm
 
         // get the input exps from the call
         exps = List.map2(expsIn, evaluateConstantFunctionCallExp, funcsIn, false);
-        scalarExp = List.map1(exps,expandComplexEpressions,funcsIn);//these exps are evaluated as well
+        scalarExp = List.map1(exps,expandComplexExpressions,funcsIn);//these exps are evaluated as well
         allInputExps = List.flatten(scalarExp);
           //print("allInputExps\n"+stringDelimitList(List.map(allInputExps,ExpressionDump.printExpStr),"\n")+"\n");
 
@@ -946,7 +946,7 @@ algorithm
   end matchcontinue;
 end evaluateConstantFunction;
 
-protected function expandComplexEpressions "gets the complex contents or if its not complex, then the exp itself, if its a call, get the scalar outputs.
+protected function expandComplexExpressions "gets the complex contents or if its not complex, then the exp itself, if its a call, get the scalar outputs.
 it would be possible to evaluate the exp before.
 author:Waurich TUD 2014-05"
   input DAE.Exp e;
@@ -987,7 +987,7 @@ algorithm
         //print(ExpressionDump.dumpExpStr(e,0)+"\n");
       then {e};
   end matchcontinue;
-end expandComplexEpressions;
+end expandComplexExpressions;
 
 protected function expandComplexElementsToCrefs "gets the complex contents or if its not complex, then the element itself and converts them to crefs.
 author:Waurich TUD 2014-05"
@@ -3470,6 +3470,8 @@ algorithm
 
     case BackendDAE.COMPLEX_EQUATION(left = DAE.TUPLE(lhs), right = DAE.TUPLE(rhs))
       algorithm
+        lhs := List.mapFlat(lhs, Expression.getComplexContents);
+        rhs := List.mapFlat(rhs, Expression.getComplexContents);
         eq :: eqs := list(makeBackendEquation(lh, rh) threaded for lh in lhs, rh in rhs);
       then
         (eq, listAppend(eqs, addEqsIn));

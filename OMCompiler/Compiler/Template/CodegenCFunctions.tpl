@@ -585,8 +585,8 @@ end recordCopyDef;
 
 template recordModelicaCallConstrctor(String rec_name, list<Variable> variables)
  "Generates code for creating and initializing a record given values for
-  ALL its memebers. This is basically what we used to generate before. However
-  that one did not handle arrays and record record memebers properly. This
+  ALL its members. This is basically what we used to generate before. However
+  that one did not handle arrays and record record members properly. This
   should replace that function. For now it is commented until I have time to
   clean out uses of the other one and replace it with this.
 
@@ -618,7 +618,7 @@ template recordModelicaCallConstrctor(String rec_name, list<Variable> variables)
   /*
   <%rec_name%> omc_<%rec_name%>(threadData_t *threadData <%inputs%>) {
     <%rec_name%> dst;
-    // TODO Improve me. No need to initalize the record memebers with defaults in <%rec_name%>_construct
+    // TODO Improve me. No need to initalize the record members with defaults in <%rec_name%>_construct
     // We should just do the allocs here and then copy the input parameters as default values instead.
     <%rec_name%>_construct(threadData, dst);
     <%varCopies%>
@@ -657,7 +657,7 @@ end recordMemberCopy;
 
 template recordConstructorDef(String ctor_name, String rec_name, list<Variable> variables)
  "Generates code for constructing a record. This means allocating memory for all
-  memebers of the record and then initializing them with their default values. Sometimes
+  members of the record and then initializing them with their default values. Sometimes
   we can have modelica derived records (e.g. record A = B(c=exp)), this will be a new
   record type whcih needs an exp to be passed to to be initialized correctly. This is
   also handled by these function. Check markDerivedRecordOutsideBindings and makeTypeRecordVar
@@ -2966,7 +2966,19 @@ match lhsexp
   at least it should have been a record_constructor not a normal call. sigh. */
   case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty=ty as T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
     let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-    /*TODO handle array record memebers. see algStmtAssign*/
+    /*TODO handle array record members. see algStmtAssign*/
+    <<
+    <%preExp%>
+    <%tmp%> = <%rhsExpStr%>;
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+      let re = daeExpCrefLhs(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction, false)
+      '<%re%> = <%tmp%>._<%var.name%>;'
+    ; separator="\n"
+    %>
+    >>
+  case RECORD(path=path,exps=expLst,ty=ty as T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
+    let tmp = tempDecl(expTypeModelica(ty),&varDecls)
+    /*TODO handle array record members. see algStmtAssign*/
     <<
     <%preExp%>
     <%tmp%> = <%rhsExpStr%>;
@@ -2987,7 +2999,7 @@ template algStmtAssignRecordWithRhsExpStr(DAE.Exp lhsexp, Text &rhsExpStr, Conte
 match lhsexp
   case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
     let tmp = tempDecl(expTypeModelica(ty),&varDecls)
-    /*TODO handle array record memebers. see algStmtAssign*/
+    /*TODO handle array record members. see algStmtAssign*/
     <<
     <%preExp%>
     <%tmp%> = <%rhsExpStr%>;
@@ -3115,7 +3127,7 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
   case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
     let rhsStr = tempDecl(expTypeArrayIf(ty), &varDecls)
     let &varCopy +=
-      /*TODO handle array record memebers. see algStmtAssign*/
+      /*TODO handle array record members. see algStmtAssign*/
       <<
       <%preExp%>
       <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
@@ -3132,7 +3144,22 @@ template tupleReturnVariableUpdates(Exp inExp, Context context, Text &varDecls, 
     let rhsStr = tempDecl(expTypeArrayIf(ty), &varDecls)
     let tmp = tempDecl(expTypeModelica(ty),&varDecls)
     let &varCopy +=
-      /*TODO handle array record memebers. see algStmtAssign*/
+      /*TODO handle array record members. see algStmtAssign*/
+      <<
+      <%preExp%>
+      <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+        let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls, &auxFunction)
+        '<%re%> = <%rhsStr%>._<%var.name%>;'
+      ; separator="\n"
+      %>
+      >> /*varCopy end*/
+    '&<%rhsStr%>'
+  case RECORD(path=path,exps=expLst,ty=ty as T_COMPLEX(varLst = varLst)) then
+    let &preExp = buffer ""
+    let rhsStr = tempDecl(expTypeArrayIf(ty), &varDecls)
+    let tmp = tempDecl(expTypeModelica(ty),&varDecls)
+    let &varCopy +=
+      /*TODO handle array record members. see algStmtAssign*/
       <<
       <%preExp%>
       <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
