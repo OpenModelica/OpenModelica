@@ -4465,8 +4465,9 @@ public
       case ARRAY()
         algorithm
           expl := list(nthRecordElement(index, e) for e in recordExp.elements);
+          ty := Type.liftArrayLeft(typeOf(listHead(expl)), listHead(Type.arrayDims(recordExp.ty)));
         then
-          makeArray(Type.setArrayElementType(recordExp.ty, typeOf(listHead(expl))), expl);
+          makeArray(ty, expl);
 
       case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
