@@ -679,27 +679,31 @@ function makeRecordFieldBindingFromParent
   output Expression exp;
 protected
   ComponentRef parent_cr;
-  Type parent_ty;
-  list<Subscript> subs;
   InstNode parent;
-  Integer dim_count;
+  InstContext.Type exp_context;
+  Binding binding;
+  Component comp;
 algorithm
   parent_cr := ComponentRef.rest(cref);
-  parent_ty := ComponentRef.nodeType(parent_cr);
-  true := Type.isRecord(Type.arrayElementType(parent_ty));
+  parent := ComponentRef.node(parent_cr);
+  exp_context := if InstNode.isFunction(InstNode.explicitParent(parent))
+    then NFInstContext.FUNCTION else NFInstContext.CLASS;
 
-  try
-    // Pass an EMPTY expression here as the default expression instead of the
-    // cref. Otherwise evalCref might attempt to make a binding for the parent
-    // from its children, which would create an evaluation loop.
-    exp := evalCref(parent_cr, Expression.EMPTY(parent_ty), target);
+  Typing.typeComponentBinding(parent, exp_context, typeChildren = false);
+  comp := InstNode.component(parent);
+  binding := Component.getBinding(comp);
+
+  if Binding.hasExp(binding) then
+    exp := Binding.getExp(binding);
+    exp := Expression.applySubscripts(ComponentRef.getSubscripts(parent_cr), exp);
+    exp := Expression.recordElement(ComponentRef.firstName(cref), exp);
+    exp := evalExp(exp, target);
   else
     // If the parent didn't have a binding, try the parent's parent.
     exp := makeRecordFieldBindingFromParent(parent_cr, target);
-  end try;
-
-  // Get the expression for the field from the parent expression.
-  exp := Expression.recordElement(ComponentRef.firstName(cref), exp);
+    exp := Expression.applySubscripts(ComponentRef.getSubscripts(parent_cr), exp);
+    exp := Expression.recordElement(ComponentRef.firstName(cref), exp);
+  end if;
 end makeRecordFieldBindingFromParent;
 
 function makeRecordBindingExp
@@ -3239,7 +3243,8 @@ algorithm
   e := evalExp(e, target);
 
   try
-    result := Expression.mapSplitExpressions(e, function evalRecordElement2(index = index));
+    result := Expression.mapSplitExpressions(e,
+      function Expression.nthRecordElement(index = index));
   else
     Error.assertion(false, getInstanceName() + " could not evaluate " +
       Expression.toString(exp), sourceInfo());

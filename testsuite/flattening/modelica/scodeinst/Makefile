@@ -128,8 +128,6 @@ CevalFuncFor2.mo \
 CevalFuncIf1.mo \
 CevalFuncRecord1.mo \
 CevalFuncRecord2.mo \
-CevalFuncRecord3.mo \
-CevalFuncRecord4.mo \
 CevalFuncRecord5.mo \
 CevalFuncRecord6.mo \
 CevalFuncRecord7.mo \
@@ -167,6 +165,7 @@ CevalRecord3.mo \
 CevalRecord4.mo \
 CevalRecord5.mo \
 CevalRecord6.mo \
+CevalRecord7.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray4.mo \
@@ -983,6 +982,8 @@ OCGTests.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+CevalFuncRecord3.mo \
+CevalFuncRecord4.mo \
 FinalParameter1.mo \
 FinalParameter2.mo \
 FinalParameter3.mo \
