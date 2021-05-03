@@ -7855,6 +7855,7 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
    * If MainWindow shortcut for menu actions are used then we should try to validate text since we can create a new model from there.
    * If context menu is used on LibraryTreeView to save a model other than the current model.
    * If QMenuBar is used with mouse or keyboard/shortcut
+   * If QToolBar QToolButton is used with mouse. See issue #7389.
    * If users switches between model using the tab bar.
    * If focus in called for DocumentationViewer
    */
@@ -7871,6 +7872,7 @@ bool ModelWidgetContainer::eventFilter(QObject *object, QEvent *event)
   } else if (event->type() == QEvent::ContextMenu && object->parent() && qobject_cast<LibraryTreeView*>(object->parent())) {
     shouldValidateText = true;
   } else if ((event->type() == QEvent::MouseButtonPress && qobject_cast<QMenuBar*>(object)) ||
+             (event->type() == QEvent::MouseButtonPress && qobject_cast<QToolButton*>(object)) ||
              (event->type() == QEvent::Shortcut && qobject_cast<QMenuBar*>(object)) ||
              (event->type() == QEvent::MouseButtonPress && qobject_cast<QTabBar*>(object)) ||
              (event->type() == QEvent::FocusIn && qobject_cast<DocumentationViewer*>(object))) {
