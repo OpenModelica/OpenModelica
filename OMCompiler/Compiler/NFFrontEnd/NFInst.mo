@@ -780,6 +780,7 @@ protected
   Restriction res;
   Type ty;
   Component.Attributes attrs;
+  SCode.Element elem;
 algorithm
   () := match cls
     case Class.EXPANDED_CLASS(restriction = res)
@@ -797,7 +798,7 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
-        mod := Modifier.fromElement(InstNode.definition(node), par);
+        mod := instElementModifier(InstNode.definition(node), par);
         mod := Modifier.propagate(mod, node, par);
         // Merge with any outer modifications.
         outer_mod := Modifier.propagate(cls.modifier, node, par);
@@ -845,7 +846,7 @@ algorithm
         Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
-        mod := Modifier.fromElement(InstNode.definition(node), InstNode.rootParent(node));
+        mod := instElementModifier(InstNode.definition(node), InstNode.rootParent(node));
         mod := Modifier.propagate(mod, node, par);
         outer_mod := Modifier.propagate(cls.modifier, node, par);
         outer_mod := Modifier.merge(outerMod, outer_mod);
@@ -880,7 +881,7 @@ algorithm
         updateComponentType(parent, node);
         cls_tree := Class.classTree(InstNode.getClass(node));
 
-        mod := Modifier.fromElement(InstNode.definition(node), InstNode.parent(node));
+        mod := instElementModifier(InstNode.definition(node), InstNode.parent(node));
         outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
         applyModifier(mod, cls_tree, InstNode.name(node));
@@ -1486,9 +1487,7 @@ algorithm
 
     case SCode.COMPONENT(info = info)
       algorithm
-        decl_mod := Modifier.fromElement(component, parent);
-        cc_mod := instConstrainingMod(component, parent);
-        mod := Modifier.merge(decl_mod, cc_mod);
+        mod := instElementModifier(component, parent);
         mod := Modifier.merge(mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
         checkOuterComponentMod(mod, component, node);
@@ -1544,6 +1543,18 @@ algorithm
         ();
   end match;
 end instComponentDef;
+
+function instElementModifier
+  input SCode.Element element;
+  input InstNode parent;
+  output Modifier mod;
+protected
+  Modifier cc_mod;
+algorithm
+  cc_mod := instConstrainingMod(element, parent);
+  mod := Modifier.fromElement(element, parent);
+  mod := Modifier.merge(mod, cc_mod);
+end instElementModifier;
 
 function instConstrainingMod
   input SCode.Element element;
