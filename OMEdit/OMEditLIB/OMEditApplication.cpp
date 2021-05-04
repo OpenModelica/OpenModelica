@@ -69,8 +69,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   //*a.severin/ add localization
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
   if (!installationDirectoryPath) {
-    QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), Helper::ok);
+    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), Helper::ok);
     quit();
     exit(1);
   }

@@ -3989,7 +3989,7 @@ WelcomePageWidget::WelcomePageWidget(QWidget *pParent)
   QHBoxLayout *topFrameLayout = new QHBoxLayout;
   topFrameLayout->setAlignment(Qt::AlignLeft);
   topFrameLayout->addWidget(mpPixmapLabel);
-  topFrameLayout->addWidget(mpHeadingLabel);
+  topFrameLayout->addWidget(mpHeadingLabel, 1);
   mpTopFrame->setLayout(topFrameLayout);
   // RecentFiles Frame
   mpRecentFilesFrame = new QFrame;

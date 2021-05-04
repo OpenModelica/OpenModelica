@@ -38,6 +38,8 @@
 #include <QColorDialog>
 #include <QKeyEvent>
 #include <cassert>
+#include <QtMath>
+#include <QApplication>
 
 #include "ViewerWidget.h"
 #include "Modeling/MessagesWidget.h"
@@ -85,17 +87,14 @@ ViewerWidget::ViewerWidget(QWidget* parent, Qt::WindowFlags flags)
   mpViewer = new Viewer;
   mpSceneView = new osgViewer::View();
   mpAnimationWidget = qobject_cast<AbstractAnimationWindow*>(parent);
-  // widget resolution
-  int height = rect().height();
-  int width = rect().width();
   // add a scene to viewer
   mpViewer->addView(mpSceneView);
   // get the viewer widget
   osg::ref_ptr<osg::Camera> camera = mpSceneView->getCamera();
   camera->setGraphicsContext(mpGraphicsWindow);
   camera->setClearColor(osg::Vec4(0.95, 0.95, 0.95, 1.0));
-  camera->setViewport(new osg::Viewport(0, 0, width, height));
-  camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(width/2) / static_cast<double>(height/2), 1.0f, 10000.0f);
+  camera->setViewport(new osg::Viewport(0, 0, width(), height()));
+  camera->setProjectionMatrixAsPerspective(30.0f, static_cast<double>(width()/2) / static_cast<double>(height()/2), 1.0f, 10000.0f);
   mpSceneView->addEventHandler(new osgViewer::StatsHandler());
   // reverse the mouse wheel zooming
   osgGA::MultiTouchTrackballManipulator *pMultiTouchTrackballManipulator = new osgGA::MultiTouchTrackballManipulator();
@@ -150,8 +149,9 @@ void ViewerWidget::paintGL()
  */
 void ViewerWidget::resizeGL(int width, int height)
 {
-  getEventQueue()->windowResize(x(), y(), width, height);
-  mpGraphicsWindow->resized(x(), y(), width, height);
+  int pixelRatio = qCeil(qApp->devicePixelRatio());
+  getEventQueue()->windowResize(x() * pixelRatio, y() * pixelRatio, width * pixelRatio, height * pixelRatio);
+  mpGraphicsWindow->resized(x() * pixelRatio, y() * pixelRatio, width * pixelRatio, height * pixelRatio);
 }
 
 /*!
@@ -185,7 +185,8 @@ void ViewerWidget::keyReleaseEvent(QKeyEvent *event)
  */
 void ViewerWidget::mouseMoveEvent(QMouseEvent *event)
 {
-  getEventQueue()->mouseMotion(static_cast<float>(event->x()), static_cast<float>(event->y()));
+  int pixelRatio = qCeil(qApp->devicePixelRatio());
+  getEventQueue()->mouseMotion(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio));
 }
 
 /*!
@@ -218,7 +219,8 @@ void ViewerWidget::mousePressEvent(QMouseEvent *event)
     default:
       break;
   }
-  getEventQueue()->mouseButtonPress(static_cast<float>(event->x()), static_cast<float>(event->y()), button);
+  int pixelRatio = qCeil(qApp->devicePixelRatio());
+  getEventQueue()->mouseButtonPress(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), button);
 }
 
 /*!
@@ -491,7 +493,8 @@ void ViewerWidget::mouseReleaseEvent(QMouseEvent *event)
     default:
       break;
   }
-  getEventQueue()->mouseButtonRelease(static_cast<float>(event->x()), static_cast<float>(event->y()), button);
+  int pixelRatio = qCeil(qApp->devicePixelRatio());
+  getEventQueue()->mouseButtonRelease(static_cast<float>(event->x() * pixelRatio), static_cast<float>(event->y() * pixelRatio), button);
 }
 
 /*!

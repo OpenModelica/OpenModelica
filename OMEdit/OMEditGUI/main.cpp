@@ -171,6 +171,9 @@ int main(int argc, char *argv[])
     }
   }
   Q_INIT_RESOURCE(resource_omedit);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+  QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
   OMEditApplication a(argc, argv, threadData);
   return a.exec();
 
