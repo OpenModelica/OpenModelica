@@ -1881,7 +1881,7 @@ algorithm
   // Type check the subscript's type against the expected subscript type for the dimension.
   ety := Dimension.subscriptType(dimension);
   // We can have both : subscripts and : dimensions here, so we need to allow unknowns.
-  (_, _, mk) := TypeCheck.matchTypes(ty, ety, e, allowUnknown = true);
+  (_, _, mk) := TypeCheck.matchTypes(ty, ety, Expression.EMPTY(ty), allowUnknown = true);
 
   if TypeCheck.isIncompatibleMatch(mk) then
     Error.addSourceMessage(Error.SUBSCRIPT_TYPE_MISMATCH,
