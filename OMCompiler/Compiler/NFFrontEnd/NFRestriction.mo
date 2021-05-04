@@ -90,6 +90,7 @@ public
       case MODEL() then ClassInf.State.MODEL(path);
       case OPERATOR() then ClassInf.State.FUNCTION(path, false);
       case RECORD() then ClassInf.State.RECORD(path);
+      case RECORD_CONSTRUCTOR() then ClassInf.State.RECORD(path);
       case TYPE() then ClassInf.State.TYPE(path);
       case CLOCK() then ClassInf.State.TYPE_CLOCK(path);
       else ClassInf.State.UNKNOWN(path);

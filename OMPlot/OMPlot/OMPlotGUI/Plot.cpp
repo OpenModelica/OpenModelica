@@ -232,6 +232,7 @@ void Plot::replot()
       pen.setColor(getUniqueColor(i, mPlotCurvesList.length()));
       mPlotCurvesList[i]->setPen(pen);
     }
+    mPlotCurvesList[i]->setTitleLocal();
   }
 
   if (mpParentPlotWindow->getXCustomLabel().isEmpty()) {
@@ -240,28 +241,20 @@ void Plot::replot()
         || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTALL
         || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE
         || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
-      if (mpXScaleDraw->getAxesPrefix().isEmpty()) {
+      if (mpXScaleDraw->getUnitPrefix().isEmpty()) {
         setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
       } else {
-        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getAxesPrefix(), timeUnit));
+        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getUnitPrefix(), timeUnit));
       }
     } else {
-      if (mpXScaleDraw->getAxesPrefix().isEmpty()) {
-        setAxisTitle(QwtPlot::xBottom, "");
-      } else {
-        setAxisTitle(QwtPlot::xBottom, QString("(%1)").arg(mpXScaleDraw->getAxesPrefix()));
-      }
+      setAxisTitle(QwtPlot::xBottom, "");
     }
   } else {
     setAxisTitle(QwtPlot::xBottom, mpParentPlotWindow->getXCustomLabel());
   }
 
   if (mpParentPlotWindow->getYCustomLabel().isEmpty()) {
-    if (mpYScaleDraw->getAxesPrefix().isEmpty()) {
-      setAxisTitle(QwtPlot::yLeft, "");
-    } else {
-      setAxisTitle(QwtPlot::yLeft, QString("(%1)").arg(mpYScaleDraw->getAxesPrefix()));
-    }
+    setAxisTitle(QwtPlot::yLeft, "");
   } else {
     setAxisTitle(QwtPlot::yLeft, mpParentPlotWindow->getYCustomLabel());
   }

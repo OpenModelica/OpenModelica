@@ -273,7 +273,7 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
-    pPlotWindow->setPrefixAxes(OptionsDialog::instance()->getPlottingPage()->getPrefixAxesCheckbox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->setXLabel(QString("time"));
     pPlotWindow->installEventFilter(this);
@@ -307,7 +307,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
-    pPlotWindow->setPrefixAxes(OptionsDialog::instance()->getPlottingPage()->getPrefixAxesCheckbox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
@@ -338,7 +338,7 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
-    pPlotWindow->setPrefixAxes(OptionsDialog::instance()->getPlottingPage()->getPrefixAxesCheckbox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     QComboBox* unitComboBox = MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox();
     if (unitComboBox->currentText() == ""){
         int currentIndex = unitComboBox->findText("s", Qt::MatchExactly);
@@ -381,7 +381,7 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QStrin
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
-    pPlotWindow->setPrefixAxes(OptionsDialog::instance()->getPlottingPage()->getPrefixAxesCheckbox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->setXLabel(QString("time"));
     pPlotWindow->installEventFilter(this);
@@ -418,7 +418,7 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
-    pPlotWindow->setPrefixAxes(OptionsDialog::instance()->getPlottingPage()->getPrefixAxesCheckbox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     QComboBox* unitComboBox = MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox();
     if (unitComboBox->currentText() == ""){
         int currentIndex = unitComboBox->findText("s", Qt::MatchExactly);
@@ -619,7 +619,7 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
           if (pPlotWindow->getAutoScaleButton()->isChecked()) {
             pPlotWindow->fitInView();
           } else {
-            pPlotWindow->getPlot()->replot();
+            pPlotWindow->updatePlot();
           }
         }
       }

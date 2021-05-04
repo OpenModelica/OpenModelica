@@ -128,8 +128,6 @@ CevalFuncFor2.mo \
 CevalFuncIf1.mo \
 CevalFuncRecord1.mo \
 CevalFuncRecord2.mo \
-CevalFuncRecord3.mo \
-CevalFuncRecord4.mo \
 CevalFuncRecord5.mo \
 CevalFuncRecord6.mo \
 CevalFuncRecord7.mo \
@@ -167,6 +165,7 @@ CevalRecord3.mo \
 CevalRecord4.mo \
 CevalRecord5.mo \
 CevalRecord6.mo \
+CevalRecord7.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray4.mo \
@@ -285,6 +284,7 @@ const7.mo \
 const8.mo \
 ConstrainingClass1.mo \
 ConstrainingClass2.mo \
+ConstrainingClassFunc1.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
 DimCyclic3.mo \
@@ -577,6 +577,7 @@ FunctionNonInputOutputParameter.mo \
 FunctionRecordArg1.mo \
 FunctionRecordArg2.mo \
 FunctionRecordArg3.mo \
+FunctionRecordArg4.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
 FunctionSections1.mo \
@@ -982,6 +983,8 @@ OCGTests.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+CevalFuncRecord3.mo \
+CevalFuncRecord4.mo \
 FinalParameter1.mo \
 FinalParameter2.mo \
 FinalParameter3.mo \

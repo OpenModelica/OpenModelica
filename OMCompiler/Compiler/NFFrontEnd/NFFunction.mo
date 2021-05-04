@@ -505,7 +505,7 @@ uniontype Function
     cache := InstNode.getFuncCache(InstNode.classScope(inNode));
     outFuncs := match cache
       case CachedData.FUNCTION() then cache.funcs;
-      else fail();
+      else {};
     end match;
   end getCachedFuncs;
 
@@ -1816,7 +1816,8 @@ uniontype Function
     end for;
 
     params := listReverse(params);
-    ty := if boxTypes then Type.box(fn.returnType) else fn.returnType;
+    ty := if isDefaultRecordConstructor(fn) then InstNode.getType(fn.node) else fn.returnType;
+    ty := if boxTypes then Type.box(ty) else ty;
     outType := DAE.T_FUNCTION(params, Type.toDAE(ty), fn.attributes, fn.path);
   end makeDAEType;
 

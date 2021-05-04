@@ -115,7 +115,7 @@ private:
   void enableDisableUnitComboBox(const QString &value);
 public slots:
   void fileSelectorButtonClicked();
-  void unitComboBoxChanged(QString text);
+  void unitComboBoxChanged(int index);
   void valueComboBoxChanged(int index);
   void valueCheckBoxChanged(bool toggle);
   void valueTextBoxEdited(const QString &text);

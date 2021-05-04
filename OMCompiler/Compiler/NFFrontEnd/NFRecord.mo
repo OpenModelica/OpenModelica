@@ -54,6 +54,7 @@ import Inst = NFInst;
 import Lookup = NFLookup;
 import TypeCheck = NFTypeCheck;
 import Typing = NFTyping;
+import NFPrefixes.Direction;
 import NFPrefixes.Variability;
 import NFPrefixes.Visibility;
 import NFFunction.Function;
@@ -62,6 +63,7 @@ import ComplexType = NFComplexType;
 import ComponentRef = NFComponentRef;
 import NFFunction.FunctionStatus;
 import MetaModelica.Dangerous.listReverseInPlace;
+import UnorderedSet;
 
 public
 
@@ -101,13 +103,12 @@ function instDefaultConstructor
   input InstContext.Type context;
   input SourceInfo info;
 protected
-  list<InstNode> inputs, locals, all_params;
+  list<InstNode> inputs, locals, all_params, sorted_locals;
   DAE.FunctionAttributes attr;
   Pointer<FunctionStatus> status;
   InstNode ctor_node, out_rec;
   Component out_comp;
   Class ctor_cls;
-  InstNode ty_node;
 algorithm
   // The node we get is usually a record instance, with applied modifiers and so on.
   // So the first thing we do is to create a "pure" instance of the record.
@@ -132,6 +133,15 @@ algorithm
   // Collect the record fields.
   (inputs, locals, all_params) := collectRecordParams(ctor_node);
 
+  // TODO: The local fields can contain depenencies on each other which requires
+  //       reordering them such that they can be initialized before they're used.
+  //       But the code generation uses the type of the record constructor both
+  //       for generating the record struct and the record constructor, so we
+  //       can't currently reorder variables here without also messing up the
+  //       order of the record itself.
+  //sorted_locals := Function.sortLocals(locals, info);
+  //all_params := listAppend(inputs, sorted_locals);
+
   // Create the output record element, using the instance created above as both parent and type.
   out_comp := Component.UNTYPED_COMPONENT(ctor_node, listArray({}),
                 NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING,
@@ -141,6 +151,7 @@ algorithm
   // Make a record constructor class and create a node for the constructor.
   ctor_cls := Class.makeRecordConstructor(all_params, out_rec);
   ctor_node := InstNode.replaceClass(ctor_cls, ctor_node);
+  InstNode.classApply(ctor_node, Class.setType, Type.COMPLEX(ctor_node, ComplexType.CLASS()));
 
   // Create the constructor function and add it to the function cache.
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
@@ -148,6 +159,37 @@ algorithm
   InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs,
     {out_rec}, locals, {}, Type.UNKNOWN(), attr, {}, status, Pointer.create(0)), false);
 end instDefaultConstructor;
+
+function checkLocalFieldOrder
+  "Checks if the local variables in a record constructor requires reordering,
+   and issues an error in that case since we can't handle it yet."
+  input list<InstNode> locals;
+  input InstNode recNode;
+  input SourceInfo info;
+protected
+  UnorderedSet<InstNode> locals_set;
+  list<InstNode> locs, deps;
+  InstNode loc;
+algorithm
+  if listLength(locals) <= 1 then
+    return;
+  end if;
+
+  loc :: locs := listReverse(locals);
+  locals_set := UnorderedSet.fromList({loc}, InstNode.hash, InstNode.refEqual);
+
+  for l in locs loop
+    deps := Function.getLocalDependencies(l, locals_set);
+
+    if not listEmpty(deps) then
+      Error.addSourceMessage(Error.UNSUPPORTED_RECORD_REORDERING,
+        {InstNode.name(recNode)}, info);
+      fail();
+    end if;
+
+    UnorderedSet.add(l, locals_set);
+  end for;
+end checkLocalFieldOrder;
 
 function collectRecordParams
   input InstNode recNode;
@@ -207,12 +249,27 @@ algorithm
 
   comp := InstNode.component(comp_node);
 
-  if Component.isConst(comp) and Component.hasBinding(comp) then
-    locals := comp_node :: locals;
-  else
+  if Component.isModifiable(comp) then
+    setFieldDirection(comp_node, Direction.INPUT);
     inputs := comp_node :: inputs;
+  else
+    setFieldDirection(comp_node, Direction.NONE);
+    locals := comp_node :: locals;
   end if;
 end collectRecordParam;
+
+function setFieldDirection
+  input InstNode field;
+  input Direction direction;
+protected
+  Component comp = InstNode.component(field);
+  Component.Attributes attr;
+algorithm
+  attr := Component.getAttributes(comp);
+  attr.direction := direction;
+  comp := Component.setAttributes(attr, comp);
+  InstNode.updateComponent(comp, field);
+end setFieldDirection;
 
 function collectRecordFields
   input InstNode recNode;
@@ -237,7 +294,7 @@ algorithm
   else
     comp := InstNode.component(comp_node);
 
-    if Component.isConst(comp) and Component.hasBinding(comp) then
+    if not Component.isModifiable(comp) then
       fields := Field.LOCAL(InstNode.name(comp_node)) :: fields;
     elseif not Component.isOutput(comp) then
       fields := Field.INPUT(InstNode.name(comp_node)) :: fields;

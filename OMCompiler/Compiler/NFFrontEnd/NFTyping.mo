@@ -1099,8 +1099,9 @@ algorithm
           parent := InstNode.parent(component);
           binding := TypeCheck.matchBinding(binding, attrType, name, parent);
 
-          // Check the variability. All builtin attributes have parameter variability.
-          if Binding.variability(binding) > Variability.PARAMETER then
+          // Check the variability. All builtin attributes have parameter variability,
+          // unless we're in a function in which case we don't care.
+          if Binding.variability(binding) > Variability.PARAMETER and not InstContext.inFunction(context) then
             Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
               {name, Prefixes.variabilityString(Variability.PARAMETER),
                "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
@@ -1880,7 +1881,7 @@ algorithm
   // Type check the subscript's type against the expected subscript type for the dimension.
   ety := Dimension.subscriptType(dimension);
   // We can have both : subscripts and : dimensions here, so we need to allow unknowns.
-  (_, _, mk) := TypeCheck.matchTypes(ty, ety, e, allowUnknown = true);
+  (_, _, mk) := TypeCheck.matchTypes(ty, ety, Expression.EMPTY(ty), allowUnknown = true);
 
   if TypeCheck.isIncompatibleMatch(mk) then
     Error.addSourceMessage(Error.SUBSCRIPT_TYPE_MISMATCH,

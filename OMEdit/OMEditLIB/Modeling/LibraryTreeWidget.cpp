@@ -455,6 +455,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
               return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
           }
         case oms_signal_type_integer:
+        case oms_signal_type_enum:
           switch (mpOMSConnector->causality) {
             case oms_causality_input:
               return ResourceCache::getIcon(":/Resources/icons/integer-input-connector.svg");

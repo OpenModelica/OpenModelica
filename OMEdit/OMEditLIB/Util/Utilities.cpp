@@ -1259,3 +1259,34 @@ QStringList Utilities::variantListToStringList(const QVariantList lst)
   }
   return strs;
 }
+
+/*!
+ * \brief Utilities::convertUnitToSymbol
+ * Converts the unit to a symbol.
+ * \param displayUnit
+ * \return
+ */
+QString Utilities::convertUnitToSymbol(const QString displayUnit)
+{
+  if (displayUnit.compare(QStringLiteral("Ohm")) == 0) {
+    return QChar(937);
+  } else {
+    return displayUnit;
+  }
+}
+
+/*!
+ * \brief Utilities::convertSymbolToUnit
+ * Converts the symbol to unit.
+ * \param symbol
+ * \return
+ */
+QString Utilities::convertSymbolToUnit(const QString symbol)
+{
+  // Greek Omega
+  if (symbol.compare(QChar(937)) == 0) {
+    return "Ohm";
+  } else {
+    return symbol;
+  }
+}

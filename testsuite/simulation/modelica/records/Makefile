@@ -3,6 +3,7 @@ TEST = ../../../rtest -v
 TESTFILES = \
 ATotal.mos \
 InOutRecord.mos \
+RecordConstructor1.mos \
 TestComplexSum1.mos \
 TestComplexSum2.mos \
 Ticket5134.mos

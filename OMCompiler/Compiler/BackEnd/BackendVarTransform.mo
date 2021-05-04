@@ -1023,6 +1023,7 @@ algorithm
       DAE.CallAttributes attr;
       DAE.Ident ident;
       HashTable2.HashTable derConst;
+      list<String> fields;
 
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
@@ -1115,6 +1116,11 @@ algorithm
         (expl_1,true) = replaceExpList(expl, repl, cond);
       then
         (DAE.CALL(path,expl_1,attr),true);
+    case (DAE.RECORD(path, expl, fields, t), repl, cond)
+      algorithm
+        (expl, true) := replaceExpList(expl, repl, cond);
+      then
+        (DAE.RECORD(path, expl, fields, t), true);
     // INTEGER_CLOCK
     case (DAE.CLKCONST(DAE.INTEGER_CLOCK(intervalCounter=e, resolution=resolution)), repl, cond)
       equation

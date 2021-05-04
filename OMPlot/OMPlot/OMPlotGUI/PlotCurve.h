@@ -55,6 +55,7 @@ private:
   qreal mWidth;
   int mStyle;
   bool mToggleSign;
+  QString mCustomTitle;
 
   Plot *mpParentPlot;
   QwtPlotDirectPainter *mpPlotDirectPainter;
@@ -83,6 +84,8 @@ public:
   int getCurveStyle() {return mStyle;}
   bool getToggleSign() const {return mToggleSign;}
   void setToggleSign(bool toggleSign) {mToggleSign = toggleSign;}
+  QString getCustomTitle() const {return mCustomTitle;}
+  void setCustomTitle(const QString &customTitle) {mCustomTitle = customTitle;}
   void setXAxisVector(QVector<double> vector);
   void addXAxisValue(double value);
   void updateXAxisValue(int index, double value);

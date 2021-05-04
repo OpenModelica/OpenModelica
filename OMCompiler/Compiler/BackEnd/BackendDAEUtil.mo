@@ -5250,7 +5250,7 @@ algorithm
       equation
         true = AbsynUtil.pathEqual(path,path1);
         rabs = intAbs(r);
-        // if not negatet rowmark then
+        // if not negated rowmark then
         false = intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
@@ -5262,7 +5262,29 @@ algorithm
       equation
         true = AbsynUtil.pathEqual(path,path1);
         rabs = intAbs(r);
-        // if not negatet rowmark then
+        // if not negated rowmark then
+        false = intEq(rowmark[rabs],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
+        true = expCrefLstHasCref(explst,cr1);
+        false = Expression.expHasCrefNoPreorDer(e1,cr1);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
+    case(r::rest,DAE.RECORD(path=path,exps=explst),_,_,_,_,_,_)
+      equation
+        rabs = intAbs(r);
+        // if not negated rowmark then
+        false = intEq(rowmark[rabs],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
+        true = expCrefLstHasCref(explst,cr1);
+        false = Expression.expHasCrefNoPreorDer(e2,cr1);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
+    case(r::rest,_,DAE.RECORD(path=path,exps=explst),_,_,_,_,_)
+      equation
+        rabs = intAbs(r);
+        // if not negated rowmark then
         false = intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
@@ -5273,7 +5295,7 @@ algorithm
     case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL(),_,_,_,_,_)
       equation
         rabs = intAbs(r);
-        // if not negatet rowmark then
+        // if not negated rowmark then
         false = intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);

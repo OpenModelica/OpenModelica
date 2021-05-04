@@ -41,6 +41,7 @@
 #include "qwt_scale_draw.h"
 #include "qwt_scale_widget.h"
 #include "qwt_text_label.h"
+#include "qwt_abstract_legend.h"
 
 using namespace OMPlot;
 
@@ -54,13 +55,10 @@ PlotWindow::PlotWindow(QStringList arguments, QWidget *parent, bool isInteractiv
   setPalette(p);
   // setup the main window widget
   setUpWidget();
-  // Use monospaced font for legend for better readability of toggled items sign.
-  QFont monospaceFont("Monospace");
-  monospaceFont.setStyleHint(QFont::TypeWriter);
-  setLegendFont(monospaceFont);
+  // Keep default legend font since greek-mu for micro is not displayed correctly with monospaced font.
+  setLegendFont(mpPlot->legend()->font());
   // initialize plot by reading all parameters passed to it
-  if (arguments.size() > 1)
-  {
+  if (arguments.size() > 1) {
     initializePlot(arguments);
     mpPlot->getPlotZoomer()->setZoomBase(false);
   }
@@ -130,7 +128,7 @@ void PlotWindow::initializePlot(QStringList arguments)
     throw PlotException("Invalid input" + arguments[17]);
   }
   setTimeUnit("");
-  setPrefixAxes(false);
+  setPrefixUnits(false);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 18; i < arguments.length(); i++)
@@ -1405,6 +1403,19 @@ void PlotWindow::updateYAxis(QPair<double, double> minMaxValues)
   }
 }
 
+/*!
+ * \brief PlotWindow::updatePlot
+ * This function is called by OMEdit when auto scale is false.
+ * Updates the plot manually.
+ */
+void PlotWindow::updatePlot()
+{
+  mpPlot->updateLayout();
+  mpPlot->replot();
+  if (mpPlot->getPlotZoomer()->zoomStack().size() == 1) {
+    mpPlot->getPlotZoomer()->setZoomBase(false);
+  }
+}
 
 void PlotWindow::setGrid(QString grid)
 {
@@ -1584,14 +1595,14 @@ QString PlotWindow::getFooter()
 #endif
 }
 
-bool PlotWindow::getPrefixAxes() const
+bool PlotWindow::getPrefixUnits() const
 {
-  return mPrefixAxes;
+  return mPrefixUnits;
 }
 
-void PlotWindow::setPrefixAxes(bool prefixAxes)
+void PlotWindow::setPrefixUnits(bool prefixUnits)
 {
-  mPrefixAxes = prefixAxes;
+  mPrefixUnits = prefixUnits;
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
@@ -1834,22 +1845,6 @@ bool PlotWindow::toggleSign(PlotCurve *pPlotCurve, bool checked)
     pPlotCurve->setData(pPlotCurve->getXAxisVector(), pPlotCurve->getYAxisVector(), pPlotCurve->getSize());
     toggleSign = true;
   }
-  // Add - sign to variable curve text
-  QwtText text = pPlotCurve->title();
-  if (checked) {
-    if (text.text().startsWith("-")) {
-      text.setText(text.text());
-    } else {
-      text.setText(QString("-%1").arg(text.text()));
-    }
-  } else {
-    if (text.text().startsWith("-")) {
-      text.setText(text.text().remove(0, 1));
-    } else {
-      text.setText(text.text());
-    }
-  }
-  pPlotCurve->setTitle(text);
   return toggleSign;
 }
 
@@ -1877,7 +1872,7 @@ VariablePageWidget::VariablePageWidget(PlotCurve *pPlotCurve, SetupDialog *pSetu
   // general group box
   mpGeneralGroupBox = new QGroupBox(tr("General"));
   mpLegendLabel = new QLabel(tr("Legend"));
-  mpLegendTextBox = new QLineEdit(mpPlotCurve->title().text());
+  mpLegendTextBox = new QLineEdit(mpPlotCurve->getCustomTitle().isEmpty() ? mpPlotCurve->title().text() : mpPlotCurve->getCustomTitle());
   mpResetLabelButton = new QPushButton(tr("Reset"));
   mpResetLabelButton->setAutoDefault(false);
   connect(mpResetLabelButton, SIGNAL(clicked()), SLOT(resetLabel()));
@@ -1955,6 +1950,7 @@ void VariablePageWidget::setCurvePickColorButtonIcon()
 
 void VariablePageWidget::resetLabel()
 {
+  mpPlotCurve->setCustomTitle("");
   mpPlotCurve->setTitleLocal();
   mpLegendTextBox->setText(mpPlotCurve->title().text());
 }
@@ -2080,6 +2076,10 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpLegendPositionComboBox->addItem(tr("Right"), "right");
   mpLegendPositionComboBox->addItem(tr("Bottom"), "bottom");
   mpLegendPositionComboBox->addItem(tr("Left"), "left");
+  int index = mpLegendPositionComboBox->findData(mpPlotWindow->getLegendPosition());
+  if (index > -1) {
+    mpLegendPositionComboBox->setCurrentIndex(index);
+  }
   mpLegendFontSizeLabel = new QLabel(tr("Legend Font Size"));
   mpLegendFontSizeSpinBox = new QDoubleSpinBox;
   mpLegendFontSizeSpinBox->setRange(6, std::numeric_limits<double>::max());
@@ -2129,15 +2129,15 @@ SetupDialog::SetupDialog(PlotWindow *pPlotWindow)
   mpXMaximumTextBox->setValidator(pDoubleValidator);
   mpYMinimumTextBox->setValidator(pDoubleValidator);
   mpXMaximumTextBox->setValidator(pDoubleValidator);
-  mpPrefixAxesCheckbox = new QCheckBox(tr("Prefix Axes"));
-  mpPrefixAxesCheckbox->setChecked(mpPlotWindow->getPrefixAxes());
+  mpPrefixUnitsCheckbox = new QCheckBox(tr("Prefix Units"));
+  mpPrefixUnitsCheckbox->setChecked(mpPlotWindow->getPrefixUnits());
   // range tab layout
   QVBoxLayout *pRangeTabVerticalLayout = new QVBoxLayout;
   pRangeTabVerticalLayout->setAlignment(Qt::AlignTop);
   pRangeTabVerticalLayout->addWidget(mpAutoScaleCheckbox);
   pRangeTabVerticalLayout->addWidget(mpXAxisGroupBox);
   pRangeTabVerticalLayout->addWidget(mpYAxisGroupBox);
-  pRangeTabVerticalLayout->addWidget(mpPrefixAxesCheckbox);
+  pRangeTabVerticalLayout->addWidget(mpPrefixUnitsCheckbox);
   mpRangeTab->setLayout(pRangeTabVerticalLayout);
   // add tabs
   mpSetupTabWidget->addTab(mpVariablesTab, tr("Variables"));
@@ -2190,7 +2190,11 @@ bool SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
   PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
 
   /* set the legend title */
-  pPlotCurve->setTitle(pVariablePageWidget->getLegendTextBox()->text());
+  if (pPlotCurve->title().text().compare(pVariablePageWidget->getLegendTextBox()->text()) == 0) {
+    pPlotCurve->setCustomTitle("");
+  } else {
+    pPlotCurve->setCustomTitle(pVariablePageWidget->getLegendTextBox()->text());
+  }
   /* set the curve color title */
   pPlotCurve->setCustomColor(!pVariablePageWidget->getAutomaticColorCheckBox()->isChecked());
   if (pVariablePageWidget->getAutomaticColorCheckBox()->isChecked()) {
@@ -2261,8 +2265,8 @@ void SetupDialog::applySetup()
   mpPlotWindow->setFooter(mpPlotFooterTextBox->text());
   // set the legend
   mpPlotWindow->setLegendPosition(mpLegendPositionComboBox->itemData(mpLegendPositionComboBox->currentIndex()).toString());
-  // set the prefix axes
-  mpPlotWindow->setPrefixAxes(mpPrefixAxesCheckbox->isChecked());
+  // set the prefix units
+  mpPlotWindow->setPrefixUnits(mpPrefixUnitsCheckbox->isChecked());
   // set the auto scale
   mpPlotWindow->setAutoScale(mpAutoScaleCheckbox->isChecked());
   // set the range
