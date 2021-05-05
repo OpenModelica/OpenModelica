@@ -9562,6 +9562,12 @@ algorithm
   end match;
 end expStructuralEqualListLst;
 
+public function expContainsList
+  input list<DAE.Exp> expl;
+  input DAE.Exp exp;
+  output Boolean contains = List.map1BoolOr(expl, expContains, exp);
+end expContainsList;
+
 public function expContains
 "Returns true if first expression contains the second one as a sub expression.
 Only constants, component references or der(componentReference) can be checked
@@ -9596,52 +9602,34 @@ algorithm
 
     case (DAE.ENUM_LITERAL(), _) then false;
 
-    case (DAE.ARRAY(array=expLst), _) equation
-      res = List.isMemberOnTrue(inExp2, expLst, expContains);
-    then res;
-
-    case (DAE.MATRIX(matrix=expl), _) equation
-      res = List.map1ListBoolOr(expl, expContains, inExp2);
-    then res;
+    case (DAE.ARRAY(array=expLst), _) then expContainsList(expLst, inExp2);
+    case (DAE.MATRIX(matrix=expl), _) then List.map1ListBoolOr(expl, expContains, inExp2);
 
     case (DAE.CREF(componentRef=cr1), DAE.CREF(componentRef=cr2)) equation
       res = ComponentReference.crefEqual(cr1, cr2);
       if not res then
         expLst = List.map(ComponentReference.crefSubs(cr1), getSubscriptExp);
-        res = List.isMemberOnTrue(inExp2, expLst, expContains);
+        res = expContainsList(expLst, inExp2);
       end if;
     then res;
 
     case ((DAE.CREF()), _) then false;
 
-    case (DAE.BINARY(exp1=e1, exp2=e2), _) equation
-      res = expContains(e1, inExp2);
-      res = if res then true else expContains(e2, inExp2);
-    then res;
+    case (DAE.BINARY(exp1=e1, exp2=e2), _)
+      then expContains(e1, inExp2) or expContains(e2, inExp2);
 
-    case (DAE.UNARY(exp=e), _) equation
-      res = expContains(e, inExp2);
-    then res;
+    case (DAE.UNARY(exp=e), _) then expContains(e, inExp2);
 
-    case (DAE.LBINARY(exp1=e1, exp2=e2), _) equation
-      res = expContains(e1, inExp2);
-      res = if res then true else expContains(e2, inExp2);
-    then res;
+    case (DAE.LBINARY(exp1=e1, exp2=e2), _)
+      then expContains(e1, inExp2) or expContains(e2, inExp2);
 
-    case (DAE.LUNARY(exp=e), _) equation
-      res = expContains(e, inExp2);
-    then res;
+    case (DAE.LUNARY(exp=e), _) then expContains(e, inExp2);
 
-    case (DAE.RELATION(exp1=e1, exp2=e2), _) equation
-      res = expContains(e1, inExp2);
-      res = if res then true else expContains(e2, inExp2);
-    then res;
+    case (DAE.RELATION(exp1=e1, exp2=e2), _)
+      then expContains(e1, inExp2) or expContains(e2, inExp2);
 
-    case (DAE.IFEXP(expCond=c, expThen=t, expElse=f), _) equation
-      res = expContains(c, inExp2);
-      res = if res then true else expContains(t, inExp2);
-      res = if res then true else expContains(f, inExp2);
-    then res;
+   case (DAE.IFEXP(expCond=c, expThen=t, expElse=f), _)
+      then expContains(c, inExp2) or expContains(t, inExp2) or expContains(f, inExp2);
 
     case (DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(cr1)}),
           DAE.CALL(path=Absyn.IDENT(name="der"), expLst={DAE.CREF(cr2)})) equation
@@ -9653,37 +9641,16 @@ algorithm
     case (DAE.CALL(path=Absyn.IDENT(name="previous")), _) then false;
 
     // special rule for no arguments
-    case (DAE.CALL(expLst={}), _)
-     then false;
+    case (DAE.CALL(expLst={}), _) then false;
 
     // general case for arguments
-    case (DAE.CALL(expLst=expLst), _) equation
-      res = List.isMemberOnTrue(inExp2, expLst, expContains);
-    then res;
-
-    case (DAE.RECORD(exps=expLst), _) equation
-      res = List.isMemberOnTrue(inExp2, expLst, expContains);
-    then res;
-
-    case (DAE.PARTEVALFUNCTION(expList=expLst), DAE.CREF()) equation
-      res = List.isMemberOnTrue(inExp2, expLst, expContains);
-    then res;
-
-    case (DAE.CAST(ty=DAE.T_REAL(), exp=DAE.ICONST()), _)
-    then false;
-
-    case (DAE.CAST(ty=DAE.T_REAL(), exp=e), _) equation
-      res = expContains(e, inExp2);
-    then res;
-
-    case (DAE.ASUB(exp=e, sub=expLst), _) equation
-      res = List.isMemberOnTrue(inExp2, expLst, expContains);
-      res = if res then true else expContains(e, inExp2);
-    then res;
-
-    case (DAE.REDUCTION(expr=e), _) equation
-      res = expContains(e, inExp2);
-    then res;
+    case (DAE.CALL(expLst=expLst), _) then expContainsList(expLst, inExp2);
+    case (DAE.RECORD(exps=expLst), _) then expContainsList(expLst, inExp2);
+    case (DAE.PARTEVALFUNCTION(expList=expLst), DAE.CREF()) then expContainsList(expLst, inExp2);
+    case (DAE.CAST(ty=DAE.T_REAL(), exp=DAE.ICONST()), _) then false;
+    case (DAE.CAST(ty=DAE.T_REAL(), exp=e), _) then expContains(e, inExp2);
+    case (DAE.ASUB(exp=e, sub=expLst), _) then expContainsList(expLst, inExp2) or expContains(e, inExp2);
+    case (DAE.REDUCTION(expr=e), _) then expContains(e, inExp2);
 
     else equation
       true = Flags.isSet(Flags.FAILTRACE);
@@ -12345,7 +12312,6 @@ algorithm
         true = intGt(i, 0);
         field_names = list(v.name for v in varLst);
         e = DAE.RECORD(name, expl, field_names, ty);
-        //e = DAE.CALL(name, expl, DAE.CALL_ATTR(ty, false, false, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
         (e, _) = traverseExpBottomUp(e, traversingextendArrExp, true);
       then
         (e, true);

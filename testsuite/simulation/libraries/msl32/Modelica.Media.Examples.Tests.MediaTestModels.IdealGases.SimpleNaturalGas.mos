@@ -40,7 +40,13 @@ runScript(modelTesting);getErrorString();
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: Some equations could not be differentiated for following variables having attribute stateSelect=StateSelect.prefer. They will be treated as if they had stateSelect=StateSelect.default
 // ========================================
-// 1: volume.medium.T
+// 1: volume.medium.Xi[6]
+// 2: volume.medium.Xi[5]
+// 3: volume.medium.Xi[4]
+// 4: volume.medium.Xi[3]
+// 5: volume.medium.Xi[2]
+// 6: volume.medium.Xi[1]
+// 7: volume.medium.T
 // Please use -d=bltdump for more information.
 //
 // "true
