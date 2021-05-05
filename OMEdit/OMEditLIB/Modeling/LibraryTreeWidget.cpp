@@ -4023,7 +4023,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   QFileInfo fileInfo(fileName);
   if (checkFileExists) {
     if (!fileInfo.exists()) {
-      QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
+      QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
       QSettings *pSettings = Utilities::getApplicationSettings();
       QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
@@ -4039,10 +4039,22 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
       return;
     }
   }
+  /* Ticket#6434 Handle the .lnk file links
+   * QFileInfo::isSymbolicLink() returns false for *.lnk files.
+   * Qt docs says,
+   * "In addition, true will be returned for shortcuts (*.lnk files) on Windows.
+   *  This behavior is deprecated and will likely change in a future version of Qt. Opening those will open the .lnk file itself."
+   * QFileInfo::symLinkTarget() returns the absolute path to the file or directory a symbolic link points to, or an empty string if the object isn't a symbolic link.
+   */
+  QString targetFileName = fileInfo.symLinkTarget();
+  if (!targetFileName.isEmpty()) {
+    fileInfo = QFileInfo(targetFileName);
+  }
+
   if (fileInfo.suffix().compare("mo") == 0 && !loadExternalModel) {
-    openModelicaFile(fileName, encoding, showProgress);
+    openModelicaFile(fileInfo.absoluteFilePath(), encoding, showProgress);
   } else if (fileInfo.suffix().compare("mol") == 0 && !loadExternalModel) {
-    openEncrytpedModelicaLibrary(fileName, encoding, showProgress);
+    openEncrytpedModelicaLibrary(fileInfo.absoluteFilePath(), encoding, showProgress);
   } else if (fileInfo.suffix().compare("ssp") == 0 && !loadExternalModel) {
     openOMSModelFile(fileInfo, showProgress);
   } else if (fileInfo.isDir()) {
