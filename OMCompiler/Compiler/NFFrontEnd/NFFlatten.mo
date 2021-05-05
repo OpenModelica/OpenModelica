@@ -1031,8 +1031,50 @@ protected
   Type ty, ty2;
 algorithm
   cref := ComponentRef.transferSubscripts(prefix, cref);
+
+  if ComponentRef.hasSplitSubscripts(cref) then
+    cref := flattenCrefSplitSubscripts(cref, prefix);
+  end if;
+
   cref := ComponentRef.mapTypes(cref, function flattenType(prefix = prefix));
 end flattenCref;
+
+function flattenCrefSplitSubscripts
+  input output ComponentRef cref;
+  input ComponentRef prefix;
+protected
+  type SubscriptList = list<Subscript>;
+  UnorderedMap<InstNode, SubscriptList> sub_map;
+algorithm
+  sub_map := UnorderedMap.new<SubscriptList>(InstNode.hash, InstNode.refEqual);
+
+  for cr in ComponentRef.toListReverse(prefix) loop
+    if ComponentRef.hasSubscripts(cr) then
+      UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), sub_map);
+    end if;
+  end for;
+
+  cref := ComponentRef.mapSubscripts(cref, function flattenCrefSplitSubscripts2(subMap = sub_map));
+  cref := ComponentRef.simplifySubscripts(cref, true);
+end flattenCrefSplitSubscripts;
+
+function flattenCrefSplitSubscripts2
+  input output Subscript sub;
+  input UnorderedMap<InstNode, list<Subscript>> subMap;
+algorithm
+  sub := match sub
+    local
+      list<Subscript> subs;
+
+    case Subscript.SPLIT_INDEX()
+      algorithm
+        subs := UnorderedMap.getOrDefault(sub.node, subMap, {});
+      then
+        if sub.dimIndex > listLength(subs) then Subscript.WHOLE() else listGet(subs, sub.dimIndex);
+
+    else sub;
+  end match;
+end flattenCrefSplitSubscripts2;
 
 function flattenConditionalArrayIfExp
   input output Expression exp;

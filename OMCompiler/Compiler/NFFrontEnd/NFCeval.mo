@@ -473,9 +473,6 @@ function subscriptBinding
 protected
   list<Subscript> subs;
 algorithm
-  exp := Expression.mapFold(exp,
-    function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts), NONE());
-
   subs := ComponentRef.getSubscripts(cref);
 
   if evalSubscripts then
@@ -483,6 +480,8 @@ algorithm
   end if;
 
   exp := Expression.applySubscripts(subs, exp);
+  exp := Expression.mapFold(exp,
+    function subscriptBinding2(cref = cref, evalSubscripts = evalSubscripts), NONE());
 end subscriptBinding;
 
 function subscriptBinding2
@@ -683,6 +682,7 @@ protected
   InstContext.Type exp_context;
   Binding binding;
   Component comp;
+  list<Subscript> subs;
 algorithm
   parent_cr := ComponentRef.rest(cref);
   parent := ComponentRef.node(parent_cr);

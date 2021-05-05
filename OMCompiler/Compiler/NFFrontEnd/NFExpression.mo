@@ -1251,6 +1251,19 @@ public
         then
           makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
 
+      case Subscript.SPLIT_INDEX()
+        algorithm
+          RANGE(ty = ty) := exp;
+          ty := Type.unliftArray(ty);
+        then
+          SUBSCRIPTED_EXP(exp, {sub}, ty, true);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown subscript '" + Subscript.toString(sub) + "'", sourceInfo());
+        then
+          fail();
+
     end match;
   end applySubscriptRange;
 
@@ -4456,8 +4469,9 @@ public
         then
           listGet(recordExp.elements, index);
 
-      case CREF(ty = Type.COMPLEX(cls = node))
+      case CREF()
         algorithm
+          Type.COMPLEX(cls = node) := Type.arrayElementType(recordExp.ty);
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
@@ -4802,8 +4816,7 @@ public
     Option<UnorderedMap<Subscript, Expression>> osub_repls;
     UnorderedMap<Subscript, Expression> sub_repls;
     list<Subscript> subs;
-    list<Expression> sub_exps;
-    list<Integer> dim_sizes;
+    list<Expression> sub_exps, dim_sizes;
   algorithm
     (outExp, osub_repls) := Expression.mapFold(exp, replaceSplitSubscripts, NONE());
 
@@ -4812,8 +4825,9 @@ public
     else
       SOME(sub_repls) := osub_repls;
       subs := UnorderedMap.keyList(sub_repls);
-      sub_exps := listReverseInPlace(UnorderedMap.valueList(sub_repls));
-      dim_sizes := listReverse(Subscript.splitIndexDimSize(s) for s in subs);
+      sub_exps := UnorderedMap.valueList(sub_repls);
+      dim_sizes := list(Subscript.splitIndexDimExp(s) for s in subs);
+      dim_sizes := list(replaceSplitSubscripts(d, SOME(sub_repls)) for d in dim_sizes);
       outExp := mapSplitExpressions2(outExp, dim_sizes, sub_exps, func);
       outExp := Expression.applySubscripts(subs, outExp);
     end if;
@@ -4865,7 +4879,7 @@ public
 
   function mapSplitExpressions2
     input Expression exp;
-    input list<Integer> dimSizes;
+    input list<Expression> dimSizes;
     input list<Expression> subExps;
     input Func func;
     output Expression outExp;
@@ -4874,8 +4888,9 @@ public
       input output Expression exp;
     end Func;
   protected
-    Integer dim_size;
-    list<Integer> rest_dims;
+    Expression dim_size;
+    list<Expression> rest_dims;
+    Integer dim_size_int;
     Expression sub_exp;
     list<Expression> rest_subs, expl;
   algorithm
@@ -4884,10 +4899,11 @@ public
       outExp := func(outExp);
     else
       dim_size :: rest_dims := dimSizes;
+      dim_size_int := toInteger(Ceval.evalExp(dim_size));
       sub_exp :: rest_subs := subExps;
       expl := {};
 
-      for i in dim_size:-1:1 loop
+      for i in dim_size_int:-1:1 loop
         Expression.updateMutable(sub_exp, Expression.INTEGER(i));
         outExp := mapSplitExpressions2(exp, rest_dims, rest_subs, func);
         expl := outExp :: expl;

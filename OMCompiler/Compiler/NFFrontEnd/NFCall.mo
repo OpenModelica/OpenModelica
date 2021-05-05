@@ -1647,20 +1647,23 @@ public
       case UNTYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := Expression.mapFold(call.exp, func, foldArg);
+          (iters, foldArg) := mapFoldIteratorsExp(call.iters, func, foldArg);
         then
-          UNTYPED_ARRAY_CONSTRUCTOR(e, call.iters);
+          UNTYPED_ARRAY_CONSTRUCTOR(e, iters);
 
       case TYPED_ARRAY_CONSTRUCTOR()
         algorithm
           (e, foldArg) := Expression.mapFold(call.exp, func, foldArg);
+          (iters, foldArg) := mapFoldIteratorsExp(call.iters, func, foldArg);
         then
-          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, call.iters);
+          TYPED_ARRAY_CONSTRUCTOR(call.ty, call.var, call.purity, e, iters);
 
       case UNTYPED_REDUCTION()
         algorithm
           (e, foldArg) := Expression.mapFold(call.exp, func, foldArg);
+          (iters, foldArg) := mapFoldIteratorsExp(call.iters, func, foldArg);
         then
-          UNTYPED_REDUCTION(call.ref, e, call.iters);
+          UNTYPED_REDUCTION(call.ref, e, iters);
 
       case TYPED_REDUCTION()
         algorithm
