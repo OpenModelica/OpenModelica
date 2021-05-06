@@ -1197,6 +1197,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->relationsPre);
   free(data->simulationInfo->storedRelations);
   free(data->simulationInfo->zeroCrossingIndex);
+  free(data->simulationInfo->mathEventsValuePre);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);
@@ -1237,6 +1238,11 @@ void deInitializeDataStruc(DATA *data)
 
   /* free buffer for state sets */
   omc_alloc_interface.free_uncollectable(data->simulationInfo->daeModeData);
+
+  /* buffer for inline Data */
+  free(data->simulationInfo->inlineData->algVars);
+  free(data->simulationInfo->inlineData->algOldVars);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo->inlineData);
 
   /* free inputs and output */
   free(data->simulationInfo->inputVars);
