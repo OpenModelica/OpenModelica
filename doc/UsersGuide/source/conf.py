@@ -72,8 +72,10 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'OpenModelica User\'s Guide'
-copyright = ' %d, Open Source Modelica Consortium' % (date.today().year)
+copyright = '''1998-%d Open Source Modelica Consortium <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="_static/cc-by-80x15.png" /></a> <br> This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>''' % (date.today().year)
 author = 'Open Source Modelica Consortium'
+
+today_fmt = '%Y'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
