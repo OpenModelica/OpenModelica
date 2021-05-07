@@ -544,6 +544,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
             sh '''
@@ -569,6 +570,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
             sh '''
@@ -593,6 +595,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
             sh '''
