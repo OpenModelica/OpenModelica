@@ -611,7 +611,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "removeEqualRHS",
     "removeSimpleEquations",
     "comSubExp",
-    //"resolveLoops",
+    "resolveLoops",
     "evalFunc",
     "encapsulateWhenConditions"
     }),
