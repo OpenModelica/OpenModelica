@@ -800,7 +800,7 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
   connect(mpReferenceComponent, SIGNAL(transformChange(bool)), SIGNAL(transformChange(bool)));
-  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
+  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
   connect(mpReferenceComponent, SIGNAL(changed()), SLOT(referenceElementChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
   /* Ticket:4204
