@@ -69,7 +69,7 @@ void integer_array_create(integer_array_t *dest, modelica_integer *data,
 
 void simple_alloc_1d_integer_array(integer_array_t* dest, int n)
 {
-    simple_alloc_1d_base_array(dest, n, integer_alloc(n));
+    simple_alloc_1d_base_array(dest, n, n ? integer_alloc(n) : NULL);
 }
 
 void simple_alloc_2d_integer_array(integer_array_t* dest, int r, int c)

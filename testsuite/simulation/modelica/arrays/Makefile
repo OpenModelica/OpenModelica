@@ -55,6 +55,7 @@ Bug3916.mos
 FAILINGTESTFILES= \
 ArrayFieldSlice.mos \
 bug_2300.mos \
+Ticket7455.mos \
 
 # Dependency files that are not .mo .mos or Makefile
 # Add them here or they will be cleaned.
