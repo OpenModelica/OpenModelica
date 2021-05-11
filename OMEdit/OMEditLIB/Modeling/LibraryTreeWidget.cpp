@@ -2952,6 +2952,11 @@ void LibraryTreeView::createActions()
   mpSaveTotalAction = new QAction(Helper::saveTotal, this);
   mpSaveTotalAction->setStatusTip(Helper::saveTotalTip);
   connect(mpSaveTotalAction, SIGNAL(triggered()), SLOT(saveTotalClass()));
+  // Copy path action
+  mpCopyPathAction = new QAction(tr("Copy Path"), this);
+  mpCopyPathAction->setShortcut(QKeySequence("Ctrl+C"));
+  mpCopyPathAction->setStatusTip(tr("Copy the class path"));
+  connect(mpCopyPathAction, SIGNAL(triggered()), SLOT(copyClassPath()));
   // Move class up action
   mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), Helper::moveUp, this);
   mpMoveUpAction->setShortcut(QKeySequence("Ctrl+Up"));
@@ -3148,6 +3153,16 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
+ * \brief LibraryTreeView::copyClassPathHelper
+ * Copies the class path to clipboard.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeView::copyClassPathHelper(const QString &classPath)
+{
+  QApplication::clipboard()->setText(classPath);
+}
+
+/*!
  * \brief LibraryTreeView::libraryTreeItemExpanded
  * Calls the function that expands the LibraryTreeItem
  * \param index
@@ -3258,6 +3273,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpSaveTotalAction);
           }
           menu.addSeparator();
+          menu.addAction(mpCopyPathAction);
+          menu.addSeparator();
           menu.addAction(mpInstantiateModelAction);
           if (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
               || ((pLibraryTreeItem->getAccess() == LibraryTreeItem::nonPackageText
@@ -3335,6 +3352,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpNewFolderAction);
             menu.addSeparator();
           }
+          menu.addAction(mpCopyPathAction);
+          menu.addSeparator();
           menu.addAction(mpRenameAction);
           menu.addAction(mpDeleteAction);
           if (pLibraryTreeItem->isTopLevel()) {
@@ -3343,6 +3362,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           break;
         case LibraryTreeItem::CompositeModel:
+          menu.addAction(mpCopyPathAction);
+          menu.addSeparator();
           menu.addAction(mpFetchInterfaceDataAction);
           menu.addAction(mpTLMCoSimulationAction);
           menu.addSeparator();
@@ -3359,6 +3380,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
           }
+          menu.addSeparator();
+          menu.addAction(mpCopyPathAction);
           break;
       }
     }
@@ -3455,6 +3478,18 @@ void LibraryTreeView::saveTotalClass()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->saveTotalLibraryTreeItem(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::copyClassPath
+ * Copies the class path.
+ */
+void LibraryTreeView::copyClassPath()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    copyClassPathHelper(pLibraryTreeItem->getNameStructure());
   }
 }
 
@@ -3930,7 +3965,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
     } else if (controlModifier && event->key() == Qt::Key_PageDown && !isSystemLibrary && isModelicaLibraryType && !isTopLevel) {
       moveClassBottom();
     } else if (controlModifier && event->key() == Qt::Key_C) {
-      QApplication::clipboard()->setText(pLibraryTreeItem->getNameStructure());
+      copyClassPathHelper(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
       if (isModelicaLibraryType) {
         unloadClass();
