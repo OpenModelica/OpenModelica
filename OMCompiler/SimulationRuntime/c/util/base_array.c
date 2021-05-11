@@ -179,11 +179,14 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
     }
     for(i = 0; i < s->ndims; ++i) {
         if(s->dim_size[i] == 0) {
-            if((s->index[i][0] <= 0) || (s->index[i][0] > a->dim_size[i])) {
-                fprintf(stderr,
-                        "scalar s->index[%d][0] == %d incorrect, a->dim_size[%d] == %d\n",
-                        i, (int) s->index[i][0], i, (int) a->dim_size[i]); fflush(stderr);
-                return 0;
+            if (s->index[i] != NULL)
+            {
+              if((s->index[i][0] < 0) || (s->index[i][0] > a->dim_size[i])) {
+                  fprintf(stderr,
+                          "scalar s->index[%d][0] == %d incorrect, a->dim_size[%d] == %d\n",
+                          i, (int) s->index[i][0], i, (int) a->dim_size[i]); fflush(stderr);
+                  return 0;
+              }
             }
         }
 
@@ -392,8 +395,12 @@ void index_alloc_base_array_size(const real_array_t * source,
            ++j;
          }
     }
-    dest->ndims = j;
+
+    dest->ndims = imax(j,1);
     dest->dim_size = size_alloc(dest->ndims);
+    for(i = 0; i < dest->ndims; ++i) {
+      dest->dim_size[i] = 0;
+    }
 
     for(i = 0, j = 0; i < source_spec->ndims; ++i) {
         if(source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */

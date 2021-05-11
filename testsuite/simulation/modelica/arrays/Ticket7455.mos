@@ -1,0 +1,81 @@
+// name: Ticket7455.mos
+// status: correct
+//
+
+loadString("
+model ZeroArraySizeHandling
+  function massFraction_mixingRatio \"conversion function\"
+    input Real[:] mixingRatio;
+    output Real[size(mixingRatio, 1)-1] massFraction=mixingRatio[1:end - 1]/sum(mixingRatio);
+  end massFraction_mixingRatio;
+
+  function externC
+    input Real[:] u;
+    input Integer nc \"Number of components\";
+    output Real a;
+  external \"C\" a = myExternC(u, nc)
+  annotation(Include = \"
+    double myExternC(const double* u, int nc)
+    {
+      return -2.0;
+    }
+    \");
+  end externC;
+
+  function callMe
+    input Real[:] u;
+    output Real a;
+  algorithm
+     a := externC(massFraction_mixingRatio(u), 0);
+  end callMe;
+
+  parameter Real x[1] = {1};
+  Real y(start = 1, fixed = true);
+equation
+  der(y) = y * callMe(x);
+end ZeroArraySizeHandling;
+"); getErrorString();
+
+instantiateModel(ZeroArraySizeHandling); getErrorString();
+simulate(ZeroArraySizeHandling); getErrorString();
+
+// Result:
+// true
+// ""
+// "function ZeroArraySizeHandling.callMe
+//   input Real[:] u;
+//   output Real a;
+// algorithm
+//   a := ZeroArraySizeHandling.externC(ZeroArraySizeHandling.massFraction_mixingRatio(u), 0);
+// end ZeroArraySizeHandling.callMe;
+//
+// function ZeroArraySizeHandling.externC
+//   input Real[:] u;
+//   input Integer nc \"Number of components\";
+//   output Real a;
+//
+//   external \"C\" a = myExternC(u, nc);
+// end ZeroArraySizeHandling.externC;
+//
+// function ZeroArraySizeHandling.massFraction_mixingRatio \"conversion function\"
+//   input Real[:] mixingRatio;
+//   output Real[size(mixingRatio, 1) - 1] massFraction = mixingRatio[1:size(mixingRatio, 1) - 1] / sum(mixingRatio);
+// end ZeroArraySizeHandling.massFraction_mixingRatio;
+//
+// class ZeroArraySizeHandling
+//   parameter Real x[1] = 1.0;
+//   Real y(start = 1.0, fixed = true);
+// equation
+//   der(y) = y * ZeroArraySizeHandling.callMe(x);
+// end ZeroArraySizeHandling;
+// "
+// ""
+// record SimulationResult
+//     resultFile = "ZeroArraySizeHandling_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ZeroArraySizeHandling', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// endResult
