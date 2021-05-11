@@ -373,6 +373,7 @@ private:
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveTotalAction;
+  QAction *mpCopyPathAction;
   QAction *mpMoveUpAction;
   QAction *mpMoveDownAction;
   QAction *mpMoveTopAction;
@@ -411,7 +412,8 @@ private:
   QAction *mpUnloadOMSModelAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
-  void libraryTreeItemExpanded(LibraryTreeItem* pLibraryTreeItem);
+  void libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem);
+  void copyClassPathHelper(const QString &classPath);
 public slots:
   void libraryTreeItemExpanded(const QModelIndex &index);
   void libraryTreeItemDoubleClicked(const QModelIndex &index);
@@ -422,6 +424,7 @@ public slots:
   void saveClass();
   void saveAsClass();
   void saveTotalClass();
+  void copyClassPath();
   void moveClassUp();
   void moveClassDown();
   void moveClassTop();
