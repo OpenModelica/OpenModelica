@@ -181,6 +181,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
         case QMessageBox::AcceptRole:
           OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(false);
           Utilities::getApplicationSettings()->setValue("simulation/newInst", true);
+          OptionsDialog::instance()->saveSimulationSettings();
           break;
         case QMessageBox::RejectRole:
         default:
