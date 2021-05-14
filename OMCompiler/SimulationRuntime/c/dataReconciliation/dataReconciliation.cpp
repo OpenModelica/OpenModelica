@@ -1593,7 +1593,8 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   matrixData reconciled_Sx = solveReconciledSx(Sx, jacFt, tmpFstar, logfile, data);
   //printMatrix(reconciled_Sx.data,reconciled_Sx.rows,reconciled_Sx.column,"reconciled Sx ===> (Sx - (Sx*Ft*Fstar))");
 
-  double value = solveConvergence(data, reconciled_X, reconciled_Sx, x, Sx, jacF, vector_c, tmpfstar, logfile);
+  matrixData copySx = copyMatrix(Sx);
+  double value = solveConvergence(data, reconciled_X, reconciled_Sx, x, copySx, jacF, vector_c, tmpfstar, logfile);
   if (value > eps)
   {
     logfile << "J*/r" << "(" << value << ")" << " > " << eps << ", Value not Converged \n";
