@@ -1134,6 +1134,8 @@ Libraries
 -  *User Libraries* – The list of user libraries/files that should be
    loaded every time OMEdit starts.
 
+.. _omedit-options-text-editor :
+
 Text Editor
 ~~~~~~~~~~~
 -  Format
@@ -1824,3 +1826,41 @@ the working directory from *Tools > Options > General* see section :ref:`omedit-
 
 For each simulation a new directory with the model name is created in the working directory and
 then all the simulation intermediate and results files are generated in it.
+
+
+High DPI Settings
+-----------------
+
+When the text is too big / too small to read there are options to change the font size
+used in OMEdit, see :ref:`omedit-options-text-editor`.
+
+If you are using a high-resolution screen (1080p, 4k and more) and the app is blurry or
+the overall proportions of the different windows are off, it can help to change the DPI settings.
+
+On Windows it is possible to change the scaling factor to adjust the size of text, apps
+and other times, but the default setting might not be appropriate for OMEdit e.g., on
+compact notebooks with high resolution screens.
+
+You can either change the scaling factor for the whole Windows system or only change the
+scaling used for OMEdit. This is done by changing the `Compatibility` settings for
+`High DPI settings for OMEdit.exe` with the following steps:
+
+1. Press `Windows-Key` and type `OpenModelica Connection Editor` and right-click on the
+   app and `Open file location`, :numref:`omedit-file-location`.
+2. Right-click on `OpenModelica Connection Editor` and open `Properties`.
+3. In the properties window go to tab `Compatibility` and open `Change high DPI settings`.
+   In the `High DPI settings for OMEdit.exe` choose
+   `Use the settings to fix scaling problems for this program instead of the one in Settings`
+   and `Override high DPI scaling behavior.Scaling performed by:` and choose `System` from
+   the drop-down menu, :numref:`omedit-dpi-settings`.
+
+
+.. figure :: media/omedit-dpi-settings-01.*
+  :name: omedit-file-location
+
+  Open file location of OpenModelica Connection Editor
+
+.. figure :: media/omedit-dpi-settings-02.*
+  :name: omedit-dpi-settings
+
+  Change high DPI settings for OMEdit.exe
