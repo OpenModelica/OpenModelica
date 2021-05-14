@@ -393,7 +393,9 @@ void modelInfoInit(MODEL_DATA_XML* xml)
     // fprintf(stderr, "Loaded the JSON (%ld kB)...\n", (long) (s.st_size+1023)/1024);
   }
 #endif
+  assert(xml->functionNames == NULL);
   xml->functionNames = (FUNCTION_INFO*) calloc(xml->nFunctions, sizeof(FUNCTION_INFO));
+  assert(xml->equationInfo == NULL);
   xml->equationInfo = (EQUATION_INFO*) calloc(1+xml->nEquations, sizeof(EQUATION_INFO));
   xml->equationInfo[0].id = 0;
   xml->equationInfo[0].profileBlockIndex = -1;
@@ -408,6 +410,17 @@ void modelInfoInit(MODEL_DATA_XML* xml)
 #if !defined(OMC_NO_FILESYSTEM)
   omc_mmap_close_read(mmap_reader);
 #endif
+}
+
+/**
+ * @brief Deinitialize memory allocated by modelInfoInit
+ *
+ * @param xml   Pointer to model info xml data.
+ */
+void modelInfoDeinit(MODEL_DATA_XML* xml)
+{
+  free(xml->functionNames); xml->functionNames = NULL;
+  free(xml->functionNames); xml->functionNames = NULL;
 }
 
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)
