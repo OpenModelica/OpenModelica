@@ -37,10 +37,11 @@
 extern "C" {
 #endif
 
-extern FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML*,size_t);
-extern void modelInfoInit(MODEL_DATA_XML*);
-extern EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML*,size_t);
-extern EQUATION_INFO modelInfoGetEquationIndexByProfileBlock(MODEL_DATA_XML*,size_t);
+void modelInfoInit(MODEL_DATA_XML* xml);
+void modelInfoDeinit(MODEL_DATA_XML* xml);
+FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix);
+EQUATION_INFO modelInfoGetEquation(MODEL_DATA_XML* xml, size_t ix);
+EQUATION_INFO modelInfoGetEquationIndexByProfileBlock(MODEL_DATA_XML* xml, size_t ix);
 
 #ifdef __cplusplus
 }

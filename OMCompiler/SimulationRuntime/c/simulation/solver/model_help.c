@@ -1273,6 +1273,9 @@ void deInitializeDataStruc(DATA *data)
     FREE_VARS(nSensitivityVars, realSensitivityData)
   }
 
+  /* Free model info xml data */
+  modelInfoDeinit(&(data->modelData->modelDataXml));
+
   TRACE_POP
 }
 
