@@ -1352,6 +1352,17 @@ constant ConfigFlag INTERACTIVE_PORT = CONFIG_FLAG(142, "interactivePort",
   NONE(), EXTERNAL(), INT_FLAG(0), NONE(),
   Gettext.gettext("Sets the port used by the interactive server."));
 
+constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStandardModelica",
+  NONE(), EXTERNAL(), STRING_LIST_FLAG({
+    }),
+  SOME(STRING_DESC_OPTION({
+    ("nonStdMultipleExternalDeclarations", Gettext.gettext("Allow several external declarations in functions.\nSee: https://specification.modelica.org/maint/3.5/functions.html#function-as-a-specialized-class")),
+    ("nonStdEnumerationAsIntegers", Gettext.gettext("Allow enumeration as integer without casting via Integer(Enum).\nSee: https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#type-conversion-of-enumeration-values-to-string-or-integer")),
+    ("nonStdIntegersAsEnumeration", Gettext.gettext("Allow integer as enumeration without casting via Enum(Integer).\nSee: https://specification.modelica.org/maint/3.5/class-predefined-types-and-declarations.html#type-conversion-of-integer-to-enumeration-values")),
+    ("nonStdDifferentCaseFileVsClassName", Gettext.gettext("Allow directory or file with different case in the name than the contained class name.\nSee: https://specification.modelica.org/maint/3.5/packages.html#mapping-package-class-structures-to-a-hierarchical-file-system"))
+    })),
+  Gettext.gettext("Flags to allow non-standard Modelica."));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;
@@ -1375,6 +1386,15 @@ algorithm
   FLAGS(debugFlags = debug_flags) := flags;
   outValue := arrayGet(debug_flags, index);
 end isSet;
+
+function isConfigFlagSet
+  "Checks if a string list config flag contains a certain string"
+  input ConfigFlag inFlag "the flag with the list of strings";
+  input String hasMember "the string to check for membership";
+  output Boolean isMember;
+algorithm
+  isMember := listMember(hasMember, Flags.getConfigStringList(inFlag));
+end isConfigFlagSet;
 
 public function getConfigValue
   "Returns the value of a configuration flag."
