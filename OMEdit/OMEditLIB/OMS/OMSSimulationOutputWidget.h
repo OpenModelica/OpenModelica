@@ -43,6 +43,21 @@
 #include <QDateTime>
 #include <QTextBrowser>
 
+class OMSInteractiveCommands : public QObject
+{
+  Q_OBJECT
+public:
+  static QString status;
+  static QString ack;
+  static QString nack;
+  static QString simulation;
+  static QString _continue;
+  static QString pause;
+  static QString end;
+  static QString _signals;
+  static QString available;
+};
+
 class SimulationSubscriberSocket : public QObject
 {
   Q_OBJECT
@@ -100,11 +115,13 @@ public:
   bool isSimulationProcessRunning() {return mIsSimulationProcessRunning;}
 private:
   QString mCref;
+  bool mIsInteractive;
   double mStartTime;
   double mStopTime;
   QString mResultFilePath;
   Label *mpProgressLabel;
   QProgressBar *mpProgressBar;
+  QToolButton *mpRunOrPauseButton;
   QPushButton *mpCancelSimulationButton;
   OutputPlainTextEdit *mpSimulationOutputPlainTextEdit;
   ArchivedSimulationItem *mpArchivedSimulationItem;
@@ -112,6 +129,7 @@ private:
   QProcess *mpSimulationProcess;
   bool mIsSimulationProcessKilled;
   bool mIsSimulationProcessRunning;
+  bool mSimulationIsPaused;
   SimulationSubscriberSocket *mpSimulationSubscriberSocket;
   SimulationRequestSocket *mpSimulationRequestSocket;
   QThread mSimulationSubscribeThread;
@@ -131,9 +149,7 @@ public slots:
   void simulationReply(const QByteArray &reply, const QString &function, const QString &argument);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
-  void pauseSimulation();
-  void continueSimulation();
-  void endSimulation();
+  void runOrPauseSimulation();
 };
 
 #endif // OMSSIMULATIONOUTPUTWIDGET_H

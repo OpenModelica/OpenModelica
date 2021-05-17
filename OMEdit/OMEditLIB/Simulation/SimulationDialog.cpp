@@ -321,8 +321,7 @@ void SimulationDialog::setUpForm()
   // interactive simulation tab
   mpInteractiveSimulationTab = new QWidget;
   // interactive simulation
-  QString interactiveSimulationText = tr("Interactive Simulation");
-  mpInteractiveSimulationGroupBox = new QGroupBox(interactiveSimulationText);
+  mpInteractiveSimulationGroupBox = new QGroupBox(Helper::interactiveSimulation);
   mpInteractiveSimulationGroupBox->setCheckable(true);
   mpInteractiveSimulationStepCheckBox = new QCheckBox(tr("Simulate with steps"));
   mpInteractiveSimulationStepCheckBox->setToolTip(tr("Activates communication with the simulation remote every time step.\n"
@@ -344,7 +343,7 @@ void SimulationDialog::setUpForm()
   pInteractiveSimulationTabLayout->addWidget(mpInteractiveSimulationGroupBox, 0, 0);
   mpInteractiveSimulationTab->setLayout(pInteractiveSimulationTabLayout);
   // add interactive simulation Tab to Simulation TabWidget
-  mpSimulationTabWidget->addTab(mpInteractiveSimulationTab, interactiveSimulationText);
+  mpSimulationTabWidget->addTab(mpInteractiveSimulationTab, Helper::interactiveSimulation);
   // Translation Tab
   mpTranslationTab = new QWidget;
   mpTranslationFlagsWidget = new TranslationFlagsWidget(this);

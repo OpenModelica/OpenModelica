@@ -242,6 +242,7 @@ public:
   static QString simulation;
   static QString reSimulation;
   static QString interactiveSimulation;
+  static QString interactiveSimulationTip;
   static QString options;
   static QString extent;
   static QString bottom;
@@ -369,6 +370,7 @@ public:
   static QString animationInitializeTip;
   static QString animationPlay;
   static QString animationPlayTip;
+  static QString run;
   static QString animationPause;
   static QString animationPauseTip;
   static QString animationRepeat;

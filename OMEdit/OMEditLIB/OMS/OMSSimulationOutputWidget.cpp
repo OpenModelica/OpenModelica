@@ -41,11 +41,22 @@
 #include "Options/OptionsDialog.h"
 #include "Simulation/ArchivedSimulationsWidget.h"
 #include "Util/OutputPlainTextEdit.h"
+#include "Util/ResourceCache.h"
 #include "zmq.h"
 
 #include <QGridLayout>
 
 const long timeout = 500;
+
+QString OMSInteractiveCommands::status = QStringLiteral("status");
+QString OMSInteractiveCommands::ack = QStringLiteral("ack");
+QString OMSInteractiveCommands::nack = QStringLiteral("nack");
+QString OMSInteractiveCommands::simulation = QStringLiteral("simulation");
+QString OMSInteractiveCommands::_continue = QStringLiteral("continue");
+QString OMSInteractiveCommands::pause = QStringLiteral("pause");
+QString OMSInteractiveCommands::end = QStringLiteral("end");
+QString OMSInteractiveCommands::_signals = QStringLiteral("signals");
+QString OMSInteractiveCommands::available = QStringLiteral("available");
 
 /*!
  * \class SimulationSubscriberSocket
@@ -193,12 +204,18 @@ void SimulationRequestSocket::sendRequest(const QString &function, const QString
 OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const QString &fileName, bool interactive, QWidget *pParent)
   : QWidget(pParent), mCref(cref)
 {
+  mIsInteractive = interactive;
   // progress label
   mpProgressLabel = new Label(tr("Running simulation of <b>%1</b>. Please wait for a while.").arg(mCref));
   mpProgressLabel->setTextFormat(Qt::RichText);
   mpCancelSimulationButton = new QPushButton(Helper::cancelSimulation);
   mpCancelSimulationButton->setEnabled(false);
   connect(mpCancelSimulationButton, SIGNAL(clicked()), SLOT(cancelSimulation()));
+  mpRunOrPauseButton = new QToolButton;
+  mpRunOrPauseButton->setEnabled(false);
+  mpRunOrPauseButton->setIcon(ResourceCache::getIcon(":/Resources/icons/play_animation.svg"));
+  mpRunOrPauseButton->setToolTip(Helper::run);
+  connect(mpRunOrPauseButton, SIGNAL(clicked()), SLOT(runOrPauseSimulation()));
   mpProgressBar = new QProgressBar;
   mpProgressBar->setAlignment(Qt::AlignHCenter);
   mpProgressBar->setRange(0, 100);
@@ -212,16 +229,8 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   pMainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   pMainLayout->addWidget(mpProgressLabel, 0, 0);
   pMainLayout->addWidget(mpProgressBar, 0, 1);
-  if (interactive) {
-    QPushButton *pPauseButton = new QPushButton("Pause");
-    connect(pPauseButton, SIGNAL(clicked()), SLOT(pauseSimulation()));
-    pMainLayout->addWidget(pPauseButton, 0, 2);
-    QPushButton *pContinueButton = new QPushButton("Continue");
-    connect(pContinueButton, SIGNAL(clicked()), SLOT(continueSimulation()));
-    pMainLayout->addWidget(pContinueButton, 0, 3);
-    QPushButton *pEndButton = new QPushButton("End");
-    connect(pEndButton, SIGNAL(clicked()), SLOT(endSimulation()));
-    //pMainLayout->addWidget(pEndButton, 0, 4);
+  if (mIsInteractive) {
+    pMainLayout->addWidget(mpRunOrPauseButton, 0, 2);
   }
   pMainLayout->addWidget(mpCancelSimulationButton, 0, 5);
   pMainLayout->addWidget(mpSimulationOutputPlainTextEdit, 1, 0, 1, 6);
@@ -243,9 +252,10 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
   mpSimulationProcess = 0;
   mIsSimulationProcessKilled = false;
   mIsSimulationProcessRunning = false;
+  mSimulationIsPaused = true;
   // create subscriber socket
   mpSimulationSubscriberSocket = new SimulationSubscriberSocket;
-  if (interactive) {
+  if (mIsInteractive) {
     // create request socket
     mpSimulationRequestSocket = new SimulationRequestSocket;
   } else {
@@ -256,7 +266,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     writeSimulationOutput(mpSimulationSubscriberSocket->getErrorString(), StringHandler::Error);
     errorInitializingSockets = true;
   }
-  if (interactive && !mpSimulationRequestSocket->getErrorString().isEmpty()) {
+  if (mIsInteractive && !mpSimulationRequestSocket->getErrorString().isEmpty()) {
     writeSimulationOutput(mpSimulationRequestSocket->getErrorString(), StringHandler::Error);
     errorInitializingSockets = true;
   }
@@ -284,7 +294,7 @@ OMSSimulationOutputWidget::OMSSimulationOutputWidget(const QString &cref, const 
     QStringList args(QString("%1/share/OMSimulator/scripts/OMSimulatorServer.py").arg(Helper::OpenModelicaHome));
     args << QString("--model=%1").arg(fileName);
     args << QString("--endpoint-pub=%1").arg(QString(mpSimulationSubscriberSocket->getEndPoint()));
-    if (interactive) {
+    if (mIsInteractive) {
       args << QString("--endpoint-rep=%1").arg(QString(mpSimulationRequestSocket->getEndPoint()));
       args << QStringLiteral("--interactive");
     }
@@ -399,7 +409,7 @@ void OMSSimulationOutputWidget::simulationProcessStarted()
   if (mpSimulationRequestSocket) {
     mpSimulationRequestSocket->setSocketConnected(true);
     mSimulationRequestThread.start();
-    emit sendRequest("signals", "available");
+    emit sendRequest(OMSInteractiveCommands::_signals, OMSInteractiveCommands::available);
   }
 }
 
@@ -494,11 +504,25 @@ void OMSSimulationOutputWidget::simulationReply(const QByteArray &reply, const Q
   JsonDocument jsonDocument;
   if (jsonDocument.parse(reply)) {
     QVariantMap resultMap = jsonDocument.result.toMap();
-    if (resultMap.value("status").toString().compare(QStringLiteral("nack")) == 0) {
+    // write the error in case of failure i.e., status is nack.
+    QString status = resultMap.value(OMSInteractiveCommands::status).toString();
+    if (status.compare(OMSInteractiveCommands::nack) == 0) {
       writeSimulationOutput(QString("Failed to parse json data %1.\n").arg(QString(reply)), StringHandler::Error);
-    } else if (resultMap.value("status").toString().compare(QStringLiteral("ack")) == 0) {
-      if ((function.compare(QStringLiteral("signals")) == 0) && (argument.compare(QStringLiteral("available")) == 0)) {
+    } else if (status.compare(OMSInteractiveCommands::ack) == 0) {
+      // handle simulation command results
+      if (function.compare(OMSInteractiveCommands::simulation) == 0) {
+        mpRunOrPauseButton->setEnabled(true);
+        if (argument.compare(OMSInteractiveCommands::_continue) == 0) {
+          mpRunOrPauseButton->setIcon(ResourceCache::getIcon(":/Resources/icons/pause.svg"));
+          mpRunOrPauseButton->setToolTip(Helper::animationPause);
+          mpRunOrPauseButton->setEnabled(true);
+        } else if (argument.compare(OMSInteractiveCommands::pause) == 0) {
+          mpRunOrPauseButton->setIcon(ResourceCache::getIcon(":/Resources/icons/play_animation.svg"));
+          mpRunOrPauseButton->setToolTip(Helper::run);
+        }
+      } else if ((function.compare(OMSInteractiveCommands::_signals) == 0) && (argument.compare(OMSInteractiveCommands::available) == 0)) {
         parseSimulationVariables(resultMap.value("result"));
+        mpRunOrPauseButton->setEnabled(true);
       }
     }
   } else {
@@ -527,6 +551,7 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
   mpProgressLabel->setText(tr("Simulation of %1 is finished.").arg(mCref));
   mpProgressBar->setValue(mpProgressBar->maximum());
   mpCancelSimulationButton->setEnabled(false);
+  mpRunOrPauseButton->setEnabled(false);
   // simulation finished show the results
   if (!mpSimulationRequestSocket) {
     MainWindow::instance()->getOMSSimulationDialog()->simulationFinished(mResultFilePath, mResultFileLastModifiedDateTime);
@@ -550,32 +575,31 @@ void OMSSimulationOutputWidget::simulationProcessFinished(int exitCode, QProcess
 void OMSSimulationOutputWidget::cancelSimulation()
 {
   if (isSimulationProcessRunning()) {
+    if (mIsInteractive) {
+      emit sendRequest(OMSInteractiveCommands::simulation, OMSInteractiveCommands::end);
+    }
     mIsSimulationProcessKilled = true;
     mpSimulationProcess->kill();
     mpProgressLabel->setText(tr("Simulation of %1 is cancelled.").arg(mCref));
     mpProgressBar->setValue(mpProgressBar->maximum());
     mpCancelSimulationButton->setEnabled(false);
+    mpRunOrPauseButton->setEnabled(false);
     mpArchivedSimulationItem->setStatus(Helper::finished);
   }
 }
 
-void OMSSimulationOutputWidget::pauseSimulation()
+/*!
+ * \brief OMSSimulationOutputWidget::runOrPauseSimulation
+ * Run or pause the interactive simulation.
+ */
+void OMSSimulationOutputWidget::runOrPauseSimulation()
 {
   if (mpSimulationRequestSocket) {
-    emit sendRequest("simulation", "pause");
-  }
-}
-
-void OMSSimulationOutputWidget::continueSimulation()
-{
-  if (mpSimulationRequestSocket) {
-    emit sendRequest("simulation", "continue");
-  }
-}
-
-void OMSSimulationOutputWidget::endSimulation()
-{
-  if (mpSimulationRequestSocket) {
-    emit sendRequest("simulation", "end");
+    mpRunOrPauseButton->setEnabled(false);
+    if (mpRunOrPauseButton->toolTip().compare(Helper::run) == 0) {
+      emit sendRequest(OMSInteractiveCommands::simulation, OMSInteractiveCommands::_continue);
+    } else {
+      emit sendRequest(OMSInteractiveCommands::simulation, OMSInteractiveCommands::pause);
+    }
   }
 }
