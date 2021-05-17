@@ -115,7 +115,12 @@ algorithm
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
         // if the scalarized binding would result in an indexed call e.g. f()[1] then don't do it!
         // fixes ticket #6267
-        if ExpressionIterator.isSubscriptedArrayCall(binding_iter) then
+        // adrpo: do not do this for arrays less than 2: see #7450
+        //        TODO! FIXME! get rid of this absurdity when the backend
+        //        can handle arrays of one = function call
+        if listLength(crefs) > 1 and
+           ExpressionIterator.isSubscriptedArrayCall(binding_iter)
+        then
           var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
           vars := var :: vars;
         else
