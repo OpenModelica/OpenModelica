@@ -47,6 +47,11 @@ class OMSInteractiveCommands : public QObject
 {
   Q_OBJECT
 public:
+  static QString fcn;
+  static QString arg;
+  static QString enable;
+  static QString disable;
+  static QString cref;
   static QString status;
   static QString ack;
   static QString nack;
@@ -97,9 +102,9 @@ private:
   QString mErrorString;
   bool mSocketConnected;
 signals:
-  void simulationReply(const QByteArray &reply, const QString &function, const QString &argument);
+  void simulationReply(const QByteArray &reply, const QJsonObject &jsonObject);
 public slots:
-  void sendRequest(const QString &function, const QString &argument);
+  void sendRequest(const QJsonObject &jsonObject);
 };
 
 class ArchivedSimulationItem;
@@ -138,7 +143,7 @@ private:
   void parseSimulationProgress(const QVariant progress);
   void parseSimulationVariables(const QVariant variables);
 signals:
-  void sendRequest(const QString &function, const QString &argument);
+  void sendRequest(const QJsonObject &jsonObject);
 public slots:
   void simulationProcessStarted();
   void readSimulationStandardOutput();
@@ -146,10 +151,11 @@ public slots:
   void simulationProcessError(QProcess::ProcessError error);
   void writeSimulationOutput(const QString &output, StringHandler::SimulationMessageType type);
   void simulationDataPublished(const QByteArray &data);
-  void simulationReply(const QByteArray &reply, const QString &function, const QString &argument);
+  void simulationReply(const QByteArray &reply, const QJsonObject &jsonObject);
   void simulationProcessFinished(int exitCode, QProcess::ExitStatus exitStatus);
   void cancelSimulation();
   void runOrPauseSimulation();
+  void checkVariable(const QString &variableName, bool enable);
 };
 
 #endif // OMSSIMULATIONOUTPUTWIDGET_H

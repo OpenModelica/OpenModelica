@@ -1940,7 +1940,7 @@ void SimulationDialog::createOpcUaClient(SimulationOptions simulationOptions)
     // determine the model owner of the interactive plot window
     QString owner = simulationOptions.getClassName();
     PlotWindowContainer* pPlotWindowContainer = MainWindow::instance()->getPlotWindowContainer();
-    OMPlot::PlotWindow* pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(true, owner, simulationOptions.getInteractiveSimulationPortNumber());
+    OMPlot::PlotWindow* pInteractivePlotWindow = pPlotWindowContainer->addInteractivePlotWindow(owner, true, simulationOptions.getInteractiveSimulationPortNumber());
     connect(pInteractivePlotWindow->getStartSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(startInteractiveSimulation()));
     connect(pInteractivePlotWindow->getPauseSimulationButton(), SIGNAL(clicked()), pOpcUaWorker, SLOT(pauseInteractiveSimulation()));
     connect(pInteractivePlotWindow->getSimulationSpeedBox(), SIGNAL(editTextChanged(QString)), pOpcUaWorker, SLOT(setSpeed(QString)));

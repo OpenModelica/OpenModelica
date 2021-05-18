@@ -185,8 +185,10 @@ public:
   void updateCurves();
   void updateYAxis(QPair<double, double> minMaxValues);
   void updatePlot();
+  void emitCheckVariable(const QString &variableName, bool enable);
 signals:
   void closingDown();
+  void checkVariable(const QString &variableName, bool enable);
 public slots:
   void enableZoomMode(bool on);
   void enablePanMode(bool on);

@@ -1899,8 +1899,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
         }
         if (pVariablesTreeRootItem->getSimulationOptions().isInteractiveSimulation()) {
-          QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot be attached to a plot window."), Helper::ok);
-          pVariablesTreeItem->setChecked(false);
+          unCheckVariableAndErrorMessage(index, tr("Cannot be attached to a plot window."));
           return;
         }
         pPlotWindow->initializeFile(QString("%1/%2").arg(pVariablesTreeItem->getFilePath(), pVariablesTreeItem->getFileName()));
@@ -1981,8 +1980,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
           pVariablesTreeRootItem = pVariablesTreeItem->rootParent();
         }
         if (pVariablesTreeRootItem->getSimulationOptions().isInteractiveSimulation()) {
-          QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot be attached to a parametric plot window."), Helper::ok);
-          pVariablesTreeItem->setChecked(false);
+          unCheckVariableAndErrorMessage(index, tr("Cannot be attached to a parametric plot window."));
           return;
         }
 
@@ -2115,8 +2113,7 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
 
       if (pVariablesTreeItem->isChecked()) { // if user checks the variable
         if (!pVariablesTreeRootItem->getSimulationOptions().isInteractiveSimulation()) {
-          QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information), tr("Cannot be attached to an interactive plot window."), Helper::ok);
-          pVariablesTreeItem->setChecked(false);
+          unCheckVariableAndErrorMessage(index, tr("Cannot be attached to an interactive plot window."));
         } else {
           // if user checks a variable belonging to an inactive plot window, switch to it.
           if (pPlotWindow->getInteractiveOwner() != pVariablesTreeRootItem->getFileName()) {
@@ -2130,39 +2127,43 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setYUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getUnit()));
             pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
             pPlotWindow->setInteractiveModelName(pVariablesTreeItem->getFileName());
-            OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
-            if (pOpcUaClient) {
-              Variable *pCurveData = *pOpcUaClient->getVariables()->find(plotVariable);
-              QwtSeriesData<QPointF>* pData = dynamic_cast<QwtSeriesData<QPointF>*>(pCurveData);
-              pPlotWindow->setInteractivePlotData(pData);
-              QPair<QVector<double>*, QVector<double>*> memory = pPlotWindow->plotInteractive(pPlotCurve);
-              // use the same vectors as a normal plot
-              pCurveData->setAxisVectors(memory);
-              pOpcUaClient->checkVariable(pCurveData->getNodeId(), pVariablesTreeItem);
-            }
+            pPlotWindow->checkVariable(plotVariable, true);
+
+//            OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
+//            if (pOpcUaClient) {
+//              Variable *pCurveData = *pOpcUaClient->getVariables()->find(plotVariable);
+//              QwtSeriesData<QPointF>* pData = dynamic_cast<QwtSeriesData<QPointF>*>(pCurveData);
+//              pPlotWindow->setInteractivePlotData(pData);
+//              QPair<QVector<double>*, QVector<double>*> memory = pPlotWindow->plotInteractive(pPlotCurve);
+//              // use the same vectors as a normal plot
+//              pCurveData->setAxisVectors(memory);
+//              pOpcUaClient->checkVariable(pCurveData->getNodeId(), pVariablesTreeItem);
+//            }
           }
         }
-      }
-      else if (!pVariablesTreeItem->isChecked()) { // if user unchecks the variable
-        // remove the variable from the data fetch list
-        OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
-        if (pOpcUaClient) {
-          Variable *pCurveData = *pOpcUaClient->getVariables()->find(pVariablesTreeItem->getPlotVariable());
-          pOpcUaClient->unCheckVariable(pCurveData->getNodeId(), pVariablesTreeItem->getPlotVariable());
-        }
-        foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
-          /* FIX: Make sure to remove the right curve when implementing several interactive simulations at the same time */
-          if (pVariablesTreeItem->getVariableName().endsWith("." + pPlotCurve->getYVariable())) {
-            pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-            pPlotCurve->detach();
-            if (pPlotWindow->getAutoScaleButton()->isChecked()) {
-              pPlotWindow->fitInView();
-            } else {
-              pPlotWindow->updatePlot();
-            }
-            break;
-          }
-        }
+      } else if (!pVariablesTreeItem->isChecked()) { // if user unchecks the variable
+          pPlotWindow->checkVariable(pVariablesTreeItem->getPlotVariable(), false);
+
+
+//        // remove the variable from the data fetch list
+//        OpcUaClient *pOpcUaClient = MainWindow::instance()->getSimulationDialog()->getOpcUaClient(port);
+//        if (pOpcUaClient) {
+//          Variable *pCurveData = *pOpcUaClient->getVariables()->find(pVariablesTreeItem->getPlotVariable());
+//          pOpcUaClient->unCheckVariable(pCurveData->getNodeId(), pVariablesTreeItem->getPlotVariable());
+//        }
+//        foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
+//          /* FIX: Make sure to remove the right curve when implementing several interactive simulations at the same time */
+//          if (pVariablesTreeItem->getVariableName().endsWith("." + pPlotCurve->getYVariable())) {
+//            pPlotWindow->getPlot()->removeCurve(pPlotCurve);
+//            pPlotCurve->detach();
+//            if (pPlotWindow->getAutoScaleButton()->isChecked()) {
+//              pPlotWindow->fitInView();
+//            } else {
+//              pPlotWindow->updatePlot();
+//            }
+//            break;
+//          }
+//        }
       }
     }
   } catch (PlotException &e) {
