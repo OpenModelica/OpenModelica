@@ -2840,6 +2840,12 @@ algorithm
       SCode.ExternalDecl ext_decl;
       InstContext.Type icontext;
 
+    // allow non standard Modelica on a flag
+    case(SCode.PARTS(externalDecl = SOME(ext_decl)), Sections.EXTERNAL())
+      guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdMultipleExternalDeclarations")
+      then
+        instExternalDecl(ext_decl, scope, context);
+
     case (_, Sections.EXTERNAL())
       guard SCodeUtil.classDefHasSections(parts, checkExternal = true)
       algorithm
