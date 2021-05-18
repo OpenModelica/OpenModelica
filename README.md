@@ -2,7 +2,11 @@
 
 [OpenModelica](https://openmodelica.org) is an open-source Modelica-based modeling and simulation environment intended for industrial and academic usage.
 
-## Dependencies (Linux/OSX) 
+## OpenModelica User's Guide
+
+The [User's Guide](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/) is automatically generated from the documentation repository.
+
+## Dependencies (Linux/OSX)
 
 Many software packages are included inside the repositories.
 To get everything running, you will need a few extras:
@@ -99,8 +103,3 @@ See [CONTRIBUTING.md](https://github.com/OpenModelica/OpenModelica/blob/master/C
 > cd OpenModelica-minimal
 > git submodule update --init --recursive libraries
 ```
-
-## OpenModelica User's Guide
-
-The [User's Guide](https://openmodelica.org/doc/OpenModelicaUsersGuide/latest/)
-is automatically generated from the documentation repository.
