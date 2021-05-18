@@ -1720,7 +1720,7 @@ void Element::updateElementTransformations(const Transformation &oldTransformati
     emit transformHasChanged();
     emit transformChanging();
   } else {
-    mpGraphicsView->getModelWidget()->beginMacro("Update component transformations");
+    mpGraphicsView->getModelWidget()->beginMacro(QStringLiteral("Update element transformations"));
     const bool moveConnectorsTogether = OptionsDialog::instance()->getGraphicalViewsPage()->getMoveConnectorsTogetherCheckBox()->isChecked();
     mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation, positionChanged, moveConnectorsTogether));
     emit transformChanging();
@@ -2869,7 +2869,12 @@ void Element::finishResizeElement()
 void Element::resizedElement()
 {
   updateElementTransformations(mOldTransformation, false);
-  mpGraphicsView->getModelWidget()->updateModelText();
+  ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
+  // push the change on stack only for OMS models. For Modelica models the change is done in ModelWidget::updateModelText();
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    pModelWidget->createOMSimulatorUndoCommand(QStringLiteral("Update element transformations"));
+  }
+  pModelWidget->updateModelText();
 }
 
 /*!
