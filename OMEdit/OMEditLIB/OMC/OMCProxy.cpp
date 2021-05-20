@@ -310,7 +310,7 @@ void OMCProxy::sendCommand(const QString expression, bool saveToHistory)
   }
   mResult = MMC_STRINGDATA(reply_str);
   double elapsed = (double)commandTime.elapsed() / 1000.0;
-  logResponse(expression, mResult.trimmed(), elapsed);
+  logResponse(expression, mResult.trimmed(), elapsed, saveToHistory);
 
   MMC_ELSE()
     mResult = "";
@@ -351,17 +351,19 @@ QString OMCProxy::getResult()
 void OMCProxy::logCommand(QString command, bool saveToHistory)
 {
   if (isLoggingEnabled()) {
-    // insert the command to the logger window.
-    QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
-    QTextCharFormat format;
-    format.setFont(font);
-    mpOMCLoggerTextBox->appendOutput(command + "\n", format);
-    if (saveToHistory) {
-      // add the expression to commands list
-      mCommandsList.append(command);
-      // set the current command index.
-      mCurrentCommandIndex = mCommandsList.count();
-      mpExpressionTextBox->setText("");
+    if (saveToHistory || MainWindow::instance()->isDebug()) {
+      // insert the command to the logger window.
+      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Bold, false);
+      QTextCharFormat format;
+      format.setFont(font);
+      mpOMCLoggerTextBox->appendOutput(command + "\n", format);
+      if (saveToHistory) {
+        // add the expression to commands list
+        mCommandsList.append(command);
+        // set the current command index.
+        mCurrentCommandIndex = mCommandsList.count();
+        mpExpressionTextBox->setText("");
+      }
     }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
@@ -388,8 +390,9 @@ void OMCProxy::logCommand(QString command, bool saveToHistory)
  * Writes the response to the omeditcommunication.log file.
  * \param response - the response to write
  * \param elapsed - the elapsed time in seconds.
+ * \param customCommand - true makes sure the response is logged regardless of debug flag.
  */
-void OMCProxy::logResponse(QString command, QString response, double elapsed)
+void OMCProxy::logResponse(QString command, QString response, double elapsed, bool customCommand)
 {
   if (isLoggingEnabled()) {
     QString firstLine("");
@@ -400,11 +403,13 @@ void OMCProxy::logResponse(QString command, QString response, double elapsed)
         break;
       }
     }
-    // insert the response to the logger window.
-    QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
-    QTextCharFormat format;
-    format.setFont(font);
-    mpOMCLoggerTextBox->appendOutput(response + "\n\n", format);
+    if (customCommand || MainWindow::instance()->isDebug()) {
+      // insert the response to the logger window.
+      QFont font(Helper::monospacedFontInfo.family(), Helper::monospacedFontInfo.pointSize() - 2, QFont::Normal, false);
+      QTextCharFormat format;
+      format.setFont(font);
+      mpOMCLoggerTextBox->appendOutput(response + "\n\n", format);
+    }
     // write the log to communication log file
     if (mpCommunicationLogFile) {
       mTotalOMCCallsTime += elapsed;
