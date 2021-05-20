@@ -461,7 +461,7 @@ algorithm
     case SCode.CLASS(restriction = SCode.R_TYPE(),
                      classDef = SCode.DERIVED(
                        typeSpec = Absyn.TCOMPLEX(
-                         path = Absyn.IDENT(name = "polymorphic")))) then true;
+                         path = Absyn.IDENT(name = "$polymorphic")))) then true;
 
     else false;
   end match;

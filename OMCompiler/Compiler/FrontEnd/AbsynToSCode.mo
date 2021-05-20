@@ -1848,7 +1848,7 @@ protected
   SCode.ClassDef cd;
   Absyn.TypeSpec ts;
 algorithm
-  ts := Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
+  ts := Absyn.TCOMPLEX(Absyn.IDENT("$polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE());
   cd := SCode.DERIVED(ts,SCode.NOMOD(),
                       SCode.ATTR({},SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(),Absyn.BIDIR(),Absyn.NONFIELD()));
   elt := SCode.CLASS(
@@ -1899,7 +1899,7 @@ algorithm
       then ();
     case (Absyn.TCOMPLEX(typeSpecs=tss),_)
       equation
-        if listMember(ts.path, {Absyn.IDENT("list"),Absyn.IDENT("List"),Absyn.IDENT("array"),Absyn.IDENT("Array"),Absyn.IDENT("polymorphic"),Absyn.IDENT("Option")}) then
+        if listMember(ts.path, {Absyn.IDENT("list"),Absyn.IDENT("List"),Absyn.IDENT("array"),Absyn.IDENT("Array"),Absyn.IDENT("$polymorphic"),Absyn.IDENT("Option")}) then
           str = AbsynUtil.typeSpecString(ts);
           Error.addSourceMessage(Error.TCOMPLEX_MULTIPLE_NAMES,{str},info);
           List.map1_0(tss, checkTypeSpec, info);

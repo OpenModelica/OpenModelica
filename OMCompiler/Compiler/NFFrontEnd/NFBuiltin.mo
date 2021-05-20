@@ -102,7 +102,7 @@ encapsulated package Elements
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
     SCode.noComment, AbsynUtil.dummyInfo);
 
-  constant SCode.Element ANY = SCode.CLASS("polymorphic",
+  constant SCode.Element ANY = SCode.CLASS("$polymorphic",
     SCode.defaultPrefixes, SCode.NOT_ENCAPSULATED(), SCode.NOT_PARTIAL(), SCode.R_TYPE(),
     SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE()),
     SCode.noComment, AbsynUtil.dummyInfo);
@@ -126,7 +126,7 @@ constant array<NFInstNode.CachedData> EMPTY_NODE_CACHE = listArrayLiteral({
 // InstNodes for the builtin types. These have empty class trees to prevent
 // access to the attributes via dot notation (which is not needed for
 // modifiers and illegal in other cases).
-constant InstNode POLYMORPHIC_NODE = InstNode.CLASS_NODE("polymorphic",
+constant InstNode POLYMORPHIC_NODE = InstNode.CLASS_NODE("$polymorphic",
   Elements.ANY, Visibility.PUBLIC,
   Pointer.createImmutable(Class.PARTIAL_BUILTIN(Type.POLYMORPHIC(""), ClassTree.EMPTY_TREE(),
     Modifier.NOMOD(), NFClass.DEFAULT_PREFIXES, Restriction.TYPE())),

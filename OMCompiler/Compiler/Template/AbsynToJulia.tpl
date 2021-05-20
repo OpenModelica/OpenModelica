@@ -784,7 +784,7 @@ match path
       case "list" then 'List'
       case "array" then 'Array'
       case "tuple" then 'Tuple'
-      case "polymorphic" then 'Any'
+      case "$polymorphic" then 'Any'
       case "Mutable" then 'MutableType'
       else '<%name%>'
   else

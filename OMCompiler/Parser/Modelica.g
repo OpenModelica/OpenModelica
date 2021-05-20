@@ -330,7 +330,7 @@ class_specifier2 returns [void* ast, const char *s2]
 | EQUALS cs=overloading { $ast=cs; }
 | SUBTYPEOF ts=type_specifier
    {
-     $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mmc_mk_scon("polymorphic")),mmc_mk_cons_typed(Absyn_TypeSpec, $ts.ast, mmc_mk_nil()),mmc_mk_nil()),
+     $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mmc_mk_scon("\$polymorphic")),mmc_mk_cons_typed(Absyn_TypeSpec, $ts.ast, mmc_mk_nil()),mmc_mk_nil()),
                            Absyn__ATTR(MMC_FALSE,MMC_FALSE,Absyn__NON_5fPARALLEL,Absyn__VAR,Absyn__BIDIR,Absyn__NONFIELD,mmc_mk_nil()),mmc_mk_nil(),mmc_mk_none());
    }
 )

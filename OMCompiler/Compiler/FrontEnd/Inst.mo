@@ -2573,7 +2573,7 @@ algorithm
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
     case (cache,env,ih,store,mods,pre,_,_,
-          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(Absyn.IDENT("$polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE())},NONE()),modifications = mod, attributes=DA),
           _,_,_,_,inst_dims,impl,_,graph,_,_,_,_,_)
       equation
         // true = Config.acceptMetaModelicaGrammar(); // We use this for builtins also
@@ -2585,7 +2585,7 @@ algorithm
       then (cache,env,ih,store,DAE.emptyDae,csets,ClassInf.META_POLYMORPHIC(Absyn.IDENT(className)),{},bc,oDA,NONE(),graph);
 
     case (_,_,_,_,mods,_,_,_,
-          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("polymorphic")),modifications=mod),
+          SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("$polymorphic")),modifications=mod),
           _,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // true = Config.acceptMetaModelicaGrammar(); // We use this for builtins also
@@ -4716,7 +4716,7 @@ algorithm
     case "list" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("list");
     case "Option" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("Option");
     case "tuple" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("tuple");
-    case "polymorphic" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("polymorphic");
+    case "$polymorphic" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("polymorphic");
     case "array" algorithm isKnownBuiltin:=Config.acceptMetaModelicaGrammar(); then Absyn.IDENT("array");
     else algorithm isKnownBuiltin:=false; then Absyn.IDENT("");
   end match;

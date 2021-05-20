@@ -292,7 +292,7 @@ algorithm
         Absyn.TPATH(path, ad);
 
     // A polymorphic type, i.e. replaceable type Type subtypeof Any.
-    case (Absyn.TCOMPLEX(path = Absyn.IDENT("polymorphic")), _, _)
+    case (Absyn.TCOMPLEX(path = Absyn.IDENT("$polymorphic")), _, _)
       then inTypeSpec;
 
     // A MetaModelica type such as list or tuple.
