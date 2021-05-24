@@ -50,8 +50,8 @@ val(R1.v,0.2); getErrorString();
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (21):
-//  * Single equations (assignments): 20
+// Notification: Strong component statistics for initialization (19):
+//  * Single equations (assignments): 18
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -61,7 +61,7 @@ val(R1.v,0.2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(2,100.0%) 16}
+//  * Linear torn systems: 1 {(2,100.0%) 18}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -70,8 +70,8 @@ val(R1.v,0.2); getErrorString();
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (12):
-//  * Single equations (assignments): 11
+// Notification: Strong component statistics for simulation (10):
+//  * Single equations (assignments): 9
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -81,7 +81,7 @@ val(R1.v,0.2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(2,100.0%) 16}
+//  * Linear torn systems: 1 {(3,100.0%) 17}
 //  * Non-linear torn systems: 0
 // "
 // 0.3170188387650512
