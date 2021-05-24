@@ -68,6 +68,7 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
+  setAttribute(Qt::AA_UseHighDpiPixmaps);
   // Localization
   //*a.severin/ add localization
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
