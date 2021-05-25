@@ -566,6 +566,7 @@ public:
   void createOMSimulatorUndoCommand(const QString &commandText, const bool doSnapShot = true, const bool switchToEdited = true,
                                     const QString oldEditedCref = QString(""), const QString newEditedCref = QString(""));
   void createOMSimulatorRenameModelUndoCommand(const QString &commandText, const QString &cref, const QString &newCref);
+  void processPendingModelUpdate();
 private:
   ModelWidgetContainer *mpModelWidgetContainer;
   LibraryTreeItem *mpLibraryTreeItem;
