@@ -4301,7 +4301,7 @@ ModelWidget::ModelWidget(LibraryTreeItem* pLibraryTreeItem, ModelWidgetContainer
      * Bundles the several operations together by calling timer start function before the timer is timed out.
      */
     mUpdateModelTimer.setSingleShot(true);
-    mUpdateModelTimer.setInterval(2000);
+    mUpdateModelTimer.setInterval(500);
     connect(&mUpdateModelTimer, SIGNAL(timeout()), SLOT(updateModel()));
   } else if (mpLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     // icon graphics framework
@@ -6390,6 +6390,19 @@ void ModelWidget::createOMSimulatorRenameModelUndoCommand(const QString &command
 }
 
 /*!
+ * \brief ModelWidget::processPendingModelUpdate
+ * Updates the model immediately if the update model timer is running.
+ * Useful in cases like save and when switching to text view.
+ */
+void ModelWidget::processPendingModelUpdate()
+{
+  if (mUpdateModelTimer.isActive()) {
+    mUpdateModelTimer.stop();
+    updateModel();
+  }
+}
+
+/*!
  * \brief ModelWidget::createUndoStack
  * Creates the undo stack.
  */
@@ -7513,6 +7526,7 @@ void ModelWidget::showTextView(bool checked)
   if (!checked || (checked && mpEditor->isVisible())) {
     return;
   }
+  processPendingModelUpdate();
   if (QMdiSubWindow *pSubWindow = mpModelWidgetContainer->getCurrentMdiSubWindow()) {
     pSubWindow->setWindowIcon(ResourceCache::getIcon(":/Resources/icons/modeltext.svg"));
   }
@@ -8422,10 +8436,11 @@ void ModelWidgetContainer::saveModelWidget()
   ModelWidget *pModelWidget = getCurrentModelWidget();
   // if pModelWidget = 0
   if (!pModelWidget) {
-    QMessageBox::information(this, QString(Helper::applicationName).append(" - ").append(Helper::information),
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                              GUIMessages::getMessage(GUIMessages::NO_MODELICA_CLASS_OPEN).arg(tr("saving")), Helper::ok);
     return;
   }
+  pModelWidget->processPendingModelUpdate();
   LibraryTreeItem *pLibraryTreeItem = pModelWidget->getLibraryTreeItem();
   MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem);
 }
