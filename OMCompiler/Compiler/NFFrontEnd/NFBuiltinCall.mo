@@ -1036,17 +1036,18 @@ protected
       (arg, arg_ty, arg_var, arg_pur) := Typing.typeExp(arg, context, info);
 
       if not (InstContext.inAlgorithm(context) or InstContext.inFunction(context)) then
-        if arg_var > Variability.PARAMETER or arg_pur == Purity.IMPURE or
-           Structural.isExpressionNotFixed(arg) then
+        if arg_var > Variability.PARAMETER then
           Error.addSourceMessageAndFail(Error.NON_PARAMETER_EXPRESSION_DIMENSION,
             {Expression.toString(arg), String(index),
              List.toString(fillArg :: dimensionArgs, Expression.toString,
                  ComponentRef.toString(fnRef), "(", ", ", ")", true)}, info);
         end if;
 
-        Structural.markExp(arg);
-        arg := Ceval.evalExp(arg);
-        arg_ty := Expression.typeOf(arg);
+        if arg_pur == Purity.PURE and not Structural.isExpressionNotFixed(arg) then
+          Structural.markExp(arg);
+          arg := Ceval.evalExp(arg);
+          arg_ty := Expression.typeOf(arg);
+        end if;
       else
         evaluated := false;
       end if;
