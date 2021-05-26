@@ -66,7 +66,7 @@ val(res,1);
 // end SimulationResult;
 // ""
 // 0.0
-// 4.458418790403979e-14
+// 4.783769300825687e-14
 // true
 // record SimulationResult
 //     resultFile = "foo_res.mat",
@@ -74,7 +74,7 @@ val(res,1);
 //     messages = "LOG_LS            | info    | initialize linear system solvers
 // |                 | |       | | 3 linear systems
 // LOG_LS            | info    | Start solving Linear System 2 (size 4) at time 0 with Lapack Solver
-// LOG_LS            | info    | Start solving Linear System 13 (size 1) at time 0 with Lapack Solver
+// LOG_LS            | info    | Start solving Linear System 14 (size 1) at time 0 with Lapack Solver
 // LOG_LS            | info    | Start solving Linear System 20 (size 1) at time 0 with Lapack Solver
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
@@ -82,5 +82,5 @@ val(res,1);
 // end SimulationResult;
 // ""
 // 0.0
-// 6.636753559913227e-14
+// 6.634188944726343e-14
 // endResult

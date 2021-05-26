@@ -49,18 +49,18 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit3_res.m
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (17):
-//  * Single equations (assignments): 16
+// Notification: Strong component statistics for initialization (26):
+//  * Single equations (assignments): 24
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
 //  * Equation systems (linear and non-linear blocks): 0
-//  * Torn equation systems: 1
+//  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(2,100.0%) 12}
+//  * Linear torn systems: 2 {(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
 //  * Number of independent subsystems: 1
@@ -69,18 +69,18 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit3_res.m
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (9):
-//  * Single equations (assignments): 8
+// Notification: Strong component statistics for simulation (18):
+//  * Single equations (assignments): 16
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
 //  * When equations: 0
 //  * If-equations: 0
 //  * Equation systems (linear and non-linear blocks): 0
-//  * Torn equation systems: 1
+//  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(3,77.8%) 11}
+//  * Linear torn systems: 2 {(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}
