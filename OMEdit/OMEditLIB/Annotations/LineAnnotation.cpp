@@ -1012,11 +1012,14 @@ void LineAnnotation::updateTransitionTextPosition()
 }
 
 /*!
-  Sets the shape flags.
-  */
+ * \brief LineAnnotation::setShapeFlags
+ * Sets the shape flags.
+ * \param enable
+ */
 void LineAnnotation::setShapeFlags(bool enable)
 {
-  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType || mLineType == LineAnnotation::ShapeType)
+  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType
+       || mLineType == LineAnnotation::InitialStateType || mLineType == LineAnnotation::ShapeType)
       && mpGraphicsView) {
     /*
       Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class

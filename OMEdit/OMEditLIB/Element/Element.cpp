@@ -2926,20 +2926,10 @@ void Element::deleteMe()
  */
 void Element::duplicate()
 {
-  MainWindow *pMainWindow = MainWindow::instance();
   QString name;
   if (mpLibraryTreeItem) {
-    // get the model defaultElementName
-    QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(mpLibraryTreeItem->getNameStructure());
-    if (defaultName.isEmpty()) {
-      name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(mpLibraryTreeItem->getName()));
-    } else {
-      if (mpGraphicsView->checkElementName(defaultName)) {
-        name = defaultName;
-      } else {
-        name = mpGraphicsView->getUniqueElementName(defaultName);
-      }
-    }
+    QString defaultName;
+    name = mpGraphicsView->getUniqueElementName(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->getName(), &defaultName);
   } else {
     name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(getName()));
   }

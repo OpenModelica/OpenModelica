@@ -148,6 +148,8 @@ private:
   QAction *mpRotateAntiClockwiseAction;
   QAction *mpFlipHorizontalAction;
   QAction *mpFlipVerticalAction;
+  QAction *mpCreateConnectorAction;
+  QAction *mpCancelConnectionAction;
   QAction *mpSetInitialStateAction;
   QAction *mpCancelTransitionAction;
   // scene->items().contains(...) involves sorting on each items() call, avoid it
@@ -218,6 +220,7 @@ public:
   void deleteElementFromOutOfSceneList(Element *pElement) {mOutOfSceneElementsList.removeOne(pElement);}
   void deleteInheritedElementFromList(Element *pElement) {mInheritedElementsList.removeOne(pElement);}
   Element* getElementObject(QString elementName);
+  QString getUniqueElementName(const QString &nameStructure, const QString &name, QString *defaultName);
   QString getUniqueElementName(QString elementName, int number = 0);
   bool checkElementName(QString elementName);
   QList<Element*> getElementsList() {return mElementsList;}
@@ -381,6 +384,8 @@ public slots:
   void rotateAntiClockwise();
   void flipHorizontal();
   void flipVertical();
+  void createConnector();
+  void cancelConnection();
   void setInitialState();
   void cancelTransition();
 protected:
