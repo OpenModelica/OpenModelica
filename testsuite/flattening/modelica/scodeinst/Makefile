@@ -839,6 +839,7 @@ RedeclareMod4.mo \
 RedeclareMod5.mo \
 RedeclareMod6.mo \
 RedeclareMod7.mo \
+RedeclareMod8.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \

@@ -798,7 +798,7 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
-        mod := instElementModifier(InstNode.definition(node), par);
+        mod := instElementModifier(InstNode.definition(node), node, par);
         mod := Modifier.propagate(mod, node, par);
         // Merge with any outer modifications.
         outer_mod := Modifier.propagate(cls.modifier, node, par);
@@ -846,7 +846,7 @@ algorithm
         Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
-        mod := instElementModifier(InstNode.definition(node), InstNode.rootParent(node));
+        mod := instElementModifier(InstNode.definition(node), node, InstNode.rootParent(node));
         mod := Modifier.propagate(mod, node, par);
         outer_mod := Modifier.propagate(cls.modifier, node, par);
         outer_mod := Modifier.merge(outerMod, outer_mod);
@@ -881,7 +881,7 @@ algorithm
         updateComponentType(parent, node);
         cls_tree := Class.classTree(InstNode.getClass(node));
 
-        mod := instElementModifier(InstNode.definition(node), InstNode.parent(node));
+        mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node));
         outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
         applyModifier(mod, cls_tree, InstNode.name(node));
@@ -1487,7 +1487,7 @@ algorithm
 
     case SCode.COMPONENT(info = info)
       algorithm
-        mod := instElementModifier(component, parent);
+        mod := instElementModifier(component, node, parent);
         mod := Modifier.merge(mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
         checkOuterComponentMod(mod, component, node);
@@ -1546,6 +1546,7 @@ end instComponentDef;
 
 function instElementModifier
   input SCode.Element element;
+  input InstNode component;
   input InstNode parent;
   output Modifier mod;
 protected
@@ -1553,6 +1554,7 @@ protected
 algorithm
   cc_mod := instConstrainingMod(element, parent);
   mod := Modifier.fromElement(element, parent);
+  mod := propagateRedeclaredMod(mod, component);
   mod := Modifier.merge(mod, cc_mod);
 end instElementModifier;
 
@@ -1576,6 +1578,25 @@ algorithm
     else Modifier.NOMOD();
   end match;
 end instConstrainingMod;
+
+function propagateRedeclaredMod
+  input Modifier mod;
+  input InstNode component;
+  output Modifier outMod;
+protected
+  InstNode parent;
+algorithm
+  outMod := match component
+    case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
+      algorithm
+        parent := InstNode.getDerivedNode(parent);
+        outMod := propagateRedeclaredMod(mod, parent);
+      then
+        Modifier.propagateBinding(outMod, parent, parent);
+
+    else mod;
+  end match;
+end propagateRedeclaredMod;
 
 function updateComponentConnectorType
   input output Component.Attributes attributes;

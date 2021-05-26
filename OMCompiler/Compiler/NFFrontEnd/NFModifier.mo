@@ -434,9 +434,6 @@ public
     input output Modifier mod;
     input InstNode origin;
     input InstNode parent;
-  protected
-    Integer dim_count;
-    list<Subscript> subs;
   algorithm
     () := match mod
       case MODIFIER()
@@ -449,6 +446,25 @@ public
       else ();
     end match;
   end propagate;
+
+  function propagateBinding
+    input output Modifier mod;
+    input InstNode origin;
+    input InstNode parent;
+  protected
+    list<Subscript> subs;
+  algorithm
+    () := match mod
+      case MODIFIER()
+        algorithm
+          subs := {Subscript.SPLIT_PROXY(origin, parent)};
+          mod.binding := Binding.propagate(mod.binding, subs);
+        then
+          ();
+
+      else ();
+    end match;
+  end propagateBinding;
 
   function propagateSubMod
     input String name;
