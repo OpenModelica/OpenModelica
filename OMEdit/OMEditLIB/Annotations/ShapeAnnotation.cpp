@@ -1831,8 +1831,7 @@ void ShapeAnnotation::editTransition()
     return;
   }
   LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  CreateOrEditTransitionDialog *pCreateOrEditTransitionDialog = new CreateOrEditTransitionDialog(mpGraphicsView, pTransitionLineAnnotation,
-                                                                                                 true, MainWindow::instance());
+  CreateOrEditTransitionDialog *pCreateOrEditTransitionDialog = new CreateOrEditTransitionDialog(mpGraphicsView, pTransitionLineAnnotation, true, MainWindow::instance());
   pCreateOrEditTransitionDialog->exec();
 }
 
