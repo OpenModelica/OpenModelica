@@ -3476,8 +3476,8 @@ algorithm
            listLength(trueType.dimensions) == listLength(falseType.dimensions) then
           // If the branches have the same element type and number of dimensions
           // but the dimensions aren't the same, create a conditional array type.
-          compatibleType := Type.CONDITIONAL_ARRAY(Type.setArrayElementType(trueType, compatibleType),
-                                                   Type.setArrayElementType(falseType, compatibleType),
+          compatibleType := Type.CONDITIONAL_ARRAY(Type.copyElementType(trueType, compatibleType),
+                                                   Type.copyElementType(falseType, compatibleType),
                                                    NFType.Branch.NONE);
           matchKind := MatchKind.EXACT;
         end if;

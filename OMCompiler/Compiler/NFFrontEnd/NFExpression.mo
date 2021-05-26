@@ -1050,7 +1050,7 @@ public
         algorithm
           outExp := applySubscript(subscript, exp.exp, restSubscripts);
         then
-          CAST(Type.copyElementType(exp.ty, typeOf(outExp)), outExp);
+          CAST(Type.copyElementType(typeOf(outExp), exp.ty), outExp);
 
       else makeSubscriptedExp(subscript :: restSubscripts, exp);
     end match;
