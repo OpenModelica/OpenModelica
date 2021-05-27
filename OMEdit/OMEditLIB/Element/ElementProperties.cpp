@@ -627,6 +627,7 @@ ParametersScrollArea::ParametersScrollArea()
   setFrameShape(QFrame::NoFrame);
   setBackgroundRole(QPalette::Base);
   setWidgetResizable(true);
+  mGroupBoxesList.clear();
   mpVerticalLayout = new QVBoxLayout;
   mpVerticalLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   mpWidget->setLayout(mpVerticalLayout);
@@ -662,8 +663,7 @@ QSize ParametersScrollArea::minimumSizeHint() const
   */
 void ParametersScrollArea::addGroupBox(GroupBox *pGroupBox)
 {
-  if (!getGroupBox(pGroupBox->title()))
-  {
+  if (!getGroupBox(pGroupBox->title())) {
     pGroupBox->hide();  /* create a hidden groupbox, we show it when it contains the parameters. */
     mGroupBoxesList.append(pGroupBox);
     mpVerticalLayout->addWidget(pGroupBox);
@@ -674,12 +674,12 @@ void ParametersScrollArea::addGroupBox(GroupBox *pGroupBox)
   Returns the GroupBox by reading the list of GroupBoxes.
   \return the GroupBox
   */
-GroupBox* ParametersScrollArea::getGroupBox(QString title)
+GroupBox* ParametersScrollArea::getGroupBox(const QString &title)
 {
-  foreach (GroupBox *pGroupBox, mGroupBoxesList)
-  {
-    if (pGroupBox->title().compare(title) == 0)
+  foreach (GroupBox *pGroupBox, mGroupBoxesList) {
+    if (pGroupBox->title().compare(title) == 0) {
       return pGroupBox;
+    }
   }
   return 0;
 }
@@ -786,8 +786,7 @@ void ElementParameters::setUpDialog()
   fetchComponentModifiers();
   fetchExtendsModifiers();
   foreach (Parameter *pParameter, mParametersList) {
-    ParametersScrollArea *pParametersScrollArea;
-    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
+    ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
     if (pParametersScrollArea) {
       if (!pParameter->getGroupBox().isEmpty()) {
         GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroupBox());
@@ -839,6 +838,26 @@ void ElementParameters::setUpDialog()
   pModifiersTabLayout->addWidget(mpModifiersTextBox);
   pModifiersTab->setLayout(pModifiersTabLayout);
   mpParametersTabWidget->addTab(pModifiersTab, "Modifiers");
+  // Issue #7494. Hide any empty tab.
+  for (int i = 0; i < mpParametersTabWidget->count(); ++i) {
+    ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(i));
+    if (pParametersScrollArea) {
+      bool tabIsEmpty = true;
+      // The tab is empty if its groupbox layout is empty.
+      for (int j = 0; j < pParametersScrollArea->groupBoxesSize(); ++j) {
+        GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(j);
+        if (pGroupBox && !pGroupBox->getGridLayout()->isEmpty()) {
+          tabIsEmpty = false;
+          break;
+        }
+      }
+      // If the tab is empty then remove it and move one step back.
+      if (tabIsEmpty) {
+        mpParametersTabWidget->removeTab(i);
+        --i;
+      }
+    }
+  }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
