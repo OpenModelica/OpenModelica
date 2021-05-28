@@ -71,6 +71,7 @@ typedef struct TRANSPORTED_EVENT_DATA {
 
 /* Private function prototypes */
 double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double interpolationPos);
+double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos);
 void addNewNodeSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity, double position, double value, int isEvent);
 int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, double in0, double in1, double posX, int isPositiveVelocity, double* eventPreValue, double* outValue);
 int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int isPositiveVelocity);
@@ -334,7 +335,9 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   DOUBLE_ENDED_LIST_NODE* firstNode;
   DOUBLE_ENDED_LIST_NODE* lastNode;
   TRANSPORTED_QUANTITY_DATA* firstNodeData;
+  TRANSPORTED_QUANTITY_DATA* secondNodeData;
   TRANSPORTED_QUANTITY_DATA* lastNodeData;
+  TRANSPORTED_QUANTITY_DATA* forelastNodeData;
   int walkedOverEvents;
   int realDirection;
   double deltaX;
@@ -399,15 +402,25 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     outValue = eventPreValue;
   }
 
-  /* Get return values */
+  /* Extrapolate return values to break up quasi-loop with inputs */
   firstNodeData = (TRANSPORTED_QUANTITY_DATA*) firstDataDoubleEndedList(transportedQuantityList);
+  secondNodeData = dataDoubleEndedList(getNextNodeDoubleEndedList(getFirstNodeDoubleEndedList(transportedQuantityList)));
   lastNodeData = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
+  forelastNodeData = dataDoubleEndedList(getPreviousNodeDoubleEndedList(getLastNodeDoubleEndedList(transportedQuantityList)));
   if (isPositiveVelocity) {
-    out0 = in0;
+    if (deltaX > SPATIAL_EPS && fabs(firstNodeData->position-secondNodeData->position)>SPATIAL_EPS ) {
+      out0 = extrapolateTransportedQuantity(firstNodeData, secondNodeData, -posX);
+    } else {
+      out0 = firstNodeData->value;
+    }
     *out1 = outValue;
   } else {
     out0 = outValue;
-    *out1 = in1;
+    if (deltaX > SPATIAL_EPS && fabs(forelastNodeData->position-lastNodeData->position)>SPATIAL_EPS ) {
+      *out1 = extrapolateTransportedQuantity(forelastNodeData, lastNodeData, -posX+1);
+    } else {
+      *out1 = lastNodeData->value;
+    }
   }
 
   infoStreamPrint(LOG_SPATIALDISTR, 0, "(out0,out1) = (%f, %f)", out0, *out1);
@@ -563,6 +576,33 @@ double interpolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData,
                     + rightValue * ((interpolationPos-leftPosition)/distPos);
 
   return interpolatedValue;
+}
+
+
+/**
+ * @brief Linear extrapolation at given position.
+ *
+ * @param leftData              Left (position,value) pair
+ * @param rightData             Right (position,value) pair
+ * @param extrapolationPos      Position where to interpolate.
+ * @return double               Extrapolated value.
+ */
+double extrapolateTransportedQuantity(const TRANSPORTED_QUANTITY_DATA* leftData, const TRANSPORTED_QUANTITY_DATA* rightData, const double extrapolationPos) {
+  double leftPosition, rightPosition;
+  double leftValue, rightValue;
+  double distPos;
+  double extrapolatedValue;
+
+  leftPosition = leftData->position;
+  leftValue = leftData->value;
+  rightPosition = rightData->position;
+  rightValue = rightData->value;
+  distPos = rightPosition - leftPosition;
+
+  assertStreamPrint(NULL, distPos > 0, "interpolateTransportedQuantity: wrong order or same position!");
+
+  extrapolatedValue = leftValue + (rightValue-leftValue)/(distPos) * (extrapolationPos - leftPosition);
+  return extrapolatedValue;
 }
 
 
