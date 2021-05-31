@@ -109,6 +109,7 @@ protected
   InstNode ctor_node, out_rec;
   Component out_comp;
   Class ctor_cls;
+  InstContext.Type ctor_context;
 algorithm
   // The node we get is usually a record instance, with applied modifiers and so on.
   // So the first thing we do is to create a "pure" instance of the record.
@@ -126,9 +127,10 @@ algorithm
     ctor_node := InstNode.replaceClass(Class.NOT_INSTANTIATED(), node);
   end try;
 
+  ctor_context := InstContext.set(context, NFInstContext.RELAXED);
   ctor_node := InstNode.setNodeType(NFInstNode.InstNodeType.ROOT_CLASS(InstNode.parent(node)), ctor_node);
-  ctor_node := Inst.instantiate(ctor_node, context = context, instPartial = true);
-  Inst.instExpressions(ctor_node, context = context);
+  ctor_node := Inst.instantiate(ctor_node, context = ctor_context);
+  Inst.instExpressions(ctor_node, context = ctor_context);
 
   // Collect the record fields.
   (inputs, locals, all_params) := collectRecordParams(ctor_node);
