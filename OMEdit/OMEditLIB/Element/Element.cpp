@@ -1442,7 +1442,8 @@ QString Element::getParameterDisplayString(QString parameterName)
   /* How to get the display value,
    * 0. If the component is inherited component then check if the value is available in the class extends modifiers.
    * 1. Check if the value is available in component modifier.
-   * 2. Check if the value is available in the component's class as a parameter or variable.
+   * 2. Check if the value is available in the component's containing class as a parameter or variable.
+   * 2.1 Check if the value is available in the component's class as a parameter or variable.
    * 3. Find the value in extends classes and check if the value is present in extends modifier.
    * 4. If there is no extends modifier then finally check if value is present in extends classes.
    */
@@ -1467,10 +1468,17 @@ QString Element::getParameterDisplayString(QString parameterName)
     if (mpLibraryTreeItem) {
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
-        if (pElement->getElementInfo()->getName().compare(parameterName) == 0) {
+        if (pElement->getElementInfo()->getName().compare(StringHandler::getFirstWordBeforeDot(parameterName)) == 0) {
           if (displayString.isEmpty()) {
             displayString = pElement->getElementInfo()->getParameterValue(pOMCProxy, mpLibraryTreeItem->getNameStructure());
           }
+          /* case 2.1
+           * Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
+           */
+          if (displayString.isEmpty()) {
+            displayString = pOMCProxy->getParameterValue(pElement->getElementInfo()->getClassName(), StringHandler::getLastWordAfterDot(parameterName));
+          }
+
           typeName = pElement->getElementInfo()->getClassName();
           checkEnumerationDisplayString(displayString, typeName);
           break;

@@ -538,6 +538,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
     QString variable = regExp.cap(0).trimmed();
     if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0)) {
       variable.remove("%");
+      variable = StringHandler::removeFirstLastCurlBrackets(variable);
       if (!variable.isEmpty()) {
         QString textValue;
         /* Ticket:4204
@@ -617,9 +618,9 @@ void TextAnnotation::updateTextString()
       return;
     }
     /* handle variables now */
-    updateTextStringHelper(QRegExp("(%%|%\\w*)"));
+    updateTextStringHelper(QRegExp("(%%|%\\{?\\w+(\\.\\w+)*\\}?)"));
     /* call again with non-word characters so invalid % can be removed. */
-    updateTextStringHelper(QRegExp("(%%|%\\W*)"));
+    updateTextStringHelper(QRegExp("(%%|%\\{?\\W+(\\.\\W+)*\\}?)"));
     /* handle %% */
     if (mOriginalTextString.toLower().contains("%%")) {
       mTextString.replace(QRegExp("%%"), "%");
