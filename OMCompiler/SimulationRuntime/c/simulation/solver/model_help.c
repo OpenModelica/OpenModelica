@@ -57,6 +57,9 @@
   #include <omp.h>
 #endif
 
+
+#define COMP_EPS 1e-12
+
 int maxEventIterations = 20;
 double linearSparseSolverMaxDensity = 0.2;
 int linearSparseSolverMinSize = DEFAULT_FLAG_LSS_MIN_SIZE;
@@ -1328,7 +1331,7 @@ modelica_boolean GreaterEqZC(double a, double b, modelica_boolean direction)
 
 modelica_boolean Less(double a, double b)
 {
-  return a < b;
+  return a + COMP_EPS <= b;
 }
 
 modelica_boolean LessEq(double a, double b)
@@ -1338,7 +1341,7 @@ modelica_boolean LessEq(double a, double b)
 
 modelica_boolean Greater(double a, double b)
 {
-  return a > b;
+  return a >= b + COMP_EPS;
 }
 
 modelica_boolean GreaterEq(double a, double b)
