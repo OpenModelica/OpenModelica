@@ -118,7 +118,7 @@ algorithm
         // adrpo: do not do this for arrays less than 2: see #7450
         //        TODO! FIXME! get rid of this absurdity when the backend
         //        can handle arrays of one = function call
-        if listLength(crefs) > 1 and
+        if listLength(crefs) > 1 and not Flags.getConfigBool(Flags.BUILDING_FMU) and
            ExpressionIterator.isSubscriptedArrayCall(binding_iter)
         then
           var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);

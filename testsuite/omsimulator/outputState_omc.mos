@@ -1,7 +1,6 @@
 // name : outputState_omc.mos
 // status: correct
 // teardown_command: rm -rf outputState.lua outputState.fmu outputState.log sink.fmu sink.log outputState_systemCall.log temp-outputState/
-// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica");
 
