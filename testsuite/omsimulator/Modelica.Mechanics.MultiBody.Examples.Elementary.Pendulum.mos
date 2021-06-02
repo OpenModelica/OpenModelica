@@ -1,6 +1,7 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu Modelica_Mechanics_MultiBody_Examples_Elementary_Pendulum.log Pendulum_systemCall.log modelDescription.xml model_res.mat
+
 loadModel(Modelica); getErrorString();
 buildModelFMU(Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum, version="2.0", fmuType="me_cs", platforms={"static"}); getErrorString();
 

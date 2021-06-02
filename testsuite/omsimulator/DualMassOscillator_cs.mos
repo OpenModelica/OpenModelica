@@ -1,7 +1,6 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf DualMassOscillator_cs.lua DualMassOscillator.System1.fmu DualMassOscillator.System2.fmu DualMassOscillator_System1.log DualMassOscillator_System2.log DualMassOscillator_cs_systemCall.log temp-DualMassOscillator_cs/
-// cflags: -d=-newInst
 
 loadFile("DualMassOscillator.mo"); getErrorString();
 

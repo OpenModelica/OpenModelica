@@ -1,7 +1,6 @@
 // keywords: fmu export import reset
 // status: correct
 // teardown_command: rm -rf resetWithLoops-fmu/ model_res.mat resetWithLoops.lua resetWithLoops.fmu resetWithLoops.log resetWithLoops_systemCall.log temp-resetWithLoops
-// cflags: -d=-newInst
 
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 
