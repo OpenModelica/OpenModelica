@@ -3345,7 +3345,7 @@ algorithm
 
         cache := FCore.emptyCache();
         FCore.setCachedFunctionTree(cache, funcs);
-        env := FGraph.empty();
+        env := FGraph.new("graph", FCore.dummyTopModel);
       then (cache, env, dae);
 
    case (cache,env,_)

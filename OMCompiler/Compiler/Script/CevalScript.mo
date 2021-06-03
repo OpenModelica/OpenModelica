@@ -2146,24 +2146,30 @@ algorithm
 
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, _, msg, _)
-      equation
-        true = Flags.isSet(Flags.EVAL_FUNC);
+      algorithm
+        true := Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         // bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " + AbsynUtil.pathString(funcpath) + "\n");
-        (cache,
-         sc as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()),
-         env) = Lookup.lookupClass(cache, env, funcpath);
-        isCevaluableFunction(sc);
-        (cache, env, _) = InstFunction.implicitFunctionInstantiation(
-          cache,
-          env,
-          InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(),
-          DAE.NOPRE(),
-          sc,
-          {});
-        func = FCore.getCachedInstFunc(cache, funcpath);
-        (cache, newval) = CevalFunction.evaluate(cache, env, func, vallst);
+
+        try
+          func := FCore.getCachedInstFunc(cache, funcpath);
+        else
+          (cache,
+           sc as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()),
+           env) := Lookup.lookupClass(cache, env, funcpath);
+          isCevaluableFunction(sc);
+          (cache, env, _) := InstFunction.implicitFunctionInstantiation(
+            cache,
+            env,
+            InnerOuter.emptyInstHierarchy,
+            DAE.NOMOD(),
+            DAE.NOPRE(),
+            sc,
+            {});
+          func := FCore.getCachedInstFunc(cache, funcpath);
+        end try;
+
+        (cache, newval) := CevalFunction.evaluate(cache, env, func, vallst);
         // bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " + AbsynUtil.pathString(funcpath) + "\n");
       then
         (cache, newval);
