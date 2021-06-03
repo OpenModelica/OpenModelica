@@ -269,6 +269,7 @@ protected
   Option<DAE.Exp> min = NONE(), max = NONE(), start = NONE(), fixed = NONE(), nominal = NONE();
   Option<DAE.StateSelect> state_select = NONE();
   Option<DAE.Uncertainty> uncertain = NONE();
+  Option<DAE.Exp> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -280,7 +281,8 @@ algorithm
       case "min"         algorithm min := convertVarAttribute(b); then ();
       case "nominal"     algorithm nominal := convertVarAttribute(b); then ();
       case "quantity"    algorithm quantity := convertVarAttribute(b); then ();
-      case "start"       algorithm start := convertVarAttribute(b); then ();
+      case "start"       algorithm start := convertVarAttribute(b);
+                                   start_origin := convertStartOrigin(b); then ();
       case "stateSelect" algorithm state_select := convertStateSelectAttribute(b); then ();
       // TODO: VAR_ATTR_REAL has no field for unbounded.
       case "unbounded"   then ();
@@ -299,7 +301,7 @@ algorithm
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_REAL(
     quantity, unit, displayUnit, min, max, start, fixed, nominal,
-    state_select, uncertain, NONE(), NONE(), NONE(), isFinal, NONE()));
+    state_select, uncertain, NONE(), NONE(), NONE(), isFinal, start_origin));
 end convertRealVarAttributes;
 
 function convertIntVarAttributes
@@ -310,7 +312,7 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
-  Option<DAE.Exp> start = NONE(), fixed = NONE();
+  Option<DAE.Exp> start = NONE(), fixed = NONE(), start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -319,7 +321,8 @@ algorithm
       case "quantity" algorithm quantity := convertVarAttribute(b); then ();
       case "min"      algorithm min := convertVarAttribute(b); then ();
       case "max"      algorithm max := convertVarAttribute(b); then ();
-      case "start"    algorithm start := convertVarAttribute(b); then ();
+      case "start"    algorithm start := convertVarAttribute(b);
+                                start_origin := convertStartOrigin(b); then ();
       case "fixed"    algorithm fixed := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
@@ -334,7 +337,7 @@ algorithm
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_INT(
     quantity, min, max, start, fixed,
-    NONE(), NONE(), NONE(), NONE(), isFinal, NONE()));
+    NONE(), NONE(), NONE(), NONE(), isFinal, start_origin));
 end convertIntVarAttributes;
 
 function convertBoolVarAttributes
@@ -345,13 +348,15 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
+  Option<DAE.Exp> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
 
     () := match name
       case "quantity" algorithm quantity := convertVarAttribute(b); then ();
-      case "start"    algorithm start := convertVarAttribute(b); then ();
+      case "start"    algorithm start := convertVarAttribute(b);
+                                start_origin := convertStartOrigin(b); then ();
       case "fixed"    algorithm fixed := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
@@ -365,7 +370,7 @@ algorithm
   end for;
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_BOOL(
-    quantity, start, fixed, NONE(), NONE(), isFinal, NONE()));
+    quantity, start, fixed, NONE(), NONE(), isFinal, start_origin));
 end convertBoolVarAttributes;
 
 function convertStringVarAttributes
@@ -376,13 +381,15 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), start = NONE(), fixed = NONE();
+  Option<DAE.Exp> start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
 
     () := match name
       case "quantity" algorithm quantity := convertVarAttribute(b); then ();
-      case "start"    algorithm start := convertVarAttribute(b); then ();
+      case "start"    algorithm start := convertVarAttribute(b);
+                                start_origin := convertStartOrigin(b); then ();
       case "fixed"    algorithm fixed := convertVarAttribute(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
@@ -396,7 +403,7 @@ algorithm
   end for;
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_STRING(
-    quantity, start, fixed, NONE(), NONE(), isFinal, NONE()));
+    quantity, start, fixed, NONE(), NONE(), isFinal, start_origin));
 end convertStringVarAttributes;
 
 function convertEnumVarAttributes
@@ -407,7 +414,7 @@ protected
   String name;
   Binding b;
   Option<DAE.Exp> quantity = NONE(), min = NONE(), max = NONE();
-  Option<DAE.Exp> start = NONE(), fixed = NONE();
+  Option<DAE.Exp> start = NONE(), fixed = NONE(), start_origin = NONE();
 algorithm
   for attr in attrs loop
     (name, b) := attr;
@@ -417,7 +424,8 @@ algorithm
       case "max"         algorithm max := convertVarAttribute(b); then ();
       case "min"         algorithm min := convertVarAttribute(b); then ();
       case "quantity"    algorithm quantity := convertVarAttribute(b); then ();
-      case "start"       algorithm start := convertVarAttribute(b); then ();
+      case "start"       algorithm start := convertVarAttribute(b);
+                                   start_origin := convertStartOrigin(b); then ();
 
       // The attributes should already be type checked, so we shouldn't get any
       // unknown attributes here.
@@ -430,7 +438,7 @@ algorithm
   end for;
 
   attributes := SOME(DAE.VariableAttributes.VAR_ATTR_ENUMERATION(
-    quantity, min, max, start, fixed, NONE(), NONE(), isFinal, NONE()));
+    quantity, min, max, start, fixed, NONE(), NONE(), isFinal, start_origin));
 end convertEnumVarAttributes;
 
 function convertVarAttribute
@@ -515,6 +523,12 @@ algorithm
         fail();
   end match;
 end lookupUncertaintyMember;
+
+function convertStartOrigin
+  input Binding binding;
+  output Option<DAE.Exp> startOrigin =
+    SOME(DAE.Exp.SCONST(if Binding.source(binding) == NFBinding.Source.TYPE then "binding" else "type"));
+end convertStartOrigin;
 
 function convertEquations
   input list<Equation> equations;

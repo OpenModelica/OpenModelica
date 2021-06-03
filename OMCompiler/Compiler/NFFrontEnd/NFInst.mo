@@ -1494,7 +1494,7 @@ algorithm
 
         dims := list(Dimension.RAW_DIM(d, parent) for d in component.attributes.arrayDims);
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
-        condition := Binding.fromAbsyn(component.condition, false, parent, info);
+        condition := Binding.fromAbsyn(component.condition, false, false, parent, info);
 
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).

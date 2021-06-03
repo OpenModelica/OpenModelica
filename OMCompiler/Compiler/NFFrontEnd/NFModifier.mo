@@ -119,6 +119,16 @@ uniontype ModifierScope
     end match;
   end name;
 
+  function isClass
+    input ModifierScope scope;
+    output Boolean res;
+  algorithm
+    res := match scope
+      case CLASS() then true;
+      else false;
+    end match;
+  end isClass;
+
   function toString
     input ModifierScope scope;
     output String string;
@@ -176,7 +186,7 @@ public
       case SCode.MOD()
         algorithm
           is_each := SCodeUtil.eachBool(mod.eachPrefix);
-          binding := Binding.fromAbsyn(mod.binding, is_each, scope, mod.info);
+          binding := Binding.fromAbsyn(mod.binding, is_each, ModifierScope.isClass(modScope), scope, mod.info);
           submod_lst := list((m.ident, createSubMod(m, modScope, scope)) for m in mod.subModLst);
           submod_table := ModTable.fromList(submod_lst,
             function mergeLocal(scope = modScope, prefix = {}));
