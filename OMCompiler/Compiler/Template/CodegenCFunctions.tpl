@@ -5878,19 +5878,19 @@ case rel as RELATION(__) then
         end match
       else
         let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-        let hysteresisfunction = if isReal then 'RELATIONHYSTERESIS' else 'RELATION'
+        let hysteresisfunction = if isReal then 'relationhysteresis' else 'relation'
         match rel.operator
         case LESS(__) then
-          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%>, Less);<%\n%>'
+          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, Less<% if isReal then ', LessZC' else ''%>);<%\n%>'
           res
         case LESSEQ(__) then
-          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%>, LessEq);<%\n%>'
+          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, LessEq<% if isReal then ', LessEqZC' else ''%>);<%\n%>'
           res
         case GREATER(__) then
-          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%>, Greater);<%\n%>'
+          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, Greater<% if isReal then ', GreaterZC' else ''%>);<%\n%>'
           res
         case GREATEREQ(__) then
-          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%>, GreaterEq);<%\n%>'
+          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%>, GreaterEq<% if isReal then ', GreaterEqZC' else ''%>);<%\n%>'
           res
         end match
     case SOME((exp,i,j)) then
@@ -5915,19 +5915,19 @@ case rel as RELATION(__) then
         end match
       else
         let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
-        let hysteresisfunction = if isReal then 'RELATIONHYSTERESIS' else 'RELATION'
+        let hysteresisfunction = if isReal then 'relationhysteresis' else 'relation'
         match rel.operator
         case LESS(__) then
-          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, Less);<%\n%>'
+          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, Less<% if isReal then ', LessZC' else ''%>);<%\n%>'
           res
         case LESSEQ(__) then
-          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, LessEq);<%\n%>'
+          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, LessEq<% if isReal then ', LessEqZC' else ''%>);<%\n%>'
           res
         case GREATER(__) then
-          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, Greater);<%\n%>'
+          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, Greater<% if isReal then ', GreaterZC' else ''%>);<%\n%>'
           res
         case GREATEREQ(__) then
-          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, GreaterEq);<%\n%>'
+          let &preExp += '<%hysteresisfunction%>(data, &<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, GreaterEq<% if isReal then ', GreaterEqZC' else ''%>);<%\n%>'
           res
         end match
     end match
