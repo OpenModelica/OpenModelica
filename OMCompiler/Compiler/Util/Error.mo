@@ -829,9 +829,9 @@ public constant ErrorTypes.Message TOO_MANY_TYPE_VARS_IN_CALL = ErrorTypes.MESSA
 public constant ErrorTypes.Message BREAK_OUTSIDE_LOOP = ErrorTypes.MESSAGE(378, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("‘break' may only be used in a while- or for-loop."));
 public constant ErrorTypes.Message TOP_LEVEL_OUTER = ErrorTypes.MESSAGE(379, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("The model can't be instantiated due to top-level outer component ‘%s‘, it may only be used as part of a simulation model."));
+  Gettext.gettext("The model can't be instantiated due to top-level outer element ‘%s‘, it may only be used as part of a simulation model."));
 public constant ErrorTypes.Message MISSING_INNER_NAME_CONFLICT = ErrorTypes.MESSAGE(380, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
-  Gettext.gettext("An inner declaration for outer component ‘%s‘ could not be found, and could not be automatically generated due to a existing declaration of that name."));
+  Gettext.gettext("An inner declaration for outer element ‘%s‘ could not be found, and could not be automatically generated due to an existing declaration of that name."));
 public constant ErrorTypes.Message TOP_LEVEL_INPUT_WITH_BINDING = ErrorTypes.MESSAGE(381, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Top-level input ‘%s‘ has a binding equation and will not be accessible as an input of the model."));
 public constant ErrorTypes.Message NON_DISCRETE_WHEN_CONDITION = ErrorTypes.MESSAGE(382, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
