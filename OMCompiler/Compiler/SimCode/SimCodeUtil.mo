@@ -13673,6 +13673,8 @@ algorithm
       //var := BackendVariable.setVarFixed(var,false);
       //var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       currentSystem := BackendVariable.addVarDAE(var, currentSystem);
+    elseif not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
+      shared := BackendVariable.addGlobalKnownVarDAE(var, shared);
     end if;
   end for;
 
