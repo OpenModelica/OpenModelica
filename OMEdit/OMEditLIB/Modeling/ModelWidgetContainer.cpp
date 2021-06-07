@@ -101,6 +101,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   /* Ticket #3275
    * Set the scroll bars policy to always on to avoid unnecessary resize events.
    */
+  setRenderHint(QPainter::SmoothPixmapTransform);
   setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
   setFrameShape(QFrame::StyledPanel);
@@ -164,6 +165,7 @@ GraphicsView::GraphicsView(StringHandler::ViewType viewType, ModelWidget *pModel
   mpClickedState = 0;
   setIsMovingComponentsAndShapes(false);
   setRenderingLibraryPixmap(false);
+  setSharpLibraryPixmap(false);
   mElementsList.clear();
   mOutOfSceneElementsList.clear();
   mConnectionsList.clear();
@@ -201,19 +203,7 @@ bool GraphicsView::isCreatingShape()
 
 void GraphicsView::setExtentRectangle(const QRectF rectangle)
 {
-  // Yes the top of the rectangle is bottom for us since the coordinate system is inverted.
-  qreal left = rectangle.left();
-  qreal bottom = rectangle.top();
-  qreal right = rectangle.right();
-  qreal top = rectangle.bottom();
-  QRectF sceneRectangle(left, bottom, qFabs(left - right), qFabs(bottom - top));
-  /* Ticket:4340 Extend vertical space
-   * Make the drawing area 25% bigger than the actual size. So we can better use the panning feature.
-   */
-  const qreal factor = 0.25;
-  const qreal widthFactor = rectangle.width() * factor;
-  const qreal heightFactor = rectangle.width() * factor;
-  sceneRectangle.adjust(-widthFactor, -heightFactor, widthFactor, heightFactor);
+  QRectF sceneRectangle = Utilities::adjustSceneRectangle(rectangle, 0.25);
   setSceneRect(sceneRectangle);
   centerOn(sceneRectangle.center());
 }
@@ -8618,7 +8608,7 @@ void ModelWidgetContainer::printModel()
       // open print dialog
       if (pPrintDialog->exec() == QDialog::Accepted) {
         QPainter painter(&printer);
-        painter.setRenderHints(QPainter::Antialiasing);
+        painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
         pGraphicsView->render(&painter);
         painter.end();
       }

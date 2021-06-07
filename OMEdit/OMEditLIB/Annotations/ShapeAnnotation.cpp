@@ -531,6 +531,12 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
   if (mBorderPattern == StringHandler::BorderRaised || mBorderPattern == StringHandler::BorderSunken) {
     thickness = Utilities::convertMMToPixel(0.25);
   }
+  // Make the display of Library Browser icons sharper. Very low line thickness is hardly visible on high resolution.
+  if (mLineThickness < 1.0 && ((mpGraphicsView && mpGraphicsView->useSharpLibraryPixmap())
+                               || (mpParentComponent && mpParentComponent->getGraphicsView()->useSharpLibraryPixmap()))) {
+    thickness = Utilities::convertMMToPixel(1.0);
+  }
+
   QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
   /* The specification doesn't say anything about it.
    * But just to keep this consist with Dymola we use Qt::BevelJoin for Line shapes.
@@ -544,10 +550,10 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
    */
   pen.setCosmetic(true);
   /* Ticket #2272, Ticket #2268.
-   * If thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
-   * Use non cosmetic pens for Libraries Browser and shapes inside component when thickness is greater than 2.
+   * If thickness is greater than 4 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
+   * Use non cosmetic pens for Libraries Browser and shapes inside component when thickness is greater than 4.
    */
-  if (thickness > 2
+  if (thickness > 4
       && ((mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap())
           || mpParentComponent)) {
     pen.setCosmetic(false);
