@@ -2237,7 +2237,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
 void LibrariesPage::openAddSystemLibrary()
 {
   AddSystemLibraryDialog *pAddSystemLibraryWidget = new AddSystemLibraryDialog(this);
-  pAddSystemLibraryWidget->show();
+  pAddSystemLibraryWidget->exec();
 }
 
 //! Slot activated when mpRemoveSystemLibraryButton clicked signal is raised.
@@ -2255,15 +2255,14 @@ void LibrariesPage::removeSystemLibrary()
 //! Opens the AddLibraryWidget in edit mode and pass it the selected tree item.
 void LibrariesPage::openEditSystemLibrary()
 {
-  if (mpSystemLibrariesTree->selectedItems().size() > 0)
-  {
+  if (mpSystemLibrariesTree->selectedItems().size() > 0) {
     AddSystemLibraryDialog *pAddSystemLibraryWidget = new AddSystemLibraryDialog(this);
-    pAddSystemLibraryWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Edit System Library")));
+    pAddSystemLibraryWidget->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Edit System Library")));
     pAddSystemLibraryWidget->mEditFlag = true;
     int currentIndex = pAddSystemLibraryWidget->mpNameComboBox->findText(mpSystemLibrariesTree->selectedItems().at(0)->text(0), Qt::MatchExactly);
     pAddSystemLibraryWidget->mpNameComboBox->setCurrentIndex(currentIndex);
     pAddSystemLibraryWidget->mpVersionTextBox->setText(mpSystemLibrariesTree->selectedItems().at(0)->text(1));
-    pAddSystemLibraryWidget->show();
+    pAddSystemLibraryWidget->exec();
   }
 }
 
@@ -2272,7 +2271,7 @@ void LibrariesPage::openEditSystemLibrary()
 void LibrariesPage::openAddUserLibrary()
 {
   AddUserLibraryDialog *pAddUserLibraryWidget = new AddUserLibraryDialog(this);
-  pAddUserLibraryWidget->show();
+  pAddUserLibraryWidget->exec();
 }
 
 //! Slot activated when mpRemoveUserLibraryButton clicked signal is raised.
@@ -2293,71 +2292,79 @@ void LibrariesPage::openEditUserLibrary()
   if (mpUserLibrariesTree->selectedItems().size() > 0)
   {
     AddUserLibraryDialog *pAddUserLibraryWidget = new AddUserLibraryDialog(this);
-    pAddUserLibraryWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Edit User Library")));
+    pAddUserLibraryWidget->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Edit User Library")));
     pAddUserLibraryWidget->mEditFlag = true;
     pAddUserLibraryWidget->mpPathTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(0));
     int currentIndex = pAddUserLibraryWidget->mpEncodingComboBox->findData(mpUserLibrariesTree->selectedItems().at(0)->text(1));
     if (currentIndex > -1)
       pAddUserLibraryWidget->mpEncodingComboBox->setCurrentIndex(currentIndex);
-    pAddUserLibraryWidget->show();
+    pAddUserLibraryWidget->exec();
   }
 }
 
-//! @class AddSystemLibraryDialog
-//! @brief Creates an interface for Adding new System Libraries.
 
-//! Constructor
-//! @param pLibrariesPage is the pointer to LibrariesPage
+/*!
+ * \class AddSystemLibraryDialog
+ * \brief Creates an interface for Adding new System Libraries.
+ */
+/*!
+ * \brief AddSystemLibraryDialog::AddSystemLibraryDialog
+ * \param pLibrariesPage is the pointer to LibrariesPage
+ */
 AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage)
   : QDialog(pLibrariesPage), mEditFlag(false)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Add System Library")));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Add System Library")));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
   mpLibrariesPage = pLibrariesPage;
   mpNameLabel = new Label(Helper::name);
   mpNameComboBox = new QComboBox;
   foreach (const QString &key, MainWindow::instance()->getOMCProxy()->getAvailableLibraries()) {
-    mpNameComboBox->addItem(key,key);
+    mpNameComboBox->addItem(key, key);
   }
 
   mpValueLabel = new Label(Helper::version + ":");
   mpVersionTextBox = new QLineEdit("default");
   mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addSystemLibrary()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   mainLayout->addWidget(mpNameLabel, 0, 0);
   mainLayout->addWidget(mpNameComboBox, 0, 1);
   mainLayout->addWidget(mpValueLabel, 1, 0);
   mainLayout->addWidget(mpVersionTextBox, 1, 1);
-  mainLayout->addWidget(mpOkButton, 2, 0, 1, 2, Qt::AlignRight);
+  mainLayout->addWidget(mpButtonBox, 2, 0, 1, 2, Qt::AlignRight);
   setLayout(mainLayout);
 }
 
-//! Returns tree if the name exists in the tree's first column.
+/*!
+ * \brief AddSystemLibraryDialog::nameExists
+ * Returns tree if the name exists in the tree's first column.
+ * \param pItem
+ * \return
+ */
 bool AddSystemLibraryDialog::nameExists(QTreeWidgetItem *pItem)
 {
   QTreeWidgetItemIterator it(mpLibrariesPage->getSystemLibrariesTree());
-  while (*it)
-  {
+  while (*it) {
     QTreeWidgetItem *pChildItem = dynamic_cast<QTreeWidgetItem*>(*it);
     // edit case
-    if (pItem)
-    {
-      if (pChildItem != pItem)
-      {
-        if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0)
-        {
+    if (pItem) {
+      if (pChildItem != pItem) {
+        if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0) {
           return true;
         }
       }
-    }
-    // add case
-    else
-    {
-      if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0)
-      {
+    } else { // add case
+      if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0) {
         return true;
       }
     }
@@ -2366,64 +2373,57 @@ bool AddSystemLibraryDialog::nameExists(QTreeWidgetItem *pItem)
   return false;
 }
 
-//! Slot activated when mpOkButton clicked signal is raised.
-//! Add/Edit the system library in the tree.
+/*!
+ * \brief AddSystemLibraryDialog::addSystemLibrary
+ * Slot activated when mpOkButton clicked signal is raised.
+ *  Add/Edit the system library in the tree.
+ */
 void AddSystemLibraryDialog::addSystemLibrary()
 {
   // if name text box is empty show error and return
-  if (mpNameComboBox->currentText().isEmpty())
-  {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
+  if (mpNameComboBox->currentText().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
     return;
   }
   // if value text box is empty show error and return
-  if (mpVersionTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
+  if (mpVersionTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
     return;
   }
   // if user is adding a new library
-  if (!mEditFlag)
-  {
-    if (nameExists())
-    {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+  if (!mEditFlag) {
+    if (nameExists()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     QStringList values;
     values << mpNameComboBox->currentText() << mpVersionTextBox->text();
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
-  }
-  // if user is editing old library
-  else if (mEditFlag)
-  {
+  } else if (mEditFlag) { // if user is editing old library
     QTreeWidgetItem *pItem = mpLibrariesPage->getSystemLibrariesTree()->selectedItems().at(0);
-    if (nameExists(pItem))
-    {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+    if (nameExists(pItem)) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
-    // pItem->setText(0, mpNameTextBox->text());
+    pItem->setText(0, mpNameComboBox->currentText());
     pItem->setText(1, mpVersionTextBox->text());
   }
   accept();
 }
 
-//! @class AddUserLibraryDialog
-//! @brief Creates an interface for Adding new User Libraries.
-
-//! Constructor
-//! @param pLibrariesPage is the pointer to LibrariesPage
+/*!
+ * \class AddUserLibraryDialog
+ * \brief Creates an interface for Adding new User Libraries.
+ */
+/*!
+ * \brief AddUserLibraryDialog::AddUserLibraryDialog
+ * \param pLibrariesPage is the pointer to LibrariesPage
+ */
 AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
   : QDialog(pLibrariesPage), mEditFlag(false)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Add User Library")));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Add User Library")));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
   mpLibrariesPage = pLibrariesPage;
   mpPathLabel = new Label(Helper::path);
   mpPathTextBox = new QLineEdit;
@@ -2434,7 +2434,15 @@ AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
   mpEncodingComboBox = new QComboBox;
   StringHandler::fillEncodingComboBox(mpEncodingComboBox);
   mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addUserLibrary()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   mainLayout->addWidget(mpPathLabel, 0, 0);
@@ -2442,33 +2450,30 @@ AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
   mainLayout->addWidget(mpPathBrowseButton, 0, 2);
   mainLayout->addWidget(mpEncodingLabel, 1, 0);
   mainLayout->addWidget(mpEncodingComboBox, 1, 1, 1, 2);
-  mainLayout->addWidget(mpOkButton, 2, 0, 1, 3, Qt::AlignRight);
+  mainLayout->addWidget(mpButtonBox, 2, 0, 1, 3, Qt::AlignRight);
   setLayout(mainLayout);
 }
 
-//! Returns tree if the name exists in the tree's first column.
+/*!
+ * \brief AddUserLibraryDialog::pathExists
+ * Returns tree if the name exists in the tree's first column.
+ * \param pItem
+ * \return
+ */
 bool AddUserLibraryDialog::pathExists(QTreeWidgetItem *pItem)
 {
   QTreeWidgetItemIterator it(mpLibrariesPage->getUserLibrariesTree());
-  while (*it)
-  {
+  while (*it) {
     QTreeWidgetItem *pChildItem = dynamic_cast<QTreeWidgetItem*>(*it);
     // edit case
-    if (pItem)
-    {
-      if (pChildItem != pItem)
-      {
-        if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0)
-        {
+    if (pItem) {
+      if (pChildItem != pItem) {
+        if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0) {
           return true;
         }
       }
-    }
-    // add case
-    else
-    {
-      if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0)
-      {
+    } else { // add case
+      if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0) {
         return true;
       }
     }
@@ -2477,46 +2482,42 @@ bool AddUserLibraryDialog::pathExists(QTreeWidgetItem *pItem)
   return false;
 }
 
-//! Slot activated when mpPathBrowseButton clicked signal is raised.
-//! Add/Edit the user library in the tree.
+/*!
+ * \brief AddUserLibraryDialog::browseUserLibraryPath
+ * Slot activated when mpPathBrowseButton clicked signal is raised.
+ * Add/Edit the user library in the tree.
+ */
 void AddUserLibraryDialog::browseUserLibraryPath()
 {
-  mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                        NULL, Helper::omFileTypes, NULL));
+  mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::omFileTypes, NULL));
 }
 
-//! Slot activated when mpOkButton clicked signal is raised.
-//! Add/Edit the user library in the tree.
+/*!
+ * \brief AddUserLibraryDialog::addUserLibrary
+ * Slot activated when mpOkButton clicked signal is raised.
+ * Add/Edit the user library in the tree.
+ */
 void AddUserLibraryDialog::addUserLibrary()
 {
   // if path text box is empty show error and return
-  if (mpPathTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          tr("Please enter the file path."), Helper::ok);
+  if (mpPathTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Please enter the file path."), Helper::ok);
     return;
   }
   // if user is adding a new library
-  if (!mEditFlag)
-  {
-    if (pathExists())
-    {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+  if (!mEditFlag) {
+    if (pathExists()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     QStringList values;
     values << mpPathTextBox->text() << mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString();
     mpLibrariesPage->getUserLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
-  }
-  // if user is editing old library
-  else if (mEditFlag)
-  {
+  } else if (mEditFlag) { // if user is editing old library
     QTreeWidgetItem *pItem = mpLibrariesPage->getUserLibrariesTree()->selectedItems().at(0);
     if (pathExists(pItem))
     {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     pItem->setText(0, mpPathTextBox->text());
