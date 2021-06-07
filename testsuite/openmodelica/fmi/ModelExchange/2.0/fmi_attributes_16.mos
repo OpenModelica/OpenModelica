@@ -1,0 +1,76 @@
+// name: fmi_attributes_16.mos
+// status: correct
+// teardown_command: rm -rf fmi_attributes_16.fmu fmi_attributes_16.log fmi_attributes_16.xml fmi_attributes_16_tmp.xml fmi_attributes_16.fmutmp/
+
+loadString("
+model fmi_attributes_16
+  Real x(fixed=true, start=x_start);
+  parameter Real x_start(fixed=false);
+initial equation
+  der(x) + x_start = 1;
+equation
+  der(x) = 0.0;
+end fmi_attributes_16;
+"); getErrorString();
+
+translateModelFMU(fmi_attributes_16); getErrorString();
+
+// unzip to console, quiet, extra quiet
+system("unzip -cqq fmi_attributes_16.fmu modelDescription.xml > fmi_attributes_16_tmp.xml"); getErrorString();
+system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" fmi_attributes_16_tmp.xml > fmi_attributes_16.xml"); getErrorString();
+readFile("fmi_attributes_16.xml"); getErrorString();
+
+system("sed -n \"/<ModelStructure>/,/<\\/ModelStructure>/p\" fmi_attributes_16_tmp.xml > fmi_attributes_16.xml"); getErrorString();
+readFile("fmi_attributes_16.xml"); getErrorString();
+
+// Result:
+// true
+// ""
+// "fmi_attributes_16.fmu"
+// ""
+// 0
+// ""
+// 0
+// ""
+// "  <ModelVariables>
+//   <!-- Index of variable = \"1\" -->
+//   <ScalarVariable
+//     name=\"x\"
+//     valueReference=\"0\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"2\" -->
+//   <ScalarVariable
+//     name=\"der(x)\"
+//     valueReference=\"1\"
+//     >
+//     <Real derivative=\"1\"/>
+//   </ScalarVariable>
+//   <!-- Index of variable = \"3\" -->
+//   <ScalarVariable
+//     name=\"x_start\"
+//     valueReference=\"2\"
+//     variability=\"fixed\"
+//     causality=\"calculatedParameter\"
+//     >
+//     <Real/>
+//   </ScalarVariable>
+//   </ModelVariables>
+// "
+// ""
+// 0
+// ""
+// "  <ModelStructure>
+//     <Derivatives>
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//     </Derivatives>
+//     <InitialUnknowns>
+//       <Unknown index=\"1\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"2\" dependencies=\"\" dependenciesKind=\"\" />
+//       <Unknown index=\"3\" dependencies=\"\" dependenciesKind=\"\" />
+//     </InitialUnknowns>
+//   </ModelStructure>
+// "
+// ""
+// endResult
