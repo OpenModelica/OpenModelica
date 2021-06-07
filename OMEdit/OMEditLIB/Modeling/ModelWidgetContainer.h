@@ -109,6 +109,7 @@ private:
   Element *mpClickedState;
   bool mIsMovingComponentsAndShapes;
   bool mRenderingLibraryPixmap;
+  bool mSharpLibraryPixmap;
   QList<Element*> mElementsList;
   // A list of components that are not deleted but are removed from scene.
   QList<Element*> mOutOfSceneElementsList;
@@ -191,6 +192,8 @@ public:
   bool isMovingComponentsAndShapes() {return mIsMovingComponentsAndShapes;}
   void setRenderingLibraryPixmap(bool renderingLibraryPixmap) {mRenderingLibraryPixmap = renderingLibraryPixmap;}
   bool isRenderingLibraryPixmap() {return mRenderingLibraryPixmap;}
+  void setSharpLibraryPixmap(bool sharpLibraryPixmap) {mSharpLibraryPixmap = sharpLibraryPixmap;}
+  bool useSharpLibraryPixmap() {return mSharpLibraryPixmap;}
   QList<ShapeAnnotation*> getShapesList() {return mShapesList;}
   QList<ShapeAnnotation*> getInheritedShapesList() {return mInheritedShapesList;}
   QAction* getManhattanizeAction() {return mpManhattanizeAction;}
