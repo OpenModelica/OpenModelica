@@ -349,6 +349,8 @@ public:
   Label *mpValueLabel;
   QLineEdit *mpVersionTextBox;
   QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
   bool mEditFlag;
 private slots:
   void addSystemLibrary();
@@ -368,6 +370,8 @@ public:
   Label *mpEncodingLabel;
   QComboBox *mpEncodingComboBox;
   QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
   bool mEditFlag;
 private slots:
   void browseUserLibraryPath();
