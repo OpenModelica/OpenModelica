@@ -1654,33 +1654,29 @@ QModelIndex ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex(const
   return expandableConnectorTreeItemIndexHelper(pExpandableConnectorTreeItem, mpRootExpandableConnectorTreeItem, QModelIndex());
 }
 
-void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pComponent,
-                                                                     ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
 {
   StringHandler::ModelicaClasses restriction = StringHandler::Model;
   if (pComponent->getLibraryTreeItem()) {
     restriction = pComponent->getLibraryTreeItem()->getRestriction();
   }
-  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pComponent->getName(),
-                                                                                              pComponent->getComponentInfo()->isArray(),
-                                                                                              pComponent->getComponentInfo()->getArrayIndex(),
-                                                                                              restriction, false,
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pComponent->getName(), pComponent->getComponentInfo()->isArray(),
+                                                                                              pComponent->getComponentInfo()->getArrayIndex(), restriction, false,
                                                                                               pParentExpandableConnectorTreeItem);
   int row = pParentExpandableConnectorTreeItem->getChildren().size();
   QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
   beginInsertRows(index, row, row);
   pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
   endInsertRows();
-  if (pComponent->getLibraryTreeItem()) {
+  if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getModelWidget()) {
     foreach (Element *pChildComponent, pComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
       createExpandableConnectorTreeItem(pChildComponent, pExpandableConnectorTreeItem);
     }
   }
   // create add variable item only if item is expandable connector
   if (pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
-    ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, "",
-                                                                                                           StringHandler::Model, true,
-                                                                                                           pExpandableConnectorTreeItem);
+    ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, "", StringHandler::Model,
+                                                                                                           true, pExpandableConnectorTreeItem);
     int row = pExpandableConnectorTreeItem->getChildren().size();
     QModelIndex index = expandableConnectorTreeItemIndex(pExpandableConnectorTreeItem);
     beginInsertRows(index, row, row);
@@ -1754,7 +1750,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
   // Start expandable connector treeview
   mpStartExpandableConnectorTreeView = 0;
   mpStartComponent = mpConnectionLineAnnotation->getStartComponent();
-  mpStartRootComponent = mpStartComponent->getParentComponent() ? mpStartComponent->getRootParentComponent() : 0;
+  mpStartRootComponent = mpStartComponent->getParentComponent() ? mpStartComponent->getRootParentComponent() : mpStartComponent;
   if (mpStartComponent->isExpandableConnector() || (mpStartRootComponent && mpStartRootComponent->isExpandableConnector())) {
     mpStartExpandableConnectorTreeModel = new ExpandableConnectorTreeModel(this);
     mpStartExpandableConnectorTreeProxyModel = new ExpandableConnectorTreeProxyModel(this);
@@ -1770,7 +1766,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
   }
   // End expandable connector treeview
   mpEndComponent = mpConnectionLineAnnotation->getEndComponent();
-  mpEndRootComponent = mpEndComponent->getParentComponent() ? mpEndComponent->getRootParentComponent() : 0;
+  mpEndRootComponent = mpEndComponent->getParentComponent() ? mpEndComponent->getRootParentComponent() : mpEndComponent;
   mpEndExpandableConnectorTreeView = 0;
   if (mpEndComponent->isExpandableConnector() || (mpEndRootComponent && mpEndRootComponent->isExpandableConnector())) {
     mpEndExpandableConnectorTreeModel = new ExpandableConnectorTreeModel(this);
