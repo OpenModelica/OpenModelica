@@ -3432,8 +3432,13 @@ algorithm
     node := Lookup.lookupSimpleName(name, scope);
 
     if InstNode.isInner(node) then
-      Error.addSourceMessage(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
       is_error := not InstContext.inRelaxed(context);
+
+      if is_error then
+        Error.addSourceMessageAsError(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
+      else
+        Error.addSourceMessage(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
+      end if;
     else
       Error.addMultiSourceMessage(Error.MISSING_INNER_NAME_CONFLICT,
         {name}, {InstNode.info(node), InstNode.info(outerNode)});
