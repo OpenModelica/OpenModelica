@@ -240,13 +240,14 @@ void initSpatialDistribution(DATA* data, threadData_t* threadData, unsigned int 
 /**
  * @brief Store spatial distribution data for an accepted step.
  *
- * @param data
- * @param threadData
- * @param index
- * @param in0
- * @param in1
- * @param posX
- * @param isPositiveVelocity
+ * @param data                Data
+ * @param threadData          Thread data for error handling
+ * @param index               Index of spatial distribution.
+ * @param in0                 First input to spatial distribution.
+ * @param in1                 Second input to spatial distribution
+ * @param posX                Value of position x.
+ * @param isPositiveVelocity  Boolean describing if velocity v is positive (>=0).
+ *                            Velocity v is `v:=der(x)`.
  */
 void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int index, double in0, double in1, double posX, int isPositiveVelocity) {
   /* Variables */
@@ -254,6 +255,7 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
   DOUBLE_ENDED_LIST* transportedQuantityList;
   DOUBLE_ENDED_LIST* storedEventsList;
   int walkedOverEvents = 0;
+  double deltaX, realDirection;
 
   /* Access spatialDistribution */
   spatialDistribution = &(data->simulationInfo->spatialDistributionData[index]);
@@ -270,6 +272,23 @@ void storeSpatialDistribution(DATA* data, threadData_t *threadData, unsigned int
   if (data->simulationInfo->discreteCall) {
     errorStreamPrint(LOG_STDOUT, 0, "Discrete call of storeSpatialDistribution");
     omc_throw_function(threadData);
+  }
+
+  /* Get deltaX */
+  deltaX = spatialDistribution->oldPosX - posX;
+  if (deltaX > 0) {
+    realDirection = 1 /* positive */;
+  } else if (deltaX < 0) {
+    realDirection = -1 /* negative */;
+    deltaX = -deltaX;
+  } else {
+    realDirection = 0 /* standing still */;
+  }
+
+  /* If real direction doesn't match isPositiveVelocity just flip isPositiveVelocity. */
+  if (deltaX > SPATIAL_ZERO_DELTA_X && isPositiveVelocity*realDirection > 0) {
+    // TODO: This is probably still a sign that we didn't handle some event or event search correctly.
+    isPositiveVelocity  = !isPositiveVelocity;
   }
 
   /* Add new node (oldPosX-deltaX, in0) or (oldPosX-deltaX+1, in1) to list
@@ -340,6 +359,7 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   TRANSPORTED_QUANTITY_DATA* forelastNodeData;
   int walkedOverEvents;
   int realDirection;
+  int jumped = 0;
   double deltaX;
   double eventPreValue;
   double outValue;
@@ -356,19 +376,21 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   doubleEndedListPrint(transportedQuantityList, LOG_SPATIALDISTR, &printTransportedQuantity);
 
   /* Get deltaX */
-  deltaX = fabs(spatialDistribution->oldPosX - posX);
-  if (posX - spatialDistribution->oldPosX > 0) {
+  deltaX = spatialDistribution->oldPosX - posX;
+  if (deltaX > 0) {
     realDirection = 1 /* positive */;
-  } else if (posX - spatialDistribution->oldPosX < 0) {
+  } else if (deltaX < 0) {
     realDirection = -1 /* negative */;
+    deltaX = -deltaX;
   } else {
     realDirection = 0 /* standing still */;
   }
 
-  /* What should happen if realDirection doesn't match given isPositiveVelocity and velocity is not 0? */
-  if ((isPositiveVelocity && realDirection==-1 && deltaX > SPATIAL_ZERO_DELTA_X) || (!isPositiveVelocity && realDirection!= -1 && deltaX > SPATIAL_ZERO_DELTA_X)) {
-    errorStreamPrint(LOG_STDOUT, 0, "Boolean isPositiveDirection doesn't match with direction x is moving.");
-    omc_throw_function(threadData);
+  /* If real direction doesn't match isPositiveVelocity just flip isPositiveVelocity.
+   * This still indicates something wrong, so we don't extrapolate the output */
+  if (deltaX > SPATIAL_ZERO_DELTA_X && isPositiveVelocity*realDirection > 0) {
+    isPositiveVelocity  = !isPositiveVelocity;
+    jumped = 1 /* true */;
   }
 
   /* Check if x was reinitialized */
@@ -408,7 +430,9 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
   lastNodeData = (TRANSPORTED_QUANTITY_DATA*) lastDataDoubleEndedList(transportedQuantityList);
   forelastNodeData = dataDoubleEndedList(getPreviousNodeDoubleEndedList(getLastNodeDoubleEndedList(transportedQuantityList)));
   if (isPositiveVelocity) {
-    if (deltaX > SPATIAL_EPS && fabs(firstNodeData->position-secondNodeData->position)>SPATIAL_EPS ) {
+    if (jumped) {
+      out0 = in0;
+    } else if (deltaX > SPATIAL_EPS && fabs(firstNodeData->position-secondNodeData->position)>SPATIAL_EPS) {
       out0 = extrapolateTransportedQuantity(firstNodeData, secondNodeData, -posX);
     } else {
       out0 = firstNodeData->value;
@@ -416,7 +440,9 @@ double spatialDistribution(DATA* data, threadData_t *threadData, unsigned int in
     *out1 = outValue;
   } else {
     out0 = outValue;
-    if (deltaX > SPATIAL_EPS && fabs(forelastNodeData->position-lastNodeData->position)>SPATIAL_EPS ) {
+    if (jumped) {
+      *out1 = in1;
+    } else if (deltaX > SPATIAL_EPS && fabs(forelastNodeData->position-lastNodeData->position)>SPATIAL_EPS) {
       *out1 = extrapolateTransportedQuantity(forelastNodeData, lastNodeData, -posX+1);
     } else {
       *out1 = lastNodeData->value;
