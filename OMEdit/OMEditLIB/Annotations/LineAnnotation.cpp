@@ -976,9 +976,9 @@ void LineAnnotation::updateEndPoint(QPointF point)
       /* update the 2nd point */
       if (secondLastIndex < mGeometries.size()) {
         if (mGeometries.at(secondLastIndex) == ShapeAnnotation::HorizontalLine) {
-          mPoints.at(secondLastIndex) = QPointF(mPoints.at(secondLastIndex).x(), mPoints.at(secondLastIndex).y() + dy);
+          mPoints[secondLastIndex] = QPointF(mPoints.at(secondLastIndex).x(), mPoints.at(secondLastIndex).y() + dy);
         } else if (mGeometries.at(secondLastIndex) == ShapeAnnotation::VerticalLine) {
-          mPoints.at(secondLastIndex) = QPointF(mPoints.at(secondLastIndex).x() + dx, mPoints.at(secondLastIndex).y());
+          mPoints[secondLastIndex] = QPointF(mPoints.at(secondLastIndex).x() + dx, mPoints.at(secondLastIndex).y());
         }
         updateCornerItem(secondLastIndex);
       }
