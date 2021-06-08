@@ -961,8 +961,8 @@ void LineAnnotation::updateEndPoint(QPointF point)
       */
     if (mPoints.size() == 2 && mpEndComponent) {
       // just check if additional points are really needed or not.
-      if ((mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine && mPoints[lastIndex].y() != point.y()) ||
-          (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine && mPoints[lastIndex].x() != point.x())) {
+      if (secondLastIndex < mGeometries.size() && ((mGeometries.at(secondLastIndex) == ShapeAnnotation::HorizontalLine && mPoints.at(lastIndex).y() != point.y()) ||
+                                                   (mGeometries.at(secondLastIndex) == ShapeAnnotation::VerticalLine && mPoints.at(lastIndex).x() != point.x()))) {
         insertPointsGeometriesAndCornerItems(lastIndex);
         setCornerItemsActiveOrPassive();
         lastIndex = mPoints.size() - 1;
@@ -974,13 +974,14 @@ void LineAnnotation::updateEndPoint(QPointF point)
       mPoints.back() = point;
       updateCornerItem(lastIndex);
       /* update the 2nd point */
-      assert(secondLastIndex < mGeometries.size());
-      if (mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine) {
-        mPoints[secondLastIndex] = QPointF(mPoints[secondLastIndex].x(), mPoints[secondLastIndex].y() + dy);
-      } else if (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine) {
-        mPoints[secondLastIndex] = QPointF(mPoints[secondLastIndex].x() + dx, mPoints[secondLastIndex].y());
+      if (secondLastIndex < mGeometries.size()) {
+        if (mGeometries.at(secondLastIndex) == ShapeAnnotation::HorizontalLine) {
+          mPoints.at(secondLastIndex) = QPointF(mPoints.at(secondLastIndex).x(), mPoints.at(secondLastIndex).y() + dy);
+        } else if (mGeometries.at(secondLastIndex) == ShapeAnnotation::VerticalLine) {
+          mPoints.at(secondLastIndex) = QPointF(mPoints.at(secondLastIndex).x() + dx, mPoints.at(secondLastIndex).y());
+        }
+        updateCornerItem(secondLastIndex);
       }
-      updateCornerItem(secondLastIndex);
     }
     if (!mpGraphicsView->isCreatingConnection() && !mpGraphicsView->isCreatingTransition()) {
       removeRedundantPointsGeometriesAndCornerItems();
@@ -1281,16 +1282,17 @@ void LineAnnotation::updateConnectionTransformation()
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     updateOMSConnection();
   } else {
-    assert(!mOldAnnotation.isEmpty());
-    if (mLineType == LineAnnotation::ConnectionType) {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
-    } else if (mLineType == LineAnnotation::TransitionType) {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset,
-                                                                                         mSynchronize, mPriority, mOldAnnotation,
-                                                                                         mCondition, mImmediate, mReset, mSynchronize,
-                                                                                         mPriority, getOMCShapeAnnotation()));
-    } else if (mLineType == LineAnnotation::InitialStateType) {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+    if (!mOldAnnotation.isEmpty()) {
+      if (mLineType == LineAnnotation::ConnectionType) {
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+      } else if (mLineType == LineAnnotation::TransitionType) {
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset,
+                                                                                           mSynchronize, mPriority, mOldAnnotation,
+                                                                                           mCondition, mImmediate, mReset, mSynchronize,
+                                                                                           mPriority, getOMCShapeAnnotation()));
+      } else if (mLineType == LineAnnotation::InitialStateType) {
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+      }
     }
   }
 }
