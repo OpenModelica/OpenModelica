@@ -176,7 +176,7 @@ end contextFunName;
 template contextIteratorName(Ident name, Context context)
   "Generates code for an iterator variable."
 ::=
-  name + "_"
+  System.unquoteIdentifier(name) + "_"
 end contextIteratorName;
 
 template crefWithIndex(ComponentRef cr, Context context, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
