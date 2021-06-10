@@ -360,7 +360,7 @@ public
 
     // If the matching was a vectorized one then create a map call
     // using the vectorization dim. This means going through each argument
-    // and subscipting it with an iterator for each dim and creating a map call.
+    // and subscripting it with an iterator for each dim and creating a map call.
     if MatchedFunction.isVectorized(matchedFunc) then
       call := vectorizeCall(call, matchedFunc.mk, scope, info);
     end if;
@@ -2271,11 +2271,9 @@ protected
     Expression exp;
     list<tuple<InstNode, Expression>> iters;
     InstNode iter;
-    Integer i, vect_idx;
-    Boolean b;
-    list<Expression> call_args, vect_args;
+    Integer i;
+    list<Expression> call_args;
     Subscript sub;
-    list<Integer> vect_idxs;
   algorithm
     vectorized_call := match (base_call, mk)
       case (TYPED_CALL(arguments = call_args), FunctionMatchKind.VECTORIZED())
