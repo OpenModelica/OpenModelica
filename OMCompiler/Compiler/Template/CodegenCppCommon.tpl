@@ -30,6 +30,7 @@ template localCref(ComponentRef cr, Boolean useFlatArrayNotation)
 ::=
   match cr
   case CREF_IDENT(ident = "time") then "_simTime"
+  case CREF_IDENT(ident = "__HOM_LAMBDA") then "1.0"
   case WILD(__) then ''
   else crefToCStr(cr,useFlatArrayNotation)
 end localCref;
@@ -1917,10 +1918,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '<%var1%>'
-
-  case CALL(path=IDENT(name="homotopyParameter"),
-            expLst={},attr=attr as CALL_ATTR(__)) then
-     '1.0'
 
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
