@@ -384,6 +384,14 @@ algorithm
           exp := Expression.replaceIterator(exp, iter, e);
           exp := Expression.makeArray(ty, {exp});
           outExp := simplify(exp);
+        elseif Expression.isLiteral(e) and not Expression.hasNonArrayIteratorSubscript(exp, iter) then
+          // If the iterator is only used to subscript array expressions like
+          // {{1, 2, 3}[i] in i 1:3}, then we might as well expand it.
+          (outExp, expanded) := ExpandExp.expandArrayConstructor(exp, ty, iters);
+
+          if expanded then
+            outExp := simplify(outExp);
+          end if;
         else
           fail();
         end if;
