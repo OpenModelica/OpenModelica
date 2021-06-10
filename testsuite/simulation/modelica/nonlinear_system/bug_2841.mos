@@ -246,6 +246,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | error_f        =   2.2204460493e-16
 // LOG_NLS_V         | info    | error_f_scaled =   4.4236473073e-17
 // LOG_NLS_V         | info    | newtonFTol          =   1.0000000000e-12
+// LOG_NLS_V         | info    | Note: newton solver rejected last x because previous was as good
 // LOG_NLS_V         | info    | NEWTON SOLVER DID CONVERGE TO A SOLUTION!!!
 // LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables
@@ -332,6 +333,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | error_f        =   2.2204460493e-16
 // LOG_NLS_V         | info    | error_f_scaled =   4.4236473073e-17
 // LOG_NLS_V         | info    | newtonFTol          =   1.0000000000e-12
+// LOG_NLS_V         | info    | Note: newton solver rejected last x because previous was as good
 // LOG_NLS_V         | info    | NEWTON SOLVER DID CONVERGE TO A SOLUTION!!!
 // LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables
@@ -408,6 +410,7 @@ simulate(nonlinearSolverTests.bug_2841, stopTime=0.0, simflags="-lv=LOG_INIT_V,L
 // LOG_NLS_V         | info    | error_f        =   2.2204460493e-16
 // LOG_NLS_V         | info    | error_f_scaled =   4.4236473073e-17
 // LOG_NLS_V         | info    | newtonFTol          =   1.0000000000e-12
+// LOG_NLS_V         | info    | Note: newton solver rejected last x because previous was as good
 // LOG_NLS_V         | info    | NEWTON SOLVER DID CONVERGE TO A SOLUTION!!!
 // LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables

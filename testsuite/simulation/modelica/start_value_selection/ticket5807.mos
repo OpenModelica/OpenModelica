@@ -47,7 +47,7 @@ simulate(TestInitStart); getErrorString();
 // LOG_NLS_V         | info    | indCol: [2-dim]
 // |                 | |       | | 0 1 
 // LOG_NLS_V         | info    | vector x (solution): [2-dim]
-// |                 | |       | |                0                1 
+// |                 | |       | |               -0                1 
 // LOG_NLS_V         | info    | regular initial point!!!
 // LOG_NLS_V         | info    | ******************************************************
 // LOG_NLS_V         | info    | NEWTON SOLVER STARTED! equation number:  2
@@ -58,16 +58,16 @@ simulate(TestInitStart); getErrorString();
 // LOG_NLS_V         | info    | Iteration: 1
 // LOG_NLS_V         | info    | newton step
 // |                 | |       | | variables
-// |                 | |       | | [ 1]                              p  =               -2		 step =                0		 old =               -2
+// |                 | |       | | [ 1]                              p  =               -2		 step =               -0		 old =               -2
 // LOG_NLS_V         | info    | Need to damp, grad_f =   -0.0000000000e+00
 // LOG_NLS_V         | info    | Need to damp, error_f =    0.0000000000e+00
 // LOG_NLS_V         | info    | Need to damp this!! lambda1 =    1.0000000000e+00
 // LOG_NLS_V         | info    | Need to damp, error_f1 =    0.0000000000e+00
 // LOG_NLS_V         | info    | Need to damp, forced error =    0.0000000000e+00
 // LOG_NLS_V         | info    | function values: [1-dim]
-// |                 | |       | |               -0 
+// |                 | |       | |                0 
 // LOG_NLS_V         | info    | scaled function values: [1-dim]
-// |                 | |       | |               -0 
+// |                 | |       | |                0 
 // LOG_NLS_V         | info    | error measurements:
 // LOG_NLS_V         | info    | delta_x        =   0.0000000000e+00
 // LOG_NLS_V         | info    | delta_x_scaled =   0.0000000000e+00
@@ -75,6 +75,7 @@ simulate(TestInitStart); getErrorString();
 // LOG_NLS_V         | info    | error_f        =   0.0000000000e+00
 // LOG_NLS_V         | info    | error_f_scaled =   0.0000000000e+00
 // LOG_NLS_V         | info    | newtonFTol          =   1.0000000000e-12
+// LOG_NLS_V         | info    | Note: newton solver rejected last x because previous was as good
 // LOG_NLS_V         | info    | NEWTON SOLVER DID CONVERGE TO A SOLUTION!!!
 // LOG_NLS_V         | info    | nls status
 // |                 | |       | | variables

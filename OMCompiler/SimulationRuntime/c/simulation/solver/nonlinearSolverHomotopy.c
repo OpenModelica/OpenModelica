@@ -1328,6 +1328,7 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
   int firstrun;
   int constraintViolated;
   int solverinfo = 0;
+  int lastWasGood = 0; /* boolean, keeps track of previous x */
 
   int assert = 1;
   threadData_t *threadData = solverData->threadData;
@@ -1515,20 +1516,23 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
         lambda = lambda1;
       }
     }
-    /* updating x, fvec, error_f_sqrd */
-    /* event. swapPointer(&x, &(solverData->x1)); */
-    vecCopy(solverData->n, solverData->x1, x);
 
     /* Calculate different error measurements */
     vecDivScaling(solverData->n, solverData->f1, solverData->resScaling, solverData->fvecScaled);
     debugVectorDouble(LOG_NLS_V,"function values:",solverData->f1, n);
     debugVectorDouble(LOG_NLS_V,"scaled function values:",solverData->fvecScaled, n);
 
+    /* update delta_x_sqrd, error_f_sqrd */
     vecDivScaling(solverData->n, solverData->dy0, solverData->xScaling, solverData->dxScaled);
     delta_x_sqrd        = vec2NormSqrd(solverData->n, solverData->dy0);
     delta_x_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->dxScaled);
+
+    error_f_old = error_f_sqrd;
     error_f_sqrd        = vec2NormSqrd(solverData->n, solverData->f1);
     error_f_sqrd_scaled = vec2NormSqrd(solverData->n, solverData->fvecScaled);
+
+    countNegativeSteps += (error_f_sqrd > 10*error_f_old);
+    lastWasGood = error_f_sqrd >= error_f_old;
 
 
     /* debug information */
@@ -1539,9 +1543,6 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     debugDouble(LOG_NLS_V, "error_f        =", sqrt(error_f_sqrd));
     debugDouble(LOG_NLS_V, "error_f_scaled =", sqrt(error_f_sqrd_scaled));
     debugDouble(LOG_NLS_V, "newtonFTol          =", sqrt(solverData->ftol_sqrd));
-
-    countNegativeSteps += (error_f_sqrd > 10*error_f_old);
-    error_f_old = error_f_sqrd;
 
 #if !defined(OMC_MINIMAL_RUNTIME)
     if (solverData->data->simulationInfo->nlsCsvInfomation){
@@ -1570,6 +1571,16 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
     if (((error_f_sqrd < solverData->ftol_sqrd) || (error_f_sqrd_scaled < solverData->ftol_sqrd)) && ((delta_x_sqrd_scaled < solverData->xtol_sqrd) || (delta_x_sqrd < solverData->xtol_sqrd)))
     {
       solverData->info = 1;
+
+      /* reject new x if old x is as good, for stability (see issue #6419) */
+      if (lastWasGood)
+      {
+        debugString(LOG_NLS_V, "Note: newton solver rejected last x because previous was as good");
+      }
+      else
+      {
+        vecCopy(solverData->n, solverData->x1, x);
+      }
 
       /* debug information */
       debugString(LOG_NLS_V, "NEWTON SOLVER DID CONVERGE TO A SOLUTION!!!");
@@ -1632,6 +1643,9 @@ static int newtonAlgorithm(DATA_HOMOTOPY* solverData, double* x)
 #ifndef OMC_EMCC
     MMC_TRY_INTERNAL(simulationJumpBuffer)
 #endif
+    /* updating x */
+    vecCopy(solverData->n, solverData->x1, x);
+
     /* calculate jacobian and function values (both stored in fJac, last column is fvec) */
     solverData->fJac_f(solverData, x, solverData->fJac);
     assert = 0;
