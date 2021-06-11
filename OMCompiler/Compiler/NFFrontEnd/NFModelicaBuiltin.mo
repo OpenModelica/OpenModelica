@@ -4198,6 +4198,18 @@ annotation(
   preferredView="text");
 end upgradeInstalledPackages;
 
+function getAvailablePackageVersions
+  input TypeName pkg;
+  input String version;
+  output String[:] withoutConversion;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the versions that provide the requested version of the library.
+</html>"),
+  preferredView="text");
+end getAvailablePackageVersions;
+
 function getUses
   input TypeName pack;
   output String[:,:] uses;
