@@ -2315,6 +2315,16 @@ algorithm
         v := Values.BOOL(PackageManagement.upgradeInstalledPackages(b));
       then (cache,v);
 
+    case (cache,_,"getAvailablePackageVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)},_)
+      algorithm
+        v := ValuesUtil.makeArray(list(ValuesUtil.makeString(s) for s in PackageManagement.versionsThatProvideTheWanted(str1, str2, true)));
+      then (cache,v);
+
+    case (cache,_,"getAvailablePackageVersions",_,_)
+      algorithm
+        v := ValuesUtil.makeArray({});
+      then (cache,v);
+
     case (cache,_,"getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
         (absynClass as Absyn.CLASS()) = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());

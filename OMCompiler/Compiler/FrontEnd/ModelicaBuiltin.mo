@@ -3979,6 +3979,18 @@ annotation(
   preferredView="text");
 end updatePackageIndex;
 
+function getAvailablePackageVersions
+  input TypeName pkg;
+  input String version;
+  output String[:] withoutConversion;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the versions that provide the requested version of the library.
+</html>"),
+  preferredView="text");
+end getAvailablePackageVersions;
+
 function upgradeInstalledPackages
   input Boolean installNewestVersions = true;
   output Boolean result;
