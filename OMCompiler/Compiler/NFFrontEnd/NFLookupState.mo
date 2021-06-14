@@ -203,6 +203,7 @@ uniontype LookupState
       local
         String name_str;
         SourceInfo info2;
+        InstNode node2;
 
       // Found the expected kind of element.
       case (COMP(),         COMP())  then ();
@@ -304,8 +305,17 @@ uniontype LookupState
       case (ERROR(errorState = PARTIAL_CLASS()), _)
         algorithm
           if not InstContext.inRelaxed(context) then
-            Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS,
-              {InstNode.name(node)}, info);
+            node2 := listHead(InstNode.scopeList(node));
+
+            if InstNode.isComponent(node2) then
+              Error.addMultiSourceMessage(Error.USE_OF_PARTIAL_CLASS,
+                {InstNode.name(node2), InstNode.name(node), AbsynUtil.pathString(Class.constrainingClassPath(node))},
+                {InstNode.info(node), InstNode.info(node2)});
+            else
+              Error.addSourceMessage(Error.LOOKUP_IN_PARTIAL_CLASS,
+                {InstNode.name(node)}, info);
+            end if;
+
             fail();
           end if;
         then

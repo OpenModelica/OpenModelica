@@ -774,6 +774,7 @@ PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
 PartialFunction1.mo \
 PartialLookup1.mo \
+PartialLookup2.mo \
 PartialType1.mo \
 PartialType2.mo \
 PartialType3.mo \
