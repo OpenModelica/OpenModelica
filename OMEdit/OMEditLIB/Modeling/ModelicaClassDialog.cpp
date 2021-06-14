@@ -1808,8 +1808,7 @@ void SaveChangesDialog::listUnSavedClasses(LibraryTreeItem *pLibraryTreeItem)
 void SaveChangesDialog::saveChanges()
 {
   bool saveResult = true;
-  for (int i = 0; i < mpUnsavedClassesListWidget->count(); i++) {
-    QListWidgetItem *pListItem = mpUnsavedClassesListWidget->item(i);
+  foreach (QListWidgetItem *pListItem, mpUnsavedClassesListWidget->selectedItems()) {
     LibraryTreeItem *pLibraryTreeItem;
     pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pListItem->text());
     if (pLibraryTreeItem && !MainWindow::instance()->getLibraryWidget()->saveLibraryTreeItem(pLibraryTreeItem)) {
