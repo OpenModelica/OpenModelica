@@ -89,6 +89,17 @@ if 0 <> system("cp index.json .openmodelica/libraries/") then
   print("Failed to cp index.json");
   exit(1);
 end if;
+vers:=OpenModelica.Scripting.getAvailablePackageVersions(Modelica, "3.2.3");
+if size(vers,1) <> 1 then
+  print("getAvailablePackageVersions(Modelica, \"3.2.3\") returned " + String(size(vers,1)) + " results\n");
+  print(getErrorString());
+  exit(1);
+end if;
+if vers[1] <> "3.2.3+maint.om" then
+  print("getAvailablePackageVersions(Modelica, \"3.2.3\") returned " + vers[1] + "\n");
+  print(getErrorString());
+  exit(1);
+end if;
 ''')
   for lib in desired.keys():
     for version in desired[lib]:
