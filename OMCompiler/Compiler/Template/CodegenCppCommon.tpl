@@ -2357,7 +2357,9 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case ADD_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
     let type = expTypeShort(ty.ty)
     let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
-    let &preExp += 'add_array_scalar<<%type%>>(<%e2%>, <%e1%>, <%tvar%>);<%\n%>'
+    let &preExp += if isArrayType(typeof(exp1)) then
+      'add_array_scalar<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>' else
+      'add_array_scalar<<%type%>>(<%e2%>, <%e1%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
   case SUB_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
     let type = expTypeShort(ty.ty)
