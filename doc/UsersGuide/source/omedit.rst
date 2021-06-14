@@ -1639,6 +1639,40 @@ in the bottom check `Save simulation flags inside model i.e., __OpenModelica_sim
 If you want to ignore this annotation then use `setCommandLineOptions("--ignoreSimulationFlagsAnnotation=true")`.
 In OMEdit *Tools > Options > Simulation* check `Ignore __OpenModelica_simulationFlags annotation`.
 
+Global and Local Flags
+----------------------
+
+There is a large number of optional settings and flags to influence the way OpenModelica generates
+the simulation code (:ref:`Compiler flags <omcflags-options>`, a.k.a. Translation flags or Command Line Options)
+and the way the simulation executable is run (:ref:`Simulation Flags <cruntime-simflags>`).
+
+The global default settings can be accessed and changed with the *Tools > Options* menu.
+It is also possible to reset them to factory state by clicking on the ``Reset`` button of the
+*Tools > Options* dialog window.
+
+When you start OMEdit and you simulate a model for the first time, the model-specific simulation
+session settings are initialized by copying the global default settings, and then by applying any
+further settings that are saved in the model within OpenModelica-specific ``__OpenModelica_commandLineOptions``
+and ``__OpenModelica_simulationFlags`` annotations. Note that the latter may partially override the former,
+if they give different values to the same flags.
+
+You can change those model-specific settings at will with the Simulation Setup window.
+Any change you make will be remembered until the end of the simulation session, i.e. until you close OMEdit.
+This is very useful to experiment with different settings and find the optimal ones,
+or to investigate bugs by turning on logging options, etc. If you check the ``Save translation flags``
+and ``Save simulation flags`` options in the simulation setup, those settings will be saved in the
+model within the corresponding OpenModelica-specific annotations, so that you can get the same behavior
+when you start a new session later on, or if someone else loads the model on a different computer.
+Otherwise, all of those changes will be forgotten when you exit OMEdit.
+
+If you change the global default settings after running some models, the simulation settings of
+those models will be reset as if you closed OMEdit and restarted a new session: the new global
+options will first be applied, and then any further setting saved in the OpenModelica-specific annotations
+will be applied, possibly overriding the global options if the same flags get different values from
+the annotations. Any model-specific settings that you may have changed with Simulation Setup up to
+that point will be lost, unless you saved them in the OpenModelica-specific annotations before changing the
+global default settings.
+
 Debugger
 --------
 

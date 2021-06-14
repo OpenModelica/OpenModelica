@@ -80,8 +80,9 @@ void OptionsDialog::destroy()
 OptionsDialog::OptionsDialog(QWidget *pParent)
   : QDialog(pParent), mpSettings(Utilities::getApplicationSettings())
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::options));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::options));
   setModal(true);
+  mDetectChange = false;
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
   mpTextEditorPage = new TextEditorPage(this);
@@ -1274,25 +1275,80 @@ void OptionsDialog::saveSimulationSettings()
 {
   // clear command line options before saving new ones
   MainWindow::instance()->getOMCProxy()->clearCommandLineOptions();
+  bool changed = false;
   // save matching algorithm
-  mpSettings->setValue("simulation/matchingAlgorithm", mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->currentText());
+  QString matchingAlgorithm = mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->currentText();
+  if (mpSettings->contains("simulation/matchingAlgorithm")) {
+    if (mpSettings->value("simulation/matchingAlgorithm").toString().compare(matchingAlgorithm) != 0) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/matchingAlgorithm", matchingAlgorithm);
   // save index reduction
+  QString indexReduction = mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->currentText();
+  if (mpSettings->contains("simulation/indexReductionMethod")) {
+    if (mpSettings->value("simulation/indexReductionMethod").toString().compare(indexReduction) != 0) {
+      changed = true;
+    }
+  }
   mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->currentText());
   // save initialization
-  mpSettings->setValue("simulation/initialization", mpSimulationPage->getTranslationFlagsWidget()->getInitializationCheckBox()->isChecked());
+  bool initialization = mpSimulationPage->getTranslationFlagsWidget()->getInitializationCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/initialization")) {
+    if (mpSettings->value("simulation/initialization").toBool() != initialization) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/initialization", initialization);
   // save evaluate all parameters
-  mpSettings->setValue("simulation/evaluateAllParameters", mpSimulationPage->getTranslationFlagsWidget()->getEvaluateAllParametersCheckBox()->isChecked());
+  bool evaluateAllParameters = mpSimulationPage->getTranslationFlagsWidget()->getEvaluateAllParametersCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/evaluateAllParameters")) {
+    if (mpSettings->value("simulation/evaluateAllParameters").toBool() != evaluateAllParameters) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/evaluateAllParameters", evaluateAllParameters);
   // save NLS analytic jacobian
-  mpSettings->setValue("simulation/NLSanalyticJacobian", mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->isChecked());
+  bool NLSanalyticJacobian = mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/NLSanalyticJacobian")) {
+    if (mpSettings->value("simulation/NLSanalyticJacobian").toBool() != NLSanalyticJacobian) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/NLSanalyticJacobian", NLSanalyticJacobian);
   // save parmodauto
-  mpSettings->setValue("simulation/parmodauto", mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked());
+  bool parmodauto = mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/parmodauto")) {
+    if (mpSettings->value("simulation/parmodauto").toBool() != parmodauto) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/parmodauto", parmodauto);
   // save old instantiation
-  mpSettings->setValue("simulation/newInst", !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked());
+  bool newInst = !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/newInst")) {
+    if (mpSettings->value("simulation/newInst").toBool() != newInst) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/newInst", newInst);
   // save dataReconciliation
-  mpSettings->setValue("simulation/dataReconciliation", mpSimulationPage->getTranslationFlagsWidget()->getDataReconciliationCheckBox()->isChecked());
+  bool dataReconciliation = mpSimulationPage->getTranslationFlagsWidget()->getDataReconciliationCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/dataReconciliation")) {
+    if (mpSettings->value("simulation/dataReconciliation").toBool() != dataReconciliation) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/dataReconciliation", dataReconciliation);
   // save command line options
+  QString additionalFlags = mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text();
   if (mpSimulationPage->getTranslationFlagsWidget()->applyFlags()) {
-    mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text());
+    if (mpSettings->contains("simulation/OMCFlags")) {
+      if (mpSettings->value("simulation/OMCFlags").toString().compare(additionalFlags) != 0) {
+        changed = true;
+      }
+    }
+    mpSettings->setValue("simulation/OMCFlags", additionalFlags);
   } else {
     mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
@@ -1306,6 +1362,11 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/deleteEntireSimulationDirectory", mpSimulationPage->getDeleteEntireSimulationDirectoryCheckBox()->isChecked());
   mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
   mpSettings->setValue("simulation/displayLimit", mpSimulationPage->getDisplayLimitSpinBox()->value());
+
+  if (mDetectChange && changed) {
+    DiscardLocalTranslationFlagsDialog *pDiscardLocalTranslationFlagsDialog = new DiscardLocalTranslationFlagsDialog(this);
+    pDiscardLocalTranslationFlagsDialog->exec();
+  }
 }
 
 /*!
@@ -1811,7 +1872,7 @@ void OptionsDialog::reset()
     mpSettings->sync();
     accept();
     destroy();
- }
+  }
   delete pResetMessageBox;
 }
 
@@ -1834,7 +1895,9 @@ void OptionsDialog::saveSettings()
   saveHTMLEditorSettings();
   emit HTMLEditorSettingsChanged();
   saveGraphicalViewsSettings();
+  mDetectChange = true;
   saveSimulationSettings();
+  mDetectChange = false;
   saveMessagesSettings();
   saveNotificationsSettings();
   saveLineStyleSettings();
@@ -5291,4 +5354,139 @@ void TraceabilityPage::browseGitRepository()
 {
   mpGitRepositoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
                                                                          .arg(Helper::chooseDirectory), NULL));
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::DiscardLocalTranslationFlagsDialog
+ * \param pParent
+ */
+DiscardLocalTranslationFlagsDialog::DiscardLocalTranslationFlagsDialog(QWidget *pParent)
+  : QDialog(pParent)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Discard Local Translation Flags")));
+  setMinimumWidth(400);
+  mpDescriptionLabel = new Label(tr("The global translation flags are changed. The following models have local translation flags. Select which models local translation flags"
+                                    " you want to discard. Discard means that the simulation settings of the models will be reset as if you closed OMEdit and restarted"
+                                    " a new session. The new global options will first be applied, and then any further setting saved in the annotations will be applied.\n"
+                                    "Double click the model to see its existing local translation flags.\n"));
+  mpDescriptionLabel->setWordWrap(true);
+  mpClassesWithLocalTranslationFlagsListWidget = new QListWidget;
+  mpClassesWithLocalTranslationFlagsListWidget->setObjectName("ClassesWithLocalTranslationFlagsListWidget");
+  mpClassesWithLocalTranslationFlagsListWidget->setItemDelegate(new ItemDelegate(mpClassesWithLocalTranslationFlagsListWidget));
+  connect(mpClassesWithLocalTranslationFlagsListWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), SLOT(showLocalTranslationFlags(QListWidgetItem*)));
+  listLocalTranslationFlagsClasses(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem());
+  QCheckBox *pSelectUnSelectAll = new QCheckBox(tr("Select/Unselect All"));
+  pSelectUnSelectAll->setChecked(true);
+  connect(pSelectUnSelectAll, SIGNAL(toggled(bool)), SLOT(selectUnSelectAll(bool)));
+  // Create the buttons
+  // create the Yes button
+  mpYesButton = new QPushButton(tr("Yes"));
+  mpYesButton->setAutoDefault(true);
+  connect(mpYesButton, SIGNAL(clicked()), SLOT(discardLocalTranslationFlags()));
+  // create the No button
+  mpNoButton = new QPushButton(tr("No"));
+  mpNoButton->setAutoDefault(false);
+  connect(mpNoButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpYesButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpNoButton, QDialogButtonBox::ActionRole);
+  // create a main layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpDescriptionLabel);
+  pMainLayout->addWidget(pSelectUnSelectAll);
+  pMainLayout->addWidget(mpClassesWithLocalTranslationFlagsListWidget);
+  pMainLayout->addWidget(mpButtonBox, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::listLocalTranslationFlagsClasses
+ * \param pLibraryTreeItem
+ */
+void DiscardLocalTranslationFlagsDialog::listLocalTranslationFlagsClasses(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !pChildLibraryTreeItem->isSystemLibrary()) {
+      if (pChildLibraryTreeItem->mSimulationOptions.isValid()) {
+        QListWidgetItem *pListItem = new QListWidgetItem(mpClassesWithLocalTranslationFlagsListWidget);
+        pListItem->setFlags(pListItem->flags() | Qt::ItemIsUserCheckable);
+        pListItem->setCheckState(Qt::Checked);
+        pListItem->setText(pChildLibraryTreeItem->getNameStructure());
+      }
+      listLocalTranslationFlagsClasses(pChildLibraryTreeItem);
+    }
+  }
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::selectUnSelectAll
+ * Selects or unselect the models. \n
+ * Slot activated when pSelectUnSelectAll toggled signal is raised.
+ * \param checked
+ */
+void DiscardLocalTranslationFlagsDialog::selectUnSelectAll(bool checked)
+{
+  for (int i = 0; i < mpClassesWithLocalTranslationFlagsListWidget->count(); i++) {
+    QListWidgetItem *pClassWithLocalTranslationFlags = mpClassesWithLocalTranslationFlagsListWidget->item(i);
+    if (checked) {
+      pClassWithLocalTranslationFlags->setCheckState(Qt::Checked);
+    } else {
+      pClassWithLocalTranslationFlags->setCheckState(Qt::Unchecked);
+    }
+  }
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::discardLocalTranslationFlags
+ * Discards the local translation flags from the selected classes. \n
+ * Slot activated when mpYesButton clicked signal is raised.
+ */
+void DiscardLocalTranslationFlagsDialog::discardLocalTranslationFlags()
+{
+  for (int i = 0; i < mpClassesWithLocalTranslationFlagsListWidget->count(); i++) {
+    QListWidgetItem *pClassWithLocalTranslationFlags = mpClassesWithLocalTranslationFlagsListWidget->item(i);
+    if (pClassWithLocalTranslationFlags->checkState() == Qt::Checked) {
+      LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pClassWithLocalTranslationFlags->text());
+      if (pLibraryTreeItem) {
+        pLibraryTreeItem->mSimulationOptions.setIsValid(false);
+      }
+    }
+  }
+  accept();
+}
+
+void DiscardLocalTranslationFlagsDialog::showLocalTranslationFlags(QListWidgetItem *pListWidgetItem)
+{
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pListWidgetItem->text());
+  if (pLibraryTreeItem) {
+    QDialog *pLocalTranslationFlagsDialog = new QDialog;
+    pLocalTranslationFlagsDialog->setWindowTitle(QString("%1 - Local Translation Flags - %2").arg(Helper::applicationName, pLibraryTreeItem->getNameStructure()));
+    pLocalTranslationFlagsDialog->setAttribute(Qt::WA_DeleteOnClose);
+    TranslationFlagsWidget *pTranslationFlagsWidget = new TranslationFlagsWidget;
+    pTranslationFlagsWidget->applySimulationOptions(pLibraryTreeItem->mSimulationOptions);
+    QPushButton *pOkButton = new QPushButton(Helper::ok);
+    connect(pOkButton, SIGNAL(clicked()), pLocalTranslationFlagsDialog, SLOT(accept()));
+    QVBoxLayout *pMainLayout = new QVBoxLayout;
+    pMainLayout->addWidget(pTranslationFlagsWidget);
+    pMainLayout->addWidget(pOkButton, 0, Qt::AlignRight);
+    pLocalTranslationFlagsDialog->setLayout(pMainLayout);
+    pLocalTranslationFlagsDialog->exec();
+  }
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::exec
+ * Reimplementation of exec.
+ * \return
+ */
+int DiscardLocalTranslationFlagsDialog::exec()
+{
+  if (mpClassesWithLocalTranslationFlagsListWidget->count() == 0) {
+    return 1;
+  }
+  return QDialog::exec();
 }
