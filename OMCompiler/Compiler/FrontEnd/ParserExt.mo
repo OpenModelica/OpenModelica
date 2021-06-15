@@ -136,8 +136,9 @@ end checkLVEToolLicense;
 public function checkLVEToolFeature
   input Option<Integer> lveInstance;
   input String feature;
+  output Boolean status;
 
-  external "C" ParserExt_checkLVEToolFeature(lveInstance, feature) annotation(Library = {"omparse","omantlr3","omcruntime"});
+  external "C" status=ParserExt_checkLVEToolFeature(lveInstance, feature) annotation(Library = {"omparse","omantlr3","omcruntime"});
 end checkLVEToolFeature;
 
 public function stopLibraryVendorExecutable

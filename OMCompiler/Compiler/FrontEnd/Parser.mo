@@ -190,8 +190,9 @@ end checkLVEToolLicense;
 function checkLVEToolFeature
   input Option<Integer> lveInstance;
   input String feature;
+  output Boolean status;
 algorithm
-  ParserExt.checkLVEToolFeature(lveInstance, feature);
+  status := ParserExt.checkLVEToolFeature(lveInstance, feature);
 end checkLVEToolFeature;
 
 function stopLibraryVendorExecutable
