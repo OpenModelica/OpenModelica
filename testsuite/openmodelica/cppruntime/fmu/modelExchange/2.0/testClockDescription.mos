@@ -6,6 +6,8 @@
 //
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+setCommandLineOptions("--exportClocksInModeldescription=true"); getErrorString();
+
 loadString("
 model SubClocks
   Real x1(start = 0);
@@ -50,6 +52,8 @@ readFile("modelDescription.tmp.xml");
 // ""
 // true
 // ""
+// true
+// ""
 // "SubClocks.fmu"
 // ""
 // 0
@@ -63,6 +67,33 @@ readFile("modelDescription.tmp.xml");
 //   <ModelExchange
 //     modelIdentifier=\"SubClocks\">
 //   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred
+//               intervalCounter=\"9\"
+//               shiftCounter=\"2\"
+//               resolution=\"6\"
+//               /></Clock>
+//       <Clock><Inferred
+//               intervalCounter=\"36\"
+//               shiftCounter=\"2\"
+//               resolution=\"12\"
+//               /></Clock>
+//       <Clock><Inferred
+//               intervalCounter=\"4\"
+//               shiftCounter=\"2\"
+//               resolution=\"4\"
+//               /></Clock>
+//       <Clock><Inferred
+//               intervalCounter=\"2\"
+//               resolution=\"2\"
+//               /></Clock>
+//       <Clock><Inferred
+//               interval=\"0.5\"
+//               shiftCounter=\"1\"
+//               /></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
 //   <LogCategories>
 //     <Category name=\"logEvents\" />
 //     <Category name=\"logSingularLinearSystems\" />
@@ -83,6 +114,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
+//     clockIndex=\"4\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -91,6 +123,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"
+//     clockIndex=\"3\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -99,6 +132,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3\"
 //     valueReference=\"2\"
 //     variability=\"discrete\"
+//     clockIndex=\"2\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -107,6 +141,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -115,6 +150,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x5\"
 //     valueReference=\"4\"
 //     variability=\"discrete\"
+//     clockIndex=\"5\"
 //     >
 //     <Real/>
 //   </ScalarVariable>

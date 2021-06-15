@@ -6,6 +6,7 @@
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 setCommandLineOptions("--std=3.3");
+setCommandLineOptions("--exportClocksInModeldescription=true"); getErrorString();
 
 loadFile("CSTR.mo"); getErrorString();
 loadString("
@@ -43,6 +44,8 @@ getErrorString();
 // Result:
 // true
 // true
+// true
+// ""
 // true
 // "Notification: Automatically loaded package Modelica 3.2.2 due to uses annotation.
 // Notification: Automatically loaded package Complex 3.2.2 due to uses annotation.
@@ -105,6 +108,13 @@ getErrorString();
 //       <BaseUnit K=\"1\" />
 //     </Unit>
 //   </UnitDefinitions>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred
+//               interval=\"20.0\"
+//               /></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
 //   <LogCategories>
 //     <Category name=\"logEvents\" />
 //     <Category name=\"logSingularLinearSystems\" />
@@ -126,6 +136,7 @@ getErrorString();
 //     valueReference=\"0\"
 //     description=\"Coolant temperature\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
@@ -135,6 +146,7 @@ getErrorString();
 //     valueReference=\"1\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
@@ -144,6 +156,7 @@ getErrorString();
 //     valueReference=\"2\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
@@ -152,6 +165,7 @@ getErrorString();
 //     name=\"previous(T)\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
@@ -160,6 +174,7 @@ getErrorString();
 //     name=\"der(_D_outputAlias_TK)\"
 //     valueReference=\"4\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -168,6 +183,7 @@ getErrorString();
 //     name=\"der(_D_outputAlias_cA)\"
 //     valueReference=\"5\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -176,6 +192,7 @@ getErrorString();
 //     name=\"der(_D_outputAlias_cB)\"
 //     valueReference=\"6\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -184,6 +201,7 @@ getErrorString();
 //     name=\"der(T)\"
 //     valueReference=\"7\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -193,6 +211,8 @@ getErrorString();
 //     valueReference=\"11\"
 //     description=\"Coolant temperature\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"1\"
 //     initial=\"exact\">
 //     <Real start=\"112.9\" nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
@@ -202,6 +222,8 @@ getErrorString();
 //     valueReference=\"12\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"2\"
 //     initial=\"exact\">
 //     <Real start=\"2.14\" unit=\"mol/l\"/>
 //   </ScalarVariable>
@@ -211,6 +233,8 @@ getErrorString();
 //     valueReference=\"13\"
 //     description=\"Concentration\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"3\"
 //     initial=\"exact\">
 //     <Real start=\"1.09\" unit=\"mol/l\"/>
 //   </ScalarVariable>
@@ -228,6 +252,7 @@ getErrorString();
 //     name=\"QK_flow_sampled\"
 //     valueReference=\"15\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -236,6 +261,8 @@ getErrorString();
 //     name=\"T\"
 //     valueReference=\"16\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"4\"
 //     initial=\"exact\">
 //     <Real start=\"114.2\" nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
@@ -255,6 +282,7 @@ getErrorString();
 //     description=\"Coolant temperature\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real nominal=\"100.0\" unit=\"degC\"/>
 //   </ScalarVariable>
@@ -274,6 +302,7 @@ getErrorString();
 //     description=\"Concentration\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
@@ -284,6 +313,7 @@ getErrorString();
 //     description=\"Concentration\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real unit=\"mol/l\"/>
 //   </ScalarVariable>
@@ -292,6 +322,7 @@ getErrorString();
 //     name=\"k[1]\"
 //     valueReference=\"22\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -300,6 +331,7 @@ getErrorString();
 //     name=\"k[2]\"
 //     valueReference=\"23\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -308,6 +340,7 @@ getErrorString();
 //     name=\"k[3]\"
 //     valueReference=\"24\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>

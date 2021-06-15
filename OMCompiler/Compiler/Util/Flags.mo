@@ -1363,6 +1363,10 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
 
+constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "exportClocksInModelDescription",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("exports clocks in modeldescription.xml for fmus, The default is false."));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

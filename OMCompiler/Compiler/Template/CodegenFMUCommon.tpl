@@ -479,6 +479,8 @@ match simVar
   let valueReference = getValueReference(simVar, simCode, false)
   let description = if comment then 'description="<%Util.escapeModelicaStringToXmlString(comment)%>"'
   let variability_ = if getClockIndex(simVar, simCode) then "discrete" else getVariability2(variability)
+  let clockIndex = getClockIndex(simVar, simCode)
+  let previous = match varKind case CLOCKED_STATE(__) then '<%getVariableIndex(cref2simvar(previousName, simCode))%>'
   let caus = getCausality2(causality)
   let initial = getInitialType2(initial_)
   <<
@@ -487,6 +489,8 @@ match simVar
   <%description%>
   <%if boolNot(stringEq(variability_, "")) then 'variability="'+variability_+'"' %>
   <%if boolNot(stringEq(caus, "")) then 'causality="'+caus+'"' %>
+  <%if boolAnd(boolNot(stringEq(clockIndex, "")), Flags.getConfigBool(Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION)) then 'clockIndex="'+clockIndex+'"' %>
+  <%if boolAnd(boolNot(stringEq(previous, "")), Flags.getConfigBool(Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION))  then 'previous="'+previous+'"' %>
   <%if boolNot(stringEq(initial, "")) then 'initial="'+initial+'"' %>
   >>
 end ScalarVariableAttribute2;
@@ -730,7 +734,7 @@ end fmiTypeDefinitions;
 template TypeDefinitionsHelper(SimCode simCode, list<SimCodeVar.SimVar> vars, String FMUVersion)
  "Generates code for TypeDefinitions for FMU target."
 ::=
-  let clocks = if boolOr(isFMIVersion10(FMUVersion), isFMIVersion20(FMUVersion)) then "" else TypeDefinitionsClocks(simCode)
+  let clocks = if isFMIVersion10(FMUVersion) then "" else if Flags.getConfigBool(Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION) then TypeDefinitionsClocks(simCode) else ""
   if boolOr(intGt(listLength(vars), 0), boolNot(stringEq(clocks, ""))) then
   <<
   <TypeDefinitions>
