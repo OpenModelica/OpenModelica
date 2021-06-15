@@ -1725,31 +1725,32 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
       sy = -sy;
     }
 
+    // Use qRound. See issue #7545
     QPointF extent1, extent2;
     if (qFuzzyCompare(rect.width(), 0.0)) {
       if (index == 0) {
-        extent1.setX(sx);
+        extent1.setX(qRound(sx));
         extent2.setX(rect.right());
       } else {
         extent1.setX(rect.left());
-        extent2.setX(sx);
+        extent2.setX(qRound(sx));
       }
     } else {
-      extent1.setX(sx * rect.left());
-      extent2.setX(sx * rect.right());
+      extent1.setX(qRound(sx * rect.left()));
+      extent2.setX(qRound(sx * rect.right()));
     }
 
     if (qFuzzyCompare(rect.height(), 0.0)) {
       if (index == 0) {
-        extent1.setY(sy);
+        extent1.setY(qRound(sy));
         extent2.setY(rect.bottom());
       } else {
         extent1.setY(rect.top());
-        extent2.setY(sy);
+        extent2.setY(qRound(sy));
       }
     } else {
-      extent1.setY(sy * rect.top());
-      extent2.setY(sy * rect.bottom());
+      extent1.setY(qRound(sy * rect.top()));
+      extent2.setY(qRound(sy * rect.bottom()));
     }
 
     QList<QPointF> extents;
@@ -1766,7 +1767,7 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
     QPointF origin;
     origin.setX(mPivotPoint.x() + xFactor * (mOldOrigin.x() - mPivotPoint.x()));
     origin.setY(mPivotPoint.y() + yFactor * (mOldOrigin.y() - mPivotPoint.y()));
-    setOrigin(origin);
+    setOrigin(mpGraphicsView->roundPoint(origin));
 
     setOriginItemPos(mOrigin);
     applyTransformation();
