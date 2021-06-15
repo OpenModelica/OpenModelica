@@ -112,7 +112,7 @@ struct errorData
 };
 
 /*
- * create html report with error logs
+ * create html report with error logs for D.1
  */
 void createErrorHtmlReport(DATA * data, int status = 0)
 {
@@ -192,6 +192,450 @@ void createErrorHtmlReport(DATA * data, int status = 0)
 }
 
 /*
+* create html report for data Reconciliation D.1
+*/
+void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matrixData &xdiag, matrixData &reconciled_X, matrixData &copyreconSx_diag, double *newX, double &eps, int &iterationcount, double &value, correlationDataWarning &warningCorrelationData)
+{
+  ofstream myfile;
+  time_t now = time(0);
+  std::stringstream htmlfile;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << ".html";
+  }
+  else
+  {
+    htmlfile << data->modelData->modelName << ".html";
+  }
+  string html = htmlfile.str();
+  myfile.open(html.c_str());
+
+  /* create a csv file */
+  ofstream csvfile;
+  std::stringstream csv_file;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_Outputs.csv";
+  }
+  else
+  {
+    csv_file << data->modelData->modelName << "_Outputs.csv";
+  }
+
+  string tmpcsv = csv_file.str();
+  csvfile.open(tmpcsv.c_str());
+
+  // check for nonReconciledVars.txt file exists to map the nonReconciled Vars failing with condition-2 of extraction algorithm
+  std::string nonReconciledVarsFilename = string(data->modelData->modelName) +  "_NonReconcilcedVars.txt";
+  vector<std::string> nonReconciledVars;
+
+  ifstream nonreconcilevarsip(nonReconciledVarsFilename);
+  string line;
+  if (nonreconcilevarsip.good())
+  {
+    while (nonreconcilevarsip.good())
+    {
+      getline(nonreconcilevarsip, line);
+      if (!line.empty())
+      {
+        //std::cout << "\n reading nonVariables of interest : " << line;
+        nonReconciledVars.push_back(line);
+      }
+    }
+    nonreconcilevarsip.close();
+    omc_unlink(nonReconciledVarsFilename.c_str());
+  }
+
+  /* Add Overview Data */
+  myfile << "<!DOCTYPE html><html>\n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n ";
+  myfile << "<h2> Overview: </h2>\n";
+  myfile << "<table> \n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Measurement input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
+  if (omc_flagValue[FLAG_DATA_RECONCILE_Cx])
+  {
+    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "</td> </tr>\n";
+  }
+  else
+  {
+    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << "no file provided" << "</td> </tr>\n";
+  }
+  myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
+  myfile << "</table>\n";
+
+  /* Add Analysis data */
+  myfile << "<h2> Analysis: </h2>\n";
+  myfile << "<table> \n";
+  myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of iterations to convergence: </th> \n" << "<td>" << iterationcount << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Final value of (J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Final value of the objective function (J*) : </th> \n" << "<td>" << (value*data->modelData->nSetcVars) << "</td> </tr>\n";
+  //myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << quantile(complement(chi_squared(data->modelData->nSetcVars), 0.05)) << "</td> </tr>\n";
+
+  if (data->modelData->nSetcVars > 200)
+  {
+    myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << "NOT Available for equations > 200 in setC" << "</td> </tr>\n";
+  }
+  else
+  {
+    myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << chisquaredvalue[data->modelData->nSetcVars - 1] << "</td> </tr>\n";
+  }
+  myfile << "<tr> \n" << "<th align=right> Result of global test : </th> \n" << "<td>" << "TRUE" << "</td> </tr>\n";
+  myfile << "</table>\n";
+
+  // Auxiliary Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
+
+  // Intermediate Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+
+  // Debug log
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    myfile << "<h3> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  }
+  else
+  {
+    myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  }
+
+  // create a warning log for correlation input file
+  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
+  {
+    myfile << "<h3> <a href=" << data->modelData->modelName << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
+    /* create a warning log file */
+    ofstream warningfile;
+    std::stringstream warning_file;
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_warning.txt";
+    }
+    else
+    {
+      warning_file << data->modelData->modelName << "_warning.txt";
+    }
+
+    warningfile.open(warning_file.str().c_str());
+    // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.diagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
+    for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
+    {
+      warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
+    }
+    warningfile.close();
+  }
+
+  /* Add Results data */
+  myfile << "<h2> Results: </h2>\n";
+  myfile << "<table border=2>\n";
+  myfile << "<tr>\n" << "<th> Variables to be Reconciled </th>\n" << "<th> Initial Measured Values </th>\n" << "<th> Reconciled Values </th>\n" << "<th> Initial Uncertainty Values </th>\n" <<"<th> Half-width Confidence Intervals </th>\n";
+  csvfile << "Variables to be Reconciled ," << "Initial Measured Values ," << "Reconciled Values ," << "Initial Uncertainty Values ," << "Half-width Confidence Intervals,";
+  myfile << "<th> Results of Local Tests </th>\n" << "<th> Values of Local Tests </th>\n" << "<th> Margin to Correctness(distance from 1.96) </th>\n" << "</tr>\n";
+  csvfile << "Results of Local Tests ," << "Values of Local Tests ," << "Margin to Correctness(distance from 1.96) ," << "\n";
+
+  for (unsigned int r = 0; r < csvinputs.headers.size(); r++)
+  {
+    bool reconciled = true;
+    if (!nonReconciledVars.empty())
+    {
+      auto nonReconciledVar = std::find(nonReconciledVars.begin(), nonReconciledVars.end(), csvinputs.headers[r]);
+      if (nonReconciledVar != nonReconciledVars.end())
+      {
+        reconciled = false;
+      }
+    }
+
+    if (reconciled)
+    {
+      myfile << "<tr>\n";
+      // variables of interest
+      myfile << "<td>" << csvinputs.headers[r] << "</td>\n";
+      csvfile << csvinputs.headers[r] << ",";
+
+      // Initial Measured Values
+      myfile << "<td>" << xdiag.data[r] << "</td>\n";
+      csvfile << xdiag.data[r] << ",";
+
+      // Reconciled Values
+      myfile << "<td>" << reconciled_X.data[r] << "</td>\n";
+      csvfile << reconciled_X.data[r] << ",";
+
+      // Initial Uncertainty Values
+      myfile << "<td>" << csvinputs.sxdata[r] << "</td>\n";
+      csvfile << csvinputs.sxdata[r] << ",";
+
+      // Reconciled Uncertainty Values
+      myfile << "<td>" << copyreconSx_diag.data[r] << "</td>\n";
+      csvfile << copyreconSx_diag.data[r] << ",";
+
+      // Results of Local Tests
+      if (newX[r] < 1.96)
+      {
+        myfile << "<td>" << "TRUE" << "</td>\n";
+        csvfile << "TRUE" << ",";
+      }
+      else
+      {
+        myfile << "<td>" << "FALSE" << "</td>\n";
+        csvfile << "FALSE" << ",";
+      }
+
+      // Values of Local Tests
+      myfile << "<td>" << newX[r] << "</td>\n";
+      csvfile << newX[r] << ",";
+
+      // Margin to Correctness(distance from 1.96)
+      myfile << "<td>" << (1.96 - newX[r]) << "</td>\n";
+      csvfile << (1.96 - newX[r]) << ",\n";
+    }
+    else
+    {
+      myfile << "<tr>\n";
+      // variables of interest
+      myfile << "<td>" << csvinputs.headers[r] << "</td>\n";
+      csvfile << csvinputs.headers[r] << ",";
+
+      // Initial Measured Values
+      myfile << "<td>" << xdiag.data[r] << "</td>\n";
+      csvfile << xdiag.data[r] << ",";
+
+      // Reconciled Values
+      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
+      csvfile << "Not reconciled" << ",";
+
+      // Initial Uncertainty Values
+      myfile << "<td>" << csvinputs.sxdata[r] << "</td>\n";
+      csvfile << csvinputs.sxdata[r] << ",";
+
+      // Reconciled Uncertainty Values
+      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
+      csvfile << "Not reconciled" << ",";
+
+      // Results of Local Tests
+      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
+      csvfile << "Not reconciled" << ",";
+
+      // Values of Local Tests
+      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
+      csvfile << "Not reconciled" << ",";
+
+      // Margin to Correctness(distance from 1.96)
+      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
+      csvfile << "Not reconciled" << ",\n";
+    }
+    csvfile.flush();
+    myfile << "</tr>\n";
+    myfile.flush();
+  }
+
+  csvfile.close();
+  myfile << "</table>\n";
+  myfile << "</body>\n</html>";
+  myfile.close();
+}
+
+/*
+ * create html report with error logs for Boundary conditions D.2
+ */
+void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
+{
+  // create HTML Report with Error Logs
+  ofstream myfile;
+  time_t now = time(0);
+  std::stringstream htmlfile;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions.html";
+  }
+  else
+  {
+    htmlfile << data->modelData->modelName << "_BoundaryConditions.html";
+  }
+  string html = htmlfile.str();
+  myfile.open(html.c_str());
+
+  /* Add Overview Data */
+  myfile << "<!DOCTYPE html><html>\n <head> <h1> Boundary Conditions Report </h1></head> \n <body> \n ";
+  myfile << "<h2> Overview: </h2>\n";
+  myfile << "<table> \n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
+  // Sx input file
+  if (omc_flagValue[FLAG_DATA_RECONCILE_Sx])
+  {
+    myfile << "<tr> \n" << "<th align=right> Reconciled values input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
+  }
+  else
+  {
+    myfile << "<tr> \n" << "<th align=right> Reconciled values input file: </th> \n" << "<td style=color:red>" << "no file provided" << "</td> </tr>\n";
+  }
+  // Cx input file
+  if (omc_flagValue[FLAG_DATA_RECONCILE_Cx])
+  {
+    myfile << "<tr> \n" << "<th align=right> Reconciled covariance matrix input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "</td> </tr>\n";
+  }
+  else
+  {
+    myfile << "<tr> \n" << "<th align=right> Reconciled covariance matrix input file: </th> \n" << "<td style=color:red>" << "no file provided" << "</td> </tr>\n";
+  }
+  myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
+  myfile << "</table>\n";
+
+  /* add analysis section */
+  myfile << "<h2> Analysis: </h2>\n";
+  myfile << "<table> \n";
+  myfile << "<tr> \n" << "<th align=right> Number of boundary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
+  myfile << "</table> \n";
+
+  // Boundary Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
+  // Intermediate Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+
+  // Error log
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
+  }
+  else
+  {
+    myfile << "<h2> <a href=" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
+  }
+
+  // debug log
+  if (status == 0)
+  {
+    if (omc_flag[FLAG_OUTPUT_PATH])
+    {
+      myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_BoundaryConditions_debug.txt"<< " target=_blank> Debug log </a> </h2>\n";
+    }
+    else
+    {
+      myfile << "<h2> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
+    }
+  }
+
+  myfile << "</table>\n";
+  myfile << "</body>\n</html>";
+  myfile.flush();
+  myfile.close();
+}
+
+/*
+ * create HTML Report for Boundary Conditions D.2
+ */
+void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string> & boundaryConditionVars, double* values, double* uncertaintyValues)
+{
+  ofstream myfile;
+  time_t now = time(0);
+  std::stringstream htmlfile;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions.html";
+  }
+  else
+  {
+    htmlfile << data->modelData->modelName << "_BoundaryConditions.html";
+  }
+  string html = htmlfile.str();
+  myfile.open(html.c_str());
+
+  /* create a csv file */
+  ofstream csvfile;
+  std::stringstream csv_file;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_BoundaryConditions_Outputs.csv";
+  }
+  else
+  {
+    csv_file << data->modelData->modelName << "_BoundaryConditions_Outputs.csv";
+  }
+
+  string tmpcsv = csv_file.str();
+  csvfile.open(tmpcsv.c_str());
+
+  /* Add Overview Data */
+  myfile << "<!DOCTYPE html><html>\n <head> <h1> Boundary Conditions Report </h1></head> \n <body> \n ";
+  myfile << "<h2> Overview: </h2>\n";
+  myfile << "<table> \n";
+  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Reconciled values input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
+  if (omc_flagValue[FLAG_DATA_RECONCILE_Cx])
+  {
+    myfile << "<tr> \n" << "<th align=right> Reconciled covariance matrix input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "</td> </tr>\n";
+  }
+  else
+  {
+    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << "no file provided" << "</td> </tr>\n";
+  }
+  myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
+  myfile << "</table>\n";
+
+  /* Add Analysis data */
+  myfile << "<h2> Analysis: </h2>\n";
+  myfile << "<table> \n";
+  myfile << "<tr> \n" << "<th align=right> Number of boundary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
+  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
+  myfile << "</table>\n";
+
+  // Boundary Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
+
+  // Intermediate Conditions
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+
+  // Debug log
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    myfile << "<h3> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  }
+  else
+  {
+    myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
+  }
+
+  /* Add Results data */
+  myfile << "<h2> Results: </h2>\n";
+  myfile << "<table border=2>\n";
+  myfile << "<tr>\n" << "<th> Boundary conditions </th>\n" << "<th> Values </th>\n" << "<th> Half-width Confidence Intervals </th> </tr>\n";
+  csvfile << "Boundary conditions ," << "Values ," << "Half-width Confidence Intervals," << "\n";
+
+  for (unsigned int r = 0; r < boundaryConditionVars.size(); r++)
+  {
+    myfile << "<tr>\n";
+    // Boundary Conditions
+    myfile << "<td>" << boundaryConditionVars[r] << "</td>\n";
+    csvfile << boundaryConditionVars[r] << ",";
+
+    // simulation Values
+    myfile << "<td>" << values[r] << "</td>\n";
+    csvfile << values[r] << ",";
+
+    // uncertainty Values
+    myfile << "<td>" << uncertaintyValues[r] << "</td>\n";
+    myfile << "</tr>\n";
+    csvfile << uncertaintyValues[r] << "," << "\n";
+  }
+
+  myfile << "</table>\n</html>";
+  myfile.close();
+  csvfile.close();
+}
+
+/*
  * function which returns the index pos
  * of input variables
  */
@@ -241,16 +685,26 @@ bool isLineEmptyData(std::string &cref)
  * and stores the initial measured value X and HalfWidth confidence
  * interval Wx and also the input variable names
  */
-csvData readMeasurementInputFile(ofstream & logfile, DATA * data)
+csvData readMeasurementInputFile(ofstream & logfile, DATA * data, bool boundaryConditions = false)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Sx];
-  if (filename == NULL)
+
+  if (filename == NULL && !boundaryConditions)
   {
     errorStreamPrint(LOG_STDOUT, 0, "Measurement input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.");
     logfile << "|  error   |   " << "Measurement input file not provided (eg:-sx=filename.csv), DataReconciliation cannot be computed!.\n";
     logfile.close();
     createErrorHtmlReport(data);
+    exit(1);
+  }
+
+  if (filename == NULL && boundaryConditions)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "Reconciled values input file not provided (eg:-sx=filename.csv), Boundary conditions cannot be computed!.");
+    logfile << "|  error   |   " << "Reconciled values input file not provided (eg:-sx=filename.csv), Boundary conditions cannot be computed!.\n";
+    logfile.close();
+    createErrorHtmlReportForBoundaryConditions(data);
     exit(1);
   }
 
@@ -268,7 +722,7 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data)
   vector<errorData> errorInfo;
   vector<int> errorInfoHeaders;
 
-  if (!ip.good())
+  if (!ip.good() && !boundaryConditions)
   {
     errorStreamPrint(LOG_STDOUT, 0, "Measurement input file path not found %s.",filename);
     logfile << "|  error   |   " << "Measurement input file path not found " << filename << "\n";
@@ -276,10 +730,27 @@ csvData readMeasurementInputFile(ofstream & logfile, DATA * data)
     createErrorHtmlReport(data);
     exit(1);
   }
+
+  if (!ip.good() && boundaryConditions)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "Reconciled values input file path not found %s.", filename);
+    logfile << "|  error   |   " << "Reconciled values input file path not found " << filename << "\n";
+    logfile.close();
+    createErrorHtmlReportForBoundaryConditions(data);
+    exit(1);
+  }
+
   while (ip.good())
   {
     getline(ip, line);
     vector<string> t1;
+
+    // allow comments on the line#1 until finding the headers
+    if (linecount == 1 && isLineEmptyData(line))
+    {
+      continue;
+    }
+
     if (linecount > 1 && !line.empty() && !isLineEmptyData(line))
     {
       //std::cout << "\nline info:" << line;
@@ -442,6 +913,34 @@ void printMatrix(double * matrix, int rows, int cols, string name, ofstream & lo
 }
 
 /*
+ * Function to Print the matrix in row based format
+ */
+void printMatrixModelicaFormat(double * matrix, int rows, int cols, string name, ofstream & logfile)
+{
+  logfile << "\n" << "************ " << name << " **********" << "\n";
+  logfile << "\n[";
+  for (int i = 0; i < rows; i++)
+  {
+    for (int j = 0; j < cols; j++)
+    {
+      //cout << setprecision(5);
+      if (j == cols - 1)
+      {
+        logfile << std::right << setw(15) << matrix[i + j * rows] << ";\n";
+      }
+      else
+      {
+        logfile << std::right << setw(15) << matrix[i + j * rows] << ",";
+      }
+
+      logfile.flush();
+    }
+    //logfile << ";\n";
+  }
+  logfile << "\n";
+}
+
+/*
  *
  Function to Print the matrix in row based format with headers
  */
@@ -461,6 +960,71 @@ void printMatrixWithHeaders(double * matrix, int rows, int cols, vector<string> 
     logfile << "\n";
   }
   logfile << "\n";
+}
+
+/*
+ *
+ Function to Print the matrix in row based format with headers
+ */
+void printBoundaryConditionsResults(double * matrixA, double * matrixB, int rows, int cols, vector<string> headers, string name, ofstream & logfile)
+{
+  logfile << "\n" << "************ " << name << " **********" << "\n";
+  logfile << "\n Boundary conditions" << setw(20) << "Values" << setw(45) << "Half-width Confidence Interval" << "\n";
+  for (int i = 0; i < rows; i++)
+  {
+    logfile << std::right << setw(20) << headers[i];
+    for (int j = 0; j < cols; j++)
+    {
+      //cout << setprecision(5);
+      logfile << std::right << setw(20) << matrixA[i + j * rows] << setw(25) << matrixB[i + j * rows];
+      logfile.flush();
+      //printf("% .5e ", matrix[i+j*rows]);
+    }
+    logfile << "\n";
+  }
+  logfile << "\n";
+}
+
+void dumpReconciledSxToCSV(double * matrix, int rows, int cols, vector<string> headers, DATA * data)
+{
+  /* create a csv file */
+  ofstream csvfile;
+  std::stringstream csv_file;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_Reconciled_Sx.csv";
+  }
+  else
+  {
+    csv_file << data->modelData->modelName << "_Reconciled_Sx.csv";
+  }
+
+  string tmpcsv = csv_file.str();
+  csvfile.open(tmpcsv.c_str());
+
+  csvfile << "Sxij" << ",";
+  for (auto it : headers)
+  {
+    //std::cout << "headers : " << it << "\n";
+    csvfile << it << ",";
+  }
+  csvfile << "\n";
+
+  for (int i = 0; i < rows; i++)
+  {
+    csvfile << headers[i] << ",";
+    for (int j = 0; j < cols; j++)
+    {
+      //cout << setprecision(5);
+      csvfile << matrix[i + j * rows] << ",";
+      //csvfile.flush();
+      //printf("% .5e ", matrix[i+j*rows]);
+    }
+    csvfile << "\n";
+  }
+  //csvfile << "\n";
+  csvfile.flush();
+  csvfile.close();
 }
 
 /*
@@ -759,7 +1323,7 @@ matrixData solveReconciledSx(matrixData Sx, matrixData Ft, matrixData Fstar, ofs
  * Function Which Computes the
  * Jacobian Matrix F
  */
-matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream & logfile)
+matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream & logfile, bool boundaryConditions = false)
 {
   // initialize the jacobian call
   const int index = data->callback->INDEX_JAC_F;
@@ -772,7 +1336,14 @@ matrixData getJacobianMatrixF(DATA * data, threadData_t * threadData, ofstream &
     errorStreamPrint(LOG_STDOUT, 0, "Cannot Compute Jacobian Matrix F");
     logfile << "|  error   |   " << "Cannot Compute Jacobian Matrix F" << "\n";
     logfile.close();
-    createErrorHtmlReport(data);
+    if (!boundaryConditions)
+    {
+      createErrorHtmlReport(data);
+    }
+    else
+    {
+      createErrorHtmlReportForBoundaryConditions(data);
+    }
     exit(1);
   }
   double *jacF = (double*) calloc(rows * cols, sizeof(double)); // allocate for Matrix F
@@ -834,7 +1405,7 @@ matrixData getCovarianceMatrixSx(csvData Sx_result, DATA *data, threadData_t *th
  * user error #7: variable of interest has multiple entry in measurement input file
  * user error #8: variable of interest in correlation input file does not correspond to variable of interest
  */
-void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile, vector<string> headers, string comments)
+void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile, vector<string> headers, string comments, bool boundaryConditions = false)
 {
   vector<string> noEntry, multipleEntry, entry;
   for (int i = 0; i < headers.size(); i++)
@@ -869,21 +1440,44 @@ void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile,
   // dump user error #7: variable of interest , has multiple entry in measurement input file
   for (int i = 0; i < multipleEntry.size(); i++)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in correlation input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
-    logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << " at " << comments << " has multiple entries in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "\n";
+    if (!boundaryConditions)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in correlation input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << " at " << comments << " has multiple entries in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "\n";
+    }
+    else
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s has multiple entries in reconciled covariance matrix input file %s ", multipleEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      logfile << "|  error   |   " << "variable of interest " << multipleEntry[i] << " at " << comments << " has multiple entries in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "\n";
+    }
   }
 
   // dump user error #8: variable of interest in correlation input file does not correspond to variable of interest
   for (int i = 0; i < noEntry.size(); i++)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s entry in correlation input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
-    logfile << "|  error   |   " << "variable of interest " << noEntry[i]  << ", at " << comments << " entry in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " does not correspond to a variable of interest" << "\n";
+    if (!boundaryConditions)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s entry in correlation input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      logfile << "|  error   |   " << "variable of interest " << noEntry[i]  << ", at " << comments << " entry in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " does not correspond to a variable of interest" << "\n";
+    }
+    else
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "variable of interest %s, at %s entry in reconciled covariance matrix input file %s does not correspond to a variable of interest ", noEntry[i].c_str(), comments.c_str(), omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      logfile << "|  error   |   " << "variable of interest " << noEntry[i]  << ", at " << comments << " entry in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " does not correspond to a variable of interest" << "\n";
+    }
   }
 
   if (!noEntry.empty() || !multipleEntry.empty())
   {
     logfile.close();
-    createErrorHtmlReport(data);
+    if (!boundaryConditions)
+    {
+      createErrorHtmlReport(data);
+    }
+    else
+    {
+      createErrorHtmlReportForBoundaryConditions(data);
+    }
     exit(1);
   }
 }
@@ -893,12 +1487,20 @@ void validateCorelationInputs(csvData Sx_result, DATA * data, ofstream &logfile,
  * square matrix or not and displays error messages for
  * user error #10: Lines and columns are in different orders
  */
-void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector<string> rowHeaders, vector<string> columnHeaders)
+void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector<string> rowHeaders, vector<string> columnHeaders, bool boundaryConditions = false)
 {
   if (rowHeaders != columnHeaders)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Lines and columns of correlation matrix in correlation input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
-    logfile << "|  error   |   " << "Lines and columns of correlation matrix in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " do not have identical names in the same order." << "\n";
+    if (!boundaryConditions)
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "Lines and columns of correlation matrix in correlation input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      logfile << "|  error   |   " << "Lines and columns of correlation matrix in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " do not have identical names in the same order." << "\n";
+    }
+    else
+    {
+      errorStreamPrint(LOG_STDOUT, 0, "Lines and columns of covariance matrix in reconciled covariance matrix input file  %s, do not have identical names in the same order.", omc_flagValue[FLAG_DATA_RECONCILE_Cx]);
+      logfile << "|  error   |   " << "Lines and columns of covariance matrix in reconciled covariance matrix input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " do not have identical names in the same order." << "\n";
+    }
 
     // user error #10: missing line headers
     for (const auto & index : columnHeaders)
@@ -934,7 +1536,14 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
     }
 
     logfile.close();
-    createErrorHtmlReport(data);
+    if (!boundaryConditions)
+    {
+      createErrorHtmlReport(data);
+    }
+    else
+    {
+      createErrorHtmlReportForBoundaryConditions(data);
+    }
     exit(1);
   }
 }
@@ -943,7 +1552,7 @@ void validateCorelationInputsSquareMatrix(DATA * data, ofstream &logfile, vector
  * Function which reads the correlation coefficient input file
  * and stores the correlation coefficient matrix Cx for DataReconciliation
  */
-correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data)
+correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & logfile, DATA * data, bool boundaryConditions = false)
 {
   char * filename = NULL;
   filename = (char*) omc_flagValue[FLAG_DATA_RECONCILE_Cx];
@@ -954,21 +1563,39 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
   correlationData Cx;
   vector<int> errorInfoHeaders;
 
-  if (filename == NULL)
+  if (filename == NULL && !boundaryConditions)
   {
     Cx = {cx_data, rowHeaders, columnHeaders};
     return Cx;
   }
 
+  if (filename == NULL && boundaryConditions)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "Reconciled covariance matrix input file not provided (eg:-cx=filename.csv), Boundary conditions cannot be computed!.");
+    logfile << "|  error   |   " << "Reconciled covariance matrix input file not provided (eg:-cx=filename.csv), Boundary conditions cannot be computed!.\n";
+    logfile.close();
+    createErrorHtmlReportForBoundaryConditions(data);
+    exit(1);
+  }
+
   // read the file
   ifstream ip(filename);
   string line;
-  if (!ip.good())
+  if (!ip.good() && !boundaryConditions)
   {
     errorStreamPrint(LOG_STDOUT, 0, "correlation coefficient input file path not found %s.", filename);
-    logfile << "|  error   |   " << "correlation coefficient input file path not found  " << filename << "\n";
+    logfile << "|  error   |   " << "correlation coefficient input file path not found " << filename << "\n";
     logfile.close();
     createErrorHtmlReport(data);
+    exit(1);
+  }
+
+  if (!ip.good() && boundaryConditions)
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "Reconciled covariance matrix input file path not found %s.", filename);
+    logfile << "|  error   |   " << "Reconciled covariance matrix input file path not found " << filename << "\n";
+    logfile.close();
+    createErrorHtmlReportForBoundaryConditions(data);
     exit(1);
   }
 
@@ -982,6 +1609,13 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
     line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
     stringstream ss(line);
     string temp;
+
+    // allow comments on the line#1 until finding the headers
+    if (linecount == 1 && isLineEmptyData(line))
+    {
+      continue;
+    }
+
     if (linecount == 1 && !line.empty())
     {
       int columnCount = 1;
@@ -1052,11 +1686,26 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
   {
     for (const auto &line : errorInfoHeaders)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in correlation input file  %s is missing in line #%d ", filename, line);
-      logfile << "|  error   |   " << "the name of the variable of interest in correlation input file " << filename << " is missing in line #" << line << "\n";
+      if (!boundaryConditions)
+      {
+        errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in correlation input file  %s is missing in line #%d ", filename, line);
+        logfile << "|  error   |   " << "the name of the variable of interest in correlation input file " << filename << " is missing in line #" << line << "\n";
+      }
+      else
+      {
+        errorStreamPrint(LOG_STDOUT, 0, "the name of the variable of interest in reconciled covariance matrix input file  %s is missing in line #%d ", filename, line);
+        logfile << "|  error   |   " << "the name of the variable of interest in reconciled covariance matrix input file " << filename << " is missing in line #" << line << "\n";
+      }
     }
     logfile.close();
-    createErrorHtmlReport(data);
+    if (!boundaryConditions)
+    {
+      createErrorHtmlReport(data);
+    }
+    else
+    {
+      createErrorHtmlReportForBoundaryConditions(data);
+    }
     exit(1);
   }
 
@@ -1065,22 +1714,37 @@ correlationData readCorrelationCoefficientFile(csvData Sx_result, ofstream & log
   {
     for (const auto & info : errorInfo)
     {
-      errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
-      logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << filename <<  " is incorrect because of wrong-Type: " << "[" << info.sx  << "]" <<"\n";
+      if (!boundaryConditions)
+      {
+        errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in correlation input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+        logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in correlation input file " << filename <<  " is incorrect because of wrong-Type: " << "[" << info.sx  << "]" <<"\n";
+      }
+      else
+      {
+        errorStreamPrint(LOG_STDOUT, 0, "Entry for variable of interest %s and variable of interest %s in reconciled covariance matrix input file %s is incorrect because of wrong-Type: [%s] ", info.name.c_str(), info.x.c_str(), filename, info.sx.c_str());
+        logfile << "|  error   |   " << "Entry for variable of interest " <<  info.name << " and variable of interest " << info.x << " in reconciled covariance matrix input file " << filename <<  " is incorrect because of wrong-Type: " << "[" << info.sx  << "]" <<"\n";
+      }
     }
     logfile.close();
-    createErrorHtmlReport(data);
+    if (!boundaryConditions)
+    {
+      createErrorHtmlReport(data);
+    }
+    else
+    {
+      createErrorHtmlReportForBoundaryConditions(data);
+    }
     exit(1);
   }
 
   // validate correlation input column headers
-  validateCorelationInputs(Sx_result, data, logfile, columnHeaders, "column headers");
+  validateCorelationInputs(Sx_result, data, logfile, columnHeaders, "column headers", boundaryConditions);
 
   // validate correlation input column headers
-  validateCorelationInputs(Sx_result, data, logfile, rowHeaders, "row headers");
+  validateCorelationInputs(Sx_result, data, logfile, rowHeaders, "row headers", boundaryConditions);
 
   // check for square matrix
-  validateCorelationInputsSquareMatrix(data, logfile, rowHeaders, columnHeaders);
+  validateCorelationInputsSquareMatrix(data, logfile, rowHeaders, columnHeaders, boundaryConditions);
 
   Cx = {cx_data, rowHeaders, columnHeaders};
 
@@ -1161,14 +1825,21 @@ matrixData computeCovarianceMatrixSx(csvData Sx_result, correlationData Cx_data,
  * which is very important for jacobians and also to get correct numerical results
  */
 
-csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logfile)
+csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logfile, bool boundaryConditions = false)
 {
   if (data->modelData->ndataReconVars != Sx_result.headers.size())
   {
     errorStreamPrint(LOG_STDOUT, 0, "invalid input file %s, number of variable of interest(%li) != (%zu)number of variables in measurement input file", omc_flagValue[FLAG_DATA_RECONCILE_Sx], data->modelData->ndataReconVars, Sx_result.headers.size());
     logfile << "|  error   |   " << "invalid input file "<< omc_flagValue[FLAG_DATA_RECONCILE_Sx] << ", number of variable of interest(" << data->modelData->ndataReconVars << ")" << " != " << "(" << Sx_result.headers.size() << ")" << "number of variables in measurement input file";
     logfile.close();
-    createErrorHtmlReport(data);
+    if (!boundaryConditions)
+    {
+      createErrorHtmlReport(data);
+    }
+    else
+    {
+      createErrorHtmlReportForBoundaryConditions(data);
+    }
     exit(1);
   }
 
@@ -1236,7 +1907,14 @@ csvData validateMeasurementInputs(csvData Sx_result, DATA * data, ofstream &logf
   {
     logfile.close();
     free(knowns);
-    createErrorHtmlReport(data);
+    if (!boundaryConditions)
+    {
+      createErrorHtmlReport(data);
+    }
+    else
+    {
+      createErrorHtmlReportForBoundaryConditions(data);
+    }
     exit(1);
   }
 
@@ -1272,6 +1950,24 @@ inputData getInputData(csvData Sx_result, ofstream & logfile)
   for (int i = 0; i < Sx_result.headers.size(); i++)
   {
     tempx[i] = Sx_result.xdata[i];
+  }
+
+  inputData x_data = {Sx_result.rowcount, 1, tempx, index};
+  return x_data;
+}
+
+/*
+ * Function which reads the input data from csvData.xdata
+ * and stores the input values in double array
+ */
+inputData getReconciledX(csvData Sx_result, ofstream & logfile)
+{
+  double * tempx = (double*) calloc(Sx_result.rowcount, sizeof(double));
+  vector<int> index;
+
+  for (int i = 0; i < Sx_result.headers.size(); i++)
+  {
+    tempx[i] = Sx_result.sxdata[i];
   }
 
   inputData x_data = {Sx_result.rowcount, 1, tempx, index};
@@ -1635,6 +2331,8 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   printMatrixWithHeaders(reconciled_X.data, reconciled_X.rows, reconciled_X.column, csvinputs.headers, "reconciled_X ===> (x - (Sx*Ft*fstar))", logfile);
   printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, csvinputs.headers, "reconciled_Sx ===> (Sx - (Sx*Ft*Fstar))", logfile);
 
+  dumpReconciledSxToCSV(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, csvinputs.headers, data);
+
   /*
    * Calculate half width Confidence interval
    * W=lambda*sqrt(Sx)
@@ -1708,253 +2406,8 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
 
   printMatrixWithHeaders(newX, xdiag.rows, xdiag.column, csvinputs.headers, "IndividualTests_Value- (recon_x-x)/sqrt(Sx_diag)", logfile);
 
-  /*
-   * create HTML Report
-   */
-  ofstream myfile;
-  time_t now = time(0);
-  std::stringstream htmlfile;
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    htmlfile << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << ".html";
-  }
-  else
-  {
-    htmlfile << data->modelData->modelName << ".html";
-  }
-  string html = htmlfile.str();
-  myfile.open(html.c_str());
-
-  /* create a csv file */
-  ofstream csvfile;
-  std::stringstream csv_file;
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    csv_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_Outputs.csv";
-  }
-  else
-  {
-    csv_file << data->modelData->modelName << "_Outputs.csv";
-  }
-
-  string tmpcsv = csv_file.str();
-  csvfile.open(tmpcsv.c_str());
-
-  // check for nonReconciledVars.txt file exists to map the nonReconciled Vars failing with condition-2 of extraction algorithm
-  std::string nonReconciledVarsFilename = string(data->modelData->modelName) +  "_NonReconcilcedVars.txt";
-  vector<std::string> nonReconciledVars;
-
-  ifstream nonreconcilevarsip(nonReconciledVarsFilename);
-  string line;
-  if (nonreconcilevarsip.good())
-  {
-    while (nonreconcilevarsip.good())
-    {
-      getline(nonreconcilevarsip, line);
-      if (!line.empty())
-      {
-        //std::cout << "\n reading nonVariables of interest : " << line;
-        nonReconciledVars.push_back(line);
-      }
-    }
-    nonreconcilevarsip.close();
-    omc_unlink(nonReconciledVarsFilename.c_str());
-  }
-
-  /* Add Overview Data */
-  myfile << "<!DOCTYPE html><html>\n <head> <h1> Data Reconciliation Report</h1></head> \n <body> \n ";
-  myfile << "<h2> Overview: </h2>\n";
-  myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Model file: </th> \n" << "<td>" << data->modelData->modelFilePrefix << ".mo" << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Model name: </th> \n" << "<td>" << data->modelData->modelName << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Model directory: </th> \n" << "<td>" << data->modelData->modelDir << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Measurement input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Sx] << "</td> </tr>\n";
-  if (omc_flagValue[FLAG_DATA_RECONCILE_Cx])
-  {
-    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << "</td> </tr>\n";
-  }
-  else
-  {
-    myfile << "<tr> \n" << "<th align=right> Correlation matrix input file: </th> \n" << "<td>" << "no file provided" << "</td> </tr>\n";
-  }
-  myfile << "<tr> \n" << "<th align=right> Generated: </th> \n" << "<td>" << ctime(&now) << " by "<< "<b>" << CONFIG_VERSION << "</b>" << "</td> </tr>\n";
-  myfile << "</table>\n";
-
-  /* Add Analysis data */
-  myfile << "<h2> Analysis: </h2>\n";
-  myfile << "<table> \n";
-  myfile << "<tr> \n" << "<th align=right> Number of auxiliary conditions: </th> \n" << "<td>" << data->modelData->nSetcVars << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Number of variables to be reconciled: </th> \n" << "<td>" << data->modelData->ndataReconVars << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Number of iterations to convergence: </th> \n" << "<td>" << iterationcount << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Final value of (J*/r) : </th> \n" << "<td>" << value << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Epsilon : </th> \n" << "<td>" << eps << "</td> </tr>\n";
-  myfile << "<tr> \n" << "<th align=right> Final value of the objective function (J*) : </th> \n" << "<td>" << (value*data->modelData->nSetcVars) << "</td> </tr>\n";
-  //myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << quantile(complement(chi_squared(data->modelData->nSetcVars), 0.05)) << "</td> </tr>\n";
-
-  if (data->modelData->nSetcVars > 200)
-  {
-    myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << "NOT Available for equations > 200 in setC" << "</td> </tr>\n";
-  }
-  else
-  {
-    myfile << "<tr> \n" << "<th align=right> Chi-square value : </th> \n" << "<td>" << chisquaredvalue[data->modelData->nSetcVars - 1] << "</td> </tr>\n";
-  }
-  myfile << "<tr> \n" << "<th align=right> Result of global test : </th> \n" << "<td>" << "TRUE" << "</td> </tr>\n";
-  myfile << "</table>\n";
-
-  // Auxiliary Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
-
-  // Intermediate Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
-
-  // Debug log
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    myfile << "<h3> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
-  }
-  else
-  {
-    myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
-  }
-
-  // create a warning log for correlation input file
-  if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
-  {
-    myfile << "<h3> <a href=" << data->modelData->modelName << "_warning.txt" << " target=_blank> Warnings </a> </h3>\n";
-    /* create a warning log file */
-    ofstream warningfile;
-    std::stringstream warning_file;
-    if (omc_flag[FLAG_OUTPUT_PATH])
-    {
-      warning_file << string(omc_flagValue[FLAG_OUTPUT_PATH]) << "/" << data->modelData->modelName << "_warning.txt";
-    }
-    else
-    {
-      warning_file << data->modelData->modelName << "_warning.txt";
-    }
-
-    warningfile.open(warning_file.str().c_str());
-    // user warning #1 : Diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
-    for (const auto &index : warningCorrelationData.diagonalEntry)
-    {
-      warningfile << "|  warning  |   " << "Diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
-    }
-    // user warning #2 : Above diagonal entry for variable of interest <variable name> in correlation input file <input file name> is ignored
-    for (const auto &index : warningCorrelationData.aboveDiagonalEntry)
-    {
-      warningfile << "|  warning  |   " << "Above diagonal entry for variable of interest " << index << " in correlation input file " << omc_flagValue[FLAG_DATA_RECONCILE_Cx] << " is ignored" << "\n";
-    }
-    warningfile.close();
-  }
-
-  /* Add Results data */
-  myfile << "<h2> Results: </h2>\n";
-  myfile << "<table border=2>\n";
-  myfile << "<tr>\n" << "<th> Variables to be Reconciled </th>\n" << "<th> Initial Measured Values </th>\n" << "<th> Reconciled Values </th>\n" << "<th> Initial Uncertainty Values </th>\n" <<"<th> Reconciled Uncertainty Values </th>\n";
-  csvfile << "Variables to be Reconciled ," << "Initial Measured Values ," << "Reconciled Values ," << "Initial Uncertainty Values ," << "Reconciled Uncertainty Values,";
-  myfile << "<th> Results of Local Tests </th>\n" << "<th> Values of Local Tests </th>\n" << "<th> Margin to Correctness(distance from 1.96) </th>\n" << "</tr>\n";
-  csvfile << "Results of Local Tests ," << "Values of Local Tests ," << "Margin to Correctness(distance from 1.96) ," << "\n";
-
-  for (unsigned int r = 0; r < csvinputs.headers.size(); r++)
-  {
-    bool reconciled = true;
-    if (!nonReconciledVars.empty())
-    {
-      auto nonReconciledVar = std::find(nonReconciledVars.begin(), nonReconciledVars.end(), csvinputs.headers[r]);
-      if (nonReconciledVar != nonReconciledVars.end())
-      {
-        reconciled = false;
-      }
-    }
-
-    if (reconciled)
-    {
-      myfile << "<tr>\n";
-      // variables of interest
-      myfile << "<td>" << csvinputs.headers[r] << "</td>\n";
-      csvfile << csvinputs.headers[r] << ",";
-
-      // Initial Measured Values
-      myfile << "<td>" << xdiag.data[r] << "</td>\n";
-      csvfile << xdiag.data[r] << ",";
-
-      // Reconciled Values
-      myfile << "<td>" << reconciled_X.data[r] << "</td>\n";
-      csvfile << reconciled_X.data[r] << ",";
-
-      // Initial Uncertainty Values
-      myfile << "<td>" << csvinputs.sxdata[r] << "</td>\n";
-      csvfile << csvinputs.sxdata[r] << ",";
-
-      // Reconciled Uncertainty Values
-      myfile << "<td>" << copyreconSx_diag.data[r] << "</td>\n";
-      csvfile << copyreconSx_diag.data[r] << ",";
-
-      // Results of Local Tests
-      if (newX[r] < 1.96)
-      {
-        myfile << "<td>" << "TRUE" << "</td>\n";
-        csvfile << "TRUE" << ",";
-      }
-      else
-      {
-        myfile << "<td>" << "FALSE" << "</td>\n";
-        csvfile << "FALSE" << ",";
-      }
-
-      // Values of Local Tests
-      myfile << "<td>" << newX[r] << "</td>\n";
-      csvfile << newX[r] << ",";
-
-      // Margin to Correctness(distance from 1.96)
-      myfile << "<td>" << (1.96 - newX[r]) << "</td>\n";
-      csvfile << (1.96 - newX[r]) << ",\n";
-    }
-    else
-    {
-      myfile << "<tr>\n";
-      // variables of interest
-      myfile << "<td>" << csvinputs.headers[r] << "</td>\n";
-      csvfile << csvinputs.headers[r] << ",";
-
-      // Initial Measured Values
-      myfile << "<td>" << xdiag.data[r] << "</td>\n";
-      csvfile << xdiag.data[r] << ",";
-
-      // Reconciled Values
-      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
-      csvfile << "Not reconciled" << ",";
-
-      // Initial Uncertainty Values
-      myfile << "<td>" << csvinputs.sxdata[r] << "</td>\n";
-      csvfile << csvinputs.sxdata[r] << ",";
-
-      // Reconciled Uncertainty Values
-      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
-      csvfile << "Not reconciled" << ",";
-
-      // Results of Local Tests
-      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
-      csvfile << "Not reconciled" << ",";
-
-      // Values of Local Tests
-      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
-      csvfile << "Not reconciled" << ",";
-
-      // Margin to Correctness(distance from 1.96)
-      myfile << "<td style=color:red>" << "Not reconciled" << "</td>\n";
-      csvfile << "Not reconciled" << ",\n";
-    }
-    csvfile.flush();
-    myfile << "</tr>\n";
-    myfile.flush();
-  }
-
-  csvfile.close();
-  myfile << "</table>\n";
-  myfile << "</body>\n</html>";
-  myfile.close();
+  // create HTML Report for D.1
+  createHtmlReportFordataReconciliation(data, csvinputs, xdiag, reconciled_X, copyreconSx_diag, newX, eps, iterationcount, value, warningCorrelationData);
 
   free(tmpFstar.data);
   free(tmpfstar.data);
@@ -1974,6 +2427,9 @@ int RunReconciliation(DATA *data, threadData_t *threadData, inputData x, matrixD
   return 0;
 }
 
+/*
+ * Runs the numerical procedure to compute constraint equation (D.1)
+*/
 int dataReconciliation(DATA * data, threadData_t * threadData, int status)
 {
   TRACE_PUSH
@@ -2005,13 +2461,10 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   logfile << "|  info    |   " << "DataReconciliation Starting!\n";
   logfile << "|  info    |   " << data->modelData->modelName << "\n";
 
+  // set default value (epselon = 1.e-10), if no value provided by user
   if (epselon == NULL)
   {
-    errorStreamPrint(LOG_STDOUT, 0, "Epsilon Value not given, Please specify a convergence value (eg: -eps=0.0002), DataReconciliation cannot be computed!.");
-    logfile << "|  error   |   " << "Epsilon Value not given, Please specify a convergence value (eg: -eps=0.0002), DataReconciliation cannot be computed!.\n";
-    logfile.close();
-    createErrorHtmlReport(data);
-    exit(1);
+    epselon = "0.0000000001";
   }
 
   // read the measurement input data provide by user
@@ -2061,6 +2514,179 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
   free(jacFt.data);
   free(tmpSx_diag.data);
   free(x_diag.data);
+  TRACE_POP
+  return 0;
+}
+
+
+/*
+ * Runs the numerical procedure to compute Boundary conditions (D.2)
+*/
+int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, int status)
+{
+  TRACE_PUSH
+
+  // report run time initialization and non linear convergence error to html
+  if (status != 0)
+  {
+    createErrorHtmlReportForBoundaryConditions(data, status);
+    exit(1);
+  }
+
+  // create a debug log file
+  ofstream logfile;
+  std::stringstream logfilename;
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    logfilename << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_BoundaryConditions_debug.txt";
+  }
+  else
+  {
+    logfilename << data->modelData->modelName << "_BoundaryConditions_debug.txt";
+  }
+
+  string tmplogfilename = logfilename.str();
+  logfile.open(tmplogfilename.c_str());
+  logfile << "|  info    |   " << "Reconcile Boundary Conditions Starting!\n";
+  logfile << "|  info    |   " << data->modelData->modelName << "\n";
+
+  // read the measurement input data provide by user
+  csvData csvdata = readMeasurementInputFile(logfile, data, true);
+
+  // validate the input data read from measurement input file
+  csvData Sx_data = validateMeasurementInputs(csvdata, data, logfile, true);
+
+  // extracts the input data (x) from csvData
+  inputData reconciled_x = getReconciledX(Sx_data, logfile);
+
+  // read the reconciled covariance matrix input file provided by user
+  correlationData cx_data = readCorrelationCoefficientFile(Sx_data, logfile, data, true);
+
+  // create the column matrix from the covariance matrix
+  int rowsize = cx_data.rowHeaders.size();
+  int colsize = cx_data.columnHeaders.size();
+  double *tempSx = (double*) calloc(rowsize * colsize, sizeof(double));
+  initColumnMatrix(cx_data.data, rowsize, colsize, tempSx);
+  matrixData reconciled_Sx = {rowsize, colsize, tempSx};
+
+
+  logfile << "\n\nInitial Data \n" << "=============\n";
+  printMatrixWithHeaders(reconciled_x.data, reconciled_x.rows, reconciled_x.column, Sx_data.headers, "Reconciled_X", logfile);
+  //printCorelationMatrix(reconciled_Sx.data, reconciled_Sx.rowHeaders, reconciled_Sx.columnHeaders, "Reconciled_Sx", logfile, warningCorrelationData);
+  printMatrixWithHeaders(reconciled_Sx.data, reconciled_Sx.rows, reconciled_Sx.column, Sx_data.headers, "Reconciled_Sx", logfile);
+
+  // set the inputs from csv file to simulationInfo datainputVars
+  for (int i = 0; i < reconciled_x.rows * reconciled_x.column; i++)
+  {
+    data->simulationInfo->datainputVars[i] = reconciled_x.data[i];
+  }
+
+  /* set the inputs via this special function generated for dataReconciliation
+   * which also sets inputs for models not involving top level inputs
+   */
+  data->callback->data_function(data, threadData);
+  // solve the system with reconciled input values got from D.1
+  data->callback->functionDAE(data, threadData);
+  // call the setc function which stores the results of boundary conditions variable
+  data->callback->setc_function(data, threadData);
+
+  // Compute the Jacobian Matrix F
+  matrixData jacF = getJacobianMatrixF(data, threadData, logfile, true);
+  printMatrix(jacF.data, jacF.rows, jacF.column, "F", logfile);
+
+  // Compute the Transpose of jacobian Matrix F
+  matrixData jacFt = getTransposeMatrix(jacF);
+  printMatrix(jacFt.data, jacFt.rows, jacFt.column, "Ft", logfile);
+
+  /*
+   * Compute St = jacF*reconciles_Sx*jacFt
+   */
+  // F*reconciledSx
+  double *tmpMatrixAf = (double *)calloc(jacF.rows * reconciled_Sx.column, sizeof(double));
+  solveMatrixMultiplication(jacF.data, reconciled_Sx.data, jacF.rows, jacF.column, reconciled_Sx.rows, reconciled_Sx.column, tmpMatrixAf, logfile, data);
+  printMatrix(tmpMatrixAf, jacF.rows, reconciled_Sx.column, "F*reconciled_Sx", logfile);
+
+  //(F*reconciledSx)*ftranspose
+  double *S_t = (double*) calloc(jacF.rows * jacFt.column, sizeof(double));
+  solveMatrixMultiplication(tmpMatrixAf, jacFt.data, jacF.rows, jacF.column, jacFt.rows, jacFt.column, S_t, logfile, data);
+  printMatrix(S_t, jacF.rows, jacFt.column, "(s_t = F*reconciled_Sx*Ft)", logfile);
+
+  /*
+   * Calculate half width Confidence interval
+   * W=lambda*sqrt(S_t)
+   * where lamba = 1.96 and
+   * S_t - diagonal elements of S_t
+   */
+  double *reconSt_diag = (double*) calloc (jacF.rows * 1, sizeof(double));
+  getDiagonalElements(S_t, jacF.rows, jacFt.column, reconSt_diag);
+
+  if (ACTIVE_STREAM(LOG_JAC))
+  {
+    logfile << "Calculations of half-width confidence interval" << "\n";
+    logfile << "===============================================\n";
+    printMatrix(reconSt_diag, jacF.rows, 1, "S_t_Diagonal", logfile);
+  }
+
+  calculateSquareRoot(reconSt_diag, jacF.rows);
+
+  if (ACTIVE_STREAM(LOG_JAC))
+  {
+    printMatrix(reconSt_diag, jacF.rows, 1, "S_t_SquareRoot", logfile);
+  }
+
+  scaleVector(jacF.rows, 1, 1.96, reconSt_diag);
+
+  // check for BoundaryConditionVars.txt file exists to generate the html report
+  std::string boundaryConditionsVarsFilename = string(data->modelData->modelName) +  "_BoundaryConditionVars.txt";
+  vector<std::string> boundaryConditionVars;
+
+  ifstream boundaryConditionVarsip(boundaryConditionsVarsFilename);
+  string line;
+  if (boundaryConditionVarsip.good())
+  {
+    while (boundaryConditionVarsip.good())
+    {
+      getline(boundaryConditionVarsip, line);
+      if (!line.empty())
+      {
+        //std::cout << "\n reading nonVariables of interest : " << line;
+        boundaryConditionVars.push_back(line);
+      }
+    }
+    boundaryConditionVarsip.close();
+    omc_unlink(boundaryConditionsVarsFilename.c_str());
+  }
+
+  printMatrixWithHeaders(reconSt_diag, jacF.rows, 1, boundaryConditionVars, "Half-width Confidence Interval(1.96*S_t_SquareRoot)", logfile);
+
+  // allocate data for boundaryconditions vars simulation results
+  double *boundaryConditionVarsResults = (double *)calloc(data->modelData->nSetcVars, sizeof(double));
+  int t = 0;
+  for (int i = data->modelData->nSetcVars; i > 0; i--)
+  {
+    boundaryConditionVarsResults[t] = data->simulationInfo->setcVars[i - 1];
+    t++;
+  }
+
+  printBoundaryConditionsResults(boundaryConditionVarsResults, reconSt_diag,  jacF.rows, 1, boundaryConditionVars, "Final Results", logfile);
+
+  // create html report for boundary conditions
+  createHtmlReportForBoundaryConditions(data, boundaryConditionVars, boundaryConditionVarsResults, reconSt_diag);
+
+  logfile << "*****Completed***********\n";
+  logfile << "|  info    |   " << "Reconcile Boundary Conditions Completed! \n";
+  logfile.flush();
+  logfile.close();
+
+  // free the memory
+  free(reconciled_Sx.data);
+  free(reconciled_x.data);
+  free(tmpMatrixAf);
+  free(S_t);
+  free(jacF.data);
+  free(jacFt.data);
+  free(reconSt_diag);
+  free(boundaryConditionVarsResults);
   TRACE_POP
   return 0;
 }
