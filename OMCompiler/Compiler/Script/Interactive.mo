@@ -17529,7 +17529,10 @@ algorithm
       //print("License File is : " + licenseFile + "\n");
       features := getFeaturesAnnotation(topClassNameQualified, parsed);
       for feature in features loop
-        Parser.checkLVEToolFeature(lveInstance, feature);
+        if not Parser.checkLVEToolFeature(lveInstance, feature) then
+          topClassNamesQualified := {};
+          return;
+        end if;
       end for;
     end for;
     Parser.stopLibraryVendorExecutable(lveInstance);
