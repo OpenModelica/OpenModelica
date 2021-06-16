@@ -1879,6 +1879,79 @@ public
     end match;
   end getName;
 
+  function enumLiteralPath
+    input Expression exp;
+    output Absyn.Path path;
+  protected
+    String name;
+    Absyn.Path ty_path;
+  algorithm
+    ENUM_LITERAL(name = name, ty = Type.ENUMERATION(typePath = ty_path)) := exp;
+    path := AbsynUtil.suffixPath(ty_path, name);
+  end enumLiteralPath;
+
+  function toAbsynOpt
+    input Option<Expression> exp;
+    output Option<Absyn.Exp> aexp;
+  algorithm
+    aexp := match exp
+      local
+        Expression e;
+
+      case SOME(e) then SOME(toAbsyn(e));
+      else NONE();
+    end match;
+  end toAbsynOpt;
+
+  function toAbsyn
+    input Expression exp;
+    output Absyn.Exp aexp;
+  algorithm
+    aexp := match exp
+      local
+        Type ty;
+
+      case INTEGER() then Absyn.Exp.INTEGER(exp.value);
+      case REAL() then Absyn.Exp.REAL(String(exp.value));
+      case STRING() then Absyn.Exp.STRING(exp.value);
+      case BOOLEAN() then Absyn.Exp.BOOL(exp.value);
+      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
+        then Absyn.Exp.CREF(AbsynUtil.pathToCref(enumLiteralPath(exp)));
+      case CLKCONST() then ClockKind.toAbsyn(exp.clk);
+      case CREF() then Absyn.Exp.CREF(ComponentRef.toAbsyn(exp.cref));
+      case TYPENAME() then Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT(Type.toString(exp.ty), {}));
+      case ARRAY() then Absyn.Exp.ARRAY(list(toAbsyn(e) for e in exp.elements));
+      case MATRIX() then Absyn.Exp.MATRIX(list(list(toAbsyn(e) for e in l) for l in exp.elements));
+      case RANGE() then Absyn.Exp.RANGE(toAbsyn(exp.start), toAbsynOpt(exp.step), toAbsyn(exp.stop));
+      case TUPLE() then Absyn.Exp.TUPLE(list(toAbsyn(e) for e in exp.elements));
+      case RECORD() then AbsynUtil.makeCall(AbsynUtil.pathToCref(exp.path), list(toAbsyn(e) for e in exp.elements));
+      case CALL() then Call.toAbsyn(exp.call);
+      case SIZE() then AbsynUtil.makeCall(Absyn.ComponentRef.CREF_IDENT("size", {}),
+        if isSome(exp.dimIndex) then {toAbsyn(Util.getOption(exp.dimIndex))} else {});
+      case END() then Absyn.Exp.END();
+      case BINARY() then Absyn.Exp.BINARY(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case UNARY() then Absyn.Exp.UNARY(Operator.toAbsyn(exp.operator), toAbsyn(exp.exp));
+      case LBINARY() then Absyn.Exp.LBINARY(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case LUNARY() then Absyn.Exp.LUNARY(Operator.toAbsyn(exp.operator), toAbsyn(exp.exp));
+      case RELATION() then Absyn.Exp.RELATION(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case IF() then Absyn.Exp.IFEXP(toAbsyn(exp.condition), toAbsyn(exp.trueBranch), toAbsyn(exp.falseBranch), {});
+      case CAST() then toAbsyn(exp.exp);
+      case BOX() then toAbsyn(exp.exp);
+      case UNBOX() then toAbsyn(exp.exp);
+      case MUTABLE() then toAbsyn(Mutable.access(exp.exp));
+      case PARTIAL_FUNCTION_APPLICATION()
+        then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
+          Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
+        then
+          fail();
+
+    end match;
+  end toAbsyn;
+
   function toDAEOpt
     input Option<Expression> exp;
     output Option<DAE.Exp> dexp;
@@ -1900,19 +1973,16 @@ public
   algorithm
     dexp := match exp
       local
-        Type ty;
         DAE.Operator daeOp;
         Boolean swap, negate;
         DAE.Exp dae1, dae2;
-        list<String> names;
         Function.Function fn;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
       case STRING() then DAE.SCONST(exp.value);
       case BOOLEAN() then DAE.BCONST(exp.value);
-      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
-        then DAE.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
+      case ENUM_LITERAL() then DAE.ENUM_LITERAL(enumLiteralPath(exp), exp.index);
 
       case CLKCONST()
         then DAE.CLKCONST(ClockKind.toDAE(exp.clk));

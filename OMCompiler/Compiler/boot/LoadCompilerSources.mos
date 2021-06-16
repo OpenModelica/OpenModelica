@@ -354,6 +354,7 @@ if true then /* Suppress output */
     "../NFFrontEnd/NFFlatModel.mo",
     "../NFFrontEnd/NFFlatten.mo",
     "../NFFrontEnd/NFFunctionDerivative.mo",
+    "../NFFrontEnd/NFFunctionInverse.mo",
     "../NFFrontEnd/NFFunction.mo",
     "../NFFrontEnd/NFHashTable3.mo",
     "../NFFrontEnd/NFHashTableCG.mo",

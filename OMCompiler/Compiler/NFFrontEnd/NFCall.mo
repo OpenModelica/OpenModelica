@@ -763,6 +763,72 @@ public
     end match;
   end typedString;
 
+  function toAbsyn
+    input Call call;
+    output Absyn.Exp absynCall;
+  algorithm
+    absynCall := match call
+      local
+        list<Absyn.Exp> pargs;
+        list<Absyn.NamedArg> nargs;
+
+      case UNTYPED_CALL()
+        algorithm
+          pargs := list(Expression.toAbsyn(arg) for arg in call.arguments);
+          nargs := list(Absyn.NamedArg.NAMEDARG(Util.tuple21(arg),
+            Expression.toAbsyn(Util.tuple22(arg))) for arg in call.named_args);
+        then
+          AbsynUtil.makeCall(ComponentRef.toAbsyn(call.ref), pargs, nargs);
+
+      case ARG_TYPED_CALL()
+        algorithm
+          pargs := list(Expression.toAbsyn(arg.value) for arg in call.positional_args);
+          nargs := list(Absyn.NamedArg.NAMEDARG(Util.getOption(arg.name),
+            Expression.toAbsyn(arg.value)) for arg in call.named_args);
+        then
+          AbsynUtil.makeCall(ComponentRef.toAbsyn(call.ref), pargs, nargs);
+
+      case TYPED_CALL()
+        algorithm
+          pargs := list(Expression.toAbsyn(arg) for arg in call.arguments);
+        then
+          AbsynUtil.makeCall(AbsynUtil.pathToCref(Function.name(call.fn)), pargs);
+
+      case UNTYPED_ARRAY_CONSTRUCTOR()
+        then Absyn.Exp.CALL(Absyn.ComponentRef.CREF_IDENT("array", {}), toAbsynIterators(call.exp, call.iters), {});
+
+      case TYPED_ARRAY_CONSTRUCTOR()
+        then Absyn.Exp.CALL(Absyn.ComponentRef.CREF_IDENT("array", {}), toAbsynIterators(call.exp, call.iters), {});
+
+      case UNTYPED_REDUCTION()
+        then Absyn.Exp.CALL(ComponentRef.toAbsyn(call.ref), toAbsynIterators(call.exp, call.iters), {});
+
+      case TYPED_REDUCTION()
+        then Absyn.Exp.CALL(AbsynUtil.pathToCref(Function.name(call.fn)), toAbsynIterators(call.exp, call.iters), {});
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown call", sourceInfo());
+        then
+          fail();
+    end match;
+  end toAbsyn;
+
+  function toAbsynIterators
+    input Expression iterExp;
+    input list<tuple<InstNode, Expression>> iters;
+    output Absyn.FunctionArgs args;
+  algorithm
+    args := Absyn.FunctionArgs.FOR_ITER_FARG(
+      Expression.toAbsyn(iterExp),
+      Absyn.ReductionIterType.COMBINE(),
+      list(Absyn.ForIterator.ITERATOR(
+          InstNode.name(Util.tuple21(i)),
+          NONE(),
+          SOME(Expression.toAbsyn(Util.tuple22(i)))
+        ) for i in iters));
+  end toAbsynIterators;
+
   function toDAE
     input NFCall call;
     output DAE.Exp daeCall;

@@ -159,7 +159,7 @@ algorithm
   attr := DAE.FUNCTION_ATTRIBUTES_DEFAULT;
   status := Pointer.create(FunctionStatus.INITIAL);
   InstNode.cacheAddFunc(node, Function.FUNCTION(path, ctor_node, inputs,
-    {out_rec}, locals, {}, Type.UNKNOWN(), attr, {}, status, Pointer.create(0)), false);
+    {out_rec}, locals, {}, Type.UNKNOWN(), attr, {}, {}, status, Pointer.create(0)), false);
 end instDefaultConstructor;
 
 function checkLocalFieldOrder

@@ -40,6 +40,7 @@ import Type = NFType;
 import NFPrefixes.*;
 import List;
 import FunctionDerivative = NFFunctionDerivative;
+import FunctionInverse = NFFunctionInverse;
 import NFModifier.Modifier;
 
 protected
@@ -263,6 +264,7 @@ uniontype Function
     Type returnType;
     DAE.FunctionAttributes attributes;
     list<FunctionDerivative> derivatives;
+    list<FunctionInverse> inverses;
     Pointer<FunctionStatus> status;
     Pointer<Integer> callCounter "Used during function evaluation to limit recursion.";
   end FUNCTION;
@@ -283,7 +285,7 @@ uniontype Function
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
-      attr, {}, Pointer.create(status), Pointer.create(0));
+      attr, {}, {}, Pointer.create(status), Pointer.create(0));
   end new;
 
   function lookupFunctionSimple
@@ -420,7 +422,6 @@ uniontype Function
         Absyn.ComponentRef cr;
         InstNode sub_fnNode;
         list<Function> funcs;
-        list<FunctionDerivative> fn_ders;
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
@@ -466,6 +467,7 @@ uniontype Function
           fn := new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fn.derivatives := FunctionDerivative.instDerivatives(fnNode, fn);
+          fn.inverses := FunctionInverse.instInverses(fnNode, fn);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
         then
           (fnNode, specialBuiltin);
@@ -768,11 +770,16 @@ uniontype Function
       else
         annMod := SCode.NOMOD();
       end if;
-      // Generate derivative annotations from the instantiated model. Paths have changed.
-      annMod := SCodeUtil.filterSubMods(annMod, function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative"}));
+      // Generate derivative/inverse annotations from the instantiated model. Paths have changed.
+      annMod := SCodeUtil.filterSubMods(annMod,
+        function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative", "inverse"}));
 
       for derivative in fn.derivatives loop
         annMod := SCodeUtil.prependSubModToMod(FunctionDerivative.toSubMod(derivative), annMod);
+      end for;
+
+      for inverse in fn.inverses loop
+        annMod := SCodeUtil.prependSubModToMod(FunctionInverse.toSubMod(inverse), annMod);
       end for;
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
@@ -1427,6 +1434,11 @@ uniontype Function
       FunctionDerivative.typeDerivative(fn_der);
     end for;
 
+    // Type any inverses of the function.
+    if not listEmpty(fn.inverses) then
+      fn.inverses := list(FunctionInverse.typeInverse(i) for i in fn.inverses);
+    end if;
+
     // If the function is pure, check that it doesn't contain any impure calls.
     if not isImpure(fn) then
       pure := foldExp(fn, function checkPureCall(fn = fn), true);
@@ -1784,7 +1796,9 @@ uniontype Function
     ity := fn.attributes.inline;
     ty := makeDAEType(fn);
     unused_inputs := analyseUnusedParameters(fn);
-    defs := def :: list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives);
+    defs := list(FunctionInverse.toDAE(fn_inv) for fn_inv in fn.inverses);
+    defs := listAppend(list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives), defs);
+    defs := def :: defs;
     daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity, unused_inputs,
       ElementSource.createElementSource(InstNode.info(fn.node)),
       SCodeUtil.getElementComment(InstNode.definition(fn.node)));
