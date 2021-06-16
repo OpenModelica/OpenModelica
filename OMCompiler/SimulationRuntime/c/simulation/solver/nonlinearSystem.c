@@ -888,16 +888,17 @@ int solveNLS(DATA *data, threadData_t *threadData, int sysNumber)
       if (success){
         success=2;
       }
-    }
 
-    if (!success) {
-      nonlinsys->solverData = mixedSolverData->hybridData;
-      success = solveHybrd(data, threadData, sysNumber);
-    }
+      if (!success) {
+        nonlinsys->solverData = mixedSolverData->hybridData;
+        success = solveHybrd(data, threadData, sysNumber);
+      }
 
-    /* update iteration variables of nonlinsys->nlsx */
-    if (success){
-      nonlinsys->getIterationVars(data, nonlinsys->nlsx);
+      /* update iteration variables of nonlinsys->nlsx */
+      if (success){
+        /* phi: why do we need to do this, and why does it change the value? */
+        nonlinsys->getIterationVars(data, nonlinsys->nlsx);
+      }
     }
 
     /*catch */

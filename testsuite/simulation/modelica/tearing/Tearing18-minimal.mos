@@ -29,9 +29,6 @@ val(x8,1.0); getErrorString();
 //     resultFile = "Tearing18_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Tearing18', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
-// assert            | debug   | Solving non-linear system 34 failed at time=0.086.
-// |                 | |       | For more information please use -lv LOG_NLS.
-// stdout            | warning | Integrator attempt to handle a problem with a called assert.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
@@ -82,16 +79,16 @@ val(x8,1.0); getErrorString();
 // "
 // -0.9589242746631385
 // ""
-// 1.489535057843215
+// 1.489535057843214
 // ""
-// -0.294476257366079
+// -0.2944762573660781
 // ""
 // -1.018493952318733
 // ""
-// 0.1102524957021611
+// 0.1102524957021606
 // ""
-// 3.489535057843215
+// 3.489535057843214
 // ""
-// 0.340964233657884
+// 0.3409642336578833
 // ""
 // endResult
