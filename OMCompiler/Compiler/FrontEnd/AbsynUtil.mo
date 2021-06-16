@@ -6590,5 +6590,14 @@ algorithm
   end match;
 end crefIsWild;
 
+public function makeCall
+  input Absyn.ComponentRef name;
+  input list<Absyn.Exp> posArgs;
+  input list<Absyn.NamedArg> namedArgs = {};
+  output Absyn.Exp callExp;
+algorithm
+  callExp := Absyn.Exp.CALL(name, Absyn.FunctionArgs.FUNCTIONARGS(posArgs, namedArgs), {});
+end makeCall;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

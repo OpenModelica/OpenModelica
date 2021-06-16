@@ -624,6 +624,24 @@ public
     end match;
   end mapFoldExpShallow;
 
+  function toAbsyn
+    input Subscript subscript;
+    output Absyn.Subscript asubscript;
+  algorithm
+    asubscript := match subscript
+      case RAW_SUBSCRIPT() then subscript.subscript;
+      case UNTYPED() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.exp));
+      case INDEX() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.index));
+      case SLICE() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.slice));
+      case WHOLE() then Absyn.Subscript.NOSUB();
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " failed on unknown subscript", sourceInfo());
+        then
+          fail();
+    end match;
+  end toAbsyn;
+
   function toDAE
     input Subscript subscript;
     output DAE.Subscript daeSubscript;

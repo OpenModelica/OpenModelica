@@ -746,9 +746,9 @@ public constant ErrorTypes.Message INVALID_WHEN_STATEMENT_CONTEXT = ErrorTypes.M
   Gettext.gettext("A when-statement may not be used inside a function or a while, if, or for-clause."));
 public constant ErrorTypes.Message MISSING_FUNCTION_DERIVATIVE_NAME = ErrorTypes.MESSAGE(337, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("Derivative annotation for function ‘%s‘ does not specify a derivative function."));
-public constant ErrorTypes.Message INVALID_FUNCTION_DERIVATIVE_ATTR = ErrorTypes.MESSAGE(338, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
-  Gettext.gettext("‘%s‘ is not a valid function derivative attribute."));
-public constant ErrorTypes.Message INVALID_FUNCTION_DERIVATIVE_INPUT = ErrorTypes.MESSAGE(339, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message INVALID_FUNCTION_ANNOTATION_ATTR = ErrorTypes.MESSAGE(338, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
+  Gettext.gettext("‘%s‘ is not a valid function %s attribute."));
+public constant ErrorTypes.Message INVALID_FUNCTION_ANNOTATION_INPUT = ErrorTypes.MESSAGE(339, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("‘%s‘ is not an input of function ‘%s‘."));
 public constant ErrorTypes.Message OPERATOR_OVERLOADING_ONE_OUTPUT_ERROR = ErrorTypes.MESSAGE(340, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Operator %s must have exactly one output."));
@@ -850,6 +850,8 @@ public constant ErrorTypes.Message CONVERSION_MISSING_PLACEHOLDER_VALUE = ErrorT
   Gettext.gettext("No replacement value for placeholder ‘%s‘ could be found."));
 public constant ErrorTypes.Message UNSUPPORTED_RECORD_REORDERING = ErrorTypes.MESSAGE(389, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("The record constructor for ‘%s‘ requires reordering of local fields to initialize them in the correct order, which is not yet supported."));
+public constant ErrorTypes.Message FUNCTION_INVALID_OUTPUTS_FOR_INVERSE = ErrorTypes.MESSAGE(390, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
+  Gettext.gettext("Invalid inverse annotation for ‘%s‘, only functions with exactly one output may have an inverse."));
 
 public constant ErrorTypes.Message INITIALIZATION_NOT_FULLY_SPECIFIED = ErrorTypes.MESSAGE(496, ErrorTypes.TRANSLATION(), ErrorTypes.WARNING(),
   Gettext.gettext("The initial conditions are not fully specified. %s."));

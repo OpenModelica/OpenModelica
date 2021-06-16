@@ -106,6 +106,7 @@ match functions
     <%dumpExternalDecl(externalDecl)%>
     >>
   case FUNCTION_DER_MAPPER(__) then ''
+  case FUNCTION_INVERSE(__) then ''
 end dumpFunctionDefinition;
 
 template dumpExternalDecl(ExternalDecl externalDecl)
