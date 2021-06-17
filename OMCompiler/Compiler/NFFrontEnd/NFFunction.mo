@@ -264,7 +264,7 @@ uniontype Function
     Type returnType;
     DAE.FunctionAttributes attributes;
     list<FunctionDerivative> derivatives;
-    list<FunctionInverse> inverses;
+    array<FunctionInverse> inverses;
     Pointer<FunctionStatus> status;
     Pointer<Integer> callCounter "Used during function evaluation to limit recursion.";
   end FUNCTION;
@@ -285,7 +285,7 @@ uniontype Function
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
-      attr, {}, {}, Pointer.create(status), Pointer.create(0));
+      attr, {}, listArray({}), Pointer.create(status), Pointer.create(0));
   end new;
 
   function lookupFunctionSimple
@@ -1435,9 +1435,7 @@ uniontype Function
     end for;
 
     // Type any inverses of the function.
-    if not listEmpty(fn.inverses) then
-      fn.inverses := list(FunctionInverse.typeInverse(i) for i in fn.inverses);
-    end if;
+    Array.mapNoCopy(fn.inverses, FunctionInverse.typeInverse);
 
     // If the function is pure, check that it doesn't contain any impure calls.
     if not isImpure(fn) then
