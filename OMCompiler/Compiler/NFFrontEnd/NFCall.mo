@@ -172,6 +172,7 @@ public
           if(BuiltinCall.needSpecialHandling(call)) then
             (outExp, ty, var, pur) := BuiltinCall.typeSpecial(call, context, info);
           else
+            checkNotPartial(cref, context, info);
             ty_call := typeMatchNormalCall(call, context, info);
             ty := typeOf(ty_call);
             var := variability(ty_call);
@@ -199,6 +200,7 @@ public
 
       case UNTYPED_REDUCTION()
         algorithm
+          checkNotPartial(call.ref, context, info);
           (ty_call, ty, var, pur) := typeReduction(call, context, info);
         then
           Expression.CALL(ty_call);
@@ -233,6 +235,18 @@ public
         then fail();
     end match;
   end typeCall;
+
+  function checkNotPartial
+    input ComponentRef fnRef;
+    input InstContext.Type context;
+    input SourceInfo info;
+  algorithm
+    if InstNode.isPartial(ComponentRef.node(fnRef)) and not InstContext.inRelaxed(context) then
+      Error.addSourceMessage(Error.PARTIAL_FUNCTION_CALL,
+        {ComponentRef.toString(fnRef)}, info);
+      fail();
+    end if;
+  end checkNotPartial;
 
   function typeNormalCall
     input output NFCall call;
