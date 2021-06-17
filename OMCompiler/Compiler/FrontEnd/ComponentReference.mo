@@ -1740,6 +1740,39 @@ algorithm
   DAE.CREF_QUAL(componentRef = outCref) := inCref;
 end crefRest;
 
+protected function crefTypeFullComputeDims
+  input list<DAE.Dimension> inDims;
+  input list<DAE.Subscript> inSubs;
+  output list<DAE.Dimension> outDims;
+protected
+  list<DAE.Dimension> dims;
+  DAE.Dimension dim, slice_dim;
+algorithm
+  dims := inDims;
+  outDims := {};
+  for sub in inSubs loop
+    dim::dims := dims;
+
+    _ := match sub
+      case DAE.INDEX() then ();
+
+      case DAE.SLICE() algorithm
+        slice_dim::_ := Types.getDimensions(Expression.typeof(sub.exp));
+        outDims := slice_dim::outDims;
+      then ();
+
+      case DAE.WHOLEDIM() algorithm
+        outDims := dim::outDims;
+      then ();
+
+    end match;
+
+  end for;
+
+  outDims := listAppend(outDims, dims) annotation(__OpenModelica_DisableListAppendWarning=true);
+
+end crefTypeFullComputeDims;
+
 public function crefTypeFull2
   "Helper function to crefTypeFull."
   input DAE.ComponentRef inCref;
@@ -1757,7 +1790,7 @@ algorithm
     case DAE.CREF_IDENT(identType = ty, subscriptLst = subs)
       equation
         (ty,dims) = Types.flattenArrayType(ty);
-        dims = List.stripN(dims, listLength(subs));
+        dims = crefTypeFullComputeDims(dims, subs);
 
         if not listEmpty(accumDims) then
           dims = listReverse(List.append_reverse(dims, accumDims));
@@ -1767,7 +1800,7 @@ algorithm
     case DAE.CREF_QUAL(identType = ty, subscriptLst = subs, componentRef = cr)
       equation
         (ty,dims) = Types.flattenArrayType(ty);
-        dims = List.stripN(dims,listLength(subs));
+        dims = crefTypeFullComputeDims(dims, subs);
 
         (basety, dims) = crefTypeFull2(cr, List.append_reverse(dims, accumDims));
       then (basety, dims);
