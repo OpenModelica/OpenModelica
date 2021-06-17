@@ -55,9 +55,10 @@ public
   function instInverses
     input InstNode fnNode;
     input Function fn;
-    output list<FunctionInverse> invs = {};
+    output array<FunctionInverse> inverses;
   protected
     list<SCode.Mod> inv_mods;
+    list<FunctionInverse> invs = {};
   algorithm
     inv_mods := getInverseAnnotations(InstNode.definition(fnNode));
 
@@ -71,6 +72,8 @@ public
     for m in inv_mods loop
       invs := instInverseMod(m, fnNode, fn, invs);
     end for;
+
+    inverses := listArray(invs);
   end instInverses;
 
   function typeInverse
