@@ -314,6 +314,7 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
   int  i, j, row, col, stack_col, temp, ptr, eptr, stack_last,
   stop = 0, pcount = 1, stack_end_ptr, nunmatched = 0, nextunmatched = 0,
   current_col, inc = 1;
+  size_t curStackSize = n;
 
   memset(visited, 0, sizeof(int) * m);
   memcpy(lookahead, col_ptrs, sizeof(int) * n);
@@ -353,8 +354,17 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
               continue;
             }
 
-            row = col_ids[ptr]; visited[row] = pcount;
-            col = row_match[row]; stack[++stack_last] = col; colptrs[col] = col_ptrs[col];
+            row = col_ids[ptr];
+            visited[row] = pcount;
+            col = row_match[row];
+            if (++stack_last >= curStackSize) {
+              stack = realloc(stack, sizeof(int)*(curStackSize*=2));
+            }
+            stack[stack_last] = col;
+            if (col >= n) {
+              fprintf(stderr, "Reading outside of array row_match[%d]=%d, n=%d, m=%d\n", row, col, n, m);
+            }
+            colptrs[col] = col_ptrs[col];
           } else {
             row = col_ids[ptr]; visited[row] = pcount;
             while(row != -1){
@@ -407,8 +417,13 @@ void match_pf_fair(int* col_ptrs, int* col_ids, int* match, int* row_match, int 
               continue;
             }
 
-            row = col_ids[ptr]; visited[row] = pcount;
-            col = row_match[row]; stack[++stack_last] = col;
+            row = col_ids[ptr];
+            visited[row] = pcount;
+            col = row_match[row];
+            if (++stack_last >= curStackSize) {
+              stack = realloc(stack, sizeof(int)*(curStackSize*=2));
+            }
+            stack[stack_last] = col;
             colptrs[col] = col_ptrs[col + 1] - 1;
 
           } else {
