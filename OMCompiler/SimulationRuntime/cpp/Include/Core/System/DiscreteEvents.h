@@ -30,6 +30,10 @@ public:
   int& pre(const int& var);
   bool& pre(const bool& var);
   std::string& pre(const std::string& var);
+  template<typename T>
+  WrapArray<T> pre(const BaseArray<T>& arr) {
+    return _sim_vars->getPreArr(arr);
+  }
   //Implementation of the Modelica edge  operator
   bool edge(double& var);
   bool edge(int& var);

@@ -148,10 +148,6 @@ end subscriptStr;
 template contextCref(ComponentRef cr, Context context,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates code for a component reference depending on which context we're in."
 ::=
-match cr
-case CREF_QUAL(ident = "$PRE") then
-   '_discrete_events->pre(<%contextCref(componentRef,context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)'
- else
   let &varDeclsCref = buffer "" /*BUFD*/
   match context
   case FUNCTION_CONTEXT(__) then crefStr(cr)
@@ -212,7 +208,10 @@ end crefToCStrWithIndex;
 
 template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
+  case CREF_QUAL(ident = "$PRE") then
+    '_discrete_events->pre(<%cref1(componentRef, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>)'
+  case CREF_IDENT(ident = "xloc") then
+    '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
   case CREF_IDENT(ident = "time") then
     match context
     case  ALGLOOP_CONTEXT(genInitialisation=false)
@@ -745,7 +744,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
 
   case 8 then
     match ty
-  case T_ARRAY(dims=dims) then'BaseArray<<%expTypeShort(ty)%>>&'
+  case T_ARRAY(dims=dims) then 'const BaseArray<<%expTypeShort(ty)%>>&'
   else expTypeFlag(ty, 9)
     end match
 

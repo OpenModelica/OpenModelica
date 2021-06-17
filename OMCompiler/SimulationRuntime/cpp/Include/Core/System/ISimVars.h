@@ -61,13 +61,18 @@ public:
     virtual bool& initBoolVar(size_t i)= 0;
     virtual string& initStringVar(size_t i)= 0;
 
-     /*Methods for pre- variables*/
-     virtual void savePreVariables() = 0;
-     virtual void initPreVariables()= 0;
-     /*access methods for pre-variable*/
-     virtual double& getPreVar(const double& var)=0;
-     virtual int& getPreVar(const int& var)=0;
-     virtual bool& getPreVar(const bool& var)=0;
-     virtual std::string& getPreVar(const std::string& var)=0;
+    /*Methods for pre- variables*/
+    virtual void savePreVariables() = 0;
+    virtual void initPreVariables() = 0;
+    /*access methods for pre-variable*/
+    virtual double& getPreVar(const double& var) = 0;
+    virtual int& getPreVar(const int& var) = 0;
+    virtual bool& getPreVar(const bool& var) = 0;
+    virtual std::string& getPreVar(const std::string& var) = 0;
+    /*access methods for pre-array*/
+    virtual WrapArray<double> getPreArr(const BaseArray<double>& arr) = 0;
+    virtual WrapArray<int> getPreArr(const BaseArray<int>& arr) = 0;
+    virtual WrapArray<bool> getPreArr(const BaseArray<bool>& arr) = 0;
+    virtual WrapArray<std::string> getPreArr(const BaseArray<std::string>& arr) = 0;
 };
 /** @} */ // end of coreSystem
