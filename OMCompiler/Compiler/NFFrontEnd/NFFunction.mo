@@ -347,13 +347,6 @@ uniontype Function
   algorithm
     fn_ref := lookupFunction(functionName, scope, context, info);
     (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, context, info);
-
-    if (InstNode.isClass(ComponentRef.node(fn_ref)) and InstNode.isPartial(fn_node)) and
-       not InstContext.inRelaxed(context) then
-      Error.addSourceMessage(Error.PARTIAL_FUNCTION_CALL,
-        {InstNode.name(fn_node)}, info);
-      fail();
-    end if;
   end instFunction;
 
   function instFunctionRef
