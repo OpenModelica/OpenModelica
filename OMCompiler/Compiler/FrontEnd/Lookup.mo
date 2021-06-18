@@ -3296,7 +3296,7 @@ algorithm
 
         // print("CREF EB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
 
-        DAE.RECORD(_, exps, comp, _) = Expression.subscriptExp(e, ss);
+        DAE.RECORD(_, exps, comp, _) = Expression.applyExpSubscripts(e, ss);
 
         e = listGet(exps, List.position(cId, comp));
         b = DAE.EQBOUND(e, NONE(), c, s);
@@ -3323,7 +3323,7 @@ algorithm
         true = Types.isRecord(tyElement);
         // print("CREF VB: " + ComponentReference.printComponentRefStr(inCref) + "\nTyParent: " + Types.printTypeStr(inParentType) + "\nParent:\n" + Types.printBindingStr(inParentBinding) + "\nChild:\n" + Types.printBindingStr(inChildBinding) + "\n");
         e = ValuesUtil.valueExp(v);
-        DAE.RECORD(_, exps, comp, _) = Expression.subscriptExp(e, ss);
+        DAE.RECORD(_, exps, comp, _) = Expression.applyExpSubscripts(e, ss);
 
         e = listGet(exps, List.position(cId, comp));
 
