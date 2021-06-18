@@ -42,56 +42,91 @@
 #include <stdlib.h>
 
 
-/* the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value}) */
-
-/*
- * Find row with greatest time that is smaller than or equal to 'time'
- * Conditions:
- *  the buffer in 'delayStruct' is not empty
- *  'time' is smaller than the last entry in 'delayStruct'
+/**
+ * @brief Find row with greatest time that is smaller than or equal to 'time'
+ *
+ * @param[in] time          Time value to search for.
+ * @param[in] delayStruct   Ringbuffer with stored delay values.
+ *                          Looks like a matrix with columns of type TIME_AND_VALUE.
+ * @param[out] foundEvent   Boolean indicating if an event was found while searching for time.
+ * @return int              Row with maximum time value smaller equal to time.
  */
-static int findTime(double time, RINGBUFFER *delayStruct)
+static int findTime(double time, RINGBUFFER *delayStruct, int foundEvent)
 {
-  int start = 0;
   int end = ringBufferLength(delayStruct);
-  double t;
+  int pos = end-1;
+  double curTime, prevTime;
+  TIME_AND_VALUE* bufferElem;
 
+  infoStreamPrint(LOG_DELAY, 0, "findTime %e", time);
+  foundEvent = 0 /* false */;
 
-  infoStreamPrint(LOG_EVENTS_V, 0, "findTime %e", time);
-  do
-  {
-    int i = (start + end) / 2;
-    t = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
-    infoStreamPrint(LOG_EVENTS_V, 0, "time(%d, %d)[%d] = %e", start, end, i, t);
-    if(t > time)
-      end = i;
-    else
-      start = i;
-  }while(t != time && end > start + 1);
-  infoStreamPrint(LOG_EVENTS_V, 0, "return time[%d, %d] = %e", start, end, t);
-  return (start);
+  /* Check if ring buffer is valid */
+  assertStreamPrint(NULL, ringBufferLength(delayStruct) > 0, "delay: In function findTime\nEmpty ring buffer.");
+  bufferElem = getRingData(delayStruct, pos);
+  curTime = bufferElem->t;
+  assertStreamPrint(NULL, time < curTime, "delay: In function findTime\nSearching for time value that is bigger then end of ring buffer.");
+
+  /* Search for time starting at end of ring buffer */
+  while(pos > 0) {
+    pos--;
+    bufferElem = getRingData(delayStruct, pos);
+    prevTime = curTime;
+    curTime = bufferElem->t;
+    /* Check for an event */
+    if (fabs(prevTime-curTime)< 1e-12) {
+      // TODO: I'm finding events to early...
+      foundEvent = 1 /* true */;
+      infoStreamPrint(LOG_EVENTS, 0, "Found event stored at time %f while searching for %f", curTime, time);
+    }
+    if (curTime < time) {
+      // Found time in previous step
+      break;
+    }
+  }
+  assertStreamPrint(NULL, pos >= 0, "delay: In function findTime\nCould not find time");
+
+  infoStreamPrint(LOG_DELAY, 0, "return time[%d, %d] = %e", pos, end, curTime);
+  return pos;
 }
 
-void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
+
+/**
+ * @brief Store expression value in delay.
+ *
+ * @param data          Storing all simulation/model data.
+ * @param threadData    Used for error handling.
+ * @param exprNumber    Index of delay
+ * @param exprValue     Value to store in delay ringbuffer
+ * @param delayTime     Time to delay expValue.
+ * @param delayMax      Maximum allowed delay time, defaults to delayTime.
+ */
+void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax)
 {
-  int i;
+  int row;
+  int foundEvent;
+  double time = data->localData[0]->timeValue;
   TIME_AND_VALUE tpl;
 
-  /* Allocate more space for expressions */
   assertStreamPrint(threadData, exprNumber < data->modelData->nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
   assertStreamPrint(threadData, 0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
   assertStreamPrint(threadData, data->simulationInfo->startTime <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
 
+  /* Append expression value to delay ring buffer */
   tpl.t = time;
   tpl.value = exprValue;
+  // TODO: Add events as well
   appendRingData(data->simulationInfo->delayStructure[exprNumber], &tpl);
-  infoStreamPrint(LOG_EVENTS_V, 0, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
+  infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
 
-  /* dequeue not longer needed values */
-  i = findTime(time-delayMax+DBL_EPSILON,data->simulationInfo->delayStructure[exprNumber]);
-  if(i > 0){
-    dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], i-1);
-    infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, time-delayMax+DBL_EPSILON, delayTime);
+  /* Dequeue not longer needed values from ring buffer */
+  row = findTime(time-delayMax+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], foundEvent);
+  if(foundEvent) {
+    infoStreamPrint(LOG_EVENTS, 0, "Current time: %f.", data->localData[0]->timeValue);
+  }
+  if(row > 0){
+    dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row-1);
+    infoStreamPrint(LOG_DELAY, 0, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", row, time-delayMax+DBL_EPSILON, delayTime);
   }
 }
 
@@ -100,8 +135,9 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
 {
   RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
   int length = ringBufferLength(delayStruct);
+  int foundEvent;
 
-  infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
+  infoStreamPrint(LOG_DELAY, 0, "delayImpl: exprNumber = %d, exprValue = %g, time = %g, delayTime = %g", exprNumber, exprValue, time, delayTime);
 
   /* Check for errors */
 
@@ -110,7 +146,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
 
   if(time <= data->simulationInfo->startTime)
   {
-    infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: Entered at time < starting time: %g.", exprValue);
+    infoStreamPrint(LOG_DELAY, 0, "delayImpl: Entered at time < starting time: %g.", exprValue);
     return (exprValue);
   }
 
@@ -139,7 +175,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   if(time <= data->simulationInfo->startTime + delayTime)
   {
     double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
-    infoStreamPrint(LOG_EVENTS_V, 0, "findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res);
+    infoStreamPrint(LOG_DELAY, 0, "findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res);
     return res;
   }
   else
@@ -154,18 +190,18 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
     /* find the row for the lower limit */
     if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t)
     {
-      infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: find the row  %g = %g", timeStamp, ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t);
+      infoStreamPrint(LOG_DELAY, 0, "delayImpl: find the row  %g = %g", timeStamp, ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t);
       /* delay between the last accepted time step and the current time */
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->value;
       time1 = time;
       value1 = exprValue;
-      infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: times %g and %g", time0, time1);
-      infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: values %g and  %g", value0, value1);
+      infoStreamPrint(LOG_DELAY, 0, "delayImpl: times %g and %g", time0, time1);
+      infoStreamPrint(LOG_DELAY, 0, "delayImpl: values %g and  %g", value0, value1);
     }
     else
     {
-      i = findTime(timeStamp, delayStruct);
+      i = findTime(timeStamp, delayStruct, foundEvent);
       assertStreamPrint(threadData, i < length, "%d = i < length = %d", i, length);
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
@@ -180,11 +216,11 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
     }
     /* was it an exact match?*/
     if(time0 == timeStamp){
-      infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: Exact match at %g = %g", timeStamp, value0);
+      infoStreamPrint(LOG_DELAY, 0, "delayImpl: Exact match at %g = %g", timeStamp, value0);
 
       return value0;
     } else if(time1 == timeStamp) {
-      infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: Exact match at %g = %g", timeStamp, value1);
+      infoStreamPrint(LOG_DELAY, 0, "delayImpl: Exact match at %g = %g", timeStamp, value1);
 
       return value1;
     } else {
@@ -193,8 +229,8 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
       double dt0 = time1 - timeStamp;
       double dt1 = timeStamp - time0;
       double retVal = (value0 * dt0 + value1 * dt1) / timedif;
-      infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
-      infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
+      infoStreamPrint(LOG_DELAY, 0, "delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
+      infoStreamPrint(LOG_DELAY, 0, "delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
       return retVal;
     }
   }

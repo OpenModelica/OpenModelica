@@ -725,7 +725,7 @@ typedef struct SIMULATION_INFO
   INLINE_DATA* inlineData;
 
   /* delay vars */
-  RINGBUFFER **delayStructure;
+  RINGBUFFER **delayStructure;        /* Array of ring buffers for delay expressions */
   const char *OPENMODELICAHOME;
 
   CHATTERING_INFO chatteringInfo;

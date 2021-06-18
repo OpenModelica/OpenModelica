@@ -50,6 +50,7 @@ const char *LOG_STREAM_NAME[SIM_LOG_MAX] = {
   "LOG_DASSL",
   "LOG_DASSL_STATES",
   "LOG_DEBUG",
+  "LOG_DELAY",
   "LOG_DSS",
   "LOG_DSS_JAC",
   "LOG_DT",
@@ -101,6 +102,7 @@ const char *LOG_STREAM_DESC[SIM_LOG_MAX] = {
   "additional information about dassl solver",                                  /* LOG_DASSL */
   "outputs the states at every dassl call",                                     /* LOG_DASSL_STATES */
   "additional debug information",                                               /* LOG_DEBUG */
+  "debug information for delay operator",                                       /* LOG_DELAY */
   "outputs information about dynamic state selection",                          /* LOG_DSS */
   "outputs jacobian of the dynamic state selection",                            /* LOG_DSS_JAC */
   "additional information about dynamic tearing",                               /* LOG_DT */
