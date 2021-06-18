@@ -768,17 +768,17 @@ int findOppositeEndSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistrib
    * until distance between currentNode and edgeNode < 1.
    */
   if (isPositiveVelocity) {
-    edgeNodePosition = -posX;
+    edgeNodePosition = firstNodeData->position;
     currentNode = lastNode;
   } else {
-    edgeNodePosition = -posX+1;
+    edgeNodePosition = lastNodeData->position;
     currentNode = firstNode;
   }
   currentNodeData = (TRANSPORTED_QUANTITY_DATA*) dataDoubleEndedList(currentNode);
 
   currentDistance = fabs(currentNodeData->position - edgeNodePosition);
   if (currentDistance + SPATIAL_EPS < 1) {
-    errorStreamPrint(LOG_STDOUT, 0, "I don't think this case can happen, but we will see...!");
+    errorStreamPrint(LOG_STDOUT, 0, "Error for spatialDistribution in function findOppositeEndSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
     omc_throw_function(NULL);
     return walkedOverEvents;
   }
@@ -880,7 +880,7 @@ int pruneSpatialDistribution(SPATIAL_DISTRIBUTION_DATA* spatialDistribution, int
 
   currentDistance = fabs(currentNodeData->position - edgeNodeData->position);
   if (currentDistance + SPATIAL_EPS < 1) {
-    errorStreamPrint(LOG_STDOUT, 0, "I don't think this case can happen, but we will see...!");
+    errorStreamPrint(LOG_STDOUT, 0, "Error for spatialDistribution in function pruneSpatialDistribution.\nThis case should not be possible. Please open a bug reoprt about it.");
     omc_throw_function(NULL);
   }
 
