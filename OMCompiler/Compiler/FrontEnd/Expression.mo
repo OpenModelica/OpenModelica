@@ -1024,6 +1024,7 @@ algorithm
     case(DAE.CREF(cref, ty), _)
       equation
         cref = ComponentReference.subscriptCref(cref, inSubs);
+        ty = ComponentReference.crefTypeFull(cref);
       then
         DAE.CREF(cref, ty);
 
