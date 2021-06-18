@@ -257,10 +257,18 @@ public
       local
         list<Function> fnl;
         Boolean is_external;
+        InstContext.Type fn_context;
 
       case UNTYPED_CALL()
         algorithm
-          fnl := Function.typeRefCache(call.ref);
+          // Strip any contexts that don't apply inside the function itself.
+          if InstContext.inRelaxed(context) then
+            fn_context := InstContext.set(NFInstContext.FUNCTION, NFInstContext.RELAXED);
+          else
+            fn_context := NFInstContext.FUNCTION;
+          end if;
+
+          fnl := Function.typeRefCache(call.ref, fn_context);
         then
           typeArgs(call, context, info);
 
