@@ -11,6 +11,7 @@ clockedEventTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
+distributionsTest.mos \
 externalArrayInputTest.mos \
 mathFunctionsTest.mos \
 nameClashTest.mos \

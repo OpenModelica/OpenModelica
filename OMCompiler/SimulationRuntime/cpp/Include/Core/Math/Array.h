@@ -630,6 +630,184 @@ public:
 };
 
 /**
+ * Wrap external data with nelems unknown at compile time into array, implements BaseArray interface methods
+ * @param T type of the array elements
+ */
+template<typename T>
+class WrapArray : public BaseArray<T>
+{
+ public:
+  /**
+   * Constuctor for wrapper array storing a pointer
+   */
+  WrapArray(T* data, size_t nelems)
+    :BaseArray<T>(true, false)
+  {
+    _data = data;
+    _nelems = nelems;
+  }
+
+  /**
+   * Constuctor for wrapper array that
+   * holds a pointer to otherarray's data
+   */
+  WrapArray(const WrapArray<T>& otherarray)
+    :BaseArray<T>(true, false)
+  {
+    _data = otherarray._data;
+    _nelems = otherarray.getNumElems();
+  }
+
+  /**
+   * Default constuctor for wrapper array
+   */
+  WrapArray()
+    :BaseArray<T>(true, false)
+  {
+    _data = NULL; // no data assigned yet
+    _nelems = 0;
+  }
+
+  virtual ~WrapArray() {}
+
+  /**
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray const operator() call");
+  }
+
+  /**
+   * Index operator to write array element
+   * @param idx  vector of indices
+   */
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray operator() call");
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual std::vector<size_t> getDims() const
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray getDims call");
+  }
+
+  /**
+   * Return sizes of one dimension
+   */
+  virtual int getDim(size_t dim) const
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray getDim call");
+  }
+
+  /**
+   * Returns number of dimensions
+   */
+  virtual size_t getNumDims() const
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong WrapArray getNumDims call");
+  }
+
+  /**
+   * Resize array method
+   * @param dims vector with new dimension sizes
+   * wrapper array could not be resized
+   */
+  virtual void resize(const std::vector<size_t>& dims)
+  {
+    if (dims != this->getDims())
+      throw std::runtime_error("Cannot resize wrapper array!");
+  }
+
+  /**
+   * Assigns data to array
+   * @param data  new array data
+   * a.assign(data)
+   */
+  virtual void assign(const T* data)
+  {
+    if (_nelems > 0) {
+      if (_data == NULL)
+        throw std::runtime_error("Cannot assign data to uninitialized WrapArray!");
+      std::copy(data, data + _nelems, _data);
+    }
+  }
+
+  /**
+   * Assigns array data to array
+   * @param b any array of type BaseArray
+   * a.assign(b)
+   */
+  virtual void assign(const BaseArray<T>& b)
+  {
+    if (_nelems > 0) {
+      if (_data == NULL)
+        throw std::runtime_error("Cannot assign to uninitialized WrapArray!");
+      assert(b.getNumElems() == _nelems);
+      b.getDataCopy(_data, _nelems);
+    }
+  }
+
+  /**
+   * Assigns value to each array element
+   * @param value  new array value
+   * a.assign(value)
+   */
+  virtual void assign(const T& value)
+  {
+    if (_nelems > 0) {
+      if (_data == NULL)
+        throw std::runtime_error("Cannot assign value to uninitialized WrapArray!");
+      std::fill(_data, _data + _nelems, value);
+    }
+  }
+
+  /**
+   * Access to data
+   */
+  virtual T* getData()
+  {
+    return _data;
+  }
+
+  /**
+   * Access to data (read-only)
+   */
+  virtual const T* getData() const
+  {
+    return _data;
+  }
+
+  /**
+   * Copies the array data of size n in the data array
+   * data has to be allocated before getDataCopy is called
+   */
+  virtual void getDataCopy(T data[], size_t n) const
+  {
+    if (n > 0)
+      std::copy(_data, _data + n, data);
+  }
+
+  /**
+   * Returns number of elements
+   */
+  virtual size_t getNumElems() const
+  {
+    return _nelems;
+  }
+
+  virtual void setDims(const std::vector<size_t>& v) {}
+
+ protected:
+  T *_data; // array data
+  size_t _nelems; // number of elements
+};
+
+/**
  * Static array, implements BaseArray interface methods
  * @param T type of the array
  * @param nelems number of elements of array
