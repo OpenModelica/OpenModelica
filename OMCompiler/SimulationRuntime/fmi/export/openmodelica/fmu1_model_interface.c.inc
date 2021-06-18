@@ -651,9 +651,6 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
     /*TODO: Simulation stop time is need to calculate in before hand all sample events
             We shouldn't generate them all in beforehand */
     initSample(comp->fmuData, comp->threadData, comp->fmuData->localData[0]->timeValue, 100 /*should be stopTime*/);
-#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
-    initDelay(comp->fmuData, comp->fmuData->localData[0]->timeValue);
-#endif
 
     /* due to an event overwrite old values */
     overwriteOldSimulationData(comp->fmuData);

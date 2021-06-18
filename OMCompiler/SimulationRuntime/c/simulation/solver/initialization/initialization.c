@@ -287,10 +287,6 @@ static int symbolic_initialization(DATA *data, threadData_t *threadData)
   solveWithGlobalHomotopy = homotopySupport
                             && ((data->callback->useHomotopy == 1 && init_lambda_steps >= 1) || adaptiveGlobal);
 
-#if !defined(OMC_NDELAY_EXPRESSIONS) || OMC_NDELAY_EXPRESSIONS>0
-  /* initial sample and delay before initial the system */
-  initDelay(data, data->simulationInfo->startTime);
-#endif
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);
   overwriteOldSimulationData(data);

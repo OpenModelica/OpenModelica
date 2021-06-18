@@ -44,13 +44,6 @@
 
 /* the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value}) */
 
-
-void initDelay(DATA* data, double startTime)
-{
-  /* get the start time of the simulation: time.start. */
-  data->simulationInfo->tStart = startTime;
-}
-
 /*
  * Find row with greatest time that is smaller than or equal to 'time'
  * Conditions:
@@ -87,7 +80,7 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   /* Allocate more space for expressions */
   assertStreamPrint(threadData, exprNumber < data->modelData->nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
   assertStreamPrint(threadData, 0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
-  assertStreamPrint(threadData, data->simulationInfo->tStart <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
+  assertStreamPrint(threadData, data->simulationInfo->startTime <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
 
   tpl.t = time;
   tpl.value = exprValue;
@@ -115,7 +108,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   assertStreamPrint(threadData, 0 <= exprNumber, "invalid exprNumber = %d", exprNumber);
   assertStreamPrint(threadData, exprNumber < data->modelData->nDelayExpressions, "invalid exprNumber = %d", exprNumber);
 
-  if(time <= data->simulationInfo->tStart)
+  if(time <= data->simulationInfo->startTime)
   {
     infoStreamPrint(LOG_EVENTS_V, 0, "delayImpl: Entered at time < starting time: %g.", exprValue);
     return (exprValue);
@@ -143,7 +136,7 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
    * delayTime need to be a parameter expression. See also Section 3.7.2.1.
    * For non-scalar arguments the function is vectorized according to Section 10.6.12.
    */
-  if(time <= data->simulationInfo->tStart + delayTime)
+  if(time <= data->simulationInfo->startTime + delayTime)
   {
     double res = ((TIME_AND_VALUE*)getRingData(delayStruct, 0))->value;
     infoStreamPrint(LOG_EVENTS_V, 0, "findTime: time <= tStart + delayTime: [%d] = %g",exprNumber, res);
