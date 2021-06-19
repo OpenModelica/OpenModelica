@@ -145,17 +145,13 @@ template subscriptStr(Subscript subscript)
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
 
-template contextCref(ComponentRef cr, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template contextCref(ComponentRef cr, Context context,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates code for a component reference depending on which context we're in."
 ::=
-match cr
-  case CREF_QUAL(ident = "$PRE") then
-    '_discrete_events->pre(<%contextCref(componentRef, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)'
-else
-    let &varDeclsCref = buffer "" /*BUFD*/
-    match context
-    case FUNCTION_CONTEXT(__) then crefStr(cr)
-    else '<%cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>'
+  let &varDeclsCref = buffer "" /*BUFD*/
+  match context
+  case FUNCTION_CONTEXT(__) then crefStr(cr)
+  else '<%cref1(cr,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>'
 end contextCref;
 
 template contextCref2(ComponentRef cr, Context context)
@@ -212,7 +208,10 @@ end crefToCStrWithIndex;
 
 template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
   match cr
-  case CREF_IDENT(ident = "xloc") then '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
+  case CREF_QUAL(ident = "$PRE") then
+    '_discrete_events->pre(<%cref1(componentRef, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>)'
+  case CREF_IDENT(ident = "xloc") then
+    '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
   case CREF_IDENT(ident = "time") then
     match context
     case  ALGLOOP_CONTEXT(genInitialisation=false)
@@ -350,7 +349,7 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp, Text &varDecls, S
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
   case CREF(componentRef = cr, ty = t as T_COMPLEX(complexClassType = RECORD(path = _))) then
     match context case FUNCTION_CONTEXT(__) then
-      '<%daeExpCrefRhs2(exp, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+      '<%daeExpCref(false, exp, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
     else
       daeExpRecordCrefRhs(t, cr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case CREF(ty = T_FUNCTION_REFERENCE_FUNC(functionType=t)) then
@@ -358,12 +357,12 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp, Text &varDecls, S
   case CREF(componentRef = CREF_IDENT(ident=ident), ty = T_FUNCTION_REFERENCE_VAR(__)) then
     contextFunName(ident, context)
   else
-    daeExpCrefRhs2(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    daeExpCref(false, exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 end daeExpCrefRhs;
 
 
-template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs,
-                        Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template daeExpCref(Boolean isLhs, Exp ecr, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs,
+                    Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code for a component reference."
 ::=
 match ecr
@@ -376,10 +375,10 @@ case component as CREF(componentRef=cr, ty=ty) then
   else
     if boolAnd(intEq(listLength(crefSubs(cr)), listLength(crefDims(cr))), crefSubIsScalar(cr)) then
       // The array subscript results in a scalar
-      let arrName = contextCref(crefStripLastSubs(cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let arrName = contextCref(crefStripLastSubs(cr), context,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       let arrayType = expTypeShort(ty)
       let dimsValuesStr = (crefSubs(cr) |> INDEX(__) =>
-          daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+          daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         ;separator=",")
       match arrayType
         case "metatype_array" then
@@ -391,13 +390,14 @@ case component as CREF(componentRef=cr, ty=ty) then
     else
       // The array subscript denotes a slice
       let arrName = contextArrayCref(cr, context)
-      let typeStr = expTypeShort(ty)
+      let arrTypeStr = if isLhs then 'ArraySlice' else 'ArraySliceConst'
+      let elTypeStr = expTypeShort(ty)
       let slice = daeExpCrefIndexSpec(crefSubs(cr), context, &preExp,
         &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,
         stateDerVectorName, useFlatArrayNotation)
-      let &preExp += 'ArraySlice<<%typeStr%>> <%slice%>_as(<%arrName%>, <%slice%>);<%\n%>'
+      let &preExp += '<%arrTypeStr%><<%elTypeStr%>> <%slice%>_as(<%arrName%>, <%slice%>);<%\n%>'
       '<%slice%>_as'
-end daeExpCrefRhs2;
+end daeExpCref;
 
 
 template daeExpCrefIndexSpec(list<Subscript> subs, Context context,
@@ -752,7 +752,7 @@ template expTypeFlag(DAE.Type ty, Integer flag)
 
   case 8 then
     match ty
-  case T_ARRAY(dims=dims) then'BaseArray<<%expTypeShort(ty)%>>&'
+  case T_ARRAY(dims=dims) then 'const BaseArray<<%expTypeShort(ty)%>>&'
   else expTypeFlag(ty, 9)
     end match
 
@@ -1042,7 +1042,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   let &rangeExpPre = buffer ""
   let arrayTypeResult = expTypeFromExpArray(r)
   let arrIndex = match ri.path case IDENT(name="array") then tempDecl("int",&tmpVarDecls)
-  let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
+  let foundFirst = match ri.path case IDENT(name="array") then "" else (if not ri.defaultValue then tempDecl("int",&tmpVarDecls))
   let resType = expTypeArrayIf(typeof(exp))
   let res = contextCref(makeUntypedCrefIdent(ri.resultName), context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
