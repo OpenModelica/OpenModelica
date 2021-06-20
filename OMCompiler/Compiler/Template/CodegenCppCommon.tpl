@@ -728,23 +728,20 @@ template expTypeFlag(DAE.Type ty, Integer flag)
     end match
   case 5 then
     match ty
-  /* previous multiarray
-    case T_ARRAY(dims=dims) then 'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
-    */
-  case T_ARRAY(dims=dims) then
-  //let testbasearray = dims |> dim =>  '<%testdimension(dim)%>' ;separator=''
-  let dimstr = checkDimension(dims)
-  match dimstr
-  case "" then 'DynArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>>'
-  else 'StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%dimstr%>>&'
-  else expTypeFlag(ty, 2)
+    case T_ARRAY(dims=dims) then
+      //let testbasearray = dims |> dim =>  '<%testdimension(dim)%>' ;separator=''
+      let dimstr = checkDimension(dims)
+      match dimstr
+      case "" then 'const DynArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>>&'
+      else 'const StatArrayDim<%listLength(dims)%><<%expTypeShort(ty)%>,<%dimstr%>>&'
+    else expTypeFlag(ty, 2)
     end match
 
   case 6 then
     expTypeFlag(ty, 4)
 
   case 7 then
-     match ty
+    match ty
     case T_ARRAY(dims=dims)
     then
      'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
@@ -752,20 +749,20 @@ template expTypeFlag(DAE.Type ty, Integer flag)
 
   case 8 then
     match ty
-  case T_ARRAY(dims=dims) then 'const BaseArray<<%expTypeShort(ty)%>>&'
-  else expTypeFlag(ty, 9)
+    case T_ARRAY(dims=dims) then 'const BaseArray<<%expTypeShort(ty)%>>&'
+    else expTypeFlag(ty, 9)
     end match
 
   case 9 then
-  // we want the "modelica type"
-  match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
-    '<%expTypeShort(ty)%>'
-  else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
-    '<%underscorePath(rname)%>Type&'
-  else match ty case T_COMPLEX(__) then
-    '<%underscorePath(ClassInf.getStateName(complexClassType))%>&'
-   else
-    '<%expTypeShort(ty)%>'
+    // we want the "modelica type"
+    match ty case T_COMPLEX(complexClassType=EXTERNAL_OBJ(__)) then
+      '<%expTypeShort(ty)%>'
+    else match ty case T_COMPLEX(complexClassType=RECORD(path=rname)) then
+      'const <%underscorePath(rname)%>Type&'
+    else match ty case T_COMPLEX(__) then
+      'const <%underscorePath(ClassInf.getStateName(complexClassType))%>&'
+    else
+      '<%expTypeShort(ty)%>'
 
 end expTypeFlag;
 
