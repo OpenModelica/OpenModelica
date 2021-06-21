@@ -71,18 +71,16 @@ algorithm
   /* Check that the program is not totally off the charts */
   _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
   // Check license features
-  Absyn.PROGRAM(classes, w) := outProgram;
   if (isSome(lveInstance)) then
+    Absyn.PROGRAM(classes, w) := outProgram;
     classes1 := {};
     for cs in classes loop
       if checkLicenseAndFeatures(cs, lveInstance) then
         classes1 := cs :: classes1;
       end if;
     end for;
-  else
-    classes1 := classes;
+    outProgram := Absyn.PROGRAM(classes1, w);
   end if;
-  outProgram := Absyn.PROGRAM(classes1, w);
 end parse;
 
 function parseexp "Parse a mos-file"
