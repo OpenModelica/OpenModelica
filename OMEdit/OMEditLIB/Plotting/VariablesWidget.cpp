@@ -736,6 +736,13 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   std::sort(variablesList.begin(), variablesList.end(), StringHandler::naturalSortForResultVariables);
   // remove time from variables list
   variablesList.removeOne("time");
+  /* Fixes issue #7551
+   * Add the $cpuTime variable to the list if cpu time flag is set.
+   * We read the variables from model_init.xml file that doesn't contain $cpuTime variable but is present in model_res.mat file.
+   */
+  if (simulationOptions.isValid() && simulationOptions.getCPUTime()) {
+    variablesList.append("$cpuTime");
+  }
   QStringList variables;
   foreach (QString plotVariable, variablesList) {
     QString parentVariable = "";
