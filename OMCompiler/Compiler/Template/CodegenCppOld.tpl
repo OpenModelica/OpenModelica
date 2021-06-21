@@ -1,7 +1,7 @@
 package CodegenCppOld
 
 import interface SimCodeTV;
-import CodegenCppCommonOld.*;
+import CodegenCppCommon.*;
 import CodegenUtil.*;
 import CodegenUtilSimulation.*;
 import CodegenCppInit.*;
