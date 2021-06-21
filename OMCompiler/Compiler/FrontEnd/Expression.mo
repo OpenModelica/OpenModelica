@@ -932,19 +932,30 @@ algorithm
   end match;
 end prependSubscriptExp;
 
-public function applyExpSubscripts "
-author: PA
-Takes an arbitrary expression and applies subscripts to it. This is done by creating asub
-expressions given the original expression and then simplify them.
-Note: The subscripts must be INDEX
+public function applyExpSubscripts
+"@mahge
+  Takes an expression and a list of subscripts and subscripts
+  the given expression.
+  If a component reference is given the subs are applied to it.
+  If an array(DAE.ARRAY) is given the element at the specified
+  subscripts is returned. Otherwise and ASUB is built and returned.
+  e.g. subscriptExp on ({{1,2},{3,4}}) with sub [2,1] gives 3
+       subscriptExp on (a) with sub [2,1] gives a[2,1]
 
-alternative names: subsriptExp (but already taken), subscriptToAsub"
+"
   input output DAE.Exp exp;
   input list<DAE.Subscript> inSubs;
 protected
-  DAE.Exp s;
+  String str;
 algorithm
-  exp := applyExpSubscriptsFoldCheckSimplify(exp, inSubs);
+  try
+    exp := applyExpSubscripts2(exp, inSubs);
+  else
+    str := "Expression.applyExpSubscripts failed applying subs: [" + ExpressionDump.printSubscriptLstStr(inSubs)
+    + "] on expression:" + ExpressionDump.printExpStr(exp) + "\n";
+    Error.addMessage(Error.INTERNAL_ERROR, {str});
+  end try;
+
 end applyExpSubscripts;
 
 
@@ -958,7 +969,11 @@ alternative names: subsriptExp (but already taken), subscriptToAsub
 
 This version of the function also returns a boolean stating if simplify
 improved anything (can be used as a heuristic if you want to apply
-the subscript when scalarizing)"
+the subscript when scalarizing)
+
+Note: mahge. Uses of this function should be replaced by applyExpSubscripts. I have not
+replaced them because I could not make sense of the usage in Backend/RemoveSimpleEquations.
+It uses the checkSimplify arg and I am not sure what it expects or is supposed to do with the result."
   input output DAE.Exp exp;
   input list<DAE.Subscript> inSubs;
   input output Boolean checkSimplify = false;
@@ -979,17 +994,13 @@ algorithm
   end for;
 end applyExpSubscriptsFoldCheckSimplify;
 
-public function subscriptExp
+public function applyExpSubscripts2
 "@mahge
-  This function does the same job as 'applyExpSubscripts' function.
-  However this one doesn't use ExpressionSimplify.simplify.
-
-
   Takes an expression and a list of subscripts and subscripts
   the given expression.
   If a component reference is given the subs are applied to it.
   If an array(DAE.ARRAY) is given the element at the specified
-  subscripts is returned.
+  subscripts is returned. Otherwise and ASUB is built and returned.
   e.g. subscriptExp on ({{1,2},{3,4}}) with sub [2,1] gives 3
        subscriptExp on (a) with sub [2,1] gives a[2,1]
 
@@ -1002,11 +1013,10 @@ algorithm
     local
       DAE.ComponentRef cref;
       DAE.Type ty;
-      DAE.Exp exp,exp1,exp2;
+      DAE.Exp exp;
       list<DAE.Exp> explst;
       DAE.Subscript sub;
       list<DAE.Subscript> restsubs;
-      DAE.Operator op;
       String str;
 
     case(_, {}) then inExp;
@@ -1014,39 +1024,29 @@ algorithm
     case(DAE.CREF(cref, ty), _)
       equation
         cref = ComponentReference.subscriptCref(cref, inSubs);
+        ty = ComponentReference.crefTypeFull(cref);
       then
         DAE.CREF(cref, ty);
 
+    /*
     case(DAE.ARRAY(_, _, explst), sub::restsubs)
       equation
         exp = listGet(explst, subscriptInt(sub));
       then
-        subscriptExp(exp, restsubs);
+        applyExpSubscripts2(exp, restsubs);
+    */
 
-    case (DAE.BINARY(exp1, op, exp2), _)
-      equation
-        exp1 = subscriptExp(exp1, inSubs);
-        exp2 = subscriptExp(exp2, inSubs);
-      then
-        DAE.BINARY(exp1, op, exp2);
-
-    case (DAE.CAST(ty,exp1), _)
-      equation
-        exp1 = subscriptExp(exp1, inSubs);
-        ty = Types.arrayElementType(ty);
-        exp1 = DAE.CAST(ty,exp1);
-      then
-        exp1;
-
-    else
-      equation
-        str = "Expression.subscriptExp failed on " + ExpressionDump.printExpStr(inExp) + "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then
-        fail();
+    // This is the default operation for exps not handled explicitly. It is unfortunate
+    // we have to build ASUBs. But we can improve this step by step to exclude more exps.
+    // Note getSubscriptExp does not work on WHOLE_DIM subs. So this will fail if one of the
+    // subs is WHOLE_DIM. DAE.ASUB should have been able to have list<DAE.Subscript> instead
+    // of just list<DAE.Exp> represneting subs.
+    else algorithm
+      exp := applyExpSubscriptsFoldCheckSimplify(inExp, inSubs);
+    then exp;
 
   end match;
-end subscriptExp;
+end applyExpSubscripts2;
 
 
 public function unliftArray

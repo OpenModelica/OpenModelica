@@ -1,0 +1,53 @@
+// name: ticket6205
+// status: correct
+
+// test inlining of function which has crefs with slices
+
+
+loadString("
+function f
+  input Integer sz;
+  input Real x[sz];
+  input Real y[sz];
+  input Integer i;
+  output Real z;
+algorithm
+  z := x[1:i] * y[1:i] + 1;
+  annotation(Inline = true);
+end f;
+
+model M
+  Real x[3] = {time, time, time};
+  Real y[3] = {time, time, time};
+  Real z;
+  Integer i = integer(time + 1);
+algorithm
+  when time > 0 then
+    z := f(3, x, y, i);
+  end when;
+end M;
+");
+getErrorString();
+
+simulate(M);
+getErrorString();
+
+val(z, {0.0,1.0});
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "M_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// {0.0,1.0}
+// ""
+// endResult
