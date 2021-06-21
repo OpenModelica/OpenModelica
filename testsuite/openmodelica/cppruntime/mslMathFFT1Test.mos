@@ -1,0 +1,37 @@
+// name: mslMathFFT1Test
+// keywords: array slice asub
+// status: correct
+// teardown_command: rm -f *RealFFT1*
+// cflags: -d=newInst
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+
+simulate(Modelica.Math.FastFourierTransform.Examples.RealFFT1);
+val(Ai[1], 6.0);
+val(Ai[11], 6.0);
+val(Ai[16], 6.0);
+val(fi[1], 6.0);
+val(fi[11], 6.0);
+val(fi[16], 6.0);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Math.FastFourierTransform.Examples.RealFFT1_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 6.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Math.FastFourierTransform.Examples.RealFFT1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "... FFT result computed at time = 4.975000 s stored on file: /home/rfranke/OpenModelica/testsuite/openmodelica/cppruntime/RealFFT1_resultFFT.mat
+// "
+// end SimulationResult;
+// 4.999999999999999
+// 2.97029702970297
+// 1.485148514851486
+// 0.0
+// 2.0
+// 3.0
+// ""
+// endResult

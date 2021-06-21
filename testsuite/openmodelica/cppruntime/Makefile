@@ -16,6 +16,7 @@ externalArrayInputTest.mos \
 mathFunctionsTest.mos \
 mslDistributionsTest.mos \
 mslElectricalSensorsTest.mos \
+mslMathFFT1Test.mos \
 nameClashTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
