@@ -211,6 +211,7 @@ algorithm
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
 
+        lveInstance = NONE();
         if encrypted then
           (lveStarted, lveInstance) = Parser.startLibraryVendorExecutable(path + pd + name);
           if not lveStarted then
