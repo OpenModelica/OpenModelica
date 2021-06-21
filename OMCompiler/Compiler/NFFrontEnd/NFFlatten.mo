@@ -1935,6 +1935,10 @@ algorithm
           funcs := flattenFunction(der_fn, funcs);
         end for;
       end for;
+
+      for fn_inv in fn.inverses loop
+        funcs := collectExpFuncs(fn_inv.inverseCall, funcs);
+      end for;
     end if;
   end if;
 end flattenFunction;

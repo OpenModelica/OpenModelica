@@ -777,6 +777,52 @@ public
     end match;
   end isPrefix;
 
+  function toAbsyn
+    input ComponentRef cref;
+    output Absyn.ComponentRef acref;
+  algorithm
+    acref := match cref
+      case CREF()
+        algorithm
+          acref := Absyn.ComponentRef.CREF_IDENT(InstNode.name(cref.node),
+            list(Subscript.toAbsyn(s) for s in cref.subscripts));
+        then
+          toAbsyn_impl(cref.restCref, acref);
+
+      case STRING()
+        algorithm
+          acref := Absyn.ComponentRef.CREF_IDENT(cref.name, {});
+        then
+          toAbsyn_impl(cref.restCref, acref);
+
+      case WILD() then Absyn.ComponentRef.WILD();
+    end match;
+  end toAbsyn;
+
+  function toAbsyn_impl
+    input ComponentRef cref;
+    input Absyn.ComponentRef accumCref;
+    output Absyn.ComponentRef acref;
+  algorithm
+    acref := match cref
+      case EMPTY() then accumCref;
+
+      case CREF()
+        algorithm
+          acref := Absyn.ComponentRef.CREF_QUAL(InstNode.name(cref.node),
+            list(Subscript.toAbsyn(s) for s in cref.subscripts), accumCref);
+        then
+          toAbsyn_impl(cref.restCref, acref);
+
+      case STRING()
+        algorithm
+          acref := Absyn.ComponentRef.CREF_QUAL(cref.name, {}, accumCref);
+        then
+          toAbsyn_impl(cref.restCref, acref);
+
+    end match;
+  end toAbsyn_impl;
+
   function toDAE
     input ComponentRef cref;
     output DAE.ComponentRef dcref;

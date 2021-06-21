@@ -40,6 +40,7 @@ import Type = NFType;
 import NFPrefixes.*;
 import List;
 import FunctionDerivative = NFFunctionDerivative;
+import FunctionInverse = NFFunctionInverse;
 import NFModifier.Modifier;
 
 protected
@@ -263,6 +264,7 @@ uniontype Function
     Type returnType;
     DAE.FunctionAttributes attributes;
     list<FunctionDerivative> derivatives;
+    array<FunctionInverse> inverses;
     Pointer<FunctionStatus> status;
     Pointer<Integer> callCounter "Used during function evaluation to limit recursion.";
   end FUNCTION;
@@ -283,7 +285,7 @@ uniontype Function
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
-      attr, {}, Pointer.create(status), Pointer.create(0));
+      attr, {}, listArray({}), Pointer.create(status), Pointer.create(0));
   end new;
 
   function lookupFunctionSimple
@@ -345,13 +347,6 @@ uniontype Function
   algorithm
     fn_ref := lookupFunction(functionName, scope, context, info);
     (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, context, info);
-
-    if (InstNode.isClass(ComponentRef.node(fn_ref)) and InstNode.isPartial(fn_node)) and
-       not InstContext.inRelaxed(context) then
-      Error.addSourceMessage(Error.PARTIAL_FUNCTION_CALL,
-        {InstNode.name(fn_node)}, info);
-      fail();
-    end if;
   end instFunction;
 
   function instFunctionRef
@@ -420,7 +415,6 @@ uniontype Function
         Absyn.ComponentRef cr;
         InstNode sub_fnNode;
         list<Function> funcs;
-        list<FunctionDerivative> fn_ders;
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
@@ -466,6 +460,7 @@ uniontype Function
           fn := new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fn.derivatives := FunctionDerivative.instDerivatives(fnNode, fn);
+          fn.inverses := FunctionInverse.instInverses(fnNode, fn);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
         then
           (fnNode, specialBuiltin);
@@ -768,11 +763,16 @@ uniontype Function
       else
         annMod := SCode.NOMOD();
       end if;
-      // Generate derivative annotations from the instantiated model. Paths have changed.
-      annMod := SCodeUtil.filterSubMods(annMod, function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative"}));
+      // Generate derivative/inverse annotations from the instantiated model. Paths have changed.
+      annMod := SCodeUtil.filterSubMods(annMod,
+        function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative", "inverse"}));
 
       for derivative in fn.derivatives loop
         annMod := SCodeUtil.prependSubModToMod(FunctionDerivative.toSubMod(derivative), annMod);
+      end for;
+
+      for inverse in fn.inverses loop
+        annMod := SCodeUtil.prependSubModToMod(FunctionInverse.toSubMod(inverse), annMod);
       end for;
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
@@ -1325,10 +1325,11 @@ uniontype Function
     "Returns the function(s) referenced by the given cref, and types them if
      they are not already typed."
     input ComponentRef functionRef;
+    input InstContext.Type context = NFInstContext.FUNCTION;
     output list<Function> functions;
   algorithm
     functions := match functionRef
-      case ComponentRef.CREF() then typeNodeCache(functionRef.node);
+      case ComponentRef.CREF() then typeNodeCache(functionRef.node, context);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got invalid function call reference", sourceInfo());
@@ -1341,6 +1342,7 @@ uniontype Function
     "Returns the function(s) in the cache of the given node, and types them if
      they are not already typed."
     input InstNode functionNode;
+    input InstContext.Type context = NFInstContext.FUNCTION;
     output list<Function> functions;
   protected
     InstNode fn_node;
@@ -1352,9 +1354,9 @@ uniontype Function
 
     // Type the function(s) if not already done.
     if not typed then
-      functions := list(typeFunctionSignature(f) for f in functions);
+      functions := list(typeFunctionSignature(f, context) for f in functions);
       InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
-      functions := list(typeFunctionBody(f) for f in functions);
+      functions := list(typeFunctionBody(f, context) for f in functions);
       InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
     end if;
   end typeNodeCache;
@@ -1371,22 +1373,24 @@ uniontype Function
 
   function typeFunction
     input output Function fn;
+    input InstContext.Type context = NFInstContext.FUNCTION;
   algorithm
-    fn := typeFunctionSignature(fn);
-    fn := typeFunctionBody(fn);
+    fn := typeFunctionSignature(fn, context);
+    fn := typeFunctionBody(fn, context);
   end typeFunction;
 
   function typeFunctionSignature
     "Types a function's parameters and local components."
     input output Function fn;
+    input InstContext.Type context;
   protected
     DAE.FunctionAttributes attr;
     InstNode node = fn.node;
   algorithm
     if not isTyped(fn) then
       // Type all the components in the function.
-      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, NFInstContext.FUNCTION, node);
-      Typing.typeComponents(node, NFInstContext.FUNCTION);
+      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, context, node);
+      Typing.typeComponents(node, context);
 
       if InstNode.isPartial(node) then
         ClassTree.applyComponents(Class.classTree(InstNode.getClass(node)), boxFunctionParameter);
@@ -1402,30 +1406,34 @@ uniontype Function
   function typeFunctionBody
     "Types the body of a function, along with any component bindings."
     input output Function fn;
+    input InstContext.Type context;
   protected
     Boolean pure;
     DAE.FunctionAttributes attr;
   algorithm
     // Type the bindings of components in the function.
     for c in fn.inputs loop
-      Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
+      Typing.typeComponentBinding(c, context);
     end for;
 
     for c in fn.outputs loop
-      Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
+      Typing.typeComponentBinding(c, context);
     end for;
 
     for c in fn.locals loop
-      Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
+      Typing.typeComponentBinding(c, context);
     end for;
 
     // Type the algorithm section of the function, if it has one.
-    Typing.typeFunctionSections(fn.node, NFInstContext.FUNCTION);
+    Typing.typeFunctionSections(fn.node, context);
 
     // Type any derivatives of the function.
     for fn_der in fn.derivatives loop
       FunctionDerivative.typeDerivative(fn_der);
     end for;
+
+    // Type any inverses of the function.
+    Array.mapNoCopy(fn.inverses, FunctionInverse.typeInverse);
 
     // If the function is pure, check that it doesn't contain any impure calls.
     if not isImpure(fn) then
@@ -1784,7 +1792,9 @@ uniontype Function
     ity := fn.attributes.inline;
     ty := makeDAEType(fn);
     unused_inputs := analyseUnusedParameters(fn);
-    defs := def :: list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives);
+    defs := list(FunctionInverse.toDAE(fn_inv) for fn_inv in fn.inverses);
+    defs := listAppend(list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives), defs);
+    defs := def :: defs;
     daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity, unused_inputs,
       ElementSource.createElementSource(InstNode.info(fn.node)),
       SCodeUtil.getElementComment(InstNode.definition(fn.node)));

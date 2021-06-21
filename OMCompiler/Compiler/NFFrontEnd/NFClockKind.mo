@@ -30,10 +30,12 @@
  */
 
 encapsulated uniontype NFClockKind
+  import Absyn;
   import DAE;
   import Expression = NFExpression;
 
 protected
+  import AbsynUtil;
   import ClockKind = NFClockKind;
 
 public
@@ -426,6 +428,27 @@ public
       else ck;
     end match;
   end mapFoldExpShallow;
+
+  function toAbsyn
+    input ClockKind clk;
+    output Absyn.Exp exp;
+  protected
+    list<Absyn.Exp> args;
+  algorithm
+    args := match clk
+      case INFERRED_CLOCK() then {};
+      case INTEGER_CLOCK()
+        then {Expression.toAbsyn(clk.intervalCounter), Expression.toAbsyn(clk.resolution)};
+      case REAL_CLOCK()
+        then {Expression.toAbsyn(clk.interval)};
+      case BOOLEAN_CLOCK()
+        then {Expression.toAbsyn(clk.condition), Expression.toAbsyn(clk.startInterval)};
+      case SOLVER_CLOCK()
+        then {Expression.toAbsyn(clk.c), Expression.toAbsyn(clk.solverMethod)};
+    end match;
+
+    exp := AbsynUtil.makeCall(Absyn.ComponentRef.CREF_IDENT("Clock", {}), args);
+  end toAbsyn;
 
   function toDAE
     input ClockKind ick;

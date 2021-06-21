@@ -193,13 +193,15 @@ function typeStructor
 protected
   CachedData cache;
   list<Function> fnl;
+  InstContext.Type context;
 algorithm
   cache := InstNode.getFuncCache(node);
 
   () := match cache
     case CachedData.FUNCTION(funcs = fnl, typed = false)
       algorithm
-        fnl := list(Function.typeFunction(fn) for fn in fnl);
+        context := InstContext.set(NFInstContext.FUNCTION, NFInstContext.RELAXED);
+        fnl := list(Function.typeFunction(fn, context) for fn in fnl);
         fnl := list(OperatorOverloading.patchOperatorRecordConstructorBinding(fn) for fn in fnl);
         InstNode.setFuncCache(node, CachedData.FUNCTION(fnl, true, cache.specialBuiltin));
       then

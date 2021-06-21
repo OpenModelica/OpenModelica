@@ -568,6 +568,11 @@ FunctionDerivativeInvalidOrder1.mo \
 FunctionDerivativeInvalidOrder2.mo \
 FunctionDerivativeMissingName1.mo \
 FunctionExtends1.mo \
+FunctionInverse1.mo \
+FunctionInverse2.mo \
+FunctionInverseInvalid1.mo \
+FunctionInverseInvalid2.mo \
+FunctionInverseInvalid3.mo \
 FunctionMultiOutput1.mo \
 FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
@@ -773,6 +778,7 @@ PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
 PartialFunction1.mo \
+PartialFunction2.mo \
 PartialLookup1.mo \
 PartialLookup2.mo \
 PartialType1.mo \
