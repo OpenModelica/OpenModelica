@@ -15,6 +15,7 @@ clockedTest.mos \
 externalArrayInputTest.mos \
 mathFunctionsTest.mos \
 mslDistributionsTest.mos \
+mslElectricalMachinesTest.mos \
 mslElectricalSensorsTest.mos \
 nameClashTest.mos \
 functionPointerTest.mos \
