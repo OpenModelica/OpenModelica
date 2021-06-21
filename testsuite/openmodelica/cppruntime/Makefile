@@ -5,6 +5,7 @@ tearnonlin1.mos \
 WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
+arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
 clockedEventTest.mos \
