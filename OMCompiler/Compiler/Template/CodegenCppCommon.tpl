@@ -2125,7 +2125,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
 
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=",")
     let funName = '<%underscorePath(path)%>'
-    let retType = '<%funName%>RetType /* undefined */'
+    let retType = '<%funName%>RetType'
     let retVar = tempDecl(retType, &varDecls)
     let &preExp += '<%contextFunName(funName, context)%>(<%argStr%><%if expLst then if retVar then "," %><%retVar%>);<%\n%>'
     '<%retVar%>'
@@ -2145,7 +2145,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     else
     /*end workaround*/
     let argStr = (explist |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>' ;separator=", ")
-    let retType = '<%funName%>RetType /* undefined */'
+    let retType = '<%funName%>RetType'
     let retVar = tempDecl(retType, &varDecls)
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%funName%>(<%argStr%><%if explist then if retVar then "," %><%if retVar then '<%retVar%>'%>);<%\n%>'
     else '<%contextFunName(funName, context)%>(<%argStr%><%if explist then if retVar then "," %> <%if retVar then '<%retVar%>'%>);<%\n%>'
@@ -2913,9 +2913,9 @@ template daeExpTsub(Exp inExp, Context context, Text &preExp,
   case TSUB(exp=CALL(path=p,attr=CALL_ATTR(ty=tys as T_TUPLE(__)))) then
     //let v = tempDecl(expTypeArrayIf(listGet(tys,ix)), &varDecls)
     //let additionalOutputs = List.restOrEmpty(tys) |> ty hasindex i1 fromindex 2 => if intEq(i1,ix) then ', &<%v%>' else ", NULL"
-     let retType = '<%underscorePath(p)%>RetType /* undefined */'
+    let retType = '<%underscorePath(p)%>RetType'
     let retVar = tempDecl(retType, &varDecls)
-     let res = daeExpCallTuple(exp,retVar, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let res = daeExpCallTuple(exp, retVar, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let &preExp += '<%res%>;<%\n%>'
     'get<<%intAdd(-1,ix)%>>(<%retVar%>.data)'
 

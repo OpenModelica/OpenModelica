@@ -8570,19 +8570,25 @@ template initConstValue(SimVar var, SimCode simCode, Text stateDerVectorName /*=
     case SIMVAR(numArrayElement=_::_) then ''
     case SIMVAR(type_=type,name=name) then
       match initialValue
-        case SOME(v) then '<%cref(name, useFlatArrayNotation)%> = <%initConstValue2(v, simCode, stateDerVectorName, useFlatArrayNotation)%>;'
+        case SOME(v) then
+          let &preExp = buffer ""
+          let &varDecls = buffer ""
+          let initValue = initConstValue2(v, &preExp, &varDecls, simCode, stateDerVectorName, useFlatArrayNotation)
+          <<
+          <%varDecls%>
+          <%preExp%>
+          <%cref(name, useFlatArrayNotation)%> = <%initValue%>;
+          >>
         else
           match type
             case T_STRING(__) then '<%cref(name, useFlatArrayNotation)%> = "";'
             else '<%cref(name, useFlatArrayNotation)%> = 0;'
 end initConstValue;
 
-template initConstValue2(Exp initialValue, SimCode simCode, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template initConstValue2(Exp initialValue, Text &preExp, Text &varDecls, SimCode simCode, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   match initialValue
     case v then
-      let &preExp = buffer "" //dummy ... the value is always a constant
-      let &varDecls = buffer ""
       let &extraFuncs = buffer ""
       let &extraFuncsDecl = buffer ""
       let &extraFuncsNamespace = buffer ""
