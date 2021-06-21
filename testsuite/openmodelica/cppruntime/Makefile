@@ -17,6 +17,7 @@ mathFunctionsTest.mos \
 mslDistributionsTest.mos \
 mslElectricalMachinesTest.mos \
 mslElectricalSensorsTest.mos \
+mslMathFFT1Test.mos \
 nameClashTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
