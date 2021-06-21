@@ -114,7 +114,7 @@ template subscriptsStrForWriteOutput(list<Subscript> subscripts)
  "Generares subscript part of the name."
 ::=
   if subscripts then
-    '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'//previous multi_array     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
+    '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
 end subscriptsStrForWriteOutput;
 
 template crefStr(ComponentRef cr)
@@ -131,27 +131,31 @@ template subscriptsStr(list<Subscript> subscripts)
  "Generares subscript part of the name."
 ::=
   if subscripts then
-    '(<%subscripts |> s => subscriptStr(s) ;separator=","%>)'//previous multi_array     '[<%subscripts |> s => subscriptStr(s) ;separator=","%>]'
+    '(<%subscripts |> s => subscriptStr(s) ;separator=","%>)'
 end subscriptsStr;
 
 template subscriptStr(Subscript subscript)
- "Generates a single subscript.
-  Only works for constant integer indicies."
+ "Generates a single subscript."
 ::=
   match subscript
-  case INDEX(exp=ICONST(integer=i)) then i
   case SLICE(exp=ICONST(integer=i)) then i
   case WHOLEDIM(__) then "WHOLEDIM"
+  case INDEX(__) then
+    match exp
+    case ICONST(integer=i) then i
+    case ENUM_LITERAL(index=i) then i
+    case CREF(componentRef=cr) then crefStr(cr)
+    end match
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
 
-template contextCref(ComponentRef cr, Context context,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template contextCref(ComponentRef cr, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
   "Generates code for a component reference depending on which context we're in."
 ::=
   let &varDeclsCref = buffer "" /*BUFD*/
   match context
   case FUNCTION_CONTEXT(__) then crefStr(cr)
-  else '<%cref1(cr,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,context,varDeclsCref,stateDerVectorName,useFlatArrayNotation)%>'
+  else '<%cref1(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)%>'
 end contextCref;
 
 template contextCref2(ComponentRef cr, Context context)
@@ -255,35 +259,6 @@ template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFun
     else
       '<%contextSystem(context)%><%cref(inCref, useFlatArrayNotation)%>'
 end representationCref;
-
-template crefToCStrWithoutIndexOperator(ComponentRef cr)
- "Helper function to cref."
-::=
-  match cr
-  case CREF_IDENT(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>'
-  case CREF_QUAL(__) then '<%unquoteIdentifier(ident)%><%subscriptsToCStrWithoutIndexOperator(subscriptLst)%>$P<%crefToCStrWithoutIndexOperator(componentRef)%>'
-  case WILD(__) then ''
-  else "CREF_NOT_IDENT_OR_QUAL"
-end crefToCStrWithoutIndexOperator;
-
-template subscriptsToCStrWithoutIndexOperator(list<Subscript> subscripts)
-::=
-  if subscripts then
-    '$lB<%subscripts |> s => subscriptToCStrWithoutIndexOperator(s) ;separator="$c"%>$rB'
-end subscriptsToCStrWithoutIndexOperator;
-
-template subscriptToCStrWithoutIndexOperator(Subscript subscript)
-::=
-  match subscript
-  case SLICE(exp=ICONST(integer=i)) then i
-  case WHOLEDIM(__) then "WHOLEDIM"
-  case INDEX(__) then
-   match exp
-    case ICONST(integer=i) then i
-    case ENUM_LITERAL(index=i) then i
-      end match
-  else "UNKNOWN_SUBSCRIPT"
-end subscriptToCStrWithoutIndexOperator;
 
 
 template arraycref(ComponentRef cr, Boolean useFlatArrayNotation)

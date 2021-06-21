@@ -11,9 +11,10 @@ clockedEventTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
-distributionsTest.mos \
 externalArrayInputTest.mos \
 mathFunctionsTest.mos \
+mslDistributionsTest.mos \
+mslElectricalSensorsTest.mos \
 nameClashTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
