@@ -8,7 +8,12 @@ setCommandLineOptions("+simCodeTarget=Cpp");
 
 loadModel(Modelica, {"3.2.3"}); getErrorString();
 
+// simulate without echo to avoid a message with absolute path name
+echo(false);
 simulate(Modelica.Math.FastFourierTransform.Examples.RealFFT1);
+echo(true);
+
+// log some test results
 val(Ai[1], 6.0);
 val(Ai[11], 6.0);
 val(Ai[16], 6.0);
@@ -21,12 +26,7 @@ getErrorString();
 // true
 // true
 // ""
-// record SimulationResult
-//     resultFile = "Modelica.Math.FastFourierTransform.Examples.RealFFT1_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 6.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Math.FastFourierTransform.Examples.RealFFT1', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
-//     messages = "... FFT result computed at time = 4.975000 s stored on file: /home/rfranke/OpenModelica/testsuite/openmodelica/cppruntime/RealFFT1_resultFFT.mat
-// "
-// end SimulationResult;
+// true
 // 4.999999999999999
 // 2.97029702970297
 // 1.485148514851486
