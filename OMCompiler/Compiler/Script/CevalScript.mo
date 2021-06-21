@@ -400,7 +400,6 @@ algorithm
       if pathToFile=="" then
         pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
       else
-        pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
         dir := System.dirname(pathToFile);
         pnew := Absyn.PROGRAM({ClassLoader.loadClassFromMp(AbsynUtil.pathFirstIdent(path), System.dirname(dir), System.basename(dir), true, NONE(), encrypted)}, Absyn.TOP());
       end if;
