@@ -242,9 +242,11 @@ algorithm
 
     case "fill"      then simplifyFill(listHead(args), listRest(args), call);
     case "homotopy"  then simplifyHomotopy(args, call);
+    case "max"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
+    case "min"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
     case "ones"      then simplifyFill(Expression.INTEGER(1), args, call);
-    case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
     case "product"   then simplifySumProduct(listHead(args), call, isSum = false);
+    case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
     case "transpose" then simplifyTranspose(listHead(args), call);
     case "vector"    then simplifyVector(listHead(args), call);
     case "zeros"     then simplifyFill(Expression.INTEGER(0), args, call);
@@ -282,9 +284,33 @@ algorithm
       end for;
     end if;
   else
-    exp := Expression.CALL(call);
+    exp := simplifyReducedArrayConstructor(exp, call);
   end if;
 end simplifySumProduct;
+
+function simplifyReducedArrayConstructor
+  input Expression arg;
+  input Call call;
+  output Expression exp;
+algorithm
+  exp := match arg
+    local
+      Call arr_call;
+      Function fn;
+      Type ty;
+      Variability var;
+      Purity purity;
+
+    case Expression.CALL(call = arr_call as Call.TYPED_ARRAY_CONSTRUCTOR())
+      guard Type.dimensionCount(arr_call.ty) == 1
+      algorithm
+        Call.TYPED_CALL(fn = fn, ty = ty, var = var, purity = purity) := call;
+      then
+        Expression.CALL(Call.makeTypedReduction(fn, ty, var, purity, arr_call.exp, arr_call.iters, AbsynUtil.dummyInfo));
+
+    else Expression.CALL(call);
+  end match;
+end simplifyReducedArrayConstructor;
 
 function simplifyTranspose
   input Expression arg;

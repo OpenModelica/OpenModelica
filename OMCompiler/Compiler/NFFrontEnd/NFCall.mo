@@ -2110,14 +2110,8 @@ protected
           purity := Variability.purityMin(purity, exp_pur);
           {fn} := Function.typeRefCache(call.ref);
           TypeCheck.checkReductionType(ty, Function.name(fn), call.exp, info);
-
-          fold_id := Util.getTempVariableIndex();
-          res_id := Util.getTempVariableIndex();
-          default_exp := reductionDefaultValue(fn, ty);
-          fold_exp := reductionFoldExpression(fn, ty, variability, purity, fold_id, res_id, info);
-          fold_tuple := (fold_exp, fold_id, res_id);
         then
-          (TYPED_REDUCTION(fn, ty, variability, purity, arg, iters, default_exp, fold_tuple), ty, variability, purity);
+          (makeTypedReduction(fn, ty, variability, purity, arg, iters, info), ty, variability, purity);
 
       else
         algorithm
@@ -2127,6 +2121,31 @@ protected
     end match;
   end typeReduction;
 
+public
+  function makeTypedReduction
+    input Function fn;
+    input Type ty;
+    input Variability var;
+    input Purity purity;
+    input Expression arg;
+    input list<tuple<InstNode, Expression>> iters;
+    input SourceInfo info;
+    output Call call;
+  protected
+    String fold_id, res_id;
+    Option<Expression> default_exp, fold_exp;
+    tuple<Option<Expression>, String, String> fold_tuple;
+  algorithm
+    fold_id := Util.getTempVariableIndex();
+    res_id := Util.getTempVariableIndex();
+    default_exp := reductionDefaultValue(fn, ty);
+    fold_exp := reductionFoldExpression(fn, ty, var, purity, fold_id, res_id, info);
+    fold_tuple := (fold_exp, fold_id, res_id);
+
+    call := TYPED_REDUCTION(fn, ty, var, purity, arg, iters, default_exp, fold_tuple);
+  end makeTypedReduction;
+
+protected
   function reductionDefaultValue
     input Function fn;
     input Type ty;
