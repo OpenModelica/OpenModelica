@@ -1099,7 +1099,7 @@ public
             fail();
           end if;
         then
-          ty;
+          Type.UNKNOWN();
 
     end match;
   end subscript;

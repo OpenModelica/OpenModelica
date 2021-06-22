@@ -1421,11 +1421,16 @@ algorithm
     expanded_subs := List.trim(expanded_subs, Subscript.isWhole);
     if not listEmpty(expanded_subs) then
       expanded_subs := listReverseInPlace(expanded_subs);
-      // Subscripting the type might not be possible if the type is wrong, but
-      // we ignore that here and handle it during type checking instead when we
-      // can give better error messages.
+      // Subscripting the expression might not be possible if the type is wrong,
+      // but we ignore it here so we can handle it during type checking instead
+      // when we can give better error messages.
       ty := Type.subscript(ty, expanded_subs, failOnError = false);
-      exp := Expression.SUBSCRIPTED_EXP(exp, expanded_subs, ty, true);
+
+      if Type.isUnknown(ty) then
+        exp := Expression.SUBSCRIPTED_EXP(exp, expanded_subs, ty, true);
+      else
+        exp := Expression.applySubscripts(expanded_subs, exp);
+      end if;
 
       // Take the purity and variability of the subscripts into consideration.
       if purity == Purity.PURE then
