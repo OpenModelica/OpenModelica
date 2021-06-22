@@ -715,7 +715,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
   for (int bc = 0; bc < baseClasses.size(); ++bc) {
     QList<LibraryTreeItem*> classes = baseClasses[bc]->childrenItems();
     for (int i = 0; i < classes.size(); ++i) {
-      if (classes[i]->getName().startsWith(lastPart) &&
+      if (classes[i]->getName().startsWith(lastPart, Qt::CaseInsensitive) &&
               classes[i]->getNameStructure().compare("OMEdit.Search.Feature") != 0)
         completionClasses << (CompleterItem(classes[i]->getName(), classes[i]->getHTMLDescription()));
     }
@@ -723,7 +723,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
     if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getLibraryType() == LibraryTreeItem::Modelica) {
       const QList<ElementInfo*> &components = baseClasses[bc]->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
-        if (components[i]->getName().startsWith(lastPart))
+        if (components[i]->getName().startsWith(lastPart, Qt::CaseInsensitive))
           completionComponents << CompleterItem(components[i]->getName(), components[i]->getHTMLDescription() + QString("<br/>// Inside %1").arg(baseClasses[bc]->mNameStructure));
       }
     }
