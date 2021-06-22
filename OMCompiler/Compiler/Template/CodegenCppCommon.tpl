@@ -1210,11 +1210,11 @@ template daeExpSize(Exp exp, Context context, Text &preExp, Text &varDecls, SimC
  "Generates code for a size expression."
 ::=
   match exp
-  case SIZE(exp=CREF(__), sz=SOME(dim)) then
+  case SIZE(sz=SOME(dim)) then
     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let dimPart = daeExp(dim, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     '<%expPart%>.getDim(<%dimPart%>)'
-  case SIZE(exp=CREF(__)) then
+  case SIZE(sz=NONE()) then
     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let tmp = tempDecl("vector<size_t>", &varDecls)
     let &preExp +=
@@ -1225,7 +1225,7 @@ template daeExpSize(Exp exp, Context context, Text &preExp, Text &varDecls, SimC
         <%tmp%>_size(<%tmp%>_i) = (int)<%tmp%>[<%tmp%>_i-1];<%\n%>
       >>
     '<%tmp%>_size'
-  else "size(X) not implemented"
+  else error(sourceInfo(), ExpressionDumpTpl.dumpExp(exp,"\"") + " not implemented")
 end daeExpSize;
 
 
