@@ -138,10 +138,10 @@ end ListReduction;
 //   s := s + "{" + realString(realsArr3[1]) + "," + realString(realsArr3[2]) + "," + realString(realsArr3[3]) + "," + "}";
 //   s := s + "
 //   ";
-//   s := s + anyString(#(min({realsArr1[1], realsArr1[2], realsArr1[3]})));
+//   s := s + anyString(#(min(r for r in {realsArr1[1], realsArr1[2], realsArr1[3]})));
 //   s := s + "
 //   ";
-//   s := s + anyString(#(max({realsArr1[1], realsArr1[2], realsArr1[3]})));
+//   s := s + anyString(#(max(r for r in {realsArr1[1], realsArr1[2], realsArr1[3]})));
 //   s := s + "
 //   ";
 //   s := s + anyString(#(max(1.5 * realsArr1[3], max(1.5 * realsArr1[2], 1.5 * realsArr1[1]))));
