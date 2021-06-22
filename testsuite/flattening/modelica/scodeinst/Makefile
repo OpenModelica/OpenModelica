@@ -551,6 +551,7 @@ FuncVectorization2.mo \
 FuncVectorization3.mo \
 FuncVectorization4.mo \
 FuncVectorization5.mo \
+FuncVectorization6.mo \
 FuncVectorizationBuiltin.mo \
 FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
