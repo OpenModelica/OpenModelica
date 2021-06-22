@@ -50,6 +50,7 @@ import ElementSource;
 import ExecStat.execStat;
 import Expression = NFExpression;
 import Flags;
+import Flatten = NFFlatten;
 import Function = NFFunction.Function;
 import MetaModelica.Dangerous.listReverseInPlace;
 import Class = NFClass;
@@ -1240,7 +1241,7 @@ algorithm
 
   binding := Component.getBinding(comp);
   binding := Binding.mapExp(binding, stripScopePrefixExp);
-  binding := Binding.mapExpShallow(binding, Expression.expandSplitIndices);
+  binding := Flatten.flattenBinding(binding, ComponentRef.EMPTY());
   bind_from_outside := Binding.source(binding) == NFBinding.Source.MODIFIER;
 
   ty := Component.getType(comp);

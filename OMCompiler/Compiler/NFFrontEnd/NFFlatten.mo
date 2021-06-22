@@ -907,7 +907,7 @@ algorithm
   end if;
 end subscriptBindingOpt;
 
-function flattenBinding
+public function flattenBinding
   input output Binding binding;
   input ComponentRef prefix;
   input Boolean isTypeAttribute = false;
