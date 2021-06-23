@@ -6964,7 +6964,7 @@ public function traverseExpListBidir<ArgT>
   input FuncType inExitFunc;
   input ArgT inArg;
   output list<DAE.Exp> outExpl;
-  output ArgT outArg;
+  output ArgT outArg = inArg;
 
   partial function FuncType
     input DAE.Exp inExp;
@@ -6972,9 +6972,33 @@ public function traverseExpListBidir<ArgT>
     output DAE.Exp outExp;
     output ArgT outArg;
   end FuncType;
+protected
+  DAE.Exp e1;
+  Boolean allEq=true;
+  DoubleEnded.MutableList<DAE.Exp> delst;
+  Integer nEq=0;
 algorithm
-  (outExpl, outArg) :=
-    List.map2Fold(inExpl, traverseExpBidir, inEnterFunc, inExitFunc, inArg);
+  for e in inExpl loop
+    (e1, outArg) := traverseExpBidir(e, inEnterFunc, inExitFunc, outArg);
+    // Preserve reference equality without any allocation if nothing changed
+    if (if allEq then not referenceEq(e, e1) else false) then
+      allEq:=false;
+      delst := DoubleEnded.empty(e1);
+      for elt in inExpl loop
+        if nEq < 1 then
+          break;
+        end if;
+        DoubleEnded.push_back(delst, elt);
+        nEq := nEq-1;
+      end for;
+    end if;
+    if allEq then
+      nEq := nEq + 1;
+    else
+      DoubleEnded.push_back(delst, e1);
+    end if;
+  end for;
+  outExpl := if allEq then inExpl else DoubleEnded.toListAndClear(delst);
 end traverseExpListBidir;
 
 public function traverseExpBidir<ArgT>
@@ -7057,11 +7081,11 @@ algorithm
   (outExp, outArg) := match(inExp)
     local
       Integer i;
-      DAE.Exp e1, e2, e3;
-      Option<DAE.Exp> oe1;
+      DAE.Exp e1, e2, e3, e1_1, e2_1, e3_1;
+      Option<DAE.Exp> oe1, oe1_1;
       DAE.Operator op;
-      ComponentRef cref;
-      list<DAE.Exp> expl;
+      ComponentRef cref, cref_1;
+      list<DAE.Exp> expl, expl_1;
       list<list<DAE.Exp>> mat_expl;
       String error_msg;
       DAE.MatchType match_ty;
@@ -7074,7 +7098,7 @@ algorithm
       Type ty,t;
       list<String> strl;
       DAE.ReductionInfo reductionInfo;
-      DAE.ReductionIterators riters;
+      DAE.ReductionIterators riters, riters_1;
       DAE.CallAttributes attr;
       list<list<String>> aliases;
       ArgT arg;
@@ -7088,75 +7112,75 @@ algorithm
 
     case DAE.CREF(componentRef = cref, ty = ty)
       equation
-        (cref, arg) = traverseExpBidirCref(cref, inEnterFunc, inExitFunc, inArg);
+        (cref_1, arg) = traverseExpBidirCref(cref, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.CREF(cref, ty), arg);
+        (if referenceEq(cref, cref_1) then inExp else DAE.CREF(cref_1, ty), arg);
 
     case DAE.BINARY(exp1 = e1, operator = op, exp2 = e2)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2_1, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.BINARY(e1, op, e2), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.BINARY(e1_1, op, e2_1), arg);
 
     case DAE.UNARY(operator = op, exp = e1)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.UNARY(op, e1), arg);
+        (if referenceEq(e1, e1_1) then inExp else DAE.UNARY(op, e1), arg);
 
     case DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2_1, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.LBINARY(e1, op, e2), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.LBINARY(e1_1, op, e2_1), arg);
 
     case DAE.LUNARY(operator = op, exp = e1)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.LUNARY(op, e1), arg);
+        (if referenceEq(e1, e1_1) then inExp else DAE.LUNARY(op, e1), arg);
 
     case DAE.RELATION(exp1 = e1, operator = op, exp2 = e2, index = index,
          optionExpisASUB = opt_exp_asub)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2_1, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.RELATION(e1, op, e2, index, opt_exp_asub), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.RELATION(e1_1, op, e2_1, index, opt_exp_asub), arg);
 
     case DAE.IFEXP(expCond = e1, expThen = e2, expElse = e3)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
-        (e3, arg) = traverseExpBidir(e3, inEnterFunc, inExitFunc, arg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2_1, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
+        (e3_1, arg) = traverseExpBidir(e3, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.IFEXP(e1, e2, e3), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(e3, e3_1) then inExp else DAE.IFEXP(e1_1, e2_1, e3_1), arg);
 
     case DAE.CALL(path = path, expLst = expl, attr = attr)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.CALL(path, expl, attr), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.CALL(path, expl_1, attr), arg);
 
     case DAE.RECORD(path = path, exps = expl, comp = strl, ty = ty)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.RECORD(path, expl, strl, ty), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.RECORD(path, expl_1, strl, ty), arg);
 
     case DAE.PARTEVALFUNCTION(path, expl, ty, t)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.PARTEVALFUNCTION(path, expl, ty, t), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.PARTEVALFUNCTION(path, expl_1, ty, t), arg);
 
     case DAE.ARRAY(ty = ty, scalar = b1, array = expl)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.ARRAY(ty, b1, expl), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.ARRAY(ty, b1, expl_1), arg);
 
     case DAE.MATRIX(ty = ty, integer = dim, matrix = mat_expl)
       equation
@@ -7167,113 +7191,115 @@ algorithm
 
     case DAE.RANGE(ty = ty, start = e1, step = oe1, stop = e2)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (oe1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, arg);
-        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (oe1_1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, arg);
+        (e2_1, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.RANGE(ty, e1, oe1, e2), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) and referenceEq(oe1, oe1_1) then inExp else DAE.RANGE(ty, e1_1, oe1_1, e2_1), arg);
 
     case DAE.TUPLE(PR = expl)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.TUPLE(expl), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.TUPLE(expl_1), arg);
 
     case DAE.CAST(ty = ty, exp = e1)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.CAST(ty, e1), arg);
+        (if referenceEq(e1, e1_1) then inExp else DAE.CAST(ty, e1), arg);
 
     case DAE.ASUB(exp = e1, sub = expl)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, arg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.ASUB(e1, expl), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(expl, expl_1) then inExp else DAE.ASUB(e1_1, expl_1), arg);
 
     case e1 as DAE.RSUB()
-      equation
-        (e2, arg) = traverseExpBidir(e1.exp, inEnterFunc, inExitFunc, inArg);
-        e1.exp = e2;
+      algorithm
+        (e2, arg) := traverseExpBidir(e1.exp, inEnterFunc, inExitFunc, inArg);
+        if referenceEq(e1.exp, e2) then
+          e1.exp := e2;
+        end if;
       then
         (e1, arg);
 
     case DAE.TSUB(e1, i, ty)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.TSUB(e1, i, ty), arg);
+        (if referenceEq(e1, e1_1) then inExp else DAE.TSUB(e1_1, i, ty), arg);
 
     case DAE.SIZE(exp = e1, sz = oe1)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (oe1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, arg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (oe1_1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.SIZE(e1, oe1), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(oe1, oe1_1) then inExp else DAE.SIZE(e1_1, oe1_1), arg);
 
     case DAE.CODE()
       then (inExp, inArg);
 
     case DAE.REDUCTION(reductionInfo = reductionInfo, expr = e1, iterators = riters)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (riters, arg) = List.map2Fold(riters, traverseReductionIteratorBidir,
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (riters_1, arg) = List.map2Fold(riters, traverseReductionIteratorBidir,
           inEnterFunc, inExitFunc, arg);
       then
-        (DAE.REDUCTION(reductionInfo, e1, riters), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(riters, riters_1) then inExp else DAE.REDUCTION(reductionInfo, e1, riters), arg);
 
     case DAE.LIST(valList = expl)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.LIST(expl), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.LIST(expl_1), arg);
 
     case DAE.CONS(car = e1, cdr = e2)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
-        (e2, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e2_1, arg) = traverseExpBidir(e2, inEnterFunc, inExitFunc, arg);
       then
-        (DAE.CONS(e1, e2), arg);
+        (if referenceEq(e1, e1_1) and referenceEq(e2, e2_1) then inExp else DAE.CONS(e1_1, e2_1), arg);
 
     case DAE.META_TUPLE(listExp = expl)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.TUPLE(expl), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.TUPLE(expl_1), arg);
 
     case DAE.META_OPTION(exp = oe1)
       equation
-        (oe1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, inArg);
+        (oe1_1, arg) = traverseExpOptBidir(oe1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.META_OPTION(oe1), arg);
+        (if referenceEq(oe1, oe1_1) then inExp else DAE.META_OPTION(oe1_1), arg);
 
     case DAE.METARECORDCALL(path = path, args = expl, fieldNames = strl, index = index, typeVars = typeVars)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.METARECORDCALL(path, expl, strl, index, typeVars), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.METARECORDCALL(path, expl_1, strl, index, typeVars), arg);
 
     case DAE.MATCHEXPRESSION(matchType = match_ty, inputs = expl, aliases=aliases,
         localDecls = match_decls, cases = match_cases, et = ty)
       equation
-        (expl, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
+        (expl_1, arg) = traverseExpListBidir(expl, inEnterFunc, inExitFunc, inArg);
         Error.addSourceMessage(Error.COMPILER_NOTIFICATION, {getInstanceName() + " not yet implemented for match expressions. Called using: " + System.dladdr(inEnterFunc) + " " + System.dladdr(inExitFunc)}, sourceInfo());
         //(cases, tup) = List.mapFold(cases, traverseMatchCase, tup);
       then
-        (DAE.MATCHEXPRESSION(match_ty, expl, aliases, match_decls, match_cases, ty), arg);
+        (if referenceEq(expl, expl_1) then inExp else DAE.MATCHEXPRESSION(match_ty, expl_1, aliases, match_decls, match_cases, ty), arg);
 
     case DAE.BOX(exp = e1)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-        (DAE.BOX(e1), arg);
+        (if referenceEq(e1, e1_1) then inExp else DAE.BOX(e1_1), arg);
 
     case DAE.UNBOX(exp = e1, ty = ty)
       equation
-        (e1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
+        (e1_1, arg) = traverseExpBidir(e1, inEnterFunc, inExitFunc, inArg);
       then
-      (DAE.UNBOX(e1, ty), arg);
+        (if referenceEq(e1, e1_1) then inExp else DAE.UNBOX(e1_1, ty), arg);
 
     case DAE.SHARED_LITERAL() then (inExp, inArg);
     case DAE.PATTERN() then (inExp, inArg);

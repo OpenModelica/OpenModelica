@@ -13,14 +13,20 @@ getErrorString();
 
 // test simple model
 translateModel(SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_testsimple, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/ParallelFlowEvaporatorOwnMedia_testsimple.mat");
+getErrorString();
 
 // test full model
 translateModel(SiemensPower.Components.HeatExchanger.Tests.ParallelFlowEvaporatorOwnMedia_test, stopTime=1, method="dassl", cflags="-L./TTSE_libs/", simflags="-iim none -iif ./ResultFiles/ParallelFlowEvaporatorOwnMedia_test.mat");
+getErrorString();
 
 
 // Result:
 // true
 // ""
 // true
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
 // true
+// "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// "
 // endResult
