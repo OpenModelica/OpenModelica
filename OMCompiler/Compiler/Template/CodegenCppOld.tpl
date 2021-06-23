@@ -3182,14 +3182,19 @@ case "gcc" then
             # Simulations use -O0 by default
             SIM_OR_DYNLOAD_OPT_LEVEL=-O0
             CC=<%CC%>
-            CXX=<%CXX%> $(OPENMP_FLAGS)
+            CXX=<%CXX%>
             RUNTIME_STATIC_LINKING=<%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'ON' else 'OFF'%>
+
+            ifeq ($(CXX),g++)
+              $(eval OPENMP_FLAGS=$(if $(findstring libomp,$(OPENMP_FLAGS)),-fopenmp,$(OPENMP_FLAGS)))
+            endif
+
             <%MPIEnvVars%>
 
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
 
-            CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+            CFLAGS_COMMON=$(OPENMP_FLAGS) <%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
 
             ifeq ($(USE_SCOREP),ON)
             $(eval CC=scorep --user --nocompiler $(CC))
@@ -3252,7 +3257,7 @@ case "gcc" then
             ifeq ($(RUNTIME_STATIC_LINKING),ON)
             <%\t%>$(CXX) $(CFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS) $(MODELICA_EXTERNAL_LIBS)
             else
-            <%\t%>$(CXX) -shared -o $(SYSTEMOBJ) $(OFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDSYSTEMFLAGS) $(MODELICA_EXTERNAL_LIBS)
+            <%\t%>$(CXX) $(OPENMP_FLAGS) -shared -o $(SYSTEMOBJ) $(OFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDSYSTEMFLAGS) $(MODELICA_EXTERNAL_LIBS)
             <%\t%>$(CXX) $(CFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
             endif
 
