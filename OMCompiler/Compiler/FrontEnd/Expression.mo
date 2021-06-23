@@ -1022,19 +1022,16 @@ algorithm
     case(_, {}) then inExp;
 
     case(DAE.CREF(cref, ty), _)
-      equation
-        cref = ComponentReference.subscriptCref(cref, inSubs);
-        ty = ComponentReference.crefTypeFull(cref);
+      algorithm
+        try
+          cref := ComponentReference.subscriptCref(cref, inSubs);
+          ty := ComponentReference.crefTypeFull(cref);
+          exp := DAE.CREF(cref, ty);
+        else
+          exp := applyExpSubscriptsFoldCheckSimplify(inExp, inSubs);
+        end try;
       then
-        DAE.CREF(cref, ty);
-
-    /*
-    case(DAE.ARRAY(_, _, explst), sub::restsubs)
-      equation
-        exp = listGet(explst, subscriptInt(sub));
-      then
-        applyExpSubscripts2(exp, restsubs);
-    */
+        exp;
 
     // This is the default operation for exps not handled explicitly. It is unfortunate
     // we have to build ASUBs. But we can improve this step by step to exclude more exps.
