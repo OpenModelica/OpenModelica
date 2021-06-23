@@ -144,8 +144,10 @@ class ParametersScrollArea : public QScrollArea
 public:
   ParametersScrollArea();
   virtual QSize minimumSizeHint() const override;
+  int groupBoxesSize() {return mGroupBoxesList.size();}
   void addGroupBox(GroupBox *pGroupBox);
-  GroupBox *getGroupBox(QString title);
+  GroupBox *getGroupBox(const QString &title);
+  GroupBox *getGroupBox(int index) {return mGroupBoxesList.at(index);}
   QVBoxLayout* getLayout();
 private:
   QWidget *mpWidget;
@@ -186,8 +188,7 @@ private:
   void createTabsGroupBoxesAndParametersHelper(LibraryTreeItem *pLibraryTreeItem, bool useInsert = false);
   void fetchComponentModifiers();
   void fetchExtendsModifiers();
-  Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter,
-                           Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
+  Parameter* findParameter(LibraryTreeItem *pLibraryTreeItem, const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
   Parameter* findParameter(const QString &parameter, Qt::CaseSensitivity caseSensitivity = Qt::CaseSensitive) const;
 public slots:
   void commentLinkClicked(QString link);

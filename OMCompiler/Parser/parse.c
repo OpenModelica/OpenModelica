@@ -482,11 +482,12 @@ int checkLVEToolLicense(void** lveInstance, const char* packageName)
   return 0;
 }
 
-void checkLVEToolFeature(void** lveInstance, const char* feature)
+int checkLVEToolFeature(void** lveInstance, const char* feature)
 {
 #ifdef OMENCRYPTION
-  checkLVEToolFeatureImpl(lveInstance, feature);
+  return checkLVEToolFeatureImpl(lveInstance, feature);
 #endif
+  return 0;
 }
 
 void stopLibraryVendorExecutable(void** lveInstance)

@@ -715,7 +715,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
   for (int bc = 0; bc < baseClasses.size(); ++bc) {
     QList<LibraryTreeItem*> classes = baseClasses[bc]->childrenItems();
     for (int i = 0; i < classes.size(); ++i) {
-      if (classes[i]->getName().startsWith(lastPart) &&
+      if (classes[i]->getName().startsWith(lastPart, Qt::CaseInsensitive) &&
               classes[i]->getNameStructure().compare("OMEdit.Search.Feature") != 0)
         completionClasses << (CompleterItem(classes[i]->getName(), classes[i]->getHTMLDescription()));
     }
@@ -723,7 +723,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
     if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getLibraryType() == LibraryTreeItem::Modelica) {
       const QList<ElementInfo*> &components = baseClasses[bc]->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
-        if (components[i]->getName().startsWith(lastPart))
+        if (components[i]->getName().startsWith(lastPart, Qt::CaseInsensitive))
           completionComponents << CompleterItem(components[i]->getName(), components[i]->getHTMLDescription() + QString("<br/>// Inside %1").arg(baseClasses[bc]->mNameStructure));
       }
     }
@@ -1686,56 +1686,41 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
   }
   GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
   if (pGraphicsView && pGraphicsView->hasAnnotation()) {
-    qreal left = pGraphicsView->mMergedCoOrdinateSystem.getLeft();
-    qreal bottom = pGraphicsView->mMergedCoOrdinateSystem.getBottom();
-    qreal right = pGraphicsView->mMergedCoOrdinateSystem.getRight();
-    qreal top = pGraphicsView->mMergedCoOrdinateSystem.getTop();
-    QRectF rectangle = QRectF(qMin(left, right), qMin(bottom, top), qFabs(left - right), qFabs(bottom - top));
-    if (rectangle.width() < 1) {
-      rectangle = QRectF(-100.0, -100.0, 200.0, 200.0);
-    }
-    qreal adjust = 25;
-    rectangle.setX(rectangle.x() - adjust);
-    rectangle.setY(rectangle.y() - adjust);
-    rectangle.setWidth(rectangle.width() + adjust);
-    rectangle.setHeight(rectangle.height() + adjust);
-    int libraryIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
-    QPixmap libraryPixmap(QSize(libraryIconSize, libraryIconSize));
-    libraryPixmap.fill(QColor(Qt::transparent));
-    QPainter libraryPainter(&libraryPixmap);
-    libraryPainter.setRenderHint(QPainter::Antialiasing);
-    libraryPainter.setRenderHint(QPainter::SmoothPixmapTransform);
+    QRectF source = Utilities::adjustSceneRectangle(pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle(), 0.125);
     /* Ticket #5554
      * Create an equal size square for rendering the scene.
      * Don't stretch to fit a square.
      */
-    QRect windowRect;
-    windowRect = rectangle.toRect();
-    if (rectangle.width() != rectangle.height()) {
-      int x = qMax(rectangle.width(), rectangle.height());
-      windowRect.setX(-x/2);
-      windowRect.setY(-x/2);
-      windowRect.setWidth(x);
-      windowRect.setHeight(x);
+    if (source.width() != source.height()) {
+      int widhtOrHeight = qMax(source.width(), source.height());
+      source = QRectF(source.center().x() - (widhtOrHeight/2), source.center().y() - (widhtOrHeight/2), widhtOrHeight, widhtOrHeight);
     }
-    libraryPainter.setWindow(windowRect);
+    // library icon pixmap
+    QPixmap libraryPixmap(source.size().toSize());
+    libraryPixmap.fill(QColor(Qt::transparent));
+    QPainter libraryPainter(&libraryPixmap);
+    libraryPainter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     libraryPainter.scale(1.0, -1.0);
+    libraryPainter.translate(0, ((-source.top()) - source.bottom()));
+    libraryPainter.setWindow(source.toRect());
     // drag pixmap
     QPixmap dragPixmap(QSize(50, 50));
     dragPixmap.fill(QColor(Qt::transparent));
     QPainter dragPainter(&dragPixmap);
-    dragPainter.setRenderHint(QPainter::Antialiasing);
-    dragPainter.setRenderHint(QPainter::SmoothPixmapTransform);
-    dragPainter.setWindow(windowRect);
+    dragPainter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     dragPainter.scale(1.0, -1.0);
+    dragPainter.translate(0, ((-source.top()) - source.bottom()));
+    dragPainter.setWindow(source.toRect());
     pGraphicsView->setRenderingLibraryPixmap(true);
+    pGraphicsView->setSharpLibraryPixmap(true);
     // render library pixmap
-    pGraphicsView->scene()->render(&libraryPainter, rectangle, rectangle);
-    // render drag pixmap
-    pGraphicsView->scene()->render(&dragPainter, rectangle, rectangle);
-    pGraphicsView->setRenderingLibraryPixmap(false);
+    pGraphicsView->scene()->render(&libraryPainter, source, source);
     libraryPainter.end();
+    pGraphicsView->setSharpLibraryPixmap(false);
+    // render drag pixmap
+    pGraphicsView->scene()->render(&dragPainter, source, source);
     dragPainter.end();
+    pGraphicsView->setRenderingLibraryPixmap(false);
     pLibraryTreeItem->setPixmap(libraryPixmap);
     pLibraryTreeItem->setDragPixmap(dragPixmap);
   } else {

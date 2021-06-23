@@ -13658,12 +13658,13 @@ algorithm
   if debug then
     BackendDump.dumpVariables(currentSystem.orderedVars,"orderedVariables");
     BackendDump.dumpEquationArray(currentSystem.orderedEqs,"orderedEquation");
+    BackendDump.dumpVariables(shared.globalKnownVars,"globalknownVars");
   end if;
 
   // traverse the simulation DAE globalknownVars and update the initialization DAE with new equations and vars
   for var in BackendVariable.varList(inSimDAE.shared.globalKnownVars) loop
-    // check for param Vars, as we are only interested in causality = calculatedParameters
-    if BackendVariable.isParam(var) then
+    // check for param Vars, as we are only interested in causality = parameters
+    if BackendVariable.isParam(var) and not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
       lhs := BackendVariable.varExp(var);
       rhs := BackendVariable.varBindExpStartValueNoFail(var) "bindings are optional";
       eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING);
@@ -13672,7 +13673,7 @@ algorithm
       //var := BackendVariable.setVarFixed(var,false);
       //var := BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       currentSystem := BackendVariable.addVarDAE(var, currentSystem);
-    else
+    elseif not BackendVariable.containsCref(var.varName, currentSystem.orderedVars) then
       shared := BackendVariable.addGlobalKnownVarDAE(var, shared);
     end if;
   end for;

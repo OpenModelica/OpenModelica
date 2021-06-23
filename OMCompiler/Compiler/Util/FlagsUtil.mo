@@ -393,7 +393,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.NEW_BACKEND,
   Flags.PARMODAUTO,
   Flags.INTERACTIVE_PORT,
-  Flags.ALLOW_NON_STANDARD_MODELICA
+  Flags.ALLOW_NON_STANDARD_MODELICA,
+  Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION
 };
 
 public function new

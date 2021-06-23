@@ -544,6 +544,7 @@ namespace Utilities {
   QStringList variantListToStringList(const QVariantList lst);
   QString convertUnitToSymbol(const QString displayUnit);
   QString convertSymbolToUnit(const QString symbol);
+  QRectF adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor);
 } // namespace Utilities
 
 #endif // UTILITIES_H

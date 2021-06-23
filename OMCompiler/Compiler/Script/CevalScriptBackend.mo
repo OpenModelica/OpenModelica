@@ -2315,6 +2315,16 @@ algorithm
         v := Values.BOOL(PackageManagement.upgradeInstalledPackages(b));
       then (cache,v);
 
+    case (cache,_,"getAvailablePackageVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)},_)
+      algorithm
+        v := ValuesUtil.makeArray(list(ValuesUtil.makeString(s) for s in PackageManagement.versionsThatProvideTheWanted(str1, str2, true)));
+      then (cache,v);
+
+    case (cache,_,"getAvailablePackageVersions",_,_)
+      algorithm
+        v := ValuesUtil.makeArray({});
+      then (cache,v);
+
     case (cache,_,"getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
         (absynClass as Absyn.CLASS()) = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
@@ -3345,7 +3355,7 @@ algorithm
 
         cache := FCore.emptyCache();
         FCore.setCachedFunctionTree(cache, funcs);
-        env := FGraph.empty();
+        env := FGraph.new("graph", FCore.dummyTopModel);
       then (cache, env, dae);
 
    case (cache,env,_)
@@ -3783,6 +3793,49 @@ algorithm
 end configureFMU;
 
 protected function buildModelFMU
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input String FMUVersion;
+  input String inFMUType;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input list<String> platforms = {"static"};
+  input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  output FCore.Cache cache;
+  output Values.Value outValue;
+protected
+  Flags.Flag flags;
+  String commandLineOptions;
+  list<String> args;
+  Boolean haveAnnotation;
+algorithm
+  if Config.ignoreCommandLineOptionsAnnotation() then
+    (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+  else
+    // read the __OpenModelica_commandLineOptions
+    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+    haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
+    // backup the flags.
+    flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
+    try
+      // apply if there are any new flags
+      if haveAnnotation then
+        args := System.strtok(commandLineOptions, " ");
+        FlagsUtil.readArgs(args);
+      end if;
+
+      (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+      // reset to the original flags
+      FlagsUtil.saveFlags(flags);
+    else
+      FlagsUtil.saveFlags(flags);
+      fail();
+    end try;
+  end if;
+end buildModelFMU;
+
+protected function callBuildModelFMU
  " Author: Frenkel TUD
    Translates a model into target code and writes also a makefile."
   input FCore.Cache inCache;
@@ -3809,7 +3862,6 @@ protected
   String FMUType = inFMUType;
 
 algorithm
-
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
@@ -3928,7 +3980,7 @@ algorithm
   if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
     System.removeDirectory(fmutmp);
   end if;
-end buildModelFMU;
+end callBuildModelFMU;
 
 protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";

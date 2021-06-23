@@ -420,7 +420,7 @@ void modelInfoInit(MODEL_DATA_XML* xml)
 void modelInfoDeinit(MODEL_DATA_XML* xml)
 {
   free(xml->functionNames); xml->functionNames = NULL;
-  free(xml->functionNames); xml->functionNames = NULL;
+  free(xml->equationInfo); xml->equationInfo = NULL;
 }
 
 FUNCTION_INFO modelInfoGetFunction(MODEL_DATA_XML* xml, size_t ix)

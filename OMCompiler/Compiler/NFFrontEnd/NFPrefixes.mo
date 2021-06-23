@@ -503,7 +503,7 @@ function purityMin
   "Returns the least pure of the arguments."
   input Purity p1;
   input Purity p2;
-  output Purity p = if p1 > p2 then p2 else p1;
+  output Purity p = if p1 == Purity.IMPURE then p1 else p2;
 end purityMin;
 
 function directionFromSCode

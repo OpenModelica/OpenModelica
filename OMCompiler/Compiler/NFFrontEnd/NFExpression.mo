@@ -1050,7 +1050,7 @@ public
         algorithm
           outExp := applySubscript(subscript, exp.exp, restSubscripts);
         then
-          CAST(Type.copyElementType(exp.ty, typeOf(outExp)), outExp);
+          CAST(Type.copyElementType(typeOf(outExp), exp.ty), outExp);
 
       else makeSubscriptedExp(subscript :: restSubscripts, exp);
     end match;
@@ -1250,6 +1250,19 @@ public
           RANGE(ty = ty) := exp;
         then
           makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
+
+      case Subscript.SPLIT_INDEX()
+        algorithm
+          RANGE(ty = ty) := exp;
+          ty := Type.unliftArray(ty);
+        then
+          SUBSCRIPTED_EXP(exp, {sub}, ty, true);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown subscript '" + Subscript.toString(sub) + "'", sourceInfo());
+        then
+          fail();
 
     end match;
   end applySubscriptRange;
@@ -1879,6 +1892,79 @@ public
     end match;
   end getName;
 
+  function enumLiteralPath
+    input Expression exp;
+    output Absyn.Path path;
+  protected
+    String name;
+    Absyn.Path ty_path;
+  algorithm
+    ENUM_LITERAL(name = name, ty = Type.ENUMERATION(typePath = ty_path)) := exp;
+    path := AbsynUtil.suffixPath(ty_path, name);
+  end enumLiteralPath;
+
+  function toAbsynOpt
+    input Option<Expression> exp;
+    output Option<Absyn.Exp> aexp;
+  algorithm
+    aexp := match exp
+      local
+        Expression e;
+
+      case SOME(e) then SOME(toAbsyn(e));
+      else NONE();
+    end match;
+  end toAbsynOpt;
+
+  function toAbsyn
+    input Expression exp;
+    output Absyn.Exp aexp;
+  algorithm
+    aexp := match exp
+      local
+        Type ty;
+
+      case INTEGER() then Absyn.Exp.INTEGER(exp.value);
+      case REAL() then Absyn.Exp.REAL(String(exp.value));
+      case STRING() then Absyn.Exp.STRING(exp.value);
+      case BOOLEAN() then Absyn.Exp.BOOL(exp.value);
+      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
+        then Absyn.Exp.CREF(AbsynUtil.pathToCref(enumLiteralPath(exp)));
+      case CLKCONST() then ClockKind.toAbsyn(exp.clk);
+      case CREF() then Absyn.Exp.CREF(ComponentRef.toAbsyn(exp.cref));
+      case TYPENAME() then Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT(Type.toString(exp.ty), {}));
+      case ARRAY() then Absyn.Exp.ARRAY(list(toAbsyn(e) for e in exp.elements));
+      case MATRIX() then Absyn.Exp.MATRIX(list(list(toAbsyn(e) for e in l) for l in exp.elements));
+      case RANGE() then Absyn.Exp.RANGE(toAbsyn(exp.start), toAbsynOpt(exp.step), toAbsyn(exp.stop));
+      case TUPLE() then Absyn.Exp.TUPLE(list(toAbsyn(e) for e in exp.elements));
+      case RECORD() then AbsynUtil.makeCall(AbsynUtil.pathToCref(exp.path), list(toAbsyn(e) for e in exp.elements));
+      case CALL() then Call.toAbsyn(exp.call);
+      case SIZE() then AbsynUtil.makeCall(Absyn.ComponentRef.CREF_IDENT("size", {}),
+        if isSome(exp.dimIndex) then {toAbsyn(Util.getOption(exp.dimIndex))} else {});
+      case END() then Absyn.Exp.END();
+      case BINARY() then Absyn.Exp.BINARY(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case UNARY() then Absyn.Exp.UNARY(Operator.toAbsyn(exp.operator), toAbsyn(exp.exp));
+      case LBINARY() then Absyn.Exp.LBINARY(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case LUNARY() then Absyn.Exp.LUNARY(Operator.toAbsyn(exp.operator), toAbsyn(exp.exp));
+      case RELATION() then Absyn.Exp.RELATION(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case IF() then Absyn.Exp.IFEXP(toAbsyn(exp.condition), toAbsyn(exp.trueBranch), toAbsyn(exp.falseBranch), {});
+      case CAST() then toAbsyn(exp.exp);
+      case BOX() then toAbsyn(exp.exp);
+      case UNBOX() then toAbsyn(exp.exp);
+      case MUTABLE() then toAbsyn(Mutable.access(exp.exp));
+      case PARTIAL_FUNCTION_APPLICATION()
+        then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
+          Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
+        then
+          fail();
+
+    end match;
+  end toAbsyn;
+
   function toDAEOpt
     input Option<Expression> exp;
     output Option<DAE.Exp> dexp;
@@ -1900,19 +1986,16 @@ public
   algorithm
     dexp := match exp
       local
-        Type ty;
         DAE.Operator daeOp;
         Boolean swap, negate;
         DAE.Exp dae1, dae2;
-        list<String> names;
         Function.Function fn;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
       case STRING() then DAE.SCONST(exp.value);
       case BOOLEAN() then DAE.BCONST(exp.value);
-      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
-        then DAE.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
+      case ENUM_LITERAL() then DAE.ENUM_LITERAL(enumLiteralPath(exp), exp.index);
 
       case CLKCONST()
         then DAE.CLKCONST(ClockKind.toDAE(exp.clk));
@@ -4386,8 +4469,9 @@ public
         then
           listGet(recordExp.elements, index);
 
-      case CREF(ty = Type.COMPLEX(cls = node))
+      case CREF()
         algorithm
+          Type.COMPLEX(cls = node) := Type.arrayElementType(recordExp.ty);
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
@@ -4732,8 +4816,7 @@ public
     Option<UnorderedMap<Subscript, Expression>> osub_repls;
     UnorderedMap<Subscript, Expression> sub_repls;
     list<Subscript> subs;
-    list<Expression> sub_exps;
-    list<Integer> dim_sizes;
+    list<Expression> sub_exps, dim_sizes;
   algorithm
     (outExp, osub_repls) := Expression.mapFold(exp, replaceSplitSubscripts, NONE());
 
@@ -4742,8 +4825,9 @@ public
     else
       SOME(sub_repls) := osub_repls;
       subs := UnorderedMap.keyList(sub_repls);
-      sub_exps := listReverseInPlace(UnorderedMap.valueList(sub_repls));
-      dim_sizes := listReverse(Subscript.splitIndexDimSize(s) for s in subs);
+      sub_exps := UnorderedMap.valueList(sub_repls);
+      dim_sizes := list(Subscript.splitIndexDimExp(s) for s in subs);
+      dim_sizes := list(replaceSplitSubscripts(d, SOME(sub_repls)) for d in dim_sizes);
       outExp := mapSplitExpressions2(outExp, dim_sizes, sub_exps, func);
       outExp := Expression.applySubscripts(subs, outExp);
     end if;
@@ -4795,7 +4879,7 @@ public
 
   function mapSplitExpressions2
     input Expression exp;
-    input list<Integer> dimSizes;
+    input list<Expression> dimSizes;
     input list<Expression> subExps;
     input Func func;
     output Expression outExp;
@@ -4804,8 +4888,9 @@ public
       input output Expression exp;
     end Func;
   protected
-    Integer dim_size;
-    list<Integer> rest_dims;
+    Expression dim_size;
+    list<Expression> rest_dims;
+    Integer dim_size_int;
     Expression sub_exp;
     list<Expression> rest_subs, expl;
   algorithm
@@ -4814,10 +4899,11 @@ public
       outExp := func(outExp);
     else
       dim_size :: rest_dims := dimSizes;
+      dim_size_int := toInteger(Ceval.evalExp(dim_size));
       sub_exp :: rest_subs := subExps;
       expl := {};
 
-      for i in dim_size:-1:1 loop
+      for i in dim_size_int:-1:1 loop
         Expression.updateMutable(sub_exp, Expression.INTEGER(i));
         outExp := mapSplitExpressions2(exp, rest_dims, rest_subs, func);
         expl := outExp :: expl;
@@ -4841,6 +4927,21 @@ public
       else exp;
     end match;
   end mapSplitExpressions3;
+
+  function hasNonArrayIteratorSubscript
+    "Returns true if the given iterator is only used to subscript array
+     expression in the given expression, otherwise false."
+    input Expression exp;
+    input InstNode iterator;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() then containsIterator(exp, iterator);
+      case SUBSCRIPTED_EXP() then not isArray(exp.exp) and
+        Subscript.listContainsExp(exp.subscripts, function containsIterator(iterator = iterator));
+      else containsShallow(exp, function hasNonArrayIteratorSubscript(iterator = iterator));
+    end match;
+  end hasNonArrayIteratorSubscript;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

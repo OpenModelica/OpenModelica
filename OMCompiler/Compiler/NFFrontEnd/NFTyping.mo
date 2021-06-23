@@ -193,13 +193,15 @@ function typeStructor
 protected
   CachedData cache;
   list<Function> fnl;
+  InstContext.Type context;
 algorithm
   cache := InstNode.getFuncCache(node);
 
   () := match cache
     case CachedData.FUNCTION(funcs = fnl, typed = false)
       algorithm
-        fnl := list(Function.typeFunction(fn) for fn in fnl);
+        context := InstContext.set(NFInstContext.FUNCTION, NFInstContext.RELAXED);
+        fnl := list(Function.typeFunction(fn, context) for fn in fnl);
         fnl := list(OperatorOverloading.patchOperatorRecordConstructorBinding(fn) for fn in fnl);
         InstNode.setFuncCache(node, CachedData.FUNCTION(fnl, true, cache.specialBuiltin));
       then
@@ -1101,7 +1103,7 @@ algorithm
 
           // Check the variability. All builtin attributes have parameter variability,
           // unless we're in a function in which case we don't care.
-          if Binding.variability(binding) > Variability.PARAMETER and not InstContext.inFunction(context) then
+          if Binding.variability(binding) >= Variability.DISCRETE and not InstContext.inFunction(context) then
             Error.addSourceMessage(Error.HIGHER_VARIABILITY_BINDING,
               {name, Prefixes.variabilityString(Variability.PARAMETER),
                "'" + Binding.toString(binding) + "'", Prefixes.variabilityString(Binding.variability(binding))},
@@ -1419,11 +1421,16 @@ algorithm
     expanded_subs := List.trim(expanded_subs, Subscript.isWhole);
     if not listEmpty(expanded_subs) then
       expanded_subs := listReverseInPlace(expanded_subs);
-      // Subscripting the type might not be possible if the type is wrong, but
-      // we ignore that here and handle it during type checking instead when we
-      // can give better error messages.
+      // Subscripting the expression might not be possible if the type is wrong,
+      // but we ignore it here so we can handle it during type checking instead
+      // when we can give better error messages.
       ty := Type.subscript(ty, expanded_subs, failOnError = false);
-      exp := Expression.SUBSCRIPTED_EXP(exp, expanded_subs, ty, true);
+
+      if Type.isUnknown(ty) then
+        exp := Expression.SUBSCRIPTED_EXP(exp, expanded_subs, ty, true);
+      else
+        exp := Expression.applySubscripts(expanded_subs, exp);
+      end if;
 
       // Take the purity and variability of the subscripts into consideration.
       if purity == Purity.PURE then

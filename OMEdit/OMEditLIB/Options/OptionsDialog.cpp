@@ -80,8 +80,9 @@ void OptionsDialog::destroy()
 OptionsDialog::OptionsDialog(QWidget *pParent)
   : QDialog(pParent), mpSettings(Utilities::getApplicationSettings())
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::options));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::options));
   setModal(true);
+  mDetectChange = false;
   mpGeneralSettingsPage = new GeneralSettingsPage(this);
   mpLibrariesPage = new LibrariesPage(this);
   mpTextEditorPage = new TextEditorPage(this);
@@ -1274,25 +1275,80 @@ void OptionsDialog::saveSimulationSettings()
 {
   // clear command line options before saving new ones
   MainWindow::instance()->getOMCProxy()->clearCommandLineOptions();
+  bool changed = false;
   // save matching algorithm
-  mpSettings->setValue("simulation/matchingAlgorithm", mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->currentText());
+  QString matchingAlgorithm = mpSimulationPage->getTranslationFlagsWidget()->getMatchingAlgorithmComboBox()->currentText();
+  if (mpSettings->contains("simulation/matchingAlgorithm")) {
+    if (mpSettings->value("simulation/matchingAlgorithm").toString().compare(matchingAlgorithm) != 0) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/matchingAlgorithm", matchingAlgorithm);
   // save index reduction
+  QString indexReduction = mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->currentText();
+  if (mpSettings->contains("simulation/indexReductionMethod")) {
+    if (mpSettings->value("simulation/indexReductionMethod").toString().compare(indexReduction) != 0) {
+      changed = true;
+    }
+  }
   mpSettings->setValue("simulation/indexReductionMethod", mpSimulationPage->getTranslationFlagsWidget()->getIndexReductionMethodComboBox()->currentText());
   // save initialization
-  mpSettings->setValue("simulation/initialization", mpSimulationPage->getTranslationFlagsWidget()->getInitializationCheckBox()->isChecked());
+  bool initialization = mpSimulationPage->getTranslationFlagsWidget()->getInitializationCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/initialization")) {
+    if (mpSettings->value("simulation/initialization").toBool() != initialization) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/initialization", initialization);
   // save evaluate all parameters
-  mpSettings->setValue("simulation/evaluateAllParameters", mpSimulationPage->getTranslationFlagsWidget()->getEvaluateAllParametersCheckBox()->isChecked());
+  bool evaluateAllParameters = mpSimulationPage->getTranslationFlagsWidget()->getEvaluateAllParametersCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/evaluateAllParameters")) {
+    if (mpSettings->value("simulation/evaluateAllParameters").toBool() != evaluateAllParameters) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/evaluateAllParameters", evaluateAllParameters);
   // save NLS analytic jacobian
-  mpSettings->setValue("simulation/NLSanalyticJacobian", mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->isChecked());
+  bool NLSanalyticJacobian = mpSimulationPage->getTranslationFlagsWidget()->getNLSanalyticJacobianCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/NLSanalyticJacobian")) {
+    if (mpSettings->value("simulation/NLSanalyticJacobian").toBool() != NLSanalyticJacobian) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/NLSanalyticJacobian", NLSanalyticJacobian);
   // save parmodauto
-  mpSettings->setValue("simulation/parmodauto", mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked());
+  bool parmodauto = mpSimulationPage->getTranslationFlagsWidget()->getParmodautoCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/parmodauto")) {
+    if (mpSettings->value("simulation/parmodauto").toBool() != parmodauto) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/parmodauto", parmodauto);
   // save old instantiation
-  mpSettings->setValue("simulation/newInst", !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked());
+  bool newInst = !mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/newInst")) {
+    if (mpSettings->value("simulation/newInst").toBool() != newInst) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/newInst", newInst);
   // save dataReconciliation
-  mpSettings->setValue("simulation/dataReconciliation", mpSimulationPage->getTranslationFlagsWidget()->getDataReconciliationCheckBox()->isChecked());
+  bool dataReconciliation = mpSimulationPage->getTranslationFlagsWidget()->getDataReconciliationCheckBox()->isChecked();
+  if (mpSettings->contains("simulation/dataReconciliation")) {
+    if (mpSettings->value("simulation/dataReconciliation").toBool() != dataReconciliation) {
+      changed = true;
+    }
+  }
+  mpSettings->setValue("simulation/dataReconciliation", dataReconciliation);
   // save command line options
+  QString additionalFlags = mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text();
   if (mpSimulationPage->getTranslationFlagsWidget()->applyFlags()) {
-    mpSettings->setValue("simulation/OMCFlags", mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text());
+    if (mpSettings->contains("simulation/OMCFlags")) {
+      if (mpSettings->value("simulation/OMCFlags").toString().compare(additionalFlags) != 0) {
+        changed = true;
+      }
+    }
+    mpSettings->setValue("simulation/OMCFlags", additionalFlags);
   } else {
     mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
@@ -1306,6 +1362,11 @@ void OptionsDialog::saveSimulationSettings()
   mpSettings->setValue("simulation/deleteEntireSimulationDirectory", mpSimulationPage->getDeleteEntireSimulationDirectoryCheckBox()->isChecked());
   mpSettings->setValue("simulation/outputMode", mpSimulationPage->getOutputMode());
   mpSettings->setValue("simulation/displayLimit", mpSimulationPage->getDisplayLimitSpinBox()->value());
+
+  if (mDetectChange && changed) {
+    DiscardLocalTranslationFlagsDialog *pDiscardLocalTranslationFlagsDialog = new DiscardLocalTranslationFlagsDialog(this);
+    pDiscardLocalTranslationFlagsDialog->exec();
+  }
 }
 
 /*!
@@ -1811,7 +1872,7 @@ void OptionsDialog::reset()
     mpSettings->sync();
     accept();
     destroy();
- }
+  }
   delete pResetMessageBox;
 }
 
@@ -1834,7 +1895,9 @@ void OptionsDialog::saveSettings()
   saveHTMLEditorSettings();
   emit HTMLEditorSettingsChanged();
   saveGraphicalViewsSettings();
+  mDetectChange = true;
   saveSimulationSettings();
+  mDetectChange = false;
   saveMessagesSettings();
   saveNotificationsSettings();
   saveLineStyleSettings();
@@ -2237,7 +2300,7 @@ LibrariesPage::LibrariesPage(OptionsDialog *pOptionsDialog)
 void LibrariesPage::openAddSystemLibrary()
 {
   AddSystemLibraryDialog *pAddSystemLibraryWidget = new AddSystemLibraryDialog(this);
-  pAddSystemLibraryWidget->show();
+  pAddSystemLibraryWidget->exec();
 }
 
 //! Slot activated when mpRemoveSystemLibraryButton clicked signal is raised.
@@ -2255,15 +2318,14 @@ void LibrariesPage::removeSystemLibrary()
 //! Opens the AddLibraryWidget in edit mode and pass it the selected tree item.
 void LibrariesPage::openEditSystemLibrary()
 {
-  if (mpSystemLibrariesTree->selectedItems().size() > 0)
-  {
+  if (mpSystemLibrariesTree->selectedItems().size() > 0) {
     AddSystemLibraryDialog *pAddSystemLibraryWidget = new AddSystemLibraryDialog(this);
-    pAddSystemLibraryWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Edit System Library")));
+    pAddSystemLibraryWidget->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Edit System Library")));
     pAddSystemLibraryWidget->mEditFlag = true;
     int currentIndex = pAddSystemLibraryWidget->mpNameComboBox->findText(mpSystemLibrariesTree->selectedItems().at(0)->text(0), Qt::MatchExactly);
     pAddSystemLibraryWidget->mpNameComboBox->setCurrentIndex(currentIndex);
     pAddSystemLibraryWidget->mpVersionTextBox->setText(mpSystemLibrariesTree->selectedItems().at(0)->text(1));
-    pAddSystemLibraryWidget->show();
+    pAddSystemLibraryWidget->exec();
   }
 }
 
@@ -2272,7 +2334,7 @@ void LibrariesPage::openEditSystemLibrary()
 void LibrariesPage::openAddUserLibrary()
 {
   AddUserLibraryDialog *pAddUserLibraryWidget = new AddUserLibraryDialog(this);
-  pAddUserLibraryWidget->show();
+  pAddUserLibraryWidget->exec();
 }
 
 //! Slot activated when mpRemoveUserLibraryButton clicked signal is raised.
@@ -2293,71 +2355,79 @@ void LibrariesPage::openEditUserLibrary()
   if (mpUserLibrariesTree->selectedItems().size() > 0)
   {
     AddUserLibraryDialog *pAddUserLibraryWidget = new AddUserLibraryDialog(this);
-    pAddUserLibraryWidget->setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Edit User Library")));
+    pAddUserLibraryWidget->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Edit User Library")));
     pAddUserLibraryWidget->mEditFlag = true;
     pAddUserLibraryWidget->mpPathTextBox->setText(mpUserLibrariesTree->selectedItems().at(0)->text(0));
     int currentIndex = pAddUserLibraryWidget->mpEncodingComboBox->findData(mpUserLibrariesTree->selectedItems().at(0)->text(1));
     if (currentIndex > -1)
       pAddUserLibraryWidget->mpEncodingComboBox->setCurrentIndex(currentIndex);
-    pAddUserLibraryWidget->show();
+    pAddUserLibraryWidget->exec();
   }
 }
 
-//! @class AddSystemLibraryDialog
-//! @brief Creates an interface for Adding new System Libraries.
 
-//! Constructor
-//! @param pLibrariesPage is the pointer to LibrariesPage
+/*!
+ * \class AddSystemLibraryDialog
+ * \brief Creates an interface for Adding new System Libraries.
+ */
+/*!
+ * \brief AddSystemLibraryDialog::AddSystemLibraryDialog
+ * \param pLibrariesPage is the pointer to LibrariesPage
+ */
 AddSystemLibraryDialog::AddSystemLibraryDialog(LibrariesPage *pLibrariesPage)
   : QDialog(pLibrariesPage), mEditFlag(false)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Add System Library")));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Add System Library")));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
   mpLibrariesPage = pLibrariesPage;
   mpNameLabel = new Label(Helper::name);
   mpNameComboBox = new QComboBox;
   foreach (const QString &key, MainWindow::instance()->getOMCProxy()->getAvailableLibraries()) {
-    mpNameComboBox->addItem(key,key);
+    mpNameComboBox->addItem(key, key);
   }
 
   mpValueLabel = new Label(Helper::version + ":");
   mpVersionTextBox = new QLineEdit("default");
   mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addSystemLibrary()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   mainLayout->addWidget(mpNameLabel, 0, 0);
   mainLayout->addWidget(mpNameComboBox, 0, 1);
   mainLayout->addWidget(mpValueLabel, 1, 0);
   mainLayout->addWidget(mpVersionTextBox, 1, 1);
-  mainLayout->addWidget(mpOkButton, 2, 0, 1, 2, Qt::AlignRight);
+  mainLayout->addWidget(mpButtonBox, 2, 0, 1, 2, Qt::AlignRight);
   setLayout(mainLayout);
 }
 
-//! Returns tree if the name exists in the tree's first column.
+/*!
+ * \brief AddSystemLibraryDialog::nameExists
+ * Returns tree if the name exists in the tree's first column.
+ * \param pItem
+ * \return
+ */
 bool AddSystemLibraryDialog::nameExists(QTreeWidgetItem *pItem)
 {
   QTreeWidgetItemIterator it(mpLibrariesPage->getSystemLibrariesTree());
-  while (*it)
-  {
+  while (*it) {
     QTreeWidgetItem *pChildItem = dynamic_cast<QTreeWidgetItem*>(*it);
     // edit case
-    if (pItem)
-    {
-      if (pChildItem != pItem)
-      {
-        if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0)
-        {
+    if (pItem) {
+      if (pChildItem != pItem) {
+        if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0) {
           return true;
         }
       }
-    }
-    // add case
-    else
-    {
-      if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0)
-      {
+    } else { // add case
+      if (pChildItem->text(0).compare(mpNameComboBox->currentText()) == 0) {
         return true;
       }
     }
@@ -2366,64 +2436,57 @@ bool AddSystemLibraryDialog::nameExists(QTreeWidgetItem *pItem)
   return false;
 }
 
-//! Slot activated when mpOkButton clicked signal is raised.
-//! Add/Edit the system library in the tree.
+/*!
+ * \brief AddSystemLibraryDialog::addSystemLibrary
+ * Slot activated when mpOkButton clicked signal is raised.
+ *  Add/Edit the system library in the tree.
+ */
 void AddSystemLibraryDialog::addSystemLibrary()
 {
   // if name text box is empty show error and return
-  if (mpNameComboBox->currentText().isEmpty())
-  {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
+  if (mpNameComboBox->currentText().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("a"), Helper::ok);
     return;
   }
   // if value text box is empty show error and return
-  if (mpVersionTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
+  if (mpVersionTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg("the value for a"), Helper::ok);
     return;
   }
   // if user is adding a new library
-  if (!mEditFlag)
-  {
-    if (nameExists())
-    {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+  if (!mEditFlag) {
+    if (nameExists()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     QStringList values;
     values << mpNameComboBox->currentText() << mpVersionTextBox->text();
     mpLibrariesPage->getSystemLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
-  }
-  // if user is editing old library
-  else if (mEditFlag)
-  {
+  } else if (mEditFlag) { // if user is editing old library
     QTreeWidgetItem *pItem = mpLibrariesPage->getSystemLibrariesTree()->selectedItems().at(0);
-    if (nameExists(pItem))
-    {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+    if (nameExists(pItem)) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
-    // pItem->setText(0, mpNameTextBox->text());
+    pItem->setText(0, mpNameComboBox->currentText());
     pItem->setText(1, mpVersionTextBox->text());
   }
   accept();
 }
 
-//! @class AddUserLibraryDialog
-//! @brief Creates an interface for Adding new User Libraries.
-
-//! Constructor
-//! @param pLibrariesPage is the pointer to LibrariesPage
+/*!
+ * \class AddUserLibraryDialog
+ * \brief Creates an interface for Adding new User Libraries.
+ */
+/*!
+ * \brief AddUserLibraryDialog::AddUserLibraryDialog
+ * \param pLibrariesPage is the pointer to LibrariesPage
+ */
 AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
   : QDialog(pLibrariesPage), mEditFlag(false)
 {
-  setWindowTitle(QString(Helper::applicationName).append(" - ").append(tr("Add User Library")));
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Add User Library")));
   setAttribute(Qt::WA_DeleteOnClose);
-  setModal(true);
   mpLibrariesPage = pLibrariesPage;
   mpPathLabel = new Label(Helper::path);
   mpPathTextBox = new QLineEdit;
@@ -2434,7 +2497,15 @@ AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
   mpEncodingComboBox = new QComboBox;
   StringHandler::fillEncodingComboBox(mpEncodingComboBox);
   mpOkButton = new QPushButton(Helper::ok);
+  mpOkButton->setAutoDefault(true);
   connect(mpOkButton, SIGNAL(clicked()), SLOT(addUserLibrary()));
+  mpCancelButton = new QPushButton(Helper::cancel);
+  mpCancelButton->setAutoDefault(false);
+  connect(mpCancelButton, SIGNAL(clicked()), SLOT(reject()));
+  // add buttons
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpOkButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpCancelButton, QDialogButtonBox::ActionRole);
   QGridLayout *mainLayout = new QGridLayout;
   mainLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   mainLayout->addWidget(mpPathLabel, 0, 0);
@@ -2442,33 +2513,30 @@ AddUserLibraryDialog::AddUserLibraryDialog(LibrariesPage *pLibrariesPage)
   mainLayout->addWidget(mpPathBrowseButton, 0, 2);
   mainLayout->addWidget(mpEncodingLabel, 1, 0);
   mainLayout->addWidget(mpEncodingComboBox, 1, 1, 1, 2);
-  mainLayout->addWidget(mpOkButton, 2, 0, 1, 3, Qt::AlignRight);
+  mainLayout->addWidget(mpButtonBox, 2, 0, 1, 3, Qt::AlignRight);
   setLayout(mainLayout);
 }
 
-//! Returns tree if the name exists in the tree's first column.
+/*!
+ * \brief AddUserLibraryDialog::pathExists
+ * Returns tree if the name exists in the tree's first column.
+ * \param pItem
+ * \return
+ */
 bool AddUserLibraryDialog::pathExists(QTreeWidgetItem *pItem)
 {
   QTreeWidgetItemIterator it(mpLibrariesPage->getUserLibrariesTree());
-  while (*it)
-  {
+  while (*it) {
     QTreeWidgetItem *pChildItem = dynamic_cast<QTreeWidgetItem*>(*it);
     // edit case
-    if (pItem)
-    {
-      if (pChildItem != pItem)
-      {
-        if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0)
-        {
+    if (pItem) {
+      if (pChildItem != pItem) {
+        if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0) {
           return true;
         }
       }
-    }
-    // add case
-    else
-    {
-      if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0)
-      {
+    } else { // add case
+      if (pChildItem->text(0).compare(mpPathTextBox->text()) == 0) {
         return true;
       }
     }
@@ -2477,46 +2545,42 @@ bool AddUserLibraryDialog::pathExists(QTreeWidgetItem *pItem)
   return false;
 }
 
-//! Slot activated when mpPathBrowseButton clicked signal is raised.
-//! Add/Edit the user library in the tree.
+/*!
+ * \brief AddUserLibraryDialog::browseUserLibraryPath
+ * Slot activated when mpPathBrowseButton clicked signal is raised.
+ * Add/Edit the user library in the tree.
+ */
 void AddUserLibraryDialog::browseUserLibraryPath()
 {
-  mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString(Helper::applicationName).append(" - ").append(Helper::chooseFile),
-                                                        NULL, Helper::omFileTypes, NULL));
+  mpPathTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::omFileTypes, NULL));
 }
 
-//! Slot activated when mpOkButton clicked signal is raised.
-//! Add/Edit the user library in the tree.
+/*!
+ * \brief AddUserLibraryDialog::addUserLibrary
+ * Slot activated when mpOkButton clicked signal is raised.
+ * Add/Edit the user library in the tree.
+ */
 void AddUserLibraryDialog::addUserLibrary()
 {
   // if path text box is empty show error and return
-  if (mpPathTextBox->text().isEmpty())
-  {
-    QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          tr("Please enter the file path."), Helper::ok);
+  if (mpPathTextBox->text().isEmpty()) {
+    QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), tr("Please enter the file path."), Helper::ok);
     return;
   }
   // if user is adding a new library
-  if (!mEditFlag)
-  {
-    if (pathExists())
-    {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+  if (!mEditFlag) {
+    if (pathExists()) {
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     QStringList values;
     values << mpPathTextBox->text() << mpEncodingComboBox->itemData(mpEncodingComboBox->currentIndex()).toString();
     mpLibrariesPage->getUserLibrariesTree()->addTopLevelItem(new QTreeWidgetItem(values));
-  }
-  // if user is editing old library
-  else if (mEditFlag)
-  {
+  } else if (mEditFlag) { // if user is editing old library
     QTreeWidgetItem *pItem = mpLibrariesPage->getUserLibrariesTree()->selectedItems().at(0);
     if (pathExists(pItem))
     {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
+      QMessageBox::critical(this, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::ITEM_ALREADY_EXISTS), Helper::ok);
       return;
     }
     pItem->setText(0, mpPathTextBox->text());
@@ -5290,4 +5354,139 @@ void TraceabilityPage::browseGitRepository()
 {
   mpGitRepositoryTextBox->setText(StringHandler::getExistingDirectory(this, QString("%1 - %2").arg(Helper::applicationName)
                                                                          .arg(Helper::chooseDirectory), NULL));
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::DiscardLocalTranslationFlagsDialog
+ * \param pParent
+ */
+DiscardLocalTranslationFlagsDialog::DiscardLocalTranslationFlagsDialog(QWidget *pParent)
+  : QDialog(pParent)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, tr("Discard Local Translation Flags")));
+  setMinimumWidth(400);
+  mpDescriptionLabel = new Label(tr("The global translation flags are changed. The following models have local translation flags. Select which models local translation flags"
+                                    " you want to discard. Discard means that the simulation settings of the models will be reset as if you closed OMEdit and restarted"
+                                    " a new session. The new global options will first be applied, and then any further setting saved in the annotations will be applied.\n"
+                                    "Double click the model to see its existing local translation flags.\n"));
+  mpDescriptionLabel->setWordWrap(true);
+  mpClassesWithLocalTranslationFlagsListWidget = new QListWidget;
+  mpClassesWithLocalTranslationFlagsListWidget->setObjectName("ClassesWithLocalTranslationFlagsListWidget");
+  mpClassesWithLocalTranslationFlagsListWidget->setItemDelegate(new ItemDelegate(mpClassesWithLocalTranslationFlagsListWidget));
+  connect(mpClassesWithLocalTranslationFlagsListWidget, SIGNAL(itemDoubleClicked(QListWidgetItem*)), SLOT(showLocalTranslationFlags(QListWidgetItem*)));
+  listLocalTranslationFlagsClasses(MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->getRootLibraryTreeItem());
+  QCheckBox *pSelectUnSelectAll = new QCheckBox(tr("Select/Unselect All"));
+  pSelectUnSelectAll->setChecked(true);
+  connect(pSelectUnSelectAll, SIGNAL(toggled(bool)), SLOT(selectUnSelectAll(bool)));
+  // Create the buttons
+  // create the Yes button
+  mpYesButton = new QPushButton(tr("Yes"));
+  mpYesButton->setAutoDefault(true);
+  connect(mpYesButton, SIGNAL(clicked()), SLOT(discardLocalTranslationFlags()));
+  // create the No button
+  mpNoButton = new QPushButton(tr("No"));
+  mpNoButton->setAutoDefault(false);
+  connect(mpNoButton, SIGNAL(clicked()), SLOT(reject()));
+  // create buttons box
+  mpButtonBox = new QDialogButtonBox(Qt::Horizontal);
+  mpButtonBox->addButton(mpYesButton, QDialogButtonBox::ActionRole);
+  mpButtonBox->addButton(mpNoButton, QDialogButtonBox::ActionRole);
+  // create a main layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
+  pMainLayout->addWidget(mpDescriptionLabel);
+  pMainLayout->addWidget(pSelectUnSelectAll);
+  pMainLayout->addWidget(mpClassesWithLocalTranslationFlagsListWidget);
+  pMainLayout->addWidget(mpButtonBox, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::listLocalTranslationFlagsClasses
+ * \param pLibraryTreeItem
+ */
+void DiscardLocalTranslationFlagsDialog::listLocalTranslationFlagsClasses(LibraryTreeItem *pLibraryTreeItem)
+{
+  for (int i = 0; i < pLibraryTreeItem->childrenSize(); i++) {
+    LibraryTreeItem *pChildLibraryTreeItem = pLibraryTreeItem->child(i);
+    if (pChildLibraryTreeItem && pChildLibraryTreeItem->getLibraryType() == LibraryTreeItem::Modelica && !pChildLibraryTreeItem->isSystemLibrary()) {
+      if (pChildLibraryTreeItem->mSimulationOptions.isValid()) {
+        QListWidgetItem *pListItem = new QListWidgetItem(mpClassesWithLocalTranslationFlagsListWidget);
+        pListItem->setFlags(pListItem->flags() | Qt::ItemIsUserCheckable);
+        pListItem->setCheckState(Qt::Checked);
+        pListItem->setText(pChildLibraryTreeItem->getNameStructure());
+      }
+      listLocalTranslationFlagsClasses(pChildLibraryTreeItem);
+    }
+  }
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::selectUnSelectAll
+ * Selects or unselect the models. \n
+ * Slot activated when pSelectUnSelectAll toggled signal is raised.
+ * \param checked
+ */
+void DiscardLocalTranslationFlagsDialog::selectUnSelectAll(bool checked)
+{
+  for (int i = 0; i < mpClassesWithLocalTranslationFlagsListWidget->count(); i++) {
+    QListWidgetItem *pClassWithLocalTranslationFlags = mpClassesWithLocalTranslationFlagsListWidget->item(i);
+    if (checked) {
+      pClassWithLocalTranslationFlags->setCheckState(Qt::Checked);
+    } else {
+      pClassWithLocalTranslationFlags->setCheckState(Qt::Unchecked);
+    }
+  }
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::discardLocalTranslationFlags
+ * Discards the local translation flags from the selected classes. \n
+ * Slot activated when mpYesButton clicked signal is raised.
+ */
+void DiscardLocalTranslationFlagsDialog::discardLocalTranslationFlags()
+{
+  for (int i = 0; i < mpClassesWithLocalTranslationFlagsListWidget->count(); i++) {
+    QListWidgetItem *pClassWithLocalTranslationFlags = mpClassesWithLocalTranslationFlagsListWidget->item(i);
+    if (pClassWithLocalTranslationFlags->checkState() == Qt::Checked) {
+      LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pClassWithLocalTranslationFlags->text());
+      if (pLibraryTreeItem) {
+        pLibraryTreeItem->mSimulationOptions.setIsValid(false);
+      }
+    }
+  }
+  accept();
+}
+
+void DiscardLocalTranslationFlagsDialog::showLocalTranslationFlags(QListWidgetItem *pListWidgetItem)
+{
+  LibraryTreeItem *pLibraryTreeItem = MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->findLibraryTreeItem(pListWidgetItem->text());
+  if (pLibraryTreeItem) {
+    QDialog *pLocalTranslationFlagsDialog = new QDialog;
+    pLocalTranslationFlagsDialog->setWindowTitle(QString("%1 - Local Translation Flags - %2").arg(Helper::applicationName, pLibraryTreeItem->getNameStructure()));
+    pLocalTranslationFlagsDialog->setAttribute(Qt::WA_DeleteOnClose);
+    TranslationFlagsWidget *pTranslationFlagsWidget = new TranslationFlagsWidget;
+    pTranslationFlagsWidget->applySimulationOptions(pLibraryTreeItem->mSimulationOptions);
+    QPushButton *pOkButton = new QPushButton(Helper::ok);
+    connect(pOkButton, SIGNAL(clicked()), pLocalTranslationFlagsDialog, SLOT(accept()));
+    QVBoxLayout *pMainLayout = new QVBoxLayout;
+    pMainLayout->addWidget(pTranslationFlagsWidget);
+    pMainLayout->addWidget(pOkButton, 0, Qt::AlignRight);
+    pLocalTranslationFlagsDialog->setLayout(pMainLayout);
+    pLocalTranslationFlagsDialog->exec();
+  }
+}
+
+/*!
+ * \brief DiscardLocalTranslationFlagsDialog::exec
+ * Reimplementation of exec.
+ * \return
+ */
+int DiscardLocalTranslationFlagsDialog::exec()
+{
+  if (mpClassesWithLocalTranslationFlagsListWidget->count() == 0) {
+    return 1;
+  }
+  return QDialog::exec();
 }

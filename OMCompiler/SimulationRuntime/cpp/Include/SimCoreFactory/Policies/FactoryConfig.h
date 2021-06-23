@@ -78,34 +78,6 @@
   /*Defines*/
   #define PATH string
   #include "LibrariesConfig.h"
-  /*interface includes*/
-  #include <Core/System/ISystemProperties.h>
-  #include <Core/System/ISystemInitialization.h>
-  #include <Core/System/IWriteOutput.h>
-  #include <Core/System/IContinuous.h>
-  #include <Core/System/ITime.h>
-  #include <Core/System/IEvent.h>
-  #include <Core/System/IStepEvent.h>
-  #include <Core/Solver/INonLinSolverSettings.h>
-  #include <Core/Solver/ILinSolverSettings.h>
-  #include <Core/DataExchange/IHistory.h>
-  #include <Core/System/IMixedSystem.h>
-  #include <Core/SimulationSettings/IGlobalSettings.h>
-  #include <Core/System/ILinearAlgLoop.h>
-  #include <Core/System/INonLinearAlgLoop.h>
-  #include <Core/Solver/ISolverSettings.h>
-  #include <Core/Solver/ISolver.h>
-  #include <Core/Solver/ILinearAlgLoopSolver.h>
-  #include <Core/Solver/INonLinearAlgLoopSolver.h>
-  #include <Core/System/IAlgLoopSolverFactory.h>
-  #include <Core/System/ISimVars.h>
-  #include <Core/DataExchange/ISimVar.h>
-  #include <Core/SimController/ISimData.h>
-  #include <Core/SimController/ISimObjects.h>
-  #include <Core/SimulationSettings/ISimControllerSettings.h>
-  #include <Core/SimController/ISimController.h>
-
-
 
 #else
   #error "operating system not supported"

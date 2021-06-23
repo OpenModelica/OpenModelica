@@ -7,6 +7,7 @@
 setCommandLineOptions("--std=3.3"); getErrorString();
 setCommandLineOptions("-d=newInst,-nfScalarize,disableFMIDependency"); getErrorString();
 setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+setCommandLineOptions("--exportClocksInModeldescription=true"); getErrorString();
 
 loadString("
 model ArrayEquationsTest
@@ -65,6 +66,8 @@ readFile("modelDescription.tmp.xml");
 // ""
 // true
 // ""
+// true
+// ""
 // "ArrayEquationsTest.fmu"
 // ""
 // 0
@@ -78,6 +81,13 @@ readFile("modelDescription.tmp.xml");
 //   <ModelExchange
 //     modelIdentifier=\"ArrayEquationsTest\">
 //   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred
+//               interval=\"0.1\"
+//               /></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
 //   <LogCategories>
 //     <Category name=\"logEvents\" />
 //     <Category name=\"logSingularLinearSystems\" />
@@ -528,6 +538,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[1]\"
 //     valueReference=\"64\"
 //     variability=\"discrete\"
+//     previous=\"1\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -536,6 +547,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[2]\"
 //     valueReference=\"65\"
 //     variability=\"discrete\"
+//     previous=\"2\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -544,6 +556,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[3]\"
 //     valueReference=\"66\"
 //     variability=\"discrete\"
+//     previous=\"3\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -552,6 +565,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[4]\"
 //     valueReference=\"67\"
 //     variability=\"discrete\"
+//     previous=\"4\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -560,6 +574,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[5]\"
 //     valueReference=\"68\"
 //     variability=\"discrete\"
+//     previous=\"5\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -568,6 +583,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[6]\"
 //     valueReference=\"69\"
 //     variability=\"discrete\"
+//     previous=\"6\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -576,6 +592,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[7]\"
 //     valueReference=\"70\"
 //     variability=\"discrete\"
+//     previous=\"7\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -584,6 +601,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[8]\"
 //     valueReference=\"71\"
 //     variability=\"discrete\"
+//     previous=\"8\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -592,6 +610,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[9]\"
 //     valueReference=\"72\"
 //     variability=\"discrete\"
+//     previous=\"9\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -600,6 +619,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x1[10]\"
 //     valueReference=\"73\"
 //     variability=\"discrete\"
+//     previous=\"10\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -608,6 +628,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[1]\"
 //     valueReference=\"74\"
 //     variability=\"discrete\"
+//     previous=\"11\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -616,6 +637,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[2]\"
 //     valueReference=\"75\"
 //     variability=\"discrete\"
+//     previous=\"12\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -624,6 +646,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[3]\"
 //     valueReference=\"76\"
 //     variability=\"discrete\"
+//     previous=\"13\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -632,6 +655,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[4]\"
 //     valueReference=\"77\"
 //     variability=\"discrete\"
+//     previous=\"14\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -640,6 +664,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[5]\"
 //     valueReference=\"78\"
 //     variability=\"discrete\"
+//     previous=\"15\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -648,6 +673,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[6]\"
 //     valueReference=\"79\"
 //     variability=\"discrete\"
+//     previous=\"16\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -656,6 +682,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[7]\"
 //     valueReference=\"80\"
 //     variability=\"discrete\"
+//     previous=\"17\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -664,6 +691,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[8]\"
 //     valueReference=\"81\"
 //     variability=\"discrete\"
+//     previous=\"18\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -672,6 +700,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[9]\"
 //     valueReference=\"82\"
 //     variability=\"discrete\"
+//     previous=\"19\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -680,6 +709,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x2[10]\"
 //     valueReference=\"83\"
 //     variability=\"discrete\"
+//     previous=\"20\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -688,6 +718,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[1]\"
 //     valueReference=\"84\"
 //     variability=\"discrete\"
+//     previous=\"21\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -696,6 +727,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[2]\"
 //     valueReference=\"85\"
 //     variability=\"discrete\"
+//     previous=\"22\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -704,6 +736,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[3]\"
 //     valueReference=\"86\"
 //     variability=\"discrete\"
+//     previous=\"23\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -712,6 +745,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[4]\"
 //     valueReference=\"87\"
 //     variability=\"discrete\"
+//     previous=\"24\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -720,6 +754,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[5]\"
 //     valueReference=\"88\"
 //     variability=\"discrete\"
+//     previous=\"25\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -728,6 +763,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[6]\"
 //     valueReference=\"89\"
 //     variability=\"discrete\"
+//     previous=\"26\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -736,6 +772,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[7]\"
 //     valueReference=\"90\"
 //     variability=\"discrete\"
+//     previous=\"27\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -744,6 +781,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[8]\"
 //     valueReference=\"91\"
 //     variability=\"discrete\"
+//     previous=\"28\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -752,6 +790,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[9]\"
 //     valueReference=\"92\"
 //     variability=\"discrete\"
+//     previous=\"29\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -760,6 +799,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x3[10]\"
 //     valueReference=\"93\"
 //     variability=\"discrete\"
+//     previous=\"30\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -768,6 +808,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[1]\"
 //     valueReference=\"94\"
 //     variability=\"discrete\"
+//     previous=\"31\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -776,6 +817,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[2]\"
 //     valueReference=\"95\"
 //     variability=\"discrete\"
+//     previous=\"32\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -784,6 +826,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[3]\"
 //     valueReference=\"96\"
 //     variability=\"discrete\"
+//     previous=\"33\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -792,6 +835,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[4]\"
 //     valueReference=\"97\"
 //     variability=\"discrete\"
+//     previous=\"34\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -800,6 +844,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[5]\"
 //     valueReference=\"98\"
 //     variability=\"discrete\"
+//     previous=\"35\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -808,6 +853,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[6]\"
 //     valueReference=\"99\"
 //     variability=\"discrete\"
+//     previous=\"36\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -816,6 +862,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[7]\"
 //     valueReference=\"100\"
 //     variability=\"discrete\"
+//     previous=\"37\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -824,6 +871,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[8]\"
 //     valueReference=\"101\"
 //     variability=\"discrete\"
+//     previous=\"38\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -832,6 +880,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[9]\"
 //     valueReference=\"102\"
 //     variability=\"discrete\"
+//     previous=\"39\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -840,6 +889,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"x4[10]\"
 //     valueReference=\"103\"
 //     variability=\"discrete\"
+//     previous=\"40\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -849,6 +899,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"104\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -858,6 +909,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"105\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -867,6 +919,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"106\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -876,6 +929,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"107\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>

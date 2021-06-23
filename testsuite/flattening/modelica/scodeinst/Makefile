@@ -170,6 +170,7 @@ CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray4.mo \
 CevalRecordArray5.mo \
+CevalRecordArray6.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
@@ -470,6 +471,7 @@ FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
 FuncBuiltinFill.mo \
 FuncBuiltinFill2.mo \
+FuncBuiltinFill3.mo \
 FuncBuiltinFloor.mo \
 FuncBuiltinGetInstanceName.mo \
 FuncBuiltinHomotopy.mo \
@@ -549,6 +551,7 @@ FuncVectorization2.mo \
 FuncVectorization3.mo \
 FuncVectorization4.mo \
 FuncVectorization5.mo \
+FuncVectorization6.mo \
 FuncVectorizationBuiltin.mo \
 FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
@@ -567,6 +570,11 @@ FunctionDerivativeInvalidOrder1.mo \
 FunctionDerivativeInvalidOrder2.mo \
 FunctionDerivativeMissingName1.mo \
 FunctionExtends1.mo \
+FunctionInverse1.mo \
+FunctionInverse2.mo \
+FunctionInverseInvalid1.mo \
+FunctionInverseInvalid2.mo \
+FunctionInverseInvalid3.mo \
 FunctionMultiOutput1.mo \
 FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
@@ -608,6 +616,7 @@ IfExpression3.mo \
 IfExpression4.mo \
 IfExpression5.mo \
 IfExpression7.mo \
+IfExpression8.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -771,7 +780,9 @@ PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
 PartialFunction1.mo \
+PartialFunction2.mo \
 PartialLookup1.mo \
+PartialLookup2.mo \
 PartialType1.mo \
 PartialType2.mo \
 PartialType3.mo \
@@ -837,6 +848,7 @@ RedeclareMod4.mo \
 RedeclareMod5.mo \
 RedeclareMod6.mo \
 RedeclareMod7.mo \
+RedeclareMod8.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
@@ -990,6 +1002,7 @@ FinalParameter2.mo \
 FinalParameter3.mo \
 CevalRecordArray3.mo \
 IfExpression6.mo \
+IfExpression9.mo \
 RedeclareConstant1.mo \
 Connect3.mo \
 ProtectedMod1.mo \

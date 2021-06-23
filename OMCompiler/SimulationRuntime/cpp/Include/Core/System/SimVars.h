@@ -112,6 +112,10 @@ class BOOST_EXTENSION_SIMVARS_DECL SimVars: public ISimVars
     virtual int& getPreVar(const int& var);
     virtual bool& getPreVar(const bool& var);
     virtual std::string& getPreVar(const std::string& var);
+    virtual WrapArray<double> getPreArr(const BaseArray<double>& arr);
+    virtual WrapArray<int> getPreArr(const BaseArray<int>& arr);
+    virtual WrapArray<bool> getPreArr(const BaseArray<bool>& arr);
+    virtual WrapArray<std::string> getPreArr(const BaseArray<std::string>& arr);
 
     virtual size_t getDimString() const;
     virtual size_t getDimBool() const;

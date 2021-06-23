@@ -1,0 +1,26 @@
+// name: mslElectricalSensorsTest
+// keywords: array subscript const complex
+// status: correct
+// teardown_command: rm -f *TestSensors*
+// cflags: -d=newInst
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+
+simulate(Modelica.Electrical.QuasiStationary.MultiPhase.Examples.TestSensors);
+val(currentQuasiRMSSensor.I, 0.1);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Electrical.QuasiStationary.MultiPhase.Examples.TestSensors_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.1, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.MultiPhase.Examples.TestSensors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 100.0
+// ""
+// endResult

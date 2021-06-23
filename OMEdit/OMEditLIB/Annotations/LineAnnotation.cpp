@@ -961,8 +961,8 @@ void LineAnnotation::updateEndPoint(QPointF point)
       */
     if (mPoints.size() == 2 && mpEndComponent) {
       // just check if additional points are really needed or not.
-      if ((mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine && mPoints[lastIndex].y() != point.y()) ||
-          (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine && mPoints[lastIndex].x() != point.x())) {
+      if (secondLastIndex < mGeometries.size() && ((mGeometries.at(secondLastIndex) == ShapeAnnotation::HorizontalLine && mPoints.at(lastIndex).y() != point.y()) ||
+                                                   (mGeometries.at(secondLastIndex) == ShapeAnnotation::VerticalLine && mPoints.at(lastIndex).x() != point.x()))) {
         insertPointsGeometriesAndCornerItems(lastIndex);
         setCornerItemsActiveOrPassive();
         lastIndex = mPoints.size() - 1;
@@ -974,13 +974,14 @@ void LineAnnotation::updateEndPoint(QPointF point)
       mPoints.back() = point;
       updateCornerItem(lastIndex);
       /* update the 2nd point */
-      assert(secondLastIndex < mGeometries.size());
-      if (mGeometries[secondLastIndex] == ShapeAnnotation::HorizontalLine) {
-        mPoints[secondLastIndex] = QPointF(mPoints[secondLastIndex].x(), mPoints[secondLastIndex].y() + dy);
-      } else if (mGeometries[secondLastIndex] == ShapeAnnotation::VerticalLine) {
-        mPoints[secondLastIndex] = QPointF(mPoints[secondLastIndex].x() + dx, mPoints[secondLastIndex].y());
+      if (secondLastIndex < mGeometries.size()) {
+        if (mGeometries.at(secondLastIndex) == ShapeAnnotation::HorizontalLine) {
+          mPoints[secondLastIndex] = QPointF(mPoints.at(secondLastIndex).x(), mPoints.at(secondLastIndex).y() + dy);
+        } else if (mGeometries.at(secondLastIndex) == ShapeAnnotation::VerticalLine) {
+          mPoints[secondLastIndex] = QPointF(mPoints.at(secondLastIndex).x() + dx, mPoints.at(secondLastIndex).y());
+        }
+        updateCornerItem(secondLastIndex);
       }
-      updateCornerItem(secondLastIndex);
     }
     if (!mpGraphicsView->isCreatingConnection() && !mpGraphicsView->isCreatingTransition()) {
       removeRedundantPointsGeometriesAndCornerItems();
@@ -1012,11 +1013,14 @@ void LineAnnotation::updateTransitionTextPosition()
 }
 
 /*!
-  Sets the shape flags.
-  */
+ * \brief LineAnnotation::setShapeFlags
+ * Sets the shape flags.
+ * \param enable
+ */
 void LineAnnotation::setShapeFlags(bool enable)
 {
-  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType || mLineType == LineAnnotation::ShapeType)
+  if ((mLineType == LineAnnotation::ConnectionType || mLineType == LineAnnotation::TransitionType
+       || mLineType == LineAnnotation::InitialStateType || mLineType == LineAnnotation::ShapeType)
       && mpGraphicsView) {
     /*
       Only set the ItemIsMovable & ItemSendsGeometryChanges flags on Line if the class is not a system library class
@@ -1278,16 +1282,17 @@ void LineAnnotation::updateConnectionTransformation()
   if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
     updateOMSConnection();
   } else {
-    assert(!mOldAnnotation.isEmpty());
-    if (mLineType == LineAnnotation::ConnectionType) {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
-    } else if (mLineType == LineAnnotation::TransitionType) {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset,
-                                                                                         mSynchronize, mPriority, mOldAnnotation,
-                                                                                         mCondition, mImmediate, mReset, mSynchronize,
-                                                                                         mPriority, getOMCShapeAnnotation()));
-    } else if (mLineType == LineAnnotation::InitialStateType) {
-      mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+    if (!mOldAnnotation.isEmpty()) {
+      if (mLineType == LineAnnotation::ConnectionType) {
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateConnectionCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+      } else if (mLineType == LineAnnotation::TransitionType) {
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateTransitionCommand(this, mCondition, mImmediate, mReset,
+                                                                                           mSynchronize, mPriority, mOldAnnotation,
+                                                                                           mCondition, mImmediate, mReset, mSynchronize,
+                                                                                           mPriority, getOMCShapeAnnotation()));
+      } else if (mLineType == LineAnnotation::InitialStateType) {
+        mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateInitialStateCommand(this, mOldAnnotation, getOMCShapeAnnotation()));
+      }
     }
   }
 }
@@ -1651,33 +1656,29 @@ QModelIndex ExpandableConnectorTreeModel::expandableConnectorTreeItemIndex(const
   return expandableConnectorTreeItemIndexHelper(pExpandableConnectorTreeItem, mpRootExpandableConnectorTreeItem, QModelIndex());
 }
 
-void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pComponent,
-                                                                     ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
+void ExpandableConnectorTreeModel::createExpandableConnectorTreeItem(Element *pComponent, ExpandableConnectorTreeItem *pParentExpandableConnectorTreeItem)
 {
   StringHandler::ModelicaClasses restriction = StringHandler::Model;
   if (pComponent->getLibraryTreeItem()) {
     restriction = pComponent->getLibraryTreeItem()->getRestriction();
   }
-  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pComponent->getName(),
-                                                                                              pComponent->getComponentInfo()->isArray(),
-                                                                                              pComponent->getComponentInfo()->getArrayIndex(),
-                                                                                              restriction, false,
+  ExpandableConnectorTreeItem *pExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(pComponent->getName(), pComponent->getComponentInfo()->isArray(),
+                                                                                              pComponent->getComponentInfo()->getArrayIndex(), restriction, false,
                                                                                               pParentExpandableConnectorTreeItem);
   int row = pParentExpandableConnectorTreeItem->getChildren().size();
   QModelIndex index = expandableConnectorTreeItemIndex(pParentExpandableConnectorTreeItem);
   beginInsertRows(index, row, row);
   pParentExpandableConnectorTreeItem->insertChild(row, pExpandableConnectorTreeItem);
   endInsertRows();
-  if (pComponent->getLibraryTreeItem()) {
+  if (pComponent->getLibraryTreeItem() && pComponent->getLibraryTreeItem()->getModelWidget()) {
     foreach (Element *pChildComponent, pComponent->getLibraryTreeItem()->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
       createExpandableConnectorTreeItem(pChildComponent, pExpandableConnectorTreeItem);
     }
   }
   // create add variable item only if item is expandable connector
   if (pExpandableConnectorTreeItem->getRestriction() == StringHandler::ExpandableConnector) {
-    ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, "",
-                                                                                                           StringHandler::Model, true,
-                                                                                                           pExpandableConnectorTreeItem);
+    ExpandableConnectorTreeItem *pNewVariableExpandableConnectorTreeItem = new ExpandableConnectorTreeItem(Helper::newVariable, false, "", StringHandler::Model,
+                                                                                                           true, pExpandableConnectorTreeItem);
     int row = pExpandableConnectorTreeItem->getChildren().size();
     QModelIndex index = expandableConnectorTreeItemIndex(pExpandableConnectorTreeItem);
     beginInsertRows(index, row, row);
@@ -1751,7 +1752,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
   // Start expandable connector treeview
   mpStartExpandableConnectorTreeView = 0;
   mpStartComponent = mpConnectionLineAnnotation->getStartComponent();
-  mpStartRootComponent = mpStartComponent->getParentComponent() ? mpStartComponent->getRootParentComponent() : 0;
+  mpStartRootComponent = mpStartComponent->getParentComponent() ? mpStartComponent->getRootParentComponent() : mpStartComponent;
   if (mpStartComponent->isExpandableConnector() || (mpStartRootComponent && mpStartRootComponent->isExpandableConnector())) {
     mpStartExpandableConnectorTreeModel = new ExpandableConnectorTreeModel(this);
     mpStartExpandableConnectorTreeProxyModel = new ExpandableConnectorTreeProxyModel(this);
@@ -1767,7 +1768,7 @@ CreateConnectionDialog::CreateConnectionDialog(GraphicsView *pGraphicsView, Line
   }
   // End expandable connector treeview
   mpEndComponent = mpConnectionLineAnnotation->getEndComponent();
-  mpEndRootComponent = mpEndComponent->getParentComponent() ? mpEndComponent->getRootParentComponent() : 0;
+  mpEndRootComponent = mpEndComponent->getParentComponent() ? mpEndComponent->getRootParentComponent() : mpEndComponent;
   mpEndExpandableConnectorTreeView = 0;
   if (mpEndComponent->isExpandableConnector() || (mpEndRootComponent && mpEndRootComponent->isExpandableConnector())) {
     mpEndExpandableConnectorTreeModel = new ExpandableConnectorTreeModel(this);

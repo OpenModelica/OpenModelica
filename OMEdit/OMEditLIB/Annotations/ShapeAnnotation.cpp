@@ -531,6 +531,12 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
   if (mBorderPattern == StringHandler::BorderRaised || mBorderPattern == StringHandler::BorderSunken) {
     thickness = Utilities::convertMMToPixel(0.25);
   }
+  // Make the display of Library Browser icons sharper. Very low line thickness is hardly visible on high resolution.
+  if (mLineThickness < 1.0 && ((mpGraphicsView && mpGraphicsView->useSharpLibraryPixmap())
+                               || (mpParentComponent && mpParentComponent->getGraphicsView()->useSharpLibraryPixmap()))) {
+    thickness = Utilities::convertMMToPixel(1.0);
+  }
+
   QPen pen(mLineColor, thickness, StringHandler::getLinePatternType(mLinePattern), Qt::SquareCap, Qt::MiterJoin);
   /* The specification doesn't say anything about it.
    * But just to keep this consist with Dymola we use Qt::BevelJoin for Line shapes.
@@ -544,10 +550,10 @@ void ShapeAnnotation::applyLinePattern(QPainter *painter)
    */
   pen.setCosmetic(true);
   /* Ticket #2272, Ticket #2268.
-   * If thickness is greater than 2 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
-   * Use non cosmetic pens for Libraries Browser and shapes inside component when thickness is greater than 2.
+   * If thickness is greater than 4 then don't make the pen cosmetic since cosmetic pens don't change the width with respect to zoom.
+   * Use non cosmetic pens for Libraries Browser and shapes inside component when thickness is greater than 4.
    */
-  if (thickness > 2
+  if (thickness > 4
       && ((mpGraphicsView && mpGraphicsView->isRenderingLibraryPixmap())
           || mpParentComponent)) {
     pen.setCosmetic(false);
@@ -763,16 +769,18 @@ void ShapeAnnotation::updateCornerItems()
 {
   if (dynamic_cast<LineAnnotation*>(this) || dynamic_cast<PolygonAnnotation*>(this)) {
     for (int i = 0 ; i < mCornerItemsList.size() ; i++) {
-      assert(mPoints.size() > i);
-      mCornerItemsList.at(i)->setPos(QPointF(mPoints.at(i).x(), mPoints.at(i).y()));
+      if (mPoints.size() > i) {
+        mCornerItemsList.at(i)->setPos(QPointF(mPoints.at(i).x(), mPoints.at(i).y()));
+      }
     }
   } else {
-    assert(mExtents.size() > 1);
-    QPointF extent1 = QPointF(qMin(mExtents.at(0).x(), mExtents.at(1).x()), qMin(mExtents.at(0).y(), mExtents.at(1).y()));
-    QPointF extent2 = QPointF(qMax(mExtents.at(0).x(), mExtents.at(1).x()), qMax(mExtents.at(0).y(), mExtents.at(1).y()));
-    if (mCornerItemsList.size() > 1) {
-      mCornerItemsList.at(0)->setPos(QPointF(extent1.x(), extent1.y()));
-      mCornerItemsList.at(1)->setPos(QPointF(extent2.x(), extent2.y()));
+    if (mExtents.size() > 1) {
+      QPointF extent1 = QPointF(qMin(mExtents.at(0).x(), mExtents.at(1).x()), qMin(mExtents.at(0).y(), mExtents.at(1).y()));
+      QPointF extent2 = QPointF(qMax(mExtents.at(0).x(), mExtents.at(1).x()), qMax(mExtents.at(0).y(), mExtents.at(1).y()));
+      if (mCornerItemsList.size() > 1) {
+        mCornerItemsList.at(0)->setPos(QPointF(extent1.x(), extent1.y()));
+        mCornerItemsList.at(1)->setPos(QPointF(extent2.x(), extent2.y()));
+      }
     }
   }
 }
@@ -797,11 +805,10 @@ void ShapeAnnotation::removeCornerItems()
  */
 void ShapeAnnotation::replaceExtent(const int index, const QPointF point)
 {
-  assert(mExtents.size() > 1);
-  assert(index >= 0 && index <= 1);
-
-  prepareGeometryChange();
-  mExtents.replace(index, point);
+  if (mExtents.size() > 1 && index >= 0 && index <= 1) {
+    prepareGeometryChange();
+    mExtents.replace(index, point);
+  }
 }
 
 /*!
@@ -812,12 +819,10 @@ void ShapeAnnotation::replaceExtent(const int index, const QPointF point)
  */
 void ShapeAnnotation::updateExtent(const int index, const QPointF point)
 {
-  assert(mExtents.size() > 1);
-  assert(index >= 0 && index <= 1);
-
-  prepareGeometryChange();
-  mExtents.replace(index, point);
-
+  if (mExtents.size() > 1 && index >= 0 && index <= 1) {
+    prepareGeometryChange();
+    mExtents.replace(index, point);
+  }
   applyTransformation();
 }
 
@@ -1543,44 +1548,44 @@ void ShapeAnnotation::cornerItemPressed(const int index)
  */
 void ShapeAnnotation::cornerItemReleased(const bool changed)
 {
-  assert(!mOldAnnotation.isEmpty());
+  if (!mOldAnnotation.isEmpty()) {
+    if (changed) {
+      ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
+      LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
 
-  if (changed) {
-    ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
-    LineAnnotation *pLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-
-    if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
-      if (pLineAnnotation) {
-        pLineAnnotation->updateOMSConnection();
-        pModelWidget->createOMSimulatorUndoCommand(QString("Update OMS Connection connect(%1, %2)").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName()));
+      if (pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+        if (pLineAnnotation) {
+          pLineAnnotation->updateOMSConnection();
+          pModelWidget->createOMSimulatorUndoCommand(QString("Update OMS Connection connect(%1, %2)").arg(pLineAnnotation->getStartComponentName(), pLineAnnotation->getEndComponentName()));
+          pModelWidget->updateModelText();
+          return;
+        }
+      } else {
+        if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
+          manhattanizeShape(false);
+          removeRedundantPointsGeometriesAndCornerItems();
+          // Call getOMCShapeAnnotation() after manhattanizeShape() and removeRedundantPointsGeometriesAndCornerItems() to get a correct new annotation
+          QString newAnnotation = getOMCShapeAnnotation();
+          pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
+        } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
+          manhattanizeShape(false);
+          removeRedundantPointsGeometriesAndCornerItems();
+          QString newAnnotation = getOMCShapeAnnotation();
+          pModelWidget->getUndoStack()->push(new UpdateTransitionCommand(pLineAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
+                                                                         pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
+                                                                         mOldAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
+                                                                         pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(), newAnnotation));
+        } else {
+          QString newAnnotation = getOMCShapeAnnotation();
+          pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, mOldAnnotation, newAnnotation));
+          pModelWidget->updateClassAnnotationIfNeeded();
+        }
         pModelWidget->updateModelText();
-        return;
       }
     } else {
-      if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::ConnectionType) {
-        manhattanizeShape(false);
-        removeRedundantPointsGeometriesAndCornerItems();
-        // Call getOMCShapeAnnotation() after manhattanizeShape() and removeRedundantPointsGeometriesAndCornerItems() to get a correct new annotation
-        QString newAnnotation = getOMCShapeAnnotation();
-        pModelWidget->getUndoStack()->push(new UpdateConnectionCommand(pLineAnnotation, mOldAnnotation, newAnnotation));
-      } else if (pLineAnnotation && pLineAnnotation->getLineType() == LineAnnotation::TransitionType) {
-        manhattanizeShape(false);
-        removeRedundantPointsGeometriesAndCornerItems();
-        QString newAnnotation = getOMCShapeAnnotation();
-        pModelWidget->getUndoStack()->push(new UpdateTransitionCommand(pLineAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
-                                                                       pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(),
-                                                                       mOldAnnotation, pLineAnnotation->getCondition(), pLineAnnotation->getImmediate(),
-                                                                       pLineAnnotation->getReset(), pLineAnnotation->getSynchronize(), pLineAnnotation->getPriority(), newAnnotation));
-      } else {
-        QString newAnnotation = getOMCShapeAnnotation();
-        pModelWidget->getUndoStack()->push(new UpdateShapeCommand(this, mOldAnnotation, newAnnotation));
-        pModelWidget->updateClassAnnotationIfNeeded();
-      }
-      pModelWidget->updateModelText();
+      parseShapeAnnotation(mOldAnnotation);
+      applyTransformation();
     }
-  } else {
-    parseShapeAnnotation(mOldAnnotation);
-    applyTransformation();
   }
 
   mIsCornerItemClicked = false;
@@ -1720,31 +1725,32 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
       sy = -sy;
     }
 
+    // Use qRound. See issue #7545
     QPointF extent1, extent2;
     if (qFuzzyCompare(rect.width(), 0.0)) {
       if (index == 0) {
-        extent1.setX(sx);
+        extent1.setX(qRound(sx));
         extent2.setX(rect.right());
       } else {
         extent1.setX(rect.left());
-        extent2.setX(sx);
+        extent2.setX(qRound(sx));
       }
     } else {
-      extent1.setX(sx * rect.left());
-      extent2.setX(sx * rect.right());
+      extent1.setX(qRound(sx * rect.left()));
+      extent2.setX(qRound(sx * rect.right()));
     }
 
     if (qFuzzyCompare(rect.height(), 0.0)) {
       if (index == 0) {
-        extent1.setY(sy);
+        extent1.setY(qRound(sy));
         extent2.setY(rect.bottom());
       } else {
         extent1.setY(rect.top());
-        extent2.setY(sy);
+        extent2.setY(qRound(sy));
       }
     } else {
-      extent1.setY(sy * rect.top());
-      extent2.setY(sy * rect.bottom());
+      extent1.setY(qRound(sy * rect.top()));
+      extent2.setY(qRound(sy * rect.bottom()));
     }
 
     QList<QPointF> extents;
@@ -1761,7 +1767,7 @@ void ShapeAnnotation::updateCornerItemPoint(int index, QPointF point)
     QPointF origin;
     origin.setX(mPivotPoint.x() + xFactor * (mOldOrigin.x() - mPivotPoint.x()));
     origin.setY(mPivotPoint.y() + yFactor * (mOldOrigin.y() - mPivotPoint.y()));
-    setOrigin(origin);
+    setOrigin(mpGraphicsView->roundPoint(origin));
 
     setOriginItemPos(mOrigin);
     applyTransformation();
@@ -1831,8 +1837,7 @@ void ShapeAnnotation::editTransition()
     return;
   }
   LineAnnotation *pTransitionLineAnnotation = dynamic_cast<LineAnnotation*>(this);
-  CreateOrEditTransitionDialog *pCreateOrEditTransitionDialog = new CreateOrEditTransitionDialog(mpGraphicsView, pTransitionLineAnnotation,
-                                                                                                 true, MainWindow::instance());
+  CreateOrEditTransitionDialog *pCreateOrEditTransitionDialog = new CreateOrEditTransitionDialog(mpGraphicsView, pTransitionLineAnnotation, true, MainWindow::instance());
   pCreateOrEditTransitionDialog->exec();
 }
 

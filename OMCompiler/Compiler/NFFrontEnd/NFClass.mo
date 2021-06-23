@@ -700,6 +700,23 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     end match;
   end getDerivedComments;
 
+  function constrainingClassPath
+    "Returns the path of the constraining class for a given class, either the
+     declared constraining class or the path of the class itself if there's no
+     declared constraining class."
+    input InstNode clsNode;
+    output Absyn.Path path;
+  protected
+    InstNode cls_node = lastBaseClass(clsNode);
+    Prefixes prefs = getPrefixes(InstNode.getClass(cls_node));
+  algorithm
+    path := match prefs
+      case Prefixes.PREFIXES(replaceablePrefix = SCode.Replaceable.REPLACEABLE(
+        cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(constrainingClass = path)))) then path;
+      else InstNode.enclosingScopePath(cls_node);
+    end match;
+  end constrainingClassPath;
+
   function hasOperator
     input String name;
     input Class cls;

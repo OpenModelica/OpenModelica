@@ -52,6 +52,7 @@ import AbsynToSCode;
 import System;
 import Testsuite;
 import Util;
+import List;
 
 public
 
@@ -61,10 +62,25 @@ function parse "Parse a mo-file"
   input String libraryPath = "";
   input Option<Integer> lveInstance = NONE();
   output Absyn.Program outProgram;
+protected
+  list<Absyn.Class> classes, classes1;
+  Absyn.Within w;
+  Absyn.Class cs;
 algorithm
   outProgram := parsebuiltin(filename,encoding,libraryPath,lveInstance);
   /* Check that the program is not totally off the charts */
   _ := AbsynToSCode.translateAbsyn2SCode(outProgram);
+  // Check license features
+  if (isSome(lveInstance)) then
+    Absyn.PROGRAM(classes, w) := outProgram;
+    classes1 := {};
+    for cs in classes loop
+      if checkLicenseAndFeatures(cs, lveInstance) then
+        classes1 := cs :: classes1;
+      end if;
+    end for;
+    outProgram := Absyn.PROGRAM(classes1, w);
+  end if;
 end parse;
 
 function parseexp "Parse a mos-file"
@@ -190,8 +206,9 @@ end checkLVEToolLicense;
 function checkLVEToolFeature
   input Option<Integer> lveInstance;
   input String feature;
+  output Boolean status;
 algorithm
-  ParserExt.checkLVEToolFeature(lveInstance, feature);
+  status := ParserExt.checkLVEToolFeature(lveInstance, feature);
 end checkLVEToolFeature;
 
 function stopLibraryVendorExecutable
@@ -243,6 +260,227 @@ algorithm
     ErrorExt.moveMessagesToParentThread();
   end if;
 end loadFileThread;
+
+public function checkLicenseAndFeatures
+  input Absyn.Class c1;
+  input Option<Integer> lveInstance = NONE();
+  output Boolean result;
+protected
+  list<String> orFeatures;
+  list<String> andFeatures;
+algorithm
+  // check license
+  //print("Parser.checkLVEToolLicense returned = " + boolString(Parser.checkLVEToolLicense(lveInstance, AbsynUtil.getClassName(c1))) + "\n");
+  //(libraryKey, licenseFile) := getLicenseAnnotation(c1);
+  //print("Library Key is : " + libraryKey + "\n");
+  //print("License File is : " + licenseFile + "\n");
+
+  // annotation(Protection(features={"LicenseOption1 LicenseOption2", "LicenseOption3"}));
+  // For above annotation. Requires license features ("LicenseOption1" and "LicenseOption2") or "LicenseOption3"
+  result := true;
+  orFeatures := getFeaturesAnnotation(c1);
+  for orFeature in orFeatures loop
+    andFeatures := Util.stringSplitAtChar(orFeature, " ");
+    result := true;
+    for andFeature in andFeatures loop
+      if not checkLVEToolFeature(lveInstance, andFeature) then
+        result := false;
+        break;
+      end if;
+    end for;
+    // If we one of the feature is there then do not look for other features.
+    // If the features vector has more than one element, then at least a license feature according to one of the elements must be present
+    if result then
+      break;
+    end if;
+  end for;
+end checkLicenseAndFeatures;
+
+protected function getLicenseAnnotation
+  "Returns the Protection(License=) annotation of a class.
+  This is annotated with the annotation:
+  annotation(Protection(License(libraryKey=\"15783-A39323-498222-444ckk4ll\", licenseFile=\"MyLibraryAuthorization_Tool.mo_lic\"))); in the class definition"
+  input Absyn.Class className;
+  output tuple<String, String> license;
+protected
+  Option<tuple<String, String>> opt_license;
+algorithm
+  opt_license := AbsynUtil.getNamedAnnotationInClass(className, Absyn.IDENT("Protection"), getLicenseAnnotationWork1);
+  license := Util.getOptionOrDefault(opt_license, ("", ""));
+end getLicenseAnnotation;
+
+protected function getLicenseAnnotationWork1
+  "Extractor function for getLicenseAnnotation"
+  input Option<Absyn.Modification> mod;
+  output tuple<String, String> license;
+algorithm
+  license := match (mod)
+    local
+      list<Absyn.ElementArg> arglst;
+      String libraryKey, licenseFile;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+      equation
+        (libraryKey, licenseFile) = getLicenseAnnotationWork2(arglst);
+      then (libraryKey, licenseFile);
+  end match;
+end getLicenseAnnotationWork1;
+
+protected function getLicenseAnnotationWork2
+  "Extractor function for getLicenseAnnotation"
+  input list<Absyn.ElementArg> eltArgs;
+  output tuple<String, String> license;
+algorithm
+  license := match eltArgs
+    local
+      Option<Absyn.Modification> mod;
+      list<Absyn.ElementArg> xs;
+      String libraryKey, licenseFile;
+
+    case ({}) then ("", "");
+
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="License"), modification = mod)::_)
+      equation
+        (libraryKey, licenseFile) = getLicenseAnnotationTuple(mod);
+      then (libraryKey, licenseFile);
+
+    case (_::xs)
+      equation
+        (libraryKey, licenseFile) = getLicenseAnnotationWork2(xs);
+      then (libraryKey, licenseFile);
+
+  end match;
+end getLicenseAnnotationWork2;
+
+protected function getLicenseAnnotationTuple
+  "Extractor function for getLicenseAnnotation"
+  input Option<Absyn.Modification> mod;
+  output tuple<String, String> license;
+algorithm
+  license := match (mod)
+    local
+      list<Absyn.ElementArg> arglst;
+      String libraryKey, licenseFile;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+      equation
+        libraryKey = getLicenseAnnotationLibraryKey(arglst);
+        licenseFile = getLicenseAnnotationLicenseFile(arglst);
+      then (libraryKey, licenseFile);
+  end match;
+end getLicenseAnnotationTuple;
+
+protected function getLicenseAnnotationLibraryKey
+  "Extractor function for getLicenseAnnotation"
+  input list<Absyn.ElementArg> eltArgs;
+  output String libraryKey;
+algorithm
+  libraryKey := match eltArgs
+    local
+      list<Absyn.ElementArg> xs;
+      String s;
+
+    case ({}) then "";
+
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="libraryKey"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_)
+      then s;
+
+    case (_::xs)
+      equation
+        s = getLicenseAnnotationLibraryKey(xs);
+      then s;
+
+    end match;
+end getLicenseAnnotationLibraryKey;
+
+protected function getLicenseAnnotationLicenseFile
+  "Extractor function for getLicenseAnnotation"
+  input list<Absyn.ElementArg> eltArgs;
+  output String licenseFile;
+algorithm
+  licenseFile := match eltArgs
+    local
+      list<Absyn.ElementArg> xs;
+      String s;
+
+    case ({}) then "";
+
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="licenseFile"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.STRING(s)))))::_)
+      then s;
+
+    case (_::xs)
+      equation
+        s = getLicenseAnnotationLicenseFile(xs);
+      then s;
+
+    end match;
+end getLicenseAnnotationLicenseFile;
+
+protected function getFeaturesAnnotation
+  "Returns the Protection(features=) annotation of a class.
+  This is annotated with the annotation:
+  annotation(Protection(features={\"LicenseOption1 LicenseOption2\", \"LicenseOption3\"})); in the class definition"
+  input Absyn.Class className;
+  output list<String> features;
+protected
+  Option<list<String>> opt_featuresList;
+algorithm
+  opt_featuresList := AbsynUtil.getNamedAnnotationInClass(className, Absyn.IDENT("Protection"), getFeaturesAnnotationList);
+  features := Util.getOptionOrDefault(opt_featuresList, {});
+end getFeaturesAnnotation;
+
+protected function getFeaturesAnnotationList
+  "Extractor function for getFeaturesAnnotation"
+  input Option<Absyn.Modification> mod;
+  output list<String> features;
+algorithm
+  features := match (mod)
+    local
+      list<Absyn.ElementArg> arglst;
+
+    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+      then getFeaturesAnnotationList2(arglst);
+
+  end match;
+end getFeaturesAnnotationList;
+
+protected function getFeaturesAnnotationList2
+  "Extractor function for getFeaturesAnnotation"
+  input list<Absyn.ElementArg> eltArgs;
+  output list<String> features;
+algorithm
+  features := match eltArgs
+    local
+      list<Absyn.Exp> expList;
+      list<Absyn.ElementArg> xs;
+      list<String> featuresList;
+
+    case ({}) then {};
+
+    case (Absyn.MODIFICATION(path = Absyn.IDENT(name="features"), modification = SOME(Absyn.CLASSMOD(eqMod=Absyn.EQMOD(exp=Absyn.ARRAY(expList)))))::_)
+      equation
+        featuresList = List.map(expList, expToString);
+      then featuresList;
+
+    case (_::xs)
+      equation
+        featuresList = getFeaturesAnnotationList2(xs);
+      then featuresList;
+
+    end match;
+end getFeaturesAnnotationList2;
+
+protected function expToString
+  input Absyn.Exp inExp;
+  output String outExp;
+algorithm
+  outExp := match (inExp)
+    local
+      String str;
+    case (Absyn.STRING(str)) then str;
+    case (_) then "";
+  end match;
+end expToString;
 
 annotation(__OpenModelica_Interface="frontend");
 end Parser;

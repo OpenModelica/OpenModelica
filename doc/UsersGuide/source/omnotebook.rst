@@ -264,7 +264,7 @@ undesired behavior of the system.
 .. omc-mos ::
   :erroratend:
 
-  loadModel(Modelica)
+  loadModel(Modelica, {"3.2.3"})
   simulate(noFeedback, stopTime=100)
 
 .. omc-gnuplot :: omnotebook-open-loop
@@ -313,7 +313,7 @@ mechanism in between.
 .. omc-mos ::
   :erroratend:
 
-  loadModel(Modelica)
+  loadModel(Modelica, {"3.2.3"})
   simulate(withFeedback, stopTime=10)
 
 .. omc-gnuplot :: omnotebook-closed-loop

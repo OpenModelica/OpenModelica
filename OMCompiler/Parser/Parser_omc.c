@@ -139,9 +139,9 @@ int ParserExt_checkLVEToolLicense(void** lveInstance, const char* packageName)
   return checkLVEToolLicense(lveInstance, packageName);
 }
 
-void ParserExt_checkLVEToolFeature(void** lveInstance, const char* feature)
+int ParserExt_checkLVEToolFeature(void** lveInstance, const char* feature)
 {
-  checkLVEToolFeature(lveInstance, feature);
+  return checkLVEToolFeature(lveInstance, feature);
 }
 
 void ParserExt_stopLibraryVendorExecutable(void** lveInstance)

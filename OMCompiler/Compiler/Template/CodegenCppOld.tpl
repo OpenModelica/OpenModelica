@@ -1,7 +1,7 @@
 package CodegenCppOld
 
 import interface SimCodeTV;
-import CodegenCppCommonOld.*;
+import CodegenCppCommon.*;
 import CodegenUtil.*;
 import CodegenUtilSimulation.*;
 import CodegenCppInit.*;
@@ -3182,14 +3182,19 @@ case "gcc" then
             # Simulations use -O0 by default
             SIM_OR_DYNLOAD_OPT_LEVEL=-O0
             CC=<%CC%>
-            CXX=<%CXX%> $(OPENMP_FLAGS)
+            CXX=<%CXX%>
             RUNTIME_STATIC_LINKING=<%if(Flags.isSet(Flags.RUNTIME_STATIC_LINKING)) then 'ON' else 'OFF'%>
+
+            ifeq ($(CXX),g++)
+              $(eval OPENMP_FLAGS=$(if $(findstring libomp,$(OPENMP_FLAGS)),-fopenmp,$(OPENMP_FLAGS)))
+            endif
+
             <%MPIEnvVars%>
 
             EXEEXT=<%makefileParams.exeext%>
             DLLEXT=<%makefileParams.dllext%>
 
-            CFLAGS_COMMON=<%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
+            CFLAGS_COMMON=$(OPENMP_FLAGS) <%extraCflags%> -Winvalid-pch $(SYSTEM_CFLAGS) -I"$(SCOREP_INCLUDE)" -I"$(OMHOME)/include/omc/cpp/" -I. <%makefileParams.includes%> -I"$(BOOST_INCLUDE)" -I"$(UMFPACK_INCLUDE)" -I"$(SUNDIALS_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %> <%additionalCFlags_GCC%> <%extraCppFlags%>
 
             ifeq ($(USE_SCOREP),ON)
             $(eval CC=scorep --user --nocompiler $(CC))
@@ -3252,7 +3257,7 @@ case "gcc" then
             ifeq ($(RUNTIME_STATIC_LINKING),ON)
             <%\t%>$(CXX) $(CFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS) $(MODELICA_EXTERNAL_LIBS)
             else
-            <%\t%>$(CXX) -shared -o $(SYSTEMOBJ) $(OFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDSYSTEMFLAGS) $(MODELICA_EXTERNAL_LIBS)
+            <%\t%>$(CXX) $(OPENMP_FLAGS) -shared -o $(SYSTEMOBJ) $(OFILES) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(LDSYSTEMFLAGS) $(MODELICA_EXTERNAL_LIBS)
             <%\t%>$(CXX) $(CFLAGS) -I. -o $(MAINOBJ) $(MAINFILE) $(LDMAINFLAGS)
             endif
 
@@ -8570,19 +8575,25 @@ template initConstValue(SimVar var, SimCode simCode, Text stateDerVectorName /*=
     case SIMVAR(numArrayElement=_::_) then ''
     case SIMVAR(type_=type,name=name) then
       match initialValue
-        case SOME(v) then '<%cref(name, useFlatArrayNotation)%> = <%initConstValue2(v, simCode, stateDerVectorName, useFlatArrayNotation)%>;'
+        case SOME(v) then
+          let &preExp = buffer ""
+          let &varDecls = buffer ""
+          let initValue = initConstValue2(v, &preExp, &varDecls, simCode, stateDerVectorName, useFlatArrayNotation)
+          <<
+          <%varDecls%>
+          <%preExp%>
+          <%cref(name, useFlatArrayNotation)%> = <%initValue%>;
+          >>
         else
           match type
             case T_STRING(__) then '<%cref(name, useFlatArrayNotation)%> = "";'
             else '<%cref(name, useFlatArrayNotation)%> = 0;'
 end initConstValue;
 
-template initConstValue2(Exp initialValue, SimCode simCode, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+template initConstValue2(Exp initialValue, Text &preExp, Text &varDecls, SimCode simCode, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   match initialValue
     case v then
-      let &preExp = buffer "" //dummy ... the value is always a constant
-      let &varDecls = buffer ""
       let &extraFuncs = buffer ""
       let &extraFuncsDecl = buffer ""
       let &extraFuncsNamespace = buffer ""
@@ -10977,14 +10988,6 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
       'localData->helpVars[<%hidx%>] && !localData->helpVars_saved[<%hidx%>] /* edge */'
     ;separator=" || ")C*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   match expTypeFromExpShort(eqn.exp)
-  case "bool"
-  case "int" then
-    let lhsStr = cref1(lhs.componentRef, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)
-    <<
-    <%if not assignToStartValues then '<%startFixedExp%>'%>
-    <%preExp%>
-    <%lhsStr%>.assign(<%expPart%>);
-    >>
   case "double" then
     <<
     <%if not assignToStartValues then '<%startFixedExp%>'%>
@@ -10992,7 +10995,12 @@ case eqn as SES_ARRAY_CALL_ASSIGN(lhs=lhs as CREF(__)) then
     <%assignDerArray(context, expPart, lhs, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
     >>
   else
-    error(sourceInfo(), 'Unsupported type of array call assign: <%expTypeFromExpShort(eqn.exp)%>')
+    let lhsStr = cref1(lhs.componentRef, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDeclsCref, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%if not assignToStartValues then '<%startFixedExp%>'%>
+    <%preExp%>
+    <%lhsStr%>.assign(<%expPart%>);
+    >>
 end equationArrayCallAssign;
 
 template assignDerArray(Context context, String arr, Exp lhs_ecr, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -11557,7 +11565,7 @@ template equationForLoop(SimEqSystem eq, Context context, Text &varDecls, SimCod
       let startExp = daeExp(startIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       let endExp = daeExp(endIt, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       let expPart = daeExp(exp, context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
-      let crefPart = daeExp(crefExp(cref), context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
+      let crefPart = daeExpCref(true, crefExp(cref), context, preExp, varDecls, simCode, extraFuncs, extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, false)
       <<
       <%if not assignToStartValues then '<%startFixedExp%>'%>
       for (int <%iterExp%> = <%startExp%>; <%iterExp%> <= <%endExp%>; <%iterExp%>++) {
@@ -13650,7 +13658,7 @@ match stmt
 case STMT_ASSIGN_ARR(exp=e, lhs=lhsexp as CREF(componentRef=cr), type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  let dest = daeExp(lhsexp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let dest = daeExpCref(true, lhsexp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
   <%preExp%>
   <%dest%>.assign(<%expPart%>);

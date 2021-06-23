@@ -71,6 +71,7 @@ class TraceabilityPage;
 class TabSettings;
 class StackFramesWidget;
 class TranslationFlagsWidget;
+class LibraryTreeItem;
 
 class OptionsDialog : public QDialog
 {
@@ -180,6 +181,7 @@ public slots:
   void saveSettings();
   void reset();
 private:
+  bool mDetectChange;
   GeneralSettingsPage *mpGeneralSettingsPage;
   LibrariesPage *mpLibrariesPage;
   TextEditorPage *mpTextEditorPage;
@@ -349,6 +351,8 @@ public:
   Label *mpValueLabel;
   QLineEdit *mpVersionTextBox;
   QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
   bool mEditFlag;
 private slots:
   void addSystemLibrary();
@@ -368,6 +372,8 @@ public:
   Label *mpEncodingLabel;
   QComboBox *mpEncodingComboBox;
   QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
   bool mEditFlag;
 private slots:
   void browseUserLibraryPath();
@@ -1039,6 +1045,27 @@ private slots:
 //  void browseFMUOutputDirectory();
   void browseGitRepository();
 
+};
+
+class DiscardLocalTranslationFlagsDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  DiscardLocalTranslationFlagsDialog(QWidget *pParent = 0);
+private:
+  Label *mpDescriptionLabel;
+  QListWidget *mpClassesWithLocalTranslationFlagsListWidget;
+  QPushButton *mpYesButton;
+  QPushButton *mpNoButton;
+  QDialogButtonBox *mpButtonBox;
+
+  void listLocalTranslationFlagsClasses(LibraryTreeItem *pLibraryTreeItem);
+private slots:
+  void selectUnSelectAll(bool checked);
+  void discardLocalTranslationFlags();
+  void showLocalTranslationFlags(QListWidgetItem *pListWidgetItem);
+public slots:
+  int exec();
 };
 
 #endif // OPTIONSDIALOG_H

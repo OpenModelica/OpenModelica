@@ -1,0 +1,37 @@
+// name: mslMathFFT1Test
+// keywords: array slice asub
+// status: correct
+// teardown_command: rm -f *RealFFT1*
+// cflags: -d=newInst
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+
+// simulate without echo to avoid a message with absolute path name
+echo(false);
+simulate(Modelica.Math.FastFourierTransform.Examples.RealFFT1);
+echo(true);
+
+// log some test results
+val(Ai[1], 6.0);
+val(Ai[11], 6.0);
+val(Ai[16], 6.0);
+val(fi[1], 6.0);
+val(fi[11], 6.0);
+val(fi[16], 6.0);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// true
+// 4.999999999999999
+// 2.97029702970297
+// 1.485148514851486
+// 0.0
+// 2.0
+// 3.0
+// ""
+// endResult

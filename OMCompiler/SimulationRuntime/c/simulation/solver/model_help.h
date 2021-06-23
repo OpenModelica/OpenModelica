@@ -36,44 +36,6 @@ extern "C" {
 
 #include "../../simulation_data.h"
 
-/* lochel: I guess this is used for discrete relations */
-#define RELATION(res,exp1,exp2,index,op_w) \
-{ \
-  if(data->simulationInfo->initial) \
-  { \
-    res = ((op_w)((exp1),(exp2))); \
-    data->simulationInfo->relations[index] = res; \
-  } \
-  else if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous) \
-  { \
-    res = data->simulationInfo->relationsPre[index]; \
-  } \
-  else \
-  { \
-    res = ((op_w)((exp1),(exp2))); \
-    data->simulationInfo->relations[index] = res; \
-  } \
-}
-
-/* lochel: I guess this is used for continuous relations */
-#define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) \
-{ \
-  if(data->simulationInfo->initial) \
-  { \
-    res = ((op_w)((exp1),(exp2))); \
-    data->simulationInfo->relations[index] = res; \
-  } \
-  else if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous) \
-  { \
-    res = data->simulationInfo->relationsPre[index]; \
-  } \
-  else \
-  { \
-    res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo->storedRelations[index])); \
-    data->simulationInfo->relations[index] = res; \
-  } \
-}
-
 extern int maxEventIterations;
 extern double linearSparseSolverMaxDensity;
 extern int linearSparseSolverMinSize;
@@ -176,6 +138,72 @@ modelica_boolean LessZC(double a, double b, modelica_boolean);
 modelica_boolean LessEqZC(double a, double b, modelica_boolean);
 modelica_boolean GreaterZC(double a, double b, modelica_boolean);
 modelica_boolean GreaterEqZC(double a, double b, modelica_boolean);
+
+
+/**
+ * @brief Relation function for compare functions.
+ *
+ * Used for cases where exp1 or exp2 are discrete.
+ *
+ * Two cases:
+ *   1. During initialization or discrete calls or not continuous mode: Use op_w(exp1,exp2) and update relations[index] and return result in res.
+ *   2. Else (Not discrete call or in continuous mode) : Only return pre-value of relation in res
+ *
+ * @param[in]   data      Pointer to data struct
+ * @param[out]  res       Gets overwritten with result of relation.
+ * @param[in]   exp1      First value (left side of relation).
+ * @param[in]   exp2      Second value (right side of relation).
+ * @param[in]   index     Index of relation in data->simulationInfo->relations.
+ * @param[in]   op_w      Comparison function, e.g. Less.
+ */
+static inline void relation(DATA* data, modelica_boolean* res, double exp1, double exp2, int index, modelica_boolean(*op_w)(double, double))
+{
+  if(data->simulationInfo->initial || !(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous) )
+  {
+    *res = op_w(exp1,exp2);
+    data->simulationInfo->relations[index] = *res;
+  }
+  else
+  {
+    *res = data->simulationInfo->relationsPre[index];
+  }
+}
+
+/**
+ * @brief Relation hysteresis function for compare functions.
+ *
+ * Used for cases where exp1 and exp2 are continuous.
+ *
+ * Three cases:
+ *   1. During initialization: Use op_w(exp1,exp2) and update relations[index] and return result in res.
+ *   2. No descrete call or in continuous case: Only return pre-value of relation in res
+ *   3. Else (events, zero-crossing): Use op_w_zc(exp1,exp2,...) to update relations[index] and return result in res.
+ *
+ * @param[in]   data      Pointer to data struct
+ * @param[out]  res       Gets overwritten with result of relation.
+ * @param[in]   exp1      First value (left side of relation).
+ * @param[in]   exp2      Second value (right side of relation).
+ * @param[in]   index     Index of relation in data->simulationInfo->relations.
+ * @param[in]   op_w      Comparison function, e.g. Less.
+ * @param[in]   op_w_zc   Matching comparison function of op_w for zero-crossing, e.g. LessZC.
+ */
+static inline void relationhysteresis(DATA* data, modelica_boolean* res, double exp1, double exp2, int index, modelica_boolean(*op_w)(double, double), modelica_boolean(*op_w_zc)(double, double, modelica_boolean))
+{
+  if(data->simulationInfo->initial)
+  {
+    *res = op_w(exp1,exp2);
+    data->simulationInfo->relations[index] = *res;
+  }
+  else if(data->simulationInfo->discreteCall == 0 || data->simulationInfo->solveContinuous)
+  {
+    *res = data->simulationInfo->relationsPre[index];
+  }
+  else
+  {
+    *res = op_w_zc(exp1, exp2, data->simulationInfo->storedRelations[index]);
+    data->simulationInfo->relations[index] = *res;
+  }
+}
 
 extern int measure_time_flag;
 

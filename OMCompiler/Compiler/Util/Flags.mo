@@ -611,7 +611,7 @@ constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "removeEqualRHS",
     "removeSimpleEquations",
     "comSubExp",
-    //"resolveLoops",
+    "resolveLoops",
     "evalFunc",
     "encapsulateWhenConditions"
     }),
@@ -1362,6 +1362,10 @@ constant ConfigFlag ALLOW_NON_STANDARD_MODELICA = CONFIG_FLAG(143, "allowNonStan
     ("nonStdDifferentCaseFileVsClassName", Gettext.gettext("Allow directory or file with different case in the name than the contained class name.\nSee: https://specification.modelica.org/maint/3.5/packages.html#mapping-package-class-structures-to-a-hierarchical-file-system"))
     })),
   Gettext.gettext("Flags to allow non-standard Modelica."));
+
+constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION = CONFIG_FLAG(144, "exportClocksInModelDescription",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("exports clocks in modeldescription.xml for fmus, The default is false."));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."

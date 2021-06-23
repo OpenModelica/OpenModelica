@@ -536,27 +536,33 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // ========================================
 // $cse1
 //
-// Replacements: (16)
+// Replacements: (20)
 // ========================================
+// ground.p.i -> 0.0
 // aimc.airGapS.RotationMatrix[2,1] -> $cse1
 // aimc.strayLoad.w -> aimc.inertiaRotor.w
 // $DER.aimc.strayLoad.phi -> aimc.inertiaRotor.w
 // aimc.rs.resistor[3].v -> aimc.rs.v[3]
 // aimc.rs.resistor[2].v -> aimc.rs.v[2]
 // aimc.rs.resistor[1].v -> aimc.rs.v[1]
+// aimc.powerBalance.lossPowerStatorWinding -> aimc.thermalAmbient.Q_flowStatorWinding
+// aimc.powerBalance.lossPowerTotal -> aimc.thermalAmbient.Q_flowTotal
 // aimc.friction.w -> aimc.inertiaRotor.w
 // $DER.aimc.friction.phi -> aimc.inertiaRotor.w
 // aimc.inertiaStator.flange_a.tau -> 0.0
 // aimc.fixed.flange.tau -> -aimc.tauElectrical
 // aimc.wMechanical -> aimc.inertiaRotor.w
 // $DER.aimc.phiMechanical -> aimc.inertiaRotor.w
+// $DER.ground.p.i -> 0.0
 // $DER.aimc.airGapS.psi_mr[1] -> aimc.airGapS.spacePhasor_r.v_[1]
-// $DER.aimc.airGapS.psi_ms[2] -> aimc.airGapS.spacePhasor_s.v_[2]
-// $DER.aimc.airGapS.psi_ms[1] -> aimc.airGapS.spacePhasor_s.v_[1]
 // $DER.aimc.airGapS.psi_mr[2] -> aimc.airGapS.spacePhasor_r.v_[2]
+// $DER.aimc.airGapS.psi_ms[1] -> aimc.airGapS.spacePhasor_s.v_[1]
+// $DER.aimc.airGapS.psi_ms[2] -> aimc.airGapS.spacePhasor_s.v_[2]
 //
-// ExtendReplacements: (18)
+// ExtendReplacements: (23)
 // ========================================
+// ground -> 0.0
+// ground.p -> 0.0
 // aimc -> 0.0
 // aimc.airGapS -> 0.0
 // aimc.airGapS.RotationMatrix -> 0.0
@@ -566,12 +572,15 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // $DER.aimc.strayLoad -> 0.0
 // aimc.rs -> 0.0
 // aimc.rs.resistor -> 0.0
+// aimc.powerBalance -> 0.0
 // aimc.friction -> 0.0
 // $DER.aimc.friction -> 0.0
 // aimc.inertiaStator -> 0.0
 // aimc.inertiaStator.flange_a -> 0.0
 // aimc.fixed -> 0.0
 // aimc.fixed.flange -> 0.0
+// $DER.ground -> 0.0
+// $DER.ground.p -> 0.0
 // $DER.aimc.airGapS -> 0.0
 // $DER.aimc.airGapS.psi_mr -> 0.0
 // $DER.aimc.airGapS.psi_ms -> 0.0
@@ -581,10 +590,8 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // $res_LSJac2_2.$pDERLSJac2.dummyVarLSJac2
 // $res_LSJac2_1.$pDERLSJac2.dummyVarLSJac2
 //
-// Unreplaceable Crefs: (7)
+// Unreplaceable Crefs: (5)
 // ========================================
-// $res_LSJac3_7.$pDERLSJac3.dummyVarLSJac3
-// $res_LSJac3_6.$pDERLSJac3.dummyVarLSJac3
 // $res_LSJac3_5.$pDERLSJac3.dummyVarLSJac3
 // $res_LSJac3_4.$pDERLSJac3.dummyVarLSJac3
 // $res_LSJac3_3.$pDERLSJac3.dummyVarLSJac3
@@ -601,12 +608,84 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // Variables (1)
 // ========================================
+// 1: star.pin_n.i:VARIABLE(flow=true unit = "A" )  "Current flowing into the pin" type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): star.pin_n.i = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: ground.p.i:DUMMY_STATE(flow=true unit = "A" stateSelect=StateSelect.never )  "Current flowing into the pin" type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): ground.p.i = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
 // 1: aimc.inertiaStator.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  "Cut torque in the flange" type: Real
 //
 //
 // Equations (1, 1)
 // ========================================
 // 1/1 (1): aimc.inertiaStator.flange_a.tau = 0.0   [binding |0|0|0|0|]
+//
+//
+// Matching
+// ========================================
+// 1 variables and equations
+// var 1 is solved in eqn 1
+//
+//
+// StrongComponents
+// ========================================
+// {1:1}
+//
+//
+// unspecified partition
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: $DER.ground.p.i:DUMMY_DER(flow=true fixed = false )  "Current flowing into the pin" type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): $DER.ground.p.i = 0.0   [binding |0|0|0|0|]
 //
 //
 // Matching
@@ -767,7 +846,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // unspecified partition
 // ========================================
 //
-// Variables (94)
+// Variables (93)
 // ========================================
 // 1: sinevoltage1.i[3]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Currents flowing into positive plugs" type: Real [3]
 // 2: sinevoltage1.i[2]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Currents flowing into positive plugs" type: Real [3]
@@ -776,96 +855,95 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 5: sinevoltage1.v[2]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
 // 6: sinevoltage1.v[1]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
 // 7: speedSensor.flange.phi:STATE(1,aimc.inertiaRotor.w)(flow=false unit = "rad" fixed = true )  "Absolute rotation angle of flange" type: Real
-// 8: ground.p.i:VARIABLE(flow=true unit = "A" )  "Current flowing into the pin" type: Real
-// 9: aimc.thermalAmbient.Q_flowTotal:VARIABLE(unit = "W" final = true )  type: Real
-// 10: aimc.thermalAmbient.Q_flowRotorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of rotor (squirrel cage)" type: Real
-// 11: aimc.thermalAmbient.Q_flowStatorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of stator windings" type: Real
-// 12: aimc.airGapS.i_ms[2]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real [2]
-// 13: aimc.airGapS.i_ms[1]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real [2]
-// 14: aimc.airGapS.spacePhasor_r.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
-// 15: aimc.airGapS.spacePhasor_r.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
-// 16: aimc.airGapS.spacePhasor_s.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
-// 17: aimc.airGapS.spacePhasor_s.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
-// 18: aimc.airGapS.RotationMatrix[2,2]:DUMMY_STATE(stateSelect=StateSelect.never )  "Matrix of rotation from rotor to stator" type: Real [2,2]
-// 19: aimc.airGapS.psi_mr[2]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real [2]
-// 20: aimc.airGapS.psi_mr[1]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real [2]
-// 21: aimc.airGapS.psi_ms[2]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real [2]
-// 22: aimc.airGapS.psi_ms[1]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real [2]
-// 23: aimc.airGapS.gamma:DUMMY_STATE(unit = "rad" stateSelect=StateSelect.never )  "Rotor displacement angle" type: Real
-// 24: aimc.strayLoad.iRMS:VARIABLE(unit = "A" )  type: Real
-// 25: aimc.strayLoad.phi:DUMMY_STATE(unit = "rad" )  "Angle between shaft and support" type: Real
-// 26: aimc.spacePhasorS.i[3]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Instantaneous phase currents" type: Real [3]
-// 27: aimc.spacePhasorS.i[2]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Instantaneous phase currents" type: Real [3]
-// 28: aimc.spacePhasorS.i[1]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Instantaneous phase currents" type: Real [3]
-// 29: aimc.spacePhasorS.v[3]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real [3]
-// 30: aimc.spacePhasorS.v[2]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real [3]
-// 31: aimc.spacePhasorS.v[1]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real [3]
-// 32: aimc.lszero.v:VARIABLE(unit = "V" )  "Voltage drop between the two pins (= p.v - n.v)" type: Real
-// 33: aimc.lssigma.spacePhasor_a.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
-// 34: aimc.lssigma.spacePhasor_a.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
-// 35: aimc.lssigma.i_[2]:DUMMY_STATE(unit = "A" )  type: Real [2]
-// 36: aimc.lssigma.i_[1]:DUMMY_STATE(unit = "A" )  type: Real [2]
-// 37: aimc.lssigma.v_[2]:VARIABLE(unit = "V" )  type: Real [2]
-// 38: aimc.lssigma.v_[1]:VARIABLE(unit = "V" )  type: Real [2]
-// 39: aimc.rs.resistor[3].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real [3]
-// 40: aimc.rs.resistor[2].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real [3]
-// 41: aimc.rs.resistor[1].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real [3]
-// 42: aimc.rs.plug_n.pin[3].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
-// 43: aimc.rs.plug_n.pin[2].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
-// 44: aimc.rs.plug_n.pin[1].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
-// 45: aimc.rs.v[3]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
-// 46: aimc.rs.v[2]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
-// 47: aimc.rs.v[1]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
-// 48: aimc.plug_sn.pin[3].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
-// 49: aimc.idq_rr[2]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real [2]
-// 50: aimc.idq_rr[1]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real [2]
-// 51: aimc.idq_rs[2]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Rotor space phasor current / stator fixed frame" type: Real [2]
-// 52: aimc.idq_rs[1]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Rotor space phasor current / stator fixed frame" type: Real [2]
-// 53: aimc.idq_sr[2]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real [2]
-// 54: aimc.idq_sr[1]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real [2]
-// 55: aimc.i_0_s:DUMMY_STATE(start = 0.0 unit = "A" stateSelect=StateSelect.prefer )  "Stator zero-sequence current" type: Real
-// 56: aimc.vs[3]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real [3]
-// 57: aimc.vs[2]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real [3]
-// 58: aimc.vs[1]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real [3]
-// 59: aimc.powerBalance.lossPowerStatorWinding:VARIABLE(unit = "W" final = true )  "Stator copper losses" type: Real
-// 60: aimc.powerBalance.lossPowerTotal:VARIABLE(unit = "W" final = true )  "Total loss power" type: Real
-// 61: aimc.powerBalance.powerInertiaRotor:VARIABLE(unit = "W" final = true )  "Rotor inertia power" type: Real
-// 62: aimc.powerBalance.powerMechanical:VARIABLE(unit = "W" final = true )  "Mechanical power" type: Real
-// 63: aimc.powerBalance.powerStator:VARIABLE(unit = "W" final = true )  "Electrical power (stator)" type: Real
-// 64: aimc.friction.phi:DUMMY_STATE(unit = "rad" )  "Angle between shaft and support" type: Real
-// 65: aimc.inertiaRotor.a:VARIABLE(unit = "rad/s2" )  "Absolute angular acceleration of component (= der(w))" type: Real
-// 66: aimc.inertiaRotor.w:STATE(1,aimc.inertiaRotor.a)(unit = "rad/s" fixed = true )  "Absolute angular velocity of component (= der(phi))" type: Real
-// 67: aimc.tauElectrical:VARIABLE(unit = "N.m" )  "Electromagnetic torque" type: Real
-// 68: aimc.phiMechanical:DUMMY_STATE(start = 0.0 unit = "rad" )  "Mechanical angle of rotor against stator" type: Real
-// 69: $DER.aimc.airGapS.gamma:DUMMY_DER(fixed = false )  "Rotor displacement angle" type: Real
-// 70: $DER.aimc.airGapS.RotationMatrix[2,1]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator" type: Real [2,2]
-// 71: $DER.aimc.airGapS.RotationMatrix[2,2]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator" type: Real [2,2]
-// 72: $DER.aimc.idq_rs[1]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame" type: Real [2]
-// 73: $DER.aimc.idq_rs[2]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame" type: Real [2]
-// 74: $DER.aimc.airGapS.i_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real [2]
-// 75: $DER.aimc.airGapS.i_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real [2]
-// 76: $DER.sinevoltage1.i[1]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real [3]
-// 77: $DER.sinevoltage1.i[2]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real [3]
-// 78: $DER.sinevoltage1.i[3]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real [3]
-// 79: $DER.aimc.spacePhasorS.i[1]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real [3]
-// 80: $DER.aimc.spacePhasorS.i[2]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real [3]
-// 81: $DER.aimc.spacePhasorS.i[3]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real [3]
-// 82: $DER.aimc.lssigma.i_[1]:DUMMY_DER(fixed = false )  type: Real [2]
-// 83: $DER.aimc.lssigma.i_[2]:DUMMY_DER(fixed = false )  type: Real [2]
-// 84: $DER.aimc.i_0_s:DUMMY_DER(fixed = false )  "Stator zero-sequence current" type: Real
-// 85: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
-// 86: aimc.airGapS.RotationMatrix[2,1]:DUMMY_STATE(fixed = false stateSelect=StateSelect.never )  "Matrix of rotation from rotor to stator" type: Real [2,2]
-// 87: aimc.rs.resistor[3].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
-// 88: aimc.rs.resistor[2].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
-// 89: aimc.rs.resistor[1].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
-// 90: aimc.fixed.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = false )  "Cut torque in the flange" type: Real
-// 91: $DER.aimc.airGapS.psi_mr[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real [2]
-// 92: $DER.aimc.airGapS.psi_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real [2]
-// 93: $DER.aimc.airGapS.psi_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real [2]
-// 94: $DER.aimc.airGapS.psi_mr[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real [2]
+// 8: aimc.thermalAmbient.Q_flowTotal:VARIABLE(unit = "W" final = true )  type: Real
+// 9: aimc.thermalAmbient.Q_flowRotorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of rotor (squirrel cage)" type: Real
+// 10: aimc.thermalAmbient.Q_flowStatorWinding:VARIABLE(unit = "W" final = true )  "Heat flow rate of stator windings" type: Real
+// 11: aimc.airGapS.i_ms[2]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real [2]
+// 12: aimc.airGapS.i_ms[1]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real [2]
+// 13: aimc.airGapS.spacePhasor_r.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
+// 14: aimc.airGapS.spacePhasor_r.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
+// 15: aimc.airGapS.spacePhasor_s.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
+// 16: aimc.airGapS.spacePhasor_s.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
+// 17: aimc.airGapS.RotationMatrix[2,2]:DUMMY_STATE(stateSelect=StateSelect.never )  "Matrix of rotation from rotor to stator" type: Real [2,2]
+// 18: aimc.airGapS.psi_mr[2]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real [2]
+// 19: aimc.airGapS.psi_mr[1]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real [2]
+// 20: aimc.airGapS.psi_ms[2]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real [2]
+// 21: aimc.airGapS.psi_ms[1]:DUMMY_STATE(unit = "Wb" )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real [2]
+// 22: aimc.airGapS.gamma:DUMMY_STATE(unit = "rad" stateSelect=StateSelect.never )  "Rotor displacement angle" type: Real
+// 23: aimc.strayLoad.iRMS:VARIABLE(unit = "A" )  type: Real
+// 24: aimc.strayLoad.phi:DUMMY_STATE(unit = "rad" )  "Angle between shaft and support" type: Real
+// 25: aimc.spacePhasorS.i[3]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Instantaneous phase currents" type: Real [3]
+// 26: aimc.spacePhasorS.i[2]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Instantaneous phase currents" type: Real [3]
+// 27: aimc.spacePhasorS.i[1]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Instantaneous phase currents" type: Real [3]
+// 28: aimc.spacePhasorS.v[3]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real [3]
+// 29: aimc.spacePhasorS.v[2]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real [3]
+// 30: aimc.spacePhasorS.v[1]:VARIABLE(unit = "V" )  "Instantaneous phase voltages" type: Real [3]
+// 31: aimc.lszero.v:VARIABLE(unit = "V" )  "Voltage drop between the two pins (= p.v - n.v)" type: Real
+// 32: aimc.lssigma.spacePhasor_a.v_[2]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
+// 33: aimc.lssigma.spacePhasor_a.v_[1]:VARIABLE(flow=false unit = "V" )  "1=real, 2=imaginary part" type: Real [2]
+// 34: aimc.lssigma.i_[2]:DUMMY_STATE(unit = "A" )  type: Real [2]
+// 35: aimc.lssigma.i_[1]:DUMMY_STATE(unit = "A" )  type: Real [2]
+// 36: aimc.lssigma.v_[2]:VARIABLE(unit = "V" )  type: Real [2]
+// 37: aimc.lssigma.v_[1]:VARIABLE(unit = "V" )  type: Real [2]
+// 38: aimc.rs.resistor[3].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real [3]
+// 39: aimc.rs.resistor[2].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real [3]
+// 40: aimc.rs.resistor[1].LossPower:VARIABLE(unit = "W" )  "Loss power leaving component via HeatPort" type: Real [3]
+// 41: aimc.rs.plug_n.pin[3].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
+// 42: aimc.rs.plug_n.pin[2].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
+// 43: aimc.rs.plug_n.pin[1].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
+// 44: aimc.rs.v[3]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
+// 45: aimc.rs.v[2]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
+// 46: aimc.rs.v[1]:VARIABLE(unit = "V" )  "Voltage drops between the two plugs" type: Real [3]
+// 47: aimc.plug_sn.pin[3].v:VARIABLE(flow=false unit = "V" )  "Potential at the pin" type: Real [3]
+// 48: aimc.idq_rr[2]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real [2]
+// 49: aimc.idq_rr[1]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Rotor space phasor current / rotor fixed frame" type: Real [2]
+// 50: aimc.idq_rs[2]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Rotor space phasor current / stator fixed frame" type: Real [2]
+// 51: aimc.idq_rs[1]:DUMMY_STATE(unit = "A" stateSelect=StateSelect.never )  "Rotor space phasor current / stator fixed frame" type: Real [2]
+// 52: aimc.idq_sr[2]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real [2]
+// 53: aimc.idq_sr[1]:STATE(1)(unit = "A" fixed = true stateSelect=StateSelect.prefer )  "Stator space phasor current / rotor fixed frame" type: Real [2]
+// 54: aimc.i_0_s:DUMMY_STATE(start = 0.0 unit = "A" stateSelect=StateSelect.prefer )  "Stator zero-sequence current" type: Real
+// 55: aimc.vs[3]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real [3]
+// 56: aimc.vs[2]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real [3]
+// 57: aimc.vs[1]:VARIABLE(unit = "V" )  "Stator instantaneous voltages" type: Real [3]
+// 58: aimc.powerBalance.powerInertiaRotor:VARIABLE(unit = "W" final = true )  "Rotor inertia power" type: Real
+// 59: aimc.powerBalance.powerMechanical:VARIABLE(unit = "W" final = true )  "Mechanical power" type: Real
+// 60: aimc.powerBalance.powerStator:VARIABLE(unit = "W" final = true )  "Electrical power (stator)" type: Real
+// 61: aimc.friction.phi:DUMMY_STATE(unit = "rad" )  "Angle between shaft and support" type: Real
+// 62: aimc.inertiaRotor.a:VARIABLE(unit = "rad/s2" )  "Absolute angular acceleration of component (= der(w))" type: Real
+// 63: aimc.inertiaRotor.w:STATE(1,aimc.inertiaRotor.a)(unit = "rad/s" fixed = true )  "Absolute angular velocity of component (= der(phi))" type: Real
+// 64: aimc.tauElectrical:VARIABLE(unit = "N.m" )  "Electromagnetic torque" type: Real
+// 65: aimc.phiMechanical:DUMMY_STATE(start = 0.0 unit = "rad" )  "Mechanical angle of rotor against stator" type: Real
+// 66: $DER.aimc.airGapS.gamma:DUMMY_DER(fixed = false )  "Rotor displacement angle" type: Real
+// 67: $DER.aimc.airGapS.RotationMatrix[2,1]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator" type: Real [2,2]
+// 68: $DER.aimc.airGapS.RotationMatrix[2,2]:DUMMY_DER(fixed = false )  "Matrix of rotation from rotor to stator" type: Real [2,2]
+// 69: $DER.aimc.idq_rs[1]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame" type: Real [2]
+// 70: $DER.aimc.idq_rs[2]:DUMMY_DER(fixed = false )  "Rotor space phasor current / stator fixed frame" type: Real [2]
+// 71: $DER.aimc.airGapS.i_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real [2]
+// 72: $DER.aimc.airGapS.i_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing current space phasor with respect to the stator fixed frame" type: Real [2]
+// 73: $DER.sinevoltage1.i[1]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real [3]
+// 74: $DER.sinevoltage1.i[2]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real [3]
+// 75: $DER.sinevoltage1.i[3]:DUMMY_DER(fixed = false )  "Currents flowing into positive plugs" type: Real [3]
+// 76: $DER.aimc.spacePhasorS.i[1]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real [3]
+// 77: $DER.aimc.spacePhasorS.i[2]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real [3]
+// 78: $DER.aimc.spacePhasorS.i[3]:DUMMY_DER(fixed = false )  "Instantaneous phase currents" type: Real [3]
+// 79: $DER.aimc.lssigma.i_[1]:DUMMY_DER(fixed = false )  type: Real [2]
+// 80: $DER.aimc.lssigma.i_[2]:DUMMY_DER(fixed = false )  type: Real [2]
+// 81: $DER.aimc.i_0_s:DUMMY_DER(fixed = false )  "Stator zero-sequence current" type: Real
+// 82: $cse1:VARIABLE(protected = true )  type: Real unreplaceable
+// 83: aimc.airGapS.RotationMatrix[2,1]:DUMMY_STATE(fixed = false stateSelect=StateSelect.never )  "Matrix of rotation from rotor to stator" type: Real [2,2]
+// 84: aimc.rs.resistor[3].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
+// 85: aimc.rs.resistor[2].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
+// 86: aimc.rs.resistor[1].v:VARIABLE(unit = "V" fixed = false )  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
+// 87: aimc.powerBalance.lossPowerStatorWinding:VARIABLE(unit = "W" fixed = false final = true )  "Stator copper losses" type: Real
+// 88: aimc.powerBalance.lossPowerTotal:VARIABLE(unit = "W" fixed = false final = true )  "Total loss power" type: Real
+// 89: aimc.fixed.flange.tau:VARIABLE(flow=true unit = "N.m" fixed = false )  "Cut torque in the flange" type: Real
+// 90: $DER.aimc.airGapS.psi_mr[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real [2]
+// 91: $DER.aimc.airGapS.psi_mr[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the rotor fixed frame" type: Real [2]
+// 92: $DER.aimc.airGapS.psi_ms[1]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real [2]
+// 93: $DER.aimc.airGapS.psi_ms[2]:DUMMY_DER(fixed = false )  "Magnetizing flux phasor with respect to the stator fixed frame" type: Real [2]
 //
 //
-// Equations (94, 94)
+// Equations (93, 93)
 // ========================================
 // 1/1 (1): aimc.phiMechanical = speedSensor.flange.phi - aimc.fixed.phi0   [binding |0|0|0|0|]
 // 2/2 (1): aimc.friction.phi = speedSensor.flange.phi - aimc.fixed.phi0   [dynamic |0|0|0|0|]
@@ -875,92 +953,91 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 6/6 (1): $cse1 = sin(aimc.airGapS.gamma)   [unknown |0|0|0|0|]
 // 7/7 (1): aimc.lssigma.i_[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[1] - $cse1 * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
 // 8/8 (1): aimc.lssigma.i_[2] = $cse1 * aimc.idq_sr[1] + aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
-// 9/9 (1): aimc.lssigma.i_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
-// 10/10 (1): aimc.spacePhasorS.i[3] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[3]   [dynamic |0|0|0|0|]
-// 11/11 (1): sinevoltage1.i[1] + sinevoltage1.i[2] + sinevoltage1.i[3] = 0.0   [dynamic |0|0|0|0|]
-// 12/12 (1): aimc.spacePhasorS.i[2] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[2]   [dynamic |0|0|0|0|]
-// 13/13 (1): aimc.lssigma.i_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
-// 14/14 (1): aimc.spacePhasorS.i[1] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[1]   [dynamic |0|0|0|0|]
-// 15/15 (1): aimc.i_0_s = (aimc.spacePhasorS.i[1] + aimc.spacePhasorS.i[2] + aimc.spacePhasorS.i[3]) / (-3.0)   [dynamic |0|0|0|0|]
-// 16/16 (1): aimc.idq_rs[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[1] - $cse1 * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
-// 17/17 (1): aimc.airGapS.i_ms[1] = aimc.lssigma.i_[1] + aimc.idq_rs[1]   [dynamic |0|0|0|0|]
-// 18/18 (1): aimc.idq_rs[2] = $cse1 * aimc.idq_rr[1] + aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
-// 19/19 (1): aimc.airGapS.i_ms[2] = aimc.lssigma.i_[2] + aimc.idq_rs[2]   [dynamic |0|0|0|0|]
-// 20/20 (1): aimc.airGapS.psi_ms[2] = aimc.airGapS.L[2,1] * aimc.airGapS.i_ms[1] + aimc.airGapS.L[2,2] * aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
-// 21/21 (1): aimc.airGapS.psi_ms[1] = aimc.airGapS.L[1,1] * aimc.airGapS.i_ms[1] + aimc.airGapS.L[1,2] * aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
-// 22/22 (1): aimc.airGapS.psi_mr[2] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[2] - $cse1 * aimc.airGapS.psi_ms[1]   [dynamic |0|0|0|0|]
-// 23/23 (1): aimc.airGapS.psi_mr[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[1] + $cse1 * aimc.airGapS.psi_ms[2]   [dynamic |0|0|0|0|]
+// 9/9 (1): aimc.idq_rs[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[1] - $cse1 * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
+// 10/10 (1): aimc.airGapS.i_ms[1] = aimc.lssigma.i_[1] + aimc.idq_rs[1]   [dynamic |0|0|0|0|]
+// 11/11 (1): aimc.idq_rs[2] = $cse1 * aimc.idq_rr[1] + aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
+// 12/12 (1): aimc.airGapS.i_ms[2] = aimc.lssigma.i_[2] + aimc.idq_rs[2]   [dynamic |0|0|0|0|]
+// 13/13 (1): aimc.airGapS.psi_ms[2] = aimc.airGapS.L[2,1] * aimc.airGapS.i_ms[1] + aimc.airGapS.L[2,2] * aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
+// 14/14 (1): aimc.airGapS.psi_ms[1] = aimc.airGapS.L[1,1] * aimc.airGapS.i_ms[1] + aimc.airGapS.L[1,2] * aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
+// 15/15 (1): aimc.airGapS.psi_mr[2] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[2] - $cse1 * aimc.airGapS.psi_ms[1]   [dynamic |0|0|0|0|]
+// 16/16 (1): aimc.airGapS.psi_mr[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[1] + $cse1 * aimc.airGapS.psi_ms[2]   [dynamic |0|0|0|0|]
+// 17/17 (1): (-sinevoltage1.i[1]) - sinevoltage1.i[3] - sinevoltage1.i[2] = 0.0   [dynamic |0|0|0|0|]
+// 18/18 (1): aimc.spacePhasorS.i[2] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[2]   [dynamic |0|0|0|0|]
+// 19/19 (1): aimc.lssigma.i_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 20/20 (1): aimc.spacePhasorS.i[3] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[3]   [dynamic |0|0|0|0|]
+// 21/21 (1): aimc.lssigma.i_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 22/22 (1): aimc.spacePhasorS.i[1] * aimc.spacePhasorS.turnsRatio = sinevoltage1.i[1]   [dynamic |0|0|0|0|]
+// 23/23 (1): aimc.i_0_s = (aimc.spacePhasorS.i[1] + aimc.spacePhasorS.i[2] + aimc.spacePhasorS.i[3]) / (-3.0)   [dynamic |0|0|0|0|]
 // 24/24 (1): sinevoltage1.v[3] = sinevoltage1.sineVoltage[3].signalSource.offset + (if time < sinevoltage1.sineVoltage[3].signalSource.startTime then 0.0 else sinevoltage1.sineVoltage[3].signalSource.amplitude * sin(6.283185307179586 * sinevoltage1.sineVoltage[3].signalSource.freqHz * (time - sinevoltage1.sineVoltage[3].signalSource.startTime) + sinevoltage1.sineVoltage[3].signalSource.phase))   [dynamic |0|0|0|0|]
 // 25/25 (1): sinevoltage1.v[2] = sinevoltage1.sineVoltage[2].signalSource.offset + (if time < sinevoltage1.sineVoltage[2].signalSource.startTime then 0.0 else sinevoltage1.sineVoltage[2].signalSource.amplitude * sin(6.283185307179586 * sinevoltage1.sineVoltage[2].signalSource.freqHz * (time - sinevoltage1.sineVoltage[2].signalSource.startTime) + sinevoltage1.sineVoltage[2].signalSource.phase))   [dynamic |0|0|0|0|]
 // 26/26 (1): sinevoltage1.v[1] = sinevoltage1.sineVoltage[1].signalSource.offset + (if time < sinevoltage1.sineVoltage[1].signalSource.startTime then 0.0 else sinevoltage1.sineVoltage[1].signalSource.amplitude * sin(6.283185307179586 * sinevoltage1.sineVoltage[1].signalSource.freqHz * (time - sinevoltage1.sineVoltage[1].signalSource.startTime) + sinevoltage1.sineVoltage[1].signalSource.phase))   [dynamic |0|0|0|0|]
 // 27/27 (1): der(speedSensor.flange.phi) = aimc.inertiaRotor.w   [dynamic |0|0|0|0|]
-// 28/28 (1): ground.p.i = (-sinevoltage1.i[2]) - sinevoltage1.i[1] - sinevoltage1.i[3]   [dynamic |0|0|0|0|]
-// 29/29 (1): aimc.thermalAmbient.Q_flowRotorWinding = 1.5 * aimc.squirrelCageR.Rr_actual * (aimc.idq_rr[1] ^ 2.0 + aimc.idq_rr[2] ^ 2.0)   [dynamic |0|0|0|0|]
-// 30/30 (1): aimc.tauElectrical = 1.5 * /*Real*/(aimc.airGapS.p) * (aimc.lssigma.i_[2] * aimc.airGapS.psi_ms[1] - aimc.lssigma.i_[1] * aimc.airGapS.psi_ms[2])   [dynamic |0|0|0|0|]
-// 31/31 (1): $DER.aimc.airGapS.gamma = /*Real*/(aimc.airGapS.p) * aimc.inertiaRotor.w   [dynamic |0|0|0|0|]
-// 32/32 (1): $DER.aimc.airGapS.RotationMatrix[2,2] = (-$cse1) * $DER.aimc.airGapS.gamma   [dynamic |0|0|0|0|]
-// 33/33 (1): $DER.aimc.airGapS.RotationMatrix[2,1] = aimc.airGapS.RotationMatrix[2,2] * $DER.aimc.airGapS.gamma   [dynamic |0|0|0|0|]
-// 34/34 (1): aimc.strayLoad.iRMS = sqrt(sinevoltage1.i[1] ^ 2.0 / 3.0 + sinevoltage1.i[2] ^ 2.0 / 3.0 + sinevoltage1.i[3] ^ 2.0 / 3.0)   [binding |0|0|0|0|]
-// 35/35 (1): aimc.rs.v[3] = aimc.rs.resistor[3].R_actual * sinevoltage1.i[3]   [dynamic |0|0|0|0|]
-// 36/36 (1): aimc.rs.resistor[3].LossPower = aimc.rs.v[3] * sinevoltage1.i[3]   [dynamic |0|0|0|0|]
-// 37/37 (1): aimc.rs.plug_n.pin[3].v = (-sinevoltage1.v[3]) - aimc.rs.v[3]   [dynamic |0|0|0|0|]
-// 38/38 (1): aimc.rs.v[2] = aimc.rs.resistor[2].R_actual * sinevoltage1.i[2]   [dynamic |0|0|0|0|]
-// 39/39 (1): aimc.rs.resistor[2].LossPower = aimc.rs.v[2] * sinevoltage1.i[2]   [dynamic |0|0|0|0|]
-// 40/40 (1): aimc.rs.plug_n.pin[2].v = (-sinevoltage1.v[2]) - aimc.rs.v[2]   [dynamic |0|0|0|0|]
-// 41/41 (1): aimc.rs.v[1] = aimc.rs.resistor[1].R_actual * sinevoltage1.i[1]   [dynamic |0|0|0|0|]
-// 42/42 (1): aimc.rs.resistor[1].LossPower = aimc.rs.v[1] * sinevoltage1.i[1]   [dynamic |0|0|0|0|]
-// 43/43 (1): aimc.thermalAmbient.Q_flowStatorWinding = aimc.rs.resistor[1].LossPower + aimc.rs.resistor[2].LossPower + aimc.rs.resistor[3].LossPower   [dynamic |0|0|0|0|]
-// 44/44 (1): aimc.thermalAmbient.Q_flowTotal = aimc.thermalAmbient.Q_flowStatorWinding + aimc.thermalAmbient.Q_flowRotorWinding   [binding |0|0|0|0|]
-// 45/45 (1): aimc.rs.plug_n.pin[1].v = (-sinevoltage1.v[1]) - aimc.rs.v[1]   [dynamic |0|0|0|0|]
-// 46/46 (1): aimc.powerBalance.lossPowerStatorWinding = aimc.rs.resistor[1].LossPower + aimc.rs.resistor[2].LossPower + aimc.rs.resistor[3].LossPower   [binding |0|0|0|0|]
-// 47/47 (1): aimc.powerBalance.lossPowerTotal = aimc.powerBalance.lossPowerStatorWinding + aimc.thermalAmbient.Q_flowRotorWinding   [binding |0|0|0|0|]
-// 48/48 (1): aimc.inertiaRotor.a = (aimc.tauElectrical + const.k) / aimc.inertiaRotor.J   [dynamic |0|0|0|0|]
-// 49/49 (1): aimc.powerBalance.powerInertiaRotor = aimc.inertiaRotor.J * aimc.inertiaRotor.a * aimc.inertiaRotor.w   [binding |0|0|0|0|]
-// 50/50 (1): der(aimc.inertiaRotor.w) = aimc.inertiaRotor.a   [dynamic |0|0|0|0|]
-// 51/51 (1): aimc.powerBalance.powerMechanical = (-aimc.inertiaRotor.w) * const.k   [binding |0|0|0|0|]
-// 52/52 (1): $DER.sinevoltage1.i[1] + $DER.sinevoltage1.i[2] + $DER.sinevoltage1.i[3] = 0.0   [dynamic |0|0|0|0|]
-// 53/53 (1): $DER.aimc.spacePhasorS.i[1] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[1]   [dynamic |0|0|0|0|]
-// 54/54 (1): $DER.aimc.lssigma.i_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * $DER.aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * $DER.aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
-// 55/55 (1): $DER.aimc.airGapS.i_ms[2] = $DER.aimc.lssigma.i_[2] + $DER.aimc.idq_rs[2]   [dynamic |0|0|0|0|]
-// 56/56 (1): $DER.aimc.idq_rs[2] = $cse1 * der(aimc.idq_rr[1]) + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_rr[1] + aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_rr[2]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
-// 57/57 (1): aimc.airGapS.spacePhasor_r.v_[2] = (-aimc.idq_rr[2]) * aimc.squirrelCageR.Rr_actual - der(aimc.idq_rr[2]) * aimc.squirrelCageR.Lrsigma   [dynamic |0|0|0|0|]
+// 28/28 (1): aimc.thermalAmbient.Q_flowRotorWinding = 1.5 * aimc.squirrelCageR.Rr_actual * (aimc.idq_rr[1] ^ 2.0 + aimc.idq_rr[2] ^ 2.0)   [dynamic |0|0|0|0|]
+// 29/29 (1): aimc.tauElectrical = 1.5 * /*Real*/(aimc.airGapS.p) * (aimc.lssigma.i_[2] * aimc.airGapS.psi_ms[1] - aimc.lssigma.i_[1] * aimc.airGapS.psi_ms[2])   [dynamic |0|0|0|0|]
+// 30/30 (1): $DER.aimc.airGapS.gamma = /*Real*/(aimc.airGapS.p) * aimc.inertiaRotor.w   [dynamic |0|0|0|0|]
+// 31/31 (1): $DER.aimc.airGapS.RotationMatrix[2,2] = (-$cse1) * $DER.aimc.airGapS.gamma   [dynamic |0|0|0|0|]
+// 32/32 (1): $DER.aimc.airGapS.RotationMatrix[2,1] = aimc.airGapS.RotationMatrix[2,2] * $DER.aimc.airGapS.gamma   [dynamic |0|0|0|0|]
+// 33/33 (1): aimc.strayLoad.iRMS = sqrt(sinevoltage1.i[1] ^ 2.0 / 3.0 + sinevoltage1.i[2] ^ 2.0 / 3.0 + sinevoltage1.i[3] ^ 2.0 / 3.0)   [binding |0|0|0|0|]
+// 34/34 (1): aimc.rs.v[3] = aimc.rs.resistor[3].R_actual * sinevoltage1.i[3]   [dynamic |0|0|0|0|]
+// 35/35 (1): aimc.rs.resistor[3].LossPower = aimc.rs.v[3] * sinevoltage1.i[3]   [dynamic |0|0|0|0|]
+// 36/36 (1): aimc.rs.plug_n.pin[3].v = (-sinevoltage1.v[3]) - aimc.rs.v[3]   [dynamic |0|0|0|0|]
+// 37/37 (1): aimc.rs.v[2] = aimc.rs.resistor[2].R_actual * sinevoltage1.i[2]   [dynamic |0|0|0|0|]
+// 38/38 (1): aimc.rs.resistor[2].LossPower = aimc.rs.v[2] * sinevoltage1.i[2]   [dynamic |0|0|0|0|]
+// 39/39 (1): aimc.rs.plug_n.pin[2].v = (-sinevoltage1.v[2]) - aimc.rs.v[2]   [dynamic |0|0|0|0|]
+// 40/40 (1): aimc.rs.v[1] = aimc.rs.resistor[1].R_actual * sinevoltage1.i[1]   [dynamic |0|0|0|0|]
+// 41/41 (1): aimc.rs.resistor[1].LossPower = aimc.rs.v[1] * sinevoltage1.i[1]   [dynamic |0|0|0|0|]
+// 42/42 (1): aimc.thermalAmbient.Q_flowStatorWinding = aimc.rs.resistor[1].LossPower + aimc.rs.resistor[2].LossPower + aimc.rs.resistor[3].LossPower   [dynamic |0|0|0|0|]
+// 43/43 (1): aimc.thermalAmbient.Q_flowTotal = aimc.thermalAmbient.Q_flowStatorWinding + aimc.thermalAmbient.Q_flowRotorWinding   [binding |0|0|0|0|]
+// 44/44 (1): aimc.rs.plug_n.pin[1].v = (-sinevoltage1.v[1]) - aimc.rs.v[1]   [dynamic |0|0|0|0|]
+// 45/45 (1): aimc.inertiaRotor.a = (aimc.tauElectrical + const.k) / aimc.inertiaRotor.J   [dynamic |0|0|0|0|]
+// 46/46 (1): aimc.powerBalance.powerInertiaRotor = aimc.inertiaRotor.J * aimc.inertiaRotor.a * aimc.inertiaRotor.w   [binding |0|0|0|0|]
+// 47/47 (1): der(aimc.inertiaRotor.w) = aimc.inertiaRotor.a   [dynamic |0|0|0|0|]
+// 48/48 (1): aimc.powerBalance.powerMechanical = (-aimc.inertiaRotor.w) * const.k   [binding |0|0|0|0|]
+// 49/49 (1): (-$DER.sinevoltage1.i[1]) - $DER.sinevoltage1.i[2] - $DER.sinevoltage1.i[3] = 0.0   [dynamic |0|0|0|0|]
+// 50/50 (1): $DER.aimc.spacePhasorS.i[3] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[3]   [dynamic |0|0|0|0|]
+// 51/51 (1): $DER.aimc.lssigma.i_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * $DER.aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * $DER.aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 52/52 (1): $DER.aimc.lssigma.i_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * $DER.aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * $DER.aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 53/53 (1): (-3.0) * $DER.aimc.i_0_s = $DER.aimc.spacePhasorS.i[1] + $DER.aimc.spacePhasorS.i[2] + $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
+// 54/54 (1): (-aimc.lszero.L) * $DER.aimc.i_0_s = aimc.lszero.v   [dynamic |0|0|0|0|]
+// 55/55 (1): 3.0 * aimc.lszero.v = aimc.spacePhasorS.v[1] + aimc.spacePhasorS.v[2] + aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
+// 56/56 (1): aimc.lssigma.spacePhasor_a.v_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * aimc.spacePhasorS.v[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * aimc.spacePhasorS.v[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
+// 57/57 (1): aimc.lssigma.v_[2] = aimc.lssigma.spacePhasor_a.v_[2] - aimc.airGapS.spacePhasor_s.v_[2]   [dynamic |0|0|0|0|]
 // 58/58 (1): aimc.airGapS.spacePhasor_r.v_[2] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.spacePhasor_s.v_[2] + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[2] + (-$cse1) * aimc.airGapS.spacePhasor_s.v_[1] - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.airGapS.psi_ms[1]   [dynamic |0|0|0|0|]
 // 59/59 (1): aimc.airGapS.spacePhasor_r.v_[1] = aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.spacePhasor_s.v_[1] + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.airGapS.psi_ms[1] + $cse1 * aimc.airGapS.spacePhasor_s.v_[2] + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.airGapS.psi_ms[2]   [dynamic |0|0|0|0|]
 // 60/60 (1): aimc.airGapS.spacePhasor_r.v_[1] = (-aimc.idq_rr[1]) * aimc.squirrelCageR.Rr_actual - der(aimc.idq_rr[1]) * aimc.squirrelCageR.Lrsigma   [dynamic |0|0|0|0|]
-// 61/61 (1): $DER.aimc.idq_rs[1] = aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_rr[1]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[1] + (-$cse1) * der(aimc.idq_rr[2]) - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
-// 62/62 (1): $DER.aimc.airGapS.i_ms[1] = $DER.aimc.lssigma.i_[1] + $DER.aimc.idq_rs[1]   [dynamic |0|0|0|0|]
-// 63/63 (1): $DER.aimc.lssigma.i_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * $DER.aimc.spacePhasorS.i[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * $DER.aimc.spacePhasorS.i[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
-// 64/64 (1): (-3.0) * $DER.aimc.i_0_s = $DER.aimc.spacePhasorS.i[1] + $DER.aimc.spacePhasorS.i[2] + $DER.aimc.spacePhasorS.i[3]   [dynamic |0|0|0|0|]
-// 65/65 (1): $DER.aimc.spacePhasorS.i[2] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[2]   [dynamic |0|0|0|0|]
-// 66/66 (1): $DER.aimc.spacePhasorS.i[3] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[3]   [dynamic |0|0|0|0|]
-// 67/67 (1): aimc.lssigma.v_[1] = aimc.lssigma.L[1] * $DER.aimc.lssigma.i_[1]   [dynamic |0|0|0|0|]
-// 68/68 (1): aimc.lssigma.v_[1] = aimc.lssigma.spacePhasor_a.v_[1] - aimc.airGapS.spacePhasor_s.v_[1]   [dynamic |0|0|0|0|]
-// 69/69 (1): aimc.lssigma.spacePhasor_a.v_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * aimc.spacePhasorS.v[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * aimc.spacePhasorS.v[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
-// 70/70 (1): aimc.lssigma.spacePhasor_a.v_[2] = aimc.spacePhasorS.TransformationMatrix[2,1] * aimc.spacePhasorS.v[1] + aimc.spacePhasorS.TransformationMatrix[2,2] * aimc.spacePhasorS.v[2] + aimc.spacePhasorS.TransformationMatrix[2,3] * aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
-// 71/71 (1): aimc.lssigma.v_[2] = aimc.lssigma.spacePhasor_a.v_[2] - aimc.airGapS.spacePhasor_s.v_[2]   [dynamic |0|0|0|0|]
-// 72/72 (1): aimc.airGapS.spacePhasor_s.v_[2] = aimc.airGapS.L[2,1] * $DER.aimc.airGapS.i_ms[1] + aimc.airGapS.L[2,2] * $DER.aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
-// 73/73 (1): aimc.airGapS.spacePhasor_s.v_[1] = aimc.airGapS.L[1,1] * $DER.aimc.airGapS.i_ms[1] + aimc.airGapS.L[1,2] * $DER.aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
-// 74/74 (1): 3.0 * aimc.lszero.v = aimc.spacePhasorS.v[1] + aimc.spacePhasorS.v[2] + aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
-// 75/75 (1): (-aimc.lszero.L) * $DER.aimc.i_0_s = aimc.lszero.v   [dynamic |0|0|0|0|]
-// 76/76 (1): aimc.spacePhasorS.v[1] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[1].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
-// 77/77 (1): aimc.spacePhasorS.v[3] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[3].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
-// 78/78 (1): aimc.spacePhasorS.v[2] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[2].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
-// 79/79 (1): aimc.lssigma.v_[2] = aimc.lssigma.L[2] * $DER.aimc.lssigma.i_[2]   [dynamic |0|0|0|0|]
-// 80/80 (1): aimc.vs[1] = (-sinevoltage1.v[1]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
-// 81/81 (1): aimc.vs[2] = (-sinevoltage1.v[2]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
-// 82/82 (1): aimc.vs[3] = (-sinevoltage1.v[3]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
-// 83/83 (1): aimc.powerBalance.powerStator = Modelica.Electrical.Machines.SpacePhasors.Functions.activePower(aimc.vs, sinevoltage1.i)   [unknown |0|0|0|0|]
-// 84/84 (1): $DER.aimc.lssigma.i_[2] = $cse1 * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[1] + aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[2]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
-// 85/85 (1): $DER.aimc.lssigma.i_[1] = aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[1] + (-$cse1) * der(aimc.idq_sr[2]) - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
-// 86/86 (1): aimc.airGapS.RotationMatrix[2,1] = $cse1   [binding |0|0|0|0|]
-// 87/87 (1): aimc.rs.resistor[3].v = aimc.rs.v[3]   [binding |0|0|0|0|]
-// 88/88 (1): aimc.rs.resistor[2].v = aimc.rs.v[2]   [binding |0|0|0|0|]
-// 89/89 (1): aimc.rs.resistor[1].v = aimc.rs.v[1]   [binding |0|0|0|0|]
-// 90/90 (1): aimc.fixed.flange.tau = -aimc.tauElectrical   [binding |0|0|0|0|]
-// 91/91 (1): $DER.aimc.airGapS.psi_mr[1] = aimc.airGapS.spacePhasor_r.v_[1]   [binding |0|0|0|0|]
-// 92/92 (1): $DER.aimc.airGapS.psi_ms[2] = aimc.airGapS.spacePhasor_s.v_[2]   [binding |0|0|0|0|]
-// 93/93 (1): $DER.aimc.airGapS.psi_ms[1] = aimc.airGapS.spacePhasor_s.v_[1]   [binding |0|0|0|0|]
-// 94/94 (1): $DER.aimc.airGapS.psi_mr[2] = aimc.airGapS.spacePhasor_r.v_[2]   [binding |0|0|0|0|]
+// 61/61 (1): $DER.aimc.idq_rs[2] = $cse1 * der(aimc.idq_rr[1]) + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_rr[1] + aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_rr[2]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
+// 62/62 (1): $DER.aimc.airGapS.i_ms[2] = $DER.aimc.lssigma.i_[2] + $DER.aimc.idq_rs[2]   [dynamic |0|0|0|0|]
+// 63/63 (1): aimc.lssigma.v_[2] = aimc.lssigma.L[2] * $DER.aimc.lssigma.i_[2]   [dynamic |0|0|0|0|]
+// 64/64 (1): $DER.aimc.idq_rs[1] = aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_rr[1]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_rr[1] + (-$cse1) * der(aimc.idq_rr[2]) - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_rr[2]   [dynamic |0|0|0|0|]
+// 65/65 (1): aimc.airGapS.spacePhasor_r.v_[2] = (-aimc.idq_rr[2]) * aimc.squirrelCageR.Rr_actual - der(aimc.idq_rr[2]) * aimc.squirrelCageR.Lrsigma   [dynamic |0|0|0|0|]
+// 66/66 (1): aimc.airGapS.spacePhasor_s.v_[1] = aimc.airGapS.L[1,1] * $DER.aimc.airGapS.i_ms[1] + aimc.airGapS.L[1,2] * $DER.aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
+// 67/67 (1): aimc.airGapS.spacePhasor_s.v_[2] = aimc.airGapS.L[2,1] * $DER.aimc.airGapS.i_ms[1] + aimc.airGapS.L[2,2] * $DER.aimc.airGapS.i_ms[2]   [dynamic |0|0|0|0|]
+// 68/68 (1): $DER.aimc.airGapS.i_ms[1] = $DER.aimc.lssigma.i_[1] + $DER.aimc.idq_rs[1]   [dynamic |0|0|0|0|]
+// 69/69 (1): aimc.lssigma.v_[1] = aimc.lssigma.spacePhasor_a.v_[1] - aimc.airGapS.spacePhasor_s.v_[1]   [dynamic |0|0|0|0|]
+// 70/70 (1): aimc.lssigma.v_[1] = aimc.lssigma.L[1] * $DER.aimc.lssigma.i_[1]   [dynamic |0|0|0|0|]
+// 71/71 (1): aimc.lssigma.spacePhasor_a.v_[1] = aimc.spacePhasorS.TransformationMatrix[1,1] * aimc.spacePhasorS.v[1] + aimc.spacePhasorS.TransformationMatrix[1,2] * aimc.spacePhasorS.v[2] + aimc.spacePhasorS.TransformationMatrix[1,3] * aimc.spacePhasorS.v[3]   [dynamic |0|0|0|0|]
+// 72/72 (1): aimc.spacePhasorS.v[3] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[3].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 73/73 (1): aimc.spacePhasorS.v[2] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[2].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 74/74 (1): aimc.spacePhasorS.v[1] / aimc.spacePhasorS.turnsRatio = aimc.rs.plug_n.pin[1].v - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 75/75 (1): $DER.aimc.spacePhasorS.i[1] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[1]   [dynamic |0|0|0|0|]
+// 76/76 (1): $DER.aimc.spacePhasorS.i[2] * aimc.spacePhasorS.turnsRatio = $DER.sinevoltage1.i[2]   [dynamic |0|0|0|0|]
+// 77/77 (1): aimc.vs[1] = (-sinevoltage1.v[1]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 78/78 (1): aimc.vs[2] = (-sinevoltage1.v[2]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 79/79 (1): aimc.vs[3] = (-sinevoltage1.v[3]) - aimc.plug_sn.pin[3].v   [dynamic |0|0|0|0|]
+// 80/80 (1): aimc.powerBalance.powerStator = Modelica.Electrical.Machines.SpacePhasors.Functions.activePower(aimc.vs, sinevoltage1.i)   [unknown |0|0|0|0|]
+// 81/81 (1): $DER.aimc.lssigma.i_[2] = $cse1 * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[1] + aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[2]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
+// 82/82 (1): $DER.aimc.lssigma.i_[1] = aimc.airGapS.RotationMatrix[2,2] * der(aimc.idq_sr[1]) + $DER.aimc.airGapS.RotationMatrix[2,2] * aimc.idq_sr[1] + (-$cse1) * der(aimc.idq_sr[2]) - $DER.aimc.airGapS.RotationMatrix[2,1] * aimc.idq_sr[2]   [dynamic |0|0|0|0|]
+// 83/83 (1): aimc.airGapS.RotationMatrix[2,1] = $cse1   [binding |0|0|0|0|]
+// 84/84 (1): aimc.rs.resistor[3].v = aimc.rs.v[3]   [binding |0|0|0|0|]
+// 85/85 (1): aimc.rs.resistor[2].v = aimc.rs.v[2]   [binding |0|0|0|0|]
+// 86/86 (1): aimc.rs.resistor[1].v = aimc.rs.v[1]   [binding |0|0|0|0|]
+// 87/87 (1): aimc.powerBalance.lossPowerStatorWinding = aimc.thermalAmbient.Q_flowStatorWinding   [binding |0|0|0|0|]
+// 88/88 (1): aimc.powerBalance.lossPowerTotal = aimc.thermalAmbient.Q_flowTotal   [binding |0|0|0|0|]
+// 89/89 (1): aimc.fixed.flange.tau = -aimc.tauElectrical   [binding |0|0|0|0|]
+// 90/90 (1): $DER.aimc.airGapS.psi_mr[1] = aimc.airGapS.spacePhasor_r.v_[1]   [binding |0|0|0|0|]
+// 91/91 (1): $DER.aimc.airGapS.psi_mr[2] = aimc.airGapS.spacePhasor_r.v_[2]   [binding |0|0|0|0|]
+// 92/92 (1): $DER.aimc.airGapS.psi_ms[1] = aimc.airGapS.spacePhasor_s.v_[1]   [binding |0|0|0|0|]
+// 93/93 (1): $DER.aimc.airGapS.psi_ms[2] = aimc.airGapS.spacePhasor_s.v_[2]   [binding |0|0|0|0|]
 //
 //
 // Simple Equations (4, 0)
@@ -981,92 +1058,92 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 //
 // Matching
 // ========================================
-// 94 variables and equations
-// var 1 is solved in eqn 10
-// var 2 is solved in eqn 12
-// var 3 is solved in eqn 11
+// 93 variables and equations
+// var 1 is solved in eqn 17
+// var 2 is solved in eqn 18
+// var 3 is solved in eqn 22
 // var 4 is solved in eqn 24
 // var 5 is solved in eqn 25
 // var 6 is solved in eqn 26
 // var 7 is solved in eqn 27
-// var 8 is solved in eqn 28
-// var 9 is solved in eqn 44
-// var 10 is solved in eqn 29
-// var 11 is solved in eqn 43
-// var 12 is solved in eqn 19
-// var 13 is solved in eqn 17
-// var 14 is solved in eqn 57
+// var 8 is solved in eqn 43
+// var 9 is solved in eqn 28
+// var 10 is solved in eqn 42
+// var 11 is solved in eqn 12
+// var 12 is solved in eqn 10
+// var 13 is solved in eqn 58
+// var 14 is solved in eqn 60
 // var 15 is solved in eqn 59
-// var 16 is solved in eqn 72
-// var 17 is solved in eqn 58
-// var 18 is solved in eqn 5
-// var 19 is solved in eqn 22
-// var 20 is solved in eqn 23
-// var 21 is solved in eqn 20
-// var 22 is solved in eqn 21
-// var 23 is solved in eqn 4
-// var 24 is solved in eqn 34
-// var 25 is solved in eqn 3
-// var 26 is solved in eqn 9
-// var 27 is solved in eqn 13
-// var 28 is solved in eqn 14
-// var 29 is solved in eqn 77
-// var 30 is solved in eqn 78
-// var 31 is solved in eqn 74
-// var 32 is solved in eqn 75
-// var 33 is solved in eqn 70
-// var 34 is solved in eqn 69
-// var 35 is solved in eqn 8
-// var 36 is solved in eqn 7
-// var 37 is solved in eqn 71
-// var 38 is solved in eqn 68
-// var 39 is solved in eqn 36
-// var 40 is solved in eqn 39
-// var 41 is solved in eqn 42
-// var 42 is solved in eqn 37
-// var 43 is solved in eqn 40
-// var 44 is solved in eqn 45
-// var 45 is solved in eqn 35
-// var 46 is solved in eqn 38
-// var 47 is solved in eqn 41
-// var 48 is solved in eqn 76
+// var 16 is solved in eqn 66
+// var 17 is solved in eqn 5
+// var 18 is solved in eqn 15
+// var 19 is solved in eqn 16
+// var 20 is solved in eqn 13
+// var 21 is solved in eqn 14
+// var 22 is solved in eqn 4
+// var 23 is solved in eqn 33
+// var 24 is solved in eqn 3
+// var 25 is solved in eqn 20
+// var 26 is solved in eqn 21
+// var 27 is solved in eqn 19
+// var 28 is solved in eqn 72
+// var 29 is solved in eqn 73
+// var 30 is solved in eqn 56
+// var 31 is solved in eqn 55
+// var 32 is solved in eqn 57
+// var 33 is solved in eqn 71
+// var 34 is solved in eqn 8
+// var 35 is solved in eqn 7
+// var 36 is solved in eqn 63
+// var 37 is solved in eqn 69
+// var 38 is solved in eqn 35
+// var 39 is solved in eqn 38
+// var 40 is solved in eqn 41
+// var 41 is solved in eqn 36
+// var 42 is solved in eqn 39
+// var 43 is solved in eqn 44
+// var 44 is solved in eqn 34
+// var 45 is solved in eqn 37
+// var 46 is solved in eqn 40
+// var 47 is solved in eqn 74
+// var 48 is solved in eqn 65
 // var 49 is solved in eqn 61
-// var 50 is solved in eqn 60
-// var 51 is solved in eqn 18
-// var 52 is solved in eqn 16
-// var 53 is solved in eqn 84
-// var 54 is solved in eqn 85
-// var 55 is solved in eqn 15
-// var 56 is solved in eqn 82
-// var 57 is solved in eqn 81
-// var 58 is solved in eqn 80
-// var 59 is solved in eqn 46
-// var 60 is solved in eqn 47
-// var 61 is solved in eqn 49
-// var 62 is solved in eqn 51
-// var 63 is solved in eqn 83
-// var 64 is solved in eqn 2
-// var 65 is solved in eqn 48
-// var 66 is solved in eqn 50
-// var 67 is solved in eqn 30
-// var 68 is solved in eqn 1
-// var 69 is solved in eqn 31
-// var 70 is solved in eqn 33
-// var 71 is solved in eqn 32
-// var 72 is solved in eqn 62
-// var 73 is solved in eqn 56
-// var 74 is solved in eqn 73
-// var 75 is solved in eqn 55
+// var 50 is solved in eqn 11
+// var 51 is solved in eqn 9
+// var 52 is solved in eqn 81
+// var 53 is solved in eqn 82
+// var 54 is solved in eqn 23
+// var 55 is solved in eqn 79
+// var 56 is solved in eqn 78
+// var 57 is solved in eqn 77
+// var 58 is solved in eqn 46
+// var 59 is solved in eqn 48
+// var 60 is solved in eqn 80
+// var 61 is solved in eqn 2
+// var 62 is solved in eqn 45
+// var 63 is solved in eqn 47
+// var 64 is solved in eqn 29
+// var 65 is solved in eqn 1
+// var 66 is solved in eqn 30
+// var 67 is solved in eqn 32
+// var 68 is solved in eqn 31
+// var 69 is solved in eqn 64
+// var 70 is solved in eqn 62
+// var 71 is solved in eqn 68
+// var 72 is solved in eqn 67
+// var 73 is solved in eqn 75
+// var 74 is solved in eqn 49
+// var 75 is solved in eqn 50
 // var 76 is solved in eqn 53
-// var 77 is solved in eqn 52
-// var 78 is solved in eqn 66
-// var 79 is solved in eqn 54
-// var 80 is solved in eqn 65
-// var 81 is solved in eqn 63
-// var 82 is solved in eqn 67
-// var 83 is solved in eqn 79
-// var 84 is solved in eqn 64
-// var 85 is solved in eqn 6
+// var 77 is solved in eqn 76
+// var 78 is solved in eqn 52
+// var 79 is solved in eqn 70
+// var 80 is solved in eqn 51
+// var 81 is solved in eqn 54
+// var 82 is solved in eqn 6
+// var 83 is solved in eqn 83
+// var 84 is solved in eqn 84
+// var 85 is solved in eqn 85
 // var 86 is solved in eqn 86
 // var 87 is solved in eqn 87
 // var 88 is solved in eqn 88
@@ -1075,76 +1152,74 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // var 91 is solved in eqn 91
 // var 92 is solved in eqn 92
 // var 93 is solved in eqn 93
-// var 94 is solved in eqn 94
 //
 //
 // StrongComponents
 // ========================================
-// {51:62}
-// {31:69}
-// {29:10}
+// {48:59}
+// {30:66}
+// {28:9}
 // {27:7}
 // {26:6}
 // {25:5}
 // {24:4}
-// {4:23}
-// {5:18}
-// {33:70}
-// {6:85}
-// {7:36}
-// {8:35}
-// {{{14:3}, {9:27}, {12:2}, {10:1}}
-// ,{11, 13:26, 28}} Size: 2 linear
+// {4:22}
+// {5:17}
+// {32:67}
+// {6:82}
+// {7:35}
+// {8:34}
+// {{{22:3}, {21:25}, {20:1}, {18:2}}
+// ,{17, 19:26, 27}} Size: 2 linear
 // For more information please use "-d=tearingdump".
-// {35:45}
-// {37:42}
-// {87:87}
-// {36:39}
-// {41:47}
-// {45:44}
-// {89:89}
-// {42:41}
-// {28:8}
-// {34:24}
-// {38:46}
-// {40:43}
+// {37:45}
+// {39:42}
+// {85:85}
+// {38:39}
+// {34:44}
+// {36:41}
+// {84:84}
+// {35:38}
+// {33:23}
+// {40:46}
+// {44:43}
+// {86:86}
+// {41:40}
+// {42:10}
+// {43:8}
 // {88:88}
-// {39:40}
-// {43:11}
-// {44:9}
-// {46:59}
-// {47:60}
-// {15:55}
-// {16:52}
-// {17:13}
-// {18:51}
-// {19:12}
-// {20:21}
-// {21:22}
-// {30:67}
-// {48:65}
-// {49:61}
-// {50:66}
-// {90:90}
-// {22:19}
-// {23:20}
-// {32:71}
-// {{{57:14}, {61:72}, {56:73}, {60:15}, {76:31}, {78:30}, {77:29}, {70:33}, {69:34}, {74:32}, {75:84}, {68:38}, {67:82}, {62:74}, {72:75}, {71:37}, {79:83}, {53:76}, {54:80}, {66:78}, {65:77}}
-// ,{59, 52, 63, 64, 55, 73, 58:81, 79, 16, 17, 48, 50, 49}} Size: 7 linear
+// {87:87}
+// {23:54}
+// {9:51}
+// {10:12}
+// {11:50}
+// {12:11}
+// {13:20}
+// {14:21}
+// {29:64}
+// {45:62}
+// {46:58}
+// {47:63}
+// {89:89}
+// {15:18}
+// {16:19}
+// {31:68}
+// {{{74:30}, {73:29}, {72:28}, {56:32}, {71:33}, {55:31}, {54:81}, {69:37}, {70:79}, {59:14}, {58:13}, {60:49}, {65:48}, {64:69}, {61:70}, {68:71}, {67:72}, {57:36}, {63:80}, {75:73}, {51:77}, {76:74}, {50:75}}
+// ,{62, 49, 53, 52, 66:78, 76, 15, 16, 47}} Size: 5 linear
 // For more information please use "-d=tearingdump".
 // {91:91}
-// {80:58}
-// {81:57}
-// {82:56}
-// {83:63}
-// {92:92}
 // {93:93}
-// {94:94}
-// {85, 84:53, 54} Size: 2 Jacobian Linear
-// {86:86}
-// {3:25}
-// {2:64}
-// {1:68}
+// {90:90}
+// {77:57}
+// {78:56}
+// {79:55}
+// {80:60}
+// {92:92}
+// {82, 81:52, 53} Size: 2 Jacobian Linear
+// {83:83}
+// {3:24}
+// {2:61}
+// {1:65}
 //
 //
 //
@@ -1458,7 +1533,7 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 303: aimc.statorCore.wLimit:VARIABLE(unit = "rad/s" fixed = true protected = true )  = max(abs(aimc.statorCoreParameters.wRef), aimc.statorCore.coreParameters.wMin)  "Limited angular velocity" type: Real
 //
 //
-// Alias Variables (238)
+// Alias Variables (237)
 // ========================================
 // 1: aimc.flange.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real
 // 2: torque.flange.phi:VARIABLE(flow=false unit = "rad" )  = speedSensor.flange.phi  "Absolute rotation angle of flange" type: Real
@@ -1578,126 +1653,125 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // 116: aimc.rs.i[3]:VARIABLE(unit = "A" )  = sinevoltage1.i[3]  "Currents flowing into positive plugs" type: Real [3]
 // 117: aimc.is[3]:VARIABLE(unit = "A" )  = sinevoltage1.i[3]  "Stator instantaneous currents" type: Real [3]
 // 118: star.plug_p.pin[3].i:VARIABLE(flow=true unit = "A" )  = -sinevoltage1.i[3]  "Current flowing into the pin" type: Real [3]
-// 119: star.pin_n.i:VARIABLE(flow=true unit = "A" )  = -ground.p.i  "Current flowing into the pin" type: Real
-// 120: aimc.statorCore.spacePhasor.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[2]  "1=real, 2=imaginary part" type: Real [2]
-// 121: aimc.spacePhasorS.spacePhasor.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[2]  "1=real, 2=imaginary part" type: Real [2]
-// 122: aimc.statorCore.spacePhasor.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[1]  "1=real, 2=imaginary part" type: Real [2]
-// 123: aimc.spacePhasorS.spacePhasor.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[1]  "1=real, 2=imaginary part" type: Real [2]
-// 124: aimc.lszero.n.v:VARIABLE(flow=false unit = "V" )  = aimc.spacePhasorS.ground.v  "Potential at the pin" type: Real
-// 125: aimc.spacePhasorS.zero.v:VARIABLE(flow=false unit = "V" )  = aimc.lszero.v  "Potential at the pin" type: Real
-// 126: aimc.spacePhasorS.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[3].v  "Potential at the pin" type: Real [3]
-// 127: aimc.rs.resistor[3].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[3].v  "Potential at the pin" type: Real [3]
-// 128: aimc.spacePhasorS.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[2].v  "Potential at the pin" type: Real [3]
-// 129: aimc.rs.resistor[2].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[2].v  "Potential at the pin" type: Real [3]
-// 130: aimc.spacePhasorS.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[1].v  "Potential at the pin" type: Real [3]
-// 131: aimc.rs.resistor[1].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[1].v  "Potential at the pin" type: Real [3]
-// 132: aimc.strayLoad.plug_n.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real [3]
-// 133: aimc.rs.resistor[3].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real [3]
-// 134: aimc.strayLoad.plug_n.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real [3]
-// 135: aimc.rs.resistor[2].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real [3]
-// 136: aimc.strayLoad.plug_n.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real [3]
-// 137: aimc.rs.resistor[1].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real [3]
-// 138: aimc.lssigma.spacePhasor_b.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_s.v_[2]  "1=real, 2=imaginary part" type: Real [2]
-// 139: aimc.lssigma.spacePhasor_b.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_s.v_[1]  "1=real, 2=imaginary part" type: Real [2]
-// 140: aimc.squirrelCageR.spacePhasor_r.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_r.v_[2]  "1=real, 2=imaginary part" type: Real [2]
-// 141: aimc.squirrelCageR.spacePhasor_r.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_r.v_[1]  "1=real, 2=imaginary part" type: Real [2]
-// 142: aimc.airGapS.i_rr[2]:VARIABLE(unit = "A" )  = aimc.idq_rr[2]  "Rotor current space phasor with respect to the rotor fixed frame" type: Real [2]
-// 143: aimc.airGapS.spacePhasor_r.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.idq_rr[2]  "1=real, 2=imaginary part" type: Real [2]
-// 144: aimc.squirrelCageR.spacePhasor_r.i_[2]:DUMMY_STATE(flow=true unit = "A" )  = -aimc.idq_rr[2]  "1=real, 2=imaginary part" type: Real [2]
-// 145: aimc.ir[2]:VARIABLE(unit = "A" )  = aimc.idq_rr[2]  "Rotor cage currents" type: Real [2]
-// 146: aimc.airGapS.i_rr[1]:VARIABLE(unit = "A" )  = aimc.idq_rr[1]  "Rotor current space phasor with respect to the rotor fixed frame" type: Real [2]
-// 147: aimc.airGapS.spacePhasor_r.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.idq_rr[1]  "1=real, 2=imaginary part" type: Real [2]
-// 148: aimc.squirrelCageR.spacePhasor_r.i_[1]:DUMMY_STATE(flow=true unit = "A" )  = -aimc.idq_rr[1]  "1=real, 2=imaginary part" type: Real [2]
-// 149: aimc.ir[1]:VARIABLE(unit = "A" )  = aimc.idq_rr[1]  "Rotor cage currents" type: Real [2]
-// 150: aimc.lssigma.spacePhasor_a.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real [2]
-// 151: aimc.lssigma.spacePhasor_b.i_[2]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real [2]
-// 152: aimc.airGapS.spacePhasor_s.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real [2]
-// 153: aimc.airGapS.i_ss[2]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[2]  "Stator current space phasor with respect to the stator fixed frame" type: Real [2]
-// 154: aimc.idq_ss[2]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[2]  "Stator space phasor current / stator fixed frame" type: Real [2]
-// 155: aimc.lssigma.spacePhasor_a.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real [2]
-// 156: aimc.lssigma.spacePhasor_b.i_[1]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real [2]
-// 157: aimc.airGapS.spacePhasor_s.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real [2]
-// 158: aimc.airGapS.i_ss[1]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[1]  "Stator current space phasor with respect to the stator fixed frame" type: Real [2]
-// 159: aimc.idq_ss[1]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[1]  "Stator space phasor current / stator fixed frame" type: Real [2]
-// 160: aimc.thermalAmbient.temperatureFriction.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 161: aimc.thermalAmbient.thermalPort.heatPortFriction.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 162: aimc.thermalAmbient.temperatureStrayLoad.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 163: aimc.thermalAmbient.thermalPort.heatPortStrayLoad.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 164: aimc.thermalAmbient.thermalPort.heatPortRotorCore.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 165: aimc.thermalAmbient.temperatureRotorCore.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 166: aimc.thermalAmbient.Q_flowRotorCore:VARIABLE(unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate of stator core losses" type: Real
-// 167: aimc.thermalAmbient.temperatureStatorCore.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 168: aimc.thermalAmbient.thermalPort.heatPortStatorCore.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 169: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[1].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 170: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[2].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 171: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[3].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 172: aimc.thermalAmbient.temperatureRotorWinding.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 173: aimc.thermalAmbient.thermalPort.heatPortRotorWinding.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 174: aimc.thermalAmbient.temperatureStatorWinding.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowStatorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 175: aimc.thermalAmbient.thermalCollectorStator.port_b.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = -aimc.thermalAmbient.Q_flowStatorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 176: aimc.inertiaRotor.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.tauElectrical  "Cut torque in the flange" type: Real
-// 177: aimc.airGapS.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -aimc.tauElectrical  "Cut torque in the flange" type: Real
-// 178: aimc.airGapS.tauElectrical:VARIABLE(unit = "N.m" )  = aimc.tauElectrical  type: Real
-// 179: aimc.airGapS.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.tauElectrical  "Cut torque in the flange" type: Real
-// 180: aimc.rs.resistor[1].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 181: aimc.rs.heatPort[1].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 182: aimc.rs.resistor[2].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 183: aimc.rs.heatPort[2].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 184: aimc.rs.resistor[3].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 185: aimc.rs.heatPort[3].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 186: aimc.spacePhasorS.zero.i:VARIABLE(flow=true unit = "A" )  = aimc.i_0_s  "Current flowing into the pin" type: Real
-// 187: aimc.lszero.p.i:VARIABLE(flow=true unit = "A" )  = -aimc.i_0_s  "Current flowing into the pin" type: Real
-// 188: aimc.lszero.i:DUMMY_STATE(start = 0.0 unit = "A" )  = -aimc.i_0_s  "Current flowing from pin p to pin n" type: Real
-// 189: aimc.lszero.n.i:VARIABLE(flow=true unit = "A" )  = aimc.i_0_s  "Current flowing into the pin" type: Real
-// 190: aimc.spacePhasorS.ground.i:VARIABLE(flow=true unit = "A" )  = -aimc.i_0_s  "Current flowing into the pin" type: Real
-// 191: terminalBox.star.pin_n.i:VARIABLE(flow=true unit = "A" )  = terminalBox.starpoint.i  "Current flowing into the pin" type: Real
-// 192: sinevoltage1.sineVoltage[3].signalSource.y:VARIABLE()  = sinevoltage1.v[3]  "Connector of Real output signal" type: Real [3]
-// 193: sinevoltage1.sineVoltage[2].signalSource.y:VARIABLE()  = sinevoltage1.v[2]  "Connector of Real output signal" type: Real [3]
-// 194: sinevoltage1.sineVoltage[1].signalSource.y:VARIABLE()  = sinevoltage1.v[1]  "Connector of Real output signal" type: Real [3]
-// 195: aimc.squirrelCageR.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
-// 196: aimc.powerBalance.lossPowerRotorWinding:VARIABLE(unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Rotor copper losses" type: Real
-// 197: aimc.airGapS.RotationMatrix[1,1]:VARIABLE()  = aimc.airGapS.RotationMatrix[2,2]  "Matrix of rotation from rotor to stator" type: Real [2,2]
-// 198: aimc.airGapS.RotationMatrix[1,2]:VARIABLE()  = -$cse1  "Matrix of rotation from rotor to stator" type: Real [2,2]
-// 199: aimc.strayLoad.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.strayLoad.tau  "Cut torque in the flange" type: Real
-// 200: aimc.powerBalance.lossPowerStrayLoad:VARIABLE(unit = "W" final = true )  = aimc.strayLoad.lossPower  "Stray load losses" type: Real
-// 201: aimc.powerBalance.lossPowerStatorCore:VARIABLE(unit = "W" final = true )  = aimc.statorCore.lossPower  "Stator core losses" type: Real
-// 202: aimc.airGapS.i_rs[2]:VARIABLE(unit = "A" )  = aimc.idq_rs[2]  "Rotor current space phasor with respect to the stator fixed frame" type: Real [2]
-// 203: aimc.airGapS.i_rs[1]:VARIABLE(unit = "A" )  = aimc.idq_rs[1]  "Rotor current space phasor with respect to the stator fixed frame" type: Real [2]
-// 204: aimc.airGapS.i_sr[2]:VARIABLE(unit = "A" )  = aimc.idq_sr[2]  "Stator current space phasor with respect to the rotor fixed frame" type: Real [2]
-// 205: aimc.airGapS.i_sr[1]:VARIABLE(unit = "A" )  = aimc.idq_sr[1]  "Stator current space phasor with respect to the rotor fixed frame" type: Real [2]
-// 206: aimc.friction.lossPower:VARIABLE(unit = "W" )  = aimc.powerBalance.lossPowerFriction  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real
-// 207: aimc.friction.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.friction.tau  "Cut torque in the flange" type: Real
-// 208: speedSensor.w:VARIABLE(unit = "rad/s" )  = aimc.inertiaRotor.w  "Absolute angular velocity of flange as output signal" type: Real
-// 209: aimc.thermalAmbient.Q_flowFriction:VARIABLE(unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate of friction losses" type: Real
-// 210: aimc.lszero.p.v:VARIABLE(flow=false unit = "V" )  = aimc.lszero.v  "Potential at the pin" type: Real
-// 211: aimc.thermalAmbient.Q_flowStatorCore:VARIABLE(unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate of stator core losses" type: Real
-// 212: aimc.thermalAmbient.Q_flowStrayLoad:VARIABLE(unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate of stray load losses" type: Real
-// 213: aimc.plug_sp.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real [3]
-// 214: aimc.rs.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real [3]
-// 215: sinevoltage1.sineVoltage[1].v:VARIABLE(unit = "V" )  = sinevoltage1.v[1]  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
-// 216: aimc.plug_sp.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real [3]
-// 217: aimc.rs.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real [3]
-// 218: sinevoltage1.sineVoltage[2].v:VARIABLE(unit = "V" )  = sinevoltage1.v[2]  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
-// 219: aimc.plug_sp.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real [3]
-// 220: aimc.rs.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real [3]
-// 221: sinevoltage1.sineVoltage[3].v:VARIABLE(unit = "V" )  = sinevoltage1.v[3]  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
-// 222: aimc.spacePhasorS.spacePhasor.i_[1]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real [2]
-// 223: aimc.spacePhasorS.spacePhasor.i_[2]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real [2]
-// 224: aimc.thermalAmbient.thermalCollectorStator.port_a[3].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 225: aimc.thermalAmbient.thermalCollectorStator.port_a[2].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 226: aimc.thermalAmbient.thermalCollectorStator.port_a[1].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
-// 227: aimc.squirrelCageR.LossPower:VARIABLE(unit = "W" )  = aimc.thermalAmbient.Q_flowRotorWinding  "Loss power leaving component via HeatPort" type: Real
-// 228: aimc.thermalAmbient.thermalPort.heatPortStrayLoad.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real
-// 229: aimc.internalThermalPort.heatPortStrayLoad.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real
-// 230: aimc.strayLoad.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real
-// 231: aimc.thermalAmbient.thermalPort.heatPortStatorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real
-// 232: aimc.internalThermalPort.heatPortStatorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real
-// 233: aimc.statorCore.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real
-// 234: aimc.thermalAmbient.thermalPort.heatPortRotorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureRotorCore.port.T  "Port temperature" type: Real
-// 235: aimc.internalThermalPort.heatPortRotorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureRotorCore.port.T  "Port temperature" type: Real
-// 236: aimc.thermalAmbient.thermalPort.heatPortFriction.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real
-// 237: aimc.friction.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real
-// 238: aimc.internalThermalPort.heatPortFriction.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real
+// 119: aimc.statorCore.spacePhasor.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[2]  "1=real, 2=imaginary part" type: Real [2]
+// 120: aimc.spacePhasorS.spacePhasor.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[2]  "1=real, 2=imaginary part" type: Real [2]
+// 121: aimc.statorCore.spacePhasor.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[1]  "1=real, 2=imaginary part" type: Real [2]
+// 122: aimc.spacePhasorS.spacePhasor.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.lssigma.spacePhasor_a.v_[1]  "1=real, 2=imaginary part" type: Real [2]
+// 123: aimc.lszero.n.v:VARIABLE(flow=false unit = "V" )  = aimc.spacePhasorS.ground.v  "Potential at the pin" type: Real
+// 124: aimc.spacePhasorS.zero.v:VARIABLE(flow=false unit = "V" )  = aimc.lszero.v  "Potential at the pin" type: Real
+// 125: aimc.spacePhasorS.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[3].v  "Potential at the pin" type: Real [3]
+// 126: aimc.rs.resistor[3].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[3].v  "Potential at the pin" type: Real [3]
+// 127: aimc.spacePhasorS.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[2].v  "Potential at the pin" type: Real [3]
+// 128: aimc.rs.resistor[2].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[2].v  "Potential at the pin" type: Real [3]
+// 129: aimc.spacePhasorS.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[1].v  "Potential at the pin" type: Real [3]
+// 130: aimc.rs.resistor[1].n.v:VARIABLE(flow=false unit = "V" )  = aimc.rs.plug_n.pin[1].v  "Potential at the pin" type: Real [3]
+// 131: aimc.strayLoad.plug_n.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real [3]
+// 132: aimc.rs.resistor[3].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real [3]
+// 133: aimc.strayLoad.plug_n.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real [3]
+// 134: aimc.rs.resistor[2].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real [3]
+// 135: aimc.strayLoad.plug_n.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real [3]
+// 136: aimc.rs.resistor[1].p.v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real [3]
+// 137: aimc.lssigma.spacePhasor_b.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_s.v_[2]  "1=real, 2=imaginary part" type: Real [2]
+// 138: aimc.lssigma.spacePhasor_b.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_s.v_[1]  "1=real, 2=imaginary part" type: Real [2]
+// 139: aimc.squirrelCageR.spacePhasor_r.v_[2]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_r.v_[2]  "1=real, 2=imaginary part" type: Real [2]
+// 140: aimc.squirrelCageR.spacePhasor_r.v_[1]:VARIABLE(flow=false unit = "V" )  = aimc.airGapS.spacePhasor_r.v_[1]  "1=real, 2=imaginary part" type: Real [2]
+// 141: aimc.airGapS.i_rr[2]:VARIABLE(unit = "A" )  = aimc.idq_rr[2]  "Rotor current space phasor with respect to the rotor fixed frame" type: Real [2]
+// 142: aimc.airGapS.spacePhasor_r.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.idq_rr[2]  "1=real, 2=imaginary part" type: Real [2]
+// 143: aimc.squirrelCageR.spacePhasor_r.i_[2]:DUMMY_STATE(flow=true unit = "A" )  = -aimc.idq_rr[2]  "1=real, 2=imaginary part" type: Real [2]
+// 144: aimc.ir[2]:VARIABLE(unit = "A" )  = aimc.idq_rr[2]  "Rotor cage currents" type: Real [2]
+// 145: aimc.airGapS.i_rr[1]:VARIABLE(unit = "A" )  = aimc.idq_rr[1]  "Rotor current space phasor with respect to the rotor fixed frame" type: Real [2]
+// 146: aimc.airGapS.spacePhasor_r.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.idq_rr[1]  "1=real, 2=imaginary part" type: Real [2]
+// 147: aimc.squirrelCageR.spacePhasor_r.i_[1]:DUMMY_STATE(flow=true unit = "A" )  = -aimc.idq_rr[1]  "1=real, 2=imaginary part" type: Real [2]
+// 148: aimc.ir[1]:VARIABLE(unit = "A" )  = aimc.idq_rr[1]  "Rotor cage currents" type: Real [2]
+// 149: aimc.lssigma.spacePhasor_a.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real [2]
+// 150: aimc.lssigma.spacePhasor_b.i_[2]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real [2]
+// 151: aimc.airGapS.spacePhasor_s.i_[2]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real [2]
+// 152: aimc.airGapS.i_ss[2]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[2]  "Stator current space phasor with respect to the stator fixed frame" type: Real [2]
+// 153: aimc.idq_ss[2]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[2]  "Stator space phasor current / stator fixed frame" type: Real [2]
+// 154: aimc.lssigma.spacePhasor_a.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real [2]
+// 155: aimc.lssigma.spacePhasor_b.i_[1]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real [2]
+// 156: aimc.airGapS.spacePhasor_s.i_[1]:VARIABLE(flow=true unit = "A" )  = aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real [2]
+// 157: aimc.airGapS.i_ss[1]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[1]  "Stator current space phasor with respect to the stator fixed frame" type: Real [2]
+// 158: aimc.idq_ss[1]:VARIABLE(unit = "A" )  = aimc.lssigma.i_[1]  "Stator space phasor current / stator fixed frame" type: Real [2]
+// 159: aimc.thermalAmbient.temperatureFriction.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 160: aimc.thermalAmbient.thermalPort.heatPortFriction.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 161: aimc.thermalAmbient.temperatureStrayLoad.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 162: aimc.thermalAmbient.thermalPort.heatPortStrayLoad.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 163: aimc.thermalAmbient.thermalPort.heatPortRotorCore.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 164: aimc.thermalAmbient.temperatureRotorCore.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 165: aimc.thermalAmbient.Q_flowRotorCore:VARIABLE(unit = "W" final = true )  = aimc.internalThermalPort.heatPortRotorCore.Q_flow  "Heat flow rate of stator core losses" type: Real
+// 166: aimc.thermalAmbient.temperatureStatorCore.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 167: aimc.thermalAmbient.thermalPort.heatPortStatorCore.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 168: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[1].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 169: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[2].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 170: aimc.thermalAmbient.thermalPort.heatPortStatorWinding[3].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 171: aimc.thermalAmbient.temperatureRotorWinding.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 172: aimc.thermalAmbient.thermalPort.heatPortRotorWinding.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 173: aimc.thermalAmbient.temperatureStatorWinding.port.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.thermalAmbient.Q_flowStatorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 174: aimc.thermalAmbient.thermalCollectorStator.port_b.Q_flow:VARIABLE(flow=true unit = "W" final = true )  = -aimc.thermalAmbient.Q_flowStatorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 175: aimc.inertiaRotor.flange_a.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.tauElectrical  "Cut torque in the flange" type: Real
+// 176: aimc.airGapS.flange.tau:VARIABLE(flow=true unit = "N.m" )  = -aimc.tauElectrical  "Cut torque in the flange" type: Real
+// 177: aimc.airGapS.tauElectrical:VARIABLE(unit = "N.m" )  = aimc.tauElectrical  type: Real
+// 178: aimc.airGapS.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.tauElectrical  "Cut torque in the flange" type: Real
+// 179: aimc.rs.resistor[1].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 180: aimc.rs.heatPort[1].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 181: aimc.rs.resistor[2].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 182: aimc.rs.heatPort[2].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 183: aimc.rs.resistor[3].heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 184: aimc.rs.heatPort[3].Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 185: aimc.spacePhasorS.zero.i:VARIABLE(flow=true unit = "A" )  = aimc.i_0_s  "Current flowing into the pin" type: Real
+// 186: aimc.lszero.p.i:VARIABLE(flow=true unit = "A" )  = -aimc.i_0_s  "Current flowing into the pin" type: Real
+// 187: aimc.lszero.i:DUMMY_STATE(start = 0.0 unit = "A" )  = -aimc.i_0_s  "Current flowing from pin p to pin n" type: Real
+// 188: aimc.lszero.n.i:VARIABLE(flow=true unit = "A" )  = aimc.i_0_s  "Current flowing into the pin" type: Real
+// 189: aimc.spacePhasorS.ground.i:VARIABLE(flow=true unit = "A" )  = -aimc.i_0_s  "Current flowing into the pin" type: Real
+// 190: terminalBox.star.pin_n.i:VARIABLE(flow=true unit = "A" )  = terminalBox.starpoint.i  "Current flowing into the pin" type: Real
+// 191: sinevoltage1.sineVoltage[3].signalSource.y:VARIABLE()  = sinevoltage1.v[3]  "Connector of Real output signal" type: Real [3]
+// 192: sinevoltage1.sineVoltage[2].signalSource.y:VARIABLE()  = sinevoltage1.v[2]  "Connector of Real output signal" type: Real [3]
+// 193: sinevoltage1.sineVoltage[1].signalSource.y:VARIABLE()  = sinevoltage1.v[1]  "Connector of Real output signal" type: Real [3]
+// 194: aimc.squirrelCageR.heatPort.Q_flow:VARIABLE(flow=true unit = "W" )  = -aimc.thermalAmbient.Q_flowRotorWinding  "Heat flow rate (positive if flowing from outside into the component)" type: Real
+// 195: aimc.powerBalance.lossPowerRotorWinding:VARIABLE(unit = "W" final = true )  = aimc.thermalAmbient.Q_flowRotorWinding  "Rotor copper losses" type: Real
+// 196: aimc.airGapS.RotationMatrix[1,1]:VARIABLE()  = aimc.airGapS.RotationMatrix[2,2]  "Matrix of rotation from rotor to stator" type: Real [2,2]
+// 197: aimc.airGapS.RotationMatrix[1,2]:VARIABLE()  = -$cse1  "Matrix of rotation from rotor to stator" type: Real [2,2]
+// 198: aimc.strayLoad.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.strayLoad.tau  "Cut torque in the flange" type: Real
+// 199: aimc.powerBalance.lossPowerStrayLoad:VARIABLE(unit = "W" final = true )  = aimc.strayLoad.lossPower  "Stray load losses" type: Real
+// 200: aimc.powerBalance.lossPowerStatorCore:VARIABLE(unit = "W" final = true )  = aimc.statorCore.lossPower  "Stator core losses" type: Real
+// 201: aimc.airGapS.i_rs[2]:VARIABLE(unit = "A" )  = aimc.idq_rs[2]  "Rotor current space phasor with respect to the stator fixed frame" type: Real [2]
+// 202: aimc.airGapS.i_rs[1]:VARIABLE(unit = "A" )  = aimc.idq_rs[1]  "Rotor current space phasor with respect to the stator fixed frame" type: Real [2]
+// 203: aimc.airGapS.i_sr[2]:VARIABLE(unit = "A" )  = aimc.idq_sr[2]  "Stator current space phasor with respect to the rotor fixed frame" type: Real [2]
+// 204: aimc.airGapS.i_sr[1]:VARIABLE(unit = "A" )  = aimc.idq_sr[1]  "Stator current space phasor with respect to the rotor fixed frame" type: Real [2]
+// 205: aimc.friction.lossPower:VARIABLE(unit = "W" )  = aimc.powerBalance.lossPowerFriction  "Loss power leaving component via heatPort (> 0, if heat is flowing out of component)" type: Real
+// 206: aimc.friction.support.tau:VARIABLE(flow=true unit = "N.m" )  = aimc.friction.tau  "Cut torque in the flange" type: Real
+// 207: speedSensor.w:VARIABLE(unit = "rad/s" )  = aimc.inertiaRotor.w  "Absolute angular velocity of flange as output signal" type: Real
+// 208: aimc.thermalAmbient.Q_flowFriction:VARIABLE(unit = "W" final = true )  = aimc.powerBalance.lossPowerFriction  "Heat flow rate of friction losses" type: Real
+// 209: aimc.lszero.p.v:VARIABLE(flow=false unit = "V" )  = aimc.lszero.v  "Potential at the pin" type: Real
+// 210: aimc.thermalAmbient.Q_flowStatorCore:VARIABLE(unit = "W" final = true )  = aimc.statorCore.lossPower  "Heat flow rate of stator core losses" type: Real
+// 211: aimc.thermalAmbient.Q_flowStrayLoad:VARIABLE(unit = "W" final = true )  = aimc.strayLoad.lossPower  "Heat flow rate of stray load losses" type: Real
+// 212: aimc.plug_sp.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real [3]
+// 213: aimc.rs.plug_p.pin[1].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[1]  "Potential at the pin" type: Real [3]
+// 214: sinevoltage1.sineVoltage[1].v:VARIABLE(unit = "V" )  = sinevoltage1.v[1]  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
+// 215: aimc.plug_sp.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real [3]
+// 216: aimc.rs.plug_p.pin[2].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[2]  "Potential at the pin" type: Real [3]
+// 217: sinevoltage1.sineVoltage[2].v:VARIABLE(unit = "V" )  = sinevoltage1.v[2]  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
+// 218: aimc.plug_sp.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real [3]
+// 219: aimc.rs.plug_p.pin[3].v:VARIABLE(flow=false unit = "V" )  = -sinevoltage1.v[3]  "Potential at the pin" type: Real [3]
+// 220: sinevoltage1.sineVoltage[3].v:VARIABLE(unit = "V" )  = sinevoltage1.v[3]  "Voltage drop between the two pins (= p.v - n.v)" type: Real [3]
+// 221: aimc.spacePhasorS.spacePhasor.i_[1]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[1]  "1=real, 2=imaginary part" type: Real [2]
+// 222: aimc.spacePhasorS.spacePhasor.i_[2]:VARIABLE(flow=true unit = "A" )  = -aimc.lssigma.i_[2]  "1=real, 2=imaginary part" type: Real [2]
+// 223: aimc.thermalAmbient.thermalCollectorStator.port_a[3].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[3].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 224: aimc.thermalAmbient.thermalCollectorStator.port_a[2].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[2].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 225: aimc.thermalAmbient.thermalCollectorStator.port_a[1].Q_flow:VARIABLE(flow=true unit = "W" final = true )  = aimc.rs.resistor[1].LossPower  "Heat flow rate (positive if flowing from outside into the component)" type: Real [3]
+// 226: aimc.squirrelCageR.LossPower:VARIABLE(unit = "W" )  = aimc.thermalAmbient.Q_flowRotorWinding  "Loss power leaving component via HeatPort" type: Real
+// 227: aimc.thermalAmbient.thermalPort.heatPortStrayLoad.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real
+// 228: aimc.internalThermalPort.heatPortStrayLoad.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real
+// 229: aimc.strayLoad.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureStrayLoad.port.T  "Port temperature" type: Real
+// 230: aimc.thermalAmbient.thermalPort.heatPortStatorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real
+// 231: aimc.internalThermalPort.heatPortStatorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real
+// 232: aimc.statorCore.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureStatorCore.port.T  "Port temperature" type: Real
+// 233: aimc.thermalAmbient.thermalPort.heatPortRotorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureRotorCore.port.T  "Port temperature" type: Real
+// 234: aimc.internalThermalPort.heatPortRotorCore.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureRotorCore.port.T  "Port temperature" type: Real
+// 235: aimc.thermalAmbient.thermalPort.heatPortFriction.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real
+// 236: aimc.friction.heatPort.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real
+// 237: aimc.internalThermalPort.heatPortFriction.T:VARIABLE(flow=false min = 0.0 start = 288.15 unit = "K" nominal = 300.0 final = true )  = aimc.thermalAmbient.temperatureFriction.port.T  "Port temperature" type: Real
 //
 //
 // Zero Crossings (3)

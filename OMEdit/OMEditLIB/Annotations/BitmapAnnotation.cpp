@@ -160,9 +160,19 @@ void BitmapAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *
   }
 }
 
+/*!
+ * \brief BitmapAnnotation::drawBitmapAnnotaion
+ * Draws the bitmap.
+ * \param painter
+ */
 void BitmapAnnotation::drawBitmapAnnotaion(QPainter *painter)
 {
-  painter->drawImage(getBoundingRect().normalized(), mImage.mirrored());
+  QRectF rect = getBoundingRect().normalized();
+  QImage image = mImage.scaled(rect.width(), rect.height(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  QPointF centerPoint = rect.center() - image.rect().center();
+  QRectF target(centerPoint.x(), centerPoint.y(), image.width(), image.height());
+
+  painter->drawImage(target, mImage.mirrored());
 }
 
 /*!

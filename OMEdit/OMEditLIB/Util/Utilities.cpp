@@ -1290,3 +1290,27 @@ QString Utilities::convertSymbolToUnit(const QString symbol)
     return symbol;
   }
 }
+
+/*!
+ * \brief Utilities::adjustRectangle
+ * Adjusts the
+ * \param rectangle
+ * \param factor
+ * \return
+ */
+QRectF Utilities::adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor)
+{
+  // Yes the top of the rectangle is bottom for us since the coordinate system is inverted.
+  qreal left = sceneRectangle.left();
+  qreal bottom = sceneRectangle.top();
+  qreal right = sceneRectangle.right();
+  qreal top = sceneRectangle.bottom();
+  QRectF rectangle(left, bottom, qFabs(left - right), qFabs(bottom - top));
+  /* Ticket:4340 Extend vertical space
+   * Make the drawing area 25% bigger than the actual size. So we can better use the panning feature.
+   */
+  const qreal widthFactor = sceneRectangle.width() * factor;
+  const qreal heightFactor = sceneRectangle.width() * factor;
+  rectangle.adjust(-widthFactor, -heightFactor, widthFactor, heightFactor);
+  return rectangle;
+}

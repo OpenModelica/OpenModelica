@@ -382,6 +382,7 @@ protected
   String pathStr, versions, className, version, modelicaPath, thisModelicaPath, dir;
   Absyn.Program p, pnew;
   ErrorTypes.MessageTokens msgTokens;
+  Option<Absyn.Class> cl;
 algorithm
   (path, _, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
   (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted) := inArg;
@@ -400,9 +401,13 @@ algorithm
       if pathToFile=="" then
         pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
       else
-        pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
         dir := System.dirname(pathToFile);
-        pnew := Absyn.PROGRAM({ClassLoader.loadClassFromMp(AbsynUtil.pathFirstIdent(path), System.dirname(dir), System.basename(dir), true, NONE(), encrypted)}, Absyn.TOP());
+        cl := ClassLoader.loadClassFromMp(AbsynUtil.pathFirstIdent(path), System.dirname(dir), System.basename(dir), true, NONE(), encrypted);
+        if (isSome(cl)) then
+          pnew := Absyn.PROGRAM({Util.getOption(cl)}, Absyn.TOP());
+        else
+          pnew := Absyn.PROGRAM({}, Absyn.TOP());
+        end if;
       end if;
       version := getPackageVersion(path, pnew);
       b := not notifyLoad or forceLoad;
@@ -2146,24 +2151,30 @@ algorithm
 
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, _, msg, _)
-      equation
-        true = Flags.isSet(Flags.EVAL_FUNC);
+      algorithm
+        true := Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         // bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " + AbsynUtil.pathString(funcpath) + "\n");
-        (cache,
-         sc as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()),
-         env) = Lookup.lookupClass(cache, env, funcpath);
-        isCevaluableFunction(sc);
-        (cache, env, _) = InstFunction.implicitFunctionInstantiation(
-          cache,
-          env,
-          InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(),
-          DAE.NOPRE(),
-          sc,
-          {});
-        func = FCore.getCachedInstFunc(cache, funcpath);
-        (cache, newval) = CevalFunction.evaluate(cache, env, func, vallst);
+
+        try
+          func := FCore.getCachedInstFunc(cache, funcpath);
+        else
+          (cache,
+           sc as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()),
+           env) := Lookup.lookupClass(cache, env, funcpath);
+          isCevaluableFunction(sc);
+          (cache, env, _) := InstFunction.implicitFunctionInstantiation(
+            cache,
+            env,
+            InnerOuter.emptyInstHierarchy,
+            DAE.NOMOD(),
+            DAE.NOPRE(),
+            sc,
+            {});
+          func := FCore.getCachedInstFunc(cache, funcpath);
+        end try;
+
+        (cache, newval) := CevalFunction.evaluate(cache, env, func, vallst);
         // bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " + AbsynUtil.pathString(funcpath) + "\n");
       then
         (cache, newval);

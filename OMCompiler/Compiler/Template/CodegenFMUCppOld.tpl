@@ -49,7 +49,7 @@ import interface SimCodeTV;
 import interface SimCodeBackendTV;
 import CodegenUtil.*;
 import CodegenCppOld.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding)
-import CodegenCppCommonOld.*;
+import CodegenCppCommon.*;
 import CodegenFMU.*;
 import CodegenCppInit;
 import CodegenFMUCommon;
@@ -831,6 +831,8 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     $(eval BINARIES=$(BINARIES) $(BOOST_LIBS)/lib$(BOOST_SYSTEM_LIB)$(DLLEXT) <%platformbins%>)
   # link static libs to avoid dependencies; can't link all static under Linux
   else ifeq ($(findstring gcc,$(CC)),gcc)
+    $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
+  else ifeq ($(findstring clang,$(CC)),clang)
     $(eval LIBS=$(LIBS) $(if $(findstring linux,$(PLATFORM)),-static-libstdc++ -static-libgcc,-static))
   endif
 

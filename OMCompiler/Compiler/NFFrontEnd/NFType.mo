@@ -666,8 +666,8 @@ public
   function copyElementType
     "Sets the element type of the destination type to the element type of the
      source type."
-    input Type srcType;
     input Type dstType;
+    input Type srcType;
     output Type ty;
   algorithm
     ty := setArrayElementType(dstType, arrayElementType(srcType));
@@ -1099,7 +1099,7 @@ public
             fail();
           end if;
         then
-          ty;
+          Type.UNKNOWN();
 
     end match;
   end subscript;

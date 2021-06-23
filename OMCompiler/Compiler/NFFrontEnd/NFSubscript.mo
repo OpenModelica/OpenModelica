@@ -624,6 +624,24 @@ public
     end match;
   end mapFoldExpShallow;
 
+  function toAbsyn
+    input Subscript subscript;
+    output Absyn.Subscript asubscript;
+  algorithm
+    asubscript := match subscript
+      case RAW_SUBSCRIPT() then subscript.subscript;
+      case UNTYPED() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.exp));
+      case INDEX() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.index));
+      case SLICE() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.slice));
+      case WHOLE() then Absyn.Subscript.NOSUB();
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " failed on unknown subscript", sourceInfo());
+        then
+          fail();
+    end match;
+  end toAbsyn;
+
   function toDAE
     input Subscript subscript;
     output DAE.Subscript daeSubscript;
@@ -755,6 +773,7 @@ public
   function simplifyList
     input list<Subscript> subscripts;
     input list<Dimension> dimensions;
+    input Boolean trim = false;
     output list<Subscript> outSubscripts = {};
   protected
     Dimension d;
@@ -772,7 +791,9 @@ public
         outSubscripts := simplify(s, d) :: outSubscripts;
       end for;
 
-      if not List.all(outSubscripts, isWhole) then
+      if trim then
+        outSubscripts := listReverseInPlace(List.trim(outSubscripts, isWhole));
+      else
         outSubscripts := listReverseInPlace(outSubscripts);
       end if;
     end if;
@@ -1118,16 +1139,16 @@ public
     end match;
   end hash;
 
-  function splitIndexDimSize
+  function splitIndexDimExp
     input Subscript sub;
-    output Integer size;
+    output Expression exp;
   protected
     InstNode node;
     Integer index;
   algorithm
     SPLIT_INDEX(node = node, dimIndex = index) := sub;
-    size := Dimension.size(Type.nthDimension(InstNode.getType(node), index));
-  end splitIndexDimSize;
+    exp := Dimension.sizeExp(Type.nthDimension(InstNode.getType(node), index));
+  end splitIndexDimExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;
