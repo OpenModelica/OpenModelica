@@ -985,6 +985,7 @@ public
     count := match component
       case UNTYPED_COMPONENT() then arrayLength(component.dimensions);
       case TYPED_COMPONENT() then listLength(Type.arrayDims(component.ty));
+      case DELETED_COMPONENT() then dimensionCount(component.component);
       else 0;
     end match;
   end dimensionCount;
