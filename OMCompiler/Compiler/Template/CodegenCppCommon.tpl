@@ -65,10 +65,10 @@ template crefToCStrForArray(ComponentRef cr, Text& dims)
   match cr
   case CREF_IDENT(__) then
     let &dims+=listLength(subscriptLst)
-    '<%ident%>_'
+    '<%System.unquoteIdentifier(ident)%>_'
   case CREF_QUAL(__) then
     let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStrForArray(subscriptLst)
-    '<%ident%><%subs%>_P_<%crefToCStrForArray(componentRef,dims)%>'
+    '<%System.unquoteIdentifier(ident)%><%subs%>_P_<%crefToCStrForArray(componentRef,dims)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStrForArray;
@@ -76,9 +76,9 @@ end crefToCStrForArray;
 template crefToCStr1(ComponentRef cr, Boolean useFlatArrayNotation)
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%>_'
+  case CREF_IDENT(__) then '<%System.unquoteIdentifier(ident)%>_'
   case CREF_QUAL(__) then
-    '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr1(componentRef,useFlatArrayNotation)%>'
+    '<%System.unquoteIdentifier(ident)%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr1(componentRef,useFlatArrayNotation)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr1;
@@ -95,10 +95,10 @@ template crefStrForWriteOutput(ComponentRef cr)
   match cr
   case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStrForWriteOutput(subscriptLst)%>'
   case CREF_IDENT(ident = "time") then "_simTime"
-  case CREF_IDENT(__) then '<%ident%><%subscriptsStrForWriteOutput(subscriptLst)%>'
+  case CREF_IDENT(__) then '<%System.unquoteIdentifier(ident)%><%subscriptsStrForWriteOutput(subscriptLst)%>'
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStrForWriteOutput(componentRef)%>)'
   case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStrForWriteOutput(componentRef)%>)'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsStrForWriteOutput(subscriptLst)%>.<%crefStrForWriteOutput(componentRef)%>'
+  case CREF_QUAL(__) then '<%System.unquoteIdentifier(ident)%><%subscriptsStrForWriteOutput(subscriptLst)%>.<%crefStrForWriteOutput(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStrForWriteOutput;
 
@@ -198,7 +198,7 @@ template crefToCStrWithIndex(ComponentRef cr, Context context, Text &varDecls, S
   let tmp = ""
   match cr
     case CREF_QUAL(__) then
-      let identTmp = '<%ident%>'
+      let identTmp = '<%System.unquoteIdentifier(ident)%>'
       match listHead(subscriptLst)
         case INDEX(__) then
           match exp case e as CREF(__) then
@@ -296,10 +296,10 @@ template crefToCStr(ComponentRef cr, Boolean useFlatArrayNotation)
   match cr
   case CREF_IDENT(__) then
     let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStr(subscriptLst, useFlatArrayNotation)
-    '<%ident%>_<%subs%>'
+    '<%System.unquoteIdentifier(ident)%>_<%subs%>'
   case CREF_QUAL(__) then
     let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStrForArray(subscriptLst)
-    '<%ident%><%subs%>_P_<%crefToCStr(componentRef, useFlatArrayNotation)%>'
+    '<%System.unquoteIdentifier(ident)%><%subs%>_P_<%crefToCStr(componentRef, useFlatArrayNotation)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
@@ -514,8 +514,8 @@ template arrayCrefStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(ident = "time") then "_simTime"
-  case CREF_IDENT(__) then '<%ident%>_'
-  case CREF_QUAL(__) then '<%ident%>_.<%arrayCrefStr(componentRef)%>'
+  case CREF_IDENT(__) then '<%System.unquoteIdentifier(ident)%>_'
+  case CREF_QUAL(__) then '<%System.unquoteIdentifier(ident)%>_.<%arrayCrefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
 
@@ -1372,9 +1372,9 @@ template daeExpMatrixName2(ComponentRef cr)
 
   match cr
   case CREF_IDENT(__) then
-    '<%ident%>'
- case CREF_QUAL(__) then               '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%daeExpMatrixName2(componentRef)%>'
-
+    '<%System.unquoteIdentifier(ident)%>'
+  case CREF_QUAL(__) then
+    '<%System.unquoteIdentifier(ident)%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%daeExpMatrixName2(componentRef)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end daeExpMatrixName2;
