@@ -2858,7 +2858,8 @@ protected
   Type ty;
 algorithm
   expl := Expression.arrayScalarElements(arg);
-  result := Expression.makeExpArray(expl, isLiteral = true);
+  result := Expression.makeExpArray(expl,
+    Type.arrayElementType(Expression.typeOf(arg)), isLiteral = true);
 end evalBuiltinVector;
 
 function evalBuiltinZeros

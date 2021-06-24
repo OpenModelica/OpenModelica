@@ -933,13 +933,13 @@ public
 
   function makeExpArray
     input list<Expression> elements;
+    input Type elementType;
     input Boolean isLiteral = false;
     output Expression exp;
   protected
     Type ty;
   algorithm
-    ty := typeOf(listHead(elements));
-    ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(elements)));
+    ty := Type.liftArrayLeft(elementType, Dimension.fromInteger(listLength(elements)));
     exp := makeArray(ty, elements, isLiteral);
   end makeExpArray;
 
@@ -4893,6 +4893,7 @@ public
     Integer dim_size_int;
     Expression sub_exp;
     list<Expression> rest_subs, expl;
+    Type ty;
   algorithm
     if listEmpty(dimSizes) then
       outExp := Expression.map(exp, mapSplitExpressions3);
@@ -4909,7 +4910,8 @@ public
         expl := outExp :: expl;
       end for;
 
-      outExp := Expression.makeExpArray(expl, isLiteral = true);
+      ty := Expression.typeOf(if listEmpty(expl) then exp else listHead(expl));
+      outExp := Expression.makeExpArray(expl, ty, isLiteral = true);
     end if;
   end mapSplitExpressions2;
 

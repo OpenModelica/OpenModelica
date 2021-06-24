@@ -1141,7 +1141,9 @@ public
         InstNode node;
 
       case CREF(node = node, origin = Origin.CREF)
-        then InstNode.isComponent(node) and Component.isDeleted(InstNode.component(node));
+        then (InstNode.isComponent(node) and Component.isDeleted(InstNode.component(node))) or
+             isDeleted(cref.restCref);
+
       else false;
     end match;
   end isDeleted;
