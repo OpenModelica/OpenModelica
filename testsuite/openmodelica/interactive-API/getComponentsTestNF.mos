@@ -1,0 +1,93 @@
+// name: getComponentsTestNF.mos
+// keywords:
+// status: correct
+// cflags: -d=nfAPI
+//
+
+loadModel(Modelica, {"4.0.0"}); getErrorString();
+y := getComponentsTest(Modelica.Thermal.HeatTransfer.Examples.TwoMasses); getErrorString();
+
+// Result:
+// true
+// ""
+// {record OpenModelica.Scripting.getComponentsTest.Component
+//     className = "Modelica.Units.SI.Temperature",
+//     name = "T_final_K",
+//     comment = "Projected final temperature",
+//     isProtected = false,
+//     isFinal = false,
+//     isFlow = false,
+//     isStream = false,
+//     isReplaceable = false,
+//     variability = "parameter",
+//     innerOuter = "",
+//     inputOutput = "",
+//     dimensions = {}
+// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+//     className = "Modelica.Thermal.HeatTransfer.Components.HeatCapacitor",
+//     name = "mass1",
+//     comment = "",
+//     isProtected = false,
+//     isFinal = false,
+//     isFlow = false,
+//     isStream = false,
+//     isReplaceable = false,
+//     variability = "",
+//     innerOuter = "",
+//     inputOutput = "",
+//     dimensions = {}
+// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+//     className = "Modelica.Thermal.HeatTransfer.Components.HeatCapacitor",
+//     name = "mass2",
+//     comment = "",
+//     isProtected = false,
+//     isFinal = false,
+//     isFlow = false,
+//     isStream = false,
+//     isReplaceable = false,
+//     variability = "",
+//     innerOuter = "",
+//     inputOutput = "",
+//     dimensions = {}
+// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+//     className = "Modelica.Thermal.HeatTransfer.Components.ThermalConductor",
+//     name = "conduction",
+//     comment = "",
+//     isProtected = false,
+//     isFinal = false,
+//     isFlow = false,
+//     isStream = false,
+//     isReplaceable = false,
+//     variability = "",
+//     innerOuter = "",
+//     inputOutput = "",
+//     dimensions = {}
+// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+//     className = "Modelica.Thermal.HeatTransfer.Celsius.TemperatureSensor",
+//     name = "Tsensor1",
+//     comment = "",
+//     isProtected = false,
+//     isFinal = false,
+//     isFlow = false,
+//     isStream = false,
+//     isReplaceable = false,
+//     variability = "",
+//     innerOuter = "",
+//     inputOutput = "",
+//     dimensions = {}
+// end OpenModelica.Scripting.getComponentsTest.Component;,record OpenModelica.Scripting.getComponentsTest.Component
+//     className = "Modelica.Thermal.HeatTransfer.Celsius.TemperatureSensor",
+//     name = "Tsensor2",
+//     comment = "",
+//     isProtected = false,
+//     isFinal = false,
+//     isFlow = false,
+//     isStream = false,
+//     isReplaceable = false,
+//     variability = "",
+//     innerOuter = "",
+//     inputOutput = "",
+//     dimensions = {}
+// end OpenModelica.Scripting.getComponentsTest.Component;}
+// ""
+// endResult
