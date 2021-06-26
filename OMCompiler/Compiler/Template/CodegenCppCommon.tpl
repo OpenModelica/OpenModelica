@@ -341,6 +341,8 @@ template daeExpCref(Boolean isLhs, Exp ecr, Context context, Text &preExp, Text 
  "Generates code for a component reference."
 ::=
 match ecr
+case component as CREF(componentRef=cr, ty=T_FUNCTION(path=name)) then
+  underscorePath(name)
 case component as CREF(componentRef=cr, ty=ty) then
   let box = daeExpCrefRhsArrayBox(cr, ty, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   if box then
@@ -664,6 +666,8 @@ template expTypeShort(DAE.Type type)
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
   case T_METATYPE(__)
   case T_METABOXED(__)   then "metatype"
+  case T_FUNCTION(__)
+  case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else 'expTypeShort:ERROR <%unparseType(type)%> '
 end expTypeShort;
@@ -785,6 +789,8 @@ template expTypeShortSPS(DAE.Type type)
                       then "type not supported"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
+  case T_FUNCTION(__)
+  case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "type not supported"
   else "expTypeShort:ERROR"
 end expTypeShortSPS;
@@ -805,6 +811,8 @@ template expTypeShortMLPI(DAE.Type type)
                       then "type not supported"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
+  case T_FUNCTION(__)
+  case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "type not supported"
   else "expTypeShort:ERROR"
 end expTypeShortMLPI;
