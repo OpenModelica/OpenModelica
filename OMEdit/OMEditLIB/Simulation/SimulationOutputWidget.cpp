@@ -540,7 +540,7 @@ void SimulationOutputWidget::compileModel()
   connect(mpCompilationProcess, SIGNAL(error(QProcess::ProcessError)), SLOT(compilationProcessError(QProcess::ProcessError)));
 #endif
   connect(mpCompilationProcess, SIGNAL(finished(int,QProcess::ExitStatus)), SLOT(compilationProcessFinished(int,QProcess::ExitStatus)));
-  QString numProcs;
+  QString numProcs, linkType("dynamic");
   if (mSimulationOptions.getNumberOfProcessors() == 0) {
     numProcs = QString::number(mSimulationOptions.getNumberOfProcessors());
   } else {
@@ -556,7 +556,7 @@ void SimulationOutputWidget::compileModel()
   SimulationPage *pSimulationPage = OptionsDialog::instance()->getSimulationPage();
   args << mSimulationOptions.getOutputFileName()
        << pSimulationPage->getTargetBuildComboBox()->itemData(pSimulationPage->getTargetBuildComboBox()->currentIndex()).toString()
-       << omPlatform << "parallel" << numProcs << "0";
+       << omPlatform << "parallel" << linkType << numProcs << "0";
   QString compilationProcessPath = QString(Helper::OpenModelicaHome) + "/share/omc/scripts/Compile.bat";
   writeCompilationOutput(QString("%1 %2\n").arg(compilationProcessPath).arg(args.join(" ")), Qt::blue);
   mpCompilationProcess->start(compilationProcessPath, args);

@@ -394,7 +394,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.PARMODAUTO,
   Flags.INTERACTIVE_PORT,
   Flags.ALLOW_NON_STANDARD_MODELICA,
-  Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION
+  Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION,
+  Flags.LINK_TYPE
 };
 
 public function new

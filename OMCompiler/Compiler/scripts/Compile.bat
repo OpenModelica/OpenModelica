@@ -4,10 +4,12 @@ REM 1 fileprefix
 REM 2 target (gcc|msvc)
 REM 3 platform (mingw64|mingw32)
 REM 4 serial/parallel
-REM 5 number of processors
-REM 6 LOGGING 0/1
-if not "%5"=="" (set NUM_PROCS=%5) else (set NUM_PROCS=%NUMBER_OF_PROCESSORS%)
-if not "%6"=="" (set LOGGING=%6) else (set LOGGING=1)
+REM 5 linkType (dynamic|static)
+REM 6 number of processors
+REM 7 LOGGING 0/1
+if not "%5"=="" (set LINK_TYPE=%5) else (set LINK_TYPE=dynamic)
+if not "%6"=="" (set NUM_PROCS=%6) else (set NUM_PROCS=%NUMBER_OF_PROCESSORS%)
+if not "%7"=="" (set LOGGING=%7) else (set LOGGING=1)
 set OM_PLATFORM=%3
 REM Clear all environment variables that may interfere during compile and link phases.
 set GCC_EXEC_PREFIX=
@@ -107,7 +109,7 @@ goto :Final
 :MINGW
 REM echo "MINGW"
 if "%4"=="parallel" set ADDITIONAL_ARGS=-j%NUM_PROCS%
-if %LOGGING%==1 ("%MinGW%\bin\mingw32-make" -w -f %1.makefile %ADDITIONAL_ARGS%  >> %1.log 2>&1) else ("%MinGW%\bin\mingw32-make" -w -f %1.makefile %ADDITIONAL_ARGS%)
+if %LOGGING%==1 ("%MinGW%\bin\mingw32-make" -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%  >> %1.log 2>&1) else ("%MinGW%\bin\mingw32-make" -w -f %1.makefile OMC_LDFLAGS_LINK_TYPE=%LINK_TYPE% %ADDITIONAL_ARGS%)
 set RESULT=%ERRORLEVEL%
 if %LOGGING%==1 echo RESULT: %RESULT% >> %1.log 2>&1
 goto :Final
