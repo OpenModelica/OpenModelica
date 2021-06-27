@@ -8,21 +8,29 @@ setCommandLineOptions("+simCodeTarget=Cpp");
 
 loadString("
 package ArrayOperations
-model Test
-  input Real u = 0;
-  Real y = f({u + 1, u + 2, u + 3});
-  annotation(experiment(StopTime = 0));
-end Test;
-function f
-  input Real[:] v;
-  output Real y;
-protected
-  Real[:,:] m;
-algorithm
-  // see e.g. Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive
-  m := matrix(v) * transpose(matrix(v));
-  y := m[3,1];
-end f;
+  model Test
+    input Real u = 0;
+    Real y = f({u + 1, u + 2, u + 3});
+    Real[2] z = g(u);
+    annotation(experiment(StopTime = 0));
+  end Test;
+  // see Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive
+  function f
+    input Real[:] v;
+    output Real y;
+  protected
+    Real[:,:] m;
+  algorithm
+    m := matrix(v) * transpose(matrix(v));
+    y := m[3,1];
+  end f;
+  // see Modelica.Media.Examples.ReferenceAir.MoistAir
+  function g
+    input Real u;
+    output Real[:] y; // unknown dimension
+  algorithm
+    y := {u, u + 1};
+  end g;
 end ArrayOperations;
 ");
 getErrorString();
@@ -31,6 +39,7 @@ simulate(ArrayOperations.Test);
 getErrorString();
 
 val(y, 0);
+val(z[2], 0);
 
 // Result:
 // true
@@ -43,4 +52,5 @@ val(y, 0);
 // end SimulationResult;
 // ""
 // 3.0
+// 1.0
 // endResult
