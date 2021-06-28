@@ -52,6 +52,9 @@ void fill_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
 void BOOST_EXTENSION_EXPORT_DECL identity_alloc(size_t n, DynArrayDim2<int>& I);
 
 template <typename T>
+void diagonal_alloc(const BaseArray<T>& v, BaseArray<T>& D);
+
+template <typename T>
 void promote_array(size_t n, const BaseArray<T>& s, BaseArray<T>& d);
 
 template <typename T>
