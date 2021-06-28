@@ -942,35 +942,40 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
  "Generates code for an expression."
 ::=
   match exp
-  case e as ICONST(__)          then    integer
-  case e as RCONST(__)          then    real
-  case e as BCONST(__)          then    if bool then "true" else "false"
-  case e as ENUM_LITERAL(__)    then    index
-  case e as CREF(__)            then    daeExpCrefRhs(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CAST(__)            then    daeExpCast(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CONS(__)            then    "Cons not supported yet"
-  case e as SCONST(__)          then     daeExpSconst(string, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as UNARY(__)           then     daeExpUnary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as LBINARY(__)         then     daeExpLbinary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as LUNARY(__)          then     daeExpLunary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as BINARY(__)          then     daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as IFEXP(__)           then     daeExpIf(expCond, expThen, expElse, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RELATION(__)        then     daeExpRelation(e, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CALL(__)            then     daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RECORD(__)          then     daeExpRecord(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as ASUB(__)            then     '/*t1*/<%daeExpAsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as MATRIX(__)          then     daeExpMatrix(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RANGE(__)           then     '/*t2*/<%daeExpRange(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as TSUB(__)            then     '/*t3*/<%daeExpTsub(e, context,  &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation )%>'
-  case e as REDUCTION(__)       then     daeExpReduction(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as ARRAY(__)           then     '/*t4*/<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as SIZE(__)            then     daeExpSize(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as SHARED_LITERAL(__)  then     daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, useFlatArrayNotation)
-  case e as PARTEVALFUNCTION(__)then daeExpPartEvalFunction(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as ICONST(__)          then integer
+  case e as RCONST(__)          then real
+  case e as BCONST(__)          then if bool then "true" else "false"
+  case e as SCONST(__)          then daeExpSconst(string, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CLKCONST(__)        then error(sourceInfo(), 'Unsupported CLKCONST exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as ENUM_LITERAL(__)    then index
+  case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CAST(__)            then daeExpCast(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CONS(__)            then error(sourceInfo(), 'Unsupported CONS exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as UNARY(__)           then daeExpUnary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as LBINARY(__)         then daeExpLbinary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as LUNARY(__)          then daeExpLunary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as BINARY(__)          then daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as IFEXP(__)           then daeExpIf(expCond, expThen, expElse, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as RELATION(__)        then daeExpRelation(e, context, &preExp, &varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CALL(__)            then daeExpCall(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as RECORD(__)          then daeExpRecord(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as TUPLE(__)           then error(sourceInfo(), 'Unsupported TUPLE exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as ASUB(__)            then '<%daeExpAsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as RANGE(__)           then '<%daeExpRange(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as TSUB(__)            then '<%daeExpTsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation )%>'
+  case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as ARRAY(__)           then '<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as SIZE(__)            then daeExpSize(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e, context, &preExp, &varDecls, useFlatArrayNotation)
+  case e as PARTEVALFUNCTION(__)then daeExpPartEvalFunction(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as RSUB(__)            then daeExpRSub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-
+  case e as METARECORDCALL(__)  then daeExpRecordCall(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as META_TUPLE(__)      then error(sourceInfo(), 'Unsupported META_TUPLE exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as META_OPTION(__)     then error(sourceInfo(), 'Unsupported META_OPTION exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as MATCHEXPRESSION(__) then error(sourceInfo(), 'Unsupported MATCHEXPRESSION exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
   else error(sourceInfo(), 'Unknown exp:<%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExp;
 
@@ -1668,6 +1673,7 @@ end structParams;
 
 template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                       Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates code for the creation and initialization of a record instance."
 ::=
   match rec
   case RECORD(__) then
@@ -1678,6 +1684,20 @@ template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, Si
   let &preExp += ass
   name
 end daeExpRecord;
+
+template daeExpRecordCall(Exp rec, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                          Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Same as daeExpRecord."
+::=
+  match rec
+  case METARECORDCALL(path=path, args=exps, fieldNames=comp) then
+  let name = tempDecl(underscorePath(path) + "Type", &varDecls)
+  let ass = List.zip(exps,comp) |>  (exp,compn) =>
+    let compnStr = crefStr(makeUntypedCrefIdent(compn))
+    '<%name%>.<%compnStr%> = <%daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
+  let &preExp += ass
+  name
+end daeExpRecordCall;
 
 template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -2832,6 +2852,21 @@ case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
   <<
   <%body%>
   >>
+case RECORD(exps=exps, comp=comp) then
+  // This case has only been seen for Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder with the new frontend.
+  // The error shall prevent the example from running for now as compilation lasts very long and simulation fails anyway.
+  error(sourceInfo(), 'writeLhsCref RECORD UNHANDLED: <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>')
+  /*
+  // assign fields of rhs record to lhs exps, one by one
+  let body = (List.zip(exps, comp) |> (exp, compn) =>
+                let lhsStr = scalarLhsCref(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+                let compnStr = crefStr(makeUntypedCrefIdent(compn))
+                '<%lhsStr%> = <%rhsStr%>.<%compnStr%>;'
+              ;separator="\n")
+  <<
+  <%body%>
+  >>
+  */
 case ASUB(__) then
   error(sourceInfo(), 'writeLhsCref UNHANDLED ASUB (should never be part of a lhs expression): <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>')
 else
