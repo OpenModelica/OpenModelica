@@ -58,6 +58,7 @@ import Package = NFPackage;
 import SimplifyExp = NFSimplifyExp;
 import ErrorExt;
 import Record = NFRecord;
+import Flatten = NFFlatten;
 
 public
 function evaluate
@@ -77,19 +78,20 @@ function evaluateVariable
 protected
   Binding binding;
 algorithm
-  binding := evaluateBinding(var.binding,
+  binding := evaluateBinding(var.binding, var.name,
     Variable.variability(var) <= Variability.STRUCTURAL_PARAMETER);
 
   if not referenceEq(binding, var.binding) then
     var.binding := binding;
   end if;
 
-  var.typeAttributes := list(evaluateTypeAttribute(a) for a in var.typeAttributes);
+  var.typeAttributes := list(evaluateTypeAttribute(a, var.name) for a in var.typeAttributes);
   var.children := list(evaluateVariable(v) for v in var.children);
 end evaluateVariable;
 
 function evaluateBinding
   input output Binding binding;
+  input ComponentRef prefix;
   input Boolean structural;
 protected
   Expression exp, eexp;
@@ -100,6 +102,7 @@ algorithm
 
     if structural then
       eexp := Ceval.evalExp(exp, Ceval.EvalTarget.ATTRIBUTE(binding));
+      eexp := Flatten.flattenExp(eexp, prefix);
     else
       info := Binding.getInfo(binding);
       eexp := evaluateExp(exp, info);
@@ -113,6 +116,7 @@ end evaluateBinding;
 
 function evaluateTypeAttribute
   input output tuple<String, Binding> attribute;
+  input ComponentRef prefix;
 protected
   String name;
   Binding binding, sbinding;
@@ -120,7 +124,7 @@ protected
 algorithm
   (name, binding) := attribute;
   structural := name == "fixed" or name == "stateSelect";
-  sbinding := evaluateBinding(binding, structural);
+  sbinding := evaluateBinding(binding, prefix, structural);
 
   if not referenceEq(binding, sbinding) then
     attribute := (name, sbinding);
@@ -170,7 +174,7 @@ algorithm
         if ComponentRef.nodeVariability(cref) <= Variability.STRUCTURAL_PARAMETER then
           // Evaluate all constants and structural parameters.
           outExp := Ceval.evalCref(cref, outExp, Ceval.EvalTarget.IGNORE_ERRORS(), evalSubscripts = false);
-          outExp := Expression.expandSplitIndices(outExp);
+          outExp := Flatten.flattenExp(outExp, cref);
           outChanged := true;
         elseif outChanged then
           ty := ComponentRef.getSubscriptedType(cref);
