@@ -4939,7 +4939,7 @@ case EXTERNAL_FUNCTION(__) then
            separator="\n")
   match language
   case "C" then extFunCallC(fun, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, useTuple)
-  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, useTuple)
+  case "FORTRAN 77" then extFunCallF77(fun, &preExp, &varDecls, &inputAssign, &outputAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 end extFunCall;
 
 
@@ -5174,7 +5174,7 @@ template extFunCallF77(Function fun, Text &preExp,
   Text &varDecls, Text &inputAssign, Text &outputAssign, SimCode simCode,
   Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
   Text stateDerVectorName /*=__zDot*/,
-  Boolean useFlatArrayNotation, Boolean useTuple)
+  Boolean useFlatArrayNotation)
  "Generates the call to an external F77 function."
 ::=
   match fun
@@ -5190,7 +5190,6 @@ template extFunCallF77(Function fun, Text &preExp,
     let returnAssign = if returnVar then '<%returnVar%> = '
     <<
     <%returnAssign%><%extFunctionName(extName, language)%>(<%args%>);
-    <%match useTuple case false then '<%funName%> = <%returnVar%>;'%>
     >>
 end extFunCallF77;
 
@@ -5228,7 +5227,11 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls,
     let varType = expTypeShort(t)
     let extType = extTypeF77(t, false, false)
     let extName = '<%varName%>_ext'
-    if stringEq(varType, extType) then
+    if stringEq(varType, "string") then
+      <<
+      <%varName%>.c_str()
+      >>
+    else if stringEq(varType, extType) then
       <<
       &<%varName%>
       >>
