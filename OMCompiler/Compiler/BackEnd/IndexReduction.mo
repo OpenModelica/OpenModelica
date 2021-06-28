@@ -3808,7 +3808,7 @@ algorithm
       then (BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io,false),(vars,so,varlst,ht));
     // regular variable with StateSelect.Prefer
     case (var as BackendDAE.VAR(name,BackendDAE.VARIABLE(),dir,prl,tp,bind,tplExp,dim,source,attr,ts,hideResult,comment,ct,io),(vars,so,varlst,ht))
-      guard(BackendVariable.varStateSelectNever(var))
+      guard(BackendVariable.varStateSelectPrefer(var))
       equation
         // add replacement for each derivative
         (varlst,ht) = makeAllDummyVarandDummyDerivativeRepl1(1,1,name,name,var,vars,so,varlst,ht);
