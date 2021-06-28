@@ -548,6 +548,9 @@ void SimulationOutputWidget::compileModel()
   }
   QStringList args;
 #ifdef WIN32
+  if (OptionsDialog::instance()->getSimulationPage()->getUseStaticLinkingCheckBox()->isChecked()) {
+    linkType = "static";
+  }
 #if defined(__MINGW32__) && defined(__MINGW64__) /* on 64 bit */
   const char* omPlatform = "mingw64";
 #else
