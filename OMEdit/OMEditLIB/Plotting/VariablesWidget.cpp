@@ -1137,10 +1137,7 @@ void VariablesTreeModel::getVariableInformation(ModelicaMatReader *pMatReader, Q
     } else { /* Read the final value of the variable. Only mat result files are supported. */
       if ((pMatReader->file != NULL) && strcmp(pMatReader->fileName, "")) {
         *value = "";
-        ModelicaMatVariable_t *var;
-        if (0 == (var = omc_matlab4_find_var(pMatReader, variableToFind.toUtf8().constData()))) {
-          qDebug() << QString("%1 not found in %2").arg(variableToFind).arg(pMatReader->fileName);
-        }
+        ModelicaMatVariable_t *var = omc_matlab4_find_var(pMatReader, variableToFind.toUtf8().constData());
         double res;
         if (var && !omc_matlab4_val(&res, pMatReader, var, omc_matlab4_stopTime(pMatReader))) {
           *value = QString::number(res);
