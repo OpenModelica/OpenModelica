@@ -10,12 +10,13 @@ loadString("
 package ArrayOperations
   model Test
     input Real u = 0;
-    Real y = f({u + 1, u + 2, u + 3});
-    Real[2] z = g(u);
+    Real y = f1({u + 1, u + 2, u + 3});
+    Real[2] z = f2(u);
+    Real[2,2] D = f3(z);
     annotation(experiment(StopTime = 0));
   end Test;
   // see Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive
-  function f
+  function f1
     input Real[:] v;
     output Real y;
   protected
@@ -23,14 +24,21 @@ package ArrayOperations
   algorithm
     m := matrix(v) * transpose(matrix(v));
     y := m[3,1];
-  end f;
+  end f1;
   // see Modelica.Media.Examples.ReferenceAir.MoistAir
-  function g
+  function f2
     input Real u;
     output Real[:] y; // unknown dimension
   algorithm
-    y := {u, u + 1};
-  end g;
+    y := {u + 1, u + 2};
+  end f2;
+  // built-in diagonal
+  function f3
+    input Real[:] v;
+    output Real[size(v, 1), size(v, 1)] D;
+  algorithm
+    D := diagonal(v);
+  end f3;
 end ArrayOperations;
 ");
 getErrorString();
@@ -39,7 +47,12 @@ simulate(ArrayOperations.Test);
 getErrorString();
 
 val(y, 0);
+val(z[1], 0);
 val(z[2], 0);
+val(D[1,1], 0);
+val(D[1,2], 0);
+val(D[2,1], 0);
+val(D[2,2], 0);
 
 // Result:
 // true
@@ -53,4 +66,9 @@ val(z[2], 0);
 // ""
 // 3.0
 // 1.0
+// 2.0
+// 1.0
+// 0.0
+// 0.0
+// 2.0
 // endResult

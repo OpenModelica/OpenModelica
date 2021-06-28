@@ -219,6 +219,24 @@ void identity_alloc(size_t n, DynArrayDim2<int>& I)
     I(i, i) = 1;
 }
 
+template <typename T>
+void diagonal_alloc(const BaseArray<T>& v, BaseArray<T>& D)
+{
+  if (v.getNumDims() != 1)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Error in diagonal, input must be vector");
+  if (D.getNumDims() != 2)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Error in diagonal, output must be matrix");
+  vector<size_t> dims = v.getDims();
+  size_t n = dims[0];
+  dims.push_back(n);
+  D.setDims(dims);
+  const T* v_data = v.getData();
+  T* D_data = D.getData();
+  std::fill(D_data, D_data + n * n, 0);
+  for (size_t i = 0; i < n; i++)
+    D_data[i * n + i] = v_data[i];
+}
+
  //template < typename T , size_t NumDims, size_t NumDims2 >
 template <typename T>
 void promote_array(size_t n, const BaseArray<T>& s, BaseArray<T>& d)
@@ -601,6 +619,11 @@ template void BOOST_EXTENSION_EXPORT_DECL
 transpose_array(const BaseArray<int>& x, BaseArray<int>& a);
 template void BOOST_EXTENSION_EXPORT_DECL
 transpose_array(const BaseArray<bool>& x, BaseArray<bool>& a);
+
+template void BOOST_EXTENSION_EXPORT_DECL
+diagonal_alloc(const BaseArray<double>& v, BaseArray<double>& D);
+template void BOOST_EXTENSION_EXPORT_DECL
+diagonal_alloc(const BaseArray<int>& v, BaseArray<int>& D);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 promote_array(size_t n, const BaseArray<double>& s, BaseArray<double>& d);
