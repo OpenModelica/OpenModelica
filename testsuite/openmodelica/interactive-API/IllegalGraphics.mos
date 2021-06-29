@@ -7,6 +7,6 @@ getIconAnnotation(IllegalGraphics); getErrorString();
 // Result:
 // true
 // ""
-// {-,-,-,-,false,-,-,,{Ellipse(true, {0.0, 0.0}, 0, {85, 170, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-60, -55}, {-30, -25}}, 0, 360), Ellipse(true, {0.0, 0.0}, 0, {85, 170, 255}, {0, 0, 0}, LinePattern.Dash, FillPattern.None, 0.25, {{-68, 10}, {68, -10}}, 0, 360), Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-100, 96}, {100, 60}}, "%name", 0, {-1, -1, -1}, "", {}, TextAlignment.Center)}}
+// {-,-,-,-,false,-,-,,{Ellipse(true, {0.0, 0.0}, 0, {85, 170, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-60, -55}, {-30, -25}}, 0, 360, if startAngle == 0 and endAngle == 360 then EllipseClosure.Chord else EllipseClosure.Radial), Ellipse(true, {0.0, 0.0}, 0, {85, 170, 255}, {0, 0, 0}, LinePattern.Dash, FillPattern.None, 0.25, {{-68, 10}, {68, -10}}, 0, 360, if startAngle == 0 and endAngle == 360 then EllipseClosure.Chord else EllipseClosure.Radial), Text(true, {0.0, 0.0}, 0, {0, 0, 255}, {0, 0, 0}, LinePattern.Solid, FillPattern.None, 0.25, {{-100, 96}, {100, 60}}, "%name", 0, {-1, -1, -1}, "", {}, TextAlignment.Center)}}
 // ""
 // endResult
