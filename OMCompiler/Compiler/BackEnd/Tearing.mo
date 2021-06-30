@@ -82,6 +82,8 @@ protected constant String UNDERLINE = "========================================"
 uniontype TearingMethod
   record MINIMAL_TEARING "Only tear discrete variables from loops"
     end MINIMAL_TEARING;
+  record GURU_TEARING "Only use tearingSelect.always tearing variables"
+    end GURU_TEARING;
   record OMC_TEARING end OMC_TEARING;
   record CELLIER_TEARING end CELLIER_TEARING;
   record TOTAL_TEARING end TOTAL_TEARING;
@@ -144,6 +146,7 @@ protected function getTearingMethod
 algorithm
   outTearingMethod := match(inTearingMethod)
     case ("minimalTearing") then MINIMAL_TEARING();
+    case ("guruTearing") then GURU_TEARING();
     case ("omcTearing") then OMC_TEARING();
     case ("cellier") then CELLIER_TEARING();
 
@@ -226,6 +229,16 @@ algorithm
            ocomp := minimalTearing(isyst, ishared, eindex, vindx, jacType, mixedSystem);
            if debug then execStat("Tearing.minimalTearing"); end if;
          then (ocomp, true);
+
+      case GURU_TEARING()
+          algorithm
+           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+             print("\nTearing type: guru\n");
+           end if;
+           ocomp := guruTearing(isyst, ishared, eindex, vindx, jacType, mixedSystem);
+           if debug then execStat("Tearing.guruTearing"); end if;
+         then (ocomp, true);
+
 
       case USER_DEFINED_TEARING()
         algorithm
@@ -5156,6 +5169,92 @@ algorithm
   end if;
 end simpleMatching;
 
+// ============================================================================
+// Section for guru tearing
+//   Use only tearingSelect.always variables as tearing variables and force
+//   all other variables to be inner variables. Can invoke inner loops.
+// ============================================================================
+protected function guruTearing
+  "Forces tearing and inner variables defined by the all knowing guru."
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input list<Integer> eindex;
+  input list<Integer> vindx;
+  input BackendDAE.JacobianType jacType;
+  input Boolean mixedSystem;
+  output BackendDAE.StrongComponent ocomp;
+protected
+  list<BackendDAE.Equation> eqn_lst, residual_eqn_lst = {};
+  list<BackendDAE.Var> var_lst, tearing_var_lst, inner_var_lst;
+  array<Integer> ass1, ass2, ass1_manipulated, scalToArr;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.Variables vars;
+  BackendDAE.AdjacencyMatrix m;
+  list<list<Integer>> sorted_inner_comps;
+  BackendDAE.InnerEquations innerEquations = {};
+  list<Integer> tearing_var_indices = {}, residual_eqn_indices = {};
+algorithm
+  // ALGORITHM ABSTRACT
+  //   1. get all equations and variables
+  //   2. split variables in tearing and inner variables
+  //   3. use existing matching information to extract residual equations
+  //   4. manipulate existing matching information to represent the system without tearing variables and residual equations
+  //   5. sort the manipulated system to get inner strong components
+
+  // 1. get all equations and variables
+  eqn_lst := BackendEquation.getList(eindex, BackendEquation.getEqnsFromEqSystem(isyst));
+  var_lst := List.map1r(vindx, BackendVariable.getVarAt, isyst.orderedVars);
+
+  // 2. split variables in tearing and inner variables
+  (tearing_var_lst, inner_var_lst) := List.splitOnTrue(var_lst, BackendVariable.varStateSelectAlways);
+  tearing_var_indices := list(i for i guard(BackendVariable.varStateSelectAlways(BackendVariable.getVarAt(isyst.orderedVars, i))) in vindx);
+
+  BackendDAE.MATCHING(ass1 = ass1, ass2 = ass2) := isyst.matching;
+  SOME((_, scalToArr, _, _, _)) := isyst.mapping;
+  ass1_manipulated := arrayCopy(ass1);
+  for i in tearing_var_indices loop
+    // 3. use existing matching information to extract residual equations
+    residual_eqn_indices := ass1[i] :: residual_eqn_indices;
+    // 4. manipulate existing matching information to represent the system without tearing variables and residual equations
+    ass1_manipulated[i] := -1;
+  end for;
+
+  SOME(m) := isyst.m;
+  sorted_inner_comps := Sorting.Tarjan(m, ass1_manipulated);
+  innerEquations := list(innerStrongComponent(comp, ass2, scalToArr) for comp in sorted_inner_comps);
+
+  ocomp := BackendDAE.TORNSYSTEM(
+    strictTearingSet  = BackendDAE.TEARINGSET(
+      tearingvars         = listReverse(tearing_var_indices),
+      residualequations   = listReverse(residual_eqn_indices),
+      innerEquations      = innerEquations,
+      jac                 = BackendDAE.EMPTY_JACOBIAN()),
+    casualTearingSet  = NONE(),
+    linear            = BackendDAEUtil.getLinearfromJacType(jacType),
+    mixedSystem       = mixedSystem);
+end guruTearing;
+
+protected function innerStrongComponent
+  input list<Integer> comp;
+  input array<Integer> ass2;
+  input array<Integer> scalToArr;
+  output BackendDAE.InnerEquation innerEqn;
+protected
+  list<Integer> eqn_indices = List.unique(list(scalToArr[i] for i in comp));
+  list<Integer> var_indices = list(ass2[i] for i in comp);
+algorithm
+  if listLength(eqn_indices) == 1 then
+    innerEqn := BackendDAE.INNEREQUATION(List.first(eqn_indices), var_indices);
+  else
+    //kab: actually compute jacobian
+    innerEqn := BackendDAE.INNERLOOP(set = BackendDAE.TEARINGSET(
+      tearingvars       = var_indices,
+      residualequations = eqn_indices,
+      innerEquations    = {},
+      jac               = BackendDAE.EMPTY_JACOBIAN())
+    );
+  end if;
+end innerStrongComponent;
 
 annotation(__OpenModelica_Interface="backend");
 end Tearing;

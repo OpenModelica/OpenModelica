@@ -485,7 +485,7 @@ end ExternalObjectClass;
 public
 uniontype Matching
   record NO_MATCHING "matching has not yet been performed" end NO_MATCHING;
-  record MATCHING "not yet used"
+  record MATCHING
     array<Integer> ass1 "ass[varindx]=eqnindx";
     array<Integer> ass2 "ass[eqnindx]=varindx";
     StrongComponents comps;
@@ -603,6 +603,10 @@ uniontype InnerEquation
     list<Integer> vars;
     Constraints cons;
   end INNEREQUATIONCONSTRAINTS;
+
+  record INNERLOOP
+    TearingSet set;
+  end INNERLOOP;
 end InnerEquation;
 
 

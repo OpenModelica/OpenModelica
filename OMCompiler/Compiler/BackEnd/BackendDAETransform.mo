@@ -100,7 +100,8 @@ algorithm
       ass1 := varAssignmentNonScalar(ass1, mapIncRowEqn);
 
       // Frenkel TUD: Do not hand over the scalar adjacency Matrix because following modules does not check if scalar or not
-      syst := BackendDAE.EQSYSTEM(syst.orderedVars, syst.orderedEqs, NONE(), NONE(), NONE(), BackendDAE.MATCHING(ass1, ass2, comps), syst.stateSets, syst.partitionKind, syst.removedEqs);
+      // Abdelhak FHB: I do not like discarding information, therefore i will keep it and check if scalar or not
+      syst := BackendDAE.EQSYSTEM(syst.orderedVars, syst.orderedEqs, syst.m, syst.mT, syst.mapping, BackendDAE.MATCHING(ass1, ass2, comps), syst.stateSets, syst.partitionKind, syst.removedEqs);
     then (syst, comps);
 
     else algorithm
@@ -525,7 +526,7 @@ algorithm
     local
       Integer v, e;
       list<Integer> elst, vlst, elst1, vlst1;
-      list<list<Integer>> vLstLst;
+      list<list<Integer>> eLstLst, vLstLst;
       BackendDAE.StrongComponent comp;
       BackendDAE.InnerEquations innerEquations;
 
@@ -551,7 +552,8 @@ algorithm
     then ({e}, vlst);
 
     case BackendDAE.TORNSYSTEM(BackendDAE.TEARINGSET(tearingvars=vlst, residualequations=elst, innerEquations=innerEquations)) equation
-      (elst1,vLstLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      (eLstLst,vLstLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
+      elst1 = List.flatten(eLstLst);
       vlst1 = List.flatten(vLstLst);
       elst = listAppend(elst1, elst);
       vlst = listAppend(vlst1, vlst);

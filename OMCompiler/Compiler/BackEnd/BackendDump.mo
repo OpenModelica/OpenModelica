@@ -1426,8 +1426,8 @@ algorithm
   oString := match (inComp)
     local
       Integer i,v;
-      list<Integer> ilst,vlst,ilst2,vlst2,innerEqLst;
-      list<list<Integer>> innerVarLst;
+      list<Integer> ilst,vlst,ilst2,vlst2;
+      list<list<Integer>> innerEqLst, innerVarLst;
       list<String> ls;
       String s,s2,s3,s4;
       BackendDAE.JacobianType jacType;
@@ -1495,7 +1495,7 @@ algorithm
                    + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
                    + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
                    + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
-                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,List.flatten(innerEqLst));
         else
           tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
         end if;
@@ -1517,7 +1517,7 @@ algorithm
                    + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
                    + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
                    + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
-                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,List.flatten(innerEqLst));
         else
           tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
         end if;
@@ -1537,7 +1537,7 @@ algorithm
                    + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst2) + "\n"
                    + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst2)
                    + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
-                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,List.flatten(innerEqLst));
         else
           tmpStr2 = tmpStr2 + "For more information please use \"-d=tearingdump\".\n";
         end if;

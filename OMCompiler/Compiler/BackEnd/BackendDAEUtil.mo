@@ -5626,23 +5626,46 @@ algorithm
   end match;
 end getEqnAndVarsFromInnerEquation;
 
+public function getEqnAndVarsFromInnerLoop
+  "kabdelhak: this should be merged with getEqnAndVarsFromInnerEquation
+   requires a lot of changes"
+  input BackendDAE.InnerEquation innerEquation;
+  output list<Integer> outEqns;
+  output list<Integer> outVars;
+  output BackendDAE.Constraints outCons;
+algorithm
+  (outEqns,outVars,outCons) := match(innerEquation)
+    local
+      list<Integer> eqns, vars;
+    case(BackendDAE.INNERLOOP(set = BackendDAE.TEARINGSET(residualequations=eqns, tearingvars=vars))) then (eqns,vars,{});
+  end match;
+end getEqnAndVarsFromInnerLoop;
+
 public function getEqnAndVarsFromInnerEquationLst
   input BackendDAE.InnerEquations innerEquations;
-  output tuple<list<Integer>,list<list<Integer>>,list<BackendDAE.Constraints>> eqnVarConstTpl;
+  output tuple<list<list<Integer>>,list<list<Integer>>,list<BackendDAE.Constraints>> eqnVarConstTpl;
 protected
   Integer eqn;
-  list<Integer> eqns = {}, vars;
-  list<list<Integer>> allVars = {};
+  list<Integer> eqns, vars;
+  list<list<Integer>> allEqns = {}, allVars = {};
   BackendDAE.Constraints constraints;
   list<BackendDAE.Constraints> allConstraints = {};
 algorithm
   for innerEq in innerEquations loop
-    (eqn,vars,constraints) := getEqnAndVarsFromInnerEquation(innerEq);
-    eqns := eqn::eqns;
+    _ := match innerEq
+      case BackendDAE.INNERLOOP() algorithm
+        (eqns,vars,constraints) := getEqnAndVarsFromInnerLoop(innerEq);
+      then ();
+      else algorithm
+        (eqn,vars,constraints) := getEqnAndVarsFromInnerEquation(innerEq);
+        eqns := {eqn};
+      then ();
+    end match;
+    allEqns := eqns::allEqns;
     allVars := vars::allVars;
     allConstraints := constraints::allConstraints;
   end for;
-  eqnVarConstTpl := (eqns,allVars,allConstraints);
+  eqnVarConstTpl := (allEqns,allVars,allConstraints);
 end getEqnAndVarsFromInnerEquationLst;
 
 protected function transformSolvabilityForCasualTearingSet
@@ -9707,7 +9730,7 @@ algorithm
     local
       Integer vidx,eidx;
       list<Integer> vidxs,eidxs, otherEqns, otherVars;
-      list<list<Integer>> otherVarsLst;
+      list<list<Integer>> otherEqnsLst, otherVarsLst;
       BackendDAE.Equation eq;
       BackendDAE.Var var;
       list<BackendDAE.Equation> eqs;
@@ -9750,7 +9773,8 @@ algorithm
     then (vars,vidxs,{eq},{eidx});
   case(BackendDAE.TORNSYSTEM(strictTearingSet = BackendDAE.TEARINGSET(residualequations=eidxs,tearingvars=vidxs, innerEquations=innerEquations)),_,_)
     equation
-      (otherEqns,otherVarsLst,_) = List.map_3(innerEquations, BackendDAEUtil.getEqnAndVarsFromInnerEquation);
+      (otherEqnsLst,otherVarsLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
+      otherEqns = List.flatten(otherEqnsLst);
       otherVars = List.flatten(otherVarsLst);
       eidxs = listAppend(otherEqns,eidxs);
       vidxs = listAppend(otherVars,vidxs);
