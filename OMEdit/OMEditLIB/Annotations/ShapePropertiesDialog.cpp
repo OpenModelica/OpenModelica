@@ -172,6 +172,16 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpEndAngleSpinBox->setRange(-std::numeric_limits<double>::max(), std::numeric_limits<double>::max());
   mpEndAngleSpinBox->setValue(mpShapeAnnotation->getEndAngle());
   mpEndAngleSpinBox->setSingleStep(90);
+  // closure
+  mpClosureLabel = new Label(tr("Closure:"));
+  mpClosureComboBox = new QComboBox;
+  mpClosureComboBox->addItem(StringHandler::getClosureString(StringHandler::ClosureNone));
+  mpClosureComboBox->addItem(StringHandler::getClosureString(StringHandler::ClosureChord));
+  mpClosureComboBox->addItem(StringHandler::getClosureString(StringHandler::ClosureRadial));
+  currentIndex = mpClosureComboBox->findText(StringHandler::getClosureString(mpShapeAnnotation->getClosure()), Qt::MatchExactly);
+  if (currentIndex > -1) {
+    mpClosureComboBox->setCurrentIndex(currentIndex);
+  }
   // set the border style Group Box layout
   QGridLayout *pAngleGridLayout = new QGridLayout;
   pAngleGridLayout->setColumnStretch(1, 1);
@@ -180,6 +190,8 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   pAngleGridLayout->addWidget(mpStartAngleSpinBox, 0, 1);
   pAngleGridLayout->addWidget(mpEndAngleLabel, 0, 2);
   pAngleGridLayout->addWidget(mpEndAngleSpinBox, 0, 3);
+  pAngleGridLayout->addWidget(mpClosureLabel, 1, 0);
+  pAngleGridLayout->addWidget(mpClosureComboBox, 1, 1);
   mpAngleGroupBox->setLayout(pAngleGridLayout);
   // Text Group Box
   mpTextGroupBox = new QGroupBox(tr("Text"));
@@ -235,8 +247,7 @@ ShapePropertiesDialog::ShapePropertiesDialog(ShapeAnnotation *pShapeAnnotation, 
   mpTextHorizontalAlignmentComboBox->addItem(StringHandler::getTextAlignmentString(StringHandler::TextAlignmentLeft));
   mpTextHorizontalAlignmentComboBox->addItem(StringHandler::getTextAlignmentString(StringHandler::TextAlignmentCenter));
   mpTextHorizontalAlignmentComboBox->addItem(StringHandler::getTextAlignmentString(StringHandler::TextAlignmentRight));
-  currentIndex = mpTextHorizontalAlignmentComboBox->findText(StringHandler::getTextAlignmentString(
-                                                               mpShapeAnnotation->getTextHorizontalAlignment()), Qt::MatchExactly);
+  currentIndex = mpTextHorizontalAlignmentComboBox->findText(StringHandler::getTextAlignmentString(mpShapeAnnotation->getTextHorizontalAlignment()), Qt::MatchExactly);
   if (currentIndex > -1) {
     mpTextHorizontalAlignmentComboBox->setCurrentIndex(currentIndex);
   }
@@ -792,6 +803,7 @@ bool ShapePropertiesDialog::applyShapeProperties()
   if (mpEllipseAnnotation) {
     mpShapeAnnotation->setStartAngle(mpStartAngleSpinBox->value());
     mpShapeAnnotation->setEndAngle(mpEndAngleSpinBox->value());
+    mpShapeAnnotation->setClosure(StringHandler::getClosureType(mpClosureComboBox->currentText()));
   }
   if (mpTextAnnotation) {
     mpShapeAnnotation->setTextString(mpTextTextBox->text().trimmed());

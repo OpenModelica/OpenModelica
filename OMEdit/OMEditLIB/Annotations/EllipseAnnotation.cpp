@@ -75,7 +75,7 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   FilledShape::parseShapeAnnotation(annotation);
   // parse the shape to get the list of attributes of Ellipse.
   QStringList list = StringHandler::getStrings(annotation);
-  if (list.size() < 11) {
+  if (list.size() < 12) {
     return;
   }
   // 9th item is the extent points
@@ -90,6 +90,8 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
   mStartAngle = list.at(9).toFloat();
   // 11th item of the list contains the end angle.
   mEndAngle = list.at(10).toFloat();
+  // 12th item of the list contains the closure
+  mClosure = StringHandler::getClosureType(list.at(11));
 }
 
 QRectF EllipseAnnotation::boundingRect() const
@@ -100,22 +102,12 @@ QRectF EllipseAnnotation::boundingRect() const
 QPainterPath EllipseAnnotation::shape() const
 {
   QPainterPath path;
-  qreal startAngle = StringHandler::getNormalizedAngle(mStartAngle);
-  qreal endAngle = StringHandler::getNormalizedAngle(mEndAngle);
-  if ((startAngle - endAngle) == 0)
-  {
-    path.addEllipse(getBoundingRect());
-    if (mFillPattern == StringHandler::FillNone)
-    {
-      return addPathStroker(path);
-    }
-    else
-    {
-      return path;
-    }
-  }
   path.addEllipse(getBoundingRect());
-  return path;
+  if (mFillPattern == StringHandler::FillNone) {
+    return addPathStroker(path);
+  } else {
+    return path;
+  }
 }
 
 void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
@@ -133,19 +125,20 @@ void EllipseAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem 
 
 void EllipseAnnotation::drawEllipseAnnotaion(QPainter *painter)
 {
-  QPainterPath path;
   // first we invert the painter since we have our coordinate system inverted.
   // inversion is required to draw the elliptic curves at correct angles.
   painter->scale(1.0, -1.0);
   painter->translate(0, ((-boundingRect().top()) - boundingRect().bottom()));
   applyLinePattern(painter);
-  applyFillPattern(painter);
-  qreal startAngle = StringHandler::getNormalizedAngle(mStartAngle);
-  qreal endAngle = StringHandler::getNormalizedAngle(mEndAngle);
-  if ((startAngle - endAngle) == 0) {
-    path.addEllipse(getBoundingRect());
-    painter->drawPath(path);
-  } else {
+  if (mClosure != StringHandler::ClosureNone) {
+    applyFillPattern(painter);
+  }
+
+  if (mClosure == StringHandler::ClosureNone) {
+    painter->drawArc(getBoundingRect(), mStartAngle*16, mEndAngle*16 - mStartAngle*16);
+  } else if (mClosure == StringHandler::ClosureChord) {
+    painter->drawChord(getBoundingRect(), mStartAngle*16, mEndAngle*16 - mStartAngle*16);
+  } else { // StringHandler::ClosureRadial
     painter->drawPie(getBoundingRect(), mStartAngle*16, mEndAngle*16 - mStartAngle*16);
   }
 }
@@ -173,6 +166,8 @@ QString EllipseAnnotation::getOMCShapeAnnotation()
   annotationString.append(QString::number(mStartAngle));
   // get the end angle
   annotationString.append(QString::number(mEndAngle));
+  // get the closure
+  annotationString.append(StringHandler::getClosureString(mClosure));
   return annotationString.join(",");
 }
 
@@ -212,8 +207,13 @@ QString EllipseAnnotation::getShapeAnnotation()
     annotationString.append(QString("startAngle=").append(QString::number(mStartAngle)));
   }
   // get the end angle
-  if (mEndAngle != 0) {
+  if (mEndAngle != 360) {
     annotationString.append(QString("endAngle=").append(QString::number(mEndAngle)));
+  }
+  // get the closure
+  if (!((mStartAngle == 0 && mEndAngle == 360 && mClosure == StringHandler::ClosureChord)
+        || (!(mStartAngle == 0 && mEndAngle == 360) && mClosure == StringHandler::ClosureRadial))) {
+    annotationString.append(QString("closure=").append(StringHandler::getClosureString(mClosure)));
   }
   return QString("Ellipse(").append(annotationString.join(",")).append(")");
 }

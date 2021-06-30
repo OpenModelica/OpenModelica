@@ -385,6 +385,7 @@ void ShapeAnnotation::setDefaults()
   mRadius = 0;
   mStartAngle = 0;
   mEndAngle = 360;
+  mClosure = StringHandler::ClosureChord;
   mOriginalTextString = "";
   mTextString = "";
   mFontSize = 0;
@@ -420,6 +421,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mRadius = pShapeAnnotation->mRadius;
   mStartAngle = pShapeAnnotation->mStartAngle;
   mEndAngle = pShapeAnnotation->mEndAngle;
+  mClosure = pShapeAnnotation->mClosure;
   mOriginalTextString = pShapeAnnotation->mOriginalTextString;
   mTextString = pShapeAnnotation->mTextString;
   mFontSize = pShapeAnnotation->mFontSize;
