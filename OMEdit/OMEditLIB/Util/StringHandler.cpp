@@ -608,6 +608,32 @@ QString StringHandler::getSmoothString(StringHandler::Smooth type)
   }
 }
 
+StringHandler::EllipseClosure StringHandler::getClosureType(QString type)
+{
+  if (type.compare("EllipseClosure.None") == 0) {
+    return StringHandler::ClosureNone;
+  } else if (type.compare("EllipseClosure.Chord") == 0) {
+    return StringHandler::ClosureChord;
+  } else if (type.compare("EllipseClosure.Radial") == 0) {
+    return StringHandler::ClosureRadial;
+  } else {
+    return StringHandler::ClosureChord;
+  }
+}
+
+QString StringHandler::getClosureString(StringHandler::EllipseClosure type)
+{
+  switch (type) {
+    case StringHandler::ClosureNone:
+      return "EllipseClosure.None";
+    case StringHandler::ClosureRadial:
+      return "EllipseClosure.Radial";
+    case StringHandler::ClosureChord:
+    default:
+      return "EllipseClosure.Chord";
+  }
+}
+
 StringHandler::Arrow StringHandler::getArrowType(QString type)
 {
   if (type.compare("Arrow.None") == 0)

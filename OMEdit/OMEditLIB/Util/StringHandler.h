@@ -55,6 +55,7 @@ public:
                     FillHorizontalCylinder, FillVerticalCylinder, FillSphere};
   enum BorderPattern {BorderNone, BorderRaised, BorderSunken, BorderEngraved};
   enum Smooth {SmoothNone, SmoothBezier};
+  enum EllipseClosure {ClosureNone, ClosureChord, ClosureRadial};
   enum Arrow {ArrowNone, ArrowOpen, ArrowFilled, ArrowHalf};
   enum TextStyle {TextStyleBold, TextStyleItalic, TextStyleUnderLine};
   enum TextAlignment {TextAlignmentLeft, TextAlignmentCenter, TextAlignmentRight};
@@ -95,6 +96,8 @@ public:
   static QString getBorderPatternString(StringHandler::BorderPattern type);
   static StringHandler::Smooth getSmoothType(QString type);
   static QString getSmoothString(StringHandler::Smooth type);
+  static StringHandler::EllipseClosure getClosureType(QString type);
+  static QString getClosureString(StringHandler::EllipseClosure type);
   static StringHandler::Arrow getArrowType(QString type);
   static QString getArrowString(StringHandler::Arrow type);
   static QComboBox* getStartArrowComboBox();
