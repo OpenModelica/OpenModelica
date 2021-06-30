@@ -236,7 +236,7 @@ function parallelParseFilesWork
 protected
   list<tuple<String,String,String,Option<Integer>>> workList = list((file,encoding,libraryPath,lveInstance) for file in filenames);
 algorithm
-  if Testsuite.isRunning() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or not(libraryPath == "") then
+  if Testsuite.isRunning() or Config.noProc()==1 or numThreads == 1 or listLength(filenames)<2 or isSome(lveInstance) then
     partialResults := list(loadFileThread(t) for t in workList);
   else
     // GC.disable(); // Seems to sometimes break building nightly omc
