@@ -106,6 +106,8 @@ private:
   DoubleSpinBox *mpStartAngleSpinBox;
   Label *mpEndAngleLabel;
   DoubleSpinBox *mpEndAngleSpinBox;
+  Label *mpClosureLabel;
+  QComboBox *mpClosureComboBox;
   QGroupBox *mpTextGroupBox;
   QLineEdit *mpTextTextBox;
   QGroupBox *mpFontAndTextStyleGroupBox;
