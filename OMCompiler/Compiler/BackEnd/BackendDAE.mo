@@ -606,6 +606,8 @@ uniontype InnerEquation
 
   record INNERLOOP
     TearingSet set;
+    Boolean linear;
+    Boolean mixed;
   end INNERLOOP;
 end InnerEquation;
 

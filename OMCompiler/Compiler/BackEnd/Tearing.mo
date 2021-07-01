@@ -4916,8 +4916,6 @@ algorithm
   end for;
 end dumpMatchingList;
 
-
-
 // =============================================================================
 //
 // User-Defined Tearing - Determine the tearing set defined by the user
@@ -5195,8 +5193,8 @@ protected
   list<Integer> tearing_var_indices = {}, residual_eqn_indices = {};
 algorithm
   // ALGORITHM ABSTRACT
-  //   1. get all equations and variables
-  //   2. split variables in tearing and inner variables
+  //   1. get all equations and variables of the algebraic loop
+  //   2. split variables in tearing and inner variables using TearingSelect.Always
   //   3. use existing matching information to extract residual equations
   //   4. manipulate existing matching information to represent the system without tearing variables and residual equations
   //   5. sort the manipulated system to get inner strong components
@@ -5207,7 +5205,7 @@ algorithm
 
   // 2. split variables in tearing and inner variables
   (tearing_var_lst, inner_var_lst) := List.splitOnTrue(var_lst, BackendVariable.varStateSelectAlways);
-  tearing_var_indices := list(i for i guard(BackendVariable.varStateSelectAlways(BackendVariable.getVarAt(isyst.orderedVars, i))) in vindx);
+  tearing_var_indices := list(i for i guard(BackendVariable.varTearingSelectAlways(BackendVariable.getVarAt(isyst.orderedVars, i))) in vindx);
 
   BackendDAE.MATCHING(ass1 = ass1, ass2 = ass2) := isyst.matching;
   SOME((_, scalToArr, _, _, _)) := isyst.mapping;
@@ -5246,13 +5244,15 @@ algorithm
   if listLength(eqn_indices) == 1 then
     innerEqn := BackendDAE.INNEREQUATION(List.first(eqn_indices), var_indices);
   else
-    //kab: actually compute jacobian
-    innerEqn := BackendDAE.INNERLOOP(set = BackendDAE.TEARINGSET(
-      tearingvars       = var_indices,
-      residualequations = eqn_indices,
-      innerEquations    = {},
-      jac               = BackendDAE.EMPTY_JACOBIAN())
-    );
+    //kab: ToDo actually compute jacobian, linear and mixed
+    innerEqn := BackendDAE.INNERLOOP(
+      set = BackendDAE.TEARINGSET(
+        tearingvars       = var_indices,
+        residualequations = eqn_indices,
+        innerEquations    = {},
+        jac               = BackendDAE.EMPTY_JACOBIAN()),
+      linear = false,
+      mixed = true);
   end if;
 end innerStrongComponent;
 
