@@ -176,7 +176,7 @@ algorithm
       if Unit.isUnit(unit) then
         // Add the unit string to the variable's type attributes.
         unit_str := Unit.unitString(unit, htU2S);
-        binding := Binding.FLAT_BINDING(Expression.STRING(unit_str), Variability.CONSTANT, NFBinding.Source.GENERATED);
+        binding := Binding.makeFlat(Expression.STRING(unit_str), Variability.CONSTANT, NFBinding.Source.GENERATED);
         var.typeAttributes := ("unit", binding) :: var.typeAttributes;
       end if;
     else

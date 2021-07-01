@@ -378,8 +378,11 @@ algorithm
   end if;
 
   comp := InstNode.component(compNode);
-  InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
-  deleteClassComponents(Component.classInstance(comp));
+
+  if not Component.isDeleted(comp) then
+    InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
+    deleteClassComponents(Component.classInstance(comp));
+  end if;
 end deleteComponent;
 
 function deleteClassComponents
@@ -493,7 +496,7 @@ algorithm
   // binding couldn't be split and was moved to an initial equation.
   if unfix then
     ty_attrs := Binding.setAttr(ty_attrs, "fixed",
-      Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT, NFBinding.Source.GENERATED));
+      Binding.makeFlat(Expression.BOOLEAN(false), Variability.CONSTANT, NFBinding.Source.GENERATED));
   end if;
 
   vars := Variable.VARIABLE(name, ty, binding, visibility, comp_attr, ty_attrs, children, cmt, info) :: vars;
@@ -543,7 +546,7 @@ algorithm
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
              else
-               Binding.FLAT_BINDING(e, var, bind_src)
+               Binding.makeFlat(e, var, bind_src)
            for e in binding_exp.elements);
 
     else
@@ -1168,14 +1171,16 @@ algorithm
   equations := match eq
     local
       Expression e1, e2, e3;
+      Type ty;
       list<Equation> eql;
 
     case Equation.EQUALITY()
       algorithm
         e1 := flattenExp(eq.lhs, prefix);
         e2 := flattenExp(eq.rhs, prefix);
+        ty := flattenType(eq.ty, prefix);
       then
-        Equation.EQUALITY(e1, e2, eq.ty, eq.source) :: equations;
+        Equation.EQUALITY(e1, e2, ty, eq.source) :: equations;
 
     case Equation.FOR()
       algorithm
@@ -1465,7 +1470,7 @@ function flattenAlgorithms
   output list<Algorithm> outAlgorithms = {};
 algorithm
   for alg in algorithms loop
-    alg.statements := Statement.mapExpList(alg.statements, function flattenExp(prefix = prefix));
+    alg.statements := flattenStatements(alg.statements, prefix);
 
     // CheckModel relies on the ElementSource to know whether a certain algorithm comes from
     // an array component, otherwise is will miscount the number of equations.
@@ -1476,6 +1481,100 @@ algorithm
     outAlgorithms := alg :: outAlgorithms;
   end for;
 end flattenAlgorithms;
+
+function flattenStatements
+  input output list<Statement> stmts;
+  input ComponentRef prefix;
+algorithm
+  stmts := list(flattenStatement(s, prefix) for s in stmts);
+end flattenStatements;
+
+function flattenStatement
+  input output Statement stmt;
+  input ComponentRef prefix;
+algorithm
+  stmt := match stmt
+    local
+      Expression e1, e2, e3;
+      Type ty;
+      list<Statement> body;
+
+    case Statement.ASSIGNMENT()
+      algorithm
+        e1 := flattenExp(stmt.lhs, prefix);
+        e2 := flattenExp(stmt.rhs, prefix);
+        ty := flattenType(stmt.ty, prefix);
+      then
+        Statement.ASSIGNMENT(e1, e2, ty, stmt.source);
+
+    case Statement.FOR()
+      algorithm
+        stmt.range := Util.applyOption(stmt.range, function flattenExp(prefix = prefix));
+        stmt.body := flattenStatements(stmt.body, prefix);
+      then
+        stmt;
+
+    case Statement.IF()
+      algorithm
+        stmt.branches := list(flattenStmtBranch(b, prefix) for b in stmt.branches);
+      then
+        stmt;
+
+    case Statement.WHEN()
+      algorithm
+        stmt.branches := list(flattenStmtBranch(b, prefix) for b in stmt.branches);
+      then
+        stmt;
+
+    case Statement.ASSERT()
+      algorithm
+        e1 := flattenExp(stmt.condition, prefix);
+        e2 := flattenExp(stmt.message, prefix);
+        e3 := flattenExp(stmt.level, prefix);
+      then
+        Statement.ASSERT(e1, e2, e3, stmt.source);
+
+    case Statement.TERMINATE()
+      algorithm
+        e1 := flattenExp(stmt.message, prefix);
+      then
+        Statement.TERMINATE(e1, stmt.source);
+
+    case Statement.NORETCALL()
+      algorithm
+        e1 := flattenExp(stmt.exp, prefix);
+      then
+        Statement.NORETCALL(e1, stmt.source);
+
+    case Statement.WHILE()
+      algorithm
+        e1 := flattenExp(stmt.condition, prefix);
+        body := flattenStatements(stmt.body, prefix);
+      then
+        Statement.WHILE(e1, body, stmt.source);
+
+    case Statement.FAILURE()
+      algorithm
+        body := flattenStatements(stmt.body, prefix);
+      then
+        Statement.FAILURE(body, stmt.source);
+
+    else stmt;
+  end match;
+end flattenStatement;
+
+function flattenStmtBranch
+  input output tuple<Expression, list<Statement>> branch;
+  input ComponentRef prefix;
+protected
+  Expression cond;
+  list<Statement> body;
+algorithm
+  (cond, body) := branch;
+  cond := flattenExp(cond, prefix);
+  body := flattenStatements(body, prefix);
+  branch := (cond, body);
+end flattenStmtBranch;
 
 function addElementSourceArrayPrefix
   input output DAE.ElementSource source;

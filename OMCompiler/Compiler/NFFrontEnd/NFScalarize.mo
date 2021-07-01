@@ -130,7 +130,7 @@ algorithm
           (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-            binding := Binding.FLAT_BINDING(exp, bind_var, bind_src);
+            binding := Binding.makeFlat(exp, bind_var, bind_src);
             ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
             vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info) :: vars;
           end for;
@@ -187,7 +187,7 @@ algorithm
     (iter, exp) := ExpressionIterator.next(iters[i]);
     arrayUpdate(iters, i, iter);
     i := i + 1;
-    attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER, NFBinding.Source.BINDING)) :: attrs;
+    attrs := (name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING)) :: attrs;
   end for;
 end nextTypeAttributes;
 
