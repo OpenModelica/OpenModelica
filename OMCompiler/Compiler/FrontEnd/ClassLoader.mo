@@ -388,7 +388,7 @@ algorithm
             Error.addInternalError("Expected file " + file + " to exist", sourceInfo());
             fail();
           end if;
-          cl = parsePackageFile(file, strategy, false, w1, id);
+          cl = parsePackageFile(file, strategy, false, w1, id, encrypted);
           if (isSome(cl)) then
             ei = AbsynUtil.makeClassElement(Util.getOption(cl));
             cps = mergeBefore(Absyn.PUBLIC({ei}),acc);

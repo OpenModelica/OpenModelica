@@ -66,6 +66,7 @@ protected
   list<Absyn.Class> classes, classes1;
   Absyn.Within w;
   Absyn.Class cs;
+  String cls;
 algorithm
   outProgram := parsebuiltin(filename,encoding,libraryPath,lveInstance);
   /* Check that the program is not totally off the charts */
@@ -75,8 +76,12 @@ algorithm
     Absyn.PROGRAM(classes, w) := outProgram;
     classes1 := {};
     for cs in classes loop
+      cls := AbsynUtil.getClassName(cs);
       if checkLicenseAndFeatures(cs, lveInstance) then
+        print("Class " + cls + " has the required features.\n");
         classes1 := cs :: classes1;
+      else
+        print("Class " + cls + " does not has the required features.\n");
       end if;
     end for;
     outProgram := Absyn.PROGRAM(classes1, w);
