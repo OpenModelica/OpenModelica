@@ -166,6 +166,9 @@ algorithm
   Absyn.ANNOTATION(el) := inAnnotation;
 
   for e in listReverse(el) loop
+
+    e := AbsynUtil.translateChoices(e);
+
     str := matchcontinue e
       case Absyn.MODIFICATION(
           path = Absyn.IDENT(annName),
@@ -218,7 +221,7 @@ algorithm
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
 
-          dae := frontEndBack(inst_anncls, annName);
+          dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
 
           if (stringEq(annName, "Icon") or stringEq(annName, "Diagram")) and not listEmpty(graphics_mod) then
@@ -263,7 +266,7 @@ algorithm
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
 
-          dae := frontEndBack(inst_anncls, annName);
+          dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           str;
@@ -378,6 +381,9 @@ algorithm
   stringLst := {};
 
   for e in listReverse(l) loop
+
+    e := AbsynUtil.translateChoices(e);
+
     str := matchcontinue e
       case Absyn.MODIFICATION(
           path = Absyn.IDENT(annName),
@@ -428,7 +434,7 @@ algorithm
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
 
-          dae := frontEndBack(inst_anncls, annName);
+          dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           stringAppendList({annName, "(", str, ")"});
@@ -455,7 +461,7 @@ algorithm
           // Mark structural parameters.
           NFInst.updateImplicitVariability(inst_anncls, Flags.isSet(Flags.EVAL_PARAM));
 
-          dae := frontEndBack(inst_anncls, annName);
+          dae := frontEndBack(inst_anncls, annName, false);
           str := DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         then
           stringAppendList({annName, "(", str, ")"});
@@ -683,6 +689,7 @@ protected
 function frontEndBack
   input InstNode inst_cls;
   input String name;
+  input Boolean scalarize = true;
   output DAE.DAElist dae;
 protected
   InstNode top;
@@ -717,7 +724,7 @@ algorithm
   funcs := Flatten.collectFunctions(flat_model);
 
   // Scalarize array components in the flat model.
-  if Flags.isSet(Flags.NF_SCALARIZE) then
+  if Flags.isSet(Flags.NF_SCALARIZE) and scalarize then
     flat_model := Scalarize.scalarize(flat_model);
   else
     // Remove empty arrays from variables
@@ -730,7 +737,7 @@ algorithm
   (dae, daeFuncs) := ConvertDAE.convert(flat_model, funcs);
 
   if Flags.isSet(Flags.EXEC_STAT) then
-    execStat("NFApi.frontEndBack(" + name + ")");
+    execStat("NFApi.frontEndBack(" + AbsynUtil.pathString(InstNode.enclosingScopePath(inst_cls)) + ", name: " + name + ", scalarize: " + boolString(scalarize) + ")");
   end if;
 
 end frontEndBack;

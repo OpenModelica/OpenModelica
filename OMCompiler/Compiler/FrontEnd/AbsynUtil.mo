@@ -6599,5 +6599,38 @@ algorithm
   callExp := Absyn.Exp.CALL(name, Absyn.FunctionArgs.FUNCTIONARGS(posArgs, namedArgs), {});
 end makeCall;
 
+public function translateChoices
+"translates
+  choices(choice(mod1),choice(mod2),choice(mod3)) -> choices(choice={\"mod1\", \"mod2\", \"mod3\"})
+  choices(choice = mod1, choice = mod2, choice = mod3) -> choices(choice={\"mod1\", \"mod2\", \"mod3\"})"
+  input Absyn.ElementArg inChoices;
+  output Absyn.ElementArg outChoices = inChoices;
+protected
+   Absyn.ElementArg choices;
+   list<Absyn.ElementArg> choice, acc = {};
+   Absyn.Info info;
+   Option<String> cmt;
+   Boolean fp;
+   Absyn.Each ep;
+algorithm
+  outChoices := match(inChoices)
+    case Absyn.MODIFICATION(
+          finalPrefix = fp,
+          eachPrefix = ep,
+          path = Absyn.IDENT("choices"),
+          modification = SOME(Absyn.CLASSMOD(choice, Absyn.NOMOD())),
+          comment = cmt,
+          info = info)
+      algorithm
+        for e in choice loop
+          acc := e::acc;
+        end for;
+        choices := Absyn.MODIFICATION(fp, ep, Absyn.IDENT("choices"), SOME(Absyn.CLASSMOD(listReverse(acc), Absyn.NOMOD())), cmt, info);
+      then
+        choices;
+    else then inChoices;
+  end match;
+end translateChoices;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;
