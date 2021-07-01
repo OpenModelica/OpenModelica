@@ -573,7 +573,7 @@ algorithm
           end if;
         end if;
 
-        dim := Dimension.fromExp(simplifyDimExp(exp), var);
+        dim := Dimension.fromExp(exp, var);
         arrayUpdate(dimensions, index, dim);
       then
         dim;
@@ -661,7 +661,7 @@ algorithm
               Structural.markExp(exp);
               exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
             then
-              Dimension.fromExp(simplifyDimExp(exp), dim.var);
+              Dimension.fromExp(exp, dim.var);
 
           case Dimension.UNKNOWN()
             algorithm

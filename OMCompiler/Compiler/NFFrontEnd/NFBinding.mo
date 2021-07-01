@@ -728,5 +728,26 @@ public
     end match;
   end source;
 
+  function makeTyped
+    input Expression exp;
+    input EachType eachType;
+    input Source source;
+    input SourceInfo info;
+    input EvalState state = EvalState.NOT_EVALUATED;
+    output Binding binding;
+  algorithm
+    binding := TYPED_BINDING(exp, Expression.typeOf(exp),
+      Expression.variability(exp), eachType, Mutable.create(state), false, source, info);
+  end makeTyped;
+
+  function makeFlat
+    input Expression exp;
+    input Variability var;
+    input Source source;
+    output Binding binding;
+  algorithm
+    binding := FLAT_BINDING(exp, var, source);
+  end makeFlat;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFBinding;
