@@ -301,10 +301,10 @@ algorithm
         if (isSome(opt_cl)) then
           (class_ as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = Util.getOption(opt_cl);
           reverseOrder = getPackageContentNames(class_, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
-	        path = AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
-	        w2 = Absyn.WITHIN(path);
-	        cp = List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
-	        opt_cl = SOME(Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info));
+          path = AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
+          w2 = Absyn.WITHIN(path);
+          cp = List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
+          opt_cl = SOME(Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info));
         end if;
       then opt_cl;
     case (_,pack,mp,_)
@@ -380,7 +380,7 @@ algorithm
             ei = AbsynUtil.makeClassElement(Util.getOption(cl));
             cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
           else
-            cps = {};
+            cps = acc;
           end if;
         else
           file = mp + pd + id + (if encrypted then ".moc" else ".mo");
@@ -388,12 +388,12 @@ algorithm
             Error.addInternalError("Expected file " + file + " to exist", sourceInfo());
             fail();
           end if;
-          cl = parsePackageFile(file, strategy, false, w1, id);
+          cl = parsePackageFile(file, strategy, false, w1, id, encrypted);
           if (isSome(cl)) then
             ei = AbsynUtil.makeClassElement(Util.getOption(cl));
             cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
           else
-            cps = {};
+            cps = acc;
           end if;
         end if;
       then cps;
