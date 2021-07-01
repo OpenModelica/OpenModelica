@@ -1184,7 +1184,7 @@ Adds algebraic loops from list of SimEqSystem into ModelInfo
 and SimEqSystem equation algebraic system index."
   input output list<SimCode.SimEqSystem> eqns;
   input output SimCode.ModelInfo modelInfo;
-  input output list<SimCode.JacobianMatrix> symJacs = {};
+  output list<SimCode.JacobianMatrix> symJacs = {};
 protected
   list<SimCode.SimEqSystem> resEqns = {};
 algorithm
@@ -1197,7 +1197,7 @@ algorithm
         Option<SimCode.LinearSystem> optLinearSyst;
         SimCode.JacobianMatrix tmpSymJac;
         list<SimCode.JacobianMatrix> tmpSymJacs, tmpAdditionalSymJacs;
-        list<SimCode.SimEqSystem> eqs, new_subsysts;
+        list<SimCode.SimEqSystem> eqs;
         SimCode.SimEqSystem system;
         BackendDAE.EquationAttributes eqAttr;
 
@@ -3851,6 +3851,7 @@ algorithm
       case BackendDAE.INNERLOOP(set=set) algorithm
         nVars := nVars + listLength(set.tearingvars);
         (simequations, ouniqueEqIndex, otempvars) := createTornSystem(eq.linear, skipDiscInAlgorithm, genDiscrete, set, NONE(), isyst, ishared, ouniqueEqIndex, eq.mixed, otempvars);
+        // TODO what about homotopySupport?
       then ();
 
       else algorithm

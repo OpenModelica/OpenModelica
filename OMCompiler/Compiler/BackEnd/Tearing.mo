@@ -5190,7 +5190,8 @@ protected
   BackendDAE.AdjacencyMatrix m;
   list<list<Integer>> sorted_inner_comps;
   BackendDAE.InnerEquations innerEquations = {};
-  list<Integer> tearing_var_indices = {}, residual_eqn_indices = {};
+  list<Integer> tearing_var_indices, residual_eqn_indices = {};
+  Boolean linear;
 algorithm
   // ALGORITHM ABSTRACT
   //   1. get all equations and variables of the algebraic loop
@@ -5204,7 +5205,7 @@ algorithm
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, isyst.orderedVars);
 
   // 2. split variables in tearing and inner variables
-  (tearing_var_lst, inner_var_lst) := List.splitOnTrue(var_lst, BackendVariable.varStateSelectAlways);
+  (tearing_var_lst, inner_var_lst) := List.splitOnTrue(var_lst, BackendVariable.varTearingSelectAlways);
   tearing_var_indices := list(i for i guard(BackendVariable.varTearingSelectAlways(BackendVariable.getVarAt(isyst.orderedVars, i))) in vindx);
 
   BackendDAE.MATCHING(ass1 = ass1, ass2 = ass2) := isyst.matching;
@@ -5219,7 +5220,8 @@ algorithm
 
   SOME(m) := isyst.m;
   sorted_inner_comps := Sorting.Tarjan(m, ass1_manipulated);
-  innerEquations := list(innerStrongComponent(comp, ass2, scalToArr) for comp in sorted_inner_comps);
+  linear := BackendDAEUtil.getLinearfromJacType(jacType);
+  innerEquations := list(innerStrongComponent(comp, ass2, scalToArr, linear, mixedSystem) for comp in sorted_inner_comps);
 
   ocomp := BackendDAE.TORNSYSTEM(
     strictTearingSet  = BackendDAE.TEARINGSET(
@@ -5228,7 +5230,7 @@ algorithm
       innerEquations      = innerEquations,
       jac                 = BackendDAE.EMPTY_JACOBIAN()),
     casualTearingSet  = NONE(),
-    linear            = BackendDAEUtil.getLinearfromJacType(jacType),
+    linear            = linear,
     mixedSystem       = mixedSystem);
 end guruTearing;
 
@@ -5236,6 +5238,8 @@ protected function innerStrongComponent
   input list<Integer> comp;
   input array<Integer> ass2;
   input array<Integer> scalToArr;
+  input Boolean linear;
+  input Boolean mixed;
   output BackendDAE.InnerEquation innerEqn;
 protected
   list<Integer> eqn_indices = List.unique(list(scalToArr[i] for i in comp));
@@ -5251,8 +5255,8 @@ algorithm
         residualequations = eqn_indices,
         innerEquations    = {},
         jac               = BackendDAE.EMPTY_JACOBIAN()),
-      linear = false,
-      mixed = true);
+      linear = linear or false,
+      mixed = mixed and true);
   end if;
 end innerStrongComponent;
 
