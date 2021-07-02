@@ -855,6 +855,17 @@ public
     input NFCall call;
     output DAE.Exp daeCall;
   algorithm
+    // The code generation can't handle reductions/array constructors with
+    // multiple iterators so we need to convert them to nested calls with one
+    // iterator each. But the frontend can handle multiple iterators more
+    // efficiently so we do it only just before passing them to the backend.
+    daeCall := toDAE_work(expandReduction(call));
+  end toDAE;
+
+  function toDAE_work
+    input NFCall call;
+    output DAE.Exp daeCall;
+  algorithm
     daeCall := match call
       local
         String fold_id, res_id;
@@ -905,7 +916,52 @@ public
         then
           fail();
     end match;
-  end toDAE;
+  end toDAE_work;
+
+  function expandReduction
+    "Turns reductions/array constructors with multiple iterators into nested
+     reductions/array constructors."
+    input Call call;
+    output Call outCall;
+  algorithm
+    outCall := match call
+      local
+        list<tuple<InstNode, Expression>> iters;
+        tuple<InstNode, Expression> iter;
+        Type ty;
+
+      case TYPED_ARRAY_CONSTRUCTOR(iters = iters)
+        guard listLength(iters) > 1
+        algorithm
+          iter :: iters := iters;
+          ty := Type.liftArrayLeftList(Expression.typeOf(call.exp),
+            Type.arrayDims(Expression.typeOf(Util.tuple22(iter))));
+          outCall := TYPED_ARRAY_CONSTRUCTOR(ty, call.var, call.purity, call.exp, {iter});
+
+          for i in iters loop
+            ty := Type.liftArrayLeftList(ty, Type.arrayDims(Expression.typeOf(Util.tuple22(i))));
+            outCall := TYPED_ARRAY_CONSTRUCTOR(ty, call.var, call.purity, Expression.CALL(outCall), {i});
+          end for;
+        then
+          outCall;
+
+      case TYPED_REDUCTION(iters = iters)
+        guard listLength(iters) > 1
+        algorithm
+          iter :: iters := iters;
+          outCall := makeTypedReduction(call.fn, call.ty, call.var, call.purity,
+            call.exp, {iter}, AbsynUtil.dummyInfo);
+
+          for i in iters loop
+            outCall := makeTypedReduction(call.fn, call.ty, call.var, call.purity,
+              Expression.CALL(outCall), {i}, AbsynUtil.dummyInfo);
+          end for;
+        then
+          outCall;
+
+      else call;
+    end match;
+  end expandReduction;
 
   function isVectorizeable
     input NFCall call;
