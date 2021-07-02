@@ -492,6 +492,17 @@ T sum_array (const BaseArray<T>& x)
   return val;
 }
 
+template <typename T>
+T product_array(const BaseArray<T>& x)
+{
+  const T* data = x.getData();
+  size_t nelems = x.getNumElems();
+  T val = 1;
+  for (size_t i = 0; i < nelems; i++)
+    val *= *data++;
+  return val;
+}
+
 /**
 scalar product of two arrays (a,b type as template parameter)
 */
@@ -729,6 +740,11 @@ template int BOOST_EXTENSION_EXPORT_DECL
 sum_array(const BaseArray<int>& x);
 template bool BOOST_EXTENSION_EXPORT_DECL
 sum_array(const BaseArray<bool>& x);
+
+template double BOOST_EXTENSION_EXPORT_DECL
+product_array(const BaseArray<double>& x);
+template int BOOST_EXTENSION_EXPORT_DECL
+product_array(const BaseArray<int>& x);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 cross_array(const BaseArray<double>& a, const BaseArray<double>& b, BaseArray<double>& res);

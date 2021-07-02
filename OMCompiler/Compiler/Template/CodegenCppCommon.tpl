@@ -1946,27 +1946,28 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     'semiLinear(<%var1%>,<%var2%>,<%var3%>)'
 
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ty), expLst={array}) then
-    //let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let arr_tp_str = expTypeShort(ty)
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).second;<%\n%>'
     '<%tvar%>'
-  case CALL(path=IDENT(name="sum"), attr=CALL_ATTR(ty = ty), expLst={array}) then
-    //let &tmpVar = buffer "" /*BUFD*/
-    let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let arr_tp_str = expTypeShort(ty)
-    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = sum_array<<%arr_tp_str%>>(<%expVar%>);<%\n%>'
-    '<%tvar%>'
 
   case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = ty), expLst={array}) then
-    //let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let arr_tp_str = expTypeShort(ty)
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).first;<%\n%>'
     '<%tvar%>'
+
+  case CALL(path=IDENT(name="sum"), attr=CALL_ATTR(ty = ty), expLst={array}) then
+    let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let arr_tp_str = expTypeShort(ty)
+    'sum_array<<%arr_tp_str%>>(<%expVar%>)'
+
+  case CALL(path=IDENT(name="product"), attr=CALL_ATTR(ty = ty), expLst={array}) then
+    let expVar = daeExp(array, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let arr_tp_str = expTypeShort(ty)
+    'product_array<<%arr_tp_str%>>(<%expVar%>)'
 
   case call as CALL(path=IDENT(name="vector"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
     let expVar = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)

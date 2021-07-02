@@ -13,6 +13,7 @@ package ArrayOperations
     Real y = f1({u + 1, u + 2, u + 3});
     Real[2] z = f2(u);
     Real[2,2] D = f3(z);
+    Real p = product(z)
     annotation(experiment(StopTime = 0));
   end Test;
   // see Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive
@@ -53,6 +54,7 @@ val(D[1,1], 0);
 val(D[1,2], 0);
 val(D[2,1], 0);
 val(D[2,2], 0);
+val(p, 0);
 
 // Result:
 // true
@@ -60,7 +62,7 @@ val(D[2,2], 0);
 // ""
 // record SimulationResult
 //     resultFile = "ArrayOperations.Test_res.mat",
-//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayOperations.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayOperations.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
 //     messages = ""
 // end SimulationResult;
 // ""
@@ -70,5 +72,6 @@ val(D[2,2], 0);
 // 1.0
 // 0.0
 // 0.0
+// 2.0
 // 2.0
 // endResult

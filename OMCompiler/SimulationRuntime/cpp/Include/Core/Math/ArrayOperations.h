@@ -99,6 +99,9 @@ void usub_array(const BaseArray<T>& a , BaseArray<T>& b);
 template < typename T >
 T sum_array(const BaseArray<T>& x);
 
+template < typename T >
+T product_array(const BaseArray<T>& x);
+
 /**
 finds min/max elements of an array */
 template <typename T>
