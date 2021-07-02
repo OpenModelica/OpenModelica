@@ -496,10 +496,7 @@ template <typename T>
 T product_array(const BaseArray<T>& x)
 {
   const T* data = x.getData();
-  size_t nelems = x.getNumElems();
-  T val = 1;
-  for (size_t i = 0; i < nelems; i++)
-    val *= *data++;
+  T val = std::accumulate(data, data + x.getNumElems(), T(1), std::multiplies<T>());
   return val;
 }
 
