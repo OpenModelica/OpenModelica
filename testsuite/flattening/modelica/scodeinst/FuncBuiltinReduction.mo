@@ -18,6 +18,7 @@ model FuncBuiltinReduction
   Real r7 = max(r*2.0 for r in 1:0);
   Real r8 = sum(r*2.0 for r in 1:0);
   Real r9 = product(r*2.0 for r in 1:0);
+  Real r10 = sum(r1*r2 for r1 in 1:integer(time), r2 in 1:4);
 
   Integer i1 = min(i-1 for i in {2, 4, 1});
   Integer i2 = max(i for i in {4, 2, 9});
@@ -50,6 +51,7 @@ end FuncBuiltinReduction;
 //   Real r7 = -8.777798510069901e+304;
 //   Real r8 = 0.0;
 //   Real r9 = 1.0;
+//   Real r10 = /*Real*/(sum(sum(r1 * r2 for r1 in 1:integer(time)) for r2 in 1:4));
 //   Integer i1 = min(i - 1 for i in {2, 4, 1});
 //   Integer i2 = max(i for i in {4, 2, 9});
 //   Integer i3 = 14;
