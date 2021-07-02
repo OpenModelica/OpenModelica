@@ -4024,7 +4024,10 @@ algorithm
         tp = Types.arrayElementType(t);
         etp = Types.simplifyType(tp);
         exp_2 = Expression.makePureBuiltinCall("product", {exp_1}, etp);
-        exp_2 = elabBuiltinProduct2(exp_2);
+
+        if not Types.arrayHasUnknownDims(t) then
+          exp_2 = elabBuiltinProduct2(exp_2);
+        end if;
       then
         (cache,exp_2,DAE.PROP(tp,c));
   end matchcontinue;
