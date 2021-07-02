@@ -471,6 +471,10 @@ algorithm
             outExp;
 
         case _
+          guard call.var <= Variability.STRUCTURAL_PARAMETER
+          then Ceval.tryEvalExp(Expression.CALL(call));
+
+        case _
           then simplifyReduction2(AbsynUtil.pathString(Function.name(call.fn)), call.exp, iters);
 
         else
