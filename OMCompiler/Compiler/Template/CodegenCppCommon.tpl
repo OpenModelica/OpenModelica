@@ -2797,7 +2797,7 @@ match exp
 case ecr as CREF(componentRef=WILD(__)) then
   ''
 case ecr as CREF(componentRef=cr, ty=ty as DAE.T_ARRAY()) then
-  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let lhsStr = scalarLhsCref(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   match cref2simvar(cr, simCode)
   case SIMVAR(varKind=varKind) then
     match varKind
@@ -2813,8 +2813,8 @@ case ecr as CREF(componentRef=cr, ty=ty as DAE.T_ARRAY()) then
       >>
     end match
   end match
-case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
-  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+case UNARY(exp = e as CREF(ty=t as DAE.T_ARRAY(__))) then
+  let lhsStr = scalarLhsCref(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   match context
   case SIMULATION_CONTEXT(__) then
     <<
@@ -2853,13 +2853,13 @@ case ARRAY(array = {}) then
   <<
 
   >>
-case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
+case ARRAY(ty=T_ARRAY(ty=ty, dims=dims), array=expl) then
   let typeShort = expTypeFromExpShort(exp)
   let fcallsuf = match listLength(dims) case 1 then "" case i then '_<%i%>D'
   let body = (List.zip(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) =>
                  let lhsstr = scalarLhsCref(lhs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                  let indxstr = (indxs |> i => '<%i%>' ;separator=",")
-                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);/*writeLhsCref2*/'
+                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);'
               ;separator="\n")
   <<
   <%body%>
@@ -2896,17 +2896,17 @@ case ecr as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
   else
     daeExpCref(true, ecr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 case ecr as CREF(componentRef=cr as CREF_QUAL(__)) then
-    if crefIsScalar(cr, context) then
-      contextCref(ecr.componentRef, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    else
-      let arrName = contextCref(crefStripSubs(cr), context, simCode ,&extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      <<
-      <%arrName%>(<%threadDimSubList(crefDims(cr), crefSubs(cr), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)
-      >>
-case ecr as CREF(componentRef=CREF_QUAL(__)) then
+  if crefIsScalar(cr, context) then
     contextCref(ecr.componentRef, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else
+    let arrName = contextCref(crefStripSubs(cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%arrName%>(<%threadDimSubList(crefDims(cr), crefSubs(cr), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)
+    >>
+case ecr as CREF(componentRef=CREF_QUAL(__)) then
+  contextCref(ecr.componentRef, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 else
-    error(sourceInfo(), 'scalarLhsCref UNSUPPORTED: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
+  error(sourceInfo(), 'scalarLhsCref UNSUPPORTED: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end scalarLhsCref;
 
 
