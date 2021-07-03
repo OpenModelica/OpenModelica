@@ -100,42 +100,47 @@ public:
   virtual void getDataCopy(T data[], size_t n) const = 0;
   virtual const T* const* getDataRefs() const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array getDataRefs call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array getDataRefs call");
   }
 
   virtual T& operator()(size_t i)
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
   };
 
   virtual const T& operator()(size_t i) const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
   };
 
   virtual T& operator()(size_t i, size_t j)
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
   };
 
   virtual const T& operator()(size_t i, size_t j) const
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
   };
 
   virtual T& operator()(size_t i, size_t j, size_t k)
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
+  };
+
+  virtual const T& operator()(size_t i, size_t j, size_t k) const
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
   };
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l)
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
   };
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m)
   {
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong virtual Array operator call");
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
   };
 
   bool isStatic() const
@@ -1958,6 +1963,13 @@ public:
   }
 
   inline virtual T& operator()(size_t i, size_t j, size_t k)
+  {
+    //return _multi_array[i-1][j-1][k-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[i-1 + shape[0]*(j-1 + shape[1]*(k-1))];
+  }
+
+  inline virtual const T& operator()(size_t i, size_t j, size_t k) const
   {
     //return _multi_array[i-1][j-1][k-1];
     const std::vector<size_t>& shape = this->_dims;
