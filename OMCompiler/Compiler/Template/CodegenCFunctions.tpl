@@ -7097,12 +7097,11 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           '<%arrayTypeResult%>_get1(<%res%>, 1, <%arrIndex%>++) = <%reductionBodyExpr%>;'
     else match ri.foldExp case SOME(fExp) then
       let &foldExpPre = buffer ""
-      let fExpStr = daeExp(fExp, context, &foldExpPre, &tmpVarDecls, &auxFunction)
+      let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, &auxFunction)
       if foundFirst then
       <<
       if (<%foundFirst%>)
       {
-        <%foldExpPre%>
         <%res%> = <%fExpStr%>;
       }
       else
