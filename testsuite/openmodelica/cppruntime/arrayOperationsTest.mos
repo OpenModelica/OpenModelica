@@ -2,7 +2,6 @@
 // keywords: array operations
 // status: correct
 // teardown_command: rm -f *ArrayOperations.Test*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
@@ -13,6 +12,7 @@ package ArrayOperations
     Real y = f1({u + 1, u + 2, u + 3});
     Real[2] z = f2(u);
     Real[2,2] D = f3(z);
+    Real p = f4(z);
     annotation(experiment(StopTime = 0));
   end Test;
   // see Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive
@@ -36,9 +36,19 @@ package ArrayOperations
   function f3
     input Real[:] v;
     output Real[size(v, 1), size(v, 1)] D;
+  protected
+    Real[size(v,1)] w;
   algorithm
-    D := diagonal(v);
+    w := v[1] ./ v;   // DIV_SCALAR_ARRAY
+    D := diagonal(w);
   end f3;
+  // built-in product
+  function f4
+    input Real[:] v;
+    output Real p;
+  algorithm
+    p := product(v);
+  end f4;
 end ArrayOperations;
 ");
 getErrorString();
@@ -53,6 +63,7 @@ val(D[1,1], 0);
 val(D[1,2], 0);
 val(D[2,1], 0);
 val(D[2,2], 0);
+val(p, 0);
 
 // Result:
 // true
@@ -70,5 +81,6 @@ val(D[2,2], 0);
 // 1.0
 // 0.0
 // 0.0
+// 0.5
 // 2.0
 // endResult
