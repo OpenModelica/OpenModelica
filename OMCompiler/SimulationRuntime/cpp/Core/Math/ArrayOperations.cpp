@@ -370,6 +370,19 @@ void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outp
 }
 
 template <typename T>
+void divide_array(const T &b, const BaseArray<T>& inputArray, BaseArray<T>& outputArray)
+{
+  size_t nelems = inputArray.getNumElems();
+  if (outputArray.getNumElems() != nelems)
+  {
+    outputArray.setDims(inputArray.getDims());
+  }
+  const T* data = inputArray.getData();
+  T* aim = outputArray.getData();
+  std::transform(data, data + nelems, aim, std::bind1st(std::divides<T>(), b));
+}
+
+template <typename T>
 void divide_array_elem_wise(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray)
 {
   size_t dimLeft = leftArray.getNumElems();
@@ -676,6 +689,11 @@ template void BOOST_EXTENSION_EXPORT_DECL
 divide_array(const BaseArray<int>& inputArray, const int &b, BaseArray<int>& outputArray);
 template void BOOST_EXTENSION_EXPORT_DECL
 divide_array(const BaseArray<bool>& inputArray, const bool &b, BaseArray<bool>& outputArray);
+
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array(const double &b, const BaseArray<double>& inputArray, BaseArray<double>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array(const int &b, const BaseArray<int>& inputArray, BaseArray<int>& outputArray);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 divide_array_elem_wise(const BaseArray<double> &leftArray, const BaseArray<double> &rightArray, BaseArray<double> &resultArray);

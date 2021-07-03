@@ -2,7 +2,6 @@
 // keywords: array operations
 // status: correct
 // teardown_command: rm -f *ArrayOperations.Test*
-// cflags:
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
@@ -37,8 +36,11 @@ package ArrayOperations
   function f3
     input Real[:] v;
     output Real[size(v, 1), size(v, 1)] D;
+  protected
+    Real[size(v,1)] w;
   algorithm
-    D := diagonal(v);
+    w := v[1] ./ v;   // DIV_SCALAR_ARRAY
+    D := diagonal(w);
   end f3;
   // built-in product
   function f4
@@ -79,6 +81,6 @@ val(p, 0);
 // 1.0
 // 0.0
 // 0.0
-// 2.0
+// 0.5
 // 2.0
 // endResult

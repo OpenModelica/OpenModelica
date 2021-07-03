@@ -70,6 +70,9 @@ template <typename T>
 void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray);
 
 template <typename T>
+void divide_array(const T &b, const BaseArray<T>& inputArray, BaseArray<T>& outputArray);
+
+template <typename T>
 void divide_array_elem_wise(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray);
 
 template <typename T>
