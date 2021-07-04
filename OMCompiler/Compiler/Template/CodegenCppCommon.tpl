@@ -1022,7 +1022,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(iterType=COMBINE()),iterators=iterators as {_}) then
   (
   let &tmpVarDecls = buffer ""
-  let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
   let &rangeExpPre = buffer ""
   let arrayTypeResult = expTypeFromExpArray(r)
@@ -1087,11 +1086,12 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           '<%res%>(<%arrIndex%>++) = <%reductionBodyExpr%>;'
     else match ri.foldExp case SOME(fExp) then
       let &foldExpPre = buffer ""
-      let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let fExpStr = daeExp(fExp, context, &foldExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       if foundFirst then
       <<
-      if(<%foundFirst%>)
+      if (<%foundFirst%>)
       {
+        <%foldExpPre%>
         <%res%> = <%fExpStr%>;
       }
       else
@@ -1167,10 +1167,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           <%dimSizes%>;
           <%res%>.setDims(<%dim_vec%>);
           >>
-
         else
           '<%res%>.setDims(<%length%>);'%>
-
        >>
      else
         (if foundFirst then
@@ -1182,7 +1180,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         <%&preDefault%>
         <%res%> = <%defaultValue%>; /* defaultValue */
         >>)
-      )
+    )
   let loop =
     <<
     while(1) {
