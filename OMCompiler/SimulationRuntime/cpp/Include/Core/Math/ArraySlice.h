@@ -141,7 +141,7 @@ class ArraySliceConst: public BaseArray<T> {
             dit->push_back(start + i * step);
         }
       }
-      if (size == 1 && sit->step == 0)
+      if (sit->iset == NULL && size == 1 && sit->step == 0)
         // preset constant _baseIdx in case of reduction
         _baseIdx[dim - 1] = sit->iset != NULL? (*_isets[dim - 1])(1): (*dit)[0];
       else {
