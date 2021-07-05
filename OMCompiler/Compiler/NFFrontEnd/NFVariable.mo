@@ -38,6 +38,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Visibility;
   import NFPrefixes.Variability;
   import NFPrefixes.ConnectorType;
+  import NFPrefixes.Direction;
   import Type = NFType;
 
 protected
@@ -195,6 +196,12 @@ public
     input Variable variable;
     output Boolean potential = ConnectorType.isStream(variable.attributes.connectorType);
   end isStream;
+
+  function isTopLevelInput
+    input Variable variable;
+    output Boolean topInput = ComponentRef.isSimple(variable.name) and
+                              variable.attributes.direction == Direction.INPUT;
+  end isTopLevelInput;
 
   function lookupTypeAttribute
     input String name;
