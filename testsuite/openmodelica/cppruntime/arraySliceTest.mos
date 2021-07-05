@@ -2,7 +2,6 @@
 // keywords: slice array
 // status: correct
 // teardown_command: rm -f *ArraySlice.Test*
-// cflags: -d=-newInst
 
 setCommandLineOptions("+simCodeTarget=Cpp");
 
@@ -11,6 +10,8 @@ package ArraySlice
 model Test
   Real[:,:] m = [1; 2; 3; 4; 5];
   Real[:] w = reverse(m);
+  Real y = catEmpty(w);
+  Real z = reduction(w);
   annotation(experiment(StopTime = 0));
 end Test;
 function reverse
@@ -22,6 +23,23 @@ protected
 algorithm
   w := v[size(w, 1):-1:1]; // test slice with negative step
 end reverse;
+function catEmpty
+  input Real[:] v;
+  output Real y;
+protected
+  parameter Integer n = size(v, 1);
+algorithm
+  y := sum(v + cat(1, v[1:n], v[2:n-size(v, 1)])); // empty slice
+end catEmpty;
+function reduction
+  input Real[:] v;
+  output Real y;
+protected
+  parameter Integer n = size(v, 1);
+  Integer[:] idx = {1};
+algorithm
+  y := product(sum(v[i*idx] for i in 1:n)); // index set with one element
+end reduction;
 end ArraySlice;
 ");
 getErrorString();
@@ -31,6 +49,8 @@ getErrorString();
 
 val(w[1], 0);
 val(w[4], 0);
+val(y, 0);
+val(z, 0);
 
 // Result:
 // true
@@ -44,4 +64,6 @@ val(w[4], 0);
 // ""
 // 4.0
 // 1.0
+// 20.0
+// 10.0
 // endResult
