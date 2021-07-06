@@ -445,7 +445,7 @@ algorithm
         // replace the iterator variable with the range expression
         cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
         (stmts, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+        ht = List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
       then ht;
 
     case(DAE.STMT_PARFOR(type_=tp, iter = iteratorName, range = e, statementLst = stmts), _, _)
@@ -453,7 +453,7 @@ algorithm
         // replace the iterator variable with the range expression
         cr = ComponentReference.makeCrefIdent(iteratorName, tp, {});
         (stmts, _) = DAEUtil.traverseDAEEquationsStmts(stmts, Expression.traverseSubexpressionsHelper, (Expression.replaceCref, (cr, e)));
-        ht = List.fold1(stmts, statementOutputs, inCrefExpansion, iht);
+        ht = List.fold1(stmts, statementOutputs, DAE.EXPAND(), iht);
       then ht;
 
     case(DAE.STMT_WHILE(statementLst = stmts), _, _)
