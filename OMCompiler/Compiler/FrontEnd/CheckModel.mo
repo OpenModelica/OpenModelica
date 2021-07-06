@@ -565,7 +565,13 @@ algorithm
     // NOT_EXPAND strategy (needed for equations translated to algorithms)
     case (e as DAE.CREF(componentRef=cr), (expand as DAE.NOT_EXPAND(),ht))
       equation
-        ht = List.fold({cr}, BaseHashSet.add, ht);
+        // Remove the subscripts from the last part of the cref and expand it.
+        // This is probably not correct, but at least more correct than not
+        // expanding anything since that causes variables to not be merged in
+        // the list if they're assigned in multiple different ways.
+        cr = ComponentReference.crefStripLastSubs(cr);
+        crlst = ComponentReference.expandCref(cr, true);
+        ht = List.fold(crlst, BaseHashSet.add, ht);
       then (e, false, (expand,ht));
 
     // EXPAND
