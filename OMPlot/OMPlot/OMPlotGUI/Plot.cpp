@@ -52,9 +52,9 @@ Plot::Plot(PlotWindow *pParent)
   insertLegend(mpLegend, QwtPlot::TopLegend);
   // create an instance of grid
   mpPlotGrid = new PlotGrid(this);
-  mpXScaleDraw = new ScaleDraw(this);
+  mpXScaleDraw = new ScaleDraw(QwtPlot::xBottom, this);
   setAxisScaleDraw(QwtPlot::xBottom, mpXScaleDraw);
-  mpYScaleDraw = new ScaleDraw(this);
+  mpYScaleDraw = new ScaleDraw(QwtPlot::yLeft, this);
   setAxisScaleDraw(QwtPlot::yLeft, mpYScaleDraw);
   // create an instance of zoomer
   mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
@@ -225,6 +225,8 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
 // just overloaded this function to get colors for curves.
 void Plot::replot()
 {
+  bool canUseXPrefixUnits = true;
+  bool canUseYPrefixUnits = true;
   for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
     if (!mPlotCurvesList[i]->hasCustomColor()) {
@@ -233,6 +235,22 @@ void Plot::replot()
       mPlotCurvesList[i]->setPen(pen);
     }
     mPlotCurvesList[i]->setTitleLocal();
+    if ((mpParentPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
+        && canUseXPrefixUnits && mPlotCurvesList[i]->getXDisplayUnit().isEmpty()) {
+      canUseXPrefixUnits = false;
+    }
+    if (canUseYPrefixUnits && mPlotCurvesList[i]->getYDisplayUnit().isEmpty()) {
+      canUseYPrefixUnits = false;
+    }
+  }
+
+  if (canUseXPrefixUnits != mpParentPlotWindow->canUseXPrefixUnits()) {
+    mpXScaleDraw->invalidateCache();
+    mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
+  }
+  if (canUseYPrefixUnits != mpParentPlotWindow->canUseYPrefixUnits()) {
+    mpYScaleDraw->invalidateCache();
+    mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
   }
 
   if (mpParentPlotWindow->getXCustomLabel().isEmpty()) {
