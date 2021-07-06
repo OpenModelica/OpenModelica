@@ -1371,8 +1371,8 @@ constant ConfigFlag LINK_TYPE = CONFIG_FLAG(145, "linkType",
   NONE(), EXTERNAL(), ENUM_FLAG(1, {("dynamic",1), ("static",2)}),
   SOME(STRING_OPTION({"dynamic", "static"})),
   Gettext.gettext("Sets the link type for the simulation executable.\n"+
-               "dynamic: Will link dynamically to build the executable very fast. This is the default."+
-               "static: Will link statically to avoid dynamic libraries dependencies. Static linking is quite slow.\n"));
+               "dynamic: libraries are dynamically linked; the executable is built very fast but is not portable because of DLL dependencies.\n"+
+               "static: libraries are statically linked; the executable is built more slowly but it is portable and dependency-free.\n"));
 
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
