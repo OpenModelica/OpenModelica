@@ -129,6 +129,8 @@ void PlotWindow::initializePlot(QStringList arguments)
   }
   setTimeUnit("");
   setPrefixUnits(false);
+  setCanUseXPrefixUnits(false);
+  setCanUseYPrefixUnits(false);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 18; i < arguments.length(); i++)
@@ -1603,6 +1605,26 @@ bool PlotWindow::getPrefixUnits() const
 void PlotWindow::setPrefixUnits(bool prefixUnits)
 {
   mPrefixUnits = prefixUnits;
+}
+
+bool PlotWindow::canUseXPrefixUnits() const
+{
+  return mCanUseXPrefixUnits;
+}
+
+void PlotWindow::setCanUseXPrefixUnits(bool canUseXPrefixUnits)
+{
+  mCanUseXPrefixUnits = canUseXPrefixUnits;
+}
+
+bool PlotWindow::canUseYPrefixUnits() const
+{
+  return mCanUseYPrefixUnits;
+}
+
+void PlotWindow::setCanUseYPrefixUnits(bool canUseYPrefixUnits)
+{
+  mCanUseYPrefixUnits = canUseYPrefixUnits;
 }
 
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
