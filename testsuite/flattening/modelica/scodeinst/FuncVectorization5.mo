@@ -31,7 +31,7 @@ end FuncVectorization5;
 //   input Real[:, :] y;
 //   output Real s = 0.0;
 // algorithm
-//   s := sum(array(FuncVectorization5.mySum(x[$i1,$i2], y[$i1,$i2]) for $i2 in 1:size(x, 2), $i1 in 1:size(x, 1)));
+//   s := sum(array(array(FuncVectorization5.mySum(x[$i1,$i2], y[$i1,$i2]) for $i2 in 1:size(x, 2)) for $i1 in 1:size(x, 1)));
 // end FuncVectorization5.f;
 //
 // function FuncVectorization5.mySum

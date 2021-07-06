@@ -134,7 +134,7 @@ public
         for cr in crefs loop
           v.name := cr;
           exp :: expl := expl;
-          v.binding := Binding.FLAT_BINDING(exp, bind_var, bind_src);
+          v.binding := Binding.makeFlat(exp, bind_var, bind_src);
           vars := v :: vars;
         end for;
       else

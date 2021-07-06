@@ -9909,7 +9909,7 @@ template equation_function_create_single_func(SimEqSystem eq, Context context, S
     <<
     <%additionalFuncs%>
     /*
-    <%dumpEqs(fill(eq,1))%>
+    <%match simCode case SIMCODE(fmuTargetName="") then dumpEqs(fill(eq,1))%>
     */
     void <%lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%><%classnameext%>::<%method%>_<%ix_str%>()
     {

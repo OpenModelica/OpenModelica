@@ -698,7 +698,7 @@ public
       case UNARY()           then Operator.typeOf(exp.operator);
       case LBINARY()         then Operator.typeOf(exp.operator);
       case LUNARY()          then Operator.typeOf(exp.operator);
-      case RELATION()        then Operator.typeOf(exp.operator);
+      case RELATION()        then Type.copyDims(Operator.typeOf(exp.operator), Type.BOOLEAN());
       case IF()              then exp.ty;
       case CAST()            then exp.ty;
       case BOX()             then Type.METABOXED(typeOf(exp.exp));
