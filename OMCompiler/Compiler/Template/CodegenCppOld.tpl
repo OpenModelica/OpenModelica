@@ -11584,7 +11584,7 @@ template assertCommon(Exp condition, Exp message,Exp level, Context context, Tex
       if (!<%condVar%>)
       {
         <%preExpMsg%>
-        <%match level case ENUM_LITERAL(index=2)
+        <%match level case ENUM_LITERAL(index=1)
           then 'LOGGER_WRITE(<%msgVar%>, LC_MODEL, LL_WARNING);'
           else 'throw ModelicaSimulationError(MODEL_EQ_SYSTEM, <%msgVar%>);'
         %>
@@ -11596,7 +11596,7 @@ template assertCommon(Exp condition, Exp message,Exp level, Context context, Tex
       {
         <%preExpCond%>
         <%preExpMsg%>
-        <%match level case ENUM_LITERAL(index=2)
+        <%match level case ENUM_LITERAL(index=1)
           then 'LOGGER_WRITE("Assert in model equation", LC_MODEL, LL_WARNING);'
           else 'throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);'
         %>
