@@ -2217,14 +2217,12 @@ case LBINARY(__) then
 end daeExpLbinary;
 
 template expTypeFromExpFlag(Exp exp, Integer flag)
+ "Generate type helper."
 ::=
   match exp
   case ICONST(__)        then match flag case 8 then "int" case 1 then "int" else "int"
   case RCONST(__)        then match flag case 1 then "double" else "double"
-  case SCONST(__)        then if acceptMetaModelicaGrammar() then
-                                (match flag case 1 then "metatype" else "modelica_metatype")
-                              else
-                                (match flag case 1 then "string" else "modelica_string")
+  case SCONST(__)        then match flag case 1 then "string" else "modelica_string"
   case BCONST(__)        then match flag case 1 then "bool" else "modelica_boolean"
   case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "int" else "int"
   case e as BINARY(__)
@@ -2233,28 +2231,31 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case e as LUNARY(__)
   case e as RELATION(__) then expTypeFromOpFlag(e.operator, flag)
   case IFEXP(__)         then expTypeFromExpFlag(expThen, flag)
-  case CALL(attr=CALL_ATTR(__))          then expTypeFlag(attr.ty, flag)
+  case CALL(attr=CALL_ATTR(__)) then expTypeFlag(attr.ty, flag)
   case c as RECORD(__)   then expTypeFlag(c.ty, flag)
   case c as ARRAY(__)
   case c as MATRIX(__)
   case c as RANGE(__)
   case c as CAST(__)
+  case c as TSUB(__)
   case c as CREF(__)
   case c as CODE(__)     then expTypeFlag(c.ty, flag)
-  case ASUB(__)          then expTypeFromExpFlag(exp, flag)
+  case c as ASUB(__)     then expTypeFlag(typeof(c), flag)
   case REDUCTION(__)     then expTypeFlag(typeof(exp), flag)
   case e as CONS(__)
   case e as LIST(__)
   case e as SIZE(__)     then expTypeFlag(typeof(e), flag)
+  case c as RSUB(ix=-1)  then expTypeFlag(c.ty, flag)
 
   case META_TUPLE(__)
   case META_OPTION(__)
   case MATCHEXPRESSION(__)
   case METARECORDCALL(__)
+  case RSUB(__)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
-  else 'ERROR:expTypeFromExpFlag <%ExpressionDumpTpl.dumpExp(exp,"\"")%> '
+  else error(sourceInfo(), 'expTypeFromExpFlag(flag=<%flag%>):<%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end expTypeFromExpFlag;
 
 template expTypeFromOpFlag(Operator op, Integer flag)
