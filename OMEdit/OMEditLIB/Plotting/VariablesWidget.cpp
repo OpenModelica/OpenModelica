@@ -67,7 +67,8 @@ namespace VariableItemData {
     USES,
     INITIAL_USES,
     DEFINED_IN,
-    INFOFILE
+    INFOFILE,
+    EXISTINRESULTFILE
   };
 }
 
@@ -125,6 +126,7 @@ void VariablesTreeItem::setVariableItemData(const QVector<QVariant> &variableIte
      mDefinedIn << var.value<IntStringPair>();
   }
   mInfoFileName = variableItemData[VariableItemData::INFOFILE].toString();
+  mExistInResultFile = variableItemData[VariableItemData::EXISTINRESULTFILE].toBool();
 }
 
 QString VariablesTreeItem::getPlotVariable()
@@ -241,10 +243,12 @@ QVariant VariablesTreeItem::data(int column, int role) const
         case Qt::ToolTipRole:
           return mToolTip;
         case Qt::CheckStateRole:
-          /* Show checkbox for nodes without children i.e., leaf nodes.
-           * Show checkbox for nodes that are array.
+          /* Show checkbox for,
+           * nodes without children i.e., leaf nodes
+           * nodes that are array
+           * nodes that exist in the result file.
            */
-          if (parent()->parent() && (mChildren.size() == 0 || mIsMainArray)) {
+          if (parent()->parent() && mExistInResultFile && (mChildren.size() == 0 || mIsMainArray)) {
             return isChecked() ? Qt::Checked : Qt::Unchecked;
            } else {
             return QVariant();
@@ -480,7 +484,7 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
   Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
   if (((index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->mChildren.size() == 0) || pVariablesTreeItem->isMainArray())
-          && pVariablesTreeItem->parent() != mpRootVariablesTreeItem) {
+          && pVariablesTreeItem->parent() != mpRootVariablesTreeItem && pVariablesTreeItem->getExistInResultFile()) {
     flags |= Qt::ItemIsUserCheckable;
     // Disable string type since is not stored in the result file and we can't plot them
     if (pVariablesTreeItem->isString()) {
@@ -638,7 +642,7 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
   QRegExp resultTypeRegExp("(\\.mat|\\.plt|\\.csv|_res.mat|_res.plt|_res.csv)");
   QString text = QString(fileName).remove(resultTypeRegExp);
   QVector<QVariant> variabledata;
-  variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json";
+  variabledata << filePath << fileName << fileName << text << "" << "" << "" << "" << QStringList() << "" << toolTip << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json" << false;
 
   bool existingTopVariableTreeItem;
   VariablesTreeItem *pTopVariablesTreeItem = findVariablesTreeItemOneLevel(variabledata.at(VariableItemData::NAME).toString(), mpRootVariablesTreeItem);
@@ -671,10 +675,12 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
     initFileName = QString("%1_init.xml").arg(text);
     infoFileName = QString("%1_info.json").arg(text);
   }
+  bool readingVariablesFromInitFile = false;
   QFile initFile(QString("%1%2%3").arg(filePath, QDir::separator(), initFileName));
   if (initFile.exists()) {
     if (initFile.open(QIODevice::ReadOnly)) {
       QXmlStreamReader initXmlReader(&initFile);
+      readingVariablesFromInitFile = variablesList.isEmpty();
       parseInitXml(initXmlReader, &variablesList);
       initFile.close();
     } else {
@@ -742,6 +748,14 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
    */
   if (simulationOptions.isValid() && simulationOptions.getCPUTime()) {
     variablesList.append("$cpuTime");
+  }
+  /* Issue #7632 Variables Browser show non-existing variable
+   * Show the non-existing variables as we want to use them for resimulation e.g., string variables.
+   * But don't make them checkable so user can't plot them.
+   */
+  QStringList variableListFromResultFile;
+  if (readingVariablesFromInitFile) {
+    variableListFromResultFile = MainWindow::instance()->getOMCProxy()->readSimulationResultVars(QString("%1%2%3").arg(filePath, QDir::separator(), fileName));
   }
   QStringList variables;
   foreach (QString plotVariable, variablesList) {
@@ -907,6 +921,11 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       }
       variableData << variantDefinedIn;
       variableData << infoFileName;
+      bool variableExistsInResultFile = true;
+      if (readingVariablesFromInitFile && !variableListFromResultFile.contains(variableToFind)) {
+        variableExistsInResultFile = false;
+      }
+      variableData << variableExistsInResultFile;
 
       VariableNode *pVariableNode = new VariableNode(variableData);
       pVariableNode->mEditable = changeAble;

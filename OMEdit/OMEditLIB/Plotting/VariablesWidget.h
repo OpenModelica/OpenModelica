@@ -70,6 +70,7 @@ public:
   QStringList getInitialUses() {return mInitialUses;}
   QList<IntStringPair> getDefinedIn() {return mDefinedIn;}
   QString getInfoFileName() {return mInfoFileName;}
+  bool getExistInResultFile() const {return mExistInResultFile;}
   bool isChecked() const {return mChecked;}
   void setChecked(bool set) {mChecked = set;}
   bool isEditable() const {return mEditable;}
@@ -120,6 +121,7 @@ private:
   QStringList mUses, mInitialUses;
   QList<IntStringPair> mDefinedIn;
   QString mInfoFileName;
+  bool mExistInResultFile;
 protected:
   bool mActive;
 };
