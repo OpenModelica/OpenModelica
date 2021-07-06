@@ -103,6 +103,8 @@ private:
   QwtSeriesData<QPointF>* mpInteractiveData;
   QString mInteractiveModelName;
   bool mPrefixUnits;
+  bool mCanUseXPrefixUnits;
+  bool mCanUseYPrefixUnits;
   QMdiSubWindow *mpSubWindow;
 public:
   PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
@@ -175,6 +177,10 @@ public:
   QString getFooter();
   bool getPrefixUnits() const;
   void setPrefixUnits(bool prefixUnits);
+  bool canUseXPrefixUnits() const;
+  void setCanUseXPrefixUnits(bool canUseXPrefixUnits);
+  bool canUseYPrefixUnits() const;
+  void setCanUseYPrefixUnits(bool canUseYPrefixUnits);
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
