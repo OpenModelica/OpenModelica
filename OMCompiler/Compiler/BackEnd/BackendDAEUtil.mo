@@ -456,7 +456,7 @@ algorithm
       then ();
     case (_,_,_,_)
       equation
-        failure(DAE.ENUM_LITERAL(index=1) = level);
+        failure(DAE.ENUM_LITERAL(index=2) = level);
       then ();
     case(_,_,_,_)
       equation

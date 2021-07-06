@@ -14,7 +14,7 @@ end AssertInvalid3;
 // [flattening/modelica/scodeinst/AssertInvalid3.mo:9:3-9:30:writable] Error: Type mismatch for positional argument 3 in assert(level=1). The argument has type:
 //   Integer
 // expected type:
-//   enumeration AssertionLevel(error, warning)
+//   enumeration AssertionLevel(warning, error)
 //
 // # Error encountered! Exiting...
 // # Please check the error message and the flags.
