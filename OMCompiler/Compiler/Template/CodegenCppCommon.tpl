@@ -610,7 +610,12 @@ end dimension;
 
 template checkDimension(Dimensions dims)
 ::=
-  dimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
+  let dimstr = dimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
+  // check for unknown dimension that is treated as -1
+  if intEq(-1, stringFind(dimstr, "-")) then
+    dimstr
+  else
+    ""
 end checkDimension;
 
 template checkExpDimension(list<DAE.Exp> dims)
