@@ -1958,8 +1958,8 @@ import Util;
 
           currentVarIndices = arrayCreate(4,1);
           //The first array elements are reserved for state and state derivative variables
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iStateVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iDerivativeVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+          (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMappings(iStateVars, VARDATATYPE_FLOAT, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+          (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) =SimCodeUtil.addVarToArrayIndexMappings(iDerivativeVars, VARDATATYPE_FLOAT, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
 
           stateAndStateDerSize = intAdd(listLength(iStateVars), listLength(iDerivativeVars));
           if(intEq(intMod(stateAndStateDerSize, maxNumElemsFloat), 0)) then
@@ -1987,16 +1987,16 @@ import Util;
           arrayUpdate(currentVarIndices, 3, intMul(listLength(cacheLinesBool), maxNumElemsBool) + 1);
           arrayUpdate(currentVarIndices, 4, 1);
 
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsFloat), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsInt), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_INTEGER), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsBool), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_BOOLEAN), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(listReverse(notOptimizedVarsString), function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_STRING), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+          (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMappings(listReverse(notOptimizedVarsFloat), VARDATATYPE_FLOAT, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+          (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMappings(listReverse(notOptimizedVarsInt), VARDATATYPE_INTEGER, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+          (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMappings(listReverse(notOptimizedVarsBool), VARDATATYPE_BOOLEAN, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+          (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMappings(listReverse(notOptimizedVarsString), VARDATATYPE_STRING, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
 
           //BaseHashTable.dumpHashTable(varArrayIndexMappingHashTable);
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_FLOAT), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iIntAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_INTEGER), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iBoolAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_BOOLEAN), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(iStringAliasVars, function SimCodeUtil.addVarToArrayIndexMapping(iVarType=VARDATATYPE_STRING), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = SimCodeUtil.addVarToArrayIndexMappings(iAliasVars, VARDATATYPE_FLOAT, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = SimCodeUtil.addVarToArrayIndexMappings(iIntAliasVars, VARDATATYPE_INTEGER, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = SimCodeUtil.addVarToArrayIndexMappings(iBoolAliasVars, VARDATATYPE_BOOLEAN, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+          ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = SimCodeUtil.addVarToArrayIndexMappings(iStringAliasVars, VARDATATYPE_STRING, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
 
           varSizeFloat = varSizeFloat + intMul(listLength(cacheLinesFloat), maxNumElemsFloat) + listLength(notOptimizedVarsFloat);
           //SimCodeUtil.dumpVarLst(notOptimizedVarsFloat, "convertCacheToVarArrayMapping: Not optimized float vars");
@@ -2084,7 +2084,7 @@ import Util;
           //print("convertCacheMapToMemoryMap2: offset=" + intString(offset) + " array-index=" + intString(iArrayIdx) + " array-position=" + intString(arrayPosition) + "\n");
           currentVarIndices = arrayCreate(4,arrayPosition);
           //print("convertCacheMapToMemoryMap2: number of variables=" + intString(arrayLength(iCacheVariables)) + " arrayPosition=" + intString(arrayPosition) + "\n");
-          (_, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMapping(arrayGet(iCacheVariables, arrayLength(iCacheVariables) - scVarIdx + 1), iArrayIdx, (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+          (_, varArrayIndexMappingHashTable, varIndexMappingHashTable) = SimCodeUtil.addVarToArrayIndexMapping(arrayGet(iCacheVariables, arrayLength(iCacheVariables) - scVarIdx + 1), iArrayIdx, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
           //iPositionMappingList = (realScVarIdx,arrayPosition,iArrayIdx)::iPositionMappingList;
           //for arridx in listRange(arrayLength(iVarIdxOffsets)) loop
           //  _ = arrayUpdate(iVarIdxOffset, intDiv(clSize, size));
