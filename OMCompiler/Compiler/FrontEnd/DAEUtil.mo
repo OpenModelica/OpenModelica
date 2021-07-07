@@ -1614,6 +1614,13 @@ algorithm
   vl_1 := getMatchingElements(vl, isOutputVar);
 end getOutputVars;
 
+public function getOutputElements
+  input list<DAE.Element> vl;
+  output list<DAE.Element> vl_1;
+algorithm
+  vl_1 := getMatchingElements(vl, isOutputElement);
+end getOutputElements;
+
 public function getProtectedVars "
   author: PA
 
@@ -1634,6 +1641,13 @@ public function getBidirVars "author: LS
 algorithm
   vl_1 := getMatchingElements(vl, isBidirVar);
 end getBidirVars;
+
+public function getBidirElements
+  input list<DAE.Element> vl;
+  output list<DAE.Element> vl_1;
+algorithm
+  vl_1 := getMatchingElements(vl, isBidirElement);
+end getBidirElements;
 
 public function getInputVars "
   Retrieve all input variables from an Element list.
@@ -1689,6 +1703,16 @@ algorithm
   end match;
 end isOutputVar;
 
+public function isOutputElement
+  input DAE.Element inElement;
+  output Boolean outMatch;
+algorithm
+  outMatch := match (inElement)
+    case DAE.VAR(direction = DAE.OUTPUT()) then true;
+    else false;
+  end match;
+end isOutputElement;
+
 public function assertProtectedVar
 "Succeeds if Element is a protected variable."
   input DAE.Element inElement;
@@ -1733,15 +1757,15 @@ algorithm
   end match;
 end isBidirVar;
 
-public function isBidirVarDirection
-  input DAE.VarDirection inVarDirection;
-  output Boolean outIsBidir;
+public function isBidirElement
+  input DAE.Element inElement;
+  output Boolean outMatch;
 algorithm
-  outIsBidir := match(inVarDirection)
-    case DAE.BIDIR() then true;
+  outMatch := match (inElement)
+    case DAE.VAR(direction = DAE.BIDIR()) then true;
     else false;
   end match;
-end isBidirVarDirection;
+end isBidirElement;
 
 public function isInputVar "
   Succeeds if Element is an input variable.
@@ -2882,7 +2906,7 @@ protected
   list<DAE.Element> elements;
 algorithm
   elements := getFunctionElements(fn);
-  outEls := List.filterOnTrue(elements, isOutputVar);
+  outEls := List.filterOnTrue(elements, isOutputElement);
 end getFunctionOutputVars;
 
 public function getFunctionProtectedVars
