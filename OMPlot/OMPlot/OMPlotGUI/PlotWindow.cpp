@@ -2212,7 +2212,7 @@ bool SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
   PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
 
   /* set the legend title */
-  if (pPlotCurve->title().text().compare(pVariablePageWidget->getLegendTextBox()->text()) == 0) {
+  if (pPlotCurve->getCustomTitle().isEmpty() && pPlotCurve->title().text().compare(pVariablePageWidget->getLegendTextBox()->text()) == 0) {
     pPlotCurve->setCustomTitle("");
   } else {
     pPlotCurve->setCustomTitle(pVariablePageWidget->getLegendTextBox()->text());
