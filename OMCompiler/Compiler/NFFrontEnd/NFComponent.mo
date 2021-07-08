@@ -487,8 +487,8 @@ public
       if InstNode.isRecord(cls_node) then
         try
           record_exp := Class.makeRecordExp(cls_node);
-          binding := Binding.FLAT_BINDING(record_exp,
-            Expression.variability(record_exp), NFBinding.Source.GENERATED);
+          binding := Binding.makeTyped(record_exp, NFBinding.EachType.NOT_EACH,
+            NFBinding.Source.GENERATED, info(component));
         else
         end try;
       end if;
@@ -985,6 +985,7 @@ public
     count := match component
       case UNTYPED_COMPONENT() then arrayLength(component.dimensions);
       case TYPED_COMPONENT() then listLength(Type.arrayDims(component.ty));
+      case DELETED_COMPONENT() then dimensionCount(component.component);
       else 0;
     end match;
   end dimensionCount;

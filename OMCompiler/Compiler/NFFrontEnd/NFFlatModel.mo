@@ -609,7 +609,7 @@ public
     else
       field_exps := listReverseInPlace(field_exps);
       record_exp := Expression.makeRecord(InstNode.scopePath(InstNode.classScope(record_node)), record_ty, field_exps);
-      record_binding := Binding.FLAT_BINDING(record_exp, Component.variability(record_comp), NFBinding.Source.GENERATED);
+      record_binding := Binding.makeFlat(record_exp, Component.variability(record_comp), NFBinding.Source.GENERATED);
     end if;
 
     recordVar := Variable.VARIABLE(recordName, record_ty, record_binding, InstNode.visibility(record_node),

@@ -1,4 +1,4 @@
-// name: distribustionsTest
+// name: mslDistribustionsTest
 // keywords: pre array const
 // status: correct
 // teardown_command: rm -f *NoiseExamples*

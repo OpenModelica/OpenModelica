@@ -91,7 +91,10 @@ Ticket6287and6288.mos \
 Ticket6300.mos \
 Ticket6307.mos \
 Ticket6406.mos \
-ReadOnlyPkg.mos
+ReadOnlyPkg.mos \
+getComponentsTestNF.mos \
+getComponentsTestOF.mos \
+Issue7544.mos
 
 # test that currently fail. Move up when fixed.
 # Run make testfailing

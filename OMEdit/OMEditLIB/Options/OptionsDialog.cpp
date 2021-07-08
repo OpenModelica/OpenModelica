@@ -629,6 +629,11 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/cxxCompiler")) {
     mpSimulationPage->getCXXCompilerComboBox()->lineEdit()->setText(mpSettings->value("simulation/cxxCompiler").toString());
   }
+#ifdef Q_OS_WIN
+  if (mpSettings->contains("simulation/useStaticLinking")) {
+    mpSimulationPage->getUseStaticLinkingCheckBox()->setChecked(mpSettings->value("simulation/useStaticLinking").toBool());
+  }
+#endif
   if (mpSettings->contains("simulation/ignoreCommandLineOptionsAnnotation")) {
     mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->setChecked(mpSettings->value("simulation/ignoreCommandLineOptionsAnnotation").toBool());
   }
@@ -1397,6 +1402,10 @@ void OptionsDialog::saveGlobalSimulationSettings()
     cxxCompiler = mpSimulationPage->getCXXCompilerComboBox()->lineEdit()->placeholderText();
   }
   MainWindow::instance()->getOMCProxy()->setCXXCompiler(cxxCompiler);
+#ifdef Q_OS_WIN
+  // static linking
+  mpSettings->setValue("simulation/useStaticLinking", mpSimulationPage->getUseStaticLinkingCheckBox()->isChecked());
+#endif
   // save ignore command line options
   mpSettings->setValue("simulation/ignoreCommandLineOptionsAnnotation", mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked());
   if (mpSimulationPage->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
@@ -3879,6 +3888,10 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpCXXCompilerComboBox->addItem("clang++");
 #endif
   mpCXXCompilerComboBox->lineEdit()->setPlaceholderText(MainWindow::instance()->getOMCProxy()->getCXXCompiler());
+#ifdef Q_OS_WIN
+  mpUseStaticLinkingCheckBox = new QCheckBox(tr("Use static Linking"));
+  mpUseStaticLinkingCheckBox->setToolTip(tr("Enables static linking for the simulation executable. Default is dynamic linking."));
+#endif
   // ignore command line options annotation checkbox
   mpIgnoreCommandLineOptionsAnnotationCheckBox = new QCheckBox(tr("Ignore __OpenModelica_commandLineOptions annotation"));
   // ignore simulation flags annotation checkbox
@@ -3944,6 +3957,9 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   pSimulationLayout->addWidget(mpCompilerComboBox, row++, 1);
   pSimulationLayout->addWidget(mpCXXCompilerLabel, row, 0);
   pSimulationLayout->addWidget(mpCXXCompilerComboBox, row++, 1);
+#ifdef Q_OS_WIN
+  pSimulationLayout->addWidget(mpUseStaticLinkingCheckBox, row++, 0, 1, 2);
+#endif
   pSimulationLayout->addWidget(mpIgnoreCommandLineOptionsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpIgnoreSimulationFlagsAnnotationCheckBox, row++, 0, 1, 2);
   pSimulationLayout->addWidget(mpSaveClassBeforeSimulationCheckBox, row++, 0, 1, 2);

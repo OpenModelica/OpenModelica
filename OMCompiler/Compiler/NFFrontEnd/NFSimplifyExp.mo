@@ -337,6 +337,7 @@ function simplifyVector
 protected
   list<Expression> expl;
   Boolean is_literal;
+  Type ty;
 algorithm
   expl := Expression.arrayScalarElements(arg);
   is_literal := Expression.isLiteral(arg);
@@ -347,7 +348,8 @@ algorithm
   end if;
 
   if is_literal or List.all(expl, Expression.isScalar) then
-    exp := Expression.makeExpArray(expl);
+    ty := Type.arrayElementType(Expression.typeOf(arg));
+    exp := Expression.makeExpArray(expl, ty);
   else
     exp := Expression.CALL(call);
   end if;
@@ -467,6 +469,10 @@ algorithm
             end if;
           then
             outExp;
+
+        case _
+          guard call.var <= Variability.STRUCTURAL_PARAMETER
+          then Ceval.tryEvalExp(Expression.CALL(call));
 
         case _
           then simplifyReduction2(AbsynUtil.pathString(Function.name(call.fn)), call.exp, iters);

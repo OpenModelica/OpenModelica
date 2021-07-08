@@ -37,9 +37,10 @@
 
 using namespace OMPlot;
 
-ScaleDraw::ScaleDraw(Plot *pParent)
+ScaleDraw::ScaleDraw(QwtPlot::Axis axis, Plot *pParent)
   : QwtScaleDraw()
 {
+  mAxis = axis;
   mpParentPlot = pParent;
   mUnitPrefix = "";
 }
@@ -60,7 +61,8 @@ QwtText ScaleDraw::label(double value) const
 {
   mUnitPrefix = "";
 
-  if (mpParentPlot->getParentPlotWindow()->getPrefixUnits()) {
+  if (mpParentPlot->getParentPlotWindow()->getPrefixUnits() && ((mAxis == QwtPlot::xBottom && mpParentPlot->getParentPlotWindow()->canUseXPrefixUnits())
+                                                                || (mAxis == QwtPlot::yLeft && mpParentPlot->getParentPlotWindow()->canUseYPrefixUnits()))) {
     int exponent = 0;
     // Use lowerBound if upperBound is zero
     /* Since log(1900) returns 3.278 so we need to round down for positive values to make it 3

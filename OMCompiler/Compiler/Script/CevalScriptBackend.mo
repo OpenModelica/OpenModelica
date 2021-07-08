@@ -1856,6 +1856,7 @@ algorithm
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
       FCore.Graph env;
+      Interactive.GraphicEnvCache genv;
       Absyn.Program p,ip,pnew,newp;
       list<Absyn.Program> newps;
       GlobalScript.SimulationOptions simOpt;
@@ -2224,14 +2225,9 @@ algorithm
     case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        sp = SymbolTable.getSCode();
-        (cache, env) = Inst.makeEnvFromProgram(sp);
-        (cache,(cl as SCode.CLASS(name=name,encapsulatedPrefix=encflag,restriction=restr)),env) = Lookup.lookupClass(cache, env, classpath, NONE());
-        env = FGraph.openScope(env, encflag, name, FGraph.restrictionToScopeType(restr));
-        (_, env) = Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(),
-          ClassInf.start(restr, FGraph.getGraphName(env)), cl, SCode.PUBLIC(), {}, 0);
-        valsLst = list(getComponentInfo(c, env, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));
-        valsLst = listAppend(list(getComponentInfo(c, env, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
+        genv = Interactive.getClassEnv(SymbolTable.getAbsyn(), classpath);
+        valsLst = list(getComponentInfo(c, genv, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));
+        valsLst = listAppend(list(getComponentInfo(c, genv, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
       then (cache,ValuesUtil.makeArray(List.flatten(valsLst)));
 
     case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(_))},_)
@@ -8037,7 +8033,7 @@ end compareInitialStateFuncArgs;
 
 function getComponentInfo
   input Absyn.Element comp;
-  input FCore.Graph inEnv;
+  input Interactive.GraphicEnvCache inEnv;
   input Boolean isProtected;
   output list<Values.Value> vs;
 algorithm
@@ -8061,10 +8057,7 @@ algorithm
         typename := matchcontinue ()
           case ()
             equation
-              (_,_,env) = Lookup.lookupClass(FCore.emptyCache(), inEnv, p, NONE());
-              SOME(envpath) = FGraph.getScopePath(env);
-              tpname = AbsynUtil.pathLastIdent(p);
-              p_1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
+              (_, p_1) = Interactive.mkFullyQual(inEnv, p);
             then AbsynUtil.pathString(p_1);
           else AbsynUtil.pathString(p);
         end matchcontinue;
@@ -8072,9 +8065,7 @@ algorithm
 
         dims1 := list(Dump.printSubscriptStr(sub) for sub in attr.arrayDim);
         r_1 := Interactive.keywordReplaceable(comp.redeclareKeywords);
-
         inout_str := innerOuterStr(comp.innerOuter);
-
         variability_str := attrVariabilityStr(attr);
         dir_str := attrDirectionStr(attr);
 
@@ -8185,6 +8176,8 @@ algorithm
       String c1,s2;
     case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))
       then (c1, s2);
+    case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,_)))
+      then (c1, "");
     case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE())
       then (c1, "");
   end match;

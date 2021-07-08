@@ -18,6 +18,7 @@ model FuncBuiltinReduction
   Real r7 = max(r*2.0 for r in 1:0);
   Real r8 = sum(r*2.0 for r in 1:0);
   Real r9 = product(r*2.0 for r in 1:0);
+  Real r10 = sum(r1*r2 for r1 in 1:integer(time), r2 in 1:4);
 
   Integer i1 = min(i-1 for i in {2, 4, 1});
   Integer i2 = max(i for i in {4, 2, 9});
@@ -41,8 +42,8 @@ end FuncBuiltinReduction;
 
 // Result:
 // class FuncBuiltinReduction
-//   Real r1 = min(r * 2.0 for r in {1.0, 2.0, 3.0, 4.0});
-//   Real r2 = max(r * r for r in {-4.0, -2.0, 3.0, 5.0});
+//   Real r1 = 2.0;
+//   Real r2 = 25.0;
 //   Real r3 = 110.0;
 //   Real r4 = 14400.0;
 //   Real r5 = 420.0;
@@ -50,20 +51,21 @@ end FuncBuiltinReduction;
 //   Real r7 = -8.777798510069901e+304;
 //   Real r8 = 0.0;
 //   Real r9 = 1.0;
-//   Integer i1 = min(i - 1 for i in {2, 4, 1});
-//   Integer i2 = max(i for i in {4, 2, 9});
+//   Real r10 = /*Real*/(sum(sum(r1 * r2 for r1 in 1:integer(time)) for r2 in 1:4));
+//   Integer i1 = 0;
+//   Integer i2 = 9;
 //   Integer i3 = 14;
 //   Integer i4 = 60480;
 //   Integer i5 = 4611686018427387903;
 //   Integer i6 = -4611686018427387903;
 //   Integer i7 = 0;
 //   Integer i8 = 1;
-//   Boolean b1 = min(not b for b in {false, true});
-//   Boolean b2 = max(i == 2 for i in 1:4);
+//   Boolean b1 = false;
+//   Boolean b2 = true;
 //   Boolean b3 = true;
 //   Boolean b4 = false;
-//   enumeration(one, two, three) e1 = min(e for e in E.one:E.three);
-//   enumeration(one, two, three) e2 = max(e for e in {E.one, E.two, E.three});
+//   enumeration(one, two, three) e1 = E.one;
+//   enumeration(one, two, three) e2 = E.three;
 //   enumeration(one, two, three) e3 = E.three;
 //   enumeration(one, two, three) e4 = E.one;
 // end FuncBuiltinReduction;

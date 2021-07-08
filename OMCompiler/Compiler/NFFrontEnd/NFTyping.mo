@@ -363,7 +363,9 @@ function typeComponent
   output Type ty;
 protected
   InstNode node = InstNode.resolveOuter(component);
-  Component c = InstNode.component(node);
+  Component c = InstNode.component(node), c_typed;
+  Expression cond;
+  Boolean is_deleted;
 algorithm
   ty := match c
     // An untyped component, type it.
@@ -375,13 +377,27 @@ algorithm
         // Construct the type of the component and update the node with it.
         ty := typeClassType(c.classInst, c.binding, context, component);
         ty := Type.liftArrayLeftList(ty, arrayList(c.dimensions));
-        InstNode.updateComponent(Component.setType(ty, c), node);
 
-        // Check that flow/stream variables are Real.
-        checkComponentStreamAttribute(c.attributes.connectorType, ty, component);
+        if Binding.isBound(c.condition) then
+          c.condition := typeComponentCondition(c.condition, context, evaluate = true);
+          is_deleted := Expression.isFalse(Binding.getExp(c.condition));
+        else
+          is_deleted := false;
+        end if;
 
-        // Type the component's children.
-        typeComponents(c.classInst, context);
+        c_typed := Component.setType(ty, c);
+
+        if is_deleted then
+          InstNode.updateComponent(Component.DELETED_COMPONENT(c_typed), node);
+        else
+          InstNode.updateComponent(c_typed, node);
+
+          // Check that flow/stream variables are Real.
+          checkComponentStreamAttribute(c.attributes.connectorType, ty, component);
+
+          // Type the component's children.
+          typeComponents(c.classInst, context);
+        end if;
       then
         ty;
 
@@ -389,6 +405,7 @@ algorithm
     case Component.TYPED_COMPONENT() then c.ty;
     case Component.ITERATOR() then c.ty;
     case Component.ENUM_LITERAL(literal = Expression.ENUM_LITERAL(ty = ty)) then ty;
+    case Component.DELETED_COMPONENT() then Component.getType(c.component);
 
     // Any other type of component shouldn't show up here.
     else
@@ -556,7 +573,7 @@ algorithm
           end if;
         end if;
 
-        dim := Dimension.fromExp(simplifyDimExp(exp), var);
+        dim := Dimension.fromExp(exp, var);
         arrayUpdate(dimensions, index, dim);
       then
         dim;
@@ -644,7 +661,7 @@ algorithm
               Structural.markExp(exp);
               exp := Ceval.evalExp(exp, Ceval.EvalTarget.DIMENSION(component, index, exp, info));
             then
-              Dimension.fromExp(simplifyDimExp(exp), dim.var);
+              Dimension.fromExp(exp, dim.var);
 
           case Dimension.UNKNOWN()
             algorithm
@@ -863,10 +880,6 @@ algorithm
 
         c.binding := binding;
 
-        if Binding.isBound(c.condition) then
-          c.condition := typeComponentCondition(c.condition, context);
-        end if;
-
         InstNode.updateComponent(c, node);
 
         if typeChildren then
@@ -883,11 +896,6 @@ algorithm
         if Binding.isTyped(c.binding) then
           c.binding := TypeCheck.matchBinding(c.binding, c.ty, InstNode.name(component), node);
           checkComponentBindingVariability(InstNode.name(component), c, c.binding, context);
-        end if;
-
-        if Binding.isBound(c.condition) then
-          c.condition := typeComponentCondition(c.condition, context);
-          InstNode.updateComponent(c, node);
         end if;
 
         if typeChildren then
@@ -925,6 +933,8 @@ algorithm
         InstNode.updateComponent(c, node);
       then
         ();
+
+    case Component.DELETED_COMPONENT() then ();
 
     else
       algorithm
@@ -1024,6 +1034,7 @@ end checkBindingEach;
 function typeComponentCondition
   input output Binding condition;
   input InstContext.Type context;
+  input Boolean evaluate = false;
 algorithm
   condition := match condition
     local
@@ -1032,6 +1043,7 @@ algorithm
       Variability var;
       SourceInfo info;
       MatchKind mk;
+      NFBinding.EvalState eval_state;
 
     case Binding.UNTYPED_BINDING(bindingExp = exp)
       algorithm
@@ -1050,9 +1062,22 @@ algorithm
             {Expression.toString(exp)}, info);
           fail();
         end if;
+
+        eval_state := NFBinding.EvalState.NOT_EVALUATED;
+
+        if evaluate then
+          ErrorExt.setCheckpoint(getInstanceName());
+          try
+            exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(info));
+            exp := simplifyDimExp(exp);
+            eval_state := NFBinding.EvalState.EVALUATED;
+          else
+          end try;
+          ErrorExt.rollBack(getInstanceName());
+        end if;
       then
         Binding.TYPED_BINDING(exp, ty, var, NFBinding.EachType.NOT_EACH,
-          Mutable.create(NFBinding.EvalState.NOT_EVALUATED), false, condition.source, info);
+          Mutable.create(eval_state), false, condition.source, info);
 
   end match;
 end typeComponentCondition;
@@ -2692,6 +2717,8 @@ algorithm
       then
         ();
 
+    case Component.DELETED_COMPONENT() then ();
+
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got uninstantiated component " + InstNode.name(component), sourceInfo());
@@ -2787,6 +2814,7 @@ protected
   InstContext.Type next_context;
   SourceInfo info;
   list<Equation> eql;
+  Boolean lhs_deleted, rhs_deleted;
 algorithm
   info := ElementSource.getInfo(source);
 
@@ -2800,13 +2828,14 @@ algorithm
   end if;
 
   next_context := InstContext.set(context, NFInstContext.CONNECT);
-  (lhs, lhs_ty) := typeConnector(lhsConn, next_context, info);
-  (rhs, rhs_ty) := typeConnector(rhsConn, next_context, info);
+  (lhs, lhs_ty, lhs_deleted) := typeConnector(lhsConn, next_context, info);
+  (rhs, rhs_ty, rhs_deleted) := typeConnector(rhsConn, next_context, info);
 
   // Check that the connectors have matching types, but only if they're not expandable.
   // Expandable connectors can only be type checked after they've been augmented during
   // the connection handling.
-  if not (Type.isExpandableConnector(lhs_ty) or Type.isExpandableConnector(rhs_ty)) then
+  if not (lhs_deleted or rhs_deleted) and
+     not (Type.isExpandableConnector(lhs_ty) or Type.isExpandableConnector(rhs_ty)) then
     (lhs, rhs, _, mk) := TypeCheck.matchExpressions(lhs, lhs_ty, rhs, rhs_ty, allowUnknown = true);
 
     if TypeCheck.isIncompatibleMatch(mk) then
@@ -2825,14 +2854,16 @@ function typeConnector
   input InstContext.Type context;
   input SourceInfo info;
         output Type ty;
+        output Boolean deleted;
 algorithm
   (connExp, ty, _) := typeExp(connExp, context, info);
-  checkConnector(connExp, info);
+  deleted := checkConnector(connExp, info);
 end typeConnector;
 
 function checkConnector
   input Expression connExp;
   input SourceInfo info;
+  output Boolean deleted;
 protected
   ComponentRef cr;
   list<Subscript> subs;
@@ -2860,6 +2891,8 @@ algorithm
             end if;
           end for;
         end if;
+
+        deleted := ComponentRef.isDeleted(cr);
       then
         ();
 

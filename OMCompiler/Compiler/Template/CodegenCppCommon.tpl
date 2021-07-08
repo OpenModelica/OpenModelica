@@ -65,10 +65,10 @@ template crefToCStrForArray(ComponentRef cr, Text& dims)
   match cr
   case CREF_IDENT(__) then
     let &dims+=listLength(subscriptLst)
-    '<%ident%>_'
+    '<%System.unquoteIdentifier(ident)%>_'
   case CREF_QUAL(__) then
     let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStrForArray(subscriptLst)
-    '<%ident%><%subs%>_P_<%crefToCStrForArray(componentRef,dims)%>'
+    '<%System.unquoteIdentifier(ident)%><%subs%>_P_<%crefToCStrForArray(componentRef,dims)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStrForArray;
@@ -76,9 +76,9 @@ end crefToCStrForArray;
 template crefToCStr1(ComponentRef cr, Boolean useFlatArrayNotation)
 ::=
   match cr
-  case CREF_IDENT(__) then '<%ident%>_'
+  case CREF_IDENT(__) then '<%System.unquoteIdentifier(ident)%>_'
   case CREF_QUAL(__) then
-    '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr1(componentRef,useFlatArrayNotation)%>'
+    '<%System.unquoteIdentifier(ident)%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%crefToCStr1(componentRef,useFlatArrayNotation)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr1;
@@ -95,10 +95,10 @@ template crefStrForWriteOutput(ComponentRef cr)
   match cr
   case CREF_IDENT(ident = "xloc") then '__xd<%subscriptsStrForWriteOutput(subscriptLst)%>'
   case CREF_IDENT(ident = "time") then "_simTime"
-  case CREF_IDENT(__) then '<%ident%><%subscriptsStrForWriteOutput(subscriptLst)%>'
+  case CREF_IDENT(__) then '<%System.unquoteIdentifier(ident)%><%subscriptsStrForWriteOutput(subscriptLst)%>'
   case CREF_QUAL(ident = "$DER") then 'der(<%crefStrForWriteOutput(componentRef)%>)'
   case CREF_QUAL(ident = "$CLKPRE") then 'previous(<%crefStrForWriteOutput(componentRef)%>)'
-  case CREF_QUAL(__) then '<%ident%><%subscriptsStrForWriteOutput(subscriptLst)%>.<%crefStrForWriteOutput(componentRef)%>'
+  case CREF_QUAL(__) then '<%System.unquoteIdentifier(ident)%><%subscriptsStrForWriteOutput(subscriptLst)%>.<%crefStrForWriteOutput(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefStrForWriteOutput;
 
@@ -198,7 +198,7 @@ template crefToCStrWithIndex(ComponentRef cr, Context context, Text &varDecls, S
   let tmp = ""
   match cr
     case CREF_QUAL(__) then
-      let identTmp = '<%ident%>'
+      let identTmp = '<%System.unquoteIdentifier(ident)%>'
       match listHead(subscriptLst)
         case INDEX(__) then
           match exp case e as CREF(__) then
@@ -296,10 +296,10 @@ template crefToCStr(ComponentRef cr, Boolean useFlatArrayNotation)
   match cr
   case CREF_IDENT(__) then
     let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStr(subscriptLst, useFlatArrayNotation)
-    '<%ident%>_<%subs%>'
+    '<%System.unquoteIdentifier(ident)%>_<%subs%>'
   case CREF_QUAL(__) then
     let subs = if Flags.isSet(Flags.NF_SCALARIZE) then subscriptsToCStrForArray(subscriptLst)
-    '<%ident%><%subs%>_P_<%crefToCStr(componentRef, useFlatArrayNotation)%>'
+    '<%System.unquoteIdentifier(ident)%><%subs%>_P_<%crefToCStr(componentRef, useFlatArrayNotation)%>'
   case WILD(__) then ''
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
@@ -341,6 +341,8 @@ template daeExpCref(Boolean isLhs, Exp ecr, Context context, Text &preExp, Text 
  "Generates code for a component reference."
 ::=
 match ecr
+case component as CREF(componentRef=cr, ty=T_FUNCTION(path=name)) then
+  underscorePath(name)
 case component as CREF(componentRef=cr, ty=ty) then
   let box = daeExpCrefRhsArrayBox(cr, ty, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   if box then
@@ -514,8 +516,8 @@ template arrayCrefStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(ident = "time") then "_simTime"
-  case CREF_IDENT(__) then '<%ident%>_'
-  case CREF_QUAL(__) then '<%ident%>_.<%arrayCrefStr(componentRef)%>'
+  case CREF_IDENT(__) then '<%System.unquoteIdentifier(ident)%>_'
+  case CREF_QUAL(__) then '<%System.unquoteIdentifier(ident)%>_.<%arrayCrefStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end arrayCrefStr;
 
@@ -608,7 +610,12 @@ end dimension;
 
 template checkDimension(Dimensions dims)
 ::=
-  dimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
+  let dimstr = dimensionsList(dims) |> dim as Integer   =>  '<%dim%>';separator=","
+  // check for unknown dimension that is treated as -1
+  if intEq(-1, stringFind(dimstr, "-")) then
+    dimstr
+  else
+    ""
 end checkDimension;
 
 template checkExpDimension(list<DAE.Exp> dims)
@@ -664,6 +671,8 @@ template expTypeShort(DAE.Type type)
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
   case T_METATYPE(__)
   case T_METABOXED(__)   then "metatype"
+  case T_FUNCTION(__)
+  case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   else 'expTypeShort:ERROR <%unparseType(type)%> '
 end expTypeShort;
@@ -785,6 +794,8 @@ template expTypeShortSPS(DAE.Type type)
                       then "type not supported"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
+  case T_FUNCTION(__)
+  case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "type not supported"
   else "expTypeShort:ERROR"
 end expTypeShortSPS;
@@ -805,6 +816,8 @@ template expTypeShortMLPI(DAE.Type type)
                       then "type not supported"
   case T_COMPLEX(__)     then '<%underscorePath(ClassInf.getStateName(complexClassType))%>Type'
   case T_METATYPE(__) case T_METABOXED(__)    then "type not supported"
+  case T_FUNCTION(__)
+  case T_FUNCTION_REFERENCE_FUNC(__)
   case T_FUNCTION_REFERENCE_VAR(__) then "type not supported"
   else "expTypeShort:ERROR"
 end expTypeShortMLPI;
@@ -934,35 +947,40 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
  "Generates code for an expression."
 ::=
   match exp
-  case e as ICONST(__)          then    integer
-  case e as RCONST(__)          then    real
-  case e as BCONST(__)          then    if bool then "true" else "false"
-  case e as ENUM_LITERAL(__)    then    index
-  case e as CREF(__)            then    daeExpCrefRhs(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CAST(__)            then    daeExpCast(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CONS(__)            then    "Cons not supported yet"
-  case e as SCONST(__)          then     daeExpSconst(string, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as UNARY(__)           then     daeExpUnary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as LBINARY(__)         then     daeExpLbinary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as LUNARY(__)          then     daeExpLunary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as BINARY(__)          then     daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as IFEXP(__)           then     daeExpIf(expCond, expThen, expElse, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RELATION(__)        then     daeExpRelation(e, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as CALL(__)            then     daeExpCall(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RECORD(__)          then     daeExpRecord(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as ASUB(__)            then     '/*t1*/<%daeExpAsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as MATRIX(__)          then     daeExpMatrix(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as RANGE(__)           then     '/*t2*/<%daeExpRange(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as TSUB(__)            then     '/*t3*/<%daeExpTsub(e, context,  &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation )%>'
-  case e as REDUCTION(__)       then     daeExpReduction(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as ARRAY(__)           then     '/*t4*/<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  case e as SIZE(__)            then     daeExpSize(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  case e as SHARED_LITERAL(__)  then     daeExpSharedLiteral(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, useFlatArrayNotation)
-  case e as PARTEVALFUNCTION(__)then daeExpPartEvalFunction(e, context, &preExp, &varDecls, simCode , &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as ICONST(__)          then integer
+  case e as RCONST(__)          then real
+  case e as BCONST(__)          then if bool then "true" else "false"
+  case e as SCONST(__)          then daeExpSconst(string, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CLKCONST(__)        then error(sourceInfo(), 'Unsupported CLKCONST exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as ENUM_LITERAL(__)    then index
+  case e as CREF(__)            then daeExpCrefRhs(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CAST(__)            then daeExpCast(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CONS(__)            then error(sourceInfo(), 'Unsupported CONS exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as UNARY(__)           then daeExpUnary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as LBINARY(__)         then daeExpLbinary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as LUNARY(__)          then daeExpLunary(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as BINARY(__)          then daeExpBinary(operator, exp1, exp2, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as IFEXP(__)           then daeExpIf(expCond, expThen, expElse, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as RELATION(__)        then daeExpRelation(e, context, &preExp, &varDecls,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as CALL(__)            then daeExpCall(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as RECORD(__)          then daeExpRecord(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as TUPLE(__)           then error(sourceInfo(), 'Unsupported TUPLE exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as ASUB(__)            then '<%daeExpAsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as MATRIX(__)          then daeExpMatrix(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as RANGE(__)           then '<%daeExpRange(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as TSUB(__)            then '<%daeExpTsub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation )%>'
+  case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as ARRAY(__)           then '<%daeExpArray(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
+  case e as SIZE(__)            then daeExpSize(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as SHARED_LITERAL(__)  then daeExpSharedLiteral(e, context, &preExp, &varDecls, useFlatArrayNotation)
+  case e as PARTEVALFUNCTION(__)then daeExpPartEvalFunction(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as BOX(__)             then daeExpBox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as UNBOX(__)           then daeExpUnbox(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   case e as RSUB(__)            then daeExpRSub(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-
+  case e as METARECORDCALL(__)  then daeExpRecordCall(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  case e as META_TUPLE(__)      then error(sourceInfo(), 'Unsupported META_TUPLE exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as META_OPTION(__)     then error(sourceInfo(), 'Unsupported META_OPTION exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
+  case e as MATCHEXPRESSION(__) then error(sourceInfo(), 'Unsupported MATCHEXPRESSION exp:<%ExpressionDumpTpl.dumpExp(e,"\"")%>')
   else error(sourceInfo(), 'Unknown exp:<%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end daeExp;
 
@@ -1009,7 +1027,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(iterType=COMBINE()),iterators=iterators as {_}) then
   (
   let &tmpVarDecls = buffer ""
-  let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
   let &rangeExpPre = buffer ""
   let arrayTypeResult = expTypeFromExpArray(r)
@@ -1074,11 +1091,12 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           '<%res%>(<%arrIndex%>++) = <%reductionBodyExpr%>;'
     else match ri.foldExp case SOME(fExp) then
       let &foldExpPre = buffer ""
-      let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+      let fExpStr = daeExp(fExp, context, &foldExpPre, &tmpVarDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       if foundFirst then
       <<
-      if(<%foundFirst%>)
+      if (<%foundFirst%>)
       {
+        <%foldExpPre%>
         <%res%> = <%fExpStr%>;
       }
       else
@@ -1154,10 +1172,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
           <%dimSizes%>;
           <%res%>.setDims(<%dim_vec%>);
           >>
-
         else
           '<%res%>.setDims(<%length%>);'%>
-
        >>
      else
         (if foundFirst then
@@ -1169,7 +1185,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
         <%&preDefault%>
         <%res%> = <%defaultValue%>; /* defaultValue */
         >>)
-      )
+    )
   let loop =
     <<
     while(1) {
@@ -1372,9 +1388,9 @@ template daeExpMatrixName2(ComponentRef cr)
 
   match cr
   case CREF_IDENT(__) then
-    '<%ident%>'
- case CREF_QUAL(__) then               '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%daeExpMatrixName2(componentRef)%>'
-
+    '<%System.unquoteIdentifier(ident)%>'
+  case CREF_QUAL(__) then
+    '<%System.unquoteIdentifier(ident)%><%subscriptsToCStrForArray(subscriptLst)%>_P_<%daeExpMatrixName2(componentRef)%>'
   case WILD(__) then ' '
   else "CREF_NOT_IDENT_OR_QUAL"
 end daeExpMatrixName2;
@@ -1660,6 +1676,7 @@ end structParams;
 
 template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
                       Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Generates code for the creation and initialization of a record instance."
 ::=
   match rec
   case RECORD(__) then
@@ -1670,6 +1687,20 @@ template daeExpRecord(Exp rec, Context context, Text &preExp, Text &varDecls, Si
   let &preExp += ass
   name
 end daeExpRecord;
+
+template daeExpRecordCall(Exp rec, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl,
+                          Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+ "Same as daeExpRecord."
+::=
+  match rec
+  case METARECORDCALL(path=path, args=exps, fieldNames=comp) then
+  let name = tempDecl(underscorePath(path) + "Type", &varDecls)
+  let ass = List.zip(exps,comp) |>  (exp,compn) =>
+    let compnStr = crefStr(makeUntypedCrefIdent(compn))
+    '<%name%>.<%compnStr%> = <%daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
+  let &preExp += ass
+  name
+end daeExpRecordCall;
 
 template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/,SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,
                     Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -1918,27 +1949,28 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     'semiLinear(<%var1%>,<%var2%>,<%var3%>)'
 
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ty), expLst={array}) then
-    //let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let arr_tp_str = expTypeShort(ty)
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).second;<%\n%>'
     '<%tvar%>'
-  case CALL(path=IDENT(name="sum"), attr=CALL_ATTR(ty = ty), expLst={array}) then
-    //let &tmpVar = buffer "" /*BUFD*/
-    let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    let arr_tp_str = expTypeShort(ty)
-    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = sum_array<<%arr_tp_str%>>(<%expVar%>);<%\n%>'
-    '<%tvar%>'
 
   case CALL(path=IDENT(name="min"), attr=CALL_ATTR(ty = ty), expLst={array}) then
-    //let &tmpVar = buffer "" /*BUFD*/
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let arr_tp_str = expTypeShort(ty)
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = min_max<<%arr_tp_str%>>(<%expVar%>).first;<%\n%>'
     '<%tvar%>'
+
+  case CALL(path=IDENT(name="sum"), attr=CALL_ATTR(ty = ty), expLst={array}) then
+    let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let arr_tp_str = expTypeShort(ty)
+    'sum_array<<%arr_tp_str%>>(<%expVar%>)'
+
+  case CALL(path=IDENT(name="product"), attr=CALL_ATTR(ty = ty), expLst={array}) then
+    let expVar = daeExp(array, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let arr_tp_str = expTypeShort(ty)
+    'product_array<<%arr_tp_str%>>(<%expVar%>)'
 
   case call as CALL(path=IDENT(name="vector"), expLst={exp}, attr=CALL_ATTR(ty=ty)) then
     let expVar = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -2032,6 +2064,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var1 = daeExp(A, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let tvar = tempDecl('DynArrayDim2<int>', &varDecls)
     let &preExp += 'identity_alloc(<%var1%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
+
+  case CALL(path=IDENT(name="diagonal"), expLst={v}, attr=CALL_ATTR(ty=ty as T_ARRAY(ty=elty))) then
+    let var1 = daeExp(v, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let tvar = tempDecl('DynArrayDim2<<%expTypeShort(elty)%>>', &varDecls)
+    let &preExp += 'diagonal_alloc(<%var1%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
 
   case CALL(path=IDENT(name="rem"), expLst={e1, e2}) then
@@ -2179,14 +2217,12 @@ case LBINARY(__) then
 end daeExpLbinary;
 
 template expTypeFromExpFlag(Exp exp, Integer flag)
+ "Generate type helper."
 ::=
   match exp
   case ICONST(__)        then match flag case 8 then "int" case 1 then "int" else "int"
   case RCONST(__)        then match flag case 1 then "double" else "double"
-  case SCONST(__)        then if acceptMetaModelicaGrammar() then
-                                (match flag case 1 then "metatype" else "modelica_metatype")
-                              else
-                                (match flag case 1 then "string" else "modelica_string")
+  case SCONST(__)        then match flag case 1 then "string" else "modelica_string"
   case BCONST(__)        then match flag case 1 then "bool" else "modelica_boolean"
   case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "int" else "int"
   case e as BINARY(__)
@@ -2195,28 +2231,31 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case e as LUNARY(__)
   case e as RELATION(__) then expTypeFromOpFlag(e.operator, flag)
   case IFEXP(__)         then expTypeFromExpFlag(expThen, flag)
-  case CALL(attr=CALL_ATTR(__))          then expTypeFlag(attr.ty, flag)
+  case CALL(attr=CALL_ATTR(__)) then expTypeFlag(attr.ty, flag)
   case c as RECORD(__)   then expTypeFlag(c.ty, flag)
   case c as ARRAY(__)
   case c as MATRIX(__)
   case c as RANGE(__)
   case c as CAST(__)
+  case c as TSUB(__)
   case c as CREF(__)
   case c as CODE(__)     then expTypeFlag(c.ty, flag)
-  case ASUB(__)          then expTypeFromExpFlag(exp, flag)
+  case c as ASUB(__)     then expTypeFlag(typeof(c), flag)
   case REDUCTION(__)     then expTypeFlag(typeof(exp), flag)
   case e as CONS(__)
   case e as LIST(__)
   case e as SIZE(__)     then expTypeFlag(typeof(e), flag)
+  case c as RSUB(ix=-1)  then expTypeFlag(c.ty, flag)
 
   case META_TUPLE(__)
   case META_OPTION(__)
   case MATCHEXPRESSION(__)
   case METARECORDCALL(__)
+  case RSUB(__)
   case BOX(__)           then match flag case 1 then "metatype" else "modelica_metatype"
   case c as UNBOX(__)    then expTypeFlag(c.ty, flag)
   case c as SHARED_LITERAL(__) then expTypeFromExpFlag(c.exp, flag)
-  else 'ERROR:expTypeFromExpFlag <%ExpressionDumpTpl.dumpExp(exp,"\"")%> '
+  else error(sourceInfo(), 'expTypeFromExpFlag(flag=<%flag%>):<%ExpressionDumpTpl.dumpExp(exp,"\"")%>')
 end expTypeFromExpFlag;
 
 template expTypeFromOpFlag(Operator op, Integer flag)
@@ -2301,7 +2340,11 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
     let &preExp += 'divide_array<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
     '<%tvar%>'
-  case DIV_SCALAR_ARRAY(__) then "daeExpBinary:ERR DIV_SCALAR_ARR not supported"
+  case DIV_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
+    let type = expTypeShort(ty.ty)
+    let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
+    let &preExp += 'divide_array<<%type%>>(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
+    '<%tvar%>'
   case UMINUS(__) then "daeExpBinary:ERR UMINUS not supported"
   case UMINUS_ARR(__) then "daeExpBinary:ERR UMINUS_ARR not supported"
   case ADD_ARR(ty=T_ARRAY(dims=dims)) then
@@ -2339,7 +2382,6 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case MUL_SCALAR_PRODUCT(__) then
     let type = expTypeShort(ty)
     'dot_array<<%type%>>(<%e1%>, <%e2%>)'
-  case DIV_SCALAR_ARRAY(__) then "daeExpBinary:ERR DIV_SCALAR_ARRAY not supported"
   case POW_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
     let tvar = tempDecl(expTypeArrayDims(ty.ty, dims), &varDecls /*BUFD*/)
     let &preExp += 'pow_array_scalar(<%e1%>, <%e2%>, <%tvar%>);<%\n%>'
@@ -2763,7 +2805,7 @@ match exp
 case ecr as CREF(componentRef=WILD(__)) then
   ''
 case ecr as CREF(componentRef=cr, ty=ty as DAE.T_ARRAY()) then
-  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let lhsStr = scalarLhsCref(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   match cref2simvar(cr, simCode)
   case SIMVAR(varKind=varKind) then
     match varKind
@@ -2779,8 +2821,8 @@ case ecr as CREF(componentRef=cr, ty=ty as DAE.T_ARRAY()) then
       >>
     end match
   end match
-case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
-  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+case UNARY(exp = e as CREF(ty=t as DAE.T_ARRAY(__))) then
+  let lhsStr = scalarLhsCref(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   match context
   case SIMULATION_CONTEXT(__) then
     <<
@@ -2792,9 +2834,12 @@ case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
 case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
   match context
   case FUNCTION_CONTEXT(__) then
-    writeLhsCref1(exp, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let lhsStr = scalarLhsCref(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%lhsStr%> = <%rhsStr%>;
+    >>
   else
-    let lhsStr = contextCref(crefStripSubs(cr), context, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    let lhsStr = contextCref(crefStripSubs(cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
       '_<%lhsStr%>P_<%var.name%>_ = <%rhsStr%>.<%var.name%>_;'
@@ -2803,9 +2848,12 @@ case CREF(componentRef = cr, ty=DAE.T_COMPLEX(varLst = varLst, complexClassType=
     >>
   end match
 case CREF(__) then
-  writeLhsCref1(exp, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let lhsStr = scalarLhsCref(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  <<
+  <%lhsStr%> = <%rhsStr%>;
+  >>
 case UNARY(exp = e as CREF(__)) then
-  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  let lhsStr = scalarLhsCref(e, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   <<
   <%lhsStr%> = -<%rhsStr%>;
   >>
@@ -2813,17 +2861,32 @@ case ARRAY(array = {}) then
   <<
 
   >>
-case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
+case ARRAY(ty=T_ARRAY(ty=ty, dims=dims), array=expl) then
   let typeShort = expTypeFromExpShort(exp)
   let fcallsuf = match listLength(dims) case 1 then "" case i then '_<%i%>D'
   let body = (List.zip(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) =>
                  let lhsstr = scalarLhsCref(lhs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
                  let indxstr = (indxs |> i => '<%i%>' ;separator=",")
-                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);/*writeLhsCref2*/'
+                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);'
               ;separator="\n")
   <<
   <%body%>
   >>
+case RECORD(exps=exps, comp=comp) then
+  // This case has only been seen for Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder with the new frontend.
+  // The error shall prevent the example from running for now as compilation lasts very long and simulation fails anyway.
+  error(sourceInfo(), 'writeLhsCref RECORD UNHANDLED: <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>')
+  /*
+  // assign fields of rhs record to lhs exps, one by one
+  let body = (List.zip(exps, comp) |> (exp, compn) =>
+                let lhsStr = scalarLhsCref(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+                let compnStr = crefStr(makeUntypedCrefIdent(compn))
+                '<%lhsStr%> = <%rhsStr%>.<%compnStr%>;'
+              ;separator="\n")
+  <<
+  <%body%>
+  >>
+  */
 case ASUB(__) then
   error(sourceInfo(), 'writeLhsCref UNHANDLED ASUB (should never be part of a lhs expression): <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>')
 else
@@ -2831,35 +2894,27 @@ else
 
 end writeLhsCref;
 
-template writeLhsCref1(Exp exp, String rhsStr, Context context, Text &preExp,Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
- "Generate a simple assignment of a tuple element"
+template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+  "Generates a single lhs cref of an assignment"
 ::=
-  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-  <<
-  <%lhsStr%> = <%rhsStr%> /*writeLhsCref1*/;
-  >>
-end writeLhsCref1;
-
-template scalarLhsCref(Exp ecr, Context context, Text &preExp,Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
 match ecr
 case ecr as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
   if crefNoSub(ecr.componentRef) then
-    contextCref(ecr.componentRef, context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    contextCref(ecr.componentRef, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
   else
-    daeExpCrefRhs(ecr, context, &preExp, &varDecls, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    daeExpCref(true, ecr, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 case ecr as CREF(componentRef=cr as CREF_QUAL(__)) then
-    if crefIsScalar(cr, context) then
-      contextCref(ecr.componentRef, context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-    else
-      let arrName = contextCref(crefStripSubs(cr), context, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-      <<
-      <%arrName%>(<%threadDimSubList(crefDims(cr),crefSubs(cr),context,&preExp,&varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)
-      >>
-
+  if crefIsScalar(cr, context) then
+    contextCref(ecr.componentRef, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  else
+    let arrName = contextCref(crefStripSubs(cr), context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%arrName%>(<%threadDimSubList(crefDims(cr), crefSubs(cr), context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>)
+    >>
 case ecr as CREF(componentRef=CREF_QUAL(__)) then
-    contextCref(ecr.componentRef, context,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+  contextCref(ecr.componentRef, context, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
 else
-    "ONLY_IDENT_OR_QUAL_CREF_SUPPORTED_SLHS"
+  error(sourceInfo(), 'scalarLhsCref UNSUPPORTED: <%ExpressionDumpTpl.dumpExp(ecr,"\"")%>')
 end scalarLhsCref;
 
 

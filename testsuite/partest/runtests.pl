@@ -323,6 +323,9 @@ foreach(@test_list) {
   $test_queue->enqueue($_);
 }
 
+# Signal that there is no more work to be sent
+$test_queue->end();
+
 # Check if we can open /proc/cpuinfo to see how many cores are available, and
 # use that many threads instead.
 if ($check_proc_cpu) {
@@ -361,7 +364,9 @@ for(my $i = 0; $i < $thread_count; $i++) {
 # Wait for the tests to finish.
 foreach my $thr (threads->list()) {
   $thr->join();
+  print "{joined thread: " . $thr->tid() . "}"
 }
+
 
 # Print out the list of tests that failed, and a summary of how many failed.
 print color 'reset';

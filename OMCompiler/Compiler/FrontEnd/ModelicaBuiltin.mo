@@ -62,7 +62,7 @@ annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 </html>"));
 end terminal;
 
-type AssertionLevel = enumeration(error, warning) annotation(__OpenModelica_builtin=true,
+type AssertionLevel = enumeration(warning, error) annotation(__OpenModelica_builtin=true,
   Documentation(info="<html>Used by <a href=\"modelica://assert\">assert()</a></html>"));
 
 function assert "Check an assertion condition"
@@ -3786,22 +3786,22 @@ annotation(
   preferredView="text");
 end getInheritedClasses;
 
-function getComponentsTest
+function getComponentsTest "returns an array of records with information about the components of the given class"
   input TypeName name;
   output Component[:] components;
   record Component
-    String className; // when building record the constructor. Records are allowed to contain only components of basic types, arrays of basic types or other records.
-    String name;
-    String comment;
-    Boolean isProtected;
-    Boolean isFinal;
-    Boolean isFlow;
-    Boolean isStream;
-    Boolean isReplaceable;
+    String className "the type of the component";
+    String name "the name of the component";
+    String comment "the comment of the component";
+    Boolean isProtected "true if component is protected";
+    Boolean isFinal "true if component is final";
+    Boolean isFlow "true if component is flow";
+    Boolean isStream "true if component is stream";
+    Boolean isReplaceable "true if component is replaceable";
     String variability "'constant', 'parameter', 'discrete', ''";
     String innerOuter "'inner', 'outer', ''";
     String inputOutput "'input', 'output', ''";
-    String dimensions[:];
+    String dimensions[:] "array with the dimensions of the component";
   end Component;
 external "builtin";
 annotation(Documentation(info="<html>

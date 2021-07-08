@@ -228,7 +228,7 @@ public function compileModel "Compiles a model given a file-prefix, helper funct
 protected
   String omhome = Settings.getInstallationDirectoryPath(),omhome_1 = System.stringReplace(omhome, "\"", "");
   String pd = Autoconf.pathDelimiter;
-  String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode,workDir = (if stringEq(workingDir, "") then "" else workingDir + pd);
+  String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode,workDir = (if stringEq(workingDir, "") then "" else workingDir + pd), linkType = "dynamic";
   String fileDLL = workDir + fileprefix + Autoconf.dllExt,
          fileEXE = workDir + fileprefix + Autoconf.exeExt,
          fileLOG = workDir + fileprefix + ".log";
@@ -252,7 +252,13 @@ algorithm
     setMakeVars := sum("set "+var+"&& " for var in makeVarsNoBinding);
     cdWorkingDir := if stringEmpty(workingDir) then "" else ("cd \"" + workingDir + "\"&& ");
     winCompileMode := if Testsuite.isRunning() then "serial" else "parallel";
-    s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", System.openModelicaPlatform(), " ", winCompileMode});
+    if Flags.getConfigEnum(Flags.LINK_TYPE) == 1 then
+      linkType := "static";
+    elseif Flags.getConfigEnum(Flags.LINK_TYPE) == 2 then
+      linkType := "dynamic";
+    end if;
+    linkType := if Testsuite.isRunning() then "dynamic" else linkType;
+    s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", System.openModelicaPlatform(), " ", winCompileMode, " ", linkType});
   else
     numParallel := if Testsuite.isRunning() then 1 else Config.noProc();
     cdWorkingDir := if stringEmpty(workingDir) then "" else (" -C \"" + workingDir + "\"");

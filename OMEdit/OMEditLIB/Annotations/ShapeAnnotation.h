@@ -183,6 +183,8 @@ public:
   qreal getStartAngle() {return mStartAngle;}
   void setEndAngle(qreal endAngle) {mEndAngle = endAngle;}
   qreal getEndAngle() {return mEndAngle;}
+  void setClosure(StringHandler::EllipseClosure closure) {mClosure = closure;}
+  StringHandler::EllipseClosure getClosure() {return mClosure;}
   void setTextString(QString textString);
   QString getTextString() {return mOriginalTextString;}
   void setFontName(QString fontName) {mFontName = fontName;}
@@ -269,6 +271,7 @@ protected:
   qreal mRadius;
   qreal mStartAngle;
   qreal mEndAngle;
+  StringHandler::EllipseClosure mClosure;
   QString mOriginalTextString;
   QString mTextString;
   qreal mFontSize;

@@ -40,7 +40,7 @@
  * Modelica slice.
  * Defined by an index vector iset != NULL or by start:stop or start:step:stop,
  * start == stop and step == 0 meaning reduction of dimension,
- * start == 0 or stop == 0 meaning end.
+ * is_stop_end marking stop == end.
  */
 class Slice {
  public:
@@ -49,6 +49,7 @@ class Slice {
     start = 1;
     step = 1;
     stop = 0;
+    is_stop_end = true;
     iset = NULL;
   }
 
@@ -57,6 +58,7 @@ class Slice {
     start = index;
     step = 0;
     stop = index;
+    is_stop_end = false;
     iset = NULL;
   }
 
@@ -64,6 +66,7 @@ class Slice {
     this->start = start;
     step = 1;
     this->stop = stop;
+    is_stop_end = false;
     iset = NULL;
   }
 
@@ -71,6 +74,7 @@ class Slice {
     this->start = start;
     this->step = step;
     this->stop = stop;
+    is_stop_end = false;
     iset = NULL;
   }
 
@@ -79,6 +83,7 @@ class Slice {
     start = 0;
     step = 0;
     stop = 0;
+    is_stop_end = false;
     if (indices.getNumDims() != 1)
       throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                     "Slice requires an index vector");
@@ -89,6 +94,7 @@ class Slice {
   int start;
   int step;
   int stop;
+  bool is_stop_end;
   const BaseArray<int> *iset;
 };
 
@@ -122,32 +128,36 @@ class ArraySliceConst: public BaseArray<T> {
       else {
         _isets[dim - 1] = NULL;
         int maxIndex = baseArray.getDim(dim);
-        int start = sit->start > 0? sit->start: maxIndex;
-        int stop = sit->stop > 0? sit->stop: maxIndex;
+        int start = sit->start;
         int step = sit->step;
-        if (start > maxIndex || stop > maxIndex)
+        int stop = sit->is_stop_end? maxIndex: sit->stop;
+        size = step == 0? 1: std::max(0, (stop - start) / step + 1);
+        if (size > 0 && (start > maxIndex || stop > maxIndex))
           throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                         "Wrong slice exceeding array size");
-        if (start == 1 && step == 1 && stop == maxIndex)
-          // all indices; avoid trivial fill of _idxs
-          size = _baseArray.getDim(dim);
-        else {
-          size = step == 0? 1: std::max(0, (stop - start) / step + 1);
+        if (start != 1 || step != 1 || stop != maxIndex) {
+          // only fill non-trivial _idxs if this is not WHOLEDIM
           for (int i = 0; i < size; i++)
             dit->push_back(start + i * step);
         }
       }
-      if (size == 1 && sit->step == 0)
+      if (sit->iset == NULL && size == 1 && sit->step == 0)
         // preset constant _baseIdx in case of reduction
         _baseIdx[dim - 1] = sit->iset != NULL? (*_isets[dim - 1])(1): (*dit)[0];
-      else
+      else {
+        if (size == 0)
+          _baseIdx[dim - 1] = 0; // mark empty dimension to distinguish it from WHOLEDIM
+        else
+          _baseIdx[dim - 1] = 1; // mark regular case with a positive value
         // store dimension of array slice
         _dims.push_back(size);
+      }
       dit++;
     }
     // use all indices of remaining dims
     for (; dim <= baseArray.getNumDims(); dim++) {
       _isets[dim - 1] = NULL;
+      _baseIdx[dim - 1] = 1; // mark regular case with positive value
       _dims.push_back(_baseArray.getDim(dim));
     }
   }
@@ -248,6 +258,21 @@ class ArraySliceConst: public BaseArray<T> {
     return _baseArray(baseIdx(2, idx));
   }
 
+  virtual const T& operator()(size_t i, size_t j, size_t k) const {
+    size_t idx[] = {i, j, k};
+    return _baseArray(baseIdx(3, idx));
+  }
+
+  virtual const T& operator()(size_t i, size_t j, size_t k, size_t l) const {
+    size_t idx[] = {i, j, k, l};
+    return _baseArray(baseIdx(4, idx));
+  }
+
+  virtual const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) const {
+    size_t idx[] = {i, j, k, l, m};
+    return _baseArray(baseIdx(5, idx));
+  }
+
  protected:
   const BaseArray<T> &_baseArray;  // underlying array
   vector<const BaseArray<int>*> _isets; // given index sets per dimension
@@ -271,8 +296,12 @@ class ArraySliceConst: public BaseArray<T> {
       size = iset? iset->getNumElems(): dit->size();
       switch (size) {
       case 0:
-        // all indices
-        _baseIdx[dim - 1] = *idx++;
+        if (_baseIdx[dim - 1] > 0)
+          // all indices
+          _baseIdx[dim - 1] = *idx++;
+        else
+          throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
+                                        "Access to empty ArraySlice");
         break;
       case 1:
         // reduction
@@ -292,7 +321,7 @@ class ArraySliceConst: public BaseArray<T> {
     size_t processed = 0;
     const BaseArray<int> *iset = _isets[dim - 1];
     size_t size = iset? iset->getNumElems(): _idxs[dim - 1].size();
-    if (size == 0)
+    if (size == 0 && _baseIdx[dim - 1] > 0)
       size = _baseArray.getDim(dim);
     for (size_t i = 1; i <= size; i++) {
       if (iset)
@@ -385,7 +414,7 @@ class ArraySlice: public ArraySliceConst<T> {
     size_t processed = 0;
     const BaseArray<int> *iset = ArraySliceConst<T>::_isets[dim - 1];
     size_t size = iset? iset->getNumElems(): _idxs[dim - 1].size();
-    if (size == 0)
+    if (size == 0 && _baseIdx[dim - 1] > 0)
       size = _baseArray.getDim(dim);
     for (size_t i = 1; i <= size; i++) {
       if (iset)
@@ -406,7 +435,7 @@ class ArraySlice: public ArraySliceConst<T> {
   void setEachDim(size_t dim, const T& value) {
     const BaseArray<int> *iset = ArraySliceConst<T>::_isets[dim - 1];
     size_t size = iset? iset->getNumElems(): _idxs[dim - 1].size();
-    if (size == 0)
+    if (size == 0 && _baseIdx[dim - 1] > 0)
       size = _baseArray.getDim(dim);
     for (size_t i = 1; i <= size; i++) {
       if (iset)

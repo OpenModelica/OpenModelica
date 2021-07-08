@@ -79,7 +79,7 @@ void partest(cache=true, extraArgs='') {
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="${MSYS_WORKSPACE}\\build\\lib\\omlibrary"
      echo cd ${MSYS_WORKSPACE}/testsuite/partest
-     echo time perl ./runtests.pl -j8 -nocolour -with-xml
+     echo time perl ./runtests.pl -nocolour -with-xml
      echo CODE=\$?
      echo if test "\$CODE\" = 0 -o "\$CODE" = 7; then
      echo   cp -f ../runtest.db.* "${env.RUNTESTDB}/"

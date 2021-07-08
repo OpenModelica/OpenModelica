@@ -206,6 +206,7 @@ type LinePattern = enumeration(None, Solid, Dash, Dot, DashDot, DashDotDot);
 type FillPattern = enumeration(None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere);
 type BorderPattern = enumeration(None, Raised, Sunken, Engraved);
 type Smooth = enumeration(None, Bezier);
+type EllipseClosure = enumeration(None, Chord, Radial); // added in Modelica 3.4
 
 type Arrow = enumeration(None, Open, Filled, Half);
 type TextStyle = enumeration(Bold, Italic, UnderLine);
@@ -315,6 +316,7 @@ record Ellipse
   Real extent[2,2]/*(each final unit=\"mm\")*/;
   Real startAngle/*(quantity=\"angle\", unit=\"deg\")*/ = 0;
   Real endAngle/*(quantity=\"angle\", unit=\"deg\")*/ = 360;
+  EllipseClosure closure = if startAngle == 0 and endAngle == 360 then EllipseClosure.Chord else EllipseClosure.Radial; // added in Modelica 3.4
 end Ellipse;
 
 record Text
@@ -460,121 +462,6 @@ end Documentation;
 "
 ;
 
-/*
-partial record GraphicItem
-  Boolean visible = true;
-  Point origin = {0, 0};
-  Real rotation(quantity="angle", unit="deg")=0;
-end GraphicItem;
-
-record CoordinateSystem
-  Extent extent;
-  Boolean preserveAspectRatio=true;
-  Real initialScale = 0.1;
-  DrawingUnit grid[2];
-end CoordinateSystem;
-
-// example
-// CoordinateSystem(extent = {{-10, -10}, {10, 10}});
-// i.e. a coordinate system with width 20 units and height 20 units.
-
-record Icon "Representation of the icon layer"
-  CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
-  GraphicItem[:] graphics;
-end Icon;
-
-record Diagram "Representation of the diagram layer"
-  CoordinateSystem coordinateSystem(extent = {{-100, -100}, {100, 100}});
-  GraphicItem[:] graphics;
-end Diagram;
-
-type Color = Integer[3](min=0, max=255) "RGB representation";
-constant Color Black = zeros(3);
-type LinePattern = enumeration(None, Solid, Dash, Dot, DashDot, DashDotDot);
-type FillPattern = enumeration(None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere);
-type BorderPattern = enumeration(None, Raised, Sunken, Engraved);
-type Smooth = enumeration(None, Bezier);
-
-type Arrow = enumeration(None, Open, Filled, Half);
-type TextStyle = enumeration(Bold, Italic, UnderLine);
-type TextAlignment = enumeration(Left, Center, Right);
-
-// Filled shapes have the following attributes for the border and interior.
-
-record FilledShape "Style attributes for filled shapes"
-  Color lineColor = Black "Color of border line";
-  Color fillColor = Black "Interior fill color";
-  LinePattern pattern = LinePattern.Solid "Border line pattern";
-  FillPattern fillPattern = FillPattern.None "Interior fill pattern";
-  DrawingUnit lineThickness = 0.25 "Line thickness";
-end FilledShape;
-
-record Transformation
-  Point origin = {0, 0};
-  Extent extent;
-  Real rotation(quantity="angle", unit="deg")=0;
-end Transformation;
-
-record Placement
-  Boolean visible = true;
-  Transformation transformation "Placement in the dagram layer";
-  Transformation iconTransformation "Placement in the icon layer";
-end Placement;
-
-record IconMap
-  Extent extent = {{0, 0}, {0, 0}};
-  Boolean primitivesVisible = true;
-end IconMap;
-
-record DiagramMap
-  Extent extent = {{0, 0}, {0, 0}};
-  Boolean primitivesVisible = true;
-end DiagramMap;
-
-record Line
-  extends GraphicItem;
-  Point points[:];
-  Color color = Black;
-  LinePattern pattern = LinePattern.Solid;
-  DrawingUnit thickness = 0.25;
-  Arrow arrow[2] = {Arrow.None, Arrow.None} "{start arrow, end arrow}";
-  DrawingUnit arrowSize=3;
-  Smooth smooth = Smooth.None "Spline";
-end Line;
-
-record Polygon
-  extends GraphicItem;
-  extends FilledShape;
-  Point points[:];
-  Smooth smooth = Smooth.None "Spline outline";
-end Polygon;
-
-record Ellipse
-  extends GraphicItem;
-  extends FilledShape;
-  Extent extent;
-  Real startAngle(quantity="angle", unit="deg")=0;
-  Real endAngle(quantity="angle", unit="deg")=360;
-end Ellipse;
-
-record Text
-  extends GraphicItem;
-  extends FilledShape;
-  Extent extent;
-  String textString;
-  Real fontSize = 0 "unit pt";
-  String fontName;
-  TextStyle textStyle[:];
-  TextAlignment horizontalAlignment = TextAlignment.Center;
-end Text;
-
-record Bitmap
-  extends GraphicItem;
-  Extent extent;
-  String fileName "Name of bitmap file";
-  String imageSource "Base64 representation of bitmap";
-end Bitmap;
-*/
 
 annotation(__OpenModelica_Interface="frontend");
 end Constants;

@@ -52,6 +52,9 @@ void fill_array_from_shape(const spec_type& sp,BaseArray<T>& s,BaseArray<T>& d);
 void BOOST_EXTENSION_EXPORT_DECL identity_alloc(size_t n, DynArrayDim2<int>& I);
 
 template <typename T>
+void diagonal_alloc(const BaseArray<T>& v, BaseArray<T>& D);
+
+template <typename T>
 void promote_array(size_t n, const BaseArray<T>& s, BaseArray<T>& d);
 
 template <typename T>
@@ -65,6 +68,9 @@ void multiply_array_elem_wise(const BaseArray<T> &leftArray, const BaseArray<T> 
 
 template <typename T>
 void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outputArray);
+
+template <typename T>
+void divide_array(const T &b, const BaseArray<T>& inputArray, BaseArray<T>& outputArray);
 
 template <typename T>
 void divide_array_elem_wise(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray);
@@ -95,6 +101,9 @@ void usub_array(const BaseArray<T>& a , BaseArray<T>& b);
 
 template < typename T >
 T sum_array(const BaseArray<T>& x);
+
+template < typename T >
+T product_array(const BaseArray<T>& x);
 
 /**
 finds min/max elements of an array */

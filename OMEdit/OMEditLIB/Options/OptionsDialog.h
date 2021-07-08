@@ -614,6 +614,9 @@ public:
   QComboBox* getTargetBuildComboBox() {return mpTargetBuildComboBox;}
   QComboBox* getCompilerComboBox() {return mpCompilerComboBox;}
   QComboBox* getCXXCompilerComboBox() {return mpCXXCompilerComboBox;}
+#ifdef Q_OS_WIN
+  QCheckBox* getUseStaticLinkingCheckBox() {return mpUseStaticLinkingCheckBox;}
+#endif
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
@@ -637,6 +640,9 @@ private:
   QComboBox *mpCompilerComboBox;
   Label *mpCXXCompilerLabel;
   QComboBox *mpCXXCompilerComboBox;
+#ifdef Q_OS_WIN
+  QCheckBox *mpUseStaticLinkingCheckBox;
+#endif
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;

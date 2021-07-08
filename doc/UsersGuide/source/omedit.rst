@@ -1335,6 +1335,9 @@ Simulation
 
   -  *CXX Compiler* – sets the CXX compiler for compiling the generated code.
 
+  -  *Use static linking* – if true then static linking is used for simulation executable.
+     The default is dynamic linking. This option is only available on Windows.
+
   -  *Ignore __OpenModelica_commandLineOptions annotation* – if true then ignores the __OpenModelica_commandLineOptions
      annotation while running the simulation.
 

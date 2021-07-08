@@ -219,6 +219,24 @@ void identity_alloc(size_t n, DynArrayDim2<int>& I)
     I(i, i) = 1;
 }
 
+template <typename T>
+void diagonal_alloc(const BaseArray<T>& v, BaseArray<T>& D)
+{
+  if (v.getNumDims() != 1)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Error in diagonal, input must be vector");
+  if (D.getNumDims() != 2)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Error in diagonal, output must be matrix");
+  vector<size_t> dims = v.getDims();
+  size_t n = dims[0];
+  dims.push_back(n);
+  D.setDims(dims);
+  const T* v_data = v.getData();
+  T* D_data = D.getData();
+  std::fill(D_data, D_data + n * n, 0);
+  for (size_t i = 0; i < n; i++)
+    D_data[i * n + i] = v_data[i];
+}
+
  //template < typename T , size_t NumDims, size_t NumDims2 >
 template <typename T>
 void promote_array(size_t n, const BaseArray<T>& s, BaseArray<T>& d)
@@ -352,6 +370,19 @@ void divide_array(const BaseArray<T>& inputArray, const T &b, BaseArray<T>& outp
 }
 
 template <typename T>
+void divide_array(const T &b, const BaseArray<T>& inputArray, BaseArray<T>& outputArray)
+{
+  size_t nelems = inputArray.getNumElems();
+  if (outputArray.getNumElems() != nelems)
+  {
+    outputArray.setDims(inputArray.getDims());
+  }
+  const T* data = inputArray.getData();
+  T* aim = outputArray.getData();
+  std::transform(data, data + nelems, aim, std::bind1st(std::divides<T>(), b));
+}
+
+template <typename T>
 void divide_array_elem_wise(const BaseArray<T> &leftArray, const BaseArray<T> &rightArray, BaseArray<T> &resultArray)
 {
   size_t dimLeft = leftArray.getNumElems();
@@ -471,6 +502,14 @@ T sum_array (const BaseArray<T>& x)
 {
   const T* data = x.getData();
   T val = std::accumulate(data, data + x.getNumElems(), T());
+  return val;
+}
+
+template <typename T>
+T product_array(const BaseArray<T>& x)
+{
+  const T* data = x.getData();
+  T val = std::accumulate(data, data + x.getNumElems(), T(1), std::multiplies<T>());
   return val;
 }
 
@@ -603,6 +642,11 @@ template void BOOST_EXTENSION_EXPORT_DECL
 transpose_array(const BaseArray<bool>& x, BaseArray<bool>& a);
 
 template void BOOST_EXTENSION_EXPORT_DECL
+diagonal_alloc(const BaseArray<double>& v, BaseArray<double>& D);
+template void BOOST_EXTENSION_EXPORT_DECL
+diagonal_alloc(const BaseArray<int>& v, BaseArray<int>& D);
+
+template void BOOST_EXTENSION_EXPORT_DECL
 promote_array(size_t n, const BaseArray<double>& s, BaseArray<double>& d);
 template void BOOST_EXTENSION_EXPORT_DECL
 promote_array(size_t n, const BaseArray<int>& s, BaseArray<int>& d);
@@ -645,6 +689,11 @@ template void BOOST_EXTENSION_EXPORT_DECL
 divide_array(const BaseArray<int>& inputArray, const int &b, BaseArray<int>& outputArray);
 template void BOOST_EXTENSION_EXPORT_DECL
 divide_array(const BaseArray<bool>& inputArray, const bool &b, BaseArray<bool>& outputArray);
+
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array(const double &b, const BaseArray<double>& inputArray, BaseArray<double>& outputArray);
+template void BOOST_EXTENSION_EXPORT_DECL
+divide_array(const int &b, const BaseArray<int>& inputArray, BaseArray<int>& outputArray);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 divide_array_elem_wise(const BaseArray<double> &leftArray, const BaseArray<double> &rightArray, BaseArray<double> &resultArray);
@@ -706,6 +755,11 @@ template int BOOST_EXTENSION_EXPORT_DECL
 sum_array(const BaseArray<int>& x);
 template bool BOOST_EXTENSION_EXPORT_DECL
 sum_array(const BaseArray<bool>& x);
+
+template double BOOST_EXTENSION_EXPORT_DECL
+product_array(const BaseArray<double>& x);
+template int BOOST_EXTENSION_EXPORT_DECL
+product_array(const BaseArray<int>& x);
 
 template void BOOST_EXTENSION_EXPORT_DECL
 cross_array(const BaseArray<double>& a, const BaseArray<double>& b, BaseArray<double>& res);

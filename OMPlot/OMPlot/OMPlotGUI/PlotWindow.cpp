@@ -129,6 +129,8 @@ void PlotWindow::initializePlot(QStringList arguments)
   }
   setTimeUnit("");
   setPrefixUnits(false);
+  setCanUseXPrefixUnits(false);
+  setCanUseYPrefixUnits(false);
   /* read variables */
   QStringList variablesToRead;
   for(int i = 18; i < arguments.length(); i++)
@@ -1610,6 +1612,26 @@ void PlotWindow::setPrefixUnits(bool prefixUnits)
   mPrefixUnits = prefixUnits;
 }
 
+bool PlotWindow::canUseXPrefixUnits() const
+{
+  return mCanUseXPrefixUnits;
+}
+
+void PlotWindow::setCanUseXPrefixUnits(bool canUseXPrefixUnits)
+{
+  mCanUseXPrefixUnits = canUseXPrefixUnits;
+}
+
+bool PlotWindow::canUseYPrefixUnits() const
+{
+  return mCanUseYPrefixUnits;
+}
+
+void PlotWindow::setCanUseYPrefixUnits(bool canUseYPrefixUnits)
+{
+  mCanUseYPrefixUnits = canUseYPrefixUnits;
+}
+
 void PlotWindow::checkForErrors(QStringList variables, QStringList variablesPlotted)
 {
   QStringList nonExistingVariables;
@@ -2195,7 +2217,7 @@ bool SetupDialog::setupPlotCurve(VariablePageWidget *pVariablePageWidget)
   PlotCurve *pPlotCurve = pVariablePageWidget->getPlotCurve();
 
   /* set the legend title */
-  if (pPlotCurve->title().text().compare(pVariablePageWidget->getLegendTextBox()->text()) == 0) {
+  if (pPlotCurve->getCustomTitle().isEmpty() && pPlotCurve->title().text().compare(pVariablePageWidget->getLegendTextBox()->text()) == 0) {
     pPlotCurve->setCustomTitle("");
   } else {
     pPlotCurve->setCustomTitle(pVariablePageWidget->getLegendTextBox()->text());

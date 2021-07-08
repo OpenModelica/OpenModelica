@@ -343,6 +343,7 @@ function evalCref
   input Expression defaultExp;
   input EvalTarget target;
   input Boolean evalSubscripts = true;
+  input Boolean liftExp = true;
   output Expression exp;
 protected
   InstNode c;
@@ -353,7 +354,7 @@ algorithm
     case ComponentRef.CREF(node = c as InstNode.COMPONENT_NODE())
       guard not ComponentRef.isIterator(cref) and
             ComponentRef.nodeVariability(cref) <= Variability.NON_STRUCTURAL_PARAMETER
-      then evalComponentBinding(c, cref, defaultExp, target, evalSubscripts);
+      then evalComponentBinding(c, cref, defaultExp, target, evalSubscripts, liftExp);
 
     else defaultExp;
   end match;
@@ -365,6 +366,7 @@ function evalComponentBinding
   input Expression defaultExp "The expression returned if the binding couldn't be evaluated";
   input EvalTarget target;
   input Boolean evalSubscripts = true;
+  input Boolean liftExp = false "Ensure that the result has the same dimensions as the cref";
   output Expression exp;
 protected
   InstContext.Type exp_context;
@@ -374,6 +376,8 @@ protected
   list<Subscript> subs;
   Variability var;
   Option<Expression> start_exp;
+  Type cref_ty, exp_ty;
+  Integer dim_diff;
 algorithm
   exp_context := if InstNode.isFunction(InstNode.explicitParent(node))
     then NFInstContext.FUNCTION else NFInstContext.CLASS;
@@ -463,6 +467,16 @@ algorithm
   // Apply subscripts from the cref to the binding expression as needed.
   if evaluated then
     exp := subscriptBinding(exp, cref, evalSubscripts);
+  end if;
+
+  if liftExp and not Expression.contains(exp, Expression.isSplitSubscriptedExp) then
+    exp_ty := Expression.typeOf(exp);
+    cref_ty := Expression.typeOf(defaultExp);
+    dim_diff := Type.dimensionDiff(cref_ty, exp_ty);
+
+    if dim_diff > 0 then
+      exp := Expression.liftArrayList(List.firstN(Type.arrayDims(cref_ty), dim_diff), exp);
+    end if;
   end if;
 end evalComponentBinding;
 
@@ -2858,7 +2872,8 @@ protected
   Type ty;
 algorithm
   expl := Expression.arrayScalarElements(arg);
-  result := Expression.makeExpArray(expl, isLiteral = true);
+  result := Expression.makeExpArray(expl,
+    Type.arrayElementType(Expression.typeOf(arg)), isLiteral = true);
 end evalBuiltinVector;
 
 function evalBuiltinZeros

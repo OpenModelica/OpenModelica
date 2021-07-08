@@ -4390,10 +4390,10 @@ template assertCommon(Exp condition, list<Exp> messages, Exp level, Context cont
   let addInfoTextContext = match context
             case FUNCTION_CONTEXT(__) then ''
             else '<%\n%>omc_assert_warning(info, "The following assertion has been violated %sat time %f\n<%Util.escapeModelicaStringToCString(ExpressionDumpTpl.dumpExp(condition,"\""))%>", initial() ? "during initialization " : "", data->localData[0]->timeValue);'
-  let omcAssertFunc = match level case ENUM_LITERAL(index=2) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
+  let omcAssertFunc = match level case ENUM_LITERAL(index=1) then 'omc_assert_warning<%AddionalFuncName%>(' else 'omc_assert<%AddionalFuncName%>(threadData, '
   let warningTriggered = tempDeclZero("static int", &varDecls)
-  let TriggerIf = match level case ENUM_LITERAL(index=2) then 'if(!<%warningTriggered%>)<%\n%>' else ''
-  let TriggerVarSet = match level case ENUM_LITERAL(index=2) then '<%warningTriggered%> = 1;<%\n%>' else ''
+  let TriggerIf = match level case ENUM_LITERAL(index=1) then 'if(!<%warningTriggered%>)<%\n%>' else ''
+  let TriggerVarSet = match level case ENUM_LITERAL(index=1) then '<%warningTriggered%> = 1;<%\n%>' else ''
   <<
   <%TriggerIf%>
   {
@@ -7052,7 +7052,6 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
   case r as REDUCTION(reductionInfo=ri as REDUCTIONINFO(iterType=COMBINE()),iterators=iterators as {_}) then
   (
   let &tmpVarDecls = buffer ""
-  let &tmpExpPre = buffer ""
   let &bodyExpPre = buffer ""
   let &rangeExpPre = buffer ""
   let arrayTypeResult = expTypeFromExpArray(r)
@@ -7101,7 +7100,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp,
       let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls, &auxFunction)
       if foundFirst then
       <<
-      if(<%foundFirst%>)
+      if (<%foundFirst%>)
       {
         <%res%> = <%fExpStr%>;
       }

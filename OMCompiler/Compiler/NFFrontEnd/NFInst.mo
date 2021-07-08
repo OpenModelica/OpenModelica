@@ -103,6 +103,7 @@ import EvalConstants = NFEvalConstants;
 import VerifyModel = NFVerifyModel;
 import Structural = NFStructural;
 import UnorderedMap;
+import CheckModel = NFCheckModel;
 
 public
 
@@ -119,6 +120,7 @@ protected
   InstNode top, cls, inst_cls;
   String name;
   InstContext.Type context;
+  Integer var_count, eq_count;
 algorithm
   // gather here all the flags to disable expansion
   // and scalarization if -d=-nfScalarize is on
@@ -203,6 +205,9 @@ algorithm
   if Flags.isSet(Flags.NF_DUMP_FLAT) then
     print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
   end if;
+
+  //(var_count, eq_count) := CheckModel.checkModel(flatModel);
+  //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 end instClassInProgram;
 
 function instantiate

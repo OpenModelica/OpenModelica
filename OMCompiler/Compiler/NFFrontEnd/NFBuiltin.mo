@@ -345,12 +345,12 @@ constant Type STATESELECT_TYPE = Type.ENUMERATION(
   Absyn.IDENT("StateSelect"), {"never", "avoid", "default", "prefer", "always"});
 
 constant Type ASSERTIONLEVEL_TYPE = Type.ENUMERATION(
-  Absyn.IDENT("AssertionLevel"), {"error", "warning"});
-
-constant Expression ASSERTIONLEVEL_ERROR = Expression.ENUM_LITERAL(
-  ASSERTIONLEVEL_TYPE, "error", 1);
+  Absyn.IDENT("AssertionLevel"), {"warning", "error"});
 
 constant Expression ASSERTIONLEVEL_WARNING = Expression.ENUM_LITERAL(
+  ASSERTIONLEVEL_TYPE, "error", 1);
+
+constant Expression ASSERTIONLEVEL_ERROR = Expression.ENUM_LITERAL(
   ASSERTIONLEVEL_TYPE, "error", 2);
 
 constant Type UNCERTAINTY_TYPE = Type.ENUMERATION(

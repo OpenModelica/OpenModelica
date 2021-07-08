@@ -1299,5 +1299,21 @@ public
     end match;
   end simplify;
 
+  function sizeOf
+    input Type ty;
+    output Integer sz;
+  algorithm
+    sz := match ty
+      case INTEGER() then 1;
+      case REAL() then 1;
+      case STRING() then 1;
+      case BOOLEAN() then 1;
+      case CLOCK() then 1;
+      case ENUMERATION() then 1;
+      case ARRAY() then sizeOf(ty.elementType) * product(Dimension.size(d) for d in ty.dimensions);
+      else 0;
+    end match;
+  end sizeOf;
+
   annotation(__OpenModelica_Interface="frontend");
 end NFType;
