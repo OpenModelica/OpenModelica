@@ -2610,7 +2610,7 @@ template extArg(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunctio
     let &varDecls += 'void *<%name%>_c89;<%\n%>'
     //let arg_name = match shortTypeStr case "integer" then '<%name%>_packed' else name
     let arg_name = if isInput then (match shortTypeStr case "integer" then '<%name%>_packed' else name) else name
-    let &preExp += '<%name%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(&(<%arg_name%>));<%\n%>'
+    let &preExp += '<%name%>_c89 = (void*) data_of_<%shortTypeStr%>_c89_array(<%arg_name%>);<%\n%>'
     '(<%extType(t,isInput,true,false)%>) <%name%>_c89'
   case SIMEXTARG(cref=c, isInput=ii, outputIndex=0, type_=t) then
     let cr = match t case T_STRING(__) then contextCrefNoPrevExp(c,contextFunction,&auxFunction) else extVarName(c)
@@ -2631,7 +2631,7 @@ template extArgF77(SimExtArg extArg, Text &preExp, Text &varDecls, Text &auxFunc
   match extArg
   case SIMEXTARG(cref=c, isArray=true, type_=t) then
     // Arrays are converted to fortran format that are stored in _ext-variables.
-    'data_of_<%expTypeShort(t)%>_f77_array(&(<%extVarName(c)%>))'
+    'data_of_<%expTypeShort(t)%>_f77_array(<%extVarName(c)%>)'
   case SIMEXTARG(cref=c, outputIndex=oi, type_=T_INTEGER(__)) then
     // Always prefix fortran arguments with &.
     let suffix = if oi then "_ext"
@@ -4971,7 +4971,7 @@ template daeExternalCExp(Exp exp, Context context, Text &preExp, Text &varDecls,
   match typeof(exp)
     case T_ARRAY(__) then  // Array-expressions
       let shortTypeStr = expTypeShort(typeof(exp))
-      '(<%extType(typeof(exp),true,true,false)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
+      '(<%extType(typeof(exp),true,true,false)%>) data_of_<%shortTypeStr%>_array(<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
     case T_STRING(__) then
       let mstr = daeExp(exp, context, &preExp, &varDecls, &auxFunction)
       'MMC_STRINGDATA(<%mstr%>)'
@@ -4984,7 +4984,7 @@ template daeExternalF77Exp(Exp exp, Context context, Text &preExp, Text &varDecl
   match typeof(exp)
     case T_ARRAY(__) then  // Array-expressions
       let shortTypeStr = expTypeShort(typeof(exp))
-      '(<%extType(typeof(exp),true,true,false)%>) data_of_<%shortTypeStr%>_array(&<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
+      '(<%extType(typeof(exp),true,true,false)%>) data_of_<%shortTypeStr%>_array(<%daeExp(exp, context, &preExp, &varDecls, &auxFunction)%>)'
     case T_STRING(__) then
       let texp = daeExp(exp, contextFunction, &preExp, &varDecls, &auxFunction)
       let tvar = tempDecl(expTypeFromExpFlag(exp,8),&varDecls)

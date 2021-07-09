@@ -83,4 +83,26 @@ void* generic_array_get2(const base_array_t* source, size_t sze, int dim1, int d
 
 void generic_array_set(base_array_t* dst, void* val, copy_func cp_func, size_t sze, ...);
 
+
+
+
+/// Get data functions. They return the raw data without the dim and size specifications.
+
+// #define data_of_real_array(arr)                     (modelica_real*) ((arr).data)
+#define data_of_real_f77_array(arr)                 (modelica_real*) ((arr).data)
+// #define data_of_real_c89_array(arr)                 (modelica_real*) ((arr).data)
+
+/* Note: data_of_integer_array converts from integer_array to int*, for external functions only */
+// #define data_of_integer_array(arr)                  (int*) ((arr).data)
+// Integer arrays are packed to int when converted to fortran arrays
+#define data_of_integer_f77_array(arr)              (int*) ((arr).data)
+// #define data_of_integer_c89_array(arr)              (int*) ((arr).data)
+
+// #define data_of_boolean_array(arr)                  (modelica_boolean*) ((arr).data)
+#define data_of_boolean_f77_array(arr)              (modelica_boolean*) ((arr).data)
+// #define data_of_boolean_c89_array(arr)              (modelica_boolean*) ((arr).data)
+
+
+
+
 #endif
