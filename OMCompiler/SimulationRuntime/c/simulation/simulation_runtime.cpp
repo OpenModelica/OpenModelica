@@ -603,6 +603,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Completed!");
   }
 
+  if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
+  {
+    infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Starting!");
+    infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+    retVal = reconcileBoundaryConditions(data, threadData, retVal);
+    infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Completed!");
+  }
+
   if(0 == retVal && create_linearmodel) {
     rt_tick(SIM_TIMER_JACOBIAN);
     retVal = linearize(data, threadData);

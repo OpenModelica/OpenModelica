@@ -1,0 +1,769 @@
+// name:     Splitter5h
+// keywords: extraction algorithm
+// status:   correct
+// depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Outputs.csv
+// depends: ./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Reconciled_Sx.csv
+
+
+setCommandLineOptions("--preOptModules+=dataReconciliationBoundaryConditions");
+getErrorString();
+
+loadFile("NewDataReconciliationSimpleTests/package.mo");
+getErrorString();
+
+simulate(NewDataReconciliationSimpleTests.Splitter5h, simflags="-reconcileBoundaryConditions -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Outputs.csv -cx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Reconciled_Sx.csv -lv=LOG_JAC");
+getErrorString();
+
+
+// Result:
+// true
+// ""
+// true
+// "Notification: Automatically loaded package Modelica 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package Complex 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package ModelicaServices 3.2.3 due to uses annotation.
+// Notification: Automatically loaded package ThermoSysPro 3.2 due to uses annotation.
+// "
+//
+// ModelInfo: NewDataReconciliationSimpleTests.Splitter5h
+// ==========================================================================
+//
+//
+// OrderedVariables (45)
+// ========================================
+// 1: T3_h:VARIABLE()  type: Real
+// 2: T2_h:VARIABLE()  type: Real
+// 3: T1_h:VARIABLE()  type: Real
+// 4: V_h5:VARIABLE()  type: Real
+// 5: V_h4:VARIABLE()  type: Real
+// 6: V_h3:VARIABLE()  type: Real
+// 7: V_h2:VARIABLE()  type: Real
+// 8: V_h1:VARIABLE()  type: Real
+// 9: V_h:VARIABLE()  type: Real
+// 10: V_P3:VARIABLE()  type: Real
+// 11: V_P2:VARIABLE()  type: Real
+// 12: V_P1:VARIABLE()  type: Real
+// 13: P:VARIABLE()  type: Real
+// 14: T3_Q2:VARIABLE()  type: Real
+// 15: T3_Q1:VARIABLE()  type: Real
+// 16: T2_Q2:VARIABLE()  type: Real
+// 17: T2_Q1:VARIABLE()  type: Real
+// 18: T1_Q2:VARIABLE()  type: Real
+// 19: T1_Q1:VARIABLE()  type: Real
+// 20: V_Q5:VARIABLE()  type: Real
+// 21: V_Q4:VARIABLE()  type: Real
+// 22: V_Q3:VARIABLE()  type: Real
+// 23: V_Q2:VARIABLE()  type: Real
+// 24: V_Q1:VARIABLE()  type: Real
+// 25: T3_P2:VARIABLE()  type: Real
+// 26: T3_P1:VARIABLE()  type: Real
+// 27: T2_P2:VARIABLE()  type: Real
+// 28: T2_P1:VARIABLE()  type: Real
+// 29: T1_P2:VARIABLE()  type: Real
+// 30: T1_P1:VARIABLE()  type: Real
+// 31: Q05:VARIABLE()  type: Real
+// 32: Q04:VARIABLE()  type: Real
+// 33: h03:VARIABLE()  type: Real
+// 34: h02:VARIABLE()  type: Real
+// 35: h01:VARIABLE()  type: Real
+// 36: Q03:VARIABLE()  type: Real
+// 37: Q02:VARIABLE()  type: Real
+// 38: P01:VARIABLE()  type: Real
+// 39: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 40: T3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 41: T2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 42: T1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 43: Q3:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 44: Q2:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 45: Q1:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// OrderedEquation (45, 45)
+// ========================================
+// 1/1 (1): Q04 = 0.0   [dynamic |0|0|0|0|]
+// 2/2 (1): V_h4 = 100000.0   [dynamic |0|0|0|0|]
+// 3/3 (1): Q05 = 0.0   [dynamic |0|0|0|0|]
+// 4/4 (1): V_h5 = 100000.0   [dynamic |0|0|0|0|]
+// 5/5 (1): V_Q4 = Q04   [dynamic |0|0|0|0|]
+// 6/6 (1): V_Q5 = Q05   [dynamic |0|0|0|0|]
+// 7/7 (1): T1_P1 = P01   [dynamic |0|0|0|0|]
+// 8/8 (1): T2_Q2 = Q02   [dynamic |0|0|0|0|]
+// 9/9 (1): T3_Q2 = Q03   [dynamic |0|0|0|0|]
+// 10/10 (1): T1_P1 - T1_P2 = Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 11/11 (1): T2_P1 - T2_P2 = Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 12/12 (1): T3_P1 - T3_P2 = Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 13/13 (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5   [dynamic |0|0|0|0|]
+// 14/14 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+// 15/15 (1): T1_Q2 = Q1   [dynamic |0|0|0|0|]
+// 16/16 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 17/17 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 18/18 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+// 19/19 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+// 20/20 (1): T1_P2 = V_P1   [dynamic |0|0|0|0|]
+// 21/21 (1): V_P1 = P   [dynamic |0|0|0|0|]
+// 22/22 (1): T2_P1 = V_P2   [dynamic |0|0|0|0|]
+// 23/23 (1): V_P2 = P   [dynamic |0|0|0|0|]
+// 24/24 (1): T3_P1 = V_P3   [dynamic |0|0|0|0|]
+// 25/25 (1): V_P3 = P   [dynamic |0|0|0|0|]
+// 26/26 (1): T1_Q1 = Q1   [dynamic |0|0|0|0|]
+// 27/27 (1): T2_Q2 = Q2   [dynamic |0|0|0|0|]
+// 28/28 (1): T3_Q2 = Q3   [dynamic |0|0|0|0|]
+// 29/29 (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2   [dynamic |0|0|0|0|]
+// 30/30 (1): V_h1 = T1_h   [dynamic |0|0|0|0|]
+// 31/31 (1): V_h2 = T2_h   [dynamic |0|0|0|0|]
+// 32/32 (1): V_h3 = T3_h   [dynamic |0|0|0|0|]
+// 33/33 (1): T1_h = h01   [dynamic |0|0|0|0|]
+// 34/34 (1): T2_h = V_h   [dynamic |0|0|0|0|]
+// 35/35 (1): T3_h = V_h   [dynamic |0|0|0|0|]
+// 36/36 (1): T1_h = cp * T1   [dynamic |0|0|0|0|]
+// 37/37 (1): T2_h = cp * T2   [dynamic |0|0|0|0|]
+// 38/38 (1): T3_h = cp * T3   [dynamic |0|0|0|0|]
+// 39/39 (1): V_h = cp * T   [dynamic |0|0|0|0|]
+// 40/40 (1): P01 = 3.0   [binding |0|0|0|0|]
+// 41/41 (1): Q02 = 1.0   [binding |0|0|0|0|]
+// 42/42 (1): Q03 = 1.0   [binding |0|0|0|0|]
+// 43/43 (1): h01 = 100000.0   [binding |0|0|0|0|]
+// 44/44 (1): h02 = 100000.0   [binding |0|0|0|0|]
+// 45/45 (1): h03 = 100000.0   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 45 variables and equations
+// var 1 is solved in eqn 35
+// var 2 is solved in eqn 31
+// var 3 is solved in eqn 33
+// var 4 is solved in eqn 4
+// var 5 is solved in eqn 2
+// var 6 is solved in eqn 32
+// var 7 is solved in eqn 29
+// var 8 is solved in eqn 30
+// var 9 is solved in eqn 34
+// var 10 is solved in eqn 25
+// var 11 is solved in eqn 23
+// var 12 is solved in eqn 20
+// var 13 is solved in eqn 21
+// var 14 is solved in eqn 9
+// var 15 is solved in eqn 19
+// var 16 is solved in eqn 8
+// var 17 is solved in eqn 17
+// var 18 is solved in eqn 14
+// var 19 is solved in eqn 26
+// var 20 is solved in eqn 6
+// var 21 is solved in eqn 5
+// var 22 is solved in eqn 18
+// var 23 is solved in eqn 16
+// var 24 is solved in eqn 13
+// var 25 is solved in eqn 12
+// var 26 is solved in eqn 24
+// var 27 is solved in eqn 11
+// var 28 is solved in eqn 22
+// var 29 is solved in eqn 10
+// var 30 is solved in eqn 7
+// var 31 is solved in eqn 3
+// var 32 is solved in eqn 1
+// var 33 is solved in eqn 45
+// var 34 is solved in eqn 44
+// var 35 is solved in eqn 43
+// var 36 is solved in eqn 42
+// var 37 is solved in eqn 41
+// var 38 is solved in eqn 40
+// var 39 is solved in eqn 39
+// var 40 is solved in eqn 38
+// var 41 is solved in eqn 37
+// var 42 is solved in eqn 36
+// var 43 is solved in eqn 28
+// var 44 is solved in eqn 27
+// var 45 is solved in eqn 15
+//
+// Standard BLT of the original model:(45)
+// ============================================================
+//
+// 45: Q1: (15/15): (1): T1_Q2 = Q1
+// 44: Q2: (27/27): (1): T2_Q2 = Q2
+// 43: Q3: (28/28): (1): T3_Q2 = Q3
+// 42: T1: (36/36): (1): T1_h = cp * T1
+// 41: T2: (37/37): (1): T2_h = cp * T2
+// 40: T3: (38/38): (1): T3_h = cp * T3
+// 39: T: (39/39): (1): V_h = cp * T
+// 38: P01: (40/40): (1): P01 = 3.0
+// 37: Q02: (41/41): (1): Q02 = 1.0
+// 36: Q03: (42/42): (1): Q03 = 1.0
+// 35: h01: (43/43): (1): h01 = 100000.0
+// 34: h02: (44/44): (1): h02 = 100000.0
+// 33: h03: (45/45): (1): h03 = 100000.0
+// 32: Q04: (1/1): (1): Q04 = 0.0
+// 31: Q05: (3/3): (1): Q05 = 0.0
+// 30: T1_P1: (7/7): (1): T1_P1 = P01
+// 29: T1_P2: (10/10): (1): T1_P1 - T1_P2 = Q1 ^ 2.0
+// 28: T2_P1: (22/22): (1): T2_P1 = V_P2
+// 27: T2_P2: (11/11): (1): T2_P1 - T2_P2 = Q2 ^ 2.0
+// 26: T3_P1: (24/24): (1): T3_P1 = V_P3
+// 25: T3_P2: (12/12): (1): T3_P1 - T3_P2 = Q3 ^ 2.0
+// 24: V_Q1: (13/13): (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5
+// 23: V_Q2: (16/16): (1): V_Q2 = T2_Q1
+// 22: V_Q3: (18/18): (1): V_Q3 = T3_Q1
+// 21: V_Q4: (5/5): (1): V_Q4 = Q04
+// 20: V_Q5: (6/6): (1): V_Q5 = Q05
+// 19: T1_Q1: (26/26): (1): T1_Q1 = Q1
+// 18: T1_Q2: (14/14): (1): V_Q1 = T1_Q2
+// 17: T2_Q1: (17/17): (1): T2_Q1 = Q2
+// 16: T2_Q2: (8/8): (1): T2_Q2 = Q02
+// 15: T3_Q1: (19/19): (1): T3_Q1 = Q3
+// 14: T3_Q2: (9/9): (1): T3_Q2 = Q03
+// 13: P: (21/21): (1): V_P1 = P
+// 12: V_P1: (20/20): (1): T1_P2 = V_P1
+// 11: V_P2: (23/23): (1): V_P2 = P
+// 10: V_P3: (25/25): (1): V_P3 = P
+// 9: V_h: (34/34): (1): T2_h = V_h
+// 8: V_h1: (30/30): (1): V_h1 = T1_h
+// 7: V_h2: (29/29): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
+// 6: V_h3: (32/32): (1): V_h3 = T3_h
+// 5: V_h4: (2/2): (1): V_h4 = 100000.0
+// 4: V_h5: (4/4): (1): V_h5 = 100000.0
+// 3: T1_h: (33/33): (1): T1_h = h01
+// 2: T2_h: (31/31): (1): V_h2 = T2_h
+// 1: T3_h: (35/35): (1): T3_h = V_h
+//
+//
+// Variables of interest (7)
+// ========================================
+// 1: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: T3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: T2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 4: T1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 5: Q3:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 6: Q2:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 7: Q1:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (6)
+// ========================================
+// 1: h03:VARIABLE()  type: Real
+// 2: h02:VARIABLE()  type: Real
+// 3: h01:VARIABLE()  type: Real
+// 4: Q03:VARIABLE()  type: Real
+// 5: Q02:VARIABLE()  type: Real
+// 6: P01:VARIABLE()  type: Real
+//
+//
+// Binding equations:(6)
+// ============================================================
+//
+// 33: h03: (45/45): (1): h03 = 100000.0
+// 34: h02: (44/44): (1): h02 = 100000.0
+// 35: h01: (43/43): (1): h01 = 100000.0
+// 36: Q03: (42/42): (1): Q03 = 1.0
+// 37: Q02: (41/41): (1): Q02 = 1.0
+// 38: P01: (40/40): (1): P01 = 3.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(7)
+// ============================================================
+//
+// 39: T: (39/39): (1): V_h = cp * T
+// 40: T3: (38/38): (1): T3_h = cp * T3
+// 41: T2: (37/37): (1): T2_h = cp * T2
+// 42: T1: (36/36): (1): T1_h = cp * T1
+// 43: Q3: (28/28): (1): T3_Q2 = Q3
+// 44: Q2: (27/27): (1): T2_Q2 = Q2
+// 45: Q1: (15/15): (1): T1_Q2 = Q1
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>39: T: (39/39): (1): V_h = cp * T
+// 9: V_h: (34/34): (1): T2_h = V_h
+// 2: T2_h: (31/31): (1): V_h2 = T2_h
+// 7: V_h2: (29/29): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
+// 4: V_h5: (4/4): (1): V_h5 = 100000.0
+// 5: V_h4: (2/2): (1): V_h4 = 100000.0
+// 6: V_h3: (32/32): (1): V_h3 = T3_h
+// 1: T3_h: (35/35): (1): T3_h = V_h
+// 8: V_h1: (30/30): (1): V_h1 = T1_h
+// 3: T1_h: (33/33): (1): T1_h = h01
+// h01 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>40: T3: (38/38): (1): T3_h = cp * T3
+// 1: T3_h: (35/35): (1): T3_h = V_h
+// 9: V_h: (34/34): (1): T2_h = V_h
+// 2: T2_h: (31/31): (1): V_h2 = T2_h
+// 7: V_h2: (29/29): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
+// 4: V_h5: (4/4): (1): V_h5 = 100000.0
+// 5: V_h4: (2/2): (1): V_h4 = 100000.0
+// 6: V_h3: (32/32): (1): V_h3 = T3_h
+// 8: V_h1: (30/30): (1): V_h1 = T1_h
+// 3: T1_h: (33/33): (1): T1_h = h01
+// h01 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>41: T2: (37/37): (1): T2_h = cp * T2
+// 2: T2_h: (31/31): (1): V_h2 = T2_h
+// 7: V_h2: (29/29): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
+// 4: V_h5: (4/4): (1): V_h5 = 100000.0
+// 5: V_h4: (2/2): (1): V_h4 = 100000.0
+// 6: V_h3: (32/32): (1): V_h3 = T3_h
+// 1: T3_h: (35/35): (1): T3_h = V_h
+// 9: V_h: (34/34): (1): T2_h = V_h
+// 8: V_h1: (30/30): (1): V_h1 = T1_h
+// 3: T1_h: (33/33): (1): T1_h = h01
+// h01 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>42: T1: (36/36): (1): T1_h = cp * T1
+// 3: T1_h: (33/33): (1): T1_h = h01
+// h01 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>43: Q3: (28/28): (1): T3_Q2 = Q3
+// 14: T3_Q2: (9/9): (1): T3_Q2 = Q03
+// Q03 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>44: Q2: (27/27): (1): T2_Q2 = Q2
+// 16: T2_Q2: (8/8): (1): T2_Q2 = Q02
+// Q02 is a boundary condition ---> exit procedure
+// Procedure failed
+//
+// >>>45: Q1: (15/15): (1): T1_Q2 = Q1
+// 18: T1_Q2: (14/14): (1): V_Q1 = T1_Q2
+// 24: V_Q1: (13/13): (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5
+// 20: V_Q5: (6/6): (1): V_Q5 = Q05
+// 31: Q05: (3/3): (1): Q05 = 0.0
+// 21: V_Q4: (5/5): (1): V_Q4 = Q04
+// 32: Q04: (1/1): (1): Q04 = 0.0
+// 22: V_Q3: (18/18): (1): V_Q3 = T3_Q1
+// 15: T3_Q1: (19/19): (1): T3_Q1 = Q3
+// 23: V_Q2: (16/16): (1): V_Q2 = T2_Q1
+// 17: T2_Q1: (17/17): (1): T2_Q1 = Q2
+// Procedure success
+//
+// Extraction procedure failed for iteration count: 1, re-running with modified model
+// ==========================================================================
+//
+// OrderedVariables (45)
+// ========================================
+// 1: T3_h:VARIABLE()  type: Real
+// 2: T2_h:VARIABLE()  type: Real
+// 3: T1_h:VARIABLE()  type: Real
+// 4: V_h5:VARIABLE()  type: Real
+// 5: V_h4:VARIABLE()  type: Real
+// 6: V_h3:VARIABLE()  type: Real
+// 7: V_h2:VARIABLE()  type: Real
+// 8: V_h1:VARIABLE()  type: Real
+// 9: V_h:VARIABLE()  type: Real
+// 10: V_P3:VARIABLE()  type: Real
+// 11: V_P2:VARIABLE()  type: Real
+// 12: V_P1:VARIABLE()  type: Real
+// 13: P:VARIABLE()  type: Real
+// 14: T3_Q2:VARIABLE()  type: Real
+// 15: T3_Q1:VARIABLE()  type: Real
+// 16: T2_Q2:VARIABLE()  type: Real
+// 17: T2_Q1:VARIABLE()  type: Real
+// 18: T1_Q2:VARIABLE()  type: Real
+// 19: T1_Q1:VARIABLE()  type: Real
+// 20: V_Q5:VARIABLE()  type: Real
+// 21: V_Q4:VARIABLE()  type: Real
+// 22: V_Q3:VARIABLE()  type: Real
+// 23: V_Q2:VARIABLE()  type: Real
+// 24: V_Q1:VARIABLE()  type: Real
+// 25: T3_P2:VARIABLE()  type: Real
+// 26: T3_P1:VARIABLE()  type: Real
+// 27: T2_P2:VARIABLE()  type: Real
+// 28: T2_P1:VARIABLE()  type: Real
+// 29: T1_P2:VARIABLE()  type: Real
+// 30: T1_P1:VARIABLE()  type: Real
+// 31: Q05:VARIABLE()  type: Real
+// 32: Q04:VARIABLE()  type: Real
+// 33: h03:VARIABLE()  type: Real
+// 34: h02:VARIABLE()  type: Real
+// 35: h01:VARIABLE()  type: Real
+// 36: Q03:VARIABLE()  type: Real
+// 37: Q02:VARIABLE()  type: Real
+// 38: P01:VARIABLE()  type: Real
+// 39: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 40: T3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 41: T2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 42: T1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 43: Q3:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 44: Q2:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 45: Q1:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// OrderedEquation (45, 45)
+// ========================================
+// 1/1 (1): T = 0.0   [binding |0|0|0|0|]
+// 2/2 (1): Q3 = 0.0   [binding |0|0|0|0|]
+// 3/3 (1): Q2 = 0.0   [binding |0|0|0|0|]
+// 4/4 (1): Q04 = 0.0   [dynamic |0|0|0|0|]
+// 5/5 (1): V_h4 = 100000.0   [dynamic |0|0|0|0|]
+// 6/6 (1): Q05 = 0.0   [dynamic |0|0|0|0|]
+// 7/7 (1): V_h5 = 100000.0   [dynamic |0|0|0|0|]
+// 8/8 (1): V_Q4 = Q04   [dynamic |0|0|0|0|]
+// 9/9 (1): V_Q5 = Q05   [dynamic |0|0|0|0|]
+// 10/10 (1): T1_P1 = P01   [dynamic |0|0|0|0|]
+// 11/11 (1): T1_P1 - T1_P2 = Q1 ^ 2.0   [dynamic |0|0|0|0|]
+// 12/12 (1): T2_P1 - T2_P2 = Q2 ^ 2.0   [dynamic |0|0|0|0|]
+// 13/13 (1): T3_P1 - T3_P2 = Q3 ^ 2.0   [dynamic |0|0|0|0|]
+// 14/14 (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5   [dynamic |0|0|0|0|]
+// 15/15 (1): V_Q1 = T1_Q2   [dynamic |0|0|0|0|]
+// 16/16 (1): T1_Q2 = Q1   [dynamic |0|0|0|0|]
+// 17/17 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 18/18 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 19/19 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+// 20/20 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+// 21/21 (1): T1_P2 = V_P1   [dynamic |0|0|0|0|]
+// 22/22 (1): V_P1 = P   [dynamic |0|0|0|0|]
+// 23/23 (1): T2_P1 = V_P2   [dynamic |0|0|0|0|]
+// 24/24 (1): V_P2 = P   [dynamic |0|0|0|0|]
+// 25/25 (1): T3_P1 = V_P3   [dynamic |0|0|0|0|]
+// 26/26 (1): V_P3 = P   [dynamic |0|0|0|0|]
+// 27/27 (1): T1_Q1 = Q1   [dynamic |0|0|0|0|]
+// 28/28 (1): T2_Q2 = Q2   [dynamic |0|0|0|0|]
+// 29/29 (1): T3_Q2 = Q3   [dynamic |0|0|0|0|]
+// 30/30 (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2   [dynamic |0|0|0|0|]
+// 31/31 (1): V_h1 = T1_h   [dynamic |0|0|0|0|]
+// 32/32 (1): V_h2 = T2_h   [dynamic |0|0|0|0|]
+// 33/33 (1): V_h3 = T3_h   [dynamic |0|0|0|0|]
+// 34/34 (1): T2_h = V_h   [dynamic |0|0|0|0|]
+// 35/35 (1): T3_h = V_h   [dynamic |0|0|0|0|]
+// 36/36 (1): T1_h = cp * T1   [dynamic |0|0|0|0|]
+// 37/37 (1): T2_h = cp * T2   [dynamic |0|0|0|0|]
+// 38/38 (1): T3_h = cp * T3   [dynamic |0|0|0|0|]
+// 39/39 (1): V_h = cp * T   [dynamic |0|0|0|0|]
+// 40/40 (1): P01 = 3.0   [binding |0|0|0|0|]
+// 41/41 (1): Q02 = 1.0   [binding |0|0|0|0|]
+// 42/42 (1): Q03 = 1.0   [binding |0|0|0|0|]
+// 43/43 (1): h01 = 100000.0   [binding |0|0|0|0|]
+// 44/44 (1): h02 = 100000.0   [binding |0|0|0|0|]
+// 45/45 (1): h03 = 100000.0   [binding |0|0|0|0|]
+//
+// Matching
+// ========================================
+// 45 variables and equations
+// var 1 is solved in eqn 35
+// var 2 is solved in eqn 34
+// var 3 is solved in eqn 31
+// var 4 is solved in eqn 7
+// var 5 is solved in eqn 5
+// var 6 is solved in eqn 33
+// var 7 is solved in eqn 32
+// var 8 is solved in eqn 30
+// var 9 is solved in eqn 39
+// var 10 is solved in eqn 26
+// var 11 is solved in eqn 24
+// var 12 is solved in eqn 21
+// var 13 is solved in eqn 22
+// var 14 is solved in eqn 29
+// var 15 is solved in eqn 20
+// var 16 is solved in eqn 28
+// var 17 is solved in eqn 18
+// var 18 is solved in eqn 15
+// var 19 is solved in eqn 27
+// var 20 is solved in eqn 9
+// var 21 is solved in eqn 8
+// var 22 is solved in eqn 19
+// var 23 is solved in eqn 17
+// var 24 is solved in eqn 14
+// var 25 is solved in eqn 13
+// var 26 is solved in eqn 25
+// var 27 is solved in eqn 12
+// var 28 is solved in eqn 23
+// var 29 is solved in eqn 11
+// var 30 is solved in eqn 10
+// var 31 is solved in eqn 6
+// var 32 is solved in eqn 4
+// var 33 is solved in eqn 45
+// var 34 is solved in eqn 44
+// var 35 is solved in eqn 43
+// var 36 is solved in eqn 42
+// var 37 is solved in eqn 41
+// var 38 is solved in eqn 40
+// var 39 is solved in eqn 1
+// var 40 is solved in eqn 38
+// var 41 is solved in eqn 37
+// var 42 is solved in eqn 36
+// var 43 is solved in eqn 2
+// var 44 is solved in eqn 3
+// var 45 is solved in eqn 16
+//
+// Standard BLT of the original model:(45)
+// ============================================================
+//
+// 45: Q1: (16/16): (1): T1_Q2 = Q1
+// 44: Q2: (3/3): (1): Q2 = 0.0
+// 43: Q3: (2/2): (1): Q3 = 0.0
+// 42: T1: (36/36): (1): T1_h = cp * T1
+// 41: T2: (37/37): (1): T2_h = cp * T2
+// 40: T3: (38/38): (1): T3_h = cp * T3
+// 39: T: (1/1): (1): T = 0.0
+// 38: P01: (40/40): (1): P01 = 3.0
+// 37: Q02: (41/41): (1): Q02 = 1.0
+// 36: Q03: (42/42): (1): Q03 = 1.0
+// 35: h01: (43/43): (1): h01 = 100000.0
+// 34: h02: (44/44): (1): h02 = 100000.0
+// 33: h03: (45/45): (1): h03 = 100000.0
+// 32: Q04: (4/4): (1): Q04 = 0.0
+// 31: Q05: (6/6): (1): Q05 = 0.0
+// 30: T1_P1: (10/10): (1): T1_P1 = P01
+// 29: T1_P2: (11/11): (1): T1_P1 - T1_P2 = Q1 ^ 2.0
+// 28: T2_P1: (23/23): (1): T2_P1 = V_P2
+// 27: T2_P2: (12/12): (1): T2_P1 - T2_P2 = Q2 ^ 2.0
+// 26: T3_P1: (25/25): (1): T3_P1 = V_P3
+// 25: T3_P2: (13/13): (1): T3_P1 - T3_P2 = Q3 ^ 2.0
+// 24: V_Q1: (14/14): (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5
+// 23: V_Q2: (17/17): (1): V_Q2 = T2_Q1
+// 22: V_Q3: (19/19): (1): V_Q3 = T3_Q1
+// 21: V_Q4: (8/8): (1): V_Q4 = Q04
+// 20: V_Q5: (9/9): (1): V_Q5 = Q05
+// 19: T1_Q1: (27/27): (1): T1_Q1 = Q1
+// 18: T1_Q2: (15/15): (1): V_Q1 = T1_Q2
+// 17: T2_Q1: (18/18): (1): T2_Q1 = Q2
+// 16: T2_Q2: (28/28): (1): T2_Q2 = Q2
+// 15: T3_Q1: (20/20): (1): T3_Q1 = Q3
+// 14: T3_Q2: (29/29): (1): T3_Q2 = Q3
+// 13: P: (22/22): (1): V_P1 = P
+// 12: V_P1: (21/21): (1): T1_P2 = V_P1
+// 11: V_P2: (24/24): (1): V_P2 = P
+// 10: V_P3: (26/26): (1): V_P3 = P
+// 9: V_h: (39/39): (1): V_h = cp * T
+// 8: V_h1: (30/30): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
+// 7: V_h2: (32/32): (1): V_h2 = T2_h
+// 6: V_h3: (33/33): (1): V_h3 = T3_h
+// 5: V_h4: (5/5): (1): V_h4 = 100000.0
+// 4: V_h5: (7/7): (1): V_h5 = 100000.0
+// 3: T1_h: (31/31): (1): V_h1 = T1_h
+// 2: T2_h: (34/34): (1): T2_h = V_h
+// 1: T3_h: (35/35): (1): T3_h = V_h
+//
+//
+// Variables of interest (7)
+// ========================================
+// 1: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 2: T3:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 3: T2:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 4: T1:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+// 5: Q3:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 6: Q2:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 7: Q1:VARIABLE(start = 2.0 uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Boundary conditions (6)
+// ========================================
+// 1: h03:VARIABLE()  type: Real
+// 2: h02:VARIABLE()  type: Real
+// 3: h01:VARIABLE()  type: Real
+// 4: Q03:VARIABLE()  type: Real
+// 5: Q02:VARIABLE()  type: Real
+// 6: P01:VARIABLE()  type: Real
+//
+//
+// Binding equations:(9)
+// ============================================================
+//
+// 33: h03: (45/45): (1): h03 = 100000.0
+// 34: h02: (44/44): (1): h02 = 100000.0
+// 35: h01: (43/43): (1): h01 = 100000.0
+// 36: Q03: (42/42): (1): Q03 = 1.0
+// 37: Q02: (41/41): (1): Q02 = 1.0
+// 38: P01: (40/40): (1): P01 = 3.0
+// 44: Q2: (3/3): (1): Q2 = 0.0
+// 43: Q3: (2/2): (1): Q3 = 0.0
+// 39: T: (1/1): (1): T = 0.0
+//
+//
+// E-BLT: equations that compute the variables of interest:(4)
+// ============================================================
+//
+// 40: T3: (38/38): (1): T3_h = cp * T3
+// 41: T2: (37/37): (1): T2_h = cp * T2
+// 42: T1: (36/36): (1): T1_h = cp * T1
+// 45: Q1: (16/16): (1): T1_Q2 = Q1
+//
+//
+// Extracting SET-C and SET-S from E-BLT
+// Procedure is applied on each equation in the E-BLT
+// ==========================================================================
+// >>>40: T3: (38/38): (1): T3_h = cp * T3
+// 1: T3_h: (35/35): (1): T3_h = V_h
+// 9: V_h: (39/39): (1): V_h = cp * T
+// Procedure success
+//
+// >>>41: T2: (37/37): (1): T2_h = cp * T2
+// 2: T2_h: (34/34): (1): T2_h = V_h
+// 9: V_h: (39/39): (1): V_h = cp * T
+// Procedure success
+//
+// >>>42: T1: (36/36): (1): T1_h = cp * T1
+// 3: T1_h: (31/31): (1): V_h1 = T1_h
+// 8: V_h1: (30/30): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
+// 4: V_h5: (7/7): (1): V_h5 = 100000.0
+// 5: V_h4: (5/5): (1): V_h4 = 100000.0
+// 6: V_h3: (33/33): (1): V_h3 = T3_h
+// 1: T3_h: (35/35): (1): T3_h = V_h
+// 9: V_h: (39/39): (1): V_h = cp * T
+// 7: V_h2: (32/32): (1): V_h2 = T2_h
+// 2: T2_h: (34/34): (1): T2_h = V_h
+// 20: V_Q5: (9/9): (1): V_Q5 = Q05
+// 31: Q05: (6/6): (1): Q05 = 0.0
+// 21: V_Q4: (8/8): (1): V_Q4 = Q04
+// 32: Q04: (4/4): (1): Q04 = 0.0
+// 22: V_Q3: (19/19): (1): V_Q3 = T3_Q1
+// 15: T3_Q1: (20/20): (1): T3_Q1 = Q3
+// 23: V_Q2: (17/17): (1): V_Q2 = T2_Q1
+// 17: T2_Q1: (18/18): (1): T2_Q1 = Q2
+// 24: V_Q1: (14/14): (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5
+// Procedure success
+//
+// >>>45: Q1: (16/16): (1): T1_Q2 = Q1
+// 18: T1_Q2: (15/15): (1): V_Q1 = T1_Q2
+// 24: V_Q1: (14/14): (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5
+// 20: V_Q5: (9/9): (1): V_Q5 = Q05
+// 31: Q05: (6/6): (1): Q05 = 0.0
+// 21: V_Q4: (8/8): (1): V_Q4 = Q04
+// 32: Q04: (4/4): (1): Q04 = 0.0
+// 22: V_Q3: (19/19): (1): V_Q3 = T3_Q1
+// 15: T3_Q1: (20/20): (1): T3_Q1 = Q3
+// 23: V_Q2: (17/17): (1): V_Q2 = T2_Q1
+// 17: T2_Q1: (18/18): (1): T2_Q1 = Q2
+// Procedure success
+//
+// Extraction procedure is successfully completed in iteration count: 2
+// ==========================================================================
+//
+// Start of extraction procedure for boundary conditions
+// Set of boundary conditions equations that failed the extraction of set S: (3)
+// ==========================================================================
+// 1: T1_h = h01
+// 2: T3_Q2 = Q03
+// 3: T2_Q2 = Q02
+//
+// Boundary conditions to be computed (3)
+// ========================================
+// 1: h01:VARIABLE()  type: Real
+// 2: Q03:VARIABLE()  type: Real
+// 3: Q02:VARIABLE()  type: Real
+//
+//
+// Extract set-S' to compute the boundary conditions
+// Procedure is applied on each equation in the failed boundary conditions
+// ==========================================================================
+// >>>T1_h = h01
+// 3: T1_h: (31/31): (1): V_h1 = T1_h
+// 8: V_h1: (30/30): (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2
+// 4: V_h5: (7/7): (1): V_h5 = 100000.0
+// 5: V_h4: (5/5): (1): V_h4 = 100000.0
+// 6: V_h3: (33/33): (1): V_h3 = T3_h
+// 1: T3_h: (35/35): (1): T3_h = V_h
+// 9: V_h: (39/39): (1): V_h = cp * T
+// 7: V_h2: (32/32): (1): V_h2 = T2_h
+// 2: T2_h: (34/34): (1): T2_h = V_h
+// 20: V_Q5: (9/9): (1): V_Q5 = Q05
+// 31: Q05: (6/6): (1): Q05 = 0.0
+// 21: V_Q4: (8/8): (1): V_Q4 = Q04
+// 32: Q04: (4/4): (1): Q04 = 0.0
+// 22: V_Q3: (19/19): (1): V_Q3 = T3_Q1
+// 15: T3_Q1: (20/20): (1): T3_Q1 = Q3
+// 23: V_Q2: (17/17): (1): V_Q2 = T2_Q1
+// 17: T2_Q1: (18/18): (1): T2_Q1 = Q2
+// 24: V_Q1: (14/14): (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5
+// Procedure success
+//
+// >>>T3_Q2 = Q03
+// 14: T3_Q2: (29/29): (1): T3_Q2 = Q3
+// Procedure success
+//
+// >>>T2_Q2 = Q02
+// 16: T2_Q2: (28/28): (1): T2_Q2 = Q2
+// Procedure success
+//
+// Final set of equations after extraction algorithm
+// ==========================================================================
+//
+// SET_B (3, 3)
+// ========================================
+// 1/1 (1): T1_h = h01   [dynamic |0|0|0|0|]
+// 2/2 (1): T3_Q2 = Q03   [dynamic |0|0|0|0|]
+// 3/3 (1): T2_Q2 = Q02   [dynamic |0|0|0|0|]
+//
+//
+// SET_S' (20, 20)
+// ========================================
+// 1/1 (1): T2_Q2 = Q2   [dynamic |0|0|0|0|]
+// 2/2 (1): T3_Q2 = Q3   [dynamic |0|0|0|0|]
+// 3/3 (1): V_h1 = T1_h   [dynamic |0|0|0|0|]
+// 4/4 (1): 0.0 = V_h1 * V_Q1 + W - V_h5 * V_Q5 - V_h4 * V_Q4 - V_h3 * V_Q3 - V_h2 * V_Q2   [dynamic |0|0|0|0|]
+// 5/5 (1): V_h5 = 100000.0   [dynamic |0|0|0|0|]
+// 6/6 (1): V_h4 = 100000.0   [dynamic |0|0|0|0|]
+// 7/7 (1): V_h3 = T3_h   [dynamic |0|0|0|0|]
+// 8/8 (1): T3_h = V_h   [dynamic |0|0|0|0|]
+// 9/9 (1): V_h = cp * T   [dynamic |0|0|0|0|]
+// 10/10 (1): V_h2 = T2_h   [dynamic |0|0|0|0|]
+// 11/11 (1): T2_h = V_h   [dynamic |0|0|0|0|]
+// 12/12 (1): V_Q5 = Q05   [dynamic |0|0|0|0|]
+// 13/13 (1): Q05 = 0.0   [dynamic |0|0|0|0|]
+// 14/14 (1): V_Q4 = Q04   [dynamic |0|0|0|0|]
+// 15/15 (1): Q04 = 0.0   [dynamic |0|0|0|0|]
+// 16/16 (1): V_Q3 = T3_Q1   [dynamic |0|0|0|0|]
+// 17/17 (1): T3_Q1 = Q3   [dynamic |0|0|0|0|]
+// 18/18 (1): V_Q2 = T2_Q1   [dynamic |0|0|0|0|]
+// 19/19 (1): T2_Q1 = Q2   [dynamic |0|0|0|0|]
+// 20/20 (1): V_Q1 = V_Q2 + V_Q3 + V_Q4 + V_Q5   [dynamic |0|0|0|0|]
+//
+//
+// Boundary condition Vars' (3)
+// ========================================
+// 1: h01:VARIABLE()  type: Real
+// 2: Q03:VARIABLE()  type: Real
+// 3: Q02:VARIABLE()  type: Real
+//
+//
+// Intermediate vars in set-S' (20)
+// ========================================
+// 1: Q04:VARIABLE()  type: Real
+// 2: Q05:VARIABLE()  type: Real
+// 3: V_Q1:VARIABLE()  type: Real
+// 4: V_Q2:VARIABLE()  type: Real
+// 5: V_Q3:VARIABLE()  type: Real
+// 6: V_Q4:VARIABLE()  type: Real
+// 7: V_Q5:VARIABLE()  type: Real
+// 8: T2_Q1:VARIABLE()  type: Real
+// 9: T2_Q2:VARIABLE()  type: Real
+// 10: T3_Q1:VARIABLE()  type: Real
+// 11: T3_Q2:VARIABLE()  type: Real
+// 12: V_h:VARIABLE()  type: Real
+// 13: V_h1:VARIABLE()  type: Real
+// 14: V_h2:VARIABLE()  type: Real
+// 15: V_h3:VARIABLE()  type: Real
+// 16: V_h4:VARIABLE()  type: Real
+// 17: V_h5:VARIABLE()  type: Real
+// 18: T1_h:VARIABLE()  type: Real
+// 19: T2_h:VARIABLE()  type: Real
+// 20: T3_h:VARIABLE()  type: Real
+//
+//
+// Known vars in set-S' (3)
+// ========================================
+// 1: Q2:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 2: Q3:VARIABLE(start = 1.0 uncertain=Uncertainty.refine)  type: Real
+// 3: T:VARIABLE(uncertain=Uncertainty.refine)  type: Real
+//
+//
+// Param vars in set-S' (2)
+// ========================================
+// 1: cp:PARAM()  = 5000.0  type: Real
+// 2: W:PARAM()  = 1000000.0  type: Real
+//
+// record SimulationResult
+//     resultFile = "econcileBoundaryConditions",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'NewDataReconciliationSimpleTests.Splitter5h', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-reconcileBoundaryConditions -sx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Outputs.csv -cx=./NewDataReconciliationSimpleTests/resources/NewDataReconciliationSimpleTests.Splitter5c_Reconciled_Sx.csv -lv=LOG_JAC'",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// stdout            | info    | Reconcile Boundary Conditions Starting!
+// stdout            | info    | NewDataReconciliationSimpleTests.Splitter5h
+// stdout            | info    | Reconcile Boundary Conditions Completed!
+// "
+// end SimulationResult;
+// ""
+// endResult
