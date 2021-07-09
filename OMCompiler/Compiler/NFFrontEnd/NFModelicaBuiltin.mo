@@ -72,7 +72,7 @@ annotation(__OpenModelica_builtin=true, __OpenModelica_Impure=true, Documentatio
 </html>"));
 end terminal;
 
-type AssertionLevel = enumeration(error, warning) annotation(__OpenModelica_builtin=true,
+type AssertionLevel = enumeration(warning, error) annotation(__OpenModelica_builtin=true,
   Documentation(info="<html>Used by <a href=\"modelica://assert\">assert()</a></html>"));
 
 function assert "Check an assertion condition"

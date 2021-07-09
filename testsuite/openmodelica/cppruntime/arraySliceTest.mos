@@ -10,8 +10,9 @@ package ArraySlice
 model Test
   Real[:,:] m = [1; 2; 3; 4; 5];
   Real[:] w = reverse(m);
-  Real y = catEmpty(w);
-  Real z = reduction(w);
+  Real x = catEmpty(w);
+  Real y = reduction(w);
+  Real[:,:] z = sliceTranspose(2, [1, 2, 3; 4, 5, 6; 7, 8, 9]);
   annotation(experiment(StopTime = 0));
 end Test;
 function reverse
@@ -40,6 +41,13 @@ protected
 algorithm
   y := product(sum(v[i*idx] for i in 1:n)); // index set with one element
 end reduction;
+function sliceTranspose
+  input Integer n;
+  input Real[n+1,n+1] M;
+  output Real[n,1] z;
+algorithm
+  z := transpose(M[n+1:n+1,1:n]); // test access to slice of slice and size 1
+end sliceTranspose;
 end ArraySlice;
 ");
 getErrorString();
@@ -49,8 +57,10 @@ getErrorString();
 
 val(w[1], 0);
 val(w[4], 0);
+val(x, 0);
 val(y, 0);
-val(z, 0);
+val(z[1,1], 0);
+val(z[2,1], 0);
 
 // Result:
 // true
@@ -66,4 +76,6 @@ val(z, 0);
 // 1.0
 // 20.0
 // 10.0
+// 7.0
+// 8.0
 // endResult

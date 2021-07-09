@@ -5088,14 +5088,16 @@ match var
       */
 case var as VARIABLE(__) then
   let marker = '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  let &varInits += '/* varOutputTuple varInits(<%marker%>) */ <%\n%>'
-  let &varAssign += '// varOutput varAssign(<%marker%>) <%\n%>'
+  let &varInits += '// varOutputTuple varInits(<%marker%>)<%\n%>'
+  let &varAssign += '// varOutput varAssign(<%marker%>)<%\n%>'
+  let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
   let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     ;separator=",")
   let assginBegin = 'get<<%ix%>>'
   if instDims then
-    let &varInits += '<%assginBegin%>(/*_<%fname%>*/output.data).setDims(<%instDimsInit%>);//todo setDims not for stat arrays
-    <%\n%>'
+    // don't setDims for static or unknown dimensions, treated as "" and "---", respectively
+    let &varInits += if boolAnd(intGt(stringLength(testinstDimsInit), 0), intEq(-1, stringFind(testinstDimsInit, "---"))) then
+      '<%assginBegin%>(/*_<%fname%>*/output.data).setDims(<%instDimsInit%>);<%\n%>'
     let &varAssign += '<%assginBegin%>(/*_<%fname%>*/output.data)=<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,stateDerVectorName,useFlatArrayNotation)%>;<%\n%>'
     ""
   else
@@ -5225,13 +5227,16 @@ template recordMemberInit(Var v, Text varName, Text &preExp /*BUFP*/, Text &varD
 end recordMemberInit;
 
 template setDims(Text testinstDimsInit, String varName , Text &varInits, String instDimsInit)
+  "call varName.setDims for dynamic and known dimensions"
    ::=
   match testinstDimsInit
-    case "" then let &varInits += ''
+  case "" then
     ""
-    else let &varInits += '<%varName%>.setDims(<%instDimsInit%>);<%\n%>'
+  else
+    let &varInits += if intEq(-1, stringFind(testinstDimsInit, "---")) then
+      '<%varName%>.setDims(<%instDimsInit%>);<%\n%>'
     ""
-    end match
+  end match
 end setDims;
 
 
@@ -5397,8 +5402,8 @@ case var as VARIABLE(__) then
      let &varInits = buffer ""
      let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
      let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation);separator=",")
-     // check for unknown dimension that is treated as -1
-     if boolAnd(stringEq(testinstDimsInit, ""), intEq(-1, stringFind(instDimsInit, "-"))) then
+     // check for static and known dimension
+     if boolAnd(stringEq(testinstDimsInit, ""), intEq(-1, stringFind(testinstDimsInit, "---"))) then
        if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>, <%instDimsInit%>>& ' else expTypeFlag(var.ty, 5)
      else
        if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>>/*<%instDimsInit%>*/&' else expTypeFlag(var.ty, 5)
@@ -5412,8 +5417,8 @@ case var as VARIABLE(__) then
      let &varInits = buffer "" // should be empty
      let testinstDimsInit = (instDims |> dim => testDaeDimension(dim);separator="")
      let instDimsInit = (instDims |> dim => daeDimension(dim, contextFunction, &varInits, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "stateDerVectorName_not_given", false /*is false the default?*/);separator=",")
-     // check for unknown dimension that is treated as -1
-     if boolAnd(stringEq(testinstDimsInit, ""), intEq(-1, stringFind(instDimsInit, "-"))) then
+     // check for static and known dimension
+     if boolAnd(stringEq(testinstDimsInit, ""), intEq(-1, stringFind(testinstDimsInit, "---"))) then
        if instDims then 'StatArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>, <%instDimsInit%>> ' else expTypeArrayIf(var.ty)
      else
        if instDims then 'DynArrayDim<%listLength(instDims)%><<%expTypeShort(var.ty)%>>/*<%instDimsInit%>*/ ' else expTypeArrayIf(var.ty)
@@ -9340,21 +9345,6 @@ bool <%lastIdentOfPath(modelInfo.name)%>::isODE()
 >>
 end isODE;
 
-template testdimension(Dimension d)
-::=
-  match d
-  case DAE.DIM_BOOLEAN(__) then ''
-  case DAE.DIM_INTEGER(__) then ''
-  case DAE.DIM_ENUM(__) then ''
-  case DAE.DIM_EXP(exp=e) then
-   match e
-  case DAE.CREF(componentRef = cr) then ''
-  else '-1'
-  end match
-  case DAE.DIM_UNKNOWN(__) then '-1'
-  else '-1'
-end testdimension;
-
 template functionInitial(list<SimEqSystem> startValueEquations, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
@@ -11332,8 +11322,9 @@ template testDaeDimensionExp(Exp exp)
  "Generates code for an expression."
 ::=
   match exp
-  case e as ICONST(__) then ''
-  else '-1'
+  case ICONST(integer=-1) then '---' // unknown
+  case ICONST(__) then ''            // known static
+  else '-1'                          // known dynamic
 end testDaeDimensionExp;
 
 template daeDimension(DAE.Dimension dim, Context context, Text &preExp, Text &varDecls, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName, Boolean useFlatArrayNotation)
@@ -11367,7 +11358,7 @@ template assertCommon(Exp condition, Exp message,Exp level, Context context, Tex
       if (!<%condVar%>)
       {
         <%preExpMsg%>
-        <%match level case ENUM_LITERAL(index=2)
+        <%match level case ENUM_LITERAL(index=1)
           then 'LOGGER_WRITE(<%msgVar%>, LC_MODEL, LL_WARNING);'
           else 'throw ModelicaSimulationError(MODEL_EQ_SYSTEM, <%msgVar%>);'
         %>
@@ -11379,7 +11370,7 @@ template assertCommon(Exp condition, Exp message,Exp level, Context context, Tex
       {
         <%preExpCond%>
         <%preExpMsg%>
-        <%match level case ENUM_LITERAL(index=2)
+        <%match level case ENUM_LITERAL(index=1)
           then 'LOGGER_WRITE("Assert in model equation", LC_MODEL, LL_WARNING);'
           else 'throw ModelicaSimulationError() << error_id(MODEL_EQ_SYSTEM);'
         %>

@@ -11607,120 +11607,128 @@ algorithm
         varArrayIndexMappingHashTable = HashTableCrIListArray.emptyHashTableSized(BaseHashTable.biggerBucketSize);
         varIndexMappingHashTable = HashTableCrILst.emptyHashTableSized(BaseHashTable.biggerBucketSize);
         currentVarIndices = arrayCreate(4,1); //0 is reserved for unused variables
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(stateVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(derivativeVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stateVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(derivativeVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
 
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(algVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(discreteAlgVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(intAlgVars, function addVarToArrayIndexMapping(iVarType=2), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(boolAlgVars, function addVarToArrayIndexMapping(iVarType=3), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(stringAlgVars, function addVarToArrayIndexMapping(iVarType=4), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(paramVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(intParamVars, function addVarToArrayIndexMapping(iVarType=2), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(boolParamVars, function addVarToArrayIndexMapping(iVarType=3), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(stringParamVars, function addVarToArrayIndexMapping(iVarType=4), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        //((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(inputVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        //((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(outputVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(constVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(intConstVars, function addVarToArrayIndexMapping(iVarType=2), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(boolConstVars, function addVarToArrayIndexMapping(iVarType=3), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(stringConstVars, function addVarToArrayIndexMapping(iVarType=4), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(realOptimizeConstraintsVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(realOptimizeFinalConstraintsVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(algVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(discreteAlgVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intAlgVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolAlgVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringAlgVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(paramVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intParamVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolParamVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringParamVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        //(currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTabl) = addVarToArrayIndexMappings(inputVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        //(currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTabl) = addVarToArrayIndexMappings(outputVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(constVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intConstVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolConstVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringConstVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(realOptimizeConstraintsVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(realOptimizeFinalConstraintsVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
 
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(aliasVars, function addVarToArrayIndexMapping(iVarType=1), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(intAliasVars, function addVarToArrayIndexMapping(iVarType=2), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(boolAliasVars, function addVarToArrayIndexMapping(iVarType=3), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
-        ((currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable)) = List.fold(stringAliasVars, function addVarToArrayIndexMapping(iVarType=4), (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable));
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(aliasVars, 1, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(intAliasVars, 2, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(boolAliasVars, 3, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
+        (currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable) = addVarToArrayIndexMappings(stringAliasVars, 4, currentVarIndices, varArrayIndexMappingHashTable, varIndexMappingHashTable);
       then (varArrayIndexMappingHashTable, varIndexMappingHashTable);
     else
       then (HashTableCrIListArray.emptyHashTableSized(0), HashTableCrILst.emptyHashTableSized(0));
   end match;
 end createVarToArrayIndexMapping;
 
+public function addVarToArrayIndexMappings
+  input list<SimCodeVar.SimVar> vars;
+  input Integer iVarType; //1 = real ; 2 = int ; 3 = bool ; 4 = string
+  input output array<Integer> currentVarIndices;
+  input output HashTableCrIListArray.HashTable varToArrayIndexMapping;
+  input output HashTableCrILst.HashTable varToIndexMapping;
+algorithm
+  for v in vars loop
+    (currentVarIndices, varToArrayIndexMapping, varToIndexMapping) :=
+      addVarToArrayIndexMapping(v, iVarType, currentVarIndices, varToArrayIndexMapping, varToIndexMapping);
+  end for;
+end addVarToArrayIndexMappings;
+
 public function addVarToArrayIndexMapping "author: marcusw
   Adds the given variable to the array-mapping and to the var-mapping. If the variable is part of an array 'a' which is not already part of the
   given hash table, a new hash table element with size 'a.length' is allocated. The allocated arrays are row-major based."
   input SimCodeVar.SimVar iVar;
   input Integer iVarType; //1 = real ; 2 = int ; 3 = bool ; 4 = string
-  input tuple<array<Integer>, HashTableCrIListArray.HashTable, HashTableCrILst.HashTable> iCurrentVarIndicesHashTable;
-  //<current indices, array related mapping, single var related mapping>
-  output tuple<array<Integer>, HashTableCrIListArray.HashTable, HashTableCrILst.HashTable> oCurrentVarIndicesHashTable;
+  input output array<Integer> currentVarIndices;
+  input output HashTableCrIListArray.HashTable varToArrayIndexMapping;
+  input output HashTableCrILst.HashTable varToIndexMapping;
 protected
-  DAE.ComponentRef arrayCref, varName, name, arrayName;
+  DAE.ComponentRef name, arrayName;
   Integer varIdx, arrayIndex;
   array<Integer> varIndices;
   list<Integer> arrayDimensions;
   list<String> numArrayElement;
-  list<DAE.ComponentRef> expandedCrefs;
-  list<String> numArrayElement;
-  array<Integer> tmpCurrentVarIndices;
   list<DAE.Subscript> arraySubscripts;
-  HashTableCrIListArray.HashTable tmpVarToArrayIndexMapping; // Maps each array variable to a list of variable indices
-  HashTableCrILst.HashTable tmpVarToIndexMapping; // Maps each variable to a concrete index
 algorithm
-  oCurrentVarIndicesHashTable := match(iVar, iVarType, iCurrentVarIndicesHashTable)
-    case(SimCodeVar.SIMVAR(name=name, numArrayElement=numArrayElement),_,(tmpCurrentVarIndices,tmpVarToArrayIndexMapping,tmpVarToIndexMapping))
-      equation
-        (tmpCurrentVarIndices,varIdx) = getArrayIdxByVar(iVar, iVarType, tmpVarToIndexMapping, tmpCurrentVarIndices);
+  () := match iVar
+    case SimCodeVar.SIMVAR(name=name, numArrayElement=numArrayElement)
+      algorithm
+        (currentVarIndices,varIdx) := getArrayIdxByVar(iVar, iVarType, varToIndexMapping, currentVarIndices);
         //print("Adding variable " + ComponentReference.printComponentRefStr(name) + " with type " + intString(iVarType) + " to map with index " + intString(varIdx) + "\n");
-        tmpVarToIndexMapping = BaseHashTable.add((name, {varIdx}), tmpVarToIndexMapping);
-        arraySubscripts = ComponentReference.crefLastSubs(name);
-        if(boolOr(listEmpty(numArrayElement), checkIfSubscriptsContainsUnhandlableIndices(arraySubscripts))) then
-          arrayName = name;
+        varToIndexMapping := BaseHashTable.add((name, {varIdx}), varToIndexMapping);
+        arraySubscripts := ComponentReference.crefLastSubs(name);
+        if listEmpty(numArrayElement) or checkIfSubscriptsContainsUnhandlableIndices(arraySubscripts) then
+          arrayName := name;
         else
-          arrayName = ComponentReference.crefStripLastSubs(name);
+          arrayName := ComponentReference.crefStripLastSubs(name);
         end if;
 
-        _ = match iVar
-        case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) equation
-          // store array dimensions and
-          // index of first element to indicate a contiguous array
-          arrayDimensions = List.map(List.lastN(numArrayElement, listLength(numArrayElement)), stringInt);
-          varIndices = arrayCreate(1, varIdx);
-          tmpVarToArrayIndexMapping = BaseHashTable.add((arrayName, (arrayDimensions, varIndices)), tmpVarToArrayIndexMapping);
-        then ();
-        else equation if (ComponentReference.crefEqual(arrayName, name)) then
+        if isArrayVar(iVar) then
+          // store array dimensions and index of first element to indicate a contiguous array
+          arrayDimensions := list(stringInt(e) for e in List.lastN(numArrayElement, listLength(numArrayElement)));
+          varIndices := arrayCreate(1, varIdx);
+          varToArrayIndexMapping := BaseHashTable.add((arrayName, (arrayDimensions, varIndices)), varToArrayIndexMapping);
+        elseif ComponentReference.crefEqual(arrayName, name) then
           // scalar variable
-          varIndices = arrayCreate(1, varIdx);
-          tmpVarToArrayIndexMapping = BaseHashTable.add((arrayName, ({1},varIndices)), tmpVarToArrayIndexMapping);
+          varIndices := arrayCreate(1, varIdx);
+          varToArrayIndexMapping := BaseHashTable.add((arrayName, ({1},varIndices)), varToArrayIndexMapping);
         else
           // store array dimensions and build up list of indices for elements
-          if(BaseHashTable.hasKey(arrayName, tmpVarToArrayIndexMapping)) then
-            ((arrayDimensions,varIndices)) = BaseHashTable.get(arrayName, tmpVarToArrayIndexMapping);
+          if BaseHashTable.hasKey(arrayName, varToArrayIndexMapping)  then
+            ((arrayDimensions,varIndices)) := BaseHashTable.get(arrayName, varToArrayIndexMapping);
           else
             //print("Try to calculate array dimensions out of " + intString(listLength(numArrayElement)) + " array elements " + "\n");
-            arrayDimensions = List.map(List.lastN(numArrayElement,listLength(arraySubscripts)), stringInt);
+            arrayDimensions := list(stringInt(e) for e in List.lastN(numArrayElement, listLength(arraySubscripts)));
             //print("Allocating new array with " + intString(List.fold(arrayDimensions, intMul, 1)) + " elements.\n");
-            varIndices = arrayCreate(List.fold(arrayDimensions, intMul, 1), 0);
+            varIndices := arrayCreate(List.fold(arrayDimensions, intMul, 1), 0);
           end if;
           //print("Num of array elements {" + stringDelimitList(List.map(arrayDimensions, intString), ",") + "} : " + intString(listLength(arraySubscripts)) + "  arraySubs "+ExpressionDump.printSubscriptLstStr(arraySubscripts) + "  arrayDimensions[ "+stringDelimitList(List.map(arrayDimensions,intString),",")+"]\n");
-          arrayIndex = getScalarElementIndex(arraySubscripts, arrayDimensions);
+          arrayIndex := getScalarElementIndex(arraySubscripts, arrayDimensions);
           //print("VarIndices: " + intString(arrayLength(varIndices)) + " arrayIndex: " + intString(arrayIndex) + " varIndex: " + intString(varIdx) + "\n");
-          varIndices = arrayUpdate(varIndices, arrayIndex, varIdx);
-          tmpVarToArrayIndexMapping = BaseHashTable.add((arrayName, (arrayDimensions,varIndices)), tmpVarToArrayIndexMapping);
-        end if; then ();
-        end match;
-      then ((tmpCurrentVarIndices, tmpVarToArrayIndexMapping, tmpVarToIndexMapping));
+          varIndices := arrayUpdate(varIndices, arrayIndex, varIdx);
+          varToArrayIndexMapping := BaseHashTable.add((arrayName, (arrayDimensions,varIndices)), varToArrayIndexMapping);
+        end if;
+      then
+        ();
+
     else
-      equation
+      algorithm
         Error.addMessage(Error.INTERNAL_ERROR, {"Unknown case for addVarToArrayIndexMapping.\n"});
-      then iCurrentVarIndicesHashTable;
+      then
+        ();
   end match;
 end addVarToArrayIndexMapping;
 
 protected function checkIfSubscriptsContainsUnhandlableIndices "author: marcusw
   Returns false if at least one subscript can not be handled as constant index."
   input list<DAE.Subscript> iSubscripts;
-  output Boolean oContainsUnhandledSubscripts;
+  output Boolean oContainsUnhandledSubscripts = false;
 protected
-  Boolean containsUnhandledSubscripts = false;
   DAE.Subscript subscript;
 algorithm
   for subscript in iSubscripts loop
-    containsUnhandledSubscripts := boolOr(containsUnhandledSubscripts, intLt(DAEUtil.getSubscriptIndex(subscript), 0));
+    if DAEUtil.getSubscriptIndex(subscript) < 0 then
+      oContainsUnhandledSubscripts := true;
+      break;
+    end if;
   end for;
-  oContainsUnhandledSubscripts := containsUnhandledSubscripts;
 end checkIfSubscriptsContainsUnhandlableIndices;
 
 protected function getArrayIdxByVar "author: marcusw
@@ -11775,14 +11783,7 @@ protected function getVarToArrayIndexByType "author: marcusw
 algorithm
   try
     oVarIdx := arrayGet(iCurrentVarIndices, iVarType);
-    _ := match iVar
-      case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
-        arrayUpdate(iCurrentVarIndices, iVarType, oVarIdx + getNumElems(iVar));
-        then ();
-      else algorithm
-        arrayUpdate(iCurrentVarIndices, iVarType, oVarIdx + 1);
-        then ();
-    end match;
+    arrayUpdate(iCurrentVarIndices, iVarType, oVarIdx + getNumElems(iVar));
   else
     Error.addMessage(Error.INTERNAL_ERROR, {"GetVarToArrayIndexByType with unknown type called."});
     oVarIdx := -1;
@@ -13982,8 +13983,8 @@ algorithm
   numElems := match var
     case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) algorithm
       numElems := 1;
-      for i in 1:listLength(var.numArrayElement) loop
-        numElems := numElems * stringInt(listGet(var.numArrayElement, i));
+      for d in var.numArrayElement loop
+        numElems := numElems * stringInt(d);
       end for;
       then numElems;
     else 1;
@@ -15011,6 +15012,16 @@ protected
 algorithm
   eqs := list(match eq case SimCode.SES_NONLINEAR() then eq; case SimCode.SES_MIXED(cont=e as SimCode.SES_NONLINEAR()) then e; end match for eq guard match eq case SimCode.SES_NONLINEAR() then true; case SimCode.SES_MIXED(cont=SimCode.SES_NONLINEAR()) then true; else false; end match in simEqSysIn);
 end selectNLEqSys;
+
+function isArrayVar
+  input SimCodeVar.SimVar var;
+  output Boolean isArray;
+algorithm
+  isArray := match var
+    case SimCodeVar.SIMVAR(type_ = DAE.T_ARRAY()) then true;
+    else false;
+  end match;
+end isArrayVar;
 
 annotation(__OpenModelica_Interface="backend");
 end SimCodeUtil;
