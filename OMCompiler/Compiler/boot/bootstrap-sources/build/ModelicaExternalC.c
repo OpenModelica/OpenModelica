@@ -18,7 +18,7 @@ alloc_real_array(&(_matrix), 2, _nrow, _ncol); // _matrix has no default value.
 _nrow_ext = (int)_nrow;
 _ncol_ext = (int)_ncol;
 _verboseRead_ext = (int)_verboseRead;
-_matrix_c89 = (void*) data_of_real_c89_array(&(_matrix));
+_matrix_c89 = (void*) data_of_real_c89_array(_matrix);
 ModelicaIO_readRealMatrix(MMC_STRINGDATA(_fileName), MMC_STRINGDATA(_matrixName), (double*) _matrix_c89, _nrow_ext, _ncol_ext, _verboseRead_ext);
 return _matrix;
 }
@@ -41,7 +41,7 @@ integer_array omc_ModelicaExternalC_ModelicaIO__readMatrixSizes(threadData_t *th
 void *_dim_c89;
 integer_array _dim;
 alloc_integer_array(&(_dim), 1, 2); // _dim has no default value.
-_dim_c89 = (void*) data_of_integer_c89_array(&(_dim));
+_dim_c89 = (void*) data_of_integer_c89_array(_dim);
 ModelicaIO_readMatrixSizes(MMC_STRINGDATA(_fileName), MMC_STRINGDATA(_matrixName), (int*) _dim_c89);
 unpack_integer_array(&_dim);
 return _dim;
