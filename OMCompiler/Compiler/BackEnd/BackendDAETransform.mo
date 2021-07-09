@@ -280,22 +280,11 @@ algorithm
       eqns_1 = BackendEquation.listEquation(eqn_lst1);
       (mixedSystem, _) = BackendEquation.iterationVarsinRelations(eqn_lst1, vars_1);
       if not Flags.isSet(Flags.DISABLE_JACSCC) then
-        syst = BackendDAEUtil.createEqSystem(vars_1, eqns_1);
-        (m, mt) = BackendDAEUtil.adjacencyMatrix(syst, BackendDAE.ABSOLUTE(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
-        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        (jac, shared) = SymbolicJacobian.calculateJacobian(vars_1, eqns_1, m, true, ishared);
-        // Jacobian of a Linear System is always linear
-        (jac_tp, jacConstant) = SymbolicJacobian.analyzeJacobian(vars_1, eqns_1, jac);
-
-        // if Jacobian is constant, then check if it is singular
-        if jacConstant and isSome(jac) then
-          true = analyzeConstantJacobian(Util.getOption(jac), arrayLength(mt), var_lst, eqn_lst, shared);
-        end if;
+        (sc, _) = SymbolicJacobian.calculateJacobianComponent(BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.EMPTY_JACOBIAN(), BackendDAE.JAC_UNPROCESSED(), mixedSystem), vars_1, eqns_1, ishared);
       else
-        jac = NONE();
-        jac_tp = BackendDAE.JAC_NO_ANALYTIC();
+        sc = BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(NONE()), BackendDAE.JAC_NO_ANALYTIC(), mixedSystem);
       end if;
-    then {BackendDAE.EQUATIONSYSTEM(comp, varindxs, BackendDAE.FULL_JACOBIAN(jac), jac_tp, mixedSystem)};
+    then {sc};
 
     /*
       All algorithms - assume each can be solved for its matched variables.

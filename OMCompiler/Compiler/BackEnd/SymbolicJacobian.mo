@@ -2044,7 +2044,7 @@ algorithm
         if Flags.isSet(Flags.JAC_DUMP2) then
           print("analytical Jacobians -> generated Jacobian DAE time: " + realString(clock()) + "\n");
         end if;
-        dependencies = calcJacobianDependencies((backendDAE, "", {}, {}, {}, {}));
+        dependencies = calcJacobianDependencies((backendDAE, "", inDiffVars, diffedVars, inVars, {}));
 
      then
         ((backendDAE, inName, inDiffVars, diffedVars, inVars, dependencies), funcs);
@@ -2446,6 +2446,9 @@ algorithm
   syst := List.first(systems);  // Only the first system contains directional derivative,
                                 // the others contain optional constant equations
   dependencies := BackendEquation.getCrefsFromEquations(syst.orderedEqs, syst.orderedVars, shared.globalKnownVars);
+  if Flags.isSet(Flags.JAC_DUMP) then
+    print("Dependencies:\n-------------------------------------\n" + ComponentReference.crefListStr(dependencies) + "\n\n");
+  end if;
 end calcJacobianDependencies;
 
 public function getJacobianDependencies
@@ -2460,11 +2463,60 @@ algorithm
     then {};
 
     else equation
-      Error.addInternalError("function getJacobianDependencies failed", sourceInfo());
+      Error.addInternalError("function SymbolicJacobian.getJacobianDependencies failed", sourceInfo());
     then fail();
 
   end match;
 end getJacobianDependencies;
+
+public function getJacType
+"author kabdelhak 2020-01
+ Returns the jacobian type for all types of jacobians. Used to generate linearity information
+ of torn systems."
+  input BackendDAE.Jacobian jacobian;
+  input Option<BackendDAE.Variables> varsOpt = NONE();
+  input Option<BackendDAE.EquationArray> eqnsOpt = NONE();
+  output BackendDAE.JacobianType jacType;
+algorithm
+  jacType := match(jacobian, varsOpt, eqnsOpt)
+    local
+      list<BackendDAE.Var> residualVars;
+      list<DAE.ComponentRef> dependencies;
+      BackendDAE.FullJacobian fullJac;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.JacobianType fullJacType;
+
+    /* No dependencies -> constant jacobian */
+    case (BackendDAE.GENERIC_JACOBIAN(jacobian=SOME((_, _, _, _, _, {}))), _, _)
+    then BackendDAE.JAC_CONSTANT();
+
+    /*
+      dependencies contain iteration vars -> nonlinear else linear
+      NOTE: do we need to check all diffed vars instead of iteration vars?
+    */
+    case (BackendDAE.GENERIC_JACOBIAN(jacobian=SOME((_, _, _, residualVars, _, dependencies))), _, _)
+    then if List.intersectionEmpty(residualVars, dependencies, BackendVariable.varCrefEqualStripped) then BackendDAE.JAC_LINEAR() else BackendDAE.JAC_NONLINEAR();
+
+    /* no jacobian */
+    case (BackendDAE.GENERIC_JACOBIAN(jacobian=NONE()), _, _)
+    then BackendDAE.JAC_NO_ANALYTIC();
+
+    /* full jacobian, this needs to be removed! */
+    case (BackendDAE.FULL_JACOBIAN(jacobian = fullJac), SOME(vars), SOME(eqns))
+      algorithm
+        (fullJacType, _) := analyzeJacobian(vars, eqns, fullJac);
+    then fullJacType;
+
+    /* empty jacobian */
+    case (BackendDAE.EMPTY_JACOBIAN(), _, _)
+    then BackendDAE.JAC_NO_ANALYTIC();
+
+    else equation
+      Error.addInternalError("function SymbolicJacobian.getJacType failed", sourceInfo());
+    then fail();
+  end match;
+end getJacType;
 
 // =============================================================================
 // Module for to calculate strong component Jacobains
@@ -2663,14 +2715,14 @@ algorithm
   end try;
 end calculateTearingSetJacobian;
 
-protected function calculateJacobianComponent
+public function calculateJacobianComponent
   "Calculates jacobian matrix for strong components of torn systems and non-linear systems."
   input BackendDAE.StrongComponent inComp;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
   input  BackendDAE.Shared inShared;
   output BackendDAE.StrongComponent outComp;
-  output  BackendDAE.Shared outShared;
+  output BackendDAE.Shared outShared;
 algorithm
   (outComp, outShared) := matchcontinue (inComp, inVars, inEqns, inShared)
     local
@@ -2699,17 +2751,29 @@ algorithm
       BackendDAE.TearingSet strictTearingset, casualTearingSet;
       Option<BackendDAE.TearingSet> optCasualTearingSet;
 
+      // First call from BackendDAETransform. Only determine jacobian type
+      case (comp as BackendDAE.EQUATIONSYSTEM(jacType=BackendDAE.JAC_UNPROCESSED(), eqns=residualequations, vars=iterationvarsInts), _, _, _)
+        algorithm
+          strictTearingset := BackendDAE.TEARINGSET(iterationvarsInts, residualequations, {}, BackendDAE.EMPTY_JACOBIAN());
+          (jacobian, _) := calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, false);
+          /* only save jacobian type */
+          comp.jac := BackendDAE.FULL_JACOBIAN(NONE());
+          comp.jacType := getJacType(jacobian);
+      then (comp, inShared);
+
       // generate symbolic jacobian for a torn system
       case (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), _, _, _)
         equation
           // generate generic jacobian backend dae
           (jacobian, shared) = calculateTearingSetJacobian(inVars, inEqns, strictTearingset, inShared, linear);
           strictTearingset.jac = jacobian;
+          linear = linear or BackendDAEUtil.getLinearfromJacType(getJacType(jacobian));
 
           if isSome(optCasualTearingSet) then
             casualTearingSet = Util.getOption(optCasualTearingSet);
             (jacobianCausal, shared) = calculateTearingSetJacobian(inVars, inEqns, casualTearingSet, shared, linear);
             casualTearingSet.jac = jacobianCausal;
+            linear = linear and BackendDAEUtil.getLinearfromJacType(getJacType(jacobian));
             optCasualTearingSet = SOME(casualTearingSet);
           end if;
       then (BackendDAE.TORNSYSTEM(strictTearingset, optCasualTearingSet, linear, mixedSystem), shared);
