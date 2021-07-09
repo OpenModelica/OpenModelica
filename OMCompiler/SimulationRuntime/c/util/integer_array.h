@@ -273,14 +273,4 @@ void unpack_integer_array(integer_array_t *a);
 void pack_alloc_integer_array(integer_array_t *a, integer_array_t *dest);
 void unpack_copy_integer_array(const integer_array_t *a, integer_array_t *dest);
 
-/* Note: data_of_integer_array converts from integer_array to int*, for external functions only */
-static inline int* data_of_integer_array(const integer_array_t *a)
-{ return (int *) a->data; }
-
-static inline int* data_of_integer_f77_array(const integer_array_t *a)
-{ return (int *) a->data; }
-
-static inline int* data_of_integer_c89_array(const integer_array_t *a)
-{ return (int *) a->data; }
-
 #endif
