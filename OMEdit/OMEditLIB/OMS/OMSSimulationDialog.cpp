@@ -40,6 +40,7 @@
 #include "OMSSimulationOutputWidget.h"
 #include "Modeling/ModelWidgetContainer.h"
 #include "Plotting/VariablesWidget.h"
+#include "Plotting/PlotWindowContainer.h"
 #include "Options/OptionsDialog.h"
 
 #include <QGridLayout>
@@ -186,6 +187,10 @@ void OMSSimulationDialog::simulate(LibraryTreeItem *pLibraryTreeItem, bool inter
     OMSSimulationOutputWidget *pOMSSimulationOutputWidget = new OMSSimulationOutputWidget(pLibraryTreeItem->getNameStructure(), fileName, interactive);
     MessagesWidget::instance()->addSimulationOutputTab(pOMSSimulationOutputWidget, pLibraryTreeItem->getNameStructure());
     MainWindow::instance()->switchToPlottingPerspectiveSlot();
+    if (interactive) {
+      OMPlot::PlotWindow *pInteractivePlotWindow = MainWindow::instance()->getPlotWindowContainer()->addInteractivePlotWindow(pLibraryTreeItem->getNameStructure());
+      connect(pInteractivePlotWindow, SIGNAL(checkVariable(QString,bool)), pOMSSimulationOutputWidget, SLOT(checkVariable(QString,bool)));
+    }
   }
 }
 

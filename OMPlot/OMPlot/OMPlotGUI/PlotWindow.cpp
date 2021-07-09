@@ -1419,6 +1419,11 @@ void PlotWindow::updatePlot()
   }
 }
 
+void PlotWindow::emitCheckVariable(const QString &variableName, bool enable)
+{
+  emit checkVariable(variableName, enable);
+}
+
 void PlotWindow::setGrid(QString grid)
 {
   if (grid.toLower().compare("simple") == 0)

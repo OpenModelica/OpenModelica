@@ -369,15 +369,15 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
  * \brief PlotWindowContainer::addInteractivePlotWindow
  * Adds a new Interactive Plot Window
  */
-PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QString owner, int port)
+PlotWindow* PlotWindowContainer::addInteractivePlotWindow(const QString &title, bool maximized, int port)
 {
   try {
     PlotWindow *pPlotWindow = new PlotWindow(QStringList(), this, true);
     pPlotWindow->setPlotType(PlotWindow::PLOTINTERACTIVE);
-    pPlotWindow->setInteractiveOwner(owner);
+    pPlotWindow->setInteractiveOwner(title);
     pPlotWindow->setInteractivePort(port);
     connect(pPlotWindow, SIGNAL(closingDown()), SLOT(removeInteractivePlotWindow()));
-    pPlotWindow->setWindowTitle(tr("Interactive Plot : %1").arg(owner));
+    pPlotWindow->setWindowTitle(tr("Interactive Plot : %1").arg(title));
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
