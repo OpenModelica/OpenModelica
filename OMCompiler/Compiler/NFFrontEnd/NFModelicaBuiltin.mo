@@ -5366,7 +5366,7 @@ package AutoCompletion "Auto completion information for OMEdit."
     // Annotation Choices for Modifications and Redeclarations
     record choices "Defines a suitable redeclaration or modifications of the element."
       Boolean checkBox = true "Display a checkbox to input the values false or true in the graphical user interface.";
-      // TODO: how to handle choice?
+      String choice[:] = fill("", 0) "the choices as string";
     end choices;
 
     Boolean choicesAllMatching "Specify whether to construct an automatic list of choices menu or not.";

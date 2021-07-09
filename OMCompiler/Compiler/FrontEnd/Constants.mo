@@ -433,6 +433,7 @@ end Selector;
 record choices
   Boolean checkBox = false;
   Boolean __Dymola_checkBox = false;
+  String choice[:] = fill(\"\", 0) \"the choices as string\";
 end choices;
 
 //
