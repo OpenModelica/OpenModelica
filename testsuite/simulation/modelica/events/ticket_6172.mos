@@ -1,0 +1,45 @@
+// name: ticket_6172
+// keywords: event, iterator, for loop
+// status: correct
+// cflags:
+// teardown_command: rm -rf matrixAdd*  output.log
+//
+//
+
+loadString("
+class matrixAdd
+  parameter Real[3,2] m={{1,2},{2,3},{4,5}};
+  parameter Real[3,2] a={{2,2},{2,2},{2,2}};
+  Real[3,2] b;
+  Real max;
+algorithm
+  max:=0;
+  for i in 1:3 loop
+    for j in 1:2 loop
+      b[i,j]:=m[i,j]+a[i,j];
+      if (max<b[i,j]) then
+          max:=b[i,j];
+      end if;
+    end for;
+  end for;
+end matrixAdd;
+"); getErrorString();
+
+simulate(matrixAdd); getErrorString();
+val(max);
+
+
+// Result:
+// true
+// ""
+// record SimulationResult
+//     resultFile = "matrixAdd_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'matrixAdd', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = "LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
+// ""
+// 7.0
+
+// endResult

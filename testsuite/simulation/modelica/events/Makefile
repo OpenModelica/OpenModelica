@@ -26,6 +26,7 @@ sample1.mos \
 sample2.mos \
 ServerWithQueue.mos \
 TestNoEventsFlags.mos \
+ticket_6172.mos \
 whenInAlgorithm.mos \
 whenTest1.mos \
 whenTest2.mos \
