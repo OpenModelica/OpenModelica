@@ -101,11 +101,7 @@ inline void normalizePath(std::string& path)
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
   : _library_path(library_path)
   , _modelicasystem_path(modelicasystem_path)
-  #if defined(RUNTIME_STATIC_LINKING)
   , _defaultLinSolver("dgesvSolver")
-  #else
-  , _defaultLinSolver("linearSolver")
-  #endif
 	, _defaultNonLinSolver("newton")
 {
   fillArgumentsToIgnore();
@@ -115,11 +111,7 @@ OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
 OMCFactory::OMCFactory()
   : _library_path("")
   , _modelicasystem_path("")
-  #if defined(RUNTIME_STATIC_LINKING)
   , _defaultLinSolver("dgesvSolver")
-  #else
-  , _defaultLinSolver("linearSolver")
-  #endif
   , _defaultNonLinSolver("newton")
 {
   fillArgumentsToIgnore();
