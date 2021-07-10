@@ -218,7 +218,7 @@ void DgesvSolver::solve()
     dgetc2_(&_dimSys, _A, &_dimSys, _iHelp, _jHelp, &info2);
     dgesc2_(&_dimSys, _A, &_dimSys, _b, _iHelp, _jHelp, &scale);
     _hasDgetc2Factors = true;
-    LOGGER_WRITE("DgesvSolver: using complete pivoting (dgesv info: " + to_string(info) + ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
+    LOGGER_WRITE("DgesvSolver: using total pivoting (dgesv info: " + to_string(info) + ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
   }
   else if (info < 0) {
     _iterationStatus = SOLVERERROR;
