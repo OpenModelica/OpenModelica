@@ -278,6 +278,11 @@ class ArraySliceConst: public BaseArray<T> {
     return _baseArray(baseIdx(5, idx));
   }
 
+  virtual const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) const {
+    size_t idx[] = {i, j, k, l, m, n};
+    return _baseArray(baseIdx(6, idx));
+  }
+
  protected:
   const BaseArray<T> &_baseArray;  // underlying array
   vector<const BaseArray<int>*> _isets; // given index sets per dimension
@@ -406,6 +411,11 @@ class ArraySlice: public ArraySliceConst<T> {
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) {
     size_t idx[] = {i, j, k, l, m};
     return _baseArray(ArraySliceConst<T>::baseIdx(5, idx));
+  }
+
+  virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) {
+    size_t idx[] = {i, j, k, l, m, n};
+    return _baseArray(ArraySliceConst<T>::baseIdx(6, idx));
   }
 
  protected:
