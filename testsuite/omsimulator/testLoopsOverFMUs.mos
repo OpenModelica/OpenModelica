@@ -125,23 +125,23 @@ val(D.x_out, 0.1, "loopsOverFMUs.mat");
 // ""
 // "warning: Alg. loop (size 3)
 // warning: Alg. loop (size 2)
-// info:    maximum step size for 'loopsOverFMUs.root': 0.100000
+// info:    maximum step size for 'loopsOverFMUs.root': 0.001000
 // info:    Result file: loopsOverFMUs.mat (bufferSize=1)
 // warning: Alg. loop (size 3)
 // warning: Alg. loop (size 2)
 // warning: Alg. loop (size 3)
 // warning: Alg. loop (size 2)
 // info:    Final Statistics for 'loopsOverFMUs.root':
-//          NumSteps = 10 NumRhsEvals  = 15 NumLinSolvSetups = 6
-//          NumNonlinSolvIters = 14 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+//          NumSteps = 101 NumRhsEvals  = 102 NumLinSolvSetups = 7
+//          NumNonlinSolvIters = 101 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // info:    6 warnings
 // info:    0 errors
 // "
-// 0.6354248688886293
+// 0.6354248688935413
 // -1.8
-// 1.164575131109139
+// 1.164575131106459
 // 2.0
-// 2.443067244571996
+// 2.442813485479551
 // 2.0
-// 2.443067244215552
+// 2.442813485479604
 // endResult

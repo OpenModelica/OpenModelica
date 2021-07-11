@@ -54,20 +54,20 @@ readFile("resetWithLoops_systemCall.log");
 // 0
 // "Instantiate
 // Initialize
-// info:    maximum step size for 'model.root': 0.100000
+// info:    maximum step size for 'model.root': 0.001000
 // info:    Result file: model_res.mat (bufferSize=10)
 // Reset
 // info:    Final Statistics for 'model.root':
 //          NumSteps = 0 NumRhsEvals  = 0 NumLinSolvSetups = 0
 //          NumNonlinSolvIters = 0 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // Initialize
-// info:    maximum step size for 'model.root': 0.100000
+// info:    maximum step size for 'model.root': 0.001000
 // info:    Result file: model_res.mat (bufferSize=10)
 // Simulate
 // Terminate and Delete
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 1 NumRhsEvals  = 5 NumLinSolvSetups = 2
-//          NumNonlinSolvIters = 4 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
+//          NumSteps = 23 NumRhsEvals  = 42 NumLinSolvSetups = 14
+//          NumNonlinSolvIters = 41 NumNonlinSolvConvFails = 0 NumErrTestFails = 4
 // Success
 // "
 // endResult
