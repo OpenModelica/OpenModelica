@@ -131,20 +131,43 @@ void OMCFactory::UnloadAllLibs(void)
     }
 }
 
-pair<string, string> OMCFactory::parseIngoredAndWrongFormatOption(const string &s)
+pair<string, string> OMCFactory::replaceCRuntimeArguments(const string &arg)
 {
-    int sep = s.find("=");
-    string key = s;
-    if(sep > 0)
-      key = s.substr(0, sep);
-
-    if (_argumentsToIgnore.find(key) != _argumentsToIgnore.end())
-        return make_pair(string("ignored"), s);
-
-    if (sep > 2 && s[0] == '-' && s[1] != '-')
-        return make_pair(string("unrecognized"), s);
+  string key = arg;
+  string value = "";
+  int sep = arg.find("=");
+  if (sep > 0) {
+    key = arg.substr(0, sep);
+    value = arg.substr(sep + 1);
+  }
+  // check for replacement
+  map<string,string>::iterator iter = _argumentsToReplace.find(key);
+  if (iter != _argumentsToReplace.end()) {
+    key = iter->second;
+    if (sep > 0) {
+      // check for replacements of value, depending on key
+      if (key == "-L") {
+        if (value == "lapack" || value == "default")
+          value = "dgesvSolver";
+        else if (value == "klu")
+          value = "linearSolver"; // contains klu for sparse
+      }
+    }
+    else {
+      // check for space in replacement, separating a value
+      int ssep = key.find(" ");
+      if (ssep > 0) {
+        value = key.substr(ssep + 1);
+        key = key.substr(0, ssep);
+        sep = ssep;
+      }
+    }
+    if (sep > 0)
+      return make_pair(key, value);    // rename arg and provide value
     else
-        return make_pair(string(), string());
+      return make_pair(key, string()); // rename arg
+  }
+  return make_pair(string(), string());// don't touch arg
 }
 
 static LogSettings initializeLogger(const po::variables_map& vm)
@@ -209,18 +232,17 @@ static LogSettings initializeLogger(const po::variables_map& vm)
         }
         // treat native option
         else {
+          // check for option with level, like "-V ls=warning" (default for "-V ls": LL_DEBUG)
           boost::split(tmpvec, log_vec[i], boost::is_any_of("="));
-
-          if (tmpvec.size() > 1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end()
-              && (tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()))
-            {
-              if (tmpvec[0] == "all") {
-                logSettings.setAll(logLvlMap[tmpvec[1]]);
-                break;
-              }
-              else
-                logSettings.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
-            }
+          if (tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()) {
+            LogLevel logLevel = LL_DEBUG;
+            if (tmpvec.size() > 1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end())
+              logLevel = logLvlMap[tmpvec[1]];
+            if (tmpvec[0] == "all")
+              logSettings.setAll(logLevel);
+            else
+              logSettings.modes[logCatMap[tmpvec[0]]] = logLevel;
+          }
           else
             throw ModelicaSimulationError(MODEL_FACTORY,
               "log-settings flags not supported: " + log_vec[i] + "\n");
@@ -317,7 +339,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("number-of-intervals,G", po::value< int >()->default_value(500), "number of intervals in equidistant grid")
           ("tolerance,T", po::value< double >()->default_value(1e-6), "solver tolerance")
           ("warn-all,W", po::bool_switch()->default_value(false), "issue all warning messages")
-          ("log-settings,V", po::value< vector<string> >(), "log information: init, nls, ls, solver, output, events, model, other")
+          ("log-settings,V", po::value< vector<string> >(), "log cat[=lvl] with cat: all, init, nls, ls, solver, output, events, model, other and lvl: error, warning, info, debug")
           ("log-format,X", po::value< string >()->default_value("txt"), "log format: txt, xml, xmltcp")
           ("log-port", po::value< int >()->default_value(0), "tcp port for log messages (default 0 meaning stdout/stderr)")
           ("alarm,A", po::value<unsigned int >()->default_value(360), "sets timeout in seconds for simulation")
@@ -339,7 +361,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      descAll.add(descHidden);
 
      po::variables_map vm;
-     boost::function<pair<string, string> (const string&)> parserFunction(boost::bind(&OMCFactory::parseIngoredAndWrongFormatOption, this, _1));
+     boost::function<pair<string, string> (const string&)> parserFunction(boost::bind(&OMCFactory::replaceCRuntimeArguments, this, _1));
      po::parsed_options parsed = po::command_line_parser(argc, argv)
          .options(descAll)
          .style((po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~po::command_line_style::allow_guessing)
@@ -477,57 +499,6 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      return settings;
 }
 
-vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const char* argv[], map<string, string> &opts)
-{
-    vector<const char *> optv;
-    optv.push_back(strdup(argv[0]));
-    for(int i = 1; i < argc; i++)
-    {
-        string arg = argv[i];
-
-        int sep = arg.find("=");
-        string key = arg;
-        string value = "";
-        if(sep > 0)
-        {
-            key = arg.substr(0, sep);
-            value = arg.substr(sep+1);
-        }
-
-        map<string, string>::iterator oldValue = opts.find(key);
-
-        map<string,string>::iterator iter = _argumentsToReplace.find(key);
-        if(iter != _argumentsToReplace.end())
-        {
-            //if(opts.find(iter->second) != opts.end()) //if the new key is already part of the argument list, prevent double insertion
-            //  continue;
-
-            if(oldValue != opts.end())
-            {
-                opts.insert(pair<string,string>(iter->second, oldValue->second));
-                opts.erase(arg);
-            }
-            key = iter->second;
-
-
-            optv.push_back(strdup(key.c_str()));
-            if(sep > 0)
-                optv.push_back(strdup(value.c_str()));
-        }
-        else
-        {
-          if(sep > 0)
-              arg = key + "=" + value;
-          else
-              arg = key;
-          optv.push_back(strdup(arg.c_str()));
-        }
-
-    }
-
-    return optv;
-}
-
 vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const char* argv[], map<string, string> &opts)
 {
   map<string, string>::const_iterator oit;
@@ -595,17 +566,17 @@ void OMCFactory::fillArgumentsToIgnore()
 void OMCFactory::fillArgumentsToReplace()
 {
   _argumentsToReplace = map<string, string>();
-  _argumentsToReplace.insert(pair<string,string>("-r", "-F"));
-  _argumentsToReplace.insert(pair<string,string>("-ls", "-L"));
-  _argumentsToReplace.insert(pair<string,string>("-nls", "-N"));
-  _argumentsToReplace.insert(pair<string,string>("-lv", "--log-settings"));
-  _argumentsToReplace.insert(pair<string,string>("-w", "--warn-all"));
-  _argumentsToReplace.insert(pair<string,string>("-logFormat", "--log-format"));
-  _argumentsToReplace.insert(pair<string,string>("-port", "--log-port"));
-  _argumentsToReplace.insert(pair<string,string>("-alarm", "--alarm"));
-  _argumentsToReplace.insert(pair<string,string>("-emit_protected", "--emit-results all"));
-  _argumentsToReplace.insert(pair<string,string>("-inputPath", "--input-path"));
-  _argumentsToReplace.insert(pair<string,string>("-outputPath", "--output-path"));
+  _argumentsToReplace.insert(pair<string,string>("-r", "results-file"));
+  _argumentsToReplace.insert(pair<string,string>("-ls", "lin-solver"));
+  _argumentsToReplace.insert(pair<string,string>("-nls", "non-lin-solver"));
+  _argumentsToReplace.insert(pair<string,string>("-lv", "log-settings"));
+  _argumentsToReplace.insert(pair<string,string>("-w", "warn-all"));
+  _argumentsToReplace.insert(pair<string,string>("-logFormat", "log-format"));
+  _argumentsToReplace.insert(pair<string,string>("-port", "log-port"));
+  _argumentsToReplace.insert(pair<string,string>("-alarm", "alarm"));
+  _argumentsToReplace.insert(pair<string,string>("-emit_protected", "emit-results all"));
+  _argumentsToReplace.insert(pair<string,string>("-inputPath", "input-path"));
+  _argumentsToReplace.insert(pair<string,string>("-outputPath", "output-path"));
 }
 
 pair<shared_ptr<ISimController>,SimSettings>
@@ -613,9 +584,8 @@ OMCFactory::createSimulation(int argc, const char* argv[],
                              map<string, string> &opts)
 {
   vector<const char *> optv = handleComplexCRuntimeArguments(argc, argv, opts);
-  vector<const char *> optv2 = handleArgumentsToReplace(optv.size(), &optv[0], opts);
 
-  SimSettings settings = readSimulationParameter(optv2.size(), &optv2[0]);
+  SimSettings settings = readSimulationParameter(optv.size(), &optv[0]);
   type_map simcontroller_type_map;
   fs::path simcontroller_path = _library_path;
   fs::path simcontroller_name(SIMCONTROLLER_LIB);
@@ -628,12 +598,7 @@ OMCFactory::createSimulation(int argc, const char* argv[],
 
   optv.clear();
 
-  for(int i = 0; i < optv2.size(); i++)
-    free((char*)optv2[i]);
-
-  optv2.clear();
-
-  return make_pair(simcontroller,settings);
+  return make_pair(simcontroller, settings);
 }
 
 LOADERRESULT OMCFactory::LoadLibrary(string libName,type_map& current_map)

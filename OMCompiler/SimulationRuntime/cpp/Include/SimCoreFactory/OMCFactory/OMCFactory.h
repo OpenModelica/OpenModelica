@@ -56,15 +56,6 @@ protected:
   std::vector<const char *> handleComplexCRuntimeArguments(int argc, const char* argv[], std::map<std::string, std::string> &opts);
 
   /**
-   * Replace all argument names that are part of the arguments-to-replace-map.
-   * @param argc Number of arguments in the argv-array.
-   * @param argv The command line arguments as c-string array.
-   * @param opts Already parsed command line arguments (as key-value-pairs)
-   * @return All arguments including the replaced strings.
-   */
-  std::vector<const char *> handleArgumentsToReplace(int argc, const char* argv[], std::map<std::string, std::string> &opts);
-
-  /**
    * Evaluate all given command line arguments and store their values into the SimSettings structure.
    * @param argc Number of arguments in the argv-array.
    * @param argv The command line arguments as c-string array.
@@ -75,13 +66,11 @@ protected:
 
   /**
    * This helper-function is invoked by the boost program option library and will handle options in the c-runtime
-   * format and options that should be ignored.
-   * It parses a long option that starts with one dash, like '-port=12345' and put it into the 'unrecognized' category.
-   * If an option is detected which is part of the arguments to ignore list, it is put into the 'ignored' category.
+   * format, replacing them with correcponding cpp options.
    * @param The argument that should be handled.
    * @return The pair of category and value that should be used for the given argument.
    */
-  pair<string, string> parseIngoredAndWrongFormatOption(const string &s);
+  pair<string, string> replaceCRuntimeArguments(const string &arg);
 
   void fillArgumentsToIgnore();
   void fillArgumentsToReplace();
