@@ -56,7 +56,7 @@ readFile("initialization2_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'test.root': 0.100000
+// "info:    maximum step size for 'test.root': 0.001000
 // info:    No result file will be created
 // info:    Initialization
 // info:      A.y: 2.3
