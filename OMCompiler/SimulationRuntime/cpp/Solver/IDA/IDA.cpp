@@ -332,6 +332,7 @@ void Ida::initialize()
       throw std::invalid_argument(/*_idid,_tCurrent,*/"IDA::initialize()");
 
     // Initialize dense linear solver
+    _ida_ySolver = N_VNew_Serial(_dimSys);
     _ida_J = SUNDenseMatrix(_dimSys, _dimSys);
     _ida_linSol = SUNLinSol_Dense(_ida_ySolver, _ida_J);
     _idid = IDASetLinearSolver(_idaMem, _ida_linSol, _ida_J);
