@@ -872,6 +872,7 @@ constant ConfigFlag TEARING_METHOD = CONFIG_FLAG(44, "tearingMethod",
   SOME(STRING_DESC_OPTION({
     ("noTearing", Gettext.gettext("Skip tearing. This breaks models with mixed continuous-integer/boolean unknowns")),
     ("minimalTearing", Gettext.gettext("Minimal tearing method to only tear discrete variables.")),
+    ("guruTearing", Gettext.gettext("Tearing method only using predefined tearing variables and forces the rest to be inner variables.")),
     ("omcTearing", Gettext.gettext("Tearing method developed by TU Dresden: Frenkel, Schubert.")),
     ("cellier", Gettext.gettext("Tearing based on Celliers method, revised by FH Bielefeld: Täuber, Patrick"))})),
 

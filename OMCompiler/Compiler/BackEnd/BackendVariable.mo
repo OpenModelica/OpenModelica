@@ -1905,6 +1905,15 @@ algorithm
   // referenceUpdate(inVar, 2, new_kind);
 end setVarTS;
 
+public function varTearingSelectAlways
+  input BackendDAE.Var v;
+  output Boolean b;
+algorithm
+  b := match(v)
+    case BackendDAE.VAR(tearingSelectOption = SOME(BackendDAE.ALWAYS())) then true;
+    else false;
+  end match;
+end varTearingSelectAlways;
 
 public function setBindExp "author: lochel"
   input BackendDAE.Var inVar;
