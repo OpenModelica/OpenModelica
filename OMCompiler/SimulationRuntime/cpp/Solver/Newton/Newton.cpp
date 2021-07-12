@@ -160,9 +160,11 @@ void Newton::solve( )
                      _lc, LL_DEBUG);
 
   while (_iterationStatus == CONTINUE) {
-    if (totSteps >= _newtonSettings->getNewtMax())
+    if (totSteps >= _newtonSettings->getNewtMax()) {
+      LOGGER_WRITE_END(_lc, LL_DEBUG);
       throw ModelicaSimulationError(ALGLOOP_SOLVER,
         "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
+    }
 
     // Newton step for non-linear system
       LOGGER_WRITE_VECTOR("y" + to_string(totSteps), _y, _dimSys, _lc, LL_DEBUG);
@@ -212,8 +214,10 @@ void Newton::solve( )
           calcFunction(_yHelp, _fHelp);
         }
         catch (ModelicaSimulationError& ex) {
-          if (lambda < 1e-10)
+          if (lambda < 1e-10) {
+            LOGGER_WRITE_END(_lc, LL_DEBUG);
             throw ex;
+          }
           // reduce step size
           lambda *= 0.5;
           continue;
@@ -292,7 +296,9 @@ void Newton::solve( )
                        _lc, LL_DEBUG);
         }
         // check for sufficient decrease
-        if (phiHelp <= (1.0 - alpha * lambda) * phi)
+        // (also break for very small lambda and try a small step instead
+        //  -- avoid "sufficient decrease" errors, still have iteration limit)
+        if (phiHelp <= (1.0 - alpha * lambda) * phi || lambda < alpha)
           break;
       }
       // take iterate
