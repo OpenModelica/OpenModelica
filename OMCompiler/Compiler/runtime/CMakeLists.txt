@@ -3,6 +3,7 @@ find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
 
 if(OMC_USE_LAPACK)
+  message(STATUS "Looking for LAPACK. This can be slow sometimes. Hang tight!")
   find_package(LAPACK REQUIRED)
 
   # Check if our lapack version have the deprecated functions.
