@@ -14,7 +14,7 @@ readFile("Pendulum_systemCall.log");
 // "Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.fmu"
 // ""
 // 0
-// "info:    maximum step size for 'model.root': 0.100000
+// "info:    maximum step size for 'model.root': 0.001000
 // info:    Result file: model_res.mat (bufferSize=10)
 // info:    Variable model.root.fmu.body.cylinder.shapeType will not be stored in the result file, because the signal type is not supported
 // info:    Variable model.root.fmu.body.sphere.shapeType will not be stored in the result file, because the signal type is not supported
@@ -37,7 +37,7 @@ readFile("Pendulum_systemCall.log");
 // info:    Variable model.root.fmu.world.z_label.cylinders[2].shapeType will not be stored in the result file, because the signal type is not supported
 // info:    Variable model.root.fmu.world.z_label.cylinders[3].shapeType will not be stored in the result file, because the signal type is not supported
 // info:    Final Statistics for 'model.root':
-//          NumSteps = 53 NumRhsEvals  = 69 NumLinSolvSetups = 13
-//          NumNonlinSolvIters = 68 NumNonlinSolvConvFails = 0 NumErrTestFails = 3
+//          NumSteps = 1004 NumRhsEvals  = 1009 NumLinSolvSetups = 55
+//          NumNonlinSolvIters = 1008 NumNonlinSolvConvFails = 0 NumErrTestFails = 1
 // "
 // endResult
