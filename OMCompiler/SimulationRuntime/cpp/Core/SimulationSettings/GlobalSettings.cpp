@@ -14,7 +14,7 @@ GlobalSettings::GlobalSettings()
   , _hOutput(0.002)
   , _emitResults(EMIT_ALL)
   , _infoOutput(true)
-  , _nonlin_solvers({"newton", "kinsol"})
+  , _nonlin_solvers{"newton", "kinsol"}
   , _selected_solver("euler")
   , _selected_lin_solver("dgesvSolver")
   , _selected_nonlin_solver("newton")

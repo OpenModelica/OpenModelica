@@ -117,7 +117,7 @@ void SimManager::initialize()
     _tStart = global_settings->getStartTime();
     _tEnd = global_settings->getEndTime();
 
-    LOGGER_WRITE("SimManager: Start initialization", LC_INIT, LL_INFO);
+    LOGGER_WRITE("SimManager: Start initialization", LC_SOLVER, LL_INFO);
     LOGGER_STATUS_STARTING(_tStart, _tEnd);
 
     // Reset debug ID
@@ -138,7 +138,7 @@ void SimManager::initialize()
         try
         {
             string nls = global_settings->getNonLinSolvers()[1];
-            LOGGER_WRITE("SimManager: Applying fallback nonlinear solver " + nls, LC_INIT, LL_INFO);
+            LOGGER_WRITE("SimManager: Applying fallback nonlinear solver " + nls, LC_SOLVER, LL_INFO);
             global_settings->setSelectedNonLinSolver(nls);
             _initialization->initializeSystem();
         }
