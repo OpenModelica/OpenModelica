@@ -102,7 +102,7 @@ OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
   : _library_path(library_path)
   , _modelicasystem_path(modelicasystem_path)
   , _defaultLinSolver("dgesvSolver")
-	, _defaultNonLinSolver("newton")
+	, _defaultNonLinSolvers({"newton", "kinsol"})
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -112,7 +112,7 @@ OMCFactory::OMCFactory()
   : _library_path("")
   , _modelicasystem_path("")
   , _defaultLinSolver("dgesvSolver")
-  , _defaultNonLinSolver("newton")
+  , _defaultNonLinSolvers({"newton", "kinsol"})
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -146,11 +146,15 @@ pair<string, string> OMCFactory::replaceCRuntimeArguments(const string &arg)
     key = iter->second;
     if (sep > 0) {
       // check for replacements of value, depending on key
-      if (key == "-L") {
+      if (key == "lin-solver") {
         if (value == "lapack" || value == "default")
           value = "dgesvSolver";
         else if (value == "klu")
           value = "linearSolver"; // contains klu for sparse
+      }
+      else if (key == "non-lin-solver") {
+        if (value == "hybrid")
+          value = "hybrj";
       }
     }
     else {
@@ -335,7 +339,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("step-size,H", po::value< double >()->default_value(0.0), "simulation step size")
           ("solver,I", po::value< string >()->default_value("euler"), "solver method")
           ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver), "linear solver method")
-          ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolver),  "non linear solver method")
+          ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolvers[0]),  "non linear solver method")
           ("number-of-intervals,G", po::value< int >()->default_value(500), "number of intervals in equidistant grid")
           ("tolerance,T", po::value< double >()->default_value(1e-6), "solver tolerance")
           ("warn-all,W", po::bool_switch()->default_value(false), "issue all warning messages")
@@ -404,7 +408,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      double tolerance = vm["tolerance"].as<double>();
      string solver = vm["solver"].as<string>();
-     string nonLinSolver = vm["non-lin-solver"].as<string>();
+     string nonLinSolvers[2];
+     nonLinSolvers[0] = vm["non-lin-solver"].as<string>();
+     nonLinSolvers[1] = nonLinSolvers[0] != _defaultNonLinSolvers[1]? _defaultNonLinSolvers[1]: _defaultNonLinSolvers[0];
      string linSolver = vm["lin-solver"].as<string>();
      unsigned int timeOut = vm["alarm"].as<unsigned int>();
      if (vm.count("runtime-library"))
@@ -491,7 +497,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver, linSolver, nonLinSolver, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
+     SimSettings settings = {solver, linSolver, nonLinSolvers[0], nonLinSolvers[1], starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();

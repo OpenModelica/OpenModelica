@@ -113,27 +113,42 @@ void SimManager::initialize()
       throw ModelicaSimulationError(SIMMANAGER,"Could not get step-event system.");
     }
 
-    _tStart = _config->getGlobalSettings()->getStartTime();
-    _tEnd = _config->getGlobalSettings()->getEndTime();
+    shared_ptr<IGlobalSettings> global_settings = _config->getGlobalSettings();
+    _tStart = global_settings->getStartTime();
+    _tEnd = global_settings->getEndTime();
 
-    LOGGER_WRITE("SimManager: Start initialization",LC_INIT,LL_DEBUG);
+    LOGGER_WRITE("SimManager: Start initialization", LC_INIT, LL_INFO);
     LOGGER_STATUS_STARTING(_tStart, _tEnd);
 
     // Reset debug ID
     _dbgId = 0;
 
+    string nls = global_settings->getNonLinSolvers()[0];
     try
     {
         // Build up system and update once
+        global_settings->setSelectedNonLinSolver(nls);
         _initialization->initializeSystem();
     }
     catch (std::exception& ex)
     {
-        LOGGER_WRITE("SimManager: Could not initialize system", LC_INIT, LL_ERROR);
-        LOGGER_WRITE("SimManager: " + string(ex.what()), LC_INIT, LL_ERROR);
+        LOGGER_WRITE("SimManager: Could not initialize system with " + nls, LC_INIT, LL_WARNING);
+        LOGGER_WRITE("SimManager: " + string(ex.what()), LC_INIT, LL_WARNING);
         //ex << error_id(SIMMANAGER);
-        throw ModelicaSimulationError(SIMMANAGER, "Could not initialize system",
-                                      string(ex.what()), LOGGER_IS_SET(LC_INIT, LL_ERROR));
+        try
+        {
+            string nls = global_settings->getNonLinSolvers()[1];
+            LOGGER_WRITE("SimManager: Applying fallback nonlinear solver " + nls, LC_INIT, LL_INFO);
+            global_settings->setSelectedNonLinSolver(nls);
+            _initialization->initializeSystem();
+        }
+        catch (std::exception& ex)
+        {
+            LOGGER_WRITE("SimManager: Could not initialize system", LC_INIT, LL_ERROR);
+            LOGGER_WRITE("SimManager: " + string(ex.what()), LC_INIT, LL_ERROR);
+            throw ModelicaSimulationError(SIMMANAGER, "Could not initialize system",
+                                          string(ex.what()), LOGGER_IS_SET(LC_INIT, LL_ERROR));
+        }
     }
 
     if (_timeevent_system)

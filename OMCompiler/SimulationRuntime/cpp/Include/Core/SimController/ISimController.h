@@ -8,7 +8,7 @@ struct SimSettings
 {
   string solver_name;
   string linear_solver_name;
-  string nonlinear_solver_name;
+  string nonlinear_solver_names[2];
   double start_time;
   double end_time;
   double step_size;

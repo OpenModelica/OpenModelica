@@ -72,6 +72,8 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual void            setOutputPointType(OutputPointType) {};
   virtual void            setOutputPath(string) {}
   virtual void            setInputPath(string) {}
+  virtual const string*   getNonLinSolvers() { return NULL; }
+  virtual void            setNonLinSolvers(const string*) {}
   virtual string          getSelectedSolver() { return "euler"; }
   virtual void            setSelectedSolver(string) {}
   virtual string          getSelectedLinSolver() { return "dgesvSolver"; }
