@@ -80,7 +80,7 @@ protected:
   //shared_ptr<ISimController> _simController;
   map<string,shared_library> _modules;
   string _defaultLinSolver;
-  string _defaultNonLinSolver;
+  string _defaultNonLinSolvers[2];
   PATH _library_path;
   PATH _modelicasystem_path;
   unordered_set<string> _argumentsToIgnore; //a set of arguments that should be ignored

@@ -152,7 +152,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->sethOutput(simsettings.step_size);
         global_settings->setResultsFileName(simsettings.outputfile_name);
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
-        global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
+        global_settings->setNonLinSolvers(simsettings.nonlinear_solver_names);
         global_settings->setSelectedSolver(simsettings.solver_name);
         global_settings->setLogSettings(simsettings.logSettings);
         global_settings->setAlarmTime(simsettings.timeOut);
@@ -460,7 +460,7 @@ void SimController::initialize(SimSettings simsettings, string modelKey, double 
         global_settings->sethOutput(simsettings.step_size);
         global_settings->setResultsFileName(simsettings.outputfile_name);
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
-        global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
+        global_settings->setNonLinSolvers(simsettings.nonlinear_solver_names);
         global_settings->setSelectedSolver(simsettings.solver_name);
         global_settings->setLogSettings(simsettings.logSettings);
        // global_settings->setAlarmTime(simsettings.timeOut);
