@@ -102,7 +102,7 @@ OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
   : _library_path(library_path)
   , _modelicasystem_path(modelicasystem_path)
   , _defaultLinSolver("dgesvSolver")
-	, _defaultNonLinSolvers{"newton", "kinsol"}
+	, _defaultNonLinSolvers{"kinsol", "newton"}
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -112,7 +112,7 @@ OMCFactory::OMCFactory()
   : _library_path("")
   , _modelicasystem_path("")
   , _defaultLinSolver("dgesvSolver")
-  , _defaultNonLinSolvers{"newton", "kinsol"}
+  , _defaultNonLinSolvers{"kinsol", "newton"}
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
