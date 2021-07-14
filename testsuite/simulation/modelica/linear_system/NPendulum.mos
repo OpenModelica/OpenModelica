@@ -136,28 +136,28 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum_res.m
 // {"NPendulum.pendulum","NPendulum.pendulum_init.xml"}
 // ""
 // 0
-// "stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// "stdout            | info    | Minimum system size for using linear sparse solver changed to 4001
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
 // {"Files Equal!"}
 // 0
-// "stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// "stdout            | info    | Minimum system size for using linear sparse solver changed to 4001
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
 // {"Files Equal!"}
 // 0
-// "stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// "stdout            | info    | Minimum system size for using linear sparse solver changed to 4001
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // true
 // {"Files Equal!"}
 // 0
-// "stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// "stdout            | info    | Minimum system size for using linear sparse solver changed to 4001
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
