@@ -408,9 +408,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      double tolerance = vm["tolerance"].as<double>();
      string solver = vm["solver"].as<string>();
-     string nonLinSolvers[2];
-     nonLinSolvers[0] = vm["non-lin-solver"].as<string>();
-     nonLinSolvers[1] = nonLinSolvers[0] != _defaultNonLinSolvers[1]? _defaultNonLinSolvers[1]: _defaultNonLinSolvers[0];
+     std::vector<string> nonLinSolvers;
+     nonLinSolvers.push_back(vm["non-lin-solver"].as<string>());
+     nonLinSolvers.push_back(nonLinSolvers[0] != _defaultNonLinSolvers[1]? _defaultNonLinSolvers[1]: _defaultNonLinSolvers[0]);
      string linSolver = vm["lin-solver"].as<string>();
      unsigned int timeOut = vm["alarm"].as<unsigned int>();
      if (vm.count("runtime-library"))
@@ -497,7 +497,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver, linSolver, nonLinSolvers[0], nonLinSolvers[1], starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
+     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();

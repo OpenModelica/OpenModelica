@@ -146,15 +146,17 @@ void GlobalSettings::setInputPath(string path)
   _input_path = path;
 }
 
-const string* GlobalSettings::getNonLinSolvers()
+const std::vector<string>& GlobalSettings::getNonLinSolvers()
 {
   return _nonlin_solvers;
 }
 
-void GlobalSettings::setNonLinSolvers(const string* solvers)
+void GlobalSettings::setNonLinSolvers(const std::vector<string>& solvers)
 {
-  _nonlin_solvers[0] = solvers[0];
-  _nonlin_solvers[1] = solvers[1];
+  _nonlin_solvers.clear();
+  for (size_t i = 0; i < solvers.size(); i++) {
+    _nonlin_solvers.push_back(solvers[i]);
+  }
 }
 
 string GlobalSettings::getSelectedSolver()

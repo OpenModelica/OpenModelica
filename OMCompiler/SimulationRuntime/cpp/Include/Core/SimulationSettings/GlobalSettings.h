@@ -44,8 +44,8 @@ public:
   //solver used for simulation
   virtual string getSelectedSolver();
   virtual void setSelectedSolver(string);
-  virtual const string* getNonLinSolvers();
-  virtual void setNonLinSolvers(const string*);
+  virtual const std::vector<string>& getNonLinSolvers();
+  virtual void setNonLinSolvers(const std::vector<string>&);
   virtual string getSelectedNonLinSolver();
   virtual void setSelectedNonLinSolver(string);
   virtual string getSelectedLinSolver();
@@ -77,8 +77,7 @@ private:
       _infoOutput,  ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
       _endless_sim,
       _nonLinSolverContinueOnError;
-  string
-      _nonlin_solvers[2];
+  std::vector<string> _nonlin_solvers;
   string
       _input_path,
       _output_path,
