@@ -86,8 +86,8 @@ public:
   virtual string getSelectedSolver() = 0;
   virtual void setSelectedSolver(string) = 0;
   virtual string getSelectedLinSolver() = 0;
-  virtual void setNonLinSolvers(const string*) = 0;
-  virtual const string* getNonLinSolvers() = 0;
+  virtual void setNonLinSolvers(const std::vector<string>&) = 0;
+  virtual const std::vector<string>& getNonLinSolvers() = 0;
   virtual void setSelectedLinSolver(string) = 0;
   virtual string getSelectedNonLinSolver() = 0;
   virtual void setSelectedNonLinSolver(string) = 0;
