@@ -3,6 +3,7 @@ find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
 
 if(OMC_USE_LAPACK)
+  message(STATUS "Looking for LAPACK. This can be slow sometimes. Hang tight!")
   find_package(LAPACK REQUIRED)
 
   # Check if our lapack version have the deprecated functions.
@@ -191,7 +192,7 @@ target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
 ################################################################################
 # This is a lazy approach to generating runtime/config.unix.h and Compiler/Util/Autoconf.mo
 # Needs to be refactored quite a bit. The variable names should be updated to be more
-# unique and descriptive. 
+# unique and descriptive.
 # However, If I do that I need to update the .in files which means the normal compilation is
 # also affected. As a result I would have to change a few things since many things depend on
 # the generated output files. For now just mimic the old compilation.
@@ -256,7 +257,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
 
 
-# Generate Autoconf.mo here since we have some of the variables already defined for config.unix.h above. 
+# Generate Autoconf.mo here since we have some of the variables already defined for config.unix.h above.
 
 if(WIN32)
 
@@ -289,6 +290,6 @@ else()
   set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC  -llapack -lblas   -lm -lomcgc -lpthread -rdynamic")
   set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC  -llapack -lblas   -lm -lomcgc -lpthread -rdynamic -Wl,--no-undefined")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas   -lm -lpthread -rdynamic -Wl,--no-undefined")
- 
+
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
 endif()
