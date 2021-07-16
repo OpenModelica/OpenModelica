@@ -123,32 +123,18 @@ void SimManager::initialize()
     // Reset debug ID
     _dbgId = 0;
 
-    string nls = global_settings->getNonLinSolvers()[0];
     try
     {
         // Build up system and update once
-        global_settings->setSelectedNonLinSolver(nls);
         _initialization->initializeSystem();
     }
     catch (std::exception& ex)
     {
-        LOGGER_WRITE("SimManager: Could not initialize system with " + nls, LC_INIT, LL_WARNING);
-        LOGGER_WRITE("SimManager: " + string(ex.what()), LC_INIT, LL_WARNING);
+        LOGGER_WRITE("SimManager: Could not initialize system", LC_INIT, LL_ERROR);
+        LOGGER_WRITE("SimManager: " + string(ex.what()), LC_INIT, LL_ERROR);
         //ex << error_id(SIMMANAGER);
-        try
-        {
-            string nls = global_settings->getNonLinSolvers()[1];
-            LOGGER_WRITE("SimManager: Applying fallback nonlinear solver " + nls, LC_SOLVER, LL_INFO);
-            global_settings->setSelectedNonLinSolver(nls);
-            _initialization->initializeSystem();
-        }
-        catch (std::exception& ex)
-        {
-            LOGGER_WRITE("SimManager: Could not initialize system", LC_INIT, LL_ERROR);
-            LOGGER_WRITE("SimManager: " + string(ex.what()), LC_INIT, LL_ERROR);
-            throw ModelicaSimulationError(SIMMANAGER, "Could not initialize system",
-                                          string(ex.what()), LOGGER_IS_SET(LC_INIT, LL_ERROR));
-        }
+        throw ModelicaSimulationError(SIMMANAGER, "Could not initialize system",
+                                      string(ex.what()), LOGGER_IS_SET(LC_INIT, LL_ERROR));
     }
 
     if (_timeevent_system)

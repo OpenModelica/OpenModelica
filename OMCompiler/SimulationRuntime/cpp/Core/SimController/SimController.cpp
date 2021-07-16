@@ -14,14 +14,12 @@
 #include <core/ReduceDAE/com/ModelicaCompiler.h>
 #endif
 
-
-
 #include <Core/SimController/ISimController.h>
 #include <Core/SimController/SimController.h>
 #include <Core/SimController/Configuration.h>
 #include <Core/SimController/SimObjects.h>
-
-
+#include <Core/SimController/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
 
 #if defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 #include "LibrariesConfig.h"
@@ -30,7 +28,6 @@
 
 SimController::SimController(PATH library_path, PATH modelicasystem_path)
     : SimControllerPolicy(library_path, modelicasystem_path, library_path)
-    , _initialized(false)
 {
     _config = shared_ptr<Configuration>(new Configuration(_library_path, _config_path, modelicasystem_path));
     _sim_objects = shared_ptr<ISimObjects>(new SimObjects(_library_path,modelicasystem_path,_config->getGlobalSettings().get()));
@@ -67,19 +64,23 @@ SimController::~SimController()
 
 weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib,string modelKey)
 {
-
     //if the model is already loaded
     std::map<string,shared_ptr<IMixedSystem> >::iterator iter = _systems.find(modelKey);
     if(iter != _systems.end())
     {
-        _sim_objects->eraseSimData(modelKey);
-        _sim_objects->eraseSimVars(modelKey);
+        //recreate data and vars
+		shared_ptr<ISimVars> sv = _sim_objects->getSimVars(modelKey);
+        _sim_objects->LoadSimVars(modelKey, sv->getDimReal(), sv->getDimInt(), sv->getDimBool(), sv->getDimString(),
+                                  sv->getDimPreVars(), sv->getDimStateVars(), sv->getStateVectorIndex());
+        _sim_objects->LoadSimData(modelKey);
         //destroy system
         _systems.erase(iter);
     }
      //create system
     shared_ptr<IMixedSystem> system = createSystem(modelLib, modelKey, _config->getGlobalSettings().get(), _sim_objects);
     _systems[modelKey] = system;
+    _modelLib = modelLib;
+    _modelKey = modelKey;
     return system;
 }
 
@@ -131,7 +132,32 @@ shared_ptr<IMixedSystem> SimController::getSystem(string modelname)
  {
      _simMgr->runSimulation();
  }
+
 void SimController::Start(SimSettings simsettings, string modelKey)
+{
+    for (int i = 0; i < simsettings.nonlinear_solver_names.size(); i++)
+    {
+        string nls = simsettings.nonlinear_solver_names[i];
+        try {
+            if (i > 0)
+                LOGGER_WRITE("SimController: Trying nonlinear solver " + nls, LC_SOLVER, LL_WARNING);
+            Start(simsettings, modelKey, nls);
+        }
+        catch(ModelicaSimulationError & ex)
+        {
+            LOGGER_WRITE("SimController: Simulation failed using nonlinear solver " + nls, LC_SOLVER, LL_WARNING);
+            if (i < simsettings.nonlinear_solver_names.size() - 1) {
+                // load system again to get all variables re-initialized
+                LoadSystem(_modelLib, _modelKey);
+            }
+            else {
+                throw ex;
+            }
+        }
+    }
+}
+
+void SimController::Start(SimSettings simsettings, string modelKey, string nls)
 {
     try
     {
@@ -152,7 +178,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->sethOutput(simsettings.step_size);
         global_settings->setResultsFileName(simsettings.outputfile_name);
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
-        global_settings->setNonLinSolvers(simsettings.nonlinear_solver_names);
+        global_settings->setSelectedNonLinSolver(nls);
         global_settings->setSelectedSolver(simsettings.solver_name);
         global_settings->setLogSettings(simsettings.logSettings);
         global_settings->setAlarmTime(simsettings.timeOut);
@@ -460,7 +486,7 @@ void SimController::initialize(SimSettings simsettings, string modelKey, double 
         global_settings->sethOutput(simsettings.step_size);
         global_settings->setResultsFileName(simsettings.outputfile_name);
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
-        global_settings->setNonLinSolvers(simsettings.nonlinear_solver_names);
+        global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_names[0]);
         global_settings->setSelectedSolver(simsettings.solver_name);
         global_settings->setLogSettings(simsettings.logSettings);
        // global_settings->setAlarmTime(simsettings.timeOut);

@@ -18,6 +18,7 @@ public:
       /// Stops the simulation
     virtual void Stop();
     virtual void Start(SimSettings simsettings, string modelKey);
+    virtual void Start(SimSettings simsettings, string modelKey, string nls);
     virtual shared_ptr<IMixedSystem> getSystem(string modelname);
     virtual shared_ptr<ISimObjects> getSimObjects();
     virtual void StartReduceDAE(SimSettings simsettings,string modelPath, string modelKey,bool loadMSL, bool loadPackage);
@@ -25,7 +26,6 @@ public:
      virtual void runReducedSimulation();
 private:
     void initialize(PATH library_path, PATH modelicasystem_path);
-    bool _initialized;
     shared_ptr<Configuration> _config;
     std::map<string, shared_ptr<IMixedSystem> > _systems;
 
@@ -39,5 +39,7 @@ private:
     std::vector<MeasureTimeData*> *measureTimeFunctionsArray;
     MeasureTimeValues *measuredFunctionStartValues, *measuredFunctionEndValues;
     #endif
+    string _modelLib;
+    string _modelKey;
 };
 /** @} */ // end of coreSimcontroller

@@ -114,9 +114,9 @@ bool ContinuousEvents::startEventIteration(bool& state_vars_reinitialized)
   }
   catch (std::exception& ex)
   {
-
-	 // if  evaluateConditions throws and error during event iteration the event iteration will restarted
-	  assert = true;
+    LOGGER_WRITE(string("Failed evaluating event conditions: ") + ex.what(), LC_EVENTS, LL_DEBUG);
+    // if  evaluateConditions throws and error during event iteration the event iteration will restarted
+    assert = true;
   }
   return(drestart || crestart || assert); //returns true if new events occurred
 }
