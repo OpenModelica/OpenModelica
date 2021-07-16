@@ -14,7 +14,6 @@ GlobalSettings::GlobalSettings()
   , _hOutput(0.002)
   , _emitResults(EMIT_ALL)
   , _infoOutput(true)
-  , _nonlin_solvers{"kinsol", "newton"}
   , _selected_solver("euler")
   , _selected_lin_solver("dgesvSolver")
   , _selected_nonlin_solver("kinsol")
@@ -144,19 +143,6 @@ string GlobalSettings::getInputPath()
 void GlobalSettings::setInputPath(string path)
 {
   _input_path = path;
-}
-
-const std::vector<string>& GlobalSettings::getNonLinSolvers()
-{
-  return _nonlin_solvers;
-}
-
-void GlobalSettings::setNonLinSolvers(const std::vector<string>& solvers)
-{
-  _nonlin_solvers.clear();
-  for (size_t i = 0; i < solvers.size(); i++) {
-    _nonlin_solvers.push_back(solvers[i]);
-  }
 }
 
 string GlobalSettings::getSelectedSolver()

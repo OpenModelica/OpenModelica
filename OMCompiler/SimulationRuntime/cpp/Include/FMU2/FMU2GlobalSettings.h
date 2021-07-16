@@ -72,8 +72,6 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual void            setOutputPointType(OutputPointType) {};
   virtual void            setOutputPath(string) {}
   virtual void            setInputPath(string) {}
-  virtual const std::vector<string>& getNonLinSolvers() { return _nonlin_solvers; }
-  virtual void            setNonLinSolvers(const std::vector<string>&) {}
   virtual string          getSelectedSolver() { return "euler"; }
   virtual void            setSelectedSolver(string) {}
   virtual string          getSelectedLinSolver() { return "dgesvSolver"; }
@@ -93,7 +91,5 @@ class FMU2GlobalSettings : public IGlobalSettings
   virtual int getSolverThreads() { return 1; };
   virtual OutputFormat getOutputFormat() {return EMPTY;};
   virtual void setOutputFormat(OutputFormat) {};
-protected:
-  vector<string> _nonlin_solvers = { DEFAULT_NLS };
 };
 /** @} */ // end of fmu2
