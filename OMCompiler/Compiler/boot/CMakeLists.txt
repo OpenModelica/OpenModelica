@@ -3,7 +3,7 @@ project(bomc)
 
 # OpenModelicaBootstrappingHeader.h should probably be added to source control and
 # updated just like the bootstrap-source c files.
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tarball-include/OpenModelicaBootstrappingHeader.h 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/tarball-include/OpenModelicaBootstrappingHeader.h
                 ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h)
 
 file(GLOB BOOTSTRAP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/bootstrap-sources/build/*.c)
