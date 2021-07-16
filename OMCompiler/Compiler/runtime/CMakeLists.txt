@@ -59,7 +59,8 @@ set(OMC_RUNTIIME_SOURCES
     om_unzip.c
     ptolemyio_omc.cpp
     SimulationResults_omc.c
-    systemimplmisc.cpp)
+    systemimplmisc.cpp
+    ffi_omc.c)
 
 
 # ######################################################################################################################
