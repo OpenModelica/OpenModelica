@@ -142,6 +142,7 @@ void SimController::Start(SimSettings simsettings, string modelKey)
             if (i > 0)
                 LOGGER_WRITE("SimController: Trying nonlinear solver " + nls, LC_SOLVER, LL_WARNING);
             Start(simsettings, modelKey, nls);
+            break;
         }
         catch(ModelicaSimulationError & ex)
         {
