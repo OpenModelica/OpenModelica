@@ -56,12 +56,16 @@ add_custom_command (
 #     TARGET bomc
 #     POST_BUILD
 
-#     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../FrontEnd/Absyn.mo 
-#             ${CMAKE_CURRENT_SOURCE_DIR}/../Script/GlobalScript.mo 
-#             ${CMAKE_CURRENT_SOURCE_DIR}/../FrontEnd/Values.mo 
-#             ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Error.mo 
-#             ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Util.mo 
-#             ${CMAKE_CURRENT_SOURCE_DIR}/../Util/FMI.mo 
+#     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../FrontEnd/Absyn.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../Script/GlobalScript.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../FrontEnd/Values.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../Util/ErrorTypes.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Config.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Gettext.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../Util/FMI.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../NFFrontEnd/NFType.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../NFFrontEnd/NFExpression.mo
+#             ${CMAKE_CURRENT_SOURCE_DIR}/../NFFrontEnd/NFDimension.mo
 #             ${CMAKE_CURRENT_SOURCE_DIR}/../GenerateOMCHeader.mos
 
 #     # The GenerateOMCHeader.mos script expects us to be in OMCompiler/Compiler folder.
@@ -69,10 +73,10 @@ add_custom_command (
 
 
 #     COMMAND $<TARGET_FILE:bomc> -g=MetaModelica ${CMAKE_CURRENT_SOURCE_DIR}/../GenerateOMCHeader.mos
-#     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h.new 
+#     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h.new
 #                                      ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h
 
-#     BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h
+#     OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h
 #     BYPRODUCTS ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h.new
 #     COMMENT "Generating ${CMAKE_CURRENT_SOURCE_DIR}/../OpenModelicaBootstrappingHeader.h"
 # )
