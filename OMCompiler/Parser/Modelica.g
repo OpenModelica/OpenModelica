@@ -198,6 +198,7 @@ goto rule ## func ## Ex; }}
 
   #if !defined(OMJULIA)
     #include "meta/meta_modelica.h"
+    #define ADD_METARECORD_DEFINITIONS static
     #if defined(OMC_BOOTSTRAPPING)
       #include "../Compiler/boot/tarball-include/OpenModelicaBootstrappingHeader.h"
     #else
