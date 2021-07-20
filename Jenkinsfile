@@ -52,43 +52,43 @@ pipeline {
     }
     stage('setup') {
       parallel {
-        stage('gcc') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          environment {
-            QTDIR = "/usr/lib/qt4"
-          }
-          steps {
-            // Xenial is GCC 5
-            script { common.buildOMC('gcc-5', 'g++-5', '', true, false) }
-            stash name: 'omc-gcc', includes: 'build/**, **/config.status'
-          }
-        }
-        stage('clang') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:v1.16'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          steps {
-            script {
-              common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
-              common.getVersion()
-            }
-            stash name: 'omc-clang', includes: 'build/**, **/config.status'
-          }
-        }
+        // stage('gcc') {
+        //   agent {
+        //     docker {
+        //       image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
+        //       label 'linux'
+        //       alwaysPull true
+        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+        //     }
+        //   }
+        //   environment {
+        //     QTDIR = "/usr/lib/qt4"
+        //   }
+        //   steps {
+        //     // Xenial is GCC 5
+        //     script { common.buildOMC('gcc-5', 'g++-5', '', true, false) }
+        //     stash name: 'omc-gcc', includes: 'build/**, **/config.status'
+        //   }
+        // }
+        // stage('clang') {
+        //   agent {
+        //     docker {
+        //       image 'docker.openmodelica.org/build-deps:v1.16'
+        //       label 'linux'
+        //       alwaysPull true
+        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+        //     }
+        //   }
+        //   steps {
+        //     script {
+        //       common.buildOMC('clang', 'clang++', '--without-hwloc', true, true)
+        //       common.getVersion()
+        //     }
+        //     stash name: 'omc-clang', includes: 'build/**, **/config.status'
+        //   }
+        // }
         stage('MacOS') {
           agent {
             node {
@@ -211,6 +211,33 @@ pipeline {
               common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF', '/tmp/cmake/bin/cmake')
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
+          }
+        }
+        stage('cmake-MacOS') {
+          agent {
+            node {
+              label 'osx'
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeSkipCMakeBuild_value }
+          }
+          // environment {
+          //   PATH = "${env.MACPORTS}/bin:${env.PATH}"
+          // }
+          steps {
+            script {
+              withEnv (["PATH=${env.MACPORTS}/bin:${env.PATH}", "QTDIR=${env.MACPORTS}/libexec/qt4"]) {
+                sh "echo PATH: \$PATH QTDIR: \$QTDIR"
+                sh "${env.GMAKE} --version"
+                common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release')
+              }
+              // echo "Our env:"
+              // echo "${env.MACPORTS}"
+              // echo "$PATH"
+              // common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF')
+            }
           }
         }
         stage('checks') {
