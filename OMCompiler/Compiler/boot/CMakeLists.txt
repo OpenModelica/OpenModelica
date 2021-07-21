@@ -30,8 +30,8 @@ target_include_directories(bomc PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../Util)
 target_link_libraries(bomc PRIVATE omc::parser)
 target_link_libraries(bomc PRIVATE omc::compiler::runtime)
 target_link_libraries(bomc PRIVATE omc::compiler::graphstream)
-target_link_libraries(bomc PRIVATE omc::3rd::modelica_external_c)
-target_link_libraries(bomc PRIVATE omc::3rd::modelica_io)
+target_link_libraries(bomc PRIVATE omc::3rd::Modelica::ExternalC)
+target_link_libraries(bomc PRIVATE omc::3rd::Modelica::IO)
 
 
 
