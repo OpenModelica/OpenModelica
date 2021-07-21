@@ -29,6 +29,8 @@ endif(WIN32)
 
 target_include_directories(OpenModelicaRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+install(TARGETS OpenModelicaRuntimeC)
+
 # ######################################################################################################################
 # Library: OpenModelicaFMIRuntimeC
 add_library(OpenModelicaFMIRuntimeC STATIC ${OMC_SIMRT_FMI_SOURCES})
@@ -39,6 +41,7 @@ target_sources(OpenModelicaFMIRuntimeC PRIVATE ${OMC_SIMRT_FMI_SOURCES})
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib::static)
 target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::simrt::runtime)
 
+install(TARGETS OpenModelicaFMIRuntimeC)
 
 
 # Quick and INCOMPLETE generation of RuntimeSources.mo
