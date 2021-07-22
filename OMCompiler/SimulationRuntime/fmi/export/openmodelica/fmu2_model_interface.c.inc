@@ -569,12 +569,19 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
   /* allocate memory for Jacobian */
   comp->_has_jacobian = 0;
   comp->fmiDerJac = NULL;
-  if (comp->fmuData->callback->initialPartialFMIDER != NULL){
+  if (comp->fmuData->callback->initialPartialFMIDER != NULL)
+  {
     comp->fmiDerJac = (ANALYTIC_JACOBIAN*) functions->allocateMemory(1, sizeof(ANALYTIC_JACOBIAN));
-    if (! comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData, comp->fmiDerJac)) {
+    if (! comp->fmuData->callback->initialPartialFMIDER(comp->fmuData, comp->threadData, comp->fmiDerJac))
+    {
       comp->_has_jacobian = 1;
     }
   }
+
+  comp->states = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
+  comp->states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
+  comp->event_indicators = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
+  comp->event_indicators_prev = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
 
   comp->_need_update = 1;
 
@@ -593,7 +600,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 void fmi2FreeInstance(fmi2Component c)
 {
   ModelInstance *comp = (ModelInstance *)c;
-  fmi2CallbackFreeMemory freeMemory = comp->functions->freeMemory;
+
   int meStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
   int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
 
@@ -635,6 +642,11 @@ void fmi2FreeInstance(fmi2Component c)
     comp->functions->freeMemory(comp->fmiDerJac); comp->fmiDerJac=NULL;
   }
 
+  comp->functions->freeMemory(comp->states); comp->states = NULL;
+  comp->functions->freeMemory(comp->states_der); comp->states_der = NULL;
+  comp->functions->freeMemory(comp->event_indicators); comp->event_indicators = NULL;
+  comp->functions->freeMemory(comp->event_indicators_prev); comp->event_indicators_prev = NULL;
+
   comp->functions->freeMemory(comp->fmuData->modelData->resourcesDir);
   if (comp->solverInfo) {
     FMI2CS_deInitializeSolverData(comp);
@@ -655,7 +667,7 @@ void fmi2FreeInstance(fmi2Component c)
   if (comp->GUID) comp->functions->freeMemory((void*)comp->GUID);
   if (comp->functions) comp->functions->freeMemory((void*)comp->functions);
   /* free comp */
-  freeMemory(comp);
+  comp->functions->freeMemory(comp);
   free_memory_pool();
 }
 
@@ -1487,10 +1499,10 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
 
   CVODE_SOLVER* cvodeData;
   fmi2Status status = fmi2OK;
-  fmi2Real* states = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
-  fmi2Real* states_der = (fmi2Real*)functions->allocateMemory(NUMBER_OF_STATES, sizeof(fmi2Real));
-  fmi2Real* event_indicators = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
-  fmi2Real* event_indicators_prev = (fmi2Real*)functions->allocateMemory(NUMBER_OF_EVENT_INDICATORS, sizeof(fmi2Real));
+  fmi2Real* states = comp->states;
+  fmi2Real* states_der = comp->states_der;
+  fmi2Real* event_indicators = comp->event_indicators;
+  fmi2Real* event_indicators_prev = comp->event_indicators_prev;
   fmi2Real t = comp->fmuData->localData[0]->timeValue;
   fmi2Real tNext, tEnd;
   fmi2Boolean enterEventMode = fmi2False, terminateSimulation = fmi2False;
@@ -1633,11 +1645,6 @@ fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2R
     }
   }
 
-  functions->freeMemory(states);
-  functions->freeMemory(states_der);
-  functions->freeMemory(event_indicators);
-  functions->freeMemory(event_indicators_prev);
-
   return status;
 }
 
@@ -1693,7 +1700,7 @@ fmi2Status fmi2SetExternalFunction(fmi2Component c, fmi2ValueReference vr[], siz
     return fmi2Error;
   if (comp->loggingOn) comp->functions->logger(c, comp->instanceName, fmi2OK, "log",
       "fmi2SetExternalFunction");
-  // no check wether setting the value is allowed in the current state
+  // no check whether setting the value is allowed in the current state
   for (i=0; i<nvr; i++) {
     if (vrOutOfRange(comp, "fmi2SetExternalFunction", vr[i], NUMBER_OF_EXTERNALFUNCTIONS))
       return fmi2Error;
