@@ -833,12 +833,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     }
 
     messageClose(LOG_STDOUT);
-    EXIT(0);
+    EXIT(1);
   }
 
-  if(omc_flag[FLAG_HELP]) {
+  if(omc_flag[FLAG_HELP])
+  {
     std::string option = omc_flagValue[FLAG_HELP];
-
     for(i=1; i<FLAG_MAX; ++i)
     {
       if(option == std::string(FLAG_NAME[i]))
@@ -923,7 +923,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
     warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -help=%s", option.c_str());
     warningStreamPrint(LOG_STDOUT, 0, "use %s -help for a list of all command-line flags", argv[0]);
-    EXIT(0);
+    EXIT(1);
   }
 
   setGlobalVerboseLevel(argc, argv);
