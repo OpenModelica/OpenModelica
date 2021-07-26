@@ -836,9 +836,9 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     EXIT(1);
   }
 
-  if(omc_flag[FLAG_HELP]) {
+  if(omc_flag[FLAG_HELP])
+  {
     std::string option = omc_flagValue[FLAG_HELP];
-
     for(i=1; i<FLAG_MAX; ++i)
     {
       if(option == std::string(FLAG_NAME[i]))
@@ -917,7 +917,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
         }
         messageClose(LOG_STDOUT);
 
-        EXIT(1);
+        EXIT(0);
       }
     }
 
