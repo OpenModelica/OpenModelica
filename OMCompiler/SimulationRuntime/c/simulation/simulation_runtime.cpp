@@ -917,7 +917,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
         }
         messageClose(LOG_STDOUT);
 
-        EXIT(0);
+        EXIT(1);
       }
     }
 
