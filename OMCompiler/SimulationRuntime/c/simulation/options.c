@@ -106,7 +106,7 @@ int checkCommandLineArguments(int argc, char **argv)
       {
         if(omc_flag[j])
         {
-          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
+          errorStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
 
@@ -123,7 +123,7 @@ int checkCommandLineArguments(int argc, char **argv)
       {
         if(omc_flag[j])
         {
-          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
+          errorStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
 
@@ -142,7 +142,7 @@ int checkCommandLineArguments(int argc, char **argv)
       {
         if(omc_flag[j])
         {
-          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
+          errorStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
           return 1;
         }
 
