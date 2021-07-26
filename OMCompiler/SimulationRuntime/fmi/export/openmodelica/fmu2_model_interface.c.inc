@@ -600,6 +600,7 @@ fmi2Component fmi2Instantiate(fmi2String instanceName, fmi2Type fmuType, fmi2Str
 void fmi2FreeInstance(fmi2Component c)
 {
   ModelInstance *comp = (ModelInstance *)c;
+  fmi2CallbackFreeMemory freeMemory = comp->functions->freeMemory;
 
   int meStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
   int csStates = modelInstantiated|modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError;
@@ -639,15 +640,15 @@ void fmi2FreeInstance(fmi2Component c)
     free(comp->fmiDerJac->sparsePattern->colorCols); comp->fmiDerJac->sparsePattern->colorCols = NULL;
     free(comp->fmiDerJac->sparsePattern); comp->fmiDerJac->sparsePattern = NULL;
 
-    comp->functions->freeMemory(comp->fmiDerJac); comp->fmiDerJac=NULL;
+    freeMemory(comp->fmiDerJac); comp->fmiDerJac=NULL;
   }
 
-  comp->functions->freeMemory(comp->states); comp->states = NULL;
-  comp->functions->freeMemory(comp->states_der); comp->states_der = NULL;
-  comp->functions->freeMemory(comp->event_indicators); comp->event_indicators = NULL;
-  comp->functions->freeMemory(comp->event_indicators_prev); comp->event_indicators_prev = NULL;
+  freeMemory(comp->states); comp->states = NULL;
+  freeMemory(comp->states_der); comp->states_der = NULL;
+  freeMemory(comp->event_indicators); comp->event_indicators = NULL;
+  freeMemory(comp->event_indicators_prev); comp->event_indicators_prev = NULL;
 
-  comp->functions->freeMemory(comp->fmuData->modelData->resourcesDir);
+  freeMemory(comp->fmuData->modelData->resourcesDir);
   if (comp->solverInfo) {
     FMI2CS_deInitializeSolverData(comp);
   }
@@ -656,18 +657,18 @@ void fmi2FreeInstance(fmi2Component c)
   freeSynchronous(comp->fmuData);
 
   /* free simuation data */
-  comp->functions->freeMemory(comp->fmuData->modelData);
-  comp->functions->freeMemory(comp->fmuData->simulationInfo);
+  freeMemory(comp->fmuData->modelData);
+  freeMemory(comp->fmuData->simulationInfo);
 
   /* free fmuData */
-  comp->functions->freeMemory(comp->threadData);
-  comp->functions->freeMemory(comp->fmuData);
+  freeMemory(comp->threadData);
+  freeMemory(comp->fmuData);
   /* free instanceName & GUID */
-  if (comp->instanceName) comp->functions->freeMemory((void*)comp->instanceName);
-  if (comp->GUID) comp->functions->freeMemory((void*)comp->GUID);
-  if (comp->functions) comp->functions->freeMemory((void*)comp->functions);
+  if (comp->instanceName) freeMemory((void*)comp->instanceName);
+  if (comp->GUID) freeMemory((void*)comp->GUID);
+  if (comp->functions) freeMemory((void*)comp->functions);
   /* free comp */
-  comp->functions->freeMemory(comp);
+  freeMemory(comp);
   free_memory_pool();
 }
 
