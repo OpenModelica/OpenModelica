@@ -833,7 +833,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     }
 
     messageClose(LOG_STDOUT);
-    EXIT(0);
+    EXIT(1);
   }
 
   if(omc_flag[FLAG_HELP]) {
@@ -923,7 +923,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
     warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -help=%s", option.c_str());
     warningStreamPrint(LOG_STDOUT, 0, "use %s -help for a list of all command-line flags", argv[0]);
-    EXIT(0);
+    EXIT(1);
   }
 
   setGlobalVerboseLevel(argc, argv);
