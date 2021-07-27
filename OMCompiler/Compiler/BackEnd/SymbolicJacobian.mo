@@ -2936,10 +2936,11 @@ algorithm
           end if;
 
           if not (listEmpty(nonLin) and listEmpty(nonLinStart) and listEmpty(lin)) then
-            print("Info: Only non-linear iteration variables in non-linear eqation systems require start values. " +
-                 "All other start values have no influence on convergence and are ignored. " +
-                 "Use \"-d=dumpLoops\" to show all loops. In OMEdit Tools->Options->Simulation->Additional Translation Flags, in "+
-                 "OMNotebook call setCommandLineOptions(\"-d=dumpLoops\")\n\n");
+            print("Info: Only non-linear iteration variables in non-linear eqation systems require start values."
+                  + " All other start values have no influence on convergence and are ignored."
+                  + (if Flags.isSet(Flags.DUMP_LOOPS) then "\n\n"
+                     else " Use \"-d=dumpLoops\" to show all loops. In OMEdit Tools->Options->Simulation->Additional Translation Flags,"
+                          + " in OMNotebook call setCommandLineOptions(\"-d=dumpLoops\")\n\n"));
           end if;
         then();
 
