@@ -313,7 +313,10 @@ algorithm
   strongComponentIndexOut := match(inComp)
     case(BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN())) equation
       if debugFlag then
-        print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\nTo disable tearing of this component use '--noTearingForComponent=" + intString(strongComponentIndexOut+1) + "'.\n");
+        print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\n");
+        if not listMember(strongComponentIndexOut+1, Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+          print("To disable tearing of this component use '--noTearingForComponent=" + intString(strongComponentIndexOut+1) + "'.\n");
+        end if;
       end if;
      then (strongComponentIndexOut + 1);
     else strongComponentIndexOut;
@@ -340,8 +343,21 @@ algorithm
       useTearing := checkTearingSettings(maxSize, isLinear, strongComponentIndexOut, listLength(vindx));
       if useTearing then
         if debugFlag then
-          print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n" +
-                "Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
+          print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n");
+          _ := match (Flags.isSet(Flags.TEARING_DUMPVERBOSE), Flags.isSet(Flags.ITERATION_VARS))
+            case (false, false) algorithm
+              print("Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
+            then ();
+            case (false, true) algorithm
+              print("Use Flag '-d=tearingdumpV' for more details\n\n");
+            then ();
+            case (true, false) algorithm
+              print("Use Flag '-d=iterationVars' for more details\n\n");
+            then ();
+            case (true, true) algorithm
+              print("\n");
+            then ();
+          end match;
         end if;
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
