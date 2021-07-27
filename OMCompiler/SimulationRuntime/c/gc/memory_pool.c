@@ -37,6 +37,7 @@
 #if !defined(OMC_NO_THREADS)
 #include <pthread.h>
 #endif
+#include "../util/omc_error.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -297,4 +298,3 @@ void* generic_alloc(int n, size_t sze)
 #if defined(__cplusplus)
 } /* end extern "C" */
 #endif
-
