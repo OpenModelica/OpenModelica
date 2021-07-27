@@ -68,7 +68,7 @@ static void pool_init(void)
   memory_pools->next = NULL;
 }
 
-static unsigned long upper_power_of_two(unsigned long v)
+static size_t upper_power_of_two(size_t v)
 {
   v--;
   v |= v >> 1;
@@ -158,7 +158,18 @@ static void nofree(void* ptr)
 }
 
 static void* malloc_zero(size_t sz) {
-  return calloc(1, sz);
+  // Our runtime system sometimes asks for 0 size allocation.
+  // Maybe we should forbid that to avoid masking issues like
+  // zero caused by overflow. See #7611.
+  if(sz == 0)
+    return NULL;
+
+  void* addr = calloc(1, sz);
+
+  if(!addr)
+    throwStreamPrint(NULL, "memory_pool.c: Error: Failed to allocate memory (calloc returned NULL.)");
+
+  return addr;
 }
 
 omc_alloc_interface_t omc_alloc_interface_pooled = {
