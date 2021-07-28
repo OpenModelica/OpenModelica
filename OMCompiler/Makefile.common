@@ -50,6 +50,9 @@ $(builddir_share)/omc/scripts/OpenTurns/ \
 $(builddir_doc)/omc/testmodels \
 $(builddir_man)/man1/
 
+
+OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
+
 ifeq ("$(APP)",".app")
 	BUILD_DIRS += $(builddir_app)
 endif
@@ -165,7 +168,22 @@ $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
 	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/Ipopt/lib/libcoinmumps.1.dylib" @rpath/libcoinmumps.1.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
 	cp -a 3rdParty/Ipopt/lib*/*.* $(OMBUILDDIR)/$(LIB_OMC)
 
-ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
+ipopt:
+	mkdir -p $(OMC_IPOPT_ROOT)/build
+	cd $(OMC_IPOPT_ROOT)/build && $(CMAKE) .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
+		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
+		-DIPOPT_BUILD_SHARED_LIBS:Bool=OFF \
+		-DMUMPS_BUILD_SHARED_LIBS:Bool=OFF \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON
+	$(CMAKE) --build $(OMC_IPOPT_ROOT)/build/ --target install
+
+ipopt-clean:
+	$(CMAKE) --build $(OMC_IPOPT_ROOT)/build/ --target clean
+	rm -rf $(OMC_IPOPT_ROOT)/build
 
 suitesparse:
 	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
@@ -482,16 +500,13 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean ipopt-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 	# remove ModelicaExternalC stuff
 	if test -f 3rdParty/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C 3rdParty/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
-	# remove Ipopt/Makefile if there is no Ipopt/Ipopt/Makefile to run configure again!
-	if test -f 3rdParty/Ipopt/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt/Makefile || true; fi
-	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf 3rdParty/sundials-5.4.0/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
