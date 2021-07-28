@@ -51,6 +51,8 @@ include(GNUInstallDirs)
 # build directory.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/install_cmake CACHE PATH "Default installation directory" FORCE)
+    # Prevent sub-projects from changing it by checking CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT after this
+    set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT FALSE)
     message(WARNING "No installation directory specified. Defaulting to: ${CMAKE_INSTALL_PREFIX}")
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
