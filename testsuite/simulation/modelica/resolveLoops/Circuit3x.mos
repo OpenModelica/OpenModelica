@@ -65,7 +65,7 @@ simulate(Circuit3x); getErrorString();
 //  * Torn equation systems: 2
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 2 {(1,100.0%) 4,(1,100.0%) 4}
+//  * Linear torn systems: 2 {(2,100.0%) 3,(1,100.0%) 4}
 //  * Non-linear torn systems: 0
 // "
 // endResult

@@ -537,7 +537,7 @@ algorithm
   columark := arrayCreate(size,-1);
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, {}, DAEtypeStr);
+  (tSel_always,tSel_prefer,tSel_avoid,tSel_never,_) := tearingSelect(var_lst, {}, DAEtypeStr);
 
   // determine tvars and do cheap matching until a maximum matching is there
   // if cheap matching stucks select additional tearing variable and continue
@@ -1987,7 +1987,7 @@ protected
   Integer size, tornsize;
   array<Integer> ass1, ass2, mapIncRowEqn, eqnNonlinPoints;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> OutTVars, residual, residual_coll, order, unsolvables, discreteVars, tSel_always, tSel_prefer, tSel_avoid,tSel_never;
+  list<Integer> OutTVars, residual, residual_coll, order, unsolvables, discreteVars, tSel_always, tSel_alwaysByUser, tSel_prefer, tSel_avoid, tSel_never;
   BackendDAE.InnerEquations innerEquations;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
@@ -2090,9 +2090,9 @@ algorithm
   end if;
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, tearingSelect_always, DAEtypeStr);
-  if not listEmpty(tSel_always) then
-    Error.addMessage(Error.USER_TEARING_VARS, {intString(strongComponentIndex), BackendDump.printBackendDAEType2String(DAEtype), BackendDump.dumpMarkedVarList(var_lst, tSel_always)});
+  (tSel_always, tSel_prefer, tSel_avoid, tSel_never, tSel_alwaysByUser) := tearingSelect(var_lst, tearingSelect_always, DAEtypeStr);
+  if not listEmpty(tSel_alwaysByUser) then
+    Error.addMessage(Error.USER_TEARING_VARS, {intString(strongComponentIndex), BackendDump.printBackendDAEType2String(DAEtype), BackendDump.dumpMarkedVarList(var_lst, tSel_alwaysByUser)});
   end if;
   if debug then execStat("Tearing.CellierTearing -> 3"); end if;
 
@@ -2282,34 +2282,47 @@ protected function tearingSelect
   output list<Integer> prefer = {};
   output list<Integer> avoid = {};
   output list<Integer> never = {};
+  output list<Integer> alwaysByUser = always "distinguish betwween user choice and compiler choice";
 protected
   BackendDAE.Var var;
   Integer index = 1;
   Option<BackendDAE.TearingSelect> ts;
   Boolean preferTVarsWithStartValue;
+  Boolean inSimulation = DAEtypeStr == "simulation";
+  Boolean decided;
 algorithm
-  preferTVarsWithStartValue := Flags.getConfigBool(Flags.PREFER_TVARS_WITH_START_VALUE) and stringEq(DAEtypeStr, "initialization");
+  preferTVarsWithStartValue := Flags.getConfigBool(Flags.PREFER_TVARS_WITH_START_VALUE) and (DAEtypeStr == "initialization");
   for var in var_lstIn loop
-      // Get the value of the variable's tearingSelect attribute.
+    // Get the value of the variable's tearingSelect attribute.
     BackendDAE.VAR(tearingSelectOption = ts) := var;
 
-      // Add the variable's index to the appropriate list.
-      _ := match(ts)
-        case SOME(BackendDAE.ALWAYS()) guard not listMember(index, always) algorithm always := index :: always; then ();
-        case SOME(BackendDAE.PREFER()) algorithm prefer := index :: prefer; then ();
-        case SOME(BackendDAE.AVOID()) algorithm avoid  := index :: avoid;  then ();
-        case SOME(BackendDAE.NEVER()) algorithm never  := index :: never;  then ();
-        else ();
-      end match;
+    // Add the variable's index to the appropriate list.
+    decided := match(ts)
+      case NONE() then false;
+      case SOME(BackendDAE.ALWAYS()) algorithm
+        if not listMember(index, always) then
+          always := index :: always;
+          alwaysByUser := index :: alwaysByUser;
+        end if;
+      then true;
+      case SOME(BackendDAE.PREFER()) algorithm prefer := index :: prefer; then true;
+      case SOME(BackendDAE.DEFAULT()) then true;
+      case SOME(BackendDAE.AVOID()) algorithm avoid := index :: avoid; then true;
+      case SOME(BackendDAE.NEVER()) algorithm never := index :: never; then true;
+    end match;
+
+    if not decided then
+      // During simulation, always select states
+      // see https://github.com/OpenModelica/OpenModelica/issues/7704
+      if inSimulation and BackendVariable.isStateVar(var) and not listMember(index, always) then
+        always := index :: always;
 
       // Also prefer variables with start value
-      if preferTVarsWithStartValue then
-        if BackendVariable.varHasStartValue(var) then
-          prefer := index :: prefer;
-        end if;
+      elseif preferTVarsWithStartValue and BackendVariable.varHasStartValue(var) then
+        prefer := index :: prefer;
       end if;
-
-      index := index + 1;
+    end if;
+    index := index + 1;
   end for;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then

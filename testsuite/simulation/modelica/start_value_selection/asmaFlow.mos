@@ -590,8 +590,10 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // $res_LSJac2_2.$pDERLSJac2.dummyVarLSJac2
 // $res_LSJac2_1.$pDERLSJac2.dummyVarLSJac2
 //
-// Unreplaceable Crefs: (5)
+// Unreplaceable Crefs: (7)
 // ========================================
+// $res_LSJac3_7.$pDERLSJac3.dummyVarLSJac3
+// $res_LSJac3_6.$pDERLSJac3.dummyVarLSJac3
 // $res_LSJac3_5.$pDERLSJac3.dummyVarLSJac3
 // $res_LSJac3_4.$pDERLSJac3.dummyVarLSJac3
 // $res_LSJac3_3.$pDERLSJac3.dummyVarLSJac3
@@ -1204,8 +1206,8 @@ val(aimc.inertiaRotor.flange_b.tau, 0);
 // {15:18}
 // {16:19}
 // {31:68}
-// {{{74:30}, {73:29}, {72:28}, {56:32}, {71:33}, {55:31}, {54:81}, {69:37}, {70:79}, {59:14}, {58:13}, {60:49}, {65:48}, {64:69}, {61:70}, {68:71}, {67:72}, {57:36}, {63:80}, {75:73}, {51:77}, {76:74}, {50:75}}
-// ,{62, 49, 53, 52, 66:78, 76, 15, 16, 47}} Size: 5 linear
+// {{{64:69}, {61:70}, {60:14}, {65:13}, {74:30}, {73:29}, {72:28}, {56:32}, {71:33}, {55:31}, {54:81}, {69:37}, {70:79}, {68:71}, {67:72}, {57:36}, {63:80}, {75:73}, {51:77}, {76:74}, {50:75}}
+// ,{58, 59, 62, 49, 53, 52, 66:78, 76, 15, 16, 47, 49, 48}} Size: 7 linear
 // For more information please use "-d=tearingdump".
 // {91:91}
 // {93:93}
