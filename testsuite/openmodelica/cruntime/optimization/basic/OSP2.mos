@@ -11,7 +11,7 @@ getErrorString();
 optimize(nmpcOilShalePyrolysis, stopTime=10.0, numberOfIntervals=350, tolerance = 1e-12, simflags="-ipopt_init=const -optimizerNP 1");
 getErrorString();
 
-res := OpenModelica.Scripting.compareSimulationResults("nmpcOilShalePyrolysis_res.mat","ReferenceFiles/nmpcOilShalePyrolysis2_ref.mat","diff_OSP2.csv",0.01,0.0001); 
+res := OpenModelica.Scripting.compareSimulationResults("nmpcOilShalePyrolysis_res.mat","ReferenceFiles/nmpcOilShalePyrolysis2_ref.mat","diff_OSP2.csv",0.01,0.0001);
 
 // Result:
 // true
@@ -37,7 +37,7 @@ res := OpenModelica.Scripting.compareSimulationResults("nmpcOilShalePyrolysis_re
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
 // LOG_SUCCESS       | info    | The simulation finished successfully.

@@ -60,8 +60,8 @@ messages:=res.messages;
 echo(false);
 res.resultFile;
 if regexBool(messages, "EXIT: Optimal Solution Found.") then
-  if regexBool(messages, "Number of Iterations....: 91") then
-    print("Number of Iterations....: 91\nEXIT: Optimal Solution Found.\n");
+  if regexBool(messages, "Number of Iterations....: 92") then
+    print("Number of Iterations....: 92\nEXIT: Optimal Solution Found.\n");
   else
     print("Number of Iterations changed.\tUpdate test\n");
     exit(1);
@@ -94,6 +94,6 @@ getErrorString();
 // "
 // true
 // ""
-// Number of Iterations....: 91
+// Number of Iterations....: 92
 // EXIT: Optimal Solution Found.
 // endResult
