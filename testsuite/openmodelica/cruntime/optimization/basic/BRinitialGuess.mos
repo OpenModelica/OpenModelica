@@ -23,9 +23,9 @@ getErrorString();
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
-// 
+//
 // "
 // end SimulationResult;
 // ""
@@ -55,7 +55,7 @@ getErrorString();
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
 // LOG_IPOPT_ERROR   | info    | max error is 0.0234335 for the approximation of the state y2(time = 0.05)

@@ -15,10 +15,10 @@ optimization nmpcBatchReactorCon4(objectiveIntegrand = -x2)
   Real c2 = 1+ exp(time);
   Real c3 = 2+ exp(time);
 
-  Real cc1(min = 0) = u - c1; 
-  Real cc2(min = 0) = u - c2; 
-  Real cc3(max = 0) = u - c3; 
-  Real cc4(max = 0) = u - 5*(1+time); 
+  Real cc1(min = 0) = u - c1;
+  Real cc2(min = 0) = u - c2;
+  Real cc3(max = 0) = u - c3;
+  Real cc4(max = 0) = u - 5*(1+time);
 constraint
   cc1;
   cc2;
@@ -61,7 +61,7 @@ getErrorString();
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
 // LOG_SUCCESS       | info    | The simulation finished successfully.
