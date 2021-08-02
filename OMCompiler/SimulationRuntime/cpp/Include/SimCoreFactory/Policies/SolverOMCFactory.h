@@ -56,7 +56,18 @@ public:
 
     virtual shared_ptr<ISolver> createSolver(IMixedSystem* system, string solvername, shared_ptr<ISolverSettings> solver_settings)
     {
-        if(solvername.compare("cppdassl")==0)
+        if (solvername.compare("dassl") == 0)
+        {
+            fs::path dassl_path = ObjectFactory<CreationPolicy>::_library_path;
+            fs::path dassl_name(DASSL_LIB);
+            dassl_path /= dassl_name;
+            LOADERRESULT result = ObjectFactory<CreationPolicy>::_factory->LoadLibrary(dassl_path.string(), *_solver_type_map);
+            if (result != LOADER_SUCCESS)
+            {
+                throw ModelicaSimulationError(MODEL_FACTORY, "Failed loading DASSL solver library!");
+            }
+        }
+        else if(solvername.compare("cppdassl")==0)
         {
             fs::path cppdassl_path = ObjectFactory<CreationPolicy>::_library_path;
             fs::path cppdassl_name(CPPDASSL_LIB);
