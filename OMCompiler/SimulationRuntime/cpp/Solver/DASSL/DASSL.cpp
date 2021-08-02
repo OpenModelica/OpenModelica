@@ -400,9 +400,12 @@ void DASSL::DASSLCore()
         _iworkAcc[i] += _iwork[i];
     }
 
-    _daskr_ddaskr_(_res, &_dimSys, &_tCurrent, _y, _yPrime, &_tEnd, _info,
-                   _rtol, _atol, &_idid, _rwork, &_lrw, _iwork, &_liw, /*rpar*/NULL,
-                   (int *)this, _jac, /*psol*/NULL, _rt, &_dimZeroFunc, _zeroSign);
+    if (_tEnd - _tCurrent > _settings->getEndTimeTol())
+      _daskr_ddaskr_(_res, &_dimSys, &_tCurrent, _y, _yPrime, &_tEnd, _info,
+                     _rtol, _atol, &_idid, _rwork, &_lrw, _iwork, &_liw, /*rpar*/NULL,
+                     (int *)this, _jac, /*psol*/NULL, _rt, &_dimZeroFunc, _zeroSign);
+    else
+      _idid = 3; // daskr would return -33 as end time too close
 
     if (_idid != 1)
       LOGGER_WRITE("proceed to t = " + to_string(_tCurrent) + ", idid = " + to_string(_idid), LC_SOLVER, LL_DEBUG);
@@ -523,7 +526,7 @@ void DASSL::DASSLCore()
       _info[0] = 0; // restart dassl
 
       // Check for event at end time
-      if (_tCurrent >= _tEnd)
+      if (_tEnd - _tCurrent <= _settings->getEndTimeTol())
         _solverStatus = DONE;
       if (_continuous_system->stepCompleted(_tCurrent))
         _solverStatus = DONE;
