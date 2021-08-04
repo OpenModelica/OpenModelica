@@ -173,7 +173,7 @@ pipeline {
               common.buildOMC(
                 '/opt/rh/devtoolset-8/root/usr/bin/gcc',
                 '/opt/rh/devtoolset-8/root/usr/bin/g++',
-                'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran',
+                'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran CMAKE=cmake3',
                 false, // Building C++ runtime doesn't work at the moment
                 false)
             }
