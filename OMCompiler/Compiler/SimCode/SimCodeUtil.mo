@@ -1203,7 +1203,6 @@ algorithm
 
       // nonlinear case
       case SimCode.SES_NONLINEAR(nlSystem=nlSyst as SimCode.NONLINEARSYSTEM(), alternativeTearing=optNlSyst, eqAttr=eqAttr) equation
-
         (nlSyst, modelInfo, symJacs) = updateNonLinearSyst(nlSyst, modelInfo, symJacs);
 
         // process the alternative system
@@ -3837,6 +3836,7 @@ protected
   list<SimCode.SimEqSystem> simequations;
   DoubleEnded.MutableList<SimCode.SimEqSystem> equations;
   BackendDAE.Constraints cons;
+  BackendDAE.TearingSet set;
 algorithm
   if listEmpty(innerEquations) then
     equations_ := isimequations;
@@ -3846,17 +3846,27 @@ algorithm
   BackendDAE.EQSYSTEM(orderedEqs = eqns) := isyst;
   equations := DoubleEnded.fromList(isimequations);
 
-  for eq in innerEquations loop
-    // get Eqn
-    (eqnindx, vars, cons) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(eq);
-    nVars := nVars + listLength(vars);
-    eqn := BackendEquation.get(eqns, eqnindx);
-    if not homotopySupport then
-      (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
-    end if;
-    // generate comp
-    comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
-    (simequations, _, ouniqueEqIndex, otempvars) := createEquationsWork(genDiscrete, false, genDiscrete, skipDiscInAlgorithm, isyst, ishared, comp, ouniqueEqIndex, otempvars, cons);
+  for eq in innerEquations loop // KAB
+    _ := match eq
+      case BackendDAE.INNERLOOP(set=set) algorithm
+        nVars := nVars + listLength(set.tearingvars);
+        (simequations, ouniqueEqIndex, otempvars) := createTornSystem(eq.linear, skipDiscInAlgorithm, genDiscrete, set, NONE(), isyst, ishared, ouniqueEqIndex, eq.mixed, otempvars);
+        // TODO what about homotopySupport?
+      then ();
+
+      else algorithm
+        // get Eqn
+        (eqnindx, vars, cons) := BackendDAEUtil.getEqnAndVarsFromInnerEquation(eq);
+        nVars := nVars + listLength(vars);
+        eqn := BackendEquation.get(eqns, eqnindx);
+        if not homotopySupport then
+          (_, homotopySupport) := BackendEquation.traverseExpsOfEquation(eqn, BackendDAEUtil.containsHomotopyCall, false);
+        end if;
+        // generate comp
+        comp := createTornSystemInnerEqns1(eqn, eqnindx, vars);
+        (simequations, _, ouniqueEqIndex, otempvars) := createEquationsWork(genDiscrete, false, genDiscrete, skipDiscInAlgorithm, isyst, ishared, comp, ouniqueEqIndex, otempvars, cons);
+      then ();
+    end match;
     DoubleEnded.push_list_back(equations, simequations);
   end for;
 
