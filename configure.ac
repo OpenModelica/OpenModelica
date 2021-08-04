@@ -14,6 +14,7 @@ m4_include([common/m4/omhome.m4])
 AC_SUBST(RPATH_QMAKE)
 AC_SUBST(SHREXT)
 AC_SUBST(APP)
+AC_SUBST(CMAKE)
 
 AC_SUBST(OMC_TARGET)
 AC_ARG_WITH(cppruntime,  [  --with-cppruntime       (build the optional cppruntime simulation libraries)],[OMC_TARGET="$withval"],[OMC_TARGET="no"])
