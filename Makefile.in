@@ -2,6 +2,12 @@
 
 defaultMakefileTarget = Makefile.unix
 
+CMAKE = @CMAKE@
+# Use the system's default cmake if nothing is passed to configure script, i.e., no CMAKE=<some_path> is specified
+ifeq ($(CMAKE),)
+	CMAKE=cmake
+endif
+
 all: @ALL_TARGETS@ @OMLIBRARY_TARGET@
 
 .PRECIOUS: Makefile
@@ -25,12 +31,12 @@ omedit-testsuite.skip: omedit.skip testsuite-depends
 	$(MAKE) -f $(defaultMakefileTarget) -C OMEdit/Testsuite
 omparser: omparser.skip
 omparser.skip:
-	test -f $@ || $(MAKE) -C OMParser OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
+	test -f $@ || $(MAKE) -C OMParser OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" CMAKE=$(CMAKE)
 omsimulator: omsimulator.skip
 omsimulator.skip:
-	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
-	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@ OMSYSIDENT=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
-	$(MAKE) -C OMSimulator OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@"
+	$(MAKE) -C OMSimulator config-3rdParty CERES=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" CMAKE=$(CMAKE)
+	$(MAKE) -C OMSimulator config-OMSimulator OMBUILDDIR=@OMBUILDDIR@ OMSYSIDENT=OFF "host_short=@host_short@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" CMAKE=$(CMAKE)
+	$(MAKE) -C OMSimulator OMBUILDDIR=@OMBUILDDIR@ "host_short=@host_short@" CC="@CC@" CC="@CC@" CXX="@CXX@" CFLAGS="@CFLAGS@" CPPFLAGS="@CPPFLAGS@" CXXFLAGS="@CXXFLAGS@" CMAKE=$(CMAKE)
 omsimulator-debug:
 	$(MAKE) omsimulator BUILD_TYPE=Debug
 omnotebook: omnotebook.skip
