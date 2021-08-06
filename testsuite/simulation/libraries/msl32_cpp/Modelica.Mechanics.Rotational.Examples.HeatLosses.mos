@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.Rotational.Examples.HeatLosses);
 compareVars :=
 {
@@ -37,13 +37,15 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Rotational.Examples.HeatLosses
 // {"inertia1.w","inertia1.phi","inertia2.w","inertia2.phi","inertia3.w","inertia3.phi","inertia4.w","inertia4.phi","inertia5.w","inertia5.phi","inertia6.w","inertia6.phi","bearingFriction.mode","lossyGear.mode"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.HeatLosses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Mechanics.Rotational.Examples.HeatLosses_res.mat
-// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Files Equal!
+// Error: Could not read variable lossyGear.mode in file Modelica.Mechanics.Rotational.Examples.HeatLosses.mat.
+// Warning: Get data of variable lossyGear.mode from file Modelica.Mechanics.Rotational.Examples.HeatLosses.mat failed!
 //
 // "true
 // "

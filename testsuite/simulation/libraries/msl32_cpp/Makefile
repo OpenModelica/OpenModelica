@@ -221,6 +221,8 @@ Modelica.Mechanics.Translational.Examples.WhyArrows.mos \
 Modelica.Media.Examples.IdealGasH2O.mos \
 Modelica.Media.Examples.MixtureGases.mos \
 Modelica.Media.Examples.MoistAir.mos \
+Modelica.Media.Examples.R134a.R134a1.mos \
+Modelica.Media.Examples.R134a.R134a2.mos \
 Modelica.Media.Examples.ReferenceAir.DryAir1.mos \
 Modelica.Media.Examples.ReferenceAir.DryAir2.mos \
 Modelica.Media.Examples.ReferenceAir.Inverse_sh_T.mos \
@@ -239,8 +241,6 @@ Modelica.Media.Examples.TestOnly.IdealGasN2Mix.mos \
 Modelica.Media.Examples.TestOnly.MixIdealGasAir.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.Air.DryAirNasa.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.Air.MoistAir.mos \
-Modelica.Media.Examples.R134a.R134a1.mos \
-Modelica.Media.Examples.R134a.R134a2.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.Air.SimpleAir.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Air.mos \
 Modelica.Media.Examples.Tests.MediaTestModels.IdealGases.Nitrogen.mos \
