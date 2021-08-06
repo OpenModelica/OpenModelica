@@ -264,18 +264,30 @@ void DASSL::initialize()
   // Use supplied Jacobian function
   _info[4] = 1;
   _maxColors = _system->getAMaxColors();
-  if (_maxColors > 0)
+  if (_system->isAnalyticJacobianGenerated() && _continuous_system->getDimContinuousStates() > 0)
+  {
+    LOGGER_WRITE("Jacobian size " + to_string(_dimSys) + ", generated symbolically", LC_SOLVER, LL_DEBUG);
+  }
+  else if (_maxColors > 0)
   {
     _system->getAColorOfColumn(_colorOfColumn, _dimSys);
     LOGGER_WRITE("Jacobian size " + to_string(_dimSys) + " with " + to_string(_maxColors) + " colors", LC_SOLVER, LL_DEBUG);
     LOGGER_WRITE_VECTOR("colors", _colorOfColumn, _dimSys, LC_SOLVER, LL_DEBUG);
     LOGGER_WRITE("(colored numerical disabled)", LC_SOLVER, LL_DEBUG);
-    _maxColors = 0; // See Modelica.Fluid.Examples.BranchingDynamicPipes
+    _maxColors = 0; // See e.g. Modelica.Electrical.Spice3.Examples.Nor
+  }
+  else
+  {
+    LOGGER_WRITE("Jacobian size " + to_string(_dimSys) + ", dense numerical", LC_SOLVER, LL_DEBUG);
   }
 
   // Max step size
   _info[6] = 1;
   _rwork[1] = _settings->getGlobalSettings()->gethOutput();
+
+  // Initial step size
+  _info[7] = 1;
+  _rwork[2] = 1e-30; // start with very small value to not miss events later on -- see StateGraph!?
 
   LOGGER_WRITE_END(LC_SOLVER, LL_DEBUG);
 }
@@ -311,7 +323,7 @@ void DASSL::solve(const SOLVERCALL action)
 #endif
 
     if (writeOutput)
-      writeToFile(0, _tCurrent, _h);
+      writeToFile(_accStps, _tCurrent, _h);
 
     return;
   }
@@ -327,7 +339,7 @@ void DASSL::solve(const SOLVERCALL action)
   {
     _firstStep = true;
     if (writeOutput || writeEventOutput)
-      writeToFile(0, _tCurrent, _h);
+      writeToFile(_accStps, _tCurrent, _h);
     _continuous_system->getContinuousStates(_y);
   }
 
@@ -411,10 +423,14 @@ void DASSL::DASSLCore()
       LOGGER_WRITE("proceed to t = " + to_string(_tCurrent) + ", idid = " + to_string(_idid), LC_SOLVER, LL_DEBUG);
     if (_idid < 0)
     {
+      _rejStps ++;
       _solverStatus = ISolver::SOLVERERROR;
       break;
     }
-    else if (1 < _idid && _idid < 4)
+    else
+      _accStps ++;
+
+    if (1 < _idid && _idid < 4)
       _solverStatus = DONE;
 
     // complete step for system and check for terminate
@@ -427,7 +443,7 @@ void DASSL::DASSLCore()
         _time_system->setTime(_tEnd); // interpolated time point
       _continuous_system->setContinuousStates(_y);
       _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-      writeToFile(0, _tCurrent, _h);
+      writeToFile(_accStps, _tCurrent, _h);
     }
 
 #ifdef RUNTIME_PROFILING
@@ -448,6 +464,7 @@ void DASSL::DASSLCore()
     // Check for found root
     if (_idid == 5 && !isInterrupted())
     {
+      _zeros ++;
       LOGGER_WRITE_VECTOR("jroot", _zeroSign, _dimZeroFunc, LC_SOLVER, LL_DEBUG);
       // DASSL sets _tCurrent to the time where the first event occurred
       double _abs = fabs(_tLastEvent - _tCurrent);
@@ -500,7 +517,7 @@ void DASSL::DASSLCore()
           // for this time step the event iteration evaluates the system with corrected values.
         }
 
-        writeToFile(0, _tCurrent, _h);
+        writeToFile(_accStps, _tCurrent, _h);
       }
 
       for (int i = 0; i < _dimZeroFunc; i++)
@@ -520,7 +537,7 @@ void DASSL::DASSLCore()
       {
         // If we want to write the event-results, we should evaluate the whole system again
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        writeToFile(0, _tCurrent, _h);
+        writeToFile(_accStps, _tCurrent, _h);
       }
 
       _info[0] = 0; // restart dassl
@@ -665,59 +682,61 @@ int DASSL::calcJacobian(double t, double *y, double *yp, double *delta,
 
   try
   {
-    for (int i = 0; i < _dimSys; i++)
+    if (_system->isAnalyticJacobianGenerated() && _continuous_system->getDimContinuousStates() > 0)
     {
-      double d = h * yp[i];
-      _dyJac[i] = 1e-8 * max(max(abs(y[i]), abs(d)), abs(1.0/wt[i]));
-      if (d >= 0.0)
-        _dyJac[i] = y[i] + _dyJac[i];
-      else
-        _dyJac[i] = y[i] - _dyJac[i];
-      _dyJac[i] -= y[i];
-      _yJac[i] = y[i];
+      memcpy(pd, &_system->getJacobian().data()[0], _dimSys * _dimSys * sizeof(double));
     }
-
-    if (_maxColors == 0) // numerical, dense
-    {
-      for (int i = 0; i < _dimSys; i++)
+    else {
+      for (int j = 0; j < _dimSys; j++)
       {
-        _yJac[i] += _dyJac[i];
-
-        calcFunction(t, _yJac, _fJac);
-
-        int startOfColumn = i * _dimSys;
-        for (int k = 0; k < _dimSys; k++)
-        {
-          pd[startOfColumn + k] = (_fJac[k] - delta[k] - yp[k]) / _dyJac[i];
-        }
-
-        _yJac[i] = y[i];
+        _dyJac[j] = max(1e-10, 1e-8 * max(max(abs(y[j]), abs(h * yp[j])), abs(1.0 / wt[j])));
+        _dyJac[j] = y[j] + _dyJac[j];
+        _dyJac[j] -= y[j];
+        _yJac[j] = y[j];
       }
-    }
-    else // colored numerical, dense
-    {
-      for (int color = 1; color <= _maxColors; color++)
+
+      if (_maxColors == 0) // numerical, dense
       {
-        for (int i = 0; i < _dimSys; i++)
+        for (int j = 0; j < _dimSys; j++)
         {
-          if (_colorOfColumn[i] == color)
+          _yJac[j] += _dyJac[j];
+
+          calcFunction(t, _yJac, _fJac);
+
+          int startOfColumn = j * _dimSys;
+          for (int i = 0; i < _dimSys; i++)
           {
-            _yJac[i] += _dyJac[i];
+            pd[startOfColumn + i] = (_fJac[i] - delta[i] - yp[i]) / _dyJac[j];
           }
+
+          _yJac[j] = y[j];
         }
-
-        calcFunction(t, _yJac, _fJac);
-
-        for (int i = 0; i < _dimSys; i++)
+      }
+      else // colored numerical, dense
+      {
+        for (int color = 1; color <= _maxColors; color++)
         {
-          if (_colorOfColumn[i] == color)
+          for (int j = 0; j < _dimSys; j++)
           {
-            int startOfColumn = i * _dimSys;
-            for (int k = 0; k < _dimSys; k++)
+            if (_colorOfColumn[j] == color)
             {
-              pd[startOfColumn + k] = (_fJac[k] - delta[k] - yp[k]) / _dyJac[i];
+              _yJac[j] += _dyJac[j];
             }
-            _yJac[i] = y[i];
+          }
+
+          calcFunction(t, _yJac, _fJac);
+
+          for (int j = 0; j < _dimSys; j++)
+          {
+            if (_colorOfColumn[j] == color)
+            {
+              int startOfColumn = j * _dimSys;
+              for (int i = 0; i < _dimSys; i++)
+              {
+                pd[startOfColumn + i] = (_fJac[i] - delta[i] - yp[i]) / _dyJac[j];
+              }
+              _yJac[j] = y[j];
+            }
           }
         }
       }

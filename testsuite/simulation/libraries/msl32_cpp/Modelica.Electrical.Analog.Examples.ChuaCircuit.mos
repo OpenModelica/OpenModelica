@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Electrical.Analog.Examples.ChuaCircuit);
 compareVars :=
 {
@@ -26,7 +26,7 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SuppressedSimulation
+// OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Electrical.Analog.Examples.ChuaCircuit
 // {"L.i","C1.v","C2.v"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp

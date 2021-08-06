@@ -31,16 +31,11 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 120.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2_res.mat
-// Messages: 
-// [CVODE ERROR]  CVode
-//   The right-hand side routine failed at the first call.
-//
-//
-// SUNDIALS_ERROR: CVode() failed with flag = -9
-//
+// Messages: DASKR--  R IS ILL-DEFINED.  ZERO VALUES WERE FOUND AT TWO                       
+//          VERY CLOSE T VALUES, AT T = R1                                         
+//       In above message,  R1 =   1.1382017794796E+02
 // ERROR  : solver: SimManager: Simulation stopped with errors before t = 120.000000
-// ERROR  : solver: SimManager: Nonlinear solver 264 stopped at time 113.796 with error in algloop solver: 
-// Algloop could not be evaluated! Evaluation failed at the first call.
+// ERROR  : solver: SimManager: DASSL: solve failed with idid = -33
 //
 // Files Equal!
 // "true

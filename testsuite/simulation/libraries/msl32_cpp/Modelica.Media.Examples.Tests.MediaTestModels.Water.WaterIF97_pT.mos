@@ -31,16 +31,12 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.01, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Media.Examples.Tests.MediaTestModels.Water.WaterIF97_pT_res.mat
-// Messages: 
-// [CVODE ERROR]  CVode
-//   At t = 0 and h = 1e-24, the corrector convergence test failed repeatedly or with |h| = hmin.
-//
-//
-// SUNDIALS_ERROR: CVode() failed with flag = -4
-//
+// Messages: DASKR--  AT T (=R1) AND STEPSIZE H (=R2) THE                                    
+//       In above,  R1 =   1.4073748835533E-16   R2 =   3.5184372088832E-17
+// DASKR--  NONLINEAR SYSTEM SOLVER COULD NOT CONVERGE                             
+// DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE                                    
 // ERROR  : solver: SimManager: Simulation stopped with errors before t = 1.010000
-// ERROR  : solver: SimManager: Nonlinear solver 80 stopped at time 1e-24 with error in algloop solver: 
-// Nonlinear solver failed!
+// ERROR  : solver: SimManager: DASSL: solve failed with idid = -10
 //
 // Files Equal!
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.

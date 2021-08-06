@@ -51,43 +51,35 @@ public:
 
   virtual ~DASSL();
 
-  // geerbt von Object (in SolverDefaultImplementation)
-  //---------------------------------------
-  /// Spezielle Solvereinstellungen setzten (default oder user defined)
+  /// initialize solver (and settings through base class SolverDefaultImplementation)
   virtual void initialize();
 
 
-  // geerbt von ISolver
-  //---------------------------------------
-  /// Setzen der Startzeit für die numerische Lösung
   virtual void setStartTime(const double& time)
   {
     SolverDefaultImplementation::setStartTime(time);
   }
 
-  /// Setzen der Endzeit für die numerische Lösung
   virtual void setEndTime(const double& time)
   {
     SolverDefaultImplementation::setEndTime(time);
   }
 
-  /// Setzen der initialen Schrittweite (z.B. auch nach Nullstelle)
   virtual void setInitStepSize(const double& stepSize)
   {
     SolverDefaultImplementation::setInitStepSize(stepSize);
   }
 
-  /// Berechung der numerischen Lösung innerhalb eines gegebenen Zeitintervalls
+  /// call solver
   virtual void solve(const SOLVERCALL command = UNDEF_CALL);
 
-  /// Liefert den Status des Solvers nach Beendigung der Simulation
   virtual ISolver::SOLVERSTATUS getSolverStatus()
   {
     return (SolverDefaultImplementation::getSolverStatus());
   }
 
-  //// Ausgabe von statistischen Informationen (wird vom SimManager nach Abschluß der Simulation aufgerufen)
   virtual void writeSimulationInfo();
+
   virtual void setTimeOut(unsigned int time_out);
 
   virtual void stop();
