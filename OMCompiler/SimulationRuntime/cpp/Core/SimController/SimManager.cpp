@@ -553,6 +553,12 @@ void SimManager::runSingleProcess()
               // Reset time-events after the evaluation in handleSystemEvents
               _timeevent_system->resetTimeConditions();
 
+              // Record result of time event (important for pulses)
+              _solverTask = ISolver::SOLVERCALL(_solverTask | ISolver::RECORDCALL);
+              _solver->setStartTime(startTime);
+              _solver->solve(_solverTask);
+              _solverTask = ISolver::SOLVERCALL(_solverTask ^ ISolver::RECORDCALL);
+
               //evaluate all to finish the step
               _cont_system->evaluateAll(IContinuous::CONTINUOUS);
               _event_system->saveAll();
