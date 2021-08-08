@@ -43,6 +43,8 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Fluid.Examples.Explanatory.MeasuringTemperature_res.mat
 // Messages: ERROR  : solver: SimManager: Simulation stopped with errors before t = 1.100000
 // ERROR  : solver: SimManager: Number of event iteration steps exceeded at time: 0.000000
+// ERROR  : solver: SimController: Simulation failed using nonlinear solver kinsol
+// ERROR  : solver: SimController: Recovering with nonlinear solver newton
 //
 // Files Equal!
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.

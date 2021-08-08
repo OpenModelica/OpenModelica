@@ -37,6 +37,8 @@ runScript(modelTesting);getErrorString();
 // DASKR--  BECAUSE IRES WAS EQUAL TO MINUS ONE                                    
 // ERROR  : solver: SimManager: Simulation stopped with errors before t = 1.010000
 // ERROR  : solver: SimManager: DASSL: solve failed with idid = -10
+// ERROR  : solver: SimController: Simulation failed using nonlinear solver kinsol
+// ERROR  : solver: SimController: Recovering with nonlinear solver newton
 //
 // Files Equal!
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
