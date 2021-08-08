@@ -91,7 +91,6 @@ DASSL::DASSL(IMixedSystem* system, ISolverSettings* settings)
   , _yJac(NULL)
   , _dyJac(NULL)
   , _fJac(NULL)
-  , _colorOfColumn(NULL)
   , _maxColors(0)
 {
 #ifdef RUNTIME_PROFILING
@@ -148,8 +147,6 @@ DASSL::~DASSL()
     delete[] _rtol;
   if (_atol)
     delete[] _atol;
-  if (_colorOfColumn)
-    delete[] _colorOfColumn;
   if (_yJac)
     delete[] _yJac;
   if (_dyJac)
@@ -208,8 +205,6 @@ void DASSL::initialize()
     delete[] _rtol;
   if (_atol)
     delete[] _atol;
-  if (_colorOfColumn)
-    delete[] _colorOfColumn;
   if (_yJac)
     delete[] _yJac;
   if (_dyJac)
@@ -228,7 +223,6 @@ void DASSL::initialize()
   _zeroSign = new int[_dimZeroFunc];
   _rtol = new double[_dimSys];
   _atol = new double[_dimSys];
-  _colorOfColumn = new int[_dimSys];
   _yJac = new double[_dimSys];
   _dyJac = new double[_dimSys];
   _fJac = new double[_dimSys];
@@ -270,11 +264,7 @@ void DASSL::initialize()
   }
   else if (_maxColors > 0)
   {
-    _system->getAColorOfColumn(_colorOfColumn, _dimSys);
     LOGGER_WRITE("Jacobian size " + to_string(_dimSys) + " with " + to_string(_maxColors) + " colors", LC_SOLVER, LL_DEBUG);
-    LOGGER_WRITE_VECTOR("colors", _colorOfColumn, _dimSys, LC_SOLVER, LL_DEBUG);
-    LOGGER_WRITE("(colored numerical disabled)", LC_SOLVER, LL_DEBUG);
-    _maxColors = 0; // See e.g. Modelica.Electrical.Spice3.Examples.Nor
   }
   else
   {
@@ -427,129 +417,136 @@ void DASSL::DASSLCore()
       _solverStatus = ISolver::SOLVERERROR;
       break;
     }
-    else
-      _accStps ++;
-
-    if (1 < _idid && _idid < 4)
+    else if (1 < _idid && _idid < 4)
       _solverStatus = DONE;
 
-    // complete step for system and check for terminate
-		if (_continuous_system->stepCompleted(_tCurrent))
-			_solverStatus = DONE;
-
-    if (writeOutput)
+    try
     {
-      if (_idid == 3)
-        _time_system->setTime(_tEnd); // interpolated time point
-      _continuous_system->setContinuousStates(_y);
-      _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-      writeToFile(_accStps, _tCurrent, _h);
-    }
+      // complete step for system and check for terminate
+      if (_continuous_system->stepCompleted(_tCurrent))
+        _solverStatus = DONE;
 
-#ifdef RUNTIME_PROFILING
-    MEASURETIME_REGION_DEFINE(dasslStepCompletedHandler, "DASSLStepCompleted");
-    if (MeasureTime::getInstance() != NULL)
-      MEASURETIME_START(measuredFunctionStartValues, dasslStepCompletedHandler, "DASSLStepCompleted");
-    if (MeasureTime::getInstance() != NULL)
-      MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[5], dasslStepCompletedHandler);
-#endif
-
-    // Perform state selection
-    bool state_selection = stateSelection();
-    if (state_selection) {
-      _continuous_system->getContinuousStates(_y);
-    }
-    _zeroFound = false;
-
-    // Check for found root
-    if (_idid == 5 && !isInterrupted())
-    {
-      _zeros ++;
-      LOGGER_WRITE_VECTOR("jroot", _zeroSign, _dimZeroFunc, LC_SOLVER, LL_DEBUG);
-      // DASSL sets _tCurrent to the time where the first event occurred
-      double _abs = fabs(_tLastEvent - _tCurrent);
-      _zeroFound = true;
-
-      if (_abs < 1e-3 && _event_n == 0)
+      if (writeOutput)
       {
-        _tLastEvent = _tCurrent;
-        _event_n++;
-      }
-      else if ((_abs < 1e-3) && (_event_n >= 1 && _event_n < 500))
-      {
-        _event_n++;
-      }
-      else if (_abs >= 1e-3)
-      {
-        //restart event counter
-        _tLastEvent = _tCurrent;
-        _event_n = 0;
-      }
-      else
-      {
-        _solverStatus = ISolver::SOLVERERROR;
-        break;
-      }
-
-      // DASSL has interpolated the states at time _tCurrent
-      _time_system->setTime(_tCurrent);
-
-      // To get steep steps in the result file, two value points (P1 and P2) are added
-      //
-      // Y |   (P2) X...........
-      //   |        :
-      //   |        :
-      //   |........X (P1)
-      //   |---------------------------------->
-      //   |        ^                         t
-      //        _tCurrent
-
-      // Write the values of (P1)
-      if (writeEventOutput)
-      {
-        try
-        {
-          _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
-        }
-        catch (std::exception& ex)
-        {
-          // if a zero crossing was dected before the event iteration was called and evalutateAll throws and error
-          // for this time step the event iteration evaluates the system with corrected values.
-        }
-
-        writeToFile(_accStps, _tCurrent, _h);
-      }
-
-      for (int i = 0; i < _dimZeroFunc; i++)
-        _events[i] = (_zeroSign[i] != 0);
-
-      if (_mixed_system->handleSystemEvents(_events))
-      {
-        // State variables were reinitialized, thus we have to give these values to dassl
-        _continuous_system->getContinuousStates(_y);
-      }
-    }
-
-    if ((_zeroFound || state_selection) && !isInterrupted())
-    {
-      // Write the values of (P2)
-      if (writeEventOutput)
-      {
-        // If we want to write the event-results, we should evaluate the whole system again
+        if (_idid == 3)
+          _time_system->setTime(_tEnd); // interpolated time point
+        _continuous_system->setContinuousStates(_y);
         _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
         writeToFile(_accStps, _tCurrent, _h);
       }
 
-      _info[0] = 0; // restart dassl
+  #ifdef RUNTIME_PROFILING
+      MEASURETIME_REGION_DEFINE(dasslStepCompletedHandler, "DASSLStepCompleted");
+      if (MeasureTime::getInstance() != NULL)
+        MEASURETIME_START(measuredFunctionStartValues, dasslStepCompletedHandler, "DASSLStepCompleted");
+      if (MeasureTime::getInstance() != NULL)
+        MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[5], dasslStepCompletedHandler);
+  #endif
 
-      // Check for event at end time
-      if (_tEnd - _tCurrent <= _settings->getEndTimeTol())
-        _solverStatus = DONE;
-      if (_continuous_system->stepCompleted(_tCurrent))
-        _solverStatus = DONE;
+      // Perform state selection
+      bool state_selection = stateSelection();
+      if (state_selection) {
+        _continuous_system->getContinuousStates(_y);
+      }
+      _zeroFound = false;
+
+      // Check for found root
+      if (_idid == 5 && !isInterrupted())
+      {
+        _zeros ++;
+        LOGGER_WRITE_VECTOR("jroot", _zeroSign, _dimZeroFunc, LC_SOLVER, LL_DEBUG);
+        // DASSL sets _tCurrent to the time where the first event occurred
+        double _abs = fabs(_tLastEvent - _tCurrent);
+        _zeroFound = true;
+
+        if (_abs < 1e-3 && _event_n == 0)
+        {
+          _tLastEvent = _tCurrent;
+          _event_n++;
+        }
+        else if ((_abs < 1e-3) && (_event_n >= 1 && _event_n < 500))
+        {
+          _event_n++;
+        }
+        else if (_abs >= 1e-3)
+        {
+          //restart event counter
+          _tLastEvent = _tCurrent;
+          _event_n = 0;
+        }
+        else
+        {
+          _solverStatus = ISolver::SOLVERERROR;
+          break;
+        }
+
+        // DASSL has interpolated the states at time _tCurrent
+        _time_system->setTime(_tCurrent);
+
+        // To get steep steps in the result file, two value points (P1 and P2) are added
+        //
+        // Y |   (P2) X...........
+        //   |        :
+        //   |        :
+        //   |........X (P1)
+        //   |---------------------------------->
+        //   |        ^                         t
+        //        _tCurrent
+
+        // Write the values of (P1) if not done via writeOutput above
+        if (writeEventOutput && !writeOutput)
+        {
+          try
+          {
+            _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+          }
+          catch (std::exception& ex)
+          {
+            // if a zero crossing was dected before the event iteration was called and evalutateAll throws an error
+            // for this time step the event iteration evaluates the system with corrected values.
+          }
+
+          writeToFile(_accStps, _tCurrent, _h);
+        }
+
+        for (int i = 0; i < _dimZeroFunc; i++)
+          _events[i] = (_zeroSign[i] != 0);
+
+        if (_mixed_system->handleSystemEvents(_events))
+        {
+          // State variables were reinitialized, thus we have to give these values to dassl
+          _continuous_system->getContinuousStates(_y);
+        }
+      }
+
+      if ((_zeroFound || state_selection) && !isInterrupted())
+      {
+        // Write the values of (P2)
+        if (writeEventOutput)
+        {
+          // If we want to write the event-results, we should evaluate the whole system again
+          _continuous_system->evaluateAll(IContinuous::CONTINUOUS);
+          writeToFile(_accStps, _tCurrent, _h);
+        }
+
+        _info[0] = 0; // restart dassl
+
+        // Check for event at end time
+        if (_tEnd - _tCurrent <= _settings->getEndTimeTol())
+          _solverStatus = DONE;
+        if (_continuous_system->stepCompleted(_tCurrent))
+          _solverStatus = DONE;
+      }
+
+      _accStps ++;
+      _tLastSuccess = _tCurrent;
     }
-
-    _tLastSuccess = _tCurrent;
+    catch (const std::exception& ex)
+    {
+      LOGGER_WRITE("DASSL: failed step at t = " + to_string(_tCurrent) + ": " + ex.what(), LC_SOLVER, LL_ERROR);
+      _solverStatus = ISolver::SOLVERERROR;
+      break;
+    }
   }
 
   LOGGER_WRITE_END(LC_SOLVER, LL_DEBUG);
@@ -605,7 +602,7 @@ int DASSL::calcFunction(const double& time, const double* y, double* f)
   }
   catch (std::exception & ex)
   {
-    LOGGER_WRITE("DASSL failed evaluation of residual at t = " + to_string(_tCurrent) + ": " + ex.what(), LC_SOLVER, LL_DEBUG);
+    LOGGER_WRITE("DASSL: failed evaluation of residual at t = " + to_string(_tCurrent) + ": " + ex.what(), LC_SOLVER, LL_DEBUG);
   }
 
 #ifdef RUNTIME_PROFILING
@@ -649,7 +646,7 @@ int DASSL::calcRoots(double t, const double *y, double *zeroValue)
   }
   catch (std::exception & ex)
   {
-    LOGGER_WRITE("DASSL failed evaluation of roots at t = " + to_string(_tCurrent) + ": " + ex.what(), LC_SOLVER, LL_WARNING);
+    LOGGER_WRITE("DASSL: failed evaluation of roots at t = " + to_string(_tCurrent) + ": " + ex.what(), LC_SOLVER, LL_WARNING);
   }
 
 #ifdef RUNTIME_PROFILING
@@ -686,7 +683,8 @@ int DASSL::calcJacobian(double t, double *y, double *yp, double *delta,
     {
       memcpy(pd, &_system->getJacobian().data()[0], _dimSys * _dimSys * sizeof(double));
     }
-    else {
+    else
+    {
       for (int j = 0; j < _dimSys; j++)
       {
         _dyJac[j] = max(1e-10, 1e-8 * max(max(abs(y[j]), abs(h * yp[j])), abs(1.0 / wt[j])));
@@ -695,7 +693,29 @@ int DASSL::calcJacobian(double t, double *y, double *yp, double *delta,
         _yJac[j] = y[j];
       }
 
-      if (_maxColors == 0) // numerical, dense
+      if (_maxColors > 0) // colored numerical
+      {
+        for (int color = 1; color <= _maxColors; color++)
+        {
+          for (int j: _system->getAColumnsOfColor(color))
+          {
+            _yJac[j] += _dyJac[j];
+          }
+
+          calcFunction(t, _yJac, _fJac);
+
+          for (int j: _system->getAColumnsOfColor(color))
+          {
+            int startOfColumn = j * _dimSys;
+            for (int i: _system->getADependenciesOfColumn(j))
+            {
+              pd[startOfColumn + i] = (_fJac[i] - delta[i] - yp[i]) / _dyJac[j];
+            }
+            _yJac[j] = y[j];
+          }
+        }
+      }
+      else // dense numerical
       {
         for (int j = 0; j < _dimSys; j++)
         {
@@ -712,40 +732,12 @@ int DASSL::calcJacobian(double t, double *y, double *yp, double *delta,
           _yJac[j] = y[j];
         }
       }
-      else // colored numerical, dense
-      {
-        for (int color = 1; color <= _maxColors; color++)
-        {
-          for (int j = 0; j < _dimSys; j++)
-          {
-            if (_colorOfColumn[j] == color)
-            {
-              _yJac[j] += _dyJac[j];
-            }
-          }
-
-          calcFunction(t, _yJac, _fJac);
-
-          for (int j = 0; j < _dimSys; j++)
-          {
-            if (_colorOfColumn[j] == color)
-            {
-              int startOfColumn = j * _dimSys;
-              for (int i = 0; i < _dimSys; i++)
-              {
-                pd[startOfColumn + i] = (_fJac[i] - delta[i] - yp[i]) / _dyJac[j];
-              }
-              _yJac[j] = y[j];
-            }
-          }
-        }
-      }
     }
     success = 1;
   }
   catch (std::exception & ex)
   {
-    LOGGER_WRITE("DASSL failed evaluation of Jacobian at t = " + to_string(_tCurrent) + ": " + ex.what(), LC_SOLVER, LL_WARNING);
+    LOGGER_WRITE("DASSL: failed evaluation of Jacobian at t = " + to_string(_tCurrent) + ": " + ex.what(), LC_SOLVER, LL_WARNING);
   }
 
   return success;

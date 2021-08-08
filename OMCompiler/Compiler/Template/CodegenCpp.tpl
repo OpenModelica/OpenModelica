@@ -282,8 +282,16 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
       ublas::vector<double> _<%name%>jac_y;
       ublas::vector<double> _<%name%>jac_tmp;
       ublas::vector<double> _<%name%>jac_x;
-      int* _<%name%>ColorOfColumn;
-      int  _<%name%>MaxColors;
+      <%
+      match name
+      case "A" then
+        <<
+        int* _<%name%>ColorOfColumn;
+        int  _<%name%>MaxColors;
+        std::vector<int>* _<%name%>ColumnsOfColor;
+        std::vector<int>* _<%name%>DependenciesOfColumn;
+        >>
+      %>
       >>
     ;separator="\n";empty)
     <<
@@ -426,9 +434,11 @@ case SIMCODE(modelInfo=MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void getResidual(double* f);
     virtual void evaluateDAE(const UPDATETYPE command = UNDEF_UPDATE);
 
-    /*colored jacobians*/
-    virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size);
+    /// Colored Jacobian
+    /*deprecated*/ virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size);
     virtual int  getAMaxColors();
+    virtual const vector<int>& getAColumnsOfColor(int color);
+    virtual const vector<int>& getADependenciesOfColumn(int idx);
 
     virtual string getModelName();
     virtual bool isJacobianSparse();//true if getSparseJacobian is implemented and getJacobian is not, false if getJacobian is implemented and getSparseJacobian is not.
@@ -609,6 +619,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        : <%lastIdentOfPath(modelInfo.name)%>(globalSettings)
        , _AColorOfColumn(NULL)
        , _AMaxColors(0)
+       , _AColumnsOfColor(NULL)
+       , _ADependenciesOfColumn(NULL)
        <%initialjacMats%>
        <%jacobianVarsInit%>
    {
@@ -618,6 +630,8 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        : <%lastIdentOfPath(modelInfo.name)%>(instance)
        , _AColorOfColumn(NULL)
        , _AMaxColors(0)
+       , _AColumnsOfColor(NULL)
+       , _ADependenciesOfColumn(NULL)
        <%initialjacMats%>
        <%jacobianVarsInit%>
    {
@@ -625,8 +639,12 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
 
    <%lastIdentOfPath(modelInfo.name)%>Jacobian::~<%lastIdentOfPath(modelInfo.name)%>Jacobian()
    {
-     if(_AColorOfColumn)
+     if (_AColorOfColumn)
        delete [] _AColorOfColumn;
+     if (_AColumnsOfColor)
+       delete [] _AColumnsOfColor;
+     if (_ADependenciesOfColumn)
+       delete [] _ADependenciesOfColumn;
    }
 
    <%functionAnalyticJacobians(modelInfo,jacobianMatrixes, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -1049,9 +1067,6 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <<
    <%classname%>Mixed::<%classname%>Mixed(shared_ptr<IGlobalSettings> globalSettings)
        : <%classname%>Jacobian(globalSettings)
-
-
-
    {
    }
 
@@ -1064,33 +1079,30 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    {
    }
 
-
-
    bool <%classname%>Mixed::isJacobianSparse(){
-    <%isJacobianSparse%>
+     <%isJacobianSparse%>
    }
 
-
    bool <%classname%>Mixed::isAnalyticJacobianGenerated(){
-    <%isAnalyticJacobianGenerated%>
+     <%isAnalyticJacobianGenerated%>
    }
 
    shared_ptr<ISimObjects> <%classname%>Mixed::getSimObjects()
    {
-      return BASECLASS::getSimObjects();
+     return BASECLASS::getSimObjects();
    }
    const matrix_t& <%classname%>Mixed::getJacobian( )
    {
-        <%getDenseAMatrix%>
+     <%getDenseAMatrix%>
    }
 
    const matrix_t& <%classname%>Mixed::getJacobian(unsigned int index)
    {
-      <%getDenseMatrix%>
+     <%getDenseMatrix%>
    }
    sparsematrix_t& <%classname%>Mixed::getSparseJacobian( )
    {
-      <%getSparseAMatrix%>
+     <%getSparseAMatrix%>
    }
 
    sparsematrix_t& <%classname%>Mixed::getSparseJacobian(unsigned int index)
@@ -1105,7 +1117,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%statesetjacobian%>
        default:
           throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
-      }
+     }
    }
    sparsematrix_t& <%classname%>Mixed::getStateSetSparseJacobian(unsigned int index)
    {
@@ -1114,41 +1126,44 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        <%statesetsparsejacobian%>
        default:
           throw ModelicaSimulationError(MATH_FUNCTION,"Not supported statset index");
-      }
+     }
    }
-    <%handleSystemEvents(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+   <%handleSystemEvents(zeroCrossings,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
 
    void <%classname%>Mixed::saveAll()
    {
      return <%classname%>::saveAll();
    }
 
-
    /*needed for colored jacobians*/
 
    void <%classname%>Mixed::getAColorOfColumn(int* aSparsePatternColorCols, int size)
    {
-    memcpy(aSparsePatternColorCols, _AColorOfColumn, size * sizeof(int));
+     memcpy(aSparsePatternColorCols, _AColorOfColumn, size * sizeof(int));
    }
 
    int <%classname%>Mixed::getAMaxColors()
    {
-    return _AMaxColors;
+     return _AMaxColors;
+   }
+
+   const std::vector<int>& <%classname%>Mixed::getAColumnsOfColor(int color)
+   {
+     return _AColumnsOfColor[color - 1];
+   }
+
+   const std::vector<int>& <%classname%>Mixed::getADependenciesOfColumn(int idx)
+   {
+     return _ADependenciesOfColumn[idx];
    }
 
    string <%classname%>Mixed::getModelName()
    {
-    return "<%fileNamePrefix%>";
+     return "<%fileNamePrefix%>";
    }
    <%updateResidualFunctionsCode%>
 
-
-
-
-
    >>
-
-
 end simulationMixedSystemCppFile;
 
 
@@ -12586,20 +12601,43 @@ case _ then
     match matrixname
     case "A" then
       let colorArray = (colorList |> (indexes) hasindex index0 =>
-      let colorCol = ( indexes |> i_index =>
-        '_<%matrixname%>ColorOfColumn[<%i_index%>] = <%intAdd(index0,1)%>;'
+        let colorCol = ( indexes |> i_index =>
+          '_<%matrixname%>ColorOfColumn[<%i_index%>] = <%intAdd(index0,1)%>;'
+          ;separator="\n")
+        '<%colorCol%>'
         ;separator="\n")
-      '<%colorCol%>'
-      ;separator="\n")
-      let index_ = listLength(seedVars)
+      let colorColumns = (colorList |> (indexes) hasindex index0 =>
+        let columns = (indexes |> i_index hasindex index1 =>
+          '<%i_index%>'
+          ;separator=", ")
+        '_AColumnsOfColor[<%index0%>] = {<%columns%>};'
+        ;separator="\n")
+      let dependencies = (sparsepattern |> (index,indexes) hasindex index0 =>
+        let jacCol = (indexes |> i_index hasindex index1 =>
+          '<%i_index%>'
+          ;separator=", ")
+        '_ADependenciesOfColumn[<%index%>] = {<%jacCol%>};'
+        ;separator="\n")
       <<
         if(_AColorOfColumn)
           delete [] _AColorOfColumn;
-        _AColorOfColumn = new int[<%index_%>];
+        _AColorOfColumn = new int[<%listLength(seedVars)%>];
         _AMaxColors = <%maxColor%>;
+        if(_AColumnsOfColor)
+          delete [] _AColumnsOfColor;
+        _AColumnsOfColor = new std::vector<int>[<%listLength(colorList)%>];
+        if(_ADependenciesOfColumn)
+          delete [] _ADependenciesOfColumn;
+        _ADependenciesOfColumn = new std::vector<int>[<%listLength(seedVars)%>];
 
-        /* write color array */
+        /* write color array (deprecated) */
         <%colorArray%>
+
+        /* write color to columns mapping */
+        <%colorColumns%>
+
+        /* write dependencies */
+        <%dependencies%>
       >>
     end match
   end match

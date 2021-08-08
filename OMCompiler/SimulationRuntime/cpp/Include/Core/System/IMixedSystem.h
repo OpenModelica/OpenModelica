@@ -38,14 +38,16 @@ public:
   virtual bool handleSystemEvents(bool* events) = 0;
 
   //virtual void saveAll() = 0;
-   virtual void getAlgebraicDAEVars(double* y) = 0;
-   virtual void setAlgebraicDAEVars(const double* y) = 0;
-   virtual void getResidual(double* f) = 0;
+  virtual void getAlgebraicDAEVars(double* y) = 0;
+  virtual void setAlgebraicDAEVars(const double* y) = 0;
+  virtual void getResidual(double* f) = 0;
 
   virtual string getModelName() = 0;
 
-  virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size) = 0;
+  /*deprecated*/ virtual void getAColorOfColumn(int* aSparsePatternColorCols, int size) = 0;
   virtual int getAMaxColors() = 0;
+  virtual const std::vector<int>& getAColumnsOfColor(int color) = 0;
+  virtual const std::vector<int>& getADependenciesOfColumn(int idx) = 0;
 
   // Copy the given IMixedSystem instance
   virtual IMixedSystem* clone() = 0;
