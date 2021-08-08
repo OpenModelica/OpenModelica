@@ -140,13 +140,13 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         string nls = simsettings.nonlinear_solver_names[i];
         try {
             if (i > 0)
-                LOGGER_WRITE("SimController: Trying nonlinear solver " + nls, LC_SOLVER, LL_WARNING);
+                LOGGER_WRITE("SimController: Recovering with nonlinear solver " + nls, LC_SOLVER, LL_ERROR);
             Start(simsettings, modelKey, nls);
             break;
         }
         catch(ModelicaSimulationError & ex)
         {
-            LOGGER_WRITE("SimController: Simulation failed using nonlinear solver " + nls, LC_SOLVER, LL_WARNING);
+            LOGGER_WRITE("SimController: Simulation failed using nonlinear solver " + nls, LC_SOLVER, LL_ERROR);
             if (i < simsettings.nonlinear_solver_names.size() - 1) {
                 // load system again to get all variables re-initialized
                 LoadSystem(_modelLib, _modelKey);

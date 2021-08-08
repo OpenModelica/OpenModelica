@@ -33,9 +33,11 @@ runScript(modelTesting);getErrorString();
 // Result file: Modelica.Fluid.Examples.AST_BatchPlant.Test.TankWithEmptyingPipe2_res.mat
 // Messages: DASKR--  R IS ILL-DEFINED.  ZERO VALUES WERE FOUND AT TWO                       
 //          VERY CLOSE T VALUES, AT T = R1                                         
-//       In above message,  R1 =   1.1382017794796E+02
+//       In above message,  R1 =   1.1382017794797E+02
 // ERROR  : solver: SimManager: Simulation stopped with errors before t = 120.000000
 // ERROR  : solver: SimManager: DASSL: solve failed with idid = -33
+// ERROR  : solver: SimController: Simulation failed using nonlinear solver kinsol
+// ERROR  : solver: SimController: Recovering with nonlinear solver newton
 //
 // Files Equal!
 // "true

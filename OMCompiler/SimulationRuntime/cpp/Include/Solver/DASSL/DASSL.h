@@ -140,7 +140,6 @@ private:
     _zeroFound;     ///< event detection
 
   // Variables for Coloured Jacobians
-  int* _colorOfColumn;
   int  _maxColors;
 
   ISystemProperties* _properties;

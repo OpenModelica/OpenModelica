@@ -50,6 +50,8 @@ runScript(modelTesting);getErrorString();
 // Messages: ERROR  : init  : SimManager: Could not initialize system
 // ERROR  : init  : SimManager: Nonlinear solver 413 stopped at time 0 with error in algloop solver: 
 // Nonlinear solver failed!
+// ERROR  : solver: SimController: Simulation failed using nonlinear solver kinsol
+// ERROR  : solver: SimController: Recovering with nonlinear solver newton
 //
 // [Modelica 3.2.1+maint.om/Fluid/Examples/TraceSubstances.mo:112:17-112:29:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
 // [Modelica 3.2.1+maint.om/Fluid/Examples/TraceSubstances.mo:122:23-122:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
