@@ -315,25 +315,18 @@ algorithm
     else strongComponentIndexOut;
   end match;
 
-  (oComp, outRunMatching) := match (inComp, isyst, ishared, inMethod)
+  (oComp, outRunMatching) := match inComp
     local
       list<Integer> eindex, vindx;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
       Boolean mixedSystem;
-      Integer maxSize;
       Boolean isLinear, useTearing;
 
     // Tearing
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) algorithm
+    case BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem) algorithm
       isLinear := BackendDAEUtil.getLinearfromJacType(jacType);
-      if isLinear then
-        maxSize := Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
-      else
-        maxSize := Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
-      end if;
-
-      useTearing := checkTearingSettings(maxSize, isLinear, strongComponentIndexOut, listLength(vindx));
+      useTearing := checkTearingSettings(isLinear, strongComponentIndexOut, listLength(vindx));
       if useTearing then
         if debugFlag then
           print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n");
@@ -380,34 +373,38 @@ end traverseComponent;
 protected function checkTearingSettings
 "Checks if we want to do tearing for the current component.
  It will also issue optional maesages if not."
-  input Integer maxSize;
   input Boolean isLinear;
   input Integer strongComponentIndex;
   input Integer numVars;
-  output Boolean activateTearing=false;
+  output Boolean activateTearing = false;
 protected
+  constant list<String> withLSS = {"C"} "targets that provide a linear sparse solver";
+  constant list<String> withNSS = {"C"} "targets that provide a nonlinear sparse solver";
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
-  Boolean forcedTearing;
-  Boolean isCpp;
+  Integer maxSize;
   Boolean isDense;
+  Boolean hasSparseSolver;
+  Boolean forcedTearing;
 algorithm
-
+  maxSize := Flags.getConfigInt(if isLinear then Flags.MAX_SIZE_LINEAR_TEARING else Flags.MAX_SIZE_NONLINEAR_TEARING);
   // Check if tearing is disabled (maxSize=0)
   if maxSize == 0 then
     return;
   end if;
 
-  // Check if (numVars < maxSize) or (isCpp and isDense)
-  isCpp := stringEqual(Config.simCodeTarget(), "Cpp");
-  isDense := stringEqual(Flags.getConfigString(Flags.MATRIX_FORMAT), "dense");
-  forcedTearing := isCpp and isDense;
+  // Check if (component is too big) or (matrix is dense and target has no sparse solver)
+  isDense := Flags.getConfigString(Flags.MATRIX_FORMAT) == "dense";
+  hasSparseSolver := listMember(Config.simCodeTarget(), (if isLinear then withLSS else withNSS));
+  forcedTearing := isDense and not hasSparseSolver;
   if numVars > maxSize and not forcedTearing then
-    Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndex), intString(numVars), (if isLinear then "linear" else "nonlinear"),intString(maxSize)});
+    Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndex), intString(numVars),
+                                              (if isLinear then "linear" else "nonlinear"), intString(maxSize),
+                                              (if isLinear then "maxSizeLinearTearing" else "maxSizeNonlinearTearing")});
     return;
   end if;
 
   // Check if tearing is disabled for this component
-  if listMember(strongComponentIndex,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+  if listMember(strongComponentIndex, Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
     if debugFlag then
       print("\nTearing deactivated by user.\n");
     end if;

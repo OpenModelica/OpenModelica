@@ -994,7 +994,7 @@ public constant ErrorTypes.Message EXEC_STAT = ErrorTypes.MESSAGE(572, ErrorType
 public constant ErrorTypes.Message EXEC_STAT_GC = ErrorTypes.MESSAGE(573, ErrorTypes.TRANSLATION(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Performance of %s: time %s/%s, GC stats:%s"));
 public constant ErrorTypes.Message MAX_TEARING_SIZE = ErrorTypes.MESSAGE(574, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
-  Gettext.gettext("Tearing is skipped for strong component %s because system size of %s exceeds maximum system size for tearing of %s systems (%s).\nTo adjust the maximum system size for tearing use --maxSizeLinearTearing=<size> and --maxSizeNonlinearTearing=<size>.\n"));
+  Gettext.gettext("Tearing is skipped for strong component %s because system size of %s exceeds maximum system size for tearing of %s systems (%s).\nTo adjust the maximum system size for tearing use --%s=<size>.\n"));
 public constant ErrorTypes.Message NO_TEARING_FOR_COMPONENT = ErrorTypes.MESSAGE(575, ErrorTypes.SYMBOLIC(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Tearing is skipped for strong component %s because of activated compiler flag 'noTearingForComponent=%1'.\n"));
 public constant ErrorTypes.Message WRONG_VALUE_OF_ARG = ErrorTypes.MESSAGE(576, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
