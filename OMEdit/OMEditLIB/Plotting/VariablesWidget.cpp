@@ -1571,7 +1571,6 @@ void VariablesWidget::variablesUpdated()
             mpVariablesTreeModel->blockSignals(state);
           } else {
             pPlotWindow->getPlot()->removeCurve(pPlotCurve);
-            pPlotCurve->detach();
           }
         }
       }
@@ -1743,8 +1742,7 @@ void VariablesWidget::reSimulate(bool showSetup)
   SimulationOptions simulationOptions = pVariablesTreeItem->getSimulationOptions();
   if (simulationOptions.isValid()) {
     if (simulationOptions.isInteractiveSimulation()) {
-      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information),
-                               tr("You cannot re-simulate an interactive simulation."), Helper::ok);
+      QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("You cannot re-simulate an interactive simulation."), Helper::ok);
     } else {
       simulationOptions.setReSimulate(true);
       updateInitXmlFile(simulationOptions);
@@ -1770,16 +1768,14 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
   if (initFile.open(QIODevice::ReadOnly)) {
     if (initXmlDocument.setContent(&initFile)) {
       VariablesTreeItem *pTopVariableTreeItem;
-      pTopVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(simulationOptions.getFullResultFileName(),
-                                                                         mpVariablesTreeModel->getRootVariablesTreeItem());
+      pTopVariableTreeItem = mpVariablesTreeModel->findVariablesTreeItem(simulationOptions.getFullResultFileName(), mpVariablesTreeModel->getRootVariablesTreeItem());
       if (pTopVariableTreeItem) {
         QHash<QString, QHash<QString, QString> > variables;
         readVariablesAndUpdateXML(pTopVariableTreeItem, simulationOptions.getFullResultFileName(), &variables);
         findVariableAndUpdateValue(initXmlDocument, variables);
       }
     } else {
-      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                            tr("Unable to set the content of QDomDocument from file %1")
+      MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, tr("Unable to set the content of QDomDocument from file %1")
                                                             .arg(initFile.fileName()), Helper::scriptingKind, Helper::errorLevel));
     }
     initFile.close();
@@ -1790,8 +1786,7 @@ void VariablesWidget::updateInitXmlFile(SimulationOptions simulationOptions)
     textStream << initXmlDocument.toString();
     initFile.close();
   } else {
-    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica,
-                                                          GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, GUIMessages::getMessage(GUIMessages::ERROR_OPENING_FILE).arg(initFile.fileName())
                                                           .arg(initFile.errorString()), Helper::scriptingKind, Helper::errorLevel));
   }
 }
@@ -1934,6 +1929,13 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
         pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(pVariablesTreeItem->getDisplayUnit()));
         if (pPlotWindow->getPlotType() == PlotWindow::PLOT) {
           pPlotWindow->plot(pPlotCurve);
+          /* Ticket:5839
+           * Check the toggle sign of the curve and apply it in case of update.
+           */
+          if (pPlotCurve && pPlotCurve->getToggleSign()) {
+            pPlotCurve->setToggleSign(false);
+            pPlotWindow->toggleSign(pPlotCurve, true);
+          }
         } else {/* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY)*/
           double timePercent = mpTimeTextBox->text().toDouble();
           pPlotWindow->plotArray(timePercent, pPlotCurve);
@@ -2053,6 +2055,13 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
             pPlotWindow->setYDisplayUnit(Utilities::convertUnitToSymbol(plotParametricVariable.displayUnit));
             if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC) {
               pPlotWindow->plotParametric(pPlotCurve);
+              /* Ticket:5839
+               * Check the toggle sign of the curve and apply it in case of update.
+               */
+              if (pPlotCurve && pPlotCurve->getToggleSign()) {
+                pPlotCurve->setToggleSign(false);
+                pPlotWindow->toggleSign(pPlotCurve, true);
+              }
             } else { /* ie. (pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)*/
               double timePercent = mpTimeTextBox->text().toDouble();
               pPlotWindow->plotArrayParametric(timePercent, pPlotCurve);
