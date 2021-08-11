@@ -170,7 +170,7 @@ ipopt:
 	$(CMAKE) --build $(OMC_IPOPT_ROOT)/build/ --target install
 
 ipopt-clean:
-	$(CMAKE) --build $(OMC_IPOPT_ROOT)/build/ --target clean
+	if test -f $(OMC_IPOPT_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_IPOPT_ROOT)/build/ clean; fi
 	rm -rf $(OMC_IPOPT_ROOT)/build
 
 suitesparse:
@@ -690,7 +690,7 @@ libffi: $(LIBFFI)
 	$(MAKE) -C "$(LIBFFI)" install
 
 libffi-clean:
-	-$(MAKE) -C "$(LIBFFI)" clean
+	if test -f $(LIBFFI)/Makefile; then $(MAKE) -C "$(LIBFFI)" clean; fi
 
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos
