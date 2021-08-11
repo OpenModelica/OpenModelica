@@ -3,8 +3,9 @@ ANTLR=../3rdParty/antlr/3.2/libantlr3c-3.2
 ANTLRJAR = $(ANTLR)/../tool/antlr-3.2.jar
 #ANTLRJAR = $(ANTLR)/../tool/antlr-3.4-complete.jar
 ANTLRCMD=java -cp $(ANTLRJAR) org.antlr.Tool -Xconversiontimeout 10000 -report
+OMC_CONFIG_INC = ../
 
-BUILDINC = -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util
+BUILDINC = -I$(OMC_CONFIG_INC) -I../Compiler/runtime -I../SimulationRuntime/c/meta -I../SimulationRuntime/c/ -I../SimulationRuntime/c/meta/gc -I../SimulationRuntime/c/util
 
 .PHONY: all
 .SUFFIXES: .h .c .o

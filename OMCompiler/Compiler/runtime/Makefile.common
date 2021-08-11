@@ -1,8 +1,6 @@
 #
 # Makefile for Compiler/runtime
 #
-# $Id$
-#
 
 top_builddir=../..
 builddir_bin=$(OMBUILDDIR)/bin
@@ -16,7 +14,7 @@ LDFLAGS += ../../3rdParty/FMIL/build/Config.cmake/Minizip/libminizip.a
 SimRuntimeCDir = $(top_builddir)/SimulationRuntime/c/
 
 ifndef OMDEV
-	configUnix = config.unix.h
+	configUnix = $(OMC_CONFIG_INC)/omc_config.unix.h
 else
 	configUnix =
 endif
@@ -42,8 +40,10 @@ OMC_OBJ = $(OMC_OBJ_SHARED) \
 
 all: install
 .PHONY: all install
+
 install: libomcruntime$(SHREXT) libomcgraphstream.a libomcbackendruntime.a
 	cp libomcruntime$(SHREXT) $(builddir_lib)/$(TRIPLE)/omc/
+
 OBJEXT=.o
 BOOTH=../OpenModelicaBootstrappingHeader.h
 ifeq ($(BOOTSTRAPPING),1)
@@ -109,7 +109,7 @@ Print_omc.o : printimpl.c printimpl.h
 omc_communication_impl.o: omc_communication.h
 Corba_omc.o: omc_communication.h corbaimpl.cpp
 Database_omc.o: Database.c Database_omc.c
-Lapack_omc.o : lapackimpl.c omc_config.h $(configUnix) $(RML_COMPAT)
+Lapack_omc.o : lapackimpl.c $(configUnix) $(RML_COMPAT) $(OMC_CONFIG_INC)/omc_config.h
 IOStreamExt_omc.o : IOStreamExt.c
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
 serializer.o: serializer.cpp
@@ -123,7 +123,7 @@ ffi_omc.o : ffi_omc.c
 # Objects depending on BOOTH
 Dynload_omc$(OBJEXT): systemimpl.h errorext.h $(BOOTH) $(SimRuntimeCDir)/util/read_write.h $(SimRuntimeCDir)/gc/omc_gc.h Dynload.cpp $(RML_COMPAT)
 Error_omc$(OBJEXT) : errorext.cpp ErrorMessage.hpp $(BOOTH)
-System_omc$(OBJEXT) : System_omc.c systemimpl.c omc_config.h errorext.h printimpl.h $(configUnix) $(RML_COMPAT) $(BOOTH)
+System_omc$(OBJEXT) : System_omc.c systemimpl.c errorext.h printimpl.h $(configUnix) $(RML_COMPAT) $(BOOTH) $(OMC_CONFIG_INC)/omc_config.h
 SimulationResults_omc$(OBJEXT) : SimulationResults.c SimulationResultsCmp.c SimulationResultsCmpTubes.c errorext.h $(SimRuntimeCDir)/util/read_matlab4.h $(BOOTH)
 TaskGraphResults_omc$(OBJEXT) : TaskGraphResultsCmp.h TaskGraphResultsCmp.cpp $(BOOTH)
 HpcOmBenchmarkExt_omc$(OBJEXT) : HpcOmBenchmarkExt.cpp $(BOOTH)
@@ -131,7 +131,7 @@ HpcOmSchedulerExt_omc$(OBJEXT) : TaskGraphResultsCmp.h HpcOmSchedulerExt.cpp $(B
 ptolemyio_omc$(OBJEXT) : ptolemyio.cpp errorext.h $(RML_COMPAT) $(BOOTH)
 FMI_omc$(OBJEXT) : FMIImpl.c $(BOOTH)
 GraphStreamExt_omc$(OBJEXT) : $(BOOTH) GraphStreamExt_impl.cpp $(RML_COMPAT)
-Settings_omc$(OBJEXT) : Settings_omc.cpp settingsimpl.c omc_config.h $(configUnix) $(BOOTH)
+Settings_omc$(OBJEXT) : Settings_omc.cpp settingsimpl.c $(configUnix) $(BOOTH) $(OMC_CONFIG_INC)/omc_config.h
 
 %.boot.o: %.c
 	$(CC) -c -o "$@" "$<" $(CFLAGS) $(CPPFLAGS) -DOPENMODELICA_BOOTSTRAPPING_FILE -I../boot/tarball-include/

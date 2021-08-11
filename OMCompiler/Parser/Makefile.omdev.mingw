@@ -1,7 +1,7 @@
 CC=gcc
 CXX=g++
 CFLAGS=-O3 -Wall
-CPPFLAGS=$(RMLINC) -I.. -I. -I$(ANTLR) -I$(ANTLR)/include $(BUILDINC) -I../3rdParty/gc/include
+CPPFLAGS=$(RMLINC) -I. -I$(ANTLR) -I$(ANTLR)/include $(BUILDINC) -I../3rdParty/gc/include
 SHREXT=.dll
 
 OMBUILDDIR=../build
