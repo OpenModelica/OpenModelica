@@ -192,7 +192,7 @@ target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
 
 
 ################################################################################
-# This is a lazy approach to generating runtime/config.unix.h and Compiler/Util/Autoconf.mo
+# This is a lazy approach to generating OMCompiler/omc_config.unix.h and Compiler/Util/Autoconf.mo
 # Needs to be refactored quite a bit. The variable names should be updated to be more
 # unique and descriptive.
 # However, If I do that I need to update the .in files which means the normal compilation is
@@ -255,11 +255,11 @@ set(WITH_UUID "#define WITH_LIBUUID 1")
 
 set(USE_GRAPH 0)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_DIR}/revision.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
+configure_file(${OMCompiler_SOURCE_DIR}/revision.h.in ${OMCompiler_SOURCE_DIR}/revision.h)
+configure_file(${OMCompiler_SOURCE_DIR}/omc_config.unix.h.in ${OMCompiler_SOURCE_DIR}/omc_config.unix.h)
 
 
-# Generate Autoconf.mo here since we have some of the variables already defined for config.unix.h above.
+# Generate Autoconf.mo here since we have some of the variables already defined for omc_config.unix.h above.
 
 if(WIN32)
 

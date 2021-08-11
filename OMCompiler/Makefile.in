@@ -101,6 +101,9 @@ settings:
 
 omc: omc-bootstrapped
 
+omc_config.unix.h: omc_config.unix.h.in
+	cd $(top_builddir) && ./config.status
+
 boehm-gc-lib: @LIBGC@
 $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 	mkdir -p $(OMBUILDDIR)/$(LIB_OMC)
