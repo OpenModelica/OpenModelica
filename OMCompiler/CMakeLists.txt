@@ -107,6 +107,11 @@ omc_option(OMC_BUILD_LPSOLVE "Should we build our own 3rdParty/lpsolve." OFF)
 omc_option(OMC_USE_LAPACK "Should we use lapack." ON)
 
 
+add_library(omc_config INTERFACE)
+add_library(omc::config ALIAS omc_config)
+target_include_directories(omc_config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+
 
 omc_add_subdirectory(3rdParty)
 
