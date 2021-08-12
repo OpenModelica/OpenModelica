@@ -43,7 +43,7 @@ class PlotGrid : public QwtPlotGrid
 public:
   PlotGrid(Plot *pParent);
   ~PlotGrid();
-  QPen getMajorPen() {return QPen(Qt::gray);}
+  QPen getMajorPen() {return QPen(QColor(242, 242, 242));} // #F2F2F2 light gray color. More lighter than Qt::lightGray
   QPen getMinorPen() {return QPen(Qt::lightGray, 0.0, Qt::DotLine);}
   void setGrid();
   void setDetailedGrid();
