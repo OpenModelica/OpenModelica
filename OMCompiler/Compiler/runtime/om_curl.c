@@ -106,7 +106,7 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
       curl_easy_getinfo(e, CURLINFO_PRIVATE, &p);
       FILE *fout = p->fout;
       const char *url = p->url;
-      free(p);
+
       if (msg->msg == CURLMSG_DONE) {
         fclose(fout);
         curl_multi_remove_handle(cm, e);
@@ -118,8 +118,10 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
           omc_unlink(p->filename);
           result = 0;
         }
-      } else { /* There should not be any other message types... Ignore it? */
       }
+      else { /* There should not be any other message types... Ignore it? */
+      }
+      free(p);
     }
     if (still_alive) {
 #if LIBCURL_VERSION_NUM >= 0x071c00 /* curl_multi_wait available since 7.28.0, not on CentOS el6 */
