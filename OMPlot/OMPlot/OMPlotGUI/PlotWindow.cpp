@@ -81,7 +81,7 @@ void PlotWindow::setUpWidget()
   // set the plot title
   setTitle(tr("Plot by OpenModelica"));
   // set the plot grid
-  setDetailedGrid(true);
+  setGrid(true);
 }
 
 void PlotWindow::initializePlot(QStringList arguments)
@@ -1421,17 +1421,12 @@ void PlotWindow::updatePlot()
 
 void PlotWindow::setGrid(QString grid)
 {
-  if (grid.toLower().compare("simple") == 0)
-  {
-    setGrid(true);
-  }
-  else if (grid.toLower().compare("none") == 0)
-  {
-    setNoGrid(true);
-  }
-  else
-  {
+  if (grid.toLower().compare("detailed") == 0) {
     setDetailedGrid(true);
+  } else if (grid.toLower().compare("none") == 0) {
+    setNoGrid(true);
+  } else {
+    setGrid(true);
   }
 }
 
