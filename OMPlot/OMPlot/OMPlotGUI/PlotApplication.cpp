@@ -40,6 +40,8 @@ using namespace OMPlot;
 PlotApplication::PlotApplication(int &argc, char *argv[], const QString uniqueKey)
     : QApplication(argc, argv)
 {
+    setAttribute(Qt::AA_DontShowIconsInMenus, false);
+    setAttribute(Qt::AA_UseHighDpiPixmaps);
     mSharedMemory.setKey(uniqueKey);
 
     if (mSharedMemory.attach())
