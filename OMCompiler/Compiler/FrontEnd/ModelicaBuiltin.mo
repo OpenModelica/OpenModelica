@@ -2814,7 +2814,7 @@ function plot "Launches a plot window using OMPlot."
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
@@ -2852,7 +2852,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
@@ -2881,7 +2881,7 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "" "This text will be used as the horizontal label in the diagram.";
