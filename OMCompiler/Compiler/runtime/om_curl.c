@@ -66,6 +66,7 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
       sprintf(ca_bundle_file, "%s/%s", omhome, CURL_CA_BUNDLE_SUFFIX);
     }
     curl_easy_setopt(eh, CURLOPT_CAINFO, ca_bundle_file);
+    free(ca_bundle_file);
   }
 #endif
   curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
