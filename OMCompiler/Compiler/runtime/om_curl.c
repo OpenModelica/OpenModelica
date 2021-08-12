@@ -110,8 +110,6 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
 
       if (msg->msg == CURLMSG_DONE) {
         fclose(fout);
-        curl_multi_remove_handle(cm, e);
-        curl_easy_cleanup(e);
         urlPathList = addTransfer(cm, urlPathList, &result);
         if (msg->data.result != CURLE_OK) {
           const char *msgs[2] = {curl_easy_strerror(msg->data.result), url};
@@ -119,6 +117,8 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
           omc_unlink(p->filename);
           result = 0;
         }
+        curl_multi_remove_handle(cm, e);
+        curl_easy_cleanup(e);
       }
       else { /* There should not be any other message types... Ignore it? */
       }
