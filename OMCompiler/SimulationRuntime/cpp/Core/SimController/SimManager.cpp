@@ -586,16 +586,6 @@ void SimManager::runSingleProcess()
                 break;
         }  // end if weiter nach Time Events
 
-        else  // Event am Schluss recorden.
-        {
-            //Final Solver Call
-            if (_writeFinalState)
-            {
-                _solverTask = ISolver::SOLVERCALL(ISolver::RECORDCALL);
-                _solver->solve(_solverTask);
-            }
-        }
-
         // Finish Simulation
         if ((!(_config->getGlobalSettings()->useEndlessSim())) || (_solver->getSolverStatus() & ISolver::SOLVERERROR) || (_solver->getSolverStatus() & ISolver::USER_STOP))
         {
@@ -631,8 +621,19 @@ void SimManager::runSingleProcess()
         }
 
     }  // end while continue
+
+    // treat terminal() and continuous events at final time
     _step_event_system->setTerminal(true);
-    _cont_system->evaluateAll(IContinuous::CONTINUOUS); //Is this really necessary? The solver should have already calculated the "final time point"
+    _cont_system->evaluateZeroFuncs(IContinuous::DISCRETE);
+    _event_system->getZeroFunc(zeroVal_new);
+    for (int i = 0; i < _dimZeroFunc; i++)
+      _events[i] = bool(zeroVal_new[i]);
+    _mixed_system->handleSystemEvents(_events);
+
+    // record final values
+    _solverTask = ISolver::SOLVERCALL(ISolver::RECORDCALL);
+    _solver->solve(_solverTask);
+
     LOGGER_STATUS("Finished", endTime, 0.0);
     if (zeroVal_new)
         delete[] zeroVal_new;
