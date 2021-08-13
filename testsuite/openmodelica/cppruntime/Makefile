@@ -2,6 +2,7 @@ TEST = ../../rtest -v
 
 TESTFILES = \
 tearnonlin1.mos \
+WhenInitialTerminal.mos \
 WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
