@@ -13,10 +13,10 @@
 SimManager::SimManager(shared_ptr<IMixedSystem> system, Configuration* config)
   : _mixed_system      (system)
   , _config            (config)
-  , _tStops            ()
-  , _dimtimeevent      (0)
+  , _dimTimeEvent      (0)
   , _dimZeroFunc       (0)
   , _timeEventCounter  (NULL)
+  , _zeroVal           (NULL)
   , _events            (NULL)
   , _sampleCycles      (NULL)
   , _cycleCounter      (0)
@@ -28,8 +28,7 @@ SimManager::SimManager(shared_ptr<IMixedSystem> system, Configuration* config)
   , _tEnd              (0)
   , _lastCycleTime     (0)
   , _continueSimulation(false)
-  , _writeFinalState   (false)
-  ,_checkTimeout(false)
+  , _checkTimeout(false)
 {
     _solver = _config->createSelectedSolver(system.get());
     _initialization = shared_ptr<Initialization>(new Initialization(dynamic_pointer_cast<ISystemInitialization>(_mixed_system), _solver));
@@ -63,6 +62,8 @@ SimManager::~SimManager()
 {
     if (_timeEventCounter)
         delete[] _timeEventCounter;
+    if (_zeroVal)
+        delete[] _zeroVal;
     if (_events)
         delete[] _events;
     if (_sampleCycles)
@@ -138,22 +139,22 @@ void SimManager::initialize()
 
     if (_timeevent_system)
     {
-        _dimtimeevent = _timeevent_system->getDimTimeEvent();
+        _dimTimeEvent = _timeevent_system->getDimTimeEvent();
         if (_timeEventCounter)
             delete[] _timeEventCounter;
-        _timeEventCounter = new int[_dimtimeevent];
-        memset(_timeEventCounter, 0, _dimtimeevent * sizeof(int));
+        _timeEventCounter = new int[_dimTimeEvent];
+        memset(_timeEventCounter, 0, _dimTimeEvent * sizeof(int));
         // compute sampleCycles for RT simulation
         if (_config->getGlobalSettings()->useEndlessSim())
         {
             if (_sampleCycles)
                 delete[] _sampleCycles;
-            _sampleCycles = new int[_dimtimeevent];
+            _sampleCycles = new int[_dimTimeEvent];
             computeSampleCycles();
         }
     }
     else
-        _dimtimeevent = 0;
+        _dimTimeEvent = 0;
 
     // Set flag for endless simulation (if solver returns)
     _continueSimulation = _tEnd > _tStart;
@@ -167,9 +168,13 @@ void SimManager::initialize()
     _solverTask = ISolver::SOLVERCALL(ISolver::FIRST_CALL);
     if (_dimZeroFunc == _event_system->getDimZeroFunc())
     {
+        if (_zeroVal)
+            delete[] _zeroVal;
         if (_events)
             delete[] _events;
+        _zeroVal = new double[_dimZeroFunc];
         _events = new bool[_dimZeroFunc];
+        memset(_zeroVal, 0, _dimZeroFunc * sizeof(double));
         memset(_events, false, _dimZeroFunc * sizeof(bool));
     }
 
@@ -180,7 +185,7 @@ void SimManager::initialize()
     {
         _cycleCounter = 0;
         _resetCycle = _sampleCycles[0];
-        for (int i = 1; i < _dimtimeevent; i++)
+        for (int i = 1; i < _dimTimeEvent; i++)
             _resetCycle *= _sampleCycles[i];
         // All Events are updated every cycle. In order to have a change in timeEventCounter, the reset is set to two
         if(_resetCycle == 1)
@@ -200,7 +205,7 @@ void SimManager::runSingleStep()
 {
     // Increase time event counter
   double cycletime = _config->getGlobalSettings()->gethOutput();
-    if (_dimtimeevent && cycletime > 0.0)
+    if (_dimTimeEvent && cycletime > 0.0)
     {
 
       if (_lastCycleTime && cycletime != _lastCycleTime)
@@ -208,7 +213,7 @@ void SimManager::runSingleStep()
         else
             _lastCycleTime = cycletime;
 
-        for (int i = 0; i < _dimtimeevent; i++)
+        for (int i = 0; i < _dimTimeEvent; i++)
         {
             if (_cycleCounter % _sampleCycles[i] == 0)
                 _timeEventCounter[i]++;
@@ -228,7 +233,7 @@ void SimManager::runSingleStep()
     if (_cycleCounter == _resetCycle + 1)
     {
       _cycleCounter = 1;
-        for (int i = 0; i < _dimtimeevent; i++)
+        for (int i = 0; i < _dimTimeEvent; i++)
           _timeEventCounter[i] = 0;
     }
 }
@@ -459,8 +464,7 @@ void SimManager::writeProperties()
 
 void SimManager::runSingleProcess()
 {
-    double startTime, endTime, *zeroVal_0, *zeroVal_new;
-    int dimZeroF;
+    double startTime, endTime;
     double closestTimeEvent = 0.0;
 
     _H = _tEnd;
@@ -480,26 +484,23 @@ void SimManager::runSingleProcess()
      BOOST_LOG_SEV(simmgr_lg::get(), simmgr_normal) <<"Run single process." ; */
     LOGGER_WRITE("SimManager: Run single process", LC_SOLVER, LL_DEBUG);
 
-    memset(_timeEventCounter, 0, _dimtimeevent * sizeof(int));
-    dimZeroF = _event_system->getDimZeroFunc();
-    zeroVal_new = new double[dimZeroF];
+    memset(_timeEventCounter, 0, _dimTimeEvent * sizeof(int));
     _timeevent_system->setTime(_tStart);
-    if (_dimtimeevent)
+    if (_dimTimeEvent)
     {
-        _writeFinalState = true;
         _timeevent_system->computeTimeEventConditions(_tStart);
     }
    // _cont_system->evaluateAll(IContinuous::CONTINUOUS);      // vxworksupdate
-    _event_system->getZeroFunc(zeroVal_new);
+    _event_system->getZeroFunc(_zeroVal);
 
     for (int i = 0; i < _dimZeroFunc; i++)
     {
-        _events[i] = bool(zeroVal_new[i]);
+        _events[i] = bool(_zeroVal[i]);
     }
     _mixed_system->handleSystemEvents(_events);
     //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
     // Reset the time-events after the evaluation of handleSystemEvents()
-    if (_dimtimeevent)
+    if (_dimTimeEvent)
     {
       _timeevent_system->resetTimeConditions();
     }
@@ -536,16 +537,16 @@ void SimManager::runSingleProcess()
             }
             //prepare next step, starting from last endTime
             startTime = endTime;
-            if (_dimtimeevent)
+            if (_dimTimeEvent)
             {
               // Find all time events at the current time and compute next one
               closestTimeEvent = _timeevent_system->computeNextTimeEvents(startTime);
               _timeevent_system->computeTimeEventConditions(startTime);
 
-              _event_system->getZeroFunc(zeroVal_new);
+              _event_system->getZeroFunc(_zeroVal);
               for (int i = 0; i < _dimZeroFunc; i++)
               {
-                _events[i] = bool(zeroVal_new[i]);
+                _events[i] = bool(_zeroVal[i]);
               }
               //handleSystemEvents calls evaluateAll() at some point and evaluates the sampler conditions
               _mixed_system->handleSystemEvents(_events);
@@ -592,17 +593,17 @@ void SimManager::runSingleProcess()
             _tStart = _tEnd;
             _tEnd += _H;
 
-            if (_dimtimeevent)
+            if (_dimTimeEvent)
             {
-                if (zeroVal_new)
+                if (_zeroVal)
                 {
                   closestTimeEvent = _timeevent_system->computeNextTimeEvents(startTime);
                   _timeevent_system->computeTimeEventConditions(_tEnd);
                   _cont_system->evaluateAll(IContinuous::CONTINUOUS);   // vxworksupdate
-                  _event_system->getZeroFunc(zeroVal_new);
+                  _event_system->getZeroFunc(_zeroVal);
                   for (int i = 0; i < _dimZeroFunc; i++)
                   {
-                    _events[i] = bool(zeroVal_new[i]);
+                    _events[i] = bool(_zeroVal[i]);
                   }
                   //_cont_system->evaluateODE(IContinuous::CONTINUOUS);
                   //reset time-events
@@ -618,9 +619,9 @@ void SimManager::runSingleProcess()
     // treat terminal() and continuous events at final time
     _step_event_system->setTerminal(true);
     _cont_system->evaluateZeroFuncs(IContinuous::DISCRETE);
-    _event_system->getZeroFunc(zeroVal_new);
+    _event_system->getZeroFunc(_zeroVal);
     for (int i = 0; i < _dimZeroFunc; i++)
-      _events[i] = bool(zeroVal_new[i]);
+      _events[i] = bool(_zeroVal[i]);
     _mixed_system->handleSystemEvents(_events);
 
     // record final values
@@ -628,7 +629,5 @@ void SimManager::runSingleProcess()
     _solver->solve(_solverTask);
 
     LOGGER_STATUS("Finished", endTime, 0.0);
-    if (zeroVal_new)
-        delete[] zeroVal_new;
 }  // end singleprocess
 /** @} */ // end of coreSimcontroller
