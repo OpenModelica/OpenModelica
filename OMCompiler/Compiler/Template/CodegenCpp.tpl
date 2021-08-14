@@ -12103,9 +12103,9 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
       case LESS(__) then
         <<
         if(_conditions[<%zerocrossingIndex%>])
-            f[<%index1%>]=(<%e1%> - 1e-6 - <%e2%>);
+            f[<%index1%>]=(<%e1%> - 1e-6 - <%e2%>); // ToDo: tighter 1e-9 better for dassl
         else
-            f[<%index1%>]=(<%e2%> - <%e1%> -  1e-6);
+            f[<%index1%>]=(<%e2%> - <%e1%> - 1e-6);
         >>
       case LESSEQ(__) then
         <<
@@ -12128,10 +12128,9 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
         else
             f[<%index1%>] = (<%e1%> - 1e-6 - <%e2%>);
         >>
-    else
+      else
         <<
-        f[<%index1%>] = -1;
-        /*error(sourceInfo(), 'Unknown relation: <%ExpressionDumpTpl.dumpExp(rel,"\"")%> for <%index1%>')*/
+        error(sourceInfo(), 'Unknown relation: <%ExpressionDumpTpl.dumpExp(rel,"\"")%> for <%index1%>')
         >>
       end match
   case CALL(path=IDENT(name="sample"), expLst={_, start, interval}) then
