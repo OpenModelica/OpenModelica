@@ -41,12 +41,6 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Fluid.Examples.Explanatory.MomentumBalanceFittings_res.mat
-// Messages: ERROR  : init  : SimManager: Could not initialize system
-// ERROR  : init  : SimManager: Nonlinear solver 55 stopped at time 0 with error in algloop solver: 
-// Nonlinear solver failed!
-// ERROR  : solver: SimController: Simulation failed using nonlinear solver kinsol
-// ERROR  : solver: SimController: Recovering with nonlinear solver newton
-//
 // [Modelica 3.2.1+maint.om/Fluid/Interfaces.mo:734:9-739:39:writable] Notification: From here:
 // [Modelica 3.2.1+maint.om/Fluid/Interfaces.mo:327:3-329:69:writable] Warning: Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627
 // 	first:  Medium.MassFlowRate m_flow(min = if allowFlowReversal then -Modelica.Constants.inf else 0, start = m_flow_start, stateSelect = if momentumDynamics == Modelica.Fluid.Types.Dynamics.SteadyState then StateSelect.default else StateSelect.prefer) "mass flow rates between states"

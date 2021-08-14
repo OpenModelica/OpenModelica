@@ -102,7 +102,7 @@ OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
   : _library_path(library_path)
   , _modelicasystem_path(modelicasystem_path)
   , _defaultLinSolver("dgesvSolver")
-	, _defaultNonLinSolvers{"kinsol", "newton"}
+	, _defaultNonLinSolvers({"newton", "kinsol"})
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -112,7 +112,7 @@ OMCFactory::OMCFactory()
   : _library_path("")
   , _modelicasystem_path("")
   , _defaultLinSolver("dgesvSolver")
-  , _defaultNonLinSolvers{"kinsol", "newton"}
+  , _defaultNonLinSolvers({"newton", "kinsol"})
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -445,11 +445,11 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      else
          outputPath = modelica_lib_path;
 
-     string resultsfilename;
+     string resultsFileName;
      if (vm.count("results-file"))
      {
          //cout << "results file: " << vm["results-file"].as<string>() << endl;
-         resultsfilename = vm["results-file"].as<vector<string> >().front();
+         resultsFileName = vm["results-file"].as<vector<string> >().front();
      }
      else
          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename is not set");
@@ -476,6 +476,12 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
        else
          throw ModelicaSimulationError(MODEL_FACTORY,
            "Unknown output-format " + outputFormat_str);
+
+       // adapt resultsFileName to match selected format
+       // (this is needed if outputFormat differs from value at compilation time)
+       size_t idx = resultsFileName.find_last_of('.');
+       if (idx > 0 && outputFormatMap.find(resultsFileName.substr(idx + 1)) != outputFormatMap.end())
+         resultsFileName = resultsFileName.substr(0, idx + 1) + outputFormat_str;
      }
      else
        throw ModelicaSimulationError(MODEL_FACTORY, "output-format is not set");
@@ -497,7 +503,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
+     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsFileName, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
