@@ -47,12 +47,6 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 86400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Fluid.Examples.TraceSubstances.RoomCO2WithControls_res.mat
-// Messages: ERROR  : init  : SimManager: Could not initialize system
-// ERROR  : init  : SimManager: Nonlinear solver 413 stopped at time 0 with error in algloop solver: 
-// Nonlinear solver failed!
-// ERROR  : solver: SimController: Simulation failed using nonlinear solver kinsol
-// ERROR  : solver: SimController: Recovering with nonlinear solver newton
-//
 // [Modelica 3.2.1+maint.om/Fluid/Examples/TraceSubstances.mo:112:17-112:29:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
 // [Modelica 3.2.1+maint.om/Fluid/Examples/TraceSubstances.mo:122:23-122:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
 // [Modelica 3.2.1+maint.om/Fluid/Examples/TraceSubstances.mo:168:23-168:37:writable] Warning: Non-array modification '0.01' for array component, possibly due to missing 'each'.
