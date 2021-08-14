@@ -277,7 +277,7 @@ void DASSL::initialize()
 
   // Initial step size
   _info[7] = 1;
-  _rwork[2] = 1e-30; // start with very small value to not miss events later on -- see StateGraph!?
+  _rwork[2] = _settings->gethInit();
 
   LOGGER_WRITE_END(LC_SOLVER, LL_DEBUG);
 }
