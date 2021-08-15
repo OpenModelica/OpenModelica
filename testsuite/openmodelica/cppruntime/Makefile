@@ -10,6 +10,7 @@ arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
 clockedEventTest.mos \
+clockedEventRotationalTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \

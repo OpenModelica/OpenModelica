@@ -9507,14 +9507,26 @@ case SIMCODE(modelInfo = MODELINFO(__), modelStructure = fmims) then
       let interval = match intvl case "unspecified" then '1.0' else intvl
       let warning = match intvl case "unspecified" then
         'LOGGER_WRITE("Using default Clock(1.0)!", LC_MODEL, LL_WARNING);'
+      let isEventBased = match baseClock case BOOLEAN_CLOCK() then "true"
       let subClocks = (subPartitions |> subPartition =>
         match subPartition
         case SUBPARTITION(subClock=SUBCLOCK(factor=RATIONAL(nom=fnom, denom=fres), shift=RATIONAL(nom=snom, denom=sres))) then
           <<
           <%preExp%>
+          <%if isEventBased then
+          <<
+          _clockInterval[<%i%>] = DBL_MAX; // determined at runtime
+          _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
+          _clockTime[<%i%>] = -DBL_MAX; // determined at runtime
+          _clockEventBased[<%i%>] = true;
+          >>
+          else
+          <<
           _clockInterval[<%i%>] = <%interval%> * <%fnom%>.0 / <%fres%>.0;
           _clockShift[<%i%>] = <%snom%>.0 / <%sres%>.0;
           _clockTime[<%i%>] = _simTime + _clockShift[<%i%>] * _clockInterval[<%i%>];
+          >>
+          %>
           _clockStart[<%i%>] = true;
           _clockSubactive[<%i%>] = false;
           <%i%> ++;
@@ -12492,14 +12504,15 @@ template clockedPartFunctions(Integer i, list<tuple<SimCodeVar.SimVar, Boolean>>
 
   void <%className%>::<%funcName%>(const UPDATETYPE command)
   {
+    if (_clockTime[<%idx%>] == -DBL_MAX) {
+      _clockTime[<%idx%>] = _simTime;
+    }
     if (_simTime > _clockTime[<%idx%>]) {
       _clockStart[<%idx%>] = false;
-    }
-    <%funcCalls%>
-    if (_simTime > _clockTime[<%idx%>]) {
       _clockInterval[<%idx%>] = _simTime - _clockTime[<%idx%>];
       _clockTime[<%idx%>] = _simTime;
     }
+    <%funcCalls%>
   }
   >>
 end clockedPartFunctions;
@@ -12571,9 +12584,12 @@ template booleanSubClockActivation2(Integer absClockIdx, Integer subClockIdx, Su
 if intNe(subClockIdx,0) then
   let absSubClockIdx = intAdd(absClockIdx,subClockIdx)
   <<
-  //activate boolean triggered subclock <%absSubClockIdx%> of the base sub-clock <%absClockIdx%> is triggered
-  if (_time_conditions[<%absClockIdx%> -1+<%numberOfTimeEvents%>] && (_simTime >= _clockShift[<%absSubClockIdx%> -1]*_clockInterval[<%absClockIdx%> -1])) {
-  _time_conditions[<%absSubClockIdx%> -1+<%numberOfTimeEvents%>] = (_simTime >= _clockShift[<%absSubClockIdx%> -1]*_clockInterval[<%absClockIdx%> -1]);
+  // activate boolean triggered subclock <%absSubClockIdx%> if its base clock <%absClockIdx%> is triggered
+  if (_time_conditions[<%absClockIdx%> -1+<%numberOfTimeEvents%>]) {
+    if (_clockTime[<%absSubClockIdx%> -1] == -DBL_MAX)
+      _clockTime[<%absSubClockIdx%> -1] = _clockTime[<%absClockIdx%> -1];
+    if (!_clockStart[<%absSubClockIdx%> -1] || _simTime >= _clockTime[<%absSubClockIdx%> -1] + _clockShift[<%absSubClockIdx%> -1] * _clockInterval[<%absClockIdx%> -1])
+      _time_conditions[<%absSubClockIdx%> -1+<%numberOfTimeEvents%>] = (_simTime >= _clockShift[<%absSubClockIdx%> -1]*_clockInterval[<%absClockIdx%> -1]);
   }
   >>
 else

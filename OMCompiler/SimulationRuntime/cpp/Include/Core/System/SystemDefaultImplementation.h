@@ -197,6 +197,7 @@ protected:
     double *_clockInterval;   ///< time interval between clock ticks
     double *_clockShift;      ///< time before first activation
     double *_clockTime;       ///< time of clock ticks
+    bool *_clockEventBased;   ///< boolean event clock
     bool *_clockCondition;    ///< clock tick active
     bool *_clockStart;        ///< only active at clock start
     bool *_clockSubactive;    ///< don't update states

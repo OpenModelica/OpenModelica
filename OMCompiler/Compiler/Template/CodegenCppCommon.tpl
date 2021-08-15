@@ -1730,7 +1730,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     '<%contextSystem(context)%>_clockInterval[clockIndex - 1]'
 
   case CALL(path=IDENT(name="$_clkfire"), expLst={arg as ICONST(__)}) then
-    '_time_conditions[<%absoluteClockIdxForBaseClock(arg.integer, getClockedPartitions(simCode))%> - 1 + <%timeEventLength(simCode)%>] = (_simTime > _clockTime[<%arg.integer%> - 1])'
+    let absClockIdx = absoluteClockIdxForBaseClock(arg.integer, getClockedPartitions(simCode))
+    '_time_conditions[<%absClockIdx%> - 1 + <%timeEventLength(simCode)%>] = (_simTime > _clockTime[<%absClockIdx%> - 1])'
 
   case CALL(path=IDENT(name="$getPart"), expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)

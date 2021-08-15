@@ -36,82 +36,84 @@ bool greaterTime( pair<unsigned int,double> t1, double t2)
 
 SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *globalSettings,shared_ptr<ISimObjects> simObjects,string modelName)
   : _simTime        (0.0)
-  , _simObjects (simObjects)
-  , __z          (_simObjects->getSimVars(modelName)->getStateVector())
-  , __zDot        (_simObjects->getSimVars(modelName)->getDerStateVector())
-  , __daeResidual(NULL)
-  , _conditions      (NULL)
-  , _time_conditions    (NULL)
-  , _dimContinuousStates  (0)
-  , _dimRHS        (0)
+  , _simObjects     (simObjects)
+  , __z             (_simObjects->getSimVars(modelName)->getStateVector())
+  , __zDot          (_simObjects->getSimVars(modelName)->getDerStateVector())
+  , __daeResidual   (NULL)
+  , _conditions     (NULL)
+  , _time_conditions(NULL)
+  , _dimContinuousStates(0)
+  , _dimRHS         (0)
   , _dimReal        (0)
-  , _dimInteger      (0)
-  , _dimBoolean      (0)
+  , _dimInteger     (0)
+  , _dimBoolean     (0)
   , _dimString      (0)
-  , _dimZeroFunc      (0)
-  , _dimTimeEvent      (0)
-  , _dimClock        (0)
-  , _dimAE        (0)
+  , _dimZeroFunc    (0)
+  , _dimTimeEvent   (0)
+  , _dimClock       (0)
+  , _dimAE          (0)
   , _timeEventData  (NULL)
   , _currTimeEvents (NULL)
   , _clockInterval  (NULL)
   , _clockShift     (NULL)
   , _clockTime      (NULL)
+  , _clockEventBased(NULL)
   , _clockCondition (NULL)
   , _clockStart     (NULL)
   , _clockSubactive (NULL)
-  , _outputStream(NULL)
-  , _callType        (IContinuous::UNDEF_UPDATE)
+  , _outputStream   (NULL)
+  , _callType       (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
   , _delay_max      (0.0)
-  , _start_time      (0.0)
-  , _terminal        (false)
+  , _start_time     (0.0)
+  , _terminal       (false)
   , _terminate      (false)
-  , _global_settings    (globalSettings)
-  , _conditions0(NULL)
-  , _event_system(NULL)
-  , _modelName(modelName)
+  , _global_settings(globalSettings)
+  , _conditions0    (NULL)
+  , _event_system   (NULL)
+  , _modelName      (modelName)
   , _freeVariablesLock(false)
 {
 }
 
 SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementation& instance)
   : _simTime        (0.0)
-  , _simObjects (shared_ptr<ISimObjects>(instance.getSimObjects()->clone()))
-  , __z          (_simObjects->getSimVars(instance.getModelName())->getStateVector())
-  , __zDot        (_simObjects->getSimVars(instance.getModelName())->getDerStateVector())
-  , __daeResidual(NULL)
-  , _conditions      (NULL)
-  , _time_conditions    (NULL)
-  , _dimContinuousStates  (0)
-  , _dimRHS        (0)
+  , _simObjects     (shared_ptr<ISimObjects>(instance.getSimObjects()->clone()))
+  , __z             (_simObjects->getSimVars(instance.getModelName())->getStateVector())
+  , __zDot          (_simObjects->getSimVars(instance.getModelName())->getDerStateVector())
+  , __daeResidual   (NULL)
+  , _conditions     (NULL)
+  , _time_conditions(NULL)
+  , _dimContinuousStates(0)
+  , _dimRHS         (0)
   , _dimReal        (0)
-  , _dimInteger      (0)
-  , _dimBoolean      (0)
+  , _dimInteger     (0)
+  , _dimBoolean     (0)
   , _dimString      (0)
-  , _dimZeroFunc      (0)
-  , _dimTimeEvent      (0)
-  , _dimClock        (0)
-  , _dimAE        (0)
+  , _dimZeroFunc    (0)
+  , _dimTimeEvent   (0)
+  , _dimClock       (0)
+  , _dimAE          (0)
   , _timeEventData  (NULL)
   , _currTimeEvents (NULL)
   , _clockInterval  (NULL)
   , _clockShift     (NULL)
   , _clockTime      (NULL)
+  , _clockEventBased(NULL)
   , _clockCondition (NULL)
   , _clockStart     (NULL)
   , _clockSubactive (NULL)
-  , _outputStream(NULL)
-  , _callType        (IContinuous::UNDEF_UPDATE)
+  , _outputStream   (NULL)
+  , _callType       (IContinuous::UNDEF_UPDATE)
   , _initial        (false)
   , _delay_max      (0.0)
-  , _start_time      (0.0)
-  , _terminal        (false)
+  , _start_time     (0.0)
+  , _terminal       (false)
   , _terminate      (false)
-  , _global_settings    (instance.getGlobalSettings())
-  , _conditions0(NULL)
-  , _event_system(NULL)
-  , _modelName(instance.getModelName())
+  , _global_settings(instance.getGlobalSettings())
+  , _conditions0    (NULL)
+  , _event_system   (NULL)
+  , _modelName      (instance.getModelName())
   , _freeVariablesLock(false)
 {
 }
@@ -145,6 +147,7 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
   if(_clockInterval) delete [] _clockInterval;
   if(_clockShift) delete [] _clockShift;
   if(_clockTime) delete [] _clockTime;
+  if(_clockEventBased) delete [] _clockEventBased;
   if(_clockCondition) delete [] _clockCondition;
   if(_clockStart) delete [] _clockStart;
   if(_clockSubactive) delete [] _clockSubactive;
@@ -246,7 +249,7 @@ void SystemDefaultImplementation::initialize()
   {
     if(_time_conditions) delete [] _time_conditions ;
     _time_conditions = new bool[_dimTimeEvent];
-    memset(_time_conditions,false,(_dimTimeEvent)*sizeof(bool));
+    memset(_time_conditions, 0, _dimTimeEvent * sizeof(bool));
   }
   if (_dimClock > 0)
   {
@@ -256,9 +259,12 @@ void SystemDefaultImplementation::initialize()
     _clockShift = new double [_dimClock];
     if (_clockTime) delete [] _clockTime;
     _clockTime = new double [_dimClock];
+    if (_clockEventBased) delete [] _clockEventBased;
+    _clockEventBased = new bool [_dimClock];
+    memset(_clockEventBased, 0, _dimClock * sizeof(bool));
     if (_clockCondition) delete [] _clockCondition;
     _clockCondition = new bool [_dimClock];
-    memset(_clockCondition,false,(_dimClock)*sizeof(bool));
+    memset(_clockCondition, 0, _dimClock * sizeof(bool));
     if (_clockStart) delete [] _clockStart;
     _clockStart = new bool [_dimClock];
     if (_clockSubactive) delete [] _clockSubactive;
@@ -748,8 +754,14 @@ void SystemDefaultImplementation::setStringStartValue(BaseArray<string>& avar, c
 */
 void SystemDefaultImplementation::computeTimeEventConditions(double currTime)
 {
+  int clockOffset = _dimTimeEvent - _dimClock;
+
   for (int i=0; i< _dimTimeEvent; i++)
   {
+    // skip event clocks
+    if (i >= clockOffset && _clockEventBased[i - clockOffset])
+      continue;
+
     if (std::abs(_currTimeEvents[i] - currTime) <= 1e4*UROUND)
     {
       _time_conditions[i] = true;
@@ -784,11 +796,16 @@ double SystemDefaultImplementation::computeNextTimeEvents(double currTime, std::
   double closestTimeEvent = std::numeric_limits<double>::max();
   double nextTimeEvent = 0;
   double pastIntervalls;
+  int clockOffset = _dimTimeEvent - _dimClock;
 
-  for (  int timerIdx = 0; timerIdx < _dimTimeEvent ; timerIdx++)
+  for (int timerIdx = 0; timerIdx < _dimTimeEvent; timerIdx++)
   {
-    //the time event samples started already
-    if(timeEventPairs[timerIdx].first <= currTime)
+    // skip event clocks
+    if (timerIdx >= clockOffset && _clockEventBased[timerIdx - clockOffset])
+      continue;
+
+    // the time event samples started already
+    if (timeEventPairs[timerIdx].first <= currTime)
     {
       pastIntervalls = std::floor((currTime - timeEventPairs[timerIdx].first + 1e4*UROUND) / timeEventPairs[timerIdx].second);
       _currTimeEvents[timerIdx] = timeEventPairs[timerIdx].first + (pastIntervalls) * timeEventPairs[timerIdx].second;
