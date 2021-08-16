@@ -414,11 +414,11 @@ void printClocks(CLOCK_INFO* clocksInfo, CLOCK_DATA* clocksData, SUBCLOCK_INFO* 
     for(i=0; i<nClocks; i++) {
       infoStreamPrint(LOG_SYNCHRONOUS, 1, "Base clock %i", i+1);
       infoStreamPrint(LOG_SYNCHRONOUS, 0, "Interval: %e", clocksData[i].interval);
-      infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of sub-clocks: %i", clocksInfo[i].nSubClocks);
+      infoStreamPrint(LOG_SYNCHRONOUS, 0, "Number of sub-clocks: %li", clocksInfo[i].nSubClocks);
       for(j=0; j<clocksInfo[i].nSubClocks; j++,subClockCounter++) {
         infoStreamPrint(LOG_SYNCHRONOUS, 1, "Sub-clock %i of base clock %i", j+1, i+1);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "shift: %i/%i", subClocksInfo[subClockCounter].shift.m, subClocksInfo[subClockCounter].shift.n);
-        infoStreamPrint(LOG_SYNCHRONOUS, 0, "factor: %i/%i", subClocksInfo[subClockCounter].factor.m, subClocksInfo[subClockCounter].factor.n);
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "shift: %li/%li", subClocksInfo[subClockCounter].shift.m, subClocksInfo[subClockCounter].shift.n);
+        infoStreamPrint(LOG_SYNCHRONOUS, 0, "factor: %li/%li", subClocksInfo[subClockCounter].factor.m, subClocksInfo[subClockCounter].factor.n);
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "solverMethod: %s", subClocksInfo[subClockCounter].solverMethod);
         infoStreamPrint(LOG_SYNCHRONOUS, 0, "holdEvents: %s", subClocksInfo[subClockCounter].holdEvents?"true":"false");
         messageClose(LOG_SYNCHRONOUS);
