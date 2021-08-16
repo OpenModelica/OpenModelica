@@ -269,7 +269,7 @@ $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) $(CMINPACK_NO_DLL) -I$(top_builddir)/3rdParty/dgesv/include/ -o $@ $<
 
-$(BUILDPATH)/util/socket$(OBJ_EXT): util/socket_win.cpp util/socket_unix.cpp
+$(BUILDPATH)/simulation/socket$(OBJ_EXT): simulation/socket_win.inc simulation/socket_unix.inc
 
 bootstrap-dependencies: $(LIBRUNTIME)
 	cp -p $(LIBRUNTIME) $(builddir_lib)
