@@ -22,6 +22,7 @@ string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 # include utility macros.
 include(.cmake/omc_utils.cmake)
+include(.cmake/omc_target_info.cmake)
 include(.cmake/omc_check_exists.cmake)
 
 # Add the compiler ids to the report for convenience.
