@@ -1129,7 +1129,7 @@ public function crefEqualNoStringCompare
 "Returns true if two component references are equal!
   IMPORTANT! do not use this function if you have
   stringified components, meaning this function will
-  return false for: cref1: QUAL(x, IDENT(x)) != cref2: IDENT(x.y)"
+  return false for: cref1: QUAL(x, IDENT(y)) != cref2: IDENT(x.y)"
   input DAE.ComponentRef inCref1;
   input DAE.ComponentRef inCref2;
   output Boolean outEqual;
