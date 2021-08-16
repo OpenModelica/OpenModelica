@@ -75,7 +75,7 @@ target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
-target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
+target_link_libraries(omcruntime PUBLIC omc::simrt::memory)
 target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
@@ -149,7 +149,7 @@ target_sources(omcbackendruntime PRIVATE ${OMC_BACKENDRUNTIIME_SOURCES})
 
 target_link_libraries(omcbackendruntime PUBLIC omc::config)
 target_link_libraries(omcbackendruntime PUBLIC ${Intl_LIBRARIES})
-target_link_libraries(omcbackendruntime PUBLIC omc::simrt::runtime)
+target_link_libraries(omcbackendruntime PUBLIC omc::simrt::memory)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib::static)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 
@@ -164,26 +164,8 @@ add_library(omc::compiler::graphstream ALIAS omcgraphstream)
 set(OMC_GRAPH_STREAM_SOURCES GraphStreamExt_omc.cpp)
 target_sources(omcgraphstream PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
 
-target_link_libraries(omcgraphstream PUBLIC omc::simrt::runtime)
+target_link_libraries(omcgraphstream PUBLIC omc::simrt::memory)
 target_link_libraries(omcgraphstream PUBLIC omc::3rd::netstream)
-
-# Remove the dependency of bootstrapping on graphstream lib and remove this. It is not needed for bootstrapping.
-# ######################################################################################################################
-# Library: omcgraphstream-boot
-add_library(omcgraphstream-boot STATIC)
-add_library(omc::compiler::graphstream-boot ALIAS omcgraphstream-boot)
-
-set(OMC_GRAPH_STREAM_SOURCES GraphStreamExt_omc.cpp)
-target_sources(omcgraphstream-boot PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
-
-# Define OMC_BOOTSTRAPPING for the boot lib.
-target_compile_definitions(omcgraphstream-boot PRIVATE OMC_BOOTSTRAPPING)
-
-target_link_libraries(omcgraphstream-boot PUBLIC omc::simrt::runtime)
-target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
-
-
-
 
 
 

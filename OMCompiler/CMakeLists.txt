@@ -78,7 +78,7 @@ write_compiler_detection_header(
 # Set the installation lib directory as an rpath for all installed
 # libs and executables.
 # Maybe there is a better way to do this but it should suffice for now.
-SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_LIBDIR})
 
 
 # Use ccache to speedup compilation!
