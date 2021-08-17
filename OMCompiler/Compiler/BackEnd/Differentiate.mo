@@ -1254,21 +1254,15 @@ algorithm
         // thread them to an DAE.ARRAY()
         arrayType := ComponentReference.crefTypeFull(cr);
         if not listEmpty(scalarLst) and listLength(scalarLst) <> Types.getDimensionProduct(arrayType) then
-          if listLength(Types.getDimensionSizes(arrayType)) > 1 then
-            // ONLY WORKS FOR VECTORS! MATRICES NEED MORE TREATMENT
-            Error.addMessage(Error.INTERNAL_ERROR, {"differentiateCrefs failed because tensor has iteration and inner variables.)"});
-            fail();
-          end if;
           scalarCrefs := ComponentReference.expandCref(cr, true);
           outFunctionTree := inFunctionTree;
           for cref in scalarCrefs loop
             (res1, outFunctionTree) := differentiateCrefs(Expression.crefExp(cref), inDiffwrtCref, inInputData, inDiffType, outFunctionTree, maxIter);
             diffed_exps := res1 :: diffed_exps;
           end for;
-          res := DAE.ARRAY(arrayType, true, listReverse(diffed_exps));
+          res := Expression.listToArray(listReverse(diffed_exps), Types.getDimensions(arrayType));
         else
           cr := createSeedCrefName(cr, matrixName);
-
           res := DAE.CREF(cr, tp);
         end if;
 
