@@ -16,6 +16,9 @@ file(GLOB_RECURSE OMC_SIMRT_SIMULATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/simul
 
 file(GLOB OMC_SIMRT_MATH_SUPPORT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c)
 
+file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.c)
+file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.h)
+
 file(GLOB OMC_SIMRT_FMI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.c)
 file(GLOB OMC_SIMRT_FMI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.h)
 
@@ -82,6 +85,21 @@ target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
 target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
 
 install(TARGETS SimulationRuntimeC)
+
+
+# ######################################################################################################################
+# Library: OptimizationRuntime
+## This is now separated from SimulationRuntimeC. Just for clarity. It can be put back in there if needed.
+add_library(OptimizationRuntime STATIC)
+add_library(omc::simrt::optimize ALIAS OptimizationRuntime)
+
+target_sources(OptimizationRuntime PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
+
+target_link_libraries(OptimizationRuntime PUBLIC omc::config)
+target_link_libraries(OptimizationRuntime PUBLIC omc::simrt::memory)
+target_link_libraries(OptimizationRuntime PUBLIC omc::3rd::ipopt)
+
+install(TARGETS OptimizationRuntime)
 
 
 # ######################################################################################################################
