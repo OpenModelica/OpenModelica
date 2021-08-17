@@ -9,6 +9,13 @@ file(GLOB OMC_SIMRT_META_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/meta/*.h)
 file(GLOB OMC_SIMRT_GC_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.c)
 file(GLOB OMC_SIMRT_GC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/gc/*.h)
 
+file(GLOB_RECURSE OMC_SIMRT_SIMULATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.c
+                                               ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.cpp)
+file(GLOB_RECURSE OMC_SIMRT_SIMULATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.h
+                                               ${CMAKE_CURRENT_SOURCE_DIR}/simulation/*.hpp)
+
+file(GLOB OMC_SIMRT_MATH_SUPPORT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c)
+
 file(GLOB OMC_SIMRT_FMI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.c)
 file(GLOB OMC_SIMRT_FMI_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/fmi/*.h)
 
@@ -56,6 +63,28 @@ target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib::static)
 install(TARGETS OpenModelicaFMIRuntimeC)
 
 
+# ######################################################################################################################
+# Library: SimulationRuntimeC
+add_library(SimulationRuntimeC STATIC)
+add_library(omc::simrt::simruntime ALIAS SimulationRuntimeC)
+
+target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_SIMULATION_SOURCES} ${OMC_SIMRT_MATH_SUPPORT_SOURCES})
+
+target_link_libraries(SimulationRuntimeC PUBLIC omc::config)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::simrt::memory)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::cvode::static)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::config)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::klu)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::umfpack)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
+
+# Fix me. Make an interface (header only library) out of 3rdParty/dgesv
+target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
+
+install(TARGETS SimulationRuntimeC)
+
+
+# ######################################################################################################################
 # Quick and INCOMPLETE generation of RuntimeSources.mo
 set(DGESV_FILES \"\")
 set(LS_FILES \"\")
