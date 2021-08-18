@@ -120,7 +120,7 @@ static FILE* omc_mmap_common(const char *fileName, const char *mode, size_t *siz
     *data = (char*) malloc(*size);
   }
 
-  omc_fread(*data, (*size > fileSize ? fileSize : *size), 1, file);
+  omc_fread(*data, (*size > fileSize ? fileSize : *size), 1, file, 0);
 
   return file;
 }

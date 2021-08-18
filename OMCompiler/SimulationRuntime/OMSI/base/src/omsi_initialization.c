@@ -353,7 +353,7 @@ omsi_string omsi_get_model_name(omsi_string fmuResourceLocation) {
 
     /* read XML */
     do {
-        omsi_unsigned_int len = omc_fread(buf, 1, sizeof(buf), file);
+        omsi_unsigned_int len = fread(buf, 1, sizeof(buf), file);
         done = len < sizeof(buf);
         if(XML_STATUS_ERROR == XML_Parse(parser, buf, len, done)) {
             filtered_base_logger(global_logCategories, log_statuserror, omsi_error,

@@ -825,7 +825,7 @@ fprintf(fout, "{title: '%s',\n"
         perror("Error on fseek set!");
       }
       html = (char*)malloc((html_size + 1) * sizeof(char));
-      omc_fread(html, sizeof(char), html_size, fout);
+      omc_fread(html, sizeof(char), html_size, fout, 0);
 
       html[html_size] = '\0';
       fclose(fout);

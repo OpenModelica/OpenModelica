@@ -425,7 +425,7 @@ static char* SystemImpl__readFile(const char* filename)
   }
   buf = (char*) omc_alloc_interface.malloc_atomic(statstr.st_size+1);
 
-  if( (res = omc_fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {
+  if( (res = omc_fread(buf, sizeof(char), statstr.st_size, file, 0)) != statstr.st_size) {
     const char *c_tokens[2]={strerror(errno),filename};
     c_add_message(NULL,85, /* ERROR_OPENING_FILE */
       ErrorType_scripting,
@@ -974,7 +974,7 @@ extern int SystemImpl__copyFile(const char *str_1, const char *str_2)
     return 0;
   }
 
-  while (( n = omc_fread(buf, 1, 8192, source) )) {
+  while (( n = omc_fread(buf, 1, 8192, source, 1) )) {
     if (n != fwrite(buf, 1, n, target)) {
       rv = 0;
       break;
@@ -1246,7 +1246,7 @@ extern const char* SystemImpl__readFileNoNumeric(const char* filename)
   file = omc_fopen(filename,"rb");
   buf = (char*) omc_alloc_interface.malloc_atomic(statstr.st_size+1);
   bufRes = (char*) omc_alloc_interface.malloc_atomic((statstr.st_size+70)*sizeof(char));
-  if( (res = omc_fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size) {
+  if( (res = omc_fread(buf, sizeof(char), statstr.st_size, file, 0)) != statstr.st_size) {
     fclose(file);
     return "Failed while reading file";
   }
@@ -2930,8 +2930,8 @@ int SystemImpl__fileContentsEqual(const char *file1, const char *file2)
     return 0;
   }
   do {
-    i1 = omc_fread(buf1,1,8192,f1);
-    i2 = omc_fread(buf2,1,8192,f2);
+    i1 = omc_fread(buf1,1,8192,f1, 1);
+    i2 = omc_fread(buf2,1,8192,f2, 1);
     if (i1 != i2 || strncmp(buf1,buf2,i1)) {
       error = 1;
     }
@@ -3068,7 +3068,7 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
     fputc('{', fout);
     fputc('\n', fout);
     do {
-      n = omc_fread(buffer,1,511,fin);
+      n = omc_fread(buffer,1,511,fin, 1);
       j = 0;
       /* adrpo: encode each char */
       for (i=0; i<n; i++) {
@@ -3111,7 +3111,7 @@ int SystemImpl__covertTextFileToCLiteral(const char *textFile, const char *outFi
   {
     fputc('\"', fout);
     do {
-      n = omc_fread(buffer,1,511,fin);
+      n = omc_fread(buffer,1,511,fin, 1);
       j = 0;
       for (i=0; i<n; i++) {
         switch (buffer[i]) {
