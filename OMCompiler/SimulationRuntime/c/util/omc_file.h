@@ -88,11 +88,15 @@ extern "C" {
 #endif /* mingw and msvc */
 
 FILE* omc_fopen(const char *filename, const char *mode);
+
+size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream);
+
 #if defined(__MINGW32__) || defined(_MSC_VER)
 int omc_stat(const char *filename, struct _stat *statbuf);
 #else
 int omc_stat(const char *filename, struct stat *statbuf);
 #endif
+
 int omc_unlink(const char *filename);
 
 #ifdef __cplusplus

@@ -34,6 +34,7 @@ extern "C" {
 #endif
 
 #include "omc_file.h"
+#include "omc_error.h"
 
 FILE* omc_fopen(const char *filename, const char *mode)
 {
@@ -53,6 +54,23 @@ FILE* omc_fopen(const char *filename, const char *mode)
 #endif
   return f;
 }
+
+size_t omc_fread(void *buffer, size_t size, size_t count, FILE *stream) {
+  size_t read_len = fread(buffer, size, count, stream);
+  if(read_len != count)  {
+    if (feof(stream)) {
+      printf("Error reading stream: unexpected end of file\n");
+    }
+    else if (ferror(stream)) {
+      perror("Error reading csv file.");
+    }
+    throwStreamPrint(NULL, "Error: omc_fread() failed to read file\n");
+  }
+
+  return read_len;
+}
+
+
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 int omc_stat(const char *filename, struct _stat *statbuf)
