@@ -281,12 +281,15 @@ algorithm
   comp_node := InstNode.resolveOuter(component);
   c := InstNode.component(comp_node);
 
+  if Component.isDeleted(c) then
+    return;
+  end if;
+
   () := match c
     case Component.TYPED_COMPONENT(condition = condition, ty = ty)
       algorithm
         // Delete the component if it has a condition that's false.
         if isDeletedComponent(condition, prefix) then
-          deleteComponent(component);
           return;
         end if;
 
@@ -315,8 +318,6 @@ algorithm
       then
         ();
 
-    case Component.DELETED_COMPONENT() then ();
-
     else
       algorithm
         Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
@@ -335,14 +336,7 @@ protected
   Binding cond;
 algorithm
   if Binding.isBound(condition) then
-    // TODO: Flattening the condition works as intended here, but we can't yet
-    //       delete components inside array instances in a reliable way since
-    //       the components share the same node. I.e. we can't delete a[1].x
-    //       while keeping a[2].x. So for now we skip flattening the condition,
-    //       so that we get an error message in that case instead (because then
-    //       the expression will be an array instead of a scalar boolean).
-    cond := condition;
-    //cond := flattenBinding(condition, prefix);
+    cond := flattenBinding(condition, prefix);
     exp := Binding.getTypedExp(cond);
     exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(Binding.getInfo(cond)));
     exp := Expression.expandSplitIndices(exp);
@@ -365,51 +359,6 @@ algorithm
     isDeleted := false;
   end if;
 end isDeletedComponent;
-
-function deleteComponent
-  "Recursively marks components as deleted."
-  input InstNode compNode;
-protected
-  Component comp;
-algorithm
-  // @adrpo: don't delete the inner/outer node, it doesn't work!
-  if InstNode.isInnerOuterNode(compNode) then
-    return;
-  end if;
-
-  comp := InstNode.component(compNode);
-
-  if not Component.isDeleted(comp) then
-    InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
-    deleteClassComponents(Component.classInstance(comp));
-  end if;
-end deleteComponent;
-
-function deleteClassComponents
-  input InstNode clsNode;
-protected
-  Class cls = InstNode.getClass(clsNode);
-  array<InstNode> comps;
-algorithm
-  () := match cls
-    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
-      guard not Restriction.isType(cls.restriction)
-      algorithm
-        for c in comps loop
-          deleteComponent(c);
-        end for;
-      then
-        ();
-
-    case Class.TYPED_DERIVED()
-      algorithm
-        deleteClassComponents(cls.baseClass);
-      then
-        ();
-
-    else ();
-  end match;
-end deleteClassComponents;
 
 function getComponentType
   input Type ty;

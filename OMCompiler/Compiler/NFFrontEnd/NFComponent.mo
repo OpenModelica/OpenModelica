@@ -216,10 +216,6 @@ public
     Modifier modifier;
   end TYPE_ATTRIBUTE;
 
-  record DELETED_COMPONENT
-    Component component;
-  end DELETED_COMPONENT;
-
   function new
     input SCode.Element definition;
     output Component component;
@@ -273,7 +269,6 @@ public
       case TYPED_COMPONENT() then component.info;
       case ITERATOR() then component.info;
       case TYPE_ATTRIBUTE() then Modifier.info(component.modifier);
-      case DELETED_COMPONENT() then info(component.component);
       // Fail for enumeration literals, InstNode.info handles that case instead.
     end match;
   end info;
@@ -362,7 +357,6 @@ public
       case UNTYPED_COMPONENT() then InstNode.getType(component.classInst);
       case ITERATOR() then component.ty;
       case TYPE_ATTRIBUTE() then component.ty;
-      case DELETED_COMPONENT() then getType(component.component);
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -757,7 +751,6 @@ public
     cty := match component
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
-      case DELETED_COMPONENT() then connectorType(component.component);
       else ConnectorType.NON_CONNECTOR;
     end match;
   end connectorType;
@@ -985,7 +978,6 @@ public
     count := match component
       case UNTYPED_COMPONENT() then arrayLength(component.dimensions);
       case TYPED_COMPONENT() then listLength(Type.arrayDims(component.ty));
-      case DELETED_COMPONENT() then dimensionCount(component.component);
       else 0;
     end match;
   end dimensionCount;
@@ -1075,7 +1067,6 @@ public
       case TYPED_COMPONENT(condition = condition)
         then Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition));
 
-      case DELETED_COMPONENT() then true;
       else false;
     end match;
   end isDeleted;
