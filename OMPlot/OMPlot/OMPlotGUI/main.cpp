@@ -43,6 +43,11 @@
 #include "PlotMainWindow.h"
 #include "PlotApplication.h"
 
+#include "util/omc_error.h"
+
+void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
+void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
+
 using namespace OMPlot;
 
 #define CONSUME_BOOL_ARG(i,n,var) { \
