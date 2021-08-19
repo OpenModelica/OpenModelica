@@ -174,9 +174,17 @@ enum _FLAG_TYPE
   FLAG_TYPE_MAX
 };
 
+typedef enum {
+  FLAG_REPEAT_POLICY_FORBID = 0,
+  FLAG_REPEAT_POLICY_IGNORE,
+  FLAG_REPEAT_POLICY_REPLACE,
+  FLAG_REPEAT_POLICY_COMBINE
+} flag_repeat_policy;
+
 extern const char *FLAG_NAME[FLAG_MAX+1];
 extern const char *FLAG_DESC[FLAG_MAX+1];
 extern const char *FLAG_DETAILED_DESC[FLAG_MAX+1];
+extern const flag_repeat_policy FLAG_REPEAT_POLICIES[FLAG_MAX];
 extern const int FLAG_TYPE[FLAG_MAX];
 
 enum SOLVER_METHOD
