@@ -328,7 +328,7 @@ protected
   Integer varCount, eqCount;
   list<Integer> ebltEqsLst, matchedEqsLst, approximatedEquations, constantEquations, tempSetC, setC, tempSetS, setS, boundaryConditionEquations, bindingEquations, setSPrime;
   ExtAdjacencyMatrix sBltAdjacencyMatrix;
-  list<BackendDAE.Var> paramVars, setSVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars;
+  list<BackendDAE.Var> paramVars, setSVars, tempSetSVars, residualVars, residualVarsSetS, knownVars, failedboundaryConditionVars, extraVarsinSetSPrime;
   list<DAE.ComponentRef> cr_lst;
   BackendDAE.Jacobian simCodeJacobian;
   BackendDAE.Shared shared;
@@ -474,10 +474,13 @@ algorithm
 
   (_, setSVars) := List.extract1OnTrue(setSVars, isBoundaryConditionVars, failedboundaryConditionVars); // filter the variables of iterest and intermediate Vars
 
+  (extraVarsinSetSPrime, _) := List.extract1OnTrue(setSVars, isBoundaryConditionVars, List.map1r(listReverse(boundaryConditionVars), BackendVariable.getVarAt, currentSystem.orderedVars)); // filter the overdetermined variables in set-S'
+
   BackendDump.dumpVarList(failedboundaryConditionVars, "Boundary condition Vars'");
   BackendDump.dumpVarList(setSVars, "Intermediate vars in set-S'");
   BackendDump.dumpVarList(knownVars, "Known vars in set-S'");
   BackendDump.dumpVarList(paramVars, "Param vars in set-S'");
+  //BackendDump.dumpVarList(extraVarsinSetSPrime, "extra vars in set-S'");
 
 
   // prepare outdiff vars (i.e) variables of interest
@@ -510,7 +513,7 @@ algorithm
   intermediateEquations := dumpExtractedEquationsToHTML(outOtherEqns, "Intermediate equations" + " (" + intString(BackendEquation.getNumberOfEquations(outOtherEqns)) + ", " + intString(BackendEquation.equationArraySize(outOtherEqns)) + ")");
   System.writeFile(intermediateEquationsFilename, intermediateEquations);
 
-  VerifySetSPrime(outBoundaryConditionVars, outOtherVars, outDiffVars, outBoundaryConditionEquations, outOtherEqns, shared);
+  VerifySetSPrime(outBoundaryConditionVars, outOtherVars, outDiffVars, extraVarsinSetSPrime, outBoundaryConditionEquations, outOtherEqns, shared);
 
   if debug then
     BackendDump.dumpVariables(outDiffVars, "Jacobian_knownVariables");
@@ -2692,19 +2695,28 @@ protected function VerifySetSPrime
   input BackendDAE.Variables boundaryConditionsVars;
   input BackendDAE.Variables intermediateVars;
   input BackendDAE.Variables knownVars;
+  input list<BackendDAE.Var> extraVarsinSetSPrime;
   input BackendDAE.EquationArray boundaryConditionsEquations;
   input BackendDAE.EquationArray intermediateEquations;
   input BackendDAE.Shared shared;
 protected
   Integer eqSize, varSize;
-  String condition5;
+  String condition5, msg;
 algorithm
   eqSize := intAdd(BackendEquation.equationArraySize(boundaryConditionsEquations), BackendEquation.equationArraySize(intermediateEquations));
   varSize := intAdd(listLength(BackendVariable.varList(boundaryConditionsVars)), listLength(BackendVariable.varList(intermediateVars)));
   if not intEq(eqSize, varSize) then
     condition5 := "Set-S' has " + intString(eqSize) + " equations and " + intString(varSize) + " variables";
-    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed: Set-S' should be square: The data reconciliation problem is ill-posed \n" + condition5});
-    generateCompileTimeHtmlReport(shared, "<b>Internal Error:</b> Condition 5-Failed: \"Set_S' should be square\": The data reconciliation problem is ill-posed", intString(BackendEquation.equationArraySize(boundaryConditionsEquations)), intString(listLength(BackendVariable.varList(knownVars))), condition5 = condition5, boundaryCondition = true);
+    msg := "Boundary condition(s) ";
+    for var in BackendVariable.varList(boundaryConditionsVars) loop
+      msg := msg + BackendDump.varStringShort(var) + ",";
+    end for;
+    msg := msg + " cannot be computed from the variables of interest only. It must be computed also from boundary conditions(s) ";
+    for var in extraVarsinSetSPrime loop
+      msg := msg + BackendDump.varStringShort(var) + ",";
+    end for;
+    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed: Set-S' should be square: " + condition5 + "\n" + msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only."});
+    generateCompileTimeHtmlReport(shared, "<b>Internal Error:</b> Condition 5-Failed: \"Set-S' should be square\": " + condition5, intString(BackendEquation.equationArraySize(boundaryConditionsEquations)), intString(listLength(BackendVariable.varList(knownVars))), condition5 = msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only.", boundaryCondition = true);
     fail();
   end if;
 end VerifySetSPrime;

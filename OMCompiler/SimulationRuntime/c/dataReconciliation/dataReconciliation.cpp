@@ -336,8 +336,8 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
   myfile << "<table border=2>\n";
-  myfile << "<tr>\n" << "<th> Variables to be Reconciled </th>\n" << "<th> Initial Measured Values </th>\n" << "<th> Reconciled Values </th>\n" << "<th> Initial Uncertainty Values </th>\n" <<"<th> Half-width Confidence Intervals </th>\n";
-  csvfile << "Variables to be Reconciled ," << "Initial Measured Values ," << "Reconciled Values ," << "Initial Uncertainty Values ," << "Half-width Confidence Intervals,";
+  myfile << "<tr>\n" << "<th> Variables to be Reconciled </th>\n" << "<th> Initial Measured Values </th>\n" << "<th> Reconciled Values </th>\n" << "<th> Initial Half-width Confidence Intervals </th>\n" <<"<th> Reconciled Half-width Confidence Intervals </th>\n";
+  csvfile << "Variables to be Reconciled ," << "Initial Measured Values ," << "Reconciled Values ," << "Initial Half-width Confidence Intervals ," << "Reconciled Half-width Confidence Intervals,";
   myfile << "<th> Results of Local Tests </th>\n" << "<th> Values of Local Tests </th>\n" << "<th> Margin to Correctness(distance from 1.96) </th>\n" << "</tr>\n";
   csvfile << "Results of Local Tests ," << "Values of Local Tests ," << "Margin to Correctness(distance from 1.96) ," << "\n";
 
@@ -610,8 +610,8 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
   myfile << "<table border=2>\n";
-  myfile << "<tr>\n" << "<th> Boundary conditions </th>\n" << "<th> Values </th>\n" << "<th> Half-width Confidence Intervals </th> </tr>\n";
-  csvfile << "Boundary conditions ," << "Values ," << "Half-width Confidence Intervals," << "\n";
+  myfile << "<tr>\n" << "<th> Boundary conditions </th>\n" << "<th> Values </th>\n" << "<th> Reconciled Half-width Confidence Intervals </th> </tr>\n";
+  csvfile << "Boundary conditions ," << "Values ," << "Reconciled Half-width Confidence Intervals," << "\n";
 
   for (unsigned int r = 0; r < boundaryConditionVars.size(); r++)
   {
