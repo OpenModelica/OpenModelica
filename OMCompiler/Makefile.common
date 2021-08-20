@@ -50,6 +50,8 @@ $(builddir_share)/omc/scripts/OpenTurns/ \
 $(builddir_doc)/omc/testmodels \
 $(builddir_man)/man1/
 
+# Silence unnecessary verbose install messages from CMAKE
+CMAKE := $(CMAKE) -DCMAKE_INSTALL_MESSAGE=LAZY
 
 OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
 
@@ -167,7 +169,7 @@ ipopt:
 		-DIPOPT_BUILD_SHARED_LIBS:Bool=OFF \
 		-DMUMPS_BUILD_SHARED_LIBS:Bool=OFF \
 		-DCMAKE_POSITION_INDEPENDENT_CODE=ON
-	$(CMAKE) --build $(OMC_IPOPT_ROOT)/build/ --target install
+	$(MAKE) -C $(OMC_IPOPT_ROOT)/build/ install
 
 ipopt-clean:
 	if test -f $(OMC_IPOPT_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_IPOPT_ROOT)/build/ clean; fi
