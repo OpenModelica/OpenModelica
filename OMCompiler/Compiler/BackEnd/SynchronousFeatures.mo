@@ -697,9 +697,10 @@ algorithm
       addPartAdjacencyEdge(part1,subClk1,part2,subClk2,partAdjacency);
     end if;
     //to get the  parent relations, check only sub partition interfaces which don't interface clock-variables
-    if clockedVarsMask[var1] and clockedVarsMask[var2] then
+    //(commented out to get right order of subclocks derived from clock variables)
+    //if clockedVarsMask[var1] and clockedVarsMask[var2] then
       partitionParents[part1]:= part2;
-    end if;
+    //end if;
   end for;
   /*
   for i in 1:numPartitions loop
