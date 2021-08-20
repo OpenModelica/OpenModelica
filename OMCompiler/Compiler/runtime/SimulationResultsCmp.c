@@ -608,15 +608,21 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
-    *success = 0;
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Error opening file: %s"),&filename,1);
-    return mmc_mk_nil();
+    if (success) {
+      *success = 0;
+      return mmc_mk_nil();
+    }
+    MMC_THROW();
   }
   /* fprintf(stderr, "Open File %s\n", reffilename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
-    *success = 0;
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Error opening reference file: %s"),&reffilename,1);
-    return mmc_mk_nil();
+    if (success) {
+      *success = 0;
+      return mmc_mk_nil();
+    }
+    MMC_THROW();
   }
 
   size = SimulationResultsImpl__readSimulationResultSize(filename,&simresglob_c);
@@ -633,9 +639,12 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
     suggestReadAll = 1;
     cmpvars = getVars(allvarsref,&ncmpvars);
     if (ncmpvars==0) {
-      *success = 0;
       c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Error getting variables"),NULL,0);
-      return mmc_mk_nil();
+      if (success) {
+        *success = 0;
+        return mmc_mk_nil();
+      }
+      MMC_THROW();
     }
   }
 #ifdef DEBUGOUTPUT
@@ -649,16 +658,22 @@ void* SimulationResultsCmp_compareResults(int isResultCmp, int runningTestsuite,
   timeVarNameRef = getTimeVarName(allvarsref);
   time = getData(timeVarName,filename,size,suggestReadAll,&simresglob_c,runningTestsuite);
   if (time.n==0) {
-    *success = 0;
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Error getting time"),NULL,0);
-    return mmc_mk_nil();
+    if (success) {
+      *success = 0;
+      return mmc_mk_nil();
+    }
+    MMC_THROW();
   }
   /* fprintf(stderr, "get reftime\n"); */
   timeref = getData(timeVarNameRef,reffilename,size_ref,suggestReadAll,&simresglob_ref,runningTestsuite);
   if (timeref.n==0) {
-    *success = 0;
     c_add_message(NULL,-1,ErrorType_scripting,ErrorLevel_error,gettext("Error getting time from reference file"),NULL,0);
-    return mmc_mk_nil();
+    if (success) {
+      *success = 0;
+      return mmc_mk_nil();
+    }
+    MMC_THROW();
   }
   cmpdiffvars = (char**)omc_alloc_interface.malloc(sizeof(char*)*(ncmpvars));
   /* check if time is larger or less reftime */
