@@ -2700,7 +2700,7 @@ protected function VerifySetSPrime
   input BackendDAE.EquationArray intermediateEquations;
   input BackendDAE.Shared shared;
 protected
-  Integer eqSize, varSize;
+  Integer eqSize, varSize, count, extraVarLength;
   String condition5, msg;
 algorithm
   eqSize := intAdd(BackendEquation.equationArraySize(boundaryConditionsEquations), BackendEquation.equationArraySize(intermediateEquations));
@@ -2711,12 +2711,19 @@ algorithm
     for var in BackendVariable.varList(boundaryConditionsVars) loop
       msg := msg + BackendDump.varStringShort(var) + ",";
     end for;
-    msg := msg + " cannot be computed from the variables of interest only. It must be computed also from boundary conditions(s) ";
+    msg := msg + " cannot be computed from the variables of interest only. They must be computed also from boundary conditions(s) ";
+    extraVarLength := listLength(extraVarsinSetSPrime);
+    count := 1;
     for var in extraVarsinSetSPrime loop
-      msg := msg + BackendDump.varStringShort(var) + ",";
+      if intEq(count, extraVarLength) then
+        msg := msg + BackendDump.varStringShort(var) + ".";
+      else
+        msg := msg + BackendDump.varStringShort(var) + ",";
+      end if;
+      count := count + 1;
     end for;
-    Error.addMessage(Error.INTERNAL_ERROR, {": Condition 5-Failed: Set-S' should be square: " + condition5 + "\n" + msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only."});
-    generateCompileTimeHtmlReport(shared, "<b>Internal Error:</b> Condition 5-Failed: \"Set-S' should be square\": " + condition5, intString(BackendEquation.equationArraySize(boundaryConditionsEquations)), intString(listLength(BackendVariable.varList(knownVars))), condition5 = msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only.", boundaryCondition = true);
+    Error.addMessage(Error.INTERNAL_ERROR, {": " + msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only."});
+    generateCompileTimeHtmlReport(shared, "", intString(BackendEquation.equationArraySize(boundaryConditionsEquations)), intString(listLength(BackendVariable.varList(knownVars))), condition5 = msg + " Therefore, the problem is ill-posed regarding the computation of boundary conditions from the variables of interest only.", boundaryCondition = true);
     fail();
   end if;
 end VerifySetSPrime;
