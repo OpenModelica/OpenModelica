@@ -16,6 +16,13 @@ file(GLOB_RECURSE OMC_SIMRT_SIMULATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/simul
 
 file(GLOB OMC_SIMRT_MATH_SUPPORT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/math-support/pivot.c)
 
+file(GLOB OMC_SIMRT_LINEARIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/linearization/linearize.cpp)
+file(GLOB OMC_SIMRT_LINEARIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/linearization/linearize.h)
+
+file(GLOB_RECURSE OMC_SIMRT_DATA_RECONCILIATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/dataReconciliation/*.cpp)
+file(GLOB_RECURSE OMC_SIMRT_DATA_RECONCILIATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/dataReconciliation/*.h)
+
+
 file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.c)
 file(GLOB_RECURSE OMC_SIMRT_OPTIMIZATION_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/optimization/*.h)
 
@@ -71,7 +78,10 @@ install(TARGETS OpenModelicaFMIRuntimeC)
 add_library(SimulationRuntimeC STATIC)
 add_library(omc::simrt::simruntime ALIAS SimulationRuntimeC)
 
-target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_SIMULATION_SOURCES} ${OMC_SIMRT_MATH_SUPPORT_SOURCES})
+target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_SIMULATION_SOURCES}
+                                          ${OMC_SIMRT_MATH_SUPPORT_SOURCES}
+                                          ${OMC_SIMRT_LINEARIZATION_SOURCES}
+                                          ${OMC_SIMRT_DATA_RECONCILIATION_SOURCES})
 
 target_link_libraries(SimulationRuntimeC PUBLIC omc::config)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::simrt::memory)
@@ -90,6 +100,8 @@ install(TARGETS SimulationRuntimeC)
 # ######################################################################################################################
 # Library: OptimizationRuntime
 ## This is now separated from SimulationRuntimeC. Just for clarity. It can be put back in there if needed.
+## However having it as a separate lib will allow us to remove it based on an option. This means we can
+## also remove the need for ipopt and mumps if this is disabled.
 add_library(OptimizationRuntime STATIC)
 add_library(omc::simrt::optimize ALIAS OptimizationRuntime)
 
