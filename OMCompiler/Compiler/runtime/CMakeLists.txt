@@ -149,7 +149,7 @@ target_sources(omcbackendruntime PRIVATE ${OMC_BACKENDRUNTIIME_SOURCES})
 target_link_libraries(omcbackendruntime PUBLIC omc::config)
 target_link_libraries(omcbackendruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcbackendruntime PUBLIC omc::simrt::memory)
-target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib::static)
+target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
