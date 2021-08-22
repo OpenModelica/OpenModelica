@@ -44,6 +44,7 @@ target_sources(omcmemory PRIVATE ${OMC_SIMRT_GC_SOURCES})
 target_link_libraries(omcmemory PUBLIC omc::3rd::omcgc)
 target_include_directories(omcmemory PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
+install(TARGETS omcmemory)
 
 # ######################################################################################################################
 # Library: OpenModelicaRuntimeC

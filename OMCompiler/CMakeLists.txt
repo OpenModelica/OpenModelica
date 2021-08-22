@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
-project(OMCompiler)
+project(OMCompiler C CXX Fortran)
 
 # Variable for signifying that we are using the new CMake configuration.
 # We use this to selectively include some cmake source files
@@ -25,8 +25,9 @@ include(.cmake/omc_target_info.cmake)
 include(.cmake/omc_check_exists.cmake)
 
 # Add the compiler ids to the report for convenience.
-omc_add_to_report(CMAKE_CXX_COMPILER_ID)
 omc_add_to_report(CMAKE_C_COMPILER_ID)
+omc_add_to_report(CMAKE_CXX_COMPILER_ID)
+omc_add_to_report(CMAKE_Fortran_COMPILER_ID)
 omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
 #########################################################################################################
