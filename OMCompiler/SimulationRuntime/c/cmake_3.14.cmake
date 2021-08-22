@@ -75,6 +75,23 @@ install(TARGETS OpenModelicaFMIRuntimeC)
 
 
 # ######################################################################################################################
+# Library: OptimizationRuntime
+## This is now separated from SimulationRuntimeC. Just for clarity. It can be put back in there if needed.
+## However having it as a separate lib will allow us to remove it based on an option. This means we can
+## also remove the need for ipopt and mumps if this is disabled.
+add_library(OptimizationRuntime STATIC)
+add_library(omc::simrt::optimize ALIAS OptimizationRuntime)
+
+target_sources(OptimizationRuntime PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
+
+target_link_libraries(OptimizationRuntime PUBLIC omc::config)
+target_link_libraries(OptimizationRuntime PUBLIC omc::simrt::memory)
+target_link_libraries(OptimizationRuntime PUBLIC omc::3rd::ipopt)
+
+install(TARGETS OptimizationRuntime)
+
+
+# ######################################################################################################################
 # Library: SimulationRuntimeC
 add_library(SimulationRuntimeC STATIC)
 add_library(omc::simrt::simruntime ALIAS SimulationRuntimeC)
@@ -92,12 +109,12 @@ target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::idas)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::kinsol)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::sunlinsolklu)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::sunlinsollapackdense)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::config)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::klu)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::amd)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::btf)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::colamd)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::umfpack)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::config)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cminpack)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cdaskr)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
@@ -109,22 +126,6 @@ install(TARGETS SimulationRuntimeC)
 
 
 # ######################################################################################################################
-# Library: OptimizationRuntime
-## This is now separated from SimulationRuntimeC. Just for clarity. It can be put back in there if needed.
-## However having it as a separate lib will allow us to remove it based on an option. This means we can
-## also remove the need for ipopt and mumps if this is disabled.
-add_library(OptimizationRuntime STATIC)
-add_library(omc::simrt::optimize ALIAS OptimizationRuntime)
-
-target_sources(OptimizationRuntime PRIVATE ${OMC_SIMRT_OPTIMIZATION_SOURCES})
-
-target_link_libraries(OptimizationRuntime PUBLIC omc::config)
-target_link_libraries(OptimizationRuntime PUBLIC omc::simrt::memory)
-target_link_libraries(OptimizationRuntime PUBLIC omc::3rd::ipopt)
-
-install(TARGETS OptimizationRuntime)
-
-
 ## Install the header files. This installs the whole directory structure of c/ folder
 ## which means all headers will be installed keeping the directory structure intact.
 ## It might install some unneeded headers but it suffices for now.
