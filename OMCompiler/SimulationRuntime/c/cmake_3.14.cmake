@@ -125,6 +125,20 @@ target_link_libraries(OptimizationRuntime PUBLIC omc::3rd::ipopt)
 install(TARGETS OptimizationRuntime)
 
 
+## Install the header files. This installs the whole directory structure of c/ folder
+## which means all headers will be installed keeping the directory structure intact.
+## It might install some unneeded headers but it suffices for now.
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/omc
+        FILES_MATCHING
+        PATTERN "*.h"
+        PATTERN "*.c.inc"
+        PATTERN "build" EXCLUDE # To skip the build dir created by the normal Makefiles build system.
+)
+
+
+
+
 # ######################################################################################################################
 # Quick and INCOMPLETE generation of RuntimeSources.mo
 set(DGESV_FILES \"\")
