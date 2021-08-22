@@ -69,7 +69,7 @@ add_library(omc::simrt::fmiruntime ALIAS OpenModelicaFMIRuntimeC)
 
 target_sources(OpenModelicaFMIRuntimeC PRIVATE ${OMC_SIMRT_FMI_SOURCES})
 
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib::static)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib)
 
 install(TARGETS OpenModelicaFMIRuntimeC)
 
@@ -86,10 +86,20 @@ target_sources(SimulationRuntimeC PRIVATE ${OMC_SIMRT_SIMULATION_SOURCES}
 
 target_link_libraries(SimulationRuntimeC PUBLIC omc::config)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::simrt::memory)
-target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::cvode::static)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::FMIL::expat)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::cvode)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::idas)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::kinsol)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::sunlinsolklu)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::sundials::sunlinsollapackdense)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::config)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::klu)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::amd)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::btf)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::colamd)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::suitesparse::umfpack)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cminpack)
+target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::cdaskr)
 target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
 
 # Fix me. Make an interface (header only library) out of 3rdParty/dgesv
