@@ -3,7 +3,10 @@ include(CMakePrintHelpers)
 
 macro(omc_add_to_report var)
   cmake_print_variables(${var})
-  add_feature_info(${var} ${var} ${${var}})
+  # quote to change variables with empty values to "" (empty string).
+  # Otherwise they will valuate to nothing and that will cause a
+  # syntax error since add_feature_info expects 3 arguments.
+  add_feature_info(${var} ${var} "${${var}}")
 endmacro(omc_add_to_report)
 
 set(CMAKE_MESSAGE_CONTEXT_SHOW ON)
