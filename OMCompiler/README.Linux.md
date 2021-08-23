@@ -14,14 +14,22 @@ If your distribution is not supported, it might still work if you use an appropr
 
 ```bash
 echo Linux name: `lsb_release --short --codename`
-echo deb http://build.openmodelica.org/apt `lsb_release --short --codename` nightly | sudo tee -a /etc/apt/sources.list
-echo deb-src http://build.openmodelica.org/apt `lsb_release --short --codename` nightly | sudo tee -a /etc/apt/sources.list
+echo deb http://build.openmodelica.org/apt `lsb_release --short --codename` nightly | sudo tee -a /etc/apt/sources.list.d/openmodelica.list
+echo deb-src http://build.openmodelica.org/apt nightly contrib | sudo tee -a /etc/apt/sources.list.d/openmodelica.list
+# You'll also need to import the GPG key used to sign the releases:
+wget -q http://build.openmodelica.org/apt/openmodelica.asc -O- | sudo apt-key add -
+# To verify that your key is installed correctly
+apt-key fingerprint
+# Gives output:
+# pub   2048R/64970947 2010-06-22
+#      Key fingerprint = D229 AF1C E5AE D74E 5F59  DF30 3A59 B536 6497 0947
+# uid                  OpenModelica Build System
 sudo apt-get update
 sudo apt-get build-dep openmodelica
 git clone --recursive https://openmodelica.org/git-readonly/OpenModelica.git OpenModelica
 cd OpenModelica
 autoconf
-./configure --with-cppruntime
+./configure --with-cppruntime --without-omc
 make -j4
 ```
 
