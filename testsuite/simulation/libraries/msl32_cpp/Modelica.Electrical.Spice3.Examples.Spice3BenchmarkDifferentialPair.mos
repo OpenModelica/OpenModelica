@@ -35,7 +35,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair
 // {"Q1.vbe","Q1.vbc","Q1.vbx","Q1.vcs","Q2.vbe","Q2.vbc","Q2.vbx","Q2.vcs"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair', options = '', outputFormat = 'mat', variableFilter = 'time|Q1.vbe|Q1.vbc|Q1.vbx|Q1.vcs|Q2.vbe|Q2.vbc|Q2.vbx|Q2.vcs', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair_res.mat
 // Files Equal!
 // "true

@@ -31,7 +31,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Analog.Examples.Rectifier
 // {"Inductor1.i","Inductor3.i","Capacitor1.v","Capacitor2.v"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 0.1, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Analog.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = 'time|Inductor1.i|Inductor3.i|Capacitor1.v|Capacitor2.v', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Analog.Examples.Rectifier_res.mat
 // Files Equal!
 // "true

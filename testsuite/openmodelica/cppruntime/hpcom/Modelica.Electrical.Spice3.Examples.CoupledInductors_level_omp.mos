@@ -48,7 +48,7 @@ runScript(modelTesting);getErrorString();
 // Using level Scheduler for the ODE system
 // Using level Scheduler for the ZeroFunc system
 // HpcOm is still under construction.
-// Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.CoupledInductors', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 0.2, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.CoupledInductors', options = '', outputFormat = 'mat', variableFilter = 'time|L1.iinternal|L2.iinternal|C1.v|L3.iinternal|C2.v', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Spice3.Examples.CoupledInductors_res.mat
 // Files Equal!
 // "true
