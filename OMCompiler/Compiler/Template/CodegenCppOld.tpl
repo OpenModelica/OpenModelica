@@ -2218,6 +2218,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   let home      = makefileParams.omhome
   let &includeMeasure = buffer "" /*BUFD*/
   let outputtype = settings.outputFormat
+  let variableFilter = settings.variableFilter
   <<
   #include <Core/ModelicaDefine.h>
   #include <Core/Modelica.h>
@@ -2293,6 +2294,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
       opts["-R"] = "<%simulationLibDir(simulationCodeTarget(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
       opts["-M"] = "<%moLib%>";
       opts["-F"] = "<%simulationResults(Testsuite.isRunning(), simCode, &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>";
+      opts["-B"] = "<%variableFilter%>";
       opts["--solver-threads"] = "<%if(intGt(getConfigInt(NUM_PROC), 0)) then getConfigInt(NUM_PROC) else 1%>";
       <%if (stringEq(settings.outputFormat, "empty")) then 'opts["-O"] = "none";' else ""%>
       <%
@@ -2393,10 +2395,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
             Logger::finalize();
             return 0;
       }
-      catch(ModelicaSimulationError& ex)
+      catch (ModelicaSimulationError& ex)
       {
-          if(!ex.isSuppressed())
-              std::cerr << "Simulation stopped with error in " << error_id_string(ex.getErrorID()) << ": "  << ex.what();
+          if (!ex.isSuppressed())
+              std::cerr << "Simulation stopped with error in " << error_id_string(ex.getErrorID()) << ": "  << ex.what() << std::endl;
           Logger::finalize();
           return 1;
       }

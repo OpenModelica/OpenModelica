@@ -67,6 +67,9 @@ public:
   ///< Write out results (default: EMIT_ALL)
   virtual EmitResults getEmitResults() = 0;
   virtual void setEmitResults(EmitResults) = 0;
+  ///< Write variables that match a name filter (default: .*)
+  virtual const string& getVariableFilter() = 0;
+  virtual void setVariableFilter(const string&) = 0;
   virtual OutputPointType getOutputPointType() = 0;
   virtual void setOutputPointType(OutputPointType) = 0;
   virtual LogSettings getLogSettings() = 0;

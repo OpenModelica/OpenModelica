@@ -13,6 +13,7 @@ GlobalSettings::GlobalSettings()
   , _endTime(1.0)
   , _hOutput(0.002)
   , _emitResults(EMIT_ALL)
+  , _variableFilter(".*")
   , _infoOutput(true)
   , _selected_solver("euler")
   , _selected_lin_solver("dgesvSolver")
@@ -102,6 +103,16 @@ EmitResults GlobalSettings::getEmitResults()
 void GlobalSettings::setEmitResults(EmitResults emitResults)
 {
   _emitResults = emitResults;
+}
+
+const string& GlobalSettings::getVariableFilter()
+{
+  return _variableFilter;
+}
+
+void GlobalSettings::setVariableFilter(const string& variableFilter)
+{
+  _variableFilter = variableFilter;
 }
 
 void GlobalSettings::setResultsFileName(string name)

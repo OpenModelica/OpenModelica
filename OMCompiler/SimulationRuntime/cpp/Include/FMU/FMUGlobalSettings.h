@@ -27,6 +27,8 @@ public:
     ///< Write out results (EMIT_NONE)
     virtual EmitResults getEmitResults() { return EMIT_NONE; }
     virtual void setEmitResults(EmitResults) {}
+    virtual const string& getVariableFilter() { return "";}
+    virtual void setVariableFilter(const string&) {}
     virtual bool useEndlessSim() {return true; }
     virtual void useEndlessSim(bool) {}
     ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
