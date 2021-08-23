@@ -1,0 +1,158 @@
+// name: MutuallyDependentClocks
+// keywords: synchronous subSample superSampe
+// status: correct
+// cflags:
+//
+//
+
+setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
+
+loadString("
+model MutuallyDependentClocks
+  Clock c = Clock(0.1);
+  Clock cs = subSample(c, 5); // c is parent of cs
+  Real x, y, z, w;
+equation
+  x = sample(time, c);
+  y = sample(time, cs);
+  z = superSample(y, 5); // cs becomes parent of c
+  w = x + z;
+end MutuallyDependentClocks;
+"); getErrorString();
+
+instantiateModel(MutuallyDependentClocks); getErrorString();
+translateModel(MutuallyDependentClocks); getErrorString();
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "class MutuallyDependentClocks
+//   Clock c = Clock(0.1);
+//   Clock cs = subSample(c, 5);
+//   Real x;
+//   Real y;
+//   Real z;
+//   Real w;
+// equation
+//   x = sample(time, c);
+//   y = sample(time, cs);
+//   z = superSample(y, 5);
+//   w = x + z;
+// end MutuallyDependentClocks;
+// "
+// ""
+// synchronous features pre-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (2 partitions)
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: w:VARIABLE()  type: Real
+// 2: z:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = $getPart(time)   [dynamic |0|0|0|0|]
+// 2/2 (1): z = $getPart(y)   [dynamic |0|0|0|0|]
+// 3/3 (1): w = x + z   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: y:VARIABLE()  type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): y = $getPart(time)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.1)[2]
+//
+//
+// Sub clocks (2)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(false)
+// 2: factor(5/1) shift(0/1)  event(false)
+//
+// synchronous features post-phase: synchronousFeatures
+//
+//
+// ########################################
+// clock partitioning (2 partitions)
+// ########################################
+//
+//
+// clocked partition(1)
+// ========================================
+//
+// Variables (3)
+// ========================================
+// 1: w:VARIABLE()  type: Real
+// 2: z:VARIABLE()  type: Real
+// 3: x:VARIABLE()  type: Real
+//
+//
+// Equations (3, 3)
+// ========================================
+// 1/1 (1): x = $getPart(time)   [dynamic |0|0|0|0|]
+// 2/2 (1): z = $getPart(y)   [dynamic |0|0|0|0|]
+// 3/3 (1): w = x + z   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: y:VARIABLE()  type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): y = $getPart(time)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+//
+// Base clocks (1)
+// ========================================
+// 1: Clock(0.1)[2]
+//
+//
+// Sub clocks (2)
+// ========================================
+// 1: factor(1/1) shift(0/1)  event(false)
+// 2: factor(5/1) shift(0/1)  event(false)
+//
+// true
+// ""
+// endResult
