@@ -18,7 +18,6 @@ string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}
 string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
-# set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # include utility macros.
 include(.cmake/omc_utils.cmake)
@@ -30,6 +29,20 @@ omc_add_to_report(CMAKE_CXX_COMPILER_ID)
 omc_add_to_report(CMAKE_C_COMPILER_ID)
 omc_add_to_report(CMAKE_LIBRARY_ARCHITECTURE)
 
+#########################################################################################################
+## Set the C standard to use. Unfortunately, we can not enforce c90.
+## Our sources contain a lot of c99 and gnu extension code.
+# set(CMAKE_C_STANDARD 90)
+
+## Set the C++ standard to use.
+set(CMAKE_CXX_STANDARD 11)
+set(CXX_STANDARD_REQUIRED ON)
+## Make sure we do not start relying on extensions down the road.
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+#########################################################################################################
+## Enable verbose Makefiles if you want to debug. (you can also instead use 'make VERBOSE=1')
+# set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Export compile commands (compile_commands.json) for each source file. This helps editors (e.g. vscode, emacs) have
 # a more accurate code navigation and intellisense. E.g. includes can be pinpointed instead of
