@@ -32,7 +32,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary
 // {"dcpm1.la.i","loadInertia1.phi","loadInertia1.w","loadInertia2.phi","loadInertia2.w"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 2000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm1.la.i|loadInertia1.phi|loadInertia1.w|loadInertia2.phi|loadInertia2.w', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_QuasiStationary_res.mat
 // Files Equal!
 // "true

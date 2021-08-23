@@ -39,7 +39,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Fluid.Examples.Explanatory.MeasuringTemperature
 // {"openTankCold2.level","openTankCold2.medium.h","openTankCold1.level","openTankCold1.medium.h","openTankHot1.level","openTankHot1.medium.h","openTankHot2.level","openTankHot2.medium.h","openTankCold3.level","openTankCold3.medium.h","openTankHot3.level","openTankHot3.medium.h"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Explanatory.MeasuringTemperature', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 1.1, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Explanatory.MeasuringTemperature', options = '', outputFormat = 'mat', variableFilter = 'time|openTankCold2.level|openTankCold2.medium.h|openTankCold1.level|openTankCold1.medium.h|openTankHot1.level|openTankHot1.medium.h|openTankHot2.level|openTankHot2.medium.h|openTankCold3.level|openTankCold3.medium.h|openTankHot3.level|openTankHot3.medium.h', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Fluid.Examples.Explanatory.MeasuringTemperature_res.mat
 // Files Equal!
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.

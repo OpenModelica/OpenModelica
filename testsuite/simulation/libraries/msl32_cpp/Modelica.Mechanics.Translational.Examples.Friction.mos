@@ -39,7 +39,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.Translational.Examples.Friction
 // {"stop1.s","stop1.v","stop2.s","stop2.v","mass.s","mass.v","der(stop1.s)","der(stop1.v)","der(stop2.s)","der(stop2.v)","der(mass.s)","der(mass.v)"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Friction', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Translational.Examples.Friction', options = '', outputFormat = 'mat', variableFilter = 'time|stop1.s|stop1.v|stop2.s|stop2.v|mass.s|mass.v|der[(]stop1.s[)]|der[(]stop1.v[)]|der[(]stop2.s[)]|der[(]stop2.v[)]|der[(]mass.s[)]|der[(]mass.v[)]', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.Translational.Examples.Friction_res.mat
 // Files Equal!
 // "true

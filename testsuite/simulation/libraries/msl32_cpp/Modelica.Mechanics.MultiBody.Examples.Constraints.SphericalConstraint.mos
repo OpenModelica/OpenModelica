@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint);
 compareVars :=
 {
@@ -36,29 +36,13 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint
 // {"bodyOfConstraint.body.w_a[1]","bodyOfConstraint.body.w_a[2]","bodyOfConstraint.body.w_a[3]","freeMotionScalarInit.angle_1","freeMotionScalarInit.angle_2","freeMotionScalarInit.angle_3","joint.w_rel[1]","joint.w_rel[2]","joint.w_rel[3]","joint.Q[1]","joint.Q[2]","joint.Q[3]","joint.Q[4]"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 10.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint', options = '', outputFormat = 'mat', variableFilter = 'time|bodyOfConstraint.body.w_a.1.|bodyOfConstraint.body.w_a.2.|bodyOfConstraint.body.w_a.3.|freeMotionScalarInit.angle_1|freeMotionScalarInit.angle_2|freeMotionScalarInit.angle_3|joint.w_rel.1.|joint.w_rel.2.|joint.w_rel.3.|joint.Q.1.|joint.Q.2.|joint.Q.3.|joint.Q.4.', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat
-// Files Equal!
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
-//
-// Error: Could not read variable joint.w_rel[1] in file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat.
-// Warning: Get data of variable joint.w_rel[1] from file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat failed!
-// Error: Could not read variable joint.w_rel[2] in file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat.
-// Warning: Get data of variable joint.w_rel[2] from file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat failed!
-// Error: Could not read variable joint.w_rel[3] in file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat.
-// Warning: Get data of variable joint.w_rel[3] from file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat failed!
-// Error: Could not read variable joint.Q[1] in file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat.
-// Warning: Get data of variable joint.Q[1] from file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat failed!
-// Error: Could not read variable joint.Q[2] in file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat.
-// Warning: Get data of variable joint.Q[2] from file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat failed!
-// Error: Could not read variable joint.Q[3] in file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat.
-// Warning: Get data of variable joint.Q[3] from file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat failed!
-// Error: Could not read variable joint.Q[4] in file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat.
-// Warning: Get data of variable joint.Q[4] from file Modelica.Mechanics.MultiBody.Examples.Constraints.SphericalConstraint_res.mat failed!
 //
 // "true
 // "
