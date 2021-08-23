@@ -158,7 +158,13 @@ function handleOverconstrainedConnections
    - Connections.uniqueRootIndices"
   input output FlatModel flatModel;
   input Connections conns;
+  input IsDeleted isDeleted;
   output FlatEdges outBroken;
+
+  partial function IsDeleted
+    input ComponentRef cref;
+    output Boolean res;
+  end IsDeleted;
 protected
   ComponentRef lhs, rhs, cref;
   DAE.ElementSource source;
@@ -181,11 +187,11 @@ algorithm
   for conn in conns.connections loop
     Connection.CONNECTION(lhs = c1, rhs = c2) := conn;
 
-    lhs_crefs := getOverconstrainedCrefs(c1);
-    rhs_crefs := getOverconstrainedCrefs(c2);
+    lhs_crefs := getOverconstrainedCrefs(c1, isDeleted);
+    rhs_crefs := getOverconstrainedCrefs(c2, isDeleted);
 
     if not listEmpty(lhs_crefs) then
-      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, context, c1.source);
+      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, context, c1.source, isDeleted);
       graph := List.threadFold(lhs_crefs, rhs_crefs,
         function addConnection(brokenEquations = eqlBroken, printTrace = print_trace), graph);
     end if;
@@ -239,7 +245,7 @@ algorithm
   ieql := flatModel.initialEquations;
   (eql, ieql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, flatModel.name, eql, ieql);
 
-  eql := removeBrokenConnects(eql, connected, broken);
+  eql := removeBrokenConnects(eql, connected, broken, isDeleted);
 
   flatModel.equations := eql;
   flatModel.initialEquations := ieql;
@@ -254,7 +260,13 @@ function generateEqualityConstraintEquation
   input Type rhs_ty;
   input InstContext.Type context;
   input DAE.ElementSource source;
+  input IsDeleted isDeleted;
   output list<Equation> eqsEqualityConstraint = {};
+
+  partial function IsDeleted
+    input ComponentRef cref;
+    output Boolean res;
+  end IsDeleted;
 protected
   ComponentRef lhs, rhs, cref, fcref_rhs, fcref_lhs, lhsArr, rhsArr;
   list<Equation> eql = {};
@@ -273,7 +285,7 @@ algorithm
     return;
   end if;
 
-  if not (ComponentRef.isDeleted(clhs) or ComponentRef.isDeleted(crhs)) then
+  if not (isDeleted(clhs) or isDeleted(crhs)) then
     cl1 := NFConnections.makeConnectors(clhs, lhs_ty, source);
     cl2 := NFConnections.makeConnectors(crhs, rhs_ty, source);
 
@@ -320,13 +332,19 @@ protected
 
 function getOverconstrainedCrefs
   input Connector conn;
+  input IsDeleted isDeleted;
   output list<ComponentRef> crefs;
+
+  partial function IsDeleted
+    input ComponentRef cref;
+    output Boolean res;
+  end IsDeleted;
 protected
   list<Connector> conns;
 algorithm
   conns := Connector.split(conn, scalarize = NFConnector.ScalarizeSetting.PREFIX);
   crefs := list(getOverconstrainedCref(c.name) for c
-    guard not Connector.isDeleted(c) and isOverconstrainedCref(c.name) in conns);
+    guard not isDeleted(c.name) and isOverconstrainedCref(c.name) in conns);
   crefs := List.uniqueOnTrue(crefs, ComponentRef.isEqual);
 end getOverconstrainedCrefs;
 
@@ -1797,7 +1815,13 @@ function removeBrokenConnects
   input list<Equation> inEquations;
   input FlatEdges inConnected;
   input FlatEdges inBroken;
+  input IsDeleted isDeleted;
   output list<Equation> outEquations;
+
+  partial function IsDeleted
+    input ComponentRef cref;
+    output Boolean res;
+  end IsDeleted;
 algorithm
   outEquations := match(inEquations, inConnected, inBroken)
     local
@@ -1820,7 +1844,7 @@ algorithm
             case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                                   rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
               algorithm
-                if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
+                if not (isDeleted(lhs) or isDeleted(rhs)) then
                   // check for equality
                   isThere := false;
                   for tpl in inBroken loop
