@@ -350,6 +350,7 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("output-type,O", po::value< string >()->default_value("all"), "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("output-format,P", po::value< string >()->default_value("mat"), "simulation results output format: csv, mat, buffer, empty")
           ("emit-results,U", po::value< string >()->default_value("public"), "emit results: all, public, none")
+          ("variable-filter,B", po::value< string >()->default_value(".*"), "only write variables that match filter")
           ;
 
      // a group for all options that should not be visible if '--help' is set
@@ -365,16 +366,22 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      descAll.add(descHidden);
 
      po::variables_map vm;
+     vector<string> unrecognized;
      boost::function<pair<string, string> (const string&)> parserFunction(boost::bind(&OMCFactory::replaceCRuntimeArguments, this, _1));
-     po::parsed_options parsed = po::command_line_parser(argc, argv)
+     try {
+       po::parsed_options parsed = po::command_line_parser(argc, argv)
          .options(descAll)
          .style((po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~po::command_line_style::allow_guessing)
          .extra_parser(parserFunction)
          .allow_unregistered()
          .run();
-     po::store(parsed, vm);
-     po::notify(vm);
-
+       po::store(parsed, vm);
+       po::notify(vm);
+       unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
+     }
+     catch (std::exception ex) {
+         throw ModelicaSimulationError(MODEL_FACTORY, ex.what());
+     }
      if (vm.count("help")) {
          cout << desc << endl;
          throw ModelicaSimulationError(MODEL_FACTORY, "Cannot parse command line arguments correctly, because the help message was requested.", "",true);
@@ -383,7 +390,6 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      LogSettings logSettings = initializeLogger(vm);
 
      // warn about unrecognized command line options
-     vector<string> unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
      if (vm.count("unrecognized")) {
          vector<string> opts = vm["unrecognized"].as<vector<string> >();
          unrecognized.insert(unrecognized.begin(), opts.begin(), opts.end());
@@ -497,13 +503,19 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
            "Unknown emit-results " + emitResults_str);
      }
 
+     string variableFilter = ".*";
+     if (vm.count("variable-filter"))
+     {
+       variableFilter = vm["variable-filter"].as<string>();
+     }
+
      fs::path libraries_path = fs::path( runtime_lib_path) ;
      fs::path modelica_path = fs::path( modelica_lib_path) ;
 
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsFileName, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
+     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsFileName, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, variableFilter, inputPath, outputPath};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
@@ -532,7 +544,7 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
             "startTime", "-S" MAP_LIST_SEP "stopTime", "-E" MAP_LIST_SEP
             "stepSize", "-H" MAP_LIST_SEP "numberOfIntervals", "-G" MAP_LIST_SEP
             "solver", "-I" MAP_LIST_SEP "tolerance", "-T" MAP_LIST_SEP
-            "outputFormat", "-P" MAP_LIST_END;
+            "outputFormat", "-P" MAP_LIST_SEP "variableFilter", "-B" MAP_LIST_END;
           vector<string> strs;
           boost::split(strs, argv[i], boost::is_any_of(",="));
           for (int j = 1; j < strs.size(); j++) {
@@ -541,12 +553,6 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
                   opts[oit->second] = strs[++j];
               }
               else {
-                  // ignore filter for all variables
-                  if (strs[j] == "variableFilter"
-                      && j < strs.size() - 1 && strs[j+1] == ".*") {
-                      ++j;
-                      continue;
-                  }
                   // leave unrecognized overrides
                   if (_overrideOMEdit.size() > 10)
                       _overrideOMEdit += ",";

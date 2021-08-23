@@ -186,6 +186,7 @@ void SimController::Start(SimSettings simsettings, string modelKey, string nls)
         global_settings->setOutputPointType(simsettings.outputPointType);
         global_settings->setOutputFormat(simsettings.outputFormat);
         global_settings->setEmitResults(simsettings.emitResults);
+        global_settings->setVariableFilter(simsettings.variableFilter);
         global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
         global_settings->setSolverThreads(simsettings.solverThreads);
         global_settings->setInputPath(simsettings.inputPath);
@@ -287,6 +288,7 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
         global_settings->setOutputPointType(simsettings.outputPointType);
         global_settings->setOutputFormat(simsettings.outputFormat);
         global_settings->setEmitResults(simsettings.emitResults);
+        global_settings->setVariableFilter(simsettings.variableFilter);
         global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
         global_settings->setSolverThreads(simsettings.solverThreads);
         /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
@@ -496,6 +498,7 @@ void SimController::initialize(SimSettings simsettings, string modelKey, double 
         global_settings->setOutputPointType(simsettings.outputPointType);
         global_settings->setOutputFormat(simsettings.outputFormat);
         global_settings->setEmitResults(simsettings.emitResults);
+        global_settings->setVariableFilter(simsettings.variableFilter);
         global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
         global_settings->setSolverThreads(simsettings.solverThreads);
         /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));

@@ -24,6 +24,8 @@ public:
   ///< Write out results (default: EMIT_ALL)
   virtual EmitResults getEmitResults();
   virtual void setEmitResults(EmitResults);
+  virtual const string& getVariableFilter();
+  virtual void setVariableFilter(const string&);
   ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false, true]; default: true)
   virtual bool getInfoOutput();
   virtual void setInfoOutput(bool);
@@ -71,6 +73,8 @@ private:
       _hOutput;     ///< Output step size (default: 20 ms)
   EmitResults
       _emitResults; ///< Write out results (default: EMIT_ALL)
+  string
+      _variableFilter;
   bool
       _infoOutput,  ///< Write out statistical simulation infos, e.g. number of steps (at the end of simulation); [false,true]; default: true)
       _endless_sim,
