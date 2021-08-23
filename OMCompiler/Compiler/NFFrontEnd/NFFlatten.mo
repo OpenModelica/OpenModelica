@@ -92,6 +92,7 @@ import DAE;
 import Structural = NFStructural;
 import ArrayConnections = NFArrayConnections;
 import UnorderedMap;
+import UnorderedSet;
 import Inline = NFInline;
 
 public
@@ -145,6 +146,7 @@ protected
   DAE.ElementSource src;
   Option<SCode.Comment> cmt;
   FlattenSettings settings;
+  UnorderedSet<ComponentRef> deleted_vars;
 algorithm
   settings := FlattenSettings.SETTINGS(
     Flags.isSet(Flags.NF_SCALARIZE),
@@ -158,8 +160,10 @@ algorithm
   src := ElementSource.addCommentToSource(src,
     SCodeUtil.getElementComment(InstNode.definition(classInst)));
 
+  deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
   (vars, sections) := flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(),
-    Visibility.PUBLIC, NONE(), {}, sections, settings);
+    Visibility.PUBLIC, NONE(), {}, sections, deleted_vars, settings);
   vars := listReverseInPlace(vars);
 
   flatModel := match sections
@@ -180,7 +184,7 @@ algorithm
   if settings.arrayConnect then
     flatModel := resolveArrayConnections(flatModel);
   else
-    flatModel := resolveConnections(flatModel);
+    flatModel := resolveConnections(flatModel, deleted_vars);
   end if;
 end flatten;
 
@@ -205,6 +209,7 @@ function flattenClass
   input Option<Binding> binding;
   input output list<Variable> vars;
   input output Sections sections;
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   array<InstNode> comps;
@@ -225,12 +230,12 @@ algorithm
 
         if listEmpty(bindings) then
           for c in comps loop
-            (vars, sections) := flattenComponent(c, prefix, visibility, binding, vars, sections, settings);
+            (vars, sections) := flattenComponent(c, prefix, visibility, binding, vars, sections, deletedVars, settings);
           end for;
         else
           for c in comps loop
             b :: bindings := bindings;
-            (vars, sections) := flattenComponent(c, prefix, visibility, SOME(b), vars, sections, settings);
+            (vars, sections) := flattenComponent(c, prefix, visibility, SOME(b), vars, sections, deletedVars, settings);
           end for;
         end if;
 
@@ -241,7 +246,7 @@ algorithm
     case Class.TYPED_DERIVED()
       algorithm
         (vars, sections) :=
-          flattenClass(InstNode.getClass(cls.baseClass), prefix, visibility, binding, vars, sections, settings);
+          flattenClass(InstNode.getClass(cls.baseClass), prefix, visibility, binding, vars, sections, deletedVars, settings);
       then
         ();
 
@@ -263,6 +268,7 @@ function flattenComponent
   input Option<Binding> outerBinding;
   input output list<Variable> vars;
   input output Sections sections;
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   InstNode comp_node;
@@ -281,15 +287,12 @@ algorithm
   comp_node := InstNode.resolveOuter(component);
   c := InstNode.component(comp_node);
 
-  if Component.isDeleted(c) then
-    return;
-  end if;
-
   () := match c
     case Component.TYPED_COMPONENT(condition = condition, ty = ty)
       algorithm
         // Delete the component if it has a condition that's false.
         if isDeletedComponent(condition, prefix) then
+          deleteComponent(component, prefix, deletedVars);
           return;
         end if;
 
@@ -299,7 +302,7 @@ algorithm
         (vars, sections) := match getComponentType(ty, settings)
           case ComponentType.COMPLEX
           then flattenComplexComponent(comp_node, c, cls, ty,
-            vis, outerBinding, prefix, vars, sections, settings);
+            vis, outerBinding, prefix, vars, sections, deletedVars, settings);
 
           case ComponentType.NORMAL
           then flattenSimpleComponent(comp_node, c, vis, outerBinding,
@@ -307,7 +310,7 @@ algorithm
 
           case ComponentType.RECORD algorithm
             (children, sections) := flattenComplexComponent(comp_node, c, cls, ty,
-              vis, outerBinding, prefix, {}, sections, settings);
+              vis, outerBinding, prefix, {}, sections, deletedVars, settings);
           then flattenSimpleComponent(comp_node, c, vis, outerBinding,
             Class.getTypeAttributes(cls), prefix, vars, sections, settings, children);
 
@@ -315,6 +318,13 @@ algorithm
             Error.assertion(false, getInstanceName() + " got unknown component", sourceInfo());
           then fail();
         end match;
+      then
+        ();
+
+    // A component that was already deleted during e.g. typing.
+    case _ guard Component.isDeleted(c)
+      algorithm
+        deleteComponent(component, prefix, deletedVars);
       then
         ();
 
@@ -359,6 +369,18 @@ algorithm
     isDeleted := false;
   end if;
 end isDeletedComponent;
+
+function deleteComponent
+  input InstNode node;
+  input ComponentRef prefix;
+  input UnorderedSet<ComponentRef> deletedVars;
+protected
+  ComponentRef cref;
+algorithm
+  cref := ComponentRef.prefixCref(node, Type.UNKNOWN(), {},
+    ComponentRef.stripSubscriptsAll(prefix));
+  UnorderedSet.add(cref, deletedVars);
+end deleteComponent;
 
 function getComponentType
   input Type ty;
@@ -522,6 +544,7 @@ function flattenComplexComponent
   input ComponentRef prefix;
   input output list<Variable> vars;
   input output Sections sections;
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   list<Dimension> dims;
@@ -596,12 +619,12 @@ algorithm
 
   // Flatten the class directly if the component is a scalar, otherwise scalarize it.
   if listEmpty(dims) then
-    (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, settings);
+    (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, deletedVars, settings);
   elseif settings.scalarize then
     dims := list(flattenDimension(d, name) for d in dims);
-    (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, settings);
+    (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   else
-    (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, settings);
+    (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   end if;
 end flattenComplexComponent;
 
@@ -614,6 +637,7 @@ function flattenArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   Dimension dim;
@@ -628,7 +652,7 @@ algorithm
     sub_pre := ComponentRef.setSubscripts(subs, prefix);
 
     (vars, sections) := flattenClass(cls, sub_pre, visibility,
-      subscriptBindingOpt(subs, binding), vars, sections, settings);
+      subscriptBindingOpt(subs, binding), vars, sections, deletedVars, settings);
   else
     dim :: rest_dims := dimensions;
     dim := flattenDimension(dim, prefix);
@@ -637,7 +661,7 @@ algorithm
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, sub_exp) := RangeIterator.next(range_iter);
       (vars, sections) := flattenArray(cls, rest_dims, prefix, visibility,
-          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts, settings);
+          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts, deletedVars, settings);
     end while;
   end if;
 end flattenArray;
@@ -651,13 +675,14 @@ function vectorizeArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   list<Variable> vrs;
   Sections sects;
 algorithm
   // if we don't scalarize flatten the class and vectorize it
-  (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), settings);
+  (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), deletedVars, settings);
 
   // add dimensions to the types
   for v in vrs loop
@@ -1546,9 +1571,36 @@ algorithm
   source := ElementSource.addElementSourceInstanceOpt(source, comp_pre);
 end addElementSourceArrayPrefix;
 
+function isDeletedConnector
+  input ComponentRef cref;
+  input UnorderedSet<ComponentRef> deletedVars;
+  output Boolean res;
+protected
+  ComponentRef cr = cref;
+  InstNode node;
+algorithm
+  cr := ComponentRef.stripSubscriptsAll(cref);
+
+  while ComponentRef.isCref(cr) loop
+    node := ComponentRef.node(cr);
+
+    if InstNode.isComponent(node) and Component.hasCondition(InstNode.component(node)) then
+      if UnorderedSet.contains(cr, deletedVars) then
+        res := true;
+        return;
+      end if;
+    end if;
+
+    cr := ComponentRef.rest(cr);
+  end while;
+
+  res := false;
+end isDeletedConnector;
+
 function resolveConnections
 "Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
+  input UnorderedSet<ComponentRef> deletedVars;
 protected
   Connections conns;
   list<Equation> conn_eql, ec_eql;
@@ -1566,7 +1618,9 @@ algorithm
   end for;
 
   // get the connections from the model
-  (flatModel, conns) := Connections.collect(flatModel);
+  (flatModel, conns) := Connections.collect(flatModel,
+    function isDeletedConnector(deletedVars = deletedVars));
+
   // Elaborate expandable connectors.
   (flatModel, conns) := ExpandableConnectors.elaborate(flatModel, conns);
   // handle overconstrained connections
@@ -1575,7 +1629,8 @@ algorithm
   // - generate the equations to replace the broken connects
   // - return the broken connects + the equations
   if  System.getHasOverconstrainedConnectors() then
-    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, conns);
+    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, conns,
+      function isDeletedConnector(deletedVars = deletedVars));
   end if;
   // add the broken connections
   conns := Connections.addBroken(broken, conns);
