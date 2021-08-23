@@ -72,9 +72,14 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
 
-
 # We prefer to install libs to "<library architecture>/omc" dir inside lib directory (e.g lib/x86_64-linux-gnu/omc/).
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
+
+## Set the adjusted installation lib directory as an rpath for all installed binaries.
+## This is useful for those binaries that end up in bin/ directory but not for
+## others as it is a relative path to the lib dir from <build_dir>/<some_dir>.
+## Maybe there is a better way to do this but it should suffice for now.
+set(CMAKE_INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 
 
 # Write out a compiler detection header. checkout the file <build_dir>/omc_compiler_detection.h to
@@ -87,13 +92,6 @@ write_compiler_detection_header(
   COMPILERS GNU Clang MSVC
   FEATURES cxx_static_assert
 )
-
-
-# Set the installation lib directory as an rpath for all installed
-# libs and executables.
-# Maybe there is a better way to do this but it should suffice for now.
-set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_LIBDIR})
-
 
 # Use ccache to speedup compilation!
 omc_option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
