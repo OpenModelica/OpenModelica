@@ -6,11 +6,11 @@
     ```bash
       git config --global core.eol lf
       git config --global core.autocrlf input
-	```
+    ```
   - get OMDev from git
      ```bash
-	  git clone https://openmodelica.org/git/OMDev.git
-	 ```
+    git clone https://openmodelica.org/git/OMDev.git
+     ```
   - this package contains all prerequisites to compile OMC on Windows using msys2+mingw32+mingw64
   - if you get issues with OpenModelica compilation maybe you should update OMDev (git pull)
   - please make sure you have OMDEV environment variable defined and that you have restarted or logout/login to make it available
@@ -22,16 +22,15 @@
 - get OpenModelica from git
   - do not create an OpenModelica directory in which you clone OpenModelica repository, it will be created when you clone it
   - start `$OMDEV\tools\msys\mingw64.exe` or `$OMDEV\tools\msys\mingw32.exe` and type:
-
-		```bash
-		# change the directory to where you want the OpenModelica repository on your hard drive
-		cd /path/to/where/you/want/to/clone/the/repository
-		# export the path to your tools: git, svn, java/javac
-		# note: if you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
-		export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
-		# git clone OpenModelica recursively using the installed git for windows
-		git clone https://github.com/OpenModelica/OpenModelica.git --recursive
-		```
+    ```bash
+    # change the directory to where you want the OpenModelica repository on your hard drive
+    cd /path/to/where/you/want/to/clone/the/repository
+    # export the path to your tools: git, svn, java/javac
+    # note: if you have a space in your path to your tool you need to escape it, i.e.: /c/Program\ Files
+    export PATH=$PATH:/c/path/to/git/bin:/c/path/to/svn/tools/bin:/c/path/to/jdk/bin
+    # git clone OpenModelica recursively using the installed git for windows
+    git clone https://github.com/OpenModelica/OpenModelica.git --recursive
+    ```
   - you should have an OpenModelica directory you got from OpenModelica GIT repository https://github.com/OpenModelica/OpenModelica
   - you can also follow the instructions at the bottom of the page on how to get OpenModelica sources
 - You could use msys2+mingw32 or msys2+mingw64 or Eclipse to build OMC. Follow the instructions in **Compiling OMC using MSYS** or **Compiling OMC using Eclipse**.
