@@ -696,11 +696,10 @@ algorithm
     if not intEq(part1,0) and not intEq(part2,0) then
       addPartAdjacencyEdge(part1,subClk1,part2,subClk2,partAdjacency);
     end if;
-    //to get the  parent relations, check only sub partition interfaces which don't interface clock-variables
-    //(commented out to get right order of subclocks derived from clock variables)
-    //if clockedVarsMask[var1] and clockedVarsMask[var2] then
-      partitionParents[part1]:= part2;
-    //end if;
+    //avoid mutually dependent parents that would result in stack overflow later on
+    if not intEq(partitionParents[part2], part1) then
+      partitionParents[part1] := part2;
+    end if;
   end for;
   /*
   for i in 1:numPartitions loop
