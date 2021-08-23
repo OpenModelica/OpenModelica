@@ -69,7 +69,6 @@ add_library(omcruntime STATIC)
 add_library(omc::compiler::runtime ALIAS omcruntime)
 
 target_sources(omcruntime PRIVATE ${OMC_RUNTIIME_SOURCES})
-target_compile_features(omcruntime PRIVATE cxx_std_11)
 
 target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
