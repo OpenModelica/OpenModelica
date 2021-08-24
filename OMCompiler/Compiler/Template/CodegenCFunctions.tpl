@@ -256,7 +256,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   DLLEXT=<%makefileParams.dllext%>
   DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
   CFLAGS= $(DEBUG_FLAGS) <%makefileParams.cflags%>
-  CPPFLAGS= -I"<%makefileParams.omhome%>/include/omc/c" <%makefileParams.includes ; separator=" "%><%
+  CPPFLAGS= <%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include" <%
     if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"
   %>
   # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
