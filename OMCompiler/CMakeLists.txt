@@ -41,6 +41,14 @@ set(CXX_STANDARD_REQUIRED ON)
 ## Make sure we do not start relying on extensions down the road.
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+## Set position independent code project wide. We will take some performance hit from this.
+## However it allows us to build all static libs and combine them later to single shared libs
+## for easy configuration. Instead of having dozens of shared libs.
+## This can of course be turned of if we do not care about memory and are happy to sacrifice a
+## bunch of memory for some performance gain. If so disable this and change the few libraries
+## we build as shared to static (see SimulationRuntime/c, which contains the only shared libs to come).
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 #########################################################################################################
 ## Enable verbose Makefiles if you want to debug. (you can also instead use 'make VERBOSE=1')
 # set(CMAKE_VERBOSE_MAKEFILE ON)
