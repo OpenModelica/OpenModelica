@@ -2875,10 +2875,6 @@ case ARRAY(ty=T_ARRAY(ty=ty, dims=dims), array=expl) then
   <%body%>
   >>
 case RECORD(exps=exps, comp=comp) then
-  // This case has only been seen for Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder with the new frontend.
-  // The error shall prevent the example from running for now as compilation lasts very long and simulation fails anyway.
-  error(sourceInfo(), 'writeLhsCref RECORD UNHANDLED: <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>')
-  /*
   // assign fields of rhs record to lhs exps, one by one
   let body = (List.zip(exps, comp) |> (exp, compn) =>
                 let lhsStr = daeExpCref(true, exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -2888,7 +2884,6 @@ case RECORD(exps=exps, comp=comp) then
   <<
   <%body%>
   >>
-  */
 case ASUB(__) then
   error(sourceInfo(), 'writeLhsCref UNHANDLED ASUB (should never be part of a lhs expression): <%ExpressionDumpTpl.dumpExp(exp,"\"")%> = <%rhsStr%>')
 else
