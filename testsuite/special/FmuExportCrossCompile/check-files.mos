@@ -11,6 +11,7 @@ if not success then
   exit(1);
 else
   print(m + "-" + target+" OK\n");
+  print(getErrorString()+"\n");
 end if;
 
 end for;
