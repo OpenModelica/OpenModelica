@@ -33,8 +33,6 @@ runScript(modelTesting);getErrorString();
 // Messages: x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
 // x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
 // x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
-// x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
-// x_zero = 0.523599, y_zero = 0.500000, A*sin(w*x_zero) = 0.500000
 //
 // Files Equal!
 // "true

@@ -3,7 +3,11 @@ ifeq ($(OMBUILDDIR),)
 OMBUILDDIR=$(CURDIR)/../build
 endif
 
-CMAKE=cmake
+# use cmake from above if is set, otherwise cmake
+ifeq ($(CMAKE),)
+	CMAKE=CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" CXXFLAGS="$(CXXFLAGS)" cmake
+endif
+
 ifeq (MINGW,$(findstring MINGW,$(shell uname)))
 CMAKE_TARGET = "MSYS Makefiles"
 else

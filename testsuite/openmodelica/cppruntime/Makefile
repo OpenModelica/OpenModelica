@@ -2,6 +2,7 @@ TEST = ../../rtest -v
 
 TESTFILES = \
 tearnonlin1.mos \
+WhenInitialTerminal.mos \
 WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
@@ -9,6 +10,7 @@ arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
 clockedEventTest.mos \
+clockedEventRotationalTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \

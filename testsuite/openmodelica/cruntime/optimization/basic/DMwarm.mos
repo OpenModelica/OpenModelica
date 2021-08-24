@@ -34,7 +34,7 @@ res := OpenModelica.Scripting.compareSimulationResults("diesel_model_res.mat","R
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
 // LOG_IPOPT_ERROR   | info    | max error is 0.0015511 for the approximation of the state p_em(time = 0.486667)

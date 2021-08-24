@@ -31,12 +31,36 @@ res := OpenModelica.Scripting.compareSimulationResults("NPendulum.pendulum40_res
 // true
 // {"NPendulum.pendulum40","NPendulum.pendulum40_init.xml"}
 // ""
-// stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// stdout            | info    | Minimum system size for using linear sparse solver changed to 4001
+// stdout            | info    | Using sparse solver for linear system 0,
+// |                 | |       | because density of 0.003 remains under threshold of 0.200 or size of 1178 exceeds threshold of 4001.
+// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
+// |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
+// stdout            | info    | Using sparse solver for linear system 1,
+// |                 | |       | because density of 0.003 remains under threshold of 0.200 or size of 1175 exceeds threshold of 4001.
+// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
+// |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
+// stdout            | info    | Using sparse solver for linear system 2,
+// |                 | |       | because density of 0.003 remains under threshold of 0.200 or size of 1175 exceeds threshold of 4001.
+// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
+// |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0
 // {"Files Equal!"}
-// stdout            | info    | Maximum system size for using linear sparse solver changed to 4001
+// stdout            | info    | Minimum system size for using linear sparse solver changed to 4001
+// stdout            | info    | Using sparse solver for linear system 0,
+// |                 | |       | because density of 0.003 remains under threshold of 0.200 or size of 1178 exceeds threshold of 4001.
+// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
+// |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
+// stdout            | info    | Using sparse solver for linear system 1,
+// |                 | |       | because density of 0.003 remains under threshold of 0.200 or size of 1175 exceeds threshold of 4001.
+// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
+// |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
+// stdout            | info    | Using sparse solver for linear system 2,
+// |                 | |       | because density of 0.003 remains under threshold of 0.200 or size of 1175 exceeds threshold of 4001.
+// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
+// |                 | |       | using the runtime flags '<-lssMaxDensity=value>' and '<-lssMinSize=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // 0

@@ -17,9 +17,10 @@
     if (LOGGER_IS_SET(mode.first, mode.second)) Logger::write(msg, mode)
   #define LOGGER_WRITE_BEGIN(msg, cat, lvl) \
     if (LOGGER_IS_SET(cat, lvl)) Logger::writeBegin(msg, cat, lvl)
-  #define LOGGER_WRITE_END(cat, lvl) Logger::writeEnd(cat, lvl)
-  #define LOGGER_WRITE_VECTOR(name, vec, dim, lc, ll) \
-    Logger::writeVector(name, vec, dim, lc, ll)
+  #define LOGGER_WRITE_END(cat, lvl) \
+    if (LOGGER_IS_SET(cat, lvl)) Logger::writeEnd(cat, lvl)
+  #define LOGGER_WRITE_VECTOR(name, vec, dim, cat, lvl) \
+    if (LOGGER_IS_SET(cat, lvl)) Logger::writeVector(name, vec, dim, cat, lvl)
   #define LOGGER_STATUS_STARTING(startTime, endTime) \
     Logger::statusStarting(startTime, endTime)
   #define LOGGER_STATUS(phase, currentTime, currentStepSize) \

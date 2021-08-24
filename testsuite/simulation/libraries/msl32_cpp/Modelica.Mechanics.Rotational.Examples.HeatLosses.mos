@@ -43,7 +43,12 @@ runScript(modelTesting);getErrorString();
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.HeatLosses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Mechanics.Rotational.Examples.HeatLosses_res.mat
-// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
+// Messages: ERROR  : solver: DASSL: failed step at t = 0.034294: Nonlinear solver 293 stopped at time 0.0342939 with error in algloop solver: 
+// error solving nonlinear system (iteration limit: 50)
+// ERROR  : solver: SimManager: Simulation stopped with errors before t = 1.000000
+// ERROR  : solver: SimManager: DASSL: solve failed with idid = 5
+// ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
+// ERROR  : solver: SimController: Recovering with nonlinear solver kinsol
 //
 // "true
 // "

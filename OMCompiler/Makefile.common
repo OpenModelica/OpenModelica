@@ -50,6 +50,11 @@ $(builddir_share)/omc/scripts/OpenTurns/ \
 $(builddir_doc)/omc/testmodels \
 $(builddir_man)/man1/
 
+# Silence unnecessary verbose install messages from CMAKE
+CMAKE := $(CMAKE) -DCMAKE_INSTALL_MESSAGE=LAZY
+
+OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
+
 ifeq ("$(APP)",".app")
 	BUILD_DIRS += $(builddir_app)
 endif
@@ -153,19 +158,22 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 3rdParty/gc/Makefile: 3rdParty/gc/configure.ac
 	(cd 3rdParty/gc && mkdir -p m4 libatomic_ops/m4 && autoreconf -vif && automake --add-missing && ./configure --prefix="`pwd`" "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --enable-static --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
-3rdParty/Ipopt/Makefile: $(LAPACK_TARGET)
-	@# Note: CXX is passed LDFLAGS, which is wrong. However, Ipopt does not respect LDFLAGS and fails to link OSX C++ code if we do not do this.
-	(cd 3rdParty/Ipopt && ./configure --prefix="`pwd`" --with-pic "CC=$(CC)" CFLAGS="$(CFLAGS) $(EXTRA_LDFLAGS)" CXX="$(CXX) $(LDFLAGS_LIBSTDCXX)" CXXFLAGS="$(CXXFLAGS)" F77="$(FC)" FFLAGS="$(FCFLAGS)" LDFLAGS="-L$(OMBUILDDIR)/$(LIB_OMC) $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
+ipopt:
+	mkdir -p $(OMC_IPOPT_ROOT)/build
+	cd $(OMC_IPOPT_ROOT)/build && $(CMAKE) .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
+		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
+		-DIPOPT_BUILD_SHARED_LIBS:Bool=OFF \
+		-DMUMPS_BUILD_SHARED_LIBS:Bool=OFF \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON
+	$(MAKE) -C $(OMC_IPOPT_ROOT)/build/ install
 
-$(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
-	$(MAKE) -C 3rdParty/Ipopt 'MAKEOVERRIDES='
-	$(MAKE) -C 3rdParty/Ipopt install 'MAKEOVERRIDES='
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.0.0.0.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.5.2.dylib 3rdParty/Ipopt/lib/libcoinmumps.1.5.2.dylib
-	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/Ipopt/lib/libcoinmumps.1.dylib" @rpath/libcoinmumps.1.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
-	cp -a 3rdParty/Ipopt/lib*/*.* $(OMBUILDDIR)/$(LIB_OMC)
-
-ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
+ipopt-clean:
+	if test -f $(OMC_IPOPT_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_IPOPT_ROOT)/build/ clean; fi
+	rm -rf $(OMC_IPOPT_ROOT)/build
 
 suitesparse:
 	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
@@ -482,16 +490,13 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean ipopt-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 	# remove ModelicaExternalC stuff
 	if test -f 3rdParty/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C 3rdParty/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
-	# remove Ipopt/Makefile if there is no Ipopt/Ipopt/Makefile to run configure again!
-	if test -f 3rdParty/Ipopt/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt/Makefile || true; fi
-	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf 3rdParty/sundials-5.4.0/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
@@ -687,7 +692,7 @@ libffi: $(LIBFFI)
 	$(MAKE) -C "$(LIBFFI)" install
 
 libffi-clean:
-	-$(MAKE) -C "$(LIBFFI)" clean
+	if test -f $(LIBFFI)/Makefile; then $(MAKE) -C "$(LIBFFI)" clean; fi
 
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos

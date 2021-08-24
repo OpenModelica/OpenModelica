@@ -218,10 +218,12 @@ void DgesvSolver::solve()
     dgetc2_(&_dimSys, _A, &_dimSys, _iHelp, _jHelp, &info2);
     dgesc2_(&_dimSys, _A, &_dimSys, _b, _iHelp, _jHelp, &scale);
     _hasDgetc2Factors = true;
-    LOGGER_WRITE("DgesvSolver: using complete pivoting (dgesv info: " + to_string(info) + ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
+    LOGGER_WRITE("total pivoting: dgesv/dgetc2 infos: " + to_string(info) + "/" + to_string(info2) +
+                 ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
   }
   else if (info < 0) {
     _iterationStatus = SOLVERERROR;
+    LOGGER_WRITE_END(LC_LS, LL_DEBUG);
     if (_algLoop->isLinearTearing())
       throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear tearing system (dgesv info: " + to_string(info) + ")");
     else

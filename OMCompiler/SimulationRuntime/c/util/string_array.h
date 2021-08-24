@@ -163,9 +163,8 @@ extern void promote_alloc_string_array(const string_array_t * a, int n,
 
 static inline int ndims_string_array(const string_array_t * a)
 { return ndims_base_array(a); }
-static inline modelica_string *data_of_string_array(const string_array_t *a)
-{ return (modelica_string *) a->data; }
-extern const char** data_of_string_c89_array(const string_array_t *a);
+
+extern const char** data_of_string_c89_array(const string_array_t a);
 
 extern void size_string_array(const string_array_t * a, integer_array_t* dest);
 extern modelica_string scalar_string_array(const string_array_t * a);

@@ -33,22 +33,21 @@ private:
     shared_ptr<IMixedSystem> _mixed_system;
     Configuration* _config;
 
-    std::vector<std::vector<std::pair<double,int> > > _tStops;            ///< - Stopzeitpunkte aufgrund von Time-Events
-    shared_ptr<ISolver>                        _solver;            ///< - Solver
-    int                                               _dimtimeevent,      ///< Temp - Timeevent-Dimensionen-Array
-                                                      _dimZeroFunc;       ///< - Number of zero functions
-    int*                                              _timeEventCounter;  ///< Temp - Timeevent-Counter-Array
-    int                                               _cycleCounter,
-                                                      _resetCycle;
-    ISolver::SOLVERCALL                               _solverTask;        ///< Temporary - Beschreibt die Aufgabe mit der der Solver aufgerufen wird
-    int                                               _dbgId;              ///< Output - DebugID
-    bool                                              _continueSimulation,///< - Flag für Endlossimulation (wird gesetzt, wenn Solver zurückkehrt)
-                                                      _writeFinalState;   ///< Temporary - Ist am Ende noch ein Time-Event???
-    bool*                                             _events;            ///< - Vector (of dimension _dimZeroF) indicating which zero function caused an event
-    double                                            _H,                 ///< Input, Output - Koppelschrittweite
-                                                      _tStart,
-                                                      _tEnd,
-                                                      _lastCycleTime;
+    shared_ptr<ISolver>                        _solver;            ///< Solver
+    int                                        _dimTimeEvent,      ///< Number of time events
+                                               _dimZeroFunc;       ///< Number of zero functions
+    int*                                       _timeEventCounter;  ///< Counter array for time events
+    int                                        _cycleCounter,
+                                               _resetCycle;
+    ISolver::SOLVERCALL                        _solverTask;        ///< Current solver task
+    int                                        _dbgId;             ///< DebugID
+    bool                                       _continueSimulation;///< Flag endless simulation
+    bool*                                      _events;            ///< Vector (of dimension _dimZeroF) indicating which zero function caused an event
+    double*                                    _zeroVal;           ///< Values of zero function
+    double                                     _H,                 ///< Interval length for endless simulation
+                                               _tStart,
+                                               _tEnd,
+                                               _lastCycleTime;
     shared_ptr<Initialization>                 _initialization;
 
     bool _checkTimeout;

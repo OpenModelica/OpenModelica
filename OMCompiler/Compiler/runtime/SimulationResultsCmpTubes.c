@@ -815,7 +815,6 @@ fprintf(fout, "{title: '%s',\n"
 
     if (isHtml) {
 #if !(_XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L)
-      size_t r;
       if (fseek(fout, 0, SEEK_END))
       {
         perror("Error on fseek end!");
@@ -826,11 +825,8 @@ fprintf(fout, "{title: '%s',\n"
         perror("Error on fseek set!");
       }
       html = (char*)malloc((html_size + 1) * sizeof(char));
-      r = fread(html, sizeof(char), html_size, fout);
-      if (r != html_size)
-      {
-        perror("Error on fread!");
-      }
+      omc_fread(html, sizeof(char), html_size, fout, 0);
+
       html[html_size] = '\0';
       fclose(fout);
       unlink(fname);

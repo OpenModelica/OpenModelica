@@ -30,6 +30,7 @@ Newton::Newton(INonLinSolverSettings* settings,shared_ptr<INonLinearAlgLoop> alg
   , _fHelp            (NULL)
   , _fTest            (NULL)
   , _iHelp            (NULL)
+  , _jHelp            (NULL)
   , _jac              (NULL)
   , _firstCall        (true)
   , _iterationStatus  (CONTINUE)
@@ -59,6 +60,7 @@ Newton::~Newton()
   if (_fHelp)    delete []    _fHelp;
   if (_fTest)    delete []    _fTest;
   if (_iHelp)    delete []    _iHelp;
+  if (_jHelp)    delete []    _jHelp;
   if (_jac)      delete []    _jac;
 }
 
@@ -89,6 +91,7 @@ void Newton::initialize()
       if (_fHelp)    delete []    _fHelp;
       if (_fTest)    delete []    _fTest;
       if (_iHelp)    delete []    _iHelp;
+      if (_jHelp)    delete []    _jHelp;
       if (_jac)      delete []    _jac;
 
       _yNames       = new const char* [_dimSys];
@@ -103,6 +106,7 @@ void Newton::initialize()
       _fHelp        = new double[_dimSys];
       _fTest        = new double[_dimSys];
       _iHelp        = new long int[_dimSys];
+      _jHelp        = new long int[_dimSys];
       _jac          = new double[_dimSys*_dimSys];
 
       _algLoop->getNamesReal(_yNames);
@@ -156,9 +160,11 @@ void Newton::solve( )
                      _lc, LL_DEBUG);
 
   while (_iterationStatus == CONTINUE) {
-    if (totSteps >= _newtonSettings->getNewtMax())
+    if (totSteps >= _newtonSettings->getNewtMax()) {
+      LOGGER_WRITE_END(_lc, LL_DEBUG);
       throw ModelicaSimulationError(ALGLOOP_SOLVER,
         "error solving nonlinear system (iteration limit: " + to_string(totSteps) + ")");
+    }
 
     // Newton step for non-linear system
       LOGGER_WRITE_VECTOR("y" + to_string(totSteps), _y, _dimSys, _lc, LL_DEBUG);
@@ -176,10 +182,20 @@ void Newton::solve( )
       // Solve linear system
       dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
 
-      if (info != 0)
+      if (info > 0) {
+        long int info2 = 0;
+        double scale = 0.0;
+        dgetc2_(&_dimSys, _jac, &_dimSys, _iHelp, _jHelp, &info2);
+        dgesc2_(&_dimSys, _jac, &_dimSys, _f, _iHelp, _jHelp, &scale);
+        LOGGER_WRITE("total pivoting: dgesv/dgetc2 infos: " + to_string(info) + "/" + to_string(info2) +
+                     ", dgesc2 scale: " + to_string(scale), _lc, LL_DEBUG);
+      }
+      else if (info < 0) {
+        LOGGER_WRITE_END(_lc, LL_DEBUG);
         throw ModelicaSimulationError(ALGLOOP_SOLVER,
           "error solving nonlinear system (iteration: " + to_string(totSteps)
           + ", dgesv info: " + to_string(info) + ")");
+      }
 
       // Increase counter
       ++ totSteps;
@@ -198,8 +214,10 @@ void Newton::solve( )
           calcFunction(_yHelp, _fHelp);
         }
         catch (ModelicaSimulationError& ex) {
-          if (lambda < 1e-10)
+          if (lambda < 1e-10) {
+            LOGGER_WRITE_END(_lc, LL_DEBUG);
             throw ex;
+          }
           // reduce step size
           lambda *= 0.5;
           continue;
@@ -248,9 +266,11 @@ void Newton::solve( )
                         0.0, lambdaTest*lambdaTest, lambda*lambda};
           dgesv_(&n, &dimRHS, A, &n, ipiv, bx, &n, &info);
           lambda = std::max(0.1*lambda, -0.5*bx[1]/bx[2]);
-          if (!(lambda >= 1e-10))
+          if (!(lambda >= 1e-10)) {
+            LOGGER_WRITE_END(_lc, LL_DEBUG);
             throw ModelicaSimulationError(ALGLOOP_SOLVER,
               "Can't get sufficient decrease of solution");
+          }
           if (lambda >= lambdaTest) {
             // upper bound 0.5*lambda
             lambda = lambdaTest;
@@ -276,7 +296,9 @@ void Newton::solve( )
                        _lc, LL_DEBUG);
         }
         // check for sufficient decrease
-        if (phiHelp <= (1.0 - alpha * lambda) * phi)
+        // (also break for very small lambda and try a small step instead
+        //  -- avoid "sufficient decrease" errors, still have iteration limit)
+        if (phiHelp <= (1.0 - alpha * lambda) * phi || lambda < alpha)
           break;
       }
       // take iterate

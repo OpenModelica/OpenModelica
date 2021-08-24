@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses);
 compareVars :=
 {
@@ -31,12 +31,13 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses
 // {"PI.x","aimc.i_0_s","aimc.idq_sr[1]","aimc.idq_sr[2]","aimc.idq_rr[1]","aimc.idq_rr[2]","loadInertia.phi","loadInertia.w"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
 // Simulation options: startTime = 0.0, stopTime = 5.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.Machines.Examples.AsynchronousInductionMachines.AIMC_withLosses_res.mat
+// Files Equal!
 // "true
 // "
 // ""

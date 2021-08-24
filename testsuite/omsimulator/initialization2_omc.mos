@@ -63,7 +63,7 @@ unloadOMSimulator();
 // ""
 // true
 // ""
-// info:    maximum step size for 'test.root': 0.100000
+// info:    maximum step size for 'test.root': 0.001000
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
 // info:      A.y: 2.3

@@ -97,6 +97,7 @@ class Newton : public INonLinearAlgLoopSolver,  public AlgLoopSolverDefaultImple
     *_fTest,                    ///< Temp        - Auxillary variables
     *_jac;                      ///< Temp        - Jacobian
   long int *_iHelp;
+  long int *_jHelp;
   LogCategory _lc;              ///< LC_NLS or LC_LS
 
 };/** @} */ // end of solverNewton

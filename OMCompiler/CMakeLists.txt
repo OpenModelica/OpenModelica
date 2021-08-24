@@ -8,6 +8,10 @@ project(OMCompiler)
 # of simulationruntimemsvc by the Makefile.omdev.mingw makefiles.
 set(OPENMODELICA_NEW_CMAKE_BUILD ON)
 
+# Remove -DNDEBUG from release build command lines. The reason is that -DNDEBUG completely
+# removes assert(...) statements. We have some assert statements with side effects. Of course,
+# these should be removed and the flag enabled so that we can benefit from removing asserts from
+# libraries and standard headers.
 string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
@@ -16,9 +20,10 @@ string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/.cmake/")
-include(omc_utils)
-include(omc_check_exists)
+# include utility macros.
+include(.cmake/omc_utils.cmake)
+include(.cmake/omc_target_info.cmake)
+include(.cmake/omc_check_exists.cmake)
 
 # Add the compiler ids to the report for convenience.
 omc_add_to_report(CMAKE_CXX_COMPILER_ID)
@@ -39,11 +44,16 @@ endif(NOT CMAKE_BUILD_TYPE)
 omc_add_to_report(CMAKE_BUILD_TYPE)
 
 
+# Install following GNU conventions (i.e., bin, lib, include, share ...)
 include(GNUInstallDirs)
+
 # Precaution so that users do not install in system folders (e.g. /user/, /usr/local/)
-# unintentionally. If the user has not specified anything default to an install_cmake dir in the root folder.
+# unintentionally. If the user has not specified anything default to an install_cmake dir in the root
+# build directory.
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/install_cmake CACHE PATH "Default installation directory" FORCE)
+    # Prevent sub-projects from changing it by checking CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT after this
+    set(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT FALSE)
     message(WARNING "No installation directory specified. Defaulting to: ${CMAKE_INSTALL_PREFIX}")
 endif()
 omc_add_to_report(CMAKE_INSTALL_PREFIX)
@@ -53,7 +63,9 @@ omc_add_to_report(CMAKE_INSTALL_PREFIX)
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
 
 
-
+# Write out a compiler detection header. checkout the file <build_dir>/omc_compiler_detection.h to
+# get an idea of what it means. We intend to use this for portability reasons in the future.
+# You know. things like is it ctime_s() or ctime_r(), MvFileEx() vs rename() and the like.
 include(WriteCompilerDetectionHeader)
 write_compiler_detection_header(
   FILE omc_compiler_detection.h
@@ -66,9 +78,10 @@ write_compiler_detection_header(
 # Set the installation lib directory as an rpath for all installed
 # libs and executables.
 # Maybe there is a better way to do this but it should suffice for now.
-SET(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_LIBDIR})
+set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_LIBDIR})
 
 
+# Use ccache to speedup compilation!
 omc_option(OMC_USE_CCACHE "Use ccache to speedup compilations." ON)
 
 if(OMC_USE_CCACHE)
@@ -93,6 +106,11 @@ omc_option(OMC_USE_LPSOLVE "Should we use lpsolve." OFF)
 omc_option(OMC_BUILD_LPSOLVE "Should we build our own 3rdParty/lpsolve." OFF)
 
 omc_option(OMC_USE_LAPACK "Should we use lapack." ON)
+
+
+add_library(omc_config INTERFACE)
+add_library(omc::config ALIAS omc_config)
+target_include_directories(omc_config INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
 
 

@@ -78,7 +78,7 @@ class Slice {
     iset = NULL;
   }
 
-  // index set, reduction if size(indices) == 1
+  // index set
   Slice(const BaseArray<int> &indices) {
     start = 0;
     step = 0;
@@ -109,6 +109,7 @@ class ArraySliceConst: public BaseArray<T> {
     , _baseArray(baseArray)
     , _isets(baseArray.getNumDims())
     , _idxs(baseArray.getNumDims())
+    , _baseReduction(baseArray.getNumDims())
     , _baseIdx(baseArray.getNumDims())
     , _tmp_data(NULL) {
 
@@ -141,10 +142,13 @@ class ArraySliceConst: public BaseArray<T> {
             dit->push_back(start + i * step);
         }
       }
-      if (sit->iset == NULL && size == 1 && sit->step == 0)
+      if (sit->iset == NULL && size == 1 && sit->step == 0) {
+        _baseReduction[dim - 1] = true;
         // preset constant _baseIdx in case of reduction
         _baseIdx[dim - 1] = sit->iset != NULL? (*_isets[dim - 1])(1): (*dit)[0];
+      }
       else {
+        _baseReduction[dim - 1] = false;
         if (size == 0)
           _baseIdx[dim - 1] = 0; // mark empty dimension to distinguish it from WHOLEDIM
         else
@@ -157,6 +161,7 @@ class ArraySliceConst: public BaseArray<T> {
     // use all indices of remaining dims
     for (; dim <= baseArray.getNumDims(); dim++) {
       _isets[dim - 1] = NULL;
+      _baseReduction[dim - 1] = false;
       _baseIdx[dim - 1] = 1; // mark regular case with positive value
       _dims.push_back(_baseArray.getDim(dim));
     }
@@ -273,11 +278,17 @@ class ArraySliceConst: public BaseArray<T> {
     return _baseArray(baseIdx(5, idx));
   }
 
+  virtual const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) const {
+    size_t idx[] = {i, j, k, l, m, n};
+    return _baseArray(baseIdx(6, idx));
+  }
+
  protected:
   const BaseArray<T> &_baseArray;  // underlying array
   vector<const BaseArray<int>*> _isets; // given index sets per dimension
   vector< vector<size_t> > _idxs;  // created index sets per dimension
   vector<size_t> _dims;            // dimensions of array slice
+  vector<bool> _baseReduction;     // mark reduced dimensions to distinguish them from size == 1
   mutable vector<size_t> _baseIdx; // idx into underlying array
   mutable T *_tmp_data;            // storage for const T* getData()
 
@@ -292,6 +303,9 @@ class ArraySliceConst: public BaseArray<T> {
     const BaseArray<int> *iset;
     vector< vector<size_t> >::const_iterator dit;
     for (dim = 1, dit = _idxs.begin(); dit != _idxs.end(); dim++, dit++) {
+      if (_baseReduction[dim - 1])
+        // preset base index in case of reduction
+        continue;
       iset = _isets[dim - 1];
       size = iset? iset->getNumElems(): dit->size();
       switch (size) {
@@ -302,9 +316,6 @@ class ArraySliceConst: public BaseArray<T> {
         else
           throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,
                                         "Access to empty ArraySlice");
-        break;
-      case 1:
-        // reduction
         break;
       default:
         // regular index mapping
@@ -400,6 +411,11 @@ class ArraySlice: public ArraySliceConst<T> {
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) {
     size_t idx[] = {i, j, k, l, m};
     return _baseArray(ArraySliceConst<T>::baseIdx(5, idx));
+  }
+
+  virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) {
+    size_t idx[] = {i, j, k, l, m, n};
+    return _baseArray(ArraySliceConst<T>::baseIdx(6, idx));
   }
 
  protected:

@@ -34,6 +34,13 @@ runScript(modelTesting);getErrorString();
 // Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 10000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
 // Result file: Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat
 // Files Equal!
+// Error: Could not read variable iAC.mean1.x in file Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat.
+// Warning: Get data of variable iAC.mean1.x from file Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat failed!
+// Error: Could not read variable iAC.mean2.x in file Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat.
+// Warning: Get data of variable iAC.mean2.x from file Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat failed!
+// Error: Could not read variable iDC2.mean.x in file Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat.
+// Warning: Get data of variable iDC2.mean.x from file Modelica.Electrical.QuasiStationary.SinglePhase.Examples.Rectifier_res.mat failed!
+//
 // "true
 // "
 // ""

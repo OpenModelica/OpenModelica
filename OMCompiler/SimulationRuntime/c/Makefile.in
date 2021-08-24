@@ -46,7 +46,7 @@ defaultMakefileTarget = Makefile
 
 LIBMAKEFILE = Makefile
 QMAKE=@QMAKE@
-CONFIG_H=$(top_builddir)/Compiler/runtime/config.h $(top_builddir)/Compiler/runtime/config.unix.h
+CONFIG_H=$(top_builddir)/config.h $(top_builddir)/omc_config.unix.h
 LIBSIMULATION=@LIBSIMULATION@
 LIBRUNTIME=@LIBRUNTIME@
 LIBFMIRUNTIME=@LIBFMIRUNTIME@

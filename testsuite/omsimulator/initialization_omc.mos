@@ -68,7 +68,7 @@ unloadOMSimulator();
 // ""
 // "initialization.fmu"
 // ""
-// info:    maximum step size for 'test.root': 0.100000
+// info:    maximum step size for 'test.root': 0.001000
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
 // info:      A.x_start: 1.5
@@ -76,9 +76,9 @@ unloadOMSimulator();
 // info:      A.w:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       1.908037152285186
-// info:      A.w:       2.31607430457037
+// info:      A.x:       1.999499000999917
+// info:      A.w:       2.498998001999992
 // info:    Final Statistics for 'test.root':
-//          NumSteps = 37 NumRhsEvals  = 83 NumLinSolvSetups = 39
-//          NumNonlinSolvIters = 82 NumNonlinSolvConvFails = 0 NumErrTestFails = 18
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // endResult

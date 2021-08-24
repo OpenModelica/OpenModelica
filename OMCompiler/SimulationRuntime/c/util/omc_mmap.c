@@ -119,9 +119,9 @@ static FILE* omc_mmap_common(const char *fileName, const char *mode, size_t *siz
   } else {
     *data = (char*) malloc(*size);
   }
-  if (1 != fread(*data, (*size > fileSize ? fileSize : *size), 1, file)) {
-    throwStreamPrint(NULL, "Failed to read file data: %s\n", fileName);
-  }
+
+  omc_fread(*data, (*size > fileSize ? fileSize : *size), 1, file, 0);
+
   return file;
 }
 

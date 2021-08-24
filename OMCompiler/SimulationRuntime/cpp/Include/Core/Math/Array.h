@@ -5,13 +5,6 @@
  */
 
 /**
-* forward declaration
-*/
-template <class T> class DynArrayDim1;
-template <class T> class DynArrayDim2;
-template <class T> class DynArrayDim3;
-
-/**
 * Operator class to assign simvar memory to a reference array
 */
 template<typename T>
@@ -106,42 +99,62 @@ public:
   virtual T& operator()(size_t i)
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
-  };
+  }
 
   virtual const T& operator()(size_t i) const
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
-  };
+  }
 
   virtual T& operator()(size_t i, size_t j)
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
-  };
+  }
 
   virtual const T& operator()(size_t i, size_t j) const
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
-  };
+  }
 
   virtual T& operator()(size_t i, size_t j, size_t k)
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
-  };
+  }
 
   virtual const T& operator()(size_t i, size_t j, size_t k) const
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
-  };
+  }
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l)
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
-  };
+  }
+
+  virtual const T& operator()(size_t i, size_t j, size_t k, size_t l) const
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
+  }
 
   virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m)
   {
     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
-  };
+  }
+
+  virtual const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) const
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
+  }
+
+  virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n)
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
+  }
+
+  virtual const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) const
+  {
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong virtual Array operator call");
+  }
 
   bool isStatic() const
   {
@@ -1544,6 +1557,603 @@ class StatArrayDim3 : public StatArray<T, size1*size2*size3, external>
 };
 
 /**
+ * Three dimensional static array, implements BaseArray interface methods
+ * @param  T type of the array
+ * @param size1  size of dimension one
+ * @param size2  size of dimension two
+ * @param size3  size of dimension three
+ * @param size4  size of dimension four
+ * @param external indicates if the memory is provided externally
+ */
+template<typename T, std::size_t size1, std::size_t size2, std::size_t size3, std::size_t size4, bool external = false>
+class StatArrayDim4 : public StatArray<T, size1*size2*size3*size4, external>
+{
+ public:
+  /**
+   * Constuctor for one dimensional array
+   * if reference array it uses data from simvars memory
+   * else it copies data  in array memory
+   */
+  StatArrayDim4(T* data)
+    :StatArray<T, size1*size2*size3*size4, external>(data) {}
+
+  /**
+   * Constuctor for three dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim4(const StatArrayDim4<T, size1, size2, size3, size4, true>& otherarray)
+    :StatArray<T, size1*size2*size3*size4, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for three dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim4(const StatArrayDim4<T, size1, size2, size3, size4, false>& otherarray)
+    :StatArray<T, size1*size2*size3*size4, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for one dimensional array that
+   * lets otherarray copy data into array memory
+   */
+  StatArrayDim4(const BaseArray<T>& otherarray)
+    :StatArray<T, size1*size2*size3*size4, external>(otherarray)
+  {
+  }
+
+  /**
+   * Default constuctor for three dimensional array
+   */
+  StatArrayDim4()
+    :StatArray<T, size1*size2*size3*size4, external>() {}
+
+  virtual ~StatArrayDim4() {}
+
+  /**
+   * Assign static array with external storage to static array.
+   * a = b
+   * @param b any array of type StatArrayDim4
+   */
+  StatArrayDim4<T, size1, size2, size3, size4, external>&
+  operator=(const StatArrayDim4<T, size1, size2, size3, size4, true>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array.
+   * a = b
+   * @param b any array of type StatArrayDim4
+   */
+  StatArrayDim4<T, size1, size2, size3, size4, external>&
+  operator=(const StatArrayDim4<T, size1, size2, size3, size4, false>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Assign array of type base array to three dim static array
+   * a = b
+   * @param b any array of type BaseArray
+   */
+  StatArrayDim4<T, size1, size2, size3, size4, external>&
+  operator=(const BaseArray<T>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Copies two dimensional array to row i
+   * @param b array of type StatArrayDim3
+   * @param i row number
+   * @param n optional number of rows not needed for static arrays
+   */
+  template<bool anybool>
+  void append(size_t i, const StatArrayDim3<T, size2, size3, anybool>& b, size_t n = 0)
+  {
+    const T* data = b.getData();
+    T *array_data = StatArray<T, size1*size2*size3*size4, external>::getData() + i-1;
+    for (size_t l = 1; l <= size4; l++) {
+      for (size_t k = 1; k <= size3; k++) {
+        for (size_t j = 1; j <= size2; j++) {
+          //(*this)(i, j, k, l) = b(j, k, l);
+          *array_data = *data++;
+          array_data += size1;
+        }
+      }
+    }
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual std::vector<size_t> getDims() const
+  {
+    std::vector<size_t> v;
+    v.push_back(size1);
+    v.push_back(size2);
+    v.push_back(size3);
+    v.push_back(size4);
+    return v;
+  }
+
+  /**
+   * Return sizes of one dimension
+   */
+  virtual int getDim(size_t dim) const
+  {
+    switch (dim) {
+    case 1:
+      return (int)size1;
+    case 2:
+      return (int)size2;
+    case 3:
+      return (int)size3;
+    case 4:
+      return (int)size4;
+    default:
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
+    }
+  }
+
+  /**
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return StatArray<T, size1*size2*size3*size4, external>::
+      _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1 + size3*(idx[3]-1)))];
+  }
+
+  /**
+   * Index operator to write array element
+   * @param idx  vector of indices
+   */
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    return StatArray<T, size1*size2*size3*size4, external>::
+      _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1 + size3*(idx[3]-1)))];
+  }
+
+  /**
+   * Index operator to access array element
+   * @param i  index 1
+   * @param j  index 2
+   * @param k  index 3
+   * @param l  index 4
+   */
+  inline virtual T& operator()(size_t i, size_t j, size_t k, size_t l)
+  {
+    return StatArray<T, size1*size2*size3*size4, external>::
+      _data[i-1 + size1*(j-1 + size2*(k-1 + size3*(l-1)))];
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual size_t getNumDims() const
+  {
+    return 4;
+  }
+
+  void setDims(size_t i, size_t j, size_t k, size_t l) {}
+};
+
+/**
+ * Three dimensional static array, implements BaseArray interface methods
+ * @param  T type of the array
+ * @param size1  size of dimension one
+ * @param size2  size of dimension two
+ * @param size3  size of dimension three
+ * @param size4  size of dimension four
+ * @param size5  size of dimension five
+ * @param external indicates if the memory is provided externally
+ */
+template<typename T, std::size_t size1, std::size_t size2, std::size_t size3, std::size_t size4, std::size_t size5, bool external = false>
+class StatArrayDim5 : public StatArray<T, size1*size2*size3*size4*size5, external>
+{
+ public:
+  /**
+   * Constuctor for one dimensional array
+   * if reference array it uses data from simvars memory
+   * else it copies data  in array memory
+   */
+  StatArrayDim5(T* data)
+    :StatArray<T, size1*size2*size3*size4*size5, external>(data) {}
+
+  /**
+   * Constuctor for three dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim5(const StatArrayDim5<T, size1, size2, size3, size4, size5, true>& otherarray)
+    :StatArray<T, size1*size2*size3*size4*size5, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for three dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim5(const StatArrayDim5<T, size1, size2, size3, size4, size5, false>& otherarray)
+    :StatArray<T, size1*size2*size3*size4*size5, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for one dimensional array that
+   * lets otherarray copy data into array memory
+   */
+  StatArrayDim5(const BaseArray<T>& otherarray)
+    :StatArray<T, size1*size2*size3*size4*size5, external>(otherarray)
+  {
+  }
+
+  /**
+   * Default constuctor for three dimensional array
+   */
+  StatArrayDim5()
+    :StatArray<T, size1*size2*size3*size4*size5, external>() {}
+
+  virtual ~StatArrayDim5() {}
+
+  /**
+   * Assign static array with external storage to static array.
+   * a = b
+   * @param b any array of type StatArrayDim5
+   */
+  StatArrayDim5<T, size1, size2, size3, size4, size5, external>&
+  operator=(const StatArrayDim5<T, size1, size2, size3, size4, size5, true>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array.
+   * a = b
+   * @param b any array of type StatArrayDim5
+   */
+  StatArrayDim5<T, size1, size2, size3, size4, size5, external>&
+  operator=(const StatArrayDim5<T, size1, size2, size3, size4, size5, false>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Assign array of type base array to three dim static array
+   * a = b
+   * @param b any array of type BaseArray
+   */
+  StatArrayDim5<T, size1, size2, size3, size4, size5, external>&
+  operator=(const BaseArray<T>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Copies two dimensional array to row i
+   * @param b array of type StatArrayDim3
+   * @param i row number
+   * @param n optional number of rows not needed for static arrays
+   */
+  template<bool anybool>
+  void append(size_t i, const StatArrayDim4<T, size2, size3, size4, anybool>& b, size_t n = 0)
+  {
+    const T* data = b.getData();
+    T *array_data = StatArray<T, size1*size2*size3*size4*size5, external>::getData() + i-1;
+    for (size_t m = 1; m <= size5; m++) {
+      for (size_t l = 1; l <= size4; l++) {
+        for (size_t k = 1; k <= size3; k++) {
+          for (size_t j = 1; j <= size2; j++) {
+            //(*this)(i, j, k, l, m) = b(j, k, l, m);
+            *array_data = *data++;
+            array_data += size1;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual std::vector<size_t> getDims() const
+  {
+    std::vector<size_t> v;
+    v.push_back(size1);
+    v.push_back(size2);
+    v.push_back(size3);
+    v.push_back(size4);
+    v.push_back(size5);
+    return v;
+  }
+
+  /**
+   * Return sizes of one dimension
+   */
+  virtual int getDim(size_t dim) const
+  {
+    switch (dim) {
+    case 1:
+      return (int)size1;
+    case 2:
+      return (int)size2;
+    case 3:
+      return (int)size3;
+    case 4:
+      return (int)size4;
+    case 5:
+      return (int)size5;
+    default:
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
+    }
+  }
+
+  /**
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return StatArray<T, size1*size2*size3*size4*size5, external>::
+      _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1 + size3*(idx[3]-1 + size4*(idx[4]-1))))];
+  }
+
+  /**
+   * Index operator to write array element
+   * @param idx  vector of indices
+   */
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    return StatArray<T, size1*size2*size3*size4*size5, external>::
+      _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1 + size3*(idx[3]-1 + size4*(idx[4]-1))))];
+  }
+
+  /**
+   * Index operator to access array element
+   * @param i  index 1
+   * @param j  index 2
+   * @param k  index 3
+   * @param l  index 4
+   * @param m  index 5
+   */
+  inline virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m)
+  {
+    return StatArray<T, size1*size2*size3*size4*size5, external>::
+      _data[i-1 + size1*(j-1 + size2*(k-1 + size3*(l-1 + size4*(m-1))))];
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual size_t getNumDims() const
+  {
+    return 5;
+  }
+
+  void setDims(size_t i, size_t j, size_t k, size_t l, size_t m) {}
+};
+
+/**
+ * Three dimensional static array, implements BaseArray interface methods
+ * @param  T type of the array
+ * @param size1  size of dimension one
+ * @param size2  size of dimension two
+ * @param size3  size of dimension three
+ * @param size4  size of dimension four
+ * @param size5  size of dimension five
+ * @param size6  size of dimension six
+ * @param external indicates if the memory is provided externally
+ */
+template<typename T, std::size_t size1, std::size_t size2, std::size_t size3, std::size_t size4, std::size_t size5, std::size_t size6, bool external = false>
+class StatArrayDim6 : public StatArray<T, size1*size2*size3*size4*size5*size6, external>
+{
+ public:
+  /**
+   * Constuctor for one dimensional array
+   * if reference array it uses data from simvars memory
+   * else it copies data  in array memory
+   */
+  StatArrayDim6(T* data)
+    :StatArray<T, size1*size2*size3*size4*size5*size6, external>(data) {}
+
+  /**
+   * Constuctor for three dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim6(const StatArrayDim6<T, size1, size2, size3, size4, size5, size6, true>& otherarray)
+    :StatArray<T, size1*size2*size3*size4*size5*size6, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for three dimensional array
+   * copies data from otherarray in array memory
+   * or holds a pointer to otherarray's data
+   */
+  StatArrayDim6(const StatArrayDim6<T, size1, size2, size3, size4, size5, size6, false>& otherarray)
+    :StatArray<T, size1*size2*size3*size4*size5*size6, external>(otherarray)
+  {
+  }
+
+  /**
+   * Constuctor for one dimensional array that
+   * lets otherarray copy data into array memory
+   */
+  StatArrayDim6(const BaseArray<T>& otherarray)
+    :StatArray<T, size1*size2*size3*size4*size5*size6, external>(otherarray)
+  {
+  }
+
+  /**
+   * Default constuctor for three dimensional array
+   */
+  StatArrayDim6()
+    :StatArray<T, size1*size2*size3*size4*size5*size6, external>() {}
+
+  virtual ~StatArrayDim6() {}
+
+  /**
+   * Assign static array with external storage to static array.
+   * a = b
+   * @param b any array of type StatArrayDim6
+   */
+  StatArrayDim6<T, size1, size2, size3, size4, size5, size6, external>&
+  operator=(const StatArrayDim6<T, size1, size2, size3, size4, size5, size6, true>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Assign static array with internal storage to static array.
+   * a = b
+   * @param b any array of type StatArrayDim6
+   */
+  StatArrayDim6<T, size1, size2, size3, size4, size5, size6, external>&
+  operator=(const StatArrayDim6<T, size1, size2, size3, size4, size5, size6, false>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Assign array of type base array to three dim static array
+   * a = b
+   * @param b any array of type BaseArray
+   */
+  StatArrayDim6<T, size1, size2, size3, size4, size5, size6, external>&
+  operator=(const BaseArray<T>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  /**
+   * Copies two dimensional array to row i
+   * @param b array of type StatArrayDim3
+   * @param i row number
+   * @param n optional number of rows not needed for static arrays
+   */
+  template<bool anybool>
+  void append(size_t i, const StatArrayDim5<T, size2, size3, size4, size5, anybool>& b, size_t n = 0)
+  {
+    const T* data = b.getData();
+    T *array_data = StatArray<T, size1*size2*size3*size4*size5*size6, external>::getData() + i-1;
+    for (size_t n = 1; n <= size6; n++) {
+      for (size_t m = 1; m <= size5; m++) {
+        for (size_t l = 1; l <= size4; l++) {
+          for (size_t k = 1; k <= size3; k++) {
+            for (size_t j = 1; j <= size2; j++) {
+              //(*this)(i, j, k, l, m, n) = b(j, k, l, m, n);
+              *array_data = *data++;
+              array_data += size1;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual std::vector<size_t> getDims() const
+  {
+    std::vector<size_t> v;
+    v.push_back(size1);
+    v.push_back(size2);
+    v.push_back(size3);
+    v.push_back(size4);
+    v.push_back(size5);
+    v.push_back(size6);
+    return v;
+  }
+
+  /**
+   * Return sizes of one dimension
+   */
+  virtual int getDim(size_t dim) const
+  {
+    switch (dim) {
+    case 1:
+      return (int)size1;
+    case 2:
+      return (int)size2;
+    case 3:
+      return (int)size3;
+    case 4:
+      return (int)size4;
+    case 5:
+      return (int)size5;
+    case 6:
+      return (int)size6;
+    default:
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong getDim");
+    }
+  }
+
+  /**
+   * Index operator to read array element
+   * @param idx  vector of indices
+   */
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    return StatArray<T, size1*size2*size3*size4*size5*size6, external>::
+      _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1 + size3*(idx[3]-1 + size4*(idx[4]-1 + size5*(idx[5]-1)))))];
+  }
+
+  /**
+   * Index operator to write array element
+   * @param idx  vector of indices
+   */
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    return StatArray<T, size1*size2*size3*size4*size5*size6, external>::
+      _data[idx[0]-1 + size1*(idx[1]-1 + size2*(idx[2]-1 + size3*(idx[3]-1 + size4*(idx[4]-1 + size5*(idx[5]-1)))))];
+  }
+
+  /**
+   * Index operator to access array element
+   * @param i  index 1
+   * @param j  index 2
+   * @param k  index 3
+   * @param l  index 4
+   * @param m  index 5
+   * @param n  index 6
+   */
+  inline virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n)
+  {
+    return StatArray<T, size1*size2*size3*size4*size5*size6, external>::
+      _data[i-1 + size1*(j-1 + size2*(k-1 + size3*(l-1 + size4*(m-1 + size5*(n-1)))))];
+  }
+
+  /**
+   * Return sizes of dimensions
+   */
+  virtual size_t getNumDims() const
+  {
+    return 6;
+  }
+
+  void setDims(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) {}
+};
+
+/**
  * Dynamically allocated array, implements BaseArray interface methods
  * @param T type of the array
  * @param ndims number of dimensions of array
@@ -1697,7 +2307,6 @@ class DynArray : public BaseArray<T>
 template<typename T>
 class DynArrayDim1 : public DynArray<T, 1>
 {
-  friend class DynArrayDim2<T>;
  public:
   DynArrayDim1()
     :DynArray<T, 1>()
@@ -1976,4 +2585,251 @@ public:
     return this->_array_data[i-1 + shape[0]*(j-1 + shape[1]*(k-1))];
   }
 };
+
+/**
+ * Dynamically allocated three dimensional array, specializes DynArray
+ * @param T type of the array
+ */
+template<typename T>
+class DynArrayDim4 : public DynArray<T, 4>
+{
+public:
+  DynArrayDim4()
+    :DynArray<T, 4>()
+  {
+  }
+
+  DynArrayDim4(const BaseArray<T>& b)
+    :DynArray<T, 4>(b)
+  {
+  }
+
+  DynArrayDim4(size_t size1, size_t size2, size_t size3, size_t size4)
+    :DynArray<T, 4>()
+  {
+    std::vector<size_t> dims;
+    dims.push_back(size1);
+    dims.push_back(size2);
+    dims.push_back(size3);
+    dims.push_back(size4);
+    this->resize(dims);
+  }
+
+  virtual ~DynArrayDim4() {}
+
+  DynArrayDim4<T>& operator=(const DynArrayDim4<T>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  void setDims(size_t size1, size_t size2, size_t size3, size_t size4)
+  {
+    std::vector<size_t> dims;
+    dims.push_back(size1);
+    dims.push_back(size2);
+    dims.push_back(size3);
+    dims.push_back(size4);
+    this->resize(dims);
+  }
+  virtual void setDims(const std::vector<size_t>& dims)
+  {
+      this->resize(dims);
+  }
+
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    //return _multi_array[idx[0]-1][idx[1]-1][idx[2]-1][idx[3]-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1 + shape[2]*(idx[3]-1)))];
+  }
+
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    //return _multi_array[idx[0]-1][idx[1]-1][idx[2]-1][idx[3]-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1 + shape[2]*(idx[3]-1)))];
+  }
+
+  inline virtual T& operator()(size_t i, size_t j, size_t k, size_t l)
+  {
+    //return _multi_array[i-1][j-1][k-1][l-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[i-1 + shape[0]*(j-1 + shape[1]*(k-1 + shape[2]*(l-1)))];
+  }
+
+  inline virtual const T& operator()(size_t i, size_t j, size_t k, size_t l) const
+  {
+    //return _multi_array[i-1][j-1][k-1][l-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[i-1 + shape[0]*(j-1 + shape[1]*(k-1 + shape[2]*(l-1)))];
+  }
+};
+
+/**
+ * Dynamically allocated three dimensional array, specializes DynArray
+ * @param T type of the array
+ */
+template<typename T>
+class DynArrayDim5 : public DynArray<T, 5>
+{
+public:
+  DynArrayDim5()
+    :DynArray<T, 5>()
+  {
+  }
+
+  DynArrayDim5(const BaseArray<T>& b)
+    :DynArray<T, 5>(b)
+  {
+  }
+
+  DynArrayDim5(size_t size1, size_t size2, size_t size3, size_t size4, size_t size5)
+    :DynArray<T, 5>()
+  {
+    std::vector<size_t> dims;
+    dims.push_back(size1);
+    dims.push_back(size2);
+    dims.push_back(size3);
+    dims.push_back(size4);
+    dims.push_back(size5);
+    this->resize(dims);
+  }
+
+  virtual ~DynArrayDim5() {}
+
+  DynArrayDim5<T>& operator=(const DynArrayDim5<T>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  void setDims(size_t size1, size_t size2, size_t size3, size_t size4, size_t size5)
+  {
+    std::vector<size_t> dims;
+    dims.push_back(size1);
+    dims.push_back(size2);
+    dims.push_back(size3);
+    dims.push_back(size4);
+    dims.push_back(size5);
+    this->resize(dims);
+  }
+  virtual void setDims(const std::vector<size_t>& dims)
+  {
+      this->resize(dims);
+  }
+
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    //return _multi_array[idx[0]-1][idx[1]-1][idx[2]-1][idx[3]-1][idx[4]-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1 + shape[2]*(idx[3]-1 + shape[3]*(idx[4]-1))))];
+  }
+
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    //return _multi_array[idx[0]-1][idx[1]-1][idx[2]-1][idx[3]-1][idx[4]-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1 + shape[2]*(idx[3]-1 + shape[3]*(idx[4]-1))))];
+  }
+
+  inline virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m)
+  {
+    //return _multi_array[i-1][j-1][k-1][l-1][m-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[i-1 + shape[0]*(j-1 + shape[1]*(k-1 + shape[2]*(l-1 + shape[3]*(m-1))))];
+  }
+
+  inline virtual const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m) const
+  {
+    //return _multi_array[i-1][j-1][k-1][l-1][m-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[i-1 + shape[0]*(j-1 + shape[1]*(k-1 + shape[2]*(l-1 + shape[3]*(m-1))))];
+  }
+};
+
+/**
+ * Dynamically allocated three dimensional array, specializes DynArray
+ * @param T type of the array
+ */
+template<typename T>
+class DynArrayDim6 : public DynArray<T, 6>
+{
+public:
+  DynArrayDim6()
+    :DynArray<T, 6>()
+  {
+  }
+
+  DynArrayDim6(const BaseArray<T>& b)
+    :DynArray<T, 6>(b)
+  {
+  }
+
+  DynArrayDim6(size_t size1, size_t size2, size_t size3, size_t size4, size_t size5, size_t size6)
+    :DynArray<T, 6>()
+  {
+    std::vector<size_t> dims;
+    dims.push_back(size1);
+    dims.push_back(size2);
+    dims.push_back(size3);
+    dims.push_back(size4);
+    dims.push_back(size5);
+    dims.push_back(size6);
+    this->resize(dims);
+  }
+
+  virtual ~DynArrayDim6() {}
+
+  DynArrayDim6<T>& operator=(const DynArrayDim6<T>& b)
+  {
+    this->assign(b);
+    return *this;
+  }
+
+  void setDims(size_t size1, size_t size2, size_t size3, size_t size4, size_t size5, size_t size6)
+  {
+    std::vector<size_t> dims;
+    dims.push_back(size1);
+    dims.push_back(size2);
+    dims.push_back(size3);
+    dims.push_back(size4);
+    dims.push_back(size5);
+    dims.push_back(size6);
+    this->resize(dims);
+  }
+  virtual void setDims(const std::vector<size_t>& dims)
+  {
+      this->resize(dims);
+  }
+
+  virtual const T& operator()(const vector<size_t>& idx) const
+  {
+    //return _multi_array[idx[0]-1][idx[1]-1][idx[2]-1][idx[3]-1][idx[4]-1][idx[5]-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1 + shape[2]*(idx[3]-1 + shape[3]*(idx[4]-1 + shape[4]*(idx[5]-1)))))];
+  }
+
+  virtual T& operator()(const vector<size_t>& idx)
+  {
+    //return _multi_array[idx[0]-1][idx[1]-1][idx[2]-1][idx[3]-1][idx[4]-1][idx[5]-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[idx[0]-1 + shape[0]*(idx[1]-1 + shape[1]*(idx[2]-1 + shape[2]*(idx[3]-1 + shape[3]*(idx[4]-1 + shape[4]*(idx[5]-1)))))];
+  }
+
+  inline virtual T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n)
+  {
+    //return _multi_array[i-1][j-1][k-1][l-1][m-1][n-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[i-1 + shape[0]*(j-1 + shape[1]*(k-1 + shape[2]*(l-1 + shape[3]*(m-1 + shape[4]*(n-1)))))];
+  }
+
+  inline virtual const T& operator()(size_t i, size_t j, size_t k, size_t l, size_t m, size_t n) const
+  {
+    //return _multi_array[i-1][j-1][k-1][l-1][m-1][n-1];
+    const std::vector<size_t>& shape = this->_dims;
+    return this->_array_data[i-1 + shape[0]*(j-1 + shape[1]*(k-1 + shape[2]*(l-1 + shape[3]*(m-1 + shape[4]*(n-1)))))];
+  }
+};
+
 /** @} */ // end of math

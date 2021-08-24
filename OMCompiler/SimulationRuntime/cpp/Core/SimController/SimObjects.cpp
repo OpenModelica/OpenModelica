@@ -73,8 +73,8 @@ shared_ptr<ISimData> SimObjects::getSimData(string modelname)
     }
     else
     {
-        string error = string("Simulation data was not found for model: ") + modelname;
-        throw ModelicaSimulationError(SIMMANAGER,error);
+        string error = string("Simulation data not found for model ") + modelname;
+        throw ModelicaSimulationError(SIMMANAGER, error);
     }
 }
 
@@ -87,8 +87,8 @@ shared_ptr<ISimVars> SimObjects::getSimVars(string modelname)
     }
     else
     {
-        string error = string("Simulation data was not found for model: ") + modelname;
-        throw ModelicaSimulationError(SIMMANAGER,error);
+        string error = string("Simulation vars not found for model ") + modelname;
+        throw ModelicaSimulationError(SIMMANAGER, error);
     }
 }
 

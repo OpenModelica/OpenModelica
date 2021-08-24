@@ -40,6 +40,9 @@ static int optionSet(const char *option, int argc, char** argv);     /* -f=value
 static const char* getOption(const char*, int, char **);             /* -f=value; returns NULL if not found */
 static const char* getFlagValue(const char *, int , char **);        /* -f value; returns NULL if not found */
 
+static int handle_repeated_option(int flag_index, char **argv_loc, int is_sticky);
+static int handle_repeated_flag(int flag_index);
+
 int omc_flag[FLAG_MAX];
 const char *omc_flagValue[FLAG_MAX];
 
@@ -104,13 +107,17 @@ int checkCommandLineArguments(int argc, char **argv)
     {
       if((FLAG_TYPE[j] == FLAG_TYPE_FLAG) && flagSet(FLAG_NAME[j], 1, argv+i))
       {
-        if(omc_flag[j])
-        {
-          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
+        // Flag is not yet set.
+        if(!omc_flag[j]) {
+          omc_flag[j] = 1;
+        }
+        // Flag is already specified earlier. Check repetition policy.
+        else if(!handle_repeated_flag(j)) {
+          // repetition is invlaid for this Flag
           return 1;
         }
 
-        omc_flag[j] = 1;
+        // All good.
         found=1;
 
 #ifdef USE_DEBUG_OUTPUT
@@ -121,16 +128,20 @@ int checkCommandLineArguments(int argc, char **argv)
       }
       else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && flagSet(FLAG_NAME[j], 1, argv+i) && (i+1 < argc))
       {
-        if(omc_flag[j])
-        {
-          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
+        // Option is not yet set.
+        if(!omc_flag[j]) {
+          omc_flag[j] = 1;
+          omc_flagValue[j] = (char*)getFlagValue(FLAG_NAME[j], 1, argv+i);
+        }
+        // Option is already specified earlier. Check repetition policy.
+        else if(!handle_repeated_option(j, argv+i, 0 /*Not sticky*/)) {
+          // repetition is invlaid for this option
           return 1;
         }
 
-        omc_flag[j] = 1;
-        omc_flagValue[j] = (char*)getFlagValue(FLAG_NAME[j], 1, argv+i);
+        // All good.
+        found = 1;
         i++;
-        found=1;
 
 #ifdef USE_DEBUG_OUTPUT
         debugStreamPrint(LOG_STDOUT, 0, "-%s %s", FLAG_NAME[j], omc_flagValue[j]);
@@ -140,15 +151,20 @@ int checkCommandLineArguments(int argc, char **argv)
       }
       else if((FLAG_TYPE[j] == FLAG_TYPE_OPTION) && optionSet(FLAG_NAME[j], 1, argv+i))
       {
-        if(omc_flag[j])
-        {
-          warningStreamPrint(LOG_STDOUT, 0, "each command line option can only be used once: %s", argv[i]);
+
+        // Option is not yet set.
+        if (!omc_flag[j]) {
+          omc_flag[j] = 1;
+          omc_flagValue[j] = (char*)getOption(FLAG_NAME[j], 1, argv+i);
+        }
+        // Option is already specified earlier. Check repetition policy.
+        else if (!handle_repeated_option(j, argv+i, 1 /*Sticky*/)) {
+          // repetition is invlaid for this option
           return 1;
         }
 
-        omc_flag[j] = 1;
-        omc_flagValue[j] = (char*)getOption(FLAG_NAME[j], 1, argv+i);
-        found=1;
+        // All good.
+        found = 1;
 
 #ifdef USE_DEBUG_OUTPUT
         debugStreamPrint(LOG_STDOUT, 0, "-%s=%s", FLAG_NAME[j], omc_flagValue[j]);
@@ -172,6 +188,80 @@ int checkCommandLineArguments(int argc, char **argv)
 #endif
 
   return 0;
+}
+
+static int handle_repeated_flag(int flag_index) {
+
+  const char* flag_name = FLAG_NAME[flag_index];
+  flag_repeat_policy repeat_policy = FLAG_REPEAT_POLICIES[flag_index];
+
+  if(repeat_policy == FLAG_REPEAT_POLICY_IGNORE) {
+    warningStreamPrint(LOG_STDOUT, 0, "Command line flag '%s' specified again. Ignoring."
+                                    , flag_name);
+    return 1;
+  }
+
+  if(repeat_policy == FLAG_REPEAT_POLICY_FORBID) {
+    errorStreamPrint(LOG_STDOUT, 0, "Command line flag '%s' can be specified only once.", flag_name);
+    return 0;
+  }
+
+
+  if(repeat_policy == FLAG_REPEAT_POLICY_REPLACE) {
+    errorStreamPrint(LOG_STDOUT, 0, "Command line flag %s is supposed to be replaced on repetition. This option does not apply for flags. Fix the repetition policy for the flag.", flag_name);
+    return 0;
+  }
+
+  if(repeat_policy == FLAG_REPEAT_POLICY_COMBINE) {
+    errorStreamPrint(LOG_STDOUT, 0, "Command line flag %s is supposed to be combined on repetition. This option does not apply for flags. Fix the repetition policy for the flag.", flag_name);
+    return 0;
+  }
+
+  errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow repetition policy for command line flag %s.", flag_name);
+  return 0;
+}
+
+static int handle_repeated_option(int flag_index, char **argv_loc, int is_sticky) {
+
+  const char* flag_name = FLAG_NAME[flag_index];
+  flag_repeat_policy repeat_policy = FLAG_REPEAT_POLICIES[flag_index];
+
+  const char* old_value = omc_flagValue[flag_index];
+
+  if(repeat_policy == FLAG_REPEAT_POLICY_IGNORE) {
+    warningStreamPrint(LOG_STDOUT, 0, "Command line option '%s' specified again. Keeping the first value '%s' and ignoring the rest."
+                                    , flag_name, old_value);
+    return 1;
+  }
+
+  if(repeat_policy == FLAG_REPEAT_POLICY_FORBID) {
+    errorStreamPrint(LOG_STDOUT, 0, "Command line option '%s' can be specified only once.", flag_name);
+    return 0;
+  }
+
+
+  const char* new_value;
+
+  if(is_sticky) // lv=LOG_STATS
+    new_value = (char*)getOption(flag_name, 1, argv_loc);
+  else // lv LOG_STATS
+    new_value = (char*)getFlagValue(flag_name, 1, argv_loc);
+
+  if(repeat_policy == FLAG_REPEAT_POLICY_REPLACE) {
+    omc_flagValue[flag_index] = new_value;
+    warningStreamPrint(LOG_STDOUT, 0, "Command line option '%s' specified again. Value has been overriden from '%s' to '%s'."
+                                    , flag_name, old_value, new_value);
+    return 1;
+  }
+
+  if(repeat_policy == FLAG_REPEAT_POLICY_COMBINE) {
+    errorStreamPrint(LOG_STDOUT, 0, "Command line option %s is supposed to be combined on repetition. This has not bee implemented yet", flag_name);
+    return 0;
+  }
+
+  errorStreamPrint(LOG_STDOUT, 0, "Error: Unknow repetition policy for command line option %s.", flag_name);
+  return 0;
+
 }
 
 static int flagSet(const char *option, int argc, char** argv)

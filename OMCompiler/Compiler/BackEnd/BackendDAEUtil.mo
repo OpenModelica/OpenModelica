@@ -8255,6 +8255,7 @@ public function allPreOptimizationModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
+    (DataReconciliation.extractBoundaryCondition, "dataReconciliationBoundaryConditions"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (EvaluateParameter.evaluateParameters, "evaluateParameters"),

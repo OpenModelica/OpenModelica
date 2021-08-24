@@ -76,7 +76,7 @@ int checkForDiscreteChanges(DATA *data, threadData_t *threadData)
       modelica_string v1 = data->simulationInfo->stringVarsPre[i];
       modelica_string v2 = data->localData[0]->stringVars[i];
       if (0 != strcmp(MMC_STRINGDATA(v1),MMC_STRINGDATA(v2))) {
-        infoStreamPrint(LOG_EVENTS_V, 0, "discrete var changed: %s from %s to %s", modelData->stringVarsData[i].info.name, v1, v2);
+        infoStreamPrint(LOG_EVENTS_V, 0, "discrete var changed: %s from %s to %s", modelData->stringVarsData[i].info.name, MMC_STRINGDATA(v1), MMC_STRINGDATA(v2));
         needToIterate = 1;
       }
     }
