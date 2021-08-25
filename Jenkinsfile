@@ -68,7 +68,9 @@ pipeline {
           steps {
             // Xenial is GCC 5
             script { common.buildOMC('gcc-5', 'g++-5', '', true, false) }
-            stash name: 'omc-gcc', includes: 'build/**, **/config.status'
+            sh script: "cat OMCompiler/Compiler/Util/Autoconf.mo", label: "contents of Autoconf.mo"
+            sh script: "cat OMCompiler/SimulationRuntime/c/RuntimeSources.mo", label: "contents of RuntimeSources.mo"
+            stash name: 'omc-gcc', includes: 'build/bin/OMCppOSUSimulation, build/bin/FMIWrapper, build/include/omc/omsi/**, build/include/omc/omsic/**, build/lib/x86_64-linux-gnu/omc/omsi/**, build/lib/x86_64-linux-gnu/omc/omsicpp/**, **/config.status'
           }
         }
         // stage('clang') {
@@ -210,29 +212,29 @@ pipeline {
             stash name: 'omc-cmake-gcc', includes: 'build/**'
           }
         }
-        stage('checks') {
-          agent {
-            docker {
-              image 'docker.openmodelica.org/build-deps:v1.16.3'
-              label 'linux'
-              alwaysPull true
-              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
-                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
-            }
-          }
-          steps {
-            script { common.standardSetup() }
-            // It's really bad if we mess up the repo and can no longer build properly
-            sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
-            // TODO: trailing-whitespace-error tab-error
-            sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
-            sh '''
-            cd doc/bibliography
-            mkdir -p /tmp/openmodelica.org-bibgen
-            sh generate.sh /tmp/openmodelica.org-bibgen
-            '''
-          }
-        }
+        // stage('checks') {
+        //   agent {
+        //     docker {
+        //       image 'docker.openmodelica.org/build-deps:v1.16.3'
+        //       label 'linux'
+        //       alwaysPull true
+        //       args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+        //            "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+        //     }
+        //   }
+        //   steps {
+        //     script { common.standardSetup() }
+        //     // It's really bad if we mess up the repo and can no longer build properly
+        //     sh '! git submodule foreach --recursive git diff 2>&1 | grep CRLF'
+        //     // TODO: trailing-whitespace-error tab-error
+        //     sh "make -f Makefile.in -j${common.numLogicalCPU()} --output-sync=recurse bom-error utf8-error thumbsdb-error spellcheck"
+        //     sh '''
+        //     cd doc/bibliography
+        //     mkdir -p /tmp/openmodelica.org-bibgen
+        //     sh generate.sh /tmp/openmodelica.org-bibgen
+        //     '''
+        //   }
+        // }
       }
     }
     stage('tests') {
