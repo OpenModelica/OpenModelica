@@ -1,10 +1,10 @@
 for m in {"FmuExportCrossCompile","RoomHeating_OM_RH","WaterTank_Control","WaterTank_TestSingleWaterTank","BouncingBall"} loop
-for os in {"linux32","linux64","win32","win64","darwin64","arm-linux-gnueabi"} loop // "darwin32"
+for os in {"linux32","linux64","win32","win64","darwin64","arm-linux-gnueabihf"} loop // "darwin32"
 for t in {"me","cs"} loop
 
 target := os+"-"+t;
 (success,vars) := diffSimulationResults(m + "-" + target + ".csv", m + "_res.csv", target+"-diff", vars={"h"});
-writeFile(target+"-diff.html", diffSimulationResultsHtml("h", target + ".csv", "FmuExportCrossCompile_res.csv"));
+writeFile(target+"-diff.html", diffSimulationResultsHtml("h", m + "-" + target + ".csv", "FmuExportCrossCompile_res.csv"));
 if not success then
   print("Failed for "+m+"-"+target+": "+sum(v + ", " for v in vars)+"\n");
   print(getErrorString()+"\n");
