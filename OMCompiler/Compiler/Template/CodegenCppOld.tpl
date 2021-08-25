@@ -6848,7 +6848,7 @@ match modelInfo
   #define MEASURETIME_MODELFUNCTIONS
   >>%>
 
-  class <%lastIdentOfPath(modelInfo.name)%>: public IContinuous, public IEvent, public IStepEvent, public ITime, public ISystemProperties <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
+  class <%lastIdentOfPath(modelInfo.name)%>: public SystemDefaultImplementation
   {
   <%friendclasses%>
   public:
@@ -7112,62 +7112,10 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
         delete this;
       }
 
-      // Set current integration time
-      void <%lastIdentOfPath(modelInfo.name)%>::setTime(double t)
-      {
-        SystemDefaultImplementation::setTime(t);
-      }
-      // Set tolerance for zero crossings
-      void <%lastIdentOfPath(modelInfo.name)%>::setZeroTol(double dt)
-      {
-        SystemDefaultImplementation::setZeroTol(dt);
-      }
       // Computes the conditions of time event samplers for the current time
       double <%lastIdentOfPath(modelInfo.name)%>::computeNextTimeEvents(double currTime)
       {
         return SystemDefaultImplementation::computeNextTimeEvents(currTime, getTimeEventData());
-      }
-      // Computes the conditions of time event samplers for the current time
-      void <%lastIdentOfPath(modelInfo.name)%>::computeTimeEventConditions(double currTime)
-      {
-        SystemDefaultImplementation::computeTimeEventConditions(currTime);
-      }
-      // Resets the conditions of time event samplers to false
-      void <%lastIdentOfPath(modelInfo.name)%>::resetTimeConditions()
-      {
-        SystemDefaultImplementation::resetTimeConditions();
-      }
-      // Provide number (dimension) of variables according to the index
-      int <%lastIdentOfPath(modelInfo.name)%>::getDimContinuousStates() const
-      {
-        return(SystemDefaultImplementation::getDimContinuousStates());
-      }
-      int <%lastIdentOfPath(modelInfo.name)%>::getDimAE() const
-      {
-        return(SystemDefaultImplementation::getDimAE());
-      }
-      // Provide number (dimension) of variables according to the index
-      int <%lastIdentOfPath(modelInfo.name)%>::getDimBoolean() const
-      {
-        return(SystemDefaultImplementation::getDimBoolean());
-      }
-
-      // Provide number (dimension) of variables according to the index
-      int <%lastIdentOfPath(modelInfo.name)%>::getDimInteger() const
-      {
-        return(SystemDefaultImplementation::getDimInteger());
-      }
-
-      // Provide number (dimension) of variables according to the index
-      int <%lastIdentOfPath(modelInfo.name)%>::getDimReal() const
-      {
-        return(SystemDefaultImplementation::getDimReal());
-      }
-
-      // Provide number (dimension) of variables according to the index
-      int <%lastIdentOfPath(modelInfo.name)%>::getDimString() const
-      {
-        return(SystemDefaultImplementation::getDimString());
       }
 
       // Provide number (dimension) of right hand sides (equations and/or residuals) according to the index
@@ -7181,41 +7129,12 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
         return(SystemDefaultImplementation::getDimRHS());
       }
 
-      void <%lastIdentOfPath(modelInfo.name)%>::getContinuousStates(double* z)
-      {
-        SystemDefaultImplementation::getContinuousStates(z);
-      }
       void <%lastIdentOfPath(modelInfo.name)%>::getNominalStates(double* z)
       {
         <%getNominalStateValues(states, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
       }
 
       // Set variables with given index to the system
-      void <%lastIdentOfPath(modelInfo.name)%>::setContinuousStates(const double* z)
-      {
-        SystemDefaultImplementation::setContinuousStates(z);
-      }
-
-      double& <%lastIdentOfPath(modelInfo.name)%>::getRealStartValue(double& var)
-      {
-         return SystemDefaultImplementation::getRealStartValue(var);
-       }
-
-       bool& <%lastIdentOfPath(modelInfo.name)%>::getBoolStartValue(bool& var)
-       {
-         return SystemDefaultImplementation::getBoolStartValue(var);
-       }
-
-       int& <%lastIdentOfPath(modelInfo.name)%>::getIntStartValue(int& var)
-       {
-         return SystemDefaultImplementation::getIntStartValue(var);
-       }
-
-       string& <%lastIdentOfPath(modelInfo.name)%>::getStringStartValue(string& var)
-       {
-         return SystemDefaultImplementation::getStringStartValue(var);
-       }
-
        void <%lastIdentOfPath(modelInfo.name)%>::setRealStartValue(double& var,double val)
        {
          SystemDefaultImplementation::setRealStartValue(var, val);
@@ -7279,10 +7198,6 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       >>%>
       }
 
-      void <%lastIdentOfPath(modelInfo.name)%>::setStateDerivatives(const double* f)
-      {
-        SystemDefaultImplementation::setStateDerivatives(f);
-      }
       bool <%lastIdentOfPath(modelInfo.name)%>::isStepEvent()
       {
        throw ModelicaSimulationError(MODEL_EQ_SYSTEM,"isStepEvent is not yet implemented");
@@ -7533,22 +7448,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     /// Releases the Modelica System
     virtual void destroy();
     /// Provide number (dimension) of variables according to the index
-    virtual int getDimContinuousStates() const;
-    virtual int getDimAE() const;
-    /// Provide number (dimension) of boolean variables
-    virtual int getDimBoolean() const;
-    /// Provide number (dimension) of integer variables
-    virtual int getDimInteger() const;
-    /// Provide number (dimension) of real variables
-    virtual int getDimReal() const;
-    /// Provide number (dimension) of string variables
-    virtual int getDimString() const;
     // Provide number (dimension) of right hand sides (equations and/or residuals)
     virtual int getDimRHS()const;
-    virtual double& getRealStartValue(double& var);
-    virtual bool& getBoolStartValue(bool& var);
-    virtual int& getIntStartValue(int& var);
-    virtual string& getStringStartValue(string& var);
+
     virtual void setRealStartValue(double& var,double val);
     virtual void setBoolStartValue(bool& var,bool val);
     virtual void setIntStartValue(int& var,int val);
@@ -7563,10 +7465,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     //Resets all time events
 
     // Provide variables with given index to the system
-    virtual void getContinuousStates(double* z);
     virtual void getNominalStates(double* z);
-    // Set variables with given index to the system
-    virtual void setContinuousStates(const double* z);
 
     // Update transfer behavior of the system of equations according to command given by solver
     virtual bool evaluateAll(const UPDATETYPE command = IContinuous::UNDEF_UPDATE);
@@ -7576,7 +7475,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
 
     // Provide the right hand side (according to the index)
     virtual void getRHS(double* f);
-    virtual void setStateDerivatives(const double* f);
 
     //Provide number (dimension) of zero functions
     virtual int getDimZeroFunc();
@@ -7608,16 +7506,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual int getDimTimeEvent() const;
     virtual std::pair<double,double>* getTimeEventData() const;
     virtual double computeNextTimeEvents(double currTime);
-    virtual void computeTimeEventConditions(double currTime);
-    virtual void resetTimeConditions();
     //initializes the definition of time event samplers (i.e. starttime and frequency)
     virtual void initTimeEventData();
-
-    /// Set current integration time
-    virtual void setTime(double time);
-
-    /// Set tolerance for zero crossings
-    virtual void setZeroTol(double dt);
 
     // System is able to provide the Jacobian symbolically
     virtual bool provideSymbolicJacobian();

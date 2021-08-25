@@ -40,6 +40,14 @@ private:
 };
 
 class BOOST_EXTENSION_SYSTEM_DECL SystemDefaultImplementation
+  : public IContinuous
+  , public IEvent
+  , public IStepEvent
+  , public ITime
+  , public ISystemProperties
+#ifdef USE_REDUCE_DAE
+  , public IReduceDAE
+#endif
 {
 public:
   SystemDefaultImplementation(IGlobalSettings* globalSettings, shared_ptr<ISimObjects> sim_objects, string modelName);
