@@ -2934,12 +2934,14 @@ public function filterSimulationResults
   input String[:] vars;
   input Integer numberOfIntervals = 0 "0=Do not resample";
   input Boolean removeDescription = false;
+  input Boolean hintReadAllVars = true;
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes one simulation result and filters out the selected variables only, producing the output file.</p>
 <p>If numberOfIntervals<>0, re-sample to that number of intervals, ignoring event points (might be changed in the future).</p>
 <p>if removeDescription=true, the description matrix will contain 0-length strings, making the file smaller.</p>
+<p>if hintReadAllVars=true, the whole mat-file will be read at once (this is faster but uses more memory if you only use few variables from the file). May cause a crash if there is not enough virtual memory.</p>
 </html>",revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>

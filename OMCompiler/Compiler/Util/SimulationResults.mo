@@ -148,10 +148,11 @@ public function filterSimulationResults
   input String inFile;
   input String outFile;
   input list<String> vars;
-  input Integer numberOfIntervals=0;
+  input Integer numberOfIntervals;
   input Boolean removeDescription;
+  input Boolean hintReadAllVars "Read a whole mat-file into memory. May crash OMC if you have too little virtual memory.";
   output Boolean result;
-  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals,removeDescription) annotation(Library = "omcruntime");
+  external "C" result=SimulationResults_filterSimulationResults(inFile,outFile,vars,numberOfIntervals,removeDescription,hintReadAllVars) annotation(Library = "omcruntime");
 end filterSimulationResults;
 
 annotation(__OpenModelica_Interface="frontend");
