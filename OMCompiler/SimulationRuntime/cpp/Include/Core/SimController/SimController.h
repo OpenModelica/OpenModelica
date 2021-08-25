@@ -22,14 +22,10 @@ public:
     virtual shared_ptr<IMixedSystem> getSystem(string modelname);
     virtual shared_ptr<ISimObjects> getSimObjects();
     virtual void StartReduceDAE(SimSettings simsettings,string modelPath, string modelKey,bool loadMSL, bool loadPackage);
-    virtual void initialize(SimSettings simsettings, string modelKey, double timeout);
-     virtual void runReducedSimulation();
+
 private:
-    void initialize(PATH library_path, PATH modelicasystem_path);
     shared_ptr<Configuration> _config;
     std::map<string, shared_ptr<IMixedSystem> > _systems;
-
-
 
     // for real-time usage (VxWorks and BODAS)
     //removed, has to be released after simulation run, see SimController.Start

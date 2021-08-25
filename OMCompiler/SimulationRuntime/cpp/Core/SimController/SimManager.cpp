@@ -180,7 +180,7 @@ void SimManager::initialize()
     }
 
     LOGGER_WRITE("SimManager: Assemble completed",LC_INIT,LL_DEBUG);
-//#if defined(__TRICORE__) || defined(__vxworks)
+
     // Initialization for RT simulation
     if (_config->getGlobalSettings()->useEndlessSim())
     {
@@ -193,7 +193,7 @@ void SimManager::initialize()
           _resetCycle++;
         _solver->initialize();
     }
-//#endif
+
     #ifdef RUNTIME_PROFILING
     if (MeasureTime::getInstance() != NULL)
     {
@@ -331,136 +331,6 @@ void SimManager::writeProperties()
   LOGGER_WRITE_BEGIN("Simulation info from solver:", LC_SOLVER, LL_INFO);
   _solver->writeSimulationInfo();
   LOGGER_WRITE_END(LC_SOLVER, LL_INFO);
-/*
-     // Zeit
-    if(_settings->_globalSettings->bEndlessSim)
-    {
-     LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Geforderte Simulationszeit: endlos"),logM);
-     //LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Rechenzeit:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
-     LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Endzeit Toleranz:           ") + boost::lexical_cast<std::string>(config->getSimControllerSettings()->dTendTol),logM);
-  }
-    else
-    {
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Geforderte Simulationszeit: ") + boost::lexical_cast<std::string>(_tEnd),logM);
-      //_infoStream << "Rechenzeit:                 " << (_tClockEnd-_tClockStart);
-      //LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Rechenzeit:                 ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Endzeit Toleranz:           ") + boost::lexical_cast<std::string>(_config->getSimControllerSettings()->dTendTol),logM);
-     }
-
-     if(_settings->_globalSettings->bRealtimeSim)
-     {
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Echtzeit Simulationszeit aktiv:"),logM);
-       log->wirte(boost::lexical_cast<std::string>("Faktor:                 ") + boost::lexical_cast<std::string>(_settings->_globalSettings->dRealtimeFactor),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Aktive Rechenzeit (Pause Zeit):           ") + boost::lexical_cast<std::string>(_tClockEnd-_tClockStart-_dataPool->getPauseDelay())
-            + boost::lexical_cast<std::string>("(") + boost::lexical_cast<std::string>(_dataPool->getPauseDelay()) + boost::lexical_cast<std::string>(")"),logM);
-     }
-     if(_dimSolver == 1)
-     {
-       if(!(_solver->getSolverStatus() & ISolver::ERROR_STOP))
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Simulation erfolgreich."),logM);
-       else
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehler bei der Simulation!"),logM);
-
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Schritte insgesamt des Solvers:   ") + boost::lexical_cast<std::string>(_totStps.at(0)),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Akzeptierte Schritte des Solvers: ") + boost::lexical_cast<std::string>(_accStps.at(0)),logM);
-       log->wrtie(boost::lexical_cast<std::string>("Verworfene Schritte  des Solvers: ") + boost::lexical_cast<std::string>(_rejStps.at(0)),logM);
-
-       if(Logger::getInstance()->isOutput(logM)
-        _solver->writeSimulationInfo();
-
-     }
-     else
-     {
-     LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Solver: ") + boost::lexical_cast<std::string>(_dimSolver),logM) ;
-
-     if(_completelyDecoupledSystems || !(_settings->bDynCouplingStepSize))
-     {
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweitensteuerung: fix "),logM);
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Ausgabeschrittweite:          ") + boost::lexical_cast<std::string>(_config->getGlobalSettings()->gethOutput()),logM);
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweite:           ") + boost::lexical_cast<std::string>(_settings->dHcpl), logM);
-
-      LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Koppelschritte: ") + boost::lexical_cast<std::string>(_totCouplStps),logM) ;
-
-      if(abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND)
-        LOGGER_WRITE(boost::lexical_cast<std::string>("Integration erfolgreich. IDID= ") + boost::lexical_cast<std::string>(_dbgId), logM);
-      else
-        LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Solver run time simmgr_error. "),logM);
-
-     }
-     else
-     {
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweitensteuerung:            dynamisch"),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Ausgabeschrittweite:                     ") + boost::lexical_cast<std::string>(_config->getGlobalSettings()->gethOutput()),logM);
-
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Koppelschrittweite für nächsten Schritt: ") + boost::lexical_cast<std::string>(_H),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Maximal verwendete Schrittweite:         ") + boost::lexical_cast<std::string>(_Hmax),logM) ;
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Minimal verwendete Schrittweite:         ") + boost::lexical_cast<std::string>(_Hmin),logM) ;
-
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Obere Grenze für Schrittweite:           ") + boost::lexical_cast<std::string>(_settings->dHuplim),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Untere Grenze für Schrittweite:          ") + boost::lexical_cast<std::string>(_settings->dHlowlim),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("k-Faktor für Schrittweite:               ") + boost::lexical_cast<std::string>(_settings->dK),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Savety-Faktor:                           ") + boost::lexical_cast<std::string>(_settings->dC),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Upscale-Faktor:                          ") + boost::lexical_cast<std::string>(_settings->dCmax),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Downscale-Faktor:                        ") + boost::lexical_cast<std::string>(_settings->dCmin),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehlertoleranz:                          ") + boost::lexical_cast<std::string>(_settings->dErrTol),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehlertoleranz für Single Step:          ") + boost::lexical_cast<std::string>(_settings->dSingleStepTol),logM);
-
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Koppelschritte insgesamt:         ") + boost::lexical_cast<std::string>(_totCouplStps),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anzahl Einfach-Schritte:                 ") + boost::lexical_cast<std::string>(_singleStps),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Davon akzeptierte Schritte:              ") + boost::lexical_cast<std::string>(_accCouplStps),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Davon verworfene Schritte:               ") + boost::lexical_cast<std::string>(_rejCouplStps),logM);
-
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Max. nacheinander verwerfbare Schritte:  ") + boost::lexical_cast<std::string>(_settings->iMaxRejSteps),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Max. nacheinander verworfene Schritte:   ") + boost::lexical_cast<std::string>(_rejCouplStpsRow),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Zeitpunkt meiste verworfene Schritte:    ") + boost::lexical_cast<std::string>(_tRejCouplStpsRow),logM);
-
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Anfangsschrittweite:                     ") + boost::lexical_cast<std::string>(_Hinit),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("bei einem Fehler:                        ") + boost::lexical_cast<std::string>(_simmgr_errorInit),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("nach verworfenen Schritten:              ") + boost::lexical_cast<std::string>(_rejCouplStpsInit),logM);
-
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Wenn Fehler knapp unter 1+ErrTol bei 0 verworf. Schritte, dann war Anfangsschrittweite gut gewählt.\n\n"),logM);
-
-       if(_dbgId == 0 && (abs(_settings->_globalSettings->tEnd - _tEnd) < 10*UROUND))
-         LOGGER_WRITE(boost::lexical_cast<std::string>("Integration erfolgreich. IDID= ") + boost::lexical_cast<std::string>(_dbgId) + boost::lexical_cast<std::string>("\n\n"),logM);
-       else if(_dbgId == -1)
-         LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Fehlerbetrag zu groß (ev. Kopplung zu starr?). IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
-       else if(_dbgId == -2)
-         LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Mehr als ") + boost::lexical_cast<std::string>(_settings->iMaxRejSteps)
-              + boost::lexical_cast<std::string>(" dirket nacheinander verworfenen Schritte. IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
-       else if(_dbgId == -3)
-         LOGGER_WRITE(boost::lexical_cast<std::string>("Integration abgebrochen. Koppelschrittweite kleiner als ") + boost::lexical_cast<std::string>(_settings->dHlowlim)
-               + boost::lexical_cast<std::string>(". IDID= ") + boost::lexical_cast<std::string>(_dbgId),logM);
-       else
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Solver run time simmgr_error"),logM);
-
-     }
-
-     // Schritte der Solver
-     for(int i=0; i<_dimSolver; ++i)
-     {
-       if(!(_solver[i]->getSolverStatus() & ISolver::ERROR_STOP))
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Simulation mit Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("] erfolgreich."),logM);
-       else
-         LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Fehler bei der Simulation in Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]!"),logM);
-
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Schritte insgesamt Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]:   ") + boost::lexical_cast<std::string>(_totStps.at(i)),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Akzeptierte Schritte Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]: ") + boost::lexical_cast<std::string>(_accStps.at(i)),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("Verworfene Schritte  Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]: ") + boost::lexical_cast<std::string>(_rejStps.at(i)),logM);
-
-     }
-
-       // Solver-Properties
-     for(int i=0; i<_dimSolver; ++i)
-     {
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("-----------------------------------------"),logM);
-       LOGGER_WRITE_TUPLE(boost::lexical_cast<std::string>("simmgr_info Ausgabe Solver[") + boost::lexical_cast<std::string>(i) + boost::lexical_cast<std::string>("]"),logM);
-
-       if(Logger::getInstance()->isOutput(logM))
-         _solver[i]->writeSimulationInfo(os);
-     }
-     }
-
-     */
 }
 
 void SimManager::runSingleProcess()
@@ -570,7 +440,7 @@ void SimManager::runSingleProcess()
               break;
         }  // end for time events
 
-        if (abs(_tEnd - endTime) > _config->getSimControllerSettings()->dTendTol && !user_stop)
+        if (abs(_tEnd - endTime) > _config->getSolverSettings()->getEndTimeTol() && !user_stop)
         {
             startTime = endTime;
             _solver->setStartTime(startTime);

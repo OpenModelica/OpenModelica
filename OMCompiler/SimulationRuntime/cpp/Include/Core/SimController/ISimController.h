@@ -42,9 +42,7 @@ public:
   virtual void Start(SimSettings simsettings, string modelKey)=0;
   virtual shared_ptr<IMixedSystem> getSystem(string modelname) = 0;
   virtual  shared_ptr<ISimObjects> getSimObjects() = 0;
-  virtual void initialize(SimSettings simsettings, string modelKey, double timeout)=0;
   virtual void StartReduceDAE(SimSettings simsettings,string modelPath, string modelKey, bool loadMSL, bool loadPackage)=0;
-  virtual void runReducedSimulation()=0;
   /**
    *    Stops the simulation
    */
