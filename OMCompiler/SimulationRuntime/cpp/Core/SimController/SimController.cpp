@@ -128,11 +128,6 @@ shared_ptr<IMixedSystem> SimController::getSystem(string modelname)
     }
 }
 
- void SimController::runReducedSimulation()
- {
-     _simMgr->runSimulation();
- }
-
 void SimController::Start(SimSettings simsettings, string modelKey)
 {
     for (int i = 0; i < simsettings.nonlinear_solver_names.size(); i++)
@@ -464,79 +459,6 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
     #else
         throw ModelicaSimulationError(SIMMANAGER,"The reduction algorithm is no supported for used compiler");
     #endif
-}
-
-
-
-void SimController::initialize(SimSettings simsettings, string modelKey, double timeout)
-{
-    try
-    {
-        #ifdef RUNTIME_PROFILING
-        MEASURETIME_REGION_DEFINE(simControllerInitializeHandler, "SimControllerInitialize");
-        MEASURETIME_REGION_DEFINE(simControllerSolveInitialSystemHandler, "SimControllerSolveInitialSystem");
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_START(measuredFunctionStartValues, simControllerInitializeHandler, "CVodeWriteOutput");
-        }
-        #endif
-        shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey);
-
-        shared_ptr<IGlobalSettings> global_settings = _config->getGlobalSettings();
-
-        global_settings->setStartTime(simsettings.start_time);
-        global_settings->setEndTime(simsettings.end_time);
-        global_settings->sethOutput(simsettings.step_size);
-        global_settings->setResultsFileName(simsettings.outputfile_name);
-        global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
-        global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_names[0]);
-        global_settings->setSelectedSolver(simsettings.solver_name);
-        global_settings->setLogSettings(simsettings.logSettings);
-       // global_settings->setAlarmTime(simsettings.timeOut);
-
-        global_settings->setAlarmTime(timeout);
-        global_settings->setOutputPointType(simsettings.outputPointType);
-        global_settings->setOutputFormat(simsettings.outputFormat);
-        global_settings->setEmitResults(simsettings.emitResults);
-        global_settings->setVariableFilter(simsettings.variableFilter);
-        global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
-        global_settings->setSolverThreads(simsettings.solverThreads);
-        /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
-
-        ISolverSettings* solver_settings = _config->getSolverSettings();
-        solver_settings->setLowerLimit(simsettings.lower_limit);
-        solver_settings->sethInit(simsettings.lower_limit);
-        solver_settings->setUpperLimit(simsettings.upper_limit);
-        solver_settings->setRTol(simsettings.tolerance);
-        solver_settings->setATol(simsettings.tolerance);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], simControllerInitializeHandler);
-            measuredFunctionStartValues->reset();
-            measuredFunctionEndValues->reset();
-            MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
-        }
-        #endif
-
-        _simMgr->initialize();
-
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[1], simControllerSolveInitialSystemHandler);
-            MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",measureTimeFunctionsArray);
-        }
-        #endif
-
-
-
-    }
-    catch(ModelicaSimulationError & ex)
-    {
-        string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
-        throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
-    }
 }
 
 void SimController::Stop()

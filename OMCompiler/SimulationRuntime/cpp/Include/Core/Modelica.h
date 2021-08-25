@@ -227,7 +227,7 @@ typedef ublas::matrix<double, ublas::column_major> matrix_t;
 #include <Core/DataExchange/ISimVar.h>
 #include <Core/SimController/ISimData.h>
 #include <Core/SimController/ISimObjects.h>
-#include <Core/SimulationSettings/ISimControllerSettings.h>
+#include <Core/Math/Constants.h>
 #include <Core/Math/Functions.h>
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/ArraySlice.h>
