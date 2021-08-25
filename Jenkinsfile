@@ -581,6 +581,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            echo "${env.NODE_NAME}"
             sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
@@ -607,6 +608,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            echo "${env.NODE_NAME}"
             sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
@@ -632,6 +634,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            echo "${env.NODE_NAME}"
             sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
@@ -667,6 +670,7 @@ pipeline {
             unstash 'cross-fmu-results-linux-wine'
             unstash 'cross-fmu-results-osx'
             unstash 'cross-fmu-results-armhf'
+            echo "${env.NODE_NAME}"
             sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
             sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'
             archiveArtifacts 'Test_FMUs.tar.gz'
@@ -687,6 +691,7 @@ pipeline {
           steps {
             unstash 'compliance'
             unstash 'compliance-newinst'
+            echo "${env.NODE_NAME}"
             sshPublisher(publishers: [sshPublisherDesc(configName: 'ModelicaComplianceReports', transfers: [sshTransfer(sourceFiles: 'compliance-*html')])])
           }
         }
@@ -704,6 +709,7 @@ pipeline {
           }
           steps {
             unstash 'usersguide'
+            echo "${env.NODE_NAME}"
             sh "tar xJf OpenModelicaUsersGuide-${common.tagName()}.html.tar.xz"
             sh "mv OpenModelicaUsersGuide ${common.tagName()}"
             sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: "OpenModelicaUsersGuide-${common.tagName()}*,${common.tagName()}/**")])])
