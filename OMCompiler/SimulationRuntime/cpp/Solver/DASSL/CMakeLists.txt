@@ -11,13 +11,13 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${DASSLName} ${SolverName} ${ExtensionUtilitiesName} ${ModelicaName})
-add_precompiled_header(${DASSLName} Include/Core/Modelica.h)
+add_precompiled_header(${DASSLName} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${DASSLName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${DASSLName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Solver/DASSL/DASSL.h
-  ${CMAKE_SOURCE_DIR}/Include/Solver/DASSL/DASSLSettings.h
-  ${CMAKE_SOURCE_DIR}/Include/Solver/DASSL/FactoryExport.h
+  ${CMAKE_SOURCE_DIR}/Solver/DASSL/DASSL.h
+  ${CMAKE_SOURCE_DIR}/Solver/DASSL/DASSLSettings.h
+  ${CMAKE_SOURCE_DIR}/Solver/DASSL/FactoryExport.h
   DESTINATION include/omc/cpp/Solver/DASSL)

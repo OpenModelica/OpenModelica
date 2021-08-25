@@ -9,22 +9,22 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${SolverName} ${MathName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName})
-add_precompiled_header(${SolverName} Include/Core/Modelica.h)
+add_precompiled_header(${SolverName} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${SolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${SolverName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ILinearAlgLoopSolver.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/INonLinearAlgLoopSolver.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ILinSolverSettings.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/INonLinSolverSettings.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolver.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/ISolverSettings.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/SolverSettings.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/SolverDefaultImplementation.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/SystemStateSelection.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/SimulationMonitor.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/Solver/FactoryExport.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/ILinearAlgLoopSolver.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/INonLinearAlgLoopSolver.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/ILinSolverSettings.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/INonLinSolverSettings.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/ISolver.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/ISolverSettings.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/SolverSettings.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/SolverDefaultImplementation.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/SystemStateSelection.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/SimulationMonitor.h
+  ${CMAKE_SOURCE_DIR}/Core/Solver/FactoryExport.h
   DESTINATION include/omc/cpp/Core/Solver)
 

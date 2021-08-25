@@ -8,7 +8,7 @@ if(NOT BUILD_SHARED_LIBS)
   set_target_properties(${EulerName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
 endif(NOT BUILD_SHARED_LIBS)
 
-add_precompiled_header(${EulerName} Include/Core/Modelica.h )
+add_precompiled_header(${EulerName} Core/Modelica.h )
 target_link_libraries (${EulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
 
 

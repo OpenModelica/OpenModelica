@@ -823,8 +823,7 @@ endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
 #set (CMAKE_CXX_FLAGS "-Winvalid-pch")
 #build of simulation.core
 include_directories ("Include")
-include_directories ("Solver")
-#include_directories ("Include/Solver/KLU")
+#include_directories ("Solver/KLU")
 
 #add_subdirectory (Solver/KLU)
 # Needs to be included before Core/Modelica othwise environment variables are not set.
@@ -1087,40 +1086,40 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
 install (FILES "Licenses/sundials.license" DESTINATION share/omc/runtime/cpp/licenses)
 
 #copy Utils/extension
-SET(HS Include/Core/Object/IObject.h
-        Include/Core/Object/Object.h
-        Include/Core/Utils/extension/adaptable_factory.hpp
-        Include/Core/Utils/extension/common.hpp
-        Include/Core/Utils/extension/convenience.hpp
-        Include/Core/Utils/extension/extension.hpp
-        Include/Core/Utils/extension/factory.hpp
-        Include/Core/Utils/extension/factory_map.hpp
-        Include/Core/Utils/extension/filesystem.hpp
-        Include/Core/Utils/extension/parameter.hpp
-        Include/Core/Utils/extension/parameter_map.hpp
-        Include/Core/Utils/extension/registry.hpp
-        Include/Core/Utils/extension/shared_library.hpp
-        Include/Core/Utils/extension/type_map.hpp
-        Include/Core/Utils/extension/logger.hpp
-        Include/Core/Utils/extension/impl/adaptable_factory.hpp
-        Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
-        Include/Core/Utils/extension/impl/adaptable_factory_set.hpp
-        Include/Core/Utils/extension/impl/create.hpp
-        Include/Core/Utils/extension/impl/create_func.hpp
-        Include/Core/Utils/extension/impl/decl.hpp
-        Include/Core/Utils/extension/impl/factory.hpp
-        Include/Core/Utils/extension/impl/factory_map.hpp
-        Include/Core/Utils/extension/impl/function.hpp
-        Include/Core/Utils/extension/impl/library_impl.hpp
-        Include/Core/Utils/extension/impl/shared_library.hpp
-        Include/Core/Utils/extension/impl/typeinfo.hpp
-        Include/FMU2/fmi2Functions.h
-        Include/FMU2/fmi2FunctionTypes.h
-        Include/FMU2/fmi2TypesPlatform.h
-        Include/FMU2/FMU2GlobalSettings.h
-        Include/FMU2/FMU2Interface.cpp
-        Include/FMU2/FMU2Wrapper.cpp
-        Include/FMU2/FMU2Wrapper.h)
+SET(HS Core/Object/IObject.h
+        Core/Object/Object.h
+        Core/Utils/extension/adaptable_factory.hpp
+        Core/Utils/extension/common.hpp
+        Core/Utils/extension/convenience.hpp
+        Core/Utils/extension/extension.hpp
+        Core/Utils/extension/factory.hpp
+        Core/Utils/extension/factory_map.hpp
+        Core/Utils/extension/filesystem.hpp
+        Core/Utils/extension/parameter.hpp
+        Core/Utils/extension/parameter_map.hpp
+        Core/Utils/extension/registry.hpp
+        Core/Utils/extension/shared_library.hpp
+        Core/Utils/extension/type_map.hpp
+        Core/Utils/extension/logger.hpp
+        Core/Utils/extension/impl/adaptable_factory.hpp
+        Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
+        Core/Utils/extension/impl/adaptable_factory_set.hpp
+        Core/Utils/extension/impl/create.hpp
+        Core/Utils/extension/impl/create_func.hpp
+        Core/Utils/extension/impl/decl.hpp
+        Core/Utils/extension/impl/factory.hpp
+        Core/Utils/extension/impl/factory_map.hpp
+        Core/Utils/extension/impl/function.hpp
+        Core/Utils/extension/impl/library_impl.hpp
+        Core/Utils/extension/impl/shared_library.hpp
+        Core/Utils/extension/impl/typeinfo.hpp
+        FMU2/fmi2Functions.h
+        FMU2/fmi2FunctionTypes.h
+        FMU2/fmi2TypesPlatform.h
+        FMU2/FMU2GlobalSettings.h
+        FMU2/FMU2Interface.cpp
+        FMU2/FMU2Wrapper.cpp
+        FMU2/FMU2Wrapper.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
 
 if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
