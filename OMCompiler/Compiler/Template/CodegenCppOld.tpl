@@ -7113,9 +7113,14 @@ template DefaultImplementationCode(SimCode simCode, Text& extraFuncs, Text& extr
       }
 
       // Set current integration time
-      void <%lastIdentOfPath(modelInfo.name)%>::setTime(const double& t)
+      void <%lastIdentOfPath(modelInfo.name)%>::setTime(double t)
       {
         SystemDefaultImplementation::setTime(t);
+      }
+      // Set tolerance for zero crossings
+      void <%lastIdentOfPath(modelInfo.name)%>::setZeroTol(double dt)
+      {
+        SystemDefaultImplementation::setZeroTol(dt);
       }
       // Computes the conditions of time event samplers for the current time
       double <%lastIdentOfPath(modelInfo.name)%>::computeNextTimeEvents(double currTime)
@@ -7609,7 +7614,10 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     virtual void initTimeEventData();
 
     /// Set current integration time
-    virtual void setTime(const double& time);
+    virtual void setTime(double time);
+
+    /// Set tolerance for zero crossings
+    virtual void setZeroTol(double dt);
 
     // System is able to provide the Jacobian symbolically
     virtual bool provideSymbolicJacobian();
@@ -12322,30 +12330,30 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
       case LESS(__) then
         <<
         if(_conditions[<%zerocrossingIndex%>])
-            f[<%index1%>]=(<%e1%> - 1e-9 - <%e2%>);
+            f[<%index1%>]=(<%e1%> - _zeroTol - <%e2%>);
         else
-            f[<%index1%>]=(<%e2%> - <%e1%> - 1e-9);
+            f[<%index1%>]=(<%e2%> - <%e1%> - _zeroTol);
         >>
       case LESSEQ(__) then
         <<
         if(_conditions[<%zerocrossingIndex%>])
-            f[<%index1%>] = (<%e1%> - 1e-9 - <%e2%>);
+            f[<%index1%>] = (<%e1%> - _zeroTol - <%e2%>);
         else
-            f[<%index1%>] = (<%e2%> - <%e1%> - 1e-9);
+            f[<%index1%>] = (<%e2%> - <%e1%> - _zeroTol);
         >>
       case GREATER(__) then
         <<
         if(_conditions[<%zerocrossingIndex%>])
-            f[<%index1%>] = (<%e2%> - <%e1%> - 1e-9);
+            f[<%index1%>] = (<%e2%> - <%e1%> - _zeroTol);
         else
-            f[<%index1%>] = (<%e1%> - 1e-9 - <%e2%>);
+            f[<%index1%>] = (<%e1%> - _zeroTol - <%e2%>);
         >>
       case GREATEREQ(__) then
         <<
         if(_conditions[<%zerocrossingIndex%>])
-            f[<%index1%>] = (<%e2%> - <%e1%> - 1e-9);
+            f[<%index1%>] = (<%e2%> - <%e1%> - _zeroTol);
         else
-            f[<%index1%>] = (<%e1%> - 1e-9 - <%e2%>);
+            f[<%index1%>] = (<%e1%> - _zeroTol - <%e2%>);
         >>
       else
         <<

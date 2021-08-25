@@ -279,6 +279,10 @@ void DASSL::initialize()
   _info[7] = 1;
   _rwork[2] = _settings->gethInit();
 
+  // Adapt tolerances for zero crossings and end time to output interval
+  _event_system->setZeroTol(1e-6 * _settings->getGlobalSettings()->gethOutput());
+  _settings->setEndTimeTol(1e-6 * _settings->getGlobalSettings()->gethOutput());
+
   LOGGER_WRITE_END(LC_SOLVER, LL_DEBUG);
 }
 

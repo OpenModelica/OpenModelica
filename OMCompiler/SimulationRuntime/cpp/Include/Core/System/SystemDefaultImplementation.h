@@ -121,8 +121,11 @@ public:
   /// (Re-) initialize the system of equations
   void initialize();
   /// Set current integration time
-  void setTime(const double& t);
+  void setTime(double t);
   double getTime();
+  /// Set tolerance for zero crossings
+  void setZeroTol(double dt);
+  double getZeroTol();
 
   /// Set modification status of independent variables
   //  (exploited by linear equation systems in Jacobians)
@@ -170,8 +173,8 @@ protected:
     shared_ptr<ISimObjects> _simObjects;
 
     double
-        _simTime;             ///< current simulation time (given by the solver)
-
+        _simTime,             ///< current simulation time (given by the solver)
+        _zeroTol;             ///< tolerance for zero crossings (given by the solver)
 
     bool
         * _conditions,   ///< External conditions changed by the solver

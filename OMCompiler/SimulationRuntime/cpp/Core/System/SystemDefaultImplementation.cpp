@@ -42,6 +42,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(IGlobalSettings *global
   , __daeResidual   (NULL)
   , _conditions     (NULL)
   , _time_conditions(NULL)
+  , _zeroTol        (1e-6)
   , _dimContinuousStates(0)
   , _dimRHS         (0)
   , _dimReal        (0)
@@ -84,6 +85,7 @@ SystemDefaultImplementation::SystemDefaultImplementation(SystemDefaultImplementa
   , __daeResidual   (NULL)
   , _conditions     (NULL)
   , _time_conditions(NULL)
+  , _zeroTol        (1e-6)
   , _dimContinuousStates(0)
   , _dimRHS         (0)
   , _dimReal        (0)
@@ -281,15 +283,27 @@ void SystemDefaultImplementation::initialize()
 };
 
 /// Set current integration time
-void SystemDefaultImplementation::setTime(const double& t)
+void SystemDefaultImplementation::setTime(double t)
 {
   _simTime = t;
-};
+}
 
 // Get current integration time
 double SystemDefaultImplementation::getTime()
 {
   return _simTime;
+}
+
+/// Set tolerance for zero crossings
+void SystemDefaultImplementation::setZeroTol(double dt)
+{
+  _zeroTol = dt;
+}
+
+// Get tolerance for zero crossings
+double SystemDefaultImplementation::getZeroTol()
+{
+  return _zeroTol;
 }
 
 /// Set status of independent variables
