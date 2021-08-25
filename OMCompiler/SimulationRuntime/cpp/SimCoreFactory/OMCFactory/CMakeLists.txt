@@ -13,39 +13,39 @@ target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${Ex
 ELSE(WIN32)
 target_link_libraries(${OMCFactoryName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} ${ExtensionUtilitiesName})
 ENDIF(WIN32)
-add_precompiled_header(${OMCFactoryName} Include/Core/Modelica.h)
+add_precompiled_header(${OMCFactoryName} Core/Modelica.h)
 
 
 
 install(TARGETS ${OMCFactoryName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/FactoryConfig.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/FactoryPolicy.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/SolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/LinSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/NonLinSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/SystemOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/SolverSettingsOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/StaticSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/StaticLinSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/StaticSystemOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/FactoryConfig.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/FactoryPolicy.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/SolverOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/LinSolverOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/NonLinSolverOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/SystemOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/SolverSettingsOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/StaticSolverOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/StaticLinSolverOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/StaticNonLinSolverOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/StaticSystemOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/StaticSolverSettingsOMCFactory.h
 
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/SolverVxWorksFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/LinSolverVxWorksFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/SystemVxWorksFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/Policies/SolverSettingsVxWorksFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/SolverVxWorksFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/LinSolverVxWorksFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/NonLinSolverVxWorksFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/SystemVxWorksFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/Policies/SolverSettingsVxWorksFactory.h
   DESTINATION include/omc/cpp/SimCoreFactory/Policies)
 
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/OMCFactory/StaticOMCFactory.h
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/OMCFactory/OMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/OMCFactory/StaticOMCFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/OMCFactory/OMCFactory.h
   DESTINATION include/omc/cpp/SimCoreFactory/OMCFactory/)
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/VxWorksFactory/VxWorksFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/VxWorksFactory/VxWorksFactory.h
   DESTINATION include/omc/cpp/SimCoreFactory/VxWorksFactory/)
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/SimCoreFactory/ObjectFactory.h
+  ${CMAKE_SOURCE_DIR}/SimCoreFactory/ObjectFactory.h
   DESTINATION include/omc/cpp/SimCoreFactory)

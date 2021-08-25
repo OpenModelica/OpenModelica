@@ -9,13 +9,13 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${NewtonName}  ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
-add_precompiled_header(${NewtonName} Include/Core/Modelica.h)
+add_precompiled_header(${NewtonName} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${NewtonName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${NewtonName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Solver/Newton/Newton.h
-  ${CMAKE_SOURCE_DIR}/Include/Solver/Newton/NewtonSettings.h
-  ${CMAKE_SOURCE_DIR}/Include/Solver/CVode/FactoryExport.h
+  ${CMAKE_SOURCE_DIR}/Solver/Newton/Newton.h
+  ${CMAKE_SOURCE_DIR}/Solver/Newton/NewtonSettings.h
+  ${CMAKE_SOURCE_DIR}/Solver/CVode/FactoryExport.h
   DESTINATION include/omc/cpp/Solver/Newton)

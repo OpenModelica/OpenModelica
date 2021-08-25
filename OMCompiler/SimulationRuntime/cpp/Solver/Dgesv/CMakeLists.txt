@@ -18,15 +18,15 @@ IF(DGESV_FOUND)
   endif(NOT BUILD_SHARED_LIBS)
 
   target_link_libraries(${DgesvSolverName}  ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
-  add_precompiled_header(${DgesvSolverName} Include/Core/Modelica.h)
+  add_precompiled_header(${DgesvSolverName} Core/Modelica.h)
 
   install(FILES $<TARGET_PDB_FILE:${DgesvSolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
   install(TARGETS ${DgesvSolverName} DESTINATION ${LIBINSTALLEXT})
   install(FILES
-    ${CMAKE_SOURCE_DIR}/Include/Solver/Dgesv/DgesvSolver.h
-    ${CMAKE_SOURCE_DIR}/Include/Solver/Dgesv/DgesvSolverSettings.h
-    ${CMAKE_SOURCE_DIR}/Include/Solver/Dgesv/FactoryExport.h
+    ${CMAKE_SOURCE_DIR}/Solver/Dgesv/DgesvSolver.h
+    ${CMAKE_SOURCE_DIR}/Solver/Dgesv/DgesvSolverSettings.h
+    ${CMAKE_SOURCE_DIR}/Solver/Dgesv/FactoryExport.h
     DESTINATION include/omc/cpp/Solver/Dgesv)
 
 ELSE()
