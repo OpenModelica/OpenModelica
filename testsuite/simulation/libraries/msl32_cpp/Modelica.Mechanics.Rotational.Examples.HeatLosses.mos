@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.Rotational.Examples.HeatLosses);
 compareVars :=
 {
@@ -37,7 +37,7 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.Rotational.Examples.HeatLosses
 // {"inertia1.w","inertia1.phi","inertia2.w","inertia2.phi","inertia3.w","inertia3.phi","inertia4.w","inertia4.phi","inertia5.w","inertia5.phi","inertia6.w","inertia6.phi","bearingFriction.mode","lossyGear.mode"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
@@ -49,6 +49,10 @@ runScript(modelTesting);getErrorString();
 // ERROR  : solver: SimManager: DASSL: solve failed with idid = 5
 // ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
 // ERROR  : solver: SimController: Recovering with nonlinear solver kinsol
+//
+// Files Equal!
+// Error: Could not read variable lossyGear.mode in file Modelica.Mechanics.Rotational.Examples.HeatLosses.mat.
+// Warning: Get data of variable lossyGear.mode from file Modelica.Mechanics.Rotational.Examples.HeatLosses.mat failed!
 //
 // "true
 // "

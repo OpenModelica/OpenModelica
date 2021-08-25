@@ -17,6 +17,6 @@ public:
   virtual void resetTimeConditions() = 0;
 
   /// Set current integration time
-  virtual void setTime(const double& time) = 0;
+  virtual void setTime(double time) = 0;
 };
 /** @} */ // end of coreSystem

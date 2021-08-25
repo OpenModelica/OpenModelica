@@ -29,7 +29,9 @@ public:
      virtual int getDimClock() = 0;
     /// Provides current values of root/zero functions
     virtual void getZeroFunc(double* f) = 0;
-
+    /// Set tolerance for zero crossings
+    virtual void setZeroTol(double dt) = 0;
+    /// Set and get conditions
     virtual void setConditions(bool* c) = 0;
     virtual void getConditions(bool* c) = 0;
     virtual void getClockConditions(bool* c) = 0;
