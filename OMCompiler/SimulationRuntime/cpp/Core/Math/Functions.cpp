@@ -29,10 +29,6 @@ namespace bindings = boost::numeric::bindings;
 /* #define get_pivot_matrix_elt(A,r,c) get_matrix_elt(A,colInd[c],rowInd[r],n_cols) */
 #define swap(a,b) { int _swap=a; a=b; b=_swap; }
 
-#ifndef min
-#define min(a,b) ((a > b) ? (b) : (a))
-#endif
-
 double  division (const double &a,const double &b, bool throwEx,const char* text)
 {
   if(b != 0)
