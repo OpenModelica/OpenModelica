@@ -208,7 +208,9 @@ pipeline {
                 sh cmake-3.17.2-Linux-x86_64.sh --prefix=/tmp/cmake --skip-license
                 /tmp/cmake/bin/cmake --version
               '''
-              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF', '/tmp/cmake/bin/cmake')
+              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/tmp/cmake/bin/cmake')
+              sh "build/bin/omc --help"
+              sh "build/bin/omc --version"
             }
             // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
           }
