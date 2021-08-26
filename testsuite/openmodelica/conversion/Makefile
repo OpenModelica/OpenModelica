@@ -5,6 +5,7 @@ ConvertClass1.mos \
 ConvertClass2.mos \
 ConvertClass3.mos \
 ConvertClass4.mos \
+ConvertClass5.mos \
 ConvertClassVectorize1.mos \
 ConvertClassVectorize2.mos \
 ConvertClassVectorize3.mos \

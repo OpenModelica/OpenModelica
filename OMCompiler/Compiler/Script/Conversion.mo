@@ -113,6 +113,34 @@ public
     rules := ConversionRules.newNode();
     rules := parseRules(stmts, rules);
 
+    if not listEmpty(lookupRules(Absyn.Path.QUALIFIED("Modelica", Absyn.Path.IDENT("SIunits")), rules)) then
+      // Hack to handle things that would otherwise require fully qualifying all names before converting, like:
+      //   import SI = Modelica.SIunits;
+      //   SI.Conversions.NonSIunits.Angle_deg angle;
+      rules := parseConvertClassStr("SI.Icons", "Modelica.Units.Icons", rules);
+      rules := parseConvertClassStr("SI.Conversions", "Modelica.Units.Conversions", rules);
+      rules := parseConvertClassStr("SI.Conversions.NonSIunits", "Modelica.Units.NonSI", rules);
+      rules := parseConvertClassStr("SI.Temp_C", "Modelica.Units.NonSI.Temperature_degC", rules);
+      rules := parseConvertClassStr("SI.Temp_K", "Modelica.Units.SI.Temperature", rules);
+      rules := parseConvertClassStr("SI.Conversions.ConversionIcon", "Modelica.Units.Icons.Conversion", rules);
+      rules := parseConvertClassStr("SI.FluxiodQuantum", "Modelica.Units.SI.FluxoidQuantum", rules);
+      rules := parseConvertClassStr("SI.RadiantExtiance", "Modelica.Units.SI.RadiantExitance", rules);
+      rules := parseConvertClassStr("SI.LoundnessLevel", "Modelica.Units.SI.LoudnessLevel", rules);
+      rules := parseConvertClassStr("SI.Loundness", "Modelica.Units.SI.Loudness", rules);
+      rules := parseConvertClassStr("SI.Wavelenght", "Modelica.Units.SI.Wavelength", rules);
+      rules := parseConvertClassStr("SI.Conversions.NonSIunits.FirstOrderTemperaturCoefficient",
+                                    "Modelica.Units.SI.LinearTemperatureCoefficientResistance", rules);
+      rules := parseConvertClassStr("SI.Conversions.NonSIunits.SecondOrderTemperaturCoefficient",
+                                    "Modelica.Units.SI.QuadraticTemperatureCoefficientResistance", rules);
+      // Hack to handle e.g. import Modelica.ComplexMath.'abs'
+      rules := parseConvertClassStr("'abs'", "abs", rules);
+      rules := parseConvertClassStr("'sqrt'", "sqrt", rules);
+      rules := parseConvertClassStr("'max'", "max", rules);
+      rules := parseConvertClassStr("'min'", "min", rules);
+      rules := parseConvertClassStr("'sum'", "sum", rules);
+      rules := parseConvertClassStr("'product'", "product", rules);
+    end if;
+
     if Flags.isSet(Flags.DUMP_CONVERSION_RULES) then
       dumpRules(rules);
     end if;
@@ -316,14 +344,10 @@ protected
     () := match args
       local
         String old_cls, new_cls;
-        list<String> old_path;
-        ConversionRule rule;
 
       case {Absyn.Exp.STRING(value = old_cls), Absyn.Exp.STRING(value = new_cls)}
         algorithm
-          old_path := parsePathList(old_cls);
-          rule := ConversionRule.CLASS(listArray(old_path), parsePath(new_cls));
-          rules := addRule(old_path, rule, rules);
+          parseConvertClassStr(old_cls, new_cls, rules);
         then
           ();
 
@@ -336,6 +360,19 @@ protected
 
     end match;
   end parseConvertClass;
+
+  function parseConvertClassStr
+    input String oldName;
+    input String newName;
+    input output ConversionRules rules;
+  protected
+    list<String> old_path;
+    ConversionRule rule;
+  algorithm
+    old_path := parsePathList(oldName);
+    rule := ConversionRule.CLASS(listArray(old_path), parsePath(newName));
+    rules := addRule(old_path, rule, rules);
+  end parseConvertClassStr;
 
   function parseConvertClassIf
     "Converts a conertClassIf statement into a conversion rule and inserts it
