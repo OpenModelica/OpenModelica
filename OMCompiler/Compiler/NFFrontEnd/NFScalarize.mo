@@ -101,6 +101,7 @@ protected
   array<ExpressionIterator> ty_attr_iters;
   Variability bind_var;
   Binding.Source bind_src;
+  Boolean force_scalar_attributes = false;
 algorithm
   if Type.isArray(var.ty) then
     try
@@ -113,12 +114,18 @@ algorithm
 
       if Binding.isBound(binding) then
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
+        for attribute in {"min", "max", "nominal"} loop
+          force_scalar_attributes := not Binding.isUnbound(Variable.lookupTypeAttribute(attribute, var));
+          if force_scalar_attributes then break; end if;
+        end for;
         // if the scalarized binding would result in an indexed call e.g. f()[1] then don't do it!
         // fixes ticket #6267
         // adrpo: do not do this for arrays less than 2: see #7450
         //        TODO! FIXME! get rid of this absurdity when the backend
         //        can handle arrays of one = function call
-        if listLength(crefs) > 1 and not Flags.getConfigBool(Flags.BUILDING_FMU) and
+        // kabdelhak: also do not do it for arrays with certain attributes: see #7485
+        if not force_scalar_attributes and listLength(crefs) > 1
+           and not Flags.getConfigBool(Flags.BUILDING_FMU) and
            ExpressionIterator.isSubscriptedArrayCall(binding_iter)
         then
           var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
