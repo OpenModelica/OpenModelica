@@ -87,7 +87,7 @@ set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/o
 ## This is useful for those binaries that end up in bin/ directory but not for
 ## others as it is a relative path to the lib dir from <build_dir>/<some_dir>.
 ## Maybe there is a better way to do this but it should suffice for now.
-set(CMAKE_INSTALL_RPATH "$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
+set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 
 
 # Write out a compiler detection header. checkout the file <build_dir>/omc_compiler_detection.h to
