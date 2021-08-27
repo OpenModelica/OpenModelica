@@ -753,8 +753,12 @@ algorithm
         end if;
         SimCodeUtil.resetFunctionIndex();
         varInfo := simCode.modelInfo.varInfo;
+        // The C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
+        copyFiles(RuntimeSources.commonFiles, source=Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir, destination=fmutmp+"/sources/");
+        // The headers are in the include directory.
+        copyFiles(RuntimeSources.commonHeaders, source=Settings.getInstallationDirectoryPath() + "/include/omc/c/", destination=fmutmp+"/sources/");
+
         allFiles := {};
-        allFiles := listAppend(RuntimeSources.commonHeaders, listAppend(RuntimeSources.commonFiles, allFiles));
         allFiles := listAppend(if FMUVersion=="1.0" then RuntimeSources.fmi1Files else RuntimeSources.fmi2Files, allFiles);
         if isSome(simCode.fmiSimulationFlags) then
           allFiles := listAppend(RuntimeSources.external3rdPartyFiles, allFiles);

@@ -1,4 +1,5 @@
 encapsulated package RuntimeSources
+  constant String fmu_sources_dir = "/include/omc/c/";
   constant list<String> commonFiles={COMMON_FILES};
   constant list<String> commonHeaders={COMMON_HEADERS};
   constant list<String> fmi1Files={"fmi-export/fmu1_model_interface.c.inc","fmi-export/fmu1_model_interface.h"};
