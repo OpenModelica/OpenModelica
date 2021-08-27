@@ -185,11 +185,11 @@ add_dependencies(DEPENDENCY_UPDATE DEPENDENCY_SCAN)
 
 
 
-add_library(OpenModelicaCompiler STATIC ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
+add_library(OpenModelicaCompiler SHARED ${OMC_C_SOURCE_FILES} .cmake/omc_entry_point.c)
 
 target_compile_definitions(OpenModelicaCompiler PRIVATE ADD_METARECORD_DEFINITIONS=)
 
-# OMC will overflow the stack (at least on Windows old OMDev) on very deep
+# OMC will overflow the stack (at least on Windows old OMDev) on very deep recursive calls.
 # E.g., try translating the CodegenCpp* tpl files to mo files with
 # an omc not compiled without large stack size. The tpl parser is quite recursive and will
 # overflow on parsing comments with very long lines ~300. *CPP tpl files have lines longer
