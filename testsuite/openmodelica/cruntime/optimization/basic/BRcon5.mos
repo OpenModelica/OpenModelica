@@ -16,16 +16,16 @@ model nmpcBatchReactorCon4
   Real c2 = 1+ exp(time);
   Real c3 = 2+ exp(time);
 
-  Real cc1(min = 0) annotation(isConstraint=true); 
-  Real cc2(min = 0) annotation(isConstraint=true); 
-  Real cc3(max = 0) annotation(isConstraint=true); 
+  Real cc1(min = 0) annotation(isConstraint=true);
+  Real cc2(min = 0) annotation(isConstraint=true);
+  Real cc3(max = 0) annotation(isConstraint=true);
   Real cc4(max = 0) annotation(isConstraint=true);
   Real cost annotation(isLagrange=true);
 equation
-  cost = -x2; 
-  cc1 = u - c1; 
-  cc2 = u - c2; 
-  cc3 = u - c3; 
+  cost = -x2;
+  cc1 = u - c1;
+  cc2 = u - c2;
+  cc3 = u - c3;
   cc4 = u - 5*(1+time);
 end nmpcBatchReactorCon4;
 ");
@@ -64,7 +64,7 @@ getErrorString();
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
 // LOG_SUCCESS       | info    | The simulation finished successfully.

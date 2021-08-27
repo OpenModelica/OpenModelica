@@ -322,7 +322,7 @@ static inline omc_opc_ua_state* addVars(omc_opc_ua_state *state, var_kind_t varK
     case VARKIND_BOOL:
     {
       STATIC_BOOLEAN_DATA *booleanVarsData = modelData->booleanVarsData;
-      state->boolVals[state->latestValues][*varIndex] = ((int*)vars)[i];
+      state->boolVals[state->latestValues][*varIndex] = ((signed char*)vars)[i];
       inputIndex = booleanVarsData[i].info.inputIndex;
       state->boolValsInputIndex[*varIndex] = inputIndex;
       nameStr = (char*) booleanVarsData[i].info.name;
@@ -656,7 +656,7 @@ int omc_embedded_server_update(void *state_vp, double t)
   for (i = 0; i < modelData->nVariablesReal; i++, realIndex++) {
     state->realVals[latestValues][realIndex] = (data->localData[0])->realVars[i];
   }
-  for (i = 0; i < modelData->nVariablesReal; i++, boolIndex++) {
+  for (i = 0; i < modelData->nVariablesBoolean; i++, boolIndex++) {
     state->boolVals[latestValues][boolIndex] = (data->localData[0])->booleanVars[i];
   }
 

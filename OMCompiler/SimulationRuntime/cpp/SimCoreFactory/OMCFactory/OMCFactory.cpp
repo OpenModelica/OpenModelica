@@ -99,28 +99,20 @@ inline void normalizePath(std::string& path)
  * Implementation of OMCFactory
  */
 OMCFactory::OMCFactory(PATH library_path, PATH modelicasystem_path)
-    : _library_path(library_path)
-    , _modelicasystem_path(modelicasystem_path)
-    #if defined(RUNTIME_STATIC_LINKING)
-	, _defaultLinSolver("dgesvSolver")
-	#else
-	, _defaultLinSolver("linearSolver")
-    #endif
-	, _defaultNonLinSolver("kinsol")
+  : _library_path(library_path)
+  , _modelicasystem_path(modelicasystem_path)
+  , _defaultLinSolver("dgesvSolver")
+	, _defaultNonLinSolvers({"newton", "kinsol"})
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
 }
 
 OMCFactory::OMCFactory()
-    : _library_path("")
-    , _modelicasystem_path("")
-    #if defined(RUNTIME_STATIC_LINKING)
-	, _defaultLinSolver("dgesvSolver")
-	#else
-	, _defaultLinSolver("linearSolver")
-    #endif
-    , _defaultNonLinSolver("kinsol")
+  : _library_path("")
+  , _modelicasystem_path("")
+  , _defaultLinSolver("dgesvSolver")
+  , _defaultNonLinSolvers({"newton", "kinsol"})
 {
   fillArgumentsToIgnore();
   fillArgumentsToReplace();
@@ -139,20 +131,47 @@ void OMCFactory::UnloadAllLibs(void)
     }
 }
 
-pair<string, string> OMCFactory::parseIngoredAndWrongFormatOption(const string &s)
+pair<string, string> OMCFactory::replaceCRuntimeArguments(const string &arg)
 {
-    int sep = s.find("=");
-    string key = s;
-    if(sep > 0)
-      key = s.substr(0, sep);
-
-    if (_argumentsToIgnore.find(key) != _argumentsToIgnore.end())
-        return make_pair(string("ignored"), s);
-
-    if (sep > 2 && s[0] == '-' && s[1] != '-')
-        return make_pair(string("unrecognized"), s);
+  string key = arg;
+  string value = "";
+  int sep = arg.find("=");
+  if (sep > 0) {
+    key = arg.substr(0, sep);
+    value = arg.substr(sep + 1);
+  }
+  // check for replacement
+  map<string,string>::iterator iter = _argumentsToReplace.find(key);
+  if (iter != _argumentsToReplace.end()) {
+    key = iter->second;
+    if (sep > 0) {
+      // check for replacements of value, depending on key
+      if (key == "lin-solver") {
+        if (value == "lapack" || value == "default")
+          value = "dgesvSolver";
+        else if (value == "klu")
+          value = "linearSolver"; // contains klu for sparse
+      }
+      else if (key == "non-lin-solver") {
+        if (value == "hybrid")
+          value = "hybrj";
+      }
+    }
+    else {
+      // check for space in replacement, separating a value
+      int ssep = key.find(" ");
+      if (ssep > 0) {
+        value = key.substr(ssep + 1);
+        key = key.substr(0, ssep);
+        sep = ssep;
+      }
+    }
+    if (sep > 0)
+      return make_pair(key, value);    // rename arg and provide value
     else
-        return make_pair(string(), string());
+      return make_pair(key, string()); // rename arg
+  }
+  return make_pair(string(), string());// don't touch arg
 }
 
 static LogSettings initializeLogger(const po::variables_map& vm)
@@ -217,18 +236,17 @@ static LogSettings initializeLogger(const po::variables_map& vm)
         }
         // treat native option
         else {
+          // check for option with level, like "-V ls=warning" (default for "-V ls": LL_DEBUG)
           boost::split(tmpvec, log_vec[i], boost::is_any_of("="));
-
-          if (tmpvec.size() > 1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end()
-              && (tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()))
-            {
-              if (tmpvec[0] == "all") {
-                logSettings.setAll(logLvlMap[tmpvec[1]]);
-                break;
-              }
-              else
-                logSettings.modes[logCatMap[tmpvec[0]]] = logLvlMap[tmpvec[1]];
-            }
+          if (tmpvec[0] == "all" || logCatMap.find(tmpvec[0]) != logCatMap.end()) {
+            LogLevel logLevel = LL_DEBUG;
+            if (tmpvec.size() > 1 && logLvlMap.find(tmpvec[1]) != logLvlMap.end())
+              logLevel = logLvlMap[tmpvec[1]];
+            if (tmpvec[0] == "all")
+              logSettings.setAll(logLevel);
+            else
+              logSettings.modes[logCatMap[tmpvec[0]]] = logLevel;
+          }
           else
             throw ModelicaSimulationError(MODEL_FACTORY,
               "log-settings flags not supported: " + log_vec[i] + "\n");
@@ -321,17 +339,18 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
           ("step-size,H", po::value< double >()->default_value(0.0), "simulation step size")
           ("solver,I", po::value< string >()->default_value("euler"), "solver method")
           ("lin-solver,L", po::value< string >()->default_value(_defaultLinSolver), "linear solver method")
-          ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolver),  "non linear solver method")
+          ("non-lin-solver,N", po::value< string >()->default_value(_defaultNonLinSolvers[0]),  "non linear solver method")
           ("number-of-intervals,G", po::value< int >()->default_value(500), "number of intervals in equidistant grid")
           ("tolerance,T", po::value< double >()->default_value(1e-6), "solver tolerance")
           ("warn-all,W", po::bool_switch()->default_value(false), "issue all warning messages")
-          ("log-settings,V", po::value< vector<string> >(), "log information: init, nls, ls, solver, output, events, model, other")
+          ("log-settings,V", po::value< vector<string> >(), "log cat[=lvl] with cat: all, init, nls, ls, solver, output, events, model, other and lvl: error, warning, info, debug")
           ("log-format,X", po::value< string >()->default_value("txt"), "log format: txt, xml, xmltcp")
           ("log-port", po::value< int >()->default_value(0), "tcp port for log messages (default 0 meaning stdout/stderr)")
           ("alarm,A", po::value<unsigned int >()->default_value(360), "sets timeout in seconds for simulation")
           ("output-type,O", po::value< string >()->default_value("all"), "the points in time written to result file: all (output steps + events), step (just output points), none")
           ("output-format,P", po::value< string >()->default_value("mat"), "simulation results output format: csv, mat, buffer, empty")
           ("emit-results,U", po::value< string >()->default_value("public"), "emit results: all, public, none")
+          ("variable-filter,B", po::value< string >()->default_value(".*"), "only write variables that match filter")
           ;
 
      // a group for all options that should not be visible if '--help' is set
@@ -347,16 +366,22 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      descAll.add(descHidden);
 
      po::variables_map vm;
-     boost::function<pair<string, string> (const string&)> parserFunction(boost::bind(&OMCFactory::parseIngoredAndWrongFormatOption, this, _1));
-     po::parsed_options parsed = po::command_line_parser(argc, argv)
+     vector<string> unrecognized;
+     boost::function<pair<string, string> (const string&)> parserFunction(boost::bind(&OMCFactory::replaceCRuntimeArguments, this, _1));
+     try {
+       po::parsed_options parsed = po::command_line_parser(argc, argv)
          .options(descAll)
          .style((po::command_line_style::default_style | po::command_line_style::allow_long_disguise) & ~po::command_line_style::allow_guessing)
          .extra_parser(parserFunction)
          .allow_unregistered()
          .run();
-     po::store(parsed, vm);
-     po::notify(vm);
-
+       po::store(parsed, vm);
+       po::notify(vm);
+       unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
+     }
+     catch (std::exception ex) {
+         throw ModelicaSimulationError(MODEL_FACTORY, ex.what());
+     }
      if (vm.count("help")) {
          cout << desc << endl;
          throw ModelicaSimulationError(MODEL_FACTORY, "Cannot parse command line arguments correctly, because the help message was requested.", "",true);
@@ -365,7 +390,6 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      LogSettings logSettings = initializeLogger(vm);
 
      // warn about unrecognized command line options
-     vector<string> unrecognized = po::collect_unrecognized(parsed.options, po::include_positional);
      if (vm.count("unrecognized")) {
          vector<string> opts = vm["unrecognized"].as<vector<string> >();
          unrecognized.insert(unrecognized.begin(), opts.begin(), opts.end());
@@ -390,7 +414,9 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
 
      double tolerance = vm["tolerance"].as<double>();
      string solver = vm["solver"].as<string>();
-     string nonLinSolver = vm["non-lin-solver"].as<string>();
+     std::vector<string> nonLinSolvers;
+     nonLinSolvers.push_back(vm["non-lin-solver"].as<string>());
+     nonLinSolvers.push_back(nonLinSolvers[0] != _defaultNonLinSolvers[1]? _defaultNonLinSolvers[1]: _defaultNonLinSolvers[0]);
      string linSolver = vm["lin-solver"].as<string>();
      unsigned int timeOut = vm["alarm"].as<unsigned int>();
      if (vm.count("runtime-library"))
@@ -425,11 +451,11 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
      else
          outputPath = modelica_lib_path;
 
-     string resultsfilename;
+     string resultsFileName;
      if (vm.count("results-file"))
      {
          //cout << "results file: " << vm["results-file"].as<string>() << endl;
-         resultsfilename = vm["results-file"].as<vector<string> >().front();
+         resultsFileName = vm["results-file"].as<vector<string> >().front();
      }
      else
          throw ModelicaSimulationError(MODEL_FACTORY,"results-filename is not set");
@@ -456,6 +482,12 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
        else
          throw ModelicaSimulationError(MODEL_FACTORY,
            "Unknown output-format " + outputFormat_str);
+
+       // adapt resultsFileName to match selected format
+       // (this is needed if outputFormat differs from value at compilation time)
+       size_t idx = resultsFileName.find_last_of('.');
+       if (idx > 0 && outputFormatMap.find(resultsFileName.substr(idx + 1)) != outputFormatMap.end())
+         resultsFileName = resultsFileName.substr(0, idx + 1) + outputFormat_str;
      }
      else
        throw ModelicaSimulationError(MODEL_FACTORY, "output-format is not set");
@@ -471,69 +503,24 @@ SimSettings OMCFactory::readSimulationParameter(int argc, const char* argv[])
            "Unknown emit-results " + emitResults_str);
      }
 
+     string variableFilter = ".*";
+     if (vm.count("variable-filter"))
+     {
+       variableFilter = vm["variable-filter"].as<string>();
+     }
+
      fs::path libraries_path = fs::path( runtime_lib_path) ;
      fs::path modelica_path = fs::path( modelica_lib_path) ;
 
      libraries_path.make_preferred();
      modelica_path.make_preferred();
 
-     SimSettings settings = {solver, linSolver, nonLinSolver, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsfilename, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, inputPath, outputPath};
+     SimSettings settings = {solver, linSolver, nonLinSolvers, starttime, stoptime, stepsize, 1e-24, 0.01, tolerance, resultsFileName, timeOut, outputPointType, logSettings, nlsContinueOnError, solverThreads, outputFormat, emitResults, variableFilter, inputPath, outputPath};
 
      _library_path = libraries_path.string();
      _modelicasystem_path = modelica_path.string();
 
      return settings;
-}
-
-vector<const char *> OMCFactory::handleArgumentsToReplace(int argc, const char* argv[], map<string, string> &opts)
-{
-    vector<const char *> optv;
-    optv.push_back(strdup(argv[0]));
-    for(int i = 1; i < argc; i++)
-    {
-        string arg = argv[i];
-
-        int sep = arg.find("=");
-        string key = arg;
-        string value = "";
-        if(sep > 0)
-        {
-            key = arg.substr(0, sep);
-            value = arg.substr(sep+1);
-        }
-
-        map<string, string>::iterator oldValue = opts.find(key);
-
-        map<string,string>::iterator iter = _argumentsToReplace.find(key);
-        if(iter != _argumentsToReplace.end())
-        {
-            //if(opts.find(iter->second) != opts.end()) //if the new key is already part of the argument list, prevent double insertion
-            //  continue;
-
-            if(oldValue != opts.end())
-            {
-                opts.insert(pair<string,string>(iter->second, oldValue->second));
-                opts.erase(arg);
-            }
-            key = iter->second;
-
-
-            optv.push_back(strdup(key.c_str()));
-            if(sep > 0)
-                optv.push_back(strdup(value.c_str()));
-        }
-        else
-        {
-          if(sep > 0)
-              arg = key + "=" + value;
-          else
-              arg = key;
-          optv.push_back(strdup(arg.c_str()));
-        }
-
-    }
-
-    return optv;
 }
 
 vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const char* argv[], map<string, string> &opts)
@@ -557,7 +544,7 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
             "startTime", "-S" MAP_LIST_SEP "stopTime", "-E" MAP_LIST_SEP
             "stepSize", "-H" MAP_LIST_SEP "numberOfIntervals", "-G" MAP_LIST_SEP
             "solver", "-I" MAP_LIST_SEP "tolerance", "-T" MAP_LIST_SEP
-            "outputFormat", "-P" MAP_LIST_END;
+            "outputFormat", "-P" MAP_LIST_SEP "variableFilter", "-B" MAP_LIST_END;
           vector<string> strs;
           boost::split(strs, argv[i], boost::is_any_of(",="));
           for (int j = 1; j < strs.size(); j++) {
@@ -566,12 +553,6 @@ vector<const char *> OMCFactory::handleComplexCRuntimeArguments(int argc, const 
                   opts[oit->second] = strs[++j];
               }
               else {
-                  // ignore filter for all variables
-                  if (strs[j] == "variableFilter"
-                      && j < strs.size() - 1 && strs[j+1] == ".*") {
-                      ++j;
-                      continue;
-                  }
                   // leave unrecognized overrides
                   if (_overrideOMEdit.size() > 10)
                       _overrideOMEdit += ",";
@@ -603,17 +584,17 @@ void OMCFactory::fillArgumentsToIgnore()
 void OMCFactory::fillArgumentsToReplace()
 {
   _argumentsToReplace = map<string, string>();
-  _argumentsToReplace.insert(pair<string,string>("-r", "-F"));
-  _argumentsToReplace.insert(pair<string,string>("-ls", "-L"));
-  _argumentsToReplace.insert(pair<string,string>("-nls", "-N"));
-  _argumentsToReplace.insert(pair<string,string>("-lv", "--log-settings"));
-  _argumentsToReplace.insert(pair<string,string>("-w", "--warn-all"));
-  _argumentsToReplace.insert(pair<string,string>("-logFormat", "--log-format"));
-  _argumentsToReplace.insert(pair<string,string>("-port", "--log-port"));
-  _argumentsToReplace.insert(pair<string,string>("-alarm", "--alarm"));
-  _argumentsToReplace.insert(pair<string,string>("-emit_protected", "--emit-results all"));
-  _argumentsToReplace.insert(pair<string,string>("-inputPath", "--input-path"));
-  _argumentsToReplace.insert(pair<string,string>("-outputPath", "--output-path"));
+  _argumentsToReplace.insert(pair<string,string>("-r", "results-file"));
+  _argumentsToReplace.insert(pair<string,string>("-ls", "lin-solver"));
+  _argumentsToReplace.insert(pair<string,string>("-nls", "non-lin-solver"));
+  _argumentsToReplace.insert(pair<string,string>("-lv", "log-settings"));
+  _argumentsToReplace.insert(pair<string,string>("-w", "warn-all"));
+  _argumentsToReplace.insert(pair<string,string>("-logFormat", "log-format"));
+  _argumentsToReplace.insert(pair<string,string>("-port", "log-port"));
+  _argumentsToReplace.insert(pair<string,string>("-alarm", "alarm"));
+  _argumentsToReplace.insert(pair<string,string>("-emit_protected", "emit-results all"));
+  _argumentsToReplace.insert(pair<string,string>("-inputPath", "input-path"));
+  _argumentsToReplace.insert(pair<string,string>("-outputPath", "output-path"));
 }
 
 pair<shared_ptr<ISimController>,SimSettings>
@@ -621,9 +602,8 @@ OMCFactory::createSimulation(int argc, const char* argv[],
                              map<string, string> &opts)
 {
   vector<const char *> optv = handleComplexCRuntimeArguments(argc, argv, opts);
-  vector<const char *> optv2 = handleArgumentsToReplace(optv.size(), &optv[0], opts);
 
-  SimSettings settings = readSimulationParameter(optv2.size(), &optv2[0]);
+  SimSettings settings = readSimulationParameter(optv.size(), &optv[0]);
   type_map simcontroller_type_map;
   fs::path simcontroller_path = _library_path;
   fs::path simcontroller_name(SIMCONTROLLER_LIB);
@@ -636,12 +616,7 @@ OMCFactory::createSimulation(int argc, const char* argv[],
 
   optv.clear();
 
-  for(int i = 0; i < optv2.size(); i++)
-    free((char*)optv2[i]);
-
-  optv2.clear();
-
-  return make_pair(simcontroller,settings);
+  return make_pair(simcontroller, settings);
 }
 
 LOADERRESULT OMCFactory::LoadLibrary(string libName,type_map& current_map)

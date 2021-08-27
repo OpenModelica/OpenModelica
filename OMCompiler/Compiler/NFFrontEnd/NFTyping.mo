@@ -386,12 +386,9 @@ algorithm
         end if;
 
         c_typed := Component.setType(ty, c);
+        InstNode.updateComponent(c_typed, node);
 
-        if is_deleted then
-          InstNode.updateComponent(Component.DELETED_COMPONENT(c_typed), node);
-        else
-          InstNode.updateComponent(c_typed, node);
-
+        if not is_deleted then
           // Check that flow/stream variables are Real.
           checkComponentStreamAttribute(c.attributes.connectorType, ty, component);
 
@@ -405,7 +402,6 @@ algorithm
     case Component.TYPED_COMPONENT() then c.ty;
     case Component.ITERATOR() then c.ty;
     case Component.ENUM_LITERAL(literal = Expression.ENUM_LITERAL(ty = ty)) then ty;
-    case Component.DELETED_COMPONENT() then Component.getType(c.component);
 
     // Any other type of component shouldn't show up here.
     else
@@ -848,6 +844,10 @@ algorithm
   c := InstNode.component(node);
 
   () := match c
+    case Component.TYPED_COMPONENT()
+      guard Component.isDeleted(c)
+      then ();
+
     case Component.TYPED_COMPONENT(binding = Binding.UNTYPED_BINDING(), attributes = attrs)
       algorithm
         name := InstNode.name(component);
@@ -933,8 +933,6 @@ algorithm
         InstNode.updateComponent(c, node);
       then
         ();
-
-    case Component.DELETED_COMPONENT() then ();
 
     else
       algorithm
@@ -2710,14 +2708,16 @@ protected
 algorithm
   comp := InstNode.component(component);
 
+  if Component.isDeleted(comp) then
+    return;
+  end if;
+
   () := match comp
     case Component.TYPED_COMPONENT()
       algorithm
         typeClassSections(comp.classInst, context);
       then
         ();
-
-    case Component.DELETED_COMPONENT() then ();
 
     else
       algorithm

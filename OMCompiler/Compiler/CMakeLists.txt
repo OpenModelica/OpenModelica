@@ -150,7 +150,6 @@ add_custom_target(INTERFACE_CHECK
 # Add a small dependency scanner program. This reads a list of list of dependencies and generates
 # a list of dependents for each entry.
 add_executable(dep_scanner ${CMAKE_CURRENT_SOURCE_DIR}/.cmake/dep_scanner.cpp)
-target_compile_features(dep_scanner PRIVATE cxx_std_11)
 
 # Write out a new line separated list of all MM source files to a list so that it can be easily
 # parsed by the small MetaModelica dependency scanner we have now. (c++ code)
@@ -211,8 +210,8 @@ target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::runtime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::backendruntime)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::compiler::graphstream)
 target_link_libraries(OpenModelicaCompiler PUBLIC omc::simrt::runtime)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_external_c)
-target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::modelica_io)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::Modelica::ExternalC)
+target_link_libraries(OpenModelicaCompiler PUBLIC omc::3rd::Modelica::IO)
 
 
 

@@ -39,5 +39,3 @@ target_link_libraries(omparse PUBLIC omc::3rd::omantlr3)
 # To find the generated antlr headers. SYSTEM to disable warnings on the generated code.
 target_include_directories(omparse SYSTEM PRIVATE ${GNERATED_DIRECTORY})
 target_include_directories(omparse PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-
-target_include_directories(omparse PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h :/

@@ -12,22 +12,22 @@ if(NOT BOOST_STATIC_LINKING)
   target_link_libraries (${DataExchangeName} ${Boost_LIBRARIES} ${ExtensionUtilitiesName}  ${ModelicaName})
 endif(NOT BOOST_STATIC_LINKING)
 
-add_precompiled_header(${DataExchangeName} Include/Core/Modelica.h)
+add_precompiled_header(${DataExchangeName} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${DataExchangeName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${DataExchangeName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IHistory.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/ISimVar.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimData.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Writer.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimDouble.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/SimBoolean.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/XmlPropertyReader.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/IPropertyReader.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/FactoryExport.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/FactoryPolicy.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/DefaultContainerManager.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/ParallelContainerManager.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/IHistory.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/ISimVar.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/SimData.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/Writer.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/SimDouble.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/SimBoolean.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/XmlPropertyReader.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/IPropertyReader.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/FactoryExport.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/FactoryPolicy.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/DefaultContainerManager.h
+  ${CMAKE_SOURCE_DIR}/Core/DataExchange/ParallelContainerManager.h
   DESTINATION include/omc/cpp/Core/DataExchange)

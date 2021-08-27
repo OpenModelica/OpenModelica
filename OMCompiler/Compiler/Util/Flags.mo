@@ -1374,6 +1374,10 @@ constant ConfigFlag LINK_TYPE = CONFIG_FLAG(145, "linkType",
                "dynamic: libraries are dynamically linked; the executable is built very fast but is not portable because of DLL dependencies.\n"+
                "static: libraries are statically linked; the executable is built more slowly but it is portable and dependency-free.\n"));
 
+constant ConfigFlag TEARING_ALWAYS_DERIVATIVES = CONFIG_FLAG(140, "tearingAlwaysDer",
+  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  Gettext.gettext("Always choose state derivatives as iteration variables in strong components."));
+
 function getFlags
   "Loads the flags with getGlobalRoot. Assumes flags have been loaded."
   input Boolean initialize = true;

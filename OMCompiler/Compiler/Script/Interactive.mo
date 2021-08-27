@@ -9797,6 +9797,7 @@ algorithm
       Absyn.Path modelpath;
       list<SCode.Element> p_1;
       FCore.Graph env,env_1;
+      GraphicEnvCache genv;
       SCode.Element c;
       String id,str;
       SCode.Encapsulated encflag;
@@ -9811,10 +9812,9 @@ algorithm
       equation
         modelpath = AbsynUtil.crefToPath(model_);
         p_1 = AbsynToSCode.translateAbsyn2SCode(p);
-        (cache,env) = Inst.makeEnvFromProgram(p_1);
-        (_,(c as SCode.CLASS()),env_1) = Lookup.lookupClass(cache,env, modelpath);
+        genv = InteractiveUtil.createEnvironment(SymbolTable.getAbsyn(), SOME(p_1), modelpath);
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getNthComponent2(c, cdef, n, env_1);
+        str = getNthComponent2(cdef, n, genv);
       then
         str;
     else "Error";
@@ -9823,40 +9823,28 @@ end getNthComponent;
 
 protected function getNthComponent2
 "Helper function to get_nth_component."
-  input SCode.Element inClass1;
   input Absyn.Class inClass2;
   input Integer inInteger3;
-  input FCore.Graph inEnv4;
+  input GraphicEnvCache genv;
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inClass1,inClass2,inInteger3,inEnv4)
+  matchcontinue (inClass2,inInteger3,genv)
     local
-      FCore.Graph env2,env_2,env;
-      ClassInf.State ci_state;
+      GraphicEnvCache env;
       Absyn.Element comp;
-      String s1,str,id;
-      SCode.Element c;
-      SCode.Encapsulated encflag;
-      SCode.Restriction restr;
       Absyn.Class cdef;
       Integer n;
+      String s1, str;
 
-    case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
+    case (cdef,n,env)
       equation
-        env2 = FGraph.openScope(env, encflag, id, FGraph.restrictionToScopeType(restr));
-        ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-        (_,env_2,_,_,_) =
-          Inst.partialInstClassIn(FCore.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
-            DAE.NOMOD(), DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
         comp = getNthComponentInClass(cdef, n);
-        {s1} = getComponentInfoOld(comp, env_2);
+        {s1} = getComponentInfoOld(comp, env);
         str = stringAppendList({"{", s1, "}"});
       then
         str;
     else
-      equation
-        print("Interactive.getNthComponent2 failed\n");
       then
         fail();
   end matchcontinue;
@@ -9941,22 +9929,7 @@ algorithm
       equation
         modelpath = AbsynUtil.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, SymbolTable.getAbsyn());
-        p_1 = SymbolTable.getSCode();
-        if Flags.isSet(Flags.NF_API) then
-          genv = GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, FCore.emptyCache(), FGraph.emptyGraph);
-        else
-          (cache,env) = Inst.makeEnvFromProgram(p_1);
-          (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache, env, modelpath);
-          env2 = FGraph.openScope(env_1, encflag, id, FGraph.restrictionToScopeType(restr));
-          ci_state = ClassInf.start(restr, FGraph.getGraphName(env2));
-          permissive = Flags.getConfigBool(Flags.PERMISSIVE);
-          FlagsUtil.setConfigBool(Flags.PERMISSIVE, true);
-          (_,env2,_,_,_) =
-            Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(),
-              DAE.NOPRE(), ci_state, c, SCode.PUBLIC(), {}, 0);
-          FlagsUtil.setConfigBool(Flags.PERMISSIVE, permissive);
-          genv = GRAPHIC_ENV_FULL_CACHE(SymbolTable.getAbsyn(), modelpath, cache, env2);
-        end if;
+        genv = InteractiveUtil.createEnvironment(SymbolTable.getAbsyn(), SOME(SymbolTable.getSCode()), modelpath);
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, b, "\"public\"", genv);
         if (access >= 4) then // i.e., Access.diagram
@@ -13958,188 +13931,22 @@ end getComponentsInElementitems;
 protected function getNthComponentInClass
 "Returns the nth GlobalScript.Component of a class. Indexed from 1..n."
   input Absyn.Class inClass;
-  input Integer inInteger;
+  input Integer nth;
   output Absyn.Element outElement;
+protected
+  list<Absyn.Element> pub, pro, lst;
+  Integer n;
 algorithm
-  outElement:=
-  matchcontinue (inClass,inInteger)
-    local
-      Integer count,n,c1,newn;
-      Absyn.Element res;
-      String a,newnstr;
-      Boolean b,c,d;
-      Absyn.Restriction e;
-      list<Absyn.ElementItem> elt;
-      list<Absyn.ClassPart> lst,rest;
-      Option<String> cmt;
-      SourceInfo file_info;
-      list<Absyn.Annotation> ann;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: _))),n)
-      equation
-        count = countComponentsInElts(elt, 0);
-        true = n <= count;
-        res = getNthComponentInElementitems(elt, n);
-      then
-        res;
-
-    // The rule above failed, i.e the nth number is larger than # elements in first public list subtract and try next public list
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PUBLIC(contents = elt) :: rest),ann = ann,comment = cmt),
-                      info = file_info),n)
-      equation
-        c1 = countComponentsInElts(elt, 0);
-        newn = n - c1;
-        true = newn > 0;
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info),
-          newn);
-      then
-        res;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: _))),n)
-      equation
-        res = getNthComponentInElementitems(elt, n);
-      then
-        res;
-
-    // The rule above failed, i.e the nth number is larger than # elements in first public list subtract and try next public list
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (Absyn.PROTECTED(contents = elt) :: rest),comment = cmt,ann = ann),
-                      info = file_info),n)
-      equation
-        c1 = countComponentsInElts(elt, 0);
-        newn = n - c1;
-        (newn > 0) = true;
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info), newn);
-      then
-        res;
-
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.PARTS(classParts = (_ :: lst),ann = ann,comment = cmt),
-                      info = file_info),n)
-      equation
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info), n);
-      then
-        res;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = {})),_)
-      then fail();
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: _))),n)
-      equation
-        count = countComponentsInElts(elt, 0);
-        (n <= count) = true;
-        res = getNthComponentInElementitems(elt, n);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    // The rule above failed, i.e the nth number is larger than # elements in first public list subtract and try next public list
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PUBLIC(contents = elt) :: rest),ann = ann,comment = cmt),
-                      info = file_info),n)
-      equation
-        c1 = countComponentsInElts(elt, 0);
-        newn = n - c1;
-        true = newn > 0;
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info),
-          newn);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: _))),n)
-      equation
-        res = getNthComponentInElementitems(elt, n);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    // The rule above failed, i.e the nth number is larger than # elements in first public list subtract and try next public list
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (Absyn.PROTECTED(contents = elt) :: rest),ann = ann,comment = cmt),
-                      info = file_info),n)
-      equation
-        c1 = countComponentsInElts(elt, 0);
-        newn = n - c1;
-        true = newn > 0;
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},rest,ann,cmt),file_info), newn);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(name = a,partialPrefix = b,finalPrefix = c,encapsulatedPrefix = d,restriction = e,
-                      body = Absyn.CLASS_EXTENDS(parts = (_ :: lst),ann = ann,comment = cmt),
-                      info = file_info),n)
-      equation
-        res = getNthComponentInClass(Absyn.CLASS(a,b,c,d,e,Absyn.PARTS({},{},lst,ann,cmt),file_info), n);
-      then
-        res;
-
-    // adrpo: handle also the case model extends X end X;
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = {})),_)
-      then fail();
-
-
-    case (Absyn.CLASS(body = Absyn.DERIVED()),_)
-      then fail();
-
-  end matchcontinue;
+  pub := getPublicComponentsInClass(inClass);
+  n := listLength(pub);
+  if nth <= n then
+    outElement := listGet(pub, nth);
+  else
+    // !TODO, check access annotation
+    pro := getProtectedComponentsInClass(inClass);
+    outElement := listGet(pro, nth-n);
+  end if;
 end getNthComponentInClass;
-
-protected function getNthComponentInElementitems
-" This function takes an ElementItem list and an integer
-   and returns the nth component in the list, indexed from 1..n."
-  input list<Absyn.ElementItem> inElements;
-  input Integer inInteger;
-  output Absyn.Element outElement;
-algorithm
-  outElement:= match (inElements, inInteger)
-    local
-      Boolean a;
-      Option<Absyn.RedeclareKeywords> b;
-      Absyn.InnerOuter c;
-      Absyn.ElementAttributes e;
-      Absyn.TypeSpec f;
-      Absyn.ComponentItem item;
-      SourceInfo info;
-      Option<Absyn.ConstrainClass> i;
-      Integer numcomps,newn,n,n_1;
-      Absyn.Element res;
-      list<Absyn.ComponentItem> lst;
-      list<Absyn.ElementItem> rest;
-
-    case ((Absyn.ELEMENTITEM(element =
-        Absyn.ELEMENT(a, b, c, Absyn.COMPONENTS(e, f, (item::_)), info, i)) :: _),1)
-      then
-        Absyn.ELEMENT(a,b,c,Absyn.COMPONENTS(e,f,{item}),info,i);
-
-    case ((Absyn.ELEMENTITEM(element = Absyn.ELEMENT(a, b, c,
-        Absyn.COMPONENTS(e, f, lst), info, i)) :: rest),n)
-      algorithm
-        numcomps := listLength(lst);
-
-        if n > numcomps then
-          newn := n - numcomps;
-          res := getNthComponentInElementitems(rest, newn);
-        else
-          item := listGet(lst, n);
-          res := Absyn.ELEMENT(a, b, c, Absyn.COMPONENTS(e, f, {item}), info, i);
-        end if;
-      then
-        res;
-
-    case ((_ :: rest),n)
-      equation
-        res = getNthComponentInElementitems(rest, n);
-      then
-        res;
-
-    case ({},_) then fail();
-
-  end match;
-end getNthComponentInElementitems;
 
 protected function getComponentInfo
 " This function takes an Element and returns a list of strings
@@ -14303,14 +14110,14 @@ protected function getComponentInfoOld
    or \'Resistor,R1,\"comment1\",R2,\"comment2\"\'
    If Element is not a component, the empty string is returned"
   input Absyn.Element inElement;
-  input FCore.Graph inEnv;
+  input GraphicEnvCache inEnv;
   output list<String> outStringLst;
 algorithm
   outStringLst:=
   matchcontinue (inElement,inEnv)
     local
       SCode.Element c;
-      FCore.Graph env_1,env;
+      GraphicEnvCache env;
       Absyn.Path envpath,p_1,p;
       String tpname,typename;
       list<Absyn.ComponentItem> lst;
@@ -14324,11 +14131,7 @@ algorithm
                         specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(p, _),components = lst)),
           env)
       equation
-        (_,_,env_1) = Lookup.lookupClass(FCore.emptyCache(),env, p, SOME(inElement.info));
-        SOME(envpath) = FGraph.getScopePath(env_1);
-        tpname = AbsynUtil.pathLastIdent(p);
-        p_1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
-        typename = AbsynUtil.pathString(p_1);
+        typename = AbsynUtil.pathString(InteractiveUtil.qualifyPath(env, p));
         names = getComponentItemsNameAndComment(lst,false);
         strList = prefixTypename(typename, names);
       then
@@ -14336,9 +14139,9 @@ algorithm
 
     case (Absyn.ELEMENT(
                         specification = Absyn.COMPONENTS(typeSpec = Absyn.TPATH(p, _),components = lst)),
-          _)
+          env)
       equation
-        typename = AbsynUtil.pathString(p);
+        typename = AbsynUtil.pathString(InteractiveUtil.qualifyPath(env, p));
         names = getComponentItemsNameAndComment(lst,false);
         strList = prefixTypename(typename, names);
       then

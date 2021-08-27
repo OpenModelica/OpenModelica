@@ -10,7 +10,7 @@ model testFinalCon2
   Real x1(start = 1, fixed = true);
   Real x2(start = -1, fixed = true);
   input Real u;
-  
+
   Real final_con1(min = 0, max = 0) annotation(isFinalConstraint = true);
   Real final_con2(min = 0, max = 0) annotation(isFinalConstraint = true);
   Real final_con3(min = 0, max = 1) annotation(isFinalConstraint = true);
@@ -22,7 +22,7 @@ equation
   final_con1 = x1 - 2; //0 <= x1 - 2 <= 0 for t = tf
   final_con2 = x2 - 3;
   final_con3 = cost - 15;
-  
+
   cost = u^2;
 end testFinalCon2;
 ");
@@ -65,7 +65,7 @@ getErrorString();
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
 // LOG_SUCCESS       | info    | The simulation finished successfully.

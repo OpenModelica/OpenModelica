@@ -8,6 +8,7 @@
 #include <boost/lexical_cast.hpp>
 #include <fstream>
 #include <iostream>
+#include <regex>
 
 XmlPropertyReader::XmlPropertyReader(IGlobalSettings *globalSettings, std::string propertyFile)
   : IPropertyReader()
@@ -34,6 +35,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
     double *derVars= sim_vars-> getDerStateVector();
     int refIdx = -1;
     boost::optional<int> refIdxOpt;
+    std::regex filterRegex(_globalSettings->getVariableFilter());
     try
     {
       ptree tree;
@@ -68,7 +70,7 @@ void XmlPropertyReader::readInitialValues(IContinuous& system, shared_ptr<ISimVa
           bool isAlias = aliasInfo.compare("alias") == 0;
           bool isNegatedAlias = aliasInfo.compare("negatedAlias") == 0;
 
-          bool emitResult = true;
+          bool emitResult = std::regex_match(name, filterRegex);
           if (_globalSettings->getEmitResults() == EMIT_NONE)
             emitResult = false;
           else if (_globalSettings->getEmitResults() != EMIT_ALL)

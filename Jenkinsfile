@@ -2,6 +2,7 @@ def common
 def shouldWeBuildOSX
 def shouldWeBuildMINGW
 def shouldWeBuildCENTOS7
+def shouldWeSkipCMakeBuild_value
 def shouldWeRunTests
 def isPR
 pipeline {
@@ -17,6 +18,7 @@ pipeline {
     booleanParam(name: 'BUILD_OSX', defaultValue: false, description: 'Build with OSX')
     booleanParam(name: 'BUILD_MINGW', defaultValue: false, description: 'Build with Win/MinGW')
     booleanParam(name: 'BUILD_CENTOS7', defaultValue: false, description: 'Build on CentOS7 with CMake 2.8')
+    booleanParam(name: 'SKIP_CMAKE_BUILD', defaultValue: false, description: 'Skip building omc with the CMake build system (CMake 3.17.2)')
   }
   // stages are ordered according to execution time; highest time first
   // nodes are selected based on a priority (in Jenkins config)
@@ -41,6 +43,8 @@ pipeline {
           print "shouldWeBuildMINGW: ${shouldWeBuildMINGW}"
           shouldWeBuildCENTOS7 = common.shouldWeBuildCENTOS7()
           print "shouldWeBuildCENTOS7: ${shouldWeBuildCENTOS7}"
+          shouldWeSkipCMakeBuild_value = common.shouldWeSkipCMakeBuild()
+          print "shouldWeSkipCMakeBuild: ${shouldWeSkipCMakeBuild_value}"
           shouldWeRunTests = common.shouldWeRunTests()
           print "shouldWeRunTests: ${shouldWeRunTests}"
         }
@@ -169,11 +173,44 @@ pipeline {
               common.buildOMC(
                 '/opt/rh/devtoolset-8/root/usr/bin/gcc',
                 '/opt/rh/devtoolset-8/root/usr/bin/g++',
-                'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran',
+                'FC=/opt/rh/devtoolset-8/root/usr/bin/gfortran CMAKE=cmake3',
                 false, // Building C++ runtime doesn't work at the moment
                 false)
             }
             //stash name: 'omc-centos7', includes: 'build/**, **/config.status'
+          }
+        }
+        stage('cmake-xenial-gcc') {
+          agent {
+            docker {
+              // image 'docker.openmodelica.org/build-deps:focal.nightly.amd64'
+              image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
+              label 'linux'
+              alwaysPull true
+              args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
+                   "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
+            }
+          }
+          when {
+            beforeAgent true
+            expression { !shouldWeSkipCMakeBuild_value }
+          }
+          environment {
+            CC = "gcc"
+            CXX = "g++"
+          }
+          steps {
+            script {
+              echo "Download and install CMake 3.17.2"
+              sh '''
+                wget "cmake.org/files/v3.17/cmake-3.17.2-Linux-x86_64.sh"
+                mkdir -p /tmp/cmake
+                sh cmake-3.17.2-Linux-x86_64.sh --prefix=/tmp/cmake --skip-license
+                /tmp/cmake/bin/cmake --version
+              '''
+              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF', '/tmp/cmake/bin/cmake')
+            }
+            // stash name: 'omc-cmake-gcc', includes: 'OMCompiler/build_cmake/install_cmake/bin/**'
           }
         }
         stage('checks') {
@@ -544,6 +581,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            echo "${env.NODE_NAME}"
             sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
@@ -570,6 +608,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            echo "${env.NODE_NAME}"
             sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
@@ -595,6 +634,7 @@ pipeline {
             skipDefaultCheckout true
           }
           steps {
+            echo "${env.NODE_NAME}"
             sh 'rm -rf testsuite/'
             unstash 'cross-fmu'
             unstash 'cross-fmu-extras'
@@ -630,6 +670,7 @@ pipeline {
             unstash 'cross-fmu-results-linux-wine'
             unstash 'cross-fmu-results-osx'
             unstash 'cross-fmu-results-armhf'
+            echo "${env.NODE_NAME}"
             sh 'cd testsuite/special/FmuExportCrossCompile && ../../../build/bin/omc check-files.mos'
             sh 'cd testsuite/special/FmuExportCrossCompile && tar -czf ../../../Test_FMUs.tar.gz Test_FMUs'
             archiveArtifacts 'Test_FMUs.tar.gz'
@@ -650,6 +691,7 @@ pipeline {
           steps {
             unstash 'compliance'
             unstash 'compliance-newinst'
+            echo "${env.NODE_NAME}"
             sshPublisher(publishers: [sshPublisherDesc(configName: 'ModelicaComplianceReports', transfers: [sshTransfer(sourceFiles: 'compliance-*html')])])
           }
         }
@@ -667,6 +709,7 @@ pipeline {
           }
           steps {
             unstash 'usersguide'
+            echo "${env.NODE_NAME}"
             sh "tar xJf OpenModelicaUsersGuide-${common.tagName()}.html.tar.xz"
             sh "mv OpenModelicaUsersGuide ${common.tagName()}"
             sshPublisher(publishers: [sshPublisherDesc(configName: 'OpenModelicaUsersGuide', transfers: [sshTransfer(sourceFiles: "OpenModelicaUsersGuide-${common.tagName()}*,${common.tagName()}/**")])])

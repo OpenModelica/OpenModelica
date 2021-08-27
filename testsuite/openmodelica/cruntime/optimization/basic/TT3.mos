@@ -12,7 +12,7 @@ loadString("
 optimization TimeTableTest(objectiveIntegrand = (x - timeTable.y[1])^2)
     input Real u(min = -10, max = 10);
     Real x(min = -5, max = 10);
-    Modelica.Blocks.Sources.CombiTimeTable timeTable(table = [0,1; 1,3; 2,-3; 3,5; 4,7; 5, 0], extrapolation = Modelica.Blocks.Types.Extrapolation.Periodic ); 
+    Modelica.Blocks.Sources.CombiTimeTable timeTable(table = [0,1; 1,3; 2,-3; 3,5; 4,7; 5, 0], extrapolation = Modelica.Blocks.Types.Extrapolation.Periodic );
 initial equation
    x = timeTable.y[1];
 equation
@@ -52,7 +52,7 @@ getErrorString();
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
 // stdout            | info    | The simulation finished successfully.

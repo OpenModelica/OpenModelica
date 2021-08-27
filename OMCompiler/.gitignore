@@ -84,6 +84,7 @@ build_cmake/
 .metadata
 .vscode/
 revision.h
+omc_config.unix.h
 SimulationRuntime/c/Makefile
 SimulationRuntime/OMSICpp/Makefile
 SimulationRuntime/OMSICpp/Makefile.env
@@ -148,7 +149,6 @@ Compiler/boot/Makefile.depends
 Compiler/boot/Makefile.sources
 Compiler/boot/patches/*.patch
 Compiler/runtime/Makefile
-Compiler/runtime/config.unix.h
 Compiler/runtime/omc_communication.cc
 Compiler/runtime/omc_communication.h
 Compiler/susan_codegen/TplCodegen.mo

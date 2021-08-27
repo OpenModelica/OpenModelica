@@ -38,10 +38,10 @@ win32 {
 
   QMAKE_LFLAGS += -Wl,--enable-auto-import
   CONFIG(debug, debug|release){
-    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwtd
+    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwtd -lOpenModelicaRuntimeC -lomcgc
   }
   else {
-    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwt
+    LIBS += -L$$(OMBUILDDIR)/lib/omc -lOMPlot -lomqwt -lOpenModelicaRuntimeC -lomcgc
   }
   INCLUDEPATH += $$(OMBUILDDIR)/include/omplot/qwt $$(OMBUILDDIR)/include/omc/c
 } else {

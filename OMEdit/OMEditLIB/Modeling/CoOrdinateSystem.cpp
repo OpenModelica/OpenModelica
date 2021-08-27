@@ -80,7 +80,9 @@ void CoOrdinateSystem::setLeft(const qreal left)
 void CoOrdinateSystem::setLeft(const QString &left)
 {
   bool ok;
-  if (left.toDouble(&ok) && ok) {
+  if (left.compare(QStringLiteral("0.0")) == 0) {
+    setLeft(0.0);
+  } else if (left.toDouble(&ok) && ok) {
     setLeft(left.toDouble());
   }
 }
@@ -94,7 +96,9 @@ void CoOrdinateSystem::setBottom(const qreal bottom)
 void CoOrdinateSystem::setBottom(const QString &bottom)
 {
   bool ok;
-  if (bottom.toDouble(&ok) && ok) {
+  if (bottom.compare(QStringLiteral("0.0")) == 0) {
+    setBottom(0.0);
+  } else if (bottom.toDouble(&ok) && ok) {
     setBottom(bottom.toDouble());
   }
 }
@@ -108,7 +112,9 @@ void CoOrdinateSystem::setRight(const qreal right)
 void CoOrdinateSystem::setRight(const QString &right)
 {
   bool ok;
-  if (right.toDouble(&ok) && ok) {
+  if (right.compare(QStringLiteral("0.0")) == 0) {
+    setRight(0.0);
+  } else if (right.toDouble(&ok) && ok) {
     setRight(right.toDouble());
   }
 }
@@ -122,7 +128,9 @@ void CoOrdinateSystem::setTop(const qreal top)
 void CoOrdinateSystem::setTop(const QString &top)
 {
   bool ok;
-  if (top.toDouble(&ok) && ok) {
+  if (top.compare(QStringLiteral("0.0")) == 0) {
+    setTop(0.0);
+  } else if (top.toDouble(&ok) && ok) {
     setTop(top.toDouble());
   }
 }

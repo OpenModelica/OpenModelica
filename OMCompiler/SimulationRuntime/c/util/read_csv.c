@@ -106,10 +106,10 @@ int read_csv_dataset_size(const char* filename)
   }
 
   /* determine delim */
-  fread(buf, 1, 5, f);
+  omc_fread(buf, 1, 5, f, 0);
   if (0 == strcmp(buf, "\"sep="))
   {
-    fread(&delim, 1, 1, f);
+    omc_fread(&delim, 1, 1, f, 0);
     offset = 8;
   }
   fseek(f, offset, SEEK_SET);
@@ -118,7 +118,7 @@ int read_csv_dataset_size(const char* filename)
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {
-    size_t len = fread(buf, 1, buf_size, f);
+    size_t len = omc_fread(buf, 1, buf_size, f, 1);
     if (len != buf_size && !feof(f)) {
       csv_free(&p);
       fclose(f);
@@ -143,7 +143,7 @@ char** read_csv_variables(FILE *fin, int *length, unsigned char delim)
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {
-    size_t len = fread(buf, 1, buf_size, fin);
+    size_t len = omc_fread(buf, 1, buf_size, fin, 1);
     if (len != buf_size && !feof(fin)) {
       csv_free(&p);
       return NULL;
@@ -212,10 +212,10 @@ double* read_csv_dataset_var(const char *filename, const char *var, int dimsize)
   }
 
   /* determine delim */
-  fread(buf, 1, 5, fin);
+  omc_fread(buf, 1, 5, fin, 0);
   if (0 == strcmp(buf, "\"sep="))
   {
-    fread(&delim, 1, 1, fin);
+    omc_fread(&delim, 1, 1, fin, 0);
     offset = 8;
   }
   fseek(fin, offset, SEEK_SET);
@@ -224,7 +224,7 @@ double* read_csv_dataset_var(const char *filename, const char *var, int dimsize)
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {
-    size_t len = fread(buf, 1, buf_size, fin);
+    size_t len = omc_fread(buf, 1, buf_size, fin, 1);
     if (len != buf_size && !feof(fin)) {
       csv_free(&p);
       fclose(fin);
@@ -258,10 +258,10 @@ struct csv_data* read_csv(const char *filename)
   }
 
   /* determine delim */
-  fread(buf, 1, 5, fin);
+  omc_fread(buf, 1, 5, fin, 0);
   if (0 == strcmp(buf, "\"sep="))
   {
-    fread(&delim, 1, 1, fin);
+    omc_fread(&delim, 1, 1, fin, 0);
     offset = 8;
   }
   fseek(fin, offset, SEEK_SET);
@@ -277,7 +277,7 @@ struct csv_data* read_csv(const char *filename)
   csv_set_realloc_func(&p, realloc);
   csv_set_free_func(&p, free);
   do {
-    size_t len = fread(buf, 1, buf_size, fin);
+    size_t len = omc_fread(buf, 1, buf_size, fin, 1);
     if (len != buf_size && !feof(fin)) {
       csv_free(&p);
       fclose(fin);

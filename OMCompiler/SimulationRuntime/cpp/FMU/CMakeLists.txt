@@ -9,18 +9,18 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${FMUName} ${ExtensionUtilitiesName}  ${ModelicaName})
-add_precompiled_header(${FMUName} Include/Core/Modelica.h)
+add_precompiled_header(${FMUName} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${FMUName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${FMUName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/FMU/fmiModelFunctions.h
-  ${CMAKE_SOURCE_DIR}/Include/FMU/fmiModelTypes.h
-  ${CMAKE_SOURCE_DIR}/Include/FMU/FMUGlobalSettings.h
-  ${CMAKE_SOURCE_DIR}/Include/FMU/FMULogger.h
-  ${CMAKE_SOURCE_DIR}/Include/FMU/FMUWrapper.h
-  ${CMAKE_SOURCE_DIR}/Include/FMU/FMULibInterface.h
-  ${CMAKE_SOURCE_DIR}/Include/FMU/IFMUInterface.h
-  ${CMAKE_SOURCE_DIR}/Include/FMU/FactoryExport.h
+  ${CMAKE_SOURCE_DIR}/FMU/fmiModelFunctions.h
+  ${CMAKE_SOURCE_DIR}/FMU/fmiModelTypes.h
+  ${CMAKE_SOURCE_DIR}/FMU/FMUGlobalSettings.h
+  ${CMAKE_SOURCE_DIR}/FMU/FMULogger.h
+  ${CMAKE_SOURCE_DIR}/FMU/FMUWrapper.h
+  ${CMAKE_SOURCE_DIR}/FMU/FMULibInterface.h
+  ${CMAKE_SOURCE_DIR}/FMU/IFMUInterface.h
+  ${CMAKE_SOURCE_DIR}/FMU/FactoryExport.h
   DESTINATION include/omc/cpp/FMU)

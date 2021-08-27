@@ -3,6 +3,7 @@ find_package(Intl REQUIRED)
 find_package(Iconv REQUIRED)
 
 if(OMC_USE_LAPACK)
+  message(STATUS "Looking for LAPACK. This can be slow sometimes. Hang tight!")
   find_package(LAPACK REQUIRED)
 
   # Check if our lapack version have the deprecated functions.
@@ -58,7 +59,8 @@ set(OMC_RUNTIIME_SOURCES
     om_unzip.c
     ptolemyio_omc.cpp
     SimulationResults_omc.c
-    systemimplmisc.cpp)
+    systemimplmisc.cpp
+    ffi_omc.c)
 
 
 # ######################################################################################################################
@@ -67,12 +69,13 @@ add_library(omcruntime STATIC)
 add_library(omc::compiler::runtime ALIAS omcruntime)
 
 target_sources(omcruntime PRIVATE ${OMC_RUNTIIME_SOURCES})
-target_compile_features(omcruntime PRIVATE cxx_std_11)
 
+target_link_libraries(omcruntime PUBLIC omc::config)
 target_link_libraries(omcruntime PUBLIC CURL::libcurl)
 target_link_libraries(omcruntime PUBLIC ${Intl_LIBRARIES})
 target_link_libraries(omcruntime PUBLIC Iconv::Iconv)
-target_link_libraries(omcruntime PUBLIC omc::simrt::runtime)
+target_link_libraries(omcruntime PUBLIC omc::simrt::memory)
+target_link_libraries(omcruntime PUBLIC omc::3rd::ffi)
 target_link_libraries(omcruntime PUBLIC omc::3rd::libzmq)
 target_link_libraries(omcruntime PUBLIC omc::3rd::FMIL::minizip) # We use the minizip lib from 3rdParty/FMIL
 
@@ -88,7 +91,6 @@ endif()
 
 target_include_directories(omcruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(omcruntime PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
 
 # uuid is one of the default libs that cmake adds to any target on Win32. On non-Win systems we look for the library and
 # explicitly use it.
@@ -144,14 +146,14 @@ set(OMC_BACKENDRUNTIIME_SOURCES
 
 target_sources(omcbackendruntime PRIVATE ${OMC_BACKENDRUNTIIME_SOURCES})
 
+target_link_libraries(omcbackendruntime PUBLIC omc::config)
 target_link_libraries(omcbackendruntime PUBLIC ${Intl_LIBRARIES})
-target_link_libraries(omcbackendruntime PUBLIC omc::simrt::runtime)
-target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib::static)
+target_link_libraries(omcbackendruntime PUBLIC omc::simrt::memory)
+target_link_libraries(omcbackendruntime PUBLIC omc::3rd::fmilib)
 target_link_libraries(omcbackendruntime PUBLIC omc::3rd::metis)
 
 target_include_directories(omcbackendruntime PUBLIC ${Intl_INCLUDE_DIRS})
 target_include_directories(omcbackendruntime PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_include_directories(omcbackendruntime PRIVATE ${OMCompiler_SOURCE_DIR}) # for revision.h
 
 # ######################################################################################################################
 # Library: omcgraphstream
@@ -161,26 +163,8 @@ add_library(omc::compiler::graphstream ALIAS omcgraphstream)
 set(OMC_GRAPH_STREAM_SOURCES GraphStreamExt_omc.cpp)
 target_sources(omcgraphstream PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
 
-target_link_libraries(omcgraphstream PUBLIC omc::simrt::runtime)
+target_link_libraries(omcgraphstream PUBLIC omc::simrt::memory)
 target_link_libraries(omcgraphstream PUBLIC omc::3rd::netstream)
-
-# Remove the dependency of bootstrapping on graphstream lib and remove this. It is not needed for bootstrapping.
-# ######################################################################################################################
-# Library: omcgraphstream-boot
-add_library(omcgraphstream-boot STATIC)
-add_library(omc::compiler::graphstream-boot ALIAS omcgraphstream-boot)
-
-set(OMC_GRAPH_STREAM_SOURCES GraphStreamExt_omc.cpp)
-target_sources(omcgraphstream-boot PRIVATE ${OMC_GRAPH_STREAM_SOURCES})
-
-# Define OMC_BOOTSTRAPPING for the boot lib.
-target_compile_definitions(omcgraphstream-boot PRIVATE OMC_BOOTSTRAPPING)
-
-target_link_libraries(omcgraphstream-boot PUBLIC omc::simrt::runtime)
-target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
-
-
-
 
 
 
@@ -189,9 +173,9 @@ target_link_libraries(omcgraphstream-boot PUBLIC omc::3rd::netstream)
 
 
 ################################################################################
-# This is a lazy approach to generating runtime/config.unix.h and Compiler/Util/Autoconf.mo
+# This is a lazy approach to generating OMCompiler/omc_config.unix.h and Compiler/Util/Autoconf.mo
 # Needs to be refactored quite a bit. The variable names should be updated to be more
-# unique and descriptive. 
+# unique and descriptive.
 # However, If I do that I need to update the .in files which means the normal compilation is
 # also affected. As a result I would have to change a few things since many things depend on
 # the generated output files. For now just mimic the old compilation.
@@ -252,11 +236,11 @@ set(WITH_UUID "#define WITH_LIBUUID 1")
 
 set(USE_GRAPH 0)
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/revision.h.in ${CMAKE_CURRENT_SOURCE_DIR}/revision.h)
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h.in ${CMAKE_CURRENT_SOURCE_DIR}/config.unix.h)
+configure_file(${OMCompiler_SOURCE_DIR}/revision.h.in ${OMCompiler_SOURCE_DIR}/revision.h)
+configure_file(${OMCompiler_SOURCE_DIR}/omc_config.unix.h.in ${OMCompiler_SOURCE_DIR}/omc_config.unix.h)
 
 
-# Generate Autoconf.mo here since we have some of the variables already defined for config.unix.h above. 
+# Generate Autoconf.mo here since we have some of the variables already defined for omc_config.unix.h above.
 
 if(WIN32)
 
@@ -286,9 +270,9 @@ else()
   set(MAKE ${CMAKE_MAKE_PROGRAM})
 
   string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC  -llapack -lblas   -lm -lomcgc -lpthread -rdynamic")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC  -llapack -lblas   -lm -lomcgc -lpthread -rdynamic -Wl,--no-undefined")
-  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -llapack -lblas   -lm -lpthread -rdynamic -Wl,--no-undefined")
- 
+  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC  -llapack -lblas -lm -lomcgc -lpthread -rdynamic")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOptimizationRuntime -lOpenModelicaRuntimeC -lomcmemory -llapack -lblas -lm -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lOpenModelicaFMIRuntimeC -llapack -lblas -lm -lpthread -rdynamic -Wl,--no-undefined")
+
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
 endif()

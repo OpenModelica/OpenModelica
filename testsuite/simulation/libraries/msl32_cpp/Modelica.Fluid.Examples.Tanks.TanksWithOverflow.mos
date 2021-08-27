@@ -31,64 +31,13 @@ runScript(modelTesting);getErrorString();
 // Modelica.Fluid.Examples.Tanks.TanksWithOverflow
 // {"upperTank.level","upperTank.medium.h","lowerTank.level","lowerTank.medium.h"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 25000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.Tanks.TanksWithOverflow', options = '', outputFormat = 'mat', variableFilter = 'time|upperTank.level|upperTank.medium.h|lowerTank.level|lowerTank.medium.h', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Fluid.Examples.Tanks.TanksWithOverflow_res.mat
-// Messages: 
-// [CVODE WARNING]  CVode
-//   Internal t = 17305.4 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 17305.4 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 18146.1 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 18146.1 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 18146.1 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 18146.1 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 19213.2 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 19213.2 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 20048.9 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 20048.9 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 20048.9 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 20048.9 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 21482 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
-//
-// [CVODE WARNING]  CVode
-//   Internal t = 21482 and h = 1e-12 are such that t + h = t on the next step. The solver will continue anyway.
-//
+// Messages: ERROR  : init  : SimManager: Could not initialize system
+// ERROR  : init  : SimManager: Nonlinear solver 126 stopped at time 0 with error in algloop solver: 
+// error solving nonlinear system (iteration limit: 50)
+// ERROR  : solver: SimController: Simulation failed using nonlinear solver newton
+// ERROR  : solver: SimController: Recovering with nonlinear solver kinsol
 //
 // "true
 // "

@@ -132,14 +132,7 @@ algorithm
     // collect vars and eqns for initial system
     vars := BackendVariable.emptyVars();
 
-    // If Cpp runtime is used set fixvars to emptyVars because otherwise Cpp testcases fail
-    // This is wrong and leads to bigger initialization tearing sets than necessary!!!
-    // To-Do: Fix the problems with the Cpp runtime
-    if (stringEq(Config.simCodeTarget(), "Cpp"))then
-      fixvars := BackendVariable.emptyVars();
-    else
-      fixvars := BackendVariable.listVar(outAllPrimaryParameters);
-    end if;
+    fixvars := BackendVariable.listVar(outAllPrimaryParameters);
 
     eqns := BackendEquation.emptyEqnsSized(BackendVariable.varsSize(dae.shared.aliasVars)
                                          + BackendVariable.varsSize(dae.shared.globalKnownVars)

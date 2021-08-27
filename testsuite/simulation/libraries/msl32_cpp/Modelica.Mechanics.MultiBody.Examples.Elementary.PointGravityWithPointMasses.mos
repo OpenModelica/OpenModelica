@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses);
 compareVars :=
 {
@@ -47,12 +47,13 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses
 // {"body1.r_0[1]","body1.r_0[2]","body1.r_0[3]","body1.v_0[1]","body1.v_0[2]","body1.v_0[3]","body2.r_0[1]","body2.r_0[2]","body2.r_0[3]","body2.v_0[1]","body2.v_0[2]","body2.v_0[3]","body3.r_0[1]","body3.r_0[2]","body3.r_0[3]","body3.v_0[1]","body3.v_0[2]","body3.v_0[3]","body4.r_0[1]","body4.r_0[2]","body4.r_0[3]","body4.v_0[1]","body4.v_0[2]","body4.v_0[3]"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses', options = '', outputFormat = 'mat', variableFilter = 'time|body1.r_0.1.|body1.r_0.2.|body1.r_0.3.|body1.v_0.1.|body1.v_0.2.|body1.v_0.3.|body2.r_0.1.|body2.r_0.2.|body2.r_0.3.|body2.v_0.1.|body2.v_0.2.|body2.v_0.3.|body3.r_0.1.|body3.r_0.2.|body3.r_0.3.|body3.v_0.1.|body3.v_0.2.|body3.v_0.3.|body4.r_0.1.|body4.r_0.2.|body4.r_0.3.|body4.v_0.1.|body4.v_0.2.|body4.v_0.3.', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.MultiBody.Examples.Elementary.PointGravityWithPointMasses_res.mat
+// Files Equal!
 // "true
 // "
 // ""

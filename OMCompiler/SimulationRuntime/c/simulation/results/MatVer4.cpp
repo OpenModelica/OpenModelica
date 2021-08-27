@@ -30,6 +30,7 @@
  */
 
 #include "MatVer4.h"
+#include "util/omc_file.h"
 
 #include <assert.h>
 #include <stddef.h>
@@ -95,7 +96,7 @@ void updateHeader_matVer4(FILE* file, long position, const char* name, size_t ro
 
   long eof = ftell(file);
   fseek(file, position, SEEK_SET);
-  fread(&header, sizeof(MatVer4Header), 1, file);
+  omc_fread(&header, sizeof(MatVer4Header), 1, file, 0);
 
   assert(header.type == (isBigEndian() ? 1000 : 0) + type);
   assert(header.mrows == rows);
@@ -122,7 +123,7 @@ MatVer4Matrix* readMatVer4Matrix(FILE* file)
   if (!matrix)
     return NULL;
 
-  fread(&matrix->header, sizeof(MatVer4Header), 1, file);
+  omc_fread(&matrix->header, sizeof(MatVer4Header), 1, file, 0);
 
   // skip name
   fseek(file, matrix->header.namelen, SEEK_CUR);
@@ -130,7 +131,7 @@ MatVer4Matrix* readMatVer4Matrix(FILE* file)
   MatVer4Type_t type = (MatVer4Type_t) (matrix->header.type % 100);
   size_t size = sizeofMatVer4Type(type);
   matrix->data = malloc(matrix->header.mrows * matrix->header.ncols * size);
-  fread(matrix->data, size, matrix->header.mrows*matrix->header.ncols, file);
+  omc_fread(matrix->data, size, matrix->header.mrows*matrix->header.ncols, file, 0);
 
   return matrix;
 }
@@ -149,7 +150,7 @@ void freeMatrix_matVer4(MatVer4Matrix** matrix)
 void skipMatrix_matVer4(FILE* file)
 {
   MatVer4Header header;
-  fread(&header, sizeof(MatVer4Header), 1, file);
+  omc_fread(&header, sizeof(MatVer4Header), 1, file, 0);
 
   // skip name
   fseek(file, header.namelen, SEEK_CUR);

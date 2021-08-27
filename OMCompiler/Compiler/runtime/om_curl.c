@@ -66,6 +66,7 @@ static void* addTransfer(CURLM *cm, void *urlPathList, int *result)
       sprintf(ca_bundle_file, "%s/%s", omhome, CURL_CA_BUNDLE_SUFFIX);
     }
     curl_easy_setopt(eh, CURLOPT_CAINFO, ca_bundle_file);
+    free(ca_bundle_file);
   }
 #endif
   curl_easy_setopt(eh, CURLOPT_FOLLOWLOCATION, 1);
@@ -106,11 +107,9 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
       curl_easy_getinfo(e, CURLINFO_PRIVATE, &p);
       FILE *fout = p->fout;
       const char *url = p->url;
-      free(p);
+
       if (msg->msg == CURLMSG_DONE) {
         fclose(fout);
-        curl_multi_remove_handle(cm, e);
-        curl_easy_cleanup(e);
         urlPathList = addTransfer(cm, urlPathList, &result);
         if (msg->data.result != CURLE_OK) {
           const char *msgs[2] = {curl_easy_strerror(msg->data.result), url};
@@ -118,8 +117,12 @@ int om_curl_multi_download(void *urlPathList, int maxParallel)
           omc_unlink(p->filename);
           result = 0;
         }
-      } else { /* There should not be any other message types... Ignore it? */
+        curl_multi_remove_handle(cm, e);
+        curl_easy_cleanup(e);
       }
+      else { /* There should not be any other message types... Ignore it? */
+      }
+      free(p);
     }
     if (still_alive) {
 #if LIBCURL_VERSION_NUM >= 0x071c00 /* curl_multi_wait available since 7.28.0, not on CentOS el6 */

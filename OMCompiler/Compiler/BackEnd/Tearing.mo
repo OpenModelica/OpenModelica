@@ -97,39 +97,33 @@ end TearingMethod;
 public function tearingSystem "author: Frenkel TUD 2012-05"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+protected
+  String methodString = Config.getTearingMethod();
+  TearingMethod method;
+  BackendDAE.BackendDAEType DAEtype;
+  Integer strongComponentIndex = System.tmpTickIndex(Global.strongComponent_index);
 algorithm
-  outDAE := matchcontinue(inDAE)
-    local
-      String methodString;
-      TearingMethod method;
-      BackendDAE.BackendDAEType DAEtype;
-      Integer strongComponentIndex = System.tmpTickIndex(Global.strongComponent_index);
+  // if noTearing is selected, do nothing.
+  if methodString == "noTearing" then
+    outDAE := inDAE;
+    return;
+  end if;
 
-    // if noTearing is selected, do nothing.
-    case(_) equation
-      methodString = Config.getTearingMethod();
-      true = stringEqual(methodString, "noTearing");
-    then inDAE;
-
-    // get method function and traverse systems
-    case(_) equation
-      methodString = Config.getTearingMethod();
-      BackendDAE.SHARED(backendDAEType=DAEtype) = inDAE.shared;
-      false = stringEqual(methodString, "shuffleTearing") and stringEq("simulation",BackendDump.printBackendDAEType2String(DAEtype));
-      method = getTearingMethod(methodString);
-      if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-        print("\n\n\n\n" + UNDERLINE + UNDERLINE + "\nCalling Tearing for ");
-        BackendDump.printBackendDAEType(DAEtype);
-        print("!\n" + UNDERLINE + UNDERLINE + "\n");
-      end if;
-      (outDAE, (_,strongComponentIndex)) = BackendDAEUtil.mapEqSystemAndFold(inDAE, tearingSystemWork, (method, strongComponentIndex));
-      System.tmpTickSetIndex(strongComponentIndex, Global.strongComponent_index);
-    then outDAE;
-
-    else equation
-      Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function tearingSystem failed", sourceInfo());
-    then fail();
-  end matchcontinue;
+  // get method function and traverse systems
+  try
+    method := getTearingMethod(methodString);
+    BackendDAE.SHARED(backendDAEType=DAEtype) := inDAE.shared;
+    if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+      print("\n\n\n\n" + UNDERLINE + UNDERLINE + "\nCalling Tearing for " +
+            BackendDump.printBackendDAEType2String(DAEtype) +
+            "!\n" + UNDERLINE + UNDERLINE + "\n");
+    end if;
+    (outDAE, strongComponentIndex) := BackendDAEUtil.mapEqSystemAndFold(inDAE, function tearingSystemWork(tearingMethod = method), strongComponentIndex);
+    System.tmpTickSetIndex(strongComponentIndex, Global.strongComponent_index);
+  else
+    Error.addInternalError(getInstanceName() + " failed", sourceInfo());
+    fail();
+  end try;
 end tearingSystem;
 
 // =============================================================================
@@ -148,7 +142,7 @@ algorithm
     case ("cellier") then CELLIER_TEARING();
 
     else equation
-      Error.addInternalError("./Compiler/BackEnd/Tearing.mo: function getTearingMethod failed", sourceInfo());
+      Error.addInternalError(getInstanceName() + " got invalid name \"" + inTearingMethod + "\".", sourceInfo());
     then fail();
   end match;
 end getTearingMethod;
@@ -188,77 +182,77 @@ algorithm
 
   // Call the appropriate tearing method
   (ocomp, outRunMatching) := match tearingMethod
-      case OMC_TEARING()
-        algorithm
-          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            print("\nTearing type: heuristic\n");
-            print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
-          end if;
-          (ocomp,outRunMatching) := omcTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
-          if debug then execStat("Tearing.omcTearing"); end if;
-        then (ocomp,outRunMatching);
+    case OMC_TEARING()
+      algorithm
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing type: heuristic\n");
+          print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
+        end if;
+        (ocomp,outRunMatching) := omcTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
+        if debug then execStat("Tearing.omcTearing"); end if;
+      then (ocomp,outRunMatching);
 
-      case CELLIER_TEARING()
-        algorithm
-          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            print("\nTearing type: heuristic\n");
-            print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
-          end if;
-          (ocomp,outRunMatching) := CellierTearing(isyst, ishared, eindex, vindx, userTVars, ojac, jacType, mixedSystem, strongComponentIndex);
-          if debug then execStat("Tearing.CellierTearing"); end if;
-        then (ocomp,outRunMatching);
+    case CELLIER_TEARING()
+      algorithm
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing type: heuristic\n");
+          print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
+        end if;
+        (ocomp,outRunMatching) := CellierTearing(isyst, ishared, eindex, vindx, userTVars, ojac, jacType, mixedSystem, strongComponentIndex);
+        if debug then execStat("Tearing.CellierTearing"); end if;
+      then (ocomp,outRunMatching);
 
-      case TOTAL_TEARING()
-        algorithm
-          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            print("\nTearing type: total\n");
-            print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
-          end if;
-          (ocomp,outRunMatching) := totalTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
-          if debug then execStat("Tearing.totalTearing"); end if;
-        then (ocomp,outRunMatching);
+    case TOTAL_TEARING()
+      algorithm
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing type: total\n");
+          print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
+        end if;
+        (ocomp,outRunMatching) := totalTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem);
+        if debug then execStat("Tearing.totalTearing"); end if;
+      then (ocomp,outRunMatching);
 
-      case MINIMAL_TEARING()
-          algorithm
-           if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-             print("\nTearing type: minimal\n");
-           end if;
-           ocomp := minimalTearing(isyst, ishared, eindex, vindx, jacType, mixedSystem);
-           if debug then execStat("Tearing.minimalTearing"); end if;
-         then (ocomp, true);
+    case MINIMAL_TEARING()
+      algorithm
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing type: minimal\n");
+        end if;
+        ocomp := minimalTearing(isyst, ishared, eindex, vindx, jacType, mixedSystem);
+        if debug then execStat("Tearing.minimalTearing"); end if;
+      then (ocomp, true);
 
-      case USER_DEFINED_TEARING()
-        algorithm
-          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
-            print("\nTearing type: user defined\n");
-            print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
-          end if;
-          (ocomp,outRunMatching) := userDefinedTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, userTVars, userResiduals);
-          if debug then execStat("Tearing.userDefinedTearing"); end if;
-        then (ocomp,outRunMatching);
-    end match;
+    case USER_DEFINED_TEARING()
+      algorithm
+        if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+          print("\nTearing type: user defined\n");
+          print("Tearing strictness: " + Flags.getConfigString(Flags.TEARING_STRICTNESS) + "\n");
+        end if;
+        (ocomp,outRunMatching) := userDefinedTearing(isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, userTVars, userResiduals);
+        if debug then execStat("Tearing.userDefinedTearing"); end if;
+      then (ocomp,outRunMatching);
+  end match;
 end callTearingMethod;
 
 protected function tearingSystemWork "author: Frenkel TUD 2012-05"
+  input TearingMethod tearingMethod;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared inShared;
-  input tuple<TearingMethod,Integer> inTearingMethodAndIndex;
+  input Integer inStrongComponentIndex;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared outShared = inShared "unused";
-  output tuple<TearingMethod,Integer> outTearingMethodAndIndex;
+  output Integer outStrongComponentIndex;
 protected
-  TearingMethod inTearingMethod = Util.tuple21(inTearingMethodAndIndex);
-  Integer strongComponentIndex = Util.tuple22(inTearingMethodAndIndex);
   BackendDAE.StrongComponents comps;
-  Boolean b;
+  Boolean runMatching;
   array<Integer> ass1, ass2;
 algorithm
-  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)):=isyst;
+  BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)) := isyst;
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\n" + BORDER + "\nBEGINNING of traverseComponents\n\n");
   end if;
 
   // Check if maxSizeLinearTearing maxSizeNonlinearTearing flag is illegal
+  // phi: TODO move this to flag handling at the beginning
   if (Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING) < 0) then
     Error.addMessage(Error.INVALID_FLAG_TYPE, {"maxSizeLinearTearing", "non-negative integer", intString(Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING))});
     fail();
@@ -267,12 +261,11 @@ algorithm
     fail();
   end if;
 
-  (comps, b, strongComponentIndex) := traverseComponents(comps, isyst, inShared, inTearingMethod, strongComponentIndex);
+  (comps, runMatching, outStrongComponentIndex) := traverseComponents(comps, isyst, inShared, tearingMethod, inStrongComponentIndex);
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
     print("\nEND of traverseComponents\n" + BORDER + "\n\n");
   end if;
-  osyst := if b then BackendDAEUtil.setEqSystMatching(isyst, BackendDAE.MATCHING(ass1, ass2, comps)) else isyst;
-  outTearingMethodAndIndex := (inTearingMethod,strongComponentIndex);
+  osyst := if runMatching then BackendDAEUtil.setEqSystMatching(isyst, BackendDAE.MATCHING(ass1, ass2, comps)) else isyst;
 end tearingSystemWork;
 
 protected function traverseComponents "author: Frenkel TUD 2012-05"
@@ -283,21 +276,21 @@ protected function traverseComponents "author: Frenkel TUD 2012-05"
   input Integer strongComponentIndexIn;
   output BackendDAE.StrongComponents oComps;
   output Boolean outRunMatching = false;
-  output Integer strongComponentIndexOut=strongComponentIndexIn;
+  output Integer strongComponentIndexOut = strongComponentIndexIn;
 algorithm
   oComps := list(match co
-        local
-          BackendDAE.StrongComponent comp;
-          Boolean b;
-        case comp
-          equation
-            (comp, b, strongComponentIndexOut) = traverseComponents1(comp, isyst, ishared, inMethod, strongComponentIndexOut);
-            outRunMatching = outRunMatching or b;
-          then comp;
-        end match for co in inComps);
+    local
+      BackendDAE.StrongComponent comp;
+      Boolean b;
+    case comp
+      equation
+        (comp, b, strongComponentIndexOut) = traverseComponent(comp, isyst, ishared, inMethod, strongComponentIndexOut);
+        outRunMatching = outRunMatching or b;
+      then comp;
+    end match for co in inComps);
 end traverseComponents;
 
-protected function traverseComponents1 "author: Frenkel TUD 2012-05"
+protected function traverseComponent "author: Frenkel TUD 2012-05"
   input BackendDAE.StrongComponent inComp;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -305,7 +298,7 @@ protected function traverseComponents1 "author: Frenkel TUD 2012-05"
   input Integer strongComponentIndexIn;
   output BackendDAE.StrongComponent oComp;
   output Boolean outRunMatching;
-  output Integer strongComponentIndexOut=strongComponentIndexIn;
+  output Integer strongComponentIndexOut = strongComponentIndexIn;
 protected
   constant Boolean debug = false;
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
@@ -313,41 +306,50 @@ algorithm
   strongComponentIndexOut := match(inComp)
     case(BackendDAE.EQUATIONSYSTEM(jac=BackendDAE.FULL_JACOBIAN())) equation
       if debugFlag then
-        print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\nTo disable tearing of this component use '--noTearingForComponent=" + intString(strongComponentIndexOut+1) + "'.\n");
+        print("Handle strong component with index: " + intString(strongComponentIndexOut+1) + "\n");
+        if not listMember(strongComponentIndexOut+1, Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+          print("To disable tearing of this component use '--noTearingForComponent=" + intString(strongComponentIndexOut+1) + "'.\n");
+        end if;
       end if;
      then (strongComponentIndexOut + 1);
     else strongComponentIndexOut;
   end match;
 
-  (oComp, outRunMatching) := match (inComp, isyst, ishared, inMethod)
+  (oComp, outRunMatching) := match inComp
     local
       list<Integer> eindex, vindx;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
       Boolean mixedSystem;
-      Integer maxSize;
       Boolean isLinear, useTearing;
 
     // Tearing
-    case ((BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem)), _, _, _) algorithm
+    case BackendDAE.EQUATIONSYSTEM(eqns=eindex, vars=vindx, jac=BackendDAE.FULL_JACOBIAN(ojac), jacType=jacType, mixedSystem=mixedSystem) algorithm
       isLinear := BackendDAEUtil.getLinearfromJacType(jacType);
-      if isLinear then
-        maxSize := Flags.getConfigInt(Flags.MAX_SIZE_LINEAR_TEARING);
-      else
-        maxSize := Flags.getConfigInt(Flags.MAX_SIZE_NONLINEAR_TEARING);
-      end if;
-
-      useTearing := checkTearingSettings(maxSize, isLinear, strongComponentIndexOut, listLength(vindx));
+      useTearing := checkTearingSettings(isLinear, strongComponentIndexOut, listLength(vindx));
       if useTearing then
         if debugFlag then
-          print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n" +
-                "Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
+          print("\nTearing of " + (if isLinear then "LINEAR" else "NONLINEAR") + " component\n");
+          _ := match (Flags.isSet(Flags.TEARING_DUMPVERBOSE), Flags.isSet(Flags.ITERATION_VARS))
+            case (false, false) algorithm
+              print("Use Flag '-d=tearingdumpV' and '-d=iterationVars' for more details\n\n");
+            then ();
+            case (false, true) algorithm
+              print("Use Flag '-d=tearingdumpV' for more details\n\n");
+            then ();
+            case (true, false) algorithm
+              print("Use Flag '-d=iterationVars' for more details\n\n");
+            then ();
+            case (true, true) algorithm
+              print("\n");
+            then ();
+          end match;
         end if;
         if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
           print("Jacobian:\n" + BackendDump.dumpJacobianStr(ojac) + "\n\n");
         end if;
         if debug then
-          execStat("Tearing.traverseComponents1 " + (if isLinear then "LS" else "NLS") + " start");
+          execStat("Tearing.traverseComponent " + (if isLinear then "LS" else "NLS") + " start");
         end if;
         try
           oComp := callTearingMethod(inMethod, isyst, ishared, eindex, vindx, ojac, jacType, mixedSystem, strongComponentIndexOut);
@@ -365,40 +367,44 @@ algorithm
     // no component for tearing
     else then(inComp, false);
   end match;
-end traverseComponents1;
+end traverseComponent;
 
 
 protected function checkTearingSettings
 "Checks if we want to do tearing for the current component.
  It will also issue optional maesages if not."
-  input Integer maxSize;
   input Boolean isLinear;
   input Integer strongComponentIndex;
   input Integer numVars;
-  output Boolean activateTearing=false;
+  output Boolean activateTearing = false;
 protected
+  constant list<String> withLSS = {"C"} "targets that provide a linear sparse solver";
+  constant list<String> withNSS = {"C"} "targets that provide a nonlinear sparse solver";
   Boolean debugFlag = Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE);
-  Boolean forcedTearing;
-  Boolean isCpp;
+  Integer maxSize;
   Boolean isDense;
+  Boolean hasSparseSolver;
+  Boolean forcedTearing;
 algorithm
-
+  maxSize := Flags.getConfigInt(if isLinear then Flags.MAX_SIZE_LINEAR_TEARING else Flags.MAX_SIZE_NONLINEAR_TEARING);
   // Check if tearing is disabled (maxSize=0)
   if maxSize == 0 then
     return;
   end if;
 
-  // Check if (numVars < maxSize) or (isCpp and isDense)
-  isCpp := stringEqual(Config.simCodeTarget(), "Cpp");
-  isDense := stringEqual(Flags.getConfigString(Flags.MATRIX_FORMAT), "dense");
-  forcedTearing := isCpp and isDense;
+  // Check if (component is too big) or (matrix is dense and target has no sparse solver)
+  isDense := Flags.getConfigString(Flags.MATRIX_FORMAT) == "dense";
+  hasSparseSolver := listMember(Config.simCodeTarget(), (if isLinear then withLSS else withNSS));
+  forcedTearing := isDense and not hasSparseSolver;
   if numVars > maxSize and not forcedTearing then
-    Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndex), intString(numVars), (if isLinear then "linear" else "nonlinear"),intString(maxSize)});
+    Error.addMessage(Error.MAX_TEARING_SIZE, {intString(strongComponentIndex), intString(numVars),
+                                              (if isLinear then "linear" else "nonlinear"), intString(maxSize),
+                                              (if isLinear then "maxSizeLinearTearing" else "maxSizeNonlinearTearing")});
     return;
   end if;
 
   // Check if tearing is disabled for this component
-  if listMember(strongComponentIndex,Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
+  if listMember(strongComponentIndex, Flags.getConfigIntList(Flags.NO_TEARING_FOR_COMPONENT)) then
     if debugFlag then
       print("\nTearing deactivated by user.\n");
     end if;
@@ -413,49 +419,54 @@ protected function getUserTearingSet
   input list<Integer> userTVars;
   input list<Integer> userResiduals;
   input Integer strongComponentIndex;
-  output list<Integer> userTvarsThisComponent={};
-  output list<Integer> userResidualsThisComponent={};
+  output list<Integer> userTvarsThisComponent = {};
+  output list<Integer> userResidualsThisComponent = {};
 protected
-  Integer i=1, start, end_;
-  Integer len;
+  Integer i, len, start, end_;
+  array<Integer> arr_TVars, arr_residuals;
 algorithm
+  // work with arrays so the accesses are faster
+  arr_TVars := listArray(userTVars);
+  arr_residuals := listArray(userResiduals);
+
+  // find tearing variables
+  i := 1;
   len := listLength(userTVars);
   while i < len loop
-      if intEq(listGet(userTVars,i),strongComponentIndex) then
-        start := i+2;
-        end_ := i + 1 + listGet(userTVars, i+1);
-        userTvarsThisComponent := List.unique(selectFromList_rev(userTVars, List.intRange2(start, end_)));
-        if not intEq(listLength(userTvarsThisComponent), listGet(userTVars, i+1)) then
-          Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The selected tearing variables must have unique indexes."});
-          fail();
-        end if;
-        break;
-      else
-        i := i + 2 + listGet(userTVars, i+1);
+    if arr_TVars[i] == strongComponentIndex then
+      start := i + 2;
+      end_ := i + 1 + arr_TVars[i+1];
+      userTvarsThisComponent := List.unique(list(arr_TVars[j] for j in start:end_));
+      if listLength(userTvarsThisComponent) <> arr_TVars[i+1] then
+        Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The selected tearing variables must have unique indexes."});
+        fail();
       end if;
+      break;
+    else
+      i := i + 2 + arr_TVars[i+1];
+    end if;
   end while;
+
+  // find residual equations
   if not listEmpty(userTvarsThisComponent) then
     i := 1;
     len := listLength(userResiduals);
     while i < len loop
-        if intEq(listGet(userResiduals,i),strongComponentIndex) then
-          start := i+2;
-          end_ := i + 1 + listGet(userResiduals, i+1);
-          userResidualsThisComponent := List.unique(selectFromList_rev(userResiduals, List.intRange2(start, end_)));
-          if not intEq(listLength(userResidualsThisComponent), listGet(userResiduals, i+1)) then
-            Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The selected residual equations must have unique indexes."});
-            fail();
-          end if;
-          break;
-        else
-          i := i + 2 + listGet(userResiduals, i+1);
+      if arr_residuals[i] == strongComponentIndex then
+        start := i + 2;
+        end_ := i + 1 + arr_residuals[i+1];
+        userResidualsThisComponent := List.unique(list(arr_residuals[j] for j in start:end_));
+        if listLength(userResidualsThisComponent) <> arr_residuals[i+1] then
+          Error.addMessage(Error.USER_DEFINED_TEARING_ERROR, {"The selected residual equations must have unique indexes."});
+          fail();
         end if;
+        break;
+      else
+        i := i + 2 + arr_residuals[i+1];
+      end if;
     end while;
   end if;
 end getUserTearingSet;
-
-
-
 
 
 // =============================================================================
@@ -537,7 +548,7 @@ algorithm
   columark := arrayCreate(size,-1);
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, {}, DAEtypeStr);
+  (tSel_always,tSel_prefer,tSel_avoid,tSel_never,_) := tearingSelect(var_lst, {}, DAEtypeStr);
 
   // determine tvars and do cheap matching until a maximum matching is there
   // if cheap matching stucks select additional tearing variable and continue
@@ -1505,8 +1516,6 @@ end isEntrySolved;
 protected function isEntrySolvable
   input BackendDAE.AdjacencyMatrixElementEnhancedEntry entry;
   output Boolean b;
-protected
-  BackendDAE.Solvability s;
 algorithm
   b := solvable(Util.tuple32(entry));
 end isEntrySolvable;
@@ -1987,7 +1996,7 @@ protected
   Integer size, tornsize;
   array<Integer> ass1, ass2, mapIncRowEqn, eqnNonlinPoints;
   array<list<Integer>> mapEqnIncRow;
-  list<Integer> OutTVars, residual, residual_coll, order, unsolvables, discreteVars, tSel_always, tSel_prefer, tSel_avoid,tSel_never;
+  list<Integer> OutTVars, residual, residual_coll, order, unsolvables, discreteVars, tSel_always, tSel_alwaysByUser, tSel_prefer, tSel_avoid, tSel_never;
   BackendDAE.InnerEquations innerEquations;
   BackendDAE.EqSystem subsyst;
   BackendDAE.Variables vars;
@@ -2090,9 +2099,9 @@ algorithm
   end if;
 
   // Collect variables with annotation attribute 'tearingSelect=always', 'tearingSelect=prefer', 'tearingSelect=avoid' and 'tearingSelect=never'
-  (tSel_always,tSel_prefer,tSel_avoid,tSel_never) := tearingSelect(var_lst, tearingSelect_always, DAEtypeStr);
-  if not listEmpty(tSel_always) then
-    Error.addMessage(Error.USER_TEARING_VARS, {intString(strongComponentIndex), BackendDump.printBackendDAEType2String(DAEtype), BackendDump.dumpMarkedVarList(var_lst, tSel_always)});
+  (tSel_always, tSel_prefer, tSel_avoid, tSel_never, tSel_alwaysByUser) := tearingSelect(var_lst, tearingSelect_always, DAEtypeStr);
+  if not listEmpty(tSel_alwaysByUser) then
+    Error.addMessage(Error.USER_TEARING_VARS, {intString(strongComponentIndex), BackendDump.printBackendDAEType2String(DAEtype), BackendDump.dumpMarkedVarList(var_lst, tSel_alwaysByUser)});
   end if;
   if debug then execStat("Tearing.CellierTearing -> 3"); end if;
 
@@ -2282,34 +2291,48 @@ protected function tearingSelect
   output list<Integer> prefer = {};
   output list<Integer> avoid = {};
   output list<Integer> never = {};
+  output list<Integer> alwaysByUser = always "distinguish betwween user choice and compiler choice";
 protected
   BackendDAE.Var var;
   Integer index = 1;
   Option<BackendDAE.TearingSelect> ts;
   Boolean preferTVarsWithStartValue;
+  Boolean inSimulation = DAEtypeStr == "simulation";
+  Boolean decided;
 algorithm
-  preferTVarsWithStartValue := Flags.getConfigBool(Flags.PREFER_TVARS_WITH_START_VALUE) and stringEq(DAEtypeStr, "initialization");
+  preferTVarsWithStartValue := Flags.getConfigBool(Flags.PREFER_TVARS_WITH_START_VALUE) and (DAEtypeStr == "initialization");
   for var in var_lstIn loop
-      // Get the value of the variable's tearingSelect attribute.
+    // Get the value of the variable's tearingSelect attribute.
     BackendDAE.VAR(tearingSelectOption = ts) := var;
 
-      // Add the variable's index to the appropriate list.
-      _ := match(ts)
-        case SOME(BackendDAE.ALWAYS()) guard not listMember(index, always) algorithm always := index :: always; then ();
-        case SOME(BackendDAE.PREFER()) algorithm prefer := index :: prefer; then ();
-        case SOME(BackendDAE.AVOID()) algorithm avoid  := index :: avoid;  then ();
-        case SOME(BackendDAE.NEVER()) algorithm never  := index :: never;  then ();
-        else ();
-      end match;
+    // Add the variable's index to the appropriate list.
+    decided := match(ts)
+      case NONE() then false;
+      case SOME(BackendDAE.ALWAYS()) algorithm
+        if not listMember(index, always) then
+          always := index :: always;
+          alwaysByUser := index :: alwaysByUser;
+        end if;
+      then true;
+      case SOME(BackendDAE.PREFER()) algorithm prefer := index :: prefer; then true;
+      case SOME(BackendDAE.DEFAULT()) then true;
+      case SOME(BackendDAE.AVOID()) algorithm avoid := index :: avoid; then true;
+      case SOME(BackendDAE.NEVER()) algorithm never := index :: never; then true;
+    end match;
+
+    if not decided then
+      // During simulation, always select states
+      // see https://github.com/OpenModelica/OpenModelica/issues/7704
+      if Flags.getConfigBool(Flags.TEARING_ALWAYS_DERIVATIVES) and
+         inSimulation and BackendVariable.isStateVar(var) and not listMember(index, always) then
+        always := index :: always;
 
       // Also prefer variables with start value
-      if preferTVarsWithStartValue then
-        if BackendVariable.varHasStartValue(var) then
-          prefer := index :: prefer;
-        end if;
+      elseif preferTVarsWithStartValue and BackendVariable.varHasStartValue(var) then
+        prefer := index :: prefer;
       end if;
-
-      index := index + 1;
+    end if;
+    index := index + 1;
   end for;
 
   if Flags.isSet(Flags.TEARING_DUMPVERBOSE) then

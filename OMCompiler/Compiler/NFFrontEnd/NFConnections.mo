@@ -91,7 +91,13 @@ public
 
   function collect
     input output FlatModel flatModel;
+    input IsDeleted isDeleted;
           output Connections conns = new();
+
+    partial function IsDeleted
+      input ComponentRef cref;
+      output Boolean res;
+    end IsDeleted;
   protected
     Component comp;
     ComponentRef cr, lhs, rhs;
@@ -120,7 +126,10 @@ public
         case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                               rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
           algorithm
-            if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
+            lhs := ComponentRef.evaluateSubscripts(lhs);
+            rhs := ComponentRef.evaluateSubscripts(rhs);
+
+            if not (isDeleted(lhs) or isDeleted(rhs)) then
               cl1 := makeConnectors(lhs, ty1, source);
               cl2 := makeConnectors(rhs, ty2, source);
 
@@ -151,14 +160,12 @@ public
     ComponentRef cr;
     Boolean expanded;
   algorithm
-    cr := ComponentRef.evaluateSubscripts(cref);
-
     if not Flags.isSet(Flags.NF_SCALARIZE) then
-      connectors := {Connector.fromCref(cr, ComponentRef.getSubscriptedType(cr), source)};
+      connectors := {Connector.fromCref(cref, ComponentRef.getSubscriptedType(cref), source)};
       return;
     end if;
 
-    cref_exp := Expression.CREF(ComponentRef.getSubscriptedType(cr), cr);
+    cref_exp := Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
     (cref_exp, expanded) := ExpandExp.expand(cref_exp);
 
     if expanded then

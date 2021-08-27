@@ -14,14 +14,12 @@
 #include <core/ReduceDAE/com/ModelicaCompiler.h>
 #endif
 
-
-
 #include <Core/SimController/ISimController.h>
 #include <Core/SimController/SimController.h>
 #include <Core/SimController/Configuration.h>
 #include <Core/SimController/SimObjects.h>
-
-
+#include <Core/SimController/FactoryExport.h>
+#include <Core/Utils/extension/logger.hpp>
 
 #if defined(OMC_BUILD) || defined(SIMSTER_BUILD)
 #include "LibrariesConfig.h"
@@ -30,7 +28,6 @@
 
 SimController::SimController(PATH library_path, PATH modelicasystem_path)
     : SimControllerPolicy(library_path, modelicasystem_path, library_path)
-    , _initialized(false)
 {
     _config = shared_ptr<Configuration>(new Configuration(_library_path, _config_path, modelicasystem_path));
     _sim_objects = shared_ptr<ISimObjects>(new SimObjects(_library_path,modelicasystem_path,_config->getGlobalSettings().get()));
@@ -67,19 +64,23 @@ SimController::~SimController()
 
 weak_ptr<IMixedSystem> SimController::LoadSystem(string modelLib,string modelKey)
 {
-
     //if the model is already loaded
     std::map<string,shared_ptr<IMixedSystem> >::iterator iter = _systems.find(modelKey);
     if(iter != _systems.end())
     {
-        _sim_objects->eraseSimData(modelKey);
-        _sim_objects->eraseSimVars(modelKey);
+        //recreate data and vars
+		shared_ptr<ISimVars> sv = _sim_objects->getSimVars(modelKey);
+        _sim_objects->LoadSimVars(modelKey, sv->getDimReal(), sv->getDimInt(), sv->getDimBool(), sv->getDimString(),
+                                  sv->getDimPreVars(), sv->getDimStateVars(), sv->getStateVectorIndex());
+        _sim_objects->LoadSimData(modelKey);
         //destroy system
         _systems.erase(iter);
     }
      //create system
     shared_ptr<IMixedSystem> system = createSystem(modelLib, modelKey, _config->getGlobalSettings().get(), _sim_objects);
     _systems[modelKey] = system;
+    _modelLib = modelLib;
+    _modelKey = modelKey;
     return system;
 }
 
@@ -127,11 +128,32 @@ shared_ptr<IMixedSystem> SimController::getSystem(string modelname)
     }
 }
 
- void SimController::runReducedSimulation()
- {
-     _simMgr->runSimulation();
- }
 void SimController::Start(SimSettings simsettings, string modelKey)
+{
+    for (int i = 0; i < simsettings.nonlinear_solver_names.size(); i++)
+    {
+        string nls = simsettings.nonlinear_solver_names[i];
+        try {
+            if (i > 0)
+                LOGGER_WRITE("SimController: Recovering with nonlinear solver " + nls, LC_SOLVER, LL_ERROR);
+            Start(simsettings, modelKey, nls);
+            break;
+        }
+        catch(ModelicaSimulationError & ex)
+        {
+            LOGGER_WRITE("SimController: Simulation failed using nonlinear solver " + nls, LC_SOLVER, LL_ERROR);
+            if (i < simsettings.nonlinear_solver_names.size() - 1) {
+                // load system again to get all variables re-initialized
+                LoadSystem(_modelLib, _modelKey);
+            }
+            else {
+                throw ex;
+            }
+        }
+    }
+}
+
+void SimController::Start(SimSettings simsettings, string modelKey, string nls)
 {
     try
     {
@@ -152,13 +174,14 @@ void SimController::Start(SimSettings simsettings, string modelKey)
         global_settings->sethOutput(simsettings.step_size);
         global_settings->setResultsFileName(simsettings.outputfile_name);
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
-        global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
+        global_settings->setSelectedNonLinSolver(nls);
         global_settings->setSelectedSolver(simsettings.solver_name);
         global_settings->setLogSettings(simsettings.logSettings);
         global_settings->setAlarmTime(simsettings.timeOut);
         global_settings->setOutputPointType(simsettings.outputPointType);
         global_settings->setOutputFormat(simsettings.outputFormat);
         global_settings->setEmitResults(simsettings.emitResults);
+        global_settings->setVariableFilter(simsettings.variableFilter);
         global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
         global_settings->setSolverThreads(simsettings.solverThreads);
         global_settings->setInputPath(simsettings.inputPath);
@@ -260,6 +283,7 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
         global_settings->setOutputPointType(simsettings.outputPointType);
         global_settings->setOutputFormat(simsettings.outputFormat);
         global_settings->setEmitResults(simsettings.emitResults);
+        global_settings->setVariableFilter(simsettings.variableFilter);
         global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
         global_settings->setSolverThreads(simsettings.solverThreads);
         /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
@@ -435,78 +459,6 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
     #else
         throw ModelicaSimulationError(SIMMANAGER,"The reduction algorithm is no supported for used compiler");
     #endif
-}
-
-
-
-void SimController::initialize(SimSettings simsettings, string modelKey, double timeout)
-{
-    try
-    {
-        #ifdef RUNTIME_PROFILING
-        MEASURETIME_REGION_DEFINE(simControllerInitializeHandler, "SimControllerInitialize");
-        MEASURETIME_REGION_DEFINE(simControllerSolveInitialSystemHandler, "SimControllerSolveInitialSystem");
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_START(measuredFunctionStartValues, simControllerInitializeHandler, "CVodeWriteOutput");
-        }
-        #endif
-        shared_ptr<IMixedSystem> mixedsystem = getSystem(modelKey);
-
-        shared_ptr<IGlobalSettings> global_settings = _config->getGlobalSettings();
-
-        global_settings->setStartTime(simsettings.start_time);
-        global_settings->setEndTime(simsettings.end_time);
-        global_settings->sethOutput(simsettings.step_size);
-        global_settings->setResultsFileName(simsettings.outputfile_name);
-        global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
-        global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);
-        global_settings->setSelectedSolver(simsettings.solver_name);
-        global_settings->setLogSettings(simsettings.logSettings);
-       // global_settings->setAlarmTime(simsettings.timeOut);
-
-        global_settings->setAlarmTime(timeout);
-        global_settings->setOutputPointType(simsettings.outputPointType);
-        global_settings->setOutputFormat(simsettings.outputFormat);
-        global_settings->setEmitResults(simsettings.emitResults);
-        global_settings->setNonLinearSolverContinueOnError(simsettings.nonLinearSolverContinueOnError);
-        global_settings->setSolverThreads(simsettings.solverThreads);
-        /*shared_ptr<SimManager>*/ _simMgr = shared_ptr<SimManager>(new SimManager(mixedsystem, _config.get()));
-
-        ISolverSettings* solver_settings = _config->getSolverSettings();
-        solver_settings->setLowerLimit(simsettings.lower_limit);
-        solver_settings->sethInit(simsettings.lower_limit);
-        solver_settings->setUpperLimit(simsettings.upper_limit);
-        solver_settings->setRTol(simsettings.tolerance);
-        solver_settings->setATol(simsettings.tolerance);
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[0], simControllerInitializeHandler);
-            measuredFunctionStartValues->reset();
-            measuredFunctionEndValues->reset();
-            MEASURETIME_START(measuredFunctionStartValues, simControllerSolveInitialSystemHandler, "SolveInitialSystem");
-        }
-        #endif
-
-        _simMgr->initialize();
-
-        #ifdef RUNTIME_PROFILING
-        if(MeasureTime::getInstance() != NULL)
-        {
-            MEASURETIME_END(measuredFunctionStartValues, measuredFunctionEndValues, (*measureTimeFunctionsArray)[1], simControllerSolveInitialSystemHandler);
-            MeasureTime::addResultContentBlock(mixedsystem->getModelName(),"simController",measureTimeFunctionsArray);
-        }
-        #endif
-
-
-
-    }
-    catch(ModelicaSimulationError & ex)
-    {
-        string error = add_error_info(string("Simulation failed for ") + simsettings.outputfile_name,ex.what(),ex.getErrorID());
-        throw ModelicaSimulationError(SIMMANAGER, error, "", ex.isSuppressed());
-    }
 }
 
 void SimController::Stop()

@@ -519,9 +519,8 @@ scalar product of two arrays (a,b type as template parameter)
 template <typename T>
 T dot_array(const BaseArray<T>& a, const BaseArray<T>& b)
 {
-  if(a.getNumDims() != 1  || b.getNumDims() != 1)
-    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"error in dot array function. Wrong dimension");
-
+  if (a.getNumDims() != 1  || b.getNumDims() != 1)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "error in dot array function. Wrong dimension");
   const T* data1 = a.getData();
   const T* data2 = b.getData();
   T r = std::inner_product(data1, data1 + a.getNumElems(), data2, 0.0);
@@ -540,10 +539,13 @@ void cross_array(const BaseArray<T>& a, const BaseArray<T>& b, BaseArray<T>& res
 };
 
 /**
-finds min/max elements of an array */
+finds min/max elements of an array
+*/
 template <typename T>
 std::pair<T,T> min_max(const BaseArray<T>& x)
 {
+  if (x.getNumElems() < 1)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "min/max requires at least one element");
   const T* data = x.getData();
   std::pair<const T*, const T*>
   ret = minmax_element(data, data + x.getNumElems());

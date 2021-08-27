@@ -825,13 +825,13 @@ void fill_alloc_string_array(string_array_t* dest, modelica_string value, int nd
   }
 }
 
-const char** data_of_string_c89_array(const string_array_t *a)
+const char** data_of_string_c89_array(const string_array_t a)
 {
   long i;
-  size_t sz = base_array_nr_of_elements(*a);
+  size_t sz = base_array_nr_of_elements(a);
   const char **res = (const char**) omc_alloc_interface.malloc(sz*sizeof(const char*));
   for (i=0; i<sz; i++) {
-    res[i] = MMC_STRINGDATA(((void**)a->data)[i]);
+    res[i] = MMC_STRINGDATA(((void**)a.data)[i]);
   }
   return res;
 }

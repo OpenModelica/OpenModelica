@@ -65,15 +65,15 @@ unloadOMSimulator();
 // ""
 // "sink.fmu"
 // ""
-// info:    maximum step size for 'test.root': 0.100000
+// info:    maximum step size for 'test.root': 0.001000
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
 // info:      A.y: 1.5
 // info:      B.u: 1.5
 // info:    Simulation
-// info:      A.y: 0.4999999999999998
-// info:      B.u: 0.4999999999999998
+// info:      A.y: 0.5000000000000554
+// info:      B.u: 0.5000000000000554
 // info:    Final Statistics for 'test.root':
-//          NumSteps = 12 NumRhsEvals  = 13 NumLinSolvSetups = 3
-//          NumNonlinSolvIters = 12 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // endResult

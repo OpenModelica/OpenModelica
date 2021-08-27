@@ -1079,16 +1079,16 @@ algorithm
       BackendDAE.Var var;
       BackendDAE.VarKind kind;
 
-      list<BackendDAE.Var> vars;
+      list<BackendDAE.Var> vars, scalarLst;
       DAE.Type tp, arrayType;
       DAE.Exp e, e1, zero, one;
       DAE.Exp res, res1;
       DAE.ComponentRef cr, cr1;
-      list<DAE.Exp> expl, expl_1;
+      list<DAE.Exp> expl, expl_1, diffed_exps = {};
 
       list<DAE.Var> varLst;
       list<Boolean> b_lst;
-      list<DAE.ComponentRef> crefs, diffCref;
+      list<DAE.ComponentRef> crefs, diffCref, scalarCrefs;
 
       String s1, s2, serr, se1, matrixName;
 
@@ -1245,12 +1245,27 @@ algorithm
 
     // d(x)/d(x) => generate seed variables
     case ((DAE.CREF(componentRef = cr,ty = tp)), _, BackendDAE.DIFFINPUTDATA(independenentVars=SOME(timevars),matrixName=SOME(matrixName)), BackendDAE.GENERIC_GRADIENT(), _)
-      equation
+      algorithm
         //true = List.isMemberOnTrue(cr, diffCref, ComponentReference.crefEqual);
-        (_::_, _) = BackendVariable.getVar(cr, timevars);
-        cr = createSeedCrefName(cr, matrixName);
+        (scalarLst, _) := BackendVariable.getVar(cr, timevars);
+        // fix for ticket #7550
+        // if not all elements (but some of them) are iteration variables
+        // we scalarize the cref and treat them individually. afterwards
+        // thread them to an DAE.ARRAY()
+        arrayType := ComponentReference.crefTypeFull(cr);
+        if not listEmpty(scalarLst) and listLength(scalarLst) <> Types.getDimensionProduct(arrayType) then
+          scalarCrefs := ComponentReference.expandCref(cr, true);
+          outFunctionTree := inFunctionTree;
+          for cref in scalarCrefs loop
+            (res1, outFunctionTree) := differentiateCrefs(Expression.crefExp(cref), inDiffwrtCref, inInputData, inDiffType, outFunctionTree, maxIter);
+            diffed_exps := res1 :: diffed_exps;
+          end for;
+          res := Expression.listToArray(listReverse(diffed_exps), Types.getDimensions(arrayType));
+        else
+          cr := createSeedCrefName(cr, matrixName);
+          res := DAE.CREF(cr, tp);
+        end if;
 
-        res = DAE.CREF(cr, tp);
       then
         (res, inFunctionTree);
 

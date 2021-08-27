@@ -24,12 +24,12 @@ endif(NOT BUILD_SHARED_LIBS)
 set_target_properties(${CppDASSLName} PROPERTIES COMPILE_DEFINITIONS "${CPPDASSL_COMPILE_DEFINITIONS}")
 set_target_properties(${CppDASSLName} PROPERTIES COMPILE_FLAGS "${OpenMP_CXX_FLAGS}")
 
-add_precompiled_header(${CppDASSLName} Include/Core/Modelica.h)
+add_precompiled_header(${CppDASSLName} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${CppDASSLName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${CppDASSLName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Solver/CppDASSL/CppDASSL.h
-  ${CMAKE_SOURCE_DIR}/Include/Solver/CppDASSL/FactoryExport.h
+  ${CMAKE_SOURCE_DIR}/Solver/CppDASSL/CppDASSL.h
+  ${CMAKE_SOURCE_DIR}/Solver/CppDASSL/FactoryExport.h
   DESTINATION include/omc/cpp/Solver/CppDASSL)

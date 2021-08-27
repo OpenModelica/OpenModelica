@@ -14,7 +14,7 @@ install(FILES $<TARGET_PDB_FILE:${UmfPackName}> DESTINATION ${LIBINSTALLEXT} OPT
 
 install(TARGETS ${UmfPackName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPack.h
-  ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/UmfPackSettings.h
-  ${CMAKE_SOURCE_DIR}/Include/Solver/UmfPack/FactoryExport.h
+  ${CMAKE_SOURCE_DIR}/Solver/UmfPack/UmfPack.h
+  ${CMAKE_SOURCE_DIR}/Solver/UmfPack/UmfPackSettings.h
+  ${CMAKE_SOURCE_DIR}/Solver/UmfPack/FactoryExport.h
   DESTINATION include/omc/cpp/Solver/UmfPack)

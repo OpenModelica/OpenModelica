@@ -5,6 +5,7 @@
 # for both UNIX/Linux and Windows platforms.
 
 BUILDPATH?=build/c
+OMC_CONFIG_INC=$(top_builddir)
 
 # Forces the generation of the dgesv sources
 NEED_DGESV=1
@@ -14,7 +15,7 @@ LIBSIMULATIONFMI=libSimulationRuntimeFMI.a
 OMC_MINIMAL_RUNTIME=
 INCLUDE_NONFMI=-I. -I$(builddir_inc)/c
 
-CPPFLAGS = -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(top_builddir)/3rdParty/Ipopt/include/ -I$(builddir_inc)/c/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC
+CPPFLAGS = -I$(OMC_CONFIG_INC) -I$(top_builddir)/Compiler/runtime -I$(top_builddir)/3rdParty/gc/include -I$(top_builddir)/3rdParty/FMIL/install/include/ -I$(top_builddir)/3rdParty/lis-1.4.12/include/ -I$(builddir_inc)/c/sundials/ -I$(builddir_inc)/c/suitesparse/ $(CONFIG_CPPFLAGS) -DGC_REDIRECT_TO_LOCAL -DLINK_SUNDIALS_STATIC
 override CFLAGS += $(CPPFLAGS) $(CONFIG_CFLAGS) $(EXTRA_CFLAGS)
 # CXXFLAGS can include everything as before. For FMI we need to use relative paths since
 # automatic builds might not add the -I., etc
@@ -258,7 +259,7 @@ $(SIMOBJSPATHC):$(BUILDPATH)/%$(OBJ_EXT): %.c $(SIMHFILESPATH) $(COMMON_HEADERS)
 
 $(OPTIMIZATIONOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(OPTIMIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(MKBUILDDIR)
-	$(CC) -c -I. $(CFLAGS) -o $@ $<
+	$(CC) -c -I. -I$(builddir_inc) $(CFLAGS) -o $@ $<
 
 $(FMIOBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): %.c $(COMMON_HEADERS)
 	$(MKBUILDDIR)
@@ -268,7 +269,7 @@ $(EXTERNAL_SOLVER_OBJSPATH):$(BUILDPATH)/%$(OBJ_EXT): $(builddir_inc)/c/%.c
 	$(MKBUILDDIR)
 	$(CC) -c $(CFLAGS) $(CMINPACK_NO_DLL) -I$(top_builddir)/3rdParty/dgesv/include/ -o $@ $<
 
-$(BUILDPATH)/util/socket$(OBJ_EXT): util/socket_win.cpp util/socket_unix.cpp
+$(BUILDPATH)/simulation/socket$(OBJ_EXT): simulation/socket_win.inc simulation/socket_unix.inc
 
 bootstrap-dependencies: $(LIBRUNTIME)
 	cp -p $(LIBRUNTIME) $(builddir_lib)

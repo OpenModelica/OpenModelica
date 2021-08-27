@@ -34,11 +34,9 @@ runScript(modelTesting);getErrorString();
 // Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling
 // {"dcpm.la.i","loadInertia.phi","loadInertia.w","cooling.T","armature.T","core.T","volumeFlow.T"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 25000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 25.0, numberOfIntervals = 25000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling', options = '', outputFormat = 'mat', variableFilter = 'time|dcpm.la.i|loadInertia.phi|loadInertia.w|cooling.T|armature.T|core.T|volumeFlow.T', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Machines.Examples.DCMachines.DCPM_Cooling_res.mat
 // Files Equal!
-// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
-//
 // "true
 // "
 // ""

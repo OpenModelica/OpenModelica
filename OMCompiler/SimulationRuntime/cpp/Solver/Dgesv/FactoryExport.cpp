@@ -7,7 +7,18 @@
 #include <Core/Modelica.h>
 #if defined(OMC_BUILD) && !defined(RUNTIME_STATIC_LINKING)
 
-//do not use for dynamic linking
+#include <Solver/Dgesv/DgesvSolver.h>
+#include <Solver/Dgesv/DgesvSolverSettings.h>
+
+/* OMC factory */
+using boost::extensions::factory;
+
+BOOST_EXTENSION_TYPE_MAP_FUNCTION {
+types.get<std::map<std::string, factory<ILinearAlgLoopSolver,ILinSolverSettings*,shared_ptr<ILinearAlgLoop> > > >()
+    ["dgesvSolver"].set<DgesvSolver>();
+types.get<std::map<std::string, factory<ILinSolverSettings> > >()
+    ["dgesvSolverSettings"].set<DgesvSolverSettings>();
+}
 
 #elif defined(OMC_BUILD) && defined(RUNTIME_STATIC_LINKING)
 #include <Solver/Dgesv/DgesvSolver.h>

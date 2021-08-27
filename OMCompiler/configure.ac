@@ -101,6 +101,7 @@ AC_SUBST(BSTATIC)
 AC_SUBST(OMC_TBB_ROOT)
 AC_SUBST(ENABLE_PARMODAUTO)
 AC_SUBST(EXTRA_MACOS_FLAGS_SUNDIALS)
+AC_SUBST(CMAKE)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -984,13 +985,13 @@ date=`date "+%Y-%m-%d %H:%M:%S"`
 CONFIGURE_ARGS="$ac_configure_args"
 
 GENERATED_AUTOCONF_FILES="Makefile \
+omc_config.unix.h \
+revision.h \
 Compiler/Util/Autoconf.mo \
 Compiler/Makefile \
 Compiler/Script/Makefile \
 Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
-Compiler/runtime/config.unix.h \
-Compiler/runtime/revision.h \
 Parser/Makefile \
 SimulationRuntime/OMSICpp/Makefile.env \
 SimulationRuntime/cpp/Makefile.env \
@@ -1030,7 +1031,7 @@ for dir_target in SimulationRuntime/cpp; do
   fi
 done
 
-AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
+AC_CONFIG_COMMANDS([omc_config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 
 AC_OUTPUT(${GENERATED_AUTOCONF_FILES})
 

@@ -31,11 +31,9 @@ runScript(modelTesting);getErrorString();
 // Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling
 // {"heatCapacitor.T","pipe1.T","outerPipe.T","innerPipe.T"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 1.5, numberOfIntervals = 1500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling', options = '', outputFormat = 'mat', variableFilter = 'time|heatCapacitor.T|pipe1.T|outerPipe.T|innerPipe.T', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Thermal.FluidHeatFlow.Examples.IndirectCooling_res.mat
 // Files Equal!
-// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
-//
 // "true
 // "
 // ""
