@@ -159,7 +159,11 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         FILES_MATCHING
         PATTERN "*.h"
         PATTERN "*.c.inc"
-        PATTERN "build" EXCLUDE # To skip the build dir created by the normal Makefiles build system.
+        # To skip the build dir created by the normal Makefiles build system.
+        PATTERN "build" EXCLUDE
+        # This is skipped by the makefiles and instead some header files from SimulationRuntime/fmi
+        # are instead added to c/fmi folders. Until we fix those we keep this for now :(
+        PATTERN "fmi" EXCLUDE
 )
 
 
