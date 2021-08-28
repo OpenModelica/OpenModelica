@@ -276,8 +276,8 @@ else()
   set(MAKE ${CMAKE_MAKE_PROGRAM})
 
   string(REPLACE ";" " " LAPACK_LIBRARIES_SPACE "${LAPACK_LIBRARIES}")
-  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC  -llapack -lblas -lm -lomcgc -lpthread -rdynamic")
-  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOptimizationRuntime -lOpenModelicaRuntimeC -lomcmemory -llapack -lblas -lm -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
+  set(RT_LDFLAGS_GENERATED_CODE " -lOpenModelicaRuntimeC -lomcmemory -llapack -lblas -lm -lpthread -rdynamic")
+  set(RT_LDFLAGS_GENERATED_CODE_SIM " -lSimulationRuntimeC -lOptimizationRuntime -lOpenModelicaRuntimeC -lomcmemory -llapack -lblas -lm -ldl -lpthread -lgfortran -lstdc++ -rdynamic -Wl,--no-undefined")
   set(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU " -lOpenModelicaFMIRuntimeC -llapack -lblas -lm -lpthread -rdynamic -Wl,--no-undefined")
 
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo.in ${CMAKE_CURRENT_SOURCE_DIR}/../Util/Autoconf.mo)
