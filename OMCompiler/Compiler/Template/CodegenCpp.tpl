@@ -6143,6 +6143,15 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
     case SIMVAR(nominalValue=SOME(exp)) then
       let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       '<%expPart%>'
+    // fallback for state derivatives lacking nominal value: use nominal value of state
+    case SIMVAR(varKind = STATE_DER(), name = CREF_QUAL(componentRef = stateCref)) then
+      match cref2simvar(stateCref, simCode)
+      case SIMVAR(nominalValue=SOME(exp)) then
+        let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        '<%expPart%>'
+      else
+        '1.0'
+      end match
     else
       '1.0'
 

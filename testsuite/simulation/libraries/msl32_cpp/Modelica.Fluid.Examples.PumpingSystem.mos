@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Fluid.Examples.PumpingSystem);
 compareVars :=
 {
@@ -27,12 +27,15 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Compilation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Fluid.Examples.PumpingSystem
 // {"PT1.y","pumps.medium.T","reservoir.level","reservoir.medium.T"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Compilation succeeded
+// Simulation options: startTime = 0.0, stopTime = 2000.0, numberOfIntervals = 5000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Fluid.Examples.PumpingSystem', options = '', outputFormat = 'mat', variableFilter = 'time|PT1.y|pumps.medium.T|reservoir.level|reservoir.medium.T', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Fluid.Examples.PumpingSystem_res.mat
+// Files Equal!
 // Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+//
 // "true
 // "
 // ""
