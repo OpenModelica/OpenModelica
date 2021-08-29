@@ -9190,9 +9190,11 @@ protected
 algorithm
   for i in SimVarsIndex.state : SimVarsIndex.realOptimizeFinalConstraints loop
     lst := Dangerous.arrayGetNoBoundsChecking(simVars,Integer(i));
-    Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndex(lst, ix));
     if not isCpp then
+      Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndex(lst, ix));
       ix := ix + listLength(lst);
+    else
+      Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndexColumnMajor(lst, 0));
     end if;
   end for;
   for i in SimVarsIndex.param : SimVarsIndex.stringConst loop // Skip jacobian, seed
@@ -9212,6 +9214,31 @@ algorithm
   end for;
   outVars := Dangerous.listReverseInPlace(outVars);
 end rewriteIndex;
+
+protected function rewriteIndexColumnMajor
+  "alternative version of rewriteIndex considering column major storage order of multi-dimensional arrays"
+  input list<SimCodeVar.SimVar> inVars;
+  output list<SimCodeVar.SimVar> outVars = {};
+  input output Integer index;
+protected
+  list<DAE.Subscript> subs;
+  list<Integer> arrayDimensions = {};
+  Integer elementIndex;
+algorithm
+  for var in inVars loop
+    subs := ComponentReference.crefLastSubs(var.name);
+    if listLength(subs) > 1 then
+      arrayDimensions := List.map(var.numArrayElement, stringInt);
+      elementIndex := getScalarElementIndex(subs, arrayDimensions);
+      var.index := index - elementIndex + convertIndexToColumnMajor(elementIndex, arrayDimensions);
+    else
+      var.index := index;
+    end if;
+    outVars := var::outVars;
+    index := index + 1;
+  end for;
+  outVars := Dangerous.listReverseInPlace(outVars);
+end rewriteIndexColumnMajor;
 
 protected function setVariableIndex
   input array<list<SimCodeVar.SimVar>> simVars;

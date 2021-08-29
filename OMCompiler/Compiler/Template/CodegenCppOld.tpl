@@ -7252,7 +7252,7 @@ end DefaultImplementationCode;
 */
 template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
-  let nominalVars = stateVars |> SIMVAR(__) hasindex i0 =>
+  let nominalVars = stateVars |> SIMVAR(index = i) =>
         match nominalValue
         case SOME(val)
         then
@@ -7260,13 +7260,13 @@ template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& ext
           let &varDecls = buffer "" /*BUFD*/
           let value = '<%daeExp(val, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
           <<
-           <%varDecls%>
-           <%preExp%>
-           z[<%i0%>]=<%value%>;
+          <%varDecls%>
+          <%preExp%>
+          z[<%i%>] = <%value%>;
           >>
         else
           <<
-           z[<%i0%>] = 1.0;
+          z[<%i%>] = 1.0;
           >>
        ;separator="\n"
 <<
