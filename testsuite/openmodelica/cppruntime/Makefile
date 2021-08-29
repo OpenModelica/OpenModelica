@@ -26,6 +26,7 @@ RefArrayDim2.mos \
 solveTest.mos \
 testArrayEquations.mos \
 testMatrixIO.mos \
+testMatrixState.mos \
 testVectorizedBlocks.mos \
 testVectorizedPowerSystem.mos \
 testVectorizedSolarSystem.mos \
