@@ -3208,17 +3208,21 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
        */
       bool isPlottingPerspectiveActive = MainWindow::instance()->isPlottingPerspectiveActive();
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-      // if we are in the plotting perspective then open the Diagram Window
-      if (isPlottingPerspectiveActive) {
-        MainWindow::instance()->switchToPlottingPerspectiveSlot();
-        if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
-          if (pLibraryTreeItem->getModelWidget()) {
-            pLibraryTreeItem->getModelWidget()->loadDiagramView();
-            pLibraryTreeItem->getModelWidget()->loadConnections();
+      // Issue #7772. If control is not clicked then switch to plotting perspective.
+      bool controlModifier = QApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
+      if (!controlModifier) {
+        // if we are in the plotting perspective then open the Diagram Window
+        if (isPlottingPerspectiveActive) {
+          MainWindow::instance()->switchToPlottingPerspectiveSlot();
+          if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
+            if (pLibraryTreeItem->getModelWidget()) {
+              pLibraryTreeItem->getModelWidget()->loadDiagramView();
+              pLibraryTreeItem->getModelWidget()->loadConnections();
+            }
+            MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
           }
-          MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
+          MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
         }
-        MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
       }
     }
   }
