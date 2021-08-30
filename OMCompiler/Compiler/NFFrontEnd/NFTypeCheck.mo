@@ -2869,42 +2869,6 @@ algorithm
       then
         (compatibleType, matchKind);
 
-    // If either type is itself a conditional array type, match against each
-    // branch of that type and create a new conditional array type.
-    case (Type.CONDITIONAL_ARRAY(), _)
-      algorithm
-        (trueBranch, falseBranch, cty1, mk1) :=
-          matchIfBranches(trueBranch, trueType.trueType, falseBranch, falseType, allowUnknown);
-        (_, _, cty2, mk2) :=
-          matchIfBranches(trueBranch, trueType.falseType, falseBranch, falseType, allowUnknown);
-
-        if isCompatibleMatch(mk1) or isCompatibleMatch(mk2) then
-          compatibleType := Type.CONDITIONAL_ARRAY(cty1, cty2, NFType.Branch.NONE);
-          matchKind := MatchKind.EXACT;
-        else
-          compatibleType := trueType;
-          matchKind := MatchKind.NOT_COMPATIBLE;
-        end if;
-      then
-        (compatibleType, matchKind);
-
-    case (_, Type.CONDITIONAL_ARRAY())
-      algorithm
-        (trueBranch, falseBranch, cty1, mk1) :=
-          matchIfBranches(trueBranch, trueType, falseBranch, falseType.trueType, allowUnknown);
-        (_, _, cty2, mk2) :=
-          matchIfBranches(trueBranch, trueType, falseBranch, falseType.falseType, allowUnknown);
-
-        if isCompatibleMatch(mk1) or isCompatibleMatch(mk2) then
-          compatibleType := Type.CONDITIONAL_ARRAY(cty1, cty2, NFType.Branch.NONE);
-          matchKind := MatchKind.EXACT;
-        else
-          compatibleType := trueType;
-          matchKind := MatchKind.NOT_COMPATIBLE;
-        end if;
-      then
-        (compatibleType, matchKind);
-
     else
       algorithm
         (trueBranch, falseBranch, compatibleType, matchKind) :=
