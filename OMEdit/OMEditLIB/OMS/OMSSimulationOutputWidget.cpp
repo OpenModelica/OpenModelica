@@ -482,8 +482,8 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
 //  writeSimulationOutput(data + "\n", StringHandler::Info);
 //  return;
   QByteArray jsonData;
-  if (data.startsWith("status")) {
-    jsonData = data.mid(QString("status").length());
+  if (data.startsWith(OMSInteractiveCommands::status.toStdString().c_str())) {
+    jsonData = data.mid(QString(OMSInteractiveCommands::status).length());
   } else {
     writeSimulationOutput(QString("Unknown simulation data %1.\n").arg(QString(data)), StringHandler::Error);
     return;
@@ -493,7 +493,7 @@ void OMSSimulationOutputWidget::simulationDataPublished(const QByteArray &data)
     writeSimulationOutput(QString("Failed to parse json data %1.\n").arg(QString(jsonData)), StringHandler::Error);
     return;
   } else {
-    if (data.startsWith("status")) {
+    if (data.startsWith(OMSInteractiveCommands::status.toStdString().c_str())) {
       parseSimulationProgress(jsonDocument.result);
     }
   }
