@@ -41,9 +41,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* Private prototypes */
+void printDelayBuffer(void* data, int stream, void* elemPointer);
+
 
 /**
- * @brief Find row with greatest time that is smaller than or equal to 'time'
+ * @brief Find row with greatest time that is greater than or equal to 'time'
+ *
+ * So all buffer elements before returned row index need to be removed from buffer.
  *
  * @param[in] time          Time value to search for.
  * @param[in] delayStruct   Ringbuffer with stored delay values.
@@ -51,40 +56,46 @@
  * @param[out] foundEvent   Boolean indicating if an event was found while searching for time.
  * @return int              Row with maximum time value smaller equal to time.
  */
-static int findTime(double time, RINGBUFFER *delayStruct, int foundEvent)
+static int findTime(double time, RINGBUFFER *delayStruct, int *foundEvent)
 {
   int end = ringBufferLength(delayStruct);
-  int pos = end-1;
+  int pos = 0;
   double curTime, prevTime;
   TIME_AND_VALUE* bufferElem;
 
   infoStreamPrint(LOG_DELAY, 0, "findTime %e", time);
-  foundEvent = 0 /* false */;
+  *foundEvent = 0 /* false */;
 
   /* Check if ring buffer is valid */
   assertStreamPrint(NULL, ringBufferLength(delayStruct) > 0, "delay: In function findTime\nEmpty ring buffer.");
   bufferElem = getRingData(delayStruct, pos);
   curTime = bufferElem->t;
-  assertStreamPrint(NULL, time < curTime, "delay: In function findTime\nSearching for time value that is bigger then end of ring buffer.");
 
-  /* Search for time starting at end of ring buffer */
-  while(pos > 0) {
-    pos--;
+  /* If searched time is smaller then first element return first position */
+  if(time < curTime) {
+    return pos;
+  }
+
+  /* Search for time starting at begin of ring buffer */
+  while(pos < end-1) {
+    pos++;
     bufferElem = getRingData(delayStruct, pos);
     prevTime = curTime;
     curTime = bufferElem->t;
     /* Check for an event */
     if (fabs(prevTime-curTime)< 1e-12) {
       // TODO: I'm finding events to early...
-      foundEvent = 1 /* true */;
+      *foundEvent = 1 /* true */;
       infoStreamPrint(LOG_EVENTS, 0, "Found event stored at time %f while searching for %f", curTime, time);
+      plotRingBuffer(delayStruct, LOG_UTIL, printDelayBuffer);
     }
-    if (curTime < time) {
+    if (curTime > time) {
+      pos--;
       // Found time in previous step
       break;
     }
   }
-  assertStreamPrint(NULL, pos >= 0, "delay: In function findTime\nCould not find time");
+  assertStreamPrint(NULL, pos < end, "delay: In function findTime\nCould not find time");
 
   infoStreamPrint(LOG_DELAY, 0, "return time[%d, %d] = %e", pos, end, curTime);
   return pos;
@@ -105,22 +116,45 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
 {
   int row;
   int foundEvent;
+  int length = ringBufferLength(data->simulationInfo->delayStructure[exprNumber]);
   double time = data->localData[0]->timeValue;
   TIME_AND_VALUE tpl;
+  TIME_AND_VALUE* lastElem;
 
   assertStreamPrint(threadData, exprNumber < data->modelData->nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
   assertStreamPrint(threadData, 0 <= exprNumber, "storeDelayedExpression: invalid expression number %d", exprNumber);
-  assertStreamPrint(threadData, data->simulationInfo->startTime <= time, "storeDelayedExpression: time is smaller than starting time. Value ignored");
+  assertStreamPrint(threadData, data->simulationInfo->startTime <= time, "storeDelayedExpression: time is smaller than starting time.");
+
+  /* Check if time is greater equal then last stored time in delay structure */
+  if (length > 0) {
+    // data->simulationInfo->discreteCall
+    lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
+    //assertStreamPrint(threadData, time >= lastElem->t, "storeDelayedExpression: time is not greater then previous saved value.");
+    while (time < lastElem->t) {
+      printf("AHeu: storeDelayedExpression: time is not greater then previous saved value for (%e,%e)\n",time,exprValue);
+      removeLastRingData(data->simulationInfo->delayStructure[exprNumber],1);
+      length = ringBufferLength(data->simulationInfo->delayStructure[exprNumber]);
+      lastElem = getRingData(data->simulationInfo->delayStructure[exprNumber], length-1);
+      //return;
+    }
+  }
+
+  /* Check if (time,value) pair is already saved */
+  if (length > 0) {
+    if (fabs(lastElem->t-time) < 1e-12 && fabs(lastElem->value-exprValue) < DBL_EPSILON) {
+      return;
+    }
+  }
 
   /* Append expression value to delay ring buffer */
   tpl.t = time;
   tpl.value = exprValue;
-  // TODO: Add events as well
   appendRingData(data->simulationInfo->delayStructure[exprNumber], &tpl);
-  infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
+  infoStreamPrint(LOG_DELAY, 0, "storeDelayed[%d] (%g,%g) position=%d", exprNumber, time, exprValue, ringBufferLength(data->simulationInfo->delayStructure[exprNumber]));
+  plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_STDOUT, printDelayBuffer);
 
   /* Dequeue not longer needed values from ring buffer */
-  row = findTime(time-delayMax+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], foundEvent);
+  row = findTime(time-delayMax+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
   if(foundEvent) {
     infoStreamPrint(LOG_EVENTS, 0, "Current time: %f.", data->localData[0]->timeValue);
   }
@@ -201,7 +235,11 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
     }
     else
     {
-      i = findTime(timeStamp, delayStruct, foundEvent);
+      i = findTime(timeStamp, delayStruct, &foundEvent);
+      if (foundEvent) {
+        // TODO: Do something if an event was found!
+      }
+
       assertStreamPrint(threadData, i < length, "%d = i < length = %d", i, length);
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->t;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->value;
@@ -234,7 +272,21 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
       return retVal;
     }
   }
+}
 
+/**
+ * @brief Print transported quantity data to stream.
+ *
+ * Prints tuple (time, value).
+ *
+ * @param data          Void pointer to bufferElemData.
+ *                      Will be casted to TIME_AND_VALUE*.
+ * @param stream        Stream of LOG_STREAM type.
+ * @param elemPointer   Address of element storing this data.
+ */
+void printDelayBuffer(void* data, int stream, void* elemPointer) {
+  TIME_AND_VALUE* bufferElemData = (TIME_AND_VALUE*) data;
+  infoStreamPrint(stream, 0, "%p: (%e,%e)", elemPointer, bufferElemData->t, bufferElemData->value);
 }
 
 #endif

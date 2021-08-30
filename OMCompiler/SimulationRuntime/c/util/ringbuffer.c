@@ -116,6 +116,22 @@ void dequeueNFirstRingDatas(RINGBUFFER *rb, int n)
   rb->nElements -= n;
 }
 
+/**
+ * @brief Remove last n elements from ring buffer.
+ *
+ * We don't really remove the elements, but decrease nElements.
+ * So "deleted" values can be overwritten by appendRingData.
+ *
+ * @param rb    Pointer to ring buffer.
+ * @param n     Number of elements to remove.
+ */
+void removeLastRingData(RINGBUFFER *rb, int n)
+{
+  assertStreamPrint(NULL, rb->nElements >= n, "empty RingBuffer");
+
+  rb->nElements -= n;
+}
+
 int ringBufferLength(RINGBUFFER *rb)
 {
   return rb->nElements;
@@ -152,5 +168,33 @@ void infoRingBuffer(RINGBUFFER *rb)
     infoStreamPrint(LOG_UTIL, 0, "nElements: %d [number of elements in buffer]", rb->nElements);
     infoStreamPrint(LOG_UTIL, 0, "bufferSize: %d [number of elements which could be stored in buffer]", rb->bufferSize);
     messageClose(LOG_UTIL);
+  }
+}
+
+/**
+ * @brief Print a ringbuffer with provided print function.
+ *
+ * @param rb                Ringbuffer to print.
+ * @param stream            Stream of type LOG_STREAM.
+ * @param printDataFunc     Function to print address of buffer element and its data to stream.
+ */
+void plotRingBuffer(RINGBUFFER *rb, int stream, void (*printDataFunc)(void*,int,void*)) {
+  int pos = 0;
+  void* bufferElemData;
+
+  if (useStream[stream]) {
+    infoStreamPrint(stream, 1, "Printing ring buffer:");
+    infoStreamPrint(stream, 0, "itemSize: %d [size of one item in bytes]", rb->itemSize);
+    infoStreamPrint(stream, 0, "firstElement: %d [position of first element in buffer]", rb->firstElement);
+    infoStreamPrint(stream, 0, "nElements: %d [number of elements in buffer]", rb->nElements);
+    infoStreamPrint(stream, 0, "bufferSize: %d [number of elements which could be stored in buffer]", rb->bufferSize);
+
+    while(pos < rb->nElements) {
+      bufferElemData = getRingData(rb, pos);
+      printDataFunc(bufferElemData, stream, (void*) bufferElemData);
+      pos++;
+    }
+
+    messageClose(stream);
   }
 }
