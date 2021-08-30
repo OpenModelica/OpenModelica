@@ -3778,25 +3778,19 @@ let &help = buffer ""
 
   ;separator="\n")
 
- let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
-     let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     match exp
-   case e as RCONST(__) then
-   <<
-   //<%preExp%>__b(<%i0%>)=<%expPart%>;
-   >>
-   else
-
-  '<%preExp%>__b(<%i0%>)=<%expPart%>;'
+  let bvector = (ls.beqs |> exp hasindex i0 fromindex 1 =>
+    let &preExp = buffer "" /*BUFD*/
+    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%preExp%>__b(<%i0%>) = <%expPart%>;
+    >>
   ;separator="\n")
-
   <<
   void <%modelname%>Algloop<%ls.index%>::evaluate()
   {
-      <%varDecls%>
-      <%Amatrix%>
-      <%bvector%>
+    <%varDecls%>
+    <%Amatrix%>
+    <%bvector%>
   }
   >>
 end updateAlgloop;
