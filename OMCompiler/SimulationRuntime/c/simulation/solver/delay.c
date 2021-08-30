@@ -154,13 +154,13 @@ void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber
   plotRingBuffer(data->simulationInfo->delayStructure[exprNumber], LOG_STDOUT, printDelayBuffer);
 
   /* Dequeue not longer needed values from ring buffer */
-  row = findTime(time-delayMax+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
+  row = findTime(time-delayTime+DBL_EPSILON, data->simulationInfo->delayStructure[exprNumber], &foundEvent);
   if(foundEvent) {
     infoStreamPrint(LOG_EVENTS, 0, "Current time: %f.", data->localData[0]->timeValue);
   }
   if(row > 0){
     dequeueNFirstRingDatas(data->simulationInfo->delayStructure[exprNumber], row-1);
-    infoStreamPrint(LOG_DELAY, 0, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", row, time-delayMax+DBL_EPSILON, delayTime);
+    infoStreamPrint(LOG_DELAY, 0, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", row, time-delayTime+DBL_EPSILON, delayTime);
   }
 }
 

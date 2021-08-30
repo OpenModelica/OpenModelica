@@ -969,7 +969,7 @@ algorithm
   (outExp,cont,outTpl) := match (inExp, inTpl)
     local
       DAE.Exp e, e1, e2, e_1, e_2, eres, eres1;
-      DAE.Exp index, in0, in1, x, dir, initPnts, initVals;
+      DAE.Exp index, delay, delayMax, in0, in1, x, dir, initPnts, initVals;
       BackendDAE.Variables vars, globalKnownVars;
       BackendDAE.ZeroCrossingSet zeroCrossings, zc_lst, samples;
       DoubleEnded.MutableList<BackendDAE.ZeroCrossing> relations;
@@ -997,6 +997,27 @@ algorithm
         print("sample index: " + intString(ZeroCrossings.length(samples)) + "\n");
       end if;
     then (inExp, true, inTpl);
+
+    // delay() can trigger events which are are handled individually via the function delayZeroCrossing() > 0
+    case (DAE.CALL(path=Absyn.IDENT(name="delay"), expLst={index, e, delay, delayMax}, attr = attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
+      algorithm
+        // traverse relevant arguments
+        (e, ((_, relations, samples, numMathFunctions), tp1))                     := Expression.traverseExpTopDown(e, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
+        (delay, ((_, relations, samples, numMathFunctions), tp1))                 := Expression.traverseExpTopDown(delay, collectZC, ((ZeroCrossings.new(), relations, samples, numMathFunctions), tp1));
+
+        // create zero crossing function
+        eres1 := DAE.CALL(Absyn.IDENT("delayZeroCrossing"), {index, e, delay, delayMax}, attr);
+        e_1 := DAE.RELATION(eres1, DAE.GREATER(DAE.T_REAL_DEFAULT) ,DAE.RCONST(0.0), DoubleEnded.length(relations), NONE());
+        zc := createZeroCrossing(eres1, {eq_count});
+        (eres, relations) := zcIndexRelation(e_1, relations, DoubleEnded.length(relations), zc);
+        zc := createZeroCrossing(eres, {eq_count});
+        (DAE.RELATION(index=itmp), zeroCrossings, _) := zcIndex(eres, zeroCrossings, DoubleEnded.length(relations), zc);
+
+        if Flags.isSet(Flags.RELIDX) then
+          print("collectZC result zc: " + ExpressionDump.printExpStr(eres) + " index: " + intString(itmp) + "\n");
+        end if;
+
+    then (DAE.CALL(Absyn.IDENT(name="delay"), {index, e, delay, delayMax}, attr), true, ((zeroCrossings, relations, samples, numMathFunctions), tp1));
 
     // spatialDistribution() can trigger events which are handled individually via the function spatialDistributionZeroCrossing() > 0
     case (DAE.CALL(path=Absyn.IDENT(name="spatialDistribution"), expLst = {index, in0, in1, x, dir, initPnts, initVals}, attr = attr), ((zeroCrossings, relations, samples, numMathFunctions), tp1 as (eq_count, _, _)))
