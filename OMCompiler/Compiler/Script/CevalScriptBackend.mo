@@ -102,6 +102,7 @@ import Inst;
 import LexerModelicaDiff;
 import List;
 import Lookup;
+import NFConvertDAE;
 import NFFlatModel;
 import NFFlatten;
 import NFInst;

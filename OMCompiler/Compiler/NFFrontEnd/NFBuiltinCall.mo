@@ -39,6 +39,7 @@ encapsulated package NFBuiltinCall
   import NFPrefixes.{Variability, Purity};
   import Type = NFType;
   import Subscript = NFSubscript;
+  import System;
 
 protected
   import Config;

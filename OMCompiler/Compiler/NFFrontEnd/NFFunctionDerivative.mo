@@ -37,6 +37,7 @@ encapsulated uniontype NFFunctionDerivative
   import NFFunction.Function;
   import Expression = NFExpression;
   import Type = NFType;
+  import Util;
 
 protected
   import SCodeDump;
