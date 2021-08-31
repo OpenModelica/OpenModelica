@@ -45,6 +45,7 @@ protected
   import AbsynUtil;
   import AdjacencyList;
   import Array;
+  import BaseHashTable;
   import Call = NFCall;
   import Ceval = NFCeval;
   import Component = NFComponent;
@@ -52,8 +53,8 @@ protected
   import ElementSource;
   import MetaModelica.Dangerous.*;
   import NFInstNode.InstNode;
-  import NFPrefixes.Variability;
   import NFPrefixes.Purity;
+  import NFPrefixes.Variability;
   import Operator = NFOperator;
   import Op = NFOperator.Op;
   import SBFunctions;

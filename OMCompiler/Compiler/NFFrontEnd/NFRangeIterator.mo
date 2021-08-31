@@ -33,6 +33,7 @@ encapsulated uniontype NFRangeIterator
 protected
   import RangeIterator = NFRangeIterator;
   import Type = NFType;
+  import Util;
 
 public
   import Expression = NFExpression;

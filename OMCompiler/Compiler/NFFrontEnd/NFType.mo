@@ -33,17 +33,15 @@ encapsulated uniontype NFType
 protected
   import Type = NFType;
   import List;
-  import Restriction = NFRestriction;
   import Class = NFClass;
   import IOStream;
+  import Util;
 
 public
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
-  import ConvertDAE = NFConvertDAE;
-  import ComponentRef = NFComponentRef;
   import NFFunction.Function;
   import Record = NFRecord;
 

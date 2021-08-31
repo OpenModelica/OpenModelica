@@ -41,6 +41,7 @@ protected
   import Prefixes = NFPrefixes;
   import Ceval = NFCeval;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import Util;
 
 public
   import Expression = NFExpression;

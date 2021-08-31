@@ -44,6 +44,7 @@ encapsulated package NFStructural
 
 protected
   import Flags;
+  import Util;
 
 public
   function isStructuralComponent

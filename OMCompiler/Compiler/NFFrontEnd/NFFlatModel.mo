@@ -51,6 +51,7 @@ protected
   import NFComponentRef.ComponentRef;
   import DAE.ElementSource;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import Util;
 
   import FlatModel = NFFlatModel;
 
