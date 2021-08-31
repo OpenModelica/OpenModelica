@@ -221,7 +221,7 @@ const char *FLAG_DESC[FLAG_MAX+1] = {
   /* FLAG_LSS */                          "value specifies the linear sparse solver method (default: umfpack)",
   /* FLAG_LSS_MAX_DENSITY */              "[double (default 0.2)] value specifies the maximum density for using a linear sparse solver",
   /* FLAG_LSS_MIN_SIZE */                 "[int (default " EXPANDSTRING(DEFAULT_FLAG_LSS_MIN_SIZE) ")] value specifies the minimum system size for using a linear sparse solver",
-  /* FLAG_LV */                           "[string list] value specifies the logging level",
+  /* FLAG_LV */                           "[string list] value specifies the logging level. This flag is allowed to be repeated with REPLACE policy.",
   /* FLAG_LV_TIME */                      "[double list] specifying time interval to allow loging in",
   /* FLAG_MAX_BISECTION_ITERATIONS */     "[int (default 0)] value specifies the maximum number of bisection iterations for state event detection or zero for default behavior",
   /* FLAG_MAX_EVENT_ITERATIONS */         "[int (default 20)] value specifies the maximum number of event iterations",
@@ -443,7 +443,8 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  The value is an Integer with default value 4001.",
   /* FLAG_LV */
   "  Value (a comma-separated String list) specifies which logging levels to\n"
-  "  enable. Multiple options can be enabled at the same time.",
+  "  enable. Multiple options can be enabled at the same time.\n"
+  "  Repetition policy: REPLACE.",
   /* FLAG_LV_TIME */
   "  Interval (a comma-separated Double list with two elements) specifies in which\n"
   "  time interval logging is active. Doesn't affect LOG_STDOUT, LOG_ASSERT, and\n"
