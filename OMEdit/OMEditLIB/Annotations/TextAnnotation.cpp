@@ -546,22 +546,37 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
          */
         textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
         if (!textValue.isEmpty()) {
-          QString unit = "";
-          QString displaytUnit = "";
+          QString unit = mpComponent->getRootParentComponent()->getParameterModifierValue(variable, "unit");
+          QString displayUnit = mpComponent->getRootParentComponent()->getParameterModifierValue(variable, "displayUnit");
           Element *pElement = mpComponent->getRootParentComponent()->getElementByName(variable);
           if (pElement) {
-            displaytUnit = pElement->getDerivedClassModifierValue("displaytUnit");
-            if (displaytUnit.isEmpty()) {
+            if (displayUnit.isEmpty()) {
+              displayUnit = pElement->getDerivedClassModifierValue("displayUnit");
+            }
+            if (unit.isEmpty()) {
               unit = pElement->getDerivedClassModifierValue("unit");
-              displaytUnit = unit;
+            }
+            // if display unit is still empty then use unit
+            if (displayUnit.isEmpty()) {
+              displayUnit = unit;
             }
           }
-          if (displaytUnit.isEmpty()) {
+          if (displayUnit.isEmpty() || unit.isEmpty()) {
             mTextString.replace(pos, regExp.matchedLength(), textValue);
             pos += textValue.length();
           } else {
-            displaytUnit = Utilities::convertUnitToSymbol(displaytUnit);
-            QString textValueWithDisplayUnit = QString("%1 %2").arg(textValue, displaytUnit);
+            QString textValueWithDisplayUnit;
+            OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+            OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(unit, displayUnit);
+            if (convertUnit.unitsCompatible) {
+              qreal convertedValue = Utilities::convertUnit(textValue.toDouble(), convertUnit.offset, convertUnit.scaleFactor);
+              textValue = StringHandler::number(convertedValue);
+              displayUnit = Utilities::convertUnitToSymbol(displayUnit);
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, displayUnit);
+            } else {
+              unit = Utilities::convertUnitToSymbol(unit);
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, unit);
+            }
             mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
             pos += textValueWithDisplayUnit.length();
           }
