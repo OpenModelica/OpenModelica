@@ -268,6 +268,7 @@ public:
   void emitDeleted();
   void componentParameterHasChanged();
   QString getParameterDisplayString(QString parameterName);
+  QString getParameterModifierValue(const QString &parameterName, const QString &modifier);
   QString getDerivedClassModifierValue(QString modifierName);
   QString getInheritedDerivedClassModifierValue(Element *pElement, QString modifierName);
   void shapeAdded();
