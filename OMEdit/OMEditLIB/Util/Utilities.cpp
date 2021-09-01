@@ -1270,6 +1270,8 @@ QString Utilities::convertUnitToSymbol(const QString displayUnit)
 {
   if (displayUnit.compare(QStringLiteral("Ohm")) == 0) {
     return QChar(937);
+  } else if (displayUnit.compare(QStringLiteral("degC")) == 0) {
+    return QString("%1C").arg(QChar(176));
   } else {
     return displayUnit;
   }
