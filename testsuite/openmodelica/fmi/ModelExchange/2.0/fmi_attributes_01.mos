@@ -49,7 +49,7 @@ readFile("fmi_attributes_01.xml"); getErrorString();
 //     variability=\"continuous\"
 //     causality=\"local\"
 //     initial=\"approx\">
-//     <Real start=\"0.0\" derivative=\"1\"/>
+//     <Real start=\"0.0\" derivative=\"1\" nominal=\"500.0\"/>
 //   </ScalarVariable>
 //   </ModelVariables>
 // "

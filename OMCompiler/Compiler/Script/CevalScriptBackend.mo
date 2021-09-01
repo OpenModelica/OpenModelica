@@ -1266,7 +1266,7 @@ algorithm
 
     case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_},_)
       equation
-        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,msg);
+        (cache,simSettings) = calculateSimulationSettings(cache, vals);
         (b,cache,_,_,_) = translateModel(cache, env, className, filenameprefix, true, SOME(simSettings));
       then
         (cache,Values.BOOL(b));
@@ -1499,7 +1499,7 @@ algorithm
         if Config.simCodeTarget() == "omsicpp" then
 
          filenameprefix := AbsynUtil.pathString(className);
-         (cache,simSettings) := calculateSimulationSettings(cache, env, vals, msg);
+         (cache,simSettings) := calculateSimulationSettings(cache, vals);
          try
              (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"},SOME(simSettings));
             if stringEmpty(str) then
@@ -1524,7 +1524,7 @@ algorithm
 
         if b then
            exeDir := compileDir;
-           (cache,simSettings) := calculateSimulationSettings(cache,env,vals,msg);
+           (cache,simSettings) := calculateSimulationSettings(cache, vals);
            SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             // result file might have been set by simflags (-r ...)
@@ -1696,7 +1696,7 @@ algorithm
         (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) = buildModel(cache,env,vals,msg);
         if b then
           exeDir=compileDir;
-          (cache,simSettings) = calculateSimulationSettings(cache,env,vals,msg);
+          (cache,simSettings) = calculateSimulationSettings(cache, vals);
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
           result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
           executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
@@ -4103,36 +4103,29 @@ end translateGraphics;
 protected function calculateSimulationSettings " author: x02lucpo
  calculates the start,end,interval,stepsize, method and initFileName"
   input FCore.Cache inCache;
-  input FCore.Graph inEnv;
   input list<Values.Value> vals;
-  input Absyn.Msg inMsg;
   output FCore.Cache outCache;
   output SimCode.SimulationSettings outSimSettings;
 algorithm
-  (outCache,outSimSettings) := match (inCache,inEnv,vals,inMsg)
+  (outCache,outSimSettings) := match (inCache,vals)
     local
-      String method_str,options_str,outputFormat_str,variableFilter_str,s;
+      String method_str,options_str,outputFormat_str,variableFilter_str;
       Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
-      FCore.Graph env;
-      Absyn.Msg msg;
       FCore.Cache cache;
-      String cflags,simflags;
-    case (cache,_,{Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(_)},_)
+      String cflags;
+    case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(_)})
       equation
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
         outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags);
-
-
       then
         (cache, outSimSettings);
     else
       equation
-        s = "CevalScript.calculateSimulationSettings failed: " + ValuesUtil.valString(Values.TUPLE(vals));
-        Error.addMessage(Error.INTERNAL_ERROR, {s});
+        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.calculateSimulationSettings failed: " + ValuesUtil.valString(Values.TUPLE(vals))});
       then
         fail();
   end match;
@@ -5459,7 +5452,7 @@ algorithm
         end if;
 
         compileDir := System.pwd() + Autoconf.pathDelimiter;
-        (cache,simSettings) := calculateSimulationSettings(cache, env, values, msg);
+        (cache,simSettings) := calculateSimulationSettings(cache, values);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) := simSettings;
 
         (success,cache,libs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix,true, SOME(simSettings));

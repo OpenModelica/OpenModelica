@@ -9179,6 +9179,7 @@ algorithm
                               ei,
                               emptyPartitionsInfo(),
                               BackendDAE.emptyDAEModeData,
+                              NONE(),
                               NONE()
                               );
 end createEmptyShared;

@@ -336,7 +336,8 @@ protected function createSimCode "
   input BackendDAE.SymbolicJacobians inFMIDer = {};
   output SimCode.SimCode simCode;
 algorithm
-  simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths, program,simSettingsOpt, recordDecls, literals, args)
+  // FIXME This matchcontinue is extremely horrible! Please remove it
+  simCode := matchcontinue(inBackendDAE, inClassName, filenamePrefix, inString11, functions, externalFunctionIncludes, includeDirs, libs, libPaths, program, simSettingsOpt, recordDecls, literals, args)
     local
       Integer numProc;
       SimCode.SimCode tmpSimCode;
