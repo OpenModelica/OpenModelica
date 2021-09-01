@@ -364,7 +364,7 @@ VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
   mpVariablesTreeView = pVariablesTreeView;
   QVector<QVariant> headers;
   headers << "" << "" << Helper::variables << Helper::variables << "" << tr("Value") << tr("Unit") << tr("Display Unit") <<
-             QStringList() << Helper::description << "" << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json";
+             QStringList() << Helper::description << "" << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json" << false;
   mpRootVariablesTreeItem = new VariablesTreeItem(headers, 0, true);
   mpActiveVariablesTreeItem = 0;
 }

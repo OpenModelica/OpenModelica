@@ -1498,6 +1498,34 @@ QString Element::getParameterDisplayString(QString parameterName)
 }
 
 /*!
+ * \brief Element::getParameterModifierValue
+ * Reads the component parameter modifier value.
+ * \param parameterName
+ * \param modifier
+ * \return
+ */
+QString Element::getParameterModifierValue(const QString &parameterName, const QString &modifier)
+{
+  /* How to get the parameter modifier value,
+   * 1. Check if the value is available in component modifier.
+   */
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QString parameterAndModiferName = QString("%1.%2").arg(parameterName).arg(modifier);
+  QString modifierValue = "";
+  /* case 1 */
+  QMap<QString, QString> modifiers = mpElementInfo->getModifiersMap(pOMCProxy, className, this);
+  QMap<QString, QString>::iterator modifiersIterator;
+  for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
+    if (parameterAndModiferName.compare(modifiersIterator.key()) == 0) {
+      modifierValue = modifiersIterator.value();
+      break;
+    }
+  }
+  return StringHandler::removeFirstLastQuotes(modifierValue);
+}
+
+/*!
  * \brief Element::getDerivedClassModifierValue
  * Used to fetch the values of unit and displayUnit.
  * \param modifierName
