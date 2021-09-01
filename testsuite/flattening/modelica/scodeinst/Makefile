@@ -620,6 +620,7 @@ IfExpression5.mo \
 IfExpression7.mo \
 IfExpression8.mo \
 IfExpression10.mo \
+IfExpression11.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
