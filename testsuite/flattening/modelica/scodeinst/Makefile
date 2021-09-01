@@ -233,6 +233,7 @@ Condition4.mo \
 Condition5.mo \
 Condition6.mo \
 Condition7.mo \
+Condition8.mo \
 ConditionInvalid1.mo \
 ConditionInvalidBinding1.mo \
 ConditionInvalidBinding2.mo \
