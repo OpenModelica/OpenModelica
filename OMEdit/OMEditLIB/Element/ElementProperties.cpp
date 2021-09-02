@@ -595,6 +595,7 @@ GroupBox::GroupBox(const QString &title, QWidget *parent)
   : QGroupBox(title, parent)
 {
   mpGroupImageLabel = new Label;
+  mpGroupImageLabel->setScaledContents(true);
   mpGridLayout = new QGridLayout;
   mpGridLayout->setObjectName(title);
   mpGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -613,6 +614,8 @@ void GroupBox::setGroupImage(QString groupImage)
 {
   if (QFile::exists(groupImage)) {
     QPixmap pixmap(groupImage);
+    mpGroupImageLabel->setMaximumWidth(pixmap.width() / qApp->devicePixelRatio());
+    mpGroupImageLabel->setMaximumHeight(pixmap.height() / qApp->devicePixelRatio());
     mpGroupImageLabel->setPixmap(pixmap);
   }
 }
