@@ -128,16 +128,7 @@ public
           algorithm
             lhs := ComponentRef.evaluateSubscripts(lhs);
             rhs := ComponentRef.evaluateSubscripts(rhs);
-
-            if not (isDeleted(lhs) or isDeleted(rhs)) then
-              cl1 := makeConnectors(lhs, ty1, source);
-              cl2 := makeConnectors(rhs, ty2, source);
-
-              for c1 in cl1 loop
-                c2 :: cl2 := cl2;
-                conns := addConnection(Connection.CONNECTION(c1, c2), conns);
-              end for;
-            end if;
+            conns.connections := makeConnections(lhs, ty1, rhs, ty2, source, isDeleted, conns.connections);
           then
             eql;
 
@@ -149,6 +140,39 @@ public
       flatModel.equations := listReverseInPlace(eql);
     end if;
   end collect;
+
+  function makeConnections
+    input ComponentRef lhsCref;
+    input Type lhsType;
+    input ComponentRef rhsCref;
+    input Type rhsType;
+    input DAE.ElementSource source;
+    input IsDeleted isDeleted;
+    input output list<Connection> connections = {};
+
+    partial function IsDeleted
+      input ComponentRef cref;
+      output Boolean res;
+    end IsDeleted;
+  protected
+    list<Connector> cl1, cl2;
+    Connector c2;
+  algorithm
+    if isDeleted(lhsCref) or isDeleted(rhsCref) then
+      return;
+    end if;
+
+    cl1 := makeConnectors(lhsCref, lhsType, source);
+    cl2 := makeConnectors(rhsCref, rhsType, source);
+
+    for c1 in cl1 loop
+      c2 :: cl2 := cl2;
+
+      if not (isDeleted(c1.name) or isDeleted(c2.name)) then
+        connections := Connection.CONNECTION(c1, c2) :: connections;
+      end if;
+    end for;
+  end makeConnections;
 
   function makeConnectors
     input ComponentRef cref;
