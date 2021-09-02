@@ -2185,7 +2185,7 @@ algorithm
           cond_ty := Type.CONDITIONAL_ARRAY(comp_ty1, comp_ty2, NFType.Branch.NONE);
           condExp := Expression.typeCast(condExp, cond_ty);
         then
-          (cond_ty, otherExp, mk1);
+          (comp_ty1, otherExp, mk1);
 
       // Only the first branch matches, mark it as the correct branch.
       case (true, _)
@@ -2193,7 +2193,7 @@ algorithm
           cond_ty := Type.CONDITIONAL_ARRAY(comp_ty1, comp_ty2, NFType.Branch.TRUE);
           condExp := Expression.typeCast(e1_1, cond_ty);
         then
-          (cond_ty, e2_1, mk1);
+          (comp_ty1, e2_1, mk1);
 
       // Only the second branch matches, mark it as the correct branch.
       case (_, true)
@@ -2201,7 +2201,7 @@ algorithm
           cond_ty := Type.CONDITIONAL_ARRAY(comp_ty1, comp_ty2, NFType.Branch.FALSE);
           condExp := Expression.typeCast(e1_2, cond_ty);
         then
-          (cond_ty, e2_2, mk2);
+          (comp_ty2, e2_2, mk2);
 
       else (condType, condExp, mk1);
     end match;
@@ -2250,7 +2250,7 @@ algorithm
           cond_ty := Type.CONDITIONAL_ARRAY(comp_ty1, comp_ty2, NFType.Branch.NONE);
           exp := Expression.typeCast(exp, cond_ty);
         then
-          (cond_ty, mk1);
+          (comp_ty1, mk1);
 
       // Only the first branch matches, mark it as the correct branch.
       case (true, _)
@@ -2258,7 +2258,7 @@ algorithm
           cond_ty := Type.CONDITIONAL_ARRAY(comp_ty1, false_ty, NFType.Branch.TRUE);
           exp := Expression.typeCast(e1, cond_ty);
         then
-          (cond_ty, mk1);
+          (comp_ty1, mk1);
 
       // Only the second branch matches, mark it as the correct branch.
       case (_, true)
@@ -2266,7 +2266,7 @@ algorithm
           cond_ty := Type.CONDITIONAL_ARRAY(true_ty, comp_ty2, NFType.Branch.FALSE);
           exp := Expression.typeCast(e2, cond_ty);
         then
-          (cond_ty, mk2);
+          (comp_ty2, mk2);
 
       else (condType, mk1);
     end match;
