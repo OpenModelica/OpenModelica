@@ -20,6 +20,14 @@ simulate(M, simflags="-nlssMinSize=1"); getErrorString();
 //     resultFile = "M_res.mat",
 //     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'M', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-nlssMinSize=1'",
 //     messages = "stdout            | info    | Minimum system size for using non-linear sparse solver changed to 1
+// stdout            | info    | Using sparse solver kinsol for nonlinear system 0,
+// |                 | |       | because density of 1.00 remains under threshold of 0.20 or size of 1 exceeds threshold of 1.
+// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
+// |                 | |       | using the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.
+// stdout            | info    | Using sparse solver kinsol for nonlinear system 1,
+// |                 | |       | because density of 1.00 remains under threshold of 0.20 or size of 1 exceeds threshold of 1.
+// |                 | |       | The maximum density and the minimal system size for using sparse solvers can be specified
+// |                 | |       | using the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.
 // LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
