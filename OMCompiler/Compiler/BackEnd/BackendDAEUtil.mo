@@ -4162,6 +4162,16 @@ protected function traverseStmts "Author: Frenkel TUD 2012-06
      input output Type_a arg2;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
+  function removeSubscripts
+    input output DAE.Exp exp;
+  algorithm
+    exp := match exp
+      case DAE.CREF() algorithm
+        exp.componentRef := ComponentReference.crefStripSubsExceptModelSubs(exp.componentRef);
+      then exp;
+      else exp;
+    end match;
+  end removeSubscripts;
 algorithm
   oextraArg := matchcontinue(inStmts,func,iextraArg)
     local
@@ -4180,22 +4190,31 @@ algorithm
 
     case ((DAE.STMT_ASSIGN(exp1 = e2,exp = e)::xs),_,extraArg)
       equation
+        // kabdelhak: remove left hand side subscripts
+        // (Modelica Specification v3.5 : 11.1.2)
+        // solves ticket #7832
         extraArg = func(e, extraArg);
-        extraArg = func(e2, extraArg);
+        extraArg = func(removeSubscripts(e2), extraArg);
       then
         traverseStmts(xs, func, extraArg);
 
     case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1, exp = e)::xs),_,extraArg)
       equation
+        // kabdelhak: remove left hand side subscripts
+        // (Modelica Specification v3.5 : 11.1.2)
+        // solves ticket #7832
         extraArg = func(e, extraArg);
-        extraArg = List.fold(expl1,func,extraArg);
+        extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
       then
         traverseStmts(xs, func, extraArg);
 
     case ((DAE.STMT_ASSIGN_ARR(lhs = e2, exp = e)::xs),_,extraArg)
       equation
+        // kabdelhak: remove left hand side subscripts
+        // (Modelica Specification v3.5 : 11.1.2)
+        // solves ticket #7832
         extraArg = func(e, extraArg);
-        extraArg = func(e2, extraArg);
+        extraArg = func(removeSubscripts(e2), extraArg);
       then
         traverseStmts(xs, func, extraArg);
 
