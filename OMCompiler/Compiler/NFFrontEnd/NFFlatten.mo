@@ -1590,7 +1590,7 @@ algorithm
       end if;
     end if;
 
-    cr := ComponentRef.rest(cr);
+    cr := ComponentRef.stripSubscripts(ComponentRef.rest(cr));
   end while;
 
   res := false;
