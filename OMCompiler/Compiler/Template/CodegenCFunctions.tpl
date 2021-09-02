@@ -6570,11 +6570,11 @@ template daeExpCall(Exp call, Context context, Text &preExp, Text &varDecls, Tex
         'data->simulationInfo->samples[<%intSub(index, 1)%>]'
     end match
 
-  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), e, delay, delayMax}) then
+  case CALL(path=IDENT(name="delayZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), e, delay, delayMax}) then
     let e_T = daeExp(e, context, &preExp, &varDecls, &auxFunction)
     let delay_T = daeExp(delay, context, &preExp, &varDecls, &auxFunction)
     let delayMax_T = daeExp(delayMax, context, &preExp, &varDecls, &auxFunction)
-    'delayZeroCrossing(data, threadData, <%index%>, <%e_T%>, <%delay_T%>, <%delayMax_T%>)'
+    'delayZeroCrossing(data, threadData, <%index%>, <%rindex%>, <%e_T%>, <%delay_T%>, <%delayMax_T%>)'
 
   case CALL(path=IDENT(name="spatialDistributionZeroCrossing"), expLst={ICONST(integer=index), ICONST(integer=rindex), xPos, dir}) then
     let xPos_T = daeExp(xPos, context, &preExp, &varDecls, &auxFunction)

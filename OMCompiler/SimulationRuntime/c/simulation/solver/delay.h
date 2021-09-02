@@ -55,6 +55,7 @@ typedef struct EXPRESSION_DELAY_BUFFER
 
   double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double t, double delayTime, double maxDelay);
   void storeDelayedExpression(DATA* data, threadData_t *threadData, int exprNumber, double exprValue, double delayTime, double delayMax);
+  double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int exprNumber, unsigned int relationIndex, double delayValue, double delayTime, double delayMax);
 
 #ifdef __cplusplus
   }

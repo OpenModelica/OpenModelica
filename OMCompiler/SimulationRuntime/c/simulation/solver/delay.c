@@ -56,7 +56,7 @@ void printDelayBuffer(void* data, int stream, void* elemPointer);
  * @param[out] foundEvent   Boolean indicating if an event was found while searching for time.
  * @return int              Row with maximum time value smaller equal to time.
  */
-static int findTime(double time, RINGBUFFER *delayStruct, int *foundEvent)
+static int findTime(double time, RINGBUFFER *delayStruct, int* foundEvent)
 {
   int end = ringBufferLength(delayStruct);
   int pos = 0;
@@ -107,8 +107,8 @@ static int findTime(double time, RINGBUFFER *delayStruct, int *foundEvent)
  *
  * @param data          Storing all simulation/model data.
  * @param threadData    Used for error handling.
- * @param exprNumber    Index of delay
- * @param exprValue     Value to store in delay ringbuffer
+ * @param exprNumber    Index of delay.
+ * @param exprValue     Value to store in delay ringbuffer.
  * @param delayTime     Time to delay expValue.
  * @param delayMax      Maximum allowed delay time, defaults to delayTime.
  */
@@ -274,6 +274,51 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
   }
 }
 
+
+/**
+ * @brief Returns value of zero crossing at current simulation time.
+ *
+ *
+ * @param data            Storing all simulation/model data.
+ * @param threadData      Used for error handling.
+ * @param exprNumber      Index of delay.
+ * @param relationIndex   Index of relation used for zero crossing.
+ * @param delayValue      Value to store in delay ringbuffer.
+ * @param delayTime       Time to delay expValue.
+ * @param delayMax        Maximum allowed delay time, defaults to delayTime.
+ * @return double         Value of zeroCrossing at current simulation time.
+ */
+double delayZeroCrossing(DATA* data, threadData_t *threadData, unsigned int exprNumber, unsigned int relationIndex, double delayValue, double delayTime, double delayMax)
+{
+  int foundEvent;
+  int eventPos;
+  double zeroCrossingValue;
+  double time = data->localData[0]->timeValue;
+
+  RINGBUFFER* delayStruct = data->simulationInfo->delayStructure[exprNumber];
+  zeroCrossingValue = data->simulationInfo->zeroCrossingsPre[relationIndex];
+
+  if (ringBufferLength(delayStruct) == 0)
+  {
+    return zeroCrossingValue;
+  }
+
+  /* Find first event on ring buffer */
+  findTime(time - delayTime, delayStruct, &foundEvent);
+
+  /* Case 0: No event to output */
+  if (!foundEvent)
+  {
+    return zeroCrossingValue;
+  }
+  else /* Case 2: There is an event to output */
+  {
+    return -zeroCrossingValue;
+  }
+}
+
+
+
 /**
  * @brief Print transported quantity data to stream.
  *
@@ -284,7 +329,8 @@ double delayImpl(DATA* data, threadData_t *threadData, int exprNumber, double ex
  * @param stream        Stream of LOG_STREAM type.
  * @param elemPointer   Address of element storing this data.
  */
-void printDelayBuffer(void* data, int stream, void* elemPointer) {
+void printDelayBuffer(void* data, int stream, void* elemPointer)
+{
   TIME_AND_VALUE* bufferElemData = (TIME_AND_VALUE*) data;
   infoStreamPrint(stream, 0, "%p: (%e,%e)", elemPointer, bufferElemData->t, bufferElemData->value);
 }
