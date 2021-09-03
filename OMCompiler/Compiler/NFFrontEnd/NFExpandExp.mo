@@ -82,9 +82,9 @@ public
       case Expression.CALL()     then expandCall(exp.call, exp);
       case Expression.SIZE()     then expandSize(exp);
       case Expression.BINARY()   then expandBinary(exp, exp.operator);
-      case Expression.UNARY()    then expandUnary(exp.exp, exp.operator);
+      case Expression.UNARY()    then expandUnary(exp);
       case Expression.LBINARY()  then expandLogicalBinary(exp);
-      case Expression.LUNARY()   then expandLogicalUnary(exp.exp, exp.operator);
+      case Expression.LUNARY()   then expandLogicalUnary(exp);
       case Expression.RELATION() then (exp, true);
       case Expression.CAST()     then expandCast(exp.exp, exp.ty);
       else expandGeneric(exp);
@@ -870,18 +870,21 @@ public
 
   function expandUnary
     input Expression exp;
-    input Operator op;
     output Expression outExp;
     output Boolean expanded;
   protected
-    Operator scalar_op;
+    Expression operand;
+    Operator op, scalar_op;
   algorithm
-    (outExp, expanded) := expand(exp);
-    scalar_op := Operator.scalarize(op);
+    Expression.UNARY(op, operand) := exp;
+    (operand, expanded) := expand(operand);
 
     if expanded then
-      outExp := Expression.mapArrayElements(outExp,
+      scalar_op := Operator.scalarize(op);
+      outExp := Expression.mapArrayElements(operand,
         function SimplifyExp.simplifyUnaryOp(op = scalar_op));
+    else
+      outExp := exp;
     end if;
   end expandUnary;
 
@@ -928,17 +931,18 @@ public
 
   function expandLogicalUnary
     input Expression exp;
-    input Operator op;
     output Expression outExp;
     output Boolean expanded;
   protected
-    Operator scalar_op;
+    Expression operand;
+    Operator op, scalar_op;
   algorithm
-    (outExp, expanded) := expand(exp);
-    scalar_op := Operator.scalarize(op);
+    Expression.LUNARY(op, operand) := exp;
+    (operand, expanded) := expand(operand);
 
     if expanded then
-      outExp := Expression.mapArrayElements(outExp, function makeLogicalUnaryOp(op = scalar_op));
+      scalar_op := Operator.scalarize(op);
+      outExp := Expression.mapArrayElements(operand, function makeLogicalUnaryOp(op = scalar_op));
     else
       outExp := exp;
     end if;
