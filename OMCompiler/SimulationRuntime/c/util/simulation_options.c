@@ -345,7 +345,7 @@ const char *FLAG_DETAILED_DESC[FLAG_MAX+1] = {
   "  If one direction fails, the other direction is always used as fallback option.",
   /* FLAG_HOMOTOPY_ON_FIRST_TRY */
   "  If the model contains the homotopy operator, directly use the homotopy method to solve the initialization problem.\n"
-  "  Without this flag, the solver first tries to solve the initialization problem without homotopy and only uses homotopy as fallback option.",
+  "  This is already the default behaviour, this flag can be used to undo the effect of -noHomotopyOnFirstTry",
   /* FLAG_NO_HOMOTOPY_ON_FIRST_TRY */
   "  Disable the use of the homotopy method to solve the initialization problem.\n"
   "  Without this flag, the solver tries to solve the initialization problem with homotopy if the model contains the homotopy-operator.",
