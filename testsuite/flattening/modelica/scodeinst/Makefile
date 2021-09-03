@@ -742,6 +742,7 @@ OperationDiv1.mo \
 OperationDivEW1.mo \
 OperationLogicalBinary1.mo \
 OperationLogicalUnary1.mo \
+OperationLogicalUnary2.mo \
 OperationMatrixProduct1.mo \
 OperationMatrixProduct2.mo \
 OperationMatrixProduct3.mo \
@@ -756,6 +757,7 @@ OperationSub1.mo \
 OperationSubEW1.mo \
 OperationSubEW2.mo \
 OperationUnary1.mo \
+OperationUnary2.mo \
 OperationVectorMatrixProduct1.mo \
 OperationVectorProduct1.mo \
 OperatorNonEncapsulated1.mo \
