@@ -2828,6 +2828,8 @@ algorithm
         outCref := crefStripSubsExceptModelSubs(cr);
       then
         makeCrefQual(id,ty,{},outCref);
+
+    else inCref;
   end match;
 end crefStripSubsExceptModelSubs;
 
