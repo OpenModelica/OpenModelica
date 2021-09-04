@@ -31,53 +31,45 @@ Concatenates n real arrays along the k:th dimension.
 template <typename T>
 void cat_array(int k, const vector<const BaseArray<T>*>& x, BaseArray<T>& a)
 {
-    unsigned int new_k_dim_size = 0;
-    unsigned int n = x.size();
-    /* check dim sizes of all inputs */
-    if(n<1)
-      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"No input arrays");
+  unsigned int new_k_dim_size = 0;
+  unsigned int n = x.size();
+  /* check dim sizes of all inputs */
+  if (n < 1)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "No input arrays");
 
-    if(x[0]->getDims().size() < k)
-     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong dimension for input array");
+  if (x[0]->getNumDims() < k)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong dimension for input array");
 
-    new_k_dim_size = x[0]->getDims()[k-1];
-    for(int i = 1; i < n; i++)
-    {
-        //arrays must have same number of dimensions
-		if(x[0]->getDims().size() != x[i]->getDims().size())
-           throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong dimension for input array");
-        //Size matching: Arrays must have identical array sizes with the exception of the size of dimension k
-		for(int j = 0; j < (k - 1); j++)
-        {
-            if (x[0]->getDims()[j] != x[i]->getDims()[j])
-                throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong size for input array");
-        }
+  new_k_dim_size = x[0]->getDim(k);
+  for (int i = 1; i < n; i++)
+  {
+    //arrays must have same number of dimensions
+		if (x[0]->getNumDims() != x[i]->getNumDims())
+      throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong dimension for input array");
+    //Size matching: Arrays must have identical array sizes with the exception of the size of dimension k
+		for (int j = 1; j < k; j++)
+      if (x[0]->getDim(j) != x[i]->getDim(j))
+        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong size for input array");
 		//calculate new size of dimension k
-        new_k_dim_size += x[i]->getDims()[k-1];
-         //Size matching: Arrays must have identical array sizes with the exception of the size of dimension k
-		for(int j = k; j < x[0]->getDims().size(); j++)
-        {
-          if (x[0]->getDims()[j] != x[i]->getDims()[j])
-            throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Wrong size for input array");
-        }
-    }
-    /* calculate size of sub and super structure in 1-dim data representation */
-    unsigned int n_sub = 1;
-    unsigned int n_super = 1;
-    for (int i = 0; i < (k - 1); i++)
-    {
-        n_super *= x[0]->getDims()[i];
-    }
-    for (int i = k; i < x[0]->getDims().size(); i++)
-    {
-        n_sub *= x[0]->getDims()[i];
-    }
-    /* allocate output array */
-    vector<size_t> ex = x[0]->getDims();
-    ex[k-1] = new_k_dim_size;
-    if(ex.size()<k)
-     throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION,"Error resizing concatenate array");
-    a.setDims( ex );
+    new_k_dim_size += x[i]->getDim(k);
+    //Size matching: Arrays must have identical array sizes with the exception of the size of dimension k
+		for (int j = k + 1; j <= x[0]->getNumDims(); j++)
+      if (x[0]->getDim(j) != x[i]->getDim(j))
+        throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Wrong size for input array");
+  }
+  /* calculate size of sub and super structure in 1-dim data representation */
+  unsigned int n_sub = 1;
+  unsigned int n_super = 1;
+  for (int i = 1; i < k; i++)
+    n_super *= x[0]->getDim(i);
+  for (int i = k + 1; i <= x[0]->getNumDims(); i++)
+    n_sub *= x[0]->getDim(i);
+  /* allocate output array */
+  vector<size_t> ex = x[0]->getDims();
+  ex[k-1] = new_k_dim_size;
+  if (ex.size() < k)
+    throw ModelicaSimulationError(MODEL_ARRAY_FUNCTION, "Error resizing concatenate array");
+  a.setDims(ex);
 
   /* concatenation along k-th dimension */
   T* a_data = a.getData();
@@ -86,7 +78,7 @@ void cat_array(int k, const vector<const BaseArray<T>*>& x, BaseArray<T>& a)
   {
     for (int c = 0; c < n; c++)
     {
-      int n_sub_k = n_sub * x[c]->getDims()[k-1];
+      int n_sub_k = n_sub * x[c]->getDim(k);
       const T* x_data = x[c]->getData();
       for (int r = 0; r < n_sub_k; r++)
       {
