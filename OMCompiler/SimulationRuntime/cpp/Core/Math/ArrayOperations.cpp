@@ -74,17 +74,14 @@ void cat_array(int k, const vector<const BaseArray<T>*>& x, BaseArray<T>& a)
   /* concatenation along k-th dimension */
   T* a_data = a.getData();
   int j = 0;
-  for (int i = 0; i < n_super; i++)
+  for (int i = 0; i < n_sub; i++)
   {
     for (int c = 0; c < n; c++)
     {
-      int n_sub_k = n_sub * x[c]->getDim(k);
-      const T* x_data = x[c]->getData();
-      for (int r = 0; r < n_sub_k; r++)
-      {
-        a_data[j] = x_data[r + (i * n_sub_k)];
-        j++;
-      }
+      int n_super_k = n_super * x[c]->getDim(k);
+      const T* x_data = x[c]->getData() + i * n_super_k;
+      std::copy(x_data, x_data + n_super_k, a_data + j);
+      j += n_super_k;
     }
   }
 }
