@@ -6,6 +6,7 @@ WhenInitialTerminal.mos \
 WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
+arrayCatTest.mos \
 arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
