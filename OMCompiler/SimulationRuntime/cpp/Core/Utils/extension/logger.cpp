@@ -9,6 +9,9 @@
 #include <Core/Utils/extension/FactoryExport.h>
 #include <Core/Utils/extension/logger.hpp>
 
+#include <boost/property_tree/xml_parser.hpp>
+using boost::property_tree::xml_parser::encode_char_entities;
+
 Logger* Logger::_instance = NULL;
 
 Logger::Logger(LogSettings settings, bool enabled)
@@ -139,7 +142,7 @@ void LoggerXML::writeInternal(std::string msg, LogCategory cat, LogLevel lvl,
   if (ls != LS_END) {
     _stream << "<message stream=\"" << getCategory(cat) << "\" "
             << "type=\"" << getLevel(lvl) << "\" "
-            << "text=\"" << msg << "\"";
+            << "text=\"" << encode_char_entities(msg) << "\"";
     if (ls == LS_BEGIN)
       _stream << " >" << std::endl;
     else
