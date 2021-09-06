@@ -1041,6 +1041,14 @@ public
               then
                 Expression.CALL(call);
 
+            // For noEvent we can type cast the argument instead of the whole call.
+            case "noEvent"
+              algorithm
+                call.arguments := list(Expression.typeCast(a, ty) for a in call.arguments);
+                call.ty := cast_ty;
+              then
+                Expression.CALL(call);
+
             else Expression.CAST(cast_ty, callExp);
           end match;
 
@@ -2200,6 +2208,30 @@ public
 
     call := TYPED_REDUCTION(fn, ty, var, purity, arg, iters, default_exp, fold_tuple);
   end makeTypedReduction;
+
+  function isEventTriggeringFunction
+    input Call call;
+    output Boolean triggering;
+  protected
+    Absyn.Path fn_name;
+  algorithm
+    fn_name := functionName(call);
+    triggering := AbsynUtil.pathIsIdent(fn_name);
+
+    if not triggering then
+      return;
+    end if;
+
+    triggering := match AbsynUtil.pathFirstIdent(fn_name)
+      case "div" then true;
+      case "mod" then true;
+      case "rem" then true;
+      case "ceil" then true;
+      case "floor" then true;
+      case "integer" then true;
+      else false;
+    end match;
+  end isEventTriggeringFunction;
 
 protected
   function reductionDefaultValue
