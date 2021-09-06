@@ -4945,5 +4945,16 @@ public
     end match;
   end hasNonArrayIteratorSubscript;
 
+  function isEventTriggering
+    input Expression exp;
+    output Boolean triggering;
+  algorithm
+    triggering := match exp
+      case RELATION() then true;
+      case CALL() then Call.isEventTriggeringFunction(exp.call);
+      else false;
+    end match;
+  end isEventTriggering;
+
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;
