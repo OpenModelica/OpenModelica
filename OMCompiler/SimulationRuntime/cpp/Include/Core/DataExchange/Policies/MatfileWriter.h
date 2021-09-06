@@ -37,7 +37,6 @@ class MatFileWriter : public ContainerManager
               _doubleMatrixData1(NULL),
               _doubleMatrixData2(NULL),
               _stringMatrix(NULL),
-              _pacString(NULL),
               _intMatrix(NULL)
     {
 
@@ -48,13 +47,11 @@ class MatFileWriter : public ContainerManager
         delete[] _doubleMatrixData1;
         delete[] _doubleMatrixData2;
         delete[] _stringMatrix;
-        delete[] _pacString;
         delete[] _intMatrix;
 
         _doubleMatrixData1 = NULL;
         _doubleMatrixData2 = NULL;
         _stringMatrix = NULL;
-        _pacString = NULL;
         _intMatrix = NULL;
 
         if (_output_stream.is_open())
@@ -258,7 +255,6 @@ class MatFileWriter : public ContainerManager
         _doubleMatrixData1 = NULL;
         _doubleMatrixData2 = NULL;
         _stringMatrix = NULL;
-        _pacString = NULL;
         _intMatrix = NULL;
 
         // allocate temp buffer for simulation data:
@@ -374,7 +370,6 @@ class MatFileWriter : public ContainerManager
         int iCols = 0;
         char *stringHelpMatrix = NULL;
         int *intHelpMatrix = NULL;
-        char *pacHelpString = NULL;
 
         // get longest string of the variable names
         for (var_names_t::const_iterator it = get<0>(s_list).begin(); it !=  get<0>(s_list).end(); ++it)
@@ -455,57 +450,42 @@ class MatFileWriter : public ContainerManager
         _stringMatrix = new char[uiVarCount * uilongest];
         memset(_stringMatrix, 0, sizeof(char) * uiVarCount * uilongest);
         stringHelpMatrix = _stringMatrix;
-        _pacString = new char[uilongest];
-        memset(_pacString, 0, sizeof(char) * (uilongest));
-        pacHelpString = _pacString;
 
         // first time ist written to "name" matrix...
-        strncpy(stringHelpMatrix, "time", uilongestName);
+        strncpy(stringHelpMatrix, "time", 4);
         stringHelpMatrix += uilongestName;
 
         // ...followed by variable names...
         for (var_names_t::const_iterator it = get<0>(s_list).begin(); it != get<0>(s_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestName);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestName;
         }
         for (var_names_t::const_iterator it = get<1>(s_list).begin(); it != get<1>(s_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestName);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestName;
         }
         for (var_names_t::const_iterator it = get<2>(s_list).begin(); it != get<2>(s_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestName);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestName;
         }
 
         // ...followed by parameter names
         for (var_names_t::const_iterator it = get<0>(s_parameter_list).begin(); it != get<0>(s_parameter_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestName);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestName;
         }
          for (var_names_t::const_iterator it = get<1>(s_parameter_list).begin(); it != get<1>(s_parameter_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestName);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestName;
         }
          for (var_names_t::const_iterator it = get<2>(s_parameter_list).begin(); it != get<2>(s_parameter_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestName);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestName);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestName;
         }
 
@@ -515,65 +495,47 @@ class MatFileWriter : public ContainerManager
         // initialize pointer and reset to zero
         memset(_stringMatrix, 0, sizeof(char) * uiVarCount * uilongest);
         stringHelpMatrix = _stringMatrix;
-        memset(_pacString, 0, sizeof(char) * (uilongest));
-        pacHelpString = _pacString;
 
         // first description of time ist written to "name" matrix...
-        strncpy(stringHelpMatrix, "Time in [s]", uilongestDesc);
+        strncpy(stringHelpMatrix, "Time in [s]", 11);
         stringHelpMatrix += uilongestDesc;
 
         // ...followed by variable descriptions...
         for (var_names_t::const_iterator it = get<0>(s_desc_list).begin(); it != get<0>(s_desc_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestDesc);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestDesc;
         }
         for (var_names_t::const_iterator it = get<1>(s_desc_list).begin(); it != get<1>(s_desc_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestDesc);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestDesc;
         }
         for (var_names_t::const_iterator it = get<2>(s_desc_list).begin(); it != get<2>(s_desc_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestDesc);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestDesc;
         }
 
         // ...followed by parameter descriptions...
         for (var_names_t::const_iterator it = get<0>(s_desc_parameter_list).begin(); it != get<0>(s_desc_parameter_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestDesc);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestDesc;
         }
         for (var_names_t::const_iterator it = get<1>(s_desc_parameter_list).begin(); it != get<1>(s_desc_parameter_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestDesc);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestDesc;
         }
         for (var_names_t::const_iterator it = get<2>(s_desc_parameter_list).begin(); it != get<2>(s_desc_parameter_list).end(); ++it)
         {
-            strncpy(pacHelpString, it->c_str(), uilongestDesc);
-            vFixVarName(pacHelpString, it->size());
-            strncpy(stringHelpMatrix, pacHelpString, uilongestDesc);
+            strncpy(stringHelpMatrix, it->c_str(), it->size());
             stringHelpMatrix += uilongestDesc;
         }
 
         // write matrix to file
         writeMatVer4Matrix("description", (int) uilongestDesc, (int) uiVarCount, _stringMatrix, sizeof(char));
-
-        // initialize pointer
-        stringHelpMatrix = NULL;
-        pacHelpString = NULL;
 
         // get memory and reset to zero
         _intMatrix = new int[4 * uiVarCount];
@@ -673,9 +635,6 @@ class MatFileWriter : public ContainerManager
 
         // write matrix to file
         writeMatVer4Matrix("dataInfo", 4, uiVarCount, _intMatrix, sizeof(int));
-
-        // initialize pointer
-        intHelpMatrix = NULL;
     }
 
     /*=={function}===================================================================================*/
@@ -811,7 +770,6 @@ class MatFileWriter : public ContainerManager
     double *_doubleMatrixData1;
     double *_doubleMatrixData2;
     char *_stringMatrix;
-    char *_pacString;
     int *_intMatrix;
     vector<string> _var_outputs;
 };
