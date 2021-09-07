@@ -714,51 +714,7 @@ void OMCProxy::loadUserLibraries()
   foreach (QString lib, libraries) {
     QString encoding = pSettings->value("userlibraries/" + lib).toString();
     QString fileName = QUrl::fromPercentEncoding(QByteArray(lib.toUtf8().constData()));
-    QStringList classesList = parseFile(fileName, encoding);
-    if (!classesList.isEmpty()) {
-      /*
-        Only allow loading of files that has just one nonstructured entity.
-        From Modelica specs section 13.2.2.2,
-        "A nonstructured entity [e.g. the file A.mo] shall contain only a stored-definition that defines a class [A] with a name
-         matching the name of the nonstructured entity."
-        */
-      if (classesList.size() > 1) {
-        QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-        pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::error));
-        pMessageBox->setIcon(QMessageBox::Critical);
-        pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-        pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(fileName)));
-        pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::MULTIPLE_TOP_LEVEL_CLASSES)).arg(fileName)
-                                        .arg(classesList.join(",")));
-        pMessageBox->setStandardButtons(QMessageBox::Ok);
-        pMessageBox->exec();
-        return;
-      }
-      QStringList existingmodelsList;
-      bool existModel = false;
-      // check if the model already exists
-      foreach(QString model, classesList) {
-        if (existClass(model)) {
-          existingmodelsList.append(model);
-          existModel = true;
-        }
-      }
-      // if existModel is true, show user an error message
-      if (existModel) {
-        QMessageBox *pMessageBox = new QMessageBox(MainWindow::instance());
-        pMessageBox->setWindowTitle(QString(Helper::applicationName).append(" - ").append(Helper::information));
-        pMessageBox->setIcon(QMessageBox::Information);
-        pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
-        pMessageBox->setText(QString(GUIMessages::getMessage(GUIMessages::UNABLE_TO_LOAD_FILE).arg(encoding)));
-        pMessageBox->setInformativeText(QString(GUIMessages::getMessage(GUIMessages::REDEFINING_EXISTING_CLASSES))
-                                        .arg(existingmodelsList.join(",")).append("\n")
-                                        .append(GUIMessages::getMessage(GUIMessages::DELETE_AND_LOAD).arg(encoding)));
-        pMessageBox->setStandardButtons(QMessageBox::Ok);
-        pMessageBox->exec();
-      } else { // if no conflicting model found then just load the file simply
-        loadFile(fileName, encoding);
-      }
-    }
+    MainWindow::instance()->getLibraryWidget()->openFile(fileName, encoding);
   }
 }
 
@@ -773,8 +729,7 @@ void OMCProxy::loadUserLibraries()
  * \param showProtected - returns the protected classes as well.
  * \return
  */
-QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qualified, bool sort, bool builtin, bool showProtected,
-                                    bool includeConstants)
+QStringList OMCProxy::getClassNames(QString className, bool recursive, bool qualified, bool sort, bool builtin, bool showProtected, bool includeConstants)
 {
   return mpOMCInterface->getClassNames(className, recursive, qualified, sort, builtin, showProtected, includeConstants);
 }
