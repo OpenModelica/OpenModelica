@@ -1274,16 +1274,23 @@ algorithm
 
     case ("loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
-        (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
-        if (b) then
-          execStatReset();
-          filename := Testsuite.friendlyPath(filename);
-          p := SymbolTable.getAbsyn();
-          newp := loadFile(filename, "UTF-8", p, b, b1, requireExactVersion);
-          execStat("loadFile("+filename+")");
-          SymbolTable.setAbsyn(newp);
-        end if;
-        outCache := FCore.emptyCache();
+        str := System.pwd();
+        try
+          0 := System.cd(System.dirname(filename));
+          (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
+          if (b) then
+            execStatReset();
+            filename := Testsuite.friendlyPath(filename);
+            p := SymbolTable.getAbsyn();
+            newp := loadFile(filename, "UTF-8", p, b, b1, requireExactVersion);
+            execStat("loadFile("+filename+")");
+            SymbolTable.setAbsyn(newp);
+          end if;
+          outCache := FCore.emptyCache();
+          0 := System.cd(str);
+        else
+          0 := System.cd(str);
+        end try;
       then
         Values.BOOL(b);
 
