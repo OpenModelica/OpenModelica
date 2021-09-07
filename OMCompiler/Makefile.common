@@ -67,8 +67,7 @@ semla:
 	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
 	# Build SEMLA
 	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DTOOL_PRIVATE_KEY_DIRECTORY:String=`pwd`/../src/openssl_keys -DLVE_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys -DTOOLS_PUBLIC_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys -DLICENSE_MANAGER:String=testingdummy -DDECRYPTOR:String=default -DOBFUSCATOR:String=dummy -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
-	(cd ../OMEncryption/3rdParty/SEMLA/build && $(CMAKE) --build .)
-	(cd ../OMEncryption/3rdParty/SEMLA/build && $(CMAKE) --build . --target install)
+	$(MAKE) -C ../OMEncryption/3rdParty/SEMLA/build install
 	mkdir -p $(builddir_lib)/omc/SEMLA/LVE
 	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
 	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libtool.a $(builddir_lib)/omc/SEMLA
