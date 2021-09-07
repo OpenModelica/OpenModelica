@@ -55,7 +55,6 @@ import ErrorExt;
 import Flags;
 import Debug;
 import MetaModelica.Dangerous.listReverseInPlace;
-import BuiltinFuncs = NFBuiltinFuncs;
 
 public
 
@@ -245,7 +244,6 @@ algorithm
     case "homotopy"  then simplifyHomotopy(args, call);
     case "max"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
     case "min"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
-    case "noEvent"   then simplifyNoEvent(listHead(args), call);
     case "ones"      then simplifyFill(Expression.INTEGER(1), args, call);
     case "product"   then simplifySumProduct(listHead(args), call, isSum = false);
     case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
@@ -381,46 +379,6 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyHomotopy;
-
-function simplifyNoEvent
-  input Expression arg;
-  input Call call;
-  output Expression exp;
-algorithm
-  // If the argument is an event triggering expression, do nothing.
-  if Expression.isEventTriggering(arg) then
-    exp := Expression.CALL(call);
-    return;
-  end if;
-
-  // Otherwise push noEvent down to only where it's required.
-  exp := Expression.map(arg, stripNoEvent);
-  exp := Expression.map(arg, addNoEvent);
-end simplifyNoEvent;
-
-function stripNoEvent
-  input Expression exp;
-  output Expression outExp;
-algorithm
-  outExp := match exp
-    case Expression.CALL()
-      guard Call.isNamed(exp.call, "noEvent")
-      then listHead(Call.arguments(exp.call));
-    else exp;
-  end match;
-end stripNoEvent;
-
-function addNoEvent
-  input Expression exp;
-  output Expression outExp;
-algorithm
-  if Expression.isEventTriggering(exp) then
-    outExp := Expression.CALL(Call.makeTypedCall(NFBuiltinFuncs.NO_EVENT, {exp},
-      Expression.variability(exp), Expression.purity(exp), Expression.typeOf(exp)));
-  else
-    outExp := exp;
-  end if;
-end addNoEvent;
 
 function simplifyArrayConstructor
   input Call call;
