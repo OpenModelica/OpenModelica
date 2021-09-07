@@ -4163,10 +4163,14 @@ protected function traverseStmts "Author: Frenkel TUD 2012-06
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
   function removeSubscripts
+    "kabdelhak: remove left hand side subscripts
+     (Modelica Specification v3.5 : 11.1.2)
+     Fix: Do not do if it is a scalar variable with all constant subscripts.
+          It leads to a massive number of hash table accesses for big tensors."
     input output DAE.Exp exp;
   algorithm
     exp := match exp
-      case DAE.CREF() algorithm
+      case DAE.CREF() guard(not ComponentReference.crefIsScalarWithAllConstSubs(exp.componentRef)) algorithm
         exp.componentRef := ComponentReference.crefStripSubsExceptModelSubs(exp.componentRef);
       then exp;
       else exp;
