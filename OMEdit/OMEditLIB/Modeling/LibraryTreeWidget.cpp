@@ -1368,15 +1368,6 @@ void LibraryTreeModel::addModelicaLibraries()
   }
   // load Modelica User Libraries.
   pOMCProxy->loadUserLibraries();
-  QStringList userLibs = pOMCProxy->getClassNames();
-  foreach (QString lib, userLibs) {
-    if (systemLibs.contains(lib)) {
-      continue;
-    }
-    SplashScreen::instance()->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, false, true);
-    checkIfAnyNonExistingClassLoaded();
-  }
 }
 
 /*!
