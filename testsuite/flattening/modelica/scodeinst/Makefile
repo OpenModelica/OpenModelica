@@ -733,7 +733,6 @@ MultiInheritanceRedeclare1.mo \
 MultiInheritanceRedeclare2.mo \
 NoEvent1.mo \
 NoEvent2.mo \
-NoEvent3.mo \
 NonConnectorFlow1.mo \
 NonexistentRedeclareModifier1.mo \
 NonexistentRedeclareModifier2.mo \

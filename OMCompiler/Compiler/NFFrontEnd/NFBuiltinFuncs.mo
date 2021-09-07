@@ -294,11 +294,6 @@ constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
     Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
-constant Function NO_EVENT = Function.FUNCTION(Path.IDENT("noEvent"),
-  InstNode.EMPTY_NODE(), {}, {}, {}, {},
-    Type.UNKNOWN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
-    Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
-
 
 constant Component CLOCK_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),
   Type.CLOCK(), NFBinding.EMPTY_BINDING, NFBinding.EMPTY_BINDING, NFComponent.DEFAULT_ATTR, NONE(), NONE(), AbsynUtil.dummyInfo);
