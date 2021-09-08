@@ -8,6 +8,7 @@ loadString("
     import SI = Modelica.SIunits;
 
     model A
+      SI.Time t;
       SI.Conversions.NonSIunits.Angle_deg angle;
     end A;
   end ConvertClass5;
@@ -25,6 +26,7 @@ list(ConvertClass5);
 //   import SI = Modelica.Units.SI;
 //
 //   model A
+//     SI.Time t;
 //     Modelica.Units.NonSI.Angle_deg angle;
 //   end A;
 // end ConvertClass5;"
