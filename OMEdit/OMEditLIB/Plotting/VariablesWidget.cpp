@@ -244,11 +244,10 @@ QVariant VariablesTreeItem::data(int column, int role) const
           return mToolTip;
         case Qt::CheckStateRole:
           /* Show checkbox for,
-           * nodes without children i.e., leaf nodes
+           * nodes without children i.e., leaf nodes and exist in the result file
            * nodes that are array
-           * nodes that exist in the result file.
            */
-          if (parent()->parent() && mExistInResultFile && (mChildren.size() == 0 || mIsMainArray)) {
+          if (parent()->parent() && ((mChildren.size() == 0 && mExistInResultFile) || mIsMainArray)) {
             return isChecked() ? Qt::Checked : Qt::Unchecked;
            } else {
             return QVariant();
@@ -483,8 +482,9 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
 
   Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-  if (((index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->mChildren.size() == 0) || pVariablesTreeItem->isMainArray())
-          && pVariablesTreeItem->parent() != mpRootVariablesTreeItem && pVariablesTreeItem->getExistInResultFile()) {
+  if ((index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->parent() != mpRootVariablesTreeItem)
+      && ((pVariablesTreeItem->mChildren.size() == 0 && pVariablesTreeItem->getExistInResultFile())
+          || pVariablesTreeItem->isMainArray())) {
     flags |= Qt::ItemIsUserCheckable;
     // Disable string type since is not stored in the result file and we can't plot them
     if (pVariablesTreeItem->isString()) {
@@ -1895,15 +1895,19 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
     // pPlotWindow is 0 or the plot's type is PLOTARRAY or PLOTARRAYPARAMETRIC
     // then create a new plot window.
     if (!pVariablesTreeItem->isMainArray() && (!pPlotWindow || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)) {
+      bool checkedState = pVariablesTreeItem->isChecked();
       MainWindow::instance()->getPlotWindowContainer()->addPlotWindow();
       pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
+      checkVariable(index, checkedState);
     }
     // if the variable is an array and
     // pPlotWindow is 0 or the plot's type is PLOT or PLOTPARAMETRIC
     // then create a new plot window.
     else if (pVariablesTreeItem->isMainArray() && (!pPlotWindow || pPlotWindow->getPlotType() == PlotWindow::PLOT || pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)) {
+      bool checkedState = pVariablesTreeItem->isChecked();
       MainWindow::instance()->getPlotWindowContainer()->addArrayPlotWindow();
       pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
+      checkVariable(index, checkedState);
     }
     // if still pPlotWindow is 0 then return.
     if (!pPlotWindow) {
@@ -2430,6 +2434,20 @@ void VariablesWidget::updateVisualization()
   mpTimeManager->updateTick();  //for real-time measurement
   visTime = mpTimeManager->getRealTime() - visTime;
   mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
+}
+
+/*!
+ * \brief VariablesWidget::checkVariable
+ * \param index
+ */
+void VariablesWidget::checkVariable(const QModelIndex &index, bool checkState)
+{
+  /* When we add a new plotwindow then the checked variables are cleared based on the new plotwindow.
+   * So check the active variable again
+   */
+  bool state = mpVariablesTreeModel->blockSignals(true);
+  mpVariablesTreeModel->setData(index, checkState ? Qt::Checked : Qt::Unchecked, Qt::CheckStateRole);
+  mpVariablesTreeModel->blockSignals(state);
 }
 
 /*!

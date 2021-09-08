@@ -262,6 +262,7 @@ private:
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile();
   void updateVisualization();
+  void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
   void unCheckCurveVariable(const QString &variable);
 public slots:
