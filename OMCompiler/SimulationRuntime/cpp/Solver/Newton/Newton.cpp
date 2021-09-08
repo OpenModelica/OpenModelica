@@ -298,7 +298,7 @@ void Newton::solve( )
         // check for sufficient decrease
         // (also break for very small lambda and try a small step instead
         //  -- avoid "sufficient decrease" errors, still have iteration limit)
-        if (phiHelp <= (1.0 - alpha * lambda) * phi || lambda < alpha)
+        if (phiHelp <= (1.0 - alpha * lambda) * phi || (lambda < alpha && isfinite(phiHelp)))
           break;
       }
       // take iterate
