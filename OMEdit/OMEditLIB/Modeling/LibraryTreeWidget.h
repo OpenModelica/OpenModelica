@@ -97,6 +97,10 @@ public:
   void setClassInformation(OMCInterface::getClassInformation_res classInformation);
   void setFileName(QString fileName) {mFileName = fileName;}
   const QString& getFileName() const {return mFileName;}
+  const QString& getVersion() const;
+  const QString& getVersionDate() const;
+  const QString& getVersionBuild() const;
+  const QString& getDateModified() const;
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
@@ -204,6 +208,9 @@ private:
   QString mParentName;
   QString mNameStructure;
   QString mFileName;
+  QString mVersionDate;
+  QString mVersionBuild;
+  QString mDateModified;
   bool mReadOnly;
   bool mIsSaved;
   SaveContentsType mSaveContentsType;
