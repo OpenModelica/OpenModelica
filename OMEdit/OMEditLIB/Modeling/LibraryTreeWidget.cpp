@@ -70,6 +70,9 @@ LibraryTreeItem::LibraryTreeItem()
   OMCInterface::getClassInformation_res classInformation;
   setClassInformation(classInformation);
   setFileName("");
+  mVersionDate = "";
+  mVersionBuild = "";
+  mDateModified = "";
   setReadOnly(false);
   setIsSaved(false);
   setSaveContentsType(LibraryTreeItem::SaveInOneFile);
@@ -169,6 +172,11 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
   if (mLibraryType == LibraryTreeItem::Modelica) {
     mClassInformation = classInformation;
     setFileName(classInformation.fileName);
+    if (!mIsRootItem) {
+      mVersionDate = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "versionDate");
+      mVersionBuild = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "versionBuild", StringHandler::Integer);
+      mDateModified = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "dateModified");
+    }
     setReadOnly(classInformation.fileReadOnly);
     // set save contents type
     if (isFilePathValid()) {
@@ -205,6 +213,58 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
     if (mpModelWidget) {
       mpModelWidget->updateViewButtonsBasedOnAccess();
     }
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersion
+ * \return
+ */
+const QString &LibraryTreeItem::getVersion() const
+{
+  if (mClassInformation.version.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersion();
+  } else {
+    return mClassInformation.version;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersionDate
+ * \return
+ */
+const QString &LibraryTreeItem::getVersionDate() const
+{
+  if (mVersionDate.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersionDate();
+  } else {
+    return mVersionDate;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersionBuild
+ * \return
+ */
+const QString &LibraryTreeItem::getVersionBuild() const
+{
+  if (mVersionBuild.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersionBuild();
+  } else {
+    return mVersionBuild;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getDateModified
+ * \return
+ */
+const QString &LibraryTreeItem::getDateModified() const
+{
+  if (mDateModified.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getDateModified();
+  } else {
+    return mDateModified;
   }
 }
 
@@ -3403,9 +3463,9 @@ void LibraryTreeView::openInformationDialog()
     QVBoxLayout *pLayout = new QVBoxLayout;
     pLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     pLayout->addWidget(pHeadingLabel);
-    pLayout->addWidget(new Label(tr("Version : %1").arg(MainWindow::instance()->getOMCProxy()->getVersion(pLibraryTreeItem->getNameStructure()))));
-    pLayout->addWidget(new Label(tr("Version Date : %1").arg(MainWindow::instance()->getOMCProxy()->getVersionDateAnnotation(pLibraryTreeItem->getNameStructure()))));
-    pLayout->addWidget(new Label(tr("Version Build : %1").arg(MainWindow::instance()->getOMCProxy()->getVersionBuildAnnotation(pLibraryTreeItem->getNameStructure()))));
+    pLayout->addWidget(new Label(tr("Version : %1").arg(pLibraryTreeItem->getVersion())));
+    pLayout->addWidget(new Label(tr("Version Date : %1").arg(MainWindow::instance()->getOMCProxy()->getNamedAnnotation(pLibraryTreeItem->getNameStructure(), "versionDate"))));
+    pLayout->addWidget(new Label(tr("Version Build : %1").arg(MainWindow::instance()->getOMCProxy()->getNamedAnnotation(pLibraryTreeItem->getNameStructure(), "versionBuild"))));
     pInformationDialog->setLayout(pLayout);
     pInformationDialog->exec();
   }

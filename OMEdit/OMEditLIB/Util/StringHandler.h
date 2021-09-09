@@ -69,6 +69,7 @@ public:
     OMEditInfo  /* used internally by OMEdit to mark message blue. */
   };
   enum TLMCausality { TLMBidirectional, TLMInput, TLMOutput };
+  enum ResultType {String, Integer};
   static QString getTLMCausality(int causality);
   enum TLMDomain { Mechanical, Electric, Hydraulic, Pneumatic, Magnetic, Signal };
   static QString getTLMDomain(int domain);

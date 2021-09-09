@@ -33,7 +33,9 @@
 
 #include "Commands.h"
 #include "MainWindow.h"
+#include "DocumentationWidget.h"
 
+#include <QDockWidget>
 #include <QMessageBox>
 #include <functional>
 
@@ -1277,6 +1279,10 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
     QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mNewVersion);
     if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
       mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mNewVersion;
+      // if documentation view is visible then update it
+      if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+        MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpGraphicsView->getModelWidget()->getLibraryTreeItem());
+      }
     }
     // uses annotation
     pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mNewUsesAnnotationString);
@@ -1317,6 +1323,10 @@ void UpdateCoOrdinateSystemCommand::undo()
     QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mOldVersion);
     if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
       mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mOldVersion;
+      // if documentation view is visible then update it
+      if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+        MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpGraphicsView->getModelWidget()->getLibraryTreeItem());
+      }
     }
     // uses annotation
     pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mOldUsesAnnotationString);
