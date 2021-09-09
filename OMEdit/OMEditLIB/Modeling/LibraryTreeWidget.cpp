@@ -3464,8 +3464,8 @@ void LibraryTreeView::openInformationDialog()
     pLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     pLayout->addWidget(pHeadingLabel);
     pLayout->addWidget(new Label(tr("Version : %1").arg(pLibraryTreeItem->getVersion())));
-    pLayout->addWidget(new Label(tr("Version Date : %1").arg(MainWindow::instance()->getOMCProxy()->getNamedAnnotation(pLibraryTreeItem->getNameStructure(), "versionDate"))));
-    pLayout->addWidget(new Label(tr("Version Build : %1").arg(MainWindow::instance()->getOMCProxy()->getNamedAnnotation(pLibraryTreeItem->getNameStructure(), "versionBuild"))));
+    pLayout->addWidget(new Label(tr("Version Date : %1").arg(pLibraryTreeItem->getVersionDate())));
+    pLayout->addWidget(new Label(tr("Version Build : %1").arg(pLibraryTreeItem->getVersionBuild())));
     pInformationDialog->setLayout(pLayout);
     pInformationDialog->exec();
   }
