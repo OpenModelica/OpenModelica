@@ -703,7 +703,7 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       // if ignoreCommandLineOptionsAnnotation flag is not set then read the __OpenModelica_commandLineOptions annotation
       if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
         QStringList additionalTranslationFlagsList;
-        QString commandLineOptions = MainWindow::instance()->getOMCProxy()->getCommandLineOptionsAnnotation(mClassName);
+        QString commandLineOptions = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mClassName, "__OpenModelica_commandLineOptions");
         QStringList commandLineOptionsList = commandLineOptions.split(" ");
         foreach (QString commandLineOption, commandLineOptionsList) {
           QStringList commandLineOptionList = commandLineOption.split("=");
@@ -1692,7 +1692,7 @@ void SimulationDialog::saveTranslationFlagsAnnotation()
   }
   // old translation flags
   QString oldCommandLineOptions = QString("__OpenModelica_commandLineOptions(\"%1\")")
-                                  .arg(MainWindow::instance()->getOMCProxy()->getCommandLineOptionsAnnotation(mpLibraryTreeItem->getNameStructure()));
+                                  .arg(MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mpLibraryTreeItem->getNameStructure(), "__OpenModelica_commandLineOptions"));
   // new translation flags
   QString newCommandLineOptions = QString("__OpenModelica_commandLineOptions(\"%1\")").arg(mpTranslationFlagsWidget->commandLineOptions());
   // if we have ModelWidget for class then put the change on undo stack.

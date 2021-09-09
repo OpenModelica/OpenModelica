@@ -1450,6 +1450,22 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
     docElement.remove(QRegExp("<html>|</html>|<HTML>|</HTML>|<head>|</head>|<HEAD>|</HEAD>|<body>|</body>|<BODY>|</BODY>"));
     doc += docElement;
   }
+
+  QString version = pLibraryTreeItem->getVersion();
+  QString versionDate = pLibraryTreeItem->getVersionDate();
+  QString versionBuild = pLibraryTreeItem->getVersionBuild();
+  QString dateModified = pLibraryTreeItem->getDateModified();
+  if (!version.isEmpty()) {
+    if (!versionDate.isEmpty()) {
+      version += QString(", %1").arg(versionDate);
+    }
+    if (!versionBuild.isEmpty()) {
+      version += QString(", build %1").arg(versionBuild);
+      if (!dateModified.isEmpty()) {
+        version += QString(" (%1)").arg(dateModified);
+      }
+    }
+  }
   QString documentation = QString("<html>\n"
                                   "  <head>\n"
                                   "    <style>\n"
@@ -1462,14 +1478,19 @@ QString OMCProxy::getDocumentationAnnotation(LibraryTreeItem *pLibraryTreeItem)
                                   "  </head>\n"
                                   "  <body>\n"
                                   "    %6\n"
+                                  "    <hr />"
+                                  "    Filename: %7<br />"
+                                  "    Version: %8<br />"
                                   "  </body>\n"
                                   "</html>")
-      .arg(Helper::systemFontInfo.family())
-      .arg(Helper::systemFontInfo.pointSize())
-      .arg(Helper::monospacedFontInfo.family())
-      .arg(Helper::monospacedFontInfo.pointSize())
-      .arg(infoHeader)
-      .arg(doc);
+                          .arg(Helper::systemFontInfo.family())
+                          .arg(Helper::systemFontInfo.pointSize())
+                          .arg(Helper::monospacedFontInfo.family())
+                          .arg(Helper::monospacedFontInfo.pointSize())
+                          .arg(infoHeader)
+                          .arg(doc)
+                          .arg(pLibraryTreeItem->getFileName())
+                          .arg(version);
   documentation = makeDocumentationUriToFileName(documentation);
   /*! @note We convert modelica:// to modelica:///.
     * This tells QWebview that these links doesn't have any host.
@@ -2800,39 +2821,25 @@ QList<QString> OMCProxy::getDerivedUnits(QString baseUnit)
   return result;
 }
 
-QString OMCProxy::getVersionDateAnnotation(QString className)
-{
-  sendCommand("getNamedAnnotation(" + className + ", versionDate)");
-  return StringHandler::unparse(StringHandler::removeFirstLastCurlBrackets(getResult()));
-}
-
-QString OMCProxy::getVersionBuildAnnotation(QString className)
-{
-  sendCommand("getNamedAnnotation(" + className + ", versionBuild)");
-  return StringHandler::removeFirstLastCurlBrackets(getResult());
-}
-
 /*!
-  Gets the DocumentationClass annotation.
-  \param className - the name of the class.
-  \return true/false.
-  */
-bool OMCProxy::getDocumentationClassAnnotation(QString className)
-{
-  sendCommand("getNamedAnnotation(" + className + ", DocumentationClass)");
-  return StringHandler::unparseBool(StringHandler::removeFirstLastCurlBrackets(getResult()));
-}
-
-/*!
- * \brief OMCProxy::getCommandLineOptionsAnnotation
- * Reads the __OpenModelica_commandLineOptions annotation from the class.
+ * \brief OMCProxy::getNamedAnnotation
+ * Returns the named annotation from the class.
  * \param className
+ * \param annotation
+ * \param type
  * \return
  */
-QString OMCProxy::getCommandLineOptionsAnnotation(QString className)
+QString OMCProxy::getNamedAnnotation(const QString &className, const QString &annotation, StringHandler::ResultType type)
 {
-  sendCommand("getNamedAnnotation(" + className + ", __OpenModelica_commandLineOptions)");
-  return StringHandler::unparse(StringHandler::removeFirstLastCurlBrackets(getResult()));
+  sendCommand(QString("getNamedAnnotation(%1, %2)").arg(className, annotation));
+  QString result = StringHandler::removeFirstLastCurlBrackets(getResult());
+  switch (type) {
+    case StringHandler::Integer:
+      return result;
+    case StringHandler::String:
+    default:
+      return StringHandler::unparse(result);
+  }
 }
 
 /*!
