@@ -1,9 +1,10 @@
 ---
 name: First Bug Report
-about: "Detailed guideline for your first bug report"
+about: Detailed guideline for your first bug report
 title: ''
 labels: ''
 assignees: ''
+
 ---
 
 ### Description
