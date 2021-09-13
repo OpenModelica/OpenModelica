@@ -78,6 +78,7 @@ public:
   void setVariability(QString variability) {mVariability = variability;}
   bool isParameter() const {return mVariability.compare("parameter") == 0;}
   bool isMainArray() const {return mIsMainArray;}
+  bool isMainArrayProtected() const;
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
   bool isActive() const {return mActive;}

@@ -129,14 +129,39 @@ void VariablesTreeItem::setVariableItemData(const QVector<QVariant> &variableIte
   mExistInResultFile = variableItemData[VariableItemData::EXISTINRESULTFILE].toBool();
 }
 
+/*!
+ * \brief VariablesTreeItem::getPlotVariable
+ * Returns the plot variable name.
+ * \return
+ */
 QString VariablesTreeItem::getPlotVariable()
 {
   return QString(mVariableName).remove(0, mFileName.length() + 1);
 }
 
+/*!
+ * \brief VariablesTreeItem::isString
+ * Returns true if variable type is String.
+ * \return
+ */
 bool VariablesTreeItem::isString() const
 {
   return mType.compare(QStringLiteral("String")) == 0;
+}
+
+/*!
+ * \brief VariablesTreeItem::isMainArrayProtected
+ * Checks if the array variable is protected.\n
+ * For protected arrays we need to check the first index to see if it is protected or not.
+ * \return
+ */
+bool VariablesTreeItem::isMainArrayProtected() const
+{
+  if (mChildren.size() > 0) {
+    return mChildren.at(0)->getExistInResultFile();
+  } else {
+    return false;
+  }
 }
 
 /*!
@@ -247,7 +272,7 @@ QVariant VariablesTreeItem::data(int column, int role) const
            * nodes without children i.e., leaf nodes and exist in the result file
            * nodes that are array
            */
-          if (parent()->parent() && ((mChildren.size() == 0 && mExistInResultFile) || mIsMainArray)) {
+          if (parent()->parent() && ((mChildren.size() == 0 && mExistInResultFile) || (mIsMainArray && isMainArrayProtected()))) {
             return isChecked() ? Qt::Checked : Qt::Unchecked;
            } else {
             return QVariant();
@@ -484,7 +509,7 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
   VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
   if ((index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->parent() != mpRootVariablesTreeItem)
       && ((pVariablesTreeItem->mChildren.size() == 0 && pVariablesTreeItem->getExistInResultFile())
-          || pVariablesTreeItem->isMainArray())) {
+          || (pVariablesTreeItem->isMainArray() && pVariablesTreeItem->isMainArrayProtected()))) {
     flags |= Qt::ItemIsUserCheckable;
     // Disable string type since is not stored in the result file and we can't plot them
     if (pVariablesTreeItem->isString()) {
