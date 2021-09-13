@@ -8,6 +8,7 @@
 #include <Core/Solver/SystemStateSelection.h>
 #include <Core/Math/ArrayOperations.h>
 #include <Core/Math/Functions.h>
+#include <Core/Utils/extension/logger.hpp>
 
 
 SystemStateSelection::SystemStateSelection(IMixedSystem* system)
@@ -67,8 +68,7 @@ SystemStateSelection::~SystemStateSelection()
 bool SystemStateSelection::stateSelection(int switchStates)
 {
 #if defined(__vxworks)
-return true;
-
+  return true;
 #else
   if(!_initialized)
     initialize();
@@ -81,23 +81,19 @@ return true;
     const matrix_t& stateset_matrix =  _system->getStateSetJacobian(i);
 
     /* call pivoting function to select the states */
-
-
-
     memcpy(oldColPivot.get(), _colPivot[i].get(), _dimStateCanditates[i]*sizeof(int));
     memcpy(oldRowPivot.get(), _rowPivot[i].get(), _dimDummyStates[i]*sizeof(int));
 
-    const double* jac =    stateset_matrix.data().begin();
+    const double* jac = stateset_matrix.data().begin();
     int* piv=_colPivot[i].get();
 
-   double* jac_ = new double[_dimDummyStates[i]*_dimStateCanditates[i]];
-   memcpy(jac_, jac, _dimDummyStates[i]*_dimStateCanditates[i]*sizeof(double));
-
-
+    double* jac_ = new double[_dimDummyStates[i]*_dimStateCanditates[i]];
+    memcpy(jac_, jac, _dimDummyStates[i]*_dimStateCanditates[i]*sizeof(double));
 
     if((pivot(jac_, _dimDummyStates[i], _dimStateCanditates[i], _rowPivot[i].get(), _colPivot[i].get()) != 0))
     {
-      throw ModelicaSimulationError(MATH_FUNCTION,"Error, singular Jacobian for dynamic state selection at time");
+      LOGGER_WRITE("Singular Jacobian for dynamic state selection in set " + to_string(i + 1), LC_SOLVER, LL_WARNING);
+      continue;
     }
     /* if we have a new set throw event for reinitialization
     and set the A matrix for set.x=A*(states) */
@@ -106,14 +102,13 @@ return true;
     {
       memcpy(_colPivot[i].get(), oldColPivot.get(), _dimStateCanditates[i]*sizeof(int));
       memcpy(_rowPivot[i].get(), oldRowPivot.get(), _dimDummyStates[i]*sizeof(int));
-
-
     }
     delete [] jac_;
     if(res)
+    {
+      LOGGER_WRITE("Dynamic state selection changed set " + to_string(i + 1), LC_SOLVER, LL_DEBUG);
       changed = true;
-    else
-      changed = false;
+    }
   }
   return changed;
 #endif

@@ -1048,7 +1048,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          break;
        >>
        case ("sparse") then
-       'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
+       <<
+       case <%i1%>:
+         throw ModelicaSimulationError(MATH_FUNCTION, "Dense matrix is not activated");'
+         break;
+       >>
        else "A matrix type is not supported"
        )
        ;separator="\n")
@@ -1060,14 +1064,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        match jacobianMatrix case JAC_MATRIX(matrixName=name) then
        match type
        case ("dense") then
-       'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
+       <<
+       case <%i1%>:
+         throw ModelicaSimulationError(MATH_FUNCTION, "Sparse matrix is not activated");
+         break;
+       >>
        case ("sparse") then
        <<
        case <%i1%>:
          return get<%name%>Jacobian();
          break;
        >>
-
        else "A matrix type is not supported"
        )
        ;separator="\n")
