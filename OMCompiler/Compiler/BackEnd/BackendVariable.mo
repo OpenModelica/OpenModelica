@@ -41,6 +41,8 @@ import Values;
 
 protected
 
+import BackendDump;
+
 import Absyn;
 import AbsynUtil;
 import Array;
@@ -144,6 +146,20 @@ algorithm
     else false;
   end match;
 end varFixed;
+
+public function isFixable
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match inVar
+    case (BackendDAE.VAR(varKind=BackendDAE.STATE()))         then true;
+    case (BackendDAE.VAR(varKind=BackendDAE.CLOCKED_STATE())) then true;
+    case (BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()))   then true;
+    case (BackendDAE.VAR(varKind=BackendDAE.DISCRETE()))      then true;
+    case (BackendDAE.VAR(varKind=BackendDAE.PARAM()))         then true;
+                                                              else false;
+  end match;
+end isFixable;
 
 public function setVarStartValue "author: Frenkel TUD
   Sets the start value attribute of a variable."
@@ -2175,6 +2191,21 @@ algorithm
   greaterThan := ComponentReference.crefSortFunc(varCref(v1), varCref(v2));
 end varSortFunc;
 
+public function sortInitialVars
+  "author:kabdelhak 2021-9
+   Sorts fixables to be at the end of the array"
+  input output BackendDAE.Variables vars;
+  input BackendDAE.Variables fixableVars;
+protected
+  list<BackendDAE.Var> var_lst, fixable, non_fixable;
+algorithm
+  var_lst := varList(vars);
+  (fixable, non_fixable) := List.splitOnTrue(var_lst, function containsVar(inVariables = fixableVars));
+  vars := listVar(listAppend(fixable, non_fixable));
+  //BackendDump.dumpVarList(fixable, "fixable");
+  //BackendDump.dumpVarList(non_fixable, "non_fixable");
+  //BackendDump.dumpVarList(listAppend(fixable, non_fixable), "combined");
+end sortInitialVars;
 
 public function getAlias
 "  author: Frenkel TUD 2012-11
@@ -3122,6 +3153,12 @@ public function getVarShared
 algorithm
   (outVarLst, outIntegerLst) := getVar(inComponentRef, inShared.globalKnownVars);
 end getVarShared;
+
+public function containsVar
+  input BackendDAE.Var var;
+  input BackendDAE.Variables inVariables;
+  output Boolean outB = containsCref(var.varName, inVariables);
+end containsVar;
 
 public function containsCref
   input DAE.ComponentRef cr;

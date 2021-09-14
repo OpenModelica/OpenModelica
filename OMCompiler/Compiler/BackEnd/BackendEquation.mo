@@ -179,7 +179,7 @@ public function getList "author: Frenkel TUD 2011-05
   returns the equations given by the list of indexes"
   input list<Integer> inIndices "one-based indexing";
   input BackendDAE.EquationArray inEquationArray;
-  output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.Equation> outEqns = {};
 algorithm
   outEqns := list(get(inEquationArray, index) for index in inIndices);
 end getList;
