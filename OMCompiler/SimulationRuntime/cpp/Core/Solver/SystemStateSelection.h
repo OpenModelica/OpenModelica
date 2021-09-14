@@ -31,6 +31,7 @@ private:
   vector<unsigned int> _dimStates;
   vector<unsigned int> _dimDummyStates;
   vector<unsigned int> _dimStateCanditates;
+  double *_jac;
   bool _initialized;
 
 };

@@ -16,7 +16,7 @@ SystemStateSelection::SystemStateSelection(IMixedSystem* system)
   ,_colPivot()
   ,_rowPivot()
   ,_initialized(false)
-
+  ,_jac(NULL)
 {
 
   _state_selection = dynamic_cast<IStateSelection*>(system);
@@ -36,6 +36,7 @@ void SystemStateSelection::initialize()
   _dimDummyStates.clear();
   _rowPivot.clear();
   _colPivot.clear();
+  unsigned int maxJacSize = 0;
   for(int i=0; i<_dimStateSets; i++)
   {
     _dimStates.push_back(_state_selection->getDimStates(i));
@@ -49,8 +50,10 @@ void SystemStateSelection::initialize()
 
     for(int n=0; n<_dimStateCanditates[i]; n++)
       _colPivot[i][n] = _dimStateCanditates[i]-n-1;
-  }
 
+    maxJacSize = max(maxJacSize, _dimDummyStates[i]*_dimStateCanditates[i]);
+  }
+  _jac = new double[maxJacSize];
 
   _initialized = true;
 #endif
@@ -62,6 +65,8 @@ SystemStateSelection::~SystemStateSelection()
 #else
   _rowPivot.clear();
   _colPivot.clear();
+  if (_jac)
+    delete [] _jac;
 #endif
 }
 
@@ -83,27 +88,21 @@ bool SystemStateSelection::stateSelection(int switchStates)
     /* call pivoting function to select the states */
     memcpy(oldColPivot.get(), _colPivot[i].get(), _dimStateCanditates[i]*sizeof(int));
     memcpy(oldRowPivot.get(), _rowPivot[i].get(), _dimDummyStates[i]*sizeof(int));
+    memcpy(_jac, stateset_matrix.data().begin(), _dimDummyStates[i]*_dimStateCanditates[i]*sizeof(double));
 
-    const double* jac = stateset_matrix.data().begin();
-    int* piv=_colPivot[i].get();
-
-    double* jac_ = new double[_dimDummyStates[i]*_dimStateCanditates[i]];
-    memcpy(jac_, jac, _dimDummyStates[i]*_dimStateCanditates[i]*sizeof(double));
-
-    if((pivot(jac_, _dimDummyStates[i], _dimStateCanditates[i], _rowPivot[i].get(), _colPivot[i].get()) != 0))
+    if(pivot(_jac, _dimDummyStates[i], _dimStateCanditates[i], _rowPivot[i].get(), _colPivot[i].get()) != 0)
     {
       LOGGER_WRITE("Singular Jacobian for dynamic state selection in set " + to_string(i + 1), LC_SOLVER, LL_WARNING);
       continue;
     }
     /* if we have a new set throw event for reinitialization
-    and set the A matrix for set.x=A*(states) */
+       and set the A matrix for set.x=A*(states) */
     res = comparePivot(oldColPivot.get(), _colPivot[i].get(), switchStates,i);
     if(!switchStates)
     {
       memcpy(_colPivot[i].get(), oldColPivot.get(), _dimStateCanditates[i]*sizeof(int));
       memcpy(_rowPivot[i].get(), oldRowPivot.get(), _dimDummyStates[i]*sizeof(int));
     }
-    delete [] jac_;
     if(res)
     {
       LOGGER_WRITE("Dynamic state selection changed set " + to_string(i + 1), LC_SOLVER, LL_DEBUG);
