@@ -2362,8 +2362,8 @@ protected
     Absyn.Path old_path, new_path;
   algorithm
     (rename, name) := match imp
-      case Absyn.GroupImport.GROUP_IMPORT_NAME() then (imp.name, imp.name);
-      case Absyn.GroupImport.GROUP_IMPORT_RENAME() then (imp.rename, imp.name);
+      case Absyn.GroupImport.GROUP_IMPORT_NAME(name = name) then (name, name);
+      case Absyn.GroupImport.GROUP_IMPORT_RENAME(rename = rename, name = name) then (rename, name);
     end match;
 
     old_path := AbsynUtil.suffixPath(prefix, name);
