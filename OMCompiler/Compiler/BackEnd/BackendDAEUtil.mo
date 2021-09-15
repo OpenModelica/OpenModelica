@@ -4197,7 +4197,7 @@ algorithm
         // kabdelhak: remove left hand side subscripts
         // (Modelica Specification v3.5 : 11.1.2)
         // solves ticket #7832
-        extraArg = func(removeSubscripts(e), extraArg);
+        extraArg = func(e, extraArg);
         extraArg = func(removeSubscripts(e2), extraArg);
       then
         traverseStmts(xs, func, extraArg);
@@ -4207,7 +4207,7 @@ algorithm
         // kabdelhak: remove left hand side subscripts
         // (Modelica Specification v3.5 : 11.1.2)
         // solves ticket #7832
-        extraArg = func(removeSubscripts(e), extraArg);
+        extraArg = func(e, extraArg);
         extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
       then
         traverseStmts(xs, func, extraArg);
@@ -4217,7 +4217,7 @@ algorithm
         // kabdelhak: remove left hand side subscripts
         // (Modelica Specification v3.5 : 11.1.2)
         // solves ticket #7832
-        extraArg = func(removeSubscripts(e), extraArg);
+        extraArg = func(e, extraArg);
         extraArg = func(removeSubscripts(e2), extraArg);
       then
         traverseStmts(xs, func, extraArg);
