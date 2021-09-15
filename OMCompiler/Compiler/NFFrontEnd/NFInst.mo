@@ -3398,7 +3398,8 @@ algorithm
     // Only components needs to be added to the class, since classes are
     // not part of the flat class.
     if InstNode.isComponent(n) then
-      // The components shouldn't have been instantiated yet, so do it here.
+      // The component might have been instantiated during lookup, otherwise do
+      // it here (instComponent will skip already instantiated components).
       instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
 
       // If the component's class has a missingInnerMessage annotation, use it
