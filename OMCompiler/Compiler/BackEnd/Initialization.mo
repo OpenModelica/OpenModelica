@@ -1230,7 +1230,15 @@ protected partial function constraintHandlerFunc
 end constraintHandlerFunc;
 
 protected function balanceInitialSystem "author: kabdelhak
-  New algorithm to handle under-, over-, and mixed-determined systems."
+  New algorithm to handle under-, over-, and mixed-determined systems.
+  Plan:
+  1. sort states and discrete states to be matched last
+  2. compute adjacency matrix
+  3. inverse match (var->eq)
+  4. remove unmatched equations (issue warning)
+  5. fix unmatched states and discrete states
+  6. success
+  "
   extends constraintHandlerFunc;
 protected
   Boolean debug = false;
@@ -1244,13 +1252,6 @@ protected
   list<BackendDAE.Var> failed_var_lst, var_lst = {};
   BackendDAE.EquationArray new_eqns;
 algorithm
-  // Plan:
-  // 1. sort states and discrete states to be matched last
-  // 2. compute adjacency matrix
-  // 3. inverse match (var->eq)
-  // 4. remove unmatched equations (issue warning)
-  // 5. fix unmatched states and discrete states
-  // 6. success
 
   if BackendVariable.varsSize(inEqSystem.orderedVars) > 0 then
     // 1. sort states and discrete states to be matched last
