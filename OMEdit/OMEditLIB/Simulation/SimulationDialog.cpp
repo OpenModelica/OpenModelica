@@ -2089,15 +2089,21 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
   }
   // Show the data reconciliation report
   if (simulationOptions.getEnableDataReconciliation()) {
-    // read the report file
-    QFileInfo reportFileInfo(QString("%1/%2.html").arg(workingDirectory, simulationOptions.getClassName()));
+    QString htmlPath;
+    // read the data Reconciliation report file
+    if (mpDataReconciliationAlgorithmComboBox->currentIndex() == 0) {
+      htmlPath = QString("%1/%2.html").arg(workingDirectory, simulationOptions.getClassName());
+    } else { // read the data Reconciliation Boundary Conditions report file
+      htmlPath = QString("%1/%2_BoundaryConditions.html").arg(workingDirectory, simulationOptions.getClassName());
+    }
+    QFileInfo reportFileInfo(htmlPath);
+    QUrl url = QString("file:///%1").arg(htmlPath);
     reportFileInfo.setCaching(false);
     QDateTime reportFileModificationTime = reportFileInfo.lastModified();
     bool reportFileExists = reportFileInfo.exists();
     // use secsTo as lastModified returns to second not to mili/nanoseconds, see #5251
     bool reportFileNewer = resultFileLastModifiedDateTime.secsTo(reportFileModificationTime) >= 0;
     if (reportFileExists && reportFileNewer) {
-      QUrl url (QString("file:///%1/%2.html").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getClassName()));
       QDesktopServices::openUrl(url);
     }
   }
