@@ -41,8 +41,6 @@ import Values;
 
 protected
 
-import BackendDump;
-
 import Absyn;
 import AbsynUtil;
 import Array;
@@ -146,20 +144,6 @@ algorithm
     else false;
   end match;
 end varFixed;
-
-public function isFixable
-  input BackendDAE.Var inVar;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := match inVar
-    case (BackendDAE.VAR(varKind=BackendDAE.STATE()))         then true;
-    case (BackendDAE.VAR(varKind=BackendDAE.CLOCKED_STATE())) then true;
-    case (BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()))   then true;
-    case (BackendDAE.VAR(varKind=BackendDAE.DISCRETE()))      then true;
-    case (BackendDAE.VAR(varKind=BackendDAE.PARAM()))         then true;
-                                                              else false;
-  end match;
-end isFixable;
 
 public function setVarStartValue "author: Frenkel TUD
   Sets the start value attribute of a variable."
@@ -2193,18 +2177,17 @@ end varSortFunc;
 
 public function sortInitialVars
   "author:kabdelhak 2021-9
-   Sorts fixables to be at the end of the array"
+   Sorts fixables to be at the end of the array, also prefers variables with start values"
   input output BackendDAE.Variables vars;
   input BackendDAE.Variables fixableVars;
 protected
-  list<BackendDAE.Var> var_lst, fixable, non_fixable;
+  list<BackendDAE.Var> var_lst, fixable_start, fixable, non_fixable;
 algorithm
   var_lst := varList(vars);
   (fixable, non_fixable) := List.splitOnTrue(var_lst, function containsVar(inVariables = fixableVars));
-  vars := listVar(listAppend(fixable, non_fixable));
-  //BackendDump.dumpVarList(fixable, "fixable");
-  //BackendDump.dumpVarList(non_fixable, "non_fixable");
-  //BackendDump.dumpVarList(listAppend(fixable, non_fixable), "combined");
+  (fixable_start, fixable) := List.splitOnTrue(fixable, varHasStartValue);
+  var_lst := listAppend(listAppend(non_fixable, fixable), fixable_start);
+  vars := listVar(var_lst);
 end sortInitialVars;
 
 public function getAlias

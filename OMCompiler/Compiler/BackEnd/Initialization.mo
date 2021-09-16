@@ -1232,59 +1232,75 @@ end constraintHandlerFunc;
 protected function balanceInitialSystem "author: kabdelhak
   New algorithm to handle under-, over-, and mixed-determined systems.
   Plan:
-  1. sort states and discrete states to be matched last
-  2. compute adjacency matrix
-  3. inverse match (var->eq)
-  4. remove unmatched equations (issue warning)
-  5. fix unmatched states and discrete states
-  6. success
+  1. split off initial equations and match the system without them
+     (ensures that the correct equations are left unmatched)
+  2. sort fixables to be matched last
+     (ensures that the correct variables are left unmatched)
+  3. compute adjacency matrix
+  4. inverse match (var->eq)
+  5. add initial equations and continue matching
+  6. remove unmatched equations (issue warning)
+  7. fix unmatched states and discrete states
+  8. success
   "
   extends constraintHandlerFunc;
 protected
   Boolean debug = false;
   DAE.FunctionTree funcs;
-  BackendDAE.AdjacencyMatrix mT;
-  array<Integer> scal_to_arr;
+  BackendDAE.AdjacencyMatrix m, mT;
+  //BackendDAE.AdjacencyMatrixEnhanced me;
   Integer nVars, nEqns;
-  array<Integer> var_to_eqn, eqn_to_var;
-  list<Integer> redundantEqns, unfixedVars;
-  list<BackendDAE.Equation> eqn_lst = {};
+  array<Integer> scal_to_arr, var_to_eqn, eqn_to_var;
+  list<Integer> redundantEqns, unfixedVars; // inconsistentEqns, numericalCheckEqns,
+  list<BackendDAE.Equation> eqn_lst, init_eqns, sim_eqns;
+  list<BackendDAE.Equation> redundant_lst = {}; //incon_lst = {}, num_lst = {},
   list<BackendDAE.Var> failed_var_lst, var_lst = {};
   BackendDAE.EquationArray new_eqns;
 algorithm
 
   if BackendVariable.varsSize(inEqSystem.orderedVars) > 0 then
-    // 1. sort states and discrete states to be matched last
-    outEqSystem := BackendDAEUtil.createEqSystem(BackendVariable.sortInitialVars(inEqSystem.orderedVars, initVars), inEqSystem.orderedEqs);
+    // 1. split off initial equations and match the system without them
+    (init_eqns, sim_eqns) := List.splitOnTrue(BackendEquation.equationList(inEqSystem.orderedEqs), BackendEquation.isInitialEquation);
+
+    // 2. sort fixables to be matched last
+    outEqSystem := BackendDAEUtil.createEqSystem(BackendVariable.sortInitialVars(inEqSystem.orderedVars, initVars), BackendEquation.listEquation(sim_eqns));
     funcs := BackendDAEUtil.getFunctions(inShared);
 
-    // 2. compute adjacency matrix
+    // 3. compute adjacency matrix
     (_, mT, _, scal_to_arr) := BackendDAEUtil.adjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
 
-    // 3. inverse match (var->eq)
+    // 4. inverse match (var->eq)
     nVars := BackendVariable.varsSize(outEqSystem.orderedVars);
+    // take original size here so that we can freely add the initial equations later
     nEqns := BackendEquation.equationArraySize(inEqSystem.orderedEqs);
     (eqn_to_var, var_to_eqn, _, _, _) := Matching.RegularMatching(mT, nEqns, nVars);
+
+    // 5. add initial equations and continue matching
+    outEqSystem.orderedEqs := BackendEquation.addList(init_eqns, outEqSystem.orderedEqs);
+    (_, mT, _, scal_to_arr) := BackendDAEUtil.adjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
+    (eqn_to_var, var_to_eqn, _, _, _) := Matching.ContinueMatching(mT, nEqns, nVars, eqn_to_var, var_to_eqn);
+
     if debug then
       BackendDump.dumpEqSystem(outEqSystem, "fixInitialSystem");
+      BackendDump.dumpAdjacencyMatrixT(mT);
       BackendDump.dumpMatchingVars(var_to_eqn);
       BackendDump.dumpMatchingEqns(eqn_to_var);
     end if;
 
-    redundantEqns := List.unique(list(scal_to_arr[i] for i guard(eqn_to_var[i] < 0) in 1:arrayLength(eqn_to_var)));
-    unfixedVars := list(i for i guard(var_to_eqn[i] < 0) in 1:arrayLength(var_to_eqn));
+    redundantEqns := list(i for i guard(eqn_to_var[i] < 0) in 1:arrayLength(eqn_to_var));
+    unfixedVars   := list(i for i guard(var_to_eqn[i] < 0) in 1:arrayLength(var_to_eqn));
 
     if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
-      // 4. remove unmatched equations
-      // ToDo: check for consistency
-      eqn_lst := BackendEquation.getList(redundantEqns, outEqSystem.orderedEqs);
-      DoubleEnded.push_list_back(removedEqns, eqn_lst);
-      new_eqns := BackendEquation.deleteList(inEqSystem.orderedEqs, redundantEqns);
+      // 6. remove unmatched equations
+      redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
+      redundant_lst := BackendEquation.getList(redundantEqns, outEqSystem.orderedEqs);
+      DoubleEnded.push_list_back(removedEqns, redundant_lst);
+      new_eqns := BackendEquation.deleteList(outEqSystem.orderedEqs, redundantEqns);
       if debug then
-        BackendDump.dumpEquationList(eqn_lst, "removed eqns");
+        BackendDump.dumpEquationList(redundant_lst, "removed eqns");
       end if;
 
-      // 5. fix unmatched states and discrete states
+      // 7. fix unmatched states and discrete states
       var_lst := list(BackendVariable.getVarAt(outEqSystem.orderedVars, i) for i in unfixedVars);
       // ToDo: all fixable?
       (new_eqns, var_lst) := addStartValueEquations(var_lst, new_eqns, {});
@@ -1295,8 +1311,20 @@ algorithm
         BackendDump.dumpVarList(failed_var_lst, "failed vars");
       end if;
 
-      // 6. success
-      outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, new_eqns);
+      // 8. success
+      outEqSystem := BackendDAEUtil.setEqSystEqs(inEqSystem, BackendEquation.sortInitialEqns(new_eqns));
+      /*(m, mT, _, scal_to_arr) := BackendDAEUtil.adjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
+      (eqn_to_var, var_to_eqn, _, _, _) := Matching.RegularMatching(mT, nEqns, nVars);
+      (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
+      (_, inconsistentEqns, numericalCheckEqns) := consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
+      if debug then
+        inconsistentEqns := List.unique(list(scal_to_arr[i] for i in inconsistentEqns));
+        numericalCheckEqns := List.unique(list(scal_to_arr[i] for i in numericalCheckEqns));
+        incon_lst := BackendEquation.getList(inconsistentEqns, outEqSystem.orderedEqs);
+        num_lst := BackendEquation.getList(numericalCheckEqns, outEqSystem.orderedEqs);
+        BackendDump.dumpEquationList(incon_lst, "inconsistent eqns");
+        BackendDump.dumpEquationList(num_lst, "numerically checked eqns");
+      end if;*/
     else
       outEqSystem := inEqSystem;
     end if;

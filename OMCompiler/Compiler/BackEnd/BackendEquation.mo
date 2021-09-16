@@ -284,8 +284,20 @@ algorithm
   end for;
 end traverseEquationArray_WithUpdate;
 
-public
-function getForEquationIterIdent
+public function sortInitialEqns
+  "author:kabdelhak 2021-9
+   Sorts initial equations to be at the start of the array"
+  input output BackendDAE.EquationArray eqns;
+protected
+  list<BackendDAE.Equation> eqn_lst, init_eqns, sim_eqns;
+algorithm
+  eqn_lst := equationList(eqns);
+  (init_eqns, sim_eqns) := List.splitOnTrue(eqn_lst, isInitialEquation);
+  eqn_lst := listAppend(init_eqns, sim_eqns);
+  eqns := listEquation(eqn_lst);
+end sortInitialEqns;
+
+public function getForEquationIterIdent
  "Get the iterator of a for-equation
   author: rfranke"
   input BackendDAE.Equation inEquation;
