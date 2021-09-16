@@ -172,6 +172,7 @@ void SimController::Start(SimSettings simsettings, string modelKey, string nls)
         global_settings->setStartTime(simsettings.start_time);
         global_settings->setEndTime(simsettings.end_time);
         global_settings->sethOutput(simsettings.step_size);
+        global_settings->setTolerance(simsettings.tolerance);
         global_settings->setResultsFileName(simsettings.outputfile_name);
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
         global_settings->setSelectedNonLinSolver(nls);
@@ -273,6 +274,7 @@ void SimController::StartReduceDAE(SimSettings simsettings,string modelPath, str
         global_settings->setStartTime(simsettings.start_time);
         global_settings->setEndTime(simsettings.end_time);
         global_settings->sethOutput(simsettings.step_size);
+        global_settings->setTolerance(simsettings.tolerance);
         global_settings->setResultsFileName(simsettings.outputfile_name);
         global_settings->setSelectedLinSolver(simsettings.linear_solver_name);
         global_settings->setSelectedNonLinSolver(simsettings.nonlinear_solver_name);

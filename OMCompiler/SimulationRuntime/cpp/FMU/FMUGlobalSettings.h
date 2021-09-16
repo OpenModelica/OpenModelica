@@ -24,6 +24,9 @@ public:
     ///< Output step size (default: 20 ms)
     virtual double gethOutput() { return 20; }
     virtual void sethOutput(double) {}
+    ///< Allowed tolerance
+    virtual double getTolerance() { return 1e-6; }
+    virtual void setTolerance(double) {}
     ///< Write out results (EMIT_NONE)
     virtual EmitResults getEmitResults() { return EMIT_NONE; }
     virtual void setEmitResults(EmitResults) {}
