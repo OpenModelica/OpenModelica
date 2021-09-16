@@ -544,9 +544,9 @@ bool OMCProxy::printMessagesStringInternal()
 int OMCProxy::getMessagesStringInternal()
 {
   // getMessagesStringInternal() is quite slow, check if there are any messages first.
-  sendCommand("countMessages()");
+  auto res = mpOMCInterface->countMessages();
 
-  if (getResult() != "(0,0,0)") {
+  if (res.numMessages || res.numErrors || res.numWarnings) {
     sendCommand("errors:=getMessagesStringInternal()");
     sendCommand("size(errors,1)");
     return getResult().toInt();
