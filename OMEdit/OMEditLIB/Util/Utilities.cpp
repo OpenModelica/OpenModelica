@@ -1288,6 +1288,8 @@ QString Utilities::convertSymbolToUnit(const QString symbol)
   // Greek Omega
   if (symbol.compare(QChar(937)) == 0) {
     return "Ohm";
+  } else if (symbol.compare(QString("%1C").arg(QChar(176))) == 0) {
+    return "degC";
   } else {
     return symbol;
   }
