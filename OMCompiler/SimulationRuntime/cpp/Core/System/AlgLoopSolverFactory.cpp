@@ -44,6 +44,7 @@ shared_ptr<INonLinearAlgLoopSolver> AlgLoopSolverFactory::createNonLinearAlgLoop
   {
     string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
     shared_ptr<INonLinSolverSettings> algsolversetting = createNonLinSolverSettings(nonlinsolver_name);
+    algsolversetting->setGlobalSettings(_global_settings);
     algsolversetting->setContinueOnError(_global_settings->getNonLinearSolverContinueOnError());
     _algsolversettings.push_back(algsolversetting);
 

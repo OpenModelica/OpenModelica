@@ -246,8 +246,8 @@ void DASSL::initialize()
   _atol[0] = _rtol[0] = 1.0; // in case of dummy state
   _continuous_system->getNominalStates(_atol);
   for (int i = 0; i < _dimSys; i++) {
-    _atol[i] *= _settings->getATol();
-    _rtol[i] = _settings->getRTol();
+    _atol[i] = max(_atol[i] * _settings->getATol(), 1e-10);
+    _rtol[i] = max(_settings->getRTol(), 1e-10);
   }
   LOGGER_WRITE_VECTOR("atol", _atol, _dimSys, LC_SOLVER, LL_DEBUG);
   LOGGER_WRITE_VECTOR("rtol", _rtol, _dimSys, LC_SOLVER, LL_DEBUG);

@@ -26,6 +26,7 @@ class NewtonSettings :public INonLinSolverSettings
   virtual void        setDelta(double);
   virtual void load(string);
 
+  virtual void setGlobalSettings(IGlobalSettings *);
   virtual void setContinueOnError(bool);
   virtual bool getContinueOnError();
  private:
