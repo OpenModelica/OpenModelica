@@ -7397,9 +7397,9 @@ void ModelWidget::drawOMSModelConnections()
             points.append(point.arg(pConnections[i]->geometry->pointsX[j]).arg(pConnections[i]->geometry->pointsY[j]));
           }
         }
-        QPointF startPoint = pStartConnectorComponent->mapToScene(pStartConnectorComponent->boundingRect().center());
+        QPointF startPoint = mpDiagramGraphicsView->roundPoint(pStartConnectorComponent->mapToScene(pStartConnectorComponent->boundingRect().center()));
         points.prepend(point.arg(startPoint.x()).arg(startPoint.y()));
-        QPointF endPoint = pEndConnectorComponent->mapToScene(pEndConnectorComponent->boundingRect().center());
+        QPointF endPoint = mpDiagramGraphicsView->roundPoint(pEndConnectorComponent->mapToScene(pEndConnectorComponent->boundingRect().center()));
         points.append(point.arg(endPoint.x()).arg(endPoint.y()));
         QString pointsString = QString("{%1}").arg(points.join(","));
         shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
