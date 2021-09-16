@@ -649,6 +649,17 @@ Output
 
 .. _omedit-2d-plotting :
 
+Data Reconciliation
+~~~~~~~~~~~~~~~~~~~
+
+-  *Algorithm* – data reconciliation algorithm.
+
+-  *Measurement Input File* – measurement input file.
+
+-  *Correlation Matrix Input File* – correlation matrix file.
+
+-  *Epsilon*
+
 2D Plotting
 -----------
 
@@ -1299,6 +1310,7 @@ Simulation
 -  Simulation
 
 .. _omedit-options-simulation-translationflags :
+
   -  Translation Flags
 
     -  *Matching Algorithm* – sets the matching algorithm for simulation.
@@ -1322,8 +1334,6 @@ Simulation
     -  *Enable parallelization of independent systems of equations (Experimental)*
 
     -  *Enable old frontend for code generation*
-
-    -  *Enable data reconciliation*
 
     -  *Additional Translation Flags* – sets the translation flags see :ref:`omcflags-options`
 
