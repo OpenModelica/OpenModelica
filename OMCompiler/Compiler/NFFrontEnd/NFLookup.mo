@@ -60,6 +60,7 @@ import ComplexType = NFComplexType;
 import Config;
 import Error;
 import UnorderedMap;
+import Modifier = NFModifier;
 
 public
 type MatchType = enumeration(FOUND, NOT_FOUND, PARTIAL);
@@ -850,6 +851,10 @@ algorithm
       state := LookupState.ERROR(LookupState.PARTIAL_CLASS());
       return;
     end if;
+  elseif InstNode.isGeneratedInner(scope) and Component.isDefinition(InstNode.component(scope)) then
+    // The scope is a generated inner component that hasn't been instantiated,
+    // it needs to be instantiated to continue lookup.
+    Inst.instComponent(scope, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
   end if;
 
   name := AbsynUtil.crefFirstIdent(cref);
