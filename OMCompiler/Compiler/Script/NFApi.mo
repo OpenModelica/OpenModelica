@@ -805,5 +805,29 @@ algorithm
 
 end frontEndLookup_dispatch;
 
+public
+function getInheritedClasses
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output list<Absyn.Path> extendsPaths;
+protected
+  InstNode cls_node;
+  Class cls;
+algorithm
+  (_, _, cls_node) := frontEndLookup(program, classPath);
+
+  if not InstNode.isClass(cls_node) then
+    extendsPaths := {};
+    return;
+  end if;
+
+  cls := InstNode.getClass(cls_node);
+
+  extendsPaths := match cls
+    case Class.EXPANDED_DERIVED() then {InstNode.scopePath(cls.baseClass, true, true)};
+    else list(InstNode.scopePath(e, true, true) for e in ClassTree.getExtends(Class.classTree(cls)));
+  end match;
+end getInheritedClasses;
+
   annotation(__OpenModelica_Interface="backend");
 end NFApi;
