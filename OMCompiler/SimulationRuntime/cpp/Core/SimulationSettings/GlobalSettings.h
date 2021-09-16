@@ -21,6 +21,9 @@ public:
   ///< Output step size (default: 20 ms)
   virtual double gethOutput();
   virtual void sethOutput(double);
+  ///< Allowed tolerance
+  virtual void setTolerance(double);
+  virtual double getTolerance();
   ///< Write out results (default: EMIT_ALL)
   virtual EmitResults getEmitResults();
   virtual void setEmitResults(EmitResults);
@@ -70,7 +73,8 @@ private:
   double
       _startTime,   ///< Start time of integration (default: 0.0)
       _endTime,     ///< End time of integraiton (default: 1.0)
-      _hOutput;     ///< Output step size (default: 20 ms)
+      _hOutput,     ///< Output step size (default: 20 ms)
+      _tolerance;   ///< Global tolerance setting
   EmitResults
       _emitResults; ///< Write out results (default: EMIT_ALL)
   string
