@@ -445,25 +445,6 @@ void SimulationDialog::setUpForm()
   mpCPUTimeCheckBox = new QCheckBox(tr("CPU Time"));
   // enable all warnings
   mpEnableAllWarningsCheckBox = new QCheckBox(tr("Enable All Warnings"));
-  // Data reconciliation
-  mpReconcileGroupBox = new QGroupBox(tr("Data Reconciliation Algorithm for Constrained Equation"));
-  mpReconcileGroupBox->setCheckable(true);
-  mpDataReconciliationInputFileLabel = new Label(tr("Input File:"));
-  mpDataReconciliationInputFileTextBox = new QLineEdit;
-  mpDataReconciliationInputFileBrowseButton = new QPushButton(Helper::browse);
-  connect(mpDataReconciliationInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationInputFile()));
-  mpDataReconciliationInputFileBrowseButton->setAutoDefault(false);
-  mpDataReconciliationEpsilonLabel = new Label(tr("Epsilon:"));
-  mpDataReconciliationEpsilonTextBox = new QLineEdit;
-  // set the reconcile groupbox layout
-  QGridLayout *pReconcileGridLayout = new QGridLayout;
-  pReconcileGridLayout->setAlignment(Qt::AlignTop);
-  pReconcileGridLayout->addWidget(mpDataReconciliationInputFileLabel, 0, 0);
-  pReconcileGridLayout->addWidget(mpDataReconciliationInputFileTextBox, 0, 1);
-  pReconcileGridLayout->addWidget(mpDataReconciliationInputFileBrowseButton, 0, 2);
-  pReconcileGridLayout->addWidget(mpDataReconciliationEpsilonLabel, 1, 0);
-  pReconcileGridLayout->addWidget(mpDataReconciliationEpsilonTextBox, 1, 1, 1, 2);
-  mpReconcileGroupBox->setLayout(pReconcileGridLayout);
   // Logging
   mpLoggingGroupBox = new QGroupBox(tr("Logging (Optional)"));
   // fetch the logging flags information
@@ -527,10 +508,9 @@ void SimulationDialog::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpProfilingComboBox, 9, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpCPUTimeCheckBox, 10, 0, 1, 3);
   pSimulationFlagsTabLayout->addWidget(mpEnableAllWarningsCheckBox, 11, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpReconcileGroupBox, 12, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 13, 0, 1, 3);
-  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 14, 0);
-  pSimulationFlagsTabLayout->addLayout(pAdditionalSimulationFlagsTabLayout, 14, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpLoggingGroupBox, 12, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpAdditionalSimulationFlagsLabel, 13, 0);
+  pSimulationFlagsTabLayout->addLayout(pAdditionalSimulationFlagsTabLayout, 13, 1, 1, 2);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTabScrollArea, tr("Simulation Flags"));
@@ -580,6 +560,48 @@ void SimulationDialog::setUpForm()
   mpOutputTab->setLayout(pOutputTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpOutputTab, Helper::output);
+  // Data Reconciliation Tab
+  mpDataReconciliationTab = new QWidget;
+  mpDataReconciliationGroupBox = new QGroupBox(tr("Enable Data Reconciliation"));
+  mpDataReconciliationGroupBox->setCheckable(true);
+  mpDataReconciliationGroupBox->setChecked(false);
+  mpDataReconciliationAlgorithmLabel = new Label(tr("Algorithm:"));
+  mpDataReconciliationAlgorithmComboBox = new QComboBox;
+  mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation"), QString("dataReconciliation"));
+  mpDataReconciliationAlgorithmComboBox->addItem(tr("Data Reconciliation with Boundary Conditions"), QString("dataReconciliationBoundaryConditions"));
+  mpDataReconciliationMeasurementInputFileLabel = new Label(tr("Measurement Input File:"));
+  mpDataReconciliationMeasurementInputFileTextBox = new QLineEdit;
+  mpDataReconciliationMeasurementInputFileBrowseButton = new QPushButton(Helper::browse);
+  connect(mpDataReconciliationMeasurementInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationMeasurementInputFile()));
+  mpDataReconciliationMeasurementInputFileBrowseButton->setAutoDefault(false);
+  mpDataReconciliationCorrelationMatrixInputFileLabel = new Label(tr("Correlation Matrix Input File:"));
+  mpDataReconciliationCorrelationMatrixInputFileTextBox = new QLineEdit;
+  mpDataReconciliationCorrelationMatrixInputFileBrowseButton = new QPushButton(Helper::browse);
+  connect(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, SIGNAL(clicked()), SLOT(browseDataReconciliationCorrelationMatrixInputFile()));
+  mpDataReconciliationCorrelationMatrixInputFileBrowseButton->setAutoDefault(false);
+  mpDataReconciliationEpsilonLabel = new Label(tr("Epsilon:"));
+  mpDataReconciliationEpsilonTextBox = new QLineEdit;
+  // set the data reconciliation groupbox layout
+  QGridLayout *pDataReconciliationGridLayout = new QGridLayout;
+  pDataReconciliationGridLayout->setAlignment(Qt::AlignTop);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationAlgorithmLabel, 0, 0);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationAlgorithmComboBox, 0, 1, 1, 2);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationMeasurementInputFileLabel, 1, 0);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationMeasurementInputFileTextBox, 1, 1);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationMeasurementInputFileBrowseButton, 1, 2);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileLabel, 2, 0);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileTextBox, 2, 1);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationCorrelationMatrixInputFileBrowseButton, 2, 2);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationEpsilonLabel, 3, 0);
+  pDataReconciliationGridLayout->addWidget(mpDataReconciliationEpsilonTextBox, 3, 1, 1, 2);
+  mpDataReconciliationGroupBox->setLayout(pDataReconciliationGridLayout);
+  // set Data Reconciliation Tab Layout
+  QGridLayout *pDataReconciliationTabLayout = new QGridLayout;
+  pDataReconciliationTabLayout->setAlignment(Qt::AlignTop);
+  pDataReconciliationTabLayout->addWidget(mpDataReconciliationGroupBox, 0, 0);
+  mpDataReconciliationTab->setLayout(pDataReconciliationTabLayout);
+  // add Data Reconciliation Tab to Simulation TabWidget
+  mpSimulationTabWidget->addTab(mpDataReconciliationTab, tr("Data Reconciliation"));
   // Add the validators
   QDoubleValidator *pDoubleValidator = new QDoubleValidator(this);
   mpStartTimeTextBox->setValidator(pDoubleValidator);
@@ -698,7 +720,6 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
       mpTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getNLSanalyticJacobianCheckBox()->isChecked());
       mpTranslationFlagsWidget->getParmodautoCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getParmodautoCheckBox()->isChecked());
       mpTranslationFlagsWidget->getOldInstantiationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getOldInstantiationCheckBox()->isChecked());
-      mpTranslationFlagsWidget->getDataReconciliationCheckBox()->setChecked(pGlobalTranslationFlagsWidget->getDataReconciliationCheckBox()->isChecked());
       mpTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->setText(pGlobalTranslationFlagsWidget->getAdditionalTranslationFlagsTextBox()->text());
       // if ignoreCommandLineOptionsAnnotation flag is not set then read the __OpenModelica_commandLineOptions annotation
       if (!OptionsDialog::instance()->getSimulationPage()->getIgnoreCommandLineOptionsAnnotationCheckBox()->isChecked()) {
@@ -748,13 +769,17 @@ void SimulationDialog::initializeFields(bool isReSimulate, SimulationOptions sim
             if (!additionalDebugFlagsList.isEmpty()) {
               additionalTranslationFlagsList.append(QString("-d=%1").arg(additionalDebugFlagsList.join(",")));
             }
-          } else if (commandLineOptionKeyFiltered.compare("d") == 0) { // check preOptModules i.e., --preOptModules+=dataReconciliation etc.
+          } else if (commandLineOptionKeyFiltered.compare("d") == 0) { // check preOptModules i.e., --preOptModules+=dataReconciliation or --preOptModules+=dataReconciliationBoundaryConditions etc.
             QStringList commandLineOptionValuesList = commandLineOptionValues.split(",");
             QStringList additionalPreOptModulesList;
             foreach (QString commandLineOptionValue, commandLineOptionValuesList) {
               commandLineOptionValue = commandLineOptionValue.trimmed();
-              if (commandLineOptionValue.compare("dataReconciliation") == 0) {
-                mpTranslationFlagsWidget->getDataReconciliationCheckBox()->setChecked(true);
+              if (commandLineOptionValue.compare(QStringLiteral("dataReconciliation")) == 0) {
+                mpDataReconciliationGroupBox->setChecked(true);
+                mpDataReconciliationAlgorithmComboBox->setCurrentIndex(0);
+              } else if (commandLineOptionValue.compare(QStringLiteral("dataReconciliationBoundaryConditions")) == 0) {
+                mpDataReconciliationGroupBox->setChecked(true);
+                mpDataReconciliationAlgorithmComboBox->setCurrentIndex(1);
               } else {
                 additionalPreOptModulesList.append(commandLineOptionValue);
               }
@@ -1012,8 +1037,9 @@ void SimulationDialog::applySimulationOptions(SimulationOptions simulationOption
   // enable all warnings
   mpEnableAllWarningsCheckBox->setChecked(simulationOptions.getEnableAllWarnings());
   // enable reconcile
-  mpReconcileGroupBox->setChecked(simulationOptions.getReconcile());
-  mpDataReconciliationInputFileTextBox->setText(simulationOptions.getDataReconciliationInputFile());
+  mpDataReconciliationGroupBox->setChecked(simulationOptions.getEnableDataReconciliation());
+  mpDataReconciliationMeasurementInputFileTextBox->setText(simulationOptions.getDataReconciliationMeasurementInputFile());
+  mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(simulationOptions.getDataReconciliationCorrelationMatrixInputFile());
   mpDataReconciliationEpsilonTextBox->setText(simulationOptions.getDataReconciliationEpsilon());
   // Logging
   QStringList logStreams = simulationOptions.getLogStreams();
@@ -1110,6 +1136,9 @@ bool SimulationDialog::translateModel(QString simulationParameters)
     MainWindow::instance()->getOMCProxy()->setCommandLineOptions("-d=visxml");
   }
 #endif
+  if (mpDataReconciliationGroupBox->isChecked()) {
+    MainWindow::instance()->getOMCProxy()->setCommandLineOptions(QString("--preOptModules+=%1").arg(mpDataReconciliationAlgorithmComboBox->itemData(mpDataReconciliationAlgorithmComboBox->currentIndex()).toString()));
+  }
   bool result = MainWindow::instance()->getOMCProxy()->translateModel(mClassName, simulationParameters);
   if (!result) {
     //! @todo Remove this once new frontend is used as default and old frontend is removed.
@@ -1267,8 +1296,9 @@ SimulationOptions SimulationDialog::createSimulationOptions()
   simulationOptions.setProfiling(mpProfilingComboBox->currentText());
   simulationOptions.setCPUTime(mpCPUTimeCheckBox->isChecked());
   simulationOptions.setEnableAllWarnings(mpEnableAllWarningsCheckBox->isChecked());
-  simulationOptions.setReconcile(mpReconcileGroupBox->isChecked());
-  simulationOptions.setDataReconciliationInputFile(mpDataReconciliationInputFileTextBox->text());
+  simulationOptions.setEnableDataReconciliation(mpDataReconciliationGroupBox->isChecked());
+  simulationOptions.setDataReconciliationMeasurementInputFile(mpDataReconciliationMeasurementInputFileTextBox->text());
+  simulationOptions.setDataReconciliationCorrelationMatrixInputFile(mpDataReconciliationCorrelationMatrixInputFileTextBox->text());
   simulationOptions.setDataReconciliationEpsilon(mpDataReconciliationEpsilonTextBox->text());
   QStringList logStreams;
   int i = 0;
@@ -1420,10 +1450,17 @@ SimulationOptions SimulationDialog::createSimulationOptions()
     simulationFlags.append("-w");
   }
   // setup data reconciliation
-  if (mpReconcileGroupBox->isChecked()) {
-    simulationFlags.append("-reconcile");
-    if (!mpDataReconciliationInputFileTextBox->text().isEmpty()) {
-      simulationFlags.append(QString("-sx=").append(mpDataReconciliationInputFileTextBox->text()));
+  if (mpDataReconciliationGroupBox->isChecked()) {
+    if (mpDataReconciliationAlgorithmComboBox->currentIndex() == 0) {
+      simulationFlags.append("-reconcile");
+    } else {
+      simulationFlags.append("-reconcileBoundaryConditions");
+    }
+    if (!mpDataReconciliationMeasurementInputFileTextBox->text().isEmpty()) {
+      simulationFlags.append(QString("-sx=").append(mpDataReconciliationMeasurementInputFileTextBox->text()));
+    }
+    if (!mpDataReconciliationCorrelationMatrixInputFileTextBox->text().isEmpty()) {
+      simulationFlags.append(QString("-cx=").append(mpDataReconciliationCorrelationMatrixInputFileTextBox->text()));
     }
     if (!mpDataReconciliationEpsilonTextBox->text().isEmpty()) {
       simulationFlags.append(QString("-eps=").append(mpDataReconciliationEpsilonTextBox->text()));
@@ -2051,16 +2088,22 @@ void SimulationDialog::simulationProcessFinished(SimulationOptions simulationOpt
     MainWindow::instance()->showTransformationsWidget(simulationOptions.getWorkingDirectory() + "/" + simulationOptions.getOutputFileName() + "_info.json");
   }
   // Show the data reconciliation report
-  if (simulationOptions.getReconcile()) {
-    // read the report file
-    QFileInfo reportFileInfo(QString("%1/%2.html").arg(workingDirectory, simulationOptions.getClassName()));
+  if (simulationOptions.getEnableDataReconciliation()) {
+    QString htmlPath;
+    // read the data Reconciliation report file
+    if (mpDataReconciliationAlgorithmComboBox->currentIndex() == 0) {
+      htmlPath = QString("%1/%2.html").arg(workingDirectory, simulationOptions.getClassName());
+    } else { // read the data Reconciliation Boundary Conditions report file
+      htmlPath = QString("%1/%2_BoundaryConditions.html").arg(workingDirectory, simulationOptions.getClassName());
+    }
+    QFileInfo reportFileInfo(htmlPath);
+    QUrl url = QString("file:///%1").arg(htmlPath);
     reportFileInfo.setCaching(false);
     QDateTime reportFileModificationTime = reportFileInfo.lastModified();
     bool reportFileExists = reportFileInfo.exists();
     // use secsTo as lastModified returns to second not to mili/nanoseconds, see #5251
     bool reportFileNewer = resultFileLastModifiedDateTime.secsTo(reportFileModificationTime) >= 0;
     if (reportFileExists && reportFileNewer) {
-      QUrl url (QString("file:///%1/%2.html").arg(simulationOptions.getWorkingDirectory(), simulationOptions.getClassName()));
       QDesktopServices::openUrl(url);
     }
   }
@@ -2206,16 +2249,6 @@ void SimulationDialog::browseEquationSystemInitializationFile()
 }
 
 /*!
- * \brief SimulationDialog::browseDataReconciliationInputFile
- * Slot activated when mpDataReconciliationInputFileBrowseButton clicked signal is raised.\n
- * Allows user to select data reconciliation input file.
- */
-void SimulationDialog::browseDataReconciliationInputFile()
-{
-  mpDataReconciliationInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
-}
-
-/*!
  * \brief SimulationDialog::showSimulationFlagsHelp
  * Slot activated when mpSimulationFlagsHelpButton clicked signal is raised.\n
  * Opens the simulationflags.html page of OpenModelica users guide.
@@ -2304,4 +2337,24 @@ void SimulationDialog::resultFileNameChanged(QString text)
     mpSinglePrecisionCheckBox->setEnabled(mpOutputFormatComboBox->currentText().compare("mat") == 0);
     mpResultFileNameTextBox->setPlaceholderText(QString("%1_res.%2").arg(mClassName).arg(mpOutputFormatComboBox->currentText()));
   }
+}
+
+/*!
+ * \brief SimulationDialog::browseDataReconciliationMeasurementInputFile
+ * Slot activated when mpDataReconciliationMeasurementInputFileBrowseButton clicked signal is raised.\n
+ * Allows user to select data reconciliation measurement input file.
+ */
+void SimulationDialog::browseDataReconciliationMeasurementInputFile()
+{
+  mpDataReconciliationMeasurementInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
+}
+
+/*!
+ * \brief SimulationDialog::browseDataReconciliationCorrelationMatrixInputFile
+ * Slot activated when mpDataReconciliationCorrelationMatrixInputFileBrowseButton clicked signal is raised.\n
+ * Allows user to select data reconciliation correlation matrix input file.
+ */
+void SimulationDialog::browseDataReconciliationCorrelationMatrixInputFile()
+{
+  mpDataReconciliationCorrelationMatrixInputFileTextBox->setText(StringHandler::getOpenFileName(this, QString("%1 - %2").arg(Helper::applicationName, Helper::chooseFile), NULL, Helper::csvFileTypes, NULL));
 }

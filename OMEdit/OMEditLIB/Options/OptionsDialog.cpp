@@ -605,9 +605,6 @@ void OptionsDialog::readSimulationSettings()
   if (mpSettings->contains("simulation/newInst")) {
     mpSimulationPage->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(!mpSettings->value("simulation/newInst").toBool());
   }
-  if (mpSettings->contains("simulation/dataReconciliation")) {
-    mpSimulationPage->getTranslationFlagsWidget()->getDataReconciliationCheckBox()->setChecked(mpSettings->value("simulation/dataReconciliation").toBool());
-  }
   if (mpSettings->contains("simulation/OMCFlags")) {
     mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->setText(mpSettings->value("simulation/OMCFlags").toString());
   }
@@ -1337,14 +1334,6 @@ void OptionsDialog::saveSimulationSettings()
     }
   }
   mpSettings->setValue("simulation/newInst", newInst);
-  // save dataReconciliation
-  bool dataReconciliation = mpSimulationPage->getTranslationFlagsWidget()->getDataReconciliationCheckBox()->isChecked();
-  if (mpSettings->contains("simulation/dataReconciliation")) {
-    if (mpSettings->value("simulation/dataReconciliation").toBool() != dataReconciliation) {
-      changed = true;
-    }
-  }
-  mpSettings->setValue("simulation/dataReconciliation", dataReconciliation);
   // save command line options
   QString additionalFlags = mpSimulationPage->getTranslationFlagsWidget()->getAdditionalTranslationFlagsTextBox()->text();
   if (mpSimulationPage->getTranslationFlagsWidget()->applyFlags()) {

@@ -54,7 +54,6 @@ public:
   QCheckBox *getNLSanalyticJacobianCheckBox() const {return mpNLSanalyticJacobianCheckBox;}
   QCheckBox *getParmodautoCheckBox() const {return mpParmodautoCheckBox;}
   QCheckBox *getOldInstantiationCheckBox() const {return mpOldInstantiationCheckBox;}
-  QCheckBox *getDataReconciliationCheckBox() const {return mpDataReconciliationCheckBox;}
   QLineEdit *getAdditionalTranslationFlagsTextBox() const {return mpAdditionalTranslationFlagsTextBox;}
 
   void applySimulationOptions(const SimulationOptions &simulationOptions);
@@ -71,7 +70,6 @@ private:
   QCheckBox *mpNLSanalyticJacobianCheckBox;
   QCheckBox *mpParmodautoCheckBox;
   QCheckBox *mpOldInstantiationCheckBox;
-  QCheckBox *mpDataReconciliationCheckBox;
   Label *mpAdditionalTranslationFlagsLabel;
   QLineEdit *mpAdditionalTranslationFlagsTextBox;
   QToolButton *mpTranslationFlagsHelpButton;
