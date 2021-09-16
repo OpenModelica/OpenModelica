@@ -543,9 +543,16 @@ bool OMCProxy::printMessagesStringInternal()
   */
 int OMCProxy::getMessagesStringInternal()
 {
-  sendCommand("errors:=getMessagesStringInternal()");
-  sendCommand("size(errors,1)");
-  return getResult().toInt();
+  // getMessagesStringInternal() is quite slow, check if there are any messages first.
+  sendCommand("countMessages()");
+
+  if (getResult() != "(0,0,0)") {
+    sendCommand("errors:=getMessagesStringInternal()");
+    sendCommand("size(errors,1)");
+    return getResult().toInt();
+  }
+
+  return 0;
 }
 
 /*!
