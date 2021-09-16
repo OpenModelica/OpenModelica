@@ -1289,8 +1289,8 @@ algorithm
       // ToDo: all fixable?
       (new_eqns, var_lst) := addStartValueEquations(var_lst, new_eqns, {});
       DoubleEnded.push_list_back(dumpVars, var_lst);
-      failed_var_lst := list(var for var guard(not BackendVariable.containsVar(var, initVars)) in var_lst);
       if debug then
+        failed_var_lst := list(var for var guard(not BackendVariable.containsVar(var, initVars)) in var_lst);
         BackendDump.dumpVarList(var_lst, "fixed vars");
         BackendDump.dumpVarList(failed_var_lst, "failed vars");
       end if;
