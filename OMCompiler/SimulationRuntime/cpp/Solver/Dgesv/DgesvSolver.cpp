@@ -198,7 +198,18 @@ void DgesvSolver::solve()
   for (int i = 0; i < _dimSys; i++)
     _b[i] /= _fNominal[i];
 
-  if (!_hasDgesvFactors && !_hasDgetc2Factors) {
+  double det;
+  if (_dimSys == 1 && (det = _A[0]) != 0.0) {
+    _b[0] /= det;
+    info = 0;
+  }
+  else if (_dimSys == 2 && (det = _A[0]*_A[3] - _A[1]*_A[2]) != 0.0) {
+    double b0 = (_b[0]*_A[3] - _b[1]*_A[2]) / det;
+    _b[1] = (_A[0]*_b[1] - _A[1]*_b[0]) / det;
+    _b[0] = b0;
+    info = 0;
+  }
+  else if (!_hasDgesvFactors && !_hasDgetc2Factors) {
     dgesv_(&_dimSys, &dimRHS, _A, &_dimSys, _iHelp, _b, &_dimSys, &info);
     _hasDgesvFactors = true;
   }
