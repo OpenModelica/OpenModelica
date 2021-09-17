@@ -180,12 +180,12 @@ void Newton::solve( )
       }
 
       double det;
-      if (_dimSys == 1 && abs(det = _jac[0]) > 1e-10) {
+      if (_dimSys == 1 && (det = _jac[0]) != 0.0) {
         det = _jac[0];
         _f[0] /= det;
         info = 0;
       }
-      else if (_dimSys == 2 && abs(det = _jac[0]*_jac[3] - _jac[1]*_jac[2]) > 1e-10) {
+      else if (_dimSys == 2 && (det = _jac[0]*_jac[3] - _jac[1]*_jac[2]) != 0.0) {
         det = _jac[0]*_jac[3] - _jac[1]*_jac[2];
         double f0 = (_f[0]*_jac[3] - _f[1]*_jac[2]) / det;
         _f[1] = (_jac[0]*_f[1] - _jac[1]*_f[0]) / det;
