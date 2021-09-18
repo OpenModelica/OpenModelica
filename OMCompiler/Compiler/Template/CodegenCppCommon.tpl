@@ -226,8 +226,12 @@ template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFun
   else '<%representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)%>'
 end cref1;
 
-template representationCref(ComponentRef inCref, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-  cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
+template representationCref(ComponentRef inCref, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
+cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
+match context
+case FUNCTION_CONTEXT() then
+  '<%crefStr(inCref)%>'
+else
   match varKind
     case STATE() then
       '__z[<%i%>]'
