@@ -227,12 +227,12 @@ template cref1(ComponentRef cr, SimCode simCode ,Text& extraFuncs,Text& extraFun
 end cref1;
 
 template representationCref(ComponentRef inCref, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Context context, Text &varDecls, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation) ::=
-cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
-match context
-case FUNCTION_CONTEXT() then
-  '<%crefStr(inCref)%>'
-else
-  match varKind
+  match context
+  case FUNCTION_CONTEXT() then
+    '<%crefStr(inCref)%>'
+  else
+    let representation = cref2simvar(inCref, simCode) |> var as SIMVAR(varKind=varKind, index=i, matrixName=matrixName) =>
+    match varKind
     case STATE() then
       '__z[<%i%>]'
     case STATE_DER() then
@@ -262,6 +262,7 @@ else
               '<%cref(inCref, useFlatArrayNotation)%>'
     else
       '<%contextSystem(context)%><%cref(inCref, useFlatArrayNotation)%>'
+  '<%representation%>'
 end representationCref;
 
 
@@ -421,8 +422,12 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
                                Text extraFuncsNamespace, Text stateDerVectorName, Boolean useFlatArrayNotation)
  "Helper to daeExpCrefRhs."
 ::=
-  cref2simvar(cr, simCode) |> var as SIMVAR(index=i, matrixName=matrixName) =>
-    match varKind
+  match context
+  case FUNCTION_CONTEXT(__) then
+    ''
+  else
+    let box = cref2simvar(cr, simCode) |> var as SIMVAR(index=i, matrixName=matrixName) =>
+      match varKind
         case STATE()
         case STATE_DER()
         case DAE_RESIDUAL_VAR() then
@@ -434,10 +439,7 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
           let arrdata = representationCref(cr, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, context, varDecls, stateDerVectorName, useFlatArrayNotation)
           daeExpCrefRhsArrayBox2(arrdata, ty, true, context, preExp, varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
         else
-          match context
-          case FUNCTION_CONTEXT(__) then ''
-          else
-            match ty
+          match ty
             case t as T_ARRAY(ty=aty, dims=dims) then
               match cr
               case CREF_QUAL(ident = "$PRE") then
@@ -457,6 +459,7 @@ template daeExpCrefRhsArrayBox(ComponentRef cr, DAE.Type ty, Context context, Te
               else
                 ''
             else ''
+    '<%box%>'
 end daeExpCrefRhsArrayBox;
 
 
