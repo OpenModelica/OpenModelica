@@ -2961,7 +2961,7 @@ algorithm
   st := match st
     local
       Expression cond, e1, e2, e3;
-      Type ty1, ty2, ty3;
+      Type ty1, ty2;
       list<Statement> sts1, body;
       list<tuple<Expression, list<Statement>>> tybrs;
       InstNode iterator;
@@ -2977,7 +2977,7 @@ algorithm
         (e2, ty2) := typeExp(st.rhs, InstContext.set(context, NFInstContext.RHS), info);
 
         // TODO: Should probably only be allowUnknown = true if in a function.
-        (e2, ty3, mk) := TypeCheck.matchTypes(ty2, ty1, e2, allowUnknown = true);
+        (e2, _, mk) := TypeCheck.matchTypes(ty2, ty1, e2, allowUnknown = true);
 
         if TypeCheck.isIncompatibleMatch(mk) then
           Error.addSourceMessage(Error.ASSIGN_TYPE_MISMATCH_ERROR,
@@ -2988,7 +2988,7 @@ algorithm
 
         checkAssignment(e1, e2, var, context, info);
       then
-        Statement.ASSIGNMENT(e1, e2, ty3, st.source);
+        Statement.ASSIGNMENT(e1, e2, ty1, st.source);
 
     case Statement.FOR()
       algorithm

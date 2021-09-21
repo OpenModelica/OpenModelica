@@ -9287,6 +9287,10 @@ public function getInheritedClasses
   input Absyn.Path inPath;
   output list<Absyn.Path> outPaths;
 algorithm
+  if Flags.isSet(Flags.NF_API) then
+    outPaths := NFApi.getInheritedClasses(inPath, SymbolTable.getAbsyn());
+    return;
+  end if;
 
 try
 

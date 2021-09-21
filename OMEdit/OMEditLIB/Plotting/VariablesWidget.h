@@ -78,6 +78,7 @@ public:
   void setVariability(QString variability) {mVariability = variability;}
   bool isParameter() const {return mVariability.compare("parameter") == 0;}
   bool isMainArray() const {return mIsMainArray;}
+  bool isMainArrayProtected() const;
   SimulationOptions getSimulationOptions() {return mSimulationOptions;}
   void setSimulationOptions(SimulationOptions simulationOptions) {mSimulationOptions = simulationOptions;}
   bool isActive() const {return mActive;}
@@ -262,6 +263,7 @@ private:
   void selectInteractivePlotWindow(VariablesTreeItem *pVariablesTreeItem);
   void openResultFile();
   void updateVisualization();
+  void checkVariable(const QModelIndex &index, bool checkState);
   void unCheckVariableAndErrorMessage(const QModelIndex &index, const QString &errorMessage);
   void unCheckCurveVariable(const QString &variable);
 public slots:

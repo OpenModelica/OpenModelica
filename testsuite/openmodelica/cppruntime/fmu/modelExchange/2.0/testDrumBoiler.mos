@@ -219,7 +219,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"4\"
 //     description=\"der(volumes of liquid phase)\"
 //     initial=\"approx\">
-//     <Real start=\"0.0\" derivative=\"2\" unit=\"m3.s-1\"/>
+//     <Real start=\"0.0\" derivative=\"2\" nominal=\"500.0\" unit=\"m3.s-1\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"6\" -->
 //   <ScalarVariable
@@ -227,7 +227,7 @@ val(evaporator_qm_S, 100);
 //     valueReference=\"5\"
 //     description=\"der(pressure inside drum boiler)\"
 //     initial=\"approx\">
-//     <Real start=\"0.0\" derivative=\"3\" unit=\"km-1.s-3.g\"/>
+//     <Real start=\"0.0\" derivative=\"3\" nominal=\"500000000.0\" unit=\"km-1.s-3.g\"/>
 //   </ScalarVariable>
 //   <!-- Index of variable = \"7\" -->
 //   <ScalarVariable

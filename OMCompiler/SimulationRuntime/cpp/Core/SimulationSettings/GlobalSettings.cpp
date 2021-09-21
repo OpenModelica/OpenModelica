@@ -12,6 +12,7 @@ GlobalSettings::GlobalSettings()
   : _startTime(0.0)
   , _endTime(1.0)
   , _hOutput(0.002)
+  , _tolerance(1e-6)
   , _emitResults(EMIT_ALL)
   , _variableFilter(".*")
   , _infoOutput(true)
@@ -62,6 +63,16 @@ double GlobalSettings::gethOutput()
 void GlobalSettings::sethOutput(double h)
 {
   _hOutput = h;
+}
+
+void GlobalSettings::setTolerance(double value)
+{
+  _tolerance = value;
+}
+
+double GlobalSettings::getTolerance()
+{
+  return _tolerance;
 }
 
 bool GlobalSettings::useEndlessSim()

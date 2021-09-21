@@ -33,17 +33,16 @@ encapsulated uniontype NFType
 protected
   import Type = NFType;
   import List;
-  import Restriction = NFRestriction;
   import Class = NFClass;
   import IOStream;
+  import Util;
+  import NFClassTree.ClassTree;
 
 public
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
-  import ConvertDAE = NFConvertDAE;
-  import ComponentRef = NFComponentRef;
   import NFFunction.Function;
   import Record = NFRecord;
 
@@ -1302,6 +1301,11 @@ public
   function sizeOf
     input Type ty;
     output Integer sz;
+
+    function fold_comp_size
+      input InstNode comp;
+      input output Integer sz = sz + sizeOf(InstNode.getType(comp));
+    end fold_comp_size;
   algorithm
     sz := match ty
       case INTEGER() then 1;
@@ -1311,6 +1315,8 @@ public
       case CLOCK() then 1;
       case ENUMERATION() then 1;
       case ARRAY() then sizeOf(ty.elementType) * product(Dimension.size(d) for d in ty.dimensions);
+      case COMPLEX()
+        then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
       else 0;
     end match;
   end sizeOf;

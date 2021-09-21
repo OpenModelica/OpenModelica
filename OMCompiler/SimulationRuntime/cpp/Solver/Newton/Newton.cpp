@@ -179,8 +179,23 @@ void Newton::solve( )
         phi += _f[i] * _f[i];
       }
 
-      // Solve linear system
-      dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+      double det;
+      if (_dimSys == 1 && (det = _jac[0]) != 0.0) {
+        det = _jac[0];
+        _f[0] /= det;
+        info = 0;
+      }
+      else if (_dimSys == 2 && (det = _jac[0]*_jac[3] - _jac[1]*_jac[2]) != 0.0) {
+        det = _jac[0]*_jac[3] - _jac[1]*_jac[2];
+        double f0 = (_f[0]*_jac[3] - _f[1]*_jac[2]) / det;
+        _f[1] = (_jac[0]*_f[1] - _jac[1]*_f[0]) / det;
+        _f[0] = f0;
+        info = 0;
+      }
+      else {
+        // Solve linear system
+        dgesv_(&_dimSys, &dimRHS, _jac, &_dimSys, _iHelp, _f, &_dimSys, &info);
+      }
 
       if (info > 0) {
         long int info2 = 0;
@@ -298,7 +313,7 @@ void Newton::solve( )
         // check for sufficient decrease
         // (also break for very small lambda and try a small step instead
         //  -- avoid "sufficient decrease" errors, still have iteration limit)
-        if (phiHelp <= (1.0 - alpha * lambda) * phi || lambda < alpha)
+        if (phiHelp <= (1.0 - alpha * lambda) * phi || (lambda < alpha && isfinite(phiHelp)))
           break;
       }
       // take iterate

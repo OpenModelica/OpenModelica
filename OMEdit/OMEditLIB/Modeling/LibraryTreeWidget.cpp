@@ -70,6 +70,9 @@ LibraryTreeItem::LibraryTreeItem()
   OMCInterface::getClassInformation_res classInformation;
   setClassInformation(classInformation);
   setFileName("");
+  mVersionDate = "";
+  mVersionBuild = "";
+  mDateModified = "";
   setReadOnly(false);
   setIsSaved(false);
   setSaveContentsType(LibraryTreeItem::SaveInOneFile);
@@ -169,6 +172,11 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
   if (mLibraryType == LibraryTreeItem::Modelica) {
     mClassInformation = classInformation;
     setFileName(classInformation.fileName);
+    if (!mIsRootItem) {
+      mVersionDate = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "versionDate");
+      mVersionBuild = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "versionBuild", StringHandler::Integer);
+      mDateModified = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "dateModified");
+    }
     setReadOnly(classInformation.fileReadOnly);
     // set save contents type
     if (isFilePathValid()) {
@@ -205,6 +213,58 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
     if (mpModelWidget) {
       mpModelWidget->updateViewButtonsBasedOnAccess();
     }
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersion
+ * \return
+ */
+const QString &LibraryTreeItem::getVersion() const
+{
+  if (mClassInformation.version.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersion();
+  } else {
+    return mClassInformation.version;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersionDate
+ * \return
+ */
+const QString &LibraryTreeItem::getVersionDate() const
+{
+  if (mVersionDate.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersionDate();
+  } else {
+    return mVersionDate;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersionBuild
+ * \return
+ */
+const QString &LibraryTreeItem::getVersionBuild() const
+{
+  if (mVersionBuild.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersionBuild();
+  } else {
+    return mVersionBuild;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getDateModified
+ * \return
+ */
+const QString &LibraryTreeItem::getDateModified() const
+{
+  if (mDateModified.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getDateModified();
+  } else {
+    return mDateModified;
   }
 }
 
@@ -1368,15 +1428,6 @@ void LibraryTreeModel::addModelicaLibraries()
   }
   // load Modelica User Libraries.
   pOMCProxy->loadUserLibraries();
-  QStringList userLibs = pOMCProxy->getClassNames();
-  foreach (QString lib, userLibs) {
-    if (systemLibs.contains(lib)) {
-      continue;
-    }
-    SplashScreen::instance()->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, false, true);
-    checkIfAnyNonExistingClassLoaded();
-  }
 }
 
 /*!
@@ -3208,17 +3259,21 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
        */
       bool isPlottingPerspectiveActive = MainWindow::instance()->isPlottingPerspectiveActive();
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-      // if we are in the plotting perspective then open the Diagram Window
-      if (isPlottingPerspectiveActive) {
-        MainWindow::instance()->switchToPlottingPerspectiveSlot();
-        if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
-          if (pLibraryTreeItem->getModelWidget()) {
-            pLibraryTreeItem->getModelWidget()->loadDiagramView();
-            pLibraryTreeItem->getModelWidget()->loadConnections();
+      // Issue #7772. If control is not clicked then switch to plotting perspective.
+      bool controlModifier = QApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
+      if (!controlModifier) {
+        // if we are in the plotting perspective then open the Diagram Window
+        if (isPlottingPerspectiveActive) {
+          MainWindow::instance()->switchToPlottingPerspectiveSlot();
+          if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
+            if (pLibraryTreeItem->getModelWidget()) {
+              pLibraryTreeItem->getModelWidget()->loadDiagramView();
+              pLibraryTreeItem->getModelWidget()->loadConnections();
+            }
+            MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
           }
-          MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
+          MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
         }
-        MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
       }
     }
   }
@@ -3408,9 +3463,9 @@ void LibraryTreeView::openInformationDialog()
     QVBoxLayout *pLayout = new QVBoxLayout;
     pLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     pLayout->addWidget(pHeadingLabel);
-    pLayout->addWidget(new Label(tr("Version : %1").arg(MainWindow::instance()->getOMCProxy()->getVersion(pLibraryTreeItem->getNameStructure()))));
-    pLayout->addWidget(new Label(tr("Version Date : %1").arg(MainWindow::instance()->getOMCProxy()->getVersionDateAnnotation(pLibraryTreeItem->getNameStructure()))));
-    pLayout->addWidget(new Label(tr("Version Build : %1").arg(MainWindow::instance()->getOMCProxy()->getVersionBuildAnnotation(pLibraryTreeItem->getNameStructure()))));
+    pLayout->addWidget(new Label(tr("Version : %1").arg(pLibraryTreeItem->getVersion())));
+    pLayout->addWidget(new Label(tr("Version Date : %1").arg(pLibraryTreeItem->getVersionDate())));
+    pLayout->addWidget(new Label(tr("Version Build : %1").arg(pLibraryTreeItem->getVersionBuild())));
     pInformationDialog->setLayout(pLayout);
     pInformationDialog->exec();
   }

@@ -233,6 +233,7 @@ Condition4.mo \
 Condition5.mo \
 Condition6.mo \
 Condition7.mo \
+Condition8.mo \
 ConditionInvalid1.mo \
 ConditionInvalidBinding1.mo \
 ConditionInvalidBinding2.mo \
@@ -376,6 +377,7 @@ ExpandableConnector1.mo \
 ExpandableConnector2.mo \
 ExpandableConnector3.mo \
 ExpandableConnector4.mo \
+ExpandableConnector5.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
 ExpandableConnectorNonDecl1.mo \
@@ -618,6 +620,8 @@ IfExpression4.mo \
 IfExpression5.mo \
 IfExpression7.mo \
 IfExpression8.mo \
+IfExpression10.mo \
+IfExpression11.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -738,6 +742,7 @@ OperationDiv1.mo \
 OperationDivEW1.mo \
 OperationLogicalBinary1.mo \
 OperationLogicalUnary1.mo \
+OperationLogicalUnary2.mo \
 OperationMatrixProduct1.mo \
 OperationMatrixProduct2.mo \
 OperationMatrixProduct3.mo \
@@ -752,6 +757,7 @@ OperationSub1.mo \
 OperationSubEW1.mo \
 OperationSubEW2.mo \
 OperationUnary1.mo \
+OperationUnary2.mo \
 OperationVectorMatrixProduct1.mo \
 OperationVectorProduct1.mo \
 OperatorNonEncapsulated1.mo \

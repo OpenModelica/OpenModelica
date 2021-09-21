@@ -988,6 +988,7 @@ uniontype InstNode
   function scopePath
     input InstNode node;
     input Boolean includeRoot = false "Whether to include the root class name or not.";
+    input Boolean ignoreBaseClass = false "Ignore that a class is a base class if true.";
     output Absyn.Path path;
   algorithm
     path := match node
@@ -997,7 +998,7 @@ uniontype InstNode
       case CLASS_NODE(nodeType = it)
         then
           match it
-            case InstNodeType.BASE_CLASS() then scopePath(it.parent, includeRoot);
+            case InstNodeType.BASE_CLASS() guard not ignoreBaseClass then scopePath(it.parent, includeRoot);
             else scopePath2(node.parentScope, includeRoot, Absyn.IDENT(node.name));
           end match;
 

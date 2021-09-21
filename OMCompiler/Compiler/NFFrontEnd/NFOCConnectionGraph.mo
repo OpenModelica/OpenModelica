@@ -268,14 +268,11 @@ function generateEqualityConstraintEquation
     output Boolean res;
   end IsDeleted;
 protected
-  ComponentRef lhs, rhs, cref, fcref_rhs, fcref_lhs, lhsArr, rhsArr;
-  list<Equation> eql = {};
-  list<Expression> lst;
+  ComponentRef lhs, rhs, fcref_rhs, fcref_lhs, lhsArr, rhsArr;
   Type ty, ty1, ty2;
   Integer priority;
+  list<Connection> conns;
   Expression root, msg;
-  Connector c1, c2;
-  list<Connector> cl1, cl2;
   Equation replaceEq;
   Expression expLHS, expRHS;
   InstNode fn_node_lhs, fn_node_rhs;
@@ -285,47 +282,43 @@ algorithm
     return;
   end if;
 
-  if not (isDeleted(clhs) or isDeleted(crhs)) then
-    cl1 := NFConnections.makeConnectors(clhs, lhs_ty, source);
-    cl2 := NFConnections.makeConnectors(crhs, rhs_ty, source);
+  conns := NFConnections.makeConnections(clhs, lhs_ty, crhs, rhs_ty, source, isDeleted);
 
-    for c1 in cl1 loop
-      c2 :: cl2 := cl2;
+  for c in conns loop
+    for conn in Connection.split(c) loop
+      lhs := Connector.name(conn.lhs);
+      rhs := Connector.name(conn.rhs);
 
-      for conn in Connection.split(Connection.CONNECTION(c1, c2)) loop
-        lhs := Connector.name(conn.lhs);
-        rhs := Connector.name(conn.rhs);
-        if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
-          lhs := getOverconstrainedCref(lhs);
-          rhs := getOverconstrainedCref(rhs);
+      if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
+        lhs := getOverconstrainedCref(lhs);
+        rhs := getOverconstrainedCref(rhs);
 
-          lhsArr := ComponentRef.stripSubscripts(lhs);
-          rhsArr := ComponentRef.stripSubscripts(rhs);
+        lhsArr := ComponentRef.stripSubscripts(lhs);
+        rhsArr := ComponentRef.stripSubscripts(rhs);
 
-          ty1 := ComponentRef.getComponentType(lhsArr);
-          ty2 := ComponentRef.getComponentType(rhsArr);
+        ty1 := ComponentRef.getComponentType(lhsArr);
+        ty2 := ComponentRef.getComponentType(rhsArr);
 
-          fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)), context);
-          (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, context, ElementSource.getInfo(source));
-          expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
+        fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)), context);
+        (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, context, ElementSource.getInfo(source));
+        expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
 
-          (expRHS, ty, var) := Typing.typeExp(expRHS, context, ElementSource.getInfo(source));
+        (expRHS, ty, var) := Typing.typeExp(expRHS, context, ElementSource.getInfo(source));
 
-          fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)), context);
-          (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, context, ElementSource.getInfo(source));
-          expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
+        fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)), context);
+        (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, context, ElementSource.getInfo(source));
+        expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
 
-          (expLHS, ty, var) := Typing.typeExp(expLHS, context, ElementSource.getInfo(source));
+        (expLHS, ty, var) := Typing.typeExp(expLHS, context, ElementSource.getInfo(source));
 
-          replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
+        replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
 
-          eqsEqualityConstraint := {replaceEq};
+        eqsEqualityConstraint := {replaceEq};
 
-          return;
-        end if;
-      end for;
+        return;
+      end if;
     end for;
-  end if;
+  end for;
 end generateEqualityConstraintEquation;
 
 protected

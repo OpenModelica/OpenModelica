@@ -165,7 +165,7 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINInit");
 
   /* Create matrix object */
-  if (kinsolData->linearSolverMethod == NLS_LS_DEFAULT) {
+  if (kinsolData->linearSolverMethod == NLS_LS_DEFAULT || kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->J = SUNDenseMatrix(size, size);
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
     kinsolData->nnz = nlsData->sparsePattern->numberOfNoneZeros;

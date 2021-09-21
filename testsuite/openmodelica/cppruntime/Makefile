@@ -6,6 +6,7 @@ WhenInitialTerminal.mos \
 WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
+arrayCatTest.mos \
 arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
@@ -27,6 +28,7 @@ RefArrayDim2.mos \
 solveTest.mos \
 testArrayEquations.mos \
 testMatrixIO.mos \
+testMatrixState.mos \
 testVectorizedBlocks.mos \
 testVectorizedPowerSystem.mos \
 testVectorizedSolarSystem.mos \

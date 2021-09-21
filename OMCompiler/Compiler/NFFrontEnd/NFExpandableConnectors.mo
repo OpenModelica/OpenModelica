@@ -291,8 +291,8 @@ algorithm
   node := InstNode.clone(node);
   node := InstNode.rename(ComponentRef.firstName(virtual_cref), node);
   node := InstNode.setParent(ComponentRef.node(ComponentRef.rest(virtual_cref)), node);
+  node := InstNode.componentApply(node, Component.setType, ty);
   virtual_cref := ComponentRef.prefixCref(node, ty, {}, ComponentRef.rest(virtual_cref));
-
   // TODO: This needs more work, the new connector might be a complex connector.
   newConnector := Connector.CONNECTOR(virtual_cref, ty, virtualConnector.face,
     virtualConnector.cty, virtualConnector.source);

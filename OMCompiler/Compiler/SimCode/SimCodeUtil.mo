@@ -290,12 +290,20 @@ protected
 
   SimCode.OMSIFunction omsiInitEquations, omsiSimEquations;
   Option<SimCode.OMSIData> omsiOptData;
+  SimCode.SimulationSettings theSettings;
 
   constant Boolean debug = false;
 algorithm
   try
     execStat("Backend phase and start with SimCode phase");
     dlow := inBackendDAE;
+    // transfer timeInterval from siulation settings to shared
+    if isSome(simSettingsOpt) then
+      SOME(theSettings) := simSettingsOpt;
+      shared := dlow.shared;
+      shared.timeInterval := SOME(DAE.RCONST(theSettings.stepSize));
+      dlow.shared := shared;
+    end if;
     System.tmpTickReset(0);
     uniqueEqIndex := 1;
     ifcpp := (stringEqual(Config.simCodeTarget(), "Cpp"));
@@ -3999,7 +4007,6 @@ algorithm
       Boolean linear, mixedSystem;
       Option<SimCode.DerivativeMatrix> derivativeMatrix;
       Integer algEqIndex;
-
       list<Integer> eqns;
       list<Integer> variables;
 
@@ -4007,14 +4014,14 @@ algorithm
     case BackendDAE.SINGLEEQUATION() equation
       ({eqn}, {var}, _) = BackendDAETransform.getEquationAndSolvedVar(component, constSyst.orderedEqs, constSyst.orderedVars);
       (tmpEqns, tmpInputVars, tmpOutputVars, tmpInnerVars, uniqueEqIndex) =
-        generateSingleEquation(eqn, var, shared.functionTree, uniqueEqIndex);
+        generateSingleEquation(eqn, var, shared.functionTree, shared.timeInterval, uniqueEqIndex);
     then ();
 
     // case for singe when equations
     case BackendDAE.SINGLEWHENEQUATION() equation
       (eqnlst, varlst, _) = BackendDAETransform.getEquationAndSolvedVar(component, constSyst.orderedEqs, constSyst.orderedVars);
       (tmpEqns, tmpInputVars, tmpOutputVars, tmpInnerVars, uniqueEqIndex) =
-        generateSingleEquation(listHead(eqnlst), listHead(varlst), shared.functionTree, uniqueEqIndex);
+        generateSingleEquation(listHead(eqnlst), listHead(varlst), shared.functionTree, shared.timeInterval, uniqueEqIndex);
     then();
 
     // case for single comlpex equation
@@ -4216,6 +4223,7 @@ function generateSingleEquation
   input BackendDAE.Equation eqn;
   input BackendDAE.Var var;
   input DAE.FunctionTree funcTree;
+  input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
   output list<SimCode.SimEqSystem> equations = {};
   output list<SimCodeVar.SimVar> inputVars = {};
   output list<SimCodeVar.SimVar> outputVars = {};
@@ -4278,7 +4286,7 @@ algorithm
 
           // add der(newSimVar) to outputVars if newSimVar is state
           if BackendVariable.isStateVar(var) then
-            outputVars := listAppend({derVarFromStateVar(newSimVar)}, outputVars);
+            outputVars := listAppend({derVarFromStateVar(newSimVar, timeInterval)}, outputVars);
             inputVars := listAppend({newSimVar}, inputVars);
           else
             outputVars := listAppend({newSimVar}, outputVars);
@@ -7953,6 +7961,7 @@ protected
   array<list<SimCodeVar.SimVar>> simVars = arrayCreate(size(SimVarsIndex,1), {});
   Integer primeSize;
   list<DAE.ComponentRef> iterationVars;
+  Option<DAE.Exp> timeInterval = NONE();
 
   constant Boolean debug = false;
 algorithm
@@ -7981,45 +7990,45 @@ algorithm
 
   // ### simulation ###
   // Extract from variable list
-  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs1), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: variable list"); end if;
 
   // Extract from known variable list
-  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: known variable list"); end if;
 
   // Extract from localKnownVars variable list
-  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: local known variables list"); end if;
 
   // Extract from removed variable list
-  simVars := BackendVariable.traverseBackendDAEVars(aliasVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(aliasVars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: removed variables list"); end if;
 
   // Extract from external object list
-  simVars := BackendVariable.traverseBackendDAEVars(extvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(extvars1, function extractVarsFromList(aliasVars=aliasVars1, vars=globalKnownVars1, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: external object list"); end if;
 
 
   // ### initialization ###
   // Extract from variable list
-  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := List.fold1(list(BackendVariable.daeVars(syst) for syst in systs2), BackendVariable.traverseBackendDAEVars, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=NONE(), iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: variable list (init)"); end if;
 
   // Extract from known variable list
-  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(globalKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: known variable list (init)"); end if;
 
   // Extract from localKnownVars variable list
-  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(localKnownVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: local known variables list (init)"); end if;
 
   // Extract from removed variable list
-  simVars := BackendVariable.traverseBackendDAEVars(aliasVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(aliasVars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: removed variables list (init)"); end if;
 
   // Extract from external object list
-  simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, iterationVars=iterationVars), simVars);
+  simVars := BackendVariable.traverseBackendDAEVars(extvars2, function extractVarsFromList(aliasVars=aliasVars2, vars=globalKnownVars2, hs=hs, timeInterval=shared.timeInterval, iterationVars=iterationVars), simVars);
   if debug then execStat("createVars: external object list (init)"); end if;
 
   addTempVars(simVars, tempvars);
@@ -8083,12 +8092,13 @@ protected function extractVarsFromList
   input output array<list<SimCodeVar.SimVar>> simVars;
   input BackendDAE.Variables aliasVars, vars;
   input Mutable<HashSet.HashSet> hs;
-  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
+  input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
+  input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode";
 algorithm
   if if ComponentReference.isPreCref(var.varName) or ComponentReference.isStartCref(var.varName) then false else not BaseHashSet.has(var.varName, Mutable.access(hs)) then
     /* ignore variable, since they are treated by kind in the codegen */
     if not BackendVariable.isAlgebraicOldState(var) then
-      extractVarFromVar(var, aliasVars, vars, simVars, hs, iterationVars);
+      extractVarFromVar(var, aliasVars, vars, simVars, hs, timeInterval, iterationVars);
     end if;
   //  print("Added  " + ComponentReference.printComponentRefStr(inVar.varName) + "\n");
   //else
@@ -8160,6 +8170,7 @@ protected function extractVarFromVar
   input BackendDAE.Variables inVars;
   input array<list<SimCodeVar.SimVar>> simVars;
   input Mutable<HashSet.HashSet> hs "all processed crefs";
+  input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
   input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
 protected
   list<DAE.ComponentRef> scalar_crefs;
@@ -8172,11 +8183,11 @@ algorithm
       // extract the sim var
       scalarVar := BackendVariable.copyVarNewName(cref, dlowVar);
       scalarVar.varType := ComponentReference.crefTypeFull(cref);
-      extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, iterationVars);
+      extractVarFromVar2(scalarVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
     end for;
   else
     // extract the sim var
-    extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, iterationVars);
+    extractVarFromVar2(dlowVar, inAliasVars, inVars, simVars, hs, timeInterval, iterationVars);
   end if;
 end extractVarFromVar;
 
@@ -8188,6 +8199,7 @@ protected function extractVarFromVar2
   input BackendDAE.Variables inVars;
   input array<list<SimCodeVar.SimVar>> simVars;
   input Mutable<HashSet.HashSet> hs "all processed crefs";
+  input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
   input list<DAE.ComponentRef> iterationVars "list of iterationVars in InitializationMode" ;
 protected
   SimCodeVar.SimVar simVar;
@@ -8228,7 +8240,7 @@ algorithm
   // update HashSet
   Mutable.update(hs, BaseHashSet.add(simVar.name, Mutable.access(hs)));
   if (not isalias) and (BackendVariable.isStateVar(dlowVar) or BackendVariable.isAlgState(dlowVar)) then
-    derivSimvar := derVarFromStateVar(simVar, iterationVars);
+    derivSimvar := derVarFromStateVar(simVar, timeInterval, iterationVars);
     Mutable.update(hs, BaseHashSet.add(derivSimvar.name, Mutable.access(hs)));
   else
     derivSimvar := simVar; // Just in case
@@ -8356,10 +8368,12 @@ end addSimVar;
 
 protected function derVarFromStateVar
   input SimCodeVar.SimVar state;
-  input list<DAE.ComponentRef> iterationVars = {} "list of iterationVars in InitializationMode" ;
+  input Option<DAE.Exp> timeInterval "from experiment annotation Interval, used for derivative nominal";
+  input list<DAE.ComponentRef> iterationVars = {} "list of iterationVars in InitializationMode";
   output SimCodeVar.SimVar deriv = state;
 protected
   Unit.Unit unit;
+  DAE.Exp nominal;
 algorithm
   deriv.arrayCref := Util.applyOption(deriv.arrayCref, ComponentReference.crefPrefixDer);
   deriv.name := ComponentReference.crefPrefixDer(deriv.name);
@@ -8377,7 +8391,20 @@ algorithm
   deriv.displayUnit := "";
   deriv.minValue := NONE();
   deriv.maxValue := NONE();
-  deriv.nominalValue := NONE();
+
+  // Only give nominal to iteration variables
+  if ComponentReference.crefInLst(deriv.name, iterationVars) then
+    // guess a nominal value for the derivative, if we have that information
+    //   der(x).nominal = x.nominal/simulationInterval
+    // otherwise just keep the nominal value of the state
+    if isSome(timeInterval) then
+      nominal := Expression.makeDiv(Util.getOptionOrDefault(deriv.nominalValue, DAE.RCONST(1.0)), Util.getOption(timeInterval));
+      deriv.nominalValue := SOME(ExpressionSimplify.simplify(nominal));
+    end if;
+  else
+    deriv.nominalValue := NONE();
+  end if;
+
   deriv.isFixed := false;
   deriv.aliasvar := SimCodeVar.NOALIAS();
   deriv.causality := SOME(SimCodeVar.LOCAL());
@@ -9190,9 +9217,11 @@ protected
 algorithm
   for i in SimVarsIndex.state : SimVarsIndex.realOptimizeFinalConstraints loop
     lst := Dangerous.arrayGetNoBoundsChecking(simVars,Integer(i));
-    Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndex(lst, ix));
     if not isCpp then
+      Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndex(lst, ix));
       ix := ix + listLength(lst);
+    else
+      Dangerous.arrayUpdateNoBoundsChecking(simVars, Integer(i), rewriteIndexColumnMajor(lst, 0));
     end if;
   end for;
   for i in SimVarsIndex.param : SimVarsIndex.stringConst loop // Skip jacobian, seed
@@ -9212,6 +9241,31 @@ algorithm
   end for;
   outVars := Dangerous.listReverseInPlace(outVars);
 end rewriteIndex;
+
+protected function rewriteIndexColumnMajor
+  "alternative version of rewriteIndex considering column major storage order of multi-dimensional arrays"
+  input list<SimCodeVar.SimVar> inVars;
+  output list<SimCodeVar.SimVar> outVars = {};
+  input output Integer index;
+protected
+  list<DAE.Subscript> subs;
+  list<Integer> arrayDimensions = {};
+  Integer elementIndex;
+algorithm
+  for var in inVars loop
+    subs := ComponentReference.crefLastSubs(var.name);
+    if listLength(subs) > 1 then
+      arrayDimensions := List.map(var.numArrayElement, stringInt);
+      elementIndex := getScalarElementIndex(subs, arrayDimensions);
+      var.index := index - elementIndex + convertIndexToColumnMajor(elementIndex, arrayDimensions);
+    else
+      var.index := index;
+    end if;
+    outVars := var::outVars;
+    index := index + 1;
+  end for;
+  outVars := Dangerous.listReverseInPlace(outVars);
+end rewriteIndexColumnMajor;
 
 protected function setVariableIndex
   input array<list<SimCodeVar.SimVar>> simVars;

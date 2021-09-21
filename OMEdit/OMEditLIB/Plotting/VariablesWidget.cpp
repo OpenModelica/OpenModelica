@@ -129,14 +129,39 @@ void VariablesTreeItem::setVariableItemData(const QVector<QVariant> &variableIte
   mExistInResultFile = variableItemData[VariableItemData::EXISTINRESULTFILE].toBool();
 }
 
+/*!
+ * \brief VariablesTreeItem::getPlotVariable
+ * Returns the plot variable name.
+ * \return
+ */
 QString VariablesTreeItem::getPlotVariable()
 {
   return QString(mVariableName).remove(0, mFileName.length() + 1);
 }
 
+/*!
+ * \brief VariablesTreeItem::isString
+ * Returns true if variable type is String.
+ * \return
+ */
 bool VariablesTreeItem::isString() const
 {
   return mType.compare(QStringLiteral("String")) == 0;
+}
+
+/*!
+ * \brief VariablesTreeItem::isMainArrayProtected
+ * Checks if the array variable is protected.\n
+ * For protected arrays we need to check the first index to see if it is protected or not.
+ * \return
+ */
+bool VariablesTreeItem::isMainArrayProtected() const
+{
+  if (mChildren.size() > 0) {
+    return mChildren.at(0)->getExistInResultFile();
+  } else {
+    return false;
+  }
 }
 
 /*!
@@ -244,11 +269,10 @@ QVariant VariablesTreeItem::data(int column, int role) const
           return mToolTip;
         case Qt::CheckStateRole:
           /* Show checkbox for,
-           * nodes without children i.e., leaf nodes
+           * nodes without children i.e., leaf nodes and exist in the result file
            * nodes that are array
-           * nodes that exist in the result file.
            */
-          if (parent()->parent() && mExistInResultFile && (mChildren.size() == 0 || mIsMainArray)) {
+          if (parent()->parent() && ((mChildren.size() == 0 && mExistInResultFile) || (mIsMainArray && isMainArrayProtected()))) {
             return isChecked() ? Qt::Checked : Qt::Unchecked;
            } else {
             return QVariant();
@@ -364,7 +388,7 @@ VariablesTreeModel::VariablesTreeModel(VariablesTreeView *pVariablesTreeView)
   mpVariablesTreeView = pVariablesTreeView;
   QVector<QVariant> headers;
   headers << "" << "" << Helper::variables << Helper::variables << "" << tr("Value") << tr("Unit") << tr("Display Unit") <<
-             QStringList() << Helper::description << "" << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json";
+             QStringList() << Helper::description << "" << false << QVariantList() << QVariantList() << QVariantList() << "dummy.json" << false;
   mpRootVariablesTreeItem = new VariablesTreeItem(headers, 0, true);
   mpActiveVariablesTreeItem = 0;
 }
@@ -483,8 +507,9 @@ Qt::ItemFlags VariablesTreeModel::flags(const QModelIndex &index) const
 
   Qt::ItemFlags flags = Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   VariablesTreeItem *pVariablesTreeItem = static_cast<VariablesTreeItem*>(index.internalPointer());
-  if (((index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->mChildren.size() == 0) || pVariablesTreeItem->isMainArray())
-          && pVariablesTreeItem->parent() != mpRootVariablesTreeItem && pVariablesTreeItem->getExistInResultFile()) {
+  if ((index.column() == 0 && pVariablesTreeItem && pVariablesTreeItem->parent() != mpRootVariablesTreeItem)
+      && ((pVariablesTreeItem->mChildren.size() == 0 && pVariablesTreeItem->getExistInResultFile())
+          || (pVariablesTreeItem->isMainArray() && pVariablesTreeItem->isMainArrayProtected()))) {
     flags |= Qt::ItemIsUserCheckable;
     // Disable string type since is not stored in the result file and we can't plot them
     if (pVariablesTreeItem->isString()) {
@@ -572,7 +597,7 @@ void VariablesTreeModel::parseInitXml(QXmlStreamReader &xmlReader, QStringList* 
       /* If it's named ScalarVariable, we'll dig the information from there.*/
       if (xmlReader.name() == "ScalarVariable") {
         QHash<QString, QString> scalarVariable = parseScalarVariable(xmlReader);
-        if (!scalarVariable.value("name").startsWith("$")) {
+        if (!scalarVariable.value("name").startsWith("$") && !scalarVariable.value("name").startsWith("_D_")) {
           mScalarVariablesHash.insert(scalarVariable.value("name"),scalarVariable);
           if (addVariablesToList) {
             variablesList->append(scalarVariable.value("name"));
@@ -922,7 +947,8 @@ bool VariablesTreeModel::insertVariablesItems(QString fileName, QString filePath
       variableData << variantDefinedIn;
       variableData << infoFileName;
       bool variableExistsInResultFile = true;
-      if (readingVariablesFromInitFile && !variableListFromResultFile.contains(variableToFind)) {
+      QHash<QString, QString> variableHash = mScalarVariablesHash.value(variableToFind);
+      if (readingVariablesFromInitFile && (!variableListFromResultFile.contains(variableToFind) || variableHash.value("hideResult").compare(QStringLiteral("true")) == 0)) {
         variableExistsInResultFile = false;
       }
       variableData << variableExistsInResultFile;
@@ -1115,6 +1141,7 @@ QHash<QString, QString> VariablesTreeModel::parseScalarVariable(QXmlStreamReader
   scalarVariable["description"] = attributes.value("description").toString();
   scalarVariable["isValueChangeable"] = attributes.value("isValueChangeable").toString();
   scalarVariable["variability"] = attributes.value("variability").toString();
+  scalarVariable["hideResult"] = attributes.value("hideResult").toString();
   /* Read the next element i.e Real, Integer, Boolean etc. */
   xmlReader.readNext();
   while (!(xmlReader.tokenType() == QXmlStreamReader::EndElement && xmlReader.name() == "ScalarVariable")) {
@@ -1893,15 +1920,19 @@ void VariablesWidget::plotVariables(const QModelIndex &index, qreal curveThickne
     // pPlotWindow is 0 or the plot's type is PLOTARRAY or PLOTARRAYPARAMETRIC
     // then create a new plot window.
     if (!pVariablesTreeItem->isMainArray() && (!pPlotWindow || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAY || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)) {
+      bool checkedState = pVariablesTreeItem->isChecked();
       MainWindow::instance()->getPlotWindowContainer()->addPlotWindow();
       pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
+      checkVariable(index, checkedState);
     }
     // if the variable is an array and
     // pPlotWindow is 0 or the plot's type is PLOT or PLOTPARAMETRIC
     // then create a new plot window.
     else if (pVariablesTreeItem->isMainArray() && (!pPlotWindow || pPlotWindow->getPlotType() == PlotWindow::PLOT || pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC)) {
+      bool checkedState = pVariablesTreeItem->isChecked();
       MainWindow::instance()->getPlotWindowContainer()->addArrayPlotWindow();
       pPlotWindow = MainWindow::instance()->getPlotWindowContainer()->getCurrentWindow();
+      checkVariable(index, checkedState);
     }
     // if still pPlotWindow is 0 then return.
     if (!pPlotWindow) {
@@ -2429,6 +2460,20 @@ void VariablesWidget::updateVisualization()
   mpTimeManager->updateTick();  //for real-time measurement
   visTime = mpTimeManager->getRealTime() - visTime;
   mpTimeManager->setRealTimeFactor(mpTimeManager->getHVisual() / visTime);
+}
+
+/*!
+ * \brief VariablesWidget::checkVariable
+ * \param index
+ */
+void VariablesWidget::checkVariable(const QModelIndex &index, bool checkState)
+{
+  /* When we add a new plotwindow then the checked variables are cleared based on the new plotwindow.
+   * So check the active variable again
+   */
+  bool state = mpVariablesTreeModel->blockSignals(true);
+  mpVariablesTreeModel->setData(index, checkState ? Qt::Checked : Qt::Unchecked, Qt::CheckStateRole);
+  mpVariablesTreeModel->blockSignals(state);
 }
 
 /*!

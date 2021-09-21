@@ -92,8 +92,8 @@ public:
     setProfiling("none");
     setCPUTime(false);
     setEnableAllWarnings(true);
-    setReconcile(false);
-    setDataReconciliationInputFile("");
+    setEnableDataReconciliation(false);
+    setDataReconciliationCorrelationMatrixInputFile("");
     setDataReconciliationEpsilon("");
     setLogStreams(QStringList() << "LOG_STATS");
     setAdditionalSimulationFlags("");
@@ -204,10 +204,12 @@ public:
   bool getCPUTime() {return mCPUTime;}
   void setEnableAllWarnings(bool enableAllWarnings) {mEnableAllWarnings = enableAllWarnings;}
   bool getEnableAllWarnings() {return mEnableAllWarnings;}
-  void setReconcile(bool reconcile) {mReconcile = reconcile;}
-  bool getReconcile() {return mReconcile;}
-  void setDataReconciliationInputFile(QString dataReconciliationInputFile) {mDataReconciliationInputFile = dataReconciliationInputFile;}
-  QString getDataReconciliationInputFile() {return mDataReconciliationInputFile;}
+  void setEnableDataReconciliation(bool dataReconciliation) {mEnableDataReconciliation = dataReconciliation;}
+  bool getEnableDataReconciliation() {return mEnableDataReconciliation;}
+  void setDataReconciliationMeasurementInputFile(QString dataReconciliationMeasurementInputFile) {mDataReconciliationMeasurementInputFile = dataReconciliationMeasurementInputFile;}
+  QString getDataReconciliationMeasurementInputFile() {return mDataReconciliationMeasurementInputFile;}
+  void setDataReconciliationCorrelationMatrixInputFile(QString dataReconciliationCorrelationMatrixInputFile) {mDataReconciliationCorrelationMatrixInputFile = dataReconciliationCorrelationMatrixInputFile;}
+  QString getDataReconciliationCorrelationMatrixInputFile() {return mDataReconciliationCorrelationMatrixInputFile;}
   void setDataReconciliationEpsilon(QString dataReconciliationEpsilon) {mDataReconciliationEpsilon = dataReconciliationEpsilon;}
   QString getDataReconciliationEpsilon() {return mDataReconciliationEpsilon;}
   void setLogStreams(QStringList logStreams) {mLogStreams = logStreams;}
@@ -294,8 +296,10 @@ private:
   QString mProfiling;
   bool mCPUTime;
   bool mEnableAllWarnings;
-  bool mReconcile;
-  QString mDataReconciliationInputFile;
+  bool mEnableDataReconciliation;
+  QString mDataReconciliationAlgorithm;
+  QString mDataReconciliationMeasurementInputFile;
+  QString mDataReconciliationCorrelationMatrixInputFile;
   QString mDataReconciliationEpsilon;
   QStringList mLogStreams;
   QString mAdditionalSimulationFlags;

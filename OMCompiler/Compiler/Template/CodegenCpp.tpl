@@ -1040,7 +1040,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
          break;
        >>
        case ("sparse") then
-       'throw ModelicaSimulationError(MATH_FUNCTION,"Dense matrix is not activated");'
+       <<
+       case <%i1%>:
+         throw ModelicaSimulationError(MATH_FUNCTION, "Dense matrix is not activated");'
+         break;
+       >>
        else "A matrix type is not supported"
        )
        ;separator="\n")
@@ -1052,14 +1056,17 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
        match jacobianMatrix case JAC_MATRIX(matrixName=name) then
        match type
        case ("dense") then
-       'throw ModelicaSimulationError(MATH_FUNCTION,"Sparse matrix is not activated");'
+       <<
+       case <%i1%>:
+         throw ModelicaSimulationError(MATH_FUNCTION, "Sparse matrix is not activated");
+         break;
+       >>
        case ("sparse") then
        <<
        case <%i1%>:
          return get<%name%>Jacobian();
          break;
        >>
-
        else "A matrix type is not supported"
        )
        ;separator="\n")
@@ -2847,12 +2854,10 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
     <%externfunctionHeaderDefinition(functions)%>
   }
 
-  Functions::Functions(double& simTime, double* z, double* zDot, bool& initial, bool& terminate)
-      : _simTime(simTime)
-      , __z(z)
-      , __zDot(zDot)
-      , _initial(initial)
-      , _terminate(terminate)
+  Functions::Functions(double& simTime, bool& initial, bool& terminate)
+    : _simTime(simTime)
+    , _initial(initial)
+    , _terminate(terminate)
   {
     <%literals |> literal hasindex i0 fromindex 0 => literalExpConstImpl(literal,i0) ; separator="\n";empty%>
   }
@@ -2863,8 +2868,8 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
 
   void Functions::Assert(bool cond, string msg)
   {
-    if(!cond)
-     throw ModelicaSimulationError(MODEL_EQ_SYSTEM,msg);
+    if (!cond)
+      throw ModelicaSimulationError(MODEL_EQ_SYSTEM,msg);
   }
 
   <%functionBodies(functions, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
@@ -2925,23 +2930,21 @@ case SIMCODE(modelInfo=MODELINFO(__)) then
   class Functions
   {
   public:
-    Functions(double& simTime, double* z, double* zDot, bool& initial, bool& terminate);
+    Functions(double& simTime, bool& initial, bool& terminate);
     ~Functions();
     //Modelica functions
-    <%functionHeaderBodies2(functions,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
+    <%functionHeaderBodies2(functions, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
 
-    void Assert(bool cond,string msg);
+    void Assert(bool cond, string msg);
 
     //Literals
     <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
   private:
     //Function return variables
-    <%functionHeaderBodies3(functions,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%>
+    <%functionHeaderBodies3(functions, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%>
     double& _simTime;
     bool& _terminate;
     bool& _initial;
-    double* __z;
-    double* __zDot;
     /*extraFuncs*/
     <%extraFuncsDecl%>
   };
@@ -3492,7 +3495,7 @@ match simCode
 
         //Todo: reindex all arrays removed  // arrayReindex(modelInfo,useFlatArrayNotation)
 
-        _functions = new Functions(_simTime,__z,__zDot,_initial,_terminate);
+        _functions = new Functions(_simTime, _initial, _terminate);
         >>
 
 end generateSimulationCppConstructorContent;
@@ -3793,25 +3796,19 @@ let &help = buffer ""
 
   ;separator="\n")
 
- let bvector =  (ls.beqs |> exp hasindex i0 fromindex 1=>
-     let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-     match exp
-   case e as RCONST(__) then
-   <<
-   //<%preExp%>__b(<%i0%>)=<%expPart%>;
-   >>
-   else
-
-  '<%preExp%>__b(<%i0%>)=<%expPart%>;'
+  let bvector = (ls.beqs |> exp hasindex i0 fromindex 1 =>
+    let &preExp = buffer "" /*BUFD*/
+    let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+    <<
+    <%preExp%>__b(<%i0%>) = <%expPart%>;
+    >>
   ;separator="\n")
-
   <<
   void <%modelname%>Algloop<%ls.index%>::evaluate()
   {
-      <%varDecls%>
-      <%Amatrix%>
-      <%bvector%>
+    <%varDecls%>
+    <%Amatrix%>
+    <%bvector%>
   }
   >>
 end updateAlgloop;
@@ -4350,29 +4347,19 @@ template functionBodyRecordConstructor(Function fn,SimCode simCode ,Text& extraF
 ::=
 match fn
 case RECORD_CONSTRUCTOR(__) then
-  //let()= System.tmpTickReset(1)
   let &varDecls = buffer "" /*BUFD*/
   let fname = underscorePath(name)
   let retType = '<%fname%>Type'
-  let retVar = tempDecl(retType, &varDecls /*BUFD*/)
-  let structType = '<%fname%>Type'
-  let structVar = tempDecl(structType, &varDecls /*BUFD*/)
 
   <<
-  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)%> <%crefStr(name)%>' ;separator=", "%><%if funArgs then "," else ""%><%retType%>& output )
+  void Functions::<%fname%>(<%funArgs |> var as  VARIABLE(__) => '<%varType1(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)%> <%crefStr(name)%>' ;separator=", "%><%if funArgs then ", " else ""%><%retType%>& output)
   {
-
+    //functionBodyRecordConstructor
     <%funArgs |> VARIABLE(__) => '(output.<%crefStr(name)%>) = (<%crefStr(name)%>);' ;separator="\n"%>
-    //output = <%structVar%>;
-  //return <%structVar%>;
   }
-
-
 
   >>
 end functionBodyRecordConstructor;
-
-
 
 template functionHeaderRegularFunction2(Function fn,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
@@ -4388,22 +4375,22 @@ case FUNCTION(outVars=_) then
   <<
   /* functionHeaderRegularFunction2 */
   <%functionTemplates(functionArguments)%>
-  void /*<%fname%>RetType*/ <%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if functionArguments then "," else ""%> <%fname%>RetType& output);
+  void <%fname%>(<%functionArguments |> var => funArgDefinition(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if functionArguments then "," else ""%> <%fname%>RetType& output);
   >>
 case EXTERNAL_FUNCTION(outVars=var::_) then
   let fname = underscorePath(name)
   <<
   /* functionHeaderRegularFunction2 */
-  void /*<%fname%>RetType*/ <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then "," else ""%> <%fname%>RetType& output);
+  void <%fname%>(<%funArgs |> var => funArgDefinition(var, simCode, &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then ", " else ""%><%fname%>RetType& output);
   >>
 case EXTERNAL_FUNCTION(outVars={}) then
   let fname = underscorePath(name)
   <<
-  void <%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%>);
+  void <%fname%>(<%funArgs |> var => funArgDefinition(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%>);
   >>
 end functionHeaderRegularFunction2;
 
-template functionHeaderRegularFunction3(Function fn,SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template functionHeaderRegularFunction3(Function fn, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
 ::=
 match fn
 case FUNCTION(outVars={}) then ""
@@ -4455,17 +4442,9 @@ case FUNCTION(__) then
         varOutputTuple(fn, var,i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       ;separator="\n"; empty /* increase the counter! */
      )
-/* previous
-  <%outVarAssign%>
-    return <%if outVars then '_<%fname%>' %>;
-  return <%if outVars then '<%outVarAssign%>' %>
-*/
-
-  //let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  //if outvars missing
   <%functionTemplates(functionArguments)%>
-  void /*<%retType%>*/ Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if functionArguments then if outVars then "," else ""%><%if outVars then '<%retType%>& output' %> )
+  void Functions::<%fname%>(<%functionArguments |> var => funArgDefinition(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if functionArguments then if outVars then ", " else ""%><%if outVars then '<%retType%>& output'%>)
   {
     //functionBodyRegularFunction
     <%(functionArguments |> var => match var case FUNCTION_PTR(name=fnptrName) then 'typedef double <%fnptrName%>RetType;' ;separator="\n")%>
@@ -4479,20 +4458,14 @@ case FUNCTION(__) then
     }
     while(false);
     <%outVarAssign%>
-    <%if outVars then '/*output = _<%fname%>;*/' %>
   }
 
   <% if inFunc then
   <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
-    <%functionArguments |> var => '<%funArgDefinition2(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;' ;separator="\n"%>
+    <%functionArguments |> var => '<%funArgDefinition2(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;' ;separator="\n"%>
     <%if outVars then '<%retType%> out;'%>
-
-    //MMC_TRY_TOP()
-
-
-
     return 0;
   }
   >>
@@ -4558,7 +4531,7 @@ case efn as EXTERNAL_FUNCTION(extArgs=extArgs) then
 
   let fnBody =
   <<
-  void /*<%retType%>*/ Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then "," else ""%> <%if retVar then '<%retType%>& output' %>)
+  void Functions::<%fname%>(<%funArgs |> var => funArgDefinition(var, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation) ;separator=", "%><%if funArgs then if outVars then ", " else ""%><%if retVar then '<%retType%>& output'%>)
   {
     /* functionBodyExternalFunction: varDecls */
     /*1*/
@@ -5047,26 +5020,19 @@ end extArgF77;
 
 
 template varOutput(Function fn, Variable var, Integer ix, Text &varDecls, Text &varInits, Text &varCopy, Text &varAssign, SimCode simCode,
-                   Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
+                   Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
  "Generates code to copy result value from a function to dest."
 ::=
 match fn
 case FUNCTION(__)
 case EXTERNAL_FUNCTION(__) then
- let fname = underscorePath(name)
 match var
 case var as VARIABLE(__) then
-  let marker = '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
-  let &varInits += '/* varOutput varInits(<%marker%>) */ <%\n%>'
-  //let &varAssign += '// varOutput varAssign(<%marker%>) <%\n%>'
-
   if instDims then
-    let &varAssign += /*_<%fname%>*/'output.assign(<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>);<%\n%>'
-    //let &varAssign += '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
+    let &varAssign += 'output.assign(<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>);<%\n%>'
     ""
   else
-    let &varAssign += /*_<%fname%>*/ 'output  = <%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
-    //let &varAssign += '<%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
+    let &varAssign += 'output = <%contextCref(var.name,contextFunction,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>;<%\n%>'
     ""
   case var as FUNCTION_PTR(__) then
     let &varAssign += 'ToDo: Function Ptr assign'
@@ -6143,6 +6109,15 @@ template createAlgloopVarAttributes(SimVar var, Text &preExp, Text &varDecls, Si
     case SIMVAR(nominalValue=SOME(exp)) then
       let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
       '<%expPart%>'
+    // fallback for state derivatives lacking nominal value: use nominal value of state
+    case SIMVAR(varKind = STATE_DER(), name = CREF_QUAL(componentRef = stateCref)) then
+      match cref2simvar(stateCref, simCode)
+      case SIMVAR(nominalValue=SOME(exp)) then
+        let expPart = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
+        '<%expPart%>'
+      else
+        '1.0'
+      end match
     else
       '1.0'
 
@@ -6335,10 +6310,10 @@ match  Config.simCodeTarget()
                {
 
                  const output_int_vars_t& outputIntVars = _reader->getIntOutVars();
-                 const output_real_vars_t&  outputRealVars= _reader->getRealOutVars();
+                 const output_real_vars_t& outputRealVars = _reader->getRealOutVars();
                  const output_bool_vars_t& outputBoolVars = _reader->getBoolOutVars();
                  const output_der_vars_t& outputDerVars = _reader->getDerOutVars();
-                 const output_res_vars_t& outputResVars= _reader->getResOutVars();;
+                 const output_res_vars_t& outputResVars = _reader->getResOutVars();
 
 
                          //Write head line
@@ -7104,7 +7079,7 @@ end DefaultImplementationCode;
 */
 template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
-  let nominalVars = stateVars |> SIMVAR(__) hasindex i0 =>
+  let nominalVars = stateVars |> SIMVAR(index = i) =>
         match nominalValue
         case SOME(val)
         then
@@ -7112,13 +7087,13 @@ template getNominalStateValues(list<SimVar> stateVars,SimCode simCode, Text& ext
           let &varDecls = buffer "" /*BUFD*/
           let value = '<%daeExp(val, contextOther, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>'
           <<
-           <%varDecls%>
-           <%preExp%>
-           z[<%i0%>]=<%value%>;
+          <%varDecls%>
+          <%preExp%>
+          z[<%i%>] = <%value%>;
           >>
         else
           <<
-           z[<%i0%>] = 1.0;
+          z[<%i%>] = 1.0;
           >>
        ;separator="\n"
 <<
@@ -13067,7 +13042,6 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let &preExp = buffer "" /*BUFD*/
     let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
-
     <%preExp%>
     >>
   case STMT_ASSIGN(exp1=CREF(ty = T_FUNCTION_REFERENCE_VAR(__)))
@@ -13076,7 +13050,6 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let varPart = daeExpCref(true, exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
-
     <%preExp%>
     <%varPart%> = (modelica_fnptr) <%expPart%>;
     >>
@@ -13085,7 +13058,6 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let &preExp = buffer ""
     let rec = daeExp(exp, context, &preExp, &varDecls, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
-
     <%preExp%>
     <% varLst |> var as TYPES_VAR(__) =>
       let varNameStr = crefStr(makeUntypedCrefIdent(var.name))
@@ -13102,7 +13074,6 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let &preExp = buffer ""
     let rec = daeExp(exp, context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
-
     <%preExp%>
     <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
       let re = daeExp(listGet(expLst,i1), context, &preExp, &varDecls,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
@@ -13115,10 +13086,8 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let varPart = daeExpCref(true, exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
-
     <%preExp%>
-    <%varPart%> = <%expPart%> /*stmtAssign*/;
-
+    <%varPart%> = <%expPart%>;
     >>
   case STMT_ASSIGN(exp1=exp1 as ASUB(__),exp=val) then
     (match expTypeFromExpShort(exp)
@@ -13130,7 +13099,6 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
         let idx1 = daeExp(idx, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         let val1 = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         <<
-
         <%preExp%>
         arrayUpdate(<%arr1%>,<%idx1%>,<%val1%>);
         >>)
@@ -13140,7 +13108,6 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
         let varPart = daeExpAsub(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         let expPart = daeExp(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
         <<
-
         <%preExp%>
         <%varPart%> = <%expPart%>;
         >>
@@ -13150,7 +13117,6 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls, SimC
     let expPart1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     let expPart2 = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
     <<
-    /*assign8*/
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
     >>
@@ -13336,7 +13302,6 @@ case STMT_NORETCALL(__) then
   //No retcall
   <%preExp%>
   <%expPart%>;
-    //No retcall
   >>
 end algStmtNoretcall;
 

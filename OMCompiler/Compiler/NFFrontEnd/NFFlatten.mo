@@ -377,8 +377,7 @@ function deleteComponent
 protected
   ComponentRef cref;
 algorithm
-  cref := ComponentRef.prefixCref(node, Type.UNKNOWN(), {},
-    ComponentRef.stripSubscriptsAll(prefix));
+  cref := ComponentRef.prefixCref(node, Type.UNKNOWN(), {}, prefix);
   UnorderedSet.add(cref, deletedVars);
 end deleteComponent;
 
@@ -1579,7 +1578,7 @@ protected
   ComponentRef cr = cref;
   InstNode node;
 algorithm
-  cr := ComponentRef.stripSubscriptsAll(cref);
+  cr := ComponentRef.stripSubscripts(cref);
 
   while ComponentRef.isCref(cr) loop
     node := ComponentRef.node(cr);
@@ -1591,7 +1590,7 @@ algorithm
       end if;
     end if;
 
-    cr := ComponentRef.rest(cr);
+    cr := ComponentRef.stripSubscripts(ComponentRef.rest(cr));
   end while;
 
   res := false;

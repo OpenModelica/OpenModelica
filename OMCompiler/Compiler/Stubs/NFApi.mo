@@ -60,5 +60,11 @@ function mkFullyQual
   output Absyn.Path qualPath = pathToQualify;
 end mkFullyQual;
 
+function getInheritedClasses
+  input Absyn.Path classPath;
+  input Absyn.Program program;
+  output list<Absyn.Path> extendsPaths;
+end getInheritedClasses;
+
   annotation(__OpenModelica_Interface="backend");
 end NFApi;

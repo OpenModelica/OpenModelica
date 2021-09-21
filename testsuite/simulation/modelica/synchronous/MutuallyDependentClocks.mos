@@ -10,13 +10,16 @@ setCommandLineOptions("+d=dumpSynchronous"); getErrorString();
 loadString("
 model MutuallyDependentClocks
   Clock c = Clock(0.1);
-  Clock cs = subSample(c, 5); // c is parent of cs
-  Real x, y, z, w;
+  Clock cf = superSample(c, 5); // c is parent of faster cf
+  Clock cs = subSample(c, 5);   // c is parent of slower cs
+  Real u, v, w, x, y, z;
 equation
-  x = sample(time, c);
+  v = sample(time, c);
+  w = sample(time, cf);
+  x = subSample(w, 5);   // cf becomes parent of c
   y = sample(time, cs);
   z = superSample(y, 5); // cs becomes parent of c
-  w = x + z;
+  u = v + x + z;
 end MutuallyDependentClocks;
 "); getErrorString();
 
@@ -30,16 +33,21 @@ translateModel(MutuallyDependentClocks); getErrorString();
 // ""
 // "class MutuallyDependentClocks
 //   Clock c = Clock(0.1);
+//   Clock cf = superSample(c, 5);
 //   Clock cs = subSample(c, 5);
+//   Real u;
+//   Real v;
+//   Real w;
 //   Real x;
 //   Real y;
 //   Real z;
-//   Real w;
 // equation
-//   x = sample(time, c);
+//   v = sample(time, c);
+//   w = sample(time, cf);
+//   x = subSample(w, 5);
 //   y = sample(time, cs);
 //   z = superSample(y, 5);
-//   w = x + z;
+//   u = v + x + z;
 // end MutuallyDependentClocks;
 // "
 // ""
@@ -47,31 +55,11 @@ translateModel(MutuallyDependentClocks); getErrorString();
 //
 //
 // ########################################
-// clock partitioning (2 partitions)
+// clock partitioning (3 partitions)
 // ########################################
 //
 //
 // clocked partition(1)
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: w:VARIABLE()  type: Real
-// 2: z:VARIABLE()  type: Real
-// 3: x:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = $getPart(time)   [dynamic |0|0|0|0|]
-// 2/2 (1): z = $getPart(y)   [dynamic |0|0|0|0|]
-// 3/3 (1): w = x + z   [dynamic |0|0|0|0|]
-//
-//
-// no matching
-//
-//
-// clocked partition(2)
 // ========================================
 //
 // Variables (1)
@@ -87,46 +75,65 @@ translateModel(MutuallyDependentClocks); getErrorString();
 // no matching
 //
 //
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: w:VARIABLE()  type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): w = $getPart(time)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: z:VARIABLE()  type: Real
+// 2: x:VARIABLE()  type: Real
+// 3: v:VARIABLE()  type: Real
+// 4: u:VARIABLE()  type: Real
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): v = $getPart(time)   [dynamic |0|0|0|0|]
+// 2/2 (1): x = $getPart(w)   [dynamic |0|0|0|0|]
+// 3/3 (1): z = $getPart(y)   [dynamic |0|0|0|0|]
+// 4/4 (1): u = v + x + z   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
 //
 // Base clocks (1)
 // ========================================
-// 1: Clock(0.1)[2]
+// 1: Clock(0.1)[3]
 //
 //
-// Sub clocks (2)
+// Sub clocks (3)
 // ========================================
-// 1: factor(1/1) shift(0/1)  event(false)
-// 2: factor(5/1) shift(0/1)  event(false)
+// 1: factor(5/1) shift(0/1)  event(false)
+// 2: factor(1/5) shift(0/1)  event(false)
+// 3: factor(1/1) shift(0/1)  event(false)
 //
 // synchronous features post-phase: synchronousFeatures
 //
 //
 // ########################################
-// clock partitioning (2 partitions)
+// clock partitioning (3 partitions)
 // ########################################
 //
 //
 // clocked partition(1)
-// ========================================
-//
-// Variables (3)
-// ========================================
-// 1: w:VARIABLE()  type: Real
-// 2: z:VARIABLE()  type: Real
-// 3: x:VARIABLE()  type: Real
-//
-//
-// Equations (3, 3)
-// ========================================
-// 1/1 (1): x = $getPart(time)   [dynamic |0|0|0|0|]
-// 2/2 (1): z = $getPart(y)   [dynamic |0|0|0|0|]
-// 3/3 (1): w = x + z   [dynamic |0|0|0|0|]
-//
-//
-// no matching
-//
-//
-// clocked partition(2)
 // ========================================
 //
 // Variables (1)
@@ -142,16 +149,55 @@ translateModel(MutuallyDependentClocks); getErrorString();
 // no matching
 //
 //
+// clocked partition(2)
+// ========================================
+//
+// Variables (1)
+// ========================================
+// 1: w:VARIABLE()  type: Real
+//
+//
+// Equations (1, 1)
+// ========================================
+// 1/1 (1): w = $getPart(time)   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
+// clocked partition(3)
+// ========================================
+//
+// Variables (4)
+// ========================================
+// 1: z:VARIABLE()  type: Real
+// 2: x:VARIABLE()  type: Real
+// 3: v:VARIABLE()  type: Real
+// 4: u:VARIABLE()  type: Real
+//
+//
+// Equations (4, 4)
+// ========================================
+// 1/1 (1): v = $getPart(time)   [dynamic |0|0|0|0|]
+// 2/2 (1): x = $getPart(w)   [dynamic |0|0|0|0|]
+// 3/3 (1): z = $getPart(y)   [dynamic |0|0|0|0|]
+// 4/4 (1): u = v + x + z   [dynamic |0|0|0|0|]
+//
+//
+// no matching
+//
+//
 //
 // Base clocks (1)
 // ========================================
-// 1: Clock(0.1)[2]
+// 1: Clock(0.1)[3]
 //
 //
-// Sub clocks (2)
+// Sub clocks (3)
 // ========================================
-// 1: factor(1/1) shift(0/1)  event(false)
-// 2: factor(5/1) shift(0/1)  event(false)
+// 1: factor(5/1) shift(0/1)  event(false)
+// 2: factor(1/5) shift(0/1)  event(false)
+// 3: factor(1/1) shift(0/1)  event(false)
 //
 // true
 // ""

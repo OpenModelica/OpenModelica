@@ -6599,5 +6599,19 @@ algorithm
   callExp := Absyn.Exp.CALL(name, Absyn.FunctionArgs.FUNCTIONARGS(posArgs, namedArgs), {});
 end makeCall;
 
+public function pathReplaceFirst
+  "Replaces the first identifier of a path with another path. Ex:
+    pathReplaceFirst(A.B.C, X.Y.Z) => X.Y.Z.B.C"
+  input Absyn.Path path;
+  input Absyn.Path prefix;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match path
+    case Absyn.Path.IDENT() then prefix;
+    case Absyn.Path.QUALIFIED() then joinPaths(prefix, path.path);
+    case Absyn.Path.FULLYQUALIFIED() then Absyn.Path.FULLYQUALIFIED(pathReplaceFirst(path.path, prefix));
+  end match;
+end pathReplaceFirst;
+
 annotation(__OpenModelica_Interface="frontend");
 end AbsynUtil;

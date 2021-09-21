@@ -27,5 +27,17 @@ public:
   virtual void load(string) = 0;
   virtual void setContinueOnError(bool) = 0;
   virtual bool getContinueOnError() = 0;
+
+  /// Global simulation settings
+  virtual void setGlobalSettings(IGlobalSettings *settings)
+  {
+    _globalSettings = settings;
+  }
+  virtual IGlobalSettings* getGlobalSettings()
+  {
+    return _globalSettings;
+  }
+protected:
+  IGlobalSettings *_globalSettings = NULL;
 };
  /** @} */ // end of coreSolver
