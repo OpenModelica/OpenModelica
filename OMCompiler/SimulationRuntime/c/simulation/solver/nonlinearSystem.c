@@ -396,6 +396,11 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
 
       if(nnz/(double)(size*size)<=nonlinearSparseSolverMaxDensity || size >= nonlinearSparseSolverMinSize)
       {
+        if(nnz < size)
+        {
+          infoStreamPrint(LOG_STDOUT, 0, "nonlinear system %d has too low density, only %d nnz with size %d", i, nnz, size);
+          assertStreamPrint(threadData, nnz >= size, "system singular?");
+        }
         data->simulationInfo->nlsMethod = NLS_KINSOL;
         infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver kinsol for nonlinear system %d,\nbecause density of %.2f remains under threshold of %.2f or size of %d exceeds threshold of %d.\nThe maximum density and the minimal system size for using sparse solvers can be specified\nusing the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.", i, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity, size, nonlinearSparseSolverMinSize);
       }
