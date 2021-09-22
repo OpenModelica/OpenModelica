@@ -2737,7 +2737,7 @@ algorithm
 
     case {Expression.REAL(r), Expression.STRING(format)}
       algorithm
-        str := System.sprintff(format, r);
+        str := System.sprintff("%" + format, r);
       then
         Expression.STRING(str);
 

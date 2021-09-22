@@ -15,7 +15,7 @@ model CevalString1
   constant String s6 = String(E.three, leftJustified = false, minimumLength = 7);
   constant String s7 = String(234.54);
   constant String s8 = String(945.2, minimumLength = 10);
-  constant String s9 = String(0.3412341234123412, format = "%.10g");
+  constant String s9 = String(0.3412341234123412, format = ".10g");
   constant String s10 = String(0.3412341234123412, significantDigits = 10);
 end CevalString1;
 
