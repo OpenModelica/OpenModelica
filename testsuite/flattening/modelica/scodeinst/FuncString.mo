@@ -13,8 +13,8 @@ model FuncString
   String s2 = String(E.one);
   String s3 = String(true);
   String s4 = String(1.0);
-  String s5 = String(1.0, significantDigits = 3);
-  String s6 = String(1.0, format = "-0.4g");
+  String s5 = String(1.234232, significantDigits = 3);
+  String s6 = String(1.2342342, format = "-0.4g");
   String s7 = String(1, leftJustified = false, minimumLength = 3);
 end FuncString;
 
@@ -24,8 +24,8 @@ end FuncString;
 //   String s2 = "one";
 //   String s3 = "true";
 //   String s4 = "1";
-//   String s5 = "1";
-//   String s6 = "-0.4g";
+//   String s5 = "1.23";
+//   String s6 = "1.234";
 //   String s7 = "  1";
 // end FuncString;
 // endResult
