@@ -206,7 +206,7 @@ pipeline {
           // }
           steps {
             script {
-              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build', '/opt/cmake-3.17.2/bin/cmake')
+              common.buildOMC_CMake('-DCMAKE_BUILD_TYPE=Release -DOMC_USE_CCACHE=OFF -DCMAKE_INSTALL_PREFIX=build -DSUNDIALS_BUILD_SHARED_LIBS=ON', '/opt/cmake-3.17.2/bin/cmake')
               sh "build/bin/omc --version"
             }
             stash name: 'omc-cmake-gcc', includes: 'build/**'
