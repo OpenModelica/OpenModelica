@@ -128,6 +128,10 @@ else() # No corba support requested. Use the stub file.
   target_sources(omcruntime PRIVATE corbaimpl_stub_omc.c)
 endif(OMC_USE_CORBA)
 
+# Install omcruntime. It is needed by bootstrapping tests.
+install(TARGETS omcruntime)
+
+
 
 # ######################################################################################################################
 # Library: omcbackendruntime
