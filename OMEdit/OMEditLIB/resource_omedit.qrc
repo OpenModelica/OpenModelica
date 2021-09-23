@@ -212,5 +212,6 @@
         <file>Resources/icons/completerClass.svg</file>
         <file>Resources/icons/completerAnnotation.svg</file>
         <file>Resources/icons/import-tlmmodel.svg</file>
+        <file>Resources/icons/auto_scale.svg</file>
     </qresource>
 </RCC>

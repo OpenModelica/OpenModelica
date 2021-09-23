@@ -81,7 +81,7 @@ void PlotWindow::setUpWidget()
   // set the plot title
   setTitle(tr("Plot by OpenModelica"));
   // set the plot grid
-  setGrid(true);
+  setGrid("simple");
 }
 
 void PlotWindow::initializePlot(QStringList arguments)
@@ -311,54 +311,30 @@ void PlotWindow::setupToolbar()
   }
   // Auto scale
   mpAutoScaleButton = new QToolButton(toolBar);
-  mpAutoScaleButton->setText(tr("Auto Scale"));
+  QString autoScale(tr("Auto Scale"));
+  mpAutoScaleButton->setText(autoScale);
+  mpAutoScaleButton->setToolTip(autoScale);
+  mpAutoScaleButton->setStatusTip(autoScale);
+  mpAutoScaleButton->setIcon(QIcon(":/Resources/icons/auto_scale.svg"));
   mpAutoScaleButton->setCheckable(true);
   connect(mpAutoScaleButton, SIGNAL(toggled(bool)), SLOT(setAutoScale(bool)));
   toolBar->addWidget(mpAutoScaleButton);
   toolBar->addSeparator();
   //Fit in View
   QToolButton *fitInViewButton = new QToolButton(toolBar);
-  fitInViewButton->setText(tr("Fit in View"));
+  QString fitInView(tr("Fit in View"));
+  fitInViewButton->setText(fitInView);
+  fitInViewButton->setToolTip(fitInView);
+  fitInViewButton->setStatusTip(fitInView);
+  fitInViewButton->setIcon(QIcon(":/Resources/icons/fit-to-diagram.svg"));
   connect(fitInViewButton, SIGNAL(clicked()), SLOT(fitInView()));
   toolBar->addWidget(fitInViewButton);
   toolBar->addSeparator();
-  //EXPORT
-  QToolButton *btnExport = new QToolButton(toolBar);
-  btnExport->setText(tr("Save"));
-  //btnExport->setToolButtonStyle(Qt::ToolButtonTextUnderIcon);
-  connect(btnExport, SIGNAL(clicked()), SLOT(exportDocument()));
-  toolBar->addWidget(btnExport);
-  toolBar->addSeparator();
-  //PRINT
-  QToolButton *btnPrint = new QToolButton(toolBar);
-  btnPrint->setText(tr("Print"));
-  connect(btnPrint, SIGNAL(clicked()), SLOT(printPlot()));
-  toolBar->addWidget(btnPrint);
-  toolBar->addSeparator();
   //GRID
-  mpGridButton = new QToolButton(toolBar);
-  mpGridButton->setText(tr("Grid"));
-  mpGridButton->setCheckable(true);
-  connect(mpGridButton, SIGNAL(toggled(bool)), SLOT(setGrid(bool)));
-  toolBar->addWidget(mpGridButton);
-  // Detailed grid
-  mpDetailedGridButton = new QToolButton(toolBar);
-  mpDetailedGridButton->setText(tr("Detailed Grid"));
-  mpDetailedGridButton->setCheckable(true);
-  connect(mpDetailedGridButton, SIGNAL(toggled(bool)), SLOT(setDetailedGrid(bool)));
-  toolBar->addWidget(mpDetailedGridButton);
-  // No Grid Button
-  mpNoGridButton = new QToolButton(toolBar);
-  mpNoGridButton->setText(tr("No Grid"));
-  mpNoGridButton->setCheckable(true);
-  connect(mpNoGridButton, SIGNAL(toggled(bool)), SLOT(setNoGrid(bool)));
-  toolBar->addWidget(mpNoGridButton);
-  // Add grid buttons to buttons group
-  QButtonGroup *pGridButtonGroup = new QButtonGroup;
-  pGridButtonGroup->setExclusive(true);
-  pGridButtonGroup->addButton(mpGridButton);
-  pGridButtonGroup->addButton(mpDetailedGridButton);
-  pGridButtonGroup->addButton(mpNoGridButton);
+  mpGridComboBox = new QComboBox;
+  mpGridComboBox->addItems(QStringList() << tr("Grid") << tr("Detailed Grid") << tr("No Grid"));
+  connect(mpGridComboBox, SIGNAL(currentIndexChanged(int)), SLOT(setGrid(int)));
+  toolBar->addWidget(mpGridComboBox);
   toolBar->addSeparator();
   //LOG x LOG y
   mpLogXCheckBox = new QCheckBox(tr("Log X"), this);
@@ -371,9 +347,33 @@ void PlotWindow::setupToolbar()
   toolBar->addSeparator();
   // setup
   mpSetupButton = new QToolButton(toolBar);
-  mpSetupButton->setText(tr("Setup"));
+  QString setup(tr("Setup"));
+  mpSetupButton->setText(setup);
+  mpSetupButton->setToolTip(setup);
+  mpSetupButton->setStatusTip(setup);
+  mpSetupButton->setIcon(QIcon(":/Resources/icons/options.svg"));
   connect(mpSetupButton, SIGNAL(clicked()), SLOT(showSetupDialog()));
   toolBar->addWidget(mpSetupButton);
+  toolBar->addSeparator();
+  //EXPORT
+  QToolButton *btnExport = new QToolButton(toolBar);
+  QString save(tr("Save"));
+  btnExport->setText(save);
+  btnExport->setToolTip(save);
+  btnExport->setStatusTip(save);
+  btnExport->setIcon(QIcon(":/Resources/icons/save.svg"));
+  connect(btnExport, SIGNAL(clicked()), SLOT(exportDocument()));
+  toolBar->addWidget(btnExport);
+  toolBar->addSeparator();
+  //PRINT
+  QToolButton *btnPrint = new QToolButton(toolBar);
+  QString print(tr("Print"));
+  btnPrint->setText(print);
+  btnPrint->setToolTip(print);
+  btnPrint->setStatusTip(print);
+  btnPrint->setIcon(QIcon(":/Resources/icons/print.svg"));
+  connect(btnPrint, SIGNAL(clicked()), SLOT(printPlot()));
+  toolBar->addWidget(btnPrint);
   // finally add the tool bar to the mainwindow
   addToolBar(toolBar);
 }
@@ -1422,11 +1422,11 @@ void PlotWindow::updatePlot()
 void PlotWindow::setGrid(QString grid)
 {
   if (grid.toLower().compare("detailed") == 0) {
-    setDetailedGrid(true);
+    mpGridComboBox->setCurrentIndex(1);
   } else if (grid.toLower().compare("none") == 0) {
-    setNoGrid(true);
+    mpGridComboBox->setCurrentIndex(2);
   } else {
-    setGrid(true);
+    mpGridComboBox->setCurrentIndex(0);
   }
 }
 
@@ -1757,37 +1757,30 @@ void PlotWindow::printPlot()
   }
 }
 
-void PlotWindow::setGrid(bool on)
+/*!
+ * \brief PlotWindow::setGrid
+ * Slot activated when grid combobox index is changed.
+ * Sets the grid type.
+ * \param index
+ */
+void PlotWindow::setGrid(int index)
 {
-  if (on)
-  {
-    mGridType = "simple";
-    mpPlot->getPlotGrid()->setGrid();
-    mpPlot->getPlotGrid()->attach(mpPlot);
-    mpGridButton->setChecked(true);
-  }
-  mpPlot->replot();
-}
-
-void PlotWindow::setDetailedGrid(bool on)
-{
-  if (on)
-  {
-    mGridType = "detailed";
-    mpPlot->getPlotGrid()->setDetailedGrid();
-    mpPlot->getPlotGrid()->attach(mpPlot);
-    mpDetailedGridButton->setChecked(true);
-  }
-  mpPlot->replot();
-}
-
-void PlotWindow::setNoGrid(bool on)
-{
-  if (on)
-  {
-    mGridType = "none";
-    mpPlot->getPlotGrid()->detach();
-    mpNoGridButton->setChecked(true);
+  switch (index) {
+    case 1:
+      mGridType = "detailed";
+      mpPlot->getPlotGrid()->setDetailedGrid();
+      mpPlot->getPlotGrid()->attach(mpPlot);
+      break;
+    case 2:
+      mGridType = "none";
+      mpPlot->getPlotGrid()->detach();
+      break;
+    case 0:
+    default:
+      mGridType = "simple";
+      mpPlot->getPlotGrid()->setGrid();
+      mpPlot->getPlotGrid()->attach(mpPlot);
+      break;
   }
   mpPlot->replot();
 }
