@@ -917,6 +917,13 @@ void OptionsDialog::readFMISettings()
       }
     }
   }
+  // read the solver for co-simulation
+  if (mpSettings->contains("FMIExport/solver")) {
+    int currentIndex = mpFMIPage->getSolverForCoSimulationComboBox()->findData(mpSettings->value("FMIExport/solver").toString());
+    if (currentIndex > -1) {
+      mpFMIPage->getSolverForCoSimulationComboBox()->setCurrentIndex(currentIndex);
+    }
+  }
   // read model description filter
   if (mpSettings->contains("FMIExport/ModelDescriptionFilter")) {
     int currentIndex = mpFMIPage->getModelDescriptionFiltersComboBox()->findText(mpSettings->value("FMIExport/ModelDescriptionFilter").toString());
@@ -1557,6 +1564,7 @@ void OptionsDialog::saveFMISettings()
     i++;
   }
   mpSettings->setValue("FMIExport/Platforms", platforms);
+  mpSettings->setValue("FMIExport/solver", mpFMIPage->getSolverForCoSimulationComboBox()->itemData(mpFMIPage->getSolverForCoSimulationComboBox()->currentIndex()).toString());
   mpSettings->setValue("FMIExport/ModelDescriptionFilter", mpFMIPage->getModelDescriptionFiltersComboBox()->currentText());
   mpSettings->setValue("FMIExport/IncludeSourceCode", mpFMIPage->getIncludeSourceCodeCheckBox()->isChecked());
   mpSettings->setValue("FMIExport/GenerateDebugSymbols", mpFMIPage->getGenerateDebugSymbolsCheckBox()->isChecked());
@@ -4957,9 +4965,9 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
     compilers << dir.entryList(nameFilters, QDir::Files | QDir::NoDotAndDotDot, QDir::Name);
   }
   mpPlatformsGroupBox = new QGroupBox(tr("Platforms"));
-  Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH\n"
-                                           "matching pattern \"*-*-*-*cc\"."));
+  Label *pPlatformNoteLabel = new Label(tr("Note: The list of platforms is created by searching for programs in the PATH matching pattern \"*-*-*-*cc\"."));
   mpLinkingComboBox = new QComboBox;
+  mpLinkingComboBox->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
   mpLinkingComboBox->addItem(tr("None"), "none");
   mpLinkingComboBox->addItem(tr("Dynamic"), "dynamic");
   mpLinkingComboBox->addItem(tr("Static"), "static");
@@ -4976,6 +4984,10 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
     pPlatformsLayout->addWidget(pCheckBox);
   }
   mpPlatformsGroupBox->setLayout(pPlatformsLayout);
+  // Solver for co-simulation
+  mpSolverForCoSimulationComboBox = new QComboBox;
+  mpSolverForCoSimulationComboBox->addItem(tr("Explicit Euler"), "");
+  mpSolverForCoSimulationComboBox->addItem(tr("CVODE"), "cvode");
   // Model description filters
   OMCInterface::getConfigFlagValidOptions_res fmiFilters = MainWindow::instance()->getOMCProxy()->getConfigFlagValidOptions("fmiFilter");
   mpModelDescriptionFiltersComboBox = new QComboBox;
@@ -5005,10 +5017,12 @@ FMIPage::FMIPage(OptionsDialog *pOptionsDialog)
   pExportLayout->addWidget(mpMoveFMUTextBox, 3, 1);
   pExportLayout->addWidget(mpBrowseFMUDirectoryButton, 3, 2);
   pExportLayout->addWidget(mpPlatformsGroupBox, 4, 0, 1, 3);
-  pExportLayout->addWidget(new Label(tr("Model Description Filters:")), 5, 0);
-  pExportLayout->addWidget(mpModelDescriptionFiltersComboBox, 5, 1);
-  pExportLayout->addWidget(mpIncludeSourceCodeCheckBox, 6, 0, 1, 3);
-  pExportLayout->addWidget(mpGenerateDebugSymbolsCheckBox, 7, 0, 1, 3);
+  pExportLayout->addWidget(new Label(tr("Solver for Co-Simulation:")), 5, 0);
+  pExportLayout->addWidget(mpSolverForCoSimulationComboBox, 5, 1, 1, 2);
+  pExportLayout->addWidget(new Label(tr("Model Description Filters:")), 6, 0);
+  pExportLayout->addWidget(mpModelDescriptionFiltersComboBox, 6, 1, 1, 2);
+  pExportLayout->addWidget(mpIncludeSourceCodeCheckBox, 7, 0, 1, 3);
+  pExportLayout->addWidget(mpGenerateDebugSymbolsCheckBox, 8, 0, 1, 3);
   mpExportGroupBox->setLayout(pExportLayout);
   // import groupbox
   mpImportGroupBox = new QGroupBox(tr("Import"));
@@ -5089,6 +5103,22 @@ QString FMIPage::getFMIExportType()
   } else {
     return "me_cs";
   }
+}
+
+/*!
+ * \brief FMIPage::getFMIFlags
+ * Returns the FMI flags.
+ * \return
+ */
+QString FMIPage::getFMIFlags()
+{
+  QStringList fmiFlags;
+  QString solver = mpSolverForCoSimulationComboBox->itemData(mpSolverForCoSimulationComboBox->currentIndex()).toString();
+  if (!solver.isEmpty()) {
+    fmiFlags.append(QString("s:%1").arg(solver));
+  }
+
+  return fmiFlags.join(",");
 }
 
 /*!
