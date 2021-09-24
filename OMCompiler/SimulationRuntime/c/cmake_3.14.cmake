@@ -65,22 +65,6 @@ endif(WIN32)
 
 install(TARGETS OpenModelicaRuntimeC)
 
-# ######################################################################################################################
-# Library: OpenModelicaFMIRuntimeC
-## This library is built as a static library and contains everything needed to run an OpenModelica FMU.
-## Therefore it has to include the functionality from the other libraries.
-## It is not complete yet. I have to see what needs to go in here.
-add_library(OpenModelicaFMIRuntimeC STATIC)
-add_library(omc::simrt::fmiruntime ALIAS OpenModelicaFMIRuntimeC)
-
-target_sources(OpenModelicaFMIRuntimeC PRIVATE ${OMC_SIMRT_FMI_SOURCES}
-                                               $<TARGET_OBJECTS:OpenModelicaRuntimeC>
-                                               $<TARGET_OBJECTS:omcmemory>)
-
-target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib)
-
-install(TARGETS OpenModelicaFMIRuntimeC)
-
 
 # ######################################################################################################################
 # Library: SimulationRuntimeC
@@ -114,6 +98,8 @@ target_link_libraries(SimulationRuntimeC PUBLIC omc::3rd::lis)
 # Fix me. Make an interface (header only library) out of 3rdParty/dgesv
 target_include_directories(SimulationRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
 
+# target_link_options(SimulationRuntimeC PRIVATE  -Wl,--no-undefined)
+
 install(TARGETS SimulationRuntimeC)
 
 
@@ -134,6 +120,56 @@ target_link_libraries(OptimizationRuntime PUBLIC omc::3rd::ipopt)
 
 
 install(TARGETS OptimizationRuntime)
+
+
+# ######################################################################################################################
+# Library: OpenModelicaFMIRuntimeC
+## This library is built as a static library and contains everything needed to run an OpenModelica FMU.
+## Therefore it has to include the functionality from the other libraries.
+## It is not complete yet. I have to see what needs to go in here.
+add_library(OpenModelicaFMIRuntimeC STATIC)
+add_library(omc::simrt::fmiruntime ALIAS OpenModelicaFMIRuntimeC)
+
+target_sources(OpenModelicaFMIRuntimeC PRIVATE  ${OMC_SIMRT_FMI_SOURCES}
+                                                ${OMC_SIMRT_GC_SOURCES}
+                                                ${OMC_SIMRT_UTIL_SOURCES}
+                                                ${OMC_SIMRT_META_SOURCES}
+                                                ${OMC_SIMRT_SIMULATION_SOURCES}
+                                                ${OMC_SIMRT_MATH_SUPPORT_SOURCES}
+                                                ${OMC_SIMRT_LINEARIZATION_SOURCES}
+                                                ${OMC_SIMRT_DATA_RECONCILIATION_SOURCES}
+                                                ${OMC_SIMRT_OPTIMIZATION_SOURCES})
+
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::config)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::omcgc)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::FMIL::expat)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::cvode)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::idas)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::kinsol)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::sunlinsolklu)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::sundials::sunlinsollapackdense)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::klu)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::amd)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::btf)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::colamd)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::umfpack)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::suitesparse::config)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::cminpack)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::cdaskr)
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::lis)
+
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::ipopt)
+
+
+target_link_libraries(OpenModelicaFMIRuntimeC PUBLIC omc::3rd::fmilib)
+target_include_directories(OpenModelicaFMIRuntimeC PRIVATE ${OMCompiler_SOURCE_DIR}/3rdParty/dgesv/include/)
+target_include_directories(OpenModelicaFMIRuntimeC PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+# target_compile_definitions(OpenModelicaFMIRuntimeC PRIVATE "-DOMC_MINIMAL_RUNTIME=1 -DOMC_FMI_RUNTIME=1")
+
+target_link_options(OpenModelicaFMIRuntimeC PRIVATE  -Wl,--no-undefined)
+
+install(TARGETS OpenModelicaFMIRuntimeC)
 
 
 # ######################################################################################################################
