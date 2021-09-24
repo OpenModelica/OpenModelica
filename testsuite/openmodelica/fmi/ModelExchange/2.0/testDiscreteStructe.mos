@@ -76,9 +76,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_FMU.c\" />
-//       <File name=\"./util/read_matlab4.c\" />
-//       <File name=\"./util/read_csv.c\" />
-//       <File name=\"./util/libcsv.c\" />
 //       <File name=\"gc/memory_pool.c\" />
 //       <File name=\"gc/omc_gc.c\" />
 //       <File name=\"./util/base_array.c\" />
