@@ -128,11 +128,8 @@ RUNTIMEUTIL_HEADERS = \
 ./util/omc_numbers.h \
 ./util/omc_spinlock.h \
 ./util/parallel_helper.h \
-./util/read_matlab4.c \
 ./util/read_matlab4.h \
-./util/read_csv.c \
 ./util/read_csv.h \
-./util/libcsv.c \
 ./util/libcsv.h \
 ./util/read_write.h \
 ./util/real_array.h \
