@@ -1384,7 +1384,7 @@ protected function dumpSparsePatternStatistics
 protected
   Integer maxDegree;
 algorithm
-  (_, maxDegree) := List.mapFold(sparsepatternT, findDegrees, 1);
+  (_, maxDegree) := List.mapFold(sparsepatternT, findDegrees, 0);
   print("analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+ String(nonZeroElements) + " maxNodeDegree: " + String(maxDegree) + " time : " + String(clock()) + "\n");
 end dumpSparsePatternStatistics;
 

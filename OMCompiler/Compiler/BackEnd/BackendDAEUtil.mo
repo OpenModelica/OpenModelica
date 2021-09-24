@@ -3551,6 +3551,7 @@ algorithm
       tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
       Boolean isInitial;
 
+    // inner variable
     case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
       equation
         cr = ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
@@ -3558,6 +3559,7 @@ algorithm
         res = adjacencyRowExp1withInput(varslst,p,pa,0);
       then (inExp,false,(vars,res,isInitial));
 
+    // iteration var with start value
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       equation
         (varslst, p) = BackendVariable.getVar(cr, vars);
@@ -3567,18 +3569,21 @@ algorithm
         res = adjacencyRowExp1withInput(varslst, p, res, 0);
       then (inExp, true, (vars, res, isInitial));
 
+    // iteration var without start value
     case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = adjacencyRowExp1withInput(varslst,p,pa,0);
       then (inExp, true, (vars, res, isInitial));
 
+    // state derivative (in backend)
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = adjacencyRowExp1withInput(varslst,p,pa,1);
       then (inExp,false,(vars,res,isInitial));
 
+    // state derivative (in simcode)
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
@@ -3586,6 +3591,7 @@ algorithm
         res = adjacencyRowExp1withInput(varslst,p,pa,1);
       then (inExp,false,(vars,res,isInitial));
 
+    // CLOCKED state
     case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
       equation
         cr = ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);

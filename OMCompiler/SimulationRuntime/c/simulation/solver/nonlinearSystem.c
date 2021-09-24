@@ -354,20 +354,12 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
   NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo->nonlinearSystemData;
   struct dataSolver *solverData;
   struct dataMixedSolver *mixedSolverData;
+#if !defined(OMC_MINIMAL_RUNTIME)
+  int allPatternsAvailable = 1; // boolean, true if all systems have sparsity pattern, false otherwise
+#endif
 
   infoStreamPrint(LOG_NLS, 1, "initialize non-linear system solvers");
   infoStreamPrint(LOG_NLS, 0, "%ld non-linear systems", data->modelData->nNonLinearSystems);
-  if (data->simulationInfo->nlsLinearSolver == NLS_LS_DEFAULT) {
-#if !defined(OMC_MINIMAL_RUNTIME)
-    if (data->simulationInfo->nlsMethod == NLS_KINSOL) {
-      data->simulationInfo->nlsLinearSolver = NLS_LS_KLU;
-    } else {
-      data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
-    }
-#else
-    data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
-#endif
-  }
 
   for(i=0; i<data->modelData->nNonLinearSystems; ++i)
   {
@@ -389,19 +381,6 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       }
     }
 
-#if !defined(OMC_MINIMAL_RUNTIME)
-    if (nonlinsys[i].isPatternAvailable)
-    {
-      nnz = nonlinsys[i].sparsePattern->numberOfNoneZeros;
-
-      if(nnz/(double)(size*size)<=nonlinearSparseSolverMaxDensity || size >= nonlinearSparseSolverMinSize)
-      {
-        data->simulationInfo->nlsMethod = NLS_KINSOL;
-        infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver kinsol for nonlinear system %d,\nbecause density of %.2f remains under threshold of %.2f or size of %d exceeds threshold of %d.\nThe maximum density and the minimal system size for using sparse solvers can be specified\nusing the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.", i, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity, size, nonlinearSparseSolverMinSize);
-      }
-    }
-#endif
-
     /* allocate system data */
     nonlinsys[i].nlsx = (double*) malloc(size*sizeof(double));
     nonlinsys[i].nlsxExtrapolation = (double*) malloc(size*sizeof(double));
@@ -419,6 +398,11 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
     nonlinsys[i].initializeStaticNLSData(data, threadData, &nonlinsys[i]);
 
 #if !defined(OMC_MINIMAL_RUNTIME)
+    if (!nonlinsys[i].isPatternAvailable)
+      allPatternsAvailable = 0;
+#endif
+
+#if !defined(OMC_MINIMAL_RUNTIME)
     /* csv data call stats*/
     if (data->simulationInfo->nlsCsvInfomation)
     {
@@ -433,7 +417,41 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       }
     }
 #endif
+  }
 
+#if !defined(OMC_MINIMAL_RUNTIME)
+  if (allPatternsAvailable && data->simulationInfo->nlsMethod != NLS_KINSOL)
+  {
+    for(i=0; i<data->modelData->nNonLinearSystems; ++i)
+    {
+      size = nonlinsys[i].size;
+      nnz = nonlinsys[i].sparsePattern->numberOfNoneZeros;
+
+      if(nnz/(double)(size*size) < nonlinearSparseSolverMaxDensity || size >= nonlinearSparseSolverMinSize)
+      {
+        data->simulationInfo->nlsMethod = NLS_KINSOL;
+        infoStreamPrint(LOG_STDOUT, 0, "Using sparse solver kinsol for nonlinear system %d,\nbecause density of %.2f remains under threshold of %.2f or size of %d exceeds threshold of %d.\nThe maximum density and the minimal system size for using sparse solvers can be specified\nusing the runtime flags '<-nlsMaxDensity=value>' and '<-nlsMinSize=value>'.", i, nnz/(double)(size*size), nonlinearSparseSolverMaxDensity, size, nonlinearSparseSolverMinSize);
+      }
+    }
+  }
+#endif
+
+  if (data->simulationInfo->nlsLinearSolver == NLS_LS_DEFAULT) {
+#if !defined(OMC_MINIMAL_RUNTIME)
+    if (data->simulationInfo->nlsMethod == NLS_KINSOL) {
+      data->simulationInfo->nlsLinearSolver = NLS_LS_KLU;
+    } else {
+      data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
+    }
+#else
+    data->simulationInfo->nlsLinearSolver = NLS_LS_LAPACK;
+#endif
+  }
+
+
+  for(i=0; i<data->modelData->nNonLinearSystems; ++i)
+  {
+    size = nonlinsys[i].size;
     switch(data->simulationInfo->nlsMethod)
     {
 #if !defined(OMC_MINIMAL_RUNTIME)
@@ -470,15 +488,6 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       }
       nonlinsys[i].solverData = (void*) solverData;
       break;
-#endif
-    case NLS_HOMOTOPY:
-      if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
-        allocateHomotopyData(size-1, &nonlinsys[i].solverData);
-      } else {
-        allocateHomotopyData(size, &nonlinsys[i].solverData);
-      }
-      break;
-#if !defined(OMC_MINIMAL_RUNTIME)
     case NLS_MIXED:
       mixedSolverData = (struct dataMixedSolver*) malloc(sizeof(struct dataMixedSolver));
       if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
@@ -491,6 +500,13 @@ int initializeNonlinearSystems(DATA *data, threadData_t *threadData)
       nonlinsys[i].solverData = (void*) mixedSolverData;
       break;
 #endif
+    case NLS_HOMOTOPY:
+      if (nonlinsys[i].homotopySupport && (data->callback->useHomotopy == 2 || data->callback->useHomotopy == 3)) {
+        allocateHomotopyData(size-1, &nonlinsys[i].solverData);
+      } else {
+        allocateHomotopyData(size, &nonlinsys[i].solverData);
+      }
+      break;
     default:
       throwStreamPrint(threadData, "unrecognized nonlinear solver");
     }
