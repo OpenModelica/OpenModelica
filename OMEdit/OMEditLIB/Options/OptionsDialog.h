@@ -934,11 +934,13 @@ public:
   QString getFMIExportVersion();
   void setFMIExportType(QString type);
   QString getFMIExportType();
+  QString getFMIFlags();
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
   QLineEdit* getMoveFMUTextBox() {return mpMoveFMUTextBox;}
   QGroupBox* getPlatformsGroupBox() {return mpPlatformsGroupBox;}
   QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
   QComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
+  QComboBox *getSolverForCoSimulationComboBox() const {return mpSolverForCoSimulationComboBox;}
   QCheckBox *getIncludeSourceCodeCheckBox() const {return mpIncludeSourceCodeCheckBox;}
   QCheckBox *getGenerateDebugSymbolsCheckBox() const {return mpGenerateDebugSymbolsCheckBox;}
   QCheckBox* getDeleteFMUDirectoryAndModelCheckBox() {return mpDeleteFMUDirectoryAndModelCheckBox;}
@@ -963,6 +965,7 @@ private:
   QPushButton *mpBrowseFMUDirectoryButton;
   QGroupBox *mpPlatformsGroupBox;
   QComboBox *mpLinkingComboBox;
+  QComboBox *mpSolverForCoSimulationComboBox;
   QComboBox *mpModelDescriptionFiltersComboBox;
   QCheckBox *mpIncludeSourceCodeCheckBox;
   QCheckBox *mpGenerateDebugSymbolsCheckBox;
