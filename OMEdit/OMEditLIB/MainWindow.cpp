@@ -948,6 +948,10 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
                                                           GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
                                                           Helper::scriptingKind, Helper::warningLevel));
   }
+  QString fmiFlags = OptionsDialog::instance()->getFMIPage()->getFMIFlags();
+  if (!fmiFlags.isEmpty()) {
+    mpOMCProxy->setCommandLineOptions(QString("--fmiFlags=%1").arg(fmiFlags));
+  }
   mpOMCProxy->setCommandLineOptions(QString("--fmiFilter=%1").arg(OptionsDialog::instance()->getFMIPage()->getModelDescriptionFiltersComboBox()->currentText()));
   mpOMCProxy->setCommandLineOptions(QString("--fmiSources=%1").arg(OptionsDialog::instance()->getFMIPage()->getIncludeSourceCodeCheckBox()->isChecked() ? "true" : "false"));
   // set the generate debug symbols flag
