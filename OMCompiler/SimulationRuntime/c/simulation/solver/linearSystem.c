@@ -208,9 +208,10 @@ int initializeLinearSystems(DATA *data, threadData_t *threadData)
         throwStreamPrint(threadData, "unrecognized sparse linear solver (%d)", data->simulationInfo->lssMethod);
       }
     }
-    if(linsys[i].useSparseSolver == 0) { /* Not an else-statement because there might not be a sparse linear solver available */
-    switch(data->simulationInfo->lsMethod)
+    if(linsys[i].useSparseSolver == 0) /* Not an else-statement because there might not be a sparse linear solver available */
     {
+      switch(data->simulationInfo->lsMethod)
+      {
       case LS_LAPACK:
         linsys[i].setAElement = setAElement;
         linsys[i].setBElement = setBElement;
@@ -510,7 +511,7 @@ int freeLinearSystems(DATA *data, threadData_t *threadData)
         break;
 
       default:
-        throwStreamPrint(threadData, "unrecognized dense linear solver (data->simulationInfo->lsMethod)");
+        throwStreamPrint(threadData, "unrecognized dense linear solver (%d)", data->simulationInfo->lsMethod);
       }
     }
 

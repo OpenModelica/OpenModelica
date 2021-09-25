@@ -224,7 +224,7 @@ enum INIT_INIT_METHOD
 extern const char *INIT_METHOD_NAME[IIM_MAX];
 extern const char *INIT_METHOD_DESC[IIM_MAX];
 
-enum LINEAR_SOLVER
+typedef enum LINEAR_SOLVER
 {
   LS_NONE = 0,
 
@@ -240,11 +240,12 @@ enum LINEAR_SOLVER
   LS_DEFAULT,
 
   LS_MAX
-};
+} LINEAR_SOLVER;
+
 extern const char *LS_NAME[LS_MAX];
 extern const char *LS_DESC[LS_MAX];
 
-enum LINEAR_SPARSE_SOLVER
+typedef enum LINEAR_SPARSE_SOLVER
 {
   LSS_NONE = 0,
 
@@ -257,12 +258,12 @@ enum LINEAR_SPARSE_SOLVER
   LSS_KLU,
   LSS_UMFPACK,
   LSS_MAX
-};
+} LINEAR_SPARSE_SOLVER;
 
 extern const char *LSS_NAME[LSS_MAX];
 extern const char *LSS_DESC[LSS_MAX];
 
-enum NONLINEAR_SOLVER
+typedef enum NONLINEAR_SOLVER
 {
   NLS_NONE = 0,
 
@@ -280,12 +281,12 @@ enum NONLINEAR_SOLVER
   NLS_HOMOTOPY,
 
   NLS_MAX
-};
+} NONLINEAR_SOLVER;
 
 extern const char *NLS_NAME[NLS_MAX];
 extern const char *NLS_DESC[NLS_MAX];
 
-enum NEWTON_STRATEGY
+typedef enum NEWTON_STRATEGY
 {
   NEWTON_NONE = 0,
 
@@ -296,7 +297,7 @@ enum NEWTON_STRATEGY
   NEWTON_PURE,
 
   NEWTON_MAX
-};
+} NEWTON_STRATEGY;
 
 extern const char *NEWTONSTRATEGY_NAME[NEWTON_MAX];
 extern const char *NEWTONSTRATEGY_DESC[NEWTON_MAX];
@@ -343,7 +344,7 @@ extern const char *IDA_LS_METHOD_DESC[IDA_LS_MAX];
  *
  * Specify method to solve underlying non-linear systems.
  */
-enum NLS_LS
+typedef enum NLS_LS
 {
   NLS_LS_UNKNOWN = 0,
 
@@ -354,7 +355,7 @@ enum NLS_LS
   NLS_LS_KLU,
 
   NLS_LS_MAX
-};
+} NLS_LS;
 
 extern const char *NLS_LS_METHOD[NLS_LS_MAX];
 extern const char *NLS_LS_METHOD_DESC[NLS_LS_MAX];

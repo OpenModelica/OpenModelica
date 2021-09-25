@@ -626,14 +626,14 @@ typedef struct SIMULATION_INFO
   double loggingTimeRecord[2];         /* Time interval in which logging is active. Only used if useLoggingTime=1 */
   int useLoggingTime;                  /* 0 if logging is currently disabled, 1 if enabled */
 
-  int lsMethod;                        /* linear solver */
-  int lssMethod;                       /* linear sparse solver */
+  LINEAR_SOLVER lsMethod;              /* linear solver */
+  LINEAR_SPARSE_SOLVER lssMethod;      /* linear sparse solver */
   int mixedMethod;                     /* mixed solver */
 
-  int nlsMethod;                       /* nonlinear solver */
-  int newtonStrategy;                  /* newton damping strategy solver */
+  NONLINEAR_SOLVER  nlsMethod;         /* nonlinear solver */
+  NEWTON_STRATEGY newtonStrategy;      /* newton damping strategy solver */
   int nlsCsvInfomation;                /* = 1 csv files with detailed nonlinear solver process are generated */
-  int nlsLinearSolver;                 /* nls linear solver setting =1 totalpivot, =2 lapack, =3=klu */
+  NLS_LS nlsLinearSolver;              /* nls linear solver */
   /* current context evaluation, set by dassl and used for extrapolation
    * of next non-linear guess */
   int currentContext;

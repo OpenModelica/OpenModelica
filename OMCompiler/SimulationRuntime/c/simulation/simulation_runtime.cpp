@@ -935,13 +935,13 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     EXIT(1);
   }
 
-  readFlag(&data->simulationInfo->nlsMethod, NLS_MAX, omc_flagValue[FLAG_NLS], "-nls", NLS_NAME, NLS_DESC);
-  readFlag(&data->simulationInfo-> lsMethod,  LS_MAX, omc_flagValue[FLAG_LS ],  "-ls",  LS_NAME,  LS_DESC);
-  readFlag(&data->simulationInfo->lssMethod, LSS_MAX, omc_flagValue[FLAG_LSS], "-lss", LSS_NAME, LSS_DESC);
-  readFlag(&homBacktraceStrategy, HOM_BACK_STRAT_MAX, omc_flagValue[FLAG_HOMOTOPY_BACKTRACE_STRATEGY], "-homBacktraceStrategy", HOM_BACK_STRAT_NAME, HOM_BACK_STRAT_DESC);
-  readFlag(&data->simulationInfo->newtonStrategy, NEWTON_MAX, omc_flagValue[FLAG_NEWTON_STRATEGY], "-newton", NEWTONSTRATEGY_NAME, NEWTONSTRATEGY_DESC);
+  readFlag((int*)&data->simulationInfo->nlsMethod, NLS_MAX, omc_flagValue[FLAG_NLS], "-nls", NLS_NAME, NLS_DESC);
+  readFlag((int*)&data->simulationInfo-> lsMethod,  LS_MAX, omc_flagValue[FLAG_LS ],  "-ls",  LS_NAME,  LS_DESC);
+  readFlag((int*)&data->simulationInfo->lssMethod, LSS_MAX, omc_flagValue[FLAG_LSS], "-lss", LSS_NAME, LSS_DESC);
+  readFlag((int*)&homBacktraceStrategy, HOM_BACK_STRAT_MAX, omc_flagValue[FLAG_HOMOTOPY_BACKTRACE_STRATEGY], "-homBacktraceStrategy", HOM_BACK_STRAT_NAME, HOM_BACK_STRAT_DESC);
+  readFlag((int*)&data->simulationInfo->newtonStrategy, NEWTON_MAX, omc_flagValue[FLAG_NEWTON_STRATEGY], "-newton", NEWTONSTRATEGY_NAME, NEWTONSTRATEGY_DESC);
   data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
-  readFlag(&data->simulationInfo->nlsLinearSolver, NLS_LS_MAX, omc_flagValue[FLAG_NLS_LS], "-nlsLS", NLS_LS_METHOD, NLS_LS_METHOD_DESC);
+  readFlag((int*)&data->simulationInfo->nlsLinearSolver, NLS_LS_MAX, omc_flagValue[FLAG_NLS_LS], "-nlsLS", NLS_LS_METHOD, NLS_LS_METHOD_DESC);
 
   if(omc_flag[FLAG_HOMOTOPY_ADAPT_BEND]) {
     homAdaptBend = atof(omc_flagValue[FLAG_HOMOTOPY_ADAPT_BEND]);
