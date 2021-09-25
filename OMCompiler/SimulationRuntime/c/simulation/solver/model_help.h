@@ -207,7 +207,7 @@ static inline void relationhysteresis(DATA* data, modelica_boolean* res, double 
 
 extern int measure_time_flag;
 
-void setContext(DATA* data, double* currentTime, int currentContext);
+void setContext(DATA* data, double* currentTime, EVAL_CONTEXT currentContext);
 void increaseJacContext(DATA* data);
 void unsetContext(DATA* data);
 
