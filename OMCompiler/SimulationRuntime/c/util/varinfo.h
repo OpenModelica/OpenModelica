@@ -37,7 +37,7 @@
 extern "C" {
 #endif
 
-extern void printErrorEqSyst(equationSystemError err, EQUATION_INFO eq, double time);
+extern void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time);
 
 extern void freeVarInfo(VAR_INFO* info);
 

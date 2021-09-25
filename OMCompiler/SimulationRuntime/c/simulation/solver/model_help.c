@@ -1524,9 +1524,9 @@ const char *context_string[CONTEXT_MAX] = {
  *
  * Set current context in simulation info object
  */
-void setContext(DATA* data, double* currentTime, int currentContext){
-  data->simulationInfo->currentContextOld =  data->simulationInfo->currentContext;
-  data->simulationInfo->currentContext =  currentContext;
+void setContext(DATA* data, double* currentTime, EVAL_CONTEXT currentContext){
+  data->simulationInfo->currentContextOld = data->simulationInfo->currentContext;
+  data->simulationInfo->currentContext = currentContext;
   infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", context_string[currentContext], *currentTime);
   if (currentContext == CONTEXT_JACOBIAN ||
       currentContext == CONTEXT_SYM_JACOBIAN)
@@ -1559,5 +1559,5 @@ void increaseJacContext(DATA* data){
  */
 void unsetContext(DATA* data){
   infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "--- Unset context %s ---", context_string[data->simulationInfo->currentContext]);
-  data->simulationInfo->currentContext =  data->simulationInfo->currentContextOld;
+  data->simulationInfo->currentContext = data->simulationInfo->currentContextOld;
 }
