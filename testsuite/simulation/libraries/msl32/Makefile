@@ -93,6 +93,7 @@ Modelica.Electrical.MultiPhase.Examples.Rectifier.mos \
 Modelica.Electrical.MultiPhase.Examples.TestSensors.mos \
 Modelica.Electrical.MultiPhase.Examples.TransformerYD.mos \
 Modelica.Electrical.MultiPhase.Examples.TransformerYY.mos \
+Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mos \
 Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingDelta.mos \
 Modelica.Electrical.QuasiStationary.MultiPhase.Examples.BalancingStar.mos \
 Modelica.Electrical.QuasiStationary.SinglePhase.Examples.ParallelResonance.mos \
@@ -280,7 +281,6 @@ Modelica.Magnetic.FundamentalWave.Examples.BasicMachines.SMEE_Generator_MultiPha
 
 # Run make failingtest
 FAILINGTESTFILES = \
-Modelica.Electrical.QuasiStationary.Machines.Examples.TransformerTestbench.mos \
 Modelica.Fluid.Examples.PumpingSystem.mos \
 
 # Dependency files that are not .mo .mos or Makefile
