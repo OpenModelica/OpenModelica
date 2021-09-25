@@ -3665,7 +3665,7 @@ algorithm
         // replace @XX@ variables in the Makefile
         makefileStr := System.stringReplace(makefileStr, "@CC@", CC);
         makefileStr := System.stringReplace(makefileStr, "@CFLAGS@", CFLAGS);
-        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+" -lSimulationRuntimeFMI "+Autoconf.ldflags_runtime_fmu);
+        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS + Autoconf.ldflags_runtime_fmu_static);
         makefileStr := System.stringReplace(makefileStr, "@LIBS@", "");
         makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
