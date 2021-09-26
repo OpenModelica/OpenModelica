@@ -44,6 +44,9 @@ set(ModelicaStandardTables_SOURCES C-Sources/ModelicaStandardTables.c
                                    C-Sources/ModelicaStandardTablesUsertab.c)
 add_library(ModelicaStandardTables STATIC ${ModelicaStandardTables_SOURCES})
 
+# This seems to be needed. Otherwise we get undefined referenes to function 'usertab'
+target_compile_definitions(ModelicaStandardTables PRIVATE -DDUMMY_FUNCTION_USERTAB)
+
 target_link_libraries(ModelicaStandardTables INTERFACE ModelicaMatIO)
 target_link_libraries(ModelicaStandardTables PUBLIC m)
 
