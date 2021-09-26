@@ -797,8 +797,8 @@ elif echo "$host" | grep -iq "mingw"; then
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
-  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
-  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -lSimulationRuntimeFMI $RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm $LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lm $LD_NOUNDEFINED"
   LINK="cp -frl"
   # No RPATH in Windows :(
   RPATH=""
@@ -835,8 +835,8 @@ else
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic" # Some of our tests refer to the testsuite itself
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic$LD_NOUNDEFINED"
-  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm -lpthread -rdynamic$LD_NOUNDEFINED"
-  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -lSimulationRuntimeFMI $RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm -lpthread -rdynamic $LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lm -lpthread -rdynamic $LD_NOUNDEFINED"
   LINK="cp -frl"
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
