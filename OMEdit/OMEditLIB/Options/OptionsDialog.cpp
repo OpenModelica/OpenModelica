@@ -3859,6 +3859,7 @@ SimulationPage::SimulationPage(OptionsDialog *pOptionsDialog)
   mpTargetBuildComboBox->addItem("Visual Studio 2012 (msvc12)", "msvc12");
   mpTargetBuildComboBox->addItem("Visual Studio 2013 (msvc13)", "msvc13");
   mpTargetBuildComboBox->addItem("Visual Studio 2015 (msvc15)", "msvc15");
+  mpTargetBuildComboBox->addItem("Visual Studio 2019 (msvc19)", "msvc19");
 #else
   mpTargetBuildComboBox->addItem("GNU Make", "gcc");
 #endif
