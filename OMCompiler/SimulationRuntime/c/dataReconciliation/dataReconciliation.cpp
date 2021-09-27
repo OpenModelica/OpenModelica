@@ -111,6 +111,24 @@ struct errorData
   string sx;
 };
 
+void copyReferenceFile(DATA * data, const std::string & filename)
+{
+  std::string outputPath = std::string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + std::string(data->modelData->modelFilePrefix) + filename;
+  std::string referenceFile = string(data->modelData->modelFilePrefix) + filename; // current directory
+
+  ifstream ifstreamfile;
+  ifstreamfile.open(referenceFile);
+
+  if (ifstreamfile.good())
+  {
+    ofstream ofstreamfile;
+    ofstreamfile.open(outputPath);
+    ofstreamfile << ifstreamfile.rdbuf();
+    ofstreamfile.close();
+    ifstreamfile.close();
+  }
+}
+
 /*
  * create html report with error logs for D.1
  */
@@ -158,31 +176,22 @@ void createErrorHtmlReport(DATA * data, int status = 0)
   myfile << "</table> \n";
 
   // Auxiliary Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
   // Intermediate Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
 
   // Error log
+  myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << ".log" << " target=_blank> Errors </a> </h2>\n";
+  // copy the error log to output path
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
-  }
-  else
-  {
-    myfile << "<h2> <a href=" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
+    copyReferenceFile(data, ".log");
   }
 
   // debug log
   if (status == 0)
   {
-    if (omc_flag[FLAG_OUTPUT_PATH])
-    {
-      myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt"<< " target=_blank> Debug log </a> </h2>\n";
-    }
-    else
-    {
-      myfile << "<h2> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
-    }
+    myfile << "<h2> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
   }
 
   myfile << "</table>\n";
@@ -226,8 +235,14 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   csvfile.open(tmpcsv.c_str());
 
   // check for nonReconciledVars.txt file exists to map the nonReconciled Vars failing with condition-2 of extraction algorithm
-  std::string nonReconciledVarsFilename = string(data->modelData->modelName) +  "_NonReconcilcedVars.txt";
+  std::string nonReconciledVarsFilename = string(data->modelData->modelFilePrefix) +  "_NonReconcilcedVars.txt";
   vector<std::string> nonReconciledVars;
+
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    nonReconciledVarsFilename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + nonReconciledVarsFilename;
+    copyReferenceFile(data, "_NonReconcilcedVars.txt");
+  }
 
   ifstream nonreconcilevarsip(nonReconciledVarsFilename);
   string line;
@@ -288,20 +303,13 @@ void createHtmlReportFordataReconciliation(DATA *data, csvData &csvinputs, matri
   myfile << "</table>\n";
 
   // Auxiliary Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_AuxiliaryConditions.html" << " target=_blank> Auxiliary conditions </a> </h3>\n";
 
   // Intermediate Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_IntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
 
   // Debug log
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    myfile << "<h3> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
-  }
-  else
-  {
-    myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
-  }
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   // create a warning log for correlation input file
   if (!warningCorrelationData.aboveDiagonalEntry.empty() || !warningCorrelationData.diagonalEntry.empty())
@@ -498,31 +506,22 @@ void createErrorHtmlReportForBoundaryConditions(DATA * data, int status = 0)
   myfile << "</table> \n";
 
   // Boundary Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
   // Intermediate Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
 
   // Error log
+  myfile << "<h2> <a href=" << data->modelData->modelFilePrefix << ".log" << " target=_blank> Errors </a> </h2>\n";
+  // copy the error log to output path
   if (omc_flag[FLAG_OUTPUT_PATH])
   {
-    myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
-  }
-  else
-  {
-    myfile << "<h2> <a href=" << data->modelData->modelName << ".log" << " target=_blank> Errors </a> </h2>\n";
+    copyReferenceFile(data, ".log");
   }
 
   // debug log
   if (status == 0)
   {
-    if (omc_flag[FLAG_OUTPUT_PATH])
-    {
-      myfile << "<h2> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_BoundaryConditions_debug.txt"<< " target=_blank> Debug log </a> </h2>\n";
-    }
-    else
-    {
-      myfile << "<h2> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
-    }
+    myfile << "<h2> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h2>\n";
   }
 
   myfile << "</table>\n";
@@ -592,20 +591,13 @@ void createHtmlReportForBoundaryConditions(DATA * data, std::vector<std::string>
   myfile << "</table>\n";
 
   // Boundary Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionsEquations.html" << " target=_blank> Boundary conditions </a> </h3>\n";
 
   // Intermediate Conditions
-  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
+  myfile << "<h3> <a href=" << data->modelData->modelFilePrefix << "_BoundaryConditionIntermediateEquations.html" << " target=_blank> Intermediate equations </a> </h3>\n";
 
   // Debug log
-  if (omc_flag[FLAG_OUTPUT_PATH])
-  {
-    myfile << "<h3> <a href=" << omc_flagValue[FLAG_OUTPUT_PATH] << "/" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
-  }
-  else
-  {
-    myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
-  }
+  myfile << "<h3> <a href=" << data->modelData->modelName << "_BoundaryConditions_debug.txt" << " target=_blank> Debug log </a> </h3>\n";
 
   /* Add Results data */
   myfile << "<h2> Results: </h2>\n";
@@ -2434,6 +2426,13 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
 {
   TRACE_PUSH
 
+  // copy the reference files "AuxiliaryConditions and IntermediateEquations.html to output path"
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    copyReferenceFile(data, "_AuxiliaryConditions.html");
+    copyReferenceFile(data, "_IntermediateEquations.html");
+  }
+
   // report run time initialization and non linear convergence error to html
   if (status != 0)
   {
@@ -2525,6 +2524,13 @@ int dataReconciliation(DATA * data, threadData_t * threadData, int status)
 int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, int status)
 {
   TRACE_PUSH
+
+  // copy the reference files "BoundaryConditionsEquations.html and _BoundaryConditionIntermediateEquations.html to output path"
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    copyReferenceFile(data, "_BoundaryConditionsEquations.html");
+    copyReferenceFile(data, "_BoundaryConditionIntermediateEquations.html");
+  }
 
   // report run time initialization and non linear convergence error to html
   if (status != 0)
@@ -2637,11 +2643,17 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, int stat
   scaleVector(jacF.rows, 1, 1.96, reconSt_diag);
 
   // check for BoundaryConditionVars.txt file exists to generate the html report
-  std::string boundaryConditionsVarsFilename = string(data->modelData->modelName) +  "_BoundaryConditionVars.txt";
+  std::string boundaryConditionsVarsFilename = std::string(data->modelData->modelFilePrefix) +  "_BoundaryConditionVars.txt";
   vector<std::string> boundaryConditionVars;
 
+  if (omc_flag[FLAG_OUTPUT_PATH])
+  {
+    boundaryConditionsVarsFilename = string(omc_flagValue[FLAG_OUTPUT_PATH]) + "/" + boundaryConditionsVarsFilename;
+    copyReferenceFile(data, "_BoundaryConditionVars.txt");
+  }
+
   ifstream boundaryConditionVarsip(boundaryConditionsVarsFilename);
-  string line;
+  std::string line;
   if (boundaryConditionVarsip.good())
   {
     while (boundaryConditionVarsip.good())
@@ -2655,6 +2667,14 @@ int reconcileBoundaryConditions(DATA * data, threadData_t * threadData, int stat
     }
     boundaryConditionVarsip.close();
     omc_unlink(boundaryConditionsVarsFilename.c_str());
+  }
+  else
+  {
+    errorStreamPrint(LOG_STDOUT, 0, "Boundary conditions vars filename not found: %s.", boundaryConditionsVarsFilename.c_str());
+    logfile << "|  error   |   " << "Boundary conditions vars filename not found: " << boundaryConditionsVarsFilename << "\n";
+    logfile.close();
+    createErrorHtmlReportForBoundaryConditions(data);
+    exit(1);
   }
 
   printMatrixWithHeaders(reconSt_diag, jacF.rows, 1, boundaryConditionVars, "Half-width Confidence Interval(1.96*S_t_SquareRoot)", logfile);
