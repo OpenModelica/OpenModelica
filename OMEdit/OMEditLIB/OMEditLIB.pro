@@ -33,6 +33,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   QT += printsupport widgets webkitwidgets concurrent
 }
 
+CONFIG += c++17
+
 TARGET = OMEdit
 TEMPLATE = lib
 CONFIG += staticlib
