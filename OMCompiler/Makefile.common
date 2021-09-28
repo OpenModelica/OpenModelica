@@ -617,10 +617,10 @@ $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	$(MAKE) -C 3rdParty/sundials-5.4.0/build install
 	# Test SUNDIALS but allow it to fail
 	#-$(MAKE) -C 3rdParty/sundials-5.4.0/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
-	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
+	mkdir -p $(builddir_inc)/sundials
 	# adrpo: do not copy the headers as they are not needed!
-	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
-	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
+	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(builddir_inc)/sundials)
+	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(builddir_inc)/sundials/kinsol/
 	# copy the libs to the build/lib/omc directory
 	find 3rdParty/sundials-5.4.0/build/lib* -not -type d -exec cp -apf {} $(builddir_lib_omc) ";"
 
