@@ -606,21 +606,26 @@ sundials: suitesparse
 $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	mkdir -p 3rdParty/sundials-5.4.0/build
 	(cd 3rdParty/sundials-5.4.0/build && \
-	    $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" \
-	    -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
-	    -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" -DLDFLAGS="$(LDFLAGS)" \
-	    -DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
-	    $(SUITESPARSE_LIBS) \
-	    -DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF -DSUNDIALS_EXAMPLES_INSTALL_PATH=./examples_install \
-	    $(IS_MINGW32) $(IS_MINGW64) \
-	    -DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS))
+		$(CMAKE) .. -G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX="`pwd`" \
+		-DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON \
+		-DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
+		-DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" \
+		-DLDFLAGS="$(LDFLAGS)" \
+		-DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
+		$(SUITESPARSE_LIBS) \
+		-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF \
+		$(IS_MINGW32) $(IS_MINGW64) \
+		-DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS))
+
 	$(MAKE) -C 3rdParty/sundials-5.4.0/build install
 	# Test SUNDIALS but allow it to fail
 	#-$(MAKE) -C 3rdParty/sundials-5.4.0/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
 	mkdir -p $(builddir_inc)/sundials
-	# adrpo: do not copy the headers as they are not needed!
 	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(builddir_inc)/sundials)
 	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(builddir_inc)/sundials/kinsol/
+
 	# copy the libs to the build/lib/omc directory
 	find 3rdParty/sundials-5.4.0/build/lib* -not -type d -exec cp -apf {} $(builddir_lib_omc) ";"
 
