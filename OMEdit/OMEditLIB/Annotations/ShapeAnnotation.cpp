@@ -396,7 +396,7 @@ void ShapeAnnotation::setDefaults()
   mFileName = "";
   mImageSource = "";
   mImage = ResourceCache::getImage(":/Resources/icons/bitmap-shape.svg");
-  mDynamicTextString.clear();
+  mTextExpression = FlatModelica::Expression();
 }
 
 /*!
@@ -433,7 +433,7 @@ void ShapeAnnotation::setDefaults(ShapeAnnotation *pShapeAnnotation)
   mClassFileName = pShapeAnnotation->mClassFileName;
   mImageSource = pShapeAnnotation->mImageSource;
   mImage = pShapeAnnotation->mImage;
-  mDynamicTextString = pShapeAnnotation->mDynamicTextString;
+  mTextExpression = pShapeAnnotation->mTextExpression;
 }
 
 /*!
@@ -1151,25 +1151,19 @@ void ShapeAnnotation::updateDynamicSelect(double time)
     setRotation(mDynamicRotationValue);
     update();
   }
+
   // textString
-  QVariant dynamicTextValue; // isNull() per default
-  if (mDynamicTextString.count() > 0) {
-    if (mpParentComponent && mpParentComponent->getComponentInfo()) {
-      QString variableName = QString("%1.%2").arg(mpParentComponent->getName(), mDynamicTextString.at(0).toString());
-      dynamicTextValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(variableName, time);
-    } else {
-      dynamicTextValue = MainWindow::instance()->getVariablesWidget()->readVariableValue(mDynamicTextString.at(0).toString(), time);
-    }
-  }
-  if (!dynamicTextValue.isNull()) {
-    mTextString = dynamicTextValue.toString();
-    if (mTextString.isEmpty()) {
-      /* use variable name as default value if result not found */
-      mTextString = mDynamicTextString.at(0).toString();
-    } else if (mDynamicTextString.count() > 1) {
-      int digits = mDynamicTextString.at(1).toInt();
-      mTextString = QString::number(mTextString.toDouble(), 'g', digits);
-    }
+  if (mTextExpression.isCall("DynamicSelect")) {
+    mTextString = mTextExpression.arg(1).evaluate([&] (std::string name) {
+      auto vname = QString::fromStdString(name);
+
+      if (mpParentComponent && mpParentComponent->getComponentInfo()) {
+        vname = QString("%1.%2").arg(mpParentComponent->getName(), vname);
+      }
+
+      return MainWindow::instance()->getVariablesWidget()->readVariableValue(vname, time);
+    }).toQString();
+
     update();
   }
 }
