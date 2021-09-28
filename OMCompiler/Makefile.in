@@ -126,7 +126,7 @@ lis: lis-configure
 	@echo Building Lis from sources
 	$(MAKE) -C 3rdParty/lis-1.4.12/src
 	# Copy the library; not headers (as they are not used by the runtime system)
-	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* $(OMBUILDDIR)/$(LIB_OMC)/
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis*@SHREXT@* $(OMBUILDDIR)/$(LIB_OMC)/
 	@# FreeBSD lis does not create the symlinks...
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f $(OMBUILDDIR)/lib/omc/liblis.so.0 || ln -s liblis.so.0.0 $(OMBUILDDIR)/lib/omc/liblis.so.0
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f $(OMBUILDDIR)/lib/omc/liblis.so || ln -s liblis.so.0.0 $(OMBUILDDIR)/lib/omc/liblis.so
