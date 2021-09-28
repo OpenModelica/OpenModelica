@@ -686,7 +686,7 @@ algorithm
       Boolean b;
       Boolean needSundials = false;
       String fileprefix;
-      String install_include_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
+      String install_include_omc_dir, install_include_omc_c_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
       list<String> sourceFiles, model_desc_src_files;
       list<String> dgesv_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
       list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
@@ -758,12 +758,13 @@ algorithm
         varInfo := simCode.modelInfo.varInfo;
 
 
-        install_include_dir := Settings.getInstallationDirectoryPath() + "/include/omc/c/";
+        install_include_omc_dir := Settings.getInstallationDirectoryPath() + "/include/omc/";
+        install_include_omc_c_dir := install_include_omc_dir + "c/";
         install_fmu_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir;
         fmu_tmp_sources_dir := fmutmp + "/sources/";
 
-        // The simrt c headers are in the include directory.
-        copyFiles(RuntimeSources.simrt_c_headers, source=install_include_dir, destination=fmu_tmp_sources_dir);
+        // The simrt c headers are in the include/omc/c directory.
+        copyFiles(RuntimeSources.simrt_c_headers, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
         // The simrt C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
         copyFiles(RuntimeSources.simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
@@ -780,7 +781,7 @@ algorithm
         // instead of just checking if flags are set only?
         if isSome(simCode.fmiSimulationFlags) then
           // The sundials headers are in the include directory.
-          copyFiles(RuntimeSources.sundials_headers, source=install_include_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.sundials_headers, source=install_include_omc_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
           simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_sources;
         else
@@ -801,7 +802,7 @@ algorithm
         // and then then they are installed to include/omc/c/fmi-export for some reason. The source, install, and source fmu location
         // for these files should be made consistent. For now to avoid modifing things a lot they are left as they are and copied here.
         fmi_export_files := if FMUVersion == "1.0" then RuntimeSources.fmi1Files else RuntimeSources.fmi2Files;
-        copyFiles(fmi_export_files, source=install_include_dir, destination=fmu_tmp_sources_dir);
+        copyFiles(fmi_export_files, source=install_include_omc_c_dir, destination=fmu_tmp_sources_dir);
 
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
 
