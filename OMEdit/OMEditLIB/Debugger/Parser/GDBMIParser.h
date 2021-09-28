@@ -40,8 +40,6 @@
 #include <sstream>
 #include <list>
 
-using namespace std;
-
 namespace GDBMIParser {
 
 class GDBMITuple;
@@ -56,7 +54,7 @@ public:
     ListValue       /* Used for list values. */
   };
   ValueType type;
-  string value;
+  std::string value;
   GDBMITuple *miTuple;
   GDBMIList *miList;
 
@@ -65,7 +63,7 @@ public:
 };
 
 class GDBMIResult;
-typedef list<GDBMIResult*>GDBMIResultList;
+typedef std::list<GDBMIResult*>GDBMIResultList;
 class GDBMITuple
 {
 public:
@@ -74,7 +72,7 @@ public:
   ~GDBMITuple();
 };
 
-typedef list<GDBMIValue*>GDBMIValueList;
+typedef std::list<GDBMIValue*>GDBMIValueList;
 class GDBMIList
 {
 public:
@@ -94,7 +92,7 @@ public:
 class GDBMIResult
 {
 public:
-  string variable;
+  std::string variable;
   GDBMIValue *miValue;
 
   GDBMIResult();
@@ -105,10 +103,10 @@ class GDBMIResultRecord
 {
 public:
   int token;
-  string cls;
+  std::string cls;
   GDBMIResultList miResultsList;
-  string consoleStreamOutput;
-  string logStreamOutput;
+  std::string consoleStreamOutput;
+  std::string logStreamOutput;
 
   GDBMIResultRecord();
   ~GDBMIResultRecord();
@@ -123,7 +121,7 @@ public:
     LogStream       /* Used for log stream output. */
   };
   StreamType type;
-  string value;
+  std::string value;
 };
 
 class GDBMIOutOfBandRecord
@@ -142,7 +140,7 @@ public:
   ~GDBMIOutOfBandRecord();
 };
 
-typedef list<GDBMIOutOfBandRecord*>GDBMIOutOfBandRecordList;
+typedef std::list<GDBMIOutOfBandRecord*>GDBMIOutOfBandRecordList;
 class GDBMIResponse
 {
 public:
@@ -170,9 +168,9 @@ void printGDBMIValue(GDBMIValue *miValue);
 void printGDBMITuple(GDBMITuple *miTuple);
 void printGDBMIList(GDBMIList *miList);
 
-list<string> getLexerErrorsList();
+std::list<std::string> getLexerErrorsList();
 void clearLexerErrorsList();
-list<string> getParserErrorsList();
+std::list<std::string> getParserErrorsList();
 void clearParserErrorsList();
 GDBMIResponse* parseGDBOutput(const char* data);
 
