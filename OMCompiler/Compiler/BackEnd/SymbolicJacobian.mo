@@ -4426,14 +4426,16 @@ uniontype LinearJacobian
     input output array<Integer> ass1;
     input output array<Integer> ass2;
     input output BackendDAE.EqSystem syst;
+    input Boolean init;
   protected
     Integer i_arr, i_scal;
-    DAE.Exp lhs;
+    DAE.Exp lhs, rhs;
     BackendDAE.Equation newEqn;
     list<Integer> updateList_arr = {};
     array<list<Integer>> mapEqnIncRow;
     array<Integer> mapIncRowEqn;
     BackendDAE.IndexType indexType;
+    Boolean fullASSC = Flags.getConfigBool(Flags.FULL_ASSC);
   algorithm
     for r in 1:arrayLength(linJac.rows) loop
       /*
@@ -4441,28 +4443,38 @@ uniontype LinearJacobian
         for now also only resolve singularities and not replace full loop
         otherwise it sometimes leads to mixed determined systems
       */
-      if linJac.eq_marks[r] and (UnorderedMap.isEmpty(linJac.rows[r]) or Flags.getConfigBool(Flags.FULL_ASSC)) then
+      if linJac.eq_marks[r] and (UnorderedMap.isEmpty(linJac.rows[r]) or fullASSC) then
         (i_arr, i_scal) := linJac.ind[r];
         /* remove assignments */
         ass2[ass1[i_scal]] := -1;
         ass1[i_scal] := -1;
 
         /* replace equation */
-        lhs := generateLHSfromList(
-          row_indices     = UnorderedMap.keyArray(linJac.rows[r]),
-          row_values      = UnorderedMap.valueArray(linJac.rows[r]),
-          vars            = syst.orderedVars
-        );
-        newEqn := BackendEquation.generateEquation(lhs, ExpressionSimplify.simplify(linJac.rhs[r]));
+        rhs := ExpressionSimplify.simplify(linJac.rhs[r]);
+        if init and Expression.isZero(rhs) then
+          /* dump replacements */
+          if Flags.isSet(Flags.DUMP_ASSC) or (Flags.isSet(Flags.BLT_DUMP) and UnorderedMap.isEmpty(linJac.rows[r])) then
+            print("[ASSC] (init) Removing equation: " + BackendDump.equationString(BackendEquation.get(syst.orderedEqs, i_arr)) + "\n");
+          end if;
+          syst.orderedEqs := BackendEquation.delete(i_arr, syst.orderedEqs);
+          updateList_arr := i_arr :: updateList_arr;
+        else
+          lhs := generateLHSfromList(
+            row_indices     = UnorderedMap.keyArray(linJac.rows[r]),
+            row_values      = UnorderedMap.valueArray(linJac.rows[r]),
+            vars            = syst.orderedVars
+          );
+          newEqn := BackendEquation.generateEquation(lhs, rhs);
 
-        /* dump replacements */
-        if Flags.isSet(Flags.DUMP_ASSC) or (Flags.isSet(Flags.BLT_DUMP) and UnorderedMap.isEmpty(linJac.rows[r])) then
-          print("[ASSC] The equation: " + BackendDump.equationString(BackendEquation.get(syst.orderedEqs, i_arr)) + "\n");
-          print("[ASSC] Gets replaced by equation: " + BackendDump.equationString(newEqn) + "\n");
+          /* dump replacements */
+          if Flags.isSet(Flags.DUMP_ASSC) or (Flags.isSet(Flags.BLT_DUMP) and UnorderedMap.isEmpty(linJac.rows[r])) then
+            print("[ASSC] The equation: " + BackendDump.equationString(BackendEquation.get(syst.orderedEqs, i_arr)) + "\n");
+            print("[ASSC] Gets replaced by equation: " + BackendDump.equationString(newEqn) + "\n");
+          end if;
+
+          syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, i_arr, newEqn);
+          updateList_arr := i_arr :: updateList_arr;
         end if;
-
-        syst.orderedEqs := BackendEquation.setAtIndex(syst.orderedEqs, i_arr, newEqn);
-        updateList_arr := i_arr :: updateList_arr;
       end if;
     end for;
       /*

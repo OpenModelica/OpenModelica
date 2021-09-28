@@ -2186,7 +2186,7 @@ algorithm
   var_lst := varList(vars);
   (fixable, non_fixable) := List.splitOnTrue(var_lst, function containsVar(inVariables = fixableVars));
   (fixable_start, fixable) := List.splitOnTrue(fixable, varHasStartValue);
-  var_lst := listAppend(listAppend(non_fixable, fixable), fixable_start);
+  var_lst := listAppend(listAppend(fixable_start, fixable), non_fixable);
   vars := listVar(var_lst);
 end sortInitialVars;
 

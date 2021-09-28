@@ -175,6 +175,13 @@ public function get
   output BackendDAE.Equation outEquation = ExpandableArray.get(inPos, inEquationArray);
 end get;
 
+public function has
+  "Returns if the element at the given index is occupied or not."
+  input BackendDAE.EquationArray inEquationArray;
+  input Integer inPos "one-based indexing";
+  output Boolean b = ExpandableArray.occupied(inPos, inEquationArray);
+end has;
+
 public function getList "author: Frenkel TUD 2011-05
   returns the equations given by the list of indexes"
   input list<Integer> inIndices "one-based indexing";
