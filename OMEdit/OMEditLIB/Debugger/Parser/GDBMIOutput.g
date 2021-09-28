@@ -112,18 +112,18 @@ async_output returns [GDBMIResultRecord* miResultRecord]
     (COMMA result {miResultRecord->miResultsList.push_back($result.miResult);})* NL?
   ;
 
-var returns [string txt]
+var returns [std::string txt]
   @init {
-    string txt;
+    std::string txt;
   }
   : STRING {
       txt = (char*)$STRING.text->chars;
     }
   ;
 
-constant returns [string txt]
+constant returns [std::string txt]
   @init {
-    string txt;
+    std::string txt;
   }
   : C_STRING {
       txt = (char*)$C_STRING.text->chars;
