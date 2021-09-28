@@ -686,7 +686,10 @@ algorithm
       Boolean b;
       Boolean needSundials = false;
       String fileprefix;
-      list<String> allFiles, sourceFiles, defaultFiles, extraFiles, runtimeFiles, dgesvFiles, sundialsFiles;
+      String install_include_dir, install_fmu_sources_dir, fmu_tmp_sources_dir;
+      list<String> sourceFiles, model_desc_src_files;
+      list<String> dgesv_sources, simrt_c_sundials_sources, simrt_linear_solver_sources, simrt_non_linear_solver_sources;
+      list<String> simrt_mixed_solver_sources, fmi_export_files, model_gen_files, model_all_gen_files, shared_source_files;
       SimCode.VarInfo varInfo;
     case (SimCode.SIMCODE(),"C")
       algorithm
@@ -755,61 +758,75 @@ algorithm
         varInfo := simCode.modelInfo.varInfo;
 
 
-        // The headers are in the include directory.
-        copyFiles(RuntimeSources.commonHeaders, source=Settings.getInstallationDirectoryPath() + "/include/omc/c/", destination=fmutmp+"/sources/");
+        install_include_dir := Settings.getInstallationDirectoryPath() + "/include/omc/c/";
+        install_fmu_sources_dir := Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir;
+        fmu_tmp_sources_dir := fmutmp + "/sources/";
 
-        allFiles := {};
-        // The C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
-        copyFiles(RuntimeSources.commonFiles, source=Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir, destination=fmutmp+"/sources/");
-        allFiles := listAppend(RuntimeSources.commonFiles, allFiles);
+        // The simrt c headers are in the include directory.
+        copyFiles(RuntimeSources.simrt_c_headers, source=install_include_dir, destination=fmu_tmp_sources_dir);
+        // The simrt C source files are installed to the folder specified by RuntimeSources.fmu_sources_dir. Copy them from there.
+        copyFiles(RuntimeSources.simrt_c_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
-        dgesvFiles :=  if varInfo.numLinearSystems > 0 or varInfo.numNonLinearSystems > 0 then RuntimeSources.dgesvFiles else {};
-        copyFiles(RuntimeSources.dgesvFiles, source=Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir, destination=fmutmp+"/sources/");
-
-        if isSome(simCode.fmiSimulationFlags) then
-          allFiles := listAppend(RuntimeSources.external3rdPartyFiles, allFiles);
-          sundialsFiles := RuntimeSources.cvodeRuntimeFiles;
-          allFiles := listAppend(sundialsFiles, allFiles);
+        if varInfo.numLinearSystems > 0 or varInfo.numNonLinearSystems > 0 then
+          // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
+          copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          dgesv_sources := RuntimeSources.sundials_headers;
         else
-          sundialsFiles := {""};
-        end if;
-        if varInfo.numLinearSystems > 0 then
-          allFiles := listAppend(RuntimeSources.lsFiles, allFiles);
-        end if;
-        if varInfo.numNonLinearSystems > 0 then
-          allFiles := listAppend(RuntimeSources.nlsFiles, allFiles);
-        end if;
-        if varInfo.numMixedSystems > 0 then
-          allFiles := listAppend(RuntimeSources.mixedFiles, allFiles);
+          dgesv_sources := {};
         end if;
 
-        copyFiles(allFiles, source=Settings.getInstallationDirectoryPath() + RuntimeSources.fmu_sources_dir, destination=fmutmp+"/sources/");
+        // Check if the sundials files are needed. Shouldn't this actually check what the flags are
+        // instead of just checking if flags are set only?
+        if isSome(simCode.fmiSimulationFlags) then
+          // The sundials headers are in the include directory.
+          copyFiles(RuntimeSources.sundials_headers, source=install_include_dir, destination=fmu_tmp_sources_dir);
+          copyFiles(RuntimeSources.simrt_c_sundials_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+          simrt_c_sundials_sources := RuntimeSources.simrt_c_sundials_sources;
+        else
+          simrt_c_sundials_sources := {};
+        end if;
+
+
+        simrt_linear_solver_sources := if varInfo.numLinearSystems > 0 then RuntimeSources.simrt_linear_solver_sources else {};
+        copyFiles(simrt_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+
+        simrt_non_linear_solver_sources := if varInfo.numNonLinearSystems > 0 then RuntimeSources.simrt_non_linear_solver_sources else {};
+        copyFiles(simrt_non_linear_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
+
+        simrt_mixed_solver_sources := if varInfo.numMixedSystems > 0 then RuntimeSources.simrt_mixed_solver_sources else {};
+        copyFiles(simrt_mixed_solver_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
 
         // This fmu export files of OMC are located in a very unexpected place. Right now they are in SimulationRuntime/fmi/export/openmodelica
         // and then then they are installed to include/omc/c/fmi-export for some reason. The source, install, and source fmu location
         // for these files should be made consistent. For now to avoid modifing things a lot they are left as they are and copied here.
-        if FMUVersion=="1.0" then
-          copyFiles(RuntimeSources.fmi1Files, source=Settings.getInstallationDirectoryPath() + "/include/omc/c/", destination=fmutmp+"/sources/");
-          allFiles := listAppend(RuntimeSources.fmi1Files, allFiles);
-        else
-          copyFiles(RuntimeSources.fmi2Files, source=Settings.getInstallationDirectoryPath() + "/include/omc/c/", destination=fmutmp+"/sources/");
-          allFiles := listAppend(RuntimeSources.fmi2Files, allFiles);
-        end if;
+        fmi_export_files := if FMUVersion == "1.0" then RuntimeSources.fmi1Files else RuntimeSources.fmi2Files;
+        copyFiles(fmi_export_files, source=install_include_dir, destination=fmu_tmp_sources_dir);
+
         System.writeFile(fmutmp+"/sources/isfmi" + (if FMUVersion=="1.0" then "1" else "2"), "");
 
-        defaultFiles := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
-        runtimeFiles := list(f for f guard Util.endsWith(f, ".c") in allFiles);
+        model_gen_files := list(simCode.fileNamePrefix + f for f in RuntimeSources.defaultFileSuffixes);
+        model_all_gen_files := listAppend(model_gen_files, SimCodeUtil.getFunctionIndex());
+
+        // I need to see some tests failing or something not working to make sense of what to add here
+        shared_source_files := List.flatten({RuntimeSources.simrt_c_sources,
+                                             // dgesv_sources, // listed separately
+                                             // simrt_c_sundials_sources, // listed separately
+                                             simrt_linear_solver_sources,
+                                             simrt_non_linear_solver_sources,
+                                             simrt_mixed_solver_sources
+                                            });
 
         // check for fmiSource=false or --fmiFilter=blackBox
         if not Flags.getConfigBool(Flags.FMI_SOURCES) or Flags.getConfigEnum(Flags.FMI_FILTER) == Flags.FMI_BLACKBOX then
-          sourceFiles := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
+          model_desc_src_files := {}; // set the sourceFiles to empty, to remove the sources in modeldescription.xml
         else
-          sourceFiles := listAppend(defaultFiles, runtimeFiles);
+          model_desc_src_files := listAppend(model_all_gen_files, shared_source_files);
         end if;
 
-        Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=sourceFiles), simCode);
-        extraFiles := SimCodeUtil.getFunctionIndex();
-        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=listAppend(extraFiles, defaultFiles), a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in runtimeFiles), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f guard Util.endsWith(f, ".c") in dgesvFiles), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f guard Util.endsWith(f, ".c") in sundialsFiles)),
+        Tpl.tplNoret(function CodegenFMU.translateModel(in_a_FMUVersion=FMUVersion, in_a_FMUType=FMUType, in_a_sourceFiles=model_desc_src_files), simCode);
+
+        Tpl.closeFile(Tpl.tplCallWithFailErrorNoArg(function CodegenFMU.fmuMakefile(a_target=Config.simulationCodeTarget(), a_simCode=simCode, a_FMUVersion=FMUVersion, a_sourceFiles=model_all_gen_files, a_runtimeObjectFiles=list(System.stringReplace(f,".c",".o") for f in shared_source_files), a_dgesvObjectFiles=list(System.stringReplace(f,".c",".o") for f in dgesv_sources), a_sundialsObjectFiles=list(System.stringReplace(f,".c",".o") for f in simrt_c_sundials_sources)),
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/Makefile.in")));
         Tpl.closeFile(Tpl.tplCallWithFailError(CodegenFMU.settingsfile, simCode,
                       txt=Tpl.redirectToFile(Tpl.emptyTxt, simCode.fileNamePrefix+".fmutmp/sources/omc_simulation_settings.h")));
