@@ -28,11 +28,12 @@
  #
  #/
 
-TEMPLATE = subdirs
+include(../Common/Testsuite.pri)
 
-SUBDIRS = BrowseMSL \
-  Diagram \
-  Transformation \
-  Homotopy \
-  Expression
+TARGET = Expression
 
+SOURCES += ../Common/Util.cpp \
+  ExpressionTest.cpp
+
+HEADERS += ../Common/Util.h \
+  ExpressionTest.h
