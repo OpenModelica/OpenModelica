@@ -382,31 +382,32 @@ protected
   Expression dstatic, ddynamic, var, digits;
   Function fn;
 algorithm
-  if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-    exp := Expression.CALL(call);
-    return;
-  end if;
+  exp := Expression.STRING(Expression.toString(Expression.CALL(call)));
+  //if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
+  //  exp := Expression.CALL(call);
+  //  return;
+  //end if;
 
-  {dstatic, ddynamic} := args;
+  //{dstatic, ddynamic} := args;
 
-  // HACK, TODO, FIXME! handle DynamicSelect properly in OMEdit, then disable this stuff!
-  exp := match (dstatic, ddynamic)
-    // DynamicSelect("%y", String(y, significantDigits = 3)) => {"%y", y, 3}
-    case (Expression.STRING(), Expression.CALL(call = Call.TYPED_CALL(
-        fn = Function.FUNCTION(path = Absyn.Path.IDENT("String")), arguments = str_args)))
-      guard listLength(str_args) == 4
-      algorithm
-        var :: digits :: _ := str_args;
-      then
-        Expression.makeArray(Type.UNKNOWN(), {dstatic, var, digits});
+  //// HACK, TODO, FIXME! handle DynamicSelect properly in OMEdit, then disable this stuff!
+  //exp := match (dstatic, ddynamic)
+  //  // DynamicSelect("%y", String(y, significantDigits = 3)) => {"%y", y, 3}
+  //  case (Expression.STRING(), Expression.CALL(call = Call.TYPED_CALL(
+  //      fn = Function.FUNCTION(path = Absyn.Path.IDENT("String")), arguments = str_args)))
+  //    guard listLength(str_args) == 4
+  //    algorithm
+  //      var :: digits :: _ := str_args;
+  //    then
+  //      Expression.makeArray(Type.UNKNOWN(), {dstatic, var, digits});
 
-    // DynamicSelect(true, y) => {true, y}
-    case (Expression.BOOLEAN(), Expression.CREF())
-      then Expression.makeArray(Type.UNKNOWN(), args);
+  //  // DynamicSelect(true, y) => {true, y}
+  //  case (Expression.BOOLEAN(), Expression.CREF())
+  //    then Expression.makeArray(Type.UNKNOWN(), args);
 
-    // Otherwise just return first argument
-    else dstatic;
-  end match;
+  //  // Otherwise just return first argument
+  //  else dstatic;
+  //end match;
 end simplifyDynamicSelect;
 
 function simplifyArrayConstructor

@@ -37,6 +37,7 @@
 
 #include "Util/StringHandler.h"
 #include "Element/Transformation.h"
+#include "FlatModelica/Expression.h"
 
 #include <QGraphicsItem>
 #include <QSettings>
@@ -284,7 +285,7 @@ protected:
   QString mImageSource;
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
-  QList<QVariant> mDynamicTextString; /* list of String() arguments */
+  FlatModelica::Expression mTextExpression;
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 

@@ -35,6 +35,8 @@
 #include "TextAnnotation.h"
 #include "Modeling/Commands.h"
 
+#include "FlatModelica/Expression.h"
+
 /*!
  * \class TextAnnotation
  * \brief Draws the text shapes.
@@ -170,23 +172,25 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
   }
   // 10th item of the list contains the textString.
-  if (list.at(9).startsWith("{")) {
-    // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
-    if (args.count() > 0) {
-      mOriginalTextString = StringHandler::removeFirstLastQuotes(args.at(0));
+  try {
+    if (list.at(9).contains("DynamicSelect")) {
+      mTextExpression = FlatModelica::Expression::parse(StringHandler::removeFirstLastQuotes(list.at(9)));
+    } else {
+      mTextExpression = FlatModelica::Expression::parse(list.at(9));
     }
-    if (args.count() > 1) {
-      mDynamicTextString << args.at(1);  // variable name
+
+    if (mTextExpression.isCall("DynamicSelect")) {
+      mOriginalTextString = mTextExpression.arg(0).toQString();
+    } else {
+      mOriginalTextString = mTextExpression.toQString();
     }
-    if (args.count() > 2) {
-      mDynamicTextString << args.at(2);  // significantDigits
-    }
-  } else {
-    mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to parse annotation: " << list.at(9);
+    qDebug() << e.what();
   }
   mTextString = mOriginalTextString;
   initUpdateTextString();
+
   // 11th item of the list contains the fontSize.
   mFontSize = list.at(10).toFloat();
   // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
@@ -519,7 +523,7 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void TextAnnotation::initUpdateTextString()
 {
   if (mpComponent) {
-    if (mOriginalTextString.contains("%")) {
+    if (mOriginalTextString.contains("%") || mTextExpression.isCall("DynamicSelect")) {
       updateTextString();
       connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
