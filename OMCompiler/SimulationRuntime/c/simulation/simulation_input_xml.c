@@ -1005,6 +1005,11 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       while (p) {
         // split it key = value => map[key]=value
         value = strchr(p, '=');
+
+        if (!value) {
+          throwStreamPrint(NULL, "Invalid format for value of override flag: %s", override);
+        }
+
         if (*value == '\0') {
           warningStreamPrint(LOG_SOLVER, 0, "failed to parse override string %s", p);
           p = strtok(NULL, "!");
@@ -1035,6 +1040,11 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       while (p) {
         // split it key = value => map[key]=value
         value = strchr(p, '=');
+
+        if (!value) {
+          throwStreamPrint(NULL, "Invalid format for value of override flag: %s", override);
+        }
+
         if (*value == '\0') {
           warningStreamPrint(LOG_SOLVER, 0, "failed to parse override string %s", p);
           p = strtok(NULL, "!");
