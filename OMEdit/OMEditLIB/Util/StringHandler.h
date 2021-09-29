@@ -116,7 +116,6 @@ public:
   static QString removeFirstLastQuotes(QString value);
   static QString removeFirstLastSingleQuotes(QString value);
   static QStringList getStrings(QString value);
-  static QStringList getStrings(QString value, char start, char end);
   /* Handles quoted identifiers A.B.'C.D' -> A.B, A.B.C.D -> A.B.C */
   static QString getLastWordAfterDot(QString value);
   static QString removeLastWordAfterDot(QString value);
