@@ -4846,7 +4846,7 @@ void ModelWidget::addConnection(QStringList connectionList, QString connectionAn
     return;
   }
   // connection annotation
-  QStringList shapesList = StringHandler::getStrings(connectionAnnotationString, '(', ')');
+  QStringList shapesList = StringHandler::getStrings(connectionAnnotationString);
   // Now parse the shapes available in list
   QString lineShape = "";
   foreach (QString shape, shapesList) {
@@ -6700,7 +6700,7 @@ void ModelWidget::getModelIconDiagramShapes(StringHandler::ViewType viewType)
   // read the shapes
   if (list.size() < 9)
     return;
-  QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)), '(', ')');
+  QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
   drawModelIconDiagramShapes(shapesList, pGraphicsView, false);
 }
 
@@ -6929,7 +6929,7 @@ void ModelWidget::getModelTransitions()
       continue;
     }
     // get the transition annotations
-    QStringList shapesList = StringHandler::getStrings(transition.at(7), '(', ')');
+    QStringList shapesList = StringHandler::getStrings(transition.at(7));
     // Now parse the shapes available in list
     QString lineShape, textShape = "";
     foreach (QString shape, shapesList) {
@@ -6970,7 +6970,7 @@ void ModelWidget::getModelInitialStates()
       continue;
     }
     // get the transition annotations
-    QStringList shapesList = StringHandler::getStrings(initialState.at(1), '(', ')');
+    QStringList shapesList = StringHandler::getStrings(initialState.at(1));
     // Now parse the shapes available in list
     QString lineShape = "";
     foreach (QString shape, shapesList) {
@@ -7154,7 +7154,7 @@ void ModelWidget::getCompositeModelConnections()
       QDomElement annotationElement = connectionChildren.at(j).toElement();
       if (annotationElement.tagName().compare("Annotation") == 0) {
         annotationFound = true;
-        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(annotationElement.attribute("Points"))), '(', ')');
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(annotationElement.attribute("Points"))));
       }
     }
     if (!annotationFound) {
@@ -7165,7 +7165,7 @@ void ModelWidget::getCompositeModelConnections()
       QPointF endPoint = pEndInterfacePointComponent->mapToScene(pEndInterfacePointComponent->boundingRect().center());
       points.append(point.arg(endPoint.x()).arg(endPoint.y()));
       QString pointsString = QString("{%1}").arg(points.join(","));
-      shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
+      shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)));
     }
     // Now parse the shapes available in list
     QString lineShape = "";
@@ -7402,7 +7402,7 @@ void ModelWidget::drawOMSModelConnections()
         QPointF endPoint = mpDiagramGraphicsView->roundPoint(pEndConnectorComponent->mapToScene(pEndConnectorComponent->boundingRect().center()));
         points.append(point.arg(endPoint.x()).arg(endPoint.y()));
         QString pointsString = QString("{%1}").arg(points.join(","));
-        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)), '(', ')');
+        shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(QString(annotation).arg(pointsString)));
         // Now parse the shapes available in list
         QString lineShape = "";
         foreach (QString shape, shapesList) {

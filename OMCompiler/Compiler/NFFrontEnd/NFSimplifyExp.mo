@@ -232,7 +232,6 @@ algorithm
       then
         exp;
 
-    case "DynamicSelect" then simplifyDynamicSelect(args, call);
     case "fill"      then simplifyFill(listHead(args), listRest(args), call);
     case "homotopy"  then simplifyHomotopy(args, call);
     case "max"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
@@ -372,43 +371,6 @@ algorithm
     else Expression.CALL(call);
   end match;
 end simplifyHomotopy;
-
-function simplifyDynamicSelect
-  input list<Expression> args;
-  input Call call;
-  output Expression exp;
-protected
-  list<Expression> str_args;
-  Expression dstatic, ddynamic, var, digits;
-  Function fn;
-algorithm
-  exp := Expression.STRING(Expression.toString(Expression.CALL(call)));
-  //if Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-  //  exp := Expression.CALL(call);
-  //  return;
-  //end if;
-
-  //{dstatic, ddynamic} := args;
-
-  //// HACK, TODO, FIXME! handle DynamicSelect properly in OMEdit, then disable this stuff!
-  //exp := match (dstatic, ddynamic)
-  //  // DynamicSelect("%y", String(y, significantDigits = 3)) => {"%y", y, 3}
-  //  case (Expression.STRING(), Expression.CALL(call = Call.TYPED_CALL(
-  //      fn = Function.FUNCTION(path = Absyn.Path.IDENT("String")), arguments = str_args)))
-  //    guard listLength(str_args) == 4
-  //    algorithm
-  //      var :: digits :: _ := str_args;
-  //    then
-  //      Expression.makeArray(Type.UNKNOWN(), {dstatic, var, digits});
-
-  //  // DynamicSelect(true, y) => {true, y}
-  //  case (Expression.BOOLEAN(), Expression.CREF())
-  //    then Expression.makeArray(Type.UNKNOWN(), args);
-
-  //  // Otherwise just return first argument
-  //  else dstatic;
-  //end match;
-end simplifyDynamicSelect;
 
 function simplifyArrayConstructor
   input Call call;
