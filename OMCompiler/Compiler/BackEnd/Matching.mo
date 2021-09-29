@@ -5641,9 +5641,8 @@ algorithm
           /* set the system to processed so that it gets analyzed only once */
           syst := BackendDAEUtil.setAnalyticalToStructuralProcessed(syst, true);
 
-          /* create NORMAL() adjacency matrix for sorting first */
-          (_, m1, _, _, _) := BackendDAEUtil.getAdjacencyMatrixScalar(isyst, BackendDAE.NORMAL(), NONE(), BackendDAEUtil.isInitializationDAE(ishared));
-          comps := Sorting.Tarjan(m1, ass2_1);
+          /* create sorting first */
+          comps := Sorting.Tarjan(mt, ass2_1);
 
           for comp in comps loop
             (ass1_1, ass2_1, syst, changed) := BackendDAEUtil.analyticalToStructuralSingularity(comp, ass1_1, ass2_1, syst, changed);
