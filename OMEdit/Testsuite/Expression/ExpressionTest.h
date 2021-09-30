@@ -46,7 +46,12 @@ class ExpressionTest: public QObject
   Q_OBJECT
 
 private slots:
-  void dynamicSelectString();
+  void dynamicSelect();
+  void dynamicSelect_data();
+  void operators();
+  void operators_data();
+  void functions();
+  void functions_data();
   void cleanupTestCase();
 };
 
