@@ -378,6 +378,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.LINEARIZATION_DUMP_LANGUAGE,
   Flags.NO_ASSC,
   Flags.FULL_ASSC,
+  Flags.REAL_ASSC,
+  Flags.INIT_ASSC,
   Flags.MAX_SIZE_ASSC,
   Flags.USE_ZEROMQ_IN_SIM,
   Flags.ZEROMQ_PUB_PORT,
@@ -395,7 +397,8 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.INTERACTIVE_PORT,
   Flags.ALLOW_NON_STANDARD_MODELICA,
   Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION,
-  Flags.LINK_TYPE
+  Flags.LINK_TYPE,
+  Flags.TEARING_ALWAYS_DERIVATIVES
 };
 
 public function new

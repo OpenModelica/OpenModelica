@@ -8140,13 +8140,13 @@ algorithm
 
         if not SymbolicJacobian.LinearJacobian.emptyOrSingle(linJac) then
           if Flags.isSet(Flags.DUMP_ASSC) then
-            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Original"));
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Original (initial: " + boolString(init) + ")"));
           end if;
 
           /* solve jacobian with gaussian elimination */
           linJac := SymbolicJacobian.LinearJacobian.solve(linJac);
           if Flags.isSet(Flags.DUMP_ASSC) then
-            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Solved"));
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Solved (initial: " + boolString(init) + ")"));
           end if;
 
           /* set changed to true if it was true before, or any row changed in the jacobian */

@@ -1231,7 +1231,6 @@ end constraintHandlerFunc;
 
 protected function balanceInitialSystem "author: kabdelhak
   New algorithm to handle under-, over-, and mixed-determined systems.
-  Plan:
   1. split off initial equations and match the system without them
      (ensures that the correct equations are left unmatched)
   2. sort fixables to be matched last
@@ -1239,8 +1238,11 @@ protected function balanceInitialSystem "author: kabdelhak
   3. compute adjacency matrix
   4. inverse match (var->eq)
   5. add initial equations and continue matching
-  6. remove unmatched equations (issue warning)
-  7. fix unmatched states and discrete states
+  6. use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
+  7. use ASSC algorithm to resolve analytical singularities
+     If ASSC changed anything:
+     7.1 inverse match (var->eq)
+     7.2 use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
   8. success
   "
   extends constraintHandlerFunc;
@@ -1255,6 +1257,7 @@ protected
   Boolean changed = false;
   list<list<Integer>> comps;
   list<Integer> redundantEqns, unfixedVars; // inconsistentEqns, numericalCheckEqns,
+  Boolean initASSC = Flags.getConfigBool(Flags.INIT_ASSC);
 algorithm
   if BackendVariable.varsSize(inEqSystem.orderedVars) > 0 then
     // 1. split off initial equations and match the system without them
@@ -1265,7 +1268,7 @@ algorithm
     funcs := BackendDAEUtil.getFunctions(inShared);
 
     // 3. compute adjacency matrix
-    (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
+    (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
 
     // 4. inverse match (var->eq)
     nVars := BackendVariable.varsSize(outEqSystem.orderedVars);
@@ -1275,7 +1278,7 @@ algorithm
 
     // 5. add initial equations and continue matching
     outEqSystem.orderedEqs := BackendEquation.addList(init_eqns, outEqSystem.orderedEqs);
-    (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
+    (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
     (eqn_to_var, var_to_eqn, _, _, _) := Matching.ContinueMatching(mT, nEqns, nVars, eqn_to_var, var_to_eqn);
 
     unfixedVars   := list(i for i guard(var_to_eqn[i] < 0) in 1:arrayLength(var_to_eqn));
@@ -1283,12 +1286,14 @@ algorithm
     redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
 
     if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
+      // 6. use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
       outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
-      (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
-      // 4. inverse match (var->eq)
+      (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
       nVars := BackendVariable.varsSize(outEqSystem.orderedVars);
       nEqns := BackendEquation.equationArraySize(outEqSystem.orderedEqs);
       (eqn_to_var, var_to_eqn, _, _, _) := Matching.RegularMatching(mT, nEqns, nVars);
+    elseif not initASSC then
+      outEqSystem := inEqSystem;
     end if;
 
     if debug then
@@ -1298,23 +1303,29 @@ algorithm
       BackendDump.dumpMatchingEqns(eqn_to_var);
     end if;
 
-    comps := Sorting.Tarjan(m, var_to_eqn, nEqns);
+    // 7. use ASSC algorithm to resolve analytical singularities
+    if initASSC then
+      comps := Sorting.Tarjan(m, var_to_eqn, nEqns);
 
-    for comp in comps loop
-      (eqn_to_var, var_to_eqn, outEqSystem, changed) := BackendDAEUtil.analyticalToStructuralSingularity(comp, eqn_to_var, var_to_eqn, outEqSystem, changed, true);
-    end for;
+      for comp in comps loop
+        (eqn_to_var, var_to_eqn, outEqSystem, changed) := BackendDAEUtil.analyticalToStructuralSingularity(comp, eqn_to_var, var_to_eqn, outEqSystem, changed, true);
+      end for;
 
-    if changed then
-      BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT)) := outEqSystem;
-      (eqn_to_var, var_to_eqn, _, _, _) := Matching.ContinueMatching(mT, nEqns, nVars, eqn_to_var, var_to_eqn);
+      if changed then
+        // 7.1 inverse match (var->eq)
+        BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT)) := outEqSystem;
+        (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.NORMAL(), SOME(funcs), true);
+        (eqn_to_var, var_to_eqn, _, _, _) := Matching.ContinueMatching(mT, nEqns, nVars, eqn_to_var, var_to_eqn);
 
-      unfixedVars   := list(i for i guard(var_to_eqn[i] < 0) in 1:arrayLength(var_to_eqn));
-      redundantEqns := list(i for i guard(eqn_to_var[i] < 0) in 1:arrayLength(eqn_to_var));
-      redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
+        unfixedVars   := list(i for i guard(var_to_eqn[i] < 0) in 1:arrayLength(var_to_eqn));
+        redundantEqns := list(i for i guard(eqn_to_var[i] < 0) in 1:arrayLength(eqn_to_var));
+        redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
 
-      if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
-        outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
-        (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
+        if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
+          // 7.2 use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
+          outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
+          (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
+        end if;
       end if;
     end if;
   else
@@ -1322,7 +1333,11 @@ algorithm
   end if;
 end balanceInitialSystem;
 
-protected function resolveOverAndUnderconstraints
+protected function resolveOverAndUnderconstraints "author: kabdelhak
+  Subroutine for balanceInitialSystem
+  New algorithm to handle under-, over-, and mixed-determined systems.
+  1. remove unmatched equations
+  2. fix unmatched initialVars"
   input output BackendDAE.EqSystem syst;
   input BackendDAE.Variables initVars;
   input list<Integer> unfixedVars;
