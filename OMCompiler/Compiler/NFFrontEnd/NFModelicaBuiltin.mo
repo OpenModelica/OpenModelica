@@ -1740,6 +1740,12 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end getModelicaPath;
 
+function getHomeDirectoryPath "This returns the path to user HOME directory."
+  output String homeDirectoryPath;
+external "builtin";
+annotation(preferredView="text");
+end getHomeDirectoryPath;
+
 function setCompilerFlags
   input String compilerFlags;
   output Boolean success;
