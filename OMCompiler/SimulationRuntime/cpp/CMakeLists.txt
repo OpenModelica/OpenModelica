@@ -34,6 +34,10 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
+if(OPENMODELICA_NEW_CMAKE_BUILD)
+  include(cmake_3.14.cmake)
+else(OPENMODELICA_NEW_CMAKE_BUILD)
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 
 IF(UNIX)
@@ -520,7 +524,7 @@ MESSAGE(STATUS ${LAPACK_LIBRARIES})
 
 MESSAGE(STATUS "use reduce dae method: ${REDUCE_DAE} - "  )
 IF(REDUCE_DAE)
- MESSAGE(STATUS "using reduce dae method") 
+ MESSAGE(STATUS "using reduce dae method")
  ADD_DEFINITIONS("-DUSE_REDUCE_DAE")
  SET(OMCCAPI_INLCUDE_HOME  omcCAPI/include/)
  SET(OMCCAPI_LIBRARY_RELEASE_HOME   Build_CAPI/)
@@ -1126,3 +1130,6 @@ if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
   # symlink boost includes outside platform specific /usr/include
   install(CODE "execute_process(COMMAND ln -sf /usr/include/boost \"${CMAKE_INSTALL_PREFIX}/include/omc/cpp/\")")
 endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+
+
+endif(OPENMODELICA_NEW_CMAKE_BUILD)
