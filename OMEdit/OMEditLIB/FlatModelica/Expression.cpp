@@ -1124,8 +1124,6 @@ namespace FlatModelica
       case djb2_hash("symmetric"): return evalSymmetric(args[0]);
       // 10.4.2
       case djb2_hash("cat"): return evalCat(args);
-      //
-      case djb2_hash("DynamicSelect"): return args[1];
     }
 
     return Expression(std::make_unique<Call>(_name, std::move(args)));
