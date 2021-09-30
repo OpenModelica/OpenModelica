@@ -803,6 +803,9 @@ algorithm
     case ("setModelicaPath",_)
       then Values.BOOL(false);
 
+    case ("getHomeDirectoryPath",{})
+      then Values.STRING(Settings.getHomeDir(Testsuite.isRunning()));
+
     case ("getLanguageStandard",{})
       then Values.STRING(Config.languageStandardString(Config.getLanguageStandard()));
 
