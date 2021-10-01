@@ -43,6 +43,13 @@
 #include "Plotting/VariablesWidget.h"
 #include "Util/ResourceCache.h"
 
+
+QString stripDynamicSelect(const QString &str)
+{
+  return str.startsWith("DynamicSelect") ?
+    StringHandler::getStrings(str.mid(14)).at(0) : str;
+}
+
 /*!
  * \brief GraphicItem::setDefaults
  * Sets the default value.
@@ -89,8 +96,9 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
   if (list.size() < 3)
     return;
   // if first item of list is true then the shape should be visible.
-  if (list.at(0).startsWith("{")) { // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(0)));
+  auto visible_str = stripDynamicSelect(list.at(0));
+  if (visible_str.startsWith("{")) { // DynamicSelect
+    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(visible_str));
     if (args.count() > 0) {
       mVisible = args.at(0).contains("true");
     }
@@ -98,16 +106,17 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
       mDynamicVisible = args.at(1);  // variable name
     }
   } else {
-    mVisible = list.at(0).contains("true");
+    mVisible = visible_str.contains("true");
   }
   // 2nd item is the origin
-  QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(1)));
+  QStringList originList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(1))));
   if (originList.size() >= 2) {
     setOrigin(QPointF(originList.at(0).toFloat(), originList.at(1).toFloat()));
   }
   // 3rd item is the rotation
-  if (list.at(2).startsWith("{")) { // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(2)));
+  auto rotation_str = stripDynamicSelect(list.at(2));
+  if (rotation_str.startsWith("{")) { // DynamicSelect
+    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(rotation_str));
     if (args.count() > 0) {
       mRotation = args.at(0).toFloat();
     }
@@ -115,7 +124,7 @@ void GraphicItem::parseShapeAnnotation(QString annotation)
       mDynamicRotation = args.at(1);  // variable name
     }
   } else {
-    mRotation = list.at(2).toFloat();
+    mRotation = rotation_str.toFloat();
   }
 }
 
@@ -205,7 +214,7 @@ void FilledShape::parseShapeAnnotation(QString annotation)
     return;
   }
   // 4th item of the list is the line color
-  QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(3)));
+  QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(3))));
   if (colorList.size() >= 3) {
     int red, green, blue = 0;
     red = colorList.at(0).toInt();
@@ -214,7 +223,7 @@ void FilledShape::parseShapeAnnotation(QString annotation)
     mLineColor = QColor (red, green, blue);
   }
   // 5th item of list contains the fill color.
-  QStringList fillColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(4)));
+  QStringList fillColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(4))));
   if (fillColorList.size() >= 3) {
     int red, green, blue = 0;
     red = fillColorList.at(0).toInt();
@@ -223,11 +232,11 @@ void FilledShape::parseShapeAnnotation(QString annotation)
     mFillColor = QColor (red, green, blue);
   }
   // 6th item of list contains the Line Pattern.
-  mLinePattern = StringHandler::getLinePatternType(list.at(5));
+  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(list.at(5)));
   // 7th item of list contains the Fill Pattern.
-  mFillPattern = StringHandler::getFillPatternType(list.at(6));
+  mFillPattern = StringHandler::getFillPatternType(stripDynamicSelect(list.at(6)));
   // 8th item of list contains the thickness.
-  mLineThickness = list.at(7).toFloat();
+  mLineThickness = stripDynamicSelect(list.at(7)).toFloat();
 }
 
 /*!

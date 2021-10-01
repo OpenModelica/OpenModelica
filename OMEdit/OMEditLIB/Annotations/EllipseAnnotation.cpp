@@ -79,7 +79,7 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item is the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
+  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(8))));
   for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
     if (extentPoints.size() >= 2) {
@@ -87,11 +87,11 @@ void EllipseAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 10th item of the list contains the start angle.
-  mStartAngle = list.at(9).toFloat();
+  mStartAngle = stripDynamicSelect(list.at(9)).toFloat();
   // 11th item of the list contains the end angle.
-  mEndAngle = list.at(10).toFloat();
+  mEndAngle = stripDynamicSelect(list.at(10)).toFloat();
   // 12th item of the list contains the closure
-  mClosure = StringHandler::getClosureType(list.at(11));
+  mClosure = StringHandler::getClosureType(stripDynamicSelect(list.at(11)));
 }
 
 QRectF EllipseAnnotation::boundingRect() const
