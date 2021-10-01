@@ -407,7 +407,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
   }
   mPoints.clear();
   // 4th item of list contains the points.
-  QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(3)));
+  QStringList pointsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(3))));
   foreach (QString point, pointsList) {
     QStringList linePoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(point));
     if (linePoints.size() >= 2) {
@@ -415,7 +415,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 5th item of list contains the color.
-  QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(4)));
+  QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(4))));
   if (colorList.size() >= 3) {
     int red, green, blue = 0;
     red = colorList.at(0).toInt();
@@ -424,19 +424,19 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
     mLineColor = QColor (red, green, blue);
   }
   // 6th item of list contains the Line Pattern.
-  mLinePattern = StringHandler::getLinePatternType(list.at(5));
+  mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(list.at(5)));
   // 7th item of list contains the Line thickness.
-  mLineThickness = list.at(6).toFloat();
+  mLineThickness = stripDynamicSelect(list.at(6)).toFloat();
   // 8th item of list contains the Line Arrows.
-  QStringList arrowList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(7)));
+  QStringList arrowList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(7))));
   if (arrowList.size() >= 2) {
     mArrow.replace(0, StringHandler::getArrowType(arrowList.at(0)));
     mArrow.replace(1, StringHandler::getArrowType(arrowList.at(1)));
   }
   // 9th item of list contains the Line Arrow Size.
-  mArrowSize = list.at(8).toFloat();
+  mArrowSize = stripDynamicSelect(list.at(8)).toFloat();
   // 10th item of list contains the smooth.
-  mSmooth = StringHandler::getSmoothType(list.at(9));
+  mSmooth = StringHandler::getSmoothType(stripDynamicSelect(list.at(9)));
 }
 
 QPainterPath LineAnnotation::getShape() const

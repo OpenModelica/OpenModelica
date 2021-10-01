@@ -114,17 +114,17 @@ void BitmapAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 4th item is the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(3)));
+  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(3))));
   for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
     if (extentPoints.size() >= 2)
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
   }
   // 5th item is the fileName
-  setFileName(StringHandler::removeFirstLastQuotes(list.at(4)));
+  setFileName(StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(4))));
   // 6th item is the imageSource
   if (list.size() >= 6) {
-    mImageSource = StringHandler::removeFirstLastQuotes(list.at(5));
+    mImageSource = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(5)));
   }
   if (!mImageSource.isEmpty()) {
     mImage.loadFromData(QByteArray::fromBase64(mImageSource.toLatin1()));

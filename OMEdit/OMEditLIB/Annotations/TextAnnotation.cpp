@@ -165,7 +165,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item of the list contains the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
+  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(8))));
   for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
     if (extentPoints.size() >= 2)
@@ -173,11 +173,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   }
   // 10th item of the list contains the textString.
   try {
-    if (list.at(9).contains("DynamicSelect")) {
-      mTextExpression = FlatModelica::Expression::parse(StringHandler::removeFirstLastQuotes(list.at(9)));
-    } else {
-      mTextExpression = FlatModelica::Expression::parse(list.at(9));
-    }
+    mTextExpression = FlatModelica::Expression::parse(list.at(9));
 
     if (mTextExpression.isCall("DynamicSelect")) {
       mOriginalTextString = mTextExpression.arg(0).toQString();
@@ -192,9 +188,9 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   initUpdateTextString();
 
   // 11th item of the list contains the fontSize.
-  mFontSize = list.at(10).toFloat();
+  mFontSize = stripDynamicSelect(list.at(10)).toFloat();
   // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
-  QStringList textColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(11)));
+  QStringList textColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(11))));
   if (textColorList.size() >= 3) {
     int red, green, blue = 0;
     red = textColorList.at(0).toInt();
@@ -205,12 +201,12 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 13th item of the list contains the font name.
-  QString fontName = StringHandler::removeFirstLastQuotes(list.at(12));
+  QString fontName = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(12)));
   if (!fontName.isEmpty()) {
     mFontName = fontName;
   }
   // 14th item of the list contains the text styles.
-  QStringList textStyles = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(13)));
+  QStringList textStyles = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(13))));
   foreach (QString textStyle, textStyles) {
     if (textStyle == "TextStyle.Bold") {
       mTextStyles.append(StringHandler::TextStyleBold);
@@ -221,7 +217,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 15th item of the list contains the text alignment.
-  QString horizontalAlignment = StringHandler::removeFirstLastQuotes(list.at(14));
+  QString horizontalAlignment = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(14)));
   if (horizontalAlignment == "TextAlignment.Left") {
     mHorizontalAlignment = StringHandler::TextAlignmentLeft;
   } else if (horizontalAlignment == "TextAlignment.Center") {

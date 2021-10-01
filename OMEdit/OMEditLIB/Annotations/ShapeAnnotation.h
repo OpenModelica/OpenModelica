@@ -54,6 +54,8 @@ class CornerItem;
 class OriginItem;
 class ShapeAnnotation;
 
+QString stripDynamicSelect(const QString &str);
+
 class GraphicItem
 {
 public:
