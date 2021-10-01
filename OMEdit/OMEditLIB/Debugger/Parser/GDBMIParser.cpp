@@ -436,7 +436,7 @@ GDBMIResponse* parseGDBOutput(const char* output) {
   /* if the parser fails */
   if (parser->pParser->rec->state->failed)
   {
-    parserErrorsList.emplace_back(output);
+    parserErrorsList.push_back(output);
     delete retval;
     retval = NULL;
   }
