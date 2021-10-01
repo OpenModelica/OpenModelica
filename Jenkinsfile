@@ -180,13 +180,13 @@ pipeline {
             //stash name: 'omc-centos7', includes: 'build/**, **/config.status'
           }
         }
-        stage('cmake-xenial-gcc') {
+        stage('cmake-gcc') {
           agent {
-            docker {
-              // image 'docker.openmodelica.org/build-deps:focal.nightly.amd64'
-              image 'docker.openmodelica.org/build-deps:v1.16-qt4-xenial'
+            dockerfile {
+              additionalBuildArgs '--pull'
+              dir '.CI/cache-without-cmake'
               label 'linux'
-              alwaysPull true
+              args "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
               args "--mount type=volume,source=omlibrary-cache,target=/cache/omlibrary " +
                    "-v /var/lib/jenkins/gitcache:/var/lib/jenkins/gitcache"
             }
@@ -196,8 +196,8 @@ pipeline {
             expression { !shouldWeSkipCMakeBuild_value }
           }
           environment {
-            CC = "gcc"
-            CXX = "g++"
+            CC = "gcc-5"
+            CXX = "g++-5"
           }
           steps {
             script {
