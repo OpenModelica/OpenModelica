@@ -10,21 +10,21 @@ namespace FlatModelica
   Expression evalAbs(const Expression &x)
   {
     if (x.isInteger()) {
-      return Expression(std::abs(x.toInteger()));
+      return Expression(std::abs(x.intValue()));
     } else {
-      return Expression(std::abs(x.toReal()));
+      return Expression(std::abs(x.realValue()));
     }
   }
 
   Expression evalSign(const Expression &x)
   {
-    auto v = x.toReal();
+    auto v = x.realValue();
     return Expression(int64_t{v > 0 ? 1 : (v < 0 ? -1 : 0)});
   }
 
   Expression evalSqrt(const Expression &x)
   {
-    auto v = x.toReal();
+    auto v = x.realValue();
 
     if (v < 0) {
       throw std::runtime_error("Invalid argument " + x.toString() + " to sqrt()");
@@ -51,18 +51,18 @@ namespace FlatModelica
   {
     switch (args.size()) {
       case 2: // String(r, format)
-        return Expression(format_string("%" + args[1].toString(), args[0].toReal()));
+        return Expression(format_string("%" + args[1].stringValue(), args[0].realValue()));
 
       case 3: // String(i, minimumLength, leftJustified)
         return Expression(format_string(
-            (args[2].toBoolean() ? "%-" : "%") + args[1].toString() + "d",
-            args[0].toInteger()
+            (args[2].boolValue() ? "%-" : "%") + args[1].toString() + "d",
+            args[0].intValue()
           ));
 
       case 4: // String(r, significantDigits, mininumLength, leftJustified)
         return Expression(format_string(
-          (args[3].toBoolean() ? "%-" : "%") + args[2].toString() + "." + args[1].toString() + "g",
-          args[0].toReal()
+          (args[3].boolValue() ? "%-" : "%") + args[2].toString() + "." + args[1].toString() + "g",
+          args[0].realValue()
         ));
     }
 
@@ -72,17 +72,17 @@ namespace FlatModelica
   Expression evalDiv(const Expression &x, const Expression &y)
   {
     if (x.isInteger() && y.isInteger()) {
-      return Expression(x.toInteger() / y.toInteger());
+      return Expression(x.intValue() / y.intValue());
     } else {
-      return Expression(x.toReal() / y.toReal());
+      return Expression(x.realValue() / y.realValue());
     }
   }
 
   Expression evalMod(const Expression &x, const Expression &y)
   {
     if (x.isInteger() && y.isInteger()) {
-      auto ix = x.toInteger();
-      auto iy = y.toInteger();
+      auto ix = x.intValue();
+      auto iy = y.intValue();
       auto res = ix % iy;
 
       if ((iy > 0 && res < 0) || (iy < 0 && res > 0)) {
@@ -91,8 +91,8 @@ namespace FlatModelica
 
       return Expression(res);
     } else {
-      auto rx = x.toReal();
-      auto ry = y.toReal();
+      auto rx = x.realValue();
+      auto ry = y.realValue();
       return Expression(rx - std::floor(rx / ry) * ry);
     }
   }
@@ -100,94 +100,94 @@ namespace FlatModelica
   Expression evalRem(const Expression &x, const Expression &y)
   {
     if (x.isInteger() && y.isInteger()) {
-      auto ix = x.toInteger();
-      auto iy = y.toInteger();
+      auto ix = x.intValue();
+      auto iy = y.intValue();
       return Expression(ix - ix / iy * iy);
     } else {
-      auto rx = x.toReal();
-      auto ry = y.toReal();
+      auto rx = x.realValue();
+      auto ry = y.realValue();
       return Expression(rx - rx / ry * ry);
     }
   }
 
   Expression evalCeil(const Expression &x)
   {
-    return Expression(std::ceil(x.toReal()));
+    return Expression(std::ceil(x.realValue()));
   }
 
   Expression evalFloor(const Expression &x)
   {
-    return Expression(std::floor(x.toReal()));
+    return Expression(std::floor(x.realValue()));
   }
 
   Expression evalInteger(const Expression &x)
   {
-    return Expression(static_cast<int64_t>(std::floor(x.toReal())));
+    return Expression(static_cast<int64_t>(std::floor(x.realValue())));
   }
 
   Expression evalSin(const Expression &x)
   {
-    return Expression(std::sin(x.toReal()));
+    return Expression(std::sin(x.realValue()));
   }
 
   Expression evalCos(const Expression &x)
   {
-    return Expression(std::cos(x.toReal()));
+    return Expression(std::cos(x.realValue()));
   }
 
   Expression evalTan(const Expression &x)
   {
-    return Expression(std::tan(x.toReal()));
+    return Expression(std::tan(x.realValue()));
   }
 
   Expression evalAsin(const Expression &x)
   {
-    return Expression(std::asin(x.toReal()));
+    return Expression(std::asin(x.realValue()));
   }
 
   Expression evalAcos(const Expression &x)
   {
-    return Expression(std::acos(x.toReal()));
+    return Expression(std::acos(x.realValue()));
   }
 
   Expression evalAtan(const Expression &x)
   {
-    return Expression(std::atan(x.toReal()));
+    return Expression(std::atan(x.realValue()));
   }
 
   Expression evalAtan2(const Expression &x, const Expression &y)
   {
-    return Expression(std::atan2(x.toReal(), y.toReal()));
+    return Expression(std::atan2(x.realValue(), y.realValue()));
   }
 
   Expression evalSinh(const Expression &x)
   {
-    return Expression(std::sinh(x.toReal()));
+    return Expression(std::sinh(x.realValue()));
   }
 
   Expression evalCosh(const Expression &x)
   {
-    return Expression(std::cosh(x.toReal()));
+    return Expression(std::cosh(x.realValue()));
   }
 
   Expression evalTanh(const Expression &x)
   {
-    return Expression(std::tanh(x.toReal()));
+    return Expression(std::tanh(x.realValue()));
   }
 
   Expression evalExp(const Expression &x)
   {
-    return Expression(std::exp(x.toReal()));
+    return Expression(std::exp(x.realValue()));
   }
 
   Expression evalLog(const Expression &x)
   {
-    return Expression(std::log(x.toReal()));
+    return Expression(std::log(x.realValue()));
   }
 
   Expression evalLog10(const Expression &x)
   {
-    return Expression(std::log10(x.toReal()));
+    return Expression(std::log10(x.realValue()));
   }
 
   Expression evalNdim(const Expression &A)
@@ -216,7 +216,7 @@ namespace FlatModelica
 
   Expression evalSize(const Expression &A, const Expression &i)
   {
-    return Expression(static_cast<int64_t>(A.size(i.toInteger())));
+    return Expression(static_cast<int64_t>(A.size(i.intValue()-1)));
   }
 
   Expression evalScalar(const Expression &A)
@@ -261,7 +261,7 @@ namespace FlatModelica
       throw std::runtime_error("Invalid argument " + n.toString() + " to identity()");
     }
 
-    auto in = n.toInteger();
+    auto in = n.intValue();
 
     std::vector<Expression> rows;
     rows.reserve(in);
@@ -310,7 +310,7 @@ namespace FlatModelica
     Expression res = value;
 
     for (auto it = first; it != last; ++it) {
-      res = Expression(std::vector<Expression>(it->toInteger(), res));
+      res = Expression(std::vector<Expression>(it->intValue(), res));
     }
 
     return res;

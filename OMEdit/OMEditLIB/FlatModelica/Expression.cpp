@@ -853,6 +853,8 @@ namespace FlatModelica
     }
   }
 
+  // Applies a unary operation to the elements of the given array Expression and
+  // returns a new array Expression with the results.
   template<class UnaryOp>
   Expression expUnaryOp(const Expression &e, UnaryOp op)
   {
@@ -863,6 +865,10 @@ namespace FlatModelica
     return Expression(std::move(res));
   }
 
+  // Applies a binary operation to each pair of elements from the two given
+  // array Expressions and returns a new array Expression with the results.
+  // If the arrays do not have the same number of elements an error is thrown
+  // using the given operator name.
   template<class BinOp>
   Expression expBinaryEWArrayOp(const Expression &e1, const Expression &e2, BinOp op, const std::string &op_name)
   {
@@ -878,6 +884,9 @@ namespace FlatModelica
     return Expression(std::move(elems));
   }
 
+  // Applies a binary operation to each combination of the given scalar and the
+  // elements of the given array and returns a new array Expression with the
+  // results.
   template<class BinOp>
   Expression expBinaryScalarArrayOp(const Expression &scalar, const Expression &arr, BinOp op)
   {
@@ -890,6 +899,9 @@ namespace FlatModelica
     }
   }
 
+  // Applies a binary operation to each combination of the elements of the given
+  // array and the given scalar and returns a new array Expression with the
+  // results.
   template<class BinOp>
   Expression expBinaryArrayScalarOp(const Expression &arr, const Expression &scalar, BinOp op)
   {
@@ -902,6 +914,10 @@ namespace FlatModelica
     }
   }
 
+  // Applies a binary operation element-wise to the two given Expressions, each
+  // of which may be either an array or a scalar, and returns a new Expression
+  // with the result. If the expressions are arrays with different number of
+  // elements an error is thrown using the given operator name.
   template<class BinOp>
   Expression expBinaryEWOp(const Expression &e1, const Expression &e2, BinOp op, const std::string &op_name)
   {
@@ -1272,7 +1288,7 @@ namespace FlatModelica
 
   Expression IfExp::eval(const Expression::VariableEvaluator &var_eval) const
   {
-    return _condition.evaluate(var_eval).toBoolean() ?
+    return _condition.evaluate(var_eval).boolValue() ?
            _true_e.evaluate(var_eval) : _false_e.evaluate(var_eval);
   }
 
@@ -1304,132 +1320,304 @@ namespace FlatModelica
     return Expression(std::make_unique<IfExp>(std::move(condition), std::move(true_e), std::move(false_e)));
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs an expression with no value.
+   */
   Expression::Expression() = default;
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs an Integer expression.
+   * \param value
+   */
   Expression::Expression(int value)
     : _value(std::make_unique<Integer>(value))
   {
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs an Integer expression.
+   * \param value
+   */
   Expression::Expression(int64_t value)
     : _value(std::make_unique<Integer>(value))
   {
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs a Real expression.
+   * \param value
+   */
   Expression::Expression(double value)
     : _value(std::make_unique<Real>(value))
   {
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs a Boolean expression.
+   * \param value
+   */
   Expression::Expression(bool value)
     : _value(std::make_unique<Boolean>(value))
   {
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs a String expression.
+   * \param value
+   */
   Expression::Expression(std::string value)
     : _value(std::make_unique<String>(std::move(value)))
   {
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs a String expression.
+   * \param value
+   */
   Expression::Expression(const char *value)
     : _value(std::make_unique<String>(value))
   {
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs a String expression.
+   * \param value
+   */
+  Expression::Expression(const QString &value)
+    : _value(std::make_unique<String>(value.toStdString()))
+  {
+  }
+
+  /*!
+   * \brief Expression::Expression
+   * Constructs an Array expression.
+   * \param elements
+   */
   Expression::Expression(std::vector<Expression> elements)
     : _value(std::make_unique<Array>(std::move(elements)))
   {
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Constructs an expression from an ExpressionBase pointer.
+   * Only for internal use by the Expression class.
+   * \param value
+   */
+  Expression::Expression(std::unique_ptr<ExpressionBase> value)
+    : _value(std::move(value))
+  {
+  }
+
+  /*!
+   * \brief Expression::~Expression
+   * Destructor for Expression.
+   * Needs to be implemented here since it will otherwise be automatically
+   * generated in the header where ExpressionBase is only forward-declared.
+   */
   Expression::~Expression() = default;
 
+  /*!
+   * \brief Expression::parse
+   * Parses a string representing a flat Modelica expression.
+   * \param string
+   * \return An Expression representing the flat Modelica expression.
+   */
   Expression Expression::parse(std::string string)
   {
     Tokenizer tokenizer(std::move(string));
     return parseExp(tokenizer);
   }
 
+  /*!
+   * \brief Expression::parse
+   * Parses a QString representing a flat Modelica expression.
+   * \param string
+   * \return An Expression representing the flat Modelica expression.
+   */
   Expression Expression::parse(const QString &str)
   {
     return parse(str.toStdString());
   }
 
-  Expression::Expression(std::unique_ptr<ExpressionBase> value)
-    : _value(std::move(value))
-  {
-  }
-
+  /*!
+   * \brief Expression::Expression
+   * Copy constructor for Expression.
+   * \param other
+   */
   Expression::Expression(const Expression &other)
     : _value(other._value ? other._value->clone() : nullptr)
   {
   }
 
+  /*!
+   * \brief Expression::operator=
+   * Assignment operator for Expression.
+   * \param other
+   */
   Expression& Expression::operator= (const Expression &other) noexcept
   {
     return *this = Expression(other);
   }
 
+  /*!
+   * \brief Expression::Expression
+   * Move constructor for Expression.
+   * \param other
+   */
   Expression::Expression(Expression &&other)
     : _value(std::move(other._value))
   {
   }
 
+  /*!
+   * \brief Expression::operator=
+   * Move assignment operator for Expression.
+   * \param other
+   */
   Expression& Expression::operator= (Expression &&other) noexcept
   {
     _value = std::move(other._value);
     return *this;
   }
 
+  /*!
+   * \brief Expression::evaluate
+   * Evaluates an Expression to a literal Expression. Any variables in the
+   * expression are evaluated using the given callback that takes a variable
+   * name as a string and returns the variables value as a double.
+   * \param var_eval
+   */
   Expression Expression::evaluate(const VariableEvaluator &var_eval) const
   {
     return Expression(_value->eval(var_eval));
   }
 
+  /*!
+   * \brief Expression::isNull
+   * Checks if the Expression contains a value or not.
+   * \return true if the Expression has no value, otherwise false.
+   */
   bool Expression::isNull() const
   {
     return _value == nullptr;
   }
 
+  /*!
+   * \brief Expression::isLiteral
+   * Checks if the Expression is a literal, i.e. is a scalar value or an array
+   * of scalar values.
+   * \return true if the Expression is a literal, otherwise false.
+   */
   bool Expression::isLiteral() const
   {
     return _value && _value->isLiteral();
   }
 
+  /*!
+   * \brief Expression::isInteger
+   * Checks if the Expression is an Integer.
+   * \return true if the Expression is an Integer, otherwise false.
+   */
   bool Expression::isInteger() const
   {
     return _value && _value->type() == ExpressionBase::value_t::integer;
   }
 
+  /*!
+   * \brief Expression::isReal
+   * Checks if the Expression is a Real.
+   * \return true if the Expression is a Real, otherwise false.
+   */
   bool Expression::isReal() const
   {
     return _value && _value->type() == ExpressionBase::value_t::real;
   }
 
+  /*!
+   * \brief Expression::isNumber
+   * Checks if the Expression is an Integer or Real.
+   * \return true if the Expression is a number, otherwise false.
+   */
   bool Expression::isNumber() const
   {
     return isInteger() || isReal();
   }
 
+  /*!
+   * \brief Expression::isBoolean
+   * Checks if the Expression is a Boolean.
+   * \return true if the Expression is a Boolean, otherwise false.
+   */
   bool Expression::isBoolean() const
   {
     return _value && _value->type() == ExpressionBase::value_t::boolean;
   }
 
+  /*!
+   * \brief Expression::isBooleanish
+   * Checks if the Expression can be type cast to Boolean, i.e. a numeric or
+   * boolean value.
+   * \return true if the Expression can be type cast to Boolean, otherwise false.
+   */
+  bool Expression::isBooleanish() const
+  {
+    if (!_value) return false;
+
+    switch (_value->type()) {
+      case ExpressionBase::value_t::boolean:
+      case ExpressionBase::value_t::integer:
+      case ExpressionBase::value_t::real:
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
+  /*!
+   * \brief Expression::isString
+   * Checks if the Expression is a String.
+   * \return true if the Expression is a String, otherwise false.
+   */
   bool Expression::isString() const
   {
     return _value && _value->type() == ExpressionBase::value_t::string;
   }
 
+  /*!
+   * \brief Expression::isArray
+   * Checks if the Expression is an array.
+   * \return true if the Expression is an array, otherwise false.
+   */
   bool Expression::isArray() const
   {
     return _value && _value->type() == ExpressionBase::value_t::array;
   }
 
+  /*!
+   * \brief Expression::isCall
+   * Checks if the Expression is a function call.
+   * \return true if the Expression is a call, otherwise false.
+   */
   bool Expression::isCall() const
   {
     return _value && _value->type() == ExpressionBase::value_t::call;
   }
 
+  /*!
+   * \brief Expression::isCall
+   * Checks if the Expression is a function call with the given name.
+   * \return true if the Expression is a call with the given name, otherwise false.
+   */
   bool Expression::isCall(const std::string &name) const
   {
     return _value &&
@@ -1437,6 +1625,12 @@ namespace FlatModelica
            dynamic_cast<const Call&>(*_value).isNamed(name);
   }
 
+  /*!
+   * \brief Expression::ndims
+   * Returns the number of dimensions an Expression has if it's an array,
+   * otherwise 0 (even if it's e.g. a function call that returns an array).
+   * \return The number of dimensions of the Expression.
+   */
   size_t Expression::ndims() const
   {
     if (isArray()) {
@@ -1447,6 +1641,13 @@ namespace FlatModelica
     }
   }
 
+  /*!
+   * \brief Expression::size
+   * Returns the size of the given dimension, or 0 if the Expression has no such
+   * dimension.
+   * \param dimension The index of the dimension.
+   * \return The size of the given dimension.
+   */
   size_t Expression::size(size_t dimension) const
   {
     if (!isArray()) {
@@ -1455,14 +1656,20 @@ namespace FlatModelica
 
     auto &elems = elements();
 
-    if (dimension <= 1 || elems.empty()) {
+    if (dimension <= 0 || elems.empty()) {
       return elems.size();
     } else {
       return elems[0].size(dimension - 1);
     }
   }
 
-  int64_t Expression::toInteger() const
+  /*!
+   * \brief Expression::intValue
+   * Converts an Integer or Real expression to an integer value, or throws an
+   * error if the Expression is not convertible.
+   * \return The integer value of the Expression.
+   */
+  int64_t Expression::intValue() const
   {
     if (isReal()) {
       return static_cast<int64_t>(dynamic_cast<const Real&>(*_value).value());
@@ -1471,7 +1678,13 @@ namespace FlatModelica
     }
   }
 
-  double Expression::toReal() const
+  /*!
+   * \brief Expression::realValue
+   * Converts an Integer or Real expression to a floating-point value, or throws
+   * an error if the Expression is not convertible.
+   * \return The floating-point value of the Expression.
+   */
+  double Expression::realValue() const
   {
     if (isInteger()) {
       return static_cast<double>(dynamic_cast<const Integer&>(*_value).value());
@@ -1480,7 +1693,13 @@ namespace FlatModelica
     }
   }
 
-  bool Expression::toBoolean() const
+  /*!
+   * \brief Expression::boolValue
+   * Converts a Boolean, Integer, or Real expression to a boolean value, or
+   * throws an error if the Expression is not convertible.
+   * \return The boolean value of the Expression.
+   */
+  bool Expression::boolValue() const
   {
     switch (_value->type()) {
       case ExpressionBase::value_t::integer:
@@ -1492,48 +1711,85 @@ namespace FlatModelica
     }
   }
 
-  std::string Expression::toString() const
+  /*!
+   * \brief Expression::stringValue
+   * Returns the string value of the Expression if it's a String, or throws an
+   * error if the Expression is not a String.
+   * \return The string value of the Expression.
+   */
+  std::string Expression::stringValue() const
   {
-    if (isString()) {
-      return dynamic_cast<const String&>(*_value).value();
-    } else {
-      std::ostringstream ss;
-      _value->print(ss);
-      return ss.str();
-    }
+    return dynamic_cast<const String&>(*_value).value();
   }
 
+  /*!
+   * \brief Expression::toString
+   * Unparses the Expression into a string.
+   * \return The string representation of the Expression.
+   */
+  std::string Expression::toString() const
+  {
+    std::ostringstream ss;
+    _value->print(ss);
+    return ss.str();
+  }
+
+  /*!
+   * \brief Expression::toString
+   * Unparses the Expression into a string.
+   * \return The QString representation of the Expression.
+   */
   QString Expression::toQString() const
   {
     return QString::fromStdString(toString());
   }
 
+  /*!
+   * \brief Expression::elements
+   * Returns the elements of the Expression if it's an array, or throws an error.
+   * \return The elements of the Expression.
+   */
   const std::vector<Expression>& Expression::elements() const
   {
     return dynamic_cast<const Array&>(*_value).elements();
   }
 
+  /*!
+   * \brief Expression::args
+   * Returns the arguments of the Expression if it's a call, or throws an error.
+   * \return The arguments of the Expression.
+   */
   const std::vector<Expression>& Expression::args() const
   {
     return dynamic_cast<const Call&>(*_value).args();
   }
 
+  /*!
+   * \brief Expression::args
+   * Returns the arguments of the Expression if it's a call, or throws an error.
+   * \return The arguments of the Expression.
+   */
   const Expression& Expression::arg(size_t index) const
   {
     return args()[index];
   }
 
+  /*!
+   * \brief Expression::operator+=
+   * Adds another Expression to this Expression, or throws an error if such an
+   * operation is invalid. Only defined for literal expressions.
+   */
   Expression& Expression::operator+= (const Expression &other)
   {
     if (isInteger() && other.isInteger()) {
       // Integer + Integer
-      _value = std::make_unique<Integer>(toInteger() + other.toInteger());
+      _value = std::make_unique<Integer>(intValue() + other.intValue());
     } else if (isNumber() && other.isNumber()) {
       // Real + Real
-      _value = std::make_unique<Real>(toReal() + other.toReal());
+      _value = std::make_unique<Real>(realValue() + other.realValue());
     } else if (isString() && other.isString()) {
       // String + String
-      _value = std::make_unique<String>(toString() + other.toString());
+      _value = std::make_unique<String>(stringValue() + other.stringValue());
     } else if (isArray() && other.isArray()) {
       // array + array
       *this = expBinaryEWArrayOp(*this, other, std::plus<Expression>{}, "+");
@@ -1544,14 +1800,19 @@ namespace FlatModelica
     return *this;
   }
 
+  /*!
+   * \brief Expression::operator-=
+   * Subtracts another Expression from this Expression, or throws an error if
+   * such an operation is invalid. Only defined for literal expressions.
+   */
   Expression& Expression::operator-= (const Expression &other)
   {
     if (isInteger() && other.isInteger()) {
       // Integer - Integer
-      _value = std::make_unique<Integer>(toInteger() - other.toInteger());
+      _value = std::make_unique<Integer>(intValue() - other.intValue());
     } else if (isNumber() && other.isNumber()) {
       // Real - Real
-      _value = std::make_unique<Real>(toReal() - other.toReal());
+      _value = std::make_unique<Real>(realValue() - other.realValue());
     } else if (isArray() && other.isArray()) {
       // array - array
       *this = expBinaryEWArrayOp(*this, other, std::minus<Expression>{}, "-");
@@ -1562,6 +1823,11 @@ namespace FlatModelica
     return *this;
   }
 
+  /*!
+   * \brief Expression::operator*=
+   * Multiplies this Expression with another Expression, or throws an error if
+   * such an operation is invalid. Only defined for literal expressions.
+   */
   Expression& Expression::operator*= (const Expression &other)
   {
     auto dim_count1 = ndims();
@@ -1570,9 +1836,9 @@ namespace FlatModelica
     if (dim_count1 == 0 && dim_count2 == 0) {
       // scalar * scalar
       if (isInteger() && other.isInteger()) {
-        _value = std::make_unique<Integer>(toInteger() * other.toInteger());
+        _value = std::make_unique<Integer>(intValue() * other.intValue());
       } else if (isNumber() && other.isNumber()) {
-        _value = std::make_unique<Real>(toReal() * other.toReal());
+        _value = std::make_unique<Real>(realValue() * other.realValue());
       } else {
         throw std::runtime_error("Expression: invalid operation " + toString() + " * " + other.toString());
       }
@@ -1610,11 +1876,16 @@ namespace FlatModelica
     return *this;
   }
 
+  /*!
+   * \brief Expression::operator/=
+   * Divides this expression by another expression, or throws an error if such
+   * an operation is invalid. Only defined for literal expressions.
+   */
   Expression& Expression::operator/= (const Expression &other)
   {
     if (isNumber() && other.isNumber()) {
       // scalar / scalar
-      _value = std::make_unique<Real>(toReal() / other.toReal());
+      _value = std::make_unique<Real>(realValue() / other.realValue());
     } else if (isArray() && other.isNumber()) {
       // array / scalar
       *this = expBinaryArrayScalarOp(*this, other, std::divides<Expression>{});
@@ -1625,14 +1896,19 @@ namespace FlatModelica
     return *this;
   }
 
+  /*!
+   * \brief Expression::operator^=
+   * Raises this expression to the power of another expression, or throws an
+   * error such an operation is invalid. Only defined for literal expressions.
+   */
   Expression& Expression::operator^= (const Expression &other)
   {
     if (isNumber() && other.isNumber()) {
       // scalar ^ scalar
-      _value = std::make_unique<Real>(std::pow(toReal(), other.toReal()));
+      _value = std::make_unique<Real>(std::pow(realValue(), other.realValue()));
     } else if (ndims() == 2 && other.isNumber()) {
       // matrix ^ scalar
-      auto n = other.toInteger();
+      auto n = other.intValue();
 
       if (n == 0) {
         *this = evalIdentity(other);
@@ -1649,37 +1925,73 @@ namespace FlatModelica
     return *this;
   }
 
+  /*!
+   * \brief Expression::addEw
+   * Returns 'e1 .+ e2', or throws an error if such an operation is invalid.
+   * Only defined for literal expressions.
+   * \return A new Expression containing the result.
+   */
   Expression Expression::addEw(const Expression &e1, const Expression &e2)
   {
     return expBinaryEWOp(e1, e2, std::plus<Expression>{}, ".+");
   }
 
+  /*!
+   * \brief Expression::subEw
+   * Returns 'e1 .- e2', or throws an error if such an operation is invalid.
+   * Only defined for literal expression.
+   * \return A new Expression containing the result.
+   */
   Expression Expression::subEw(const Expression &e1, const Expression &e2)
   {
     return expBinaryEWOp(e1, e2, std::minus<Expression>{}, ".-");
   }
 
+  /*!
+   * \brief Expression::mulEw
+   * Returns 'e1 .* e2', or throws an error if such an operation is invalid.
+   * Only defined for literal expression.
+   * \return A new Expression containing the result.
+   */
   Expression Expression::mulEw(const Expression &e1, const Expression &e2)
   {
     return expBinaryEWOp(e1, e2, std::multiplies<Expression>{}, ".*");
   }
 
+  /*!
+   * \brief Expression::divEw
+   * Returns 'e1 ./ e2', or throws an error if such an operation is invalid.
+   * Only defined for literal expression.
+   * \return A new Expression containing the result.
+   */
   Expression Expression::divEw(const Expression &e1, const Expression &e2)
   {
     return expBinaryEWOp(e1, e2, std::divides<Expression>{}, "./");
   }
 
+  /*!
+   * \brief Expression::powEw
+   * Returns 'e1 .^ e2', or throws an error if such an operation is invalid.
+   * Only defined for literal expression.
+   * \return A new Expression containing the result.
+   */
   Expression Expression::powEw(const Expression &e1, const Expression &e2)
   {
     return expBinaryEWOp(e1, e2, std::bit_xor<Expression>{}, ".^");
   }
 
+  /*!
+   * \brief Expression::operator-
+   * Returns the negated Expression, or throws an error is such an operation is
+   * invalid. Only defined for literal expressions.
+   * \return A new Expression containing the result.
+   */
   Expression Expression::operator- () const
   {
     if (isInteger()) {
-      return Expression(-toInteger());
+      return Expression(-intValue());
     } else if (isReal()) {
-      return Expression(-toReal());
+      return Expression(-realValue());
     } else if (isArray()) {
       return expUnaryOp(*this, [&] (auto &e) { return -e; });
     } else {
@@ -1687,100 +1999,154 @@ namespace FlatModelica
     }
   }
 
+  /*!
+   * \brief Expression::operator!
+   * Returns the logically negated Expression, or throws an error is such an
+   * operation is invalid. Only defined for literal expressions.
+   * \return A new Expression containing the result.
+   */
   Expression Expression::operator! () const
   {
     if (isArray()) {
       return expUnaryOp(*this, [&] (auto &e) { return !e; });
     } else {
-      return Expression(!toBoolean());
+      return Expression(!boolValue());
     }
   }
 
+  /*!
+   * \brief Expression::operator&&
+   * Returns 'e1 and e2', or throws an error if such an operation is invalid.
+   * Only defined for literal expressions.
+   * \return A new Expression containing the result.
+   */
   Expression operator&& (const Expression &e1, const Expression &e2)
   {
-    return Expression(e1.toBoolean() && e2.toBoolean());
+    return Expression(e1.boolValue() && e2.boolValue());
   }
 
+  /*!
+   * \brief Expression::operator||
+   * Returns 'e1 or e2', or throws an error if such an operation is invalid.
+   * Only defined for literal expressions.
+   * \return A new Expression containing the result.
+   */
   Expression operator|| (const Expression &e1, const Expression &e2)
   {
-    return Expression(e1.toBoolean() || e2.toBoolean());
+    return Expression(e1.boolValue() || e2.boolValue());
   }
 
+  /*!
+   * \brief Expression::operator==
+   * Returns whether the expressions are equivalent, or throws an error if they
+   * can't be compared. Only defined for literal scalar expressions.
+   * \return true if e1 is equivalent to e2, otherwise false.
+   */
   bool operator== (const Expression &e1, const Expression &e2)
   {
     if (e1.isBoolean() || e2.isBoolean()) {
-      return e1.toBoolean() == e2.toBoolean();
+      return e1.boolValue() == e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
-      return e1.toString() == e2.toString();
+      return e1.stringValue() == e2.stringValue();
     } else if (e1.isInteger() && e2.isInteger()) {
-      return e1.toInteger() == e2.toInteger();
+      return e1.intValue() == e2.intValue();
     } else {
-      return e1.toReal() == e2.toReal();
+      return e1.realValue() == e2.realValue();
     }
   }
 
+  /*!
+   * \brief Expression::operator!=
+   * Returns whether the expressions are not equivalent, or throws an error if
+   * they can't be compared. Only defined for literal scalar expressions.
+   * \return true if e1 is not equivalent to e2, otherwise false.
+   */
   bool operator!= (const Expression &e1, const Expression &e2)
   {
     if (e1.isBoolean() || e2.isBoolean()) {
-      return e1.toBoolean() != e2.toBoolean();
+      return e1.boolValue() != e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
-      return e1.toString() != e2.toString();
+      return e1.stringValue() != e2.stringValue();
     } else if (e1.isInteger() && e2.isInteger()) {
-      return e1.toInteger() != e2.toInteger();
+      return e1.intValue() != e2.intValue();
     } else {
-      return e1.toReal() != e2.toReal();
+      return e1.realValue() != e2.realValue();
     }
   }
 
+  /*!
+   * \brief Expression::operator<
+   * Returns whether e1 is less than e2, or throws an error if they can't be
+   * compared. Only defined for literal scalar expressions.
+   * \return true if e1 is less than e2, otherwise false.
+   */
   bool operator< (const Expression &e1, const Expression &e2)
   {
     if (e1.isBoolean() || e2.isBoolean()) {
-      return e1.toBoolean() < e2.toBoolean();
+      return e1.boolValue() < e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
-      return e1.toString() < e2.toString();
+      return e1.stringValue() < e2.stringValue();
     } else if (e1.isInteger() && e2.isInteger()) {
-      return e1.toInteger() < e2.toInteger();
+      return e1.intValue() < e2.intValue();
     } else {
-      return e1.toReal() < e2.toReal();
+      return e1.realValue() < e2.realValue();
     }
   }
 
+  /*!
+   * \brief Expression::operator<=
+   * Returns whether e1 is less than or equivalent to e2, or throws an error if
+   * they can't be compared. Only defined for literal scalar expressions.
+   * \return true if e1 is less than or equivalent to e2, otherwise false.
+   */
   bool operator<= (const Expression &e1, const Expression &e2)
   {
     if (e1.isBoolean() || e2.isBoolean()) {
-      return e1.toBoolean() <= e2.toBoolean();
+      return e1.boolValue() <= e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
-      return e1.toString() <= e2.toString();
+      return e1.stringValue() <= e2.stringValue();
     } else if (e1.isInteger() && e2.isInteger()) {
-      return e1.toInteger() <= e2.toInteger();
+      return e1.intValue() <= e2.intValue();
     } else {
-      return e1.toReal() <= e2.toReal();
+      return e1.realValue() <= e2.realValue();
     }
   }
 
+  /*!
+   * \brief Expression::operator>
+   * Returns whether e1 is greater than e2, or throws an error if they can't be
+   * compared. Only defined for literal scalar expressions.
+   * \return true if e1 is greater than e2, otherwise false.
+   */
   bool operator> (const Expression &e1, const Expression &e2)
   {
     if (e1.isBoolean() || e2.isBoolean()) {
-      return e1.toBoolean() > e2.toBoolean();
+      return e1.boolValue() > e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
-      return e1.toString() > e2.toString();
+      return e1.stringValue() > e2.stringValue();
     } else if (e1.isInteger() && e2.isInteger()) {
-      return e1.toInteger() > e2.toInteger();
+      return e1.intValue() > e2.intValue();
     } else {
-      return e1.toReal() > e2.toReal();
+      return e1.realValue() > e2.realValue();
     }
   }
 
+  /*!
+   * \brief Expression::operator>=
+   * Returns whether e1 is greater than or equivalent to e2, or throws an error
+   * if they can't be compared. Only defined for literal scalar expressions.
+   * \return true if e1 is greater than or equivalent to e2, otherwise false.
+   */
   bool operator>= (const Expression &e1, const Expression &e2)
   {
     if (e1.isBoolean() || e2.isBoolean()) {
-      return e1.toBoolean() >= e2.toBoolean();
+      return e1.boolValue() >= e2.boolValue();
     } else if (e1.isString() && e2.isString()) {
-      return e1.toString() >= e2.toString();
+      return e1.stringValue() >= e2.stringValue();
     } else if (e1.isInteger() && e2.isInteger()) {
-      return e1.toInteger() >= e2.toInteger();
+      return e1.intValue() >= e2.intValue();
     } else {
-      return e1.toReal() >= e2.toReal();
+      return e1.realValue() >= e2.realValue();
     }
   }
 
