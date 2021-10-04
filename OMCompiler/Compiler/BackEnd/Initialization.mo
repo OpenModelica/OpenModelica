@@ -1219,14 +1219,14 @@ algorithm
 end getInitEqIndices;
 
 protected partial function constraintHandlerFunc
-  input BackendDAE.EqSystem inEqSystem;
-  input BackendDAE.Shared inShared;
-  output BackendDAE.EqSystem outEqSystem;
-  output BackendDAE.Shared outShared = inShared;
-  input output Integer dummy;
-  input BackendDAE.Variables initVars;
-  input DoubleEnded.MutableList<BackendDAE.Var> dumpVars;
-  input DoubleEnded.MutableList<BackendDAE.Equation> removedEqns;
+  input BackendDAE.EqSystem inEqSystem                              "initial system to be balanced";
+  input BackendDAE.Shared inShared                                  "shared information along all systems";
+  output BackendDAE.EqSystem outEqSystem                            "balanced initial system";
+  output BackendDAE.Shared outShared = inShared                     "possibly adapted shared information";
+  input output Integer dummy                                        "traverser dummy";
+  input BackendDAE.Variables initVars                               "all variables that are allowed to be fixed";
+  input DoubleEnded.MutableList<BackendDAE.Var> dumpVars            "new fixed variables";
+  input DoubleEnded.MutableList<BackendDAE.Equation> removedEqns    "redundant equations";
 end constraintHandlerFunc;
 
 protected function balanceInitialSystem "author: kabdelhak
@@ -1243,20 +1243,19 @@ protected function balanceInitialSystem "author: kabdelhak
      If ASSC changed anything:
      7.1 inverse match (var->eq)
      7.2 use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
-  8. success
-  "
+  8. success"
   extends constraintHandlerFunc;
 protected
   Boolean debug = false;
   list<BackendDAE.Equation> eqn_lst, init_eqns, sim_eqns;
   DAE.FunctionTree funcs;
   BackendDAE.AdjacencyMatrix m, mT;
-  //BackendDAE.AdjacencyMatrixEnhanced me;
+  BackendDAE.AdjacencyMatrixEnhanced me;
   Integer nVars, nEqns;
   array<Integer> scal_to_arr, var_to_eqn, eqn_to_var;
   Boolean changed = false;
   list<list<Integer>> comps;
-  list<Integer> redundantEqns, unfixedVars; // inconsistentEqns, numericalCheckEqns,
+  list<Integer> redundantEqns, unfixedVars;
   Boolean initASSC = Flags.getConfigBool(Flags.INIT_ASSC);
 algorithm
   if BackendVariable.varsSize(inEqSystem.orderedVars) > 0 then
@@ -1287,6 +1286,8 @@ algorithm
 
     if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
       // 6. use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
+      (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
+      (_, _, _) := consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
       outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
       (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
       nVars := BackendVariable.varsSize(outEqSystem.orderedVars);
@@ -1323,6 +1324,8 @@ algorithm
 
         if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
           // 7.2 use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
+          (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
+          (_, _, _) := consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
           outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
           (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
         end if;
@@ -1338,12 +1341,12 @@ protected function resolveOverAndUnderconstraints "author: kabdelhak
   New algorithm to handle under-, over-, and mixed-determined systems.
   1. remove unmatched equations
   2. fix unmatched initialVars"
-  input output BackendDAE.EqSystem syst;
-  input BackendDAE.Variables initVars;
-  input list<Integer> unfixedVars;
-  input list<Integer> redundantEqns;
-  input DoubleEnded.MutableList<BackendDAE.Var> dumpVars;
-  input DoubleEnded.MutableList<BackendDAE.Equation> removedEqns;
+  input output BackendDAE.EqSystem syst                             "possibly mixed determined system to be resolved";
+  input BackendDAE.Variables initVars                               "variables that are allowed to be fixed";
+  input list<Integer> unfixedVars                                   "indices of variables that have to be fixed";
+  input list<Integer> redundantEqns                                 "indices of equations that have to be removed";
+  input DoubleEnded.MutableList<BackendDAE.Var> dumpVars            "variables that have been fixed (debug report)";
+  input DoubleEnded.MutableList<BackendDAE.Equation> removedEqns    "equations that have been removed (debug report)";
 protected
   Boolean debug = false;
   list<BackendDAE.Equation> redundant_lst = {};
@@ -1352,6 +1355,7 @@ protected
 algorithm
   // 6. remove unmatched equations
   redundant_lst := BackendEquation.getList(redundantEqns, syst.orderedEqs);
+
   DoubleEnded.push_list_back(removedEqns, redundant_lst);
   new_eqns := BackendEquation.deleteList(syst.orderedEqs, redundantEqns);
   if debug then
@@ -1360,29 +1364,17 @@ algorithm
 
   // 7. fix unmatched states and discrete states
   var_lst := list(BackendVariable.getVarAt(syst.orderedVars, i) for i in unfixedVars);
-  // ToDo: all fixable?
   (new_eqns, var_lst) := addStartValueEquations(var_lst, new_eqns, {});
   DoubleEnded.push_list_back(dumpVars, var_lst);
   if debug then
     failed_var_lst := list(var for var guard(not BackendVariable.containsVar(var, initVars)) in var_lst);
     BackendDump.dumpVarList(var_lst, "fixed vars");
+    // report these in general?
     BackendDump.dumpVarList(failed_var_lst, "failed vars");
   end if;
 
   // 8. success
   syst := BackendDAEUtil.setEqSystEqs(syst, BackendEquation.sortInitialEqns(new_eqns));
-          /*(m, mT, _, scal_to_arr) := BackendDAEUtil.adjacencyMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs), BackendDAEUtil.isInitializationDAE(inShared)); // Should always be true, just to be sure
-      (eqn_to_var, var_to_eqn, _, _, _) := Matching.RegularMatching(mT, nEqns, nVars);
-      (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, inShared, false);
-      (_, inconsistentEqns, numericalCheckEqns) := consistencyCheck(redundantEqns, syst.orderedEqs, syst.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
-      if debug then
-        inconsistentEqns := List.unique(list(scal_to_arr[i] for i in inconsistentEqns));
-        numericalCheckEqns := List.unique(list(scal_to_arr[i] for i in numericalCheckEqns));
-        incon_lst := BackendEquation.getList(inconsistentEqns, syst.orderedEqs);
-        num_lst := BackendEquation.getList(numericalCheckEqns, syst.orderedEqs);
-        BackendDump.dumpEquationList(incon_lst, "inconsistent eqns");
-        BackendDump.dumpEquationList(num_lst, "numerically checked eqns");
-      end if;*/
 end resolveOverAndUnderconstraints;
 
 protected function fixInitialSystem "author: lochel
