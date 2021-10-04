@@ -1264,6 +1264,7 @@ algorithm
 
     // 2. sort fixables to be matched last
     outEqSystem := BackendDAEUtil.createEqSystem(BackendVariable.sortInitialVars(inEqSystem.orderedVars, initVars), BackendEquation.listEquation(sim_eqns));
+    outEqSystem.removedEqs := inEqSystem.removedEqs;
     funcs := BackendDAEUtil.getFunctions(inShared);
 
     // 3. compute adjacency matrix
