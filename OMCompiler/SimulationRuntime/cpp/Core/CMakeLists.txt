@@ -5,6 +5,9 @@ endmacro()
 
 set(SCOREP_INCLUDE_ ".")
 set(Boost_INCLUDE_ ".")
+set(Boost_LIBS_ ".")
+set(LAPACK_LIBS_ ".")
+set(LAPACK_LIBRARIES_ "-llapack -lblas")
 set(SYSTEM_CFLAGS ${SYSTEM_CFLAGS} "-DOMC_BUILD -fPIC")
 
 configure_file(Modelica/ModelicaLibraryConfig_gcc.inc.in ${CMAKE_CURRENT_BINARY_DIR}/ModelicaLibraryConfig_gcc.inc)
@@ -177,7 +180,7 @@ set(OMC_SIMRT_CPP_CORE_SIMCONTROLLER_SOURCES SimController/Configuration.cpp
                                              SimController/SimObjects.cpp)
 
 add_library(OMCppSimController SHARED)
-add_library(omc::simrt::cpp::core::system ALIAS OMCppSimController)
+add_library(omc::simrt::cpp::core::simcontroller ALIAS OMCppSimController)
 
 target_sources(OMCppSimController PRIVATE ${OMC_SIMRT_CPP_CORE_SIMCONTROLLER_SOURCES})
 
