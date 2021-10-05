@@ -56,7 +56,7 @@ public:
   QRectF boundingRect() const override;
   QPainterPath shape() const override;
   void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0) override;
-  void drawRectangleAnnotaion(QPainter *painter);
+  void drawRectangleAnnotation(QPainter *painter);
   QString getOMCShapeAnnotation() override;
   QString getOMCShapeAnnotationWithShapeName() override;
   QString getShapeAnnotation() override;

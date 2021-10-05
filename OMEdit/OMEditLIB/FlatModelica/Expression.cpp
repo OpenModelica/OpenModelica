@@ -1658,6 +1658,17 @@ namespace FlatModelica
 
   /*!
    * \brief Expression::size
+   * Returns the number of elements in an array, or 0 if the expression is not
+   * an array.
+   * \return The size of the expression.
+   */
+  size_t Expression::size() const
+  {
+    return size(0);
+  }
+
+  /*!
+   * \brief Expression::size
    * Returns the size of the given dimension, or 0 if the Expression has no such
    * dimension.
    * \param dimension The index of the dimension.

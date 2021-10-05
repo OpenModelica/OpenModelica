@@ -415,18 +415,11 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 5th item of list contains the color.
-  QStringList colorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(4))));
-  if (colorList.size() >= 3) {
-    int red, green, blue = 0;
-    red = colorList.at(0).toInt();
-    green = colorList.at(1).toInt();
-    blue = colorList.at(2).toInt();
-    mLineColor = QColor (red, green, blue);
-  }
+  mLineColor.parse(list.at(4));
   // 6th item of list contains the Line Pattern.
   mLinePattern = StringHandler::getLinePatternType(stripDynamicSelect(list.at(5)));
   // 7th item of list contains the Line thickness.
-  mLineThickness = stripDynamicSelect(list.at(6)).toFloat();
+  mLineThickness.parse(list.at(6));
   // 8th item of list contains the Line Arrows.
   QStringList arrowList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(7))));
   if (arrowList.size() >= 2) {
@@ -434,7 +427,7 @@ void LineAnnotation::parseShapeAnnotation(QString annotation)
     mArrow.replace(1, StringHandler::getArrowType(arrowList.at(1)));
   }
   // 9th item of list contains the Line Arrow Size.
-  mArrowSize = stripDynamicSelect(list.at(8)).toFloat();
+  mArrowSize.parse(list.at(8));
   // 10th item of list contains the smooth.
   mSmooth = StringHandler::getSmoothType(stripDynamicSelect(list.at(9)));
 }
@@ -489,22 +482,19 @@ void LineAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
 {
   Q_UNUSED(option);
   Q_UNUSED(widget);
-  if (mVisible || !mDynamicVisible.isEmpty()) {
+  if (mVisible) {
     if (mLineType == LineAnnotation::TransitionType && mpGraphicsView->isVisualizationView()) {
       if (isActiveState()) {
         painter->setOpacity(1.0);
       } else {
         painter->setOpacity(0.2);
       }
-    } else if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
-                                         || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
-      return;
     }
-    drawLineAnnotaion(painter);
+    drawLineAnnotation(painter);
   }
 }
 
-void LineAnnotation::drawLineAnnotaion(QPainter *painter)
+void LineAnnotation::drawLineAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
   // draw start arrow
