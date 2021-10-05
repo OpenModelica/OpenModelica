@@ -22,6 +22,47 @@ install(TARGETS OMCppCVode)
 
 
 #####################################################################################################
+# OMCppDASSL
+set(OMC_SIMRT_CPP_SOLVER_DASSL_SOURCES DASSL/DASSL.cpp
+                                       DASSL/DASSLSettings.cpp
+                                       DASSL/FactoryExport.cpp)
+
+add_library(OMCppDASSL SHARED)
+add_library(omc::simrt::cpp::solver::dassl ALIAS OMCppDASSL)
+
+target_sources(OMCppDASSL PRIVATE ${OMC_SIMRT_CPP_SOLVER_DASSL_SOURCES})
+
+target_link_libraries(OMCppDASSL PRIVATE omc::simrt::cpp::core::modelica)
+target_link_libraries(OMCppDASSL PRIVATE omc::simrt::cpp::core::solver)
+target_link_libraries(OMCppDASSL PRIVATE omc::3rd::cdaskr)
+
+target_link_options(OMCppDASSL PRIVATE  -Wl,--no-undefined)
+
+install(TARGETS OMCppDASSL)
+
+
+#####################################################################################################
+# OMCppDgesv
+set(OMC_SIMRT_CPP_SOLVER_DGESV_SOURCES Dgesv/DgesvSolver.cpp
+                                       Dgesv/DgesvSolverSettings.cpp
+                                       Dgesv/FactoryExport.cpp)
+
+add_library(OMCppDgesv SHARED)
+add_library(omc::simrt::cpp::solver::dgesvsolver ALIAS OMCppDgesv)
+
+target_sources(OMCppDgesv PRIVATE ${OMC_SIMRT_CPP_SOLVER_DGESV_SOURCES})
+
+target_link_libraries(OMCppDgesv PRIVATE omc::simrt::cpp::core::modelica)
+target_link_libraries(OMCppDgesv PRIVATE omc::simrt::cpp::core::solver)
+target_link_libraries(OMCppDgesv PRIVATE ${LAPACK_LIBRARIES})
+# target_link_libraries(OMCppDgesv PRIVATE omc::3rd::cdaskr)
+
+target_link_options(OMCppDgesv PRIVATE  -Wl,--no-undefined)
+
+install(TARGETS OMCppDgesv)
+
+
+#####################################################################################################
 # OMCppKinsol
 set(OMC_SIMRT_CPP_SOLVER_KINSOL_SOURCES Kinsol/Kinsol.cpp
                                         Kinsol/KinsolLapack.cpp
@@ -61,3 +102,24 @@ target_link_libraries(OMCppLinearSolver PRIVATE ${LAPACK_LIBRARIES})
 target_link_options(OMCppLinearSolver PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppLinearSolver)
+
+
+#####################################################################################################
+# OMCppNewton
+set(OMC_SIMRT_CPP_SOLVER_NEWTON_SOURCES Newton/Newton.cpp
+                                       Newton/NewtonSettings.cpp
+                                       Newton/FactoryExport.cpp)
+
+add_library(OMCppNewton SHARED)
+add_library(omc::simrt::cpp::solver::newton ALIAS OMCppNewton)
+
+target_sources(OMCppNewton PRIVATE ${OMC_SIMRT_CPP_SOLVER_NEWTON_SOURCES})
+
+target_link_libraries(OMCppNewton PRIVATE omc::simrt::cpp::core::modelica)
+target_link_libraries(OMCppNewton PRIVATE omc::simrt::cpp::core::solver)
+target_link_libraries(OMCppNewton PRIVATE ${LAPACK_LIBRARIES})
+
+
+target_link_options(OMCppNewton PRIVATE  -Wl,--no-undefined)
+
+install(TARGETS OMCppNewton)
