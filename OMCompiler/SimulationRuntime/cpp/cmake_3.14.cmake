@@ -24,6 +24,7 @@ add_subdirectory(SimCoreFactory)
 add_subdirectory(Core)
 add_subdirectory(Solver)
 add_subdirectory(FMU)
+add_subdirectory(FMU2)
 
 
 ## This little function will give us the filename of the CPP runtime
