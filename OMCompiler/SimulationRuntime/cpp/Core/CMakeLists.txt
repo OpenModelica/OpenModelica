@@ -86,6 +86,19 @@ target_link_options(OMCppMath PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppMath)
 
+# OMCppMath_static
+add_library(OMCppMath_static STATIC)
+add_library(omc::simrt::cpp::core::math::static ALIAS OMCppMath_static)
+
+target_sources(OMCppMath_static PRIVATE ${OMC_SIMRT_CPP_CORE_MATH_SOURCES})
+
+target_compile_definitions(OMCppMath_static PRIVATE -DRUNTIME_STATIC_LINKING)
+
+target_link_libraries(OMCppMath_static PUBLIC omc::simrt::cpp::config)
+
+install(TARGETS OMCppMath_static)
+##
+
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         TYPE INCLUDE
         FILES_MATCHING
@@ -114,6 +127,19 @@ target_link_options(OMCppSolver PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppSolver)
 
+# OMCppSolver_static
+add_library(OMCppSolver_static STATIC)
+add_library(omc::simrt::cpp::core::solver::static ALIAS OMCppSolver_static)
+
+target_sources(OMCppSolver_static PRIVATE ${OMC_SIMRT_CPP_CORE_SOLVER_SOURCES})
+
+target_compile_definitions(OMCppSolver_static PRIVATE -DRUNTIME_STATIC_LINKING)
+
+target_link_libraries(OMCppSolver_static PUBLIC omc::simrt::cpp::config)
+
+install(TARGETS OMCppSolver_static)
+##
+
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         TYPE INCLUDE
         FILES_MATCHING
@@ -140,6 +166,19 @@ target_link_options(OMCppExtensionUtilities PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppExtensionUtilities)
 
+# OMCppExtensionUtilities_static
+add_library(OMCppExtensionUtilities_static STATIC)
+add_library(omc::simrt::cpp::core::utils::extension::static ALIAS OMCppExtensionUtilities_static)
+
+target_sources(OMCppExtensionUtilities_static PRIVATE ${OMC_SIMRT_CPP_CORE_UTILS_EXTENSIONS_SOURCES})
+
+target_compile_definitions(OMCppExtensionUtilities_static PRIVATE -DRUNTIME_STATIC_LINKING)
+
+target_link_libraries(OMCppExtensionUtilities_static PUBLIC omc::simrt::cpp::config)
+
+install(TARGETS OMCppExtensionUtilities_static)
+##
+
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         TYPE INCLUDE
         FILES_MATCHING
@@ -163,6 +202,19 @@ target_link_libraries(OMCppModelicaUtilities PUBLIC omc::simrt::cpp::config)
 target_link_options(OMCppModelicaUtilities PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppModelicaUtilities)
+
+# OMCppModelicaUtilities_static
+add_library(OMCppModelicaUtilities_static STATIC)
+add_library(omc::simrt::cpp::core::utils::modelica::static ALIAS OMCppModelicaUtilities_static)
+
+target_sources(OMCppModelicaUtilities_static PRIVATE ${OMC_SIMRT_CPP_CORE_UTILS_MODELICA_SOURCES})
+
+target_compile_definitions(OMCppModelicaUtilities_static PRIVATE -DRUNTIME_STATIC_LINKING)
+
+target_link_libraries(OMCppModelicaUtilities_static PUBLIC omc::simrt::cpp::config)
+
+install(TARGETS OMCppModelicaUtilities_static)
+##
 
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         TYPE INCLUDE
@@ -254,8 +306,23 @@ target_link_options(OMCppSystem PRIVATE  -Wl,--no-undefined)
 
 install(TARGETS OMCppSystem)
 
+# OMCppSystem_static
+add_library(OMCppSystem_static STATIC)
+add_library(omc::simrt::cpp::core::system::static ALIAS OMCppSystem_static)
+
+target_sources(OMCppSystem_static PRIVATE ${OMC_SIMRT_CPP_CORE_SYSTEM_SOURCES})
+
+target_compile_definitions(OMCppSystem_static PRIVATE -DRUNTIME_STATIC_LINKING)
+
+target_link_libraries(OMCppSystem_static PUBLIC omc::simrt::cpp::config)
+
+install(TARGETS OMCppSystem_static)
+##
+
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         TYPE INCLUDE
         FILES_MATCHING
         PATTERN System/*.h
 )
+
+
