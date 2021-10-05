@@ -250,6 +250,7 @@ namespace FlatModelica
             ++_next;
 
             if (_next != _str.cend() && *_next == '=') {
+              ++_next;
               return Token::GREATEREQ;
             }
 
@@ -258,11 +259,13 @@ namespace FlatModelica
           case '=':
             ++_next;
 
-            if (_next != _str.cend() && *_next == '=') {
+            if (_next == _str.cend()) {
+              throw std::runtime_error(std::string("readOperator unexpected end of data"));
+            } else if (*_next == '=') {
+              ++_next;
               return Token::EQUAL;
             }
-
-            throw std::runtime_error("readOperator unexpected end of data");
+            break;
         }
 
         throw std::runtime_error(std::string("readOperator got unknown operator ") + *_next);
@@ -751,9 +754,9 @@ namespace FlatModelica
       case Token::POW_EW: return Binary::pow_ew;
       case Token::AND: return Binary::logic_and;
       case Token::OR: return Binary::logic_or;
-      case Token::EQUAL: return Binary::nequal;
-      case Token::NEQUAL: return Binary::less;
-      case Token::LESS: return Binary::lesseq;
+      case Token::EQUAL: return Binary::equal;
+      case Token::NEQUAL: return Binary::nequal;
+      case Token::LESS: return Binary::less;
       case Token::LESSEQ: return Binary::lesseq;
       case Token::GREATER: return Binary::greater;
       case Token::GREATEREQ: return Binary::greatereq;
@@ -1277,10 +1280,22 @@ namespace FlatModelica
 
     if (tok.type == Token::SUB) {
       tokenizer.popToken();
-      return Expression(std::make_unique<Unary>(Unary::minus, parseExp(tokenizer)));
+      auto e = parseExp(tokenizer);
+
+      if (e.isNumber()) {
+        return e.isInteger() ? Expression(-e.intValue()) : Expression(-e.realValue());
+      } else {
+        return Expression(std::make_unique<Unary>(Unary::minus, std::move(e)));
+      }
     } else if (tok.type == Token::NOT) {
       tokenizer.popToken();
-      return Expression(std::make_unique<Unary>(Unary::logic_not, parseExp(tokenizer)));
+      auto e = parseExp(tokenizer);
+
+      if (e.isBoolean()) {
+        return Expression(!e.boolValue());
+      } else {
+        return Expression(std::make_unique<Unary>(Unary::logic_not, std::move(e)));
+      }
     }
 
     throw std::runtime_error("Unary::parse got invalid operator " + tok.string());

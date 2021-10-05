@@ -5,6 +5,7 @@
 #include <string>
 #include <ostream>
 #include <functional>
+#include <vector>
 
 #include <QString>
 

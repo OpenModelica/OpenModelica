@@ -201,6 +201,22 @@ void ExpressionTest::operators_data()
   QTest::newRow("- array")
     << "-{1, 2, 3}"
     << "{-1,-2,-3}";
+
+  QTest::newRow("relation 1")
+    << "x == y"
+    << "true";
+
+  QTest::newRow("relation 2")
+    << "x > y"
+    << "false";
+
+  QTest::newRow("relation 3")
+    << "x >= y"
+    << "true";
+
+  QTest::newRow("relation 4")
+    << "not x == y"
+    << "false";
 }
 
 void ExpressionTest::functions()
