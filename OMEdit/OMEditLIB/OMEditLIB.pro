@@ -135,6 +135,12 @@ SOURCES += Util/Helper.cpp \
   Annotations/EllipseAnnotation.cpp \
   Annotations/TextAnnotation.cpp \
   Annotations/BitmapAnnotation.cpp \
+  Annotations/DynamicAnnotation.cpp \
+  Annotations/BooleanAnnotation.cpp \
+  Annotations/ColorAnnotation.cpp \
+  Annotations/ExtentAnnotation.cpp \
+  Annotations/PointAnnotation.cpp \
+  Annotations/RealAnnotation.cpp \
   Element/ElementProperties.cpp \
   Element/Transformation.cpp \
   Modeling/DocumentationWidget.cpp \
@@ -228,6 +234,12 @@ HEADERS  += Util/Helper.h \
   Annotations/EllipseAnnotation.h \
   Annotations/TextAnnotation.h \
   Annotations/BitmapAnnotation.h \
+  Annotations/DynamicAnnotation.h \
+  Annotations/BooleanAnnotation.h \
+  Annotations/ColorAnnotation.h \
+  Annotations/ExtentAnnotation.h \
+  Annotations/PointAnnotation.h \
+  Annotations/RealAnnotation.h \
   Element/ElementProperties.h \
   Element/Transformation.h \
   Modeling/DocumentationWidget.h \

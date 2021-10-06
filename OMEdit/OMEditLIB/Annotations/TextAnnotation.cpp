@@ -165,12 +165,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item of the list contains the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(8))));
-  for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
-    QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
-    if (extentPoints.size() >= 2)
-      mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
-  }
+  mExtents.parse(list.at(8));
   // 10th item of the list contains the textString.
   try {
     mTextExpression = FlatModelica::Expression::parse(list.at(9));
@@ -188,17 +183,10 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
   initUpdateTextString();
 
   // 11th item of the list contains the fontSize.
-  mFontSize = stripDynamicSelect(list.at(10)).toFloat();
+  mFontSize.parse(list.at(10));
   // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
-  QStringList textColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(11))));
-  if (textColorList.size() >= 3) {
-    int red, green, blue = 0;
-    red = textColorList.at(0).toInt();
-    green = textColorList.at(1).toInt();
-    blue = textColorList.at(2).toInt();
-    if (red >= 0 && green >= 0 && blue >= 0) {
-      mLineColor = QColor (red, green, blue);
-    }
+  if (!list.at(11).contains("-1")) {
+    mLineColor.parse(list.at(11));
   }
   // 13th item of the list contains the font name.
   QString fontName = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(12)));
@@ -268,7 +256,7 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
   } else if (mpComponent && mpComponent->getGraphicsView()->isRenderingLibraryPixmap()) {
     return;
   }
-  if (mVisible || !mDynamicVisible.isEmpty()) {
+  if (mVisible) {
     // state machine visualization
     // text annotation on a component
     if (mpComponent && mpComponent->getLibraryTreeItem() && mpComponent->getLibraryTreeItem()->isState()
@@ -289,20 +277,16 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
         painter->setOpacity(0.2);
       }
     }
-    if (!mDynamicVisibleValue && ((mpGraphicsView && mpGraphicsView->isVisualizationView())
-                                  || (mpParentComponent && mpParentComponent->getGraphicsView()->isVisualizationView()))) {
-      return;
-    }
-    drawTextAnnotaion(painter);
+    drawTextAnnotation(painter);
   }
 }
 
 /*!
- * \brief TextAnnotation::drawTextAnnotaion
+ * \brief TextAnnotation::drawTextAnnotation
  * Draws the Text annotation
  * \param painter
  */
-void TextAnnotation::drawTextAnnotaion(QPainter *painter)
+void TextAnnotation::drawTextAnnotation(QPainter *painter)
 {
   applyLinePattern(painter);
   /* Don't apply the fill patterns on Text shapes. */

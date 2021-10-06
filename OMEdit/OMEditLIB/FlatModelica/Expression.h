@@ -80,6 +80,7 @@ namespace FlatModelica
       bool isCall(const std::string &name) const;
 
       size_t ndims() const;
+      size_t size() const;
       size_t size(size_t dimension) const;
 
       int64_t intValue() const;
