@@ -13357,9 +13357,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
-// <quantity string=\"&quot;AngularAcceleration&quot;\">
+// <quantity string=\"{&quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;}\">
 // </quantity>
-// <unit string=\"&quot;rad/s2&quot;\">
+// <unit string=\"{&quot;rad/s2&quot;, &quot;rad/s2&quot;, &quot;rad/s2&quot;}\">
 // </unit>
 // </attributesValues>
 // </variable>
@@ -13375,9 +13375,9 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
-// <quantity string=\"&quot;AngularAcceleration&quot;\">
+// <quantity string=\"{&quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;}\">
 // </quantity>
-// <unit string=\"&quot;rad/s2&quot;\">
+// <unit string=\"{&quot;rad/s2&quot;, &quot;rad/s2&quot;, &quot;rad/s2&quot;}\">
 // </unit>
 // </attributesValues>
 // </variable>
@@ -13393,14 +13393,14 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </element>
 // </classesNames>
 // <attributesValues>
-// <quantity string=\"&quot;AngularAcceleration&quot;\">
+// <quantity string=\"{&quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;, &quot;AngularAcceleration&quot;}\">
 // </quantity>
-// <unit string=\"&quot;rad/s2&quot;\">
+// <unit string=\"{&quot;rad/s2&quot;, &quot;rad/s2&quot;, &quot;rad/s2&quot;}\">
 // </unit>
 // </attributesValues>
 // </variable>
 // <variable id=\"598\" name=\"body.Q_start[1]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
-// <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
+// <bindExpression string=\"{0.0, 0.0, 0.0, 1.0}\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13412,7 +13412,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"599\" name=\"body.Q_start[2]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
-// <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
+// <bindExpression string=\"{0.0, 0.0, 0.0, 1.0}\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13424,7 +13424,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"600\" name=\"body.Q_start[3]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
-// <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
+// <bindExpression string=\"{0.0, 0.0, 0.0, 1.0}\">
 // </bindExpression>
 // <classesNames>
 // <element>
@@ -13436,7 +13436,7 @@ readFile("Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.xml");
 // </classesNames>
 // </variable>
 // <variable id=\"601\" name=\"body.Q_start[4]\" variability=\"parameter\" direction=\"none\" type=\"Real\" fixed=\"true\" flow=\"NonConnector\" stream=\"NonStreamConnector\" comment=\"Quaternion orientation object from world frame to frame_a at initial time\">
-// <bindExpression string=\"Modelica.Mechanics.MultiBody.Frames.Quaternions.from_T(body.R_start.T, {0.0, 0.0, 0.0, 1.0})\">
+// <bindExpression string=\"{0.0, 0.0, 0.0, 1.0}\">
 // </bindExpression>
 // <classesNames>
 // <element>

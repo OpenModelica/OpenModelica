@@ -1,0 +1,16 @@
+// test comment1
+Variables to be Reconciled ,Initial Measured Values ,Reconciled Values ,Initial Uncertainty Values ,Reconciled Uncertainty Values,Results of Local Tests ,Values of Local Tests ,Margin to Correctness(distance from 1.96) ,
+// test comment2
+Q1,2.1,2.0737,1.96,0.0482997,TRUE,0.0263047,1.9337,
+// test comment3
+Q2,1.05,1.0805,1.91,0.93803,TRUE,0.0359287,1.92407,
+// test comment4
+Q3,0.97,0.993204,1.91,0.938101,TRUE,0.0273361,1.93266,
+// test comment5
+T1,20,19.9968,1.96,1.95726,TRUE,0.0102424,1.94976,
+T2,118,116.443,1.91,1.11162,FALSE,1.9654,-0.00539907,
+T3,121,116.443,1.91,1.11162,FALSE,5.75115,-3.79115,
+T,110,116.443,1.96,1.11162,FALSE,7.82227,-5.86227,
+P1,8.1,8.16008,1.96,1.11569,TRUE,0.0730722,1.88693,
+P2,5.45,5.42622,1.91,1.48605,TRUE,0.0388474,1.92115,
+P3,5.55,5.51673,1.91,1.4687,TRUE,0.0534038,1.9066,

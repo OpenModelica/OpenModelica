@@ -106,6 +106,7 @@ match functions
     <%dumpExternalDecl(externalDecl)%>
     >>
   case FUNCTION_DER_MAPPER(__) then ''
+  case FUNCTION_INVERSE(__) then ''
 end dumpFunctionDefinition;
 
 template dumpExternalDecl(ExternalDecl externalDecl)
@@ -161,6 +162,7 @@ end dumpRecordVar;
 template dumpRecordConstructorInputAttr(DAE.Attributes attr)
 ::=
 match attr
+  case DAE.ATTR(direction = Absyn.INPUT()) then 'input '
   case DAE.ATTR(visibility = SCode.PROTECTED()) then 'protected '
   case DAE.ATTR(variability = SCode.CONST()) then 'constant '
   else 'input '
@@ -671,7 +673,7 @@ template dumpAssert(DAE.Exp cond, DAE.Exp msg, DAE.Exp lvl, DAE.ElementSource sr
 ::=
   let cond_str = dumpExp(cond)
   let msg_str = dumpExp(msg)
-  let lvl_str = match lvl case DAE.ENUM_LITERAL(index = 2) then ', AssertionLevel.warning'
+  let lvl_str = match lvl case DAE.ENUM_LITERAL(index = 1) then ', AssertionLevel.warning'
   let src_str = dumpSource(src)
   <<
   assert(<%cond_str%>, <%msg_str%><%lvl_str%>)<%src_str%>;

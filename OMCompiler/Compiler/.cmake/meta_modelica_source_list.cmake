@@ -295,6 +295,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCallParameterTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCardinalityTable.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCeval.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFCheckModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClass.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClassTree.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFClockKind.mo
@@ -320,6 +321,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatModel.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFlatten.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionDerivative.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunctionInverse.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFFunction.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTable3.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/NFFrontEnd/NFHashTableCG.mo
@@ -377,6 +379,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaUtil.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/MMToJuliaKeywords.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Script/NFApi.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Script/Conversion.mo
 
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/HpcOmSimCodeMain.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/SimCode/SerializeInitXML.mo
@@ -392,7 +395,6 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenEmbeddedC.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppCommon.mo
-    ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppCommonOld.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCpp.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppOld.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Template/CodegenCppHpcom.mo
@@ -431,6 +433,7 @@ set(OMC_MM_BACKEND_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DiffAlgorithm.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/DisjointSets.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/ExpandableArray.mo
+    ${CMAKE_CURRENT_SOURCE_DIR}/Util/FFI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMI.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/FMIExt.mo
     ${CMAKE_CURRENT_SOURCE_DIR}/Util/GraphML.mo

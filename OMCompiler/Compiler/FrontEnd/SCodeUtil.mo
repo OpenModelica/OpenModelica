@@ -5806,5 +5806,27 @@ algorithm
   end match;
 end hasNamedExternalCall;
 
+function classDefHasSections
+  "Returns true if the class definition directly contains any sections,
+   otherwise false."
+  input SCode.ClassDef cdef;
+  input Boolean checkExternal;
+  output Boolean res;
+algorithm
+  res := match cdef
+    case SCode.ClassDef.PARTS()
+      then not (listEmpty(cdef.normalEquationLst) and
+                listEmpty(cdef.initialEquationLst) and
+                listEmpty(cdef.normalAlgorithmLst) and
+                listEmpty(cdef.initialAlgorithmLst) and
+                (if checkExternal then isNone(cdef.externalDecl) else true));
+
+    case SCode.ClassDef.CLASS_EXTENDS()
+      then classDefHasSections(cdef.composition, checkExternal);
+
+    else false;
+  end match;
+end classDefHasSections;
+
 annotation(__OpenModelica_Interface="frontend");
 end SCodeUtil;

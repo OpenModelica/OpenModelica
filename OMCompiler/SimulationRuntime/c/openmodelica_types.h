@@ -37,13 +37,8 @@
 extern "C" {
 #endif
 
-#if defined(__alpha__) || defined(__sparc64__) || defined(__x86_64__) || defined(__ia64__)
 typedef int integer;
 typedef unsigned int uinteger;
-#else
-typedef long int integer;
-typedef unsigned long int uinteger;
-#endif
 typedef double doublereal;
 #define maxmacro(X,Y) X > Y ? X : Y
 #define minmacro(X,Y) X > Y ? Y : X

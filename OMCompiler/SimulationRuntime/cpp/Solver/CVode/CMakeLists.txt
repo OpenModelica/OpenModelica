@@ -12,12 +12,12 @@ message(STATUS "Sundials Libraries used for linking:")
 message(STATUS "${SUNDIALS_LIBRARIES}")
 
 target_link_libraries(${CVodeName} ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${SUNDIALS_LIBRARIES})
-add_precompiled_header(${CVodeName} Include/Core/Modelica.h)
+add_precompiled_header(${CVodeName} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${CVodeName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${CVodeName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Solver/CVode/CVode.h
-  ${CMAKE_SOURCE_DIR}/Include/Solver/CVode/FactoryExport.h
+  ${CMAKE_SOURCE_DIR}/Solver/CVode/CVode.h
+  ${CMAKE_SOURCE_DIR}/Solver/CVode/FactoryExport.h
   DESTINATION include/omc/cpp/Solver/CVode)

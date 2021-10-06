@@ -1,0 +1,57 @@
+// keywords: fmu export import
+// status: correct
+// teardown_command: rm -rf Enumeration3.lua Enum1.fmu Int1.fmu Enum1.log Int1.log Enumeration3_systemCall.log temp-Enumeration3/
+
+loadString("
+model Enum1
+  type E = enumeration(one, two, three);
+  input E u;
+end Enum1;
+"); getErrorString();
+
+loadString("
+model Int1
+  output Integer y = 2;
+end Int1;
+"); getErrorString();
+
+buildModelFMU(Enum1, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+buildModelFMU(Int1, version="2.0", fmuType="me", platforms={"static"}); getErrorString();
+
+writeFile("Enumeration3.lua", "
+oms_setCommandLineOption(\"--suppressPath=true\")
+oms_setTempDirectory(\"./temp-Enumeration3/\")
+
+oms_newModel(\"test\")
+oms_addSystem(\"test.root\", oms_system_sc)
+oms_addSubModel(\"test.root.A\", \"Int1.fmu\")
+oms_addSubModel(\"test.root.B\", \"Enum1.fmu\")
+oms_addConnection(\"test.root.B.u\", \"test.root.A.y\")
+oms_setResultFile(\"test\", \"\")
+
+oms_instantiate(\"test\")
+oms_initialize(\"test\")
+oms_simulate(\"test\")
+oms_terminate(\"test\")
+oms_delete(\"test\")
+"); getErrorString();
+
+system(getInstallationDirectoryPath() + "/bin/OMSimulator Enumeration3.lua", "Enumeration3_systemCall.log");
+readFile("Enumeration3_systemCall.log");
+
+// Result:
+// true
+// ""
+// true
+// ""
+// "Enum1.fmu"
+// ""
+// "Int1.fmu"
+// ""
+// true
+// ""
+// 0
+// "info:    model doesn't contain any continuous state
+// info:    No result file will be created
+// "
+// endResult

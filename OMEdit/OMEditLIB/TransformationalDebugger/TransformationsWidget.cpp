@@ -442,8 +442,8 @@ void TVariablesTreeModel::insertVariablesItems(VariableNode *pParentVariableNode
 {
   if (pParentVariableNode && !pParentVariableNode->mChildren.isEmpty()) {
     QModelIndex index = tVariablesTreeItemIndex(pParentTVariablesTreeItem);
-    int row = rowCount(index);
-    beginInsertRows(index, row, pParentVariableNode->mChildren.size() - 1);
+    int row = 0;
+    beginInsertRows(index, 0, pParentVariableNode->mChildren.size() - 1);
     QHash<QString, VariableNode*>::const_iterator iterator = pParentVariableNode->mChildren.constBegin();
     while (iterator != pParentVariableNode->mChildren.constEnd()) {
       VariableNode *pVariableNode = iterator.value();

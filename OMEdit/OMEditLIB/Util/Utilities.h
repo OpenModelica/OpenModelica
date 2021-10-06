@@ -541,9 +541,10 @@ namespace Utilities {
   QList<QPointF> liangBarskyClipper(float xmin, float ymin, float xmax, float ymax, float x1, float y1, float x2, float y2);
   void removeDirectoryRecursivly(QString path);
   qreal mapToCoOrdinateSystem(qreal value, qreal startA, qreal endA, qreal startB, qreal endB);
-
   QStringList variantListToStringList(const QVariantList lst);
-
+  QString convertUnitToSymbol(const QString displayUnit);
+  QString convertSymbolToUnit(const QString symbol);
+  QRectF adjustSceneRectangle(const QRectF sceneRectangle, const qreal factor);
 } // namespace Utilities
 
 #endif // UTILITIES_H

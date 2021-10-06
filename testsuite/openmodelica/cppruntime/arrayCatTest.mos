@@ -1,0 +1,74 @@
+// name: arrayCatTest
+// keywords: array cat
+// status: correct
+// teardown_command: rm -f *ArrayCat.Test*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+package ArrayCat
+model Test
+  Real[:,:] A = [11, 12; 21, 22];
+  Real[:,:] B = [31, 32];
+  Real[:,:] C = [13; 23];
+  Real[:,:] AB = cat1(A, B);
+  Real[:,:] AC = cat2(A, C);
+  annotation(experiment(StopTime = 0));
+end Test;
+function cat1
+  input Real[:,:] A;
+  input Real[:,:] B;
+  output Real[size(A,1) + size(B,1), size(A,2)] AB;
+algorithm
+  AB := cat(1, A, B);
+end cat1;
+function cat2
+  input Real[:,:] A;
+  input Real[:,:] C;
+  output Real[size(A,1), size(A,2) + size(C,2)] AC;
+algorithm
+  AC := cat(2, A, C);
+end cat2;
+end ArrayCat;
+");
+getErrorString();
+
+simulate(ArrayCat.Test);
+getErrorString();
+
+val(AB[1,1], 0);
+val(AB[1,2], 0);
+val(AB[2,1], 0);
+val(AB[2,2], 0);
+val(AB[3,1], 0);
+val(AB[3,2], 0);
+val(AC[1,1], 0);
+val(AC[1,2], 0);
+val(AC[1,3], 0);
+val(AC[2,1], 0);
+val(AC[2,2], 0);
+val(AC[2,3], 0);
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayCat.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayCat.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 11.0
+// 12.0
+// 21.0
+// 22.0
+// 31.0
+// 32.0
+// 11.0
+// 12.0
+// 13.0
+// 21.0
+// 22.0
+// 23.0
+// endResult

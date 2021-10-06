@@ -92,6 +92,7 @@ import DAE;
 import Structural = NFStructural;
 import ArrayConnections = NFArrayConnections;
 import UnorderedMap;
+import UnorderedSet;
 import Inline = NFInline;
 
 public
@@ -145,6 +146,7 @@ protected
   DAE.ElementSource src;
   Option<SCode.Comment> cmt;
   FlattenSettings settings;
+  UnorderedSet<ComponentRef> deleted_vars;
 algorithm
   settings := FlattenSettings.SETTINGS(
     Flags.isSet(Flags.NF_SCALARIZE),
@@ -158,8 +160,10 @@ algorithm
   src := ElementSource.addCommentToSource(src,
     SCodeUtil.getElementComment(InstNode.definition(classInst)));
 
+  deleted_vars := UnorderedSet.new(ComponentRef.hash, ComponentRef.isEqual);
+
   (vars, sections) := flattenClass(InstNode.getClass(classInst), ComponentRef.EMPTY(),
-    Visibility.PUBLIC, NONE(), {}, sections, settings);
+    Visibility.PUBLIC, NONE(), {}, sections, deleted_vars, settings);
   vars := listReverseInPlace(vars);
 
   flatModel := match sections
@@ -180,7 +184,7 @@ algorithm
   if settings.arrayConnect then
     flatModel := resolveArrayConnections(flatModel);
   else
-    flatModel := resolveConnections(flatModel);
+    flatModel := resolveConnections(flatModel, deleted_vars);
   end if;
 end flatten;
 
@@ -205,6 +209,7 @@ function flattenClass
   input Option<Binding> binding;
   input output list<Variable> vars;
   input output Sections sections;
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   array<InstNode> comps;
@@ -225,12 +230,12 @@ algorithm
 
         if listEmpty(bindings) then
           for c in comps loop
-            (vars, sections) := flattenComponent(c, prefix, visibility, binding, vars, sections, settings);
+            (vars, sections) := flattenComponent(c, prefix, visibility, binding, vars, sections, deletedVars, settings);
           end for;
         else
           for c in comps loop
             b :: bindings := bindings;
-            (vars, sections) := flattenComponent(c, prefix, visibility, SOME(b), vars, sections, settings);
+            (vars, sections) := flattenComponent(c, prefix, visibility, SOME(b), vars, sections, deletedVars, settings);
           end for;
         end if;
 
@@ -241,7 +246,7 @@ algorithm
     case Class.TYPED_DERIVED()
       algorithm
         (vars, sections) :=
-          flattenClass(InstNode.getClass(cls.baseClass), prefix, visibility, binding, vars, sections, settings);
+          flattenClass(InstNode.getClass(cls.baseClass), prefix, visibility, binding, vars, sections, deletedVars, settings);
       then
         ();
 
@@ -263,6 +268,7 @@ function flattenComponent
   input Option<Binding> outerBinding;
   input output list<Variable> vars;
   input output Sections sections;
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   InstNode comp_node;
@@ -286,7 +292,7 @@ algorithm
       algorithm
         // Delete the component if it has a condition that's false.
         if isDeletedComponent(condition, prefix) then
-          deleteComponent(component);
+          deleteComponent(component, prefix, deletedVars);
           return;
         end if;
 
@@ -296,7 +302,7 @@ algorithm
         (vars, sections) := match getComponentType(ty, settings)
           case ComponentType.COMPLEX
           then flattenComplexComponent(comp_node, c, cls, ty,
-            vis, outerBinding, prefix, vars, sections, settings);
+            vis, outerBinding, prefix, vars, sections, deletedVars, settings);
 
           case ComponentType.NORMAL
           then flattenSimpleComponent(comp_node, c, vis, outerBinding,
@@ -304,7 +310,7 @@ algorithm
 
           case ComponentType.RECORD algorithm
             (children, sections) := flattenComplexComponent(comp_node, c, cls, ty,
-              vis, outerBinding, prefix, {}, sections, settings);
+              vis, outerBinding, prefix, {}, sections, deletedVars, settings);
           then flattenSimpleComponent(comp_node, c, vis, outerBinding,
             Class.getTypeAttributes(cls), prefix, vars, sections, settings, children);
 
@@ -315,7 +321,12 @@ algorithm
       then
         ();
 
-    case Component.DELETED_COMPONENT() then ();
+    // A component that was already deleted during e.g. typing.
+    case _ guard Component.isDeleted(c)
+      algorithm
+        deleteComponent(component, prefix, deletedVars);
+      then
+        ();
 
     else
       algorithm
@@ -335,17 +346,10 @@ protected
   Binding cond;
 algorithm
   if Binding.isBound(condition) then
-    // TODO: Flattening the condition works as intended here, but we can't yet
-    //       delete components inside array instances in a reliable way since
-    //       the components share the same node. I.e. we can't delete a[1].x
-    //       while keeping a[2].x. So for now we skip flattening the condition,
-    //       so that we get an error message in that case instead (because then
-    //       the expression will be an array instead of a scalar boolean).
-    cond := condition;
-    //cond := flattenBinding(condition, prefix);
+    cond := flattenBinding(condition, prefix);
     exp := Binding.getTypedExp(cond);
     exp := Ceval.evalExp(exp, Ceval.EvalTarget.CONDITION(Binding.getInfo(cond)));
-    exp := Expression.stripBindingInfo(exp);
+    exp := Expression.expandSplitIndices(exp);
 
     // Hack to make arrays work when all elements have the same value.
     if Expression.arrayAllEqual(exp) then
@@ -367,46 +371,15 @@ algorithm
 end isDeletedComponent;
 
 function deleteComponent
-  "Recursively marks components as deleted."
-  input InstNode compNode;
+  input InstNode node;
+  input ComponentRef prefix;
+  input UnorderedSet<ComponentRef> deletedVars;
 protected
-  Component comp;
+  ComponentRef cref;
 algorithm
-  // @adrpo: don't delete the inner/outer node, it doesn't work!
-  if InstNode.isInnerOuterNode(compNode) then
-    return;
-  end if;
-
-  comp := InstNode.component(compNode);
-  InstNode.updateComponent(Component.DELETED_COMPONENT(comp), compNode);
-  deleteClassComponents(Component.classInstance(comp));
+  cref := ComponentRef.prefixCref(node, Type.UNKNOWN(), {}, prefix);
+  UnorderedSet.add(cref, deletedVars);
 end deleteComponent;
-
-function deleteClassComponents
-  input InstNode clsNode;
-protected
-  Class cls = InstNode.getClass(clsNode);
-  array<InstNode> comps;
-algorithm
-  () := match cls
-    case Class.INSTANCED_CLASS(elements = ClassTree.FLAT_TREE(components = comps))
-      guard not Restriction.isType(cls.restriction)
-      algorithm
-        for c in comps loop
-          deleteComponent(c);
-        end for;
-      then
-        ();
-
-    case Class.TYPED_DERIVED()
-      algorithm
-        deleteClassComponents(cls.baseClass);
-      then
-        ();
-
-    else ();
-  end match;
-end deleteClassComponents;
 
 function getComponentType
   input Type ty;
@@ -492,7 +465,8 @@ algorithm
   // Set fixed = false for parameters that are part of a record instance whose
   // binding couldn't be split and was moved to an initial equation.
   if unfix then
-    ty_attrs := Binding.setAttr(ty_attrs, "fixed", Binding.FLAT_BINDING(Expression.BOOLEAN(false), Variability.CONSTANT));
+    ty_attrs := Binding.setAttr(ty_attrs, "fixed",
+      Binding.makeFlat(Expression.BOOLEAN(false), Variability.CONSTANT, NFBinding.Source.GENERATED));
   end if;
 
   // kabdelhak: add dummy backend info, will be changed to actual value in
@@ -530,9 +504,11 @@ function getRecordBindings
 protected
   Expression binding_exp;
   Variability var;
+  Binding.Source bind_src;
 algorithm
   binding_exp := Binding.getTypedExp(binding);
   var := Binding.variability(binding);
+  bind_src := Binding.source(binding);
 
   // Convert the expressions in the record expression into bindings.
   recordBindings := match binding_exp
@@ -542,7 +518,7 @@ algorithm
                // from an evaluated function call where it wasn't assigned a value.
                NFBinding.EMPTY_BINDING
              else
-               Binding.FLAT_BINDING(e, var)
+               Binding.makeFlat(e, var, bind_src)
            for e in binding_exp.elements);
 
     else
@@ -563,12 +539,13 @@ function flattenComplexComponent
   input InstNode node;
   input Component comp;
   input Class cls;
-  input Type ty;
+  input Type nodeTy;
   input Visibility visibility;
   input Option<Binding> outerBinding;
   input ComponentRef prefix;
   input output list<Variable> vars;
   input output Sections sections;
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   list<Dimension> dims;
@@ -579,7 +556,9 @@ protected
   Equation eq;
   list<Expression> bindings;
   Variability comp_var, binding_var;
+  Type ty;
 algorithm
+  ty := flattenType(nodeTy, prefix);
   dims := Type.arrayDims(ty);
   binding := if isSome(outerBinding) then Util.getOption(outerBinding) else Component.getBinding(comp);
 
@@ -591,7 +570,7 @@ algorithm
 
     comp_var := Component.variability(comp);
     if comp_var <= Variability.STRUCTURAL_PARAMETER or binding_var <= Variability.STRUCTURAL_PARAMETER then
-      binding_exp := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
+      binding_exp := Ceval.evalExp(binding_exp);
     elseif binding_var == Variability.PARAMETER and Component.isFinal(comp) then
       // Try to use inlining first.
       try
@@ -602,7 +581,7 @@ algorithm
       // If inlining fails, try to evaluate the binding instead.
       if not (Expression.isRecord(binding_exp) or Expression.isCref(binding_exp)) then
         try
-          binding_exp_eval := Expression.stripBindingInfo(Ceval.evalExp(binding_exp));
+          binding_exp_eval := Ceval.evalExp(binding_exp);
 
           // Throw away the evaluated binding if the number of dimensions no
           // longer match after evaluation, in case Ceval fails to apply the
@@ -641,12 +620,12 @@ algorithm
 
   // Flatten the class directly if the component is a scalar, otherwise scalarize it.
   if listEmpty(dims) then
-    (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, settings);
+    (vars, sections) := flattenClass(cls, name, visibility, opt_binding, vars, sections, deletedVars, settings);
   elseif settings.scalarize then
     dims := list(flattenDimension(d, name) for d in dims);
-    (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, settings);
+    (vars, sections) := flattenArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   else
-    (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, settings);
+    (vars, sections) := vectorizeArray(cls, dims, name, visibility, opt_binding, vars, sections, {}, deletedVars, settings);
   end if;
 end flattenComplexComponent;
 
@@ -659,6 +638,7 @@ function flattenArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   Dimension dim;
@@ -673,15 +653,16 @@ algorithm
     sub_pre := ComponentRef.setSubscripts(subs, prefix);
 
     (vars, sections) := flattenClass(cls, sub_pre, visibility,
-      subscriptBindingOpt(subs, binding), vars, sections, settings);
+      subscriptBindingOpt(subs, binding), vars, sections, deletedVars, settings);
   else
     dim :: rest_dims := dimensions;
+    dim := flattenDimension(dim, prefix);
     range_iter := RangeIterator.fromDim(dim);
 
     while RangeIterator.hasNext(range_iter) loop
       (range_iter, sub_exp) := RangeIterator.next(range_iter);
       (vars, sections) := flattenArray(cls, rest_dims, prefix, visibility,
-          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts, settings);
+          binding, vars, sections, Subscript.INDEX(sub_exp) :: subscripts, deletedVars, settings);
     end while;
   end if;
 end flattenArray;
@@ -695,13 +676,14 @@ function vectorizeArray
   input output list<Variable> vars;
   input output Sections sections;
   input list<Subscript> subscripts = {};
+  input UnorderedSet<ComponentRef> deletedVars;
   input FlattenSettings settings;
 protected
   list<Variable> vrs;
   Sections sects;
 algorithm
   // if we don't scalarize flatten the class and vectorize it
-  (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), settings);
+  (vrs, sects) := flattenClass(cls, prefix, visibility, binding, {}, Sections.SECTIONS({}, {}, {}, {}), deletedVars, settings);
 
   // add dimensions to the types
   for v in vrs loop
@@ -902,7 +884,7 @@ algorithm
   end if;
 end subscriptBindingOpt;
 
-function flattenBinding
+public function flattenBinding
   input output Binding binding;
   input ComponentRef prefix;
   input Boolean isTypeAttribute = false;
@@ -923,7 +905,7 @@ algorithm
           return;
         end if;
 
-        binding.bindingExp := flattenBindingExp(binding.bindingExp, prefix, isTypeAttribute);
+        binding.bindingExp := flattenExp(binding.bindingExp, prefix);
         binding.bindingType := flattenType(binding.bindingType, prefix);
         binding.isFlattened := true;
       then
@@ -949,82 +931,7 @@ algorithm
   end match;
 end flattenBinding;
 
-function flattenBindingExp
-  input Expression exp;
-  input ComponentRef prefix;
-  input Boolean isTypeAttribute = false;
-  output Expression outExp;
-protected
-  list<Subscript> subs, accum_subs;
-  Integer binding_level;
-  list<InstNode> parents;
-  ComponentRef pre;
-  InstNode cr_node, par;
-algorithm
-  outExp := match exp
-    case Expression.BINDING_EXP(exp = outExp)
-      algorithm
-        outExp := flattenExp(outExp, prefix);
-        parents := listRest(exp.parents);
-
-        if not exp.isEach then
-          if isTypeAttribute and not listEmpty(parents) then
-            parents := listRest(parents);
-          end if;
-
-          if not listEmpty(parents) then
-            outExp := flattenBindingExp2(outExp, prefix, parents);
-          end if;
-        end if;
-      then
-        outExp;
-
-    else exp;
-  end match;
-end flattenBindingExp;
-
-function flattenBindingExp2
-  input Expression exp;
-  input ComponentRef prefix;
-  input list<InstNode> parents;
-  output Expression outExp = exp;
-protected
-  Integer binding_level = 0;
-  list<Subscript> subs;
-  ComponentRef pre = prefix;
-  InstNode pre_node, par;
-algorithm
-  par := listHead(parents);
-
-  if InstNode.isComponent(par) and not ComponentRef.isEmpty(pre) then
-    pre_node := ComponentRef.node(pre);
-
-    while not InstNode.refEqual(pre_node, par) loop
-      pre := ComponentRef.rest(pre);
-
-      if ComponentRef.isEmpty(pre) then
-        return;
-      end if;
-
-      pre_node := ComponentRef.node(pre);
-    end while;
-  end if;
-
-  for parent in parents loop
-    binding_level := binding_level + Type.dimensionCount(InstNode.getType(parent));
-  end for;
-
-  if binding_level > 0 then
-    // TODO: Optimize this, making a list of all subscripts in the prefix when
-    //       only a few are needed is unnecessary.
-    subs := listAppend(listReverse(s) for s in ComponentRef.subscriptsAll(pre));
-    binding_level := min(binding_level, listLength(subs));
-    subs := List.firstN_reverse(subs, binding_level);
-    outExp := Expression.applySubscripts(subs, exp);
-  end if;
-end flattenBindingExp2;
-
-function flattenExp
+public function flattenExp
   input output Expression exp;
   input ComponentRef prefix;
 algorithm
@@ -1039,16 +946,60 @@ algorithm
     case Expression.CREF(cref = ComponentRef.CREF())
       algorithm
         exp.cref := flattenCref(exp.cref, prefix);
+        exp.ty := flattenType(exp.ty, prefix);
       then
         exp;
 
-    case Expression.BINDING_EXP() then flattenBindingExp(exp, prefix);
+    case Expression.SUBSCRIPTED_EXP()
+      then replaceSplitIndices(exp.exp, exp.subscripts, prefix);
+
     case Expression.IF(ty = Type.CONDITIONAL_ARRAY()) then flattenConditionalArrayIfExp(exp);
     else exp;
   end match;
 
   exp := flattenExpType(exp, prefix);
 end flattenExp_traverse;
+
+function replaceSplitIndices
+  input output Expression exp;
+  input list<Subscript> subscripts;
+  input ComponentRef prefix;
+protected
+  list<Subscript> subs = subscripts, cr_subs;
+  Integer index;
+  InstNode cr_node;
+algorithm
+  for cr in ComponentRef.toListReverse(prefix) loop
+    cr_subs := ComponentRef.getSubscripts(cr);
+
+    if not listEmpty(cr_subs) then
+      index := 1;
+      cr_node := ComponentRef.node(cr);
+
+      for s in cr_subs loop
+        subs := List.replaceOnTrue(s, subs,
+          function replaceSplitIndices2(node = cr_node, index = index));
+        index := index + 1;
+      end for;
+    end if;
+  end for;
+
+  subs := Subscript.expandSplitIndices(subs);
+  exp := Expression.applySubscripts(subs, exp);
+end replaceSplitIndices;
+
+function replaceSplitIndices2
+  input Subscript sub;
+  input InstNode node;
+  input Integer index;
+  output Boolean replace;
+algorithm
+  replace := match sub
+    case Subscript.SPLIT_INDEX()
+      then sub.dimIndex == index and InstNode.refEqual(sub.node, node);
+    else false;
+  end match;
+end replaceSplitIndices2;
 
 function flattenCref
   input output ComponentRef cref;
@@ -1057,13 +1008,50 @@ protected
   Type ty, ty2;
 algorithm
   cref := ComponentRef.transferSubscripts(prefix, cref);
-  ty := ComponentRef.nodeType(cref);
-  ty2 := flattenType(ty, prefix);
 
-  if not referenceEq(ty, ty2) then
-    cref := ComponentRef.setNodeType(ty2, cref);
+  if ComponentRef.hasSplitSubscripts(cref) then
+    cref := flattenCrefSplitSubscripts(cref, prefix);
   end if;
+
+  cref := ComponentRef.mapTypes(cref, function flattenType(prefix = prefix));
 end flattenCref;
+
+function flattenCrefSplitSubscripts
+  input output ComponentRef cref;
+  input ComponentRef prefix;
+protected
+  type SubscriptList = list<Subscript>;
+  UnorderedMap<InstNode, SubscriptList> sub_map;
+algorithm
+  sub_map := UnorderedMap.new<SubscriptList>(InstNode.hash, InstNode.refEqual);
+
+  for cr in ComponentRef.toListReverse(prefix) loop
+    if ComponentRef.hasSubscripts(cr) then
+      UnorderedMap.addUnique(ComponentRef.node(cr), ComponentRef.getSubscripts(cr), sub_map);
+    end if;
+  end for;
+
+  cref := ComponentRef.mapSubscripts(cref, function flattenCrefSplitSubscripts2(subMap = sub_map));
+  cref := ComponentRef.simplifySubscripts(cref, true);
+end flattenCrefSplitSubscripts;
+
+function flattenCrefSplitSubscripts2
+  input output Subscript sub;
+  input UnorderedMap<InstNode, list<Subscript>> subMap;
+algorithm
+  sub := match sub
+    local
+      list<Subscript> subs;
+
+    case Subscript.SPLIT_INDEX()
+      algorithm
+        subs := UnorderedMap.getOrDefault(sub.node, subMap, {});
+      then
+        if sub.dimIndex > listLength(subs) then Subscript.WHOLE() else listGet(subs, sub.dimIndex);
+
+    else sub;
+  end match;
+end flattenCrefSplitSubscripts2;
 
 function flattenConditionalArrayIfExp
   input output Expression exp;
@@ -1157,14 +1145,16 @@ algorithm
   equations := match eq
     local
       Expression e1, e2, e3;
+      Type ty;
       list<Equation> eql;
 
     case Equation.EQUALITY()
       algorithm
         e1 := flattenExp(eq.lhs, prefix);
         e2 := flattenExp(eq.rhs, prefix);
+        ty := flattenType(eq.ty, prefix);
       then
-        Equation.EQUALITY(e1, e2, eq.ty, eq.source) :: equations;
+        Equation.EQUALITY(e1, e2, ty, eq.source) :: equations;
 
     case Equation.FOR()
       algorithm
@@ -1368,7 +1358,6 @@ algorithm
   // Unroll the loop by replacing the iterator with each of its values in the for loop body.
   range := flattenExp(range, prefix);
   range := Ceval.evalExp(range, Ceval.EvalTarget.RANGE(Equation.info(forLoop)));
-  range := Expression.stripBindingInfo(range);
   range_iter := RangeIterator.fromExp(range);
 
   while RangeIterator.hasNext(range_iter) loop
@@ -1455,7 +1444,7 @@ function flattenAlgorithms
   output list<Algorithm> outAlgorithms = {};
 algorithm
   for alg in algorithms loop
-    alg.statements := Statement.mapExpList(alg.statements, function flattenExp(prefix = prefix));
+    alg.statements := flattenStatements(alg.statements, prefix);
 
     // CheckModel relies on the ElementSource to know whether a certain algorithm comes from
     // an array component, otherwise is will miscount the number of equations.
@@ -1466,6 +1455,100 @@ algorithm
     outAlgorithms := alg :: outAlgorithms;
   end for;
 end flattenAlgorithms;
+
+function flattenStatements
+  input output list<Statement> stmts;
+  input ComponentRef prefix;
+algorithm
+  stmts := list(flattenStatement(s, prefix) for s in stmts);
+end flattenStatements;
+
+function flattenStatement
+  input output Statement stmt;
+  input ComponentRef prefix;
+algorithm
+  stmt := match stmt
+    local
+      Expression e1, e2, e3;
+      Type ty;
+      list<Statement> body;
+
+    case Statement.ASSIGNMENT()
+      algorithm
+        e1 := flattenExp(stmt.lhs, prefix);
+        e2 := flattenExp(stmt.rhs, prefix);
+        ty := flattenType(stmt.ty, prefix);
+      then
+        Statement.ASSIGNMENT(e1, e2, ty, stmt.source);
+
+    case Statement.FOR()
+      algorithm
+        stmt.range := Util.applyOption(stmt.range, function flattenExp(prefix = prefix));
+        stmt.body := flattenStatements(stmt.body, prefix);
+      then
+        stmt;
+
+    case Statement.IF()
+      algorithm
+        stmt.branches := list(flattenStmtBranch(b, prefix) for b in stmt.branches);
+      then
+        stmt;
+
+    case Statement.WHEN()
+      algorithm
+        stmt.branches := list(flattenStmtBranch(b, prefix) for b in stmt.branches);
+      then
+        stmt;
+
+    case Statement.ASSERT()
+      algorithm
+        e1 := flattenExp(stmt.condition, prefix);
+        e2 := flattenExp(stmt.message, prefix);
+        e3 := flattenExp(stmt.level, prefix);
+      then
+        Statement.ASSERT(e1, e2, e3, stmt.source);
+
+    case Statement.TERMINATE()
+      algorithm
+        e1 := flattenExp(stmt.message, prefix);
+      then
+        Statement.TERMINATE(e1, stmt.source);
+
+    case Statement.NORETCALL()
+      algorithm
+        e1 := flattenExp(stmt.exp, prefix);
+      then
+        Statement.NORETCALL(e1, stmt.source);
+
+    case Statement.WHILE()
+      algorithm
+        e1 := flattenExp(stmt.condition, prefix);
+        body := flattenStatements(stmt.body, prefix);
+      then
+        Statement.WHILE(e1, body, stmt.source);
+
+    case Statement.FAILURE()
+      algorithm
+        body := flattenStatements(stmt.body, prefix);
+      then
+        Statement.FAILURE(body, stmt.source);
+
+    else stmt;
+  end match;
+end flattenStatement;
+
+function flattenStmtBranch
+  input output tuple<Expression, list<Statement>> branch;
+  input ComponentRef prefix;
+protected
+  Expression cond;
+  list<Statement> body;
+algorithm
+  (cond, body) := branch;
+  cond := flattenExp(cond, prefix);
+  body := flattenStatements(body, prefix);
+  branch := (cond, body);
+end flattenStmtBranch;
 
 function addElementSourceArrayPrefix
   input output DAE.ElementSource source;
@@ -1488,9 +1571,36 @@ algorithm
   source := ElementSource.addElementSourceInstanceOpt(source, comp_pre);
 end addElementSourceArrayPrefix;
 
+function isDeletedConnector
+  input ComponentRef cref;
+  input UnorderedSet<ComponentRef> deletedVars;
+  output Boolean res;
+protected
+  ComponentRef cr = cref;
+  InstNode node;
+algorithm
+  cr := ComponentRef.stripSubscripts(cref);
+
+  while ComponentRef.isCref(cr) loop
+    node := ComponentRef.node(cr);
+
+    if InstNode.isComponent(node) and Component.hasCondition(InstNode.component(node)) then
+      if UnorderedSet.contains(cr, deletedVars) then
+        res := true;
+        return;
+      end if;
+    end if;
+
+    cr := ComponentRef.stripSubscripts(ComponentRef.rest(cr));
+  end while;
+
+  res := false;
+end isDeletedConnector;
+
 function resolveConnections
 "Generates the connect equations and adds them to the equation list"
   input output FlatModel flatModel;
+  input UnorderedSet<ComponentRef> deletedVars;
 protected
   Connections conns;
   list<Equation> conn_eql, ec_eql;
@@ -1508,7 +1618,9 @@ algorithm
   end for;
 
   // get the connections from the model
-  (flatModel, conns) := Connections.collect(flatModel);
+  (flatModel, conns) := Connections.collect(flatModel,
+    function isDeletedConnector(deletedVars = deletedVars));
+
   // Elaborate expandable connectors.
   (flatModel, conns) := ExpandableConnectors.elaborate(flatModel, conns);
   // handle overconstrained connections
@@ -1517,7 +1629,8 @@ algorithm
   // - generate the equations to replace the broken connects
   // - return the broken connects + the equations
   if  System.getHasOverconstrainedConnectors() then
-    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, conns);
+    (flatModel, broken) := NFOCConnectionGraph.handleOverconstrainedConnections(flatModel, conns,
+      function isDeletedConnector(deletedVars = deletedVars));
   end if;
   // add the broken connections
   conns := Connections.addBroken(broken, conns);
@@ -1953,6 +2066,7 @@ protected
   Function fn = func;
 algorithm
   if not Function.isCollected(fn) then
+    fn := Function.mapExp(fn, Expression.expandSplitIndices);
     fn := EvalConstants.evaluateFunction(fn);
     SimplifyModel.simplifyFunction(fn);
     Function.collect(fn);
@@ -1965,6 +2079,10 @@ algorithm
         for der_fn in Function.getCachedFuncs(fn_der.derivativeFn) loop
           funcs := flattenFunction(der_fn, funcs);
         end for;
+      end for;
+
+      for fn_inv in fn.inverses loop
+        funcs := collectExpFuncs(fn_inv.inverseCall, funcs);
       end for;
     end if;
   end if;

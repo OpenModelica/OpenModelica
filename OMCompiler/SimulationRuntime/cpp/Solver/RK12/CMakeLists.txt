@@ -9,7 +9,7 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 target_link_libraries(${RK12Name} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES})
-add_precompiled_header(${RK12Name} Include/Core/Modelica.h)
+add_precompiled_header(${RK12Name} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${RK12Name}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 

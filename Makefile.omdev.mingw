@@ -121,7 +121,7 @@ omsens:
 omsens-clean:
 	$(MAKE) -f $(defaultMakefileTarget) -C OMSens OMBUILDDIR=$(OMBUILDDIR) clean
 
-omsens_qt:
+omsens_qt: omsens
 	$(MAKE) -f $(defaultMakefileTarget) -C OMSens_Qt OMBUILDDIR=$(OMBUILDDIR) CC="$(CC)" CXX="$(CXX)"
 
 qtclients: omplot omedit omnotebook omshell omoptim omsens_qt

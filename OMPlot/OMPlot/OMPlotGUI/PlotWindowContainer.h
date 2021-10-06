@@ -42,19 +42,19 @@ namespace OMPlot
 class PlotMainWindow;
 class PlotWindowContainer : public QMdiArea
 {
-    Q_OBJECT
+  Q_OBJECT
 public:
-    PlotWindowContainer(PlotMainWindow *pParent);
+  PlotWindowContainer(PlotMainWindow *pParent);
 
-    PlotMainWindow* getPlotMainWindow();
-    QString getUniqueName(QString name = QString("Plot"), int number = 1);
-    PlotWindow* getCurrentWindow();
+  PlotMainWindow* getPlotMainWindow();
+  QString getUniqueName(QString name = QString("Plot"), int number = 1);
+  PlotWindow* getCurrentWindow();
 private:
-    PlotMainWindow *mpPlotMainWindow;
+  PlotMainWindow *mpPlotMainWindow;
 public slots:
-    void addPlotWindow(QStringList arguments);
-    void updateCurrentWindow(QStringList arguments);
-    void checkSubWindows();
+  void addPlotWindow(QStringList arguments);
+  void updateCurrentWindow(QStringList arguments);
+  void checkSubWindows();
 };
 }
 

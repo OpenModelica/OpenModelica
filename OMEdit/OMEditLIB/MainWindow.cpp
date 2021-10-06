@@ -948,6 +948,10 @@ void MainWindow::exportModelFMU(LibraryTreeItem *pLibraryTreeItem)
                                                           GUIMessages::getMessage(GUIMessages::FMU_EMPTY_PLATFORMS).arg(Helper::toolsOptionsPath),
                                                           Helper::scriptingKind, Helper::warningLevel));
   }
+  QString fmiFlags = OptionsDialog::instance()->getFMIPage()->getFMIFlags();
+  if (!fmiFlags.isEmpty()) {
+    mpOMCProxy->setCommandLineOptions(QString("--fmiFlags=%1").arg(fmiFlags));
+  }
   mpOMCProxy->setCommandLineOptions(QString("--fmiFilter=%1").arg(OptionsDialog::instance()->getFMIPage()->getModelDescriptionFiltersComboBox()->currentText()));
   mpOMCProxy->setCommandLineOptions(QString("--fmiSources=%1").arg(OptionsDialog::instance()->getFMIPage()->getIncludeSourceCodeCheckBox()->isChecked() ? "true" : "false"));
   // set the generate debug symbols flag
@@ -1452,7 +1456,7 @@ void MainWindow::PlotCallbackFunction(void *p, int externalWindow, const char* f
           }
         }
         pVariablesTreeModel->setData(index, Qt::Checked, Qt::CheckStateRole);
-        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), pPlotCurve);
+        pMainWindow->getVariablesWidget()->plotVariables(index, pPlotWindow->getCurveWidth(), pPlotWindow->getCurveStyle(), false, pPlotCurve);
       }
     }
     // variables list is empty for plotAll
@@ -2279,6 +2283,23 @@ void MainWindow::simulateModelWithAlgorithmicDebugger()
   ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
   if (pModelWidget) {
     simulateWithAlgorithmicDebugger(pModelWidget->getLibraryTreeItem());
+  }
+}
+
+void MainWindow::simulateModelInteractive()
+{
+  ModelWidget *pModelWidget = mpModelWidgetContainer->getCurrentModelWidget();
+  if (pModelWidget && pModelWidget->getLibraryTreeItem() && pModelWidget->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    // get the top level LibraryTreeItem
+    LibraryTreeItem *pTopLevelLibraryTreeItem = mpLibraryWidget->getLibraryTreeModel()->getTopLevelLibraryTreeItem(pModelWidget->getLibraryTreeItem());
+    if (pTopLevelLibraryTreeItem) {
+      if (!mpOMSSimulationDialog) {
+        mpOMSSimulationDialog = new OMSSimulationDialog(this);
+      }
+      if (pTopLevelLibraryTreeItem) {
+        mpOMSSimulationDialog->simulate(pTopLevelLibraryTreeItem, true);
+      }
+    }
   }
 }
 
@@ -3468,6 +3489,11 @@ void MainWindow::createActions()
   mpSimulateWithAnimationAction->setEnabled(false);
   connect(mpSimulateWithAnimationAction, SIGNAL(triggered()), SLOT(simulateModelWithAnimation()));
 #endif
+  // simulate interactive action
+  mpSimulateModelInteractiveAction = new QAction(QIcon(":/Resources/icons/simulate.svg"), Helper::simulate, this);
+  mpSimulateModelInteractiveAction->setStatusTip(Helper::simulateTip);
+  mpSimulateModelInteractiveAction->setEnabled(false);
+  connect(mpSimulateModelInteractiveAction, SIGNAL(triggered()), SLOT(simulateModelInteractive()));
   // archived simulations action
   mpArchivedSimulationsAction = new QAction(Helper::archivedSimulations, this);
   mpArchivedSimulationsAction->setStatusTip(tr("Shows the list of archived simulations"));
@@ -3895,6 +3921,7 @@ void MainWindow::createMenus()
 #if !defined(WITHOUT_OSG)
   pSimulationMenu->addAction(mpSimulateWithAnimationAction);
 #endif
+//  pSimulationMenu->addAction(mpSimulateModelInteractiveAction);
   pSimulationMenu->addSeparator();
   pSimulationMenu->addAction(mpArchivedSimulationsAction);
   // add Simulation menu to menu bar
@@ -4342,6 +4369,7 @@ void MainWindow::createToolbars()
 #if !defined(WITHOUT_OSG)
   mpSimulationToolBar->addAction(mpSimulateWithAnimationAction);
 #endif
+//  mpSimulationToolBar->addAction(mpSimulateModelInteractiveAction);
   // Re-simulation Toolbar
   mpReSimulationToolBar = addToolBar(tr("Re-simulation Toolbar"));
   mpReSimulationToolBar->setObjectName("Re-simulation Toolbar");

@@ -419,7 +419,7 @@ static int endsWith(const char *s, const char *suffix)
     return 0;
   }
 }
-int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals, int removeDescription)
+int SimulationResults_filterSimulationResults(const char *inFile, const char *outFile, void *vars, int numberOfIntervals, int removeDescription, int readAllVars)
 {
   const char *msg[5] = {"","","","",""};
   void *tmp;
@@ -446,7 +446,9 @@ int SimulationResults_filterSimulationResults(const char *inFile, const char *ou
     double stop = omc_matlab4_stopTime(&simresglob.matReader);
     double start_stop[2] = {start, stop};
     parameter_indexes[0] = 1; /* time */
-    omc_matlab4_read_all_vals(&simresglob.matReader);
+    if (readAllVars) {
+      omc_matlab4_read_all_vals(&simresglob.matReader);
+    }
     if (endsWith(outFile,".csv")) {
       double **vals = omc_alloc_interface.malloc(sizeof(double*)*numToFilter);
       FILE *fout = NULL;

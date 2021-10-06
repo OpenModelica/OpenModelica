@@ -225,7 +225,7 @@ public
     input output ComponentRef cref;
   algorithm
     () := match cref
-      case CREF()
+      case CREF() guard InstNode.isComponent(cref.node)
         algorithm
           cref.ty := InstNode.getType(cref.node);
         then
@@ -445,6 +445,19 @@ public
     end match;
   end hasSubscripts;
 
+  function hasSplitSubscripts
+    input ComponentRef cref;
+    output Boolean res;
+  algorithm
+    res := match cref
+      case CREF(origin = Origin.CREF)
+        then List.exist(cref.subscripts, Subscript.isSplitIndex) or
+             hasSplitSubscripts(cref.restCref);
+
+      else false;
+    end match;
+  end hasSplitSubscripts;
+
   function getSubscripts
     input ComponentRef cref;
     output list<Subscript> subscripts;
@@ -611,6 +624,29 @@ public
     end match;
   end foldSubscripts;
 
+  function mapSubscripts
+    input output ComponentRef cref;
+    input FuncT func;
+
+    partial function FuncT
+      input output Subscript subscript;
+    end FuncT;
+  algorithm
+    cref := match cref
+      case CREF(origin = Origin.CREF)
+        algorithm
+          if not listEmpty(cref.subscripts) then
+            cref.subscripts := list(func(s) for s in cref.subscripts);
+          end if;
+
+          cref.restCref := mapSubscripts(cref.restCref, func);
+        then
+          cref;
+
+      else cref;
+    end match;
+  end mapSubscripts;
+
   function fillSubscripts
     "Fills in any unsubscripted dimensions in the cref with : subscripts."
     input output ComponentRef cref;
@@ -775,6 +811,52 @@ public
       else false;
     end match;
   end isPrefix;
+
+  function toAbsyn
+    input ComponentRef cref;
+    output Absyn.ComponentRef acref;
+  algorithm
+    acref := match cref
+      case CREF()
+        algorithm
+          acref := Absyn.ComponentRef.CREF_IDENT(InstNode.name(cref.node),
+            list(Subscript.toAbsyn(s) for s in cref.subscripts));
+        then
+          toAbsyn_impl(cref.restCref, acref);
+
+      case STRING()
+        algorithm
+          acref := Absyn.ComponentRef.CREF_IDENT(cref.name, {});
+        then
+          toAbsyn_impl(cref.restCref, acref);
+
+      case WILD() then Absyn.ComponentRef.WILD();
+    end match;
+  end toAbsyn;
+
+  function toAbsyn_impl
+    input ComponentRef cref;
+    input Absyn.ComponentRef accumCref;
+    output Absyn.ComponentRef acref;
+  algorithm
+    acref := match cref
+      case EMPTY() then accumCref;
+
+      case CREF()
+        algorithm
+          acref := Absyn.ComponentRef.CREF_QUAL(InstNode.name(cref.node),
+            list(Subscript.toAbsyn(s) for s in cref.subscripts), accumCref);
+        then
+          toAbsyn_impl(cref.restCref, acref);
+
+      case STRING()
+        algorithm
+          acref := Absyn.ComponentRef.CREF_QUAL(cref.name, {}, accumCref);
+        then
+          toAbsyn_impl(cref.restCref, acref);
+
+    end match;
+  end toAbsyn_impl;
 
   function toDAE
     input ComponentRef cref;
@@ -1023,6 +1105,7 @@ public
 
   function simplifySubscripts
     input output ComponentRef cref;
+    input Boolean trim = false;
   algorithm
     cref := match cref
       local
@@ -1030,15 +1113,15 @@ public
 
       case CREF(subscripts = {}, origin = Origin.CREF)
         algorithm
-          cref.restCref := simplifySubscripts(cref.restCref);
+          cref.restCref := simplifySubscripts(cref.restCref, trim);
         then
           cref;
 
       case CREF(origin = Origin.CREF)
         algorithm
-          subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty));
+          subs := Subscript.simplifyList(cref.subscripts, Type.arrayDims(cref.ty), trim);
         then
-          CREF(cref.node, subs, cref.ty, cref.origin, simplifySubscripts(cref.restCref));
+          CREF(cref.node, subs, cref.ty, cref.origin, simplifySubscripts(cref.restCref, trim));
 
       else cref;
     end match;
@@ -1076,7 +1159,9 @@ public
         InstNode node;
 
       case CREF(node = node, origin = Origin.CREF)
-        then InstNode.isComponent(node) and Component.isDeleted(InstNode.component(node));
+        then (InstNode.isComponent(node) and Component.isDeleted(InstNode.component(node))) or
+             isDeleted(cref.restCref);
+
       else false;
     end match;
   end isDeleted;
@@ -1094,12 +1179,15 @@ public
 
   function toListReverse
     input ComponentRef cref;
+    input Boolean includeScope = true;
     input list<ComponentRef> accum = {};
     output list<ComponentRef> crefs;
   algorithm
     crefs := match cref
+      case CREF() guard includeScope
+        then toListReverse(cref.restCref, includeScope, cref :: accum);
       case CREF(origin = Origin.CREF)
-        then toListReverse(cref.restCref, cref :: accum);
+        then toListReverse(cref.restCref, includeScope, cref :: accum);
       else accum;
     end match;
   end toListReverse;
@@ -1406,6 +1494,31 @@ public
       else ();
     end match;
   end removeOuterCrefPrefix;
+
+  function mapTypes
+    input ComponentRef cref;
+    input MapFunc func;
+    output ComponentRef outCref;
+
+    partial function MapFunc
+      input output Type e;
+    end MapFunc;
+  algorithm
+    outCref := match cref
+      local
+        ComponentRef rest;
+        Type ty;
+
+      case CREF()
+        algorithm
+          ty := func(cref.ty);
+          rest := mapTypes(cref.restCref, func);
+        then
+          CREF(cref.node, cref.subscripts, ty, cref.origin, rest);
+
+      else cref;
+    end match;
+  end mapTypes;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponentRef;

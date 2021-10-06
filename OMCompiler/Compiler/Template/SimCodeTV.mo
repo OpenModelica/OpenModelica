@@ -3917,6 +3917,7 @@ package Flags
   constant ConfigFlag ZEROMQ_SERVER_ID;
   constant ConfigFlag ZEROMQ_CLIENT_ID;
   constant ConfigFlag FMI_FILTER;
+  constant ConfigFlag EXPORT_CLOCKS_IN_MODELDESCRIPTION;
 
   function isSet
     input DebugFlag inFlag;

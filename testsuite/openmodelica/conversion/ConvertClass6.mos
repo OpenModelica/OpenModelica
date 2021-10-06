@@ -1,0 +1,30 @@
+// name:   ConvertClass6
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertClass6
+    import Modelica.SIunits;
+    package MySI = SIunits;
+
+    import SIunits2 = Modelica.SIunits;
+    package MySI2 = SIunits2;
+  end ConvertClass6;
+");
+
+convertPackage(ConvertClass6, "scripts/ConvertClass4.mos");
+getErrorString();
+list(ConvertClass6);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertClass6
+//   import Modelica.Units.SI;
+//   package MySI = SI;
+//   import SIunits2 = Modelica.Units.SI;
+//   package MySI2 = SIunits2;
+// end ConvertClass6;"
+// endResult

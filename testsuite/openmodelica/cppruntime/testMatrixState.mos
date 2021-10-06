@@ -1,0 +1,60 @@
+// name: testMatrixState
+// keywords: array storage order
+// status: correct
+// teardown_command: rm -f *MatrixStateTest*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+model MatrixStateTest
+  Real v(start = 1);
+  Real w(start = 2);
+  Real[2,2] x(start = [11, 12; 21, 22], nominal = [11, 12; 21, 22]);
+equation
+  der(v) = 1;
+  der(w) = 2;
+  der(x[1,1]) = 11;
+  der(x[1,2]) = 12;
+  der(x[2,1]) = 21;
+  der(x[2,2]) = 22;
+  annotation(experiment(StopTime = 1));
+end MatrixStateTest;
+");
+getErrorString();
+
+simulate(MatrixStateTest);
+val(v, 0);
+val(w, 0);
+val(x[1,1], 0);
+val(x[1,2], 0);
+val(x[2,1], 0);
+val(x[2,2], 0);
+val(v, 1);
+val(w, 1);
+val(x[1,1], 1);
+val(x[1,2], 1);
+val(x[2,1], 1);
+val(x[2,2], 1);
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "MatrixStateTest_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'MatrixStateTest', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 1.0
+// 2.0
+// 11.0
+// 12.0
+// 21.0
+// 22.0
+// 2.0
+// 4.0
+// 22.0
+// 24.0
+// 42.0
+// 44.0
+// endResult

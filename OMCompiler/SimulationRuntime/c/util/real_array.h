@@ -212,12 +212,6 @@ extern void promote_alloc_real_array(const real_array_t * a, int n, real_array_t
 
 static inline int ndims_real_array(const real_array_t * a)
 { return ndims_base_array(a); }
-static inline modelica_real *data_of_real_array(const real_array_t *a)
-{ return (modelica_real *) a->data; }
-static inline modelica_real *data_of_real_c89_array(const real_array_t *a)
-{ return (modelica_real *) a->data; }
-static inline modelica_real *data_of_real_f77_array(const real_array_t *a)
-{ return (modelica_real *) a->data; }
 
 extern void size_real_array(const real_array_t * a,integer_array_t* dest);
 extern modelica_real scalar_real_array(const real_array_t * a);

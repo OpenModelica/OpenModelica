@@ -91,7 +91,13 @@ public
 
   function collect
     input output FlatModel flatModel;
+    input IsDeleted isDeleted;
           output Connections conns = new();
+
+    partial function IsDeleted
+      input ComponentRef cref;
+      output Boolean res;
+    end IsDeleted;
   protected
     Component comp;
     ComponentRef cr, lhs, rhs;
@@ -120,15 +126,9 @@ public
         case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                               rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
           algorithm
-            if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
-              cl1 := makeConnectors(lhs, ty1, source);
-              cl2 := makeConnectors(rhs, ty2, source);
-
-              for c1 in cl1 loop
-                c2 :: cl2 := cl2;
-                conns := addConnection(Connection.CONNECTION(c1, c2), conns);
-              end for;
-            end if;
+            lhs := ComponentRef.evaluateSubscripts(lhs);
+            rhs := ComponentRef.evaluateSubscripts(rhs);
+            conns.connections := makeConnections(lhs, ty1, rhs, ty2, source, isDeleted, conns.connections);
           then
             eql;
 
@@ -141,6 +141,39 @@ public
     end if;
   end collect;
 
+  function makeConnections
+    input ComponentRef lhsCref;
+    input Type lhsType;
+    input ComponentRef rhsCref;
+    input Type rhsType;
+    input DAE.ElementSource source;
+    input IsDeleted isDeleted;
+    input output list<Connection> connections = {};
+
+    partial function IsDeleted
+      input ComponentRef cref;
+      output Boolean res;
+    end IsDeleted;
+  protected
+    list<Connector> cl1, cl2;
+    Connector c2;
+  algorithm
+    if isDeleted(lhsCref) or isDeleted(rhsCref) then
+      return;
+    end if;
+
+    cl1 := makeConnectors(lhsCref, lhsType, source);
+    cl2 := makeConnectors(rhsCref, rhsType, source);
+
+    for c1 in cl1 loop
+      c2 :: cl2 := cl2;
+
+      if not (isDeleted(c1.name) or isDeleted(c2.name)) then
+        connections := Connection.CONNECTION(c1, c2) :: connections;
+      end if;
+    end for;
+  end makeConnections;
+
   function makeConnectors
     input ComponentRef cref;
     input Type ty;
@@ -151,14 +184,12 @@ public
     ComponentRef cr;
     Boolean expanded;
   algorithm
-    cr := ComponentRef.evaluateSubscripts(cref);
-
     if not Flags.isSet(Flags.NF_SCALARIZE) then
-      connectors := {Connector.fromCref(cr, ComponentRef.getSubscriptedType(cr), source)};
+      connectors := {Connector.fromCref(cref, ComponentRef.getSubscriptedType(cref), source)};
       return;
     end if;
 
-    cref_exp := Expression.CREF(ComponentRef.getSubscriptedType(cr), cr);
+    cref_exp := Expression.CREF(ComponentRef.getSubscriptedType(cref), cref);
     (cref_exp, expanded) := ExpandExp.expand(cref_exp);
 
     if expanded then

@@ -6,6 +6,8 @@
 //
 
 setCommandLineOptions("+simCodeTarget=Cpp"); getErrorString();
+setCommandLineOptions("--exportClocksInModeldescription=true"); getErrorString();
+
 loadString("
 model SIDTest
   parameter Real dt = 0.1 annotation(Evaluate = true);
@@ -35,6 +37,8 @@ readFile("modelDescription.tmp.xml");
 // ""
 // true
 // ""
+// true
+// ""
 // "SIDTest.fmu"
 // ""
 // 0
@@ -48,6 +52,14 @@ readFile("modelDescription.tmp.xml");
 //   <ModelExchange
 //     modelIdentifier=\"SIDTest\">
 //   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred
+//               interval=\"0.2\"
+//               shiftCounter=\"3\"
+//               /></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
 //   <LogCategories>
 //     <Category name=\"logEvents\" />
 //     <Category name=\"logSingularLinearSystems\" />
@@ -68,6 +80,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"previous(xd)\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -84,6 +97,8 @@ readFile("modelDescription.tmp.xml");
 //     name=\"xd\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -93,6 +108,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"4\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>

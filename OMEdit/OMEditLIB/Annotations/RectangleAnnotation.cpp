@@ -124,9 +124,9 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item of the list contains the border pattern.
-  mBorderPattern = StringHandler::getBorderPatternType(list.at(8));
+  mBorderPattern = StringHandler::getBorderPatternType(stripDynamicSelect(list.at(8)));
   // 10th item is the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
+  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(9))));
   for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
     if (extentPoints.size() >= 2) {
@@ -134,7 +134,7 @@ void RectangleAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 11th item of the list contains the corner radius.
-  mRadius = list.at(10).toFloat();
+  mRadius = stripDynamicSelect(list.at(10)).toFloat();
 }
 
 QRectF RectangleAnnotation::boundingRect() const

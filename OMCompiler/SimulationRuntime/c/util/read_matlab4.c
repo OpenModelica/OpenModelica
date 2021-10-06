@@ -162,14 +162,14 @@ static int read_chars(int type, size_t n, FILE *file, char *str)
     double d=0.0;
     int k;
     for (k=0; k<n; k++) {
-      if (fread(&d, sizeof(double), 1, file) != 1) {
+      if (omc_fread(&d, sizeof(double), 1, file, 0) != 1) {
         return 1;
       }
       str[k] = (char) d;
     }
     return 0;
   } else if (p == 5) { /* Byte */
-    return fread(str,n,1,file) != 1;
+    return omc_fread(str,n,1,file, 0) != 1;
   }
   return 1;
 }
@@ -181,14 +181,14 @@ static int read_int32(int type, size_t n, FILE *file, int32_t *val)
     double d=0.0;
     int k;
     for (k=0; k<n; k++) {
-      if (fread(&d, sizeof(double), 1, file) != 1) {
+      if (omc_fread(&d, sizeof(double), 1, file, 0) != 1) {
         return 1;
       }
       val[k] = (int32_t) d;
     }
     return 0;
   } else if (p == 2) { /* int32 */
-    return fread(val,n*sizeof(int32_t),1,file) != 1;
+    return omc_fread(val,n*sizeof(int32_t),1,file, 0) != 1;
   }
   return 1;
 }
@@ -200,12 +200,12 @@ static int read_double(int type, size_t n, FILE *file, double *val)
     return 0;
   }
   if (p == 0) { /* Double */
-    return fread(val,n*sizeof(double),1,file) != 1;
+    return omc_fread(val,n*sizeof(double),1,file, 0) != 1;
   } else if (p == 1) { /* float */
     float f=0.0;
     int k;
     for (k=0; k<n; k++) {
-      if (fread(&f, sizeof(float), 1, file) != 1) {
+      if (omc_fread(&f, sizeof(float), 1, file, 0) != 1) {
         return 1;
       }
       val[k] = (double) f;
@@ -233,7 +233,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
   reader->stopTime = NAN;
   for(i=0; i<nMatrix;i++) {
     MHeader_t hdr;
-    int nr = fread(&hdr,sizeof(MHeader_t),1,reader->file);
+    int nr = omc_fread(&hdr,sizeof(MHeader_t),1,reader->file, 0);
     size_t matrix_length,element_length;
     char *name;
     if(nr != 1) return "Corrupt header (1)";
@@ -241,7 +241,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     if(hdr.imagf > 1) return "Matrix uses imaginary numbers";
     if((element_length = mat_element_length(hdr.type)) == -1) return "Could not determine size of matrix elements";
     name = (char*) malloc(hdr.namelen);
-    nr = fread(name,hdr.namelen,1,reader->file);
+    nr = omc_fread(name,hdr.namelen,1,reader->file, 0);
     if(nr != 1) {
       free(name);
       return "Corrupt header (2)";
@@ -576,7 +576,7 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
     {
       for(i=0; i<reader->nrows; i++) {
         fseek(reader->file,reader->var_offset + sizeof(double)*(i*reader->nvar + absVarIndex-1), SEEK_SET);
-        if(1 != fread(&tmp[i], sizeof(double), 1, reader->file)) {
+        if(1 != omc_fread(&tmp[i], sizeof(double), 1, reader->file, 0)) {
           /* fprintf(stderr, "Corrupt file at %d of %d? nvar %d\n", i, reader->nrows, reader->nvar); */
           free(tmp);
           tmp=NULL;
@@ -591,7 +591,7 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
       float *buffer = (float*) malloc(reader->nrows*sizeof(float));
       for(i=0; i<reader->nrows; i++) {
         fseek(reader->file,reader->var_offset + sizeof(float)*(i*reader->nvar + absVarIndex-1), SEEK_SET);
-        if(1 != fread(&buffer[i], sizeof(float), 1, reader->file)) {
+        if(1 != omc_fread(&buffer[i], sizeof(float), 1, reader->file, 0)) {
           /* fprintf(stderr, "Corrupt file at %d of %d? nvar %d\n", i, reader->nrows, reader->nvar); */
           free(buffer);
           free(tmp);
@@ -684,7 +684,7 @@ int omc_matlab4_read_all_vals(ModelicaMatReader *reader)
     return 1;
   }
   fseek(reader->file, reader->var_offset, SEEK_SET);
-  if (nvar*reader->nrows != fread(tmp, reader->doublePrecision==1 ? sizeof(double) : sizeof(float), nvar*nrows, reader->file)) {
+  if (nvar*reader->nrows != omc_fread(tmp, reader->doublePrecision==1 ? sizeof(double) : sizeof(float), nvar*nrows, reader->file, 0)) {
     free(tmp);
     return 1;
   }
@@ -721,14 +721,14 @@ double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int v
   }
   if(reader->doublePrecision==1) {
     fseek(reader->file,reader->var_offset + sizeof(double)*(timeIndex*reader->nvar + absVarIndex-1), SEEK_SET);
-    if(1 != fread(res, sizeof(double), 1, reader->file)) {
+    if(1 != omc_fread(res, sizeof(double), 1, reader->file, 0)) {
       *res = 0;
       return 1;
     }
   } else {
     float tmpres;
     fseek(reader->file,reader->var_offset + sizeof(float)*(timeIndex*reader->nvar + absVarIndex-1), SEEK_SET);
-    if(1 != fread(&tmpres, sizeof(float), 1, reader->file)) {
+    if(1 != omc_fread(&tmpres, sizeof(float), 1, reader->file, 0)) {
       *res = 0;
       return 1;
     }

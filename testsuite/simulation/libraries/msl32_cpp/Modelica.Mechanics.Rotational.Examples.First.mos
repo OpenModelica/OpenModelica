@@ -31,7 +31,7 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.Rotational.Examples.First
 // {"inertia3.phi","inertia3.w","damper.phi_rel","damper.w_rel"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.First', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.First', options = '', outputFormat = 'mat', variableFilter = 'time|inertia3.phi|inertia3.w|damper.phi_rel|damper.w_rel', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.Rotational.Examples.First_res.mat
 // Files Equal!
 // "true

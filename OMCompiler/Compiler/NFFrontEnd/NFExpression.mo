@@ -71,6 +71,7 @@ public
   import ClockKind = NFClockKind;
   import ExpressionIterator = NFExpressionIterator;
   import InstContext = NFInstContext;
+  import UnorderedMap;
 
   record INTEGER
     Integer value;
@@ -209,6 +210,7 @@ public
     Expression exp;
     list<Subscript> subscripts;
     Type ty;
+    Boolean split;
   end SUBSCRIPTED_EXP;
 
   record TUPLE_ELEMENT
@@ -238,25 +240,6 @@ public
     list<String> argNames;
     Type ty;
   end PARTIAL_FUNCTION_APPLICATION;
-
-  record BINDING_EXP
-    "Represents a binding expression, for example:
-       model A
-         Real x[2];
-       end A;
-
-       model B
-         A a[3](x = {{1, 2}, {3, 4}, {5, 6}});
-       end B;
-     is represented as:
-       BINDING_EXP({{1, 2}, {3, 4}, {5, 6}}, Real[3, 2], Real[2], {x, a}, false);
-    "
-    Expression exp;
-    Type expType     "The actual type of exp.";
-    Type bindingType "The type of the propagated binding.";
-    list<InstNode> parents;
-    Boolean isEach;
-  end BINDING_EXP;
 
   function isArray
     input Expression exp;
@@ -681,12 +664,6 @@ public
         then
           comp;
 
-      case BINDING_EXP()
-        algorithm
-          BINDING_EXP(exp = e2) := exp2;
-        then
-          compare(exp1.exp, e2);
-
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -742,7 +719,7 @@ public
       case UNARY()           then Operator.typeOf(exp.operator);
       case LBINARY()         then Operator.typeOf(exp.operator);
       case LUNARY()          then Operator.typeOf(exp.operator);
-      case RELATION()        then Operator.typeOf(exp.operator);
+      case RELATION()        then Type.copyDims(Operator.typeOf(exp.operator), Type.BOOLEAN());
       case IF()              then exp.ty;
       case CAST()            then exp.ty;
       case BOX()             then Type.METABOXED(typeOf(exp.exp));
@@ -753,7 +730,6 @@ public
       case MUTABLE()         then typeOf(Mutable.access(exp.exp));
       case EMPTY()           then exp.ty;
       case PARTIAL_FUNCTION_APPLICATION() then exp.ty;
-      case BINDING_EXP()     then exp.bindingType;
       else Type.UNKNOWN();
     end match;
   end typeOf;
@@ -783,41 +759,9 @@ public
       case TUPLE_ELEMENT()   algorithm exp.ty := ty; then exp;
       case RECORD_ELEMENT()  algorithm exp.ty := ty; then exp;
       case PARTIAL_FUNCTION_APPLICATION() algorithm exp.ty := ty; then exp;
-      case BINDING_EXP()     then setBindingExpType(ty, exp);
       else exp;
     end match;
   end setType;
-
-  function setBindingExpType
-    "Sets the type of a binding expression while taking into account any extra
-     dimensions the expression contained in the binding expression might have
-     due to modifier propagation."
-    input Type ty;
-    input output Expression bindingExp;
-  protected
-    Expression exp;
-    Type exp_ty, bind_ty;
-    list<InstNode> parents;
-    Boolean is_each;
-    Integer dim_diff;
-  algorithm
-    BINDING_EXP(exp, exp_ty, bind_ty, parents, is_each) := bindingExp;
-    dim_diff := Type.dimensionDiff(exp_ty, bind_ty);
-    bind_ty := ty;
-
-    if dim_diff > 0 then
-      // If the expression type has more dimensions than the binding type, add
-      // those dimensions to the new binding type.
-      exp_ty := Type.liftArrayLeftList(ty, List.firstN(Type.arrayDims(exp_ty), dim_diff));
-    else
-      // Otherwise the expression type and the binding type is the same.
-      exp_ty := ty;
-    end if;
-
-    // Also set the type of the contained expression.
-    exp := setType(exp_ty, exp);
-    bindingExp := BINDING_EXP(exp, exp_ty, bind_ty, parents, is_each);
-  end setBindingExpType;
 
   function typeCastOpt
     input Option<Expression> exp;
@@ -897,14 +841,12 @@ public
       // Casting a cast expression overrides its current cast type.
       case CAST() then typeCast(exp.exp, ty);
 
-      case BINDING_EXP()
+      case SUBSCRIPTED_EXP()
         algorithm
-          e1 := typeCast(exp.exp, ty);
-          t := typeOf(e1);
-          dim_diff := Type.dimensionDiff(exp.expType, exp.bindingType);
-          t2 := if dim_diff > 0 then Type.unliftArrayN(dim_diff, t) else t;
+          e1 := typeCast(exp.exp, ety);
+          t := Type.setArrayElementType(exp.ty, ety);
         then
-          BINDING_EXP(e1, t, t2, exp.parents, exp.isEach);
+          SUBSCRIPTED_EXP(e1, exp.subscripts, t, exp.split);
 
       // Other expressions are handled by making a CAST expression.
       else typeCastGeneric(exp, ety);
@@ -1027,13 +969,13 @@ public
 
   function makeExpArray
     input list<Expression> elements;
+    input Type elementType;
     input Boolean isLiteral = false;
     output Expression exp;
   protected
     Type ty;
   algorithm
-    ty := typeOf(listHead(elements));
-    ty := Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(elements)));
+    ty := Type.liftArrayLeft(elementType, Dimension.fromInteger(listLength(elements)));
     exp := makeArray(ty, elements, isLiteral);
   end makeExpArray;
 
@@ -1127,17 +1069,10 @@ public
       case RANGE() guard listEmpty(restSubscripts)
         then applySubscriptRange(subscript, exp);
 
-      case CALL(call = Call.TYPED_ARRAY_CONSTRUCTOR())
-        then applySubscriptArrayConstructor(subscript, exp.call, restSubscripts);
-
       case CALL()
         then applySubscriptCall(subscript, exp, restSubscripts);
 
       case IF() then applySubscriptIf(subscript, exp, restSubscripts);
-
-      case BINDING_EXP()
-        then bindingExpMap(exp,
-          function applySubscript(subscript = subscript, restSubscripts = restSubscripts));
 
       case UNBOX()
         algorithm
@@ -1146,6 +1081,12 @@ public
           unbox(outExp);
 
       case BOX() then box(applySubscript(subscript, exp.exp, restSubscripts));
+
+      case CAST()
+        algorithm
+          outExp := applySubscript(subscript, exp.exp, restSubscripts);
+        then
+          CAST(Type.copyElementType(typeOf(outExp), exp.ty), outExp);
 
       else makeSubscriptedExp(subscript :: restSubscripts, exp);
     end match;
@@ -1180,7 +1121,7 @@ public
       case Subscript.INDEX() then applyIndexSubscriptTypename(ty, sub);
 
       case Subscript.SLICE()
-        then SUBSCRIPTED_EXP(TYPENAME(ty), {subscript}, Type.ARRAY(ty, {Subscript.toDimension(sub)}));
+        then SUBSCRIPTED_EXP(TYPENAME(ty), {subscript}, Type.ARRAY(ty, {Subscript.toDimension(sub)}), false);
 
       case Subscript.WHOLE()
         then TYPENAME(ty);
@@ -1214,7 +1155,7 @@ public
         case Type.ENUMERATION() then nthEnumLiteral(ty, idx);
       end match;
     else
-      subscriptedExp := SUBSCRIPTED_EXP(TYPENAME(ty), {index}, ty);
+      subscriptedExp := SUBSCRIPTED_EXP(TYPENAME(ty), {index}, ty, false);
     end if;
   end applyIndexSubscriptTypename;
 
@@ -1230,6 +1171,7 @@ public
     Type ty;
     Integer el_count;
     Boolean literal;
+    Expression first_e;
   algorithm
     sub := Subscript.expandSlice(subscript);
 
@@ -1244,11 +1186,7 @@ public
             ARRAY(ty = ty, elements = expl, literal = literal) := exp;
             s :: rest_subs := restSubscripts;
             expl := list(applySubscript(s, e, rest_subs) for e in expl);
-
-            el_count := listLength(expl);
-            ty := if el_count > 0 then typeOf(listHead(expl)) else
-                                       Type.subscript(Type.unliftArray(ty), restSubscripts);
-            ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
+            (ty, literal) := typeSubscriptedArray(expl, restSubscripts, ty, literal);
             outExp := makeArray(ty, expl, literal);
           end if;
         then
@@ -1258,15 +1196,39 @@ public
         algorithm
           ARRAY(ty = ty, literal = literal) := exp;
           expl := list(applyIndexSubscriptArray(exp, i, restSubscripts) for i in sub.indices);
-
-          el_count := listLength(expl);
-          ty := if el_count > 0 then typeOf(listHead(expl)) else
-                                     Type.subscript(Type.unliftArray(ty), restSubscripts);
-          ty := Type.liftArrayLeft(ty, Dimension.fromInteger(el_count));
+          (ty, literal) := typeSubscriptedArray(expl, restSubscripts, ty, literal);
         then
           makeArray(ty, expl, literal);
+
+      case Subscript.SPLIT_INDEX() then makeSubscriptedExp(subscript :: restSubscripts, exp);
+
     end match;
   end applySubscriptArray;
+
+  function typeSubscriptedArray
+    input list<Expression> elements;
+    input list<Subscript> subscripts;
+    input output Type ty;
+    input output Boolean literal;
+  protected
+    Integer count;
+    Expression e;
+  algorithm
+    count := listLength(elements);
+
+    if count > 0 then
+      // If the array isn't empty, use the type of the first element.
+      e := listHead(elements);
+      ty := typeOf(e);
+      // Non-literal subscripts might change an array from literal to non-literal.
+      literal := literal and isLiteral(e);
+    else
+      // If the array is empty, use the slower method of subscripting the type.
+      ty := Type.subscript(Type.unliftArray(ty), subscripts);
+    end if;
+
+    ty := Type.liftArrayLeft(ty, Dimension.fromInteger(count));
+  end typeSubscriptedArray;
 
   function applyIndexSubscriptArray
     input Expression exp;
@@ -1288,8 +1250,6 @@ public
     if isScalarLiteral(index) then
       ARRAY(elements = expl) := exp;
       outExp := applySubscripts(restSubscripts, listGet(expl, toInteger(index)));
-    elseif isBindingExp(index) then
-      outExp := bindingExpMap(index, function applyIndexExpArray(exp = exp, restSubscripts = restSubscripts));
     else
       outExp := makeSubscriptedExp(Subscript.INDEX(index) :: restSubscripts, exp);
     end if;
@@ -1316,7 +1276,7 @@ public
           RANGE(ty = ty) := exp;
           ty := Type.ARRAY(Type.unliftArray(ty), {Subscript.toDimension(sub)});
         then
-          SUBSCRIPTED_EXP(exp, {subscript}, ty);
+          SUBSCRIPTED_EXP(exp, {subscript}, ty, false);
 
       case Subscript.WHOLE() then exp;
 
@@ -1326,6 +1286,19 @@ public
           RANGE(ty = ty) := exp;
         then
           makeArray(Type.liftArrayLeft(ty, Dimension.fromInteger(listLength(expl))), expl);
+
+      case Subscript.SPLIT_INDEX()
+        algorithm
+          RANGE(ty = ty) := exp;
+          ty := Type.unliftArray(ty);
+        then
+          SUBSCRIPTED_EXP(exp, {sub}, ty, true);
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown subscript '" + Subscript.toString(sub) + "'", sourceInfo());
+        then
+          fail();
 
     end match;
   end applySubscriptRange;
@@ -1349,7 +1322,7 @@ public
       RANGE(ty = ty) := rangeExp;
       subs := {index};
       ty := Type.subscript(ty, subs);
-      outExp := SUBSCRIPTED_EXP(rangeExp, subs, ty);
+      outExp := SUBSCRIPTED_EXP(rangeExp, subs, ty, false);
     end if;
   end applyIndexSubscriptRange;
 
@@ -1480,13 +1453,18 @@ public
     list<Subscript> subs, extra_subs;
     Type ty;
     Integer dim_count;
+    Boolean split;
   algorithm
     // If the expression is already a SUBSCRIPTED_EXP we need to concatenate the
     // old subscripts with the new. Otherwise we just create a new SUBSCRIPTED_EXP.
-    (e, subs, ty) := match exp
-      case SUBSCRIPTED_EXP() then (exp.exp,exp.subscripts, typeOf(exp.exp));
-      else (exp, {}, typeOf(exp));
+    (e, subs, ty, split) := match exp
+      case SUBSCRIPTED_EXP() then (exp.exp, exp.subscripts, typeOf(exp.exp), exp.split);
+      else (exp, {}, typeOf(exp), false);
     end match;
+
+    if not split then
+      split := List.exist(subscripts, Subscript.isSplitIndex);
+    end if;
 
     dim_count := Type.dimensionCount(ty);
     (subs, extra_subs) := Subscript.mergeList(subscripts, subs, dim_count);
@@ -1498,7 +1476,7 @@ public
     end if;
 
     ty := Type.subscript(ty, subs);
-    outExp := SUBSCRIPTED_EXP(e, subs, ty);
+    outExp := SUBSCRIPTED_EXP(e, subs, ty, split);
   end makeSubscriptedExp;
 
   function replaceIterator
@@ -1721,7 +1699,6 @@ public
       case PARTIAL_FUNCTION_APPLICATION()
         then "function " + ComponentRef.toString(exp.fn) + "(" + stringDelimitList(
           list(n + " = " + toString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
-      case BINDING_EXP() then toString(exp.exp);
 
       else anyString(exp);
     end match;
@@ -1749,7 +1726,7 @@ public
 
       case CREF() then ComponentRef.toFlatString(exp.cref);
       case TYPENAME() then Type.typenameString(Type.arrayElementType(exp.ty));
-      case ARRAY(elements={}) then "fill("+toFlatString(makeZero(Type.elementType(exp.ty)))+", " + Type.dimensionsToFlatString(exp.ty) + ")";
+      case ARRAY(elements={}) then "fill("+toFlatString(makeDefaultValue(Type.elementType(exp.ty)))+", " + Type.dimensionsToFlatString(exp.ty) + ")";
       case ARRAY() then "{" + stringDelimitList(list(toFlatString(e) for e in exp.elements), ", ") + "}";
       case MATRIX() then "[" + stringDelimitList(list(stringDelimitList(list(toFlatString(e) for e in el), ", ") for el in exp.elements), "; ") + "]";
 
@@ -1814,7 +1791,6 @@ public
       case PARTIAL_FUNCTION_APPLICATION()
         then "function " + ComponentRef.toFlatString(exp.fn) + "(" + stringDelimitList(
           list(n + " = " + toFlatString(a) threaded for a in exp.args, n in exp.argNames), ", ") + ")";
-      case BINDING_EXP() then toFlatString(exp.exp);
 
       else anyString(exp);
     end match;
@@ -1822,7 +1798,7 @@ public
 
   function toFlatSubscriptedString
     input Expression exp;
-    input list<Subscript> subs;
+    input list<Subscript> subscripts;
     output String str;
   protected
     Type exp_ty;
@@ -1830,24 +1806,31 @@ public
     list<Dimension> dims;
     list<String> strl;
     String name;
+    list<Subscript> subs;
   algorithm
-    exp_ty := typeOf(exp);
-    dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
-    sub_tyl := list(Dimension.subscriptType(d) for d in dims);
-    name := Type.subscriptedTypeName(exp_ty, sub_tyl);
+    subs := list(s for s guard not Subscript.isSplitIndex(s) in subscripts);
 
-    strl := {")"};
+    if listEmpty(subs) then
+      str := toFlatString(exp);
+    else
+      exp_ty := typeOf(exp);
+      dims := List.firstN(Type.arrayDims(exp_ty), listLength(subs));
+      sub_tyl := list(Dimension.subscriptType(d) for d in dims);
+      name := Type.subscriptedTypeName(exp_ty, sub_tyl);
 
-    for s in subs loop
-      strl := Subscript.toFlatString(s) :: strl;
-      strl := "," :: strl;
-    end for;
+      strl := {")"};
 
-    strl := toFlatString(exp) :: strl;
-    strl := "'(" :: strl;
-    strl := name :: strl;
-    strl := "'" :: strl;
-    str := stringAppendList(strl);
+      for s in subs loop
+        strl := Subscript.toFlatString(s) :: strl;
+        strl := "," :: strl;
+      end for;
+
+      strl := toFlatString(exp) :: strl;
+      strl := "'(" :: strl;
+      strl := name :: strl;
+      strl := "'" :: strl;
+      str := stringAppendList(strl);
+    end if;
   end toFlatSubscriptedString;
 
   function operandString
@@ -1990,10 +1973,82 @@ public
       case UNBOX() then getName(exp.exp);
       case MUTABLE() then getName(Mutable.access(exp.exp));
       case PARTIAL_FUNCTION_APPLICATION() then ComponentRef.toString(exp.fn);
-      case BINDING_EXP() then getName(exp.exp);
       else toString(exp);
     end match;
   end getName;
+
+  function enumLiteralPath
+    input Expression exp;
+    output Absyn.Path path;
+  protected
+    String name;
+    Absyn.Path ty_path;
+  algorithm
+    ENUM_LITERAL(name = name, ty = Type.ENUMERATION(typePath = ty_path)) := exp;
+    path := AbsynUtil.suffixPath(ty_path, name);
+  end enumLiteralPath;
+
+  function toAbsynOpt
+    input Option<Expression> exp;
+    output Option<Absyn.Exp> aexp;
+  algorithm
+    aexp := match exp
+      local
+        Expression e;
+
+      case SOME(e) then SOME(toAbsyn(e));
+      else NONE();
+    end match;
+  end toAbsynOpt;
+
+  function toAbsyn
+    input Expression exp;
+    output Absyn.Exp aexp;
+  algorithm
+    aexp := match exp
+      local
+        Type ty;
+
+      case INTEGER() then Absyn.Exp.INTEGER(exp.value);
+      case REAL() then Absyn.Exp.REAL(String(exp.value));
+      case STRING() then Absyn.Exp.STRING(exp.value);
+      case BOOLEAN() then Absyn.Exp.BOOL(exp.value);
+      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
+        then Absyn.Exp.CREF(AbsynUtil.pathToCref(enumLiteralPath(exp)));
+      case CLKCONST() then ClockKind.toAbsyn(exp.clk);
+      case CREF() then Absyn.Exp.CREF(ComponentRef.toAbsyn(exp.cref));
+      case TYPENAME() then Absyn.Exp.CREF(Absyn.ComponentRef.CREF_IDENT(Type.toString(exp.ty), {}));
+      case ARRAY() then Absyn.Exp.ARRAY(list(toAbsyn(e) for e in exp.elements));
+      case MATRIX() then Absyn.Exp.MATRIX(list(list(toAbsyn(e) for e in l) for l in exp.elements));
+      case RANGE() then Absyn.Exp.RANGE(toAbsyn(exp.start), toAbsynOpt(exp.step), toAbsyn(exp.stop));
+      case TUPLE() then Absyn.Exp.TUPLE(list(toAbsyn(e) for e in exp.elements));
+      case RECORD() then AbsynUtil.makeCall(AbsynUtil.pathToCref(exp.path), list(toAbsyn(e) for e in exp.elements));
+      case CALL() then Call.toAbsyn(exp.call);
+      case SIZE() then AbsynUtil.makeCall(Absyn.ComponentRef.CREF_IDENT("size", {}),
+        if isSome(exp.dimIndex) then {toAbsyn(Util.getOption(exp.dimIndex))} else {});
+      case END() then Absyn.Exp.END();
+      case BINARY() then Absyn.Exp.BINARY(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case UNARY() then Absyn.Exp.UNARY(Operator.toAbsyn(exp.operator), toAbsyn(exp.exp));
+      case LBINARY() then Absyn.Exp.LBINARY(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case LUNARY() then Absyn.Exp.LUNARY(Operator.toAbsyn(exp.operator), toAbsyn(exp.exp));
+      case RELATION() then Absyn.Exp.RELATION(toAbsyn(exp.exp1), Operator.toAbsyn(exp.operator), toAbsyn(exp.exp2));
+      case IF() then Absyn.Exp.IFEXP(toAbsyn(exp.condition), toAbsyn(exp.trueBranch), toAbsyn(exp.falseBranch), {});
+      case CAST() then toAbsyn(exp.exp);
+      case BOX() then toAbsyn(exp.exp);
+      case UNBOX() then toAbsyn(exp.exp);
+      case MUTABLE() then toAbsyn(Mutable.access(exp.exp));
+      case PARTIAL_FUNCTION_APPLICATION()
+        then Absyn.Exp.PARTEVALFUNCTION(ComponentRef.toAbsyn(exp.fn),
+          Absyn.FunctionArgs.FUNCTIONARGS(list(toAbsyn(e) for e in exp.args), {}));
+
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown expression '" + toString(exp) + "'", sourceInfo());
+        then
+          fail();
+
+    end match;
+  end toAbsyn;
 
   function toDAEOpt
     input Option<Expression> exp;
@@ -2016,19 +2071,16 @@ public
   algorithm
     dexp := match exp
       local
-        Type ty;
         DAE.Operator daeOp;
         Boolean swap, negate;
         DAE.Exp dae1, dae2;
-        list<String> names;
         Function.Function fn;
 
       case INTEGER() then DAE.ICONST(exp.value);
       case REAL() then DAE.RCONST(exp.value);
       case STRING() then DAE.SCONST(exp.value);
       case BOOLEAN() then DAE.BCONST(exp.value);
-      case ENUM_LITERAL(ty = ty as Type.ENUMERATION())
-        then DAE.ENUM_LITERAL(AbsynUtil.suffixPath(ty.typePath, exp.name), exp.index);
+      case ENUM_LITERAL() then DAE.ENUM_LITERAL(enumLiteralPath(exp), exp.index);
 
       case CLKCONST()
         then DAE.CLKCONST(ClockKind.toDAE(exp.clk));
@@ -2103,8 +2155,6 @@ public
                                list(toDAE(arg) for arg in exp.args),
                                Type.toDAE(exp.ty),
                                Type.toDAE(Type.FUNCTION(fn, NFType.FunctionType.FUNCTIONAL_VARIABLE)));
-
-      case BINDING_EXP() then toDAE(exp.exp);
 
       else
         algorithm
@@ -2428,7 +2478,8 @@ public
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(map(exp.exp, func), list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty);
+        then SUBSCRIPTED_EXP(map(exp.exp, func),
+          list(Subscript.mapExp(s, func) for s in exp.subscripts), exp.ty, exp.split);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -2453,12 +2504,6 @@ public
           exp.args := list(map(e, func) for e in exp.args);
         then
           exp;
-
-      case BINDING_EXP()
-        algorithm
-          e1 := map(exp.exp, func);
-        then
-          if referenceEq(exp.exp, e1) then exp else BINDING_EXP(e1, exp.expType, exp.bindingType, exp.parents, exp.isEach);
 
       else exp;
     end match;
@@ -2609,7 +2654,8 @@ public
           if referenceEq(exp.exp, e1) then exp else unbox(e1);
 
       case SUBSCRIPTED_EXP()
-        then SUBSCRIPTED_EXP(func(exp.exp), list(Subscript.mapShallowExp(e, func) for e in exp.subscripts), exp.ty);
+        then SUBSCRIPTED_EXP(func(exp.exp),
+          list(Subscript.mapShallowExp(e, func) for e in exp.subscripts), exp.ty, exp.split);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -2634,12 +2680,6 @@ public
           exp.args := list(func(e) for e in exp.args);
         then
           exp;
-
-      case BINDING_EXP()
-        algorithm
-          e1 := func(exp.exp);
-        then
-          if referenceEq(exp.exp, e1) then exp else BINDING_EXP(e1, exp.expType, exp.bindingType, exp.parents, exp.isEach);
 
       else exp;
     end match;
@@ -2822,7 +2862,6 @@ public
       case RECORD_ELEMENT() then fold(exp.recordExp, func, arg);
       case MUTABLE() then fold(Mutable.access(exp.exp), func, arg);
       case PARTIAL_FUNCTION_APPLICATION() then foldList(exp.args, func, arg);
-      case BINDING_EXP() then fold(exp.exp, func, arg);
       else arg;
     end match;
 
@@ -2962,7 +3001,6 @@ public
       case RECORD_ELEMENT() algorithm apply(exp.recordExp, func); then ();
       case MUTABLE() algorithm apply(Mutable.access(exp.exp), func); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyList(exp.args, func); then ();
-      case BINDING_EXP() algorithm apply(exp.exp, func); then ();
       else ();
     end match;
 
@@ -3086,7 +3124,6 @@ public
       case RECORD_ELEMENT() algorithm func(exp.recordExp); then ();
       case MUTABLE() algorithm func(Mutable.access(exp.exp)); then ();
       case PARTIAL_FUNCTION_APPLICATION() algorithm applyListShallow(exp.args, func); then ();
-      case BINDING_EXP() algorithm func(exp.exp); then ();
       else ();
     end match;
   end applyShallow;
@@ -3285,7 +3322,7 @@ public
           (e1, arg) := mapFold(exp.exp, func, arg);
           (subs, arg) := List.mapFold(exp.subscripts, function Subscript.mapFoldExp(func = func), arg);
         then
-          SUBSCRIPTED_EXP(e1, subs, exp.ty);
+          SUBSCRIPTED_EXP(e1, subs, exp.ty, exp.split);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -3312,12 +3349,6 @@ public
           exp.args := expl;
         then
           exp;
-
-      case BINDING_EXP()
-        algorithm
-          (e1, arg) := mapFold(exp.exp, func, arg);
-        then
-          if referenceEq(exp.exp, e1) then exp else BINDING_EXP(e1, exp.expType, exp.bindingType, exp.parents, exp.isEach);
 
       else exp;
     end match;
@@ -3516,7 +3547,7 @@ public
           (e1, arg) := func(exp.exp, arg);
           (subs, arg) := List.mapFold(exp.subscripts, function Subscript.mapFoldExpShallow(func = func), arg);
         then
-          SUBSCRIPTED_EXP(e1, subs, exp.ty);
+          SUBSCRIPTED_EXP(e1, subs, exp.ty, exp.split);
 
       case TUPLE_ELEMENT()
         algorithm
@@ -3543,12 +3574,6 @@ public
           exp.args := expl;
         then
           exp;
-
-      case BINDING_EXP()
-        algorithm
-          (e1, arg) := func(exp.exp, arg);
-        then
-          if referenceEq(exp.exp, e1) then exp else BINDING_EXP(e1, exp.expType, exp.bindingType, exp.parents, exp.isEach);
 
       else exp;
     end match;
@@ -3679,7 +3704,6 @@ public
       case RECORD_ELEMENT() then contains(exp.recordExp, func);
       case MUTABLE() then contains(Mutable.access(exp.exp), func);
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
-      case BINDING_EXP() then contains(exp.exp, func);
       else false;
     end match;
   end contains;
@@ -3774,7 +3798,6 @@ public
       case RECORD_ELEMENT() then func(exp.recordExp);
       case MUTABLE() then func(Mutable.access(exp.exp));
       case PARTIAL_FUNCTION_APPLICATION() then listContains(exp.args, func);
-      case BINDING_EXP() then func(exp.exp);
       else false;
     end match;
   end containsShallow;
@@ -4206,11 +4229,26 @@ public
       case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
       case Type.ARRAY()
         then makeArray(ty,
-                       List.fill(makeMaxValue(Type.unliftArray(ty)),
+                       List.fill(makeMinValue(Type.unliftArray(ty)),
                                  Dimension.size(listHead(ty.dimensions))),
                        literal = true);
     end match;
   end makeMinValue;
+
+  function makeDefaultValue
+    input Type ty;
+    output Expression exp;
+  algorithm
+    exp := match ty
+      case Type.INTEGER() then INTEGER(0);
+      case Type.REAL() then REAL(0);
+      case Type.STRING() then STRING("");
+      case Type.BOOLEAN() then BOOLEAN(false);
+      case Type.ENUMERATION() then ENUM_LITERAL(ty, listHead(ty.literals), 1);
+      case Type.ARRAY() then fillType(ty, makeDefaultValue(Type.arrayElementType(ty)));
+      case Type.TUPLE() then TUPLE(ty, list(makeDefaultValue(t) for t in ty.types));
+    end match;
+  end makeDefaultValue;
 
   function box
     input Expression exp;
@@ -4556,7 +4594,6 @@ public
       case MUTABLE() then variability(Mutable.access(exp.exp));
       case EMPTY() then Variability.CONSTANT;
       case PARTIAL_FUNCTION_APPLICATION() then Variability.CONTINUOUS;
-      case BINDING_EXP() then variability(exp.exp);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -4625,7 +4662,6 @@ public
       case MUTABLE() then purity(Mutable.access(exp.exp));
       case EMPTY() then Purity.PURE;
       case PARTIAL_FUNCTION_APPLICATION() then Purity.PURE;
-      case BINDING_EXP() then purity(exp.exp);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got unknown expression.", sourceInfo());
@@ -4669,6 +4705,16 @@ public
       else false;
     end match;
   end isMutable;
+
+  function updateMutable
+    input Expression mutableExp;
+    input Expression value;
+  protected
+    Mutable<Expression> exp_ptr;
+  algorithm
+    Expression.MUTABLE(exp = exp_ptr) := mutableExp;
+    Mutable.update(exp_ptr, value);
+  end updateMutable;
 
   function isEmpty
     input Expression exp;
@@ -4730,8 +4776,8 @@ public
         then
           exp;
 
-      case BINDING_EXP()
-        then bindingExpMap(exp, function tupleElement(ty = ty, index = index));
+      case SUBSCRIPTED_EXP(split = true)
+        then mapSplitExpressions(exp, function tupleElement(ty = ty, index = index));
 
       else TUPLE_ELEMENT(exp, index, ty);
     end match;
@@ -4762,8 +4808,9 @@ public
         then
           listGet(recordExp.elements, index);
 
-      case CREF(ty = Type.COMPLEX(cls = node))
+      case CREF()
         algorithm
+          Type.COMPLEX(cls = node) := Type.arrayElementType(recordExp.ty);
           cls_tree := Class.classTree(InstNode.getClass(node));
           (node, false) := ClassTree.lookupElement(elementName, cls_tree);
           ty := InstNode.getType(node);
@@ -4789,16 +4836,12 @@ public
         then
           makeArray(ty, expl, recordExp.literal);
 
-      case BINDING_EXP()
-        then bindingExpMap(recordExp,
-          function recordElement(elementName = elementName));
-
       case SUBSCRIPTED_EXP()
         algorithm
           outExp := recordElement(elementName, recordExp.exp);
+          ty := Type.subscript(typeOf(outExp), recordExp.subscripts);
         then
-          SUBSCRIPTED_EXP(outExp, recordExp.subscripts,
-            Type.lookupRecordFieldType(elementName, recordExp.ty));
+          SUBSCRIPTED_EXP(outExp, recordExp.subscripts, ty, recordExp.split);
 
       case EMPTY() then fail();
 
@@ -4828,6 +4871,7 @@ public
       local
         InstNode node;
         list<Expression> expl;
+        Type ty;
 
       case RECORD() then listGet(recordExp.elements, index);
 
@@ -4844,8 +4888,9 @@ public
       case ARRAY()
         algorithm
           expl := list(nthRecordElement(index, e) for e in recordExp.elements);
+          ty := Type.liftArrayLeft(typeOf(listHead(expl)), listHead(Type.arrayDims(recordExp.ty)));
         then
-          makeArray(Type.setArrayElementType(recordExp.ty, typeOf(listHead(expl))), expl);
+          makeArray(ty, expl);
 
       case RECORD_ELEMENT(ty = Type.ARRAY(elementType = Type.COMPLEX(cls = node)))
         algorithm
@@ -4854,8 +4899,12 @@ public
           RECORD_ELEMENT(recordExp, index, InstNode.name(node),
                          Type.liftArrayLeftList(InstNode.getType(node), Type.arrayDims(recordExp.ty)));
 
-      case BINDING_EXP()
-        then bindingExpMap(recordExp, function nthRecordElement(index = index));
+      case SUBSCRIPTED_EXP()
+        algorithm
+          outExp := nthRecordElement(index, recordExp.exp);
+          ty := Type.subscript(typeOf(outExp), recordExp.subscripts);
+        then
+          SUBSCRIPTED_EXP(outExp, recordExp.subscripts, ty, recordExp.split);
 
       else
         algorithm
@@ -4946,288 +4995,6 @@ public
   algorithm
     exp := ENUM_LITERAL(ty, Type.nthEnumLiteral(ty, n), n);
   end nthEnumLiteral;
-
-  function isBindingExp
-    input Expression exp;
-    output Boolean isBindingExp;
-  algorithm
-    isBindingExp := match exp
-      case BINDING_EXP() then true;
-      else false;
-    end match;
-  end isBindingExp;
-
-  function getBindingExp
-    "Returns the expression contained in a binding expression, if the given
-     expression is a binding expression."
-    input Expression bindingExp;
-    output Expression outExp;
-  algorithm
-    outExp := match bindingExp
-      case BINDING_EXP() then getBindingExp(bindingExp.exp);
-      else bindingExp;
-    end match;
-  end getBindingExp;
-
-  function getScalarBindingExp
-    "Returns the expression contained in a binding expression if it's a scalar,
-     otherwise returns the given binding expression."
-    input Expression bindingExp;
-    output Expression outExp;
-  algorithm
-    outExp := getBindingExp(bindingExp);
-
-    if Type.isArray(typeOf(outExp)) then
-      outExp := bindingExp;
-    end if;
-  end getScalarBindingExp;
-
-  function setBindingExp
-    "Replaces the expression contained in a binding expression with the given
-     expression. The given expression is assumed to have the same type as the
-     old expression, and only the innermost expression in a nested binding will
-     be replaced."
-    input Expression exp;
-    input output Expression bindingExp;
-  algorithm
-    bindingExp := match bindingExp
-      case BINDING_EXP()
-        algorithm
-          bindingExp.exp := setBindingExp(exp, bindingExp.exp);
-        then
-          bindingExp;
-
-      else exp;
-    end match;
-  end setBindingExp;
-
-  function stripBindingInfo
-    "Replaces all binding expressions in the given expression with the
-     expressions they contain."
-    input Expression exp;
-    output Expression outExp;
-  algorithm
-    outExp := map(exp, getBindingExp);
-  end stripBindingInfo;
-
-  function propagatedDimCount
-    "Returns the number of dimensions a binding expression has been propagated
-     through."
-    input Expression exp;
-    output Integer dimCount;
-  algorithm
-    dimCount := match exp
-      case BINDING_EXP(isEach = false)
-        algorithm
-          if Type.isKnown(exp.expType) then
-            dimCount := Type.dimensionCount(exp.expType) -
-                        Type.dimensionCount(exp.bindingType);
-          else
-            dimCount := 0;
-            for parent in listRest(exp.parents) loop
-              dimCount := dimCount + Type.dimensionCount(InstNode.getType(parent));
-            end for;
-          end if;
-        then
-          dimCount;
-
-      else 0;
-    end match;
-  end propagatedDimCount;
-
-  function bindingExpType
-    "Calculates the expression type and binding type of an expression given the
-     number of dimensions it's been propagated through."
-    input Expression exp;
-    input Integer propagatedDimCount;
-    output Type expType;
-    output Type bindingType;
-  algorithm
-    expType := typeOf(exp);
-    bindingType := if propagatedDimCount > 0 then
-      Type.unliftArrayN(propagatedDimCount, expType) else expType;
-  end bindingExpType;
-
-  function vectorize
-    "Constructs an array with the given dimensions by calling the given
-     function on the given expression for each combination of subscripts defined
-     by the dimensions."
-    input Expression exp;
-    input list<Dimension> dims;
-    input FuncT func;
-    input list<Subscript> accumSubs = {};
-    output Expression outExp;
-
-    partial function FuncT
-      input output Expression exp;
-      input list<Subscript> subs;
-    end FuncT;
-  protected
-    RangeIterator iter;
-    Dimension dim;
-    list<Dimension> rest_dims;
-    list<Expression> expl;
-    Expression e;
-  algorithm
-    if listEmpty(dims) then
-      outExp := func(exp, listReverse(accumSubs));
-    else
-      expl := {};
-      dim :: rest_dims := dims;
-      iter := RangeIterator.fromDim(dim);
-
-      while RangeIterator.hasNext(iter) loop
-        (iter, e) := RangeIterator.next(iter);
-        e := vectorize(exp, rest_dims, func, Subscript.INDEX(e) :: accumSubs);
-        expl := e :: expl;
-      end while;
-
-      outExp := makeExpArray(listReverseInPlace(expl));
-    end if;
-  end vectorize;
-
-  function bindingExpMap
-    "Calls the given function on each element of a binding expression."
-    input Expression exp;
-    input EvalFunc evalFunc;
-    output Expression result;
-
-    partial function EvalFunc
-      input output Expression exp;
-    end EvalFunc;
-  protected
-    Expression max_prop_exp;
-    Integer max_prop_count;
-  algorithm
-    (max_prop_exp, max_prop_count) := mostPropagatedSubExp(exp);
-
-    if max_prop_count >= 0 then
-      result := bindingExpMap2(exp, evalFunc, max_prop_count, max_prop_exp);
-    else
-      result := evalFunc(exp);
-    end if;
-  end bindingExpMap;
-
-  function bindingExpMap2
-    input Expression exp;
-    input EvalFunc evalFunc;
-    input Integer mostPropagatedCount;
-    input Expression mostPropagatedExp;
-    output Expression result;
-
-    partial function EvalFunc
-      input output Expression exp;
-    end EvalFunc;
-  protected
-    Type exp_ty, bind_ty;
-    list<Dimension> dims;
-    Expression e;
-    list<InstNode> parents;
-    Boolean is_each;
-  algorithm
-    BINDING_EXP(exp = e, expType = exp_ty, parents = parents, isEach = is_each) := mostPropagatedExp;
-    dims := List.firstN(Type.arrayDims(exp_ty), mostPropagatedCount);
-    result := vectorize(exp, dims, function bindingExpMap3(evalFunc = evalFunc));
-    (exp_ty, bind_ty) := bindingExpType(result, mostPropagatedCount);
-    result := BINDING_EXP(result, exp_ty, bind_ty, parents, is_each);
-  end bindingExpMap2;
-
-  function bindingExpMap3
-    input Expression exp;
-    input EvalFunc evalFunc;
-    input list<Subscript> subs;
-    output Expression result;
-
-    partial function EvalFunc
-      input output Expression exp;
-    end EvalFunc;
-  protected
-    Expression e1, e2;
-    Operator op;
-  algorithm
-    result := map(exp, function bindingExpMap4(subs = subs));
-    result := evalFunc(result);
-  end bindingExpMap3;
-
-  function bindingExpMap4
-    input Expression exp;
-    input list<Subscript> subs;
-    output Expression outExp;
-  algorithm
-    outExp := match exp
-      local
-        Integer prop_count;
-        list<Subscript> prop_subs;
-
-      case BINDING_EXP()
-        algorithm
-          prop_count := propagatedDimCount(exp);
-          prop_subs := List.lastN(subs, prop_count);
-        then
-          applySubscripts(prop_subs, exp.exp);
-
-      else exp;
-    end match;
-  end bindingExpMap4;
-
-  function mostPropagatedSubExp
-    "Returns the most propagated subexpression of the given expression, as well
-     as the number of dimensions it's been propagated through. Returns the
-     expression itself and -1 as the number of dimensions if it doesn't contain
-     any binding expressions."
-    input Expression exp;
-    output Expression maxPropExp;
-    output Integer maxPropCount;
-  algorithm
-    // TODO: Optimize this, there's no need to check for bindings in e.g. literal arrays.
-    (maxPropCount, maxPropExp) := fold(exp, mostPropagatedSubExp_traverser, (-1, exp));
-  end mostPropagatedSubExp;
-
-  function mostPropagatedSubExpBinary
-    "Returns the most propagated subexpression in either of the two given
-     expressions, as well as the number of dimensions it's been propagated
-     through. Returns the first expression and -1 as the number of dimensions
-     if neither expression contains any binding expressions."
-    input Expression exp1;
-    input Expression exp2;
-    output Expression maxPropExp;
-    output Integer maxPropCount;
-  algorithm
-    // TODO: Optimize this, there's no need to check for bindings in e.g. literal arrays.
-    (maxPropCount, maxPropExp) := fold(exp1, mostPropagatedSubExp_traverser, (-1, exp1));
-    (maxPropCount, maxPropExp) := fold(exp2, mostPropagatedSubExp_traverser, (maxPropCount, maxPropExp));
-  end mostPropagatedSubExpBinary;
-
-  function mostPropagatedSubExp_traverser
-    input Expression exp;
-    input output tuple<Integer, Expression> mostPropagated;
-  protected
-    Integer max_prop, exp_prop;
-  algorithm
-    if isBindingExp(exp) then
-      (max_prop, _) := mostPropagated;
-      exp_prop := propagatedDimCount(exp);
-
-      if exp_prop > max_prop then
-        mostPropagated := (exp_prop, exp);
-      end if;
-    end if;
-  end mostPropagatedSubExp_traverser;
-
-  function addBindingExpParent
-    input InstNode parent;
-    input output Expression exp;
-  algorithm
-    () := match exp
-      case BINDING_EXP()
-        algorithm
-          exp.parents := parent :: exp.parents;
-        then
-          ();
-
-      else ();
-    end match;
-  end addBindingExpParent;
 
   function foldReduction
     input Expression exp;
@@ -5340,6 +5107,201 @@ public
       else b;
     end match;
   end isCrefEqual;
+
+  function filterSplitIndices
+    input output Expression exp;
+    input InstNode node;
+  protected
+    Expression e;
+    list<Subscript> subs;
+  algorithm
+    exp := match exp
+      case Expression.SUBSCRIPTED_EXP(exp = e, subscripts = subs)
+        algorithm
+          subs := list(s for s guard not filterSplitIndices2(s, node) in subs);
+        then
+          Expression.applySubscripts(subs, exp.exp);
+
+      else exp;
+    end match;
+  end filterSplitIndices;
+
+  function filterSplitIndices2
+    input Subscript sub;
+    input InstNode node;
+    output Boolean matching;
+  algorithm
+    matching := match sub
+      case Subscript.SPLIT_INDEX() then InstNode.refEqual(sub.node, node);
+      case Subscript.SPLIT_PROXY() then InstNode.refEqual(sub.parent, node);
+      else false;
+    end match;
+  end filterSplitIndices2;
+
+  function expandSplitIndices
+    input Expression exp;
+    output Expression outExp;
+  protected
+    list<Subscript> subs;
+  algorithm
+    outExp := match exp
+      case Expression.SUBSCRIPTED_EXP(subscripts = subs)
+        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts), exp.exp);
+
+      else exp;
+    end match;
+  end expandSplitIndices;
+
+  function isSplitSubscriptedExp
+    input Expression exp;
+    output Boolean split;
+  algorithm
+    split := match exp
+      case Expression.SUBSCRIPTED_EXP(split = split) then split;
+      else false;
+    end match;
+  end isSplitSubscriptedExp;
+
+  function mapSplitExpressions
+    input Expression exp;
+    input Func func;
+    output Expression outExp;
+
+    partial function Func
+      input output Expression exp;
+    end Func;
+  protected
+    Option<UnorderedMap<Subscript, Expression>> osub_repls;
+    UnorderedMap<Subscript, Expression> sub_repls;
+    list<Subscript> subs;
+    list<Expression> sub_exps, dim_sizes;
+  algorithm
+    (outExp, osub_repls) := Expression.mapFold(exp, replaceSplitSubscripts, NONE());
+
+    if isNone(osub_repls) then
+      outExp := func(exp);
+    else
+      SOME(sub_repls) := osub_repls;
+      subs := UnorderedMap.keyList(sub_repls);
+      sub_exps := UnorderedMap.valueList(sub_repls);
+      dim_sizes := list(Subscript.splitIndexDimExp(s) for s in subs);
+      dim_sizes := list(replaceSplitSubscripts(d, SOME(sub_repls)) for d in dim_sizes);
+      outExp := mapSplitExpressions2(outExp, dim_sizes, sub_exps, func);
+      outExp := Expression.applySubscripts(subs, outExp);
+    end if;
+  end mapSplitExpressions;
+
+  function replaceSplitSubscripts
+    input output Expression exp;
+    input output Option<UnorderedMap<Subscript, Expression>> subRepls;
+  algorithm
+    exp := match exp
+      local
+        list<Subscript> subs;
+
+      case Expression.SUBSCRIPTED_EXP(split = true)
+        algorithm
+          (subs, subRepls) := List.mapFold(exp.subscripts, replaceSplitSubscripts2, subRepls);
+        then
+          Expression.applySubscripts(subs, exp.exp);
+
+      else exp;
+    end match;
+  end replaceSplitSubscripts;
+
+  function replaceSplitSubscripts2
+    input output Subscript subscript;
+    input output Option<UnorderedMap<Subscript, Expression>> subRepls;
+  protected
+    Expression sub_exp;
+    UnorderedMap<Subscript, Expression> sub_repls;
+  algorithm
+    subscript := match subscript
+      case Subscript.SPLIT_INDEX()
+        algorithm
+          if isSome(subRepls) then
+            SOME(sub_repls) := subRepls;
+          else
+            sub_repls := UnorderedMap.new<Expression>(Subscript.hash, Subscript.isEqual);
+            subRepls := SOME(sub_repls);
+          end if;
+
+          sub_exp := Expression.makeMutable(Expression.INTEGER(0));
+          sub_exp := UnorderedMap.tryAdd(subscript, sub_exp, sub_repls);
+        then
+          Subscript.INDEX(sub_exp);
+
+      else subscript;
+    end match;
+  end replaceSplitSubscripts2;
+
+  function mapSplitExpressions2
+    input Expression exp;
+    input list<Expression> dimSizes;
+    input list<Expression> subExps;
+    input Func func;
+    output Expression outExp;
+
+    partial function Func
+      input output Expression exp;
+    end Func;
+  protected
+    Expression dim_size;
+    list<Expression> rest_dims;
+    Integer dim_size_int;
+    Expression sub_exp;
+    list<Expression> rest_subs, expl;
+    Type ty;
+  algorithm
+    if listEmpty(dimSizes) then
+      outExp := Expression.map(exp, mapSplitExpressions3);
+      outExp := func(outExp);
+    else
+      dim_size :: rest_dims := dimSizes;
+      dim_size_int := toInteger(Ceval.evalExp(dim_size));
+      sub_exp :: rest_subs := subExps;
+      expl := {};
+
+      for i in dim_size_int:-1:1 loop
+        Expression.updateMutable(sub_exp, Expression.INTEGER(i));
+        outExp := mapSplitExpressions2(exp, rest_dims, rest_subs, func);
+        expl := outExp :: expl;
+      end for;
+
+      ty := Expression.typeOf(if listEmpty(expl) then exp else listHead(expl));
+      outExp := Expression.makeExpArray(expl, ty, isLiteral = true);
+    end if;
+  end mapSplitExpressions2;
+
+  function mapSplitExpressions3
+    input output Expression exp;
+  protected
+    list<Subscript> subs;
+  algorithm
+    exp := match exp
+      case Expression.MUTABLE() then Mutable.access(exp.exp);
+
+      case Expression.SUBSCRIPTED_EXP(subscripts = subs)
+        then Expression.applySubscripts(subs, exp.exp);
+
+      else exp;
+    end match;
+  end mapSplitExpressions3;
+
+  function hasNonArrayIteratorSubscript
+    "Returns true if the given iterator is only used to subscript array
+     expression in the given expression, otherwise false."
+    input Expression exp;
+    input InstNode iterator;
+    output Boolean res;
+  algorithm
+    res := match exp
+      case CREF() then containsIterator(exp, iterator);
+      case SUBSCRIPTED_EXP() then not isArray(exp.exp) and
+        Subscript.listContainsExp(exp.subscripts, function containsIterator(iterator = iterator));
+      else containsShallow(exp, function hasNonArrayIteratorSubscript(iterator = iterator));
+    end match;
+  end hasNonArrayIteratorSubscript;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFExpression;

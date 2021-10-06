@@ -140,19 +140,26 @@ extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, mod
   BackendDAEExtImpl__matching(nv, ne, matchingID, cheapID, relabel_period, clear_match);
 }
 
+static void failBecauseLength(const char *function, const char *var1str, long len1, const char *var2str, long len2)
+{
+  char len1str[64],len2str[64];
+  const char *tokens[5] = {var2str,len2str,len1str,var1str,function};
+  snprintf(len1str,64,"%ld", (long) len1);
+  snprintf(len2str,64,"%ld", (long) len2);
+  c_add_message(NULL,-1,ErrorType_symbolic,ErrorLevel_internal,"%s failed because %s=%s>%s=%s",tokens,5);
+}
+
 extern void BackendDAEEXT_getAssignment(modelica_metatype ass1, modelica_metatype ass2)
 {
   int i=0;
   mmc_uint_t len1 = MMC_HDRSLOTS(MMC_GETHDR(ass1));
   mmc_uint_t len2 = MMC_HDRSLOTS(MMC_GETHDR(ass2));
-  if (n > len1 || m > len2) {
-    char nstr[64],mstr[64],len1str[64],len2str[64];
-    const char *tokens[4] = {len2str,mstr,len1str,nstr};
-    snprintf(nstr,64,"%ld", (long) n);
-    snprintf(mstr,64,"%ld", (long) m);
-    snprintf(len1str,64,"%ld", (long) len1);
-    snprintf(len2str,64,"%ld", (long) len2);
-    c_add_message(NULL,-1,ErrorType_symbolic,ErrorLevel_internal,"BackendDAEEXT.getAssignment failed because n=%s>arrayLength(ass1)=%s or m=%s>arrayLength(ass2)=%s",tokens,4);
+  if (n > len1) {
+    failBecauseLength("BackendDAEEXT.getAssignment", "n", n, "arrayLength(ass1)", len1);
+    MMC_THROW();
+  }
+  if (m > len2) {
+    failBecauseLength("BackendDAEEXT.getAssignment", "m", m, "arrayLength(ass2)", len2);
     MMC_THROW();
   }
   if (match != NULL) {
@@ -181,6 +188,10 @@ extern int BackendDAEEXT_setAssignment(int lenass1, int lenass2, modelica_metaty
   nelts = MMC_HDRSLOTS(MMC_GETHDR(ass1));
   if (nelts > 0) {
     n = lenass1;
+    if (n > nelts) {
+      failBecauseLength("BackendDAEEXT.setAssignment", "n", n, "arrayLength(ass1)", nelts);
+      return 0;
+    }
     if(match) {
       free(match);
     }
@@ -193,6 +204,10 @@ extern int BackendDAEEXT_setAssignment(int lenass1, int lenass2, modelica_metaty
   nelts = MMC_HDRSLOTS(MMC_GETHDR(ass2));
   if (nelts > 0) {
     m = lenass2;
+    if (m > nelts) {
+      failBecauseLength("BackendDAEEXT.setAssignment", "m", m, "arrayLength(ass2)", nelts);
+      return 0;
+    }
     if(row_match) {
       free(row_match);
     }

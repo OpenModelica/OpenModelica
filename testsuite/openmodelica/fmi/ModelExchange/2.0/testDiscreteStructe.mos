@@ -7,6 +7,8 @@
 
 loadModel(Modelica, {"3.2.3"});
 setCommandLineOptions("--std=3.3 -d=-disableDirectionalDerivatives");
+setCommandLineOptions("--exportClocksInModeldescription=true"); getErrorString();
+
 loadString("
 model testDID
   parameter Real p = 1;
@@ -34,6 +36,8 @@ readFile("modelDescription.tmp.xml");
 // Result:
 // true
 // true
+// true
+// ""
 // true
 // ""
 // "testDID.fmu"
@@ -72,9 +76,6 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"testDID_18spd.c\" />
 //       <File name=\"testDID_init_fmu.c\" />
 //       <File name=\"testDID_FMU.c\" />
-//       <File name=\"./util/read_matlab4.c\" />
-//       <File name=\"./util/read_csv.c\" />
-//       <File name=\"./util/libcsv.c\" />
 //       <File name=\"gc/memory_pool.c\" />
 //       <File name=\"gc/omc_gc.c\" />
 //       <File name=\"./util/base_array.c\" />
@@ -119,6 +120,11 @@ readFile("modelDescription.tmp.xml");
 //       <File name=\"./meta/meta_modelica_catch.c\" />
 //     </SourceFiles>
 //   </ModelExchange>
+//   <TypeDefinitions>
+//     <Clocks>
+//       <Clock><Inferred/></Clock>
+//     </Clocks>
+//   </TypeDefinitions>
 //   <LogCategories>
 //     <Category name=\"logEvents\" />
 //     <Category name=\"logSingularLinearSystems\" />
@@ -139,6 +145,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"previous(_D_outputAlias_y1)\"
 //     valueReference=\"0\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -147,6 +154,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"previous(_D_outputAlias_y2)\"
 //     valueReference=\"1\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -155,6 +163,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"der(_D_outputAlias_y1)\"
 //     valueReference=\"2\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -163,6 +172,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"der(_D_outputAlias_y2)\"
 //     valueReference=\"3\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -171,6 +181,8 @@ readFile("modelDescription.tmp.xml");
 //     name=\"_D_outputAlias_y1\"
 //     valueReference=\"4\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -179,6 +191,8 @@ readFile("modelDescription.tmp.xml");
 //     name=\"_D_outputAlias_y2\"
 //     valueReference=\"5\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
+//     previous=\"2\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -195,6 +209,7 @@ readFile("modelDescription.tmp.xml");
 //     name=\"ud\"
 //     valueReference=\"7\"
 //     variability=\"discrete\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -204,6 +219,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"8\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>
@@ -213,6 +229,7 @@ readFile("modelDescription.tmp.xml");
 //     valueReference=\"9\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>

@@ -2,7 +2,6 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf reset.fmu reset.log reset_systemCall.log temp-reset test_res.mat
-// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica");
 
@@ -78,19 +77,19 @@ unloadOMSimulator();
 // info:      A.x:       1.0
 // info:    Simulation
 // info:      A.x_start: 1.0
-// info:      A.x:       0.3486784401
+// info:      A.x:       0.3676954247709639
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
 // info:      A.x_start: 1.5
 // info:      A.x:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       0.5230176601500001
+// info:      A.x:       0.5515431371564458
 // info:    Result file: test_res.mat (bufferSize=10)
 // info:    Initialization
 // info:      A.x_start: 1.5
 // info:      A.x:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       0.5230176601500001
+// info:      A.x:       0.5515431371564458
 // endResult

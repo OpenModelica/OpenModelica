@@ -41,6 +41,7 @@ protected
   import Prefixes = NFPrefixes;
   import Ceval = NFCeval;
   import MetaModelica.Dangerous.listReverseInPlace;
+  import Util;
 
 public
   import Expression = NFExpression;
@@ -75,6 +76,20 @@ public
   end EXPANDED_SLICE;
 
   record WHOLE end WHOLE;
+
+  // Split proxy and index subscripts are added to modifier array expressions to
+  // indicate where they are split when propagating them down to the array
+  // elements. Proxies are added during the instantiation and then replaced with
+  // split indices during typing once the number of dimensions on elements are known.
+  record SPLIT_PROXY
+    InstNode origin;
+    InstNode parent;
+  end SPLIT_PROXY;
+
+  record SPLIT_INDEX
+    InstNode node;
+    Integer dimIndex;
+  end SPLIT_INDEX;
 
   function fromExp
     input Expression exp;
@@ -136,6 +151,12 @@ public
     end if;
   end makeIndex;
 
+  function makeSplitIndex
+    input InstNode node;
+    input Integer dimIndex;
+    output Subscript subscript = SPLIT_INDEX(node, dimIndex);
+  end makeSplitIndex;
+
   function isIndex
     input Subscript sub;
     output Boolean isIndex;
@@ -168,6 +189,8 @@ public
         ty := Expression.typeOf(sub.index);
         then
           isValidIndexType(ty);
+
+      case SPLIT_INDEX() then true;
 
       else false;
     end match;
@@ -220,6 +243,11 @@ public
         then Expression.isEqual(subscript1.slice, subscript2.slice);
 
       case (WHOLE(), WHOLE()) then true;
+
+      case (SPLIT_INDEX(), SPLIT_INDEX())
+        then subscript1.dimIndex == subscript2.dimIndex and
+             InstNode.refEqual(subscript1.node, subscript2.node);
+
       else false;
     end match;
   end isEqual;
@@ -267,6 +295,8 @@ public
     comp := match subscript1
       local
         Expression e;
+        InstNode node;
+        Integer index;
 
       case UNTYPED()
         algorithm
@@ -287,6 +317,14 @@ public
           Expression.compare(subscript1.slice, e);
 
       case WHOLE() then 0;
+
+      case SPLIT_INDEX()
+        algorithm
+          SPLIT_INDEX(node = node, dimIndex = index) := subscript2;
+          comp := InstNode.refCompare(subscript1.node, node);
+        then
+          if comp == 0 then Util.intCompare(subscript1.dimIndex, index) else comp;
+
     end match;
   end compare;
 
@@ -587,6 +625,24 @@ public
     end match;
   end mapFoldExpShallow;
 
+  function toAbsyn
+    input Subscript subscript;
+    output Absyn.Subscript asubscript;
+  algorithm
+    asubscript := match subscript
+      case RAW_SUBSCRIPT() then subscript.subscript;
+      case UNTYPED() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.exp));
+      case INDEX() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.index));
+      case SLICE() then Absyn.Subscript.SUBSCRIPT(Expression.toAbsyn(subscript.slice));
+      case WHOLE() then Absyn.Subscript.NOSUB();
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " failed on unknown subscript", sourceInfo());
+        then
+          fail();
+    end match;
+  end toAbsyn;
+
   function toDAE
     input Subscript subscript;
     output DAE.Subscript daeSubscript;
@@ -631,6 +687,10 @@ public
       case EXPANDED_SLICE()
         then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
       case WHOLE() then ":";
+      case SPLIT_PROXY()
+        then "<" + InstNode.name(subscript.origin) + ", " + InstNode.name(subscript.parent) + ">";
+      case SPLIT_INDEX()
+        then "<" + InstNode.name(subscript.node) + ", " + String(subscript.dimIndex) + ">";
     end match;
   end toString;
 
@@ -653,6 +713,8 @@ public
       case EXPANDED_SLICE()
         then List.toString(subscript.indices, toString, "", "{", ", ", "}", false);
       case WHOLE() then ":";
+      case SPLIT_INDEX()
+        then "<" + InstNode.name(subscript.node) + ", " + String(subscript.dimIndex) + ">";
     end match;
   end toFlatString;
 
@@ -712,6 +774,7 @@ public
   function simplifyList
     input list<Subscript> subscripts;
     input list<Dimension> dimensions;
+    input Boolean trim = false;
     output list<Subscript> outSubscripts = {};
   protected
     Dimension d;
@@ -729,7 +792,9 @@ public
         outSubscripts := simplify(s, d) :: outSubscripts;
       end for;
 
-      if not List.all(outSubscripts, isWhole) then
+      if trim then
+        outSubscripts := listReverseInPlace(List.trim(outSubscripts, isWhole));
+      else
         outSubscripts := listReverseInPlace(outSubscripts);
       end if;
     end if;
@@ -744,6 +809,7 @@ public
       case INDEX() then Dimension.fromInteger(1);
       case SLICE() then listHead(Type.arrayDims(Expression.typeOf(subscript.slice)));
       case WHOLE() then Dimension.UNKNOWN();
+      case SPLIT_INDEX() then Dimension.fromInteger(1);
     end match;
   end toDimension;
 
@@ -906,7 +972,7 @@ public
       case UNTYPED() then Expression.variability(subscript.exp);
       case INDEX() then Expression.variability(subscript.index);
       case SLICE() then Expression.variability(subscript.slice);
-      case WHOLE() then Variability.CONSTANT;
+      else Variability.CONSTANT;
     end match;
   end variability;
 
@@ -927,7 +993,7 @@ public
       case UNTYPED() then Expression.purity(subscript.exp);
       case INDEX() then Expression.purity(subscript.index);
       case SLICE() then Expression.purity(subscript.slice);
-      case WHOLE() then Purity.IMPURE;
+      else Purity.IMPURE;
     end match;
   end purity;
 
@@ -1039,6 +1105,51 @@ public
       case Dimension.ENUM()    then INDEX(Expression.nthEnumLiteral(dim.enumType, 1));
     end match;
   end first;
+
+  function isSplitIndex
+    input Subscript sub;
+    output Boolean res;
+  algorithm
+    res := match sub
+      case SPLIT_INDEX() then true;
+      else false;
+    end match;
+  end isSplitIndex;
+
+  function expandSplitIndices
+    input list<Subscript> subs;
+    output list<Subscript> outSubs = {};
+  algorithm
+    for s in subs loop
+      outSubs := (if isSplitIndex(s) then WHOLE() else s) :: outSubs;
+    end for;
+
+    outSubs := List.trim(outSubs, isWhole);
+    outSubs := listReverseInPlace(outSubs);
+  end expandSplitIndices;
+
+  function hash
+    input Subscript sub;
+    input Integer mod;
+    output Integer hash;
+  algorithm
+    hash := match sub
+      case SPLIT_PROXY() then intMod(InstNode.hash(sub.origin, 1) + InstNode.hash(sub.parent, 1), mod);
+      case SPLIT_INDEX() then intMod(InstNode.hash(sub.node, 1) + sub.dimIndex, mod);
+      else stringHashDjb2Mod(toString(sub), mod);
+    end match;
+  end hash;
+
+  function splitIndexDimExp
+    input Subscript sub;
+    output Expression exp;
+  protected
+    InstNode node;
+    Integer index;
+  algorithm
+    SPLIT_INDEX(node = node, dimIndex = index) := sub;
+    exp := Dimension.sizeExp(Type.nthDimension(InstNode.getType(node), index));
+  end splitIndexDimExp;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFSubscript;

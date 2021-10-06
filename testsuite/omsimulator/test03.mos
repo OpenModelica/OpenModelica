@@ -1,7 +1,6 @@
 // name:     test03.mos
 // status:   correct
 // teardown_command: rm -rf test03/ test_res.mat Modelica_Blocks_Sources_* Modelica.Blocks.Sources.Constant.fmu Modelica.Blocks.Sources.Sine.fmu
-// cflags: -d=-newInst
 
 setCommandLineOptions("-g=MetaModelica");
 loadModel(Modelica, {"3.2.3"});

@@ -5637,7 +5637,7 @@ algorithm
         syst := isyst;
 
         /* check if index type is solvable and is unprocessed and if index reduction is activated */
-        if not Flags.getConfigBool(Flags.NO_ASSC) and BackendDAEUtil.hasIndexTypeSolvableAndUnprocessedScalar(syst) and BackendDAEUtil.doIndexReduction(inMatchingOptions) then
+        if (not Flags.getConfigBool(Flags.NO_ASSC)) and BackendDAEUtil.hasIndexTypeSolvableAndUnprocessedScalar(syst) and BackendDAEUtil.doIndexReduction(inMatchingOptions) then
           /* set the system to processed so that it gets analyzed only once */
           syst := BackendDAEUtil.setAnalyticalToStructuralProcessed(syst, true);
 

@@ -198,7 +198,18 @@ void DgesvSolver::solve()
   for (int i = 0; i < _dimSys; i++)
     _b[i] /= _fNominal[i];
 
-  if (!_hasDgesvFactors && !_hasDgetc2Factors) {
+  double det;
+  if (_dimSys == 1 && (det = _A[0]) != 0.0) {
+    _b[0] /= det;
+    info = 0;
+  }
+  else if (_dimSys == 2 && (det = _A[0]*_A[3] - _A[1]*_A[2]) != 0.0) {
+    double b0 = (_b[0]*_A[3] - _b[1]*_A[2]) / det;
+    _b[1] = (_A[0]*_b[1] - _A[1]*_b[0]) / det;
+    _b[0] = b0;
+    info = 0;
+  }
+  else if (!_hasDgesvFactors && !_hasDgetc2Factors) {
     dgesv_(&_dimSys, &dimRHS, _A, &_dimSys, _iHelp, _b, &_dimSys, &info);
     _hasDgesvFactors = true;
   }
@@ -218,10 +229,12 @@ void DgesvSolver::solve()
     dgetc2_(&_dimSys, _A, &_dimSys, _iHelp, _jHelp, &info2);
     dgesc2_(&_dimSys, _A, &_dimSys, _b, _iHelp, _jHelp, &scale);
     _hasDgetc2Factors = true;
-    LOGGER_WRITE("DgesvSolver: using complete pivoting (dgesv info: " + to_string(info) + ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
+    LOGGER_WRITE("total pivoting: dgesv/dgetc2 infos: " + to_string(info) + "/" + to_string(info2) +
+                 ", dgesc2 scale: " + to_string(scale) + ")", LC_LS, LL_DEBUG);
   }
   else if (info < 0) {
     _iterationStatus = SOLVERERROR;
+    LOGGER_WRITE_END(LC_LS, LL_DEBUG);
     if (_algLoop->isLinearTearing())
       throw ModelicaSimulationError(ALGLOOP_SOLVER, "error solving linear tearing system (dgesv info: " + to_string(info) + ")");
     else

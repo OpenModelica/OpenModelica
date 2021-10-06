@@ -69,6 +69,7 @@ BuiltinAttribute17.mo \
 BuiltinAttribute18.mo \
 BuiltinAttribute19.mo \
 BuiltinAttribute20.mo \
+BuiltinAttribute21.mo \
 BuiltinLookup1.mo \
 BuiltinTime.mo \
 BuiltinTimeSubscripted.mo \
@@ -98,6 +99,11 @@ CevalArrayConstructor2.mo \
 CevalAsin1.mo \
 CevalAtan1.mo \
 CevalAtan21.mo \
+CevalBinding1.mo \
+CevalBinding2.mo \
+CevalBinding3.mo \
+CevalBinding4.mo \
+CevalBinding5.mo \
 CevalConstant1.mo \
 CevalCeil1.mo \
 CevalCos1.mo \
@@ -122,8 +128,6 @@ CevalFuncFor2.mo \
 CevalFuncIf1.mo \
 CevalFuncRecord1.mo \
 CevalFuncRecord2.mo \
-CevalFuncRecord3.mo \
-CevalFuncRecord4.mo \
 CevalFuncRecord5.mo \
 CevalFuncRecord6.mo \
 CevalFuncRecord7.mo \
@@ -161,10 +165,12 @@ CevalRecord3.mo \
 CevalRecord4.mo \
 CevalRecord5.mo \
 CevalRecord6.mo \
+CevalRecord7.mo \
 CevalRecordArray1.mo \
 CevalRecordArray2.mo \
 CevalRecordArray4.mo \
 CevalRecordArray5.mo \
+CevalRecordArray6.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
@@ -196,10 +202,12 @@ ClassExtends5.mo \
 ClassExtends6.mo \
 ClassExtends7.mo \
 ClassExtends8.mo \
+ClassExtends9.mo \
 ClassExtendsBuiltin1.mo \
 ClassExtendsBuiltin2.mo \
 ClassExtendsBuiltin3.mo \
 ClassExtendsMod1.mo \
+ClassExtendsMod2.mo \
 ClassExtendsMissing1.mo \
 ClassMod1.mo \
 ClassMod2.mo \
@@ -224,6 +232,8 @@ Condition3.mo \
 Condition4.mo \
 Condition5.mo \
 Condition6.mo \
+Condition7.mo \
+Condition8.mo \
 ConditionInvalid1.mo \
 ConditionInvalidBinding1.mo \
 ConditionInvalidBinding2.mo \
@@ -277,6 +287,7 @@ const7.mo \
 const8.mo \
 ConstrainingClass1.mo \
 ConstrainingClass2.mo \
+ConstrainingClassFunc1.mo \
 DimCyclic1.mo \
 DimCyclic2.mo \
 DimCyclic3.mo \
@@ -328,6 +339,7 @@ Each2.mo \
 Each3.mo \
 Each4.mo \
 Each5.mo \
+Each6.mo \
 EmptyArray1.mo \
 Encapsulated1.mo \
 Encapsulated2.mo \
@@ -365,6 +377,7 @@ ExpandableConnector1.mo \
 ExpandableConnector2.mo \
 ExpandableConnector3.mo \
 ExpandableConnector4.mo \
+ExpandableConnector5.mo \
 ExpandableConnectorFlow1.mo \
 ExpandableConnectorFlow2.mo \
 ExpandableConnectorNonDecl1.mo \
@@ -461,6 +474,7 @@ FuncBuiltinDiv.mo \
 FuncBuiltinEdge.mo \
 FuncBuiltinFill.mo \
 FuncBuiltinFill2.mo \
+FuncBuiltinFill3.mo \
 FuncBuiltinFloor.mo \
 FuncBuiltinGetInstanceName.mo \
 FuncBuiltinHomotopy.mo \
@@ -509,6 +523,9 @@ FuncBuiltinZeros.mo \
 FuncClassParam.mo \
 FuncDefaultArg1.mo \
 FuncDefaultArg2.mo \
+FuncDefaultArg3.mo \
+FuncDefaultArg4.mo \
+FuncDefaultArg5.mo \
 FuncDuplicateParams1.mo \
 FuncExtends.mo \
 FuncInnerParam.mo \
@@ -537,6 +554,7 @@ FuncVectorization2.mo \
 FuncVectorization3.mo \
 FuncVectorization4.mo \
 FuncVectorization5.mo \
+FuncVectorization6.mo \
 FuncVectorizationBuiltin.mo \
 FuncVectorizationCastConflict1.mo \
 FuncVectorizationMap1.mo \
@@ -548,12 +566,18 @@ FunctionalArgBinary1.mo \
 FunctionalArgInvalidType1.mo \
 FunctionCompOrder1.mo \
 FunctionCompOrder2.mo \
+FunctionCompOrder3.mo \
 FunctionDerivative1.mo \
 FunctionDerivativeInvalidInput1.mo \
 FunctionDerivativeInvalidOrder1.mo \
 FunctionDerivativeInvalidOrder2.mo \
 FunctionDerivativeMissingName1.mo \
 FunctionExtends1.mo \
+FunctionInverse1.mo \
+FunctionInverse2.mo \
+FunctionInverseInvalid1.mo \
+FunctionInverseInvalid2.mo \
+FunctionInverseInvalid3.mo \
 FunctionMultiOutput1.mo \
 FunctionMultiOutput2.mo \
 FunctionMultiOutput3.mo \
@@ -563,8 +587,15 @@ FunctionNoOutput1.mo \
 FunctionNonInputOutputParameter.mo \
 FunctionRecordArg1.mo \
 FunctionRecordArg2.mo \
+FunctionRecordArg3.mo \
+FunctionRecordArg4.mo \
 FunctionRecursive1.mo \
 FunctionRecursive2.mo \
+FunctionSections1.mo \
+FunctionSections2.mo \
+FunctionSections3.mo \
+FunctionSections4.mo \
+FunctionSections5.mo \
 FunctionStreamPrefix.mo \
 IfConnect1.mo \
 IfConnect2.mo \
@@ -588,6 +619,9 @@ IfExpression3.mo \
 IfExpression4.mo \
 IfExpression5.mo \
 IfExpression7.mo \
+IfExpression8.mo \
+IfExpression10.mo \
+IfExpression11.mo \
 IfEquationInvalidCond1.mo \
 ih1.mo \
 ih2.mo \
@@ -708,6 +742,7 @@ OperationDiv1.mo \
 OperationDivEW1.mo \
 OperationLogicalBinary1.mo \
 OperationLogicalUnary1.mo \
+OperationLogicalUnary2.mo \
 OperationMatrixProduct1.mo \
 OperationMatrixProduct2.mo \
 OperationMatrixProduct3.mo \
@@ -722,6 +757,7 @@ OperationSub1.mo \
 OperationSubEW1.mo \
 OperationSubEW2.mo \
 OperationUnary1.mo \
+OperationUnary2.mo \
 OperationVectorMatrixProduct1.mo \
 OperationVectorProduct1.mo \
 OperatorNonEncapsulated1.mo \
@@ -751,7 +787,9 @@ PartialApplicationInvalidArg1.mo \
 PartialApplicationInvalidArg2.mo \
 PartialClass1.mo \
 PartialFunction1.mo \
+PartialFunction2.mo \
 PartialLookup1.mo \
+PartialLookup2.mo \
 PartialType1.mo \
 PartialType2.mo \
 PartialType3.mo \
@@ -817,6 +855,7 @@ RedeclareMod4.mo \
 RedeclareMod5.mo \
 RedeclareMod6.mo \
 RedeclareMod7.mo \
+RedeclareMod8.mo \
 redeclare10.mo \
 redeclare11.mo \
 redeclare12.mo \
@@ -868,6 +907,7 @@ Subscript3.mo \
 Subscript4.mo \
 Subscript5.mo \
 Subscript6.mo \
+Subscript7.mo \
 SubscriptCevalIndex1.mo \
 SubscriptCevalIndexRange1.mo \
 SubscriptCevalSlice1.mo \
@@ -962,11 +1002,14 @@ OCGTests.mos \
 # test that currently fail. Move up when fixed.
 # Run make testfailing
 FAILINGTESTFILES=\
+CevalFuncRecord3.mo \
+CevalFuncRecord4.mo \
 FinalParameter1.mo \
 FinalParameter2.mo \
 FinalParameter3.mo \
 CevalRecordArray3.mo \
 IfExpression6.mo \
+IfExpression9.mo \
 RedeclareConstant1.mo \
 Connect3.mo \
 ProtectedMod1.mo \

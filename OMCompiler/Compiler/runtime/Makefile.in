@@ -13,6 +13,8 @@ GRAPHSTREAMINCLUDE = ../../3rdParty/graphstream/gs-netstream/c++/src/
 CJSONINCLUDE = ../../3rdParty/cJSON
 ZMQINCLUDE = ../../3rdParty/libzmq/include
 GCINCLUDE = -DGC_THREADS -I$(top_builddir)/3rdParty/gc/include
+OMC_CONFIG_INC = $(top_builddir)
+
 CFLAGS = @CFLAGS@ @CHECK_C_ERRORS@ $(USE_CORBA)
 OMPCC = @CC@ @OMPCFLAGS@
 OMBUILDDIR = @OMBUILDDIR@
@@ -34,16 +36,13 @@ CXX	= @CXX@
 IDL	= @IDLCMD@
 IDLPYTHON = @IDLPYTHONCMD@
 CXXFLAGS = @CXXFLAGS@
-CPPFLAGS = @CPPFLAGS@ -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I. $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(GRAPHSTREAMINCLUDE) -I$(GRAPHINCLUDE) -I$(CJSONINCLUDE) -I$(ZMQINCLUDE)  -I"$(TOP_DIR)/3rdParty/FMIL/ThirdParty/Zlib/zlib-1.2.6" -I"$(TOP_DIR)/3rdParty/FMIL/build/zlib/"
+CPPFLAGS = @CPPFLAGS@ -I$(OMC_CONFIG_INC) -I$(top_builddir)/SimulationRuntime/c -I$(top_builddir)/SimulationRuntime/c/simulation/results -I$(top_builddir)/SimulationRuntime/c/util -I$(top_builddir)/SimulationRuntime/c/meta -I$(top_builddir)/SimulationRuntime/c/meta/gc -I. $(CORBAINCL) $(GCINCLUDE) -I$(FMIINCLUDE) -I$(GRAPHSTREAMINCLUDE) -I$(GRAPHINCLUDE) -I$(CJSONINCLUDE) -I$(ZMQINCLUDE)  -I"$(TOP_DIR)/3rdParty/FMIL/ThirdParty/Zlib/zlib-1.2.6" -I"$(TOP_DIR)/3rdParty/FMIL/build/zlib/" -I"$(TOP_DIR)/3rdParty/libffi/install/include/"
 TRIPLE=@host_short@
 SHREXT=@SHREXT@
 RPATH=@RPATH@
 LDFLAGS = -L "$(builddir_lib)/$(TRIPLE)/omc/" -lOpenModelicaRuntimeC @OMCRUNTIME_SHARED_LDFLAGS@
 
 include Makefile.common
-
-config.unix.h: config.unix.h.in
-	cd $(top_builddir) && ./config.status
 
 Makefile: Makefile.in
 	cd @top_builddir@ && ./config.status

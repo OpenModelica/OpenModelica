@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair);
 compareVars :=
 {
@@ -31,14 +31,13 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.SimpleSimulation
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
 // Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair
 // {"Q1.vbe","Q1.vbc","Q1.vbx","Q1.vcs","Q2.vbe","Q2.vbc","Q2.vbx","Q2.vcs"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-05, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair', options = '', outputFormat = 'mat', variableFilter = 'time|Q1.vbe|Q1.vbc|Q1.vbx|Q1.vcs|Q2.vbe|Q2.vbc|Q2.vbx|Q2.vcs', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Electrical.Spice3.Examples.Spice3BenchmarkDifferentialPair_res.mat
-// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
-//
+// Files Equal!
 // "true
 // "
 // ""

@@ -103,6 +103,7 @@ import EvalConstants = NFEvalConstants;
 import VerifyModel = NFVerifyModel;
 import Structural = NFStructural;
 import UnorderedMap;
+import CheckModel = NFCheckModel;
 
 public
 
@@ -119,6 +120,7 @@ protected
   InstNode top, cls, inst_cls;
   String name;
   InstContext.Type context;
+  Integer var_count, eq_count;
 algorithm
   // gather here all the flags to disable expansion
   // and scalarization if -d=-nfScalarize is on
@@ -209,6 +211,9 @@ algorithm
   if Flags.isSet(Flags.NF_DUMP_FLAT) then
     print("FlatModel:\n" + FlatModel.toString(flatModel) + "\n");
   end if;
+
+  //(var_count, eq_count) := CheckModel.checkModel(flatModel);
+  //print(name + " has " + String(var_count) + " variable(s) and " + String(eq_count) + " equation(s).\n");
 end instClassInProgram;
 
 function instantiate
@@ -786,6 +791,7 @@ protected
   Restriction res;
   Type ty;
   Component.Attributes attrs;
+  SCode.Element elem;
 algorithm
   () := match cls
     case Class.EXPANDED_CLASS(restriction = res)
@@ -803,9 +809,11 @@ algorithm
         inst_cls as Class.EXPANDED_CLASS(elements = cls_tree) := InstNode.getClass(node);
 
         // Fetch modification on the class definition (for class extends).
-        mod := Modifier.fromElement(InstNode.definition(node), {}, par);
+        mod := instElementModifier(InstNode.definition(node), node, par);
+        mod := Modifier.propagate(mod, node, par);
         // Merge with any outer modifications.
-        outer_mod := Modifier.merge(outerMod, cls.modifier);
+        outer_mod := Modifier.propagate(cls.modifier, node, par);
+        outer_mod := Modifier.merge(outerMod, outer_mod);
         mod := Modifier.merge(outer_mod, mod);
 
         // Apply the modifiers of extends nodes.
@@ -849,8 +857,10 @@ algorithm
         Class.EXPANDED_DERIVED(baseClass = base_node) := InstNode.getClass(node);
 
         // Merge outer modifiers and attributes.
-        mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.rootParent(node));
-        outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
+        mod := instElementModifier(InstNode.definition(node), node, InstNode.rootParent(node));
+        mod := Modifier.propagate(mod, node, par);
+        outer_mod := Modifier.propagate(cls.modifier, node, par);
+        outer_mod := Modifier.merge(outerMod, outer_mod);
         mod := Modifier.merge(outer_mod, mod);
         attrs := updateClassConnectorType(cls.restriction, cls.attributes);
         attributes := mergeDerivedAttributes(attrs, attributes, parent);
@@ -882,8 +892,8 @@ algorithm
         updateComponentType(parent, node);
         cls_tree := Class.classTree(InstNode.getClass(node));
 
-        mod := Modifier.fromElement(InstNode.definition(node), {node}, InstNode.parent(node));
-        outer_mod := Modifier.merge(outerMod, Modifier.addParent(node, cls.modifier));
+        mod := instElementModifier(InstNode.definition(node), node, InstNode.parent(node));
+        outer_mod := Modifier.merge(outerMod, cls.modifier);
         mod := Modifier.merge(outer_mod, mod);
         applyModifier(mod, cls_tree, InstNode.name(node));
 
@@ -1015,7 +1025,7 @@ algorithm
 
   // Create a modifier from the extends.
   InstNodeType.BASE_CLASS(definition = elem) := InstNode.nodeType(extendsNode);
-  ext_mod := Modifier.fromElement(elem, {}, scope);
+  ext_mod := Modifier.fromElement(elem, scope);
   ext_mod := Modifier.merge(InstNode.getModifier(extendsNode), ext_mod);
 
   if not Class.isBuiltin(cls) then
@@ -1323,20 +1333,13 @@ algorithm
         then
           Class.setPrefixes(prefs, orig_cls);
 
-      // Class extends of a long class declaration.
-      case (Class.EXPANDED_CLASS(), Class.PARTIAL_CLASS())
+      // Class extends of a normal class.
+      case (_, Class.PARTIAL_CLASS())
         algorithm
           node_ty := InstNodeType.BASE_CLASS(InstNode.parent(orig_node), InstNode.definition(orig_node));
           orig_node := InstNode.setNodeType(node_ty, orig_node);
           rdcl_cls.elements := ClassTree.setClassExtends(orig_node, rdcl_cls.elements);
           rdcl_cls.modifier := Modifier.merge(outerMod, rdcl_cls.modifier);
-          rdcl_cls.prefixes := prefs;
-        then
-          rdcl_cls;
-
-      // Class extends of a short class declaration.
-      case (Class.EXPANDED_DERIVED(), Class.PARTIAL_CLASS())
-        algorithm
           rdcl_cls.prefixes := prefs;
         then
           rdcl_cls;
@@ -1454,7 +1457,7 @@ algorithm
     cc_smod := SCodeUtil.getConstrainingMod(def);
     if not SCodeUtil.isEmptyMod(cc_smod) then
       name := InstNode.name(node);
-      cc_def_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), {}, parent);
+      cc_def_mod := Modifier.create(cc_smod, name, ModifierScope.COMPONENT(name), parent);
       cc_mod := Modifier.merge(cc_mod, cc_def_mod);
     end if;
 
@@ -1495,17 +1498,14 @@ algorithm
 
     case SCode.COMPONENT(info = info)
       algorithm
-        decl_mod := Modifier.fromElement(component, {}, parent);
-        cc_mod := instConstrainingMod(component, parent);
-        mod := Modifier.merge(decl_mod, cc_mod);
+        mod := instElementModifier(component, node, parent);
         mod := Modifier.merge(mod, innerMod);
         mod := Modifier.merge(outerMod, mod);
-        mod := Modifier.addParent(node, mod);
         checkOuterComponentMod(mod, component, node);
 
         dims := list(Dimension.RAW_DIM(d, parent) for d in component.attributes.arrayDims);
         binding := if useBinding then Modifier.binding(mod) else NFBinding.EMPTY_BINDING;
-        condition := Binding.fromAbsyn(component.condition, false, {node}, parent, info);
+        condition := Binding.fromAbsyn(component.condition, false, false, parent, info);
 
         // Instantiate the component's attributes, and merge them with the
         // attributes of the component's parent (e.g. constant SomeComplexClass c).
@@ -1532,6 +1532,7 @@ algorithm
         InstNode.updateComponent(inst_comp, node);
 
         // Instantiate the type of the component.
+        mod := Modifier.propagate(mod, node, node);
         (ty_node, ty_attr) := instTypeSpec(component.typeSpec, mod, attr,
           useBinding and not Binding.isBound(binding), parent, node, info, instLevel, context);
         ty := InstNode.getClass(ty_node);
@@ -1554,6 +1555,20 @@ algorithm
   end match;
 end instComponentDef;
 
+function instElementModifier
+  input SCode.Element element;
+  input InstNode component;
+  input InstNode parent;
+  output Modifier mod;
+protected
+  Modifier cc_mod;
+algorithm
+  cc_mod := instConstrainingMod(element, parent);
+  mod := Modifier.fromElement(element, parent);
+  mod := propagateRedeclaredMod(mod, component);
+  mod := Modifier.merge(mod, cc_mod);
+end instElementModifier;
+
 function instConstrainingMod
   input SCode.Element element;
   input InstNode parent;
@@ -1565,15 +1580,34 @@ algorithm
 
     case SCode.Element.CLASS(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
         SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-      then Modifier.create(smod, element.name, ModifierScope.CLASS(element.name), {}, parent);
+      then Modifier.create(smod, element.name, ModifierScope.CLASS(element.name), parent);
 
     case SCode.Element.COMPONENT(prefixes = SCode.Prefixes.PREFIXES(replaceablePrefix =
         SCode.Replaceable.REPLACEABLE(cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(modifier = smod)))))
-      then Modifier.create(smod, element.name, ModifierScope.COMPONENT(element.name), {}, parent);
+      then Modifier.create(smod, element.name, ModifierScope.COMPONENT(element.name), parent);
 
     else Modifier.NOMOD();
   end match;
 end instConstrainingMod;
+
+function propagateRedeclaredMod
+  input Modifier mod;
+  input InstNode component;
+  output Modifier outMod;
+protected
+  InstNode parent;
+algorithm
+  outMod := match component
+    case InstNode.COMPONENT_NODE(nodeType = InstNodeType.REDECLARED_COMP(parent = parent))
+      algorithm
+        parent := InstNode.getDerivedNode(parent);
+        outMod := propagateRedeclaredMod(mod, parent);
+      then
+        Modifier.propagateBinding(outMod, parent, parent);
+
+    else mod;
+  end match;
+end propagateRedeclaredMod;
 
 function updateComponentConnectorType
   input output Component.Attributes attributes;
@@ -2371,7 +2405,6 @@ algorithm
 
     case Modifier.MODIFIER(binding = binding)
       algorithm
-        binding := Binding.addParent(node, binding);
         attribute.binding := instBinding(binding, context);
       then
         ();
@@ -2449,9 +2482,12 @@ algorithm
     case Binding.RAW_BINDING()
       algorithm
         bind_exp := instExp(binding.bindingExp, binding.scope, context, binding.info);
-        bind_exp := Expression.BINDING_EXP(bind_exp, Type.UNKNOWN(), Type.UNKNOWN(), binding.parents, binding.isEach);
+
+        if not listEmpty(binding.subs) then
+          bind_exp := Expression.SUBSCRIPTED_EXP(bind_exp, binding.subs, Type.UNKNOWN(), true);
+        end if;
       then
-        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.isEach, binding.info);
+        Binding.UNTYPED_BINDING(bind_exp, false, binding.scope, binding.eachType, binding.source, binding.info);
 
     else binding;
   end match;
@@ -2836,15 +2872,31 @@ algorithm
       SCode.ExternalDecl ext_decl;
       InstContext.Type icontext;
 
+    // allow non standard Modelica on a flag
+    case(SCode.PARTS(externalDecl = SOME(ext_decl)), Sections.EXTERNAL())
+      guard Flags.isConfigFlagSet(Flags.ALLOW_NON_STANDARD_MODELICA, "nonStdMultipleExternalDeclarations")
+      then
+        instExternalDecl(ext_decl, scope, context);
+
     case (_, Sections.EXTERNAL())
+      guard SCodeUtil.classDefHasSections(parts, checkExternal = true)
       algorithm
-        Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
-          {InstNode.name(scope)}, InstNode.info(scope));
+        // Class with inherited external section that also contains other sections.
+        Error.addMultiSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
+          {InstNode.name(scope)}, {sections.info, InstNode.info(scope)});
       then
         fail();
 
     case (SCode.PARTS(externalDecl = SOME(ext_decl)), _)
-      then instExternalDecl(ext_decl, scope, context);
+      algorithm
+        if SCodeUtil.classDefHasSections(parts, checkExternal = false) then
+          // Class with external section that also contains other sections.
+          Error.addSourceMessage(Error.MULTIPLE_SECTIONS_IN_FUNCTION,
+            {InstNode.name(scope)}, InstNode.info(scope));
+          fail();
+        end if;
+      then
+        instExternalDecl(ext_decl, scope, context);
 
     case (SCode.PARTS(), _)
       algorithm
@@ -2888,7 +2940,7 @@ algorithm
           ret_cref := ComponentRef.EMPTY();
         end if;
       then
-        Sections.EXTERNAL(name, args, ret_cref, lang, extDecl.annotation_, isSome(extDecl.funcName));
+        Sections.EXTERNAL(name, args, ret_cref, lang, extDecl.annotation_, isSome(extDecl.funcName), info);
 
   end match;
 end instExternalDecl;
@@ -3357,7 +3409,8 @@ algorithm
     // Only components needs to be added to the class, since classes are
     // not part of the flat class.
     if InstNode.isComponent(n) then
-      // The components shouldn't have been instantiated yet, so do it here.
+      // The component might have been instantiated during lookup, otherwise do
+      // it here (instComponent will skip already instantiated components).
       instComponent(n, NFComponent.DEFAULT_ATTR, Modifier.NOMOD(), true, 0, NONE(), NFInstContext.CLASS);
 
       // If the component's class has a missingInnerMessage annotation, use it
@@ -3396,8 +3449,13 @@ algorithm
     node := Lookup.lookupSimpleName(name, scope);
 
     if InstNode.isInner(node) then
-      Error.addSourceMessage(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
       is_error := not InstContext.inRelaxed(context);
+
+      if is_error then
+        Error.addSourceMessageAsError(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
+      else
+        Error.addSourceMessage(Error.TOP_LEVEL_OUTER, {name}, InstNode.info(node));
+      end if;
     else
       Error.addMultiSourceMessage(Error.MISSING_INNER_NAME_CONFLICT,
         {name}, {InstNode.info(node), InstNode.info(outerNode)});

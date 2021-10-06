@@ -104,6 +104,7 @@ import Inst;
 import LexerModelicaDiff;
 import List;
 import Lookup;
+import NFConvertDAE;
 import NFFlatModel;
 import NFFlatten;
 import NFInst;
@@ -1096,7 +1097,7 @@ algorithm
       then
         (cache,Values.BOOL(false));
 
-    case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path)},_)
+    case (cache,_,"diffModelicaFileListings",{Values.STRING(s1),Values.STRING(s2),Values.ENUM_LITERAL(name=path),Values.BOOL(b)},_)
       algorithm
         ExecStat.execStatReset();
 
@@ -1159,7 +1160,12 @@ algorithm
             fail();
           end try;
           if not StringUtil.equalIgnoreSpace(s3, s4) then
-            Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+            if b then
+              Error.addInternalError("After merging the strings, the semantics changed for some reason. Will return the empty string:\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5+"\nparseTree2:"+SimpleModelicaParser.parseTreeStr(parseTree2), sourceInfo());
+              fail();
+            else
+              Error.addInternalError("After merging the strings, the semantics changed for some reason (will simply return s2):\ns1:\n"+s1+"\ns2:\n"+s2+"\ns3:\n"+s3+"\ns4:\n"+s4+"\ns5:\n"+s5, sourceInfo());
+            end if;
             sanityCheckFailed := true;
           end if;
         end if;
@@ -1262,7 +1268,7 @@ algorithm
 
     case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_},_)
       equation
-        (cache,simSettings) = calculateSimulationSettings(cache,env,vals,msg);
+        (cache,simSettings) = calculateSimulationSettings(cache, vals);
         (b,cache,_,_,_) = translateModel(cache, env, className, filenameprefix, true, SOME(simSettings));
       then
         (cache,Values.BOOL(b));
@@ -1495,7 +1501,7 @@ algorithm
         if Config.simCodeTarget() == "omsicpp" then
 
          filenameprefix := AbsynUtil.pathString(className);
-         (cache,simSettings) := calculateSimulationSettings(cache, env, vals, msg);
+         (cache,simSettings) := calculateSimulationSettings(cache, vals);
          try
              (cache, Values.STRING(str)) := buildModelFMU(cache, env, className, "2.0", "me", "<default>", true, {"static"},SOME(simSettings));
             if stringEmpty(str) then
@@ -1520,7 +1526,7 @@ algorithm
 
         if b then
            exeDir := compileDir;
-           (cache,simSettings) := calculateSimulationSettings(cache,env,vals,msg);
+           (cache,simSettings) := calculateSimulationSettings(cache, vals);
            SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) := simSettings;
            result_file := stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
             // result file might have been set by simflags (-r ...)
@@ -1692,7 +1698,7 @@ algorithm
         (b,cache,compileDir,executable,_,outputFormat_str,_,simflags,resultValues,vals) = buildModel(cache,env,vals,msg);
         if b then
           exeDir=compileDir;
-          (cache,simSettings) = calculateSimulationSettings(cache,env,vals,msg);
+          (cache,simSettings) = calculateSimulationSettings(cache, vals);
           SimCode.SIMULATION_SETTINGS(outputFormat = outputFormat_str) = simSettings;
           result_file = stringAppendList(List.consOnTrue(not Testsuite.isRunning(),compileDir,{executable,"_res.",outputFormat_str}));
           executableSuffixedExe = stringAppend(executable, getSimulationExtension(Config.simCodeTarget(),Autoconf.platform));
@@ -1853,6 +1859,7 @@ algorithm
       Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
       FCore.Graph env;
+      Interactive.GraphicEnvCache genv;
       Absyn.Program p,ip,pnew,newp;
       list<Absyn.Program> newps;
       GlobalScript.SimulationOptions simOpt;
@@ -1883,7 +1890,7 @@ algorithm
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars,postOptModStrings,postOptModStringsOrg,mps,files,dirs,modifiernamelst;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r,r1,r2,linearizeTime,curveWidth,offset,offset1,offset2,scaleFactor,scaleFactor1,scaleFactor2;
       GlobalScript.Statements istmts;
-      Boolean have_corba, bval, anyCode, b, b1, b2, b3, b4, b5, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, keepRedeclares;
+      Boolean have_corba, bval, anyCode, b, b1, b2, b3, b4, b5, externalWindow, logX, logY, autoScale, forceOMPlot, gcc_res, omcfound, rm_res, touch_res, uname_res,  ifcpp, ifmsvc,sort, builtin, showProtected, inputConnectors, outputConnectors, sanityCheckFailed, keepRedeclares, hintReadAllVars;
       FCore.Cache cache;
       Absyn.ComponentRef  crefCName;
       list<tuple<String,Values.Value>> resultValues;
@@ -2221,14 +2228,9 @@ algorithm
     case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, SymbolTable.getAbsyn());
-        sp = SymbolTable.getSCode();
-        (cache, env) = Inst.makeEnvFromProgram(sp);
-        (cache,(cl as SCode.CLASS(name=name,encapsulatedPrefix=encflag,restriction=restr)),env) = Lookup.lookupClass(cache, env, classpath, NONE());
-        env = FGraph.openScope(env, encflag, name, FGraph.restrictionToScopeType(restr));
-        (_, env) = Inst.partialInstClassIn(cache, env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), DAE.NOPRE(),
-          ClassInf.start(restr, FGraph.getGraphName(env)), cl, SCode.PUBLIC(), {}, 0);
-        valsLst = list(getComponentInfo(c, env, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));
-        valsLst = listAppend(list(getComponentInfo(c, env, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
+        genv = Interactive.getClassEnv(SymbolTable.getAbsyn(), classpath);
+        valsLst = list(getComponentInfo(c, genv, isProtected=false) for c in Interactive.getPublicComponentsInClass(absynClass));
+        valsLst = listAppend(list(getComponentInfo(c, genv, isProtected=true) for c in Interactive.getProtectedComponentsInClass(absynClass)), valsLst);
       then (cache,ValuesUtil.makeArray(List.flatten(valsLst)));
 
     case (cache,_,"getComponentsTest",{Values.CODE(Absyn.C_TYPENAME(_))},_)
@@ -2310,6 +2312,16 @@ algorithm
     case (cache,_,"upgradeInstalledPackages",{Values.BOOL(b)},_)
       algorithm
         v := Values.BOOL(PackageManagement.upgradeInstalledPackages(b));
+      then (cache,v);
+
+    case (cache,_,"getAvailablePackageVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2)},_)
+      algorithm
+        v := ValuesUtil.makeArray(list(ValuesUtil.makeString(s) for s in PackageManagement.versionsThatProvideTheWanted(str1, str2, true)));
+      then (cache,v);
+
+    case (cache,_,"getAvailablePackageVersions",_,_)
+      algorithm
+        v := ValuesUtil.makeArray({});
       then (cache,v);
 
     case (cache,_,"getUses",{Values.CODE(Absyn.C_TYPENAME(classpath))},_)
@@ -2428,10 +2440,10 @@ algorithm
     case (cache,_,"compareSimulationResults",_,_)
       then (cache,Values.STRING("Error in compareSimulationResults"));
 
-    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars),Values.INTEGER(numberOfIntervals),Values.BOOL(b)},_)
+    case (cache,_,"filterSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.ARRAY(valueLst=cvars),Values.INTEGER(numberOfIntervals),Values.BOOL(b),Values.BOOL(hintReadAllVars)},_)
       equation
         vars_1 = List.map(cvars, ValuesUtil.extractValueString);
-        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1,numberOfIntervals,b);
+        b = SimulationResults.filterSimulationResults(filename,filename_1,vars_1,numberOfIntervals,b,hintReadAllVars=hintReadAllVars);
       then
         (cache,Values.BOOL(b));
 
@@ -3345,7 +3357,7 @@ algorithm
 
         cache := FCore.emptyCache();
         FCore.setCachedFunctionTree(cache, funcs);
-        env := FGraph.empty();
+        env := FGraph.new("graph", FCore.dummyTopModel);
       then (cache, env, dae);
 
    case (cache,env,_)
@@ -3658,7 +3670,7 @@ algorithm
         // replace @XX@ variables in the Makefile
         makefileStr := System.stringReplace(makefileStr, "@CC@", CC);
         makefileStr := System.stringReplace(makefileStr, "@CFLAGS@", CFLAGS);
-        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS+" -lSimulationRuntimeFMI "+Autoconf.ldflags_runtime_fmu);
+        makefileStr := System.stringReplace(makefileStr, "@LDFLAGS@", LDFLAGS + Autoconf.ldflags_runtime_fmu_static);
         makefileStr := System.stringReplace(makefileStr, "@LIBS@", "");
         makefileStr := System.stringReplace(makefileStr, "@DLLEXT@", Autoconf.dllExt);
         makefileStr := System.stringReplace(makefileStr, "@NEED_RUNTIME@", "");
@@ -3783,6 +3795,49 @@ algorithm
 end configureFMU;
 
 protected function buildModelFMU
+  input FCore.Cache inCache;
+  input FCore.Graph inEnv;
+  input Absyn.Path className "path for the model";
+  input String FMUVersion;
+  input String inFMUType;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input list<String> platforms = {"static"};
+  input Option<SimCode.SimulationSettings> inSimSettings = NONE();
+  output FCore.Cache cache;
+  output Values.Value outValue;
+protected
+  Flags.Flag flags;
+  String commandLineOptions;
+  list<String> args;
+  Boolean haveAnnotation;
+algorithm
+  if Config.ignoreCommandLineOptionsAnnotation() then
+    (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+  else
+    // read the __OpenModelica_commandLineOptions
+    Absyn.STRING(commandLineOptions) := Interactive.getNamedAnnotation(className, SymbolTable.getAbsyn(), Absyn.IDENT("__OpenModelica_commandLineOptions"), SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
+    haveAnnotation := boolNot(stringEq(commandLineOptions, ""));
+    // backup the flags.
+    flags := if haveAnnotation then FlagsUtil.backupFlags() else FlagsUtil.loadFlags();
+    try
+      // apply if there are any new flags
+      if haveAnnotation then
+        args := System.strtok(commandLineOptions, " ");
+        FlagsUtil.readArgs(args);
+      end if;
+
+      (cache, outValue) := callBuildModelFMU(inCache,inEnv,className,FMUVersion,inFMUType,inFileNamePrefix,addDummy,platforms,inSimSettings);
+      // reset to the original flags
+      FlagsUtil.saveFlags(flags);
+    else
+      FlagsUtil.saveFlags(flags);
+      fail();
+    end try;
+  end if;
+end buildModelFMU;
+
+protected function callBuildModelFMU
  " Author: Frenkel TUD
    Translates a model into target code and writes also a makefile."
   input FCore.Cache inCache;
@@ -3809,7 +3864,6 @@ protected
   String FMUType = inFMUType;
 
 algorithm
-
   cache := inCache;
   if not FMI.checkFMIVersion(FMUVersion) then
     outValue := Values.STRING("");
@@ -3928,7 +3982,7 @@ algorithm
   if not Flags.isSet(Flags.GEN_DEBUG_SYMBOLS) then
     System.removeDirectory(fmutmp);
   end if;
-end buildModelFMU;
+end callBuildModelFMU;
 
 protected function buildEncryptedPackage
   input Absyn.Path className "path for the model";
@@ -4054,36 +4108,29 @@ end translateGraphics;
 protected function calculateSimulationSettings " author: x02lucpo
  calculates the start,end,interval,stepsize, method and initFileName"
   input FCore.Cache inCache;
-  input FCore.Graph inEnv;
   input list<Values.Value> vals;
-  input Absyn.Msg inMsg;
   output FCore.Cache outCache;
   output SimCode.SimulationSettings outSimSettings;
 algorithm
-  (outCache,outSimSettings) := match (inCache,inEnv,vals,inMsg)
+  (outCache,outSimSettings) := match (inCache,vals)
     local
-      String method_str,options_str,outputFormat_str,variableFilter_str,s;
+      String method_str,options_str,outputFormat_str,variableFilter_str;
       Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
       Real starttime_r,stoptime_r,tolerance_r;
-      FCore.Graph env;
-      Absyn.Msg msg;
       FCore.Cache cache;
-      String cflags,simflags;
-    case (cache,_,{Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(_)},_)
+      String cflags;
+    case (cache, {Values.CODE(Absyn.C_TYPENAME(_)),starttime_v,stoptime_v,Values.INTEGER(interval_i),tolerance_v,Values.STRING(method_str),_,Values.STRING(options_str),Values.STRING(outputFormat_str),Values.STRING(variableFilter_str),Values.STRING(cflags),Values.STRING(_)})
       equation
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
         outSimSettings = SimCodeMain.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,cflags);
-
-
       then
         (cache, outSimSettings);
     else
       equation
-        s = "CevalScript.calculateSimulationSettings failed: " + ValuesUtil.valString(Values.TUPLE(vals));
-        Error.addMessage(Error.INTERNAL_ERROR, {s});
+        Error.addMessage(Error.INTERNAL_ERROR, {"CevalScript.calculateSimulationSettings failed: " + ValuesUtil.valString(Values.TUPLE(vals))});
       then
         fail();
   end match;
@@ -5410,7 +5457,7 @@ algorithm
         end if;
 
         compileDir := System.pwd() + Autoconf.pathDelimiter;
-        (cache,simSettings) := calculateSimulationSettings(cache, env, values, msg);
+        (cache,simSettings) := calculateSimulationSettings(cache, values);
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) := simSettings;
 
         (success,cache,libs,file_dir,resultValues) := translateModel(cache,env, classname, filenameprefix,true, SOME(simSettings));
@@ -7985,7 +8032,7 @@ end compareInitialStateFuncArgs;
 
 function getComponentInfo
   input Absyn.Element comp;
-  input FCore.Graph inEnv;
+  input Interactive.GraphicEnvCache inEnv;
   input Boolean isProtected;
   output list<Values.Value> vs;
 algorithm
@@ -8009,10 +8056,7 @@ algorithm
         typename := matchcontinue ()
           case ()
             equation
-              (_,_,env) = Lookup.lookupClass(FCore.emptyCache(), inEnv, p, NONE());
-              SOME(envpath) = FGraph.getScopePath(env);
-              tpname = AbsynUtil.pathLastIdent(p);
-              p_1 = AbsynUtil.joinPaths(envpath, Absyn.IDENT(tpname));
+              (_, p_1) = Interactive.mkFullyQual(inEnv, p);
             then AbsynUtil.pathString(p_1);
           else AbsynUtil.pathString(p);
         end matchcontinue;
@@ -8020,9 +8064,7 @@ algorithm
 
         dims1 := list(Dump.printSubscriptStr(sub) for sub in attr.arrayDim);
         r_1 := Interactive.keywordReplaceable(comp.redeclareKeywords);
-
         inout_str := innerOuterStr(comp.innerOuter);
-
         variability_str := attrVariabilityStr(attr);
         dir_str := attrDirectionStr(attr);
 
@@ -8133,6 +8175,8 @@ algorithm
       String c1,s2;
     case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,SOME(s2))))
       then (c1, s2);
+    case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = SOME(Absyn.COMMENT(_,_)))
+      then (c1, "");
     case Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = c1),comment = NONE())
       then (c1, "");
   end match;

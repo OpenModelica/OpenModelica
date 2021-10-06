@@ -69,6 +69,13 @@ void NewtonSettings::load(string)
 {
 }
 
+void NewtonSettings::setGlobalSettings(IGlobalSettings *settings)
+{
+   _globalSettings = settings;
+   _dAtol = max(settings->getTolerance() * 1e-2, 1e-12);
+   _dRtol = _dAtol;
+}
+
 void NewtonSettings::setContinueOnError(bool value)
 {
   _continueOnError = value;

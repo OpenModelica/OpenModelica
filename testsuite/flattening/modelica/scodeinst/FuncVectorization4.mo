@@ -28,7 +28,7 @@ end FuncVectorization4;
 //   output Real s = 0.0;
 // algorithm
 //   for i in 1:size(x, 1) loop
-//     s := s + sum(array(abs(x[i,$i1]) for $i1 in 1:size(x[i,:], 1)));
+//     s := s + sum(abs(x[i,$i1]) for $i1 in 1:size(x[i,:], 1));
 //   end for;
 // end FuncVectorization4.f;
 //

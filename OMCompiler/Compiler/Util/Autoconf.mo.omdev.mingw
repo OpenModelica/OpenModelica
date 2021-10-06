@@ -28,11 +28,12 @@ encapsulated package Autoconf
                                   "-luser32 -lkernel32 -ladvapi32 -lshell32 -lopenblas -lcminpack -Wl,-Bdynamic";
 
   constant String ldflags_runtime = " -lOpenModelicaRuntimeC" + ldflags_basic;
-  constant String ldflags_runtime_sim = linkType + "-lSimulationRuntimeC -Wl,-Bdynamic" + ldflags_basic + " -lwsock32 -lstdc++";
+  constant String ldflags_runtime_sim = linkType + "-lSimulationRuntimeC -Wl,-Bdynamic " + ldflags_basic + " -lwsock32 " + linkType + " -lstdc++ -Wl,-Bdynamic ";
   constant String ldflags_runtime_fmu = linkType + "-lregex -ltre -lintl -liconv -static-libgcc -lpthread -lm " +
                                         libFortran +
                                         "-lgfortran -lquadmath -lmingw32 -lgcc_eh -lmoldname -lmingwex " +
                                         libMsvcrt + "-luser32 -lkernel32 -ladvapi32 -lshell32 -limagehlp -lopenblas -lhdf5 -lz -lszip -Wl,-Bdynamic";
+  constant String ldflags_runtime_fmu_static = " -lSimulationRuntimeFMI " + ldflags_runtime_fmu;
 
   constant String platform = if is64Bit then "WIN64" else "WIN32";
   constant String pathDelimiter = "/";

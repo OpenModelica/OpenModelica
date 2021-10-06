@@ -79,7 +79,7 @@ void partest(cache=true, extraArgs='') {
      echo export OPENMODELICAHOME="\${MSYS_WORKSPACE}/build"
      echo export OPENMODELICALIBRARY="${MSYS_WORKSPACE}\\build\\lib\\omlibrary"
      echo cd ${MSYS_WORKSPACE}/testsuite/partest
-     echo time perl ./runtests.pl -j8 -nocolour -with-xml
+     echo time perl ./runtests.pl -nocolour -with-xml
      echo CODE=\$?
      echo if test "\$CODE\" = 0 -o "\$CODE" = 7; then
      echo   cp -f ../runtest.db.* "${env.RUNTESTDB}/"
@@ -307,6 +307,36 @@ void buildOMSens() {
   }
 }
 
+void buildOMC_CMake(cmake_args, cmake_exe='cmake') {
+  standardSetup()
+
+  if (isWindows()) {
+  bat ("""
+     set OMDEV=C:\\OMDev
+     echo on
+     (
+     echo export MSYS_WORKSPACE="`cygpath '${WORKSPACE}'`"
+     echo echo MSYS_WORKSPACE: \${MSYS_WORKSPACE}
+     echo cd \${MSYS_WORKSPACE}
+     echo export MAKETHREADS=16
+     echo set -ex
+     echo mkdir OMCompiler/build_cmake
+     echo cmake -S OMCompiler -B OMCompiler/build_cmake ${cmake_args}
+     echo time cmake --build OMCompiler/build_cmake --parallel \${MAKETHREADS} --target install
+     ) > buildOMCWindows.sh
+
+     set MSYSTEM=MINGW64
+     set MSYS2_PATH_TYPE=inherit
+     %OMDEV%\\tools\\msys\\usr\\bin\\sh --login -i -c "cd `cygpath '${WORKSPACE}'` && chmod +x buildOMCWindows.sh && ./buildOMCWindows.sh && rm -f ./buildOMCWindows.sh"
+  """)
+  }
+  else {
+    sh "mkdir OMCompiler/build_cmake"
+    sh "${cmake_exe} -S OMCompiler -B OMCompiler/build_cmake ${cmake_args}"
+    sh "${cmake_exe} --build OMCompiler/build_cmake --parallel ${numPhysicalCPU()} --target install"
+  }
+}
+
 void buildGUI(stash, isQt5) {
   if (isWindows()) {
   bat ("""
@@ -482,6 +512,15 @@ def shouldWeBuildCENTOS7() {
     }
   }
   return params.BUILD_CENTOS7
+}
+
+def shouldWeSkipCMakeBuild() {
+  if (isPR()) {
+    if (pullRequest.labels.contains("CI/Skip CMake Build")) {
+      return true
+    }
+  }
+  return params.SKIP_CMAKE_BUILD
 }
 
 def shouldWeRunTests() {

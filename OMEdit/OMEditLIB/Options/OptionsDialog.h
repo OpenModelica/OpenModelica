@@ -71,6 +71,7 @@ class TraceabilityPage;
 class TabSettings;
 class StackFramesWidget;
 class TranslationFlagsWidget;
+class LibraryTreeItem;
 
 class OptionsDialog : public QDialog
 {
@@ -180,6 +181,7 @@ public slots:
   void saveSettings();
   void reset();
 private:
+  bool mDetectChange;
   GeneralSettingsPage *mpGeneralSettingsPage;
   LibrariesPage *mpLibrariesPage;
   TextEditorPage *mpTextEditorPage;
@@ -349,6 +351,8 @@ public:
   Label *mpValueLabel;
   QLineEdit *mpVersionTextBox;
   QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
   bool mEditFlag;
 private slots:
   void addSystemLibrary();
@@ -368,6 +372,8 @@ public:
   Label *mpEncodingLabel;
   QComboBox *mpEncodingComboBox;
   QPushButton *mpOkButton;
+  QPushButton *mpCancelButton;
+  QDialogButtonBox *mpButtonBox;
   bool mEditFlag;
 private slots:
   void browseUserLibraryPath();
@@ -608,6 +614,9 @@ public:
   QComboBox* getTargetBuildComboBox() {return mpTargetBuildComboBox;}
   QComboBox* getCompilerComboBox() {return mpCompilerComboBox;}
   QComboBox* getCXXCompilerComboBox() {return mpCXXCompilerComboBox;}
+#ifdef Q_OS_WIN
+  QCheckBox* getUseStaticLinkingCheckBox() {return mpUseStaticLinkingCheckBox;}
+#endif
   QCheckBox* getIgnoreCommandLineOptionsAnnotationCheckBox() {return mpIgnoreCommandLineOptionsAnnotationCheckBox;}
   QCheckBox* getIgnoreSimulationFlagsAnnotationCheckBox() {return mpIgnoreSimulationFlagsAnnotationCheckBox;}
   QCheckBox* getSaveClassBeforeSimulationCheckBox() {return mpSaveClassBeforeSimulationCheckBox;}
@@ -631,6 +640,9 @@ private:
   QComboBox *mpCompilerComboBox;
   Label *mpCXXCompilerLabel;
   QComboBox *mpCXXCompilerComboBox;
+#ifdef Q_OS_WIN
+  QCheckBox *mpUseStaticLinkingCheckBox;
+#endif
   QCheckBox *mpIgnoreCommandLineOptionsAnnotationCheckBox;
   QCheckBox *mpIgnoreSimulationFlagsAnnotationCheckBox;
   QCheckBox *mpSaveClassBeforeSimulationCheckBox;
@@ -800,6 +812,7 @@ public:
   void setPlottingViewMode(QString value);
   QString getPlottingViewMode();
   QCheckBox* getAutoScaleCheckBox() {return mpAutoScaleCheckBox;}
+  QCheckBox* getPrefixUnitsCheckbox() {return mpPrefixUnitsCheckbox;}
   void setCurvePattern(int pattern);
   int getCurvePattern();
   void setCurveThickness(qreal thickness);
@@ -816,6 +829,7 @@ private:
   OptionsDialog *mpOptionsDialog;
   QGroupBox *mpGeneralGroupBox;
   QCheckBox *mpAutoScaleCheckBox;
+  QCheckBox *mpPrefixUnitsCheckbox;
   QGroupBox *mpPlottingViewModeGroupBox;
   QRadioButton *mpPlottingTabbedViewRadioButton;
   QRadioButton *mpPlottingSubWindowViewRadioButton;
@@ -920,11 +934,13 @@ public:
   QString getFMIExportVersion();
   void setFMIExportType(QString type);
   QString getFMIExportType();
+  QString getFMIFlags();
   QLineEdit* getFMUNameTextBox() {return mpFMUNameTextBox;}
   QLineEdit* getMoveFMUTextBox() {return mpMoveFMUTextBox;}
   QGroupBox* getPlatformsGroupBox() {return mpPlatformsGroupBox;}
   QComboBox* getLinkingComboBox() {return mpLinkingComboBox;}
   QComboBox *getModelDescriptionFiltersComboBox() const {return mpModelDescriptionFiltersComboBox;}
+  QComboBox *getSolverForCoSimulationComboBox() const {return mpSolverForCoSimulationComboBox;}
   QCheckBox *getIncludeSourceCodeCheckBox() const {return mpIncludeSourceCodeCheckBox;}
   QCheckBox *getGenerateDebugSymbolsCheckBox() const {return mpGenerateDebugSymbolsCheckBox;}
   QCheckBox* getDeleteFMUDirectoryAndModelCheckBox() {return mpDeleteFMUDirectoryAndModelCheckBox;}
@@ -949,6 +965,7 @@ private:
   QPushButton *mpBrowseFMUDirectoryButton;
   QGroupBox *mpPlatformsGroupBox;
   QComboBox *mpLinkingComboBox;
+  QComboBox *mpSolverForCoSimulationComboBox;
   QComboBox *mpModelDescriptionFiltersComboBox;
   QCheckBox *mpIncludeSourceCodeCheckBox;
   QCheckBox *mpGenerateDebugSymbolsCheckBox;
@@ -1037,6 +1054,27 @@ private slots:
 //  void browseFMUOutputDirectory();
   void browseGitRepository();
 
+};
+
+class DiscardLocalTranslationFlagsDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  DiscardLocalTranslationFlagsDialog(QWidget *pParent = 0);
+private:
+  Label *mpDescriptionLabel;
+  QListWidget *mpClassesWithLocalTranslationFlagsListWidget;
+  QPushButton *mpYesButton;
+  QPushButton *mpNoButton;
+  QDialogButtonBox *mpButtonBox;
+
+  void listLocalTranslationFlagsClasses(LibraryTreeItem *pLibraryTreeItem);
+private slots:
+  void selectUnSelectAll(bool checked);
+  void discardLocalTranslationFlags();
+  void showLocalTranslationFlags(QListWidgetItem *pListWidgetItem);
+public slots:
+  int exec();
 };
 
 #endif // OPTIONSDIALOG_H

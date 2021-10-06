@@ -59,8 +59,8 @@ int index_spec_ok(const index_spec_t* s)
           fprintf(stderr,"index_spec_ok: the index spec dimension size for dimension %d is negative: %d!\n", i, (int)s->dim_size[i]); fflush(stderr);
           return 0;
         }
-        if((s->index[i] == 0) && (s->dim_size[i] != 1)) {
-            fprintf(stderr,"index[%d] == 0, size == %d\n", i, (unsigned int) s->dim_size[i]); fflush(stderr);
+        if((s->index[i] == 0) && (s->dim_size[i] != 1 && s->dim_size[i] != 0)) {
+            fprintf(stderr,"index_spec_ok: index[%d] == 0, size == %d\n", i, (unsigned int) s->dim_size[i]); fflush(stderr);
             return 0;
         }
     }

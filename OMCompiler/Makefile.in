@@ -11,16 +11,24 @@ includedir = @includedir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
-CMAKE = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@LDFLAGS@" cmake @CMAKE_EXTRA_DEFINES@
-CMAKE_NO_CHECK_UNDEFINED = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS_UNDEFINED_LOOKUP@ @LDFLAGS@" cmake @CMAKE_EXTRA_DEFINES@
-CMAKE_RPATH = CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@ @CMAKE_LDFLAGS_UNDEFINED_LOOKUP@" cmake @CMAKE_EXTRA_DEFINES@
-CMAKE_TARGET = "Unix Makefiles"
-OPENCL = @OPENCL@
+
 AR = @AR@
 host = @host@
 host_short = @host_short@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
+CMAKE=@CMAKE@
+# Use the system's default cmake if nothing is passed to configure script, i.e., no CMAKE=<some_path> is specified
+ifeq ($(CMAKE),)
+	CMAKE=cmake
+endif
+
+CMAKE := CC="$(CC)" CXX="$(CXX)" FC="$(FC)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" FFLAGS="$(FCFLAGS)" LDFLAGS="@LDFLAGS@" $(CMAKE) @CMAKE_EXTRA_DEFINES@
+CMAKE_NO_CHECK_UNDEFINED := CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@CMAKE_LDFLAGS_UNDEFINED_LOOKUP@ @LDFLAGS@" $(CMAKE) @CMAKE_EXTRA_DEFINES@
+CMAKE_RPATH := CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CXXFLAGS="$(CXXFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="@RPATH_QMAKE@ @CMAKE_LDFLAGS_UNDEFINED_LOOKUP@" $(CMAKE) @CMAKE_EXTRA_DEFINES@
+CMAKE_TARGET = "Unix Makefiles"
+OPENCL = @OPENCL@
+
 ENABLE_PARMODAUTO = @ENABLE_PARMODAUTO@
 OMC_TBB_ROOT = @OMC_TBB_ROOT@
 
@@ -93,6 +101,9 @@ settings:
 
 omc: omc-bootstrapped
 
+omc_config.unix.h: omc_config.unix.h.in
+	cd $(top_builddir) && ./config.status
+
 boehm-gc-lib: @LIBGC@
 $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.so: 3rdParty/gc/.libs/libomcgc.so
 	mkdir -p $(OMBUILDDIR)/$(LIB_OMC)
@@ -115,7 +126,7 @@ lis: lis-configure
 	@echo Building Lis from sources
 	$(MAKE) -C 3rdParty/lis-1.4.12/src
 	# Copy the library; not headers (as they are not used by the runtime system)
-	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis@SHREXT@* $(OMBUILDDIR)/$(LIB_OMC)/
+	cp -Pp 3rdParty/lis-1.4.12/src/.libs/liblis*@SHREXT@* $(OMBUILDDIR)/$(LIB_OMC)/
 	@# FreeBSD lis does not create the symlinks...
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f $(OMBUILDDIR)/lib/omc/liblis.so.0 || ln -s liblis.so.0.0 $(OMBUILDDIR)/lib/omc/liblis.so.0
 	! test -f build/lib/omc/liblis.so.0.0 -a ! -f $(OMBUILDDIR)/lib/omc/liblis.so || ln -s liblis.so.0.0 $(OMBUILDDIR)/lib/omc/liblis.so

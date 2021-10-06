@@ -158,6 +158,12 @@ package Absyn
       end FULLYQUALIFIED;
     end Path;
 
+  uniontype Direction
+    record INPUT end INPUT;
+    record OUTPUT end OUTPUT;
+    record BIDIR end BIDIR;
+    record INPUT_OUTPUT end INPUT_OUTPUT;
+  end Direction;
 end Absyn;
 
 package SCode
@@ -968,6 +974,11 @@ package DAE
       Option<Absyn.Path> defaultDerivative "if conditions fails, use default derivative if exists";
       list<Absyn.Path> lowerOrderDerivatives;
     end FUNCTION_DER_MAPPER;
+
+    record FUNCTION_INVERSE "A function inverse declaration"
+      ComponentRef inputParam "The input parameter the inverse is for";
+      Exp inverseCall "The inverse function call";
+    end FUNCTION_INVERSE;
   end FunctionDefinition;
 
   uniontype derivativeCond "Different conditions on derivatives"

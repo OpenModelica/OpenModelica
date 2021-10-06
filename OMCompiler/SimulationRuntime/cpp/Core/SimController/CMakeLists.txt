@@ -12,19 +12,19 @@ target_link_libraries(${SimControllerName} ${OMCFactoryName} ${ExtensionUtilitie
 else(REDUCE_DAE)
 target_link_libraries(${SimControllerName} ${OMCFactoryName} ${ExtensionUtilitiesName} ${ModelicaUtilitiesName} ${Boost_LIBRARIES} ${CMAKE_DL_LIBS} )
 endif(REDUCE_DAE)
-add_precompiled_header(${SimControllerName} Include/Core/Modelica.h)
+add_precompiled_header(${SimControllerName} Core/Modelica.h)
 
 install(FILES $<TARGET_PDB_FILE:${SimControllerName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
 
 install(TARGETS ${SimControllerName} DESTINATION ${LIBINSTALLEXT})
 install(FILES
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimData.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimObjects.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/ISimController.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/SimController.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/SimManager.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/SimController.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/SimManager.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/Configuration.h
-  ${CMAKE_SOURCE_DIR}/Include/Core/SimController/Initialization.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/ISimData.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/ISimObjects.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/ISimController.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/SimController.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/SimManager.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/SimController.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/SimManager.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/Configuration.h
+  ${CMAKE_SOURCE_DIR}/Core/SimController/Initialization.h
   DESTINATION include/omc/cpp/Core/SimController)

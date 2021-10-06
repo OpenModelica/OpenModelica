@@ -38,6 +38,7 @@ encapsulated uniontype NFVariable
   import NFPrefixes.Visibility;
   import NFPrefixes.Variability;
   import NFPrefixes.ConnectorType;
+  import NFPrefixes.Direction;
   import Type = NFType;
   import BackendInfo = NFBackendExtension.BackendInfo;
 
@@ -110,6 +111,7 @@ public
     Variable v;
     Binding binding;
     Variability bind_var;
+    Binding.Source bind_src;
     Expression bind_exp, exp;
     list<Expression> expl;
     Integer crefs_len, expl_len;
@@ -144,11 +146,12 @@ public
         end if;
 
         bind_var := Binding.variability(binding);
+        bind_src := Binding.source(binding);
 
         for cr in crefs loop
           v.name := cr;
           exp :: expl := expl;
-          v.binding := Binding.FLAT_BINDING(exp, bind_var);
+          v.binding := Binding.makeFlat(exp, bind_var, bind_src);
           vars := v :: vars;
         end for;
       else
@@ -209,6 +212,12 @@ public
     input Variable variable;
     output Boolean potential = ConnectorType.isStream(variable.attributes.connectorType);
   end isStream;
+
+  function isTopLevelInput
+    input Variable variable;
+    output Boolean topInput = ComponentRef.isSimple(variable.name) and
+                              variable.attributes.direction == Direction.INPUT;
+  end isTopLevelInput;
 
   function lookupTypeAttribute
     input String name;

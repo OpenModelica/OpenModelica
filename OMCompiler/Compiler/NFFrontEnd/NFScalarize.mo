@@ -101,6 +101,8 @@ protected
   array<ExpressionIterator> ty_attr_iters;
   Variability bind_var;
   BackendInfo binfo;
+  Binding.Source bind_src;
+  Boolean force_scalar_attributes = false;
 algorithm
   if Type.isArray(var.ty) then
     try
@@ -115,17 +117,30 @@ algorithm
         binding_iter := ExpressionIterator.fromExp(expandComplexCref(Binding.getTypedExp(binding)));
         bind_var := Binding.variability(binding);
 
+        for attribute in {"min", "max", "nominal"} loop
+          force_scalar_attributes := not Binding.isUnbound(Variable.lookupTypeAttribute(attribute, var));
+          if force_scalar_attributes then break; end if;
+        end for;
         // if the scalarized binding would result in an indexed call e.g. f()[1] then don't do it!
         // fixes ticket #6267
-        if ExpressionIterator.isSubscriptedArrayCall(binding_iter) then
+        // adrpo: do not do this for arrays less than 2: see #7450
+        //        TODO! FIXME! get rid of this absurdity when the backend
+        //        can handle arrays of one = function call
+        // kabdelhak: also do not do it for arrays with certain attributes: see #7485
+        if not force_scalar_attributes and listLength(crefs) > 1
+           and not Flags.getConfigBool(Flags.BUILDING_FMU) and
+           ExpressionIterator.isSubscriptedArrayCall(binding_iter)
+        then
           var.binding := Binding.mapExp(var.binding, expandComplexCref_traverser);
           vars := var :: vars;
         else
+          bind_var := Binding.variability(binding);
+          bind_src := Binding.source(binding);
           elem_ty := Type.arrayElementType(ty);
           (ty_attr_names, ty_attr_iters) := scalarizeTypeAttributes(ty_attr);
           for cr in crefs loop
             (binding_iter, exp) := ExpressionIterator.next(binding_iter);
-            binding := Binding.FLAT_BINDING(exp, bind_var);
+            binding := Binding.makeFlat(exp, bind_var, bind_src);
             ty_attr := nextTypeAttributes(ty_attr_names, ty_attr_iters);
             vars := Variable.VARIABLE(cr, elem_ty, binding, vis, attr, ty_attr, {}, cmt, info, NFBackendExtension.DUMMY_BACKEND_INFO) :: vars;
           end for;
@@ -182,7 +197,7 @@ algorithm
     (iter, exp) := ExpressionIterator.next(iters[i]);
     arrayUpdate(iters, i, iter);
     i := i + 1;
-    attrs := (name, Binding.FLAT_BINDING(exp, Variability.PARAMETER)) :: attrs;
+    attrs := (name, Binding.makeFlat(exp, Variability.PARAMETER, NFBinding.Source.BINDING)) :: attrs;
   end for;
 end nextTypeAttributes;
 

@@ -36,6 +36,9 @@
 #include "Util/Helper.h"
 #include "MainWindow.h"
 #include "Modeling/LibraryTreeWidget.h"
+//! @todo Remove this once new frontend is used as default and old frontend is removed.
+#include "Options/OptionsDialog.h"
+#include "Simulation/TranslationFlagsWidget.h"
 
 #include <locale.h>
 #include <QMessageBox>
@@ -65,12 +68,12 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
   QTextCodec::setCodecForLocale(QTextCodec::codecForName(Helper::utf8.toUtf8().constData()));
 #endif
   setAttribute(Qt::AA_DontShowIconsInMenus, false);
+  setAttribute(Qt::AA_UseHighDpiPixmaps);
   // Localization
   //*a.severin/ add localization
   const char *installationDirectoryPath = SettingsImpl__getInstallationDirectoryPath();
   if (!installationDirectoryPath) {
-    QMessageBox::critical(0, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                          GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), Helper::ok);
+    QMessageBox::critical(0, QString("%1 - %2").arg(Helper::applicationName, Helper::error), GUIMessages::getMessage(GUIMessages::INSTALLATIONDIRECTORY_NOT_FOUND), Helper::ok);
     quit();
     exit(1);
   }
@@ -164,6 +167,28 @@ OMEditApplication::OMEditApplication(int &argc, char **argv, threadData_t* threa
     pMainwindow->show();
     // hide the splash screen
     SplashScreen::instance()->finish(pMainwindow);
+    //! @todo Remove this once new frontend is used as default and old frontend is removed.
+    //! Fixes issue #7456
+    if (OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->isChecked()) {
+      QMessageBox *pMessageBox = new QMessageBox;
+      pMessageBox->setWindowTitle(QString("%1 - %2").arg(Helper::applicationName, Helper::question));
+      pMessageBox->setIcon(QMessageBox::Question);
+      pMessageBox->setAttribute(Qt::WA_DeleteOnClose);
+      pMessageBox->setText(tr("You have enabled old frontend for code generation which is not recommended. Do you want to switch to new frontend?"));
+      pMessageBox->addButton(tr("Switch to new frontend"), QMessageBox::AcceptRole);
+      pMessageBox->addButton(tr("Keep using old frontend"), QMessageBox::RejectRole);
+      int answer = pMessageBox->exec();
+      switch (answer) {
+        case QMessageBox::AcceptRole:
+          OptionsDialog::instance()->getSimulationPage()->getTranslationFlagsWidget()->getOldInstantiationCheckBox()->setChecked(false);
+          Utilities::getApplicationSettings()->setValue("simulation/newInst", true);
+          OptionsDialog::instance()->saveSimulationSettings();
+          break;
+        case QMessageBox::RejectRole:
+        default:
+          break;
+      }
+    }
   }
 }
 

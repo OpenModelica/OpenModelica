@@ -320,7 +320,7 @@ can be done through the File->Load Modelica Library menu item:
 
 .. omc-mos::
 
-  loadModel(Modelica)
+  loadModel(Modelica, {"3.2.3"})
 
 We also load a file containing the dcmotor model:
 

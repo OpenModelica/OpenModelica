@@ -30,11 +30,7 @@
  */
 
 
-#if defined(__APPLE__) /* MacOS doesn't like static libffi, use the system one */
-#include <ffi.h>
-#else /* sane systems */
-#include "../../3rdParty/libffi/install/include/ffi.h"
-#endif
+#include "ffi.h"
 
 #include <gc.h>
 
@@ -278,7 +274,7 @@ static void* unlift_array_type(void *type)
 {
   void *elem_ty = MMC_STRUCTDATA(type)[UNBOX_OFFSET];
   void *dims = MMC_STRUCTDATA(type)[UNBOX_OFFSET+1];
-  return NFType__ARRAY(elem_ty, MMC_CAR(dims));
+  return NFType__ARRAY(elem_ty, MMC_CDR(dims));
 }
 
 /* Constructs an integer expression given a pointer to an int */

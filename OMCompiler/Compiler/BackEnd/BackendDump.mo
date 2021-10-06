@@ -1488,16 +1488,18 @@ algorithm
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
         tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + "\n";
-        if (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) and isSome(inSyst) then
-          SOME(eSys) = inSyst;
-          (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
-          tmpStr = tmpStr
-                   + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
-                   + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
-                   + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
-                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
-        else
-          tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
+        if isSome(inSyst) then
+          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+            SOME(eSys) = inSyst;
+            (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
+            tmpStr = tmpStr
+                     + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
+                     + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
+                     + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
+                     + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+          else
+            tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
+          end if;
         end if;
       then tmpStr;
     case BackendDAE.TORNSYSTEM(strictTearingSet=BackendDAE.TEARINGSET(residualequations=ilst,tearingvars=vlst,innerEquations=innerEquations),casualTearingSet=SOME(BackendDAE.TEARINGSET(residualequations=ilst2,tearingvars=vlst2,innerEquations=innerEquations2)),linear=b)
@@ -1510,16 +1512,18 @@ algorithm
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
         tmpStr = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst)) + " " + s4 + " (strict tearing set)\n";
-        if (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) and isSome(inSyst) then
-          SOME(eSys) = inSyst;
-          (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
-          tmpStr = tmpStr
-                   + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
-                   + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
-                   + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
-                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
-        else
-          tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
+        if isSome(inSyst) then
+          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+            SOME(eSys) = inSyst;
+            (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations);
+            tmpStr = tmpStr
+                     + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst) + "\n"
+                     + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst)
+                     + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
+                     + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+          else
+            tmpStr = tmpStr + "For more information please use \"-d=tearingdump\".\n";
+          end if;
         end if;
 
         ls = List.map(innerEquations2, innerEquationString);
@@ -1530,16 +1534,18 @@ algorithm
         s3 = stringDelimitList(ls, ", ");
         s4 = if b then "linear" else "nonlinear";
         tmpStr2 = "{{" + s + "}\n,{" + s2 + ":" + s3 + "}} Size: " + intString(listLength(vlst2)) + " " + s4 + " (casual tearing set)\n";
-        if (Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE)) and isSome(inSyst) then
-          SOME(eSys) = inSyst;
-          (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations2);
-          tmpStr2 = tmpStr2
-                   + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst2) + "\n"
-                   + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst2)
-                   + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
-                   + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
-        else
-          tmpStr2 = tmpStr2 + "For more information please use \"-d=tearingdump\".\n";
+        if isSome(inSyst) then
+          if Flags.isSet(Flags.TEARING_DUMP) or Flags.isSet(Flags.TEARING_DUMPVERBOSE) then
+            SOME(eSys) = inSyst;
+            (innerEqLst,innerVarLst,_) = BackendDAEUtil.getEqnAndVarsFromInnerEquationLst(innerEquations2);
+            tmpStr2 = tmpStr2
+                      + "\nTearing Variables:\n-------------------------------------\n" + dumpMarkedVars(eSys,vlst2) + "\n"
+                      + "Residual Equations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,ilst2)
+                      + "Inner Variables:\n-------------------------------------\n" + dumpMarkedVarsLsts(eSys,innerVarLst) + "\n"
+                      + "InnerEquations:\n-------------------------------------\n" + dumpMarkedEqns(eSys,innerEqLst);
+          else
+            tmpStr2 = tmpStr2 + "For more information please use \"-d=tearingdump\".\n";
+          end if;
         end if;
       then tmpStr + tmpStr2;
   end match;
@@ -2459,47 +2465,6 @@ algorithm
 
   end match;
 end symJacString;
-
-public function dumpLinearIntegerJacobianSparse
-  input BackendDAE.LinearIntegerJacobian linIntJac;
-  input String heading = "";
-protected
-  array<BackendDAE.LinearIntegerJacobianRow> rowArr;
-  BackendDAE.LinearIntegerJacobianRhs rhsArr;
-  BackendDAE.LinearIntegerJacobianIndices idxArr;
-  array<Boolean> boolArr, matchedVarsArr;
-algorithm
-  (rowArr, rhsArr, idxArr, boolArr, matchedVarsArr) := linIntJac;
-  print("######################################################\n" +
-        " LinearIntegerJacobian sparsity pattern: " + heading + "\n" +
-        "######################################################\n" +
-        "(scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION\n");
-  for idx in 1:arrayLength(rowArr) loop
-    dumpLinearIntegerJacobianSparseRow(rowArr[idx], rhsArr[idx], idxArr[idx], boolArr[idx]);
-  end for;
-  print("\n");
-end dumpLinearIntegerJacobianSparse;
-
-protected function dumpLinearIntegerJacobianSparseRow
-  input BackendDAE.LinearIntegerJacobianRow linIntJacRow;
-  input DAE.Exp rhs;
-  input tuple<Integer, Integer> indices;
-  input Boolean changed;
-protected
-  Integer i_arr, i_scal, index, value;
-algorithm
-  (i_arr, i_scal) := indices;
-  print("(" + intString(i_arr) + "|" + intString(i_scal) + "|" + boolString(changed) +"):    ");
-  if listLength(linIntJacRow) < 1 then
-    print("EMPTY ROW     ");
-  else
-    for element in linIntJacRow loop
-      (index, value) := element;
-      print("[" + intString(index) + "|" + intString(value) + "] ");
-    end for;
-  end if;
-  print("    || RHS: " + ExpressionDump.printExpStr(rhs) + "\n");
-end dumpLinearIntegerJacobianSparseRow;
 
 public function dumpEqnsStr
 "Helper function to dump."

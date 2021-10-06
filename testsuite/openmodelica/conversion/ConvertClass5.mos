@@ -1,0 +1,33 @@
+// name:   ConvertClass5
+// status: correct
+// cflags: -d=newInst
+// depends: scripts
+
+loadString("
+  package ConvertClass5
+    import SI = Modelica.SIunits;
+
+    model A
+      SI.Time t;
+      SI.Conversions.NonSIunits.Angle_deg angle;
+    end A;
+  end ConvertClass5;
+");
+
+convertPackage(ConvertClass5, "scripts/ConvertClass4.mos");
+getErrorString();
+list(ConvertClass5);
+
+// Result:
+// true
+// true
+// ""
+// "package ConvertClass5
+//   import SI = Modelica.Units.SI;
+//
+//   model A
+//     SI.Time t;
+//     Modelica.Units.NonSI.Angle_deg angle;
+//   end A;
+// end ConvertClass5;"
+// endResult

@@ -617,7 +617,6 @@ algorithm
 
   if isSome(nominal_oexp) then
     SOME(nominal_exp) := nominal_oexp;
-    nominal_exp := Expression.getBindingExp(nominal_exp);
     flow_threshold := Expression.BINARY(flowThreshold, Operator.makeMul(Type.REAL()), nominal_exp);
   else
     flow_threshold := flowThreshold;
@@ -835,7 +834,7 @@ algorithm
       attr_exp := Ceval.evalExp(attr_exp);
     end if;
 
-    isZero := Expression.isZero(Expression.getBindingExp(attr_exp));
+    isZero := Expression.isZero(attr_exp);
   else
     isZero := false;
   end if;

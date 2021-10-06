@@ -19,6 +19,8 @@ Splitter5c.mos\
 Splitter5d.mos\
 Splitter5e.mos\
 Splitter5f.mos\
+Splitter5g.mos\
+Splitter5h.mos\
 FourFlows.mos\
 TSP_Pipe.mos\
 TSP_Pipe1.mos\
@@ -85,6 +87,13 @@ baseline:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(BASELINE) $(TESTFILES)
+
+failtestbaseline:
+	@echo
+	@echo Running baseline for failing tests...
+	@echo
+	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
+	@$(BASELINE) $(FAILINGTESTFILES)
 
 # Cleans all files that are not listed as dependencies
 clean :

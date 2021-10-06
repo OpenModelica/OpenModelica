@@ -1,0 +1,28 @@
+// name: mslDistribustionsTest
+// keywords: pre array const
+// status: correct
+// teardown_command: rm -f *NoiseExamples*
+// cflags: -d=newInst
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadModel(Modelica, {"3.2.3"}); getErrorString();
+
+simulate(Modelica.Blocks.Examples.NoiseExamples.Distributions);
+val(truncatedNormalNoise_y, 2.0);
+val(uniformNoise_y, 2.0);
+getErrorString();
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "Modelica.Blocks.Examples.NoiseExamples.Distributions_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 2.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Blocks.Examples.NoiseExamples.Distributions', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// 0.7428113041992174
+// 0.3976885904512169
+// ""
+// endResult

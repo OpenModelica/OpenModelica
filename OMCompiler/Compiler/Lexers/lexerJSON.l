@@ -3,7 +3,6 @@
 /* grammar according to json.org */
 protected
 import Error;
-import StringUtil;
 public
 %}
 

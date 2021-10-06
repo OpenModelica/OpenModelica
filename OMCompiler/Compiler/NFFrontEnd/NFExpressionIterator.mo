@@ -126,12 +126,6 @@ public
       local
         list<Expression> expl;
 
-      case Binding.TYPED_BINDING(eachType = NFBinding.EachType.REPEAT)
-        algorithm
-          expl := Expression.arrayScalarElements(binding.bindingExp);
-        then
-          if listLength(expl) == 1 then EACH_ITERATOR(listHead(expl)) else REPEAT_ITERATOR(expl, expl);
-
       case Binding.TYPED_BINDING(eachType = NFBinding.EachType.EACH)
         then EACH_ITERATOR(binding.bindingExp);
 
@@ -239,8 +233,6 @@ public
       local
         Expression call;
       case ARRAY_ITERATOR(slice = Expression.SUBSCRIPTED_EXP(exp = call as Expression.CALL())::_)
-        then (not trySimplify) or Expression.isCall(SimplifyExp.simplify(call));
-      case ARRAY_ITERATOR(slice = Expression.BINDING_EXP(exp = Expression.SUBSCRIPTED_EXP(exp = call as Expression.CALL()))::_)
         then (not trySimplify) or Expression.isCall(SimplifyExp.simplify(call));
       else false;
     end match;

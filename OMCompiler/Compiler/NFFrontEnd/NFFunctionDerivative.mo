@@ -37,6 +37,7 @@ encapsulated uniontype NFFunctionDerivative
   import NFFunction.Function;
   import Expression = NFExpression;
   import Type = NFType;
+  import Util;
 
 protected
   import SCodeDump;
@@ -297,8 +298,8 @@ protected
 
         else
           algorithm
-            Error.addStrictMessage(Error.INVALID_FUNCTION_DERIVATIVE_ATTR,
-              {id + (if SCodeUtil.isEmptyMod(mod) then "" else " = " + SCodeDump.printModStr(mod))}, info);
+            Error.addStrictMessage(Error.INVALID_FUNCTION_ANNOTATION_ATTR,
+              {id + (if SCodeUtil.isEmptyMod(mod) then "" else " = " + SCodeDump.printModStr(mod)), "derivative"}, info);
           then
             ();
 
@@ -324,7 +325,7 @@ protected
       index := index + 1;
     end for;
 
-    Error.addSourceMessage(Error.INVALID_FUNCTION_DERIVATIVE_INPUT,
+    Error.addSourceMessage(Error.INVALID_FUNCTION_ANNOTATION_INPUT,
       {name, AbsynUtil.pathString(Function.name(fn))}, info);
     fail();
   end getInputIndex;

@@ -656,6 +656,15 @@ algorithm
         end for;
     then();
 
+    case(DAE.RECORD(exps = expLst))
+      algorithm
+        for exp in expLst loop
+          if Expression.isNotWild(exp) then
+            globalKnownVarHT := addConstantCseVarsToGlobalKnownVarHT(exp, globalKnownVarHT);
+          end if;
+        end for;
+    then();
+
     case DAE.CREF(componentRef=cr, ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))
       algorithm
         globalKnownVarHT := BaseHashSet.add(cr, globalKnownVarHT);
@@ -1616,7 +1625,6 @@ algorithm
     then outVarLst;
 
     case DAE.RECORD(exps=expLst) equation
-      print("This should never appear\n");
       outVarLst = List.fold(expLst, createVarsForExp, inAccumVarLst);
     then outVarLst;
 

@@ -395,7 +395,10 @@ constant list<Flags.ConfigFlag> allConfigFlags = {
   Flags.FMI_FLAGS,
   Flags.NEW_BACKEND,
   Flags.PARMODAUTO,
-  Flags.INTERACTIVE_PORT
+  Flags.INTERACTIVE_PORT,
+  Flags.ALLOW_NON_STANDARD_MODELICA,
+  Flags.EXPORT_CLOCKS_IN_MODELDESCRIPTION,
+  Flags.LINK_TYPE
 };
 
 public function new

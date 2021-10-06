@@ -22,40 +22,40 @@ AlgLoopSolverFactory::~AlgLoopSolverFactory()
 
 shared_ptr<ILinearAlgLoopSolver> AlgLoopSolverFactory::createLinearAlgLoopSolver(shared_ptr<ILinearAlgLoop> algLoop)
 {
-      try
-      {
-        string linsolver_name = _global_settings->getSelectedLinSolver();
-		shared_ptr<ILinSolverSettings> algsolversetting= createLinSolverSettings(linsolver_name);
+  try
+  {
+    string linsolver_name = _global_settings->getSelectedLinSolver();
+		shared_ptr<ILinSolverSettings> algsolversetting = createLinSolverSettings(linsolver_name);
 		_linalgsolversettings.push_back(algsolversetting);
-        shared_ptr<ILinearAlgLoopSolver> algsolver= createLinSolver(linsolver_name,algsolversetting,algLoop);
-        _linear_algsolvers.push_back(algsolver);
-        return algsolver;
-      }
-      catch(std::exception &arg)
-      {
-        throw ModelicaSimulationError(MODEL_FACTORY,"Linear AlgLoop solver is not available");
-      }
-
+    shared_ptr<ILinearAlgLoopSolver> algsolver = createLinSolver(linsolver_name, algsolversetting, algLoop);
+    _linear_algsolvers.push_back(algsolver);
+    return algsolver;
+  }
+  catch(std::exception &arg)
+  {
+    throw ModelicaSimulationError(MODEL_FACTORY, "Linear AlgLoop solver is not available");
+  }
 }
 
 /// Creates a nonlinear solver according to given system of equations of type algebraic loop
 shared_ptr<INonLinearAlgLoopSolver> AlgLoopSolverFactory::createNonLinearAlgLoopSolver(shared_ptr<INonLinearAlgLoop> algLoop)
 {
-	try
-    {
-		string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
-		shared_ptr<INonLinSolverSettings> algsolversetting= createNonLinSolverSettings(nonlinsolver_name);
-		algsolversetting->setContinueOnError(_global_settings->getNonLinearSolverContinueOnError());
-		_algsolversettings.push_back(algsolversetting);
+  try
+  {
+    string nonlinsolver_name = _global_settings->getSelectedNonLinSolver();
+    shared_ptr<INonLinSolverSettings> algsolversetting = createNonLinSolverSettings(nonlinsolver_name);
+    algsolversetting->setGlobalSettings(_global_settings);
+    algsolversetting->setContinueOnError(_global_settings->getNonLinearSolverContinueOnError());
+    _algsolversettings.push_back(algsolversetting);
 
-		shared_ptr<INonLinearAlgLoopSolver> algsolver= createNonLinSolver(nonlinsolver_name,algsolversetting,algLoop);
-		_non_linear_algsolvers.push_back(algsolver);
-		return algsolver;
+    shared_ptr<INonLinearAlgLoopSolver> algsolver= createNonLinSolver(nonlinsolver_name, algsolversetting, algLoop);
+    _non_linear_algsolvers.push_back(algsolver);
+    return algsolver;
 	}
-    catch(std::exception &arg)
-    {
-      throw ModelicaSimulationError(MODEL_FACTORY,"Linear AlgLoop solver is not available");
-    }
-
+  catch(std::exception &arg)
+  {
+    throw ModelicaSimulationError(MODEL_FACTORY, "Nonlinear AlgLoop solver is not available");
+  }
 }
+
 /** @} */ // end of coreSystem

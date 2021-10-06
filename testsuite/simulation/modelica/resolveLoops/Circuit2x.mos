@@ -28,7 +28,7 @@ simulate(Circuit2x); getErrorString();
 //  * Number of variables: 38
 // Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // Notification: Model statistics after passing the back-end for initialization:
-//  * Number of independent subsystems: 2
+//  * Number of independent subsystems: 3
 //  * Number of states: 0 ()
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)

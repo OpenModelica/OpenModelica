@@ -685,10 +685,12 @@ protected
   list<tuple<Integer,BackendDAE.SubClock>> adjParts;
   array<Integer> partitionParents;
   array<Boolean> partitionParentsVisited;
+  array<Boolean> partitionInterfacesClockVars;
 algorithm
   //build adjacency matrix for subclock partitions and dependency (parent) graph
   partAdjacency := arrayCreate(numPartitions,{});
   partitionParents := arrayCreate(numPartitions,-1);
+  partitionInterfacesClockVars := arrayCreate(numPartitions,false);
   for subPartEq in subPartitionInterfaceEqs loop
     //part1,subClk1 is the output of the sub partition interface function calls, this is used for ordering
     (infered,part1,var1,subClk1,part2,var2,subClk2) := getConnectedSubPartitions(BackendEquation.get(eqs,subPartEq),varPartMap,vars);
@@ -696,9 +698,15 @@ algorithm
     if not intEq(part1,0) and not intEq(part2,0) then
       addPartAdjacencyEdge(part1,subClk1,part2,subClk2,partAdjacency);
     end if;
-    //to get the  parent relations, check only sub partition interfaces which don't interface clock-variables
-    if clockedVarsMask[var1] and clockedVarsMask[var2] then
-      partitionParents[part1]:= part2;
+    //reset previously obtained opposite parent relation if it interfaces clock-variables
+    //this is to prefer signal flow relations over clock relations in case of conflicts
+    if partitionParents[part2] == part1 and partitionInterfacesClockVars[part2] then
+      partitionParents[part2] := -1;
+    end if;
+    partitionInterfacesClockVars[part1] := not (clockedVarsMask[var1] and clockedVarsMask[var2]);
+    //avoid mutually dependent parents that would result in stack overflow later on
+    if not intEq(partitionParents[part2], part1) then
+      partitionParents[part1] := part2;
     end if;
   end for;
   /*
@@ -985,7 +993,7 @@ algorithm
     case(BackendDAE.SUBCLOCK(_,shift,_))
       then shift;
     else
-      then MMath.RAT1;
+      then MMath.RAT0;
   end match;
 end getSubClockShift;
 

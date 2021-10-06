@@ -36,45 +36,63 @@ end testFinalCon5_;
 ");
 getErrorString();
 
+// Test with maxSizeSolveLinearSystem=0
 setCommandLineOptions("+maxSizeSolveLinearSystem=0");
+print("Trying with maxSizeSolveLinearSystem=0");
 getErrorString();
+
 echo(false);
-res:=optimize(testFinalCon5_, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-optimizerNP 1");
+res:=optimize(testFinalCon5_, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT -optimizerNP 1");
 messages:=res.messages;
 echo(true);
-res.resultFile;
-if regexBool(messages, "No optimal solution found") then
-  print("No optimal solution found");
-else
-  print("Optimal solution found? Weird...\n");
-  exit(1);
-end if;
-getErrorString();
-res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001); // Files not equal!!! Testing other convergence with solveLinearSystem
 getErrorString();
 
-setCommandLineOptions("+maxSizeSolveLinearSystem=20"); getErrorString();
-echo(false);
-res := optimize(testFinalCon5, numberOfIntervals=700, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT -optimizerNP 1 -iif ReferenceFiles/testFinalCon5_ref.mat -iim none -ipopt_init const");
-messages:=res.messages;
-echo(false);
-res.resultFile;
+
 if regexBool(messages, "EXIT: Optimal Solution Found.") then
-  if regexBool(messages, "Number of Iterations....: 91") then
-    print("Number of Iterations....: 91\nEXIT: Optimal Solution Found.\n");
-  else
-    print("Number of Iterations changed.\tUpdate test\n");
-    exit(1);
-  end if;
+
+  print("Optimal Solution Found.. Please Update the test\n");
+  res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
+  print(res); print("\n");
+  print(getErrorString());
+
+elseif regexBool(messages, "EXIT: Maximum Number of Iterations Exceeded.") then
+  print("Maximum Number of Iterations Exceeded.\n");
 else
-  print("No optimal solution found");
-  exit(1);
+  print("No optimal solution found\n");
 end if;
-getErrorString();
+
+
+
+// Testing other convergence with solveLinearSystem
+print("Trying with maxSizeSolveLinearSystem=20");
+setCommandLineOptions("+maxSizeSolveLinearSystem=20");
 getErrorString();
 
-res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5_res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
+echo(false);
+res := optimize(testFinalCon5, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT -optimizerNP 1");
+messages:=res.messages;
+echo(true);
 getErrorString();
+
+
+if regexBool(messages, "EXIT: Optimal Solution Found.") then
+  if regexBool(messages, "Number of Iterations....: 50") then
+    print("Optimal Solution Found.\n");
+    print("Number of Iterations: 50\n");
+
+    res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5_res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
+    print(res); print("\n");
+    print(getErrorString());
+
+  else
+    print("Number of Iterations changed. Please update the test\n");
+  end if;
+elseif regexBool(messages, "EXIT: Maximum Number of Iterations Exceeded.") then
+  print("Maximum Number of Iterations Exceeded.");
+else
+  print("No optimal solution found");
+end if;
+
 
 // Result:
 // true
@@ -82,18 +100,22 @@ getErrorString();
 // true
 // ""
 // true
+// Trying with maxSizeSolveLinearSystem=0
 // ""
 // true
-// "testFinalCon5__res.mat"
-// No optimal solution found
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// {"Files not Equal!","y2","y1","x2","x1","u","final_con2","final_con1","der(x2)","der(x1)","cost"}
-// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
-// Warning: Files not Equal
-// "
+// Maximum Number of Iterations Exceeded.
+//
+// Trying with maxSizeSolveLinearSystem=20
 // true
 // ""
-// Number of Iterations....: 91
-// EXIT: Optimal Solution Found.
+// true
+// "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
+// "
+// Optimal Solution Found.
+// Number of Iterations: 50
+// Files Equal!
+// Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+//
 // endResult

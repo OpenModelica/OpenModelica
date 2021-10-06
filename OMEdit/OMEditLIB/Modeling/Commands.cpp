@@ -33,7 +33,9 @@
 
 #include "Commands.h"
 #include "MainWindow.h"
+#include "DocumentationWidget.h"
 
+#include <QDockWidget>
 #include <QMessageBox>
 #include <functional>
 
@@ -1277,6 +1279,10 @@ void UpdateCoOrdinateSystemCommand::redoInternal()
     QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mNewVersion);
     if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
       mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mNewVersion;
+      // if documentation view is visible then update it
+      if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+        MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpGraphicsView->getModelWidget()->getLibraryTreeItem());
+      }
     }
     // uses annotation
     pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mNewUsesAnnotationString);
@@ -1317,6 +1323,10 @@ void UpdateCoOrdinateSystemCommand::undo()
     QString versionAnnotation = QString("annotate=version(\"%1\")").arg(mOldVersion);
     if (pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), versionAnnotation)) {
       mpGraphicsView->getModelWidget()->getLibraryTreeItem()->mClassInformation.version = mOldVersion;
+      // if documentation view is visible then update it
+      if (MainWindow::instance()->getDocumentationDockWidget()->isVisible()) {
+        MainWindow::instance()->getDocumentationWidget()->showDocumentation(mpGraphicsView->getModelWidget()->getLibraryTreeItem());
+      }
     }
     // uses annotation
     pOMCProxy->addClassAnnotation(mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure(), mOldUsesAnnotationString);
@@ -1626,7 +1636,7 @@ void OMSimulatorUndoCommand::redoInternal()
   MainWindow::instance()->getModelWidgetContainer()->getOpenedModelWidgetsOfOMSimulatorModel(mModelName, &mOpenedModelWidgetsList);
   // load the new snapshot
   if (mDoSnapShot) {
-    OMSProxy::instance()->loadSnapshot(mModelName, mNewSnapshot);
+    OMSProxy::instance()->importSnapshot(mModelName, mNewSnapshot, &mModelName);
   }
   // reload/redraw the OMSimulator model
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mNewSnapshot, mOldEditedCref, mNewEditedCref);
@@ -1652,7 +1662,7 @@ void OMSimulatorUndoCommand::undo()
 {
   // load the old snapshot
   if (mDoSnapShot) {
-    OMSProxy::instance()->loadSnapshot(mModelName, mOldSnapshot);
+    OMSProxy::instance()->importSnapshot(mModelName, mOldSnapshot, &mModelName);
   }
   MainWindow::instance()->getLibraryWidget()->getLibraryTreeModel()->reLoadOMSimulatorModel(mModelName, mEditedCref, mOldSnapshot, mNewEditedCref, mOldEditedCref);
   // Get the new model LibraryTreeItem

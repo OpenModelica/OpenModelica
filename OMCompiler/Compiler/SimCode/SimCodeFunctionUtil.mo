@@ -709,7 +709,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_NON_PARALLEL()) = funAttrs;
 
-        outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filterOnTrue(daeElts, isVarQ);
@@ -728,7 +728,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_KERNEL_FUNCTION()) = funAttrs;
 
-        outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filterOnTrue(daeElts, isVarNotInputNotOutput);
@@ -747,7 +747,7 @@ algorithm
 
         DAE.FUNCTION_ATTRIBUTES(functionParallelism=DAE.FP_PARALLEL_FUNCTION()) = funAttrs;
 
-        outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         vars = List.filterOnTrue(daeElts, isVarQ);
@@ -764,13 +764,13 @@ algorithm
       equation
         DAE.EXTERNALDECL(name=extfnname, args=extargs,
           returnArg=extretarg, language=lang, ann=ann) = extdecl;
-        // outvars = DAEUtil.getOutputVars(daeElts);
+        // outvars = DAEUtil.getOutputElements(daeElts);
         // invars = DAEUtil.getInputVars(daeElts);
         // bivars = DAEUtil.getBidirVars(daeElts);
         funArgs = List.map1(args, typesSimFunctionArg, NONE());
-        outVars = List.map(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        outVars = List.map(DAEUtil.getOutputElements(daeElts), daeInOutSimVar);
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
-        biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
+        biVars = List.map(DAEUtil.getBidirElements(daeElts), daeInOutSimVar);
         (recordDecls, rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
         info = ElementSource.getElementSourceFileInfo(source);
         (fn_includes, fn_includeDirs, fn_libs, fn_paths,dynamicLoad) = generateExtFunctionIncludes(program, fpath, ann, info);

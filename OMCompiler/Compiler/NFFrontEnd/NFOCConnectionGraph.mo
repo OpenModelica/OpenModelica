@@ -158,7 +158,13 @@ function handleOverconstrainedConnections
    - Connections.uniqueRootIndices"
   input output FlatModel flatModel;
   input Connections conns;
+  input IsDeleted isDeleted;
   output FlatEdges outBroken;
+
+  partial function IsDeleted
+    input ComponentRef cref;
+    output Boolean res;
+  end IsDeleted;
 protected
   ComponentRef lhs, rhs, cref;
   DAE.ElementSource source;
@@ -181,11 +187,11 @@ algorithm
   for conn in conns.connections loop
     Connection.CONNECTION(lhs = c1, rhs = c2) := conn;
 
-    lhs_crefs := getOverconstrainedCrefs(c1);
-    rhs_crefs := getOverconstrainedCrefs(c2);
+    lhs_crefs := getOverconstrainedCrefs(c1, isDeleted);
+    rhs_crefs := getOverconstrainedCrefs(c2, isDeleted);
 
     if not listEmpty(lhs_crefs) then
-      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, context, c1.source);
+      eqlBroken := generateEqualityConstraintEquation(c1.name, c1.ty, c2.name, c2.ty, context, c1.source, isDeleted);
       graph := List.threadFold(lhs_crefs, rhs_crefs,
         function addConnection(brokenEquations = eqlBroken, printTrace = print_trace), graph);
     end if;
@@ -239,7 +245,7 @@ algorithm
   ieql := flatModel.initialEquations;
   (eql, ieql, connected, broken) := handleOverconstrainedConnections_dispatch(graph, flatModel.name, eql, ieql);
 
-  eql := removeBrokenConnects(eql, connected, broken);
+  eql := removeBrokenConnects(eql, connected, broken, isDeleted);
 
   flatModel.equations := eql;
   flatModel.initialEquations := ieql;
@@ -254,16 +260,19 @@ function generateEqualityConstraintEquation
   input Type rhs_ty;
   input InstContext.Type context;
   input DAE.ElementSource source;
+  input IsDeleted isDeleted;
   output list<Equation> eqsEqualityConstraint = {};
+
+  partial function IsDeleted
+    input ComponentRef cref;
+    output Boolean res;
+  end IsDeleted;
 protected
-  ComponentRef lhs, rhs, cref, fcref_rhs, fcref_lhs, lhsArr, rhsArr;
-  list<Equation> eql = {};
-  list<Expression> lst;
+  ComponentRef lhs, rhs, fcref_rhs, fcref_lhs, lhsArr, rhsArr;
   Type ty, ty1, ty2;
   Integer priority;
+  list<Connection> conns;
   Expression root, msg;
-  Connector c1, c2;
-  list<Connector> cl1, cl2;
   Equation replaceEq;
   Expression expLHS, expRHS;
   InstNode fn_node_lhs, fn_node_rhs;
@@ -273,60 +282,62 @@ algorithm
     return;
   end if;
 
-  if not (ComponentRef.isDeleted(clhs) or ComponentRef.isDeleted(crhs)) then
-    cl1 := NFConnections.makeConnectors(clhs, lhs_ty, source);
-    cl2 := NFConnections.makeConnectors(crhs, rhs_ty, source);
+  conns := NFConnections.makeConnections(clhs, lhs_ty, crhs, rhs_ty, source, isDeleted);
 
-    for c1 in cl1 loop
-      c2 :: cl2 := cl2;
+  for c in conns loop
+    for conn in Connection.split(c) loop
+      lhs := Connector.name(conn.lhs);
+      rhs := Connector.name(conn.rhs);
 
-      for conn in Connection.split(Connection.CONNECTION(c1, c2)) loop
-        lhs := Connector.name(conn.lhs);
-        rhs := Connector.name(conn.rhs);
-        if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
-          lhs := getOverconstrainedCref(lhs);
-          rhs := getOverconstrainedCref(rhs);
+      if isOverconstrainedCref(lhs) and isOverconstrainedCref(rhs) then
+        lhs := getOverconstrainedCref(lhs);
+        rhs := getOverconstrainedCref(rhs);
 
-          lhsArr := ComponentRef.stripSubscripts(lhs);
-          rhsArr := ComponentRef.stripSubscripts(rhs);
+        lhsArr := ComponentRef.stripSubscripts(lhs);
+        rhsArr := ComponentRef.stripSubscripts(rhs);
 
-          ty1 := ComponentRef.getComponentType(lhsArr);
-          ty2 := ComponentRef.getComponentType(rhsArr);
+        ty1 := ComponentRef.getComponentType(lhsArr);
+        ty2 := ComponentRef.getComponentType(rhsArr);
 
-          fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)), context);
-          (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, context, ElementSource.getInfo(source));
-          expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
+        fcref_rhs := Function.lookupFunctionSimple("equalityConstraint", InstNode.classScope(ComponentRef.node(lhs)), context);
+        (fcref_rhs, fn_node_rhs, _) := Function.instFunctionRef(fcref_rhs, context, ElementSource.getInfo(source));
+        expRHS := Expression.CALL(Call.UNTYPED_CALL(fcref_rhs, {Expression.CREF(ty1, lhsArr), Expression.CREF(ty2, rhsArr)}, {}, fn_node_rhs));
 
-          (expRHS, ty, var) := Typing.typeExp(expRHS, context, ElementSource.getInfo(source));
+        (expRHS, ty, var) := Typing.typeExp(expRHS, context, ElementSource.getInfo(source));
 
-          fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)), context);
-          (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, context, ElementSource.getInfo(source));
-          expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
+        fcref_lhs := Function.lookupFunctionSimple("fill", InstNode.topScope(ComponentRef.node(clhs)), context);
+        (fcref_lhs, fn_node_lhs, _) := Function.instFunctionRef(fcref_lhs, context, ElementSource.getInfo(source));
+        expLHS := Expression.CALL(Call.UNTYPED_CALL(fcref_lhs, Expression.REAL(0.0)::List.map(Type.arrayDims(ty), Dimension.sizeExp), {}, fn_node_lhs));
 
-          (expLHS, ty, var) := Typing.typeExp(expLHS, context, ElementSource.getInfo(source));
+        (expLHS, ty, var) := Typing.typeExp(expLHS, context, ElementSource.getInfo(source));
 
-          replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
+        replaceEq := Equation.EQUALITY(expRHS, expLHS, ty, source);
 
-          eqsEqualityConstraint := {replaceEq};
+        eqsEqualityConstraint := {replaceEq};
 
-          return;
-        end if;
-      end for;
+        return;
+      end if;
     end for;
-  end if;
+  end for;
 end generateEqualityConstraintEquation;
 
 protected
 
 function getOverconstrainedCrefs
   input Connector conn;
+  input IsDeleted isDeleted;
   output list<ComponentRef> crefs;
+
+  partial function IsDeleted
+    input ComponentRef cref;
+    output Boolean res;
+  end IsDeleted;
 protected
   list<Connector> conns;
 algorithm
   conns := Connector.split(conn, scalarize = NFConnector.ScalarizeSetting.PREFIX);
   crefs := list(getOverconstrainedCref(c.name) for c
-    guard not Connector.isDeleted(c) and isOverconstrainedCref(c.name) in conns);
+    guard not isDeleted(c.name) and isOverconstrainedCref(c.name) in conns);
   crefs := List.uniqueOnTrue(crefs, ComponentRef.isEqual);
 end getOverconstrainedCrefs;
 
@@ -1797,7 +1808,13 @@ function removeBrokenConnects
   input list<Equation> inEquations;
   input FlatEdges inConnected;
   input FlatEdges inBroken;
+  input IsDeleted isDeleted;
   output list<Equation> outEquations;
+
+  partial function IsDeleted
+    input ComponentRef cref;
+    output Boolean res;
+  end IsDeleted;
 algorithm
   outEquations := match(inEquations, inConnected, inBroken)
     local
@@ -1820,7 +1837,7 @@ algorithm
             case Equation.CONNECT(lhs = Expression.CREF(ty = ty1, cref = lhs),
                                   rhs = Expression.CREF(ty = ty2, cref = rhs), source = source)
               algorithm
-                if not (ComponentRef.isDeleted(lhs) or ComponentRef.isDeleted(rhs)) then
+                if not (isDeleted(lhs) or isDeleted(rhs)) then
                   // check for equality
                   isThere := false;
                   for tpl in inBroken loop

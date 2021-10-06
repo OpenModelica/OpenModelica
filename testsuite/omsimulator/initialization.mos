@@ -1,7 +1,6 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf initialization.lua initialization.fmu initialization.log initialization_systemCall.log temp-initialization/
-// cflags: -d=-newInst
 
 loadString("
 model initialization
@@ -58,7 +57,7 @@ readFile("initialization_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'test.root': 0.100000
+// "info:    maximum step size for 'test.root': 0.001000
 // info:    No result file will be created
 // info:    Initialization
 // info:      A.x_start: 1.5
@@ -66,10 +65,10 @@ readFile("initialization_systemCall.log");
 // info:      A.w:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       1.9080371522852
-// info:      A.w:       2.3160743045704
+// info:      A.x:       1.9994990009999
+// info:      A.w:       2.498998002
 // info:    Final Statistics for 'test.root':
-//          NumSteps = 37 NumRhsEvals  = 83 NumLinSolvSetups = 39
-//          NumNonlinSolvIters = 82 NumNonlinSolvConvFails = 0 NumErrTestFails = 18
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

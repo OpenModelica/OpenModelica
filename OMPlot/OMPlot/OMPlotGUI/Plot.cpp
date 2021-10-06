@@ -32,7 +32,6 @@
  */
 
 #include "PlotWindow.h"
-#include "ScaleDraw.h"
 #include "qwt_plot_canvas.h"
 #include "qwt_plot_layout.h"
 #include "qwt_scale_widget.h"
@@ -53,6 +52,10 @@ Plot::Plot(PlotWindow *pParent)
   insertLegend(mpLegend, QwtPlot::TopLegend);
   // create an instance of grid
   mpPlotGrid = new PlotGrid(this);
+  mpXScaleDraw = new ScaleDraw(QwtPlot::xBottom, this);
+  setAxisScaleDraw(QwtPlot::xBottom, mpXScaleDraw);
+  mpYScaleDraw = new ScaleDraw(QwtPlot::yLeft, this);
+  setAxisScaleDraw(QwtPlot::yLeft, mpYScaleDraw);
   // create an instance of zoomer
   mpPlotZoomer = new PlotZoomer(QwtPlot::xBottom, QwtPlot::yLeft, canvas());
   // create an instance of panner
@@ -66,8 +69,6 @@ Plot::Plot(PlotWindow *pParent)
   pPlotCanvas->setFrameStyle(QFrame::NoFrame);  /* Ticket #2679 point 6. Remove the default frame from the canvas. */
   setCanvasBackground(Qt::white);
   setContentsMargins(10, 10, 10, 10);
-  setAxisScaleDraw(QwtPlot::yLeft, new ScaleDraw);
-  setAxisScaleDraw(QwtPlot::xBottom, new ScaleDraw);
 #if QWT_VERSION >= 0x060000
   /* Ticket #2679 point 2. */
   for (int i = 0; i < QwtPlot::axisCnt; i++) {
@@ -78,15 +79,16 @@ Plot::Plot(PlotWindow *pParent)
   }
   plotLayout()->setAlignCanvasToScales(true);
 #endif
+  // Use monospaced font for better readability.
+  QFont monospaceFont("Monospace");
+  monospaceFont.setStyleHint(QFont::TypeWriter);
   // set the bottom axis title font size small.
   QwtText bottomTitle = axisTitle(QwtPlot::xBottom);
-  QFont font = bottomTitle.font();
-  bottomTitle.setFont(QFont(font.family(), 11));
+  bottomTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::xBottom, bottomTitle);
   // set the left axis title font size small.
   QwtText leftTitle = axisTitle(QwtPlot::yLeft);
-  font = leftTitle.font();
-  leftTitle.setFont(QFont(font.family(), 11));
+  leftTitle.setFont(QFont(monospaceFont.family(), 11));
   setAxisTitle(QwtPlot::yLeft, leftTitle);
   // fill colors list
   fillColorsList();
@@ -129,7 +131,7 @@ Legend* Plot::getLegend()
   return mpLegend;
 }
 
-QwtPlotPicker* Plot::getPlotPicker()
+PlotPicker* Plot::getPlotPicker()
 {
   return mpPlotPicker;
 }
@@ -172,6 +174,7 @@ void Plot::addPlotCurve(PlotCurve *pCurve)
 void Plot::removeCurve(PlotCurve *pCurve)
 {
   mPlotCurvesList.removeOne(pCurve);
+  pCurve->getPointMarker()->setVisible(false);
 }
 
 QColor Plot::getUniqueColor(int index, int total)
@@ -222,15 +225,56 @@ void Plot::setFontSizes(double titleFontSize, double verticalAxisTitleFontSize, 
 // just overloaded this function to get colors for curves.
 void Plot::replot()
 {
-  for (int i = 0 ; i < mPlotCurvesList.length() ; i++)
-  {
+  bool canUseXPrefixUnits = true;
+  bool canUseYPrefixUnits = true;
+  for (int i = 0 ; i < mPlotCurvesList.length() ; i++) {
     // if user has set the custom color for the curve then dont get automatic color for it
-    if (!mPlotCurvesList[i]->hasCustomColor())
-    {
+    if (!mPlotCurvesList[i]->hasCustomColor()) {
       QPen pen = mPlotCurvesList[i]->pen();
       pen.setColor(getUniqueColor(i, mPlotCurvesList.length()));
       mPlotCurvesList[i]->setPen(pen);
     }
+    mPlotCurvesList[i]->setTitleLocal();
+    if ((mpParentPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC)
+        && canUseXPrefixUnits && mPlotCurvesList[i]->getXDisplayUnit().isEmpty()) {
+      canUseXPrefixUnits = false;
+    }
+    if (canUseYPrefixUnits && mPlotCurvesList[i]->getYDisplayUnit().isEmpty()) {
+      canUseYPrefixUnits = false;
+    }
+  }
+
+  if (canUseXPrefixUnits != mpParentPlotWindow->canUseXPrefixUnits()) {
+    mpXScaleDraw->invalidateCache();
+    mpParentPlotWindow->setCanUseXPrefixUnits(canUseXPrefixUnits);
+  }
+  if (canUseYPrefixUnits != mpParentPlotWindow->canUseYPrefixUnits()) {
+    mpYScaleDraw->invalidateCache();
+    mpParentPlotWindow->setCanUseYPrefixUnits(canUseYPrefixUnits);
+  }
+
+  if (mpParentPlotWindow->getXCustomLabel().isEmpty()) {
+    QString timeUnit = mpParentPlotWindow->getTimeUnit();
+    if (mpParentPlotWindow->getPlotType() == PlotWindow::PLOT
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTALL
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTINTERACTIVE
+        || mpParentPlotWindow->getPlotType() == PlotWindow::PLOTARRAY) {
+      if (mpXScaleDraw->getUnitPrefix().isEmpty()) {
+        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2)").arg(mpParentPlotWindow->getXLabel(), timeUnit));
+      } else {
+        setAxisTitle(QwtPlot::xBottom, QString("%1 (%2%3)").arg(mpParentPlotWindow->getXLabel(), mpXScaleDraw->getUnitPrefix(), timeUnit));
+      }
+    } else {
+      setAxisTitle(QwtPlot::xBottom, "");
+    }
+  } else {
+    setAxisTitle(QwtPlot::xBottom, mpParentPlotWindow->getXCustomLabel());
+  }
+
+  if (mpParentPlotWindow->getYCustomLabel().isEmpty()) {
+    setAxisTitle(QwtPlot::yLeft, "");
+  } else {
+    setAxisTitle(QwtPlot::yLeft, mpParentPlotWindow->getYCustomLabel());
   }
 
   QwtPlot::replot();

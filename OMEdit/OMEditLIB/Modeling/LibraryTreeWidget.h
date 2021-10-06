@@ -97,6 +97,10 @@ public:
   void setClassInformation(OMCInterface::getClassInformation_res classInformation);
   void setFileName(QString fileName) {mFileName = fileName;}
   const QString& getFileName() const {return mFileName;}
+  const QString& getVersion() const;
+  const QString& getVersionDate() const;
+  const QString& getVersionBuild() const;
+  const QString& getDateModified() const;
   bool isFilePathValid();
   void setReadOnly(bool readOnly) {mReadOnly = readOnly;}
   bool isReadOnly() {return mReadOnly;}
@@ -204,6 +208,9 @@ private:
   QString mParentName;
   QString mNameStructure;
   QString mFileName;
+  QString mVersionDate;
+  QString mVersionBuild;
+  QString mDateModified;
   bool mReadOnly;
   bool mIsSaved;
   SaveContentsType mSaveContentsType;
@@ -297,7 +304,6 @@ public:
   void removeNonExistingLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem) {mNonExistingLibraryTreeItemsList.removeOne(pLibraryTreeItem);}
   void updateLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
   void updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
-  void updateLibraryTreeItemClassTextManually(LibraryTreeItem *pLibraryTreeItem, QString contents);
   void updateChildLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem, QString contents, QString fileName);
   void readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTreeItem);
   LibraryTreeItem* getContainingFileParentLibraryTreeItem(LibraryTreeItem *pLibraryTreeItem);
@@ -374,6 +380,7 @@ private:
   QAction *mpSaveAction;
   QAction *mpSaveAsAction;
   QAction *mpSaveTotalAction;
+  QAction *mpCopyPathAction;
   QAction *mpMoveUpAction;
   QAction *mpMoveDownAction;
   QAction *mpMoveTopAction;
@@ -412,7 +419,8 @@ private:
   QAction *mpUnloadOMSModelAction;
   void createActions();
   LibraryTreeItem* getSelectedLibraryTreeItem();
-  void libraryTreeItemExpanded(LibraryTreeItem* pLibraryTreeItem);
+  void libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem);
+  void copyClassPathHelper(const QString &classPath);
 public slots:
   void libraryTreeItemExpanded(const QModelIndex &index);
   void libraryTreeItemDoubleClicked(const QModelIndex &index);
@@ -423,6 +431,7 @@ public slots:
   void saveClass();
   void saveAsClass();
   void saveTotalClass();
+  void copyClassPath();
   void moveClassUp();
   void moveClassDown();
   void moveClassTop();

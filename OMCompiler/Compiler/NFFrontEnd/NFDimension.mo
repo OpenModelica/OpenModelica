@@ -102,6 +102,14 @@ public
                 fail();
           end match;
 
+      case Expression.ARRAY()
+        guard Expression.arrayAllEqual(exp)
+        then fromExp(Expression.arrayFirstScalar(exp), var);
+
+      case Expression.SUBSCRIPTED_EXP(split = true)
+        guard Expression.isArray(exp.exp) and Expression.arrayAllEqual(exp.exp)
+        then fromExp(Expression.arrayFirstScalar(exp.exp), var);
+
       else EXP(exp, var);
     end match;
   end fromExp;
@@ -194,7 +202,6 @@ public
     isEqual := match (dim1, dim2)
       case (UNKNOWN(), _) then true;
       case (_, UNKNOWN()) then true;
-      case (EXP(), EXP()) then Expression.isEqual(dim1.exp, dim2.exp);
       case (EXP(), _) then true;
       case (_, EXP()) then true;
       else Dimension.size(dim1) == Dimension.size(dim2);
@@ -458,7 +465,7 @@ public
         algorithm
           e2 := Expression.map(e1, func);
         then
-          if referenceEq(e1, e2) then dim else EXP(e2, dim.var);
+          if referenceEq(e1, e2) then dim else fromExp(e2, dim.var);
 
       else dim;
     end match;
@@ -510,6 +517,19 @@ public
       else ();
     end match;
   end simplify;
+
+  function typeOf
+    input Dimension dim;
+    output Type ty;
+  algorithm
+    ty := match dim
+      case INTEGER() then Type.INTEGER();
+      case BOOLEAN() then Type.BOOLEAN();
+      case ENUM() then dim.enumType;
+      case EXP() then Expression.typeOf(dim.exp);
+      else Type.UNKNOWN();
+    end match;
+  end typeOf;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFDimension;

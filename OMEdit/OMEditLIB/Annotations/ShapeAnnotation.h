@@ -37,6 +37,7 @@
 
 #include "Util/StringHandler.h"
 #include "Element/Transformation.h"
+#include "FlatModelica/Expression.h"
 
 #include <QGraphicsItem>
 #include <QSettings>
@@ -52,6 +53,8 @@ class GraphicsView;
 class CornerItem;
 class OriginItem;
 class ShapeAnnotation;
+
+QString stripDynamicSelect(const QString &str);
 
 class GraphicItem
 {
@@ -183,6 +186,8 @@ public:
   qreal getStartAngle() {return mStartAngle;}
   void setEndAngle(qreal endAngle) {mEndAngle = endAngle;}
   qreal getEndAngle() {return mEndAngle;}
+  void setClosure(StringHandler::EllipseClosure closure) {mClosure = closure;}
+  StringHandler::EllipseClosure getClosure() {return mClosure;}
   void setTextString(QString textString);
   QString getTextString() {return mOriginalTextString;}
   void setFontName(QString fontName) {mFontName = fontName;}
@@ -269,6 +274,7 @@ protected:
   qreal mRadius;
   qreal mStartAngle;
   qreal mEndAngle;
+  StringHandler::EllipseClosure mClosure;
   QString mOriginalTextString;
   QString mTextString;
   qreal mFontSize;
@@ -281,7 +287,7 @@ protected:
   QString mImageSource;
   QImage mImage;
   QList<CornerItem*> mCornerItemsList;
-  QList<QVariant> mDynamicTextString; /* list of String() arguments */
+  FlatModelica::Expression mTextExpression;
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
 };
 

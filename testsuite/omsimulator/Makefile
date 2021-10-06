@@ -6,10 +6,12 @@ DualMassOscillator_me.mos \
 DualMassOscillator.mos \
 enumeration.mos \
 enumeration2.mos \
+enumeration3.mos \
 initialization_omc.mos \
 initialization.mos \
 initialization2_omc.mos \
 initialization2.mos \
+Modelica.Mechanics.MultiBody.Examples.Elementary.Pendulum.mos \
 outputState_omc.mos \
 outputState.mos \
 reset_omc.mos \
@@ -18,7 +20,7 @@ resetWithLoops.mos \
 testDirectionalDerivatives.mos \
 testLoopsOverFMUs.mos \
 testSynchronousFMU_01.mos \
-testSynchronousFMU_02.mos
+testSynchronousFMU_02.mos \
 
 FAILINGTESTFILES = \
 test03.mos \
@@ -40,6 +42,11 @@ test:
 	@echo
 	@echo OPENMODELICAHOME=" $(OPENMODELICAHOME) "
 	@$(TEST) $(TESTFILES)
+
+baseline:
+	@echo
+	@echo Updating baselines...
+	@$(TEST) -b $(TESTFILES)
 
 # Cleans all files that are not listed as dependencies
 clean :

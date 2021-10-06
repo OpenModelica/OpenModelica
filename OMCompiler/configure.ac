@@ -34,6 +34,7 @@ AC_SUBST(RT_LDFLAGS_SIM_OPTIONAL)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SIM)
 AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU)
+AC_SUBST(RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC)
 AC_SUBST(RT_LDFLAGS_SHARED)
 AC_SUBST(OMCRUNTIME_SHARED_LDFLAGS)
 AC_SUBST(SUNDIALS_LDFLAGS)
@@ -101,6 +102,7 @@ AC_SUBST(BSTATIC)
 AC_SUBST(OMC_TBB_ROOT)
 AC_SUBST(ENABLE_PARMODAUTO)
 AC_SUBST(EXTRA_MACOS_FLAGS_SUNDIALS)
+AC_SUBST(CMAKE)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -761,6 +763,7 @@ if test "$DARWIN" = "1"; then
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc"
   RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -lSimulationRuntimeFMI $RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU"
   RT_LDFLAGS_SHARED=
   OMCRUNTIME_SHARED_LDFLAGS="$RT_LDFLAGS -Wl,-undefined -Wl,dynamic_lookup $LIBLPSOLVE55 -lzmq $LIBUUID $RT_LDFLAGS_OPTIONAL"
   LINK="cp -fr"
@@ -794,7 +797,8 @@ elif echo "$host" | grep -iq "mingw"; then
   RT_LDFLAGS_OPTIONAL="$RT_LDFLAGS_OPTIONAL"
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $RT_LDFLAGS"
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC -lcdaskr $RT_LDFLAGS_SIM"
-  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm$LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm $LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lm $LD_NOUNDEFINED"
   LINK="cp -frl"
   # No RPATH in Windows :(
   RPATH=""
@@ -831,7 +835,8 @@ else
   # All libraries are dynamically linked; we don't need anything else
   RT_LDFLAGS_GENERATED_CODE="$LDFLAGS -lOpenModelicaRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic" # Some of our tests refer to the testsuite itself
   RT_LDFLAGS_GENERATED_CODE_SIM="$LDFLAGS -lSimulationRuntimeC $LD_LAPACK -lm -lomcgc -lpthread -rdynamic$LD_NOUNDEFINED"
-  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm -lpthread -rdynamic$LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU="$LDFLAGS $LD_LAPACK -lm -lpthread -rdynamic $LD_NOUNDEFINED"
+  RT_LDFLAGS_GENERATED_CODE_SOURCE_FMU_STATIC=" -Wl,-Bstatic -lSimulationRuntimeFMI $LDFLAGS $LD_LAPACK -Wl,-Bdynamic -lm -lpthread -rdynamic $LD_NOUNDEFINED"
   LINK="cp -frl"
   LDFLAGS="$LDFLAGS -Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
   RT_LDFLAGS_SHARED="-Wl,-rpath-link,$OMBUILDDIR/lib/$host_short/omc"
@@ -984,13 +989,13 @@ date=`date "+%Y-%m-%d %H:%M:%S"`
 CONFIGURE_ARGS="$ac_configure_args"
 
 GENERATED_AUTOCONF_FILES="Makefile \
+omc_config.unix.h \
+revision.h \
 Compiler/Util/Autoconf.mo \
 Compiler/Makefile \
 Compiler/Script/Makefile \
 Compiler/Template/Makefile \
 Compiler/runtime/Makefile \
-Compiler/runtime/config.unix.h \
-Compiler/runtime/revision.h \
 Parser/Makefile \
 SimulationRuntime/OMSICpp/Makefile.env \
 SimulationRuntime/cpp/Makefile.env \
@@ -1030,7 +1035,7 @@ for dir_target in SimulationRuntime/cpp; do
   fi
 done
 
-AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
+AC_CONFIG_COMMANDS([omc_config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 
 AC_OUTPUT(${GENERATED_AUTOCONF_FILES})
 

@@ -40,8 +40,8 @@ val(R1.v,0.2); getErrorString();
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (15):
-//  * Single equations (assignments): 14
+// Notification: Strong component statistics for initialization (14):
+//  * Single equations (assignments): 13
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -51,17 +51,17 @@ val(R1.v,0.2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(2,100.0%) 8}
+//  * Linear torn systems: 1 {(1,100.0%) 10}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 1
+//  * Number of independent subsystems: 2
 //  * Number of states: 0 ('-d=stateselection' for list of states)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (9):
-//  * Single equations (assignments): 8
+// Notification: Strong component statistics for simulation (8):
+//  * Single equations (assignments): 7
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -71,11 +71,11 @@ val(R1.v,0.2); getErrorString();
 //  * Torn equation systems: 1
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 1 {(2,100.0%) 8}
+//  * Linear torn systems: 1 {(1,100.0%) 10}
 //  * Non-linear torn systems: 0
 // "
-// -2.842170943040401e-14
+// -2.880022175007437e-14
 // ""
-// -2.842170943040401e-13
+// -2.880022175007437e-13
 // ""
 // endResult

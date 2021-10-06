@@ -44,8 +44,8 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for initialization (27):
-//  * Single equations (assignments): 23
+// Notification: Strong component statistics for initialization (32):
+//  * Single equations (assignments): 28
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -55,17 +55,17 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Torn equation systems: 4
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 4 {(1,100.0%) 5,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3}
+//  * Linear torn systems: 4 {(1,100.0%) 7,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // Notification: Model statistics after passing the back-end for simulation:
-//  * Number of independent subsystems: 5
+//  * Number of independent subsystems: 7
 //  * Number of states: 2 (C2.v,C3.v)
 //  * Number of discrete variables: 0 ('-d=discreteinfo' for list of discrete vars)
 //  * Number of discrete states: 0 ('-d=discreteinfo' for list of discrete states)
 //  * Number of clocked states: 0 ('-d=discreteinfo' for list of clocked states)
 //  * Top-level inputs: 0
-// Notification: Strong component statistics for simulation (17):
-//  * Single equations (assignments): 13
+// Notification: Strong component statistics for simulation (23):
+//  * Single equations (assignments): 19
 //  * Array equations: 0
 //  * Algorithm blocks: 0
 //  * Record equations: 0
@@ -75,7 +75,7 @@ res := OpenModelica.Scripting.compareSimulationResults("ElectricalCircuit1_res.m
 //  * Torn equation systems: 4
 //  * Mixed (continuous/discrete) equation systems: 0
 // Notification: Torn system details for strict tearing set:
-//  * Linear torn systems: 4 {(1,100.0%) 5,(1,100.0%) 3,(1,100.0%) 3,(1,100.0%) 3}
+//  * Linear torn systems: 4 {(1,100.0%) 6,(1,100.0%) 2,(1,100.0%) 2,(1,100.0%) 2}
 //  * Non-linear torn systems: 0
 // "
 // {"Files Equal!"}

@@ -228,7 +228,7 @@ public function compileModel "Compiles a model given a file-prefix, helper funct
 protected
   String omhome = Settings.getInstallationDirectoryPath(),omhome_1 = System.stringReplace(omhome, "\"", "");
   String pd = Autoconf.pathDelimiter;
-  String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode,workDir = (if stringEq(workingDir, "") then "" else workingDir + pd);
+  String cdWorkingDir,setMakeVars,libsfilename,libs_str,s_call,filename,winCompileMode,workDir = (if stringEq(workingDir, "") then "" else workingDir + pd), linkType = "dynamic";
   String fileDLL = workDir + fileprefix + Autoconf.dllExt,
          fileEXE = workDir + fileprefix + Autoconf.exeExt,
          fileLOG = workDir + fileprefix + ".log";
@@ -252,7 +252,13 @@ algorithm
     setMakeVars := sum("set "+var+"&& " for var in makeVarsNoBinding);
     cdWorkingDir := if stringEmpty(workingDir) then "" else ("cd \"" + workingDir + "\"&& ");
     winCompileMode := if Testsuite.isRunning() then "serial" else "parallel";
-    s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", System.openModelicaPlatform(), " ", winCompileMode});
+    if Flags.getConfigEnum(Flags.LINK_TYPE) == 1 then
+      linkType := "static";
+    elseif Flags.getConfigEnum(Flags.LINK_TYPE) == 2 then
+      linkType := "dynamic";
+    end if;
+    linkType := if Testsuite.isRunning() then "dynamic" else linkType;
+    s_call := stringAppendList({omhome,cdWorkingDir,setMakeVars,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",Config.simulationCodeTarget()," ", System.openModelicaPlatform(), " ", winCompileMode, " ", linkType});
   else
     numParallel := if Testsuite.isRunning() then 1 else Config.noProc();
     cdWorkingDir := if stringEmpty(workingDir) then "" else (" -C \"" + workingDir + "\"");
@@ -382,6 +388,7 @@ protected
   String pathStr, versions, className, version, modelicaPath, thisModelicaPath, dir;
   Absyn.Program p, pnew;
   ErrorTypes.MessageTokens msgTokens;
+  Option<Absyn.Class> cl;
 algorithm
   (path, _, versionsLst, onlyCheckFirstModelicaPath) := modelToLoad;
   (modelicaPath, forceLoad, notifyLoad, checkUses, requireExactVersion, encrypted) := inArg;
@@ -400,9 +407,13 @@ algorithm
       if pathToFile=="" then
         pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
       else
-        pnew := ClassLoader.loadClass(path, versionsLst, thisModelicaPath, NONE(), requireExactVersion, encrypted);
         dir := System.dirname(pathToFile);
-        pnew := Absyn.PROGRAM({ClassLoader.loadClassFromMp(AbsynUtil.pathFirstIdent(path), System.dirname(dir), System.basename(dir), true, NONE(), encrypted)}, Absyn.TOP());
+        cl := ClassLoader.loadClassFromMp(AbsynUtil.pathFirstIdent(path), System.dirname(dir), System.basename(dir), true, NONE(), encrypted);
+        if (isSome(cl)) then
+          pnew := Absyn.PROGRAM({Util.getOption(cl)}, Absyn.TOP());
+        else
+          pnew := Absyn.PROGRAM({}, Absyn.TOP());
+        end if;
       end if;
       version := getPackageVersion(path, pnew);
       b := not notifyLoad or forceLoad;
@@ -700,7 +711,7 @@ algorithm
          {
            "heapsize_full",
            "free_bytes_full",
-           "unmapped_bytes: ",
+           "unmapped_bytes",
            "bytes_allocd_since_gc",
            "allocd_bytes_before_gc",
            "total_allocd_bytes",
@@ -791,6 +802,9 @@ algorithm
 
     case ("setModelicaPath",_)
       then Values.BOOL(false);
+
+    case ("getHomeDirectoryPath",{})
+      then Values.STRING(Settings.getHomeDir(Testsuite.isRunning()));
 
     case ("getLanguageStandard",{})
       then Values.STRING(Config.languageStandardString(Config.getLanguageStandard()));
@@ -1263,16 +1277,23 @@ algorithm
 
     case ("loadEncryptedPackage",Values.STRING(filename)::Values.STRING(workdir)::Values.BOOL(bval)::Values.BOOL(b)::Values.BOOL(b1)::Values.BOOL(requireExactVersion)::_)
       algorithm
-        (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
-        if (b) then
-          execStatReset();
-          filename := Testsuite.friendlyPath(filename);
-          p := SymbolTable.getAbsyn();
-          newp := loadFile(filename, "UTF-8", p, b, b1, requireExactVersion);
-          execStat("loadFile("+filename+")");
-          SymbolTable.setAbsyn(newp);
-        end if;
-        outCache := FCore.emptyCache();
+        str := System.pwd();
+        try
+          0 := System.cd(System.dirname(filename));
+          (b, filename) := unZipEncryptedPackageAndCheckFile(workdir, filename, bval);
+          if (b) then
+            execStatReset();
+            filename := Testsuite.friendlyPath(filename);
+            p := SymbolTable.getAbsyn();
+            newp := loadFile(filename, "UTF-8", p, b, b1, requireExactVersion);
+            execStat("loadFile("+filename+")");
+            SymbolTable.setAbsyn(newp);
+          end if;
+          outCache := FCore.emptyCache();
+          0 := System.cd(str);
+        else
+          0 := System.cd(str);
+        end try;
       then
         Values.BOOL(b);
 
@@ -2146,24 +2167,30 @@ algorithm
 
     // try function interpretation
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, _, msg, _)
-      equation
-        true = Flags.isSet(Flags.EVAL_FUNC);
+      algorithm
+        true := Flags.isSet(Flags.EVAL_FUNC);
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         // bcall1(Flags.isSet(Flags.DYN_LOAD), print,"[dynload]: try constant evaluation: " + AbsynUtil.pathString(funcpath) + "\n");
-        (cache,
-         sc as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()),
-         env) = Lookup.lookupClass(cache, env, funcpath);
-        isCevaluableFunction(sc);
-        (cache, env, _) = InstFunction.implicitFunctionInstantiation(
-          cache,
-          env,
-          InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(),
-          DAE.NOPRE(),
-          sc,
-          {});
-        func = FCore.getCachedInstFunc(cache, funcpath);
-        (cache, newval) = CevalFunction.evaluate(cache, env, func, vallst);
+
+        try
+          func := FCore.getCachedInstFunc(cache, funcpath);
+        else
+          (cache,
+           sc as SCode.CLASS(partialPrefix = SCode.NOT_PARTIAL()),
+           env) := Lookup.lookupClass(cache, env, funcpath);
+          isCevaluableFunction(sc);
+          (cache, env, _) := InstFunction.implicitFunctionInstantiation(
+            cache,
+            env,
+            InnerOuter.emptyInstHierarchy,
+            DAE.NOMOD(),
+            DAE.NOPRE(),
+            sc,
+            {});
+          func := FCore.getCachedInstFunc(cache, funcpath);
+        end try;
+
+        (cache, newval) := CevalFunction.evaluate(cache, env, func, vallst);
         // bcall1(Flags.isSet(Flags.DYN_LOAD), print, "[dynload]: constant evaluation SUCCESS: " + AbsynUtil.pathString(funcpath) + "\n");
       then
         (cache, newval);

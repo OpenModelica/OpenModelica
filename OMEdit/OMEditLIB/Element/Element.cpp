@@ -171,6 +171,9 @@ void ElementInfo::parseComponentInfoString(QString value)
   // read the class name
   if (list.size() > 0) {
     mClassName = list.at(0);
+    if (mClassName.startsWith(".")) {
+      mClassName.remove(0, 1);
+    }
   } else {
     return;
   }
@@ -295,6 +298,9 @@ void ElementInfo::parseElementInfoString(QString value)
   // read the class name, i.e. type name
   if (list.size() > 2) {
     mClassName = list.at(2);
+    if (mClassName.startsWith(".")) {
+      mClassName.remove(0, 1);
+    }
   } else {
     return;
   }
@@ -794,7 +800,7 @@ Element::Element(Element *pElement, GraphicsView *pGraphicsView)
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(referenceElementTransformHasChanged()));
   connect(mpReferenceComponent, SIGNAL(transformHasChanged()), SLOT(updateOriginItem()));
   connect(mpReferenceComponent, SIGNAL(transformChange(bool)), SIGNAL(transformChange(bool)));
-  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SIGNAL(displayTextChanged()));
+  connect(mpReferenceComponent, SIGNAL(displayTextChanged()), SLOT(componentNameHasChanged()));
   connect(mpReferenceComponent, SIGNAL(changed()), SLOT(referenceElementChanged()));
   connect(mpReferenceComponent, SIGNAL(deleted()), SLOT(referenceElementDeleted()));
   /* Ticket:4204
@@ -1436,7 +1442,8 @@ QString Element::getParameterDisplayString(QString parameterName)
   /* How to get the display value,
    * 0. If the component is inherited component then check if the value is available in the class extends modifiers.
    * 1. Check if the value is available in component modifier.
-   * 2. Check if the value is available in the component's class as a parameter or variable.
+   * 2. Check if the value is available in the component's containing class as a parameter or variable.
+   * 2.1 Check if the value is available in the component's class as a parameter or variable.
    * 3. Find the value in extends classes and check if the value is present in extends modifier.
    * 4. If there is no extends modifier then finally check if value is present in extends classes.
    */
@@ -1461,10 +1468,17 @@ QString Element::getParameterDisplayString(QString parameterName)
     if (mpLibraryTreeItem) {
       mpLibraryTreeItem->getModelWidget()->loadDiagramView();
       foreach (Element *pElement, mpLibraryTreeItem->getModelWidget()->getDiagramGraphicsView()->getElementsList()) {
-        if (pElement->getElementInfo()->getName().compare(parameterName) == 0) {
+        if (pElement->getElementInfo()->getName().compare(StringHandler::getFirstWordBeforeDot(parameterName)) == 0) {
           if (displayString.isEmpty()) {
             displayString = pElement->getElementInfo()->getParameterValue(pOMCProxy, mpLibraryTreeItem->getNameStructure());
           }
+          /* case 2.1
+           * Fixes issue #7493. Handles the case where value is from instance name e.g., %instanceName.parameterName
+           */
+          if (displayString.isEmpty()) {
+            displayString = pOMCProxy->getParameterValue(pElement->getElementInfo()->getClassName(), StringHandler::getLastWordAfterDot(parameterName));
+          }
+
           typeName = pElement->getElementInfo()->getClassName();
           checkEnumerationDisplayString(displayString, typeName);
           break;
@@ -1481,6 +1495,34 @@ QString Element::getParameterDisplayString(QString parameterName)
     displayString = getParameterDisplayStringFromExtendsParameters(parameterName, displayString);
   }
   return displayString;
+}
+
+/*!
+ * \brief Element::getParameterModifierValue
+ * Reads the component parameter modifier value.
+ * \param parameterName
+ * \param modifier
+ * \return
+ */
+QString Element::getParameterModifierValue(const QString &parameterName, const QString &modifier)
+{
+  /* How to get the parameter modifier value,
+   * 1. Check if the value is available in component modifier.
+   */
+  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QString parameterAndModiferName = QString("%1.%2").arg(parameterName).arg(modifier);
+  QString modifierValue = "";
+  /* case 1 */
+  QMap<QString, QString> modifiers = mpElementInfo->getModifiersMap(pOMCProxy, className, this);
+  QMap<QString, QString>::iterator modifiersIterator;
+  for (modifiersIterator = modifiers.begin(); modifiersIterator != modifiers.end(); ++modifiersIterator) {
+    if (parameterAndModiferName.compare(modifiersIterator.key()) == 0) {
+      modifierValue = modifiersIterator.value();
+      break;
+    }
+  }
+  return StringHandler::removeFirstLastQuotes(modifierValue);
 }
 
 /*!
@@ -1714,7 +1756,7 @@ void Element::updateElementTransformations(const Transformation &oldTransformati
     emit transformHasChanged();
     emit transformChanging();
   } else {
-    mpGraphicsView->getModelWidget()->beginMacro("Update component transformations");
+    mpGraphicsView->getModelWidget()->beginMacro(QStringLiteral("Update element transformations"));
     const bool moveConnectorsTogether = OptionsDialog::instance()->getGraphicalViewsPage()->getMoveConnectorsTogetherCheckBox()->isChecked();
     mpGraphicsView->getModelWidget()->getUndoStack()->push(new UpdateComponentTransformationsCommand(this, oldTransformation, mTransformation, positionChanged, moveConnectorsTogether));
     emit transformChanging();
@@ -1934,6 +1976,7 @@ void Element::drawOMSElement()
       pInputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
       switch (mpLibraryTreeItem->getOMSConnector()->type) {
         case oms_signal_type_integer:
+        case oms_signal_type_enum:
           pInputPolygonAnnotation->setLineColor(QColor(255,127,0));
           pInputPolygonAnnotation->setFillColor(QColor(255,127,0));
           break;
@@ -1943,9 +1986,6 @@ void Element::drawOMSElement()
           break;
         case oms_signal_type_string:
           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "Element::drawOMSElement oms_signal_type_enum not implemented yet.";
           break;
         case oms_signal_type_bus:
           qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
@@ -1965,6 +2005,7 @@ void Element::drawOMSElement()
       pOutputPolygonAnnotation->setFillPattern(StringHandler::FillSolid);
       switch (mpLibraryTreeItem->getOMSConnector()->type) {
         case oms_signal_type_integer:
+        case oms_signal_type_enum:
           pOutputPolygonAnnotation->setLineColor(QColor(255, 127, 0));
           pOutputPolygonAnnotation->setFillColor(QColor(255, 255, 255));
           break;
@@ -1974,9 +2015,6 @@ void Element::drawOMSElement()
           break;
         case oms_signal_type_string:
           qDebug() << "Element::drawOMSElement oms_signal_type_string not implemented yet.";
-          break;
-        case oms_signal_type_enum:
-          qDebug() << "Element::drawOMSElement oms_signal_type_enum not implemented yet.";
           break;
         case oms_signal_type_bus:
           qDebug() << "Element::drawOMSElement oms_signal_type_bus not implemented yet.";
@@ -2867,7 +2905,12 @@ void Element::finishResizeElement()
 void Element::resizedElement()
 {
   updateElementTransformations(mOldTransformation, false);
-  mpGraphicsView->getModelWidget()->updateModelText();
+  ModelWidget *pModelWidget = mpGraphicsView->getModelWidget();
+  // push the change on stack only for OMS models. For Modelica models the change is done in ModelWidget::updateModelText();
+  if (mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getLibraryType() == LibraryTreeItem::OMS) {
+    pModelWidget->createOMSimulatorUndoCommand(QStringLiteral("Update element transformations"));
+  }
+  pModelWidget->updateModelText();
 }
 
 /*!
@@ -2919,20 +2962,10 @@ void Element::deleteMe()
  */
 void Element::duplicate()
 {
-  MainWindow *pMainWindow = MainWindow::instance();
   QString name;
   if (mpLibraryTreeItem) {
-    // get the model defaultElementName
-    QString defaultName = pMainWindow->getOMCProxy()->getDefaultComponentName(mpLibraryTreeItem->getNameStructure());
-    if (defaultName.isEmpty()) {
-      name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(mpLibraryTreeItem->getName()));
-    } else {
-      if (mpGraphicsView->checkElementName(defaultName)) {
-        name = defaultName;
-      } else {
-        name = mpGraphicsView->getUniqueElementName(defaultName);
-      }
-    }
+    QString defaultName;
+    name = mpGraphicsView->getUniqueElementName(mpLibraryTreeItem->getNameStructure(), mpLibraryTreeItem->getName(), &defaultName);
   } else {
     name = mpGraphicsView->getUniqueElementName(StringHandler::toCamelCase(getName()));
   }

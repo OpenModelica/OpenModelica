@@ -304,6 +304,10 @@ void index_real_array(const real_array_t * source,
     omc_assert_macro(index_spec_ok(source_spec));
     omc_assert_macro(index_spec_fit_base_array(source_spec,source));
 
+    /* adrpo: if destination is an Real[0] just return */
+    if (dest->ndims == 1 && dest->dim_size[0] == 0)
+      return;
+
     /*for(i = 0, j = 0; i < source->ndims; ++i)
     {
       printf("source_spec->index_type[%d] = %c\n", i, source_spec->index_type[i]);
@@ -318,7 +322,7 @@ void index_real_array(const real_array_t * source,
             ++j;
         }
     }
-    omc_assert_macro(j == dest->ndims);
+    omc_assert_macro(imax(j,1) == dest->ndims);
 
     idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
     /* idx_vec2 = size_alloc(dest->ndims); / * indices in the destination array* / */
@@ -329,7 +333,7 @@ void index_real_array(const real_array_t * source,
     }
     for(i = 0; i < source_spec->ndims; ++i) {
         if(source_spec->index[i] != NULL) { /* is 'S' or 'A' */
-            idx_size[i] = imax(source_spec->dim_size[i],1); /* the imax() is not needed, because there is (idx[d] >= size[d]) in the next_index(), but ... */
+            idx_size[i] = imax(source_spec->dim_size[i], 1); /* the imax() is not needed, because there is (idx[d] >= size[d]) in the next_index(), but ... */
         } else { /* is 'W' */
             idx_size[i] = source->dim_size[i];
         }

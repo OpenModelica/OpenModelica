@@ -603,6 +603,14 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data, threadData_t
     infoStreamPrint(LOG_STDOUT, 0, "DataReconciliation Completed!");
   }
 
+  if (omc_flag[FLAG_DATA_RECONCILE_BOUNDARY])
+  {
+    infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Starting!");
+    infoStreamPrint(LOG_STDOUT, 0, "%s", data->modelData->modelName);
+    retVal = reconcileBoundaryConditions(data, threadData, retVal);
+    infoStreamPrint(LOG_STDOUT, 0, "Reconcile Boundary Conditions Completed!");
+  }
+
   if(0 == retVal && create_linearmodel) {
     rt_tick(SIM_TIMER_JACOBIAN);
     retVal = linearize(data, threadData);
@@ -825,12 +833,12 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     }
 
     messageClose(LOG_STDOUT);
-    EXIT(0);
+    EXIT(1);
   }
 
-  if(omc_flag[FLAG_HELP]) {
+  if(omc_flag[FLAG_HELP])
+  {
     std::string option = omc_flagValue[FLAG_HELP];
-
     for(i=1; i<FLAG_MAX; ++i)
     {
       if(option == std::string(FLAG_NAME[i]))
@@ -915,7 +923,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
 
     warningStreamPrint(LOG_STDOUT, 0, "invalid command line option: -help=%s", option.c_str());
     warningStreamPrint(LOG_STDOUT, 0, "use %s -help for a list of all command-line flags", argv[0]);
-    EXIT(0);
+    EXIT(1);
   }
 
   setGlobalVerboseLevel(argc, argv);
@@ -927,13 +935,13 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
     EXIT(1);
   }
 
-  readFlag(&data->simulationInfo->nlsMethod, NLS_MAX, omc_flagValue[FLAG_NLS], "-nls", NLS_NAME, NLS_DESC);
-  readFlag(&data->simulationInfo-> lsMethod,  LS_MAX, omc_flagValue[FLAG_LS ],  "-ls",  LS_NAME,  LS_DESC);
-  readFlag(&data->simulationInfo->lssMethod, LSS_MAX, omc_flagValue[FLAG_LSS], "-lss", LSS_NAME, LSS_DESC);
-  readFlag(&homBacktraceStrategy, HOM_BACK_STRAT_MAX, omc_flagValue[FLAG_HOMOTOPY_BACKTRACE_STRATEGY], "-homBacktraceStrategy", HOM_BACK_STRAT_NAME, HOM_BACK_STRAT_DESC);
-  readFlag(&data->simulationInfo->newtonStrategy, NEWTON_MAX, omc_flagValue[FLAG_NEWTON_STRATEGY], "-newton", NEWTONSTRATEGY_NAME, NEWTONSTRATEGY_DESC);
+  readFlag((int*)&data->simulationInfo->nlsMethod, NLS_MAX, omc_flagValue[FLAG_NLS], "-nls", NLS_NAME, NLS_DESC);
+  readFlag((int*)&data->simulationInfo-> lsMethod,  LS_MAX, omc_flagValue[FLAG_LS ],  "-ls",  LS_NAME,  LS_DESC);
+  readFlag((int*)&data->simulationInfo->lssMethod, LSS_MAX, omc_flagValue[FLAG_LSS], "-lss", LSS_NAME, LSS_DESC);
+  readFlag((int*)&homBacktraceStrategy, HOM_BACK_STRAT_MAX, omc_flagValue[FLAG_HOMOTOPY_BACKTRACE_STRATEGY], "-homBacktraceStrategy", HOM_BACK_STRAT_NAME, HOM_BACK_STRAT_DESC);
+  readFlag((int*)&data->simulationInfo->newtonStrategy, NEWTON_MAX, omc_flagValue[FLAG_NEWTON_STRATEGY], "-newton", NEWTONSTRATEGY_NAME, NEWTONSTRATEGY_DESC);
   data->simulationInfo->nlsCsvInfomation = omc_flag[FLAG_NLS_INFO];
-  readFlag(&data->simulationInfo->nlsLinearSolver, NLS_LS_MAX, omc_flagValue[FLAG_NLS_LS], "-nlsLS", NLS_LS_METHOD, NLS_LS_METHOD_DESC);
+  readFlag((int*)&data->simulationInfo->nlsLinearSolver, NLS_LS_MAX, omc_flagValue[FLAG_NLS_LS], "-nlsLS", NLS_LS_METHOD, NLS_LS_METHOD_DESC);
 
   if(omc_flag[FLAG_HOMOTOPY_ADAPT_BEND]) {
     homAdaptBend = atof(omc_flagValue[FLAG_HOMOTOPY_ADAPT_BEND]);
@@ -1001,7 +1009,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   }
   if(omc_flag[FLAG_LSS_MIN_SIZE]) {
     linearSparseSolverMinSize = atoi(omc_flagValue[FLAG_LSS_MIN_SIZE]);
-    infoStreamPrint(LOG_STDOUT, 0, "Maximum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
+    infoStreamPrint(LOG_STDOUT, 0, "Minimum system size for using linear sparse solver changed to %d", linearSparseSolverMinSize);
   }
   if(omc_flag[FLAG_NLS_MAX_DENSITY]) {
     nonlinearSparseSolverMaxDensity = atof(omc_flagValue[FLAG_NLS_MAX_DENSITY]);
@@ -1009,7 +1017,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data, threadData_t *thr
   }
   if(omc_flag[FLAG_NLS_MIN_SIZE]) {
     nonlinearSparseSolverMinSize = atoi(omc_flagValue[FLAG_NLS_MIN_SIZE]);
-    infoStreamPrint(LOG_STDOUT, 0, "Maximum system size for using non-linear sparse solver changed to %d", nonlinearSparseSolverMinSize);
+    infoStreamPrint(LOG_STDOUT, 0, "Minimum system size for using non-linear sparse solver changed to %d", nonlinearSparseSolverMinSize);
   }
   if(omc_flag[FLAG_NEWTON_XTOL]) {
     newtonXTol = atof(omc_flagValue[FLAG_NEWTON_XTOL]);

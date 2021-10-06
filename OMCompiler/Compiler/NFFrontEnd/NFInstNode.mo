@@ -609,6 +609,28 @@ uniontype InstNode
     end match;
   end parentScope;
 
+  function enclosingScopePath
+    "Returns the enclosing scopes of a node as a path."
+    input InstNode node;
+    output Absyn.Path path;
+  algorithm
+    path := AbsynUtil.stringListPath(
+      list(InstNode.name(n) for n in enclosingScopeList(node)));
+  end enclosingScopePath;
+
+  function enclosingScopeList
+    "Returns the enclosing scopes of a node as a list of nodes."
+    input InstNode node;
+    output list<InstNode> res = {};
+  protected
+    InstNode scope = node;
+  algorithm
+    while not isTopScope(scope) loop
+      res := scope :: res;
+      scope := classScope(parentScope(scope));
+    end while;
+  end enclosingScopeList;
+
   function classScope
     input InstNode node;
     output InstNode scope;
@@ -640,6 +662,16 @@ uniontype InstNode
       else topScope(parentScope(node));
     end match;
   end topScope;
+
+  function isTopScope
+    input InstNode node;
+    output Boolean res;
+  algorithm
+    res := match node
+      case CLASS_NODE(nodeType = InstNodeType.TOP_SCOPE()) then true;
+      else false;
+    end match;
+  end isTopScope;
 
   function topComponent
     input InstNode node;
@@ -969,6 +1001,7 @@ uniontype InstNode
   function scopePath
     input InstNode node;
     input Boolean includeRoot = false "Whether to include the root class name or not.";
+    input Boolean ignoreBaseClass = false "Ignore that a class is a base class if true.";
     output Absyn.Path path;
   algorithm
     path := match node
@@ -978,7 +1011,7 @@ uniontype InstNode
       case CLASS_NODE(nodeType = it)
         then
           match it
-            case InstNodeType.BASE_CLASS() then scopePath(it.parent, includeRoot);
+            case InstNodeType.BASE_CLASS() guard not ignoreBaseClass then scopePath(it.parent, includeRoot);
             else scopePath2(node.parentScope, includeRoot, Absyn.IDENT(node.name));
           end match;
 
@@ -1707,6 +1740,17 @@ uniontype InstNode
     input Integer mod;
     output Integer hash = stringHashDjb2Mod(name(node), mod);
   end hash;
+
+  function dimensionCount
+    input InstNode node;
+    output Integer count;
+  algorithm
+    count := match node
+      case COMPONENT_NODE() then Component.dimensionCount(Pointer.access(node.component));
+      case CLASS_NODE() then Class.dimensionCount(Pointer.access(node.cls));
+      else 0;
+    end match;
+  end dimensionCount;
 end InstNode;
 
 annotation(__OpenModelica_Interface="frontend");

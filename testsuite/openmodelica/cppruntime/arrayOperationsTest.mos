@@ -1,0 +1,86 @@
+// name: arrayOperationsTest
+// keywords: array operations
+// status: correct
+// teardown_command: rm -f *ArrayOperations.Test*
+
+setCommandLineOptions("+simCodeTarget=Cpp");
+
+loadString("
+package ArrayOperations
+  model Test
+    input Real u = 0;
+    Real y = f1({u + 1, u + 2, u + 3});
+    Real[2] z = f2(u);
+    Real[2,2] D = f3(z);
+    Real p = f4(z);
+    annotation(experiment(StopTime = 0));
+  end Test;
+  // see Modelica.Mechanics.MultiBody.Examples.Rotational3DEffects.MovingActuatedDrive
+  function f1
+    input Real[:] v;
+    output Real y;
+  protected
+    Real[:,:] m;
+  algorithm
+    m := matrix(v) * transpose(matrix(v));
+    y := m[3,1];
+  end f1;
+  // see Modelica.Media.Examples.ReferenceAir.MoistAir
+  function f2
+    input Real u;
+    output Real[:] y; // unknown dimension
+  algorithm
+    y := {u + 1, u + 2};
+  end f2;
+  // built-in diagonal
+  function f3
+    input Real[:] v;
+    output Real[size(v, 1), size(v, 1)] D;
+  protected
+    Real[size(v,1)] w;
+  algorithm
+    w := v[1] ./ v;   // DIV_SCALAR_ARRAY
+    D := diagonal(w);
+  end f3;
+  // built-in product
+  function f4
+    input Real[:] v;
+    output Real p;
+  algorithm
+    p := product(v);
+  end f4;
+end ArrayOperations;
+");
+getErrorString();
+
+simulate(ArrayOperations.Test);
+getErrorString();
+
+val(y, 0);
+val(z[1], 0);
+val(z[2], 0);
+val(D[1,1], 0);
+val(D[1,2], 0);
+val(D[2,1], 0);
+val(D[2,2], 0);
+val(p, 0);
+
+// Result:
+// true
+// true
+// ""
+// record SimulationResult
+//     resultFile = "ArrayOperations.Test_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'ArrayOperations.Test', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''",
+//     messages = ""
+// end SimulationResult;
+// ""
+// 3.0
+// 1.0
+// 2.0
+// 1.0
+// 0.0
+// 0.0
+// 0.5
+// 2.0
+// endResult

@@ -144,7 +144,7 @@ GDBMIResponse::~GDBMIResponse()
   if (miResultRecord) delete miResultRecord;
 }
 
-static list<string> lexerErrorsList;
+static std::list<std::string> lexerErrorsList;
 static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
   pANTLR3_LEXER lexer;
@@ -183,7 +183,7 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   }
 }
 
-static list<string> parserErrorsList;
+static std::list<std::string> parserErrorsList;
 /* Error handling based on antlr3baserecognizer.c */
 static void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
@@ -398,7 +398,7 @@ void printGDBMIList(GDBMIList *miList)
   }
 }
 
-list<string> getLexerErrorsList()
+std::list<std::string> getLexerErrorsList()
 {
   return lexerErrorsList;
 }
@@ -408,7 +408,7 @@ void clearLexerErrorsList()
   lexerErrorsList.clear();
 }
 
-list<string> getParserErrorsList()
+std::list<std::string> getParserErrorsList()
 {
   return parserErrorsList;
 }
@@ -436,7 +436,7 @@ GDBMIResponse* parseGDBOutput(const char* output) {
   /* if the parser fails */
   if (parser->pParser->rec->state->failed)
   {
-    parserErrorsList.push_back(string(output));
+    parserErrorsList.push_back(output);
     delete retval;
     retval = NULL;
   }

@@ -50,6 +50,11 @@ $(builddir_share)/omc/scripts/OpenTurns/ \
 $(builddir_doc)/omc/testmodels \
 $(builddir_man)/man1/
 
+# Silence unnecessary verbose install messages from CMAKE
+CMAKE := $(CMAKE) -DCMAKE_INSTALL_MESSAGE=LAZY
+
+OMC_IPOPT_ROOT = 3rdParty/Ipopt-3.13.4
+
 ifeq ("$(APP)",".app")
 	BUILD_DIRS += $(builddir_app)
 endif
@@ -67,8 +72,7 @@ semla:
 	mkdir -p ../OMEncryption/3rdParty/SEMLA/build
 	# Build SEMLA
 	(cd ../OMEncryption/3rdParty/SEMLA/build && test -f Makefile || $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DTOOL_PRIVATE_KEY_DIRECTORY:String=`pwd`/../src/openssl_keys -DLVE_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys -DTOOLS_PUBLIC_KEYS_DIRECTORY:String=`pwd`/../src/openssl_keys -DLICENSE_MANAGER:String=testingdummy -DDECRYPTOR:String=default -DOBFUSCATOR:String=dummy -DCMAKE_INSTALL_PREFIX:String=../install ../src -G $(CMAKE_TARGET))
-	(cd ../OMEncryption/3rdParty/SEMLA/build && $(CMAKE) --build .)
-	(cd ../OMEncryption/3rdParty/SEMLA/build && $(CMAKE) --build . --target install)
+	$(MAKE) -C ../OMEncryption/3rdParty/SEMLA/build install
 	mkdir -p $(builddir_lib)/omc/SEMLA/LVE
 	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/bin/* $(builddir_lib)/omc/SEMLA
 	cp -pPR ../OMEncryption/3rdParty/SEMLA/install/lib/libtool.a $(builddir_lib)/omc/SEMLA
@@ -124,7 +128,7 @@ docs:
 	mkdir -p $(builddir_doc)/omc/testmodels
 	cp -p Examples/*.* $(builddir_doc)/omc/testmodels/
 	rm -f $(builddir_doc)/omc/testmodels/CMake*.txt
-	$(MAKE) -C Compiler/Translation OMBUILDDIR=$(OMBUILDDIR) release
+	#$(MAKE) -C Compiler/Translation OMBUILDDIR=$(OMBUILDDIR) release
 
 GC_HEADERS=gc.h gc_allocator.h gc_amiga_redirects.h gc_backptr.h gc_config_macros.h gc_gcj.h gc_pthread_redirects.h
 libgc-dev: /usr/include/gc/gc_inline.h
@@ -153,19 +157,22 @@ $(OMBUILDDIR)/include/omc/c/gc_pthread_redirects.h: 3rdParty/gc/include/gc_pthre
 3rdParty/gc/Makefile: 3rdParty/gc/configure.ac
 	(cd 3rdParty/gc && mkdir -p m4 libatomic_ops/m4 && autoreconf -vif && automake --add-missing && ./configure --prefix="`pwd`" "--host=$(host)" $(LIBGC_EXTRA_CONFIGURATION) --enable-static --disable-gcj-support --disable-java-finalization --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS) -DLARGE_CONFIG -DTHREAD_LOCAL_ALLOC")
 
-3rdParty/Ipopt/Makefile: $(LAPACK_TARGET)
-	@# Note: CXX is passed LDFLAGS, which is wrong. However, Ipopt does not respect LDFLAGS and fails to link OSX C++ code if we do not do this.
-	(cd 3rdParty/Ipopt && ./configure --prefix="`pwd`" --with-pic "CC=$(CC)" CFLAGS="$(CFLAGS) $(EXTRA_LDFLAGS)" CXX="$(CXX) $(LDFLAGS_LIBSTDCXX)" CXXFLAGS="$(CXXFLAGS)" F77="$(FC)" FFLAGS="$(FCFLAGS)" LDFLAGS="-L$(OMBUILDDIR)/$(LIB_OMC) $(LDFLAGS)" --with-lapack-lib="$(LD_LAPACK)" --with-blas-lib="$(LD_LAPACK)" "--host=$(host)" --without-metis --without-HSLold --without-HSL)
+ipopt:
+	mkdir -p $(OMC_IPOPT_ROOT)/build
+	cd $(OMC_IPOPT_ROOT)/build && $(CMAKE) .. \
+		-G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX:PATH="$(top_builddir)" \
+		-DCMAKE_INSTALL_LIBDIR="$(builddir_lib_omc)" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(builddir_inc)" \
+		-DIPOPT_BUILD_SHARED_LIBS:Bool=OFF \
+		-DMUMPS_BUILD_SHARED_LIBS:Bool=OFF \
+		-DCMAKE_POSITION_INDEPENDENT_CODE=ON
+	$(MAKE) -C $(OMC_IPOPT_ROOT)/build/ install
 
-$(OMBUILDDIR)/$(LIB_OMC)/libipopt.la: 3rdParty/Ipopt/Makefile
-	$(MAKE) -C 3rdParty/Ipopt 'MAKEOVERRIDES='
-	$(MAKE) -C 3rdParty/Ipopt install 'MAKEOVERRIDES='
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libipopt.0.0.0.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
-	test ! `uname` = Darwin || install_name_tool -id @rpath/libcoinmumps.1.5.2.dylib 3rdParty/Ipopt/lib/libcoinmumps.1.5.2.dylib
-	test ! `uname` = Darwin || install_name_tool -change "`pwd`/3rdParty/Ipopt/lib/libcoinmumps.1.dylib" @rpath/libcoinmumps.1.dylib 3rdParty/Ipopt/lib/libipopt.0.0.0.dylib
-	cp -a 3rdParty/Ipopt/lib*/*.* $(OMBUILDDIR)/$(LIB_OMC)
-
-ipopt: $(OMBUILDDIR)/$(LIB_OMC)/libipopt.la
+ipopt-clean:
+	if test -f $(OMC_IPOPT_ROOT)/build/Makefile; then $(MAKE) -C $(OMC_IPOPT_ROOT)/build/ clean; fi
+	rm -rf $(OMC_IPOPT_ROOT)/build
 
 suitesparse:
 	mkdir -p 3rdParty/SuiteSparse-5.8.1/build
@@ -482,16 +489,13 @@ openblas-clean:
 	# OpenBLAS make clean actually gives error-messages. Let it do it, but silently
 	test ! -d 3rdParty/OpenBLAS-0.2.8 || $(MAKE) -C 3rdParty/OpenBLAS-0.2.8 clean > /dev/null 2>&1
 
-clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean
+clean: $(SEMLA_CLEAN) fmil-clean opencl_rt_clean gc-clean lis-clean runtimeCPPclean CMinpack-clean metis-clean Cdaskr-clean bootstrap-clean msgpack-clean graphstream-clean openblas-clean suitesparse-clean OMSI-clean libffi-clean ipopt-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	(cd Parser && $(MAKE) -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR))
 	$(MAKE) -C Compiler/Template -f $(defaultMakefileTarget) clean OMBUILDDIR=$(OMBUILDDIR)
 	# remove ModelicaExternalC stuff
 	if test -f 3rdParty/ModelicaExternalC/BuildProjects/autotools/Makefile; then $(MAKE) -C 3rdParty/ModelicaExternalC/BuildProjects/autotools/ distclean OMBUILDDIR=$(OMBUILDDIR); fi
-	# remove Ipopt/Makefile if there is no Ipopt/Ipopt/Makefile to run configure again!
-	if test -f 3rdParty/Ipopt/Ipopt/Makefile; then true; else rm -f 3rdParty/Ipopt/Makefile || true; fi
-	if test -f 3rdParty/Ipopt/Makefile; then $(MAKE) -C 3rdParty/Ipopt distclean || true; fi
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf 3rdParty/sundials-5.4.0/build
 	rm -rf $(OMBUILDDIR)/share $(OMBUILDDIR)/lib $(OMBUILDDIR)/include $(OMBUILDDIR)/bin/OMShell* $(OMBUILDDIR)/bin/OMNotebook* \
@@ -534,7 +538,7 @@ install: install-dirs
 	# Java
 	cp -p /${builddir_java}/* ${INSTALL_JAVADIR}
 	# Translations
-	cp -rp /${builddir_locale}/* ${INSTALL_LOCALEDIR}/
+	#cp -rp /${builddir_locale}/* ${INSTALL_LOCALEDIR}/
 
 3rdParty/msgpack-0.5.8/Makefile:
 	cd 3rdParty/msgpack-0.5.8 && ./configure --prefix="`pwd`" "--host=$(host)" CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS) $(MSGPACK_CFLAGS)" CPPFLAGS="$(CPPFLAGS)" LDFLAGS="$(LDFLAGS) "
@@ -579,7 +583,7 @@ graphstream-clean:
 lpsolve: $(builddir_lib_omc)/liblpsolve55.a
 $(builddir_lib_omc)/liblpsolve55.a: 3rdParty/lpsolve/Makefile
 	$(MAKE) -C 3rdParty/lpsolve/ install CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)" CPPFLAGS="$(CPPFLAGS)" -j1
-	cp -pf 3rdParty/lpsolve/build/lib/liblpsolve55* $(builddir_lib_omc)
+	cp -pf 3rdParty/lpsolve/build/lib*/liblpsolve55* $(builddir_lib_omc)
 	cp -prf 3rdParty/lpsolve/build/include/* $(builddir_inc)/
 	test ! `uname` = Darwin || install_name_tool -id @rpath/liblpsolve55.dylib "$(builddir_lib_omc)/liblpsolve55.dylib"
 3rdParty/lpsolve/Makefile: 3rdParty/lpsolve/configure.ac
@@ -602,21 +606,25 @@ sundials: suitesparse
 $(builddir_lib_omc)/libsundials_ida.a: 3rdParty/sundials-5.4.0/CMakeLists.txt
 	mkdir -p 3rdParty/sundials-5.4.0/build
 	(cd 3rdParty/sundials-5.4.0/build && \
-	    $(CMAKE) .. -G $(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DCMAKE_INSTALL_PREFIX="`pwd`" \
-	    -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
-	    -DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" -DLDFLAGS="$(LDFLAGS)" \
-	    -DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
-	    $(SUITESPARSE_LIBS) \
-	    -DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF -DSUNDIALS_EXAMPLES_INSTALL_PATH=./examples_install \
-	    $(IS_MINGW32) $(IS_MINGW64) \
-	    -DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS))
+		$(CMAKE) .. -G $(CMAKE_TARGET) \
+		-DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
+		-DCMAKE_INSTALL_PREFIX="`pwd`" \
+		-DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON \
+		-DSUNDIALS_BUILD_STATIC_LIBS:Bool=ON \
+		-DCMAKE_C_FLAGS="$(CFLAGS) -lm -L $(builddir_lib_omc)" \
+		-DLDFLAGS="$(LDFLAGS)" \
+		-DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(builddir_lib_omc)" -DKLU_INCLUDE_DIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
+		$(SUITESPARSE_LIBS) \
+		-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF -DSUNDIALS_EXAMPLES_INSTALL=OFF \
+		$(IS_MINGW32) $(IS_MINGW64) \
+		-DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="$(LD_LAPACK)" -DCMAKE_Fortran_COMPILER="$(FC)" $(EXTRA_MACOS_FLAGS_SUNDIALS))
+
 	$(MAKE) -C 3rdParty/sundials-5.4.0/build install
 	# Test SUNDIALS but allow it to fail
 	#-$(MAKE) -C 3rdParty/sundials-5.4.0/build test test_install || echo "WARNING: SUNDIALS test failing, continuing any way"
-	mkdir -p $(OMBUILDDIR)/include/omc/c/sundials
-	# adrpo: do not copy the headers as they are not needed!
-	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(OMBUILDDIR)/include/omc/c/sundials)
-	cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/c/sundials/kinsol/
+	mkdir -p $(builddir_inc)/sundials
+	(cp -pfr 3rdParty/sundials-5.4.0/build/include/* $(builddir_inc)/sundials)
+
 	# copy the libs to the build/lib/omc directory
 	find 3rdParty/sundials-5.4.0/build/lib* -not -type d -exec cp -apf {} $(builddir_lib_omc) ";"
 
@@ -687,7 +695,7 @@ libffi: $(LIBFFI)
 	$(MAKE) -C "$(LIBFFI)" install
 
 libffi-clean:
-	-$(MAKE) -C "$(LIBFFI)" clean
+	if test -f $(LIBFFI)/Makefile; then $(MAKE) -C "$(LIBFFI)" clean; fi
 
 sanity-check: omc
 	$(OMBUILDDIR)/bin/omc Examples/SanityCheck.mos

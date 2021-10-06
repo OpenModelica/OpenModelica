@@ -40,6 +40,7 @@
 #include "PlotZoomer.h"
 #include "PlotPanner.h"
 #include "PlotPicker.h"
+#include "ScaleDraw.h"
 #include "PlotCurve.h"
 
 namespace OMPlot
@@ -50,6 +51,7 @@ class PlotGrid;
 class PlotZoomer;
 class PlotPanner;
 class PlotPicker;
+class ScaleDraw;
 class PlotCurve;
 
 class Plot : public QwtPlot
@@ -59,6 +61,8 @@ private:
   PlotWindow *mpParentPlotWindow;
   Legend *mpLegend;
   PlotGrid *mpPlotGrid;
+  ScaleDraw *mpXScaleDraw;
+  ScaleDraw *mpYScaleDraw;
   PlotZoomer *mpPlotZoomer;
   PlotPanner *mpPlotPanner;
   PlotPicker *mpPlotPicker;
@@ -72,8 +76,10 @@ public:
   PlotWindow* getParentPlotWindow();
   void setLegend(Legend *pLegend);
   Legend* getLegend();
-  QwtPlotPicker* getPlotPicker();
+  PlotPicker *getPlotPicker();
   PlotGrid* getPlotGrid();
+  ScaleDraw *getXScaleDraw() const {return mpXScaleDraw;}
+  ScaleDraw *getYScaleDraw() const {return mpYScaleDraw;}
   PlotZoomer* getPlotZoomer();
   PlotPanner* getPlotPanner();
   QList<PlotCurve*> getPlotCurvesList();

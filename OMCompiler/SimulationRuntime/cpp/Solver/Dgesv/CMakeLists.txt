@@ -11,13 +11,22 @@ IF(DGESV_FOUND)
   GET_TARGET_PROPERTY(libDgesvLocation ${DgesvName}_static LOCATION)
   GET_FILENAME_COMPONENT(libDgesvExt ${libDgesvLocation} EXT CACHE)
 
-  add_library(${DgesvSolverName} STATIC DgesvSolver.cpp DgesvSolverSettings.cpp FactoryExport.cpp)
+  add_library(${DgesvSolverName} DgesvSolver.cpp DgesvSolverSettings.cpp FactoryExport.cpp)
 
-  set_target_properties(${DgesvSolverName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING;ENABLE_SUNDIALS_STATIC")
+  if(NOT BUILD_SHARED_LIBS)
+    set_target_properties(${DgesvSolverName} PROPERTIES COMPILE_DEFINITIONS "RUNTIME_STATIC_LINKING")
+  endif(NOT BUILD_SHARED_LIBS)
+
+  target_link_libraries(${DgesvSolverName}  ${SolverName} ${ExtensionUtilitiesName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES}  ${ModelicaName})
+  add_precompiled_header(${DgesvSolverName} Core/Modelica.h)
+
+  install(FILES $<TARGET_PDB_FILE:${DgesvSolverName}> DESTINATION ${LIBINSTALLEXT} OPTIONAL)
+
   install(TARGETS ${DgesvSolverName} DESTINATION ${LIBINSTALLEXT})
   install(FILES
-    ${CMAKE_SOURCE_DIR}/Include/Solver/Dgesv/DgesvSolver.h
-    ${CMAKE_SOURCE_DIR}/Include/Solver/Dgesv/FactoryExport.h
+    ${CMAKE_SOURCE_DIR}/Solver/Dgesv/DgesvSolver.h
+    ${CMAKE_SOURCE_DIR}/Solver/Dgesv/DgesvSolverSettings.h
+    ${CMAKE_SOURCE_DIR}/Solver/Dgesv/FactoryExport.h
     DESTINATION include/omc/cpp/Solver/Dgesv)
 
 ELSE()

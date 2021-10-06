@@ -1,0 +1,37 @@
+// depends: SimilarNamesAnnotationWrongOrder.mo
+// depends: SimilarNamesAnnotationFixedOrder.mo
+// status: correct
+
+echo(false);
+s1 := readFile("SimilarNamesAnnotationWrongOrder.mo");
+s2 := readFile("SimilarNamesAnnotationFixedOrder.mo");
+
+answer := "package MM
+  model A
+    extends B;
+    annotation();
+  end A;
+
+  model C
+    extends D;
+    annotation();
+  end C;
+end MM;
+";
+res := diffModelicaFileListings(s1, s2, OpenModelica.Scripting.DiffFormat.plain);
+if answer<>res then
+  print("\nFailed \n");
+  print("\nStart model:\n\n" + s1 + "\n");
+  print("\nUpdated model:\n\n" + s2 + "\n");
+  print("\nDiff:\n\n" + diffModelicaFileListings(s1, s2) + "\n");
+  print(getErrorString());
+  writeFile("SimilarNames.res", res);
+  writeFile("SimilarNames.expected", answer);
+  print("Wrote to files SimilarNames.res and SimilarNames.expected\n");
+  exit(1);
+end if;
+print("OK\n");
+
+// Result:
+// OK
+// endResult

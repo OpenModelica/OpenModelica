@@ -92,6 +92,11 @@ typedef struct {
   int _need_update;
   int _has_jacobian;
   ANALYTIC_JACOBIAN* fmiDerJac;
+
+  fmi2Real* states;
+  fmi2Real* states_der;
+  fmi2Real* event_indicators;
+  fmi2Real* event_indicators_prev;
 } ModelInstance;
 
 /* reset alignment policy to the one set before reading this file */

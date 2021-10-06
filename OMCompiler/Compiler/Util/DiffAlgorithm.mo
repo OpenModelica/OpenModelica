@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2014, Open Source Modelica Consortium (OSMC),
+ * Copyright (c) 1998-2021, Open Source Modelica Consortium (OSMC),
  * c/o Linköpings universitet, Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -39,7 +39,7 @@ Based on:
   http://xmailserver.org/diff2.pdf
 
 Other resources used to understand the paper and optimize the algorithm:
-  http://www.codeproject.com/Articles/42279/Investigating-Myers-diff-algorithm-Part-of
+  https://www.codeproject.com/Articles/42279/Investigating-Myers-diff-algorithm-Part-1-of-2
   https://code.google.com/p/google-diff-match-patch/
 "
 

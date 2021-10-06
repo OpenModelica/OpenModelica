@@ -73,11 +73,10 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   }
   connect(mpIndexReductionMethodComboBox, SIGNAL(currentIndexChanged(int)), SLOT(updateIndexReductionToolTip(int)));
   mpInitializationCheckBox = new QCheckBox(tr("Show additional information from the initialization process"));
-  mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime)"));
+  mpEvaluateAllParametersCheckBox = new QCheckBox(tr("Evaluate all parameters (faster simulation, cannot change them at runtime, does not work with old frontend)"));
   mpNLSanalyticJacobianCheckBox = new QCheckBox(tr("Enable analytical jacobian for non-linear strong components"));
   mpParmodautoCheckBox = new QCheckBox(tr("Enable parallelization of independent systems of equations (Experimental)"));
   mpOldInstantiationCheckBox = new QCheckBox(tr("Enable old frontend for code generation"));
-  mpDataReconciliationCheckBox = new QCheckBox(tr("Enable data reconciliation"));
   mpAdditionalTranslationFlagsLabel = new Label(tr("Additional Translation Flags:"));
   mpAdditionalTranslationFlagsLabel->setToolTip(Helper::translationFlagsTip);
   mpAdditionalTranslationFlagsTextBox = new QLineEdit;
@@ -100,7 +99,6 @@ TranslationFlagsWidget::TranslationFlagsWidget(QWidget *pParent)
   pMainLayout->addWidget(mpNLSanalyticJacobianCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpParmodautoCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpOldInstantiationCheckBox, row++, 0, 1, 3);
-  pMainLayout->addWidget(mpDataReconciliationCheckBox, row++, 0, 1, 3);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsLabel, row, 0);
   pMainLayout->addWidget(mpAdditionalTranslationFlagsTextBox, row, 1);
   pMainLayout->addWidget(mpTranslationFlagsHelpButton, row++, 2);
@@ -127,7 +125,6 @@ void TranslationFlagsWidget::applySimulationOptions(const SimulationOptions &sim
   mpNLSanalyticJacobianCheckBox->setChecked(simulationOptions.getNLSanalyticJacobian());
   mpParmodautoCheckBox->setChecked(simulationOptions.getParmodauto());
   mpOldInstantiationCheckBox->setChecked(simulationOptions.getOldInstantiation());
-  mpDataReconciliationCheckBox->setChecked(simulationOptions.getDataReconciliation());
   mpAdditionalTranslationFlagsTextBox->setText(simulationOptions.getAdditionalTranslationFlags());
 }
 
@@ -145,7 +142,6 @@ void TranslationFlagsWidget::createSimulationOptions(SimulationOptions *pSimulat
   pSimulationOptions->setNLSanalyticJacobian(mpNLSanalyticJacobianCheckBox->isChecked());
   pSimulationOptions->setParmodauto(mpParmodautoCheckBox->isChecked());
   pSimulationOptions->setOldInstantiation(mpOldInstantiationCheckBox->isChecked());
-  pSimulationOptions->setDataReconciliation(mpDataReconciliationCheckBox->isChecked());
   pSimulationOptions->setAdditionalTranslationFlags(mpAdditionalTranslationFlagsTextBox->text());
 }
 
@@ -197,19 +193,10 @@ QString TranslationFlagsWidget::commandLineOptions()
     debugFlags.append("nonewInst");
   }
 
-  QStringList preOptModules;
-  // data reconciliation
-  if (mpDataReconciliationCheckBox->isChecked()) {
-    preOptModules.append("dataReconciliation");
-  }
-
   QStringList commandLineOptions;
   commandLineOptions.append(configFlags);
   if (!debugFlags.isEmpty()) {
     commandLineOptions.append(QString("-d=%1").arg(debugFlags.join(",")));
-  }
-  if (!preOptModules.isEmpty()) {
-    commandLineOptions.append(QString("--preOptModules+=%1").arg(preOptModules.join(",")));
   }
   // set command line options set manually by user. This can override above options.
   if (!mpAdditionalTranslationFlagsTextBox->text().isEmpty()) {

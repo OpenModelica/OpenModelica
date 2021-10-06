@@ -146,12 +146,6 @@ private:
   QComboBox *mpProfilingComboBox;
   QCheckBox *mpCPUTimeCheckBox;
   QCheckBox *mpEnableAllWarningsCheckBox;
-  QGroupBox *mpReconcileGroupBox;
-  Label *mpDataReconciliationInputFileLabel;
-  QLineEdit *mpDataReconciliationInputFileTextBox;
-  QPushButton *mpDataReconciliationInputFileBrowseButton;
-  Label *mpDataReconciliationEpsilonLabel;
-  QLineEdit *mpDataReconciliationEpsilonTextBox;
   QGroupBox *mpLoggingGroupBox;
   QGridLayout *mpLoggingGroupLayout;
   Label *mpAdditionalSimulationFlagsLabel;
@@ -176,6 +170,19 @@ private:
   QCheckBox *mpEquidistantTimeGridCheckBox;
   QCheckBox *mpStoreVariablesAtEventsCheckBox;
   QCheckBox *mpShowGeneratedFilesCheckBox;
+  // Data Reconciliation Tab
+  QWidget *mpDataReconciliationTab;
+  QGroupBox *mpDataReconciliationGroupBox;
+  Label *mpDataReconciliationAlgorithmLabel;
+  QComboBox *mpDataReconciliationAlgorithmComboBox;
+  Label *mpDataReconciliationMeasurementInputFileLabel;
+  QLineEdit *mpDataReconciliationMeasurementInputFileTextBox;
+  QPushButton *mpDataReconciliationMeasurementInputFileBrowseButton;
+  Label *mpDataReconciliationCorrelationMatrixInputFileLabel;
+  QLineEdit *mpDataReconciliationCorrelationMatrixInputFileTextBox;
+  QPushButton *mpDataReconciliationCorrelationMatrixInputFileBrowseButton;
+  Label *mpDataReconciliationEpsilonLabel;
+  QLineEdit *mpDataReconciliationEpsilonTextBox;
   // checkboxes
   QCheckBox *mpSaveExperimentAnnotationCheckBox;
   QCheckBox *mpSaveSimulationFlagsAnnotationCheckBox;
@@ -225,7 +232,6 @@ public slots:
   void interactiveSimulation(bool checked);
   void browseModelSetupFile();
   void browseEquationSystemInitializationFile();
-  void browseDataReconciliationInputFile();
   void showSimulationFlagsHelp();
   void simulate();
   void reject();
@@ -233,6 +239,8 @@ public slots:
   void updateYAxis(double min, double max);
 private slots:
   void resultFileNameChanged(QString text);
+  void browseDataReconciliationMeasurementInputFile();
+  void browseDataReconciliationCorrelationMatrixInputFile();
   void simulationStarted();
   void simulationPaused();
 };

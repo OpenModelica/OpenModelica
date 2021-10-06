@@ -1204,17 +1204,11 @@ void DocumentationViewer::createActions()
 
 /*!
  * \brief DocumentationViewer::resetZoom
- * Resets the zoom. \n
- * QWebView seems to be using fixed 96 dpi so set a proper base zoomfactor for high resolution screens.
+ * Resets the zoom.
  */
 void DocumentationViewer::resetZoom()
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-  qreal zoomFactor = QApplication::primaryScreen()->logicalDotsPerInchX() / 96;
-#else // QT_VERSION_CHECK
-  qreal zoomFactor = QApplication::desktop()->screen()->logicalDpiX() / 96;
-#endif // QT_VERSION_CHECK
-  setZoomFactor(zoomFactor < 1 ? 1 : zoomFactor);
+  setZoomFactor(1.0);
 }
 
 /*!

@@ -36,6 +36,7 @@
 #include <qwt_text.h>
 #include <qwt_plot_curve.h>
 #include <qwt_plot_picker.h>
+#include <qwt_scale_draw.h>
 #include <qwt_picker_machine.h>
 #include <qwt_plot_grid.h>
 #include <qwt_curve_fitter.h>
@@ -65,9 +66,7 @@ private:
   Plot *mpPlot;
   QCheckBox *mpLogXCheckBox;
   QCheckBox *mpLogYCheckBox;
-  QToolButton *mpGridButton;
-  QToolButton *mpDetailedGridButton;
-  QToolButton *mpNoGridButton;
+  QComboBox *mpGridComboBox;
   QToolButton *mpAutoScaleButton;
   QToolButton *mpSetupButton;
   QToolButton *mpStartSimulationToolButton;
@@ -79,8 +78,14 @@ private:
   QStringList mVariablesList;
   PlotType mPlotType;
   QString mGridType;
-  QString mUnit;
-  QString mDisplayUnit;
+  QString mXLabel;
+  QString mYLabel;
+  QString mXCustomLabel;
+  QString mYCustomLabel;
+  QString mXUnit;
+  QString mXDisplayUnit;
+  QString mYUnit;
+  QString mYDisplayUnit;
   QString mTimeUnit;
   QString mXRangeMin;
   QString mXRangeMax;
@@ -95,6 +100,9 @@ private:
   int mInteractivePort;
   QwtSeriesData<QPointF>* mpInteractiveData;
   QString mInteractiveModelName;
+  bool mPrefixUnits;
+  bool mCanUseXPrefixUnits;
+  bool mCanUseYPrefixUnits;
   QMdiSubWindow *mpSubWindow;
 public:
   PlotWindow(QStringList arguments = QStringList(), QWidget *parent = 0, bool isInteractiveSimulation = false);
@@ -131,12 +139,22 @@ public:
   QToolButton* getStartSimulationButton() {return mpStartSimulationToolButton;}
   QToolButton* getPauseSimulationButton() {return mpPauseSimulationToolButton;}
   QComboBox* getSimulationSpeedBox() {return mpSimulationSpeedComboBox;}
-  void setXLabel(QString label);
-  void setYLabel(QString label);
-  void setUnit(QString unit) {mUnit = unit;}
-  QString getUnit() {return mUnit;}
-  void setDisplayUnit(QString displayUnit) {mDisplayUnit = displayUnit;}
-  QString getDisplayUnit() {return mDisplayUnit;}
+  void setXLabel(const QString &label) {mXLabel = label;}
+  QString getXLabel() const {return mXLabel;}
+  void setYLabel(const QString &label) {mYLabel = label;}
+  QString getYLabel() const {return mYLabel;}
+  void setXCustomLabel(const QString &label) {mXCustomLabel = label;}
+  QString getXCustomLabel() const {return mXCustomLabel;}
+  void setYCustomLabel(const QString &label) {mYCustomLabel = label;}
+  QString getYCustomLabel() const {return mYCustomLabel;}
+  void setXUnit(QString xUnit) {mXUnit = xUnit;}
+  QString getXUnit() {return mXUnit;}
+  void setXDisplayUnit(QString xDisplayUnit) {mXDisplayUnit = xDisplayUnit;}
+  QString getXDisplayUnit() {return mXDisplayUnit;}
+  void setYUnit(QString yUnit) {mYUnit = yUnit;}
+  QString getYUnit() {return mYUnit;}
+  void setYDisplayUnit(QString yDisplayUnit) {mYDisplayUnit = yDisplayUnit;}
+  QString getYDisplayUnit() {return mYDisplayUnit;}
   void setTimeUnit(QString timeUnit) {mTimeUnit = timeUnit;}
   QString getTimeUnit() {return mTimeUnit;}
   void setXRange(double min, double max);
@@ -155,6 +173,12 @@ public:
   QString getLegendPosition();
   void setFooter(QString footer);
   QString getFooter();
+  bool getPrefixUnits() const;
+  void setPrefixUnits(bool prefixUnits);
+  bool canUseXPrefixUnits() const;
+  void setCanUseXPrefixUnits(bool canUseXPrefixUnits);
+  bool canUseYPrefixUnits() const;
+  void setCanUseYPrefixUnits(bool canUseYPrefixUnits);
   void checkForErrors(QStringList variables, QStringList variablesPlotted);
   Plot* getPlot();
   void receiveMessage(QStringList arguments);
@@ -164,6 +188,7 @@ public:
   void updateTimeText(QString unit);
   void updateCurves();
   void updateYAxis(QPair<double, double> minMaxValues);
+  void updatePlot();
 signals:
   void closingDown();
 public slots:
@@ -171,9 +196,7 @@ public slots:
   void enablePanMode(bool on);
   void exportDocument();
   void printPlot();
-  void setGrid(bool on);
-  void setDetailedGrid(bool on);
-  void setNoGrid(bool on);
+  void setGrid(int index);
   void fitInView();
   void setLogX(bool on);
   void setLogY(bool on);
@@ -295,6 +318,7 @@ private:
   QLineEdit *mpYMinimumTextBox;
   QLabel *mpYMaximumLabel;
   QLineEdit *mpYMaximumTextBox;
+  QCheckBox *mpPrefixUnitsCheckbox;
   /* buttons */
   QPushButton *mpOkButton;
   QPushButton *mpApplyButton;

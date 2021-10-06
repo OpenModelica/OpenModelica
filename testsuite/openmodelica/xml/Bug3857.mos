@@ -43,10 +43,10 @@ readFile("Bug3857.xml"); getErrorString();
 // ""
 // "<?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <OpenModelicaModelDescription
-//   xmlns:exp=\"https://svn.jmodelica.org/trunk/XML/daeExpressions.xsd\"
-//   xmlns:equ=\"https://svn.jmodelica.org/trunk/XML/daeEquations.xsd\"
-//   xmlns:fun=\"https://svn.jmodelica.org/trunk/XML/daeFunctions.xsd\"
-//   xmlns:opt=\"https://svn.jmodelica.org/trunk/XML/daeOptimization.xsd\"
+//   xmlns:exp=\"https://github.com/JModelica/JModelica/tree/master/XML/daeExpressions.xsd\"
+//   xmlns:equ=\"https://github.com/JModelica/JModelica/tree/master/XML/daeEquations.xsd\"
+//   xmlns:fun=\"https://github.com/JModelica/JModelica/tree/master/XML/daeFunctions.xsd\"
+//   xmlns:opt=\"https://github.com/JModelica/JModelica/tree/master/XML/daeOptimization.xsd\"
 //   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
 //   fmiVersion=\"1.0\"
 //   modelName=\"Modelica.Blocks.Examples.PID_Controller\"
@@ -4539,10 +4539,10 @@ readFile("Bug3857.xml"); getErrorString();
 //
 // </OpenModelicaModelDescription><?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <OpenModelicaModelDescription
-//   xmlns:exp=\"https://svn.jmodelica.org/trunk/XML/daeExpressions.xsd\"
-//   xmlns:equ=\"https://svn.jmodelica.org/trunk/XML/daeEquations.xsd\"
-//   xmlns:fun=\"https://svn.jmodelica.org/trunk/XML/daeFunctions.xsd\"
-//   xmlns:opt=\"https://svn.jmodelica.org/trunk/XML/daeOptimization.xsd\"
+//   xmlns:exp=\"https://github.com/JModelica/JModelica/tree/master/XML/daeExpressions.xsd\"
+//   xmlns:equ=\"https://github.com/JModelica/JModelica/tree/master/XML/daeEquations.xsd\"
+//   xmlns:fun=\"https://github.com/JModelica/JModelica/tree/master/XML/daeFunctions.xsd\"
+//   xmlns:opt=\"https://github.com/JModelica/JModelica/tree/master/XML/daeOptimization.xsd\"
 //   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
 //   fmiVersion=\"1.0\"
 //   modelName=\"BouncingBall\"
@@ -4779,10 +4779,10 @@ readFile("Bug3857.xml"); getErrorString();
 //
 // </OpenModelicaModelDescription><?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <OpenModelicaModelDescription
-//   xmlns:exp=\"https://svn.jmodelica.org/trunk/XML/daeExpressions.xsd\"
-//   xmlns:equ=\"https://svn.jmodelica.org/trunk/XML/daeEquations.xsd\"
-//   xmlns:fun=\"https://svn.jmodelica.org/trunk/XML/daeFunctions.xsd\"
-//   xmlns:opt=\"https://svn.jmodelica.org/trunk/XML/daeOptimization.xsd\"
+//   xmlns:exp=\"https://github.com/JModelica/JModelica/tree/master/XML/daeExpressions.xsd\"
+//   xmlns:equ=\"https://github.com/JModelica/JModelica/tree/master/XML/daeEquations.xsd\"
+//   xmlns:fun=\"https://github.com/JModelica/JModelica/tree/master/XML/daeFunctions.xsd\"
+//   xmlns:opt=\"https://github.com/JModelica/JModelica/tree/master/XML/daeOptimization.xsd\"
 //   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
 //   fmiVersion=\"1.0\"
 //   modelName=\"NewtonCoolingDynamic\"
@@ -5044,10 +5044,10 @@ readFile("Bug3857.xml"); getErrorString();
 //
 // </OpenModelicaModelDescription><?xml version=\"1.0\" encoding=\"UTF-8\"?>
 // <OpenModelicaModelDescription
-//   xmlns:exp=\"https://svn.jmodelica.org/trunk/XML/daeExpressions.xsd\"
-//   xmlns:equ=\"https://svn.jmodelica.org/trunk/XML/daeEquations.xsd\"
-//   xmlns:fun=\"https://svn.jmodelica.org/trunk/XML/daeFunctions.xsd\"
-//   xmlns:opt=\"https://svn.jmodelica.org/trunk/XML/daeOptimization.xsd\"
+//   xmlns:exp=\"https://github.com/JModelica/JModelica/tree/master/XML/daeExpressions.xsd\"
+//   xmlns:equ=\"https://github.com/JModelica/JModelica/tree/master/XML/daeEquations.xsd\"
+//   xmlns:fun=\"https://github.com/JModelica/JModelica/tree/master/XML/daeFunctions.xsd\"
+//   xmlns:opt=\"https://github.com/JModelica/JModelica/tree/master/XML/daeOptimization.xsd\"
 //   xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
 //   fmiVersion=\"1.0\"
 //   modelName=\"HysteresisEmbeddedControlNoWhen\"

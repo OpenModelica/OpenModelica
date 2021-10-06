@@ -66,6 +66,7 @@ protected import Flags;
 protected import List;
 protected import MetaModelica.Dangerous;
 protected import Static;
+protected import System;
 protected import Types;
 protected import Util;
 protected import Values;
@@ -400,8 +401,16 @@ algorithm
       DAE.Type tp;
       Boolean b2;
       Real r1,r2;
-      String idn, idn2;
+      String idn, idn2, name;
       Integer n,i1,i2;
+      DAE.ReductionInfo ri;
+
+    // min|max|sum|product(array(x for x in ...)) -> min(x for x in ...). Only works for scalar arrays (might affect sum; other entries are not valid Modelica)
+    case (DAE.CALL(path=Absyn.IDENT(name),expLst={e as DAE.REDUCTION(reductionInfo=ri as DAE.REDUCTIONINFO(path=Absyn.IDENT("array")), iterators={_})}, attr=DAE.CALL_ATTR(ty=tp)))
+      guard listMember(name, {"sum", "product", "min", "max"})
+      algorithm
+        e.reductionInfo := DAE.REDUCTIONINFO(Absyn.IDENT(name), Absyn.COMBINE(), tp, SOME(reductionDefaultValue(name, tp)), ri.foldName, ri.resultName, SOME(reductionExpression(name, tp, ri.foldName, ri.resultName)));
+      then e;
 
     // homotopy(e, e) => e
     case DAE.CALL(path=Absyn.IDENT("homotopy"),expLst={e1,e2})
@@ -1079,6 +1088,54 @@ protected function addCast
 algorithm
   outExp:=DAE.CAST(inType,inExp);
 end addCast;
+
+protected function reductionDefaultValue
+  input String name;
+  input DAE.Type ty;
+  output Values.Value defaultValue;
+algorithm
+  defaultValue := match (name, ty)
+    case ("min", DAE.T_BOOL()) then Values.BOOL(true);
+    case ("min", DAE.T_INTEGER()) then Values.INTEGER(System.intMaxLit());
+    case ("min", DAE.T_REAL()) then Values.REAL(System.realMaxLit());
+    case ("min", DAE.T_ENUMERATION())
+      then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.path, List.last(ty.names)), listLength(ty.names));
+
+    case ("max", DAE.T_BOOL()) then Values.BOOL(false);
+    case ("max", DAE.T_INTEGER()) then Values.INTEGER(intNeg(System.intMaxLit()));
+    case ("max", DAE.T_REAL()) then Values.REAL(realNeg(System.realMaxLit()));
+    case ("max", DAE.T_ENUMERATION())
+      then Values.ENUM_LITERAL(AbsynUtil.suffixPath(ty.path, List.last(ty.names)), 1);
+
+    case ("product", DAE.T_INTEGER()) then Values.INTEGER(1);
+    case ("product", DAE.T_REAL()) then Values.REAL(1.0);
+
+    case ("sum", DAE.T_INTEGER()) then Values.INTEGER(0);
+    case ("sum", DAE.T_REAL()) then Values.REAL(0.0);
+  end match;
+end reductionDefaultValue;
+
+
+protected function reductionExpression
+  input String name;
+  input DAE.Type ty;
+  input String foldName;
+  input String resultName;
+  output DAE.Exp foldExp;
+protected
+  DAE.Exp foldNameExp, resultNameExp;
+algorithm
+  foldNameExp := Expression.makeCrefExp(ComponentReference.makeCrefIdent(foldName,ty,{}), ty);
+  resultNameExp := Expression.makeCrefExp(ComponentReference.makeCrefIdent(resultName,ty,{}), ty);
+
+  foldExp := match name
+    case "min" then Expression.makeBuiltinCall("min",{foldNameExp, resultNameExp}, ty, false);
+    case "max" then Expression.makeBuiltinCall("max",{foldNameExp, resultNameExp}, ty, false);
+    case "product" then DAE.BINARY(foldNameExp, DAE.MUL(ty), resultNameExp);
+    case "sum" then DAE.BINARY(foldNameExp, DAE.ADD(ty), resultNameExp);
+  end match;
+end reductionExpression;
+
 
 protected function simplifyBuiltinCalls "simplifies some builtin calls (with no constant expressions)"
   input DAE.Exp exp;
@@ -5604,8 +5661,10 @@ protected function simplifyReductionFoldPhase
   input list<DAE.Exp> inExps;
   input Option<Values.Value> defaultValue;
   output DAE.Exp exp;
+protected
+  Boolean checkForSimplifications;
 algorithm
-  exp := match (path,optFoldExp,foldName,resultName,ty,inExps,defaultValue)
+  (exp, checkForSimplifications) := match (path,optFoldExp,foldName,resultName,ty,inExps,defaultValue)
     local
       Values.Value val;
       DAE.Exp arr_exp,foldExp;
@@ -5619,23 +5678,23 @@ algorithm
         length = listLength(inExps);
         ty2 = Types.liftArray(aty, DAE.DIM_INTEGER(length)); // The size can be unknown before the reduction...
         exp = Expression.makeArray(inExps, ty2, not Types.isArray(aty));
-      then exp;
+      then (exp, false);
 
-    case (_,_,_,_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
+    case (_,_,_,_,_,{},SOME(val)) then (ValuesUtil.valueExp(val), false);
     case (_,_,_,_,_,{},NONE()) then fail();
 
     case (Absyn.IDENT("min"),_,_,_,_,_,_)
       equation
         arr_exp = Expression.makeScalarArray(inExps, ty);
-      then Expression.makePureBuiltinCall("min", {arr_exp}, ty);
+      then (Expression.makePureBuiltinCall("min", {arr_exp}, ty), true);
 
     case (Absyn.IDENT("max"),_,_,_,_,_,_)
       equation
         arr_exp = Expression.makeScalarArray(inExps, ty);
-      then Expression.makePureBuiltinCall("max", {arr_exp}, ty);
+      then (Expression.makePureBuiltinCall("max", {arr_exp}, ty), true);
 
     case (_,SOME(_),_,_,_,{exp},_)
-      then exp;
+      then (exp, false);
 
 
     // foldExp=(a+b) ; exps={1,2,3,4}
@@ -5646,9 +5705,12 @@ algorithm
     case (_,SOME(foldExp),_,_,_,exp::exps,_)
       equation
         exp = simplifyReductionFoldPhase2(exps,foldExp,foldName,resultName,exp);
-      then exp;
+      then (exp, false);
 
   end match;
+  if checkForSimplifications then
+    (exp,true) := simplify1(exp);
+  end if;
 end simplifyReductionFoldPhase;
 
 protected function simplifyReductionFoldPhase2

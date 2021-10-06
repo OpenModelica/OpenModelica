@@ -237,7 +237,7 @@ MESSAGE(STATUS " ")
 
 if(BUILD_SHARED_LIBS)
   # tweak SYSTEM_CFLAGS for precompiled headers
-  create_precompiled_header(${ModelicaName} Include/Core/Modelica.h)
+  create_precompiled_header(${ModelicaName} Core/Modelica.h)
 else(BUILD_SHARED_LIBS)
   # set SYSTEM_CFLAGS from cmake variables
   STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
@@ -291,10 +291,10 @@ ENDIF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR "${CMAKE_CXX_COMPILER_ID}" ST
 
 
 install(TARGETS ${ModelicaName} DESTINATION ${LIBINSTALLEXT})
-install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/Modelica.h ${CMAKE_SOURCE_DIR}/Include/Core/ModelicaDefine.h DESTINATION include/omc/cpp/Core)
-install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/TextfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
-install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/MatfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
-install (FILES  ${CMAKE_SOURCE_DIR}/Include/Core/DataExchange/Policies/BufferReaderWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
+install (FILES  ${CMAKE_SOURCE_DIR}/Core/Modelica.h ${CMAKE_SOURCE_DIR}/Core/ModelicaDefine.h DESTINATION include/omc/cpp/Core)
+install (FILES  ${CMAKE_SOURCE_DIR}/Core/DataExchange/Policies/TextfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
+install (FILES  ${CMAKE_SOURCE_DIR}/Core/DataExchange/Policies/MatfileWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
+install (FILES  ${CMAKE_SOURCE_DIR}/Core/DataExchange/Policies/BufferReaderWriter.h DESTINATION include/omc/cpp/Core/DataExchange/Policies)
 #if(REDUCE_DAE)
 #install (FILES Policies/BufferReaderWriter.h DESTINATION include/omc/cpp/policies)
 #endif()

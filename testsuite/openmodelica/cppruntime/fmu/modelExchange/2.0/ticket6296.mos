@@ -7,6 +7,7 @@
 setCommandLineOptions("--std=3.3"); getErrorString();
 setCommandLineOptions("-d=newInst,-nfScalarize,disableFMIDependency"); getErrorString();
 setCommandLineOptions("--simCodeTarget=Cpp"); getErrorString();
+setCommandLineOptions("--exportClocksInModeldescription=true"); getErrorString();
 
 loadString("model ArrayEquationsTest
   parameter Integer n = 10;
@@ -33,6 +34,8 @@ system("sed -n \"/<ModelVariables>/,/<\\/ModelVariables>/p\" ArrayEquationsTest_
 readFile("ArrayEquationsTest.xml"); getErrorString()
 
 // Result:
+// true
+// ""
 // true
 // ""
 // true
@@ -202,6 +205,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[1]\"
 //     valueReference=\"31\"
 //     variability=\"discrete\"
+//     previous=\"1\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -210,6 +214,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[2]\"
 //     valueReference=\"32\"
 //     variability=\"discrete\"
+//     previous=\"2\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -218,6 +223,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[3]\"
 //     valueReference=\"33\"
 //     variability=\"discrete\"
+//     previous=\"3\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -226,6 +232,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[4]\"
 //     valueReference=\"34\"
 //     variability=\"discrete\"
+//     previous=\"4\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -234,6 +241,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[5]\"
 //     valueReference=\"35\"
 //     variability=\"discrete\"
+//     previous=\"5\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -242,6 +250,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[6]\"
 //     valueReference=\"36\"
 //     variability=\"discrete\"
+//     previous=\"6\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -250,6 +259,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[7]\"
 //     valueReference=\"37\"
 //     variability=\"discrete\"
+//     previous=\"7\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -258,6 +268,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[8]\"
 //     valueReference=\"38\"
 //     variability=\"discrete\"
+//     previous=\"8\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -266,6 +277,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[9]\"
 //     valueReference=\"39\"
 //     variability=\"discrete\"
+//     previous=\"9\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -274,6 +286,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     name=\"x1[10]\"
 //     valueReference=\"40\"
 //     variability=\"discrete\"
+//     previous=\"10\"
 //     initial=\"exact\">
 //     <Real/>
 //   </ScalarVariable>
@@ -283,6 +296,7 @@ readFile("ArrayEquationsTest.xml"); getErrorString()
 //     valueReference=\"41\"
 //     variability=\"discrete\"
 //     causality=\"output\"
+//     clockIndex=\"1\"
 //     >
 //     <Real/>
 //   </ScalarVariable>

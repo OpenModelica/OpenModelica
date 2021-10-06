@@ -275,7 +275,6 @@ public
       case TYPED_COMPONENT() then component.info;
       case ITERATOR() then component.info;
       case TYPE_ATTRIBUTE() then Modifier.info(component.modifier);
-      case DELETED_COMPONENT() then info(component.component);
       // Fail for enumeration literals, InstNode.info handles that case instead.
     end match;
   end info;
@@ -364,7 +363,6 @@ public
       case UNTYPED_COMPONENT() then InstNode.getType(component.classInst);
       case ITERATOR() then component.ty;
       case TYPE_ATTRIBUTE() then component.ty;
-      case DELETED_COMPONENT() then getType(component.component);
       else Type.UNKNOWN();
     end match;
   end getType;
@@ -490,7 +488,8 @@ public
       if InstNode.isRecord(cls_node) then
         try
           record_exp := Class.makeRecordExp(cls_node);
-          binding := Binding.FLAT_BINDING(record_exp, Expression.variability(record_exp));
+          binding := Binding.makeTyped(record_exp, NFBinding.EachType.NOT_EACH,
+            NFBinding.Source.GENERATED, info(component));
         else
         end try;
       end if;
@@ -759,7 +758,6 @@ public
     cty := match component
       case UNTYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
       case TYPED_COMPONENT(attributes = Attributes.ATTRIBUTES(connectorType = cty)) then cty;
-      case DELETED_COMPONENT() then connectorType(component.component);
       else ConnectorType.NON_CONNECTOR;
     end match;
   end connectorType;
@@ -924,7 +922,7 @@ public
 
     while true loop
       (name, binding) := listHead(ty_attrs);
-      bind_exp := Expression.getBindingExp(Binding.getExp(binding));
+      bind_exp := Expression.expandSplitIndices(Binding.getExp(binding));
       binding_dims := Type.dimensionCount(Expression.typeOf(bind_exp));
 
       if var_dims > binding_dims then
@@ -1039,7 +1037,7 @@ public
       return;
     end if;
 
-    fixed := fixed and Expression.isTrue(Expression.getBindingExp(Binding.getExp(binding)));
+    fixed := fixed and Expression.isTrue(Binding.getExp(binding));
   end getFixedAttribute;
 
   function getUnitAttribute
@@ -1057,7 +1055,7 @@ public
       return;
     end if;
 
-    unit := Expression.getBindingExp(Binding.getExp(binding));
+    unit := Binding.getExp(binding);
 
     unitString := match unit
       case Expression.STRING() then unit.value;
@@ -1076,7 +1074,6 @@ public
       case TYPED_COMPONENT(condition = condition)
         then Binding.isBound(condition) and Expression.isFalse(Binding.getTypedExp(condition));
 
-      case DELETED_COMPONENT() then true;
       else false;
     end match;
   end isDeleted;
@@ -1090,6 +1087,13 @@ public
       else false;
     end match;
   end isTypeAttribute;
+
+  function isModifiable
+    input Component component;
+    output Boolean isModifiable;
+  algorithm
+    isModifiable := not isFinal(component) and not (isConst(component) and hasBinding(component));
+  end isModifiable;
 
 annotation(__OpenModelica_Interface="frontend");
 end NFComponent;

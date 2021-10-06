@@ -479,7 +479,7 @@ void read_input_xml(MODEL_DATA* modelData,
     char buf[BUFSIZ] = {0};
     do
     {
-      size_t len = fread(buf, 1, sizeof(buf), file);
+      size_t len = omc_fread(buf, 1, sizeof(buf), file, 1);
       done = len < sizeof(buf);
       if(XML_STATUS_ERROR == XML_Parse(parser, buf, len, done))
       {
@@ -961,7 +961,7 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
     line[0] = '\0';
     fseek(infile, 0L, SEEK_SET);
     errno = 0;
-    if (1 != fread(line, n, 1, infile)) {
+    if (1 != omc_fread(line, n, 1, infile, 0)) {
       free(line);
       throwStreamPrint(NULL, "simulation_input_xml.c: could not read overrideFile %s: %s", overrideFile, strerror(errno));
     }
@@ -1005,6 +1005,11 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       while (p) {
         // split it key = value => map[key]=value
         value = strchr(p, '=');
+
+        if (!value) {
+          throwStreamPrint(NULL, "Invalid format for value of override flag: %s", override);
+        }
+
         if (*value == '\0') {
           warningStreamPrint(LOG_SOLVER, 0, "failed to parse override string %s", p);
           p = strtok(NULL, "!");
@@ -1035,6 +1040,11 @@ void doOverride(omc_ModelInput *mi, MODEL_DATA *modelData, const char *override,
       while (p) {
         // split it key = value => map[key]=value
         value = strchr(p, '=');
+
+        if (!value) {
+          throwStreamPrint(NULL, "Invalid format for value of override flag: %s", override);
+        }
+
         if (*value == '\0') {
           warningStreamPrint(LOG_SOLVER, 0, "failed to parse override string %s", p);
           p = strtok(NULL, "!");

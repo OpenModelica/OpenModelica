@@ -40,6 +40,7 @@ import Type = NFType;
 import NFPrefixes.*;
 import List;
 import FunctionDerivative = NFFunctionDerivative;
+import FunctionInverse = NFFunctionInverse;
 import NFModifier.Modifier;
 
 protected
@@ -263,6 +264,7 @@ uniontype Function
     Type returnType;
     DAE.FunctionAttributes attributes;
     list<FunctionDerivative> derivatives;
+    array<FunctionInverse> inverses;
     Pointer<FunctionStatus> status;
     Pointer<Integer> callCounter "Used during function evaluation to limit recursion.";
   end FUNCTION;
@@ -283,7 +285,7 @@ uniontype Function
     // Make sure builtin functions aren't added to the function tree.
     status := if isBuiltinAttr(attr) then FunctionStatus.COLLECTED else FunctionStatus.INITIAL;
     fn := FUNCTION(path, node, inputs, outputs, locals, {}, Type.UNKNOWN(),
-      attr, {}, Pointer.create(status), Pointer.create(0));
+      attr, {}, listArray({}), Pointer.create(status), Pointer.create(0));
   end new;
 
   function lookupFunctionSimple
@@ -345,13 +347,6 @@ uniontype Function
   algorithm
     fn_ref := lookupFunction(functionName, scope, context, info);
     (fn_ref, fn_node, specialBuiltin) := instFunctionRef(fn_ref, context, info);
-
-    if (InstNode.isClass(ComponentRef.node(fn_ref)) and InstNode.isPartial(fn_node)) and
-       not InstContext.inRelaxed(context) then
-      Error.addSourceMessage(Error.PARTIAL_FUNCTION_CALL,
-        {InstNode.name(fn_node)}, info);
-      fail();
-    end if;
   end instFunction;
 
   function instFunctionRef
@@ -420,7 +415,6 @@ uniontype Function
         Absyn.ComponentRef cr;
         InstNode sub_fnNode;
         list<Function> funcs;
-        list<FunctionDerivative> fn_ders;
 
       case SCode.CLASS() guard SCodeUtil.isOperatorRecord(def)
         algorithm
@@ -466,6 +460,7 @@ uniontype Function
           fn := new(fnPath, fnNode);
           specialBuiltin := isSpecialBuiltin(fn);
           fn.derivatives := FunctionDerivative.instDerivatives(fnNode, fn);
+          fn.inverses := FunctionInverse.instInverses(fnNode, fn);
           fnNode := InstNode.cacheAddFunc(fnNode, fn, specialBuiltin);
         then
           (fnNode, specialBuiltin);
@@ -505,7 +500,7 @@ uniontype Function
     cache := InstNode.getFuncCache(InstNode.classScope(inNode));
     outFuncs := match cache
       case CachedData.FUNCTION() then cache.funcs;
-      else fail();
+      else {};
     end match;
   end getCachedFuncs;
 
@@ -769,11 +764,16 @@ uniontype Function
       else
         annMod := SCode.NOMOD();
       end if;
-      // Generate derivative annotations from the instantiated model. Paths have changed.
-      annMod := SCodeUtil.filterSubMods(annMod, function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative"}));
+      // Generate derivative/inverse annotations from the instantiated model. Paths have changed.
+      annMod := SCodeUtil.filterSubMods(annMod,
+        function SCodeUtil.removeGivenSubModNames(namesToRemove={"derivative", "inverse"}));
 
       for derivative in fn.derivatives loop
         annMod := SCodeUtil.prependSubModToMod(FunctionDerivative.toSubMod(derivative), annMod);
+      end for;
+
+      for inverse in fn.inverses loop
+        annMod := SCodeUtil.prependSubModToMod(FunctionInverse.toSubMod(inverse), annMod);
       end for;
 
       if not SCodeUtil.emptyModOrEquality(annMod) then
@@ -1007,6 +1007,9 @@ uniontype Function
     outArg := match slot.evalStatus
       local
         Expression exp;
+        Type ty;
+        Variability var;
+        Purity pur;
 
       // An already evaluated slot, return its binding.
       case SlotEvalStatus.EVALUATED
@@ -1026,8 +1029,8 @@ uniontype Function
           arrayUpdate(slots, slot.index, slot);
 
           exp := evaluateSlotExp(Util.getOption(slot.default), slots, info);
-          outArg := TypedArg.TYPED_ARG(NONE(), exp, Expression.typeOf(exp),
-            Expression.variability(exp), Expression.purity(exp));
+          (exp, ty, var, pur) := Typing.typeExp(exp, NFInstContext.FUNCTION, info);
+          outArg := TypedArg.TYPED_ARG(NONE(), exp, ty, var, pur);
 
           slot.arg := SOME(outArg);
           slot.evalStatus := SlotEvalStatus.EVALUATED;
@@ -1055,27 +1058,48 @@ uniontype Function
     output Expression outExp;
   algorithm
     outExp := match exp
-      local
-        ComponentRef cref;
-        Option<Slot> slot;
-        TypedArg arg;
-
-      case Expression.CREF(cref = cref as ComponentRef.CREF(restCref = ComponentRef.EMPTY()))
-        algorithm
-          slot := lookupSlotInArray(ComponentRef.firstName(cref), slots);
-
-          if isSome(slot) then
-            arg := fillDefaultSlot(Util.getOption(slot), slots, info);
-            outExp := arg.value;
-          else
-            outExp := exp;
-          end if;
-        then
-          outExp;
-
+      case Expression.CREF() then evaluateSlotCref(exp, slots, info);
       else exp;
     end match;
   end evaluateSlotExp_traverser;
+
+  function evaluateSlotCref
+    input output Expression crefExp;
+    input array<Slot> slots;
+    input SourceInfo info;
+  protected
+    ComponentRef cref;
+    Type cref_ty;
+    list<ComponentRef> cref_parts;
+    String name;
+    Option<Slot> slot;
+    TypedArg arg;
+  algorithm
+    Expression.CREF(cref = cref, ty = cref_ty) := crefExp;
+
+    if not ComponentRef.isCref(cref) then
+      return;
+    end if;
+
+    cref :: cref_parts := ComponentRef.toListReverse(cref);
+    name := ComponentRef.firstName(cref);
+    slot := lookupSlotInArray(name, slots);
+
+    if isSome(slot) then
+      arg := fillDefaultSlot(Util.getOption(slot), slots, info);
+      crefExp := arg.value;
+      crefExp := Expression.applySubscripts(ComponentRef.getSubscripts(cref), crefExp);
+
+      for cr in cref_parts loop
+        crefExp := Expression.recordElement(ComponentRef.firstName(cr), crefExp);
+        crefExp := Expression.applySubscripts(ComponentRef.getSubscripts(cr), crefExp);
+      end for;
+
+      if Type.isKnown(cref_ty) then
+        crefExp := TypeCheck.matchTypes(Expression.typeOf(crefExp), cref_ty, crefExp);
+      end if;
+    end if;
+  end evaluateSlotCref;
 
   function lookupSlotInArray
     input String slotName;
@@ -1302,10 +1326,11 @@ uniontype Function
     "Returns the function(s) referenced by the given cref, and types them if
      they are not already typed."
     input ComponentRef functionRef;
+    input InstContext.Type context = NFInstContext.FUNCTION;
     output list<Function> functions;
   algorithm
     functions := match functionRef
-      case ComponentRef.CREF() then typeNodeCache(functionRef.node);
+      case ComponentRef.CREF() then typeNodeCache(functionRef.node, context);
       else
         algorithm
           Error.assertion(false, getInstanceName() + " got invalid function call reference", sourceInfo());
@@ -1318,6 +1343,7 @@ uniontype Function
     "Returns the function(s) in the cache of the given node, and types them if
      they are not already typed."
     input InstNode functionNode;
+    input InstContext.Type context = NFInstContext.FUNCTION;
     output list<Function> functions;
   protected
     InstNode fn_node;
@@ -1329,9 +1355,9 @@ uniontype Function
 
     // Type the function(s) if not already done.
     if not typed then
-      functions := list(typeFunctionSignature(f) for f in functions);
+      functions := list(typeFunctionSignature(f, context) for f in functions);
       InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
-      functions := list(typeFunctionBody(f) for f in functions);
+      functions := list(typeFunctionBody(f, context) for f in functions);
       InstNode.setFuncCache(fn_node, CachedData.FUNCTION(functions, true, special));
     end if;
   end typeNodeCache;
@@ -1348,34 +1374,28 @@ uniontype Function
 
   function typeFunction
     input output Function fn;
+    input InstContext.Type context = NFInstContext.FUNCTION;
   algorithm
-    fn := typeFunctionSignature(fn);
-    fn := typeFunctionBody(fn);
+    fn := typeFunctionSignature(fn, context);
+    fn := typeFunctionBody(fn, context);
   end typeFunction;
 
   function typeFunctionSignature
-    "Types a function's parameters, local components and default arguments."
+    "Types a function's parameters and local components."
     input output Function fn;
+    input InstContext.Type context;
   protected
     DAE.FunctionAttributes attr;
     InstNode node = fn.node;
   algorithm
     if not isTyped(fn) then
       // Type all the components in the function.
-      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, NFInstContext.FUNCTION, node);
-      Typing.typeComponents(node, NFInstContext.FUNCTION);
+      Typing.typeClassType(node, NFBinding.EMPTY_BINDING, context, node);
+      Typing.typeComponents(node, context);
 
       if InstNode.isPartial(node) then
         ClassTree.applyComponents(Class.classTree(InstNode.getClass(node)), boxFunctionParameter);
       end if;
-
-      // Type the bindings of the inputs only. This is done because they are
-      // needed when type checking a function call. The outputs are not needed
-      // for that and can contain recursive calls to the function, so we leave
-      // them for later.
-      for c in fn.inputs loop
-        Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
-      end for;
 
       // Make the slots and return type for the function.
       fn.slots := makeSlots(fn.inputs);
@@ -1385,29 +1405,36 @@ uniontype Function
   end typeFunctionSignature;
 
   function typeFunctionBody
-    "Types the body of a function, along with any bindings of local variables
-     and outputs."
+    "Types the body of a function, along with any component bindings."
     input output Function fn;
+    input InstContext.Type context;
   protected
     Boolean pure;
     DAE.FunctionAttributes attr;
   algorithm
-    // Type the bindings of the outputs and local variables.
+    // Type the bindings of components in the function.
+    for c in fn.inputs loop
+      Typing.typeComponentBinding(c, context);
+    end for;
+
     for c in fn.outputs loop
-      Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
+      Typing.typeComponentBinding(c, context);
     end for;
 
     for c in fn.locals loop
-      Typing.typeComponentBinding(c, NFInstContext.FUNCTION);
+      Typing.typeComponentBinding(c, context);
     end for;
 
     // Type the algorithm section of the function, if it has one.
-    Typing.typeFunctionSections(fn.node, NFInstContext.FUNCTION);
+    Typing.typeFunctionSections(fn.node, context);
 
     // Type any derivatives of the function.
     for fn_der in fn.derivatives loop
       FunctionDerivative.typeDerivative(fn_der);
     end for;
+
+    // Type any inverses of the function.
+    Array.mapNoCopy(fn.inverses, FunctionInverse.typeInverse);
 
     // If the function is pure, check that it doesn't contain any impure calls.
     if not isImpure(fn) then
@@ -1766,7 +1793,9 @@ uniontype Function
     ity := fn.attributes.inline;
     ty := makeDAEType(fn);
     unused_inputs := analyseUnusedParameters(fn);
-    defs := def :: list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives);
+    defs := list(FunctionInverse.toDAE(fn_inv) for fn_inv in fn.inverses);
+    defs := listAppend(list(FunctionDerivative.toDAE(fn_der) for fn_der in fn.derivatives), defs);
+    defs := def :: defs;
     daeFn := DAE.FUNCTION(fn.path, defs, ty, vis, par, impr, ity, unused_inputs,
       ElementSource.createElementSource(InstNode.info(fn.node)),
       SCodeUtil.getElementComment(InstNode.definition(fn.node)));
@@ -1798,7 +1827,8 @@ uniontype Function
     end for;
 
     params := listReverse(params);
-    ty := if boxTypes then Type.box(fn.returnType) else fn.returnType;
+    ty := if isDefaultRecordConstructor(fn) then InstNode.getType(fn.node) else fn.returnType;
+    ty := if boxTypes then Type.box(ty) else ty;
     outType := DAE.T_FUNCTION(params, Type.toDAE(ty), fn.attributes, fn.path);
   end makeDAEType;
 
@@ -1907,6 +1937,23 @@ uniontype Function
       InstNode.updateComponent(comp, node);
     end if;
   end mapExpParameter;
+
+  function mapBody
+    input output Function fn;
+    input MapFn mapFn;
+
+    partial function MapFn
+      input output Algorithm alg;
+    end MapFn;
+  protected
+    Class cls;
+    Sections sections;
+  algorithm
+    cls := InstNode.getClass(fn.node);
+    sections := Sections.map(Class.getSections(cls), algFn = mapFn);
+    cls := cls.setSections(sections, cls);
+    InstNode.updateClass(cls, fn.node);
+  end mapBody;
 
   function foldExp<ArgT>
     input Function fn;
@@ -2104,7 +2151,7 @@ protected
   algorithm
     try
       comp := InstNode.component(component);
-      default := Binding.typedExp(Component.getImplicitBinding(comp));
+      default := Binding.getExpOpt(Component.getImplicitBinding(comp));
       name := InstNode.name(component);
 
       // Remove $in_ for OM input output arguments.
@@ -2427,23 +2474,38 @@ protected
   function getLocalDependencies
     input InstNode node;
     input UnorderedSet<InstNode> locals;
-    output list<InstNode> dependencies = {};
+    output list<InstNode> dependencies;
   protected
+    Component comp;
     Binding binding;
     UnorderedSet<InstNode> deps;
   algorithm
-    binding := Component.getBinding(InstNode.component(node));
+    // Use a set to store the dependencies to avoid duplicates.
+    deps := UnorderedSet.new(InstNode.hash, InstNode.refEqual, 1);
+
+    comp := InstNode.component(node);
+    binding := Component.getBinding(comp);
 
     if Binding.hasExp(binding) then
-      // Use a set to store the dependencies to avoid duplicates.
-      deps := UnorderedSet.new(InstNode.hash, InstNode.refEqual, 1);
-      deps := Expression.fold(Binding.getExp(binding),
-        function getLocalDependencies2(locals = locals), deps);
-      dependencies := UnorderedSet.toList(deps);
+      deps := getLocalDependenciesExp(Binding.getExp(binding), locals, deps);
     end if;
+
+    deps := Type.foldDims(Component.getType(comp),
+      function getLocalDependenciesDim(locals = locals), deps);
+
+    dependencies := UnorderedSet.toList(deps);
   end getLocalDependencies;
 
-  function getLocalDependencies2
+  function getLocalDependenciesExp
+    input Expression exp;
+    input UnorderedSet<InstNode> locals;
+    input output UnorderedSet<InstNode> deps;
+  algorithm
+    deps := Expression.fold(exp,
+      function getLocalDependenciesExp2(locals = locals), deps);
+  end getLocalDependenciesExp;
+
+  function getLocalDependenciesExp2
     input Expression exp;
     input UnorderedSet<InstNode> locals;
     input output UnorderedSet<InstNode> deps;
@@ -2474,7 +2536,16 @@ protected
 
       else ();
     end match;
-  end getLocalDependencies2;
+  end getLocalDependenciesExp2;
+
+  function getLocalDependenciesDim
+    input Dimension dim;
+    input UnorderedSet<InstNode> locals;
+    input output UnorderedSet<InstNode> deps;
+  algorithm
+    deps := Dimension.foldExp(dim,
+      function getLocalDependenciesExp(locals = locals), deps);
+  end getLocalDependenciesDim;
 end Function;
 
 annotation(__OpenModelica_Interface="frontend");

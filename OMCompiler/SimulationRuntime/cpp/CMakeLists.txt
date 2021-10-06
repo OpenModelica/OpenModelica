@@ -34,6 +34,10 @@
 #
 # The used defines are stored in the SYSTEM_CFLAGS variable, which is passed to the ModelicaConfig.inc and written in the PrecompiledHeader.cmake
 
+if(OPENMODELICA_NEW_CMAKE_BUILD)
+  include(cmake_3.14.cmake)
+else(OPENMODELICA_NEW_CMAKE_BUILD)
+
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.9)
 
 IF(UNIX)
@@ -128,6 +132,7 @@ SET(CVodeName ${LIBPREFIX}CVode${LIBSUFFIX})
 SET(ARKodeName ${LIBPREFIX}ARKode${LIBSUFFIX})
 SET(IDAName ${LIBPREFIX}IDA${LIBSUFFIX})
 SET(PeerName ${LIBPREFIX}Peer${LIBSUFFIX})
+SET(DASSLName ${LIBPREFIX}DASSL${LIBSUFFIX})
 SET(CppDASSLName ${LIBPREFIX}CppDASSL${LIBSUFFIX})
 SET(RTRKName ${LIBPREFIX}RTRK${LIBSUFFIX})
 SET(EulerName ${LIBPREFIX}Euler${LIBSUFFIX})
@@ -519,7 +524,7 @@ MESSAGE(STATUS ${LAPACK_LIBRARIES})
 
 MESSAGE(STATUS "use reduce dae method: ${REDUCE_DAE} - "  )
 IF(REDUCE_DAE)
- MESSAGE(STATUS "using reduce dae method") 
+ MESSAGE(STATUS "using reduce dae method")
  ADD_DEFINITIONS("-DUSE_REDUCE_DAE")
  SET(OMCCAPI_INLCUDE_HOME  omcCAPI/include/)
  SET(OMCCAPI_LIBRARY_RELEASE_HOME   Build_CAPI/)
@@ -546,7 +551,7 @@ IF(USE_SUNDIALS)
     SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/include/")
     SET(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/lib/")
   ELSE(MSVC)
-    SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/c/sundials)
+    SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/sundials)
     SET(SUNDIALS_LIBRARY_RELEASE_HOME   ${CMAKE_INSTALL_PREFIX}/${LIBINSTALLEXT}/..)
   ENDIF(MSVC)
 
@@ -822,8 +827,7 @@ endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
 #set (CMAKE_CXX_FLAGS "-Winvalid-pch")
 #build of simulation.core
 include_directories ("Include")
-include_directories ("Solver")
-#include_directories ("Include/Solver/KLU")
+#include_directories ("Solver/KLU")
 
 #add_subdirectory (Solver/KLU)
 # Needs to be included before Core/Modelica othwise environment variables are not set.
@@ -869,6 +873,13 @@ if(NOT FMU_TARGET)
   add_subdirectory(Solver/Peer)
   add_subdirectory(Solver/LinearSolver)
   # add simulation solvers
+  find_package(Cdaskr)
+  if(CDASKR_FOUND)
+    add_subdirectory(Solver/DASSL)
+    message(STATUS "DASSL enabled")
+  else(CDASKR_FOUND)
+    message(STATUS "DASSL disabled because Cdaskr not found")
+  endif(CDASKR_FOUND)
   add_subdirectory(Solver/Euler)
   add_subdirectory(Solver/RK12)
   add_subdirectory(Solver/RTEuler)
@@ -944,6 +955,11 @@ GET_FILENAME_COMPONENT(libDgesvSolverName ${libDgesvSolver} NAME)
 GET_TARGET_PROPERTY(libPeer ${PeerName} LOCATION)
 GET_FILENAME_COMPONENT(libPeerName ${libPeer} NAME)
 
+IF(CDASKR_FOUND)
+  GET_TARGET_PROPERTY(libDASSL ${DASSLName} LOCATION)
+  GET_FILENAME_COMPONENT(libDASSLName ${libDASSL} NAME)
+ENDIF(CDASKR_FOUND)
+
 IF(OPENMP_FOUND)
   GET_TARGET_PROPERTY(libCppDASSL ${CppDASSLName} LOCATION)
   GET_FILENAME_COMPONENT(libCppDASSLName ${libCppDASSL} NAME)
@@ -1016,6 +1032,7 @@ set (NEWTON_LIB ${libNewtonName})
 set (BROYDEN_LIB ${libBroydenName})
 set (UMFPACK_LIB ${libUmfPackName})
 set (PEER_LIB ${libPeerName})
+set (DASSL_LIB ${libDASSLName})
 set (CPPDASSL_LIB ${libCppDASSLName})
 set (RTRK_LIB ${libRTRKName})
 set (SYSTEM_LIB ${libSystemName})
@@ -1073,43 +1090,46 @@ install (FILES "${PROJECT_BINARY_DIR}/LibrariesConfig.h" DESTINATION include/omc
 install (FILES "Licenses/sundials.license" DESTINATION share/omc/runtime/cpp/licenses)
 
 #copy Utils/extension
-SET(HS Include/Core/Object/IObject.h
-        Include/Core/Object/Object.h
-        Include/Core/Utils/extension/adaptable_factory.hpp
-        Include/Core/Utils/extension/common.hpp
-        Include/Core/Utils/extension/convenience.hpp
-        Include/Core/Utils/extension/extension.hpp
-        Include/Core/Utils/extension/factory.hpp
-        Include/Core/Utils/extension/factory_map.hpp
-        Include/Core/Utils/extension/filesystem.hpp
-        Include/Core/Utils/extension/parameter.hpp
-        Include/Core/Utils/extension/parameter_map.hpp
-        Include/Core/Utils/extension/registry.hpp
-        Include/Core/Utils/extension/shared_library.hpp
-        Include/Core/Utils/extension/type_map.hpp
-        Include/Core/Utils/extension/logger.hpp
-        Include/Core/Utils/extension/impl/adaptable_factory.hpp
-        Include/Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
-        Include/Core/Utils/extension/impl/adaptable_factory_set.hpp
-        Include/Core/Utils/extension/impl/create.hpp
-        Include/Core/Utils/extension/impl/create_func.hpp
-        Include/Core/Utils/extension/impl/decl.hpp
-        Include/Core/Utils/extension/impl/factory.hpp
-        Include/Core/Utils/extension/impl/factory_map.hpp
-        Include/Core/Utils/extension/impl/function.hpp
-        Include/Core/Utils/extension/impl/library_impl.hpp
-        Include/Core/Utils/extension/impl/shared_library.hpp
-        Include/Core/Utils/extension/impl/typeinfo.hpp
-        Include/FMU2/fmi2Functions.h
-        Include/FMU2/fmi2FunctionTypes.h
-        Include/FMU2/fmi2TypesPlatform.h
-        Include/FMU2/FMU2GlobalSettings.h
-        Include/FMU2/FMU2Interface.cpp
-        Include/FMU2/FMU2Wrapper.cpp
-        Include/FMU2/FMU2Wrapper.h)
+SET(HS Core/Object/IObject.h
+        Core/Object/Object.h
+        Core/Utils/extension/adaptable_factory.hpp
+        Core/Utils/extension/common.hpp
+        Core/Utils/extension/convenience.hpp
+        Core/Utils/extension/extension.hpp
+        Core/Utils/extension/factory.hpp
+        Core/Utils/extension/factory_map.hpp
+        Core/Utils/extension/filesystem.hpp
+        Core/Utils/extension/parameter.hpp
+        Core/Utils/extension/parameter_map.hpp
+        Core/Utils/extension/registry.hpp
+        Core/Utils/extension/shared_library.hpp
+        Core/Utils/extension/type_map.hpp
+        Core/Utils/extension/logger.hpp
+        Core/Utils/extension/impl/adaptable_factory.hpp
+        Core/Utils/extension/impl/adaptable_factory_free_functions.hpp
+        Core/Utils/extension/impl/adaptable_factory_set.hpp
+        Core/Utils/extension/impl/create.hpp
+        Core/Utils/extension/impl/create_func.hpp
+        Core/Utils/extension/impl/decl.hpp
+        Core/Utils/extension/impl/factory.hpp
+        Core/Utils/extension/impl/factory_map.hpp
+        Core/Utils/extension/impl/function.hpp
+        Core/Utils/extension/impl/library_impl.hpp
+        Core/Utils/extension/impl/shared_library.hpp
+        Core/Utils/extension/impl/typeinfo.hpp
+        FMU2/fmi2Functions.h
+        FMU2/fmi2FunctionTypes.h
+        FMU2/fmi2TypesPlatform.h
+        FMU2/FMU2GlobalSettings.h
+        FMU2/FMU2Interface.cpp
+        FMU2/FMU2Wrapper.cpp
+        FMU2/FMU2Wrapper.h)
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
 
 if(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
   # symlink boost includes outside platform specific /usr/include
   install(CODE "execute_process(COMMAND ln -sf /usr/include/boost \"${CMAKE_INSTALL_PREFIX}/include/omc/cpp/\")")
 endif(UNIX AND Boost_INCLUDE_DIR STREQUAL "/usr/include")
+
+
+endif(OPENMODELICA_NEW_CMAKE_BUILD)

@@ -2,17 +2,25 @@ TEST = ../../rtest -v
 
 TESTFILES = \
 tearnonlin1.mos \
+WhenInitialTerminal.mos \
 WhenStatement1.mos \
 WhenTuple.mos \
 BouncingBall.mos \
+arrayCatTest.mos \
+arrayOperationsTest.mos \
 arraySliceTest.mos \
 clockedAlgloopTest.mos \
 clockedEventTest.mos \
+clockedEventRotationalTest.mos \
 clockedSolverTest.mos \
 clockedTypesTest.mos \
 clockedTest.mos \
 externalArrayInputTest.mos \
 mathFunctionsTest.mos \
+mslDistributionsTest.mos \
+mslElectricalMachinesTest.mos \
+mslElectricalSensorsTest.mos \
+mslMathFFT1Test.mos \
 nameClashTest.mos \
 functionPointerTest.mos \
 recordTupleReturnTest.mos \
@@ -20,6 +28,7 @@ RefArrayDim2.mos \
 solveTest.mos \
 testArrayEquations.mos \
 testMatrixIO.mos \
+testMatrixState.mos \
 testVectorizedBlocks.mos \
 testVectorizedPowerSystem.mos \
 testVectorizedSolarSystem.mos \

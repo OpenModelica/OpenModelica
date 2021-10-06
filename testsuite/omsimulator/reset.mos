@@ -1,7 +1,6 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf reset.lua reset.fmu reset.log reset_systemCall.log temp-reset/
-// cflags: -d=-newInst
 
 loadString("
 model reset
@@ -71,20 +70,20 @@ readFile("reset_systemCall.log");
 // info:      A.x:       1.0
 // info:    Simulation
 // info:      A.x_start: 1.0
-// info:      A.x:       0.3486784401
+// info:      A.x:       0.36769542477096
 // info:    No result file will be created
 // info:    Initialization
 // info:      A.x_start: 1.5
 // info:      A.x:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       0.52301766015
+// info:      A.x:       0.55154313715645
 // info:    No result file will be created
 // info:    Initialization
 // info:      A.x_start: 1.5
 // info:      A.x:       1.5
 // info:    Simulation
 // info:      A.x_start: 1.5
-// info:      A.x:       0.52301766015
+// info:      A.x:       0.55154313715645
 // "
 // endResult

@@ -17,84 +17,95 @@ simulate(ASSC); getErrorString();
 // ""
 // true
 // ######################################################
-//  LinearIntegerJacobian sparsity pattern: Original
+//  LinearJacobian sparsity pattern: Original
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
-// (5|5|false):	[2|1] [3|1] [1|1] 	|| RHS: 0
-// (4|4|false):	[2|1] [3|1] 	|| RHS: 5.0 - y
-// (3|3|false):	[2|2] [3|2] [1|1] 	|| RHS: 10.0 - x
+// (3|3|false):    [2|2.0] [3|2.0]     || RHS: 10.0 - (x + c)
+// (5|5|false):    [2|1.0] [3|1.0]     || RHS: -c
 //
 // ######################################################
-//  LinearIntegerJacobian sparsity pattern: Solved
+//  LinearJacobian sparsity pattern: Solved
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
-// (5|5|false):	[2|1] [3|1] [1|1] 	|| RHS: 0
-// (4|4|true):	[1|-1] 	|| RHS: 5.0 - y
-// (3|3|true):	EMPTY ROW 		|| RHS: -5.0 + x - y
+// (3|3|false):    [2|1.0] [3|1.0]     || RHS: 10.0 - (x + c)
+// (5|5|true):    EMPTY ROW         || RHS: -10.0 + x + c - 2.0 * c
 //
-// [ASSC] The equation: 2.0 * (a + b) + c + x = 10.0
-// [ASSC] Gets replaced by equation: 0.0 = -5.0 + x - y
-// unmatched equations: 3
+// [ASSC] The equation: a + b + c = 0.0
+// [ASSC] Gets replaced by equation: 0.0 = -10.0 + x + c - 2.0 * c
+// unmatched equations: 5
 //
 // Index Reduction neccessary!
 // MSS subsets:
-//  3
+//  5, 4
 //
 // ##############--MSSS--##############
-// Indices of constraint equations: 3
+// Indices of constraint equations: 5 4
 //
-// ------------------3------------------
+// ------------------4------------------
 // Constraint equation to be differentiated:
-// 0.0 = -5.0 + x - y
+// 0.0 = 5.0 + c - y
 // Differentiated equation:
-// 0.0 = der(x) - der(y)
+// 0.0 = der(c) - der(y)
 //
-// Update Adjacency Matrix: 3
+// ------------------5------------------
+// Constraint equation to be differentiated:
+// 0.0 = -10.0 + x + c - 2.0 * c
+// Differentiated equation:
+// 0.0 = der(x) - der(c)
+//
+// Update Adjacency Matrix: 3 4 5
 //
 // ########################### STATE SELECTION ###########################
 // ########## Try static state selection ##########
 // Try to select dummy vars with natural matching (newer)
-// Select 1 dummy states from 2 candidates.
+// Select 2 dummy states from 3 candidates.
 //
-// Highest order derivatives (state candidates): (2)
+// Highest order derivatives (state candidates): (3)
 // ========================================
-// 1: y:STATE(1)()  type: Real
-// 2: x:STATE(1)(fixed = true )  type: Real
+// 1: c:STATE(1)(stateSelect=StateSelect.never )  type: Real
+// 2: y:STATE(1)()  type: Real
+// 3: x:STATE(1)(fixed = true )  type: Real
 //
 //
-// Constraint equations: (1)
+// Constraint equations: (2)
 // ========================================
-// 1/1 (1): 0.0 = -5.0 + x - y   [unknown |0|0|0|0|]
+// 1/1 (1): 0.0 = -10.0 + x + c - 2.0 * c   [unknown |0|0|0|0|]
+// 2/2 (1): 0.0 = 5.0 + c - y   [unknown |0|0|0|0|]
 //
 // Adjacency Matrix Enhanced (row == equation)
 // ====================================
-// number of rows: 1
-// 1:(-2,constone) (-1,constone)
+// number of rows: 2
+// 1:(-3,constone) (-1,constone)
+// 2:(-1,constone) (-2,constone)
 //
 // Transpose Adjacency Matrix Enhanced (row == var)
 // =====================================
-// number of rows: 2
-// 1:(-1,constone)
-// 2:(-1,constone)
+// number of rows: 3
+// 1:(-2,constone) (-1,constone)
+// 2:(-2,constone)
+// 3:(-1,constone)
 //
 //
 // Matching
 // ========================================
-// 2 variables
+// 3 variables
 // var 1 is solved in eqn 1
-// var 2 is solved in eqn -1
+// var 2 is solved in eqn 2
+// var 3 is solved in eqn -1
 //
 //
 // Matching
 // ========================================
-// 1 equations
+// 2 equations
 // eqn 1 is solved for var 1
+// eqn 2 is solved for var 2
 // Perfect Matching, no dynamic index reduction needed! There are no unassigned equations.
 //
 //
-// Selected dummy states: (1)
+// Selected dummy states: (2)
 // ========================================
 // 1: y:STATE(1)()  type: Real
+// 2: c:STATE(1)(stateSelect=StateSelect.never )  type: Real
 //
 //
 // Selected continuous states: (1)

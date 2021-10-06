@@ -33,6 +33,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   QT += printsupport widgets webkitwidgets concurrent
 }
 
+CONFIG += c++14
+
 TARGET = OMEdit
 TEMPLATE = lib
 CONFIG += staticlib
@@ -186,7 +188,9 @@ SOURCES += Util/Helper.cpp \
   OMS/OMSSimulationOutputWidget.cpp \
   Animation/TimeManager.cpp \
   Util/ResourceCache.cpp \
-  Util/NetworkAccessManager.cpp
+  Util/NetworkAccessManager.cpp \
+  FlatModelica/Expression.cpp \
+  FlatModelica/ExpressionFuncs.cpp
 
 HEADERS  += Util/Helper.h \
   Util/Utilities.h \
@@ -281,7 +285,9 @@ HEADERS  += Util/Helper.h \
   Interfaces/InformationInterface.h \
   Interfaces/ModelInterface.h \
   Util/ResourceCache.h \
-  Util/NetworkAccessManager.h
+  Util/NetworkAccessManager.h \
+  FlatModelica/Expression.h \
+  FlatModelica/ExpressionFuncs.h
 
 CONFIG(osg) {
 

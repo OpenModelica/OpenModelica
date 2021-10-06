@@ -43,6 +43,11 @@
 #include "PlotMainWindow.h"
 #include "PlotApplication.h"
 
+#include "util/omc_error.h"
+
+void (*omc_assert)(threadData_t*,FILE_INFO info,const char *msg,...) __attribute__((noreturn)) = omc_assert_function;
+void (*omc_assert_warning)(FILE_INFO info,const char *msg,...) = omc_assert_warning_function;
+
 using namespace OMPlot;
 
 #define CONSUME_BOOL_ARG(i,n,var) { \
@@ -237,6 +242,9 @@ int main(int argc, char *argv[])
     arguments.append(autoScale ? "true" : "false");
     arguments.append(vars);
     // create the plot application object that is used to check that only one instance of application is running
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+    QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+#endif
     PlotApplication app(argc, argv, "OMPlot");
     // create the plot main window
     PlotMainWindow w;

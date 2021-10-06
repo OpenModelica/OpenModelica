@@ -70,6 +70,9 @@ LibraryTreeItem::LibraryTreeItem()
   OMCInterface::getClassInformation_res classInformation;
   setClassInformation(classInformation);
   setFileName("");
+  mVersionDate = "";
+  mVersionBuild = "";
+  mDateModified = "";
   setReadOnly(false);
   setIsSaved(false);
   setSaveContentsType(LibraryTreeItem::SaveInOneFile);
@@ -169,6 +172,11 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
   if (mLibraryType == LibraryTreeItem::Modelica) {
     mClassInformation = classInformation;
     setFileName(classInformation.fileName);
+    if (!mIsRootItem) {
+      mVersionDate = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "versionDate");
+      mVersionBuild = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "versionBuild", StringHandler::Integer);
+      mDateModified = MainWindow::instance()->getOMCProxy()->getNamedAnnotation(mNameStructure, "dateModified");
+    }
     setReadOnly(classInformation.fileReadOnly);
     // set save contents type
     if (isFilePathValid()) {
@@ -205,6 +213,58 @@ void LibraryTreeItem::setClassInformation(OMCInterface::getClassInformation_res 
     if (mpModelWidget) {
       mpModelWidget->updateViewButtonsBasedOnAccess();
     }
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersion
+ * \return
+ */
+const QString &LibraryTreeItem::getVersion() const
+{
+  if (mClassInformation.version.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersion();
+  } else {
+    return mClassInformation.version;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersionDate
+ * \return
+ */
+const QString &LibraryTreeItem::getVersionDate() const
+{
+  if (mVersionDate.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersionDate();
+  } else {
+    return mVersionDate;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getVersionBuild
+ * \return
+ */
+const QString &LibraryTreeItem::getVersionBuild() const
+{
+  if (mVersionBuild.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getVersionBuild();
+  } else {
+    return mVersionBuild;
+  }
+}
+
+/*!
+ * \brief LibraryTreeItem::getDateModified
+ * \return
+ */
+const QString &LibraryTreeItem::getDateModified() const
+{
+  if (mDateModified.isEmpty() && mpParentLibraryTreeItem && !mpParentLibraryTreeItem->isRootItem()) {
+    return mpParentLibraryTreeItem->getDateModified();
+  } else {
+    return mDateModified;
   }
 }
 
@@ -455,6 +515,7 @@ QIcon LibraryTreeItem::getLibraryTreeItemIcon() const
               return ResourceCache::getIcon(":/Resources/icons/package-icon.svg");
           }
         case oms_signal_type_integer:
+        case oms_signal_type_enum:
           switch (mpOMSConnector->causality) {
             case oms_causality_input:
               return ResourceCache::getIcon(":/Resources/icons/integer-input-connector.svg");
@@ -714,7 +775,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
   for (int bc = 0; bc < baseClasses.size(); ++bc) {
     QList<LibraryTreeItem*> classes = baseClasses[bc]->childrenItems();
     for (int i = 0; i < classes.size(); ++i) {
-      if (classes[i]->getName().startsWith(lastPart) &&
+      if (classes[i]->getName().startsWith(lastPart, Qt::CaseInsensitive) &&
               classes[i]->getNameStructure().compare("OMEdit.Search.Feature") != 0)
         completionClasses << (CompleterItem(classes[i]->getName(), classes[i]->getHTMLDescription()));
     }
@@ -722,7 +783,7 @@ void LibraryTreeItem::tryToComplete(QList<CompleterItem> &completionClasses, QLi
     if (!baseClasses[bc]->isRootItem() && baseClasses[bc]->getLibraryType() == LibraryTreeItem::Modelica) {
       const QList<ElementInfo*> &components = baseClasses[bc]->getComponentsList();
       for (int i = 0; i < components.size(); ++i) {
-        if (components[i]->getName().startsWith(lastPart))
+        if (components[i]->getName().startsWith(lastPart, Qt::CaseInsensitive))
           completionComponents << CompleterItem(components[i]->getName(), components[i]->getHTMLDescription() + QString("<br/>// Inside %1").arg(baseClasses[bc]->mNameStructure));
       }
     }
@@ -805,7 +866,7 @@ int LibraryTreeItem::row() const
  */
 bool LibraryTreeItem::isTopLevel() const
 {
-  if (parent()->isRootItem()) {
+  if (mpParentLibraryTreeItem && mpParentLibraryTreeItem->isRootItem()) {
     return true;
   } else {
     return false;
@@ -1367,15 +1428,6 @@ void LibraryTreeModel::addModelicaLibraries()
   }
   // load Modelica User Libraries.
   pOMCProxy->loadUserLibraries();
-  QStringList userLibs = pOMCProxy->getClassNames();
-  foreach (QString lib, userLibs) {
-    if (systemLibs.contains(lib)) {
-      continue;
-    }
-    SplashScreen::instance()->showMessage(QString(Helper::loading).append(" ").append(lib), Qt::AlignRight, Qt::white);
-    createLibraryTreeItem(lib, mpRootLibraryTreeItem, true, false, true);
-    checkIfAnyNonExistingClassLoaded();
-  }
 }
 
 /*!
@@ -1578,36 +1630,6 @@ void LibraryTreeModel::updateLibraryTreeItemClassText(LibraryTreeItem *pLibraryT
 }
 
 /*!
- * \brief LibraryTreeModel::updateLibraryTreeItemClassTextManually
- * Updates the Parent Modelica class text after user has made changes manually in the text view.
- * \param pLibraryTreeItem
- * \param contents
- */
-void LibraryTreeModel::updateLibraryTreeItemClassTextManually(LibraryTreeItem *pLibraryTreeItem, QString contents)
-{
-  // set the library node not saved.
-  pLibraryTreeItem->setIsSaved(false);
-  updateLibraryTreeItem(pLibraryTreeItem);
-  // update the containing parent LibraryTreeItem class text.
-  LibraryTreeItem *pParentLibraryTreeItem = getContainingFileParentLibraryTreeItem(pLibraryTreeItem);
-  // we also mark the containing parent class unsaved because it is very important for saving of single file packages.
-  pParentLibraryTreeItem->setIsSaved(false);
-  updateLibraryTreeItem(pParentLibraryTreeItem);
-  OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  pParentLibraryTreeItem->setClassText(contents);
-  if (pParentLibraryTreeItem->getModelWidget()) {
-    pParentLibraryTreeItem->getModelWidget()->setWindowTitle(QString(pParentLibraryTreeItem->getName()).append("*"));
-  }
-  // if we first updated the parent class then the child classes needs to be updated as well.
-  if (pParentLibraryTreeItem != pLibraryTreeItem) {
-    pOMCProxy->loadString(pParentLibraryTreeItem->getClassText(this), pParentLibraryTreeItem->getFileName(), Helper::utf8,
-                          pParentLibraryTreeItem->getSaveContentsType() == LibraryTreeItem::SaveFolderStructure, false);
-    updateChildLibraryTreeItemClassText(pParentLibraryTreeItem, contents, pParentLibraryTreeItem->getFileName());
-    pParentLibraryTreeItem->setClassInformation(pOMCProxy->getClassInformation(pParentLibraryTreeItem->getNameStructure()));
-  }
-}
-
-/*!
  * \brief LibraryTreeModel::updateChildLibraryTreeItemClassText
  * Updates the class text of child LibraryTreeItems
  * \param pLibraryTreeItem
@@ -1621,9 +1643,7 @@ void LibraryTreeModel::updateChildLibraryTreeItemClassText(LibraryTreeItem *pLib
     if (pChildLibraryTreeItem && pChildLibraryTreeItem->getFileName().compare(fileName) == 0) {
       pChildLibraryTreeItem->setClassInformation(MainWindow::instance()->getOMCProxy()->getClassInformation(pChildLibraryTreeItem->getNameStructure()));
       readLibraryTreeItemClassTextFromText(pChildLibraryTreeItem, contents);
-      if (pChildLibraryTreeItem->childrenSize() > 0) {
-        updateChildLibraryTreeItemClassText(pChildLibraryTreeItem, contents, fileName);
-      }
+      updateChildLibraryTreeItemClassText(pChildLibraryTreeItem, contents, fileName);
     }
   }
 }
@@ -1637,7 +1657,7 @@ void LibraryTreeModel::readLibraryTreeItemClassText(LibraryTreeItem *pLibraryTre
 {
   if (pLibraryTreeItem->getLibraryType() == LibraryTreeItem::OMS) {
     QString contents;
-    if (OMSProxy::instance()->list(pLibraryTreeItem->getNameStructure(), &contents)) {
+    if (OMSProxy::instance()->exportSnapshot(pLibraryTreeItem->getNameStructure(), &contents)) {
       pLibraryTreeItem->setClassText(contents);
     }
   } else {
@@ -1717,56 +1737,41 @@ void LibraryTreeModel::loadLibraryTreeItemPixmap(LibraryTreeItem *pLibraryTreeIt
   }
   GraphicsView *pGraphicsView = pLibraryTreeItem->getModelWidget()->getIconGraphicsView();
   if (pGraphicsView && pGraphicsView->hasAnnotation()) {
-    qreal left = pGraphicsView->mMergedCoOrdinateSystem.getLeft();
-    qreal bottom = pGraphicsView->mMergedCoOrdinateSystem.getBottom();
-    qreal right = pGraphicsView->mMergedCoOrdinateSystem.getRight();
-    qreal top = pGraphicsView->mMergedCoOrdinateSystem.getTop();
-    QRectF rectangle = QRectF(qMin(left, right), qMin(bottom, top), qFabs(left - right), qFabs(bottom - top));
-    if (rectangle.width() < 1) {
-      rectangle = QRectF(-100.0, -100.0, 200.0, 200.0);
-    }
-    qreal adjust = 25;
-    rectangle.setX(rectangle.x() - adjust);
-    rectangle.setY(rectangle.y() - adjust);
-    rectangle.setWidth(rectangle.width() + adjust);
-    rectangle.setHeight(rectangle.height() + adjust);
-    int libraryIconSize = OptionsDialog::instance()->getGeneralSettingsPage()->getLibraryIconSizeSpinBox()->value();
-    QPixmap libraryPixmap(QSize(libraryIconSize, libraryIconSize));
-    libraryPixmap.fill(QColor(Qt::transparent));
-    QPainter libraryPainter(&libraryPixmap);
-    libraryPainter.setRenderHint(QPainter::Antialiasing);
-    libraryPainter.setRenderHint(QPainter::SmoothPixmapTransform);
+    QRectF source = Utilities::adjustSceneRectangle(pGraphicsView->mMergedCoOrdinateSystem.getExtentRectangle(), 0.125);
     /* Ticket #5554
      * Create an equal size square for rendering the scene.
      * Don't stretch to fit a square.
      */
-    QRect windowRect;
-    windowRect = rectangle.toRect();
-    if (rectangle.width() != rectangle.height()) {
-      int x = qMax(rectangle.width(), rectangle.height());
-      windowRect.setX(-x/2);
-      windowRect.setY(-x/2);
-      windowRect.setWidth(x);
-      windowRect.setHeight(x);
+    if (source.width() != source.height()) {
+      int widhtOrHeight = qMax(source.width(), source.height());
+      source = QRectF(source.center().x() - (widhtOrHeight/2), source.center().y() - (widhtOrHeight/2), widhtOrHeight, widhtOrHeight);
     }
-    libraryPainter.setWindow(windowRect);
+    // library icon pixmap
+    QPixmap libraryPixmap(source.size().toSize());
+    libraryPixmap.fill(QColor(Qt::transparent));
+    QPainter libraryPainter(&libraryPixmap);
+    libraryPainter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     libraryPainter.scale(1.0, -1.0);
+    libraryPainter.translate(0, ((-source.top()) - source.bottom()));
+    libraryPainter.setWindow(source.toRect());
     // drag pixmap
     QPixmap dragPixmap(QSize(50, 50));
     dragPixmap.fill(QColor(Qt::transparent));
     QPainter dragPainter(&dragPixmap);
-    dragPainter.setRenderHint(QPainter::Antialiasing);
-    dragPainter.setRenderHint(QPainter::SmoothPixmapTransform);
-    dragPainter.setWindow(windowRect);
+    dragPainter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     dragPainter.scale(1.0, -1.0);
+    dragPainter.translate(0, ((-source.top()) - source.bottom()));
+    dragPainter.setWindow(source.toRect());
     pGraphicsView->setRenderingLibraryPixmap(true);
+    pGraphicsView->setSharpLibraryPixmap(true);
     // render library pixmap
-    pGraphicsView->scene()->render(&libraryPainter, rectangle, rectangle);
-    // render drag pixmap
-    pGraphicsView->scene()->render(&dragPainter, rectangle, rectangle);
-    pGraphicsView->setRenderingLibraryPixmap(false);
+    pGraphicsView->scene()->render(&libraryPainter, source, source);
     libraryPainter.end();
+    pGraphicsView->setSharpLibraryPixmap(false);
+    // render drag pixmap
+    pGraphicsView->scene()->render(&dragPainter, source, source);
     dragPainter.end();
+    pGraphicsView->setRenderingLibraryPixmap(false);
     pLibraryTreeItem->setPixmap(libraryPixmap);
     pLibraryTreeItem->setDragPixmap(dragPixmap);
   } else {
@@ -2079,7 +2084,7 @@ void LibraryTreeModel::reLoadOMSimulatorModel(const QString &modelName, const QS
       pEditedModelWidget->setWindowTitle(QString("%1*").arg(pNewEditedLibraryTreeItem->getName()));
       pEditedModelWidget->reDrawModelWidget();
       QString contents;
-      if (OMSProxy::instance()->list(pNewEditedLibraryTreeItem->getNameStructure(), &contents)) {
+      if (OMSProxy::instance()->exportSnapshot(pNewEditedLibraryTreeItem->getNameStructure(), &contents)) {
         pNewEditedLibraryTreeItem->setClassText(contents);
       }
     }
@@ -2983,6 +2988,11 @@ void LibraryTreeView::createActions()
   mpSaveTotalAction = new QAction(Helper::saveTotal, this);
   mpSaveTotalAction->setStatusTip(Helper::saveTotalTip);
   connect(mpSaveTotalAction, SIGNAL(triggered()), SLOT(saveTotalClass()));
+  // Copy path action
+  mpCopyPathAction = new QAction(tr("Copy Path"), this);
+  mpCopyPathAction->setShortcut(QKeySequence("Ctrl+C"));
+  mpCopyPathAction->setStatusTip(tr("Copy the class path"));
+  connect(mpCopyPathAction, SIGNAL(triggered()), SLOT(copyClassPath()));
   // Move class up action
   mpMoveUpAction = new QAction(QIcon(":/Resources/icons/up.svg"), Helper::moveUp, this);
   mpMoveUpAction->setShortcut(QKeySequence("Ctrl+Up"));
@@ -3179,6 +3189,16 @@ void LibraryTreeView::libraryTreeItemExpanded(LibraryTreeItem *pLibraryTreeItem)
 }
 
 /*!
+ * \brief LibraryTreeView::copyClassPathHelper
+ * Copies the class path to clipboard.
+ * \param pLibraryTreeItem
+ */
+void LibraryTreeView::copyClassPathHelper(const QString &classPath)
+{
+  QApplication::clipboard()->setText(classPath);
+}
+
+/*!
  * \brief LibraryTreeView::libraryTreeItemExpanded
  * Calls the function that expands the LibraryTreeItem
  * \param index
@@ -3239,17 +3259,21 @@ void LibraryTreeView::libraryTreeItemDoubleClicked(const QModelIndex &index)
        */
       bool isPlottingPerspectiveActive = MainWindow::instance()->isPlottingPerspectiveActive();
       mpLibraryWidget->getLibraryTreeModel()->showModelWidget(pLibraryTreeItem);
-      // if we are in the plotting perspective then open the Diagram Window
-      if (isPlottingPerspectiveActive) {
-        MainWindow::instance()->switchToPlottingPerspectiveSlot();
-        if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
-          if (pLibraryTreeItem->getModelWidget()) {
-            pLibraryTreeItem->getModelWidget()->loadDiagramView();
-            pLibraryTreeItem->getModelWidget()->loadConnections();
+      // Issue #7772. If control is not clicked then switch to plotting perspective.
+      bool controlModifier = QApplication::keyboardModifiers().testFlag(Qt::ControlModifier);
+      if (!controlModifier) {
+        // if we are in the plotting perspective then open the Diagram Window
+        if (isPlottingPerspectiveActive) {
+          MainWindow::instance()->switchToPlottingPerspectiveSlot();
+          if (MainWindow::instance()->getPlotWindowContainer()->getDiagramSubWindowFromMdi()) {
+            if (pLibraryTreeItem->getModelWidget()) {
+              pLibraryTreeItem->getModelWidget()->loadDiagramView();
+              pLibraryTreeItem->getModelWidget()->loadConnections();
+            }
+            MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
           }
-          MainWindow::instance()->getPlotWindowContainer()->getDiagramWindow()->drawDiagram(pLibraryTreeItem->getModelWidget());
+          MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
         }
-        MainWindow::instance()->getPlotWindowContainer()->addDiagramWindow(pLibraryTreeItem->getModelWidget());
       }
     }
   }
@@ -3288,6 +3312,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addSeparator();
             menu.addAction(mpSaveTotalAction);
           }
+          menu.addSeparator();
+          menu.addAction(mpCopyPathAction);
           menu.addSeparator();
           menu.addAction(mpInstantiateModelAction);
           if (pLibraryTreeItem->getAccess() >= LibraryTreeItem::packageText
@@ -3366,6 +3392,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addAction(mpNewFolderAction);
             menu.addSeparator();
           }
+          menu.addAction(mpCopyPathAction);
+          menu.addSeparator();
           menu.addAction(mpRenameAction);
           menu.addAction(mpDeleteAction);
           if (pLibraryTreeItem->isTopLevel()) {
@@ -3374,6 +3402,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
           }
           break;
         case LibraryTreeItem::CompositeModel:
+          menu.addAction(mpCopyPathAction);
+          menu.addSeparator();
           menu.addAction(mpFetchInterfaceDataAction);
           menu.addAction(mpTLMCoSimulationAction);
           menu.addSeparator();
@@ -3390,6 +3420,8 @@ void LibraryTreeView::showContextMenu(QPoint point)
             menu.addSeparator();
             menu.addAction(mpUnloadOMSModelAction);
           }
+          menu.addSeparator();
+          menu.addAction(mpCopyPathAction);
           break;
       }
     }
@@ -3431,9 +3463,9 @@ void LibraryTreeView::openInformationDialog()
     QVBoxLayout *pLayout = new QVBoxLayout;
     pLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     pLayout->addWidget(pHeadingLabel);
-    pLayout->addWidget(new Label(tr("Version : %1").arg(MainWindow::instance()->getOMCProxy()->getVersion(pLibraryTreeItem->getNameStructure()))));
-    pLayout->addWidget(new Label(tr("Version Date : %1").arg(MainWindow::instance()->getOMCProxy()->getVersionDateAnnotation(pLibraryTreeItem->getNameStructure()))));
-    pLayout->addWidget(new Label(tr("Version Build : %1").arg(MainWindow::instance()->getOMCProxy()->getVersionBuildAnnotation(pLibraryTreeItem->getNameStructure()))));
+    pLayout->addWidget(new Label(tr("Version : %1").arg(pLibraryTreeItem->getVersion())));
+    pLayout->addWidget(new Label(tr("Version Date : %1").arg(pLibraryTreeItem->getVersionDate())));
+    pLayout->addWidget(new Label(tr("Version Build : %1").arg(pLibraryTreeItem->getVersionBuild())));
     pInformationDialog->setLayout(pLayout);
     pInformationDialog->exec();
   }
@@ -3486,6 +3518,18 @@ void LibraryTreeView::saveTotalClass()
   LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
   if (pLibraryTreeItem) {
     mpLibraryWidget->saveTotalLibraryTreeItem(pLibraryTreeItem);
+  }
+}
+
+/*!
+ * \brief LibraryTreeView::copyClassPath
+ * Copies the class path.
+ */
+void LibraryTreeView::copyClassPath()
+{
+  LibraryTreeItem *pLibraryTreeItem = getSelectedLibraryTreeItem();
+  if (pLibraryTreeItem) {
+    copyClassPathHelper(pLibraryTreeItem->getNameStructure());
   }
 }
 
@@ -3961,7 +4005,7 @@ void LibraryTreeView::keyPressEvent(QKeyEvent *event)
     } else if (controlModifier && event->key() == Qt::Key_PageDown && !isSystemLibrary && isModelicaLibraryType && !isTopLevel) {
       moveClassBottom();
     } else if (controlModifier && event->key() == Qt::Key_C) {
-      QApplication::clipboard()->setText(pLibraryTreeItem->getNameStructure());
+      copyClassPathHelper(pLibraryTreeItem->getNameStructure());
     } else if (event->key() == Qt::Key_Delete) {
       if (isModelicaLibraryType) {
         unloadClass();
@@ -4054,7 +4098,7 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
   QFileInfo fileInfo(fileName);
   if (checkFileExists) {
     if (!fileInfo.exists()) {
-      QMessageBox::information(MainWindow::instance(), QString(Helper::applicationName).append(" - ").append(Helper::information),
+      QMessageBox::information(MainWindow::instance(), QString("%1 - %2").arg(Helper::applicationName, Helper::information),
                                GUIMessages::getMessage(GUIMessages::FILE_NOT_FOUND).arg(fileName), Helper::ok);
       QSettings *pSettings = Utilities::getApplicationSettings();
       QList<QVariant> files = pSettings->value("recentFilesList/files").toList();
@@ -4070,10 +4114,22 @@ void LibraryWidget::openFile(QString fileName, QString encoding, bool showProgre
       return;
     }
   }
+  /* Ticket#6434 Handle the .lnk file links
+   * QFileInfo::isSymbolicLink() returns false for *.lnk files.
+   * Qt docs says,
+   * "In addition, true will be returned for shortcuts (*.lnk files) on Windows.
+   *  This behavior is deprecated and will likely change in a future version of Qt. Opening those will open the .lnk file itself."
+   * QFileInfo::symLinkTarget() returns the absolute path to the file or directory a symbolic link points to, or an empty string if the object isn't a symbolic link.
+   */
+  QString targetFileName = fileInfo.symLinkTarget();
+  if (!targetFileName.isEmpty()) {
+    fileInfo = QFileInfo(targetFileName);
+  }
+
   if (fileInfo.suffix().compare("mo") == 0 && !loadExternalModel) {
-    openModelicaFile(fileName, encoding, showProgress);
+    openModelicaFile(fileInfo.absoluteFilePath(), encoding, showProgress);
   } else if (fileInfo.suffix().compare("mol") == 0 && !loadExternalModel) {
-    openEncrytpedModelicaLibrary(fileName, encoding, showProgress);
+    openEncrytpedModelicaLibrary(fileInfo.absoluteFilePath(), encoding, showProgress);
   } else if (fileInfo.suffix().compare("ssp") == 0 && !loadExternalModel) {
     openOMSModelFile(fileInfo, showProgress);
   } else if (fileInfo.isDir()) {

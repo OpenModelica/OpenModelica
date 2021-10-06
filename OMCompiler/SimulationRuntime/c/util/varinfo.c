@@ -33,7 +33,7 @@
 #include "varinfo.h"
 
 
-void printErrorEqSyst(equationSystemError err, EQUATION_INFO eq, double time)
+void printErrorEqSyst(EQUATION_SYSTEM_ERROR err, EQUATION_INFO eq, double time)
 {
   int indexes[2] = {1,eq.id};
   switch(err)

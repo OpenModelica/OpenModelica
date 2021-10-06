@@ -209,7 +209,7 @@ private:
   void handleGDBMIConsoleStream(GDBMIStreamRecord *pGDBMIStreamRecord);
   void handleGDBMILogStream(GDBMIStreamRecord *pGDBMIStreamRecord);
   bool skipSteppedInFrames(GDBMIResultRecord *pGDBMIResultRecord);
-  void handleStoppedEvent(string reason, GDBMIResultRecord *pGDBMIResultRecord);
+  void handleStoppedEvent(std::string reason, GDBMIResultRecord *pGDBMIResultRecord);
   void handleBreakpointHit(GDBMIResultRecord *pGDBMIResultRecord);
   void handleSteppingRange(GDBMIResultRecord *pGDBMIResultRecord);
   void handleFunctionFinished(GDBMIResultRecord *pGDBMIResultRecord);

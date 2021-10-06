@@ -35,6 +35,8 @@
 #include "TextAnnotation.h"
 #include "Modeling/Commands.h"
 
+#include "FlatModelica/Expression.h"
+
 /*!
  * \class TextAnnotation
  * \brief Draws the text shapes.
@@ -163,34 +165,32 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     return;
   }
   // 9th item of the list contains the extent points
-  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(8)));
+  QStringList extentsList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(8))));
   for (int i = 0 ; i < qMin(extentsList.size(), 2) ; i++) {
     QStringList extentPoints = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(extentsList[i]));
     if (extentPoints.size() >= 2)
       mExtents.replace(i, QPointF(extentPoints.at(0).toFloat(), extentPoints.at(1).toFloat()));
   }
   // 10th item of the list contains the textString.
-  if (list.at(9).startsWith("{")) {
-    // DynamicSelect
-    QStringList args = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(9)));
-    if (args.count() > 0) {
-      mOriginalTextString = StringHandler::removeFirstLastQuotes(args.at(0));
+  try {
+    mTextExpression = FlatModelica::Expression::parse(list.at(9));
+
+    if (mTextExpression.isCall("DynamicSelect")) {
+      mOriginalTextString = mTextExpression.arg(0).toQString();
+    } else {
+      mOriginalTextString = mTextExpression.toQString();
     }
-    if (args.count() > 1) {
-      mDynamicTextString << args.at(1);  // variable name
-    }
-    if (args.count() > 2) {
-      mDynamicTextString << args.at(2);  // significantDigits
-    }
-  } else {
-    mOriginalTextString = StringHandler::removeFirstLastQuotes(list.at(9));
+  } catch (const std::exception &e) {
+    qDebug() << "Failed to parse annotation: " << list.at(9);
+    qDebug() << e.what();
   }
   mTextString = mOriginalTextString;
   initUpdateTextString();
+
   // 11th item of the list contains the fontSize.
-  mFontSize = list.at(10).toFloat();
+  mFontSize = stripDynamicSelect(list.at(10)).toFloat();
   // 12th item of the list contains the optional textColor, {-1, -1, -1} if not set
-  QStringList textColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(11)));
+  QStringList textColorList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(11))));
   if (textColorList.size() >= 3) {
     int red, green, blue = 0;
     red = textColorList.at(0).toInt();
@@ -201,12 +201,12 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 13th item of the list contains the font name.
-  QString fontName = StringHandler::removeFirstLastQuotes(list.at(12));
+  QString fontName = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(12)));
   if (!fontName.isEmpty()) {
     mFontName = fontName;
   }
   // 14th item of the list contains the text styles.
-  QStringList textStyles = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(13)));
+  QStringList textStyles = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(stripDynamicSelect(list.at(13))));
   foreach (QString textStyle, textStyles) {
     if (textStyle == "TextStyle.Bold") {
       mTextStyles.append(StringHandler::TextStyleBold);
@@ -217,7 +217,7 @@ void TextAnnotation::parseShapeAnnotation(QString annotation)
     }
   }
   // 15th item of the list contains the text alignment.
-  QString horizontalAlignment = StringHandler::removeFirstLastQuotes(list.at(14));
+  QString horizontalAlignment = StringHandler::removeFirstLastQuotes(stripDynamicSelect(list.at(14)));
   if (horizontalAlignment == "TextAlignment.Left") {
     mHorizontalAlignment = StringHandler::TextAlignmentLeft;
   } else if (horizontalAlignment == "TextAlignment.Center") {
@@ -519,7 +519,7 @@ void TextAnnotation::updateShape(ShapeAnnotation *pShapeAnnotation)
 void TextAnnotation::initUpdateTextString()
 {
   if (mpComponent) {
-    if (mOriginalTextString.contains("%")) {
+    if (mOriginalTextString.contains("%") || mTextExpression.isCall("DynamicSelect")) {
       updateTextString();
       connect(mpComponent, SIGNAL(displayTextChanged()), SLOT(updateTextString()), Qt::UniqueConnection);
     }
@@ -538,6 +538,7 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
     QString variable = regExp.cap(0).trimmed();
     if ((!variable.isEmpty()) && (variable.compare("%%") != 0) && (variable.compare("%name") != 0) && (variable.compare("%class") != 0)) {
       variable.remove("%");
+      variable = StringHandler::removeFirstLastCurlBrackets(variable);
       if (!variable.isEmpty()) {
         QString textValue;
         /* Ticket:4204
@@ -545,21 +546,37 @@ void TextAnnotation::updateTextStringHelper(QRegExp regExp)
          */
         textValue = mpComponent->getRootParentComponent()->getParameterDisplayString(variable);
         if (!textValue.isEmpty()) {
-          QString unit = "";
-          QString displaytUnit = "";
+          QString unit = mpComponent->getRootParentComponent()->getParameterModifierValue(variable, "unit");
+          QString displayUnit = mpComponent->getRootParentComponent()->getParameterModifierValue(variable, "displayUnit");
           Element *pElement = mpComponent->getRootParentComponent()->getElementByName(variable);
           if (pElement) {
-            displaytUnit = pElement->getDerivedClassModifierValue("displaytUnit");
-            if (displaytUnit.isEmpty()) {
+            if (displayUnit.isEmpty()) {
+              displayUnit = pElement->getDerivedClassModifierValue("displayUnit");
+            }
+            if (unit.isEmpty()) {
               unit = pElement->getDerivedClassModifierValue("unit");
-              displaytUnit = unit;
+            }
+            // if display unit is still empty then use unit
+            if (displayUnit.isEmpty()) {
+              displayUnit = unit;
             }
           }
-          if (displaytUnit.isEmpty()) {
+          if (displayUnit.isEmpty() || unit.isEmpty()) {
             mTextString.replace(pos, regExp.matchedLength(), textValue);
             pos += textValue.length();
           } else {
-            QString textValueWithDisplayUnit = QString("%1 %2").arg(textValue, displaytUnit);
+            QString textValueWithDisplayUnit;
+            OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
+            OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(unit, displayUnit);
+            if (convertUnit.unitsCompatible) {
+              qreal convertedValue = Utilities::convertUnit(textValue.toDouble(), convertUnit.offset, convertUnit.scaleFactor);
+              textValue = StringHandler::number(convertedValue);
+              displayUnit = Utilities::convertUnitToSymbol(displayUnit);
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, displayUnit);
+            } else {
+              unit = Utilities::convertUnitToSymbol(unit);
+              textValueWithDisplayUnit = QString("%1 %2").arg(textValue, unit);
+            }
             mTextString.replace(pos, regExp.matchedLength(), textValueWithDisplayUnit);
             pos += textValueWithDisplayUnit.length();
           }
@@ -616,9 +633,9 @@ void TextAnnotation::updateTextString()
       return;
     }
     /* handle variables now */
-    updateTextStringHelper(QRegExp("(%%|%\\w*)"));
+    updateTextStringHelper(QRegExp("(%%|%\\{?\\w+(\\.\\w+)*\\}?)"));
     /* call again with non-word characters so invalid % can be removed. */
-    updateTextStringHelper(QRegExp("(%%|%\\W*)"));
+    updateTextStringHelper(QRegExp("(%%|%\\{?\\W+(\\.\\W+)*\\}?)"));
     /* handle %% */
     if (mOriginalTextString.toLower().contains("%%")) {
       mTextString.replace(QRegExp("%%"), "%");

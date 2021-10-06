@@ -35,6 +35,7 @@
 #include <assert.h>
 #include "omc_config.h"
 
+#define ADD_METARECORD_DEFINITIONS static
 #if defined(OMC_BOOTSTRAPPING)
   #include "../boot/tarball-include/OpenModelicaBootstrappingHeader.h"
 #else

@@ -62,7 +62,7 @@ annotation(__OpenModelica_Impure=true, Documentation(info="<html>
 </html>"));
 end terminal;
 
-type AssertionLevel = enumeration(error, warning) annotation(__OpenModelica_builtin=true,
+type AssertionLevel = enumeration(warning, error) annotation(__OpenModelica_builtin=true,
   Documentation(info="<html>Used by <a href=\"modelica://assert\">assert()</a></html>"));
 
 function assert "Check an assertion condition"
@@ -1516,6 +1516,12 @@ annotation(Documentation(info="<html>
   preferredView="text");
 end getModelicaPath;
 
+function getHomeDirectoryPath "This returns the path to user HOME directory."
+  output String homeDirectoryPath;
+external "builtin";
+annotation(preferredView="text");
+end getHomeDirectoryPath;
+
 function setCompilerFlags
   input String compilerFlags;
   output Boolean success;
@@ -2342,8 +2348,10 @@ end listFile;
 type DiffFormat = enumeration(plain "no deletions, no markup", color "terminal escape sequences", xml "XML tags");
 
 function diffModelicaFileListings "Creates diffs of two strings corresponding to Modelica files"
-  input String before, after;
+  input String before;
+  input String after;
   input DiffFormat diffFormat = DiffFormat.color;
+  input Boolean failOnSemanticsChange = false "Defaults to returning after instead of hard fail";
   output String result;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -2530,7 +2538,7 @@ function simulate "simulates a modelica model by generating c code, build it and
   input TypeName className "the class that should simulated";
   input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Real numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
   input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
   input String method = "<default>" "integration method used for simulation. <default> = dassl";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
@@ -2566,7 +2574,7 @@ function buildModel "builds a modelica model by generating c code and build it.
   input TypeName className "the class that should be built";
   input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Real numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
   input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
   input String method = "<default>" "integration method used for simulation. <default> = dassl";
   input String fileNamePrefix = "<default>" "fileNamePrefix. <default> = \"\"";
@@ -2663,7 +2671,7 @@ function linearize "creates a model with symbolic linearization matrixes"
   input TypeName className "the class that should simulated";
   input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Real numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
   input Real stepSize = 0.002 "step size that is used for the result file. <default> = 0.002";
   input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
   input String method = "<default>" "integration method used for simulation. <default> = dassl";
@@ -2700,7 +2708,7 @@ function optimize "optimize a modelica/optimica model by generating c code, buil
   input TypeName className "the class that should simulated";
   input Real startTime = "<default>" "the start time of the simulation. <default> = 0.0";
   input Real stopTime = 1.0 "the stop time of the simulation. <default> = 1.0";
-  input Real numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
+  input Integer numberOfIntervals = 500 "number of intervals in the result file. <default> = 500";
   input Real stepSize = 0.002 "step size that is used for the result file. <default> = 0.002";
   input Real tolerance = 1e-6 "tolerance used by the integration method. <default> = 1e-6";
   input String method = DAE.SCONST("optimization") "optimize a modelica/optimica model.";
@@ -2812,7 +2820,7 @@ function plot "Launches a plot window using OMPlot."
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
@@ -2850,7 +2858,7 @@ function plotAll "Works in the same way as plot(), but does not accept any
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
   input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
@@ -2879,10 +2887,10 @@ function plotParametric "Launches a plotParametric window using OMPlot. Returns 
   input Boolean externalWindow = false "Opens the plot in a new plot window";
   input String fileName = "<default>" "The filename containing the variables. <default> will read the last simulation result";
   input String title = "" "This text will be used as the diagram title.";
-  input String grid = "detailed" "Sets the grid for the plot i.e simple, detailed, none.";
+  input String grid = "simple" "Sets the grid for the plot i.e simple, detailed, none.";
   input Boolean logX = false "Determines whether or not the horizontal axis is logarithmically scaled.";
   input Boolean logY = false "Determines whether or not the vertical axis is logarithmically scaled.";
-  input String xLabel = "time" "This text will be used as the horizontal label in the diagram.";
+  input String xLabel = "" "This text will be used as the horizontal label in the diagram.";
   input String yLabel = "" "This text will be used as the vertical label in the diagram.";
   input Real xRange[2] = {0.0,0.0} "Determines the horizontal interval that is visible in the diagram. {0,0} will select a suitable range.";
   input Real yRange[2] = {0.0,0.0} "Determines the vertical interval that is visible in the diagram. {0,0} will select a suitable range.";
@@ -2932,12 +2940,14 @@ public function filterSimulationResults
   input String[:] vars;
   input Integer numberOfIntervals = 0 "0=Do not resample";
   input Boolean removeDescription = false;
+  input Boolean hintReadAllVars = true;
   output Boolean success;
 external "builtin";
 annotation(Documentation(info="<html>
 <p>Takes one simulation result and filters out the selected variables only, producing the output file.</p>
 <p>If numberOfIntervals<>0, re-sample to that number of intervals, ignoring event points (might be changed in the future).</p>
 <p>if removeDescription=true, the description matrix will contain 0-length strings, making the file smaller.</p>
+<p>if hintReadAllVars=true, the whole mat-file will be read at once (this is faster but uses more memory if you only use few variables from the file). May cause a crash if there is not enough virtual memory.</p>
 </html>",revisions="<html>
 <table>
 <tr><th>Revision</th><th>Author</th><th>Comment</th></tr>
@@ -3784,22 +3794,22 @@ annotation(
   preferredView="text");
 end getInheritedClasses;
 
-function getComponentsTest
+function getComponentsTest "returns an array of records with information about the components of the given class"
   input TypeName name;
   output Component[:] components;
   record Component
-    String className; // when building record the constructor. Records are allowed to contain only components of basic types, arrays of basic types or other records.
-    String name;
-    String comment;
-    Boolean isProtected;
-    Boolean isFinal;
-    Boolean isFlow;
-    Boolean isStream;
-    Boolean isReplaceable;
+    String className "the type of the component";
+    String name "the name of the component";
+    String comment "the comment of the component";
+    Boolean isProtected "true if component is protected";
+    Boolean isFinal "true if component is final";
+    Boolean isFlow "true if component is flow";
+    Boolean isStream "true if component is stream";
+    Boolean isReplaceable "true if component is replaceable";
     String variability "'constant', 'parameter', 'discrete', ''";
     String innerOuter "'inner', 'outer', ''";
     String inputOutput "'input', 'output', ''";
-    String dimensions[:];
+    String dimensions[:] "array with the dimensions of the component";
   end Component;
 external "builtin";
 annotation(Documentation(info="<html>
@@ -3976,6 +3986,18 @@ annotation(
 </html>"),
   preferredView="text");
 end updatePackageIndex;
+
+function getAvailablePackageVersions
+  input TypeName pkg;
+  input String version;
+  output String[:] withoutConversion;
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Returns the versions that provide the requested version of the library.
+</html>"),
+  preferredView="text");
+end getAvailablePackageVersions;
 
 function upgradeInstalledPackages
   input Boolean installNewestVersions = true;

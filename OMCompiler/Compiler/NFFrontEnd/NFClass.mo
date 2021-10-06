@@ -447,6 +447,19 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
     end match;
   end getDimensions;
 
+  function dimensionCount
+    input Class cls;
+    output Integer count;
+  algorithm
+    count := match cls
+      case EXPANDED_DERIVED() then arrayLength(cls.dims);
+      case INSTANCED_CLASS() then Type.dimensionCount(cls.ty);
+      case INSTANCED_BUILTIN() then Type.dimensionCount(cls.ty);
+      case TYPED_DERIVED() then Type.dimensionCount(cls.ty);
+      else 0;
+    end match;
+  end dimensionCount;
+
   function getAttributes
     input Class cls;
     output Component.Attributes attr;
@@ -686,6 +699,23 @@ constant Prefixes DEFAULT_PREFIXES = Prefixes.PREFIXES(
       else cmts;
     end match;
   end getDerivedComments;
+
+  function constrainingClassPath
+    "Returns the path of the constraining class for a given class, either the
+     declared constraining class or the path of the class itself if there's no
+     declared constraining class."
+    input InstNode clsNode;
+    output Absyn.Path path;
+  protected
+    InstNode cls_node = lastBaseClass(clsNode);
+    Prefixes prefs = getPrefixes(InstNode.getClass(cls_node));
+  algorithm
+    path := match prefs
+      case Prefixes.PREFIXES(replaceablePrefix = SCode.Replaceable.REPLACEABLE(
+        cc = SOME(SCode.ConstrainClass.CONSTRAINCLASS(constrainingClass = path)))) then path;
+      else InstNode.enclosingScopePath(cls_node);
+    end match;
+  end constrainingClassPath;
 
   function hasOperator
     input String name;

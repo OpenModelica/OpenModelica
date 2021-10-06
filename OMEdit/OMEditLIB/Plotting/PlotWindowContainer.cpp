@@ -273,8 +273,9 @@ void PlotWindowContainer::addPlotWindow(bool maximized)
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
-    pPlotWindow->setXLabel(QString("time (%1)").arg(pPlotWindow->getTimeUnit()));
+    pPlotWindow->setXLabel(QString("time"));
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
@@ -306,6 +307,7 @@ void PlotWindowContainer::addParametricPlotWindow()
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
@@ -336,6 +338,7 @@ void PlotWindowContainer::addArrayPlotWindow(bool maximized)
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     QComboBox* unitComboBox = MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox();
     if (unitComboBox->currentText() == ""){
         int currentIndex = unitComboBox->findText("s", Qt::MatchExactly);
@@ -378,8 +381,9 @@ PlotWindow* PlotWindowContainer::addInteractivePlotWindow(bool maximized, QStrin
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     pPlotWindow->setTimeUnit(MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox()->currentText());
-    pPlotWindow->setXLabel(QString("time (%1)").arg(pPlotWindow->getTimeUnit()));
+    pPlotWindow->setXLabel(QString("time"));
     pPlotWindow->installEventFilter(this);
     QMdiSubWindow *pSubWindow = addSubWindow(pPlotWindow);
     PlottingPage *pPlottingPage = OptionsDialog::instance()->getPlottingPage();
@@ -414,6 +418,7 @@ void PlotWindowContainer::addArrayParametricPlotWindow()
     pPlotWindow->setTitle("");
     pPlotWindow->setLegendPosition("top");
     pPlotWindow->setAutoScale(OptionsDialog::instance()->getPlottingPage()->getAutoScaleCheckBox()->isChecked());
+    pPlotWindow->setPrefixUnits(OptionsDialog::instance()->getPlottingPage()->getPrefixUnitsCheckbox()->isChecked());
     QComboBox* unitComboBox = MainWindow::instance()->getVariablesWidget()->getSimulationTimeComboBox();
     if (unitComboBox->currentText() == ""){
         int currentIndex = unitComboBox->findText("s", Qt::MatchExactly);
@@ -530,6 +535,10 @@ void PlotWindowContainer::exportVariables()
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("No plot window is active for exporting variables."), Helper::ok);
     return;
   }
+  if (pPlotWindow->getPlotType() == PlotWindow::PLOTPARAMETRIC || pPlotWindow->getPlotType() == PlotWindow::PLOTARRAYPARAMETRIC) {
+    QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Cannot export parametric plot."), Helper::ok);
+    return;
+  }
   if (pPlotWindow->getPlot()->getPlotCurvesList().isEmpty()) {
     QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("No variables are selected for exporting."), Helper::ok);
     return;
@@ -552,7 +561,7 @@ void PlotWindowContainer::exportVariables()
         QMessageBox::information(this, QString("%1 - %2").arg(Helper::applicationName, Helper::information), tr("Not possible to export variables from different result files."), Helper::ok);
         return;
       }
-      headers << QString("\"%1\"").arg(pPlotCurve->getName());
+      headers << QString("\"%1\"").arg(pPlotCurve->getYVariable());
     }
     ++i;
   }
@@ -573,7 +582,7 @@ void PlotWindowContainer::exportVariables()
     data << QString::number(timeVector.at(i));
     foreach (PlotCurve *pPlotCurve, pPlotWindow->getPlot()->getPlotCurvesList()) {
       if (pPlotCurve && pPlotCurve->mYAxisVector.size() > i) { // parameters have just start and stop points in the dataset
-        OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotCurve->getDisplayUnit(), pPlotCurve->getUnit());
+        OMCInterface::convertUnits_res convertUnit = MainWindow::instance()->getOMCProxy()->convertUnits(pPlotCurve->getYDisplayUnit(), pPlotCurve->getYUnit());
         if (convertUnit.unitsCompatible) {
           data << StringHandler::number(Utilities::convertUnit(pPlotCurve->mYAxisVector.at(i), convertUnit.offset, convertUnit.scaleFactor));
         } else {
@@ -610,7 +619,7 @@ void PlotWindowContainer::updatePlotWindows(QString variable)
           if (pPlotWindow->getAutoScaleButton()->isChecked()) {
             pPlotWindow->fitInView();
           } else {
-            pPlotWindow->getPlot()->replot();
+            pPlotWindow->updatePlot();
           }
         }
       }

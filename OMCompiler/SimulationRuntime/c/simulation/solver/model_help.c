@@ -1197,6 +1197,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo->relationsPre);
   free(data->simulationInfo->storedRelations);
   free(data->simulationInfo->zeroCrossingIndex);
+  free(data->simulationInfo->mathEventsValuePre);
 
   /* free buffer for old state variables */
   free(data->simulationInfo->realVarsOld);
@@ -1238,6 +1239,11 @@ void deInitializeDataStruc(DATA *data)
   /* free buffer for state sets */
   omc_alloc_interface.free_uncollectable(data->simulationInfo->daeModeData);
 
+  /* buffer for inline Data */
+  free(data->simulationInfo->inlineData->algVars);
+  free(data->simulationInfo->inlineData->algOldVars);
+  omc_alloc_interface.free_uncollectable(data->simulationInfo->inlineData);
+
   /* free inputs and output */
   free(data->simulationInfo->inputVars);
   free(data->simulationInfo->outputVars);
@@ -1273,6 +1279,9 @@ void deInitializeDataStruc(DATA *data)
     free(data->simulationInfo->sensitivityMatrix);
     FREE_VARS(nSensitivityVars, realSensitivityData)
   }
+
+  /* Free model info xml data */
+  modelInfoDeinit(&(data->modelData->modelDataXml));
 
   TRACE_POP
 }
@@ -1515,9 +1524,9 @@ const char *context_string[CONTEXT_MAX] = {
  *
  * Set current context in simulation info object
  */
-void setContext(DATA* data, double* currentTime, int currentContext){
-  data->simulationInfo->currentContextOld =  data->simulationInfo->currentContext;
-  data->simulationInfo->currentContext =  currentContext;
+void setContext(DATA* data, double* currentTime, EVAL_CONTEXT currentContext){
+  data->simulationInfo->currentContextOld = data->simulationInfo->currentContext;
+  data->simulationInfo->currentContext = currentContext;
   infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "+++ Set context %s +++ at time %f", context_string[currentContext], *currentTime);
   if (currentContext == CONTEXT_JACOBIAN ||
       currentContext == CONTEXT_SYM_JACOBIAN)
@@ -1550,5 +1559,5 @@ void increaseJacContext(DATA* data){
  */
 void unsetContext(DATA* data){
   infoStreamPrint(LOG_SOLVER_CONTEXT, 0, "--- Unset context %s ---", context_string[data->simulationInfo->currentContext]);
-  data->simulationInfo->currentContext =  data->simulationInfo->currentContextOld;
+  data->simulationInfo->currentContext = data->simulationInfo->currentContextOld;
 }

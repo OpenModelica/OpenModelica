@@ -104,7 +104,7 @@ elseif (modelTestingType == OpenModelicaModelTesting.Kind.VerifiedSimulation) or
    (modelTestingType == OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation) then
   print(if debug then "got simulation test\n" else "");
 
-  if size(compareVars,1) > 0 and simulationRuntime <> OpenModelicaModelTesting.SimulationRuntime.Cpp then
+  if size(compareVars,1) > 0 then
     loadString("
     function toRegex
       input String str;

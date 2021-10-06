@@ -649,6 +649,17 @@ Output
 
 .. _omedit-2d-plotting :
 
+Data Reconciliation
+~~~~~~~~~~~~~~~~~~~
+
+-  *Algorithm* – data reconciliation algorithm.
+
+-  *Measurement Input File* – measurement input file.
+
+-  *Correlation Matrix Input File* – correlation matrix file.
+
+-  *Epsilon*
+
 2D Plotting
 -----------
 
@@ -687,6 +698,12 @@ windows by clicking on the New Plot Parametric toolbar button (|parametric-plot-
   :height: 14pt
 
 .. _array-plot :
+
+Select the x-axis variable while holding down the shift key, release the shift key and then select
+y-axis variables. One or many y-axis variables can be selected against one x-axis variable. To select
+a new x-axis variable press and hold the shift key again.
+
+Unchecking the x-axis variable will uncheck all y-axis variables linked to it.
 
 Array Plot
 ^^^^^^^^^^
@@ -737,6 +754,8 @@ Plot Window
 A plot window shows the plot curve of instance variables. Several plot curves can be plotted in the
 same plot window. See :numref:`omedit-plotting-perspective`.
 
+.. _omedit-plot-window-menu :
+
 Plot Window Menu
 ^^^^^^^^^^^^^^^^
 
@@ -763,6 +782,14 @@ Plot Window Menu
     -  *Titles* - Plot, axes and footer titles settings.
     -  *Legend* - Sets legend position and font.
     -  *Range* - Automatic or manual axes range.
+      -  *Auto Scale* - Automatically scales the horizontal and vertical axes.
+      -  *X-Axis*
+        -  *Minimum* - Minimum value for x-axis.
+        -  *Maximum* - Maximum value for x-axis.
+      -  *Y-Axis*
+        -  *Minimum* - Minimum value for y-axis.
+        -  *Maximum* - Maximum value for y-axis.
+    -  *Prefix Units* - Automatically pick the right prefix for units.
 
 Re-simulating a Model
 ---------------------
@@ -1118,6 +1145,8 @@ Libraries
 -  *User Libraries* – The list of user libraries/files that should be
    loaded every time OMEdit starts.
 
+.. _omedit-options-text-editor :
+
 Text Editor
 ~~~~~~~~~~~
 -  Format
@@ -1281,6 +1310,7 @@ Simulation
 -  Simulation
 
 .. _omedit-options-simulation-translationflags :
+
   -  Translation Flags
 
     -  *Matching Algorithm* – sets the matching algorithm for simulation.
@@ -1305,8 +1335,6 @@ Simulation
 
     -  *Enable old frontend for code generation*
 
-    -  *Enable data reconciliation*
-
     -  *Additional Translation Flags* – sets the translation flags see :ref:`omcflags-options`
 
   -  *Target Language* – sets the target language in which the code is generated.
@@ -1316,6 +1344,9 @@ Simulation
   -  *C Compiler* – sets the C compiler for compiling the generated code.
 
   -  *CXX Compiler* – sets the CXX compiler for compiling the generated code.
+
+  -  *Use static linking* – if true then static linking is used for simulation executable.
+     The default is dynamic linking. This option is only available on Windows.
 
   -  *Ignore __OpenModelica_commandLineOptions annotation* – if true then ignores the __OpenModelica_commandLineOptions
      annotation while running the simulation.
@@ -1444,7 +1475,9 @@ Plotting
 
 -  General
 
-  -  *Auto Scale* – sets whether to auto scale the plots or not.
+  -  *Auto Scale* – Sets whether to auto scale the plots or not.
+  -  *Prefix Units* – Automatically pick the right prefix for units for the new plot windows.
+     For existing plot windows use the :ref:`omedit-plot-window-menu`.
 
 -  Plotting View Mode
 
@@ -1618,6 +1651,40 @@ in the bottom check `Save simulation flags inside model i.e., __OpenModelica_sim
 
 If you want to ignore this annotation then use `setCommandLineOptions("--ignoreSimulationFlagsAnnotation=true")`.
 In OMEdit *Tools > Options > Simulation* check `Ignore __OpenModelica_simulationFlags annotation`.
+
+Global and Local Flags
+----------------------
+
+There is a large number of optional settings and flags to influence the way OpenModelica generates
+the simulation code (:ref:`Compiler flags <omcflags-options>`, a.k.a. Translation flags or Command Line Options)
+and the way the simulation executable is run (:ref:`Simulation Flags <cruntime-simflags>`).
+
+The global default settings can be accessed and changed with the *Tools > Options* menu.
+It is also possible to reset them to factory state by clicking on the ``Reset`` button of the
+*Tools > Options* dialog window.
+
+When you start OMEdit and you simulate a model for the first time, the model-specific simulation
+session settings are initialized by copying the global default settings, and then by applying any
+further settings that are saved in the model within OpenModelica-specific ``__OpenModelica_commandLineOptions``
+and ``__OpenModelica_simulationFlags`` annotations. Note that the latter may partially override the former,
+if they give different values to the same flags.
+
+You can change those model-specific settings at will with the Simulation Setup window.
+Any change you make will be remembered until the end of the simulation session, i.e. until you close OMEdit.
+This is very useful to experiment with different settings and find the optimal ones,
+or to investigate bugs by turning on logging options, etc. If you check the ``Save translation flags``
+and ``Save simulation flags`` options in the simulation setup, those settings will be saved in the
+model within the corresponding OpenModelica-specific annotations, so that you can get the same behavior
+when you start a new session later on, or if someone else loads the model on a different computer.
+Otherwise, all of those changes will be forgotten when you exit OMEdit.
+
+If you change the global default settings after running some models, the simulation settings of
+those models will be reset as if you closed OMEdit and restarted a new session: the new global
+options will first be applied, and then any further setting saved in the OpenModelica-specific annotations
+will be applied, possibly overriding the global options if the same flags get different values from
+the annotations. Any model-specific settings that you may have changed with Simulation Setup up to
+that point will be lost, unless you saved them in the OpenModelica-specific annotations before changing the
+global default settings.
 
 Debugger
 --------
@@ -1806,3 +1873,41 @@ the working directory from *Tools > Options > General* see section :ref:`omedit-
 
 For each simulation a new directory with the model name is created in the working directory and
 then all the simulation intermediate and results files are generated in it.
+
+
+High DPI Settings
+-----------------
+
+When the text is too big / too small to read there are options to change the font size
+used in OMEdit, see :ref:`omedit-options-text-editor`.
+
+If you are using a high-resolution screen (1080p, 4k and more) and the app is blurry or
+the overall proportions of the different windows are off, it can help to change the DPI settings.
+
+On Windows it is possible to change the scaling factor to adjust the size of text, apps
+and other times, but the default setting might not be appropriate for OMEdit e.g., on
+compact notebooks with high resolution screens.
+
+You can either change the scaling factor for the whole Windows system or only change the
+scaling used for OMEdit. This is done by changing the `Compatibility` settings for
+`High DPI settings for OMEdit.exe` with the following steps:
+
+1. Press `Windows-Key` and type `OpenModelica Connection Editor` and right-click on the
+   app and `Open file location`, :numref:`omedit-file-location`.
+2. Right-click on `OpenModelica Connection Editor` and open `Properties`.
+3. In the properties window go to tab `Compatibility` and open `Change high DPI settings`.
+   In the `High DPI settings for OMEdit.exe` choose
+   `Use the settings to fix scaling problems for this program instead of the one in Settings`
+   and `Override high DPI scaling behavior.Scaling performed by:` and choose `System` from
+   the drop-down menu, :numref:`omedit-dpi-settings`.
+
+
+.. figure :: media/omedit-dpi-settings-01.*
+  :name: omedit-file-location
+
+  Open file location of OpenModelica Connection Editor
+
+.. figure :: media/omedit-dpi-settings-02.*
+  :name: omedit-dpi-settings
+
+  Change high DPI settings for OMEdit.exe

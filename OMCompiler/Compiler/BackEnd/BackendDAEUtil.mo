@@ -456,7 +456,7 @@ algorithm
       then ();
     case (_,_,_,_)
       equation
-        failure(DAE.ENUM_LITERAL(index=1) = level);
+        failure(DAE.ENUM_LITERAL(index=2) = level);
       then ();
     case(_,_,_,_)
       equation
@@ -1198,93 +1198,6 @@ end setHideResultAttribute;
 /*******************************************
    Functions that deals with BackendDAE as input
 ********************************************/
-
-public function generateStatePartition "function:generateStatePartition
-
-  This function traverses the equations to find out which blocks needs to
-  be solved by the numerical solver (Dynamic Section) and which blocks only
-  needs to be solved for output to file ( Accepted Section).
-  This is done by traversing the graph of strong components, where
-  equations/variable pairs correspond to nodes of the graph. The edges of
-  this graph are the dependencies between blocks or components.
-  The traversal is made in the backward direction of this graph.
-  The result is a split of the blocks into two lists.
-  inputs: (blocks: int list list,
-             daeLow: BackendDAE,
-             assignments1: int vector,
-             assignments2: int vector,
-             adjacencyMatrix: AdjacencyMatrix,
-             adjacencyMatrixT: AdjacencyMatrixT)
-  outputs: (dynamicBlocks: int list list, outputBlocks: int list list)
-"
-  input BackendDAE.EqSystem syst;
-  output BackendDAE.StrongComponents outCompsStates;
-  output BackendDAE.StrongComponents outCompsNoStates;
-algorithm
-  (outCompsStates,outCompsNoStates):=
-  matchcontinue syst
-    local
-      Integer size;
-      array<Integer> arr,arr_1;
-      BackendDAE.StrongComponents comps,blt_states,blt_no_states;
-      BackendDAE.Variables v;
-      BackendDAE.EquationArray e,se,ie;
-      array<Integer> ass1,ass2;
-      array<list<Integer>> m,mt;
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,_,comps)))
-      equation
-        size = arrayLength(ass1) "equation_size(e) => size &";
-        arr = arrayCreate(size, 0);
-        arr_1 = markStateEquations(syst, arr, ass1);
-        (blt_states,blt_no_states) = splitBlocks(comps, arr_1);
-      then
-        (blt_states,blt_no_states);
-    else
-      equation
-        print("- BackendDAEUtil.generateStatePartition failed\n");
-      then
-        fail();
-  end matchcontinue;
-end generateStatePartition;
-
-protected function splitBlocks "Split the blocks into two parts, one dynamic and one output, depending
-  on if an equation in the block is marked or not.
-  inputs:  (blocks: int list list, marks: int array)
-  outputs: (dynamic: int list list, output: int list list)"
-  input BackendDAE.StrongComponents inComps;
-  input array<Integer> inIntegerArray;
-  output BackendDAE.StrongComponents outCompsStates;
-  output BackendDAE.StrongComponents outCompsNoStates;
-algorithm
-  (outCompsStates,outCompsNoStates) := matchcontinue (inComps,inIntegerArray)
-    local
-      BackendDAE.StrongComponents comps,states,output_;
-      BackendDAE.StrongComponent comp;
-      list<Integer> eqns;
-      array<Integer> arr;
-
-    case ({},_) then ({},{});
-
-    case (comp::comps,arr)
-      equation
-        (eqns,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        true = blockIsDynamic(eqns, arr) "block is dynamic, belong in dynamic section";
-        (states,output_) = splitBlocks(comps, arr);
-      then
-        ((comp::states),output_);
-
-    case (comp::comps,arr)
-      equation
-        (states,output_) = splitBlocks(comps, arr) "block is not dynamic, belong in output section";
-      then
-        (states,(comp::output_));
-    else
-      equation
-        print("- BackendDAEUtil.splitBlocks failed\n");
-      then
-        fail();
-  end matchcontinue;
-end splitBlocks;
 
 public function blockIsDynamic "Return true if the block contains a variable that is marked"
   input list<Integer> lst;
@@ -3638,6 +3551,7 @@ algorithm
       tuple<BackendDAE.Variables,AvlSetInt.Tree, Boolean> tpl;
       Boolean isInitial;
 
+    // inner variable
     case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
       equation
         cr = ComponentReference.makeCrefQual(BackendDAE.partialDerivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
@@ -3645,6 +3559,7 @@ algorithm
         res = adjacencyRowExp1withInput(varslst,p,pa,0);
       then (inExp,false,(vars,res,isInitial));
 
+    // iteration var with start value
     case (DAE.CREF(componentRef=cr), (vars, pa, isInitial))
       equation
         (varslst, p) = BackendVariable.getVar(cr, vars);
@@ -3654,18 +3569,21 @@ algorithm
         res = adjacencyRowExp1withInput(varslst, p, res, 0);
       then (inExp, true, (vars, res, isInitial));
 
+    // iteration var without start value
     case (DAE.CREF(componentRef = cr),(vars,pa,isInitial))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = adjacencyRowExp1withInput(varslst,p,pa,0);
       then (inExp, true, (vars, res, isInitial));
 
+    // state derivative (in backend)
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = adjacencyRowExp1withInput(varslst,p,pa,1);
       then (inExp,false,(vars,res,isInitial));
 
+    // state derivative (in simcode)
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
@@ -3673,6 +3591,7 @@ algorithm
         res = adjacencyRowExp1withInput(varslst,p,pa,1);
       then (inExp,false,(vars,res,isInitial));
 
+    // CLOCKED state
     case (DAE.CALL(path = Absyn.IDENT(name = "previous"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,isInitial))
       equation
         cr = ComponentReference.makeCrefQual(DAE.previousNamePrefix, DAE.T_REAL_DEFAULT, {}, cr);
@@ -4249,6 +4168,20 @@ protected function traverseStmts "Author: Frenkel TUD 2012-06
      input output Type_a arg2;
   end FuncExpType;
   replaceable type Type_a subtypeof Any;
+  function removeSubscripts
+    "kabdelhak: remove left hand side subscripts
+     (Modelica Specification v3.5 : 11.1.2)
+     Fix: Do not do if it is a scalar variable with all constant subscripts.
+          It leads to a massive number of hash table accesses for big tensors."
+    input output DAE.Exp exp;
+  algorithm
+    exp := match exp
+      case DAE.CREF() guard(not ComponentReference.crefIsScalarWithAllConstSubs(exp.componentRef)) algorithm
+        exp.componentRef := ComponentReference.crefStripSubsExceptModelSubs(exp.componentRef);
+      then exp;
+      else exp;
+    end match;
+  end removeSubscripts;
 algorithm
   oextraArg := matchcontinue(inStmts,func,iextraArg)
     local
@@ -4267,22 +4200,31 @@ algorithm
 
     case ((DAE.STMT_ASSIGN(exp1 = e2,exp = e)::xs),_,extraArg)
       equation
+        // kabdelhak: remove left hand side subscripts
+        // (Modelica Specification v3.5 : 11.1.2)
+        // solves ticket #7832
         extraArg = func(e, extraArg);
-        extraArg = func(e2, extraArg);
+        extraArg = func(removeSubscripts(e2), extraArg);
       then
         traverseStmts(xs, func, extraArg);
 
     case ((DAE.STMT_TUPLE_ASSIGN(expExpLst = expl1, exp = e)::xs),_,extraArg)
       equation
+        // kabdelhak: remove left hand side subscripts
+        // (Modelica Specification v3.5 : 11.1.2)
+        // solves ticket #7832
         extraArg = func(e, extraArg);
-        extraArg = List.fold(expl1,func,extraArg);
+        extraArg = List.fold(list(removeSubscripts(ex) for ex in expl1),func,extraArg);
       then
         traverseStmts(xs, func, extraArg);
 
     case ((DAE.STMT_ASSIGN_ARR(lhs = e2, exp = e)::xs),_,extraArg)
       equation
+        // kabdelhak: remove left hand side subscripts
+        // (Modelica Specification v3.5 : 11.1.2)
+        // solves ticket #7832
         extraArg = func(e, extraArg);
-        extraArg = func(e2, extraArg);
+        extraArg = func(removeSubscripts(e2), extraArg);
       then
         traverseStmts(xs, func, extraArg);
 
@@ -5337,7 +5279,7 @@ algorithm
       equation
         true = AbsynUtil.pathEqual(path,path1);
         rabs = intAbs(r);
-        // if not negatet rowmark then
+        // if not negated rowmark then
         false = intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
@@ -5349,7 +5291,29 @@ algorithm
       equation
         true = AbsynUtil.pathEqual(path,path1);
         rabs = intAbs(r);
-        // if not negatet rowmark then
+        // if not negated rowmark then
+        false = intEq(rowmark[rabs],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
+        true = expCrefLstHasCref(explst,cr1);
+        false = Expression.expHasCrefNoPreorDer(e1,cr1);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
+    case(r::rest,DAE.RECORD(path=path,exps=explst),_,_,_,_,_,_)
+      equation
+        rabs = intAbs(r);
+        // if not negated rowmark then
+        false = intEq(rowmark[rabs],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
+        true = expCrefLstHasCref(explst,cr1);
+        false = Expression.expHasCrefNoPreorDer(e2,cr1);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,globalKnownVars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED(),{})::inRow,trytosolve,size,shared);
+    case(r::rest,_,DAE.RECORD(path=path,exps=explst),_,_,_,_,_)
+      equation
+        rabs = intAbs(r);
+        // if not negated rowmark then
         false = intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
@@ -5360,7 +5324,7 @@ algorithm
     case(r::rest,DAE.TUPLE(PR=explst),DAE.CALL(),_,_,_,_,_)
       equation
         rabs = intAbs(r);
-        // if not negatet rowmark then
+        // if not negated rowmark then
         false = intEq(rowmark[rabs],-mark);
         // solved?
         BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, rabs);
@@ -8015,7 +7979,7 @@ algorithm
   dae := preOptimizeDAE(inDAE, preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  dae := causalizeDAE(dae, NONE(), matchingAlgorithm, daeHandler, true);
+  dae := causalizeDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), matchingAlgorithm, daeHandler, true);
   execStat("causalizeDAE (first run)");
   //fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump", dae));
 
@@ -8124,7 +8088,7 @@ protected
   list<tuple<BackendDAE.Equation, tuple<Integer, Integer>>> loopEqs = {}; /* scalar index needs to be list -- replace lookup with eqnIndexArray*/
   list<tuple<BackendDAE.Var, Integer>> loopVars = {};
   BackendDAE.Equation tmp_eq;
-  BackendDAE.LinearIntegerJacobian linIntJac;
+  SymbolicJacobian.LinearJacobian linJac;
 algorithm
   if listLength(comp) > 1 then
     /* collect eqs and vars from strong component */
@@ -8143,27 +8107,27 @@ algorithm
       loopVars := (BackendVariable.getVarAt(syst.orderedVars, ass1[eqnIndex]), ass1[eqnIndex]) :: loopVars;
     end for;
 
-    if listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC) then
+    if not listEmpty(loopEqs) and (listLength(loopEqs) <= Flags.getConfigInt(Flags.MAX_SIZE_ASSC)) then
       try
         /* generate linear integer sub jacobian from system */
-        linIntJac := SymbolicJacobian.generateLinearIntegerJacobian(loopEqs, loopVars, ass1);
+        linJac := SymbolicJacobian.LinearJacobian.generate(loopEqs, loopVars, ass1);
 
-        if not SymbolicJacobian.emptyOrSingleLinearIntegerJacobian(linIntJac) then
+        if not SymbolicJacobian.LinearJacobian.emptyOrSingle(linJac) then
           if Flags.isSet(Flags.DUMP_ASSC) then
-            BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Original");
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Original"));
           end if;
 
           /* solve jacobian with gaussian elimination */
-          linIntJac := SymbolicJacobian.solveLinearIntegerJacobian(linIntJac);
+          linJac := SymbolicJacobian.LinearJacobian.solve(linJac);
           if Flags.isSet(Flags.DUMP_ASSC) then
-            BackendDump.dumpLinearIntegerJacobianSparse(linIntJac, "Solved");
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Solved"));
           end if;
 
           /* set changed to true if it was true before, or any row changed in the jacobian */
-          changed := changed or SymbolicJacobian.anyRowChanged(linIntJac);
+          changed := changed or SymbolicJacobian.LinearJacobian.anyChanges(linJac);
 
           /* resolve zero rows to new equations and update assignments / adjacency matrix */
-          (ass1, ass2, syst) := SymbolicJacobian.resolveAnalyticalSingularities(linIntJac, ass1, ass2, syst);
+          (ass1, ass2, syst) := SymbolicJacobian.LinearJacobian.resolveASSC(linJac, ass1, ass2, syst);
         end if;
       else
         /* possibly fails if jacobian is empty --- nothing to do */
@@ -8320,6 +8284,7 @@ public function allPreOptimizationModules
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
+    (DataReconciliation.extractBoundaryCondition, "dataReconciliationBoundaryConditions"),
     (DynamicOptimization.createDynamicOptimization,"createDynamicOptimization"),
     (BackendInline.normalInlineFunction, "normalInlineFunction"),
     (EvaluateParameter.evaluateParameters, "evaluateParameters"),
@@ -9243,6 +9208,7 @@ algorithm
                               ei,
                               emptyPartitionsInfo(),
                               BackendDAE.emptyDAEModeData,
+                              NONE(),
                               NONE()
                               );
 end createEmptyShared;

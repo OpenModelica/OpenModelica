@@ -172,7 +172,7 @@ public:
   bool saveTotalModel(QString fileName, QString className);
   QString list(QString className);
   QString listFile(QString className, bool nestedClasses = true);
-  QString diffModelicaFileListings(QString before, QString after);
+  QString diffModelicaFileListings(const QString &before, const QString &after);
   QString instantiateModel(QString className);
   bool addClassAnnotation(QString className, QString annotation);
   QString getDefaultComponentName(QString className);
@@ -234,9 +234,7 @@ public:
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
   QList<QString> getDerivedUnits(QString baseUnit);
-  QString getVersionDateAnnotation(QString className);
-  QString getVersionBuildAnnotation(QString className);
-  bool getDocumentationClassAnnotation(QString className);
+  QString getNamedAnnotation(const QString &className, const QString &annotation, StringHandler::ResultType type = StringHandler::String);
   QString getCommandLineOptionsAnnotation(QString className);
   QList<QString> getAnnotationNamedModifiers(QString className, QString annotation);
   QString getAnnotationModifierValue(QString className, QString annotation, QString modifier);
@@ -274,7 +272,7 @@ signals:
 public slots:
   void logCommand(QString command) { logCommand(command, false); }
   void logCommand(QString command, bool saveToHistory);
-  void logResponse(QString command, QString response, double elapsed);
+  void logResponse(QString command, QString response, double elapsed, bool customCommand = false);
   void showException(QString exception);
   void openOMCLoggerWidget();
   void sendCustomExpression();

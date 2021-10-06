@@ -515,6 +515,17 @@ algorithm
   end match;
 end varStateSelectNever;
 
+public function varStateSelectPrefer
+  "Returns true, if the state select attribute is DAE.PREFER()"
+  input BackendDAE.Var inVar;
+  output Boolean isPrefer;
+algorithm
+  isPrefer := match(varStateSelect(inVar))
+    case DAE.PREFER() then true;
+    else false;
+  end match;
+end varStateSelectPrefer;
+
 public function setVarStateSelect "Sets the state select attribute of a variable."
   input BackendDAE.Var inVar;
   input DAE.StateSelect stateSelect;

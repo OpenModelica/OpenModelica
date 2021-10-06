@@ -3836,9 +3836,7 @@ algorithm
 end getHomotopyArguments;
 
 protected function elabBuiltinDynamicSelect
-  "Elaborates DynamicSelect statements in annotations for OMEdit.
-   Currently only text annotations with one String statement accessing
-   one variable are supported. Otherwise the first argument is returned."
+  "Elaborates DynamicSelect statements in annotations for OMEdit."
   input FCore.Cache inCache;
   input FCore.Graph inEnv;
   input list<Absyn.Exp> inPosArgs;
@@ -3859,37 +3857,15 @@ algorithm
     msg_str := ", expected DynamicSelect(staticExp, dynamicExp)";
     printBuiltinFnArgError("DynamicSelect", msg_str, inPosArgs, inNamedArgs, inPrefix, inInfo);
   end if;
+
   {astatic, adynamic} := inPosArgs;
   (outCache, dstatic, outProperties as DAE.PROP(ty, _)) :=
     elabExpInExpression(inCache, inEnv, astatic, inImplicit, true, inPrefix, inInfo);
+
   try
-    outExp := match (astatic, adynamic)
-    local
-      Absyn.ComponentRef acref;
-      Integer digits;
-      list<Absyn.NamedArg> namedArgs;
-      Boolean bconst;
-    // keep DynamicSelect for String with cref arg (textString)
-    case (Absyn.STRING(), Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "String"), functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = acref)}, argNames = namedArgs))) algorithm
-      (outCache, dstatic, outProperties as DAE.PROP(ty, _)) :=
-        elabExpInExpression(inCache, inEnv, astatic, inImplicit, true, inPrefix, inInfo);
-      ddynamic := Expression.crefToExp(absynCrefToComponentReference(acref));
-      // Note: can't generate Modelica syntax as OMEdit only parses lists
-      //outExp := Expression.makePureBuiltinCall("DynamicSelect", {dstatic,
-      //  Expression.makePureBuiltinCall("String", {ddynamic}, ty)}, ty);
-      outExp := match namedArgs
-        case {Absyn.NAMEDARG(argName = "significantDigits", argValue = Absyn.INTEGER(value = digits))}
-          then Expression.makeArray({dstatic, ddynamic, DAE.ICONST(digits)}, ty, true);
-        case {Absyn.NAMEDARG(), Absyn.NAMEDARG(argName = "significantDigits", argValue = Absyn.INTEGER(value = digits))}
-          then Expression.makeArray({dstatic, ddynamic, DAE.ICONST(digits)}, ty, true);
-          else Expression.makeArray({dstatic, ddynamic}, ty, true);
-      end match;
-      then outExp;
-    // keep DynamicSelect for Boolean with cref arg (visible, primitivesVisible)
-    case (Absyn.BOOL(), Absyn.CREF(componentRef = acref))
-      then Expression.makeArray({dstatic, Expression.crefToExp(absynCrefToComponentReference(acref))}, ty, true);
-    end match;
-  // return first argument of DynamicSelect for model editing per default
+    (outCache, ddynamic, _) :=
+      elabExpInExpression(outCache, inEnv, adynamic, inImplicit, true, inPrefix, inInfo);
+    outExp := Expression.makePureBuiltinCall("DynamicSelect", {dstatic, ddynamic}, ty);
   else
     outExp := dstatic;
   end try;
@@ -4024,7 +4000,10 @@ algorithm
         tp = Types.arrayElementType(t);
         etp = Types.simplifyType(tp);
         exp_2 = Expression.makePureBuiltinCall("product", {exp_1}, etp);
-        exp_2 = elabBuiltinProduct2(exp_2);
+
+        if not Types.arrayHasUnknownDims(t) then
+          exp_2 = elabBuiltinProduct2(exp_2);
+        end if;
       then
         (cache,exp_2,DAE.PROP(tp,c));
   end matchcontinue;

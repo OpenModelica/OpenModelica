@@ -9,7 +9,7 @@
 
 runScript("../common/ModelTestingDefaults.mos"); getErrorString();
 
-modelTestingType := OpenModelicaModelTesting.Kind.Compilation;
+modelTestingType := OpenModelicaModelTesting.Kind.SimpleSimulation;
 modelName := $TypeName(Modelica.Electrical.Spice3.Examples.Inverter);
 compareVars :=
 {
@@ -27,9 +27,13 @@ runScript(modelTesting);getErrorString();
 // "true
 // "
 // ""
-// OpenModelicaModelTesting.Kind.Compilation
+// OpenModelicaModelTesting.Kind.SimpleSimulation
 // Modelica.Electrical.Spice3.Examples.Inverter
 // {"mp.Dinternal","mp.Sinternal","mn.Dinternal","mn.Sinternal"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Compilation succeeded
+// Simulation options: startTime = 0.0, stopTime = 9.999999999999999e-12, numberOfIntervals = 1999, tolerance = 1e-07, method = 'dassl', fileNamePrefix = 'Modelica.Electrical.Spice3.Examples.Inverter', options = '', outputFormat = 'mat', variableFilter = 'time|mp.Dinternal|mp.Sinternal|mn.Dinternal|mn.Sinternal', cflags = '', simflags = ' -emit_protected'
+// Result file: Modelica.Electrical.Spice3.Examples.Inverter_res.mat
+// "true
+// "
+// ""
 // endResult

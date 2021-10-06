@@ -34,7 +34,6 @@ encapsulated package BackendDAE
   package:     BackendDAE
   description: BackendDAE contains the data-types used by the back end.
 "
-
 import Absyn;
 import AvlSetPath;
 import DAE;
@@ -80,7 +79,7 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
     StateSets stateSets                     "the state sets of the system";
     BaseClockPartitionKind partitionKind;
     EquationArray removedEqs                "these are equations that cannot solve for a variable.
-                                            e.g. assertions, external function calls, algorithm sections without effect";
+                                             e.g. assertions, external function calls, algorithm sections without effect";
   end EQSYSTEM;
 end EqSystem;
 
@@ -122,8 +121,8 @@ uniontype Shared "Data shared for all equation-systems"
                                              pointer to their values (trajectories).";
     EquationArray initialEqs                "Initial equations";
     EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect";
-    list< .DAE.Constraint> constraints     "constraints (Optimica extension)";
-    list< .DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
+    list< .DAE.Constraint> constraints      "constraints (Optimica extension)";
+    list< .DAE.ClassAttributes> classAttrs  "class attributes (Optimica extension)";
     FCore.Cache cache;
     FCore.Graph graph;
     .DAE.FunctionTree functionTree          "functions for Backend";
@@ -131,10 +130,11 @@ uniontype Shared "Data shared for all equation-systems"
     ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
     BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
     SymbolicJacobians symjacs               "Symbolic Jacobians";
-    ExtraInfo info "contains extra info that we send around like the model name";
+    ExtraInfo info                          "contains extra info that we send around like the model name";
     PartitionsInfo partitionsInfo;
-    BackendDAEModeData daeModeData "DAEMode Data";
+    BackendDAEModeData daeModeData          "DAEMode Data";
     Option<DataReconciliationData> dataReconciliationData;
+    Option<.DAE.Exp> timeInterval           "from experiment annotation Interval, used for derivative nominal guesswork";
   end SHARED;
 end Shared;
 
@@ -168,8 +168,8 @@ uniontype PartitionsInfo
 end PartitionsInfo;
 
 uniontype ExtraInfo "extra information that we should send around with the DAE"
-  record EXTRA_INFO "extra information that we should send around with the DAE"
-    String description "the model description string";
+  record EXTRA_INFO
+    String description    "the model description string";
     String fileNamePrefix "the model name to be used in the dumps";
   end EXTRA_INFO;
 end ExtraInfo;
@@ -807,20 +807,6 @@ constant SparsePattern emptySparsePattern = ({},{},({},{}),0);
 
 public
 type SparseColoring = list<list< .DAE.ComponentRef>>;   // colouring
-
-/*
-  Type only for transformation from analytical to structural singularity.
-*/
-type LinearIntegerJacobianRow = list<tuple<Integer, Integer>>;        // Actual jacobian entries sparse, <column, value>
-type LinearIntegerJacobianRhs = array<.DAE.Exp>;                      // RHS-Exp for full pivot algorithm. Replacement for eliminated equation.
-type LinearIntegerJacobianIndices = array<tuple<Integer, Integer>>;   // Index tuple <array, scalar> for equations
-
-/*
-  The full linear integer matrix
-  - additional boolean array to track which rows have been changed
-  - additional boolean array to track which variables are matched to the equations
-*/
-type LinearIntegerJacobian = tuple<array<LinearIntegerJacobianRow>, LinearIntegerJacobianRhs, LinearIntegerJacobianIndices, array<Boolean>, array<Boolean>>;
 
 public
 uniontype DifferentiateInputData

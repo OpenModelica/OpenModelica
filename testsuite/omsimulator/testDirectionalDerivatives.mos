@@ -2,7 +2,6 @@
 // keywords: FMI 2.0 fmi2GetDirectionalDerivative OMSimulator
 // status: correct
 // teardown_command: rm -rf temp_testDirectionalDerivatives/ test_res.mat directionalDerivatives.csv directionalDerivatives.lua directionalDerivatives_systemCall.log Modelica.Electrical.Analog.Examples.CauerLowPassAnalog.fmu Modelica_Electrical_Analog_Examples_CauerLowPassAnalog.log
-// cflags: -d=-newInst
 //
 // Test initialization, simulation with fmi2GetDirectionalDerivative and deinitialization of FMU with OMSimulator
 
@@ -56,14 +55,14 @@ readFile("directionalDerivatives_systemCall.log");
 // true
 // ""
 // 0
-// "info:    maximum step size for 'test.root': 0.100000
+// "info:    maximum step size for 'test.root': 0.001000
 // info:    Result file: directionalDerivatives.csv (bufferSize=1)
 // info:    Initialization
 // info:    system1.C1.v: 0.0
 // info:    Simulation
 // info:    system1.C1.v: 0.0
 // info:    Final Statistics for 'test.root':
-//          NumSteps = 12 NumRhsEvals  = 13 NumLinSolvSetups = 3
-//          NumNonlinSolvIters = 12 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
+//          NumSteps = 1001 NumRhsEvals  = 1002 NumLinSolvSetups = 51
+//          NumNonlinSolvIters = 1001 NumNonlinSolvConvFails = 0 NumErrTestFails = 0
 // "
 // endResult

@@ -1,7 +1,6 @@
 // keywords: fmu export import
 // status: correct
 // teardown_command: rm -rf Enumeration.lua Enumeration.fmu Enumeration.log Enumeration_systemCall.log temp-Enumeration/
-// cflags: -d=-newInst
 
 loadString("
 model Enumeration

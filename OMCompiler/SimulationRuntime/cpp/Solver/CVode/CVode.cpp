@@ -992,6 +992,10 @@ int Cvode::reportErrorMessage(ostream& messageStream)
 
 void Cvode::writeSimulationInfo()
 {
+	// don't write before memory has been initialized
+	if (_cvodeMem == NULL)
+		return;
+
 	long int nst, nfe, nsetups, nni, ncfn, netf;
 	long int nfQe, netfQ;
 	long int nfSe, nfeS, nsetupsS, nniS, ncfnS;

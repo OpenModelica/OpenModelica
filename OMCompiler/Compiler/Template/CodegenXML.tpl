@@ -31,13 +31,14 @@ template generateXml(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   let guid = getUUIDStr()
+  let prefix='https://github.com/JModelica/JModelica/tree/master/XML'
   <<
   <?xml version="1.0" encoding="UTF-8"?>
   <OpenModelicaModelDescription
-    xmlns:exp="https://svn.jmodelica.org/trunk/XML/daeExpressions.xsd"
-    xmlns:equ="https://svn.jmodelica.org/trunk/XML/daeEquations.xsd"
-    xmlns:fun="https://svn.jmodelica.org/trunk/XML/daeFunctions.xsd"
-    xmlns:opt="https://svn.jmodelica.org/trunk/XML/daeOptimization.xsd"
+    xmlns:exp="<%prefix%>/daeExpressions.xsd"
+    xmlns:equ="<%prefix%>/daeEquations.xsd"
+    xmlns:fun="<%prefix%>/daeFunctions.xsd"
+    xmlns:opt="<%prefix%>/daeOptimization.xsd"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     <%modelDescriptionXml(simCode,guid)%>
     >
@@ -191,7 +192,7 @@ case SIMVAR(__) then
       <TimePoint index="0" isLinear="true"/>
     </isLinearTimedVariables>
       <VariableCategory><%variableCategory%></VariableCategory>
-    </ScalarVariable> <%\n%>
+    </ScalarVariable><%\n%>
   >>
 end ScalarVariableAttributesXml;
 
@@ -736,7 +737,7 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
     <exp:Sub>
       <%x%>
     </exp:Sub>
-  </equ:Equation>  <%\n%>
+  </equ:Equation><%\n%>
   >>
   <<
   >>
@@ -1099,7 +1100,7 @@ case FUNCTION(__) then
     <fun:Algorithm>
       <%bodyPart%>
     </fun:Algorithm>
-  </fun:Function> <%\n%>
+  </fun:Function><%\n%>
   >>
 end regularFunctionXml;
 
@@ -1123,7 +1124,7 @@ case efn as EXTERNAL_FUNCTION(__) then
     <fun:Algorithm>
       <%callPart%>
     </fun:Algorithm>
-  </fun:Function> <%\n%>
+  </fun:Function><%\n%>
   >>
 end externalFunctionXml;
 
@@ -2543,7 +2544,7 @@ case BINARY(__) then
     <exp:Add>
       <%e1%>
       <%e2%>
-    </exp:Add> <%\n%>
+    </exp:Add><%\n%>
     >>
     '<%var%>'
   case SUB_ARR(__) then
@@ -2556,7 +2557,7 @@ case BINARY(__) then
     <exp:Sub>
     <%e1%>
     <%e2%>
-    </exp:Sub> <%\n%>
+    </exp:Sub><%\n%>
     >>
     '<%var%>'
   case MUL_ARR(__) then  'daeExpBinary:ERR for MUL_ARR'
@@ -2571,7 +2572,7 @@ case BINARY(__) then
     <exp:Mul>
     <%e1%>
     <%e2%>
-    </exp:Mul> <%\n%>
+    </exp:Mul><%\n%>
     >>
     '<%var%>'
   case ADD_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for ADD_ARRAY_SCALAR'
@@ -2592,7 +2593,7 @@ case BINARY(__) then
     <exp:Mul>
     <%e1%>
     <%e2%>
-    </exp:Mul> <%\n%>
+    </exp:Mul><%\n%>
     >>
     '<%var%>'
   case DIV_ARRAY_SCALAR(__) then
@@ -2605,7 +2606,7 @@ case BINARY(__) then
     <exp:Div>
     <%e1%>
     <%e2%>
-    </exp:Div> <%\n%>
+    </exp:Div><%\n%>
     >>
     '<%var%>'
   case DIV_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for DIV_SCALAR_ARRAY'
@@ -2774,7 +2775,7 @@ case rel as RELATION(__) then
           <exp:LogLt>
             <%e1%>
             <%e2%>
-          </exp:LogLt> <%\n%>
+          </exp:LogLt><%\n%>
           >>
           res
         case LESSEQ(__) then
@@ -2783,7 +2784,7 @@ case rel as RELATION(__) then
           <exp:LogLeq>
             <%e1%>
             <%e2%>
-          </exp:LogLeq> <%\n%>
+          </exp:LogLeq><%\n%>
           >>
           res
         case GREATER(__) then
@@ -2792,7 +2793,7 @@ case rel as RELATION(__) then
           <exp:LogGt>
             <%e1%>
             <%e2%>
-          </exp:LogGt> <%\n%>
+          </exp:LogGt><%\n%>
           >>
           res
         case GREATEREQ(__) then
@@ -2801,7 +2802,7 @@ case rel as RELATION(__) then
           <exp:LogGeq>
             <%e1%>
             <%e2%>
-          </exp:LogGeq> <%\n%>
+          </exp:LogGeq><%\n%>
           >>
           res
         end match
@@ -2827,7 +2828,7 @@ case rel as RELATION(__) then
           <exp:LogLeq>
             <%e1%>
             <%e2%>
-          <exp:LogLeq> <%\n%>
+          <exp:LogLeq><%\n%>
         >>
         res
       case GREATER(__) then
@@ -2872,7 +2873,7 @@ case rel as RELATION(__) then
           <exp:LogLeq>
             <%e1%>
             <%e2%>
-          </exp:LogLeq> <%\n%>
+          </exp:LogLeq><%\n%>
           >>
           res
         case GREATER(__) then
@@ -2916,7 +2917,7 @@ case rel as RELATION(__) then
             <exp:LogLeq>
               <%e1%>
               <%e2%>
-            </exp:LogLeq> <%\n%>
+            </exp:LogLeq><%\n%>
         >>
         res
      case GREATER(__) then
@@ -2962,21 +2963,21 @@ case rel as RELATION(__) then
           <opt:ConstraintEqu>
             <%e1%>
             <%e2%>
-          </opt:ConstraintEqu> <%\n%>
+          </opt:ConstraintEqu><%\n%>
           >>
         case LESSEQ(__) then
           <<
           <opt:ConstraintLeq>
             <%e1%>
             <%e2%>
-          </opt:ConstraintLeq> <%\n%>
+          </opt:ConstraintLeq><%\n%>
           >>
         case GREATEREQ(__) then
           <<
           <opt:ConstraintGeq>
             <%e1%>
             <%e2%>
-          </opt:ConstraintGeq> <%\n%>
+          </opt:ConstraintGeq><%\n%>
           >>
         else
           <<

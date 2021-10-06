@@ -170,6 +170,53 @@ public
     outOperator := OPERATOR(Type.UNKNOWN(), op);
   end fromAbsyn;
 
+  function toAbsyn
+    input Operator op;
+    output Absyn.Operator aop;
+  algorithm
+    aop := match op.op
+      case Op.ADD               then if Type.isArray(op.ty) then Absyn.Operator.ADD_EW() else Absyn.Operator.ADD();
+      case Op.SUB               then if Type.isArray(op.ty) then Absyn.Operator.SUB_EW() else Absyn.Operator.SUB();
+      case Op.MUL               then if Type.isArray(op.ty) then Absyn.Operator.MUL_EW() else Absyn.Operator.MUL();
+      case Op.DIV               then if Type.isArray(op.ty) then Absyn.Operator.DIV_EW() else Absyn.Operator.DIV();
+      case Op.POW               then if Type.isArray(op.ty) then Absyn.Operator.POW_EW() else Absyn.Operator.POW();
+      case Op.ADD_EW            then Absyn.Operator.ADD_EW();
+      case Op.SUB_EW            then Absyn.Operator.SUB_EW();
+      case Op.MUL_EW            then Absyn.Operator.MUL_EW();
+      case Op.DIV_EW            then Absyn.Operator.DIV_EW();
+      case Op.POW_EW            then Absyn.Operator.POW_EW();
+      case Op.ADD_SCALAR_ARRAY  then Absyn.Operator.ADD();
+      case Op.ADD_ARRAY_SCALAR  then Absyn.Operator.ADD();
+      case Op.SUB_SCALAR_ARRAY  then Absyn.Operator.SUB();
+      case Op.SUB_ARRAY_SCALAR  then Absyn.Operator.SUB();
+      case Op.MUL_SCALAR_ARRAY  then Absyn.Operator.MUL();
+      case Op.MUL_ARRAY_SCALAR  then Absyn.Operator.MUL();
+      case Op.MUL_VECTOR_MATRIX then Absyn.Operator.MUL();
+      case Op.MUL_MATRIX_VECTOR then Absyn.Operator.MUL();
+      case Op.SCALAR_PRODUCT    then Absyn.Operator.MUL();
+      case Op.MATRIX_PRODUCT    then Absyn.Operator.MUL();
+      case Op.DIV_SCALAR_ARRAY  then Absyn.Operator.DIV();
+      case Op.DIV_ARRAY_SCALAR  then Absyn.Operator.DIV();
+      case Op.POW_SCALAR_ARRAY  then Absyn.Operator.POW();
+      case Op.POW_ARRAY_SCALAR  then Absyn.Operator.POW();
+      case Op.POW_MATRIX        then Absyn.Operator.POW();
+      case Op.UMINUS            then if Type.isArray(op.ty) then Absyn.Operator.UMINUS_EW() else Absyn.Operator.UMINUS();
+      case Op.AND               then Absyn.Operator.AND();
+      case Op.OR                then Absyn.Operator.OR();
+      case Op.NOT               then Absyn.Operator.NOT();
+      case Op.LESS              then Absyn.Operator.LESS();
+      case Op.LESSEQ            then Absyn.Operator.LESSEQ();
+      case Op.GREATER           then Absyn.Operator.GREATER();
+      case Op.EQUAL             then Absyn.Operator.EQUAL();
+      case Op.NEQUAL            then Absyn.Operator.NEQUAL();
+      else
+        algorithm
+          Error.assertion(false, getInstanceName() + " got unknown type.", sourceInfo());
+        then
+          fail();
+    end match;
+  end toAbsyn;
+
   function toDAE
     input Operator op;
     output DAE.Operator daeOp;

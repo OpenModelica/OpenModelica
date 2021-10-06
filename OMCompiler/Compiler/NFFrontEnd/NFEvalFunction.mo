@@ -192,28 +192,22 @@ function evaluateRecordConstructor
   output Expression result;
 protected
   ArgumentMap arg_map;
-  Expression arg, repl_exp;
-  list<Record.Field> fields;
-  list<Expression> rest_args = args, expl = {};
-  list<InstNode> inputs = fn.inputs, locals = fn.locals;
-  InstNode node;
+  list<Expression> expl = {};
+  InstNode node, out_ty;
 algorithm
+  // Map the record fields to the arguments of the constructor.
   arg_map := createArgumentMap(fn.inputs, {}, fn.locals, args, mutableParams = false);
-  fields := Type.recordFields(ty);
 
-  // Fetch the new binding expressions for all the variables, both inputs and
-  // locals.
-  for f in fields loop
-    if Record.Field.isInput(f) then
-      node :: inputs := inputs;
-    else
-      node :: locals := locals;
-    end if;
+  // Use the node of the return type to determine the order of the variables,
+  // since they might be reordered in the record constructor.
+  Type.COMPLEX(cls = out_ty) := fn.returnType;
 
-    expl := UnorderedMap.getOrFail(node, arg_map) :: expl;
+  // Fetch the new binding expressions for all the variables, both inputs and locals.
+  for c in ClassTree.getComponents(Class.classTree(InstNode.getClass(out_ty))) loop
+    expl := UnorderedMap.getOrFail(c, arg_map) :: expl;
   end for;
 
-  // Create a new record expression from the list of arguments.
+  // Create a new record expression from the mapped arguments.
   result := Expression.makeRecord(Function.name(fn), ty, listReverseInPlace(expl));
 
   // Constant evaluate the expression if requested.
@@ -297,7 +291,7 @@ algorithm
   binding := Component.getBinding(comp);
 
   if Binding.isBound(binding) then
-    bindingExp := Expression.getBindingExp(Binding.getExp(binding));
+    bindingExp := Binding.getExp(binding);
   else
     bindingExp := buildBinding(node, map, mutableParams, buildArrayBinding);
   end if;
@@ -429,7 +423,7 @@ protected
   InstNode parent, node;
 algorithm
   // Explode the cref into a list of parts in reverse order.
-  cref_parts := ComponentRef.toListReverse(cref);
+  cref_parts := ComponentRef.toListReverse(cref, includeScope = false);
 
   // If the list is empty it's probably an iterator or _, which shouldn't be replaced.
   if listEmpty(cref_parts) then

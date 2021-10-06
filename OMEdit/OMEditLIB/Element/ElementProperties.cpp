@@ -112,13 +112,13 @@ Parameter::Parameter(Element *pComponent, bool showStartAttribute, QString tab, 
   mPreviousUnit = mDisplayUnit;
   mpUnitComboBox = new QComboBox;
   if (!mUnit.isEmpty()) {
-    mpUnitComboBox->addItem(mUnit);
+    mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(mUnit), mUnit);
     if (mDisplayUnit.compare(mUnit) != 0) {
-      mpUnitComboBox->addItem(mDisplayUnit);
+      mpUnitComboBox->addItem(Utilities::convertUnitToSymbol(mDisplayUnit), mDisplayUnit);
       mpUnitComboBox->setCurrentIndex(1);
     }
   }
-  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(QString)), SLOT(unitComboBoxChanged(QString)));
+  connect(mpUnitComboBox, SIGNAL(currentIndexChanged(int)), SLOT(unitComboBoxChanged(int)));
   mpCommentLabel = new Label(mpComponent->getComponentInfo()->getComment());
 }
 
@@ -152,19 +152,19 @@ void Parameter::setValueWidget(QString value, bool defaultValue, QString fromUni
   }
   if (Utilities::isValueLiteralConstant(value)) {
     // convert the value to display unit
-    if (!fromUnit.isEmpty() && mpUnitComboBox->currentText().compare(fromUnit) != 0) {
+    if (!fromUnit.isEmpty() && mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString().compare(fromUnit) != 0) {
       bool ok = true;
       qreal realValue = value.toDouble(&ok);
       // if the modifier is a literal constant
       if (ok) {
         OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->currentText());
+        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(fromUnit, mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString());
         if (convertUnit.unitsCompatible) {
           realValue = Utilities::convertUnit(realValue, convertUnit.offset, convertUnit.scaleFactor);
           value = StringHandler::number(realValue);
         }
       } else { // if expression
-        value = Utilities::arrayExpressionUnitConversion(MainWindow::instance()->getOMCProxy(), value, fromUnit, mpUnitComboBox->currentText());
+        value = Utilities::arrayExpressionUnitConversion(MainWindow::instance()->getOMCProxy(), value, fromUnit, mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString());
       }
     }
   }
@@ -423,10 +423,10 @@ void Parameter::enableDisableUnitComboBox(const QString &value)
    */
   if (!literalConstant) {
     bool state = mpUnitComboBox->blockSignals(true);
-    int index = mpUnitComboBox->findText(literalConstant ? mDisplayUnit : mUnit, Qt::MatchExactly);
+    int index = mpUnitComboBox->findData(literalConstant ? mDisplayUnit : mUnit);
     if (index > -1 && index != mpUnitComboBox->currentIndex()) {
       mpUnitComboBox->setCurrentIndex(index);
-      mPreviousUnit = mpUnitComboBox->currentText();
+      mPreviousUnit = mpUnitComboBox->itemData(mpUnitComboBox->currentIndex()).toString();
     }
     mpUnitComboBox->blockSignals(state);
   }
@@ -473,11 +473,11 @@ void Parameter::fileSelectorButtonClicked()
 
 /*!
  * \brief Parameter::unitComboBoxChanged
- * SLOT activated when mpUnitComboBox currentIndexChanged(QString) SIGNAL is raised.\n
+ * SLOT activated when mpUnitComboBox currentIndexChanged(int) SIGNAL is raised.\n
  * Updates the value according to the unit selected.
  * \param text
  */
-void Parameter::unitComboBoxChanged(QString text)
+void Parameter::unitComboBoxChanged(int index)
 {
   if (!mDefaultValue.isEmpty()) {
     setValueWidget(mDefaultValue, true, mPreviousUnit, false, true, true);
@@ -486,7 +486,7 @@ void Parameter::unitComboBoxChanged(QString text)
   if (!value.isEmpty()) {
     setValueWidget(value, false, mPreviousUnit, true, true, true);
   }
-  mPreviousUnit = text;
+  mPreviousUnit = mpUnitComboBox->itemData(index).toString();
 }
 
 /*!
@@ -595,6 +595,7 @@ GroupBox::GroupBox(const QString &title, QWidget *parent)
   : QGroupBox(title, parent)
 {
   mpGroupImageLabel = new Label;
+  mpGroupImageLabel->setScaledContents(true);
   mpGridLayout = new QGridLayout;
   mpGridLayout->setObjectName(title);
   mpGridLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
@@ -613,6 +614,8 @@ void GroupBox::setGroupImage(QString groupImage)
 {
   if (QFile::exists(groupImage)) {
     QPixmap pixmap(groupImage);
+    mpGroupImageLabel->setMaximumWidth(pixmap.width() / qApp->devicePixelRatio());
+    mpGroupImageLabel->setMaximumHeight(pixmap.height() / qApp->devicePixelRatio());
     mpGroupImageLabel->setPixmap(pixmap);
   }
 }
@@ -627,6 +630,7 @@ ParametersScrollArea::ParametersScrollArea()
   setFrameShape(QFrame::NoFrame);
   setBackgroundRole(QPalette::Base);
   setWidgetResizable(true);
+  mGroupBoxesList.clear();
   mpVerticalLayout = new QVBoxLayout;
   mpVerticalLayout->setAlignment(Qt::AlignLeft | Qt::AlignTop);
   mpWidget->setLayout(mpVerticalLayout);
@@ -662,8 +666,7 @@ QSize ParametersScrollArea::minimumSizeHint() const
   */
 void ParametersScrollArea::addGroupBox(GroupBox *pGroupBox)
 {
-  if (!getGroupBox(pGroupBox->title()))
-  {
+  if (!getGroupBox(pGroupBox->title())) {
     pGroupBox->hide();  /* create a hidden groupbox, we show it when it contains the parameters. */
     mGroupBoxesList.append(pGroupBox);
     mpVerticalLayout->addWidget(pGroupBox);
@@ -674,12 +677,12 @@ void ParametersScrollArea::addGroupBox(GroupBox *pGroupBox)
   Returns the GroupBox by reading the list of GroupBoxes.
   \return the GroupBox
   */
-GroupBox* ParametersScrollArea::getGroupBox(QString title)
+GroupBox* ParametersScrollArea::getGroupBox(const QString &title)
 {
-  foreach (GroupBox *pGroupBox, mGroupBoxesList)
-  {
-    if (pGroupBox->title().compare(title) == 0)
+  foreach (GroupBox *pGroupBox, mGroupBoxesList) {
+    if (pGroupBox->title().compare(title) == 0) {
       return pGroupBox;
+    }
   }
   return 0;
 }
@@ -786,8 +789,7 @@ void ElementParameters::setUpDialog()
   fetchComponentModifiers();
   fetchExtendsModifiers();
   foreach (Parameter *pParameter, mParametersList) {
-    ParametersScrollArea *pParametersScrollArea;
-    pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
+    ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(mTabsMap.value(pParameter->getTab())));
     if (pParametersScrollArea) {
       if (!pParameter->getGroupBox().isEmpty()) {
         GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(pParameter->getGroupBox());
@@ -839,6 +841,26 @@ void ElementParameters::setUpDialog()
   pModifiersTabLayout->addWidget(mpModifiersTextBox);
   pModifiersTab->setLayout(pModifiersTabLayout);
   mpParametersTabWidget->addTab(pModifiersTab, "Modifiers");
+  // Issue #7494. Hide any empty tab.
+  for (int i = 0; i < mpParametersTabWidget->count(); ++i) {
+    ParametersScrollArea *pParametersScrollArea = qobject_cast<ParametersScrollArea*>(mpParametersTabWidget->widget(i));
+    if (pParametersScrollArea) {
+      bool tabIsEmpty = true;
+      // The tab is empty if its groupbox layout is empty.
+      for (int j = 0; j < pParametersScrollArea->groupBoxesSize(); ++j) {
+        GroupBox *pGroupBox = pParametersScrollArea->getGroupBox(j);
+        if (pGroupBox && !pGroupBox->getGridLayout()->isEmpty()) {
+          tabIsEmpty = false;
+          break;
+        }
+      }
+      // If the tab is empty then remove it and move one step back.
+      if (tabIsEmpty) {
+        mpParametersTabWidget->removeTab(i);
+        --i;
+      }
+    }
+  }
   // Create the buttons
   mpOkButton = new QPushButton(Helper::ok);
   mpOkButton->setAutoDefault(true);
@@ -1108,13 +1130,13 @@ void ElementParameters::fetchComponentModifiers()
       }
       if (modifiersIterator.key().compare(parameterName + ".displayUnit") == 0) {
         QString displayUnit = StringHandler::removeFirstLastQuotes(modifiersIterator.value());
-        int index = pParameter->getUnitComboBox()->findText(displayUnit, Qt::MatchExactly);
+        int index = pParameter->getUnitComboBox()->findData(displayUnit);
         if (index < 0) {
           // add modifier as additional display unit if compatible
           index = pParameter->getUnitComboBox()->count() - 1;
           if (index > -1 &&
-              (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemText(0), displayUnit)).unitsCompatible) {
-            pParameter->getUnitComboBox()->addItem(displayUnit);
+              (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit)).unitsCompatible) {
+            pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
             index ++;
           }
         }
@@ -1169,13 +1191,13 @@ void ElementParameters::fetchExtendsModifiers()
           }
           if (extendsModifiersIterator.key().compare(parameterName + ".displayUnit") == 0) {
             QString displayUnit = StringHandler::removeFirstLastQuotes(extendsModifiersIterator.value());
-            int index = pParameter->getUnitComboBox()->findText(displayUnit, Qt::MatchExactly);
+            int index = pParameter->getUnitComboBox()->findData(displayUnit);
             if (index < 0) {
               // add extends modifier as additional display unit if compatible
               index = pParameter->getUnitComboBox()->count() - 1;
               if (index > -1 &&
-                  (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemText(0), displayUnit)).unitsCompatible) {
-                pParameter->getUnitComboBox()->addItem(displayUnit);
+                  (pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(0).toString(), displayUnit)).unitsCompatible) {
+                pParameter->getUnitComboBox()->addItem(Utilities::convertUnitToSymbol(displayUnit), displayUnit);
                 index ++;
               }
             }
@@ -1261,18 +1283,18 @@ void ElementParameters::updateComponentParameters()
     QString componentModifierKey = pParameter->getNameLabel()->text();
     QString componentModifierValue = pParameter->getValue();
     // convert the value to display unit
-    if (!pParameter->getUnit().isEmpty() && pParameter->getUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
+    if (!pParameter->getUnit().isEmpty() && pParameter->getUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
       bool ok = true;
       qreal componentModifierRealValue = componentModifierValue.toDouble(&ok);
       // if the modifier is a literal constant
       if (ok) {
-        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->currentText(), pParameter->getUnit());
+        OMCInterface::convertUnits_res convertUnit = pOMCProxy->convertUnits(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(), pParameter->getUnit());
         if (convertUnit.unitsCompatible) {
           componentModifierRealValue = Utilities::convertUnit(componentModifierRealValue, convertUnit.offset, convertUnit.scaleFactor);
           componentModifierValue = StringHandler::number(componentModifierRealValue);
         }
       } else { // if expression
-        componentModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, componentModifierValue, pParameter->getUnitComboBox()->currentText(), pParameter->getUnit());
+        componentModifierValue = Utilities::arrayExpressionUnitConversion(pOMCProxy, componentModifierValue, pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString(), pParameter->getUnit());
       }
     }
     if (pParameter->isValueModified()) {
@@ -1305,14 +1327,14 @@ void ElementParameters::updateComponentParameters()
       }
     }
     // if displayUnit is changed
-    if (pParameter->getUnitComboBox()->isEnabled() && pParameter->getDisplayUnit().compare(pParameter->getUnitComboBox()->currentText()) != 0) {
+    if (pParameter->getUnitComboBox()->isEnabled() && pParameter->getDisplayUnit().compare(pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString()) != 0) {
       valueChanged = true;
       /* If the component is inherited then add the modifier value into the extends. */
       if (mpComponent->isInheritedComponent()) {
         newComponentExtendsModifiersMap.insert(mpComponent->getName() + "." + componentModifierKey + ".displayUnit",
-                                               "\"" + pParameter->getUnitComboBox()->currentText() + "\"");
+                                               "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
       } else {
-        newComponentModifiersMap.insert(componentModifierKey + ".displayUnit", "\"" + pParameter->getUnitComboBox()->currentText() + "\"");
+        newComponentModifiersMap.insert(componentModifierKey + ".displayUnit", "\"" + pParameter->getUnitComboBox()->itemData(pParameter->getUnitComboBox()->currentIndex()).toString() + "\"");
       }
     }
   }

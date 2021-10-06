@@ -165,7 +165,7 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
   checkReturnFlag_SUNDIALS(flag, SUNDIALS_KIN_FLAG, "KINInit");
 
   /* Create matrix object */
-  if (kinsolData->linearSolverMethod == NLS_LS_DEFAULT) {
+  if (kinsolData->linearSolverMethod == NLS_LS_DEFAULT || kinsolData->linearSolverMethod == NLS_LS_LAPACK) {
     kinsolData->J = SUNDenseMatrix(size, size);
   } else if (kinsolData->linearSolverMethod == NLS_LS_KLU) {
     kinsolData->nnz = nlsData->sparsePattern->numberOfNoneZeros;
@@ -1187,20 +1187,8 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
                                      data->localData[0]->timeValue);
 
   /* Solve nonlinear system with KINSol() */
+  kinsolData->retries = 0;
   do {
-
-      /* TODO: Is this still true? */
-      /* It seems if we don't free KINSol on every iteration, it leaks memory.
-       * But if we reset KINSol, it takes an enormous amount of time...
-       */
-      if (0) { /* Save time; leak memory */
-        resetKinsolMemory(kinsolData, nlsData);
-      } else {
-        /* reset configuration settings */
-        nlsKinsolConfigSetup(kinsolData);
-      }
-
-
     nlsKinsolResetInitial(data, kinsolData, nlsData, INITIAL_EXTRAPOLATION);
 
     /* Set x scaling */

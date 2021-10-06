@@ -10,13 +10,15 @@
 
 GlobalSettings::GlobalSettings()
   : _startTime(0.0)
-  , _endTime(5.0)
-  , _hOutput(0.001)
+  , _endTime(1.0)
+  , _hOutput(0.002)
+  , _tolerance(1e-6)
   , _emitResults(EMIT_ALL)
+  , _variableFilter(".*")
   , _infoOutput(true)
-  , _selected_solver("Euler")
-  , _selected_lin_solver("linearSolver")
-  , _selected_nonlin_solver("Newton")
+  , _selected_solver("euler")
+  , _selected_lin_solver("dgesvSolver")
+  , _selected_nonlin_solver("kinsol")
   , _resultsfile_name("results.csv")
   , _endless_sim(false)
   , _nonLinSolverContinueOnError(false)
@@ -63,6 +65,16 @@ void GlobalSettings::sethOutput(double h)
   _hOutput = h;
 }
 
+void GlobalSettings::setTolerance(double value)
+{
+  _tolerance = value;
+}
+
+double GlobalSettings::getTolerance()
+{
+  return _tolerance;
+}
+
 bool GlobalSettings::useEndlessSim()
 {
   return _endless_sim ;
@@ -102,6 +114,16 @@ EmitResults GlobalSettings::getEmitResults()
 void GlobalSettings::setEmitResults(EmitResults emitResults)
 {
   _emitResults = emitResults;
+}
+
+const string& GlobalSettings::getVariableFilter()
+{
+  return _variableFilter;
+}
+
+void GlobalSettings::setVariableFilter(const string& variableFilter)
+{
+  _variableFilter = variableFilter;
 }
 
 void GlobalSettings::setResultsFileName(string name)
@@ -155,7 +177,7 @@ void GlobalSettings::setSelectedSolver(string solver)
   _selected_solver = solver;
 }
 
-string   GlobalSettings::getSelectedLinSolver()
+string GlobalSettings::getSelectedLinSolver()
 {
   return _selected_lin_solver;
 }

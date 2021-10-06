@@ -172,14 +172,6 @@ algorithm
           args := list(if Expression.hasArrayCall(arg) then arg else ExpandExp.expand(arg) for arg in args);
         end if;
 
-        // HACK, TODO, FIXME! handle DynamicSelect properly in OMEdit, then disable this stuff!
-        if Flags.isSet(Flags.NF_API) and not Flags.isSet(Flags.NF_API_DYNAMIC_SELECT) then
-          if stringEq("DynamicSelect", AbsynUtil.pathString(Function.nameConsiderBuiltin(call.fn))) then
-            callExp := simplify(listHead(args));
-            return;
-          end if;
-        end if;
-
         args := list(simplify(arg) for arg in args);
         call.arguments := args;
         builtin := Function.isBuiltin(call.fn);
@@ -190,7 +182,6 @@ algorithm
           if is_pure and List.all(args, Expression.isLiteral) then
             try
               callExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
-              callExp := Expression.stripBindingInfo(callExp);
             else
               callExp := Expression.CALL(call);
             end try;
@@ -231,7 +222,6 @@ algorithm
 
   try
     outExp := Ceval.evalCall(call, EvalTarget.IGNORE_ERRORS());
-    outExp := Expression.stripBindingInfo(outExp);
     ErrorExt.delCheckpoint(getInstanceName());
   else
     if Flags.isSet(Flags.FAILTRACE) then
@@ -260,9 +250,11 @@ algorithm
 
     case "fill"      then simplifyFill(listHead(args), listRest(args), call);
     case "homotopy"  then simplifyHomotopy(args, call);
+    case "max"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
+    case "min"       guard listLength(args) == 1 then simplifyReducedArrayConstructor(listHead(args), call);
     case "ones"      then simplifyFill(Expression.INTEGER(1), args, call);
-    case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
     case "product"   then simplifySumProduct(listHead(args), call, isSum = false);
+    case "sum"       then simplifySumProduct(listHead(args), call, isSum = true);
     case "transpose" then simplifyTranspose(listHead(args), call);
     case "vector"    then simplifyVector(listHead(args), call);
     case "zeros"     then simplifyFill(Expression.INTEGER(0), args, call);
@@ -300,9 +292,33 @@ algorithm
       end for;
     end if;
   else
-    exp := Expression.CALL(call);
+    exp := simplifyReducedArrayConstructor(exp, call);
   end if;
 end simplifySumProduct;
+
+function simplifyReducedArrayConstructor
+  input Expression arg;
+  input Call call;
+  output Expression exp;
+algorithm
+  exp := match arg
+    local
+      Call arr_call;
+      Function fn;
+      Type ty;
+      Variability var;
+      Purity purity;
+
+    case Expression.CALL(call = arr_call as Call.TYPED_ARRAY_CONSTRUCTOR())
+      guard Type.dimensionCount(arr_call.ty) == 1
+      algorithm
+        Call.TYPED_CALL(fn = fn, ty = ty, var = var, purity = purity) := call;
+      then
+        Expression.CALL(Call.makeTypedReduction(fn, ty, var, purity, arr_call.exp, arr_call.iters, AbsynUtil.dummyInfo));
+
+    else Expression.CALL(call);
+  end match;
+end simplifyReducedArrayConstructor;
 
 function simplifyTranspose
   input Expression arg;
@@ -329,6 +345,7 @@ function simplifyVector
 protected
   list<Expression> expl;
   Boolean is_literal;
+  Type ty;
 algorithm
   expl := Expression.arrayScalarElements(arg);
   is_literal := Expression.isLiteral(arg);
@@ -339,7 +356,8 @@ algorithm
   end if;
 
   if is_literal or List.all(expl, Expression.isScalar) then
-    exp := Expression.makeExpArray(expl);
+    ty := Type.arrayElementType(Expression.typeOf(arg));
+    exp := Expression.makeExpArray(expl, ty);
   else
     exp := Expression.CALL(call);
   end if;
@@ -402,6 +420,14 @@ algorithm
           exp := Expression.replaceIterator(exp, iter, e);
           exp := Expression.makeArray(ty, {exp});
           outExp := simplify(exp);
+        elseif Expression.isLiteral(e) and not Expression.hasNonArrayIteratorSubscript(exp, iter) then
+          // If the iterator is only used to subscript array expressions like
+          // {{1, 2, 3}[i] in i 1:3}, then we might as well expand it.
+          (outExp, expanded) := ExpandExp.expandArrayConstructor(exp, ty, iters);
+
+          if expanded then
+            outExp := simplify(outExp);
+          end if;
         else
           fail();
         end if;
@@ -451,6 +477,10 @@ algorithm
             end if;
           then
             outExp;
+
+        case _
+          guard call.var <= Variability.STRUCTURAL_PARAMETER
+          then Ceval.tryEvalExp(Expression.CALL(call));
 
         case _
           then simplifyReduction2(AbsynUtil.pathString(Function.name(call.fn)), call.exp, iters);
@@ -715,7 +745,6 @@ function simplifyBinaryOp
 algorithm
   if Expression.isLiteral(exp1) and Expression.isLiteral(exp2) then
     outExp := Ceval.evalBinaryOp(ExpandExp.expand(exp1), op, ExpandExp.expand(exp2));
-    outExp := Expression.stripBindingInfo(outExp);
   else
     outExp := match op.op
       case Op.ADD then simplifyBinaryAdd(exp1, op, exp2);
@@ -865,7 +894,6 @@ function simplifyUnaryOp
 algorithm
   if Expression.isLiteral(exp) then
     outExp := Ceval.evalUnaryOp(exp, op);
-    outExp := Expression.stripBindingInfo(outExp);
   else
     outExp := simplifyUnarySign(exp, true);
   end if;
@@ -972,7 +1000,6 @@ algorithm
 
   if Expression.isLiteral(se) then
     unaryExp := Ceval.evalLogicUnaryOp(se, op);
-    unaryExp := Expression.stripBindingInfo(unaryExp);
   elseif not referenceEq(e, se) then
     unaryExp := Expression.LUNARY(op, se);
   end if;
@@ -990,7 +1017,6 @@ algorithm
 
   if Expression.isLiteral(se1) and Expression.isLiteral(se2) then
     relationExp := Ceval.evalRelationOp(se1, op, se2);
-    relationExp := Expression.stripBindingInfo(relationExp);
   elseif not (referenceEq(e1, se1) and referenceEq(e2, se2)) then
     relationExp := Expression.RELATION(se1, op, se2);
   end if;
@@ -1062,11 +1088,17 @@ protected
   Expression e;
   list<Subscript> subs;
   Type ty;
+  Boolean split;
 algorithm
-  Expression.SUBSCRIPTED_EXP(e, subs, ty) := subscriptedExp;
+  Expression.SUBSCRIPTED_EXP(e, subs, ty, split) := subscriptedExp;
   subscriptedExp := simplify(e);
   subs := Subscript.simplifyList(subs, Type.arrayDims(Expression.typeOf(e)));
-  subscriptedExp := Expression.applySubscripts(subs, subscriptedExp);
+
+  if split then
+    subscriptedExp := Expression.SUBSCRIPTED_EXP(subscriptedExp, subs, ty, split);
+  else
+    subscriptedExp := Expression.applySubscripts(subs, subscriptedExp);
+  end if;
 end simplifySubscriptedExp;
 
 function simplifyTupleElement

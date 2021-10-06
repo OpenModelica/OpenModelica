@@ -48,7 +48,7 @@ getErrorString();
 // ******************************************************************************
 // This program contains Ipopt, a library for large-scale nonlinear optimization.
 //  Ipopt is released as open source code under the Eclipse Public License (EPL).
-//          For more information visit http://projects.coin-or.org/Ipopt
+//          For more information visit https://github.com/coin-or/Ipopt
 // ******************************************************************************
 //
 // LOG_IPOPT_ERROR   | info    | max violation is 2.49596 for the constraint $con$conSigma_con(time = 936)
@@ -69,8 +69,8 @@ getErrorString();
 // LOG_IPOPT_ERROR   | info    | max violation is 1.48405e-06 for the constraint $con$conSigma_con(time = 216)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.49979e-06 for the constraint $con$conSigma_con(time = 216)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.49983e-06 for the constraint $con$conSigma_con(time = 216)
+// LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 288)
 // LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 360)
-// LOG_IPOPT_ERROR   | info    | max violation is 1.5e-06 for the constraint $con$conSigma_con(time = 504)
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;

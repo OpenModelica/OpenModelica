@@ -29,11 +29,9 @@ runScript(modelTesting);getErrorString();
 // Modelica.Mechanics.Rotational.Examples.LossyGearDemo3
 // {"Inertia2.w","Inertia2.phi"}
 // OpenModelicaModelTesting.SimulationRuntime.Cpp
-// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.LossyGearDemo3', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = ''
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'Modelica.Mechanics.Rotational.Examples.LossyGearDemo3', options = '', outputFormat = 'mat', variableFilter = 'time|Inertia2.w|Inertia2.phi', cflags = '', simflags = ' -emit_protected'
 // Result file: Modelica.Mechanics.Rotational.Examples.LossyGearDemo3_res.mat
 // Files Equal!
-// Warning: There are iteration variables with default zero start attribute. For more information set +d=initialization. In OMEdit Tools->Options->Simulation->OMCFlags, in OMNotebook call setCommandLineOptions("+d=initialization").
-//
 // "true
 // "
 // ""

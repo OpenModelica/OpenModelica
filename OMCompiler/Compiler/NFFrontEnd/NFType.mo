@@ -33,17 +33,16 @@ encapsulated uniontype NFType
 protected
   import Type = NFType;
   import List;
-  import Restriction = NFRestriction;
   import Class = NFClass;
   import IOStream;
+  import Util;
+  import NFClassTree.ClassTree;
 
 public
   import Dimension = NFDimension;
   import NFInstNode.InstNode;
   import Subscript = NFSubscript;
   import ComplexType = NFComplexType;
-  import ConvertDAE = NFConvertDAE;
-  import ComponentRef = NFComponentRef;
   import NFFunction.Function;
   import Record = NFRecord;
   import UnorderedMap;
@@ -664,6 +663,16 @@ public
     end match;
   end elementType;
 
+  function copyElementType
+    "Sets the element type of the destination type to the element type of the
+     source type."
+    input Type dstType;
+    input Type srcType;
+    output Type ty;
+  algorithm
+    ty := setArrayElementType(dstType, arrayElementType(srcType));
+  end copyElementType;
+
   function arrayDims
     input Type ty;
     output list<Dimension> dims;
@@ -1043,6 +1052,7 @@ public
     "Reduces a type's dimensions based on the given list of subscripts."
     input output Type ty;
     input list<Subscript> subs;
+    input Boolean failOnError = true;
   protected
     Dimension dim;
     list<Dimension> dims, subbed_dims = {};
@@ -1062,6 +1072,7 @@ public
               case Subscript.INDEX() then subbed_dims;
               case Subscript.SLICE() then Subscript.toDimension(sub) :: subbed_dims;
               case Subscript.WHOLE() then dim :: subbed_dims;
+              case Subscript.SPLIT_INDEX() then subbed_dims;
             end match;
           end for;
 
@@ -1082,10 +1093,13 @@ public
 
       else
         algorithm
-          Error.assertion(false, getInstanceName() +
-            " got unsubscriptable type " + toString(ty) + "\n", sourceInfo());
+          if failOnError then
+            Error.assertion(false, getInstanceName() +
+              " got unsubscriptable type " + toString(ty) + "\n", sourceInfo());
+            fail();
+          end if;
         then
-          fail();
+          Type.UNKNOWN();
 
     end match;
   end subscript;
@@ -1309,6 +1323,29 @@ public
       else ();
     end match;
   end simplify;
+
+  function sizeOf
+    input Type ty;
+    output Integer sz;
+
+    function fold_comp_size
+      input InstNode comp;
+      input output Integer sz = sz + sizeOf(InstNode.getType(comp));
+    end fold_comp_size;
+  algorithm
+    sz := match ty
+      case INTEGER() then 1;
+      case REAL() then 1;
+      case STRING() then 1;
+      case BOOLEAN() then 1;
+      case CLOCK() then 1;
+      case ENUMERATION() then 1;
+      case ARRAY() then sizeOf(ty.elementType) * product(Dimension.size(d) for d in ty.dimensions);
+      case COMPLEX()
+        then ClassTree.foldComponents(Class.classTree(InstNode.getClass(ty.cls)), fold_comp_size, 0);
+      else 0;
+    end match;
+  end sizeOf;
 
   annotation(__OpenModelica_Interface="frontend");
 end NFType;

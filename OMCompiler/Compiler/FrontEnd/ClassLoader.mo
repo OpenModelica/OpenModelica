@@ -142,7 +142,7 @@ protected function loadClassFromMps
 protected
   String mp, name, pwd, cmd, version, userLibraries;
   Boolean isDir, impactOK;
-  Absyn.Class cl;
+  Option<Absyn.Class> cl;
   list<String> versionsThatProvideTheWanted, commands;
 algorithm
   try
@@ -172,7 +172,11 @@ algorithm
   // print("System.getLoadModelPath: " + id + " {" + stringDelimitList(prios,",") + "} " + stringDelimitList(mps,",") + " => " + mp + " " + name + " " + boolString(isDir));
   Config.setLanguageStandardFromMSL(name);
   cl := loadClassFromMp(id, mp, name, isDir, encoding, encrypted);
-  outProgram := Absyn.PROGRAM({cl},Absyn.TOP());
+  if (isSome(cl)) then
+    outProgram := Absyn.PROGRAM({Util.getOption(cl)},Absyn.TOP());
+  else
+    outProgram := Absyn.PROGRAM({},Absyn.TOP());
+  end if;
 end loadClassFromMps;
 
 public function loadClassFromMp
@@ -182,12 +186,12 @@ public function loadClassFromMp
   input Boolean isDir;
   input Option<String> optEncoding;
   input Boolean encrypted = false;
-  output Absyn.Class outClass;
+  output Option<Absyn.Class> outClass;
 algorithm
   outClass := match (id,path,name,isDir,optEncoding)
     local
       String pd,encoding,encodingfile;
-      Absyn.Class cl;
+      Option<Absyn.Class> cl;
       list<String> filenames;
       LoadFileStrategy strategy;
       Boolean lveStarted;
@@ -200,7 +204,7 @@ algorithm
         encodingfile = stringAppendList({path,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
         strategy = STRATEGY_ON_DEMAND(encoding);
-        cl = parsePackageFile(path + pd + name, strategy, false, Absyn.TOP(), id);
+        cl = parsePackageFile(path + pd + name, strategy, false, Absyn.TOP(), id, encrypted);
       then
         cl;
 
@@ -211,6 +215,7 @@ algorithm
         encodingfile = stringAppendList({path,pd,name,pd,"package.encoding"});
         encoding = System.trimChar(System.trimChar(if System.regularFileExists(encodingfile) then System.readFile(encodingfile) else Util.getOptionOrDefault(optEncoding,"UTF-8"),"\n")," ");
 
+        lveInstance = NONE();
         if encrypted then
           (lveStarted, lveInstance) = Parser.startLibraryVendorExecutable(path + pd + name);
           if not lveStarted then
@@ -261,7 +266,7 @@ protected function loadCompletePackageFromMp
   input Absyn.Within inWithin;
   input Integer numError;
   input Boolean encrypted = false;
-  output Absyn.Class cl;
+  output Option<Absyn.Class> cl;
 algorithm
   cl := matchcontinue (id,inIdent,inString,inWithin)
     local
@@ -274,6 +279,8 @@ algorithm
       list<Absyn.ClassPart> cp;
       Option<String> cmt;
       SourceInfo info;
+      Option<Absyn.Class> opt_cl;
+      Absyn.Class class_;
       Absyn.Path path;
       Absyn.Within w2;
       list<PackageOrder> reverseOrder;
@@ -289,13 +296,17 @@ algorithm
           fail();
         end if;
         // print("Look for " + packagefile + "\n");
-        (cl as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = parsePackageFile(packagefile, strategy, true, within_, id);
+        opt_cl = parsePackageFile(packagefile, strategy, true, within_, id, encrypted);
         // print("Got " + packagefile + "\n");
-        reverseOrder = getPackageContentNames(cl, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
-        path = AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
-        w2 = Absyn.WITHIN(path);
-        cp = List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
-      then Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info);
+        if (isSome(opt_cl)) then
+          (class_ as Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info)) = Util.getOption(opt_cl);
+          reverseOrder = getPackageContentNames(class_, orderfile, mp_1, Error.getNumErrorMessages(), encrypted);
+          path = AbsynUtil.joinWithinPath(within_,Absyn.IDENT(id));
+          w2 = Absyn.WITHIN(path);
+          cp = List.fold4(reverseOrder, loadCompletePackageFromMp2, mp_1, strategy, w2, encrypted, {});
+          opt_cl = SOME(Absyn.CLASS(name,pp,fp,ep,r,Absyn.PARTS(tv,ca,cp,ann,cmt),info));
+        end if;
+      then opt_cl;
     case (_,pack,mp,_)
       equation
         true = numError == Error.getNumErrorMessages();
@@ -340,7 +351,7 @@ algorithm
       Absyn.ElementItem ei;
       String pd,file,id;
       Absyn.ClassPart cp;
-      Absyn.Class cl;
+      Option<Absyn.Class> cl;
       Boolean bDirectoryAndFileExists;
 
     case CLASSPART(cp)
@@ -365,17 +376,25 @@ algorithm
         bDirectoryAndFileExists = System.directoryExists(mp + pd + id) and System.regularFileExists(file);
         if bDirectoryAndFileExists then
           cl = loadCompletePackageFromMp(id,id,mp,strategy,w1,Error.getNumErrorMessages(),encrypted);
-          ei = AbsynUtil.makeClassElement(cl);
-          cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+          if (isSome(cl)) then
+            ei = AbsynUtil.makeClassElement(Util.getOption(cl));
+            cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+          else
+            cps = acc;
+          end if;
         else
           file = mp + pd + id + (if encrypted then ".moc" else ".mo");
           if not System.regularFileExists(file) then
             Error.addInternalError("Expected file " + file + " to exist", sourceInfo());
             fail();
           end if;
-          cl = parsePackageFile(file, strategy, false, w1, id);
-          ei = AbsynUtil.makeClassElement(cl);
-          cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+          cl = parsePackageFile(file, strategy, false, w1, id, encrypted);
+          if (isSome(cl)) then
+            ei = AbsynUtil.makeClassElement(Util.getOption(cl));
+            cps = mergeBefore(Absyn.PUBLIC({ei}),acc);
+          else
+            cps = acc;
+          end if;
         end if;
       then cps;
 
@@ -389,8 +408,10 @@ public function parsePackageFile
   input Boolean expectPackage;
   input Absyn.Within w1 "Expected within of the package";
   input String pack "Expected name of the package";
-  output Absyn.Class cl;
+  input Boolean encrypted = false;
+  output Option<Absyn.Class> cl;
 protected
+  Absyn.Class class_;
   list<Absyn.Class> cs;
   Absyn.Within w2;
   list<String> classNames;
@@ -402,10 +423,16 @@ algorithm
   classNames := List.map(cs, AbsynUtil.getClassName);
   str := stringDelimitList(classNames,", ");
   if not listLength(cs)==1 then
-    Error.addSourceMessage(Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
-    fail();
+    if encrypted then
+      cl := NONE();
+      return;
+    else
+      Error.addSourceMessage(Error.LIBRARY_ONE_PACKAGE_PER_FILE, {str}, SOURCEINFO(name,true,0,0,0,0,0.0));
+      fail();
+    end if;
   end if;
-  (cl as Absyn.CLASS(name=cname,body=body,info=info))::{} := cs;
+  (class_ as Absyn.CLASS(name=cname,body=body,info=info))::{} := cs;
+  cl := SOME(class_);
   if not stringEqual(cname,pack) then
     if stringEqual(System.tolower(cname), System.tolower(pack)) then
       Error.addSourceMessage(Error.LIBRARY_UNEXPECTED_NAME_CASE_SENSITIVE, {pack,cname}, info);
