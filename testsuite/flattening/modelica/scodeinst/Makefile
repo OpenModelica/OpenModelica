@@ -23,9 +23,11 @@ arrfunc.mo \
 Assert1.mo \
 Assert2.mo \
 Assert3.mo \
+Assert4.mo \
 AssertInvalid1.mo \
 AssertInvalid2.mo \
 AssertInvalid3.mo \
+AssertInvalid4.mo \
 AssignConstant1.mo \
 AssignInput1.mo \
 AssignParameter1.mo \
