@@ -419,7 +419,7 @@ public
     // (x(1))' = x'(1)
     case Expression.SUBSCRIPTED_EXP() algorithm
       (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
-    then (Expression.SUBSCRIPTED_EXP(elem1, exp.subscripts, exp.ty), diffArguments);
+    then (Expression.SUBSCRIPTED_EXP(elem1, exp.subscripts, exp.ty, exp.split), diffArguments);
 
     // (..., a_i ,...)' = (..., a'_i, ...)
     case Expression.TUPLE_ELEMENT() algorithm
@@ -431,11 +431,6 @@ public
     case Expression.RECORD_ELEMENT() algorithm
       (elem1, diffArguments) := differentiateExpression(exp.recordExp, diffArguments);
     then (Expression.RECORD_ELEMENT(elem1, exp.index, exp.fieldName, exp.ty), diffArguments);
-
-    // x(..., (y = z)', ...) = x(..., y = z', ...)
-    case Expression.BINDING_EXP() algorithm
-      (elem1, diffArguments) := differentiateExpression(exp.exp, diffArguments);
-    then (Expression.BINDING_EXP(elem1, exp.expType, exp.bindingType, exp.parents, exp.isEach), diffArguments);
 
     // Binary expressions, conditions and placeholders are not differentiated and left as they are
     case Expression.LBINARY()       then (exp, diffArguments);

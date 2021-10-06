@@ -221,7 +221,7 @@ constant ComponentRef STRING_CREF =
 
 constant Function LOG_REAL = Function.FUNCTION(Path.IDENT("log"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
@@ -232,12 +232,12 @@ constant Function ABS_REAL = Function.FUNCTION(Path.IDENT("abs"),
 // TODO: Sort these functions ...
 constant Function COS_REAL = Function.FUNCTION(Path.IDENT("cos"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function SIN_REAL = Function.FUNCTION(Path.IDENT("sin"),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {},
+    Type.REAL(), DAE.FUNCTION_ATTRIBUTES_BUILTIN, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Function MAX_INT = Function.FUNCTION(Path.IDENT("max"),
@@ -312,7 +312,7 @@ constant Function SUM = Function.FUNCTION(Path.IDENT("sum"),
 
 constant Function SAMPLE = Function.FUNCTION(Path.QUALIFIED("OMC_NO_CLOCK", Path.IDENT("sample")),
   InstNode.EMPTY_NODE(), {REAL_PARAM, REAL_PARAM}, {REAL_PARAM}, {}, {},
-    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {},
+    Type.BOOLEAN(), DAE.FUNCTION_ATTRIBUTES_BUILTIN_IMPURE, {}, listArray({}),
     Pointer.createImmutable(FunctionStatus.BUILTIN), Pointer.createImmutable(0));
 
 constant Component CLOCK_COMPONENT = Component.TYPED_COMPONENT(NFInstNode.EMPTY_NODE(),

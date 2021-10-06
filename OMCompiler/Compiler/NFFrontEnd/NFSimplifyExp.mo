@@ -1378,10 +1378,6 @@ algorithm
       exp.args := list(combineBinariesExp(arg) for arg in exp.args);
     then addArgument(result, exp, inverse);
 
-    case (_, Expression.BINDING_EXP()) algorithm
-      exp.exp := combineBinariesExp(exp.exp);
-    then addArgument(result, exp, inverse);
-
     // done on this branch
     else addArgument(result, exp, inverse);
   end match;

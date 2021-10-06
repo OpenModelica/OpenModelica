@@ -878,7 +878,7 @@ public
     // create variable and add optional binding
     if isSome(binding) then
       bnd := Util.getOption(binding);
-      var := fromCref(cref, Binding.FLAT_BINDING(bnd, Expression.variability(bnd)));
+      var := fromCref(cref, Binding.FLAT_BINDING(bnd, Expression.variability(bnd), NFBinding.Source.BINDING));
     else
       var := fromCref(cref);
     end if;
@@ -915,7 +915,7 @@ public
     Variable var;
   algorithm
     var := Pointer.access(var_ptr);
-    b := Expression.isConstNumber(Expression.getBindingExp(Binding.getExp(var.binding)));
+    b := Expression.isConstNumber(Binding.getExp(var.binding));
   end hasConstBinding;
 
   function setFixed
@@ -956,7 +956,7 @@ public
         Expression start;
 
       case Variable.VARIABLE(backendinfo = binfo as BackendExtension.BACKEND_INFO()) algorithm
-        start := Expression.getBindingExp(Binding.getExp(var.binding));
+        start := Binding.getExp(var.binding);
         binfo.attributes := BackendExtension.VariableAttributes.setStartAttribute(binfo.attributes, start);
         binfo.attributes := BackendExtension.VariableAttributes.setFixed(binfo.attributes);
         var.backendinfo := binfo;
@@ -979,7 +979,7 @@ public
     Expression binding;
   algorithm
     var := Pointer.access(var_ptr);
-    binding := Expression.getBindingExp(Binding.getExp(var.binding));
+    binding := Binding.getExp(var.binding);
     b := not (Expression.isCref(binding) or Expression.isCref(Expression.negate(binding)));
     b := b and checkExpMap(binding, isTimeDependent);
   end hasNonTrivialAliasBinding;
@@ -992,7 +992,7 @@ public
     Expression binding;
   algorithm
     var := Pointer.access(var_ptr);
-    binding := Expression.getBindingExp(Binding.getExp(var.binding));
+    binding := Binding.getExp(var.binding);
     b := not checkExpMap(binding, isTimeDependent);
   end hasConstOrParamAliasBinding;
 

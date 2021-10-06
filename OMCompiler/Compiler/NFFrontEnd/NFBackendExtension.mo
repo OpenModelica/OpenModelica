@@ -748,7 +748,7 @@ public
     protected
       InstNode node;
       String name;
-      Expression exp = Expression.getBindingExp(Binding.getTypedExp(binding));
+      Expression exp = Binding.getTypedExp(binding);
     algorithm
       name := match exp
         case Expression.ENUM_LITERAL() then exp.name;

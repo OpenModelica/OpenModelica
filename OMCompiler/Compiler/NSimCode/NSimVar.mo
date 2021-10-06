@@ -411,7 +411,7 @@ public
         // parameter with constant binding -> start value is updated to the binding value. Value can be changed after sim
         case Variable.VARIABLE(binding = Binding.TYPED_BINDING(variability = NFPrefixes.Variability.CONSTANT, bindingExp = bindingExp),
           backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
-        then (SOME(Expression.getBindingExp(bindingExp)), true, Causality.PARAMETER);
+        then (SOME(bindingExp), true, Causality.PARAMETER);
 
         // parameter with non constant binding -> normal start value. Value cannot be changed after simulation
         case Variable.VARIABLE(backendinfo = BackendExtension.BACKEND_INFO(varKind = BackendExtension.PARAMETER()))
@@ -508,7 +508,7 @@ public
       alias := match binding
         local
           Expression exp;
-        case Binding.TYPED_BINDING(bindingExp = Expression.BINDING_EXP(exp = exp)) algorithm
+        case Binding.TYPED_BINDING(bindingExp = exp) algorithm
         then getAlias(exp);
         else NO_ALIAS();
       end match;

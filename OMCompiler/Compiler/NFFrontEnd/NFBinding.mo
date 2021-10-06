@@ -689,7 +689,7 @@ public
 
       case UNBOUND()
       then TYPED_BINDING(
-          bindingExp  = makeBindingExp(exp),
+          bindingExp  = exp,
           bindingType = Expression.typeOf(exp),
           variability = Expression.variability(exp),
           eachType    = EachType.NOT_EACH,
@@ -697,23 +697,24 @@ public
                         then Mutable.create(EvalState.EVALUATED)
                         else Mutable.create(EvalState.NOT_EVALUATED),
           isFlattened = true,
+          source      = Source.BINDING,
           info        = binding.info
         );
 
       case UNTYPED_BINDING() algorithm
-        binding.bindingExp := makeBindingExp(exp);
+        binding.bindingExp := exp;
       then binding;
 
       case TYPED_BINDING() algorithm
-        binding.bindingExp := makeBindingExp(exp);
+        binding.bindingExp := exp;
       then binding;
 
       case FLAT_BINDING() algorithm
-        binding.bindingExp := makeBindingExp(exp);
+        binding.bindingExp := exp;
       then binding;
 
       case CEVAL_BINDING() algorithm
-        binding.bindingExp := makeBindingExp(exp);
+        binding.bindingExp := exp;
       then binding;
 
       case INVALID_BINDING() algorithm
@@ -730,19 +731,6 @@ public
 
     end match;
   end update;
-
-  function makeBindingExp
-    input Expression exp;
-    output Expression bindingExp;
-  algorithm
-    bindingExp := Expression.BINDING_EXP(
-      exp         = exp,
-      expType     = Expression.typeOf(exp),
-      bindingType = Expression.typeOf(exp), // ToDo: are these different?
-      parents     = {},
-      isEach      = false
-    );
-  end makeBindingExp;
 
   function setAttr
     "sets a specific attribute value and adds it if it does not exist"

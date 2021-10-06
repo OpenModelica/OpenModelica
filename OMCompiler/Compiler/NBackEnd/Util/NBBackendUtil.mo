@@ -201,7 +201,6 @@ public
           hash := hash + noNameHashExp(arg, mod);
         end for;
       then hash;
-      case Expression.BINDING_EXP() then noNameHashExp(exp.exp, mod);
       else 0;
     end match;
     hash := intMod(intAbs(hash), mod);

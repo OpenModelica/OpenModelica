@@ -49,6 +49,7 @@ protected
   import SBSet;
   import SimplifyExp = NFSimplifyExp;
   import Subscript = NFSubscript;
+  import System;
   import Vector;
 
 public

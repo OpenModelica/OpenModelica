@@ -41,6 +41,7 @@ public
   import BEquation = NBEquation;
   import Jacobian = NBJacobian;
   import Events = NBEvents;
+  import NFFlatten.FunctionTree;
 
 protected
   // New Frontend imports
@@ -54,7 +55,6 @@ protected
   import FEquation = NFEquation;
   import FlatModel = NFFlatModel;
   import InstNode = NFInstNode.InstNode;
-  import NFFlatten.FunctionTree;
   import Prefixes = NFPrefixes;
   import Subscript = NFSubscript;
   import Type = NFType;
