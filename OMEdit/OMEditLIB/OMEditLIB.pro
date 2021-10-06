@@ -100,6 +100,8 @@ for(path, INCLUDEPATH) {
 }
 
 SOURCES += Util/Helper.cpp \
+  Modeling/InstallLibraryDialog.cpp \
+  Modeling/LibraryManagementDialog.cpp \
   Util/Utilities.cpp \
   Util/StringHandler.cpp \
   Util/OutputPlainTextEdit.cpp \
@@ -193,6 +195,8 @@ SOURCES += Util/Helper.cpp \
   FlatModelica/ExpressionFuncs.cpp
 
 HEADERS  += Util/Helper.h \
+  Modeling/InstallLibraryDialog.h \
+  Modeling/LibraryManagementDialog.h \
   Util/Utilities.h \
   Util/StringHandler.h \
   Util/OutputPlainTextEdit.h \

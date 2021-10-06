@@ -58,6 +58,7 @@ public:
   static QString OpenModelicaVersion;
   static QString OpenModelicaHome;
   static QString OpenModelicaLibrary;
+  static QString userHomeDirectory;
   static QString OMCServerName;
   static QString omFileTypes;
   static QString omEncryptedFileTypes;
@@ -168,6 +169,7 @@ public:
   static QString parameters;
   static QString inputs;
   static QString name;
+  static QString nameStr;
   static QString startScript;
   static QString comment;
   static QString path;
@@ -427,6 +429,7 @@ public:
   static QString systemSimulationInformation;
   static QString translationFlags;
   static QString send;
+  static QString installLibrary;
 };
 
 class GUIMessages : public QObject

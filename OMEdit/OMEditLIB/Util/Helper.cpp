@@ -40,10 +40,11 @@ QString Helper::applicationName = "OMEdit";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 QString Helper::organization = "openmodelica";  /* case-sensitive string. Don't change it. Used by ini settings file. */
 QString Helper::application = "omedit"; /* case-sensitive string. Don't change it. Used by ini settings file. */
-// these two variables are set once we are connected to OMC......in OMCProxy::startServer().
+// Following four variables are set once we are connected to OMC......in OMCProxy::initializeOMC().
 QString Helper::OpenModelicaVersion = "";
 QString Helper::OpenModelicaHome = "";
 QString Helper::OpenModelicaLibrary = "";
+QString Helper::userHomeDirectory = "";
 QString Helper::OMCServerName = "OMEdit";
 QString Helper::omFileTypes = "All Files (*.mo *.mol *.ssp);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;System Structure and Parameterization Files (*.ssp)";
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
@@ -162,6 +163,7 @@ QString Helper::output;
 QString Helper::parameters;
 QString Helper::inputs;
 QString Helper::name;
+QString Helper::nameStr;
 QString Helper::startScript;
 QString Helper::comment;
 QString Helper::path;
@@ -420,6 +422,7 @@ QString Helper::archivedSimulations;
 QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
 QString Helper::send;
+QString Helper::installLibrary;
 
 void Helper::initHelperVariables()
 {
@@ -461,6 +464,7 @@ void Helper::initHelperVariables()
   Helper::parameters = tr("Parameters");
   Helper::inputs = tr("Inputs");
   Helper::name = tr("Name:");
+  Helper::nameStr = tr("Name");
   Helper::startScript = tr("Start Script:");
   Helper::comment = tr("Comment:");
   Helper::path = tr("Path:");
@@ -719,6 +723,7 @@ void Helper::initHelperVariables()
   Helper::systemSimulationInformation = tr("System Simulation Information");
   Helper::translationFlags = tr("Translation Flags");
   Helper::send = tr("Send");
+  Helper::installLibrary = tr("Install Library");
 }
 
 QString GUIMessages::getMessage(int type)
