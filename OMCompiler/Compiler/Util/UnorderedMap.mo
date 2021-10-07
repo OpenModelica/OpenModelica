@@ -334,7 +334,7 @@ public
   end firstKey;
 
   function toList
-    "Returns a tuple list (key, value)."
+    "Returns a list with the (key, value) pairs."
     input UnorderedMap<K, V> map;
     output list<tuple<K, V>> entries = List.zip(keyList(map), valueList(map));
   end toList;
@@ -355,6 +355,24 @@ public
     values := Vector.toList(map.values);
   end valueList;
 
+  function toArray
+    "Returns an array with the (key, value) pairs."
+    input UnorderedMap<K, V> map;
+    output array<tuple<K, V>> entries;
+  protected
+    Vector<K> keys = map.keys;
+    Vector<V> values = map.values;
+    tuple<K, V> t = t;
+    Integer sz = Vector.size(keys);
+  algorithm
+    entries := arrayCreateNoInit(sz, t);
+
+    for i in 1:sz loop
+      arrayUpdateNoBoundsChecking(entries, i,
+        (Vector.getNoBounds(keys, i), Vector.getNoBounds(values, i)));
+    end for;
+  end toArray;
+
   function keyArray
     "Returns the keys as an array."
     input UnorderedMap<K, V> map;
@@ -370,6 +388,24 @@ public
   algorithm
     values := Vector.toArray(map.values);
   end valueArray;
+
+  function toVector
+    "Returns a Vector with the (key, value) pairs."
+    input UnorderedMap<K, V> map;
+    output Vector<tuple<K, V>> entries;
+  protected
+    Vector<K> keys = map.keys;
+    Vector<V> values = map.values;
+    Integer sz = Vector.size(keys);
+    type EntryT = tuple<K, V>;
+  algorithm
+    entries := Vector.new<EntryT>(sz);
+
+    for i in 1:sz loop
+      Vector.updateNoBounds(entries, i,
+        (Vector.getNoBounds(keys, i), Vector.getNoBounds(values, i)));
+    end for;
+  end toVector;
 
   function keyVector
     "Returns the keys as a Vector."
