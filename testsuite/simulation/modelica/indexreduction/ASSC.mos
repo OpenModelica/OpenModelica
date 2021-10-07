@@ -17,14 +17,14 @@ simulate(ASSC); getErrorString();
 // ""
 // true
 // ######################################################
-//  LinearJacobian sparsity pattern: Original
+//  LinearJacobian sparsity pattern: Original (initial: false)
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
 // (3|3|false):    [2|2.0] [3|2.0]     || RHS: 10.0 - (x + c)
 // (5|5|false):    [2|1.0] [3|1.0]     || RHS: -c
 //
 // ######################################################
-//  LinearJacobian sparsity pattern: Solved
+//  LinearJacobian sparsity pattern: Solved (initial: false)
 // ######################################################
 // (scal_idx|arr_idx|changed) [var_index, value] || RHS_EXPRESSION
 // (3|3|false):    [2|1.0] [3|1.0]     || RHS: 10.0 - (x + c)

@@ -19,6 +19,6 @@ buildModel(OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureA
 // {"OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperature","OverdeterminedInitialization.Fluid.TwoVolumesFullSteadyStatePressureAndTemperature_init.xml"}
 // "Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
 // Warning: The initial conditions are over specified. The following 1 initial equations are redundant, so they are removed from the initialization sytem:
-//          $DER.V1.medium.p = 0.0.
+//          $DER.V2.medium.p = 0.0.
 // "
 // endResult
