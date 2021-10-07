@@ -1283,12 +1283,12 @@ algorithm
 
     unfixedVars   := list(i for i guard(var_to_eqn[i] < 0) in 1:arrayLength(var_to_eqn));
     redundantEqns := list(i for i guard(eqn_to_var[i] < 0) in 1:arrayLength(eqn_to_var));
-    redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
 
     if not (listEmpty(redundantEqns) and listEmpty(unfixedVars)) then
       // 6. use subroutine resolveOverAndUnderconstraints for unmatched variables and equations
       (me, _, _, _) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(outEqSystem, inShared, false);
       (_, _, _) := consistencyCheck(redundantEqns, outEqSystem.orderedEqs, outEqSystem.orderedVars, inShared, 0, m, me, var_to_eqn, eqn_to_var, scal_to_arr);
+      redundantEqns := List.unique(list(scal_to_arr[i] for i in redundantEqns));
       outEqSystem := resolveOverAndUnderconstraints(outEqSystem, initVars, unfixedVars, redundantEqns, dumpVars, removedEqns);
       (outEqSystem, m, mT, _, scal_to_arr) := BackendDAEUtil.getAdjacencyMatrixScalar(outEqSystem, BackendDAE.SOLVABLE(), SOME(funcs), true);
       nVars := BackendVariable.varsSize(outEqSystem.orderedVars);
@@ -1693,8 +1693,8 @@ algorithm
     then ({}, {}, {});
 
     case currRedundantEqn::restRedundantEqns equation
-      _ = BackendVariable.varsSize(inVars);
-      _ = BackendEquation.equationArraySize(inEqns);
+      nVars = BackendVariable.varsSize(inVars);
+      nEqns = BackendEquation.equationArraySize(inEqns);
     //BackendDump.dumpMatchingVars(vecVarToEqs);
     //BackendDump.dumpMatchingEqns(vecEqsToVar);
     //BackendDump.dumpVariables(inVars, "inVars");
@@ -1703,7 +1703,7 @@ algorithm
     //BackendDump.dumpAdjacencyMatrix(inM);
 
       // get the sorting and algebraic loops
-      comps = Sorting.Tarjan(inM, vecVarToEqs);
+      comps = Sorting.Tarjan(inM, vecVarToEqs, nEqns);
       flatComps = List.flatten(comps);
     //BackendDump.dumpComponentsOLD(comps);
 

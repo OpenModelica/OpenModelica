@@ -64,7 +64,7 @@ algorithm
   lowlink := arrayCreate(N, -1);
   onStack := arrayCreate(N, false);
 
-  for var in 1:N loop
+  for var in 1:arrayLength(ass1) loop
     eqn := ass1[var];
     if eqn > 0 and number[eqn] == -1 then
       (stack, index, outComponents) := StrongConnect(m, ass1, eqn, stack, index, number, lowlink, onStack, outComponents);
