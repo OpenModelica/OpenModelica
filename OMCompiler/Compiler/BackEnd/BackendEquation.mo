@@ -175,11 +175,18 @@ public function get
   output BackendDAE.Equation outEquation = ExpandableArray.get(inPos, inEquationArray);
 end get;
 
+public function has
+  "Returns if the element at the given index is occupied or not."
+  input BackendDAE.EquationArray inEquationArray;
+  input Integer inPos "one-based indexing";
+  output Boolean b = ExpandableArray.occupied(inPos, inEquationArray);
+end has;
+
 public function getList "author: Frenkel TUD 2011-05
   returns the equations given by the list of indexes"
   input list<Integer> inIndices "one-based indexing";
   input BackendDAE.EquationArray inEquationArray;
-  output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.Equation> outEqns = {};
 algorithm
   outEqns := list(get(inEquationArray, index) for index in inIndices);
 end getList;
@@ -284,8 +291,20 @@ algorithm
   end for;
 end traverseEquationArray_WithUpdate;
 
-public
-function getForEquationIterIdent
+public function sortInitialEqns
+  "author:kabdelhak 2021-9
+   Sorts initial equations to be at the start of the array"
+  input output BackendDAE.EquationArray eqns;
+protected
+  list<BackendDAE.Equation> eqn_lst, init_eqns, sim_eqns;
+algorithm
+  eqn_lst := equationList(eqns);
+  (init_eqns, sim_eqns) := List.splitOnTrue(eqn_lst, isInitialEquation);
+  eqn_lst := listAppend(init_eqns, sim_eqns);
+  eqns := listEquation(eqn_lst);
+end sortInitialEqns;
+
+public function getForEquationIterIdent
  "Get the iterator of a for-equation
   author: rfranke"
   input BackendDAE.Equation inEquation;
