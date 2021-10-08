@@ -43,6 +43,7 @@ protected
 import CevalScript;
 import RewriteRules;
 import StaticScript;
+import SymbolTable;
 
 public function cevalInteractiveFunctions
   input FCore.Cache inCache;
@@ -100,6 +101,18 @@ function rewriteFrontEnd
 algorithm
   (outExp,isChanged) := RewriteRules.rewriteFrontEnd(inExp);
 end rewriteFrontEnd;
+
+function appendLibrary
+  input Absyn.Path modelName;
+  input String modelicaPath;
+  output Absyn.Program program;
+  output Boolean success;
+algorithm
+  program := SymbolTable.getAbsyn();
+  (program, success) := CevalScript.loadModel({(modelName, "", {"default"}, false)},
+    modelicaPath, program, true, true, true, false);
+  SymbolTable.setAbsyn(program);
+end appendLibrary;
 
 annotation(__OpenModelica_Interface="backendInterface");
 end BackendInterface;
