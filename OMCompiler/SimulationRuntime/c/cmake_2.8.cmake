@@ -36,9 +36,9 @@ MESSAGE(STATUS "Sundials path:")
 MESSAGE(STATUS "${Sundials_Path}")
 
 # SUNDIALS Header
-FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h PATHS "${Sundials_Path}/include")
+FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h PATHS "${Sundials_Path}/include/sundials")
 IF(NOT SUNDIALS_INCLUDE_DIR)
-  MESSAGE(FATAL_ERROR "Could not find sundials/sundials_config.h in ${Sundials_Path}/include")
+  MESSAGE(FATAL_ERROR "Could not find sundials/sundials_config.h in ${Sundials_Path}/include/sundials")
 ENDIF()
 
 MESSAGE(STATUS "Sundials include:")

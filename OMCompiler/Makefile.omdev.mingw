@@ -338,7 +338,7 @@ $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
 	echo @echo on > 3rdParty/FMIL/build_msvc/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/FMIL/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=../install_msvc -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo @echo on >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKE= >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/FMIL/build_msvc/build.bat
@@ -440,7 +440,7 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
-	echo '-DSUNDIALS_BUILD_STATIC_LIBS:Bool=OFF -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo '-DSUNDIALS_BUILD_STATIC_LIBS:Bool=OFF -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=. ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo '-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo '-DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="%OMDEV%\\lib\\3rdParty\\Lapack\\Lib\\blas_win32.lib;%OMDEV%\\lib\\3rdParty\\Lapack\\Lib\\lapack_win32.lib" -DSUNDIALS_F77_FUNC_UNDERSCORES=one -DSUNDIALS_F77_FUNC_CASE=lower ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo '-DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(OMBUILDDIR_MSVC)\\lib\\omc\\msvc\\" -DKLU_INCLUDE_DIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc\\suitesparse" ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
@@ -456,8 +456,6 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.
 	# copy dll to lib and bin folder
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
 	(cp -pufr 3rdParty/sundials-5.4.0/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
-	(cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/msvc/sundials/kinsol/)
-	(cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h 3rdParty/sundials-5.4.0/build_msvc/include/kinsol/)
 	(cp -puf 3rdParty/sundials-5.4.0/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
 	mkdir -p $(OMBUILDDIR)/bin/msvc
 	(cp -puf 3rdParty/sundials-5.4.0/build_msvc/lib/*.dll $(OMBUILDDIR)/bin/msvc)
