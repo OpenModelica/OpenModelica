@@ -3,6 +3,25 @@ cmake_minimum_required(VERSION 3.14)
 project(OMModelicaExternalC)
 
 
+# zlib
+# We have decided to use zlib from here. We could have used the system zlib. However,
+# modelica annotations request for "zlib" while the system zlib is OFTEN (but not always) called "libz"
+# which means it should be used as "z". We can modify the annotations to use "z" but then
+# it will be the same issue on systems that call it "zlib". So we need to find a solution.
+# Originally I was creating a sym link to the system zlib in our lib directories. However,
+# that might be confusing for others. So it might be better to explicitly
+# build it and use it from here. The one advantage of this is that we can compile it with -fpic so
+# that we can link it into our static FMUs.
+file(GLOB libzlib_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/*.c)
+add_library(zlib STATIC ${libzlib_SOURCES})
+
+install(TARGETS zlib)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/zlib.h
+              ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/zconf.h
+        TYPE INCLUDE)
+
+
+
 # ModelicaExternalC
 set(libModelicaExternalC_SOURCES C-Sources/ModelicaFFT.c
                                  C-Sources/ModelicaInternal.c
@@ -17,11 +36,14 @@ target_link_libraries(ModelicaExternalC PUBLIC m)
 set(libModelicaMatIO_SOURCES C-Sources/ModelicaMatIO.c C-Sources/snprintf.c)
 add_library(ModelicaMatIO STATIC ${libModelicaMatIO_SOURCES})
 
-find_package(ZLIB)
-if(ZLIB_FOUND)
-    target_link_libraries(ModelicaMatIO PUBLIC ZLIB::ZLIB)
-    target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
-endif()
+target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
+target_link_libraries(ModelicaMatIO PUBLIC zlib)
+
+# find_package(ZLIB)
+# if(ZLIB_FOUND)
+#     target_link_libraries(ModelicaMatIO PUBLIC ZLIB::ZLIB)
+#     target_compile_definitions(ModelicaMatIO PRIVATE HAVE_ZLIB)
+# endif()
 
 # find_package(HDF5)
 # if(HDF5_FOUND)
@@ -49,8 +71,6 @@ target_compile_definitions(ModelicaStandardTables PRIVATE -DDUMMY_FUNCTION_USERT
 
 target_link_libraries(ModelicaStandardTables INTERFACE ModelicaMatIO)
 target_link_libraries(ModelicaStandardTables PUBLIC m)
-
-
 
 
 install(TARGETS ModelicaExternalC
