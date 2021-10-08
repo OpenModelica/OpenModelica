@@ -710,6 +710,7 @@ lookup1.mo \
 lookup2.mo \
 lookup3.mo \
 lookup4.mo \
+LookupLibrary1.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \
