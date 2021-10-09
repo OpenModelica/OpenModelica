@@ -299,14 +299,8 @@ AC_LANG_POP([C++])
 
 fi
 
-m4_include([common/m4/ax_cxx_compile_stdcxx_11.m4])
-HAVE_CXX_STD=0
-for flag in $CXXFLAGS; do
-  (echo $flag | grep -q "^-std=") && HAVE_CXX_STD=1
-done
-if test "$HAVE_CXX_STD" = 0; then
-  AX_CXX_COMPILE_STDCXX_11([noext],[optional])
-fi
+m4_include([common/m4/ax_cxx_compile_stdcxx.m4])
+AX_CXX_COMPILE_STDCXX(14,[noext],[optional])
 
 if test "`getconf LONG_BIT`" = "32"; then
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
