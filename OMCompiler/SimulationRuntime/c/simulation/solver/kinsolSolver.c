@@ -230,8 +230,7 @@ static void resetKinsolMemory(NLS_KINSOL_DATA *kinsolData,
  * @param linearSolverMethod    Type of linear solver method.
  * @return int
  */
-int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData,
-                      enum NLS_LS linearSolverMethod) {
+int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nlsData, NLS_LS linearSolverMethod) {
   NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA *)malloc(sizeof(NLS_KINSOL_DATA));
 
   /* Allocate system data */
@@ -814,12 +813,12 @@ static void nlsKinsolResetInitial(DATA *data, NLS_KINSOL_DATA *kinsolData,
  * Scale with 1.0 for mode `SCALING_ONES`.
  * Scale with 1/fmax(nominal,|xStart|) for mode `SCALING_NOMINALSTART`.
  *
- * @param data
+ * @param data          unused
  * @param kinsolData
  * @param nlsData
  * @param mode          Mode for scaling. Use `SCALING_NOMINALSTART` for nominal
  *                      scaling and `SCALING_ONES` for no scalign. Will be
- * overwritten by simulation flag `FLAG_NO_SCALING`.
+ *                      overwritten by simulation flag `FLAG_NO_SCALING`.
  */
 static void nlsKinsolXScaling(DATA *data, NLS_KINSOL_DATA *kinsolData,
                               NONLINEAR_SYSTEM_DATA *nlsData,
@@ -1108,11 +1107,11 @@ static int nlsKinsolErrorHandler(int errorCode, DATA *data,
 
   /* check if the current solution is sufficient anyway */
   KINGetFuncNorm(kinsolData->kinsolMemory, &fNorm);
-  if (fNorm < FTOL_WITH_LESS_ACCURANCY) {
+  if (fNorm < FTOL_WITH_LESS_ACCURACY) {
     warningStreamPrint(LOG_NLS_V, 0,
                        "Move forward with a less accurate solution.");
-    KINSetFuncNormTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURANCY);
-    KINSetScaledStepTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURANCY);
+    KINSetFuncNormTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
+    KINSetScaledStepTol(kinsolData->kinsolMemory, FTOL_WITH_LESS_ACCURACY);
     retValue2 = 1;
   } else {
     warningStreamPrint(LOG_NLS_V, 0, "Current status of fx = %f", fNorm);
@@ -1168,13 +1167,11 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
   long eqSystemNumber = nlsData->equationIndex;
   int indexes[2] = {1, eqSystemNumber};
 
-  int flag, i;
+  int flag;
   long nFEval;
   int success = 0;
   int retry = 0;
   double *xStart = NV_DATA_S(kinsolData->initialGuess);
-  double *xScaling = NV_DATA_S(kinsolData->xScale);
-  double *fScaling = NV_DATA_S(kinsolData->fScale);
   double fNormValue;
 
   /* set user data */
@@ -1251,7 +1248,7 @@ int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber) {
 
     infoStreamPrint(LOG_NLS_V, 0, "%sEuclidean norm of F(u) = %e",
                     (omc_flag[FLAG_NO_SCALING]) ? "" : "scaled ", fNormValue);
-    if (FTOL_WITH_LESS_ACCURANCY < fNormValue) {
+    if (FTOL_WITH_LESS_ACCURACY < fNormValue) {
       warningStreamPrint(LOG_NLS_V, 0,
                          "False positive solution. FNorm is not small enough.");
       success = 0;

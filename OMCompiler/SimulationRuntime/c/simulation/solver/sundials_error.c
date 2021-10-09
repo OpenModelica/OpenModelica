@@ -258,7 +258,7 @@ static void checkReturnFlag_CVLS(int flag, const char *functionName) {
  */
 static void checkReturnFlag_KIN(int flag, const char *functionName) {
 
-  const char* flagName = KINGetLinReturnFlagName(flag);
+  const char* flagName = KINGetLinReturnFlagName(flag); /* memory is allocated here so it must be freed at the end, see kinsol_ls.c */
 
   switch (flag) {
   case KIN_SUCCESS:
@@ -351,6 +351,8 @@ static void checkReturnFlag_KIN(int flag, const char *functionName) {
                      "##KINSOL## %s In function %s: Error with flag %i.", flagName,
                      functionName, flag);
   }
+
+  free((char*)flagName);
 }
 
 /**
