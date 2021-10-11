@@ -180,7 +180,7 @@ suitesparse:
 		$(CMAKE_TARGET) -DCMAKE_VERBOSE_MAKEFILE:Bool=ON \
 		-DCMAKE_INSTALL_PREFIX:PATH="$(OMBUILDDIR)" \
 		-DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" \
-		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/suitesparse" \
+		-DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR)/include/omc/c/" \
 		-DBUILD_SHARED_LIBS:Bool=$(SUITESPARSE_SHARED)
 	$(MAKE) -C 3rdParty/SuiteSparse-5.8.1/build install
 	test ! `uname` = Darwin || install_name_tool -id @rpath/libamd.dylib               "$(builddir_lib_omc)/libamd.dylib"
