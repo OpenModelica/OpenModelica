@@ -83,6 +83,8 @@ omc_add_to_report(CMAKE_INSTALL_PREFIX)
 # We prefer to install libs to "<library architecture>/omc" dir inside lib directory (e.g lib/x86_64-linux-gnu/omc/).
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/${CMAKE_LIBRARY_ARCHITECTURE}/omc/)
 
+set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/omc/)
+
 ## Set the adjusted installation lib directory as an rpath for all installed binaries.
 ## This is useful for those binaries that end up in bin/ directory but not for
 ## others as it is a relative path to the lib dir from <build_dir>/<some_dir>.

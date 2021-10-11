@@ -6,7 +6,7 @@ add_definitions(-DOMC_BUILD)
 # CPP libs should be installed to in lib/<arch>/omc/cpp/ for now.
 set(CMAKE_INSTALL_LIBDIR ${CMAKE_INSTALL_LIBDIR}/cpp)
 # CPP headers are installed in include/omc/cpp for now.
-set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/omc/cpp)
+set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/cpp)
 
 
 
@@ -62,4 +62,3 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/LibrariesConfig.h
 # This folder contains only one file right now. Something should be done about it.
 install (DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/Include/
          TYPE INCLUDE)
-
