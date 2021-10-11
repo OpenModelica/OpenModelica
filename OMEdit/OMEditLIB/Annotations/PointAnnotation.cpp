@@ -33,7 +33,7 @@ void PointAnnotation::fromExp(const FlatModelica::Expression &exp)
   if (exp.isArray()) {
     auto &elems = exp.elements();
 
-    if (elems.size() >= 3) {
+    if (elems.size() >= 2) {
       mValue.setX(elems[0].isNumber() ? elems[0].realValue() : 0.0);
       mValue.setY(elems[1].isNumber() ? elems[1].realValue() : 0.0);
     }
