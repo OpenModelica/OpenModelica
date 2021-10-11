@@ -95,8 +95,12 @@ IDLPYTHON = $(OMDEVMSYS)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniidl -bpytho
 IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
 IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
-LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC.a
-LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables.a
+LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC$(STAEXT)
+LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables$(STAEXT)
+LIBMODELICAZLIB==$(OMBUILDDIR)/lib/omc/libzlib$(STAEXT)
+LIBMODELICAIO==$(OMBUILDDIR)/lib/omc/libModelicaIO$(STAEXT)
+LIBMODELICAMATIO==$(OMBUILDDIR)/lib/omc/libModelicaMatIO$(STAEXT)
+
 SUITESPARSE_LIBS=
 
 defaultMakefileTarget = Makefile.omdev.mingw
