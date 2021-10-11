@@ -91,6 +91,7 @@ set(CMAKE_INSTALL_INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR}/omc/)
 ## Maybe there is a better way to do this but it should suffice for now.
 set(CMAKE_INSTALL_RPATH "$ORIGIN:$ORIGIN/../${CMAKE_INSTALL_LIBDIR}")
 
+set(CMAKE_INSTALL_MESSAGE LAZY)
 
 # Write out a compiler detection header. checkout the file <build_dir>/omc_compiler_detection.h to
 # get an idea of what it means. We intend to use this for portability reasons in the future.
