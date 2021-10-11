@@ -18,6 +18,9 @@ CMAKE_CALL=$(CMAKE) .. -G $(CMAKE_TARGET) -DPLATFORM=$(PLATFORM) $(CMAKE_FLAGS) 
 OMSI: OMSIBaseInstall OMSICInstall
 
 OMSI-clean: OMSIBaseClean OMSICClean
+	$(foreach PLATFORM, $(PLATFORMS), \
+	  rm -rf SimulationRuntime/OMSI/Build_$(PLATFORM); \
+	)
 	cd $(OMBUILDDIR);                             \
 	rm -rf include/omc/omsi include/omc/omsic;    \
 	rm -rf $(LIB_OMC)/omsi;
