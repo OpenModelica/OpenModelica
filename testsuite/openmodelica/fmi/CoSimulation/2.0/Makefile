@@ -2,6 +2,7 @@ TEST = ../../../../rtest -v
 
 TESTFILES = \
 FmuExportFlags.mos \
+fmi_interpolation_01.mos \
 ExportCvodeFmu_dynamic.mos \
 ExportCvodeFmu_static.mos \
 
