@@ -11,22 +11,22 @@ encapsulated package RuntimeSources
   constant list<String> defaultFileSuffixes={".c", "_functions.c", "_records.c", "_01exo.c", "_02nls.c", "_03lsy.c", "_04set.c", "_05evt.c", "_06inz.c", "_07dly.c", "_08bnd.c", "_09alg.c", "_10asr.c", "_11mix.c", "_12jac.c", "_13opt.c", "_14lnz.c", "_15syn.c", "_16dae.c", "_17inl.c", "_18spd.c", "_init_fmu.c", "_FMU.c"};
 
 
-  constant list<String> sundials_headers={"../../cvode/cvode_ls.h",
-                                         "../../cvode/cvode_proj.h",
-                                         "../../cvode/cvode.h",
-                                         "../../sundials/sundials_config.h",
-                                         "../../sundials/sundials_dense.h",
-                                         "../../sundials/sundials_direct.h",
-                                         "../../sundials/sundials_iterative.h",
-                                         "../../sundials/sundials_linearsolver.h",
-                                         "../../sundials/sundials_matrix.h",
-                                         "../../sundials/sundials_nonlinearsolver.h",
-                                         "../../sundials/sundials_types.h",
-                                         "../../sunlinsol/sunlinsol_dense.h",
-                                         "../../sunmatrix/sunmatrix_dense.h",
-                                         "../../sunnonlinsol/sunnonlinsol_fixedpoint.h",
-                                         "../../nvector/nvector_serial.h",
-                                         "../../sundials/sundials_nvector.h"};
+  constant list<String> sundials_headers={"sundials/cvode/cvode_ls.h",
+                                         "sundials/cvode/cvode_proj.h",
+                                         "sundials/cvode/cvode.h",
+                                         "sundials/sundials/sundials_config.h",
+                                         "sundials/sundials/sundials_dense.h",
+                                         "sundials/sundials/sundials_direct.h",
+                                         "sundials/sundials/sundials_iterative.h",
+                                         "sundials/sundials/sundials_linearsolver.h",
+                                         "sundials/sundials/sundials_matrix.h",
+                                         "sundials/sundials/sundials_nonlinearsolver.h",
+                                         "sundials/sundials/sundials_types.h",
+                                         "sundials/sunlinsol/sunlinsol_dense.h",
+                                         "sundials/sunmatrix/sunmatrix_dense.h",
+                                         "sundials/sunnonlinsol/sunnonlinsol_fixedpoint.h",
+                                         "sundials/nvector/nvector_serial.h",
+                                         "sundials/sundials/sundials_nvector.h"};
 
   constant list<String> simrt_c_sundials_sources={@SOURCE_FMU_CVODE_RUNTIME_FILES@};
 

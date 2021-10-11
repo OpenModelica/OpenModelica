@@ -191,7 +191,7 @@ install(TARGETS OpenModelicaFMIRuntimeC)
 ## which means all headers will be installed keeping the directory structure intact.
 ## It might install some unneeded headers but it suffices for now.
 install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/omc
+        TYPE INCLUDE
         FILES_MATCHING
         PATTERN "*.h"
         PATTERN "*.c.inc"

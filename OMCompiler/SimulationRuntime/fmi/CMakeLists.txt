@@ -10,11 +10,11 @@ omc_add_subdirectory(export/buildproject)
 file(GLOB FMI_OPENMODELICA_EXPORT_FILES ${CMAKE_CURRENT_SOURCE_DIR}/export/openmodelica/*)
 
 install(FILES ${FMI_OPENMODELICA_EXPORT_FILES}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/omc/c/fmi-export/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/fmi-export/
 )
 
 file(GLOB FMI_EXPORT_FILES ${CMAKE_CURRENT_SOURCE_DIR}/export/fmi/*)
 
 install(FILES ${FMI_EXPORT_FILES}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/omc/c/fmi/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/c/fmi/
 )
