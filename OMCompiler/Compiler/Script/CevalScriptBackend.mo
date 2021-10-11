@@ -1930,6 +1930,7 @@ algorithm
       list<tuple<Diff, list<SimpleModelicaParser.ParseTree>>> treeDiffs;
       SourceInfo info;
       SymbolTable forkedSymbolTable;
+      list<list<String>> libraries;
 
     case (cache,_,"getAvailableIndexReductionMethods",_,_)
       equation
@@ -2286,6 +2287,13 @@ algorithm
       algorithm
         files := PackageManagement.AvailableLibraries.listKeys(PackageManagement.getInstalledLibraries());
         v := ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
+      then
+        (cache,v);
+
+    case (cache,_,"getAvailableLibrariesAndVersions",{},_)
+      algorithm
+        libraries := PackageManagement.getInstalledLibrariesAndVersions();
+        v := ValuesUtil.makeArray(List.map(libraries, ValuesUtil.makeStringArray));
       then
         (cache,v);
 
