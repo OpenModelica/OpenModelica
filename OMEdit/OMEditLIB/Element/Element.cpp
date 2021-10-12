@@ -1539,7 +1539,12 @@ QString Element::getDerivedClassModifierValue(QString modifierName)
    * A derived class can be inherited, so look recursively.
    */
   OMCProxy *pOMCProxy = MainWindow::instance()->getOMCProxy();
-  QString className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  QString className;
+  if (mpReferenceComponent) {
+    className = mpReferenceComponent->getGraphicsView()->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  } else {
+    className = mpGraphicsView->getModelWidget()->getLibraryTreeItem()->getNameStructure();
+  }
   QString modifierValue = mpElementInfo->getModifiersMap(pOMCProxy, className, this).value(modifierName);
   if (modifierValue.isEmpty()) {
     if (!pOMCProxy->isBuiltinType(mpElementInfo->getClassName())) {
