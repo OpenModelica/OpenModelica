@@ -410,7 +410,7 @@ $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion 3rdParty/SuiteSparse-5.8.
 	echo echo Calling CMake >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="$(OMBUILDDIR_MSVC)" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc\\suitesparse" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo echo Building SuiteSparse >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo @echo on >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
