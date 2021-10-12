@@ -326,7 +326,7 @@ omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cd
 
 boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
 
-fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll
+fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll $(LIBMODELICAZLIB)
 $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/fmil*
 	rm -rf 3rdParty/FMIL/install_msvc
@@ -342,7 +342,7 @@ $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
 	echo @echo on > 3rdParty/FMIL/build_msvc/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/FMIL/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=../install_msvc -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=../install_msvc -DOMC_ZLIB_LIBRARY="$(LIBMODELICAZLIB)" -DOMC_ZLIB_INCLUDE_DIR="$(builddir_inc)" -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo @echo on >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKE= >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/FMIL/build_msvc/build.bat
