@@ -15,6 +15,8 @@ project(OMModelicaExternalC)
 file(GLOB libzlib_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/*.c)
 add_library(zlib STATIC ${libzlib_SOURCES})
 
+target_include_directories(zlib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib)
+
 install(TARGETS zlib)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/zlib.h
               ${CMAKE_CURRENT_SOURCE_DIR}/C-Sources/zlib/zconf.h
