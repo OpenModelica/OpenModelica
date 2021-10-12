@@ -1117,7 +1117,7 @@ algorithm
       algorithm
         {Absyn.CREF(componentRef = cr)} := args;
         Values.ENUM_LITERAL(index=access) := checkAccessAnnotationAndEncryption(AbsynUtil.crefToPath(cr), p);
-        if (access >= 4) then // i.e., Access.diagram
+        if (access >= 2) then // i.e., Access.icon
           if not Flags.isSet(Flags.NF_API_NOISE) then
             ErrorExt.setCheckpoint("getElementAnnotations");
           end if;
