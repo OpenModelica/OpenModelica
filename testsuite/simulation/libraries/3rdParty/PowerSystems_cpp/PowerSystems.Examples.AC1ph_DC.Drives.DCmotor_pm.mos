@@ -1,0 +1,46 @@
+// name:     PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_pm
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_pm);
+compareVars :=
+{
+  "power.p",
+  "loadInertia.w",
+  "loadInertia.flange_a.tau",
+  "efficiency.eta"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_pm
+// {"power.p","loadInertia.w","loadInertia.flange_a.tau","efficiency.eta"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 3.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_pm', options = '', outputFormat = 'mat', variableFilter = 'time|power.p|loadInertia.w|loadInertia.flange_a.tau|efficiency.eta', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_pm_res.mat
+// Files Equal!
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

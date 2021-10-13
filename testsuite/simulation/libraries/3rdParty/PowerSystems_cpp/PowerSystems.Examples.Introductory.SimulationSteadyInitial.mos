@@ -1,0 +1,47 @@
+// name:     PowerSystems.Examples.Introductory.SimulationSteadyInitial
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(PowerSystems.Examples.Introductory.SimulationSteadyInitial);
+compareVars :=
+{
+  "meter.p[1]",
+  "meter.p[2]",
+  "meter.p[3]",
+  "meter.v[1]",
+  "meter.v[2]",
+  "meter.v[3]",
+  "meter.i[1]",
+  "meter.i[2]",
+  "meter.i[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Instantiation
+// PowerSystems.Examples.Introductory.SimulationSteadyInitial
+// {"meter.p[1]","meter.p[2]","meter.p[3]","meter.v[1]","meter.v[2]","meter.v[3]","meter.i[1]","meter.i[2]","meter.i[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

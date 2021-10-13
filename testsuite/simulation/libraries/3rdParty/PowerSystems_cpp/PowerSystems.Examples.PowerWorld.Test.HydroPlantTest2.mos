@@ -1,0 +1,43 @@
+// name:     PowerSystems.Examples.PowerWorld.Test.HydroPlantTest2
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.PowerWorld.Test.HydroPlantTest2);
+compareVars :=
+{
+  "hydroPlant.P_generator",
+  "hydroPlant.P_control",
+  "hydroPlant.reservoirLevel.y"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.PowerWorld.Test.HydroPlantTest2
+// {"hydroPlant.P_generator","hydroPlant.P_control","hydroPlant.reservoirLevel.y"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 86400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.PowerWorld.Test.HydroPlantTest2', options = '', outputFormat = 'mat', variableFilter = 'time|hydroPlant.P_generator|hydroPlant.P_control|hydroPlant.reservoirLevel.y', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.PowerWorld.Test.HydroPlantTest2_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

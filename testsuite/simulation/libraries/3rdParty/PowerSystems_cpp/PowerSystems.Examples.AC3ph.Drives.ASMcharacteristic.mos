@@ -1,0 +1,45 @@
+// name:     PowerSystems.Examples.AC3ph.Drives.ASMcharacteristic
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Drives.ASMcharacteristic);
+compareVars :=
+{
+  "asm.motor.slip",
+  "asm.motor.airgap.tau",
+  "speed.flange.tau",
+  "bdCond.heat.ports[1].Q_flow",
+  "bdCond.heat.ports[2].Q_flow"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Drives.ASMcharacteristic
+// {"asm.motor.slip","asm.motor.airgap.tau","speed.flange.tau","bdCond.heat.ports[1].Q_flow","bdCond.heat.ports[2].Q_flow"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Drives.ASMcharacteristic', options = '', outputFormat = 'mat', variableFilter = 'time|asm.motor.slip|asm.motor.airgap.tau|speed.flange.tau|bdCond.heat.ports.1..Q_flow|bdCond.heat.ports.2..Q_flow', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Drives.ASMcharacteristic_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult
