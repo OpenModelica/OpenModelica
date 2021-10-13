@@ -709,6 +709,8 @@ $(LIBMODELICAEXTERNALC):
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools"
 	$(MAKE) -C "$(MODELICAEXTERNALC)/BuildProjects/autotools" install
 	rm -f $(OMBUILDDIR)/$(LIB_OMC)/libzlib.la $(OMBUILDDIR)/$(LIB_OMC)/libModelica*.la
+	cp -pPR "$(MODELICAEXTERNALC)/C-Sources/zlib/zlib.h" $(builddir_inc)/
+	cp -pPR "$(MODELICAEXTERNALC)/C-Sources/zlib/zconf.h" $(builddir_inc)/
 	# test ! `uname` = Darwin || install_name_tool -id @rpath/libModelicaExternalC.0.dylib "$(LIBMODELICAEXTERNALC)"
 	# test ! `uname` = Darwin || (install_name_tool -id @rpath/libModelicaStandardTables.0.dylib "$(LIBMODELICASTANDARDTABLES)" && install_name_tool -change "$(LIBMODELICAMATIO:%.dylib=%.0.dylib)" @rpath/libModelicaMatIO.0.dylib "$(LIBMODELICASTANDARDTABLES)" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$(LIBMODELICASTANDARDTABLES)")
 	# test ! `uname` = Darwin || (install_name_tool -id @rpath/libzlib.0.dylib "$(LIBMODELICAZLIB)" && install_name_tool -change "$(LIBMODELICAZLIB:%.dylib=%.0.dylib)" @rpath/libzlib.0.dylib "$(LIBMODELICAZLIB)")
