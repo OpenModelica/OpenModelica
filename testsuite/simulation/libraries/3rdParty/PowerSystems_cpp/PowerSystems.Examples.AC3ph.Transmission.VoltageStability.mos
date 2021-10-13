@@ -1,0 +1,49 @@
+// name:     PowerSystems.Examples.AC3ph.Transmission.VoltageStability
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Transmission.VoltageStability);
+compareVars :=
+{
+  "meter0.p[1]",
+  "meter0.v_norm",
+  "meter0.alpha_v",
+  "meter1.p[1]",
+  "meter1.v_norm",
+  "meter1.alpha_v",
+  "meter2.p[1]",
+  "meter2.v_norm",
+  "meter2.alpha_v"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Transmission.VoltageStability
+// {"meter0.p[1]","meter0.v_norm","meter0.alpha_v","meter1.p[1]","meter1.v_norm","meter1.alpha_v","meter2.p[1]","meter2.v_norm","meter2.alpha_v"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 180.0, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Transmission.VoltageStability', options = '', outputFormat = 'mat', variableFilter = 'time|meter0.p.1.|meter0.v_norm|meter0.alpha_v|meter1.p.1.|meter1.v_norm|meter1.alpha_v|meter2.p.1.|meter2.v_norm|meter2.alpha_v', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Transmission.VoltageStability_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

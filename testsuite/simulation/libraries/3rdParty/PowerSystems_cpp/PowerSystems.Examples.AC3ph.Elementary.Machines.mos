@@ -1,0 +1,52 @@
+// name:     PowerSystems.Examples.AC3ph.Elementary.Machines
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Elementary.Machines);
+compareVars :=
+{
+  "power.p[1]",
+  "power.p[2]",
+  "power.p[3]",
+  "asynchron.v[1]",
+  "asynchron.v[2]",
+  "asynchron.v[3]",
+  "asynchron.i[1]",
+  "asynchron.i[2]",
+  "asynchron.i[3]",
+  "asynchron.w_el"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Elementary.Machines
+// {"power.p[1]","power.p[2]","power.p[3]","asynchron.v[1]","asynchron.v[2]","asynchron.v[3]","asynchron.i[1]","asynchron.i[2]","asynchron.i[3]","asynchron.w_el"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Elementary.Machines', options = '', outputFormat = 'mat', variableFilter = 'time|power.p.1.|power.p.2.|power.p.3.|asynchron.v.1.|asynchron.v.2.|asynchron.v.3.|asynchron.i.1.|asynchron.i.2.|asynchron.i.3.|asynchron.w_el', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Elementary.Machines_res.mat
+// Files Equal!
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

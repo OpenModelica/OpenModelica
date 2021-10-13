@@ -1,0 +1,54 @@
+// name:     PowerSystems.Examples.AC3ph.Precalculation.EqCircFromTransDat
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Precalculation.EqCircFromTransDat);
+compareVars :=
+{
+  "r_rd[1]",
+  "r_rd[2]",
+  "xsig_rd[1]",
+  "xsig_rd[2]",
+  "xm_d[1]",
+  "xm_d[2]",
+  "xm_d[3]",
+  "r_rq[1]",
+  "r_rq[2]",
+  "xsig_rq[1]",
+  "xsig_rq[2]",
+  "xm_q[1]",
+  "xm_q[2]",
+  "xm_q[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Precalculation.EqCircFromTransDat
+// {"r_rd[1]","r_rd[2]","xsig_rd[1]","xsig_rd[2]","xm_d[1]","xm_d[2]","xm_d[3]","r_rq[1]","r_rq[2]","xsig_rq[1]","xsig_rq[2]","xm_q[1]","xm_q[2]","xm_q[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 0.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Precalculation.EqCircFromTransDat', options = '', outputFormat = 'mat', variableFilter = 'time|r_rd.1.|r_rd.2.|xsig_rd.1.|xsig_rd.2.|xm_d.1.|xm_d.2.|xm_d.3.|r_rq.1.|r_rq.2.|xsig_rq.1.|xsig_rq.2.|xm_q.1.|xm_q.2.|xm_q.3.', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Precalculation.EqCircFromTransDat_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

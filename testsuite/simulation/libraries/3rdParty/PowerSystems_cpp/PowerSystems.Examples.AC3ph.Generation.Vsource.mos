@@ -1,0 +1,41 @@
+// name:     PowerSystems.Examples.AC3ph.Generation.Vsource
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.Instantiation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Generation.Vsource);
+compareVars :=
+{
+  "sensor.p[1]",
+  "sensor.p[2]",
+  "sensor.p[3]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.Instantiation
+// PowerSystems.Examples.AC3ph.Generation.Vsource
+// {"sensor.p[1]","sensor.p[2]","sensor.p[3]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Frontend succeeded
+// "true
+// "
+// ""
+// endResult

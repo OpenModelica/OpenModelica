@@ -1,0 +1,46 @@
+// name:     PowerSystems.Examples.Generic.Test.FixedLoadTest
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.Generic.Test.FixedLoadTest);
+compareVars :=
+{
+  "line.p[1]",
+  "line.p[2]",
+  "line.v[1]",
+  "line.v[2]",
+  "line.i[1]",
+  "line.i[2]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.Generic.Test.FixedLoadTest
+// {"line.p[1]","line.p[2]","line.v[1]","line.v[2]","line.i[1]","line.i[2]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.Generic.Test.FixedLoadTest', options = '', outputFormat = 'mat', variableFilter = 'time|line.p.1.|line.p.2.|line.v.1.|line.v.2.|line.i.1.|line.i.2.', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.Generic.Test.FixedLoadTest_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

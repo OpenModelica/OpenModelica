@@ -1,0 +1,44 @@
+// name:     PowerSystems.Examples.AC3ph.Generation.LocalGeneration
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Generation.LocalGeneration);
+compareVars :=
+{
+  "DCpower.p",
+  "DCvoltage.v"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Generation.LocalGeneration
+// {"DCpower.p","DCvoltage.v"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 30.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Generation.LocalGeneration', options = '', outputFormat = 'mat', variableFilter = 'time|DCpower.p|DCvoltage.v', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Generation.LocalGeneration_res.mat
+// Files Equal!
+// Notification: The following initial equation is redundant and consistent due to simplifications in RemoveSimpleEquations and therefore removed from the initialization problem: 0.000124777475384046 * der(PMgen.generator.i_s[3]) = 0.0 -> 0.0 = 0.0
+//
+// "true
+// "
+// ""
+// endResult

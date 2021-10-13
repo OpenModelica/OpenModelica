@@ -1,0 +1,51 @@
+// name:     PowerSystems.Examples.AC3ph.Generation.PowerAngle
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Generation.PowerAngle);
+compareVars :=
+{
+  "sensor.p[1]",
+  "sensor.p[2]",
+  "sensor.p[3]",
+  "sensor1.p[1]",
+  "sensor1.p[2]",
+  "sensor1.p[3]",
+  "generator.powerAngle"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Generation.PowerAngle
+// {"sensor.p[1]","sensor.p[2]","sensor.p[3]","sensor1.p[1]","sensor1.p[2]","sensor1.p[3]","generator.powerAngle"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Generation.PowerAngle', options = '', outputFormat = 'mat', variableFilter = 'time|sensor.p.1.|sensor.p.2.|sensor.p.3.|sensor1.p.1.|sensor1.p.2.|sensor1.p.3.|generator.powerAngle', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Generation.PowerAngle_res.mat
+// Files Equal!
+// Warning: The model contains alias variables with redundant start and/or conflicting nominal values. It is recommended to resolve the conflicts, because otherwise the system could be hard to solve. To print the conflicting alias sets and the chosen candidates please use -d=aliasConflicts.
+// Notification: It was not possible to check the given initialization system for consistency symbolically, because the relevant equations are part of an algebraic loop. This is not supported yet.
+// Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

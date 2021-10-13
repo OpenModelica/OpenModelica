@@ -1,0 +1,57 @@
+// name:     PowerSystems.Examples.PowerWorld.PowerWorld
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedSimulation;
+modelName := $TypeName(PowerSystems.Examples.PowerWorld.PowerWorld);
+compareVars :=
+{
+  "city.MW2W.u",
+  "dispatcher.loadForcast",
+  "dispatcher.windForcast",
+  "dispatcher.hydroBase.y",
+  "dispatcher.hydroDaily.y",
+  "dispatcher.secondaryControl.y",
+  "frequency.y",
+  "hydroPlant.P_generator",
+  "hydroPlant.P_control",
+  "hydroPlant.reservoirLevel.y",
+  "hydroPlant.primaryControl.y",
+  "powerPlant.P_generator",
+  "powerPlant.P_control",
+  "powerPlant.primaryControl.y",
+  "powerPlant.throttleReserve.y",
+  "powerPlant.pressureLoss.y",
+  "powerPlant.hotwellLevel.y",
+  "windFarm.MW2W.u"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SuppressedSimulation
+// PowerSystems.Examples.PowerWorld.PowerWorld
+// {"city.MW2W.u","dispatcher.loadForcast","dispatcher.windForcast","dispatcher.hydroBase.y","dispatcher.hydroDaily.y","dispatcher.secondaryControl.y","frequency.y","hydroPlant.P_generator","hydroPlant.P_control","hydroPlant.reservoirLevel.y","hydroPlant.primaryControl.y","powerPlant.P_generator","powerPlant.P_control","powerPlant.primaryControl.y","powerPlant.throttleReserve.y","powerPlant.pressureLoss.y","powerPlant.hotwellLevel.y","windFarm.MW2W.u"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 86400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.PowerWorld.PowerWorld', options = '', outputFormat = 'mat', variableFilter = 'time|city.MW2W.u|dispatcher.loadForcast|dispatcher.windForcast|dispatcher.hydroBase.y|dispatcher.hydroDaily.y|dispatcher.secondaryControl.y|frequency.y|hydroPlant.P_generator|hydroPlant.P_control|hydroPlant.reservoirLevel.y|hydroPlant.primaryControl.y|powerPlant.P_generator|powerPlant.P_control|powerPlant.primaryControl.y|powerPlant.throttleReserve.y|powerPlant.pressureLoss.y|powerPlant.hotwellLevel.y|windFarm.MW2W.u', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.PowerWorld.PowerWorld_res.mat
+// "true
+// "
+// ""
+// endResult
