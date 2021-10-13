@@ -988,7 +988,6 @@ void LibraryTreeItem::handleLoaded(LibraryTreeItem *pLibraryTreeItem)
       mpModelWidget->getDiagramGraphicsView()->removeTransitionsFromView();
       mpModelWidget->getDiagramGraphicsView()->removeInitialStatesFromView();
     }
-    mpModelWidget->getModelConnections();
     // load new icon for the class.
     pMainWindow->getLibraryWidget()->getLibraryTreeModel()->loadLibraryTreeItemPixmap(this);
     // update the icon in the libraries browser view.
