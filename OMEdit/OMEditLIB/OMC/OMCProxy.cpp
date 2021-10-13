@@ -1161,7 +1161,9 @@ QString OMCProxy::getDiagramAnnotation(QString className)
   */
 int OMCProxy::getConnectionCount(QString className)
 {
-  return mpOMCInterface->getConnectionCount(className);
+  int result = mpOMCInterface->getConnectionCount(className);
+  printMessagesStringInternal();
+  return result;
 }
 
 /*!

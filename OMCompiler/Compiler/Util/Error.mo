@@ -1225,7 +1225,7 @@ public constant ErrorTypes.Message EXPECTED_ENCRYPTED_PACKAGE = ErrorTypes.MESSA
   Gettext.gettext("Expected encrypted package with .mol extension got: %s."));
 public constant ErrorTypes.Message SAVE_ENCRYPTED_CLASS_ERROR = ErrorTypes.MESSAGE(7022, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
   Gettext.gettext("Cannot save the encrypted class. Encrypted classes are read-only."));
-public constant ErrorTypes.Message ACCESS_ENCRYPTED_PROTECTED_CONTENTS = ErrorTypes.MESSAGE(7023, ErrorTypes.SCRIPTING(), ErrorTypes.ERROR(),
+public constant ErrorTypes.Message ACCESS_ENCRYPTED_PROTECTED_CONTENTS = ErrorTypes.MESSAGE(7023, ErrorTypes.SCRIPTING(), ErrorTypes.NOTIFICATION(),
   Gettext.gettext("Cannot access encrypted and protected class contents."));
 public constant ErrorTypes.Message INVALID_NONLINEAR_JACOBIAN_COMPONENT = ErrorTypes.MESSAGE(7024, ErrorTypes.TRANSLATION(), ErrorTypes.ERROR(),
   Gettext.gettext("Jacobian %s contains non-linear components. This indicates a singular system or internal generation errors."));
