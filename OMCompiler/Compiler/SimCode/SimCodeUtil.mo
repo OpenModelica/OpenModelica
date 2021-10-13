@@ -14896,6 +14896,21 @@ algorithm
   vr := AvlTreeCRToInt.get(simCode.valueReferences, cr);
 end lookupVR;
 
+public function lookupVRForRealOutputDerivative
+  "function which maps output Real var ValueReference to an internal real variable ValueReference of
+  pattern $X_der where x = varname, this function will be used by fmi2GetRealOutputDerivatives"
+  input DAE.ComponentRef cr;
+  input SimCode.SimCode simCode;
+  output Integer vr;
+protected
+  DAE.ComponentRef outputRealDerivativeCref;
+algorithm
+  // map the cref to the internal real var (e.g) output Real y => $y_der
+  outputRealDerivativeCref := ComponentReference.appendStringLastIdent("_der", cr); // append _der
+  outputRealDerivativeCref := ComponentReference.prependStringCref("$", outputRealDerivativeCref); // prepend $
+  vr := AvlTreeCRToInt.get(simCode.valueReferences, outputRealDerivativeCref);
+end lookupVRForRealOutputDerivative;
+
 protected function getValueReferenceMapping
   input SimCode.ModelInfo modelInfo;
   output AvlTreeCRToInt.Tree tree;
