@@ -23,12 +23,15 @@ ifeq ($(OMBUILDDIR),)
 OMBUILDDIR=$(CURDIR)/build
 endif
 
-OMBUILDDIR_MSVC=$(shell cygpath -m $(OMBUILDDIR))
 
 builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
+
+OMBUILDDIR_MSVC=$(shell cygpath -m $(OMBUILDDIR))
+builddir_inc_msvc=$(OMBUILDDIR_MSVC)\include\omc
+
 
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
@@ -98,6 +101,7 @@ LIB_OMC=lib/omc
 LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC$(STAEXT)
 LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables$(STAEXT)
 LIBMODELICAZLIB=$(OMBUILDDIR)/lib/omc/libzlib$(STAEXT)
+LIBMODELICAZLIB_MSVC=$(OMBUILDDIR_MSVC)\lib\omc\msvc\zlib.lib
 LIBMODELICAIO=$(OMBUILDDIR)/lib/omc/libModelicaIO$(STAEXT)
 LIBMODELICAMATIO=$(OMBUILDDIR)/lib/omc/libModelicaMatIO$(STAEXT)
 
@@ -326,8 +330,37 @@ omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cd
 
 boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
 
+
+zlib_msvc: $(LIBMODELICAZLIB_MSVC)
+$(LIBMODELICAZLIB_MSVC): getMSVCversion
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/zlib.*
+	rm -rf 3rdParty/ModelicaExternalC/build_msvc
+	rm -rf 3rdParty/ModelicaExternalC/install_msvc
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
+	# Goto build msvc directory
+	test -d 3rdParty/ModelicaExternalC
+	mkdir -p 3rdParty/ModelicaExternalC/build_msvc
+
+	# Create batch file, that builds with CMake and Visual Studio
+	test -f """$(VSCOMNTOOLS)/../../VC/vcvarsall.bat"""
+	echo 'Building ModelicaExternalC/zlib with MSVC'
+	echo @echo on > 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo call '"$(VSCOMNTOOLS)\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo echo Calling CMake >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo 'cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo echo Building ModelicaExternalC/zlib >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo @echo on >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	# Change into directory and run batch file
+	cd ./3rdParty/ModelicaExternalC/build_msvc; echo "change to 3rdParty/ModelicaExternalC/build_msvc";\
+	cmd /c build.bat
+	# copy dll to bin folder
+	(cp -puf 3rdParty/ModelicaExternalC/install_msvc/lib/zlib.lib $(OMBUILDDIR)/lib/omc/msvc/)
+
 fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll
-$(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
+$(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion zlib_msvc
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/fmil*
 	rm -rf 3rdParty/FMIL/install_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
@@ -338,11 +371,11 @@ $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
 
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
-	echo 'Building CMinpack with MSVC'
+	echo 'Building FMIL with MSVC'
 	echo @echo on > 3rdParty/FMIL/build_msvc/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/FMIL/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=../install_msvc -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=../install_msvc -DOMC_ZLIB_LIBRARY="$(LIBMODELICAZLIB_MSVC)" -DOMC_ZLIB_INCLUDE_DIR="$(builddir_inc_msvc)" -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo @echo on >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKE= >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/FMIL/build_msvc/build.bat
@@ -410,7 +443,7 @@ $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion 3rdParty/SuiteSparse-5.8.
 	echo echo Calling CMake >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="$(OMBUILDDIR_MSVC)" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc\\suitesparse" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo echo Building SuiteSparse >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo @echo on >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
