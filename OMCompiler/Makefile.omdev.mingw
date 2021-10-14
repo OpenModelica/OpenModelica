@@ -331,8 +331,8 @@ omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cd
 boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
 
 
-zlib_msvc: $(OMBUILDDIR)/lib/omc/msvc/zlib.lib
-$(OMBUILDDIR)/lib/omc/msvc/zlib.lib: getMSVCversion
+zlib_msvc: $(LIBMODELICAZLIB_MSVC)
+$(LIBMODELICAZLIB_MSVC): getMSVCversion
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/zlib.*
 	rm -rf 3rdParty/ModelicaExternalC/build_msvc
 	rm -rf 3rdParty/ModelicaExternalC/install_msvc
@@ -347,7 +347,7 @@ $(OMBUILDDIR)/lib/omc/msvc/zlib.lib: getMSVCversion
 	echo @echo on > 3rdParty/ModelicaExternalC/build_msvc/build.bat
 	echo call '"$(VSCOMNTOOLS)\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo 'cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
 	echo echo Building ModelicaExternalC/zlib >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
 	echo @echo on >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
 	echo set MAKE= >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
@@ -359,8 +359,8 @@ $(OMBUILDDIR)/lib/omc/msvc/zlib.lib: getMSVCversion
 	# copy dll to bin folder
 	(cp -puf 3rdParty/ModelicaExternalC/install_msvc/lib/zlib.lib $(OMBUILDDIR)/lib/omc/msvc/)
 
-fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll zlib_msvc
-$(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
+fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll
+$(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion zlib_msvc
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/fmil*
 	rm -rf 3rdParty/FMIL/install_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
