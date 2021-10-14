@@ -14901,14 +14901,19 @@ public function lookupVRForRealOutputDerivative
   pattern $X_der where x = varname, this function will be used by fmi2GetRealOutputDerivatives"
   input DAE.ComponentRef cr;
   input SimCode.SimCode simCode;
+  input String fmuType;
   output Integer vr;
 protected
   DAE.ComponentRef outputRealDerivativeCref;
 algorithm
-  // map the cref to the internal real var (e.g) output Real y => $y_der
-  outputRealDerivativeCref := ComponentReference.appendStringLastIdent("_der", cr); // append _der
-  outputRealDerivativeCref := ComponentReference.prependStringCref("$", outputRealDerivativeCref); // prepend $
-  vr := AvlTreeCRToInt.get(simCode.valueReferences, outputRealDerivativeCref);
+  if (fmuType == "cs") then
+    // map the cref to the internal real var (e.g) output Real y => $y_der
+    outputRealDerivativeCref := ComponentReference.appendStringLastIdent("_der", cr); // append _der
+    outputRealDerivativeCref := ComponentReference.prependStringCref("$", outputRealDerivativeCref); // prepend $
+    vr := AvlTreeCRToInt.get(simCode.valueReferences, outputRealDerivativeCref);
+  else
+    vr := -1;
+  end if;
 end lookupVRForRealOutputDerivative;
 
 protected function getValueReferenceMapping

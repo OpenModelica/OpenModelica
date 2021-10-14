@@ -1320,6 +1320,7 @@ package SimCodeUtil
   function lookupVRForRealOutputDerivative
     input DAE.ComponentRef cr;
     input SimCode.SimCode simCode;
+    input String fmuType;
     output Integer vr;
   end lookupVRForRealOutputDerivative;
 
