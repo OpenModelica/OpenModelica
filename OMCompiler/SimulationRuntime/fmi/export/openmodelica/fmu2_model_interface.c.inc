@@ -1487,8 +1487,33 @@ fmi2Status fmi2SetRealInputDerivatives(fmi2Component c, const fmi2ValueReference
 
 fmi2Status fmi2GetRealOutputDerivatives(fmi2Component c, const fmi2ValueReference vr[], size_t nvr, const fmi2Integer order[], fmi2Real value[])
 {
-  // TODO Write code here
-  return unsupportedFunction(c, "fmi2GetRealOutputDerivatives", ~0);
+  /* Variables */
+  int i;
+  ModelInstance *comp = (ModelInstance*)c;
+
+  /* Check for valid call sequence */
+  if (invalidState(comp, "fmi2GetRealOutputDerivatives", modelInitializationMode|modelEventMode|modelContinuousTimeMode|modelTerminated|modelError, ~0))
+    return fmi2Error;
+  if (nvr > 0 && nullPointer(comp, "fmi2GetRealOutputDerivatives", "vr[]", vr))
+    return fmi2Error;
+  if (nvr > 0 && nullPointer(comp, "fmi2GetRealOutputDerivatives", "value[]", value))
+    return fmi2Error;
+
+#if NUMBER_OF_REALS > 0
+  if (updateIfNeeded(comp, "fmi2GetRealOutputDerivatives") != fmi2OK)
+    return fmi2Error;
+
+  for (i = 0; i < nvr; i++)
+  {
+    if (vrOutOfRange(comp, "fmi2GetRealOutputDerivatives", vr[i], NUMBER_OF_REALS)) {
+      return fmi2Error;
+    }
+    fmi2ValueReference mappedVR = mapOutputReference2RealOutputDerivatives(vr[i]);
+    value[i] = getReal(comp, mappedVR); // to be implemented by the includer of this file
+    FILTERED_LOG(comp, fmi2OK, LOG_FMI2_CALL, "fmi2GetRealOutputDerivatives: #r%u# = %.16g", vr[i], value[i])
+  }
+#endif
+  return fmi2OK;
 }
 
 fmi2Status fmi2DoStep(fmi2Component c, fmi2Real currentCommunicationPoint, fmi2Real communicationStepSize, fmi2Boolean noSetFMUStatePriorToCurrentPoint)

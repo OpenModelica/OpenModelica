@@ -75,7 +75,7 @@ case sc as SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let _ = generateSimulationFiles(simCode,guid,fileNamePrefixTmpDir,FMUVersion)
 
   let()= textFile(simulationInitFunction(simCode,guid), '<%fileNamePrefixTmpDir%>_init_fmu.c')
-  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion), '<%fileNamePrefixTmpDir%>_FMU.c')
+  let()= textFile(fmumodel_identifierFile(simCode,guid,FMUVersion,FMUType), '<%fileNamePrefixTmpDir%>_FMU.c')
 
   /* Doesn't seem to work properly
   let &fmuModelDescription = buffer ""
@@ -231,7 +231,7 @@ case SIMCODE(__) then
   >>
 end VendorAnnotations;
 
-template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion)
+template fmumodel_identifierFile(SimCode simCode, String guid, String FMUVersion, String FMUType)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -280,6 +280,7 @@ case SIMCODE(__) then
   fmi2Status setExternalFunction(ModelInstance* c, const fmi2ValueReference vr, const void* value);
   fmi2ValueReference mapInputReference2InputNumber(const fmi2ValueReference vr);
   fmi2ValueReference mapOutputReference2OutputNumber(const fmi2ValueReference vr);
+  fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr);
   >>
   else
   <<
@@ -329,6 +330,7 @@ case SIMCODE(__) then
   <%setStringFunction2(simCode, modelInfo)%>
   <%setExternalFunction2(modelInfo)%>
   <%mapInputAndOutputs(simCode)%>
+  <%mapRealOutputDerivatives(simCode, FMUType)%>
   >>
   else
   <<
@@ -1169,6 +1171,24 @@ case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(inputVars=inputVars, outputVars=ou
 end match
 end mapInputAndOutputs;
 
+template mapRealOutputDerivatives(SimCode simCode, String FMUType)
+""
+::=
+match simCode
+case SIMCODE(modelInfo=MODELINFO(vars=SIMVARS(outputVars=outputVars))) then
+    <<
+    /* function maps output references to an internal output Real derivatives */
+    fmi2ValueReference mapOutputReference2RealOutputDerivatives(const fmi2ValueReference vr) {
+        switch (vr) {
+          <%outputVars |> var =>  match var case SIMVAR(name=name, type_=T_REAL()) then
+          'case <%lookupVR(name, simCode)%>: return <%lookupVRForRealOutputDerivative(name, simCode, FMUType)%>; break;' ;separator="\n"%>
+          default:
+            return -1;
+        }
+    }
+    >>
+end match
+end mapRealOutputDerivatives;
 
 template getPlatformString2(String modelNamePrefix, String platform, String fileNamePrefix, String fmuTargetName, String dirExtra, String libsPos1, String libsPos2, String omhome, String FMUVersion)
  "returns compilation commands for the platform. "

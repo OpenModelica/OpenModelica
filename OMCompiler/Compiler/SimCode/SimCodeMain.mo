@@ -950,7 +950,7 @@ algorithm
   (success, outStringLst, outFileDir) :=
   matchcontinue (inEnv, className, inFileNamePrefix, addDummy, inSimSettingsOpt, args)
     local
-      String filenameprefix, file_dir, resstr, description;
+      String filenameprefix, file_dir, resstr, description, fmuType;
       DAE.DAElist dae, dae1;
       FCore.Graph graph;
       BackendDAE.BackendDAE dlow, dlow_1;
@@ -1028,11 +1028,16 @@ algorithm
       end if;
 
       isFMI2 := match kind
-        case TranslateModelKind.FMU() then FMI.isFMIVersion20();
+        case TranslateModelKind.FMU(fmuType) then FMI.isFMIVersion20();
         else false;
       end match;
       // FMI 2.0: enable postOptModule to create alias variables for output states
       strPreOptModules := if (isFMI2) then SOME("introduceOutputAliases"::BackendDAEUtil.getPreOptModulesString()) else NONE();
+
+      // FMI 2.0: enable postOptModule "introduceOutputRealDerivatives" to set maxOutputDerivativeOrder = 1
+      if (isFMI2 and fmuType == "cs") then
+        strPreOptModules := SOME("introduceOutputRealDerivatives":: Util.getOption(strPreOptModules));
+      end if;
 
       //BackendDump.printBackendDAE(dlow);
       (dlow, initDAE, initDAE_lambda0, inlineData, removedInitialEquationLst) := BackendDAEUtil.getSolvedSystem(dlow,inFileNamePrefix,strPreOptModules=strPreOptModules);

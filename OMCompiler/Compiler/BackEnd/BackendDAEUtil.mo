@@ -1778,6 +1778,43 @@ algorithm
   end match;
 end reduceEqSystem;
 
+public function introduceOutputRealDerivatives
+"Find output variables of Real type and replace them with derivative equation
+ (e.g) output Real y;
+  $y_der = der(y)
+ "
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystem currentSystem;
+  DAE.ComponentRef newCref, cref;
+  DAE.Exp lhs, rhs;
+  list<BackendDAE.Equation> newEqnlst;
+  list<BackendDAE.Var> daeVarsLst;
+algorithm
+  {currentSystem} := inDAE.eqs;
+  daeVarsLst := {};
+  newEqnlst := {};
+  for var in BackendVariable.varList(currentSystem.orderedVars) loop
+    if BackendVariable.isOutputVar(var) then
+      newCref := ComponentReference.appendStringLastIdent("_der", var.varName); // append _der
+      newCref := ComponentReference.prependStringCref("$", newCref); // prepend $
+      daeVarsLst := BackendVariable.makeVar(newCref) :: daeVarsLst;
+      lhs := Expression.crefExp(newCref);
+      rhs := IndexReduction.makeder(BackendVariable.varExp(var));
+      newEqnlst := BackendEquation.generateEquation(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING) :: newEqnlst;
+    end if;
+  end for;
+  //BackendDump.dumpEquationList(newEqnlst, "first order derivative equation");
+
+  currentSystem := BackendVariable.addVarsDAE(daeVarsLst, currentSystem);
+  currentSystem.orderedEqs := BackendEquation.merge(currentSystem.orderedEqs, BackendEquation.listEquation(newEqnlst));
+
+  outDAE := BackendDAE.DAE({currentSystem}, inDAE.shared);
+
+  //BackendDump.printBackendDAE(outDAE);
+end introduceOutputRealDerivatives;
+
 public function introduceOutputAliases
 "Find top level output variables and replace them with alias variables."
   input output BackendDAE.BackendDAE dae;
@@ -8314,6 +8351,7 @@ end selectMatchingAlgorithm;
 public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
+    (BackendDAEUtil.introduceOutputRealDerivatives, "introduceOutputRealDerivatives"),
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
     (DataReconciliation.extractBoundaryCondition, "dataReconciliationBoundaryConditions"),

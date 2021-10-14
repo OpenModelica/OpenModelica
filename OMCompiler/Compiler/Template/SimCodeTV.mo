@@ -1317,6 +1317,13 @@ package SimCodeUtil
     output Integer vr;
   end lookupVR;
 
+  function lookupVRForRealOutputDerivative
+    input DAE.ComponentRef cr;
+    input SimCode.SimCode simCode;
+    input String fmuType;
+    output Integer vr;
+  end lookupVRForRealOutputDerivative;
+
   function unbalancedEqSystemPartition
     input list<SimCode.SimEqSystem> inList;
     input Integer maxLength;
