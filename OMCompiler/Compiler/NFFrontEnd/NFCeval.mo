@@ -712,6 +712,8 @@ algorithm
     exp := Expression.applySubscripts(ComponentRef.getSubscripts(parent_cr), exp);
     exp := Expression.recordElement(ComponentRef.firstName(cref), exp);
     exp := evalExp(exp, target);
+    exp := Expression.map(exp, function Expression.expandNonListedSplitIndices(
+      indicesToKeep = ComponentRef.nodesIncludingSplitSubs(cref)));
   else
     // If the parent didn't have a binding, try the parent's parent.
     exp := makeRecordFieldBindingFromParent(parent_cr, target);
