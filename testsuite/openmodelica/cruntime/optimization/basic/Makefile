@@ -17,6 +17,7 @@ CM2.mos \
 DM.mos \
 DMwarm.mos \
 DMwarmCsv.mos \
+InputOptIssues.mos \
 LoopTest.mos \
 LRB.mos \
 LRB2.mos \

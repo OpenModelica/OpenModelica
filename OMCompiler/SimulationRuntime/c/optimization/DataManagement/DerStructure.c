@@ -142,9 +142,8 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   }
 
   if(s->mayer){
-    const int nReal = dim->nReal;
     dim->index_mayer = -1;
-    for(i = 0; i < nReal; ++i){
+    for(i = 0; i < dim->nReal; ++i){
        if(&data->localData[0]->realVars[i] == s->pmayer){
          dim->index_mayer = i;
          break;
@@ -153,9 +152,8 @@ inline void allocate_der_struct(OptDataStructure *s, OptDataDim * dim, DATA* dat
   }
 
   if(s->lagrange){
-    const int nReal = dim->nReal;
     dim->index_lagrange = -1;
-    for(i = 0; i < nReal; ++i){
+    for(i = 0; i < dim->nReal; ++i){
        if(&data->localData[0]->realVars[i] == s->plagrange){
          dim->index_lagrange = i;
          break;
