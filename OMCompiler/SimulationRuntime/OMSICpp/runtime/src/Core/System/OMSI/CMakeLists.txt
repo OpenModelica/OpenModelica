@@ -7,7 +7,7 @@ MESSAGE(STATUS "Build omsi library with fmilib:")
 MESSAGE(STATUS "${FMILIB_LIB}")
 
 add_library(${SystemOMSIName} OMSUSystem.cpp FactoryExport.cpp)
-target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName} ${Boost_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${FMILIB_LIB} ${FMILIB_LIB_EXTRA})
+target_link_libraries(${SystemOMSIName} ${ExtendedSystemName} ${SystemBaseName} ${Boost_LIBRARIES} ${OMCFactoryName} ${SimulationSettings} ${FMILIB_LIB} ${FMILIB_LIB_EXTRA} ${LibZName})
 
 
 if(NOT BUILD_SHARED_LIBS)

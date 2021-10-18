@@ -28,6 +28,8 @@ template translateModel(SimCode simCode)
         let target = simulationCodeTarget()
         let &extraFuncs = buffer "" /*BUFD*/
         let &extraFuncsDecl = buffer "" /*BUFD*/
+        let &extraInitFuncs = buffer ""
+        let &extraInitFuncsDecl = buffer ""
         let &extraResidualsFuncsDecl = buffer "" /*BUFD*/
         let &dummyTypeElemCreation = buffer "" //remove this workaround if GCC > 4.4 is the default compiler
         let &complexStartExpressions = buffer ""
@@ -46,17 +48,17 @@ template translateModel(SimCode simCode)
          ""
         else
            ""
-        let()= textFile(simulationInitCppFile(simCode, &extraFuncs, &extraFuncsDecl, '<%className%>Initialize', dummyTypeElemCreation, stateDerVectorName, false, complexStartExpressions),'OMCpp<%fileNamePrefix%>Initialize.cpp')
 
         let _ = match boolOr(Flags.isSet(Flags.HARDCODED_START_VALUES), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))
           case true then
-            let()= textFile(simulationInitParameterCppFile(simCode, &extraFuncs, &extraFuncsDecl, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
-            let()= textFile(simulationInitAlgVarsCppFile(simCode, &extraFuncs, &extraFuncsDecl, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
+            let()= textFile(simulationInitParameterCppFile(simCode, &extraInitFuncs, &extraInitFuncsDecl, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeParameter.cpp')
+            let()= textFile(simulationInitAlgVarsCppFile(simCode, &extraInitFuncs, &extraInitFuncsDecl, '<%className%>Initialize', stateDerVectorName, false),'OMCpp<%fileNamePrefix%>InitializeAlgVars.cpp')
             ""
           else
             ""
+        let()= textFile(simulationInitCppFile(simCode, &extraInitFuncs, &extraInitFuncsDecl, '<%className%>Initialize', dummyTypeElemCreation, stateDerVectorName, false, complexStartExpressions),'OMCpp<%fileNamePrefix%>Initialize.cpp')
+        let()= textFile(simulationInitHeaderFile(simCode, &extraInitFuncs, &extraInitFuncsDecl, '<%className%>Initialize'), 'OMCpp<%fileNamePrefix%>Initialize.h')
 
-        let()= textFile(simulationInitHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, '<%className%>Initialize'), 'OMCpp<%fileNamePrefix%>Initialize.h')
         let()= textFile(simulationTypesHeaderFile(simCode, &extraFuncs, &extraFuncsDecl, "", &dummyTypeElemCreation, modelInfo.functions, literals, stateDerVectorName, false), 'OMCpp<%fileNamePrefix%>Types.h')
         let()= textFile(simulationMakefile(target, simCode, &extraFuncs, &extraFuncsDecl, "", "", "", "", "", false), '<%fileNamePrefix%>.makefile')
 
@@ -139,7 +141,7 @@ case SIMCODE(__) then
 end simulationHeaderFile;
 
 
-template simulationInitHeaderFile(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
+template simulationInitHeaderFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
  "Generates code for header file for simulation target."
 ::=
 match simCode
@@ -183,6 +185,7 @@ let initparameqs = generateEquationMemberFuncDecls(parameterEquations,"initParam
       <%initeqs%>
       <%initparameqs%>
       <%destructExtObjsDecl(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, false)%>
+      <%extraFuncsDecl%>
 
       void InitializeDummyTypeElems();
 
@@ -481,7 +484,6 @@ case SIMCODE(modelInfo=MODELINFO()) then
 end simulationFactoryFile;
 
 
-
 template simulationInitCppFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text& dummyTypeElemCreation, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Text& complexStartExpressions)
  "Generates code for main cpp file for simulation target."
 ::=
@@ -527,7 +529,9 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%init(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, complexStartExpressions)%>
 
    <%destructExtObjs(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)%>
-  >>
+
+   <%extraFuncs%>
+   >>
 end simulationInitCppFile;
 
 template simulationInitParameterCppFile(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
@@ -5435,7 +5439,7 @@ template destructExtObjsDecl(SimCode simCode, Text& extraFuncs, Text& extraFuncs
 end destructExtObjsDecl;
 
 
-template init(SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Text& complexStartExpressions)
+template init(SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation, Text& complexStartExpressions)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),initialEquations=initialEquations,parameterEquations=parameterEquations)  then
@@ -5447,13 +5451,8 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
    let initZeroCrossings = functionOnlyZeroCrossing(zeroCrossings,varDecls,simCode , &extraFuncs , &extraFuncsDecl, extraFuncsNamespace)
    let initEventHandling = eventHandlingInit(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
    let initClockIntervals = clockIntervalsInit(simCode, &varDecls, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation)
-
    let initAlgloopSolvers = initAlgloopsolvers(listAppend(listAppend(allEquations, initialEquations), getClockedEquations(getSubPartitions(clockedPartitions))),simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
 
-
-   let initialequations  =  match  Config.simCodeTarget()   case "Cpp" then functionInitialEquations(initialEquations,"initEquation",simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, true, false) else ""
-   let boundparameterequations  =  match  Config.simCodeTarget() case "Cpp" then functionInitialEquations(parameterEquations,"initParameterEquation",simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, true, true) else ""
-   let compiledir = makefileParams.compileDir
    <<
    // convenience function for full initialization
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initialize()
@@ -5546,8 +5545,6 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
       >>
       %>
 
-  
-
       /*Start complex expressions */
       <%complexStartExpressions%>
       /* End complex expression */
@@ -5593,20 +5590,22 @@ case SIMCODE(modelInfo = MODELINFO(__),makefileParams = MAKEFILE_PARAMS(__),init
 
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initEquations()
    {
-      <%(initialEquations |> eq  =>
-                    equation_function_call(eq,  contextOther, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"initEquation")
-                    ;separator="\n")%>
+      <%(List.partition(initialEquations, 100) |> eqs hasindex i0 =>
+          createInitWithSplit(i0, contextOther, eqs, "initEquations", "initEquation", simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+          ; separator="\n")%>
    }
-   <%initialequations%>
+   <%functionInitialEquations(initialEquations, "initEquation",
+                              simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, true, false)%>
    void <%lastIdentOfPath(modelInfo.name)%>Initialize::initParameterEquations()
    {
-      <%(parameterEquations |> eq  =>
-                    equation_function_call(eq,  contextOther, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"initParameterEquation")
-                    ;separator="\n")%>
+      <%(List.partition(parameterEquations, 100) |> eqs hasindex i0 =>
+          createInitWithSplit(i0, contextOther, eqs, "initParameterEquations", "initParameterEquation", simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace)
+          ; separator="\n")%>
    }
-   <%boundparameterequations%>
+   <%functionInitialEquations(parameterEquations, "initParameterEquation",
+                              simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, stateDerVectorName, useFlatArrayNotation, false, true, true)%>
    <%init2(simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, modelInfo, stateDerVectorName, useFlatArrayNotation)%>
-    >>
+   >>
   end match
 end init;
 
@@ -5639,6 +5638,28 @@ case modelInfo as MODELINFO(vars=SIMVARS(__))  then
    >>
    else ''
 end init2;
+
+
+template createInitWithSplit(Integer sectionIndex, Context context, list<SimEqSystem> sectionEquations, String functionName, String functionCallName, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace)
+::=
+  let init_func_calls = (sectionEquations |> eq  =>
+                    equation_function_call(eq, context, simCode, functionCallName)
+                    ;separator="\n")
+  let &extraFuncs +=
+  <<
+  <%\n%>void <%extraFuncsNamespace%>::<%functionName%>_<%sectionIndex%>()
+  {
+    <%init_func_calls%>
+  }
+  >>
+  let &extraFuncsDecl +=
+  <<
+  void <%functionName%>_<%sectionIndex%>();<%\n%>
+  >>
+  <<
+  <%functionName%>_<%sectionIndex%>();
+  >>
+end createInitWithSplit;
 
 
 template functionExternalObjects(Text className, ExtObjInfo extObjInfo, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace, Boolean useFlatArrayNotation)
@@ -9638,17 +9659,15 @@ template equationString(SimEqSystem eq, Context context, Text &varDecls, SimCode
     error(sourceInfo(), 'NOT IMPLEMENTED EQUATION 2: <%dumpEqs(fill(eq,1))%>')
 end equationString;
 
-template equation_function_call(SimEqSystem eq, Context context, Text &varDecls, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace,Text method)
+template equation_function_call(SimEqSystem eq, Context context, SimCode simCode, Text method)
  "Generates an equation.
   This template should not be used for a SES_RESIDUAL.
   Residual equations are handled differently."
 ::=
-
-    let ix_str = equationIndex(eq)
-     <<
-     <%method%>_<%ix_str%>();
-     >>
-
+  let ix_str = equationIndex(eq)
+  <<
+  <%method%>_<%ix_str%>();
+  >>
 end equation_function_call;
 
 template equation_function_create_single_func(SimEqSystem eq, Context context, SimCode simCode, Text& extraFuncs, Text& extraFuncsDecl, Text extraFuncsNamespace,
@@ -12355,11 +12374,10 @@ end booleanSubClockActivation2;
 template createEvaluateConditions( list<SimEqSystem> allEquationsPlusWhen, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace, Context context, Text stateDerVectorName /*=__zDot*/, Boolean useFlatArrayNotation)
 ::=
   let className = lastIdentOfPathFromSimCode(simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace)
-  let &varDecls = buffer "" /*BUFD*/
 
   let &eqfuncs = buffer ""
   let equation_all_func_calls = (allEquationsPlusWhen |> eq  =>
-                    equation_function_call(eq,  context, &varDecls /*BUFC*/, simCode , &extraFuncs , &extraFuncsDecl,  extraFuncsNamespace,"evaluate")
+                    equation_function_call(eq, context, simCode, "evaluate")
                     ;separator="\n")
 
   <<
@@ -12398,16 +12416,14 @@ end createEvaluate;
 
 template createEvaluatePartitions(Integer partIdx, Context context, list<SimEqSystem> odeEquations, list<Integer> partition, list<Integer> activators, String className, SimCode simCode, Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
-  let &varDecls = buffer "" /*BUFD*/
   let condition = partitionCondition(activators)
   let equation_func_calls = (SimCodeUtil.getSimEqSystemsByIndexLst(partition,odeEquations) |> eq  =>
-                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace, "evaluate")
+                    equation_function_call(eq, context, simCode, "evaluate")
                     ;separator="\n")
 <<
 // Partition <%partIdx%>
 if (<%condition%>)
 {
-    <%varDecls%>
     <%equation_func_calls%>
 }
 >>
@@ -12443,16 +12459,13 @@ end createEvaluateZeroFuncs;
 
 template createEvaluateWithSplit(Integer sectionIndex, Context context, list<SimEqSystem> sectionEquations, String functionName,String functionCallName, String className, SimCode simCode ,Text& extraFuncs,Text& extraFuncsDecl,Text extraFuncsNamespace)
 ::=
-  let &varDecls = buffer "" /*BUFD*/
   let equation_func_calls = (sectionEquations |> eq  =>
-                    equation_function_call(eq, context, &varDecls /*BUFC*/, simCode, &extraFuncs, &extraFuncsDecl, extraFuncsNamespace,functionCallName)
+                    equation_function_call(eq, context, simCode,functionCallName)
                     ;separator="\n")
   let &extraFuncs +=
   <<
   <%\n%>void <%className%>::<%functionName%>_<%sectionIndex%>(const UPDATETYPE command)
   {
-    <%varDecls%>
-
     <%equation_func_calls%>
   }
   >>

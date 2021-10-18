@@ -112,8 +112,8 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU"  OR "${CMAKE_CXX_COMPILER_ID}" STRE
 	SET(_output "${_outdir}/${_name}.gch")
 	STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 	SET(_compiler_FLAGS ${${_flags_var_name}})
-	#remove compiler flag for optimization becaus Modelica system is compiled without optimization
-	STRING(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS "${_compiler_FLAGS}" )
+	#disable optimization to speed up model compilation at cost of simulation performance
+	#STRING(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS "${_compiler_FLAGS}" )
 	#STRING(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
 	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		SET(_compiler_FLAGS "${_compiler_FLAGS} -fPIC ")
@@ -173,8 +173,8 @@ IF("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 	SET(_output "${_outdir}/${_name}.pch")
 	STRING(TOUPPER "CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}" _flags_var_name)
 	SET(_compiler_FLAGS ${${_flags_var_name}})
-	#remove compiler flag for optimization becaus Modelica system is compiled without optimization
-	STRING(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS ${_compiler_FLAGS} )
+	#disable optimization to speed up model compilation at cost of simulation performance
+	#STRING(REGEX REPLACE "O[1-9]" "O0" _compiler_FLAGS ${_compiler_FLAGS} )
 	#string(REGEX REPLACE "-g" "" _compiler_FLAGS ${_compiler_FLAGS} )
 
 	IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

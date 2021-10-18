@@ -1,0 +1,49 @@
+// name:     PowerSystems.Examples.AC1ph_DC.Transformation.TapChanger
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC1ph_DC.Transformation.TapChanger);
+compareVars :=
+{
+  "meter1.p",
+  "meter1.v",
+  "meter1.i",
+  "meter12.p",
+  "meter12.v",
+  "meter12.i",
+  "meter22.p",
+  "meter22.v",
+  "meter22.i"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC1ph_DC.Transformation.TapChanger
+// {"meter1.p","meter1.v","meter1.i","meter12.p","meter12.v","meter12.i","meter22.p","meter22.v","meter22.i"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 4.0, numberOfIntervals = 4000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Transformation.TapChanger', options = '', outputFormat = 'mat', variableFilter = 'time|meter1.p|meter1.v|meter1.i|meter12.p|meter12.v|meter12.i|meter22.p|meter22.v|meter22.i', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC1ph_DC.Transformation.TapChanger_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

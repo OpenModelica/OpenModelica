@@ -4765,11 +4765,11 @@ algorithm
         e4 = Expression.makePureBuiltinCall("cos",{e2},ty);
         e = DAE.BINARY(e3,op2,e4);
       then e;
-    // cos(e2)/tan(e2) => sin(e2)
-    case(_,DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("cos"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("tan"),expLst={e2}),_,_)
+    // sin(e2)/tan(e2) => cos(e2)
+    case(_,DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("sin"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("tan"),expLst={e2}),_,_)
       equation
         true = Expression.expEqual(e1,e2);
-        e = Expression.makePureBuiltinCall("sin",{e2},ty);
+        e = Expression.makePureBuiltinCall("cos",{e2},ty);
       then e;
     // e1/tan(e2) => e1*cos(e2)/sin(e2)
     case(_,op2 as DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("tan"),expLst={e2}),_,_)
@@ -4778,18 +4778,11 @@ algorithm
         e4 = Expression.makePureBuiltinCall("cos",{e2},ty);
         e = DAE.BINARY(e4,op2,e3);
       then DAE.BINARY(e1,DAE.MUL(ty), e);
-    // sinh(e)/cosh(e) => tan(e)
+    // sinh(e)/cosh(e) => tanh(e)
     case(_,DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("sinh"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("cosh"),expLst={e2}),_,_)
       equation
         true = Expression.expEqual(e1,e2);
       then Expression.makePureBuiltinCall("tanh",{e1},ty);
-    // e1/tanh(e2) => e1*cos(e2)/sin(e2)
-    case(_,op2 as DAE.DIV(ty),e1,DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e2}),_,_)
-      equation
-        e3 = Expression.makePureBuiltinCall("sinh",{e2},ty);
-        e4 = Expression.makePureBuiltinCall("cosh",{e2},ty);
-        e = DAE.BINARY(e4,op2,e3);
-      then DAE.BINARY(e1,DAE.MUL(ty), e);
     // tanh(e2)/sinh(e2) => 1.0/cosh(e2)
     case(_,op2 as DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("sinh"),expLst={e2}),_,_)
       equation
@@ -4798,11 +4791,11 @@ algorithm
         e4 = Expression.makePureBuiltinCall("cosh",{e2},ty);
         e = DAE.BINARY(e3,op2,e4);
       then e;
-    // cosh(e2)/tanh(e2) => sinh(e2)
-    case(_,DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("cosh"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e2}),_,_)
+    // sinh(e2)/tanh(e2) => cosh(e2)
+    case(_,DAE.DIV(ty),DAE.CALL(path=Absyn.IDENT("sinh"),expLst={e1}),DAE.CALL(path=Absyn.IDENT("tanh"),expLst={e2}),_,_)
       equation
         true = Expression.expEqual(e1,e2);
-        e = Expression.makePureBuiltinCall("sinh",{e2},ty);
+        e = Expression.makePureBuiltinCall("cosh",{e2},ty);
       then e;
 
     // e1  -e2 => -e1  e2

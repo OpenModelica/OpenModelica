@@ -551,7 +551,7 @@ ENDIF(REDUCE_DAE)
 IF(USE_SUNDIALS)
   #set sundials solvers include and library directories
   IF(MSVC)
-    SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/include/")
+    SET(SUNDIALS_INLCUDE_HOME  "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/include/sundials")
     SET(SUNDIALS_LIBRARY_RELEASE_HOME "${CMAKE_SOURCE_DIR}/../../3rdParty/sundials-5.4.0/build_msvc/lib/")
   ELSE(MSVC)
     SET(SUNDIALS_INLCUDE_HOME  ${CMAKE_INSTALL_PREFIX}/include/omc/sundials)
@@ -895,7 +895,7 @@ IF(USE_MICO)
   MESSAGE(STATUS ${MICO_LIBRARY})
   MESSAGE(STATUS ${MICO_INCLUDE_DIR})
 ENDIF(USE_MICO)
-#Handle ZeroMQ 
+#Handle ZeroMQ
 
 
  IF(MSVC)

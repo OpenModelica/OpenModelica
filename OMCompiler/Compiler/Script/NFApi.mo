@@ -230,7 +230,7 @@ algorithm
               try
                 exp := NFCeval.evalExp(save);
               else
-                exp := save;
+                exp := EvalConstants.evaluateExp(save, info);
               end try;
               exp := SimplifyExp.simplify(exp);
               str := str + ", " + Expression.toString(exp);

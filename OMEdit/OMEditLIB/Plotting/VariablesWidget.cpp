@@ -1850,10 +1850,14 @@ void VariablesWidget::initializeVisualization(SimulationOptions simulationOption
 double VariablesWidget::readVariableValue(QString variable, double time)
 {
   double value = 0.0;
+  bool found = false;
+
   if (mModelicaMatReader.file) {
     ModelicaMatVariable_t* var = omc_matlab4_find_var(&mModelicaMatReader, variable.toUtf8().constData());
     if (var) {
       omc_matlab4_val(&value, &mModelicaMatReader, var, time);
+      found = true;
+    } else {
     }
   } else if (mpCSVData) {
     double *timeDataSet = read_csv_dataset(mpCSVData, "time");
@@ -1863,6 +1867,7 @@ double VariablesWidget::readVariableValue(QString variable, double time)
           double *varDataSet = read_csv_dataset(mpCSVData, variable.toUtf8().constData());
           if (varDataSet) {
             value = varDataSet[i];
+            found = true;
             break;
           }
         }
@@ -1883,12 +1888,18 @@ double VariablesWidget::readVariableValue(QString variable, double time)
         QStringList values = currentLine.split(",");
         if (QString::number(time).compare(values[0]) == 0) {
           value = values[1].toDouble();
+          found = true;
           break;
         }
       }
     }
     textStream.seek(0);
   }
+
+  if (!found) {
+    MessagesWidget::instance()->addGUIMessage(MessageItem(MessageItem::Modelica, "No result for variable " + variable + " in result file.", Helper::simulationKind, Helper::warningLevel));
+  }
+
   return value;
 }
 

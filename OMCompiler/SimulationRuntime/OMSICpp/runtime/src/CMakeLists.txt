@@ -16,6 +16,10 @@ if(NOT FMU_TARGET)
 endif(NOT FMU_TARGET)
 
 # add system default implemention project
+if(USE_FMILIB)
+    add_subdirectory(Core/ModelicaExternalC)
+endif(USE_FMILIB)
+
 add_subdirectory(Core/System)
 # add solver default implemention project
 add_subdirectory(Core/Solver)

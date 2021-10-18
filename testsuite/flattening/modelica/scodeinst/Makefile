@@ -23,9 +23,11 @@ arrfunc.mo \
 Assert1.mo \
 Assert2.mo \
 Assert3.mo \
+Assert4.mo \
 AssertInvalid1.mo \
 AssertInvalid2.mo \
 AssertInvalid3.mo \
+AssertInvalid4.mo \
 AssignConstant1.mo \
 AssignInput1.mo \
 AssignParameter1.mo \
@@ -171,6 +173,7 @@ CevalRecordArray2.mo \
 CevalRecordArray4.mo \
 CevalRecordArray5.mo \
 CevalRecordArray6.mo \
+CevalRecordArray7.mo \
 CevalRelation1.mo \
 CevalRem1.mo \
 CevalScalar1.mo \
@@ -708,6 +711,7 @@ lookup1.mo \
 lookup2.mo \
 lookup3.mo \
 lookup4.mo \
+LookupLibrary1.mo \
 loop1.mo \
 loop2.mo \
 loop3.mo \

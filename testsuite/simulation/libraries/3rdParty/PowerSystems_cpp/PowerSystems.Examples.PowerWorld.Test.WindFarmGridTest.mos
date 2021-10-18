@@ -1,0 +1,42 @@
+// name:     PowerSystems.Examples.PowerWorld.Test.WindFarmGridTest
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.PowerWorld.Test.WindFarmGridTest);
+compareVars :=
+{
+  "windFarm.p[1]",
+  "windFarm.p[2]"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.SuppressedVerifiedSimulation
+// PowerSystems.Examples.PowerWorld.Test.WindFarmGridTest
+// {"windFarm.p[1]","windFarm.p[2]"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 86400.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.PowerWorld.Test.WindFarmGridTest', options = '', outputFormat = 'mat', variableFilter = 'time|windFarm.p.1.|windFarm.p.2.', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.PowerWorld.Test.WindFarmGridTest_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

@@ -4781,18 +4781,31 @@ public
   end filterSplitIndices2;
 
   function expandSplitIndices
+    "Replaces split indices in a subscripted expression with : subscripts."
     input Expression exp;
     output Expression outExp;
-  protected
-    list<Subscript> subs;
   algorithm
     outExp := match exp
-      case Expression.SUBSCRIPTED_EXP(subscripts = subs)
-        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts), exp.exp);
+      case Expression.SUBSCRIPTED_EXP()
+        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts, {}), exp.exp);
 
       else exp;
     end match;
   end expandSplitIndices;
+
+  function expandNonListedSplitIndices
+    "Replaces split indices in a subscripted expression with : subscripts,
+     except for indices that reference nodes in the given list."
+    input Expression exp;
+    input list<InstNode> indicesToKeep;
+    output Expression outExp;
+  algorithm
+    outExp := match exp
+      case Expression.SUBSCRIPTED_EXP(split = true)
+        then Expression.applySubscripts(Subscript.expandSplitIndices(exp.subscripts, indicesToKeep), exp.exp);
+      else exp;
+    end match;
+  end expandNonListedSplitIndices;
 
   function isSplitSubscriptedExp
     input Expression exp;

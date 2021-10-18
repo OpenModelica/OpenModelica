@@ -150,6 +150,18 @@ void ExpressionTest::operators_data()
   QTest::addColumn<QString>("string");
   QTest::addColumn<QString>("result");
 
+  QTest::newRow("unary1")
+    << "-17"
+    << "-17";
+
+  QTest::newRow("unary2")
+    << "-3 + x"
+    << "-2";
+
+  QTest::newRow("unary3")
+    << "x + -5"
+    << "-4";
+
   QTest::newRow("logic1")
     << "x and y or z"
     << "true";

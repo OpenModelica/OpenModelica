@@ -1,0 +1,51 @@
+// name:     PowerSystems.Examples.AC3ph.Drives.ASMav
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Drives.ASMav);
+compareVars :=
+{
+  "power.p[1]",
+  "power.p[2]",
+  "power.p[3]",
+  "asm.motor.slip",
+  "tabLoad.vVehicle"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Drives.ASMav
+// {"power.p[1]","power.p[2]","power.p[3]","asm.motor.slip","tabLoad.vVehicle"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 1200, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Drives.ASMav', options = '', outputFormat = 'mat', variableFilter = 'time|power.p.1.|power.p.2.|power.p.3.|asm.motor.slip|tabLoad.vVehicle', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Drives.ASMav_res.mat
+// Messages: ... loading "height" from "/home/rfranke/Modelica/PowerSystems/PowerSystems/Resources/Tables/hNormProfile.tab"
+// Model terminate() at 56.5173
+// Message: BOUNDARY POSITION REACHED!
+//
+// Files Equal!
+// Warning: There are nonlinear iteration variables with default zero start attribute found in NLSJac1. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions("-d=initialization").
+//
+// "true
+// "
+// ""
+// endResult

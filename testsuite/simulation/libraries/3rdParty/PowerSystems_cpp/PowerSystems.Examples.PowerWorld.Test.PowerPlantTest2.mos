@@ -1,0 +1,44 @@
+// name:     PowerSystems.Examples.PowerWorld.Test.PowerPlantTest2
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.PowerWorld.Test.PowerPlantTest2);
+compareVars :=
+{
+  "powerPlant.P_generator",
+  "powerPlant.throttling.y",
+  "powerPlant.fuel.y",
+  "powerPlant.frequency.y"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.PowerWorld.Test.PowerPlantTest2
+// {"powerPlant.P_generator","powerPlant.throttling.y","powerPlant.fuel.y","powerPlant.frequency.y"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 600.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.PowerWorld.Test.PowerPlantTest2', options = '', outputFormat = 'mat', variableFilter = 'time|powerPlant.P_generator|powerPlant.throttling.y|powerPlant.fuel.y|powerPlant.frequency.y', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.PowerWorld.Test.PowerPlantTest2_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

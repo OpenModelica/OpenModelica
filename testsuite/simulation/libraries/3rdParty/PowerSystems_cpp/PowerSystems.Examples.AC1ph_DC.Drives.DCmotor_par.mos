@@ -1,0 +1,46 @@
+// name:     PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_par
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_par);
+compareVars :=
+{
+  "power.p",
+  "tabLoad.vVehicle"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_par
+// {"power.p","tabLoad.vVehicle"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 60.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_par', options = '', outputFormat = 'mat', variableFilter = 'time|power.p|tabLoad.vVehicle', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC1ph_DC.Drives.DCmotor_par_res.mat
+// Messages: ... loading "height" from "/home/rfranke/Modelica/PowerSystems/PowerSystems/Resources/Tables/hNormProfile.tab"
+// Model terminate() at 54.1181
+// Message: BOUNDARY POSITION REACHED!
+//
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

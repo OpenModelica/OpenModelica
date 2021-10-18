@@ -1,0 +1,48 @@
+// name:     PowerSystems.Examples.AC3ph.Generation.GenOrder3and7
+// keywords: simulation PowerSystems Examples
+// status: correct
+//
+// Simulation Results
+// PowerSystems Library
+//
+
+runScript("../../common/ModelTestingDefaults.mos"); getErrorString();
+
+modelTestingType := OpenModelicaModelTesting.Kind.VerifiedSimulation;
+modelName := $TypeName(PowerSystems.Examples.AC3ph.Generation.GenOrder3and7);
+compareVars :=
+{
+  "turboGen1.generator.i[1]",
+  "turboGen1.generator.i[2]",
+  "turboGen1.generator.i[3]",
+  "turboGen1.generator.tau_el",
+  "turboGen2.generator.i[1]",
+  "turboGen2.generator.i[2]",
+  "turboGen2.generator.i[3]",
+  "turboGen2.generator.tau_el"
+};
+
+runScript("common.mos"); getErrorString();
+
+runScript(modelTesting);getErrorString();
+
+// Result:
+// "true
+// "
+// ""
+// OpenModelicaModelTesting.Kind.VerifiedSimulation
+// PowerSystems.Examples.AC3ph.Generation.GenOrder3and7
+// {"turboGen1.generator.i[1]","turboGen1.generator.i[2]","turboGen1.generator.i[3]","turboGen1.generator.tau_el","turboGen2.generator.i[1]","turboGen2.generator.i[2]","turboGen2.generator.i[3]","turboGen2.generator.tau_el"}
+// "PowerSystems
+// \"\"
+// OpenModelicaModelTesting.SimulationRuntime.Cpp
+// \"PowerSystems\"
+// "
+// ""
+// Simulation options: startTime = 0.0, stopTime = 0.5, numberOfIntervals = 1000, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'PowerSystems.Examples.AC3ph.Generation.GenOrder3and7', options = '', outputFormat = 'mat', variableFilter = 'time|turboGen1.generator.i.1.|turboGen1.generator.i.2.|turboGen1.generator.i.3.|turboGen1.generator.tau_el|turboGen2.generator.i.1.|turboGen2.generator.i.2.|turboGen2.generator.i.3.|turboGen2.generator.tau_el', cflags = '', simflags = ' -emit_protected'
+// Result file: PowerSystems.Examples.AC3ph.Generation.GenOrder3and7_res.mat
+// Files Equal!
+// "true
+// "
+// ""
+// endResult

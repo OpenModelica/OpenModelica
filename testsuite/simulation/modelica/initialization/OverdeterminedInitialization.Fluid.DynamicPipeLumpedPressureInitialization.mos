@@ -21,9 +21,9 @@ buildModel(OverdeterminedInitialization.Fluid.DynamicPipeLumpedPressureInitializ
 // Warning: Assuming fixed start value for the following 1 variables:
 //          m_flow_initial:DISCRETE(unit = \"kg/s\" fixed = true )  type: Real
 // Warning: The initial conditions are over specified. The following 4 initial equations are redundant, so they are removed from the initialization sytem:
+//          $DER.pipe.mediums[1].p = 0.0
 //          $DER.pipe.mediums[2].p = 0.0
 //          $DER.pipe.mediums[3].p = 0.0
-//          $DER.pipe.mediums[4].p = 0.0
-//          $DER.pipe.mediums[1].p = 0.0.
+//          $DER.pipe.mediums[5].p = 0.0.
 // "
 // endResult

@@ -341,6 +341,20 @@
         }
       }
     },
+    "PowerSystems": {
+      "versions": {
+        "1.0.1": {
+          "path": "PowerSystems",
+          "sha": "07b5d32cc291e2397becd2f97351c0bc1a375d54",
+          "support": "support",
+          "uses": {
+            "Modelica": "3.2.3"
+          },
+          "version": "1.0.1",
+          "zipfile": "https://github.com/modelica-3rdparty/PowerSystems/archive/07b5d32cc291e2397becd2f97351c0bc1a375d54.zip"
+        }
+      }
+    },
     "SiemensPower": {
       "versions": {
         "0.0.0-OMCtest": {

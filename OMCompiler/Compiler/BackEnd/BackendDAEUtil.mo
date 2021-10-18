@@ -1778,6 +1778,43 @@ algorithm
   end match;
 end reduceEqSystem;
 
+public function introduceOutputRealDerivatives
+"Find output variables of Real type and replace them with derivative equation
+ (e.g) output Real y;
+  $y_der = der(y)
+ "
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystem currentSystem;
+  DAE.ComponentRef newCref, cref;
+  DAE.Exp lhs, rhs;
+  list<BackendDAE.Equation> newEqnlst;
+  list<BackendDAE.Var> daeVarsLst;
+algorithm
+  {currentSystem} := inDAE.eqs;
+  daeVarsLst := {};
+  newEqnlst := {};
+  for var in BackendVariable.varList(currentSystem.orderedVars) loop
+    if BackendVariable.isOutputVar(var) then
+      newCref := ComponentReference.appendStringLastIdent("_der", var.varName); // append _der
+      newCref := ComponentReference.prependStringCref("$", newCref); // prepend $
+      daeVarsLst := BackendVariable.makeVar(newCref) :: daeVarsLst;
+      lhs := Expression.crefExp(newCref);
+      rhs := IndexReduction.makeder(BackendVariable.varExp(var));
+      newEqnlst := BackendEquation.generateEquation(lhs, rhs, DAE.emptyElementSource, BackendDAE.EQ_ATTR_DEFAULT_BINDING) :: newEqnlst;
+    end if;
+  end for;
+  //BackendDump.dumpEquationList(newEqnlst, "first order derivative equation");
+
+  currentSystem := BackendVariable.addVarsDAE(daeVarsLst, currentSystem);
+  currentSystem.orderedEqs := BackendEquation.merge(currentSystem.orderedEqs, BackendEquation.listEquation(newEqnlst));
+
+  outDAE := BackendDAE.DAE({currentSystem}, inDAE.shared);
+
+  //BackendDump.printBackendDAE(outDAE);
+end introduceOutputRealDerivatives;
+
 public function introduceOutputAliases
 "Find top level output variables and replace them with alias variables."
   input output BackendDAE.BackendDAE dae;
@@ -3871,11 +3908,27 @@ algorithm
 
     case (_,_,_,_,{},_,_,_,_) then (m,mt,iMapEqnIncRow,iMapIncRowEqn);
 
-    case (_,_,_,_,e::eqns,_,_,_,_)
+    case (_,_,_,_,e::eqns,_,_,_,_) guard(BackendEquation.has(daeeqns, intAbs(e)))
       equation
         abse = intAbs(e);
         eqn = BackendEquation.get(daeeqns, abse);
         (row,_) = adjacencyRow(eqn,vars,inIndxType,functionTree,AvlSetInt.Tree.EMPTY(),isInitial);
+        scalarindxs = iMapEqnIncRow[abse];
+        oldvars = getOldVars(m,listHead(scalarindxs));
+        (_,outvarsTree,invarsTree) = AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.Tree.EMPTY(), oldvars),row);
+        outvars = AvlSetInt.listKeys(outvarsTree);
+        invars = AvlSetInt.listKeys(invarsTree);
+        // do the same for each scalar indxs
+        m_1 = List.fold1r(scalarindxs,arrayUpdate,AvlSetInt.listKeys(row),m);
+        mt_1 = List.fold1(scalarindxs,removeValuefromMatrix,outvars,mt);
+        mt_2 = List.fold1(scalarindxs,addValuetoMatrix,invars,mt_1);
+        (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) = updateAdjacencyMatrixScalar1(vars,daeeqns,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType,functionTree,isInitial);
+      then (m_2,mt_3,mapEqnIncRow,mapIncRowEqn);
+
+    case (_,_,_,_,e::eqns,_,_,_,_) // Backup for non existent equations
+      equation
+        abse = intAbs(e);
+        row = AvlSetInt.Tree.EMPTY();
         scalarindxs = iMapEqnIncRow[abse];
         oldvars = getOldVars(m,listHead(scalarindxs));
         (_,outvarsTree,invarsTree) = AvlSetInt.intersection(AvlSetInt.addList(AvlSetInt.Tree.EMPTY(), oldvars),row);
@@ -3923,8 +3976,7 @@ algorithm
       array<Integer> mapIncRowEqn;
 
     case (_,_,_,_,_,_,_,_,_,_,_)
-      guard
-        not intGt(index,n)
+      guard(not intGt(index,n) and BackendEquation.has(daeeqns, intAbs(index)))
       equation
         abse = intAbs(index);
         eqn = BackendEquation.get(daeeqns, abse);
@@ -3943,6 +3995,22 @@ algorithm
     case (_,_,_,_,_,_,_,_,_,_,_)
       then
         (m,mt,iMapEqnIncRow,iMapIncRowEqn);
+
+    else
+      equation
+        abse = intAbs(index);
+        rowsize = 1;
+        row = AvlSetInt.EMPTY();
+        new_size = size+rowsize;
+        scalarindxs = List.intRange2(size+1,new_size);
+        mapEqnIncRow = arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
+        mapIncRowEqn = List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
+        row_lst = AvlSetInt.listKeys(row);
+        m1= List.fold1r(scalarindxs,arrayUpdate,row_lst,m);
+        mt1 = filladjacencyMatrixT(row_lst,scalarindxs,mt);
+        (m1,mt1,mapEqnIncRow,mapIncRowEqn) = updateAdjacencyMatrixScalar2(index+1,n,new_size,vars,daeeqns,m1,mt1,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree,isInitial);
+      then
+        (m1,mt1,mapEqnIncRow,mapIncRowEqn);
   end matchcontinue;
 end updateAdjacencyMatrixScalar2;
 
@@ -8081,6 +8149,7 @@ public function analyticalToStructuralSingularity
   input output array<Integer> ass2;
   input output BackendDAE.EqSystem syst;
   input output Boolean changed;
+  input Boolean init = false;
 protected
   array<list<Integer>> mapArrayToScalar;
   array<Integer> mapScalarToArray;
@@ -8114,20 +8183,20 @@ algorithm
 
         if not SymbolicJacobian.LinearJacobian.emptyOrSingle(linJac) then
           if Flags.isSet(Flags.DUMP_ASSC) then
-            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Original"));
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Original (initial: " + boolString(init) + ")"));
           end if;
 
           /* solve jacobian with gaussian elimination */
           linJac := SymbolicJacobian.LinearJacobian.solve(linJac);
           if Flags.isSet(Flags.DUMP_ASSC) then
-            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Solved"));
+            print(SymbolicJacobian.LinearJacobian.toString(linJac, "Solved (initial: " + boolString(init) + ")"));
           end if;
 
           /* set changed to true if it was true before, or any row changed in the jacobian */
           changed := changed or SymbolicJacobian.LinearJacobian.anyChanges(linJac);
 
           /* resolve zero rows to new equations and update assignments / adjacency matrix */
-          (ass1, ass2, syst) := SymbolicJacobian.LinearJacobian.resolveASSC(linJac, ass1, ass2, syst);
+          (ass1, ass2, syst) := SymbolicJacobian.LinearJacobian.resolveASSC(linJac, ass1, ass2, syst, init);
         end if;
       else
         /* possibly fails if jacobian is empty --- nothing to do */
@@ -8282,6 +8351,7 @@ end selectMatchingAlgorithm;
 public function allPreOptimizationModules
   "This list contains all back end pre-optimization modules."
   output list<tuple<BackendDAEFunc.optimizationModule, String>> allPreOptimizationModules = {
+    (BackendDAEUtil.introduceOutputRealDerivatives, "introduceOutputRealDerivatives"),
     (BackendDAEUtil.introduceOutputAliases, "introduceOutputAliases"),
     (DataReconciliation.newExtractionAlgorithm, "dataReconciliation"),
     (DataReconciliation.extractBoundaryCondition, "dataReconciliationBoundaryConditions"),

@@ -1280,7 +1280,7 @@ namespace FlatModelica
 
     if (tok.type == Token::SUB) {
       tokenizer.popToken();
-      auto e = parseExp(tokenizer);
+      auto e = parsePrimary(tokenizer);
 
       if (e.isNumber()) {
         return e.isInteger() ? Expression(-e.intValue()) : Expression(-e.realValue());
@@ -1289,7 +1289,7 @@ namespace FlatModelica
       }
     } else if (tok.type == Token::NOT) {
       tokenizer.popToken();
-      auto e = parseExp(tokenizer);
+      auto e = parsePrimary(tokenizer);
 
       if (e.isBoolean()) {
         return Expression(!e.boolValue());
@@ -1654,6 +1654,17 @@ namespace FlatModelica
     } else {
       return 0;
     }
+  }
+
+  /*!
+   * \brief Expression::size
+   * Returns the number of elements in an array, or 0 if the expression is not
+   * an array.
+   * \return The size of the expression.
+   */
+  size_t Expression::size() const
+  {
+    return size(0);
   }
 
   /*!

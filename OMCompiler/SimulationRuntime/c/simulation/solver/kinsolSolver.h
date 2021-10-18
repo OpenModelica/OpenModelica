@@ -50,7 +50,7 @@ extern "C" {
 
 /* constants */
 #define RETRY_MAX 5
-#define FTOL_WITH_LESS_ACCURANCY 1.e-6
+#define FTOL_WITH_LESS_ACCURACY 1.e-6
 
 #ifndef FALSE
 #define FALSE 0
@@ -67,9 +67,9 @@ typedef enum initialMode {
 } initialMode;
 
 typedef enum scalingMode {
-  SCALING_NOMINALSTART = 1, /* Scale with nomian values */
-  SCALING_ONES,             /* Scale with ones (no scaling) */
-  SCALING_JACOBIAN          /* Scale jacobian */
+  SCALING_NOMINALSTART = 1,            /* Scale with nomian values */
+  SCALING_ONES,                        /* Scale with ones (no scaling) */
+  SCALING_JACOBIAN                     /* Scale jacobian */
 } scalingMode;
 
 typedef struct NLS_KINSOL_USERDATA {
@@ -81,21 +81,21 @@ typedef struct NLS_KINSOL_USERDATA {
 
 typedef struct NLS_KINSOL_DATA {
   /* ### configuration  ### */
-  enum NLS_LS linearSolverMethod; /* specifies the method to solve the
-                                  underlying linear problem */
+  NLS_LS linearSolverMethod;           /* specifies the method to solve the
+                                          underlying linear problem */
   int nonLinearSystemNumber;
-  int kinsolStrategy; /* Strategy used to solve nonlinear systems. Has to be one
-                       * of: KIN NONE, KIN_LINESEARCH, KIN_FP, KIN_PICARD */
-  int retries;        /* Number of retries after failed solve of KINSOL */
-  int solved;         /* If the system is once solved reuse linear matrix information */
-  int nominalJac;     /* 1 for enabled scaling on Jacobian, 0 for disabled scaling */
+  int kinsolStrategy;                  /* Strategy used to solve nonlinear systems. Has to be one
+                                          of: KIN_NONE, KIN_LINESEARCH, KIN_FP, KIN_PICARD */
+  int retries;                         /* Number of retries after failed solve of KINSOL */
+  int solved;                          /* If the system is once solved reuse linear matrix information */
+  int nominalJac;                      /* 0/1 for disabled/enabled scaling on Jacobian */
 
   /* ### tolerances ### */
-  double fnormtol;      /* function-norm stopping tolerance */
-  double scsteptol;     /* step tolerance */
-  double maxstepfactor; /* maximum newton step factor mxnewtstep = maxstepfactor
-                         * norm2(xScaling) */
-  double mxnstepin;     /* Maximum allowable scaled length of Newton step */
+  double fnormtol;                     /* function-norm stopping tolerance */
+  double scsteptol;                    /* step tolerance */
+  double maxstepfactor;                /* maximum newton step factor mxnewtstep = maxstepfactor
+                                        * norm2(xScaling) */
+  double mxnstepin;                    /* Maximum allowable scaled length of Newton step */
 
   /* ### work arrays ### */
   N_Vector initialGuess;
@@ -105,26 +105,27 @@ typedef struct NLS_KINSOL_DATA {
   N_Vector fTmp;
 
   int iflag;
-  long countResCalls; /* case of sparse function not avaiable */
+  long countResCalls;                  /* case of sparse function not avaiable */
 
   /* ### kinsol internal data */
-  void *kinsolMemory;           /* Internal memroy block for KINSOL */
-  NLS_KINSOL_USERDATA userData; /* User data provided to KINSOL */
+  void *kinsolMemory;                  /* Internal memroy block for KINSOL */
+  NLS_KINSOL_USERDATA userData;        /* User data provided to KINSOL */
 
   /* linear solver data */
-  SUNLinearSolver linSol; /* Linear solver object used by KINSOL */
-  N_Vector y;  /* Template for cloning vectors needed inside linear solver */
-  SUNMatrix J; /* (Non-)Sparse matrix template for cloning matrices needed within
-                  linear solver */
+  SUNLinearSolver linSol;              /* Linear solver object used by KINSOL */
+  N_Vector y;                          /* Template for cloning vectors needed
+                                          inside linear solver */
+  SUNMatrix J;                         /* (Non-)Sparse matrix template for cloning
+                                          matrices needed within linear solver */
 
   /* Properties of non-linear system */
-  int size;   /* Size of non-linear problem */
-  int nnz;    /* Number of non-zero elements */
+  int size;                            /* Size of non-linear problem */
+  int nnz;                             /* Number of non-zero elements */
 
 } NLS_KINSOL_DATA;
 
 int nlsKinsolAllocate(int size, NONLINEAR_SYSTEM_DATA *nonlinsys,
-                      enum NLS_LS linearSolverMethod);
+                      NLS_LS linearSolverMethod);
 int nlsKinsolFree(void **solverData);
 int nlsKinsolSolve(DATA *data, threadData_t *threadData, int sysNumber);
 

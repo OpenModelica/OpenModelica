@@ -1533,6 +1533,18 @@ algorithm
   end match;
 end isOutputVar;
 
+public function isRealOutputVar "Return true if variable is declared as output and type is Real. Note that the output
+  attribute sticks with a variable even if it is originating from a sub
+  component, which is not the case for Dymola."
+  input BackendDAE.Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inVar)
+    case (BackendDAE.VAR(varDirection = DAE.OUTPUT(), varType = DAE.T_REAL())) then true;
+    else false;
+  end match;
+end isRealOutputVar;
+
 public function isOutput
   input DAE.ComponentRef inCref;
   input BackendDAE.Variables inVars;
@@ -2175,6 +2187,20 @@ algorithm
   greaterThan := ComponentReference.crefSortFunc(varCref(v1), varCref(v2));
 end varSortFunc;
 
+public function sortInitialVars
+  "author:kabdelhak 2021-9
+   Sorts fixables to be at the end of the array, also prefers variables with start values"
+  input output BackendDAE.Variables vars;
+  input BackendDAE.Variables fixableVars;
+protected
+  list<BackendDAE.Var> var_lst, fixable_start, fixable, non_fixable;
+algorithm
+  var_lst := varList(vars);
+  (fixable, non_fixable) := List.splitOnTrue(var_lst, function containsVar(inVariables = fixableVars));
+  (fixable_start, fixable) := List.splitOnTrue(fixable, varHasStartValue);
+  var_lst := listAppend(listAppend(fixable_start, listReverse(fixable)), listReverse(non_fixable));
+  vars := listVar(var_lst);
+end sortInitialVars;
 
 public function getAlias
 "  author: Frenkel TUD 2012-11
@@ -3122,6 +3148,12 @@ public function getVarShared
 algorithm
   (outVarLst, outIntegerLst) := getVar(inComponentRef, inShared.globalKnownVars);
 end getVarShared;
+
+public function containsVar
+  input BackendDAE.Var var;
+  input BackendDAE.Variables inVariables;
+  output Boolean outB = containsCref(var.varName, inVariables);
+end containsVar;
 
 public function containsCref
   input DAE.ComponentRef cr;

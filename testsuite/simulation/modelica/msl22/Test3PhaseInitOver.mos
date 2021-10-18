@@ -63,27 +63,27 @@ val(power,10);
 // LOG_SUCCESS       | info    | The simulation finished successfully.
 // "
 // end SimulationResult;
-// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: $DER.u_dq0[3] = 0.0 (0.5773502691896258 * ((if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * cos(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase) * 6.283185307179586 * S1.signalSource.freqHz) + (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * cos(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase) * 6.283185307179586 * S2.signalSource.freqHz) + (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * cos(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase) * 6.283185307179586 * S3.signalSource.freqHz)) = 0.0)
+// "Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: $DER.u_dq0[1] = 0.0 (0.8164965809277261 * sin(6.283185307179586 * time) * (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * cos(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase) * 6.283185307179586 * S1.signalSource.freqHz) + 5.130199320647457 * cos(6.283185307179586 * time) * (S1.signalSource.offset + (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * sin(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase))) + 0.8164965809277261 * sin(2.094395102393195 + 6.283185307179586 * time) * (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * cos(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase) * 6.283185307179586 * S2.signalSource.freqHz) + 5.130199320647457 * cos(2.094395102393195 + 6.283185307179586 * time) * (S2.signalSource.offset + (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * sin(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase))) + 0.8164965809277261 * sin(4.188790204786391 + 6.283185307179586 * time) * (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * cos(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase) * 6.283185307179586 * S3.signalSource.freqHz) + 5.130199320647457 * cos(4.188790204786391 + 6.283185307179586 * time) * (S3.signalSource.offset + (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * sin(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase))) = 0.0)
 // Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: $DER.u_dq0[2] = 0.0 (0.8164965809277261 * cos(6.283185307179586 * time) * (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * cos(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase) * 6.283185307179586 * S1.signalSource.freqHz) + (-5.130199320647457) * sin(6.283185307179586 * time) * (S1.signalSource.offset + (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * sin(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase))) + 0.8164965809277261 * cos(2.094395102393195 + 6.283185307179586 * time) * (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * cos(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase) * 6.283185307179586 * S2.signalSource.freqHz) + (-5.130199320647457) * sin(2.094395102393195 + 6.283185307179586 * time) * (S2.signalSource.offset + (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * sin(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase))) + 0.8164965809277261 * cos(4.188790204786391 + 6.283185307179586 * time) * (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * cos(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase) * 6.283185307179586 * S3.signalSource.freqHz) + (-5.130199320647457) * sin(4.188790204786391 + 6.283185307179586 * time) * (S3.signalSource.offset + (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * sin(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase))) = 0.0)
-// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: $DER.u_dq0[1] = 0.0 (0.8164965809277261 * sin(6.283185307179586 * time) * (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * cos(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase) * 6.283185307179586 * S1.signalSource.freqHz) + 5.130199320647457 * cos(6.283185307179586 * time) * (S1.signalSource.offset + (if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * sin(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase))) + 0.8164965809277261 * sin(2.094395102393195 + 6.283185307179586 * time) * (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * cos(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase) * 6.283185307179586 * S2.signalSource.freqHz) + 5.130199320647457 * cos(2.094395102393195 + 6.283185307179586 * time) * (S2.signalSource.offset + (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * sin(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase))) + 0.8164965809277261 * sin(4.188790204786391 + 6.283185307179586 * time) * (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * cos(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase) * 6.283185307179586 * S3.signalSource.freqHz) + 5.130199320647457 * cos(4.188790204786391 + 6.283185307179586 * time) * (S3.signalSource.offset + (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * sin(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase))) = 0.0)
+// Warning: It was not possible to determine if the initialization problem is consistent, because of not evaluable parameters/start values during compile time: $DER.u_dq0[3] = 0.0 (0.5773502691896258 * ((if time < S1.signalSource.startTime then 0.0 else S1.signalSource.amplitude * cos(6.283185307179586 * S1.signalSource.freqHz * (time - S1.signalSource.startTime) + S1.signalSource.phase) * 6.283185307179586 * S1.signalSource.freqHz) + (if time < S2.signalSource.startTime then 0.0 else S2.signalSource.amplitude * cos(6.283185307179586 * S2.signalSource.freqHz * (time - S2.signalSource.startTime) + S2.signalSource.phase) * 6.283185307179586 * S2.signalSource.freqHz) + (if time < S3.signalSource.startTime then 0.0 else S3.signalSource.amplitude * cos(6.283185307179586 * S3.signalSource.freqHz * (time - S3.signalSource.startTime) + S3.signalSource.phase) * 6.283185307179586 * S3.signalSource.freqHz)) = 0.0)
 // Warning: The initial conditions are over specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
 // "i_abc[:] at 0.0"
-// 0.2989213705621611
-// -0.2237355800428358
-// -0.07518579051932672
+// 0.2989213705621613
+// -0.2237355800428353
+// -0.07518579051932761
 // "i_dq0[:] at 0.0"
-// -0.1050405635159077
-// 0.3661024155453519
-// -8.332838307662111e-16
+// -0.1050405635159067
+// 0.3661024155453524
+// -9.614813431917821e-16
 // "i_abc[:] at 10.0"
-// 0.2989210002960301
-// -0.2237375080684502
-// -0.07518349222758333
+// 0.2989210002960067
+// -0.2237375080684379
+// -0.07518349222756693
 // "i_dq0[:] at 10.0:"
-// -0.1050435519735721
-// 0.3661019620638076
-// -1.971036753543153e-15
+// -0.105043551973575
+// 0.3661019620637768
+// 1.041604788457764e-15
 // "u_abc[:] at 0.0"
 // 0.0
 // 0.8660254037844389
@@ -101,6 +101,6 @@ val(power,10);
 // 2.942091015256665e-15
 // 2.179357711234706e-15
 // "power :"
-// -0.1286478914541904
-// -0.128651551552387
+// -0.1286478914541893
+// -0.1286515515523906
 // endResult

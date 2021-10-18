@@ -256,7 +256,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   DLLEXT=<%makefileParams.dllext%>
   DEBUG_FLAGS=<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then " -g" else "$(SIM_OR_DYNLOAD_OPT_LEVEL)" %>
   CFLAGS= $(DEBUG_FLAGS) <%makefileParams.cflags%>
-  CPPFLAGS= <%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include" <%
+  CPPFLAGS= <%makefileParams.includes ; separator=" "%> -I"<%makefileParams.omhome%>/include/omc/c" -I"<%makefileParams.omhome%>/include/omc" <%
     if Flags.isSet(Flags.OMC_RELOCATABLE_FUNCTIONS) then " -DOMC_GENERATE_RELOCATABLE_CODE"
   %>
   # define OMC_LDFLAGS_LINK_TYPE env variable to "static" to override this
@@ -4809,8 +4809,10 @@ template tempDecl(String ty, Text &varDecls)
     match ty /* TODO! FIXME! UGLY! UGLY! hack! */
       case "modelica_metatype"
       case "metamodelica_string"
-      case "metamodelica_string_const"
-        then 'tmpMeta[<%System.tmpTickIndex(1)%>]'
+      case "metamodelica_string_const" then
+        let newVarIx = 'tmpMeta<%System.tmpTick()%>'
+        let &varDecls += 'modelica_metatype <%newVarIx%>;<%\n%>'
+        newVarIx
       else
         let newVarIx = 'tmp<%System.tmpTick()%>'
         let &varDecls += '<%ty%> <%newVarIx%>;<%\n%>'
@@ -4834,8 +4836,10 @@ template tempDeclZero(String ty, Text &varDecls)
     match ty /* TODO! FIXME! UGLY! UGLY! hack! */
       case "modelica_metatype"
       case "metamodelica_string"
-      case "metamodelica_string_const"
-        then 'tmpMeta[<%System.tmpTickIndex(1)%>]'
+      case "metamodelica_string_const" then
+        let newVarIx = 'tmpMeta<%System.tmpTick()%>'
+        let &varDecls += 'modelica_metatype <%newVarIx%>;<%\n%>'
+        newVarIx
       else
         let newVarIx = 'tmp<%System.tmpTick()%>'
         let &varDecls += '<%ty%> <%newVarIx%> = 0;<%\n%>'

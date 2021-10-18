@@ -23,12 +23,15 @@ ifeq ($(OMBUILDDIR),)
 OMBUILDDIR=$(CURDIR)/build
 endif
 
-OMBUILDDIR_MSVC=$(shell cygpath -m $(OMBUILDDIR))
 
 builddir_build=$(OMBUILDDIR)
 builddir_bin=$(OMBUILDDIR)/bin
 builddir_lib=$(OMBUILDDIR)/lib/omc
 builddir_inc=$(OMBUILDDIR)/include/omc
+
+OMBUILDDIR_MSVC=$(shell cygpath -m $(OMBUILDDIR))
+builddir_inc_msvc=$(OMBUILDDIR_MSVC)\include\omc
+
 
 ifeq ($(BUILDTYPE),)
 BUILDTYPE=$(BuildType)
@@ -95,8 +98,13 @@ IDLPYTHON = $(OMDEVMSYS)/lib/omniORB-4.2.0-msvc-10/bin/x86_win32/omniidl -bpytho
 IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/OMPythonIDL/omc_communication_idl.py
 IDLFILE=$(top_builddir)/Compiler/runtime/omc_communication.idl
 LIB_OMC=lib/omc
-LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC.a
-LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables.a
+LIBMODELICAEXTERNALC=$(OMBUILDDIR)/lib/omc/libModelicaExternalC$(STAEXT)
+LIBMODELICASTANDARDTABLES=$(OMBUILDDIR)/lib/omc/libModelicaStandardTables$(STAEXT)
+LIBMODELICAZLIB=$(OMBUILDDIR)/lib/omc/libzlib$(STAEXT)
+LIBMODELICAZLIB_MSVC=$(OMBUILDDIR_MSVC)\lib\omc\msvc\zlib.lib
+LIBMODELICAIO=$(OMBUILDDIR)/lib/omc/libModelicaIO$(STAEXT)
+LIBMODELICAMATIO=$(OMBUILDDIR)/lib/omc/libModelicaMatIO$(STAEXT)
+
 SUITESPARSE_LIBS=
 
 defaultMakefileTarget = Makefile.omdev.mingw
@@ -322,8 +330,37 @@ omc:  interactive fmil omdev_extra_dlls breakprocess opencl_rt CMinpack metis Cd
 
 boehm-gc-lib: $(OMBUILDDIR)/$(LIB_OMC)/libomcgc.a
 
+
+zlib_msvc: $(LIBMODELICAZLIB_MSVC)
+$(LIBMODELICAZLIB_MSVC): getMSVCversion
+	rm -f $(OMBUILDDIR)/lib/omc/msvc/zlib.*
+	rm -rf 3rdParty/ModelicaExternalC/build_msvc
+	rm -rf 3rdParty/ModelicaExternalC/install_msvc
+	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
+	# Goto build msvc directory
+	test -d 3rdParty/ModelicaExternalC
+	mkdir -p 3rdParty/ModelicaExternalC/build_msvc
+
+	# Create batch file, that builds with CMake and Visual Studio
+	test -f """$(VSCOMNTOOLS)/../../VC/vcvarsall.bat"""
+	echo 'Building ModelicaExternalC/zlib with MSVC'
+	echo @echo on > 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo call '"$(VSCOMNTOOLS)\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo echo Calling CMake >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo 'cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DSHARED_LIBS=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc ../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo echo Building ModelicaExternalC/zlib >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo @echo on >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo set MAKE= >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo set MAKEFLAGS= >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	echo %OMDEV%\\tools\\jom\\jom.exe /f Makefile install >> 3rdParty/ModelicaExternalC/build_msvc/build.bat
+	# Change into directory and run batch file
+	cd ./3rdParty/ModelicaExternalC/build_msvc; echo "change to 3rdParty/ModelicaExternalC/build_msvc";\
+	cmd /c build.bat
+	# copy dll to bin folder
+	(cp -puf 3rdParty/ModelicaExternalC/install_msvc/lib/zlib.lib $(OMBUILDDIR)/lib/omc/msvc/)
+
 fmil_msvc: $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll
-$(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
+$(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion zlib_msvc
 	rm -f $(OMBUILDDIR)/lib/omc/msvc/fmil*
 	rm -rf 3rdParty/FMIL/install_msvc
 	mkdir -p $(OMBUILDDIR)/lib/omc/msvc/
@@ -334,11 +371,11 @@ $(OMBUILDDIR)/bin/msvc/fmilib_shared.dll: getMSVCversion
 
 	# Create batch file, that builds with CMake and Visual Studio
 	test -f """${VSCOMNTOOLS}/../../VC/vcvarsall.bat"""
-	echo 'Building CMinpack with MSVC'
+	echo 'Building FMIL with MSVC'
 	echo @echo on > 3rdParty/FMIL/build_msvc/build.bat
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/FMIL/build_msvc/build.bat
-	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=../install_msvc -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
+	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON -DFMILIB_BUILD_TESTS=OFF -DFMILIB_BUILD_STATIC_LIB=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=../install_msvc -DOMC_ZLIB_LIBRARY="$(LIBMODELICAZLIB_MSVC)" -DOMC_ZLIB_INCLUDE_DIR="$(builddir_inc_msvc)" -DCMAKE_INSTALL_LIBDIR="$(LIB_OMC)" ../ -G  "NMake Makefiles" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/FMIL/build_msvc/build.bat
 	echo @echo on >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKE= >> 3rdParty/FMIL/build_msvc/build.bat
 	echo set MAKEFLAGS= >> 3rdParty/FMIL/build_msvc/build.bat
@@ -406,7 +443,7 @@ $(OMBUILDDIR)/lib/omc/msvc/umfpack.lib: getMSVCversion 3rdParty/SuiteSparse-5.8.
 	echo echo Calling CMake >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '-DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="$(OMBUILDDIR_MSVC)" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
-	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc\\suitesparse" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
+	echo '-DCMAKE_INSTALL_LIBDIR="lib\\omc\\msvc" -DCMAKE_INSTALL_INCLUDEDIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc" ^' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo '../ -G  "NMake Makefiles JOM" -D"CMAKE_MAKE_PROGRAM:PATH=%OMDEV%\\tools\\jom\\jom.exe"' >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo echo Building SuiteSparse >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
 	echo @echo on >> 3rdParty/SuiteSparse-5.8.1/build_msvc/build.bat
@@ -440,7 +477,7 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.
 	echo call '"${VSCOMNTOOLS}\\..\\..\\VC\\vcvarsall.bat" ${VCVARS_PARAMS}' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo echo Calling CMake >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo '%OMDEV%\\bin\\cmake\\bin\\cmake -DCMAKE_VERBOSE_MAKEFILE:Bool=ON ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
-	echo '-DSUNDIALS_BUILD_STATIC_LIBS:Bool=OFF -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=. ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
+	echo '-DSUNDIALS_BUILD_STATIC_LIBS:Bool=OFF -DSUNDIALS_BUILD_SHARED_LIBS:Bool=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_INCLUDEDIR=include -DCMAKE_INSTALL_PREFIX=. ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo '-DSUNDIALS_EXAMPLES_ENABLE_C:Bool=OFF -DSUNDIALS_EXAMPLES_ENABLE_CXX:Bool=OFF ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo '-DSUNDIALS_LAPACK_ENABLE:Bool=ON -DLAPACK_LIBRARIES="%OMDEV%\\lib\\3rdParty\\Lapack\\Lib\\blas_win32.lib;%OMDEV%\\lib\\3rdParty\\Lapack\\Lib\\lapack_win32.lib" -DSUNDIALS_F77_FUNC_UNDERSCORES=one -DSUNDIALS_F77_FUNC_CASE=lower ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
 	echo '-DSUNDIALS_KLU_ENABLE:Bool=ON -DSUNDIALS_KLU_LIBRARY_DIR="$(OMBUILDDIR_MSVC)\\lib\\omc\\msvc\\" -DKLU_INCLUDE_DIR="$(OMBUILDDIR_MSVC)\\include\\omc\\msvc\\suitesparse" ^' >> 3rdParty/sundials-5.4.0/build_msvc/build.bat
@@ -456,8 +493,6 @@ $(OMBUILDDIR)/lib/omc/msvc/sundials_ida.dll: getMSVCversion 3rdParty/sundials-5.
 	# copy dll to lib and bin folder
 	mkdir -p $(OMBUILDDIR)/include/omc/msvc/sundials
 	(cp -pufr 3rdParty/sundials-5.4.0/build_msvc/include/* $(OMBUILDDIR)/include/omc/msvc/sundials)
-	(cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h $(OMBUILDDIR)/include/omc/msvc/sundials/kinsol/)
-	(cp 3rdParty/sundials-5.4.0/src/kinsol/kinsol_impl.h 3rdParty/sundials-5.4.0/build_msvc/include/kinsol/)
 	(cp -puf 3rdParty/sundials-5.4.0/build_msvc/lib/* $(OMBUILDDIR)/lib/omc/msvc/)
 	mkdir -p $(OMBUILDDIR)/bin/msvc
 	(cp -puf 3rdParty/sundials-5.4.0/build_msvc/lib/*.dll $(OMBUILDDIR)/bin/msvc)

@@ -2769,11 +2769,7 @@ algorithm
     case Equation.ASSERT()
       algorithm
         info := ElementSource.getInfo(eq.source);
-        next_context := InstContext.set(context, NFInstContext.ASSERT);
-        e1 := typeOperatorArg(eq.condition, Type.BOOLEAN(),
-          InstContext.set(next_context, NFInstContext.CONDITION), "assert", "condition", 1, info);
-        e2 := typeOperatorArg(eq.message, Type.STRING(), next_context, "assert", "message", 2, info);
-        e3 := typeOperatorArg(eq.level, NFBuiltin.ASSERTIONLEVEL_TYPE, next_context, "assert", "level", 3, info);
+        (e1, e2, e3) := typeAssert(eq.condition, eq.message, eq.level, context, info);
       then
         Equation.ASSERT(e1, e2, e3, eq.source);
 
@@ -2940,6 +2936,35 @@ algorithm
   end match;
 end checkLhsInWhen;
 
+function typeAssert
+  input output Expression condition;
+  input output Expression message;
+  input output Expression level;
+  input InstContext.Type context;
+  input SourceInfo info;
+protected
+  InstContext.Type next_context;
+  Variability level_var;
+algorithm
+  next_context := InstContext.set(context, NFInstContext.ASSERT);
+
+  condition := typeOperatorArg(condition, Type.BOOLEAN(),
+    InstContext.set(next_context, NFInstContext.CONDITION), "assert", "condition", 1, info);
+  message := typeOperatorArg(message, Type.STRING(),
+    next_context, "assert", "message", 2, info);
+  (level, level_var) := typeOperatorArg(level, NFBuiltin.ASSERTIONLEVEL_TYPE,
+    next_context, "assert", "level", 3, info);
+
+  if level_var > Variability.PARAMETER then
+    Error.addSourceMessage(Error.FUNCTION_SLOT_VARIABILITY,
+        {"level", Expression.toString(level), "assert",
+         Prefixes.variabilityString(level_var), "parameter"}, info);
+    fail();
+  end if;
+
+  Structural.markExp(level);
+end typeAssert;
+
 function typeAlgorithm
   input output Algorithm alg;
   input InstContext.Type context;
@@ -3040,11 +3065,7 @@ algorithm
     case Statement.ASSERT()
       algorithm
         info := ElementSource.getInfo(st.source);
-        next_context := InstContext.set(context, NFInstContext.ASSERT);
-        e1 := typeOperatorArg(st.condition, Type.BOOLEAN(),
-          InstContext.set(next_context, NFInstContext.CONDITION), "assert", "condition", 1, info);
-        e2 := typeOperatorArg(st.message, Type.STRING(), next_context, "assert", "message", 2, info);
-        e3 := typeOperatorArg(st.level, NFBuiltin.ASSERTIONLEVEL_TYPE, next_context, "assert", "level", 3, info);
+        (e1, e2, e3) := typeAssert(st.condition, st.message, st.level, context, info);
       then
         Statement.ASSERT(e1, e2, e3, st.source);
 
@@ -3348,11 +3369,12 @@ function typeOperatorArg
   input String argName;
   input Integer argIndex;
   input SourceInfo info;
+        output Variability var;
 protected
   Type ty;
   MatchKind mk;
 algorithm
-  (arg, ty, _) := typeExp(arg, context, info);
+  (arg, ty, var) := typeExp(arg, context, info);
   (arg, _, mk) := TypeCheck.matchTypes(ty, expectedType, arg);
 
   if TypeCheck.isIncompatibleMatch(mk) then
