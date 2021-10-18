@@ -113,6 +113,9 @@ protected:
   IWriteOutput::OUTPUT
     _outputCommand;           ///< Controls the output
 
+  IWriteOutput
+    *_writeoutput_system;
+
 private:
   /// Definition of signum function
   inline static int sgn (const double &c)
