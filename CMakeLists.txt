@@ -119,6 +119,8 @@ set(CMAKE_INSTALL_MESSAGE LAZY)
 
 ## Subdirectories ##########################################################################################
 omc_add_subdirectory(OMCompiler)
+# omc_add_subdirectory(libraries)
+include(omsimulator.cmake)
 
 
 ## Report some status info.
