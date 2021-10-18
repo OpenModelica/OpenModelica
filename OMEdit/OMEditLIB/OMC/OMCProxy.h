@@ -271,6 +271,7 @@ public:
   bool loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses = true, bool notify = true, bool requireExactVersion = false);
   bool installPackage(const QString &library, const QString &version, bool exactMatch);
   bool updatePackageIndex();
+  bool upgradeInstalledPackages(bool installNewestVersions);
 signals:
   void commandFinished();
 public slots:

@@ -77,7 +77,6 @@
 #include "Interfaces/ModelInterface.h"
 #include "omc_config.h"
 #include "Util/NetworkAccessManager.h"
-#include "Modeling/LibraryManagementDialog.h"
 #include "Modeling/InstallLibraryDialog.h"
 
 #include <QtSvg/QSvgGenerator>
@@ -2484,16 +2483,26 @@ void MainWindow::exportModelToOMNotebook()
   }
 }
 
-void MainWindow::openLibraryManagementDialog()
-{
-  LibraryManagementDialog *pLibraryManagementDialog = new LibraryManagementDialog;
-  pLibraryManagementDialog->exec();
-}
-
+/*!
+ * \brief MainWindow::openInstallLibraryDialog
+ * Opens the install library dialog.
+ */
 void MainWindow::openInstallLibraryDialog()
 {
   InstallLibraryDialog *pInstallLibraryDialog = new InstallLibraryDialog;
   pInstallLibraryDialog->exec();
+}
+
+/*!
+ * \brief MainWindow::upgradeInstalledLibraries
+ * Upgrades the installed libraries.
+ */
+void MainWindow::upgradeInstalledLibraries()
+{
+  if (mpOMCProxy->upgradeInstalledPackages(true)) {
+    mpOMCProxy->updatePackageIndex();
+    addSystemLibraries();
+  }
 }
 
 //! Imports the models from OMNotebook.
@@ -3417,14 +3426,14 @@ void MainWindow::createActions()
   mpExportToOMNotebookAction->setStatusTip(Helper::exportToOMNotebookTip);
   mpExportToOMNotebookAction->setEnabled(false);
   connect(mpExportToOMNotebookAction, SIGNAL(triggered()), SLOT(exportModelToOMNotebook()));
-  // package manager action
-  mpLibraryManagementAction = new QAction(tr("Library Management"), this);
-  mpLibraryManagementAction->setStatusTip(tr("Opens the library management interface"));
-  connect(mpLibraryManagementAction, SIGNAL(triggered()), SLOT(openLibraryManagementDialog()));
   // install library action
   mpInstallLibraryAction = new QAction(tr("Install Library"), this);
   mpInstallLibraryAction->setStatusTip(tr("Opens the install library window"));
   connect(mpInstallLibraryAction, SIGNAL(triggered()), SLOT(openInstallLibraryDialog()));
+  // upgrade installed libraries action
+  mpUpgradeInstalledLibrariesAction = new QAction(tr("Upgrade Installed Libraries"), this);
+  mpUpgradeInstalledLibrariesAction->setStatusTip(tr("Upgrades the installed libraries"));
+  connect(mpUpgradeInstalledLibrariesAction, SIGNAL(triggered()), SLOT(upgradeInstalledLibraries()));
   // clear recent files action
   mpClearRecentFilesAction = new QAction(Helper::clearRecentFiles, this);
   mpClearRecentFilesAction->setStatusTip(tr("Clears the recent files list"));
@@ -3870,7 +3879,6 @@ void MainWindow::createMenus()
   pExportMenu->addAction(mpExportToOMNotebookAction);
   mpFileMenu->addMenu(pExportMenu);
   mpFileMenu->addSeparator();
-  mpFileMenu->addAction(mpLibraryManagementAction);
   // System libraries menu
   mpLibrariesMenu = new QMenu(menuBar());
   mpLibrariesMenu->setObjectName("LibrariesMenu");
@@ -3878,6 +3886,7 @@ void MainWindow::createMenus()
   addSystemLibraries();
   mpFileMenu->addMenu(mpLibrariesMenu);
   mpFileMenu->addAction(mpInstallLibraryAction);
+  mpFileMenu->addAction(mpUpgradeInstalledLibrariesAction);
   mpFileMenu->addSeparator();
   mpRecentFilesMenu = new QMenu(menuBar());
   mpRecentFilesMenu->setObjectName("RecentFilesMenu");

@@ -3308,6 +3308,19 @@ bool OMCProxy::updatePackageIndex()
 }
 
 /*!
+ * \brief OMCProxy::upgradeInstalledPackages
+ * Upgrades installed packages that have been registered by the package manager.
+ * \param installNewestVersions
+ * \return
+ */
+bool OMCProxy::upgradeInstalledPackages(bool installNewestVersions)
+{
+  bool result = mpOMCInterface->upgradeInstalledPackages(installNewestVersions);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
   \class CustomExpressionBox
   \brief A text box for executing OMC commands.
   */
