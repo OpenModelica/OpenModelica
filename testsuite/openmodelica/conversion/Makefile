@@ -13,6 +13,7 @@ ConvertClassVectorize1.mos \
 ConvertClassVectorize2.mos \
 ConvertClassVectorize3.mos \
 ConvertElement1.mos \
+ConvertElement2.mos \
 ConvertModifiers1.mos \
 ConvertModifiers2.mos \
 ConvertModifiers3.mos \
