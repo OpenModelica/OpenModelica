@@ -42,6 +42,7 @@ requirements.log \
 scalable.log \
 device.log \
 ffi.log
+conversion.log
 
 SIMULATIONLOGS = \
 linearization.log \
@@ -619,6 +620,9 @@ flatmodelica.log: omc-diff
 	@echo $@ done
 ffi.log: omc-diff
 	$(MAKE) -C flattening/modelica/ffi -f Makefile test > $@
+	@echo $@ done
+conversion.log: omc-diff
+	$(MAKE) -C openmodelica/conversion -f Makefile test > $@
 	@echo $@ done
 
 failingtest: omc-diff

@@ -42,6 +42,7 @@ protected
   import Parser;
   import System;
   import UnorderedMap;
+  import UnorderedSet;
   import Util;
   import MetaModelica.Dangerous.*;
 
@@ -1372,6 +1373,15 @@ protected
     input list<ConversionRules> extendsRules;
   algorithm
     elements := list(convertElementItem(e, rules, imports, extendsRules) for e in elements);
+
+    // After converting elements we might end up with duplicate imports, for example:
+    //   import SI = Modelica.SIunits;
+    //   import Modelica.SIunits;
+    // becomes after conversion:
+    //   import Modelica.Units.SI; // After simplification of SI = Modelica.Units.SI
+    //   import Modelica.Units.SI;
+    // To avoid issues we filter out such duplicate imports here.
+    elements := filterDuplicateImports(elements);
   end convertElementItems;
 
   function convertElementItem
@@ -1518,7 +1528,56 @@ protected
 
       else ();
     end match;
+
+    imp := simplifyImport(imp);
   end convertImport;
+
+  function simplifyImport
+    "Simplifies imports like `import C = A.B.C;` to `import A.B.C`"
+    input output Absyn.Import imp;
+  algorithm
+    imp := match imp
+      case Absyn.Import.NAMED_IMPORT()
+        guard imp.name == AbsynUtil.pathLastIdent(imp.path)
+        then Absyn.Import.QUAL_IMPORT(imp.path);
+
+      else imp;
+    end match;
+  end simplifyImport;
+
+  function filterDuplicateImports
+    "Filters out duplicate imports in a list of elements."
+    input list<Absyn.ElementItem> elements;
+    output list<Absyn.ElementItem> outElements;
+  protected
+    UnorderedSet<Absyn.Path> imports;
+  algorithm
+    imports := UnorderedSet.new(AbsynUtil.pathHashMod, AbsynUtil.pathEqual, 1);
+    outElements := list(e for e guard not importExists(e, imports) in elements);
+  end filterDuplicateImports;
+
+  function importExists
+    input Absyn.ElementItem element;
+    input UnorderedSet<Absyn.Path> imports;
+    output Boolean exists;
+  protected
+    Absyn.Path path;
+  algorithm
+    exists := match element
+      case Absyn.ElementItem.ELEMENTITEM(element = Absyn.Element.ELEMENT(
+          specification = Absyn.ElementSpec.IMPORT(import_ = Absyn.Import.QUAL_IMPORT(path = path))))
+        algorithm
+          exists := UnorderedSet.contains(path, imports);
+
+          if not exists then
+            UnorderedSet.add(path, imports);
+          end if;
+        then
+          exists;
+
+      else false;
+    end match;
+  end importExists;
 
   function convertComponentItem
     "Converts an Absyn.ComponentItem."
