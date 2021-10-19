@@ -41,7 +41,7 @@ buildings.log \
 requirements.log \
 scalable.log \
 device.log \
-ffi.log
+ffi.log \
 conversion.log
 
 SIMULATIONLOGS = \
