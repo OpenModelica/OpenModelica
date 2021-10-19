@@ -8177,7 +8177,7 @@ protected
   BackendDAE.Var scalarVar;
 algorithm
   // if it is an array parameter split it up. Do not do it for Cpp runtime, they can handle array parameters
-  if BackendVariable.isParam(dlowVar) and Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
+  if Types.isArray(dlowVar.varType) and not (Config.simCodeTarget() == "Cpp" ) then
     scalar_crefs := ComponentReference.expandCref(dlowVar.varName, false);
     for cref in scalar_crefs loop
       // extract the sim var
