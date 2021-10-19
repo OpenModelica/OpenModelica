@@ -2754,6 +2754,8 @@ protected
     input list<Absyn.ClassPart> parts;
     input TypeTable components;
   algorithm
+    UnorderedMap.clear(components);
+
     for part in parts loop
       () := match part
         case Absyn.ClassPart.PUBLIC()

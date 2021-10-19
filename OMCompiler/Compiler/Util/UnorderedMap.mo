@@ -262,6 +262,15 @@ public
     Vector.apply(map.buckets, function update_indices(removedIndex = index));
   end remove;
 
+  function clear
+    input UnorderedMap<K, V> map;
+  algorithm
+    Vector.clear(map.buckets);
+    Vector.push(map.buckets, {});
+    Vector.clear(map.keys);
+    Vector.clear(map.values);
+  end clear;
+
   function get
     "Returns SOME(value) if the given key has an associated value in the map,
      otherwise NONE()."
