@@ -40,10 +40,11 @@ QString Helper::applicationName = "OMEdit";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 QString Helper::organization = "openmodelica";  /* case-sensitive string. Don't change it. Used by ini settings file. */
 QString Helper::application = "omedit"; /* case-sensitive string. Don't change it. Used by ini settings file. */
-// these two variables are set once we are connected to OMC......in OMCProxy::startServer().
+// Following four variables are set once we are connected to OMC......in OMCProxy::initializeOMC().
 QString Helper::OpenModelicaVersion = "";
 QString Helper::OpenModelicaHome = "";
 QString Helper::OpenModelicaLibrary = "";
+QString Helper::userHomeDirectory = "";
 QString Helper::OMCServerName = "OMEdit";
 QString Helper::omFileTypes = "All Files (*.mo *.mol *.ssp);;Modelica Files (*.mo);;Encrypted Modelica Libraries (*.mol);;System Structure and Parameterization Files (*.ssp)";
 QString Helper::omEncryptedFileTypes = "Encrypted Modelica Libraries (*.mol)";
@@ -346,6 +347,7 @@ QString Helper::crashReport;
 QString Helper::parsingFailedJson;
 QString Helper::expandAll;
 QString Helper::collapseAll;
+QString Helper::versionLabel;
 QString Helper::version;
 QString Helper::unlimited;
 QString Helper::simulationOutput;
@@ -420,6 +422,7 @@ QString Helper::archivedSimulations;
 QString Helper::systemSimulationInformation;
 QString Helper::translationFlags;
 QString Helper::send;
+QString Helper::installLibrary;
 
 void Helper::initHelperVariables()
 {
@@ -645,6 +648,7 @@ void Helper::initHelperVariables()
   Helper::parsingFailedJson = tr("Parsing of JSON file failed");
   Helper::expandAll = tr("Expand All");
   Helper::collapseAll = tr("Collapse All");
+  Helper::versionLabel = tr("Version:");
   Helper::version = tr("Version");
   Helper::unlimited = tr("unlimited");
   Helper::simulationOutput = tr("Simulation Output");
@@ -719,6 +723,7 @@ void Helper::initHelperVariables()
   Helper::systemSimulationInformation = tr("System Simulation Information");
   Helper::translationFlags = tr("Translation Flags");
   Helper::send = tr("Send");
+  Helper::installLibrary = tr("Install Library");
 }
 
 QString GUIMessages::getMessage(int type)

@@ -263,6 +263,7 @@ bool OMCProxy::initializeOMC(threadData_t *threadData)
   changeDirectory(tmpPath);
   // set the OpenModelicaLibrary variable.
   Helper::OpenModelicaLibrary = getModelicaPath();
+  Helper::userHomeDirectory = getHomeDirectoryPath();
   return true;
 }
 
@@ -2750,6 +2751,18 @@ QString OMCProxy::getModelicaPath()
 }
 
 /*!
+ * \brief OMCProxy::getHomeDirectoryPath
+ * Returns the user HOME directory path.
+ * \return
+ */
+QString OMCProxy::getHomeDirectoryPath()
+{
+  QString result = mpOMCInterface->getHomeDirectoryPath();
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
  * \brief OMCProxy::getAvailableLibraries
  * Gets the available OpenModelica libraries.
  * \return the list of libaries.
@@ -2757,6 +2770,16 @@ QString OMCProxy::getModelicaPath()
 QStringList OMCProxy::getAvailableLibraries()
 {
   return mpOMCInterface->getAvailableLibraries();
+}
+
+/*!
+ * \brief OMCProxy::getAvailableLibraryVersions
+ * Gets the library versions.
+ * \return
+ */
+QStringList OMCProxy::getAvailableLibraryVersions(QString libraryName)
+{
+  return mpOMCInterface->getAvailableLibraryVersions(libraryName);
 }
 
 /*!
@@ -3253,6 +3276,60 @@ QList<QString> OMCProxy::parseEncryptedPackage(QString fileName, QString working
 bool OMCProxy::loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses, bool notify, bool requireExactVersion)
 {
   bool result = mpOMCInterface->loadEncryptedPackage(fileName, workingDirectory, skipUnzip, uses, notify, requireExactVersion);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::installPackage
+ * Installs the package.
+ * \param library
+ * \param version
+ * \param exactMatch
+ * \return
+ */
+bool OMCProxy::installPackage(const QString &library, const QString &version, bool exactMatch)
+{
+  bool result = mpOMCInterface->installPackage(library, version, exactMatch);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::updatePackageIndex
+ * Updates the package index.
+ * \return
+ */
+bool OMCProxy::updatePackageIndex()
+{
+  bool result = mpOMCInterface->updatePackageIndex();
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::upgradeInstalledPackages
+ * Upgrades installed packages that have been registered by the package manager.
+ * \param installNewestVersions
+ * \return
+ */
+bool OMCProxy::upgradeInstalledPackages(bool installNewestVersions)
+{
+  bool result = mpOMCInterface->upgradeInstalledPackages(installNewestVersions);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getAvailablePackageVersions
+ * Returns the available package versions in preference order.
+ * \param pkg
+ * \param version
+ * \return
+ */
+QStringList OMCProxy::getAvailablePackageVersions(QString pkg, QString version)
+{
+  QStringList result = mpOMCInterface->getAvailablePackageVersions(pkg, version);
   printMessagesStringInternal();
   return result;
 }

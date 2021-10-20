@@ -2289,6 +2289,13 @@ algorithm
       then
         (cache,v);
 
+    case (cache,_,"getAvailableLibraryVersions",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1)))},_)
+      algorithm
+        files := PackageManagement.getInstalledLibraryVersions(str1);
+        v := ValuesUtil.makeArray(List.map(files, ValuesUtil.makeString));
+      then
+        (cache,v);
+
     case (cache,_,"installPackage",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT(str1))), Values.STRING(str2), Values.BOOL(b)},_)
       algorithm
         v := Values.BOOL(PackageManagement.installPackage(str1, str2, b));

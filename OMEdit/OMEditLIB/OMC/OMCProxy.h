@@ -229,7 +229,9 @@ public:
   QString makeDocumentationUriToFileName(QString documentation);
   QString uriToFilename(QString uri);
   QString getModelicaPath();
+  QString getHomeDirectoryPath();
   QStringList getAvailableLibraries();
+  QStringList getAvailableLibraryVersions(QString libraryName);
   QStringList getDerivedClassModifierNames(QString className);
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
@@ -267,6 +269,10 @@ public:
   bool buildEncryptedPackage(QString className, bool encrypt = true);
   QList<QString> parseEncryptedPackage(QString fileName, QString workingDirectory);
   bool loadEncryptedPackage(QString fileName, QString workingDirectory, bool skipUnzip, bool uses = true, bool notify = true, bool requireExactVersion = false);
+  bool installPackage(const QString &library, const QString &version, bool exactMatch);
+  bool updatePackageIndex();
+  bool upgradeInstalledPackages(bool installNewestVersions);
+  QStringList getAvailablePackageVersions(QString pkg, QString version);
 signals:
   void commandFinished();
 public slots:
