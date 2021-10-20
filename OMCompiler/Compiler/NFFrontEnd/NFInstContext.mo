@@ -60,6 +60,7 @@ encapsulated package NFInstContext
   constant Type CONNECT         = intBitLShift(1, 21); // Part of connect argument.
   constant Type NOEVENT         = intBitLShift(1, 22); // Part of noEvent argument.
   constant Type ASSERT          = intBitLShift(1, 23); // Part of assert argument.
+  constant Type GRAPHICAL_EXP   = intBitLShift(1, 24); // Part of a graphical expression.
 
   // Combined flags:
   constant Type EQ_SUBEXPRESSION = intBitOr(EQUATION, SUBEXPRESSION);
@@ -212,6 +213,11 @@ encapsulated package NFInstContext
     input Type context;
     output Boolean res = intBitAnd(context, ASSERT) > 0;
   end inAssert;
+
+  function inGraphicalExp
+    input Type context;
+    output Boolean res = intBitAnd(context, GRAPHICAL_EXP) > 0;
+  end inGraphicalExp;
 
   function inValidTypenameScope
     input Type context;

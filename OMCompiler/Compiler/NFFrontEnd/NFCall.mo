@@ -1927,6 +1927,20 @@ protected
       // If it had iterators then it will not reach here. The args would have been parsed to
       // Absyn.FOR_ITER_FARG and that is handled in instIteratorCall.
       case "array" then BuiltinCall.makeArrayExp(args, named_args, info);
+
+      case _ guard InstContext.inGraphicalExp(context)
+        algorithm
+          // If we're in a graphic annotation expression, first try to find the
+          // function in the top scope in case there's a user-defined function
+          // with the same name. If it's not found, check the normal scope.
+          try
+            fn_ref := Function.instFunction(functionName, InstNode.topScope(scope), context, info);
+          else
+            fn_ref := Function.instFunction(functionName, scope, context, info);
+          end try;
+        then
+          Expression.CALL(UNTYPED_CALL(fn_ref, args, named_args, scope));
+
       else
         algorithm
           fn_ref := Function.instFunction(functionName, scope, context, info);

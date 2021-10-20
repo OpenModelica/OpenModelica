@@ -160,6 +160,7 @@ protected
   DAE.DAElist dae;
   Type ty;
   Variability var;
+  InstContext.Type context;
 algorithm
   stringLst := {};
 
@@ -224,7 +225,8 @@ algorithm
           if (stringEq(annName, "Icon") or stringEq(annName, "Diagram")) and not listEmpty(graphics_mod) then
             try
               {Absyn.MODIFICATION(modification = SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp = absynExp))))} := graphics_mod;
-              exp := NFInst.instExp(absynExp, inst_cls, NFInstContext.RELAXED, info);
+              context := InstContext.set(NFInstContext.RELAXED, NFInstContext.GRAPHICAL_EXP);
+              exp := NFInst.instExp(absynExp, inst_cls, context, info);
               (exp, ty, var) := Typing.typeExp(exp, NFInstContext.CLASS, info);
               save := exp;
               try
