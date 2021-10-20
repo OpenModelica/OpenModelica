@@ -1060,7 +1060,7 @@ end loadLibrary;
 function loadLibrary_work
   input String name;
   input InstNode scope;
-  output String version;
+  output String version = "(default)";
 protected
   String modelica_path, cls_name;
   Absyn.Program aprog;
