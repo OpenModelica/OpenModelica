@@ -18,6 +18,7 @@ DM.mos \
 DMwarm.mos \
 DMwarmCsv.mos \
 LoopTest.mos \
+issue7969.mos \
 LRB.mos \
 LRB2.mos \
 LV.mos \
