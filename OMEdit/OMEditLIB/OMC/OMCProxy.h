@@ -231,7 +231,7 @@ public:
   QString getModelicaPath();
   QString getHomeDirectoryPath();
   QStringList getAvailableLibraries();
-  QList<QList<QString> > getAvailableLibrariesAndVersions();
+  QStringList getAvailableLibraryVersions(QString libraryName);
   QStringList getDerivedClassModifierNames(QString className);
   QString getDerivedClassModifierValue(QString className, QString modifierName);
   OMCInterface::convertUnits_res convertUnits(QString from, QString to);
@@ -272,6 +272,7 @@ public:
   bool installPackage(const QString &library, const QString &version, bool exactMatch);
   bool updatePackageIndex();
   bool upgradeInstalledPackages(bool installNewestVersions);
+  QStringList getAvailablePackageVersions(QString pkg, QString version);
 signals:
   void commandFinished();
 public slots:

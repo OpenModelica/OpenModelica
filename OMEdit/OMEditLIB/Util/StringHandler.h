@@ -152,7 +152,6 @@ public:
   static bool naturalSort(const QString &s1, const QString &s2);
   static QString cleanResultVariable(const QString &variable);
   static bool naturalSortForResultVariables(const QString &s1, const QString &s2);
-  static bool lessThanListListString(const QStringList &s1, const QStringList &s2);
 #ifdef WIN32
   static QProcessEnvironment simulationProcessEnvironment();
 #endif

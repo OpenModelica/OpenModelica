@@ -2773,13 +2773,13 @@ QStringList OMCProxy::getAvailableLibraries()
 }
 
 /*!
- * \brief OMCProxy::getAvailableLibrariesAndVersions
- * Gets the available OpenModelica libraries and their versions.
+ * \brief OMCProxy::getAvailableLibraryVersions
+ * Gets the library versions.
  * \return
  */
-QList<QList<QString> > OMCProxy::getAvailableLibrariesAndVersions()
+QStringList OMCProxy::getAvailableLibraryVersions(QString libraryName)
 {
-  return mpOMCInterface->getAvailableLibrariesAndVersions();
+  return mpOMCInterface->getAvailableLibraryVersions(libraryName);
 }
 
 /*!
@@ -3316,6 +3316,20 @@ bool OMCProxy::updatePackageIndex()
 bool OMCProxy::upgradeInstalledPackages(bool installNewestVersions)
 {
   bool result = mpOMCInterface->upgradeInstalledPackages(installNewestVersions);
+  printMessagesStringInternal();
+  return result;
+}
+
+/*!
+ * \brief OMCProxy::getAvailablePackageVersions
+ * Returns the available package versions in preference order.
+ * \param pkg
+ * \param version
+ * \return
+ */
+QStringList OMCProxy::getAvailablePackageVersions(QString pkg, QString version)
+{
+  QStringList result = mpOMCInterface->getAvailablePackageVersions(pkg, version);
   printMessagesStringInternal();
   return result;
 }

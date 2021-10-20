@@ -1479,21 +1479,31 @@ void MainWindow::addSystemLibraries()
 {
   mpLibrariesMenu->clear();
   // get the available libraries and versions.
-  QList<QList<QString> > availableLibrariesAndVersions = MainWindow::instance()->getOMCProxy()->getAvailableLibrariesAndVersions();
-  availableLibrariesAndVersions.append(QStringList() << "OpenModelica" << "");
-  std::sort(availableLibrariesAndVersions.begin(), availableLibrariesAndVersions.end(), StringHandler::lessThanListListString);
-  foreach (QStringList availableLibraryAndVersions, availableLibrariesAndVersions) {
-    // we always a get a nested list<QString> with 2 values.
-    QString libraryName = availableLibraryAndVersions.at(0);
-    for (int i = 1; i < availableLibraryAndVersions.size(); ++i) {
-      QString libraryVersion = availableLibraryAndVersions.at(i);
-      QAction *pAction = new QAction(QString("%1 %2").arg(libraryName, libraryVersion), this);
-      pAction->setData(QStringList() << libraryName << libraryVersion);
-      if ((libraryName.compare(QStringLiteral("Modelica")) == 0) && (libraryVersion.compare(QStringLiteral("4.0.0")) == 0)) {
-        pAction->setShortcut(QKeySequence("Ctrl+m"));
-      }
+  QStringList libraries = MainWindow::instance()->getOMCProxy()->getAvailableLibraries();
+  libraries.append("OpenModelica");
+  libraries.sort();
+  foreach (QString library, libraries) {
+    QStringList versions;
+    if (library.compare(QStringLiteral("OpenModelica")) != 0) {
+      versions = MainWindow::instance()->getOMCProxy()->getAvailableLibraryVersions(library);
+    }
+    if (versions.isEmpty()) {
+      QAction *pAction = new QAction(library, this);
+      pAction->setData(QStringList() << library << "");
       connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
       mpLibrariesMenu->addAction(pAction);
+    } else {
+      QMenu *pLibraryMenu = new QMenu(library);
+      foreach (QString version, versions) {
+        QAction *pAction = new QAction(version, this);
+        pAction->setData(QStringList() << library << version);
+        if ((library.compare(QStringLiteral("Modelica")) == 0) && (version.compare(QStringLiteral("4.0.0")) == 0)) {
+          pAction->setShortcut(QKeySequence("Ctrl+m"));
+        }
+        connect(pAction, SIGNAL(triggered()), SLOT(loadSystemLibrary()));
+        pLibraryMenu->addAction(pAction);
+      }
+      mpLibrariesMenu->addMenu(pLibraryMenu);
     }
   }
 }

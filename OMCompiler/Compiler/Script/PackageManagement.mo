@@ -123,28 +123,25 @@ algorithm
   end for;
 end getInstalledLibraries;
 
-function getInstalledLibrariesAndVersions
-  output list<list<String>> librariesAndVersions = {};
+function getInstalledLibraryVersions
+  input String libraryName;
+  output list<String> libraryVersions = {};
 protected
   AvailableLibraries.Tree tree;
-  list<String> libraries = {};
-  list<String> libraryAndVersions = {};
   VersionMap.Tree versionTree;
   list<SemanticVersion.Version> versions = {};
+  String versionStr;
 algorithm
   tree := getInstalledLibraries();
-  libraries := AvailableLibraries.listKeys(tree);
-  for library in libraries loop
-    versionTree := AvailableLibraries.get(tree, library);
-    versions := VersionMap.listKeys(versionTree);
-    for version in versions loop
-      libraryAndVersions := VersionMap.keyStr(version)::libraryAndVersions;
-    end for;
-  libraryAndVersions := library::libraryAndVersions;
-  librariesAndVersions := libraryAndVersions::librariesAndVersions;
-  libraryAndVersions := {};
+  versionTree := AvailableLibraries.get(tree, libraryName);
+  versions := VersionMap.listKeys(versionTree);
+  for version in versions loop
+    versionStr := VersionMap.keyStr(version);
+    if (stringCompare(versionStr, "") > 0) then
+      libraryVersions := versionStr::libraryVersions;
+    end if;
   end for;
-end getInstalledLibrariesAndVersions;
+end getInstalledLibraryVersions;
 
 function getLibrarySubdirectories "This function returns a list of subdirectories that contain a package.mo file."
   input String inPath;

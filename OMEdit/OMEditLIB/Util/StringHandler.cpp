@@ -1637,11 +1637,6 @@ bool StringHandler::naturalSortForResultVariables(const QString &s1, const QStri
   return StringHandler::naturalSort(s3, s4);
 }
 
-bool StringHandler::lessThanListListString(const QStringList &s1, const QStringList &s2)
-{
-  return s1.first() < s2.first();
-}
-
 #ifdef WIN32
 /*!
  * \brief StringHandler::simulationProcessEnvironment

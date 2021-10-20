@@ -49,12 +49,22 @@ private:
   JsonDocument mIndexJsonDocument;
   QVariantMap mLibrariesMap;
   QComboBox *mpNameComboBox;
+  Label *mpSourceLabel;
+  QCheckBox *mpLatestBackwardsCompatibleCheckBox;
+  QCheckBox *mpPostReleaseBuildsCheckBox;
+  QCheckBox *mpPreReleaseBuildsCheckBox;
+  QCheckBox *mpFullSupportCheckBox;
+  QCheckBox *mpSupportCheckBox;
+  QCheckBox *mpExperimentalCheckBox;
+  QCheckBox *mpObsoleteCheckBox;
+  QCheckBox *mpNoSupportCheckBox;
   QComboBox *mpVersionComboBox;
   QCheckBox *mpExactMatchCheckBox;
   QPushButton *mpOkButton;
   QPushButton *mpCancelButton;
   QDialogButtonBox *mpButtonBox;
 private slots:
+  void filterChanged(bool checked);
   void libraryIndexChanged(const QString &text);
   void installLibrary();
 };

@@ -169,7 +169,6 @@ public:
   static QString parameters;
   static QString inputs;
   static QString name;
-  static QString nameStr;
   static QString startScript;
   static QString comment;
   static QString path;
@@ -354,6 +353,7 @@ public:
   static QString parsingFailedJson;
   static QString expandAll;
   static QString collapseAll;
+  static QString versionLabel;
   static QString version;
   static QString unlimited;
   static QString simulationOutput;

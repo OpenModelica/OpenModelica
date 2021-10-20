@@ -4168,15 +4168,16 @@ annotation(
   preferredView="text");
 end getAvailableLibraries;
 
-function getAvailableLibrariesAndVersions
-  output String[:,:] librariesAndVersions;
+function getAvailableLibraryVersions
+  input TypeName libraryName;
+  output String[:] librariesAndVersions;
 external "builtin";
 annotation(
   Documentation(info="<html>
-  Looks for all libraries that are visible from the <a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">getModelicaPath()</a>.
+  Returns the installed versions of a library.
 </html>"),
   preferredView="text");
-end getAvailableLibrariesAndVersions;
+end getAvailableLibraryVersions;
 
 function installPackage
   input TypeName pkg;
