@@ -400,7 +400,7 @@ protected
 algorithm
   name := Expression.reductionIterName(iter);
   cr := ComponentReference.makeCrefIdent(name,DAE.T_INTEGER_DEFAULT,{});
-  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.BCONST(false), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
+  backendVar := BackendDAE.VAR(cr, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_INTEGER_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), NONE(), NONE(), DAE.NON_CONNECTOR(), DAE.NOT_INNER_OUTER(), false);
 end makeIterVariable;
 
 protected function checkEquationSize"author: Frenkel TUD 2010-12
@@ -1164,13 +1164,12 @@ end setTearingSelectAttribute;
 
 public function setHideResultAttribute
   "Returns the expression of the hideResult annotation.
-   Uses isProtected as default if the annotation is not specified.
    See Modelica Spec 3.3, section 18.3"
   input Option<SCode.Comment> comment;
-  input Boolean isProtected;
   input DAE.ComponentRef inCref;
-  output DAE.Exp hideResult;
+  output Option<DAE.Exp> hideResult;
 protected
+  DAE.Exp hr;
   SCode.Annotation ann;
   Absyn.Exp val;
   DAE.ComponentRef crefRoot;
@@ -1178,19 +1177,19 @@ algorithm
   try
     SOME(SCode.COMMENT(annotation_=SOME(ann))) := comment;
     val := SCodeUtil.getNamedAnnotation(ann, "HideResult");
-    hideResult := Expression.fromAbsynExp(val);
+    hr := Expression.fromAbsynExp(val);
 
     hideResult := match(inCref)
       case(DAE.CREF_QUAL())
         equation
           (crefRoot,_) = ComponentReference.splitCrefLast(inCref);
-          hideResult = Expression.traverseExpBottomUp(hideResult, ComponentReference.joinCrefsExp, crefRoot);
-       then hideResult;
-      else hideResult;
+          hr = Expression.traverseExpBottomUp(hr, ComponentReference.joinCrefsExp, crefRoot);
+       then SOME(hr);
+      else SOME(hr);
     end match;
 
   else
-    hideResult := DAE.BCONST(isProtected);
+    hideResult := NONE();
   end try;
 end setHideResultAttribute;
 
@@ -7213,7 +7212,7 @@ algorithm
       list<DAE.Dimension> instdims;
       Option<DAE.VariableAttributes> attr, attr_;
       Option<BackendDAE.TearingSelect> ts;
-      DAE.Exp hideResult;
+      Option<DAE.Exp> hideResult;
       Type_a ext_arg_1, ext_arg_2;
       BackendDAE.VarKind varKind;
       DAE.VarDirection varDirection;

@@ -2889,9 +2889,9 @@ algorithm
     case(DAE.CREF(cr, ty)::rest) equation
       slst = List.map(dims, intString);
       if FMI.isFMIVersion20() then
-        var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, true, NONE(), NONE(), NONE(), NONE(), SOME(cr));
+        var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), slst, false, true, SOME(true), NONE(), NONE(), NONE(), NONE(), SOME(cr));
       else
-        var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, true, NONE(), NONE(), NONE(), NONE(), SOME(cr));
+        var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(name), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), slst, false, true, SOME(true), NONE(), NONE(), NONE(), NONE(), SOME(cr));
       end if;
       tempvars = createTempVarsforCrefs(rest, {var});
     then List.append_reverse(tempvars, itempvars);
@@ -2929,9 +2929,9 @@ algorithm
       inst_dims = ComponentReference.crefDims(cr);
       numArrayElement = List.map(inst_dims, ExpressionDump.dimensionString);
       if FMI.isFMIVersion20() then
-        var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, true, NONE(), NONE(), NONE(), NONE(), SOME(cr));
+        var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), numArrayElement, false, true, SOME(true), NONE(), NONE(), NONE(), NONE(), SOME(cr));
       else
-        var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, true, NONE(), NONE(), NONE(), NONE(), SOME(cr));
+        var = SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, arrayCref, SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), numArrayElement, false, true, SOME(true), NONE(), NONE(), NONE(), NONE(), SOME(cr));
       end if;
     then createTempVarsforCrefs(rest, var::itempvars);
   end match;
@@ -2975,9 +2975,9 @@ algorithm
         arraycref := ComponentReference.crefStripSubs(cr);
         ty := ComponentReference.crefTypeFull(cr);
         if FMI.isFMIVersion20() then
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, true, NONE(), NONE(), NONE(), NONE(), SOME(cr));
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, SOME(true), NONE(), NONE(), NONE(), NONE(), SOME(cr));
         else
-          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, true, true, NONE(), NONE(), NONE(), NONE(), SOME(cr));
+          var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, SOME(arraycref), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, true, SOME(true), NONE(), NONE(), NONE(), NONE(), SOME(cr));
         end if;
 
         /* The rest don't need to be marked i.e. we have 'NONE()'. Just create simvars. */
@@ -2985,9 +2985,9 @@ algorithm
         for cr in crlst loop
           ty := ComponentReference.crefTypeFull(cr);
           if FMI.isFMIVersion20() then
-            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, true, NONE(), NONE(), NONE(), NONE(), SOME(cr));
+            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, SOME(true), NONE(), NONE(), NONE(), NONE(), SOME(cr));
           else
-            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, true, true, NONE(), NONE(), NONE(), NONE(), SOME(cr));
+            var := SimCodeVar.SIMVAR(cr, BackendDAE.VARIABLE(), "", "", "", 0, NONE(), NONE(), NONE(), NONE(), false, ty, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, true, SOME(true), NONE(), NONE(), NONE(), NONE(), SOME(cr));
           end if;
           ttmpvars := var::ttmpvars;
         end for;
@@ -5250,12 +5250,12 @@ algorithm
     outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
-        SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, false, false, NONE(), NONE(), NONE(), NONE(), SOME(inName));
+        SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, false, NONE(), NONE(), NONE(), NONE(), NONE(), SOME(inName));
   else
     outSimVar := SimCodeVar.SIMVAR(inName, inVarKind, "", "", "", -1 /* use -1 to get an error in simulation if something failed */,
         NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT,
         false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource,
-        SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, false, false, NONE(), NONE(), NONE(), NONE(), SOME(inName));
+        SOME(SimCodeVar.NONECAUS()), NONE(), NONE(), {}, false, false, NONE(), NONE(), NONE(), NONE(), NONE(), SOME(inName));
   end if;
 end makeTmpRealSimCodeVar;
 
@@ -8441,7 +8441,11 @@ algorithm
     case SimCodeVar.NEGATEDALIAS(varName = cr) then " (negated alias: " + ComponentReference.printComponentRefStr(cr) + ") ";
   end match);
   s := s + (if inVar.isProtected then " protected " else "");
-  s := s + (if inVar.hideResult then " hideResult " else "");
+  s := s + (match inVar.hideResult
+    local Boolean bval;
+    case SOME(bval) then (if bval then " hideResult " else "");
+    else "";
+  end match);
   s := s + " initial: " + (if Util.isSome(inVar.initialValue) then ExpressionDump.printOptExpStr(inVar.initialValue) else "");
   s := s + (if Util.isSome(inVar.arrayCref) then "\tarrCref:" + ComponentReference.printComponentRefStr(Util.getOption(inVar.arrayCref)) else "\tno arrCref");
   s := s + " index:(" + (if Util.isSome(inVar.variable_index) then intString(Util.getOption(inVar.variable_index)) else "") + ")";
@@ -9542,7 +9546,7 @@ algorithm
       list<DAE.Dimension> inst_dims;
       list<String> numArrayElement;
       Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Exp hideResultExp;
+      Option<DAE.Exp> hideResultExp;
       Option<SCode.Comment> comment;
       BackendDAE.Type tp;
       String  commentStr, unit, displayUnit;
@@ -9560,7 +9564,7 @@ algorithm
       SimCodeVar.Initial initial_;
       SimCodeVar.Variability variability;
       Boolean isProtected;
-      Boolean hideResult;
+      Option<Boolean> hideResult;
 
     case ((BackendDAE.VAR(varName = cr,
       varKind = kind as BackendDAE.PARAM(),
@@ -9574,7 +9578,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(hideResultExp, isProtected);
+        hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -9619,7 +9623,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(hideResultExp, isProtected);
+        hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -9660,7 +9664,7 @@ algorithm
         commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
         (unit, displayUnit) = extractVarUnit(dae_var_attr);
         isProtected = getProtected(dae_var_attr);
-        hideResult = getHideResult(hideResultExp, isProtected);
+        hideResult = getHideResult(hideResultExp);
         (minValue, maxValue) = getMinMaxValues(dlowVar);
         initVal = getStartValue(dlowVar);
         nomVal = getNominalValue(dlowVar);
@@ -11602,17 +11606,17 @@ end getProtected;
 
 protected function getHideResult
   "Returns the value of the hideResult attribute."
-  input DAE.Exp hideResultExp;
-  input Boolean isProtected;
-  output Boolean hideResult;
+  input Option<DAE.Exp> hideResultExp;
+  output Option<Boolean> hideResult;
 algorithm
   hideResult := match(hideResultExp)
-    case(DAE.BCONST(false)) then false;
-    case(DAE.BCONST(true)) then true;
+    case(NONE()) then NONE();
+    case(SOME(DAE.BCONST(false))) then SOME(false);
+    case(SOME(DAE.BCONST(true))) then SOME(true);
     else
       equation
-        Error.addCompilerWarning("The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is set to 'isProtected' (=" + boolString(isProtected) + ") by default.");
-     then isProtected;
+        Error.addCompilerWarning("The hideResult annotation could not be evaluated, probably due to missing annotation(Evaluate=true). It is removed.");
+     then NONE();
   end match;
 end getHideResult;
 
@@ -14624,7 +14628,7 @@ algorithm
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, false, NONE(), NONE(), NONE(), NONE(), SOME(badcref));
+    outSimVar := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), NONE(), NONE(), NONE(), NONE(), SOME(badcref));
   end try;
 end cref2simvar;
 
@@ -14667,7 +14671,7 @@ algorithm
   else
     //print("cref2simvar: " + ComponentReference.printComponentRefStr(inCref) + " not found!\n");
     badcref := ComponentReference.makeCrefIdent("ERROR_cref2simvar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, false, NONE(), NONE(), NONE(), NONE(), SOME(badcref));
+    sv := SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), NONE(), NONE(), NONE(), NONE(), SOME(badcref));
   end try;
   outSimVar := sv;
 end simVarFromHT;
@@ -14700,7 +14704,7 @@ algorithm
     case (_,_)
       equation
         badcref = ComponentReference.makeCrefIdent("ERROR_localCref2SimVar_failed " + ComponentReference.printComponentRefStr(inCref), DAE.T_REAL_DEFAULT, {});
-        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, false, NONE(), NONE(), NONE(), NONE(), SOME(badcref));
+        then SimCodeVar.SIMVAR(badcref, BackendDAE.VARIABLE(), "", "", "", -2, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCodeVar.NOALIAS(), DAE.emptyElementSource, SOME(SimCodeVar.LOCAL()), NONE(), NONE(), {}, false, true, NONE(), NONE(), NONE(), NONE(), NONE(), SOME(badcref));
   end matchcontinue;
 end localCref2SimVar;
 

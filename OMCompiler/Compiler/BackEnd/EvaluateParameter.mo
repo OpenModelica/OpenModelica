@@ -826,10 +826,11 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Values.Value value;
       DAE.Exp hideResultExp;
+      Option<DAE.Exp> hideResultOpt;
       Boolean b;
 
     // Parameter with bind expression
-    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e), hideResult=hideResultExp) equation
+    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), bindExp=SOME(e), hideResult=hideResultOpt) equation
       // save constant bindings of parameters if parameters are final and fixed
       if Expression.isConst(e) and BackendVariable.isFinalVar(v) and BackendVariable.varFixed(v) then
         // Save all constant bindings of final parameters in replacements
@@ -868,16 +869,21 @@ algorithm
       (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);
       // apply replacements in hideResult attribute
-      (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
-      if b then
-        (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
-        v.hideResult = hideResultExp;
-      end if;
+      v.hideResult = match (hideResultOpt)
+      case SOME(hideResultExp) equation
+        (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
+        if b then
+          (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
+        end if;
+        then SOME(hideResultExp);
+      else
+        v.hideResult;
+      end match;
       globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
      then ();
 
     // Parameter without bind expression but with start attribute
-    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), values=attr, hideResult=hideResultExp) equation
+    case v as BackendDAE.VAR(varName = cr, varKind=BackendDAE.PARAM(), values=attr, hideResult=hideResultOpt) equation
       true = BackendVariable.varFixed(var);
       e = DAEUtil.getStartAttrFail(attr);
       // apply replacements
@@ -907,16 +913,21 @@ algorithm
       (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);
       // apply replacements in hideResult attribute
-      (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
-      if b then
-        (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
-        v.hideResult = hideResultExp;
-      end if;
+      v.hideResult = match (hideResultOpt)
+      case SOME(hideResultExp) equation
+        (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
+        if b then
+          (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
+        end if;
+        then SOME(hideResultExp);
+      else
+        v.hideResult;
+      end match;
       globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
      then ();
 
     // other vars
-    case v as BackendDAE.VAR(bindExp=SOME(e), hideResult=hideResultExp) equation
+    case v as BackendDAE.VAR(bindExp=SOME(e), hideResult=hideResultOpt) equation
       // apply replacements
       (e, b) = BackendVarTransform.replaceExp(e, replEvaluate, NONE());
       if b then
@@ -942,24 +953,34 @@ algorithm
       (attr, (replEvaluate, _)) = BackendDAEUtil.traverseBackendDAEVarAttr(v.values, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(v, attr);
       // apply replacements in hideResult attribute
-      (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
-      if b then
-        (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
-        v.hideResult = hideResultExp;
-      end if;
+      v.hideResult = match (hideResultOpt)
+      case SOME(hideResultExp) equation
+        (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
+        if b then
+          (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
+        end if;
+        then SOME(hideResultExp);
+      else
+        v.hideResult;
+      end match;
       globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
      then ();
 
-    case BackendDAE.VAR(values=attr, hideResult=hideResultExp) equation
+    case BackendDAE.VAR(values=attr, hideResult=hideResultOpt) equation
       // apply replacements
       (attr, (replEvaluate, true)) = BackendDAEUtil.traverseBackendDAEVarAttr(attr, traverseExpVisitorWrapper, (replEvaluate, false));
       v = BackendVariable.setVarAttributes(var, attr);
       // apply replacements in hideResult attribute
-      (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
-      if b then
-        (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
-        v.hideResult = hideResultExp;
-      end if;
+      v.hideResult = match (hideResultOpt)
+      case SOME(hideResultExp) equation
+        (hideResultExp, b) = BackendVarTransform.replaceExp(hideResultExp, replEvaluate, NONE());
+        if b then
+          (hideResultExp, _) = ExpressionSimplify.simplify(hideResultExp);
+        end if;
+        then SOME(hideResultExp);
+      else
+        v.hideResult;
+      end match;
       globalKnownVars = BackendVariable.setVarAt(globalKnownVars, index, v);
      then ();
 
