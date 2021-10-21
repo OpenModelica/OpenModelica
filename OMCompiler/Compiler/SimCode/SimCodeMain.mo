@@ -772,7 +772,7 @@ algorithm
           // The dgesv headers are in the RuntimeSources.fmu_sources_dir for now since they are not properly installed in the include folder
           copyFiles(RuntimeSources.dgesv_headers, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
           copyFiles(RuntimeSources.dgesv_sources, source=install_fmu_sources_dir, destination=fmu_tmp_sources_dir);
-          dgesv_sources := RuntimeSources.sundials_headers;
+          dgesv_sources := RuntimeSources.dgesv_sources;
         else
           dgesv_sources := {};
         end if;

@@ -31,7 +31,8 @@ set(SOURCE_FMU_COMMON_HEADERS \"./omc_inline.h\",\"./openmodelica_func.h\",\"./o
 
 ######################################################################################################################
 # Lapack files
-file(GLOB_RECURSE 3RD_DGESV_FILES   ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/blas/*.c
+file(GLOB_RECURSE 3RD_DGESV_FILES   ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/include/*.h
+                                    ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/blas/*.c
                                     ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/lapack/*.c
                                     ${OMCompiler_3rdParty_SOURCE_DIR}/dgesv/libf2c/*.c)
 install(FILES ${3RD_DGESV_FILES}
