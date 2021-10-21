@@ -41,26 +41,16 @@ setCommandLineOptions("+maxSizeSolveLinearSystem=0");
 print("Trying with maxSizeSolveLinearSystem=0");
 getErrorString();
 
-echo(false);
-res:=optimize(testFinalCon5_, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT -optimizerNP 1");
-messages:=res.messages;
-echo(true);
+optimize(testFinalCon5_, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-optimizerNP=1 -iif=ReferenceFiles/testFinalCon5_ref.mat -ipopt_init=FILE");
 getErrorString();
 
-
-if regexBool(messages, "EXIT: Optimal Solution Found.") then
-
-  print("Optimal Solution Found.. Please Update the test\n");
-  res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
-  print(res); print("\n");
-  print(getErrorString());
-
-elseif regexBool(messages, "EXIT: Maximum Number of Iterations Exceeded.") then
-  print("Maximum Number of Iterations Exceeded.\n");
-else
-  print("No optimal solution found\n");
-end if;
-
+res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001, {
+"x2",
+"x1",
+"y1",
+"final_con1"
+});
+getErrorString();
 
 
 // Testing other convergence with solveLinearSystem
@@ -68,31 +58,16 @@ print("Trying with maxSizeSolveLinearSystem=20");
 setCommandLineOptions("+maxSizeSolveLinearSystem=20");
 getErrorString();
 
-echo(false);
-res := optimize(testFinalCon5, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-lv LOG_IPOPT -optimizerNP 1");
-messages:=res.messages;
-echo(true);
+optimize(testFinalCon5, numberOfIntervals=20, tolerance = 1e-08, stopTime = 5, simflags="-optimizerNP=1");
 getErrorString();
 
-
-if regexBool(messages, "EXIT: Optimal Solution Found.") then
-  if regexBool(messages, "Number of Iterations....: 50") then
-    print("Optimal Solution Found.\n");
-    print("Number of Iterations: 50\n");
-
-    res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5_res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001);
-    print(res); print("\n");
-    print(getErrorString());
-
-  else
-    print("Number of Iterations changed. Please update the test\n");
-  end if;
-elseif regexBool(messages, "EXIT: Maximum Number of Iterations Exceeded.") then
-  print("Maximum Number of Iterations Exceeded.");
-else
-  print("No optimal solution found");
-end if;
-
+res := OpenModelica.Scripting.compareSimulationResults("testFinalCon5__res.mat","ReferenceFiles/testFinalCon5_ref.mat","testFinalCon_diff.csv",0.01,0.0001, {
+"x2",
+"x1",
+"y1",
+"final_con1"
+});
+getErrorString();
 
 // Result:
 // true
@@ -102,20 +77,76 @@ end if;
 // true
 // Trying with maxSizeSolveLinearSystem=0
 // ""
-// true
+// record SimulationResult
+//     resultFile = "testFinalCon5__res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon5_', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP=1 -iif=ReferenceFiles/testFinalCon5_ref.mat -ipopt_init=FILE'",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con2 >= 0.0 and $finalCon$final_con2 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con2 <= 0.0, has value: -3
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con1 >= 0.0 and $finalCon$final_con1 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con1 <= 0.0, has value: -2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// Input[2]:u(start = 5.47918, nominal = 6.47918, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+// stdout            | info    | Using values from file as initial guess.
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit https://github.com/coin-or/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// Maximum Number of Iterations Exceeded.
-//
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // Trying with maxSizeSolveLinearSystem=20
 // true
 // ""
-// true
+// record SimulationResult
+//     resultFile = "testFinalCon5_res.mat",
+//     simulationOptions = "startTime = 0.0, stopTime = 5.0, numberOfIntervals = 20, tolerance = 1e-08, method = 'optimization', fileNamePrefix = 'testFinalCon5', options = '', outputFormat = 'mat', variableFilter = '.*', cflags = '', simflags = '-optimizerNP=1'",
+//     messages = "assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con2 >= 0.0 and $finalCon$final_con2 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con2 <= 0.0, has value: -3
+// assert            | warning | The following assertion has been violated at time 0.000000
+// |                 | |       | $finalCon$final_con1 >= 0.0 and $finalCon$final_con1 <= 0.0
+// assert            | warning | Variable violating min/max constraint: 0.0 <= $finalCon$final_con1 <= 0.0, has value: -2
+// LOG_SUCCESS       | info    | The initialization finished successfully without homotopy method.
+//
+// Optimizer Variables
+// ========================================================
+// State[0]:x1(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// State[1]:x2(start = 0, nominal = 1, min = -Inf, max = +Inf, init = 0)
+// Input[2]:u(start = 0, nominal = 1, min = -Inf, max = +Inf)
+// --------------------------------------------------------
+// number of nonlinear constraints: 0
+// ========================================================
+//
+// ******************************************************************************
+// This program contains Ipopt, a library for large-scale nonlinear optimization.
+//  Ipopt is released as open source code under the Eclipse Public License (EPL).
+//          For more information visit https://github.com/coin-or/Ipopt
+// ******************************************************************************
+//
+// LOG_SUCCESS       | info    | The simulation finished successfully.
+// "
+// end SimulationResult;
 // "Warning: The initial conditions are not fully specified. For more information set -d=initialization. In OMEdit Tools->Options->Simulation->Show additional information from the initialization process, in OMNotebook call setCommandLineOptions(\"-d=initialization\").
 // "
-// Optimal Solution Found.
-// Number of Iterations: 50
-// Files Equal!
-// Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
-//
+// {"Files Equal!"}
+// "Warning: 'compareSimulationResults' is deprecated. It is recommended to use 'diffSimulationResults' instead.
+// "
 // endResult
