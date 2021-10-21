@@ -247,6 +247,9 @@ install(FILES FrontEnd/ModelicaBuiltin.mo
 install(FILES FrontEnd/MetaModelicaBuiltin.mo
             DESTINATION lib/omc
             COMPONENT compiler)
+install(FILES FrontEnd/PDEModelicaBuiltin.mo
+            DESTINATION lib/omc
+            COMPONENT compiler)
 
 
 # This is a convenience target to install omc. We are used to issuing 'make install' to install
